@@ -1,0 +1,1248 @@
+{
+  "version": 1,
+  "units": "metres",
+  "axes": "+Y up, +Z front",
+  "motionUnits": {
+    "bobAmplitude": "metres",
+    "rockAmplitudeDeg": "degrees"
+  },
+  "seaDatum": -1.2,
+  "assets": {
+    "watersports_windsurf_rig": {
+      "feet": [
+        [
+          -0.13,
+          0.105,
+          -0.52
+        ],
+        [
+          0.13,
+          0.105,
+          -0.1
+        ]
+      ],
+      "hands": [
+        [
+          -0.28,
+          1.27,
+          -0.28
+        ],
+        [
+          -0.29,
+          1.27,
+          -0.63
+        ]
+      ],
+      "floatHeight": 0.1,
+      "floating": true,
+      "draftDepth": 0.32,
+      "bobAmplitude": 0.045,
+      "rockAmplitudeDeg": 3.0
+    },
+    "watersports_windsurf_sand": {
+      "stand": [
+        -1.25,
+        0,
+        0.6
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_windsurf_derigged": {
+      "stand": [
+        0,
+        0,
+        1.5
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_sup_a": {
+      "feet": [
+        [
+          -0.18,
+          0.1,
+          -0.16
+        ],
+        [
+          0.18,
+          0.1,
+          0.16
+        ]
+      ],
+      "hands": [
+        [
+          0.46,
+          1.2,
+          0.1
+        ],
+        [
+          0.46,
+          0.65,
+          -0.1
+        ]
+      ],
+      "floatHeight": 0.1,
+      "floating": true,
+      "draftDepth": 0.28,
+      "bobAmplitude": 0.04,
+      "rockAmplitudeDeg": 2.2
+    },
+    "watersports_sup_b": {
+      "feet": [
+        [
+          -0.17,
+          0.1,
+          -0.16
+        ],
+        [
+          0.17,
+          0.1,
+          0.16
+        ]
+      ],
+      "hands": [
+        [
+          0.45,
+          1.2,
+          0.1
+        ],
+        [
+          0.45,
+          0.65,
+          -0.1
+        ]
+      ],
+      "floatHeight": 0.1,
+      "floating": true,
+      "draftDepth": 0.28,
+      "bobAmplitude": 0.04,
+      "rockAmplitudeDeg": 2.2
+    },
+    "watersports_sup_c": {
+      "feet": [
+        [
+          -0.19,
+          0.1,
+          -0.16
+        ],
+        [
+          0.19,
+          0.1,
+          0.16
+        ]
+      ],
+      "hands": [
+        [
+          0.47,
+          1.2,
+          0.1
+        ],
+        [
+          0.47,
+          0.65,
+          -0.1
+        ]
+      ],
+      "floatHeight": 0.1,
+      "floating": true,
+      "draftDepth": 0.28,
+      "bobAmplitude": 0.04,
+      "rockAmplitudeDeg": 2.2
+    },
+    "watersports_paddle": {
+      "hands": [
+        [
+          0,
+          1.79,
+          0
+        ],
+        [
+          0,
+          1.12,
+          0
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_kiteboard": {
+      "feet": [
+        [
+          0,
+          0.036,
+          -0.28
+        ],
+        [
+          0,
+          0.036,
+          0.28
+        ]
+      ],
+      "hands": [
+        [
+          0.22,
+          1.0,
+          0.3
+        ],
+        [
+          -0.22,
+          1.0,
+          0.3
+        ]
+      ],
+      "floatHeight": 0.035,
+      "floating": true,
+      "draftDepth": 0.065,
+      "bobAmplitude": 0.035,
+      "rockAmplitudeDeg": 3.4
+    },
+    "watersports_foilboard": {
+      "feet": [
+        [
+          0,
+          0.09,
+          -0.28
+        ],
+        [
+          0,
+          0.09,
+          0.27
+        ]
+      ],
+      "hands": [
+        [
+          0.22,
+          1.05,
+          0.3
+        ],
+        [
+          -0.22,
+          1.05,
+          0.3
+        ]
+      ],
+      "floatHeight": 0.09,
+      "floating": true,
+      "draftDepth": 0.9,
+      "bobAmplitude": 0.03,
+      "rockAmplitudeDeg": 2.2
+    },
+    "watersports_kite_bar": {
+      "hands": [
+        [
+          -0.2,
+          0.075,
+          0
+        ],
+        [
+          0.2,
+          0.075,
+          0
+        ]
+      ],
+      "lineAttachments": [
+        [
+          -0.27,
+          0.075,
+          0
+        ],
+        [
+          0.27,
+          0.075,
+          0
+        ],
+        [
+          0,
+          0.15,
+          0
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_kite_flying": {
+      "lineAttachments": [
+        [
+          -2.55,
+          0.95,
+          0.8
+        ],
+        [
+          2.55,
+          0.95,
+          0.8
+        ],
+        [
+          -3.35,
+          0.12,
+          -1.05
+        ],
+        [
+          3.35,
+          0.12,
+          -1.05
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_kite_sand": {
+      "lineAttachments": [
+        [
+          -2.55,
+          0.27,
+          0.8
+        ],
+        [
+          2.55,
+          0.27,
+          0.8
+        ],
+        [
+          -3.35,
+          0.12,
+          -1.05
+        ],
+        [
+          3.35,
+          0.12,
+          -1.05
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_kayak_single": {
+      "seat": [
+        0,
+        0.05,
+        -0.18
+      ],
+      "feet": [
+        [
+          -0.13,
+          -0.04,
+          0.29
+        ],
+        [
+          0.13,
+          -0.04,
+          0.29
+        ]
+      ],
+      "hands": [
+        [
+          -0.38,
+          0.38,
+          0.04
+        ],
+        [
+          0.38,
+          0.38,
+          0.04
+        ]
+      ],
+      "floating": true,
+      "draftDepth": 0.17,
+      "bobAmplitude": 0.025,
+      "rockAmplitudeDeg": 3
+    },
+    "watersports_kayak_double": {
+      "seats": [
+        [
+          0,
+          0.05,
+          -0.85
+        ],
+        [
+          0,
+          0.05,
+          0.65
+        ]
+      ],
+      "feet": [
+        [
+          -0.13,
+          -0.04,
+          -0.38
+        ],
+        [
+          0.13,
+          -0.04,
+          -0.38
+        ],
+        [
+          -0.13,
+          -0.04,
+          1.12
+        ],
+        [
+          0.13,
+          -0.04,
+          1.12
+        ]
+      ],
+      "hands": [
+        [
+          -0.38,
+          0.38,
+          -0.63
+        ],
+        [
+          0.38,
+          0.38,
+          -0.63
+        ],
+        [
+          -0.38,
+          0.38,
+          0.87
+        ],
+        [
+          0.38,
+          0.38,
+          0.87
+        ]
+      ],
+      "floating": true,
+      "draftDepth": 0.19,
+      "bobAmplitude": 0.03,
+      "rockAmplitudeDeg": 3
+    },
+    "watersports_rowing_boat": {
+      "seat": [
+        0,
+        0.225,
+        -0.23
+      ],
+      "feet": [
+        [
+          -0.19,
+          -0.1,
+          0.28
+        ],
+        [
+          0.19,
+          -0.1,
+          0.28
+        ]
+      ],
+      "hands": [
+        [
+          -0.62,
+          0.43,
+          -0.25
+        ],
+        [
+          0.62,
+          0.43,
+          -0.25
+        ]
+      ],
+      "oarlocks": [
+        [
+          -0.67,
+          0.43,
+          -0.25
+        ],
+        [
+          0.67,
+          0.43,
+          -0.25
+        ]
+      ],
+      "floating": true,
+      "draftDepth": 0.24,
+      "bobAmplitude": 0.04,
+      "rockAmplitudeDeg": 4
+    },
+    "watersports_lancha": {
+      "stand": [
+        0,
+        0.1,
+        -0.38
+      ],
+      "feet": [
+        [
+          -0.19,
+          0.1,
+          -0.38
+        ],
+        [
+          0.19,
+          0.1,
+          -0.38
+        ]
+      ],
+      "hands": [
+        [
+          -0.15,
+          0.96,
+          0.2
+        ],
+        [
+          0.15,
+          0.96,
+          0.2
+        ]
+      ],
+      "seats": [
+        [
+          0,
+          0.39,
+          -1.65
+        ],
+        [
+          0,
+          0.39,
+          1.3
+        ]
+      ],
+      "moorBow": [
+        0,
+        0.62,
+        3.18
+      ],
+      "moorStern": [
+        0.82,
+        0.55,
+        -2.78
+      ],
+      "floating": true,
+      "draftDepth": 0.38,
+      "bobAmplitude": 0.035,
+      "rockAmplitudeDeg": 3
+    },
+    "watersports_oar": {
+      "hands": [
+        [
+          0,
+          0.033,
+          -0.53
+        ],
+        [
+          0,
+          0.033,
+          -0.18
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_anchor": {
+      "ropeEye": [
+        0,
+        0.64,
+        0
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_rope_coil": {
+      "ropeEnd": [
+        0.3,
+        0.035,
+        0.15
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_lifebuoy": {
+      "hands": [
+        [
+          -0.31,
+          0.03,
+          0
+        ],
+        [
+          0.31,
+          0.03,
+          0
+        ]
+      ],
+      "floating": true,
+      "draftDepth": 0.055,
+      "bobAmplitude": 0.04,
+      "rockAmplitudeDeg": 5
+    },
+    "watersports_wooden_boat_maria_del_mar": {
+      "stand": [
+        0,
+        0.26,
+        -0.3
+      ],
+      "feet": [
+        [
+          -0.18,
+          0.26,
+          -0.3
+        ],
+        [
+          0.18,
+          0.26,
+          -0.3
+        ]
+      ],
+      "hands": [
+        [
+          -0.48,
+          0.68,
+          -0.3
+        ],
+        [
+          0.48,
+          0.68,
+          -0.3
+        ]
+      ],
+      "moorBow": [
+        0,
+        0.86,
+        2.5
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_wooden_boat_la_esperanza": {
+      "stand": [
+        0,
+        0.26,
+        -0.3
+      ],
+      "feet": [
+        [
+          -0.18,
+          0.26,
+          -0.3
+        ],
+        [
+          0.18,
+          0.26,
+          -0.3
+        ]
+      ],
+      "hands": [
+        [
+          -0.48,
+          0.68,
+          -0.3
+        ],
+        [
+          0.48,
+          0.68,
+          -0.3
+        ]
+      ],
+      "moorBow": [
+        0,
+        0.86,
+        2.5
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_wooden_boat_san_pedro": {
+      "stand": [
+        0,
+        0.26,
+        -0.3
+      ],
+      "feet": [
+        [
+          -0.18,
+          0.26,
+          -0.3
+        ],
+        [
+          0.18,
+          0.26,
+          -0.3
+        ]
+      ],
+      "hands": [
+        [
+          -0.48,
+          0.68,
+          -0.3
+        ],
+        [
+          0.48,
+          0.68,
+          -0.3
+        ]
+      ],
+      "moorBow": [
+        0,
+        0.86,
+        2.5
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_wooden_boat_brisa": {
+      "stand": [
+        0,
+        0.26,
+        -0.3
+      ],
+      "feet": [
+        [
+          -0.18,
+          0.26,
+          -0.3
+        ],
+        [
+          0.18,
+          0.26,
+          -0.3
+        ]
+      ],
+      "hands": [
+        [
+          -0.48,
+          0.68,
+          -0.3
+        ],
+        [
+          0.48,
+          0.68,
+          -0.3
+        ]
+      ],
+      "moorBow": [
+        0,
+        0.86,
+        2.5
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_buoy": {
+      "ropeEye": [
+        0,
+        0.33,
+        0
+      ],
+      "floating": true,
+      "draftDepth": 0.15,
+      "bobAmplitude": 0.045,
+      "rockAmplitudeDeg": 6
+    },
+    "watersports_bell_buoy": {
+      "ropeEye": [
+        0,
+        -0.22,
+        0
+      ],
+      "floating": true,
+      "draftDepth": 0.28,
+      "bobAmplitude": 0.05,
+      "rockAmplitudeDeg": 5
+    },
+    "watersports_swimline_segment": {
+      "joinStart": [
+        -1.5,
+        0,
+        0
+      ],
+      "joinEnd": [
+        1.5,
+        0,
+        0
+      ],
+      "floating": true,
+      "draftDepth": 0.07,
+      "bobAmplitude": 0.025,
+      "rockAmplitudeDeg": 2
+    },
+    "watersports_diving_raft": {
+      "stand": [
+        0,
+        0.35,
+        0
+      ],
+      "feet": [
+        [
+          -0.18,
+          0.35,
+          0
+        ],
+        [
+          0.18,
+          0.35,
+          0
+        ]
+      ],
+      "ladder": {
+        "start": [
+          0,
+          -0.85,
+          1.45
+        ],
+        "end": [
+          0,
+          0.35,
+          1.14
+        ]
+      },
+      "navKeepOut": [
+        [
+          -1.5,
+          -1.5
+        ],
+        [
+          1.5,
+          -1.5
+        ],
+        [
+          1.5,
+          1.5
+        ],
+        [
+          -1.5,
+          1.5
+        ]
+      ],
+      "floating": true,
+      "draftDepth": 0.9,
+      "bobAmplitude": 0.035,
+      "rockAmplitudeDeg": 2
+    },
+    "watersports_sunken_moped": {
+      "inspect": [
+        0.65,
+        0.55,
+        0
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_sunken_anchor_tyre": {
+      "inspect": [
+        0,
+        0.45,
+        0.9
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_deck": {
+      "stand": [
+        0,
+        0.22,
+        0
+      ],
+      "joinStart": [
+        0,
+        0.22,
+        -1
+      ],
+      "joinEnd": [
+        0,
+        0.22,
+        1
+      ],
+      "navKeepOut": [
+        [
+          -1.5,
+          -1
+        ],
+        [
+          1.5,
+          -1
+        ],
+        [
+          1.5,
+          1
+        ],
+        [
+          -1.5,
+          1
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_pile": {
+      "deckSeat": [
+        0,
+        3.6,
+        0
+      ],
+      "barnacleBand": [
+        0,
+        0.72,
+        0
+      ],
+      "navKeepOut": [
+        [
+          -0.16,
+          -0.16
+        ],
+        [
+          0.16,
+          -0.16
+        ],
+        [
+          0.16,
+          0.16
+        ],
+        [
+          -0.16,
+          0.16
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_crossbrace": {
+      "joinStart": [
+        -1.16,
+        0.055,
+        0
+      ],
+      "joinEnd": [
+        1.16,
+        1.445,
+        0
+      ],
+      "navKeepOut": [
+        [
+          -1.2,
+          -0.08
+        ],
+        [
+          1.2,
+          -0.08
+        ],
+        [
+          1.2,
+          0.08
+        ],
+        [
+          -1.2,
+          0.08
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_handrail": {
+      "joinStart": [
+        -1,
+        0,
+        0
+      ],
+      "joinEnd": [
+        1,
+        0,
+        0
+      ],
+      "navKeepOut": [
+        [
+          -1,
+          -0.06
+        ],
+        [
+          1,
+          -0.06
+        ],
+        [
+          1,
+          0.06
+        ],
+        [
+          -1,
+          0.06
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_post": {
+      "railTop": [
+        0,
+        0.91,
+        0
+      ],
+      "navKeepOut": [
+        [
+          -0.07,
+          -0.07
+        ],
+        [
+          0.07,
+          -0.07
+        ],
+        [
+          0.07,
+          0.07
+        ],
+        [
+          -0.07,
+          0.07
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_mooring_cleat": {
+      "ropeEye": [
+        0,
+        0.12,
+        0
+      ],
+      "navKeepOut": [
+        [
+          -0.18,
+          -0.07
+        ],
+        [
+          0.18,
+          -0.07
+        ],
+        [
+          0.18,
+          0.07
+        ],
+        [
+          -0.18,
+          0.07
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_ladder": {
+      "ladder": {
+        "start": [
+          0,
+          0.15,
+          0.18
+        ],
+        "end": [
+          0,
+          2.45,
+          -0.16
+        ]
+      },
+      "hands": [
+        [
+          -0.3,
+          2.85,
+          -0.14
+        ],
+        [
+          0.3,
+          2.85,
+          -0.14
+        ]
+      ],
+      "navKeepOut": [
+        [
+          -0.33,
+          -0.19
+        ],
+        [
+          0.33,
+          -0.19
+        ],
+        [
+          0.33,
+          0.19
+        ],
+        [
+          -0.33,
+          0.19
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_rod_holder": {
+      "rodSocket": [
+        0,
+        0.405,
+        0.045
+      ],
+      "navKeepOut": [
+        [
+          -0.065,
+          -0.08
+        ],
+        [
+          0.065,
+          -0.08
+        ],
+        [
+          0.065,
+          0.08
+        ],
+        [
+          -0.065,
+          0.08
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_lamp": {
+      "light": [
+        0,
+        2.6,
+        0.02
+      ],
+      "navKeepOut": [
+        [
+          -0.33,
+          -0.33
+        ],
+        [
+          0.33,
+          -0.33
+        ],
+        [
+          0.33,
+          0.33
+        ],
+        [
+          -0.33,
+          0.33
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_bait_crate": {
+      "carryHands": [
+        [
+          -0.3,
+          0.25,
+          0
+        ],
+        [
+          0.3,
+          0.25,
+          0
+        ]
+      ],
+      "navKeepOut": [
+        [
+          -0.29,
+          -0.21
+        ],
+        [
+          0.29,
+          -0.21
+        ],
+        [
+          0.29,
+          0.21
+        ],
+        [
+          -0.29,
+          0.21
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    },
+    "watersports_pier_end_platform": {
+      "stand": [
+        0,
+        0.22,
+        0
+      ],
+      "joinStart": [
+        0,
+        0.22,
+        -1.5
+      ],
+      "ladder": {
+        "start": [
+          0,
+          -1.0,
+          1.62
+        ],
+        "end": [
+          0,
+          0.22,
+          1.26
+        ]
+      },
+      "navKeepOut": [
+        [
+          -2,
+          -1.5
+        ],
+        [
+          2,
+          -1.5
+        ],
+        [
+          2,
+          1.5
+        ],
+        [
+          -2,
+          1.5
+        ]
+      ],
+      "floating": false,
+      "draftDepth": 0,
+      "bobAmplitude": 0,
+      "rockAmplitudeDeg": 0
+    }
+  }
+}

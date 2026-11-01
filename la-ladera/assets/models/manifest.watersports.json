@@ -1,0 +1,3032 @@
+{
+  "version": 1,
+  "complete": true,
+  "license": "CC0-1.0",
+  "units": "metres",
+  "generator": {
+    "script": "tools/blender/watersports_build.py",
+    "blender": "5.0.1",
+    "catalogSha256": "5908e64c787cebeeeb4d3f06126c7e1de1a1256e76d9ee5dc01e25b3f206e432",
+    "anchorsSha256": "1850f1467c88f38f2b11ffd467674410a6fb20b4e880d1c8bc62a53b3b69662d",
+    "materialsSha256": "b11f992806d1c061e59689b14406420079be1f529ecbb7ec2ef73a52993b2439",
+    "textHashForm": "UTF-8 with CRLF normalized to LF"
+  },
+  "assetCount": 41,
+  "lodCount": 41,
+  "glbBytes": 1023188,
+  "textureBytes": 256152,
+  "totalBytes": 1279340,
+  "atlas": {
+    "width": 2048,
+    "height": 2048,
+    "gutter": 8,
+    "maps": {
+      "baseColor": {
+        "path": "../textures/watersports/watersports_base.png",
+        "bytes": 215055,
+        "sha256": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d"
+      },
+      "normal": {
+        "path": "../textures/watersports/watersports_normal.png",
+        "bytes": 20254,
+        "sha256": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b"
+      },
+      "orm": {
+        "path": "../textures/watersports/watersports_orm.png",
+        "bytes": 20843,
+        "sha256": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      }
+    },
+    "tiles": {
+      "sail_coral": [
+        0.00390625,
+        0.00390625,
+        0.12109375,
+        0.12109375
+      ],
+      "sail_teal": [
+        0.12890625,
+        0.00390625,
+        0.24609375,
+        0.12109375
+      ],
+      "sail_gold": [
+        0.25390625,
+        0.00390625,
+        0.37109375,
+        0.12109375
+      ],
+      "sail_blue": [
+        0.37890625,
+        0.00390625,
+        0.49609375,
+        0.12109375
+      ],
+      "sail_lime": [
+        0.50390625,
+        0.00390625,
+        0.62109375,
+        0.12109375
+      ],
+      "sail_plum": [
+        0.62890625,
+        0.00390625,
+        0.74609375,
+        0.12109375
+      ],
+      "kite_coral": [
+        0.75390625,
+        0.00390625,
+        0.87109375,
+        0.12109375
+      ],
+      "kite_teal": [
+        0.87890625,
+        0.00390625,
+        0.99609375,
+        0.12109375
+      ],
+      "kite_gold": [
+        0.00390625,
+        0.12890625,
+        0.12109375,
+        0.24609375
+      ],
+      "kite_blue": [
+        0.12890625,
+        0.12890625,
+        0.24609375,
+        0.24609375
+      ],
+      "kite_lime": [
+        0.25390625,
+        0.12890625,
+        0.37109375,
+        0.24609375
+      ],
+      "kite_plum": [
+        0.37890625,
+        0.12890625,
+        0.49609375,
+        0.24609375
+      ],
+      "board_coral": [
+        0.50390625,
+        0.12890625,
+        0.62109375,
+        0.24609375
+      ],
+      "board_teal": [
+        0.62890625,
+        0.12890625,
+        0.74609375,
+        0.24609375
+      ],
+      "board_gold": [
+        0.75390625,
+        0.12890625,
+        0.87109375,
+        0.24609375
+      ],
+      "board_blue": [
+        0.87890625,
+        0.12890625,
+        0.99609375,
+        0.24609375
+      ],
+      "board_lime": [
+        0.00390625,
+        0.25390625,
+        0.12109375,
+        0.37109375
+      ],
+      "board_plum": [
+        0.12890625,
+        0.25390625,
+        0.24609375,
+        0.37109375
+      ],
+      "board_twin": [
+        0.25390625,
+        0.25390625,
+        0.37109375,
+        0.37109375
+      ],
+      "board_foil": [
+        0.37890625,
+        0.25390625,
+        0.49609375,
+        0.37109375
+      ],
+      "white": [
+        0.50390625,
+        0.25390625,
+        0.62109375,
+        0.37109375
+      ],
+      "navy": [
+        0.62890625,
+        0.25390625,
+        0.74609375,
+        0.37109375
+      ],
+      "wood": [
+        0.75390625,
+        0.25390625,
+        0.87109375,
+        0.37109375
+      ],
+      "wood_dark": [
+        0.87890625,
+        0.25390625,
+        0.99609375,
+        0.37109375
+      ],
+      "steel": [
+        0.00390625,
+        0.37890625,
+        0.12109375,
+        0.49609375
+      ],
+      "rust": [
+        0.12890625,
+        0.37890625,
+        0.24609375,
+        0.49609375
+      ],
+      "rubber": [
+        0.25390625,
+        0.37890625,
+        0.37109375,
+        0.49609375
+      ],
+      "rope": [
+        0.37890625,
+        0.37890625,
+        0.49609375,
+        0.49609375
+      ],
+      "red": [
+        0.50390625,
+        0.37890625,
+        0.62109375,
+        0.49609375
+      ],
+      "teal": [
+        0.62890625,
+        0.37890625,
+        0.74609375,
+        0.49609375
+      ],
+      "yellow": [
+        0.75390625,
+        0.37890625,
+        0.87109375,
+        0.49609375
+      ],
+      "encrusted": [
+        0.87890625,
+        0.37890625,
+        0.99609375,
+        0.49609375
+      ],
+      "barnacles": [
+        0.00390625,
+        0.50390625,
+        0.12109375,
+        0.62109375
+      ],
+      "glass": [
+        0.12890625,
+        0.50390625,
+        0.24609375,
+        0.62109375
+      ],
+      "deckpad": [
+        0.25390625,
+        0.50390625,
+        0.37109375,
+        0.62109375
+      ],
+      "boat_hull": [
+        0.37890625,
+        0.50390625,
+        0.49609375,
+        0.62109375
+      ],
+      "maria_del_mar": [
+        0.50390625,
+        0.50390625,
+        0.62109375,
+        0.62109375
+      ],
+      "la_esperanza": [
+        0.62890625,
+        0.50390625,
+        0.74609375,
+        0.62109375
+      ],
+      "san_pedro": [
+        0.75390625,
+        0.50390625,
+        0.87109375,
+        0.62109375
+      ],
+      "brisa": [
+        0.87890625,
+        0.50390625,
+        0.99609375,
+        0.62109375
+      ],
+      "lamp": [
+        0.00390625,
+        0.62890625,
+        0.12109375,
+        0.74609375
+      ],
+      "coral": [
+        0.12890625,
+        0.62890625,
+        0.24609375,
+        0.74609375
+      ],
+      "canvas": [
+        0.25390625,
+        0.62890625,
+        0.37109375,
+        0.74609375
+      ],
+      "sand": [
+        0.37890625,
+        0.62890625,
+        0.49609375,
+        0.74609375
+      ],
+      "blue": [
+        0.50390625,
+        0.62890625,
+        0.62109375,
+        0.74609375
+      ],
+      "green": [
+        0.62890625,
+        0.62890625,
+        0.74609375,
+        0.74609375
+      ],
+      "cream": [
+        0.75390625,
+        0.62890625,
+        0.87109375,
+        0.74609375
+      ],
+      "black": [
+        0.25390625,
+        0.37890625,
+        0.37109375,
+        0.49609375
+      ],
+      "spare_0": [
+        0.00390625,
+        0.75390625,
+        0.12109375,
+        0.87109375
+      ],
+      "spare_1": [
+        0.12890625,
+        0.75390625,
+        0.24609375,
+        0.87109375
+      ],
+      "spare_2": [
+        0.25390625,
+        0.75390625,
+        0.37109375,
+        0.87109375
+      ],
+      "spare_3": [
+        0.37890625,
+        0.75390625,
+        0.49609375,
+        0.87109375
+      ],
+      "spare_4": [
+        0.50390625,
+        0.75390625,
+        0.62109375,
+        0.87109375
+      ],
+      "spare_5": [
+        0.62890625,
+        0.75390625,
+        0.74609375,
+        0.87109375
+      ],
+      "spare_6": [
+        0.75390625,
+        0.75390625,
+        0.87109375,
+        0.87109375
+      ],
+      "spare_7": [
+        0.87890625,
+        0.75390625,
+        0.99609375,
+        0.87109375
+      ],
+      "spare_8": [
+        0.00390625,
+        0.87890625,
+        0.12109375,
+        0.99609375
+      ],
+      "spare_9": [
+        0.12890625,
+        0.87890625,
+        0.24609375,
+        0.99609375
+      ],
+      "spare_10": [
+        0.25390625,
+        0.87890625,
+        0.37109375,
+        0.99609375
+      ],
+      "spare_11": [
+        0.37890625,
+        0.87890625,
+        0.49609375,
+        0.99609375
+      ],
+      "spare_12": [
+        0.50390625,
+        0.87890625,
+        0.62109375,
+        0.99609375
+      ],
+      "spare_13": [
+        0.62890625,
+        0.87890625,
+        0.74609375,
+        0.99609375
+      ],
+      "spare_14": [
+        0.75390625,
+        0.87890625,
+        0.87109375,
+        0.99609375
+      ],
+      "spare_15": [
+        0.87890625,
+        0.87890625,
+        0.99609375,
+        0.99609375
+      ],
+      "pile_wood": [
+        0.87890625,
+        0.25390625,
+        0.99609375,
+        0.37109375
+      ],
+      "hull_white": [
+        0.50390625,
+        0.25390625,
+        0.62109375,
+        0.37109375
+      ],
+      "hull_blue": [
+        0.62890625,
+        0.25390625,
+        0.74609375,
+        0.37109375
+      ],
+      "hull_red": [
+        0.50390625,
+        0.37890625,
+        0.62109375,
+        0.49609375
+      ],
+      "metal": [
+        0.00390625,
+        0.37890625,
+        0.12109375,
+        0.49609375
+      ],
+      "orange": [
+        0.12890625,
+        0.62890625,
+        0.24609375,
+        0.74609375
+      ],
+      "name_maria": [
+        0.50390625,
+        0.50390625,
+        0.62109375,
+        0.62109375
+      ],
+      "name_esperanza": [
+        0.62890625,
+        0.50390625,
+        0.74609375,
+        0.62109375
+      ],
+      "name_pedro": [
+        0.75390625,
+        0.50390625,
+        0.87109375,
+        0.62109375
+      ],
+      "name_brisa": [
+        0.87890625,
+        0.50390625,
+        0.99609375,
+        0.62109375
+      ]
+    },
+    "colourSpace": {
+      "baseColor": "sRGB",
+      "normal": "linear",
+      "orm": "linear"
+    },
+    "ormChannels": {
+      "r": "occlusion",
+      "g": "roughness",
+      "b": "metalness"
+    }
+  },
+  "files": [
+    {
+      "glb": "watersports/watersports_boards.glb",
+      "bytes": 371068,
+      "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e",
+      "assets": {
+        "watersports_windsurf_rig": {
+          "node": "watersports_windsurf_rig",
+          "size": [
+            0.72,
+            4.57,
+            2.83
+          ],
+          "origin": "waterline-centre",
+          "triangles": 713,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              -0.3199999928474426,
+              -1.6720731556415558
+            ],
+            "max": [
+              0.33000001311302185,
+              4.22098695486784,
+              1.149999976158142
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_rig-pivot_sail",
+            "watersports_windsurf_rig-pivot_boom"
+          ],
+          "description": "2.30 m windsurf board, footstraps, universal joint, mast, wishbone boom and six panel sail with transparent window",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_windsurf_rig_lod1"
+        },
+        "watersports_windsurf_rig_lod1": {
+          "node": "watersports_windsurf_rig_lod1",
+          "size": [
+            0.72,
+            4.57,
+            2.83
+          ],
+          "origin": "waterline-centre",
+          "triangles": 150,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              -0.3199999928474426,
+              -1.6720731556415558
+            ],
+            "max": [
+              0.33000001311302185,
+              4.22084104269743,
+              1.149999976158142
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_rig_lod1-pivot_sail",
+            "watersports_windsurf_rig_lod1-pivot_boom"
+          ],
+          "description": "2.30 m windsurf board, footstraps, universal joint, mast, wishbone boom and six panel sail with transparent window",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_windsurf_sand": {
+          "node": "watersports_windsurf_sand",
+          "size": [
+            4.89,
+            0.65,
+            2.83
+          ],
+          "origin": "floor-centre",
+          "triangles": 701,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -2.4600000381469727,
+              0,
+              -1.4320731461048126
+            ],
+            "max": [
+              2.4309868600945608,
+              0.6679998174365024,
+              1.3899999856948853
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_sand-pivot_sail",
+            "watersports_windsurf_sand-pivot_boom"
+          ],
+          "description": "Complete windsurf rig resting on the sand: board beside the sideways sail and wishbone boom",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_windsurf_sand_lod1"
+        },
+        "watersports_windsurf_sand_lod1": {
+          "node": "watersports_windsurf_sand_lod1",
+          "size": [
+            4.89,
+            0.65,
+            2.83
+          ],
+          "origin": "floor-centre",
+          "triangles": 146,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -2.4600000381469727,
+              0,
+              -1.4320731461048126
+            ],
+            "max": [
+              2.430840947929145,
+              0.6273624747055266,
+              1.3899999856948853
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_sand_lod1-pivot_sail",
+            "watersports_windsurf_sand_lod1-pivot_boom"
+          ],
+          "description": "Complete windsurf rig resting on the sand: board beside the sideways sail and wishbone boom",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_windsurf_derigged": {
+          "node": "watersports_windsurf_derigged",
+          "size": [
+            1.76,
+            0.32,
+            2.3
+          ],
+          "origin": "floor-centre",
+          "triangles": 634,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -0.8799999952316284,
+              0,
+              -1.149999976158142
+            ],
+            "max": [
+              0.8479999601840973,
+              0.2993311882019043,
+              1.149999976158142
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_derigged-pivot_boom",
+            "watersports_windsurf_derigged-pivot_mast_lower",
+            "watersports_windsurf_derigged-pivot_mast_upper",
+            "watersports_windsurf_derigged-pivot_sail_bundle"
+          ],
+          "description": "Derigged windsurf board with rolled sail, two separated mast sections and a detached wishbone boom",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_windsurf_derigged_lod1"
+        },
+        "watersports_windsurf_derigged_lod1": {
+          "node": "watersports_windsurf_derigged_lod1",
+          "size": [
+            1.76,
+            0.32,
+            2.3
+          ],
+          "origin": "floor-centre",
+          "triangles": 172,
+          "parts": 5,
+          "bounds": {
+            "min": [
+              -0.8799999952316284,
+              0,
+              -1.149999976158142
+            ],
+            "max": [
+              0.8072838485240936,
+              0.25699999928474426,
+              1.149999976158142
+            ]
+          },
+          "pivots": [
+            "watersports_windsurf_derigged_lod1-pivot_boom",
+            "watersports_windsurf_derigged_lod1-pivot_mast_lower",
+            "watersports_windsurf_derigged_lod1-pivot_mast_upper",
+            "watersports_windsurf_derigged_lod1-pivot_sail_bundle"
+          ],
+          "description": "Derigged windsurf board with rolled sail, two separated mast sections and a detached wishbone boom",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_sup_a": {
+          "node": "watersports_sup_a",
+          "size": [
+            0.8,
+            0.45,
+            3.3
+          ],
+          "origin": "waterline-centre",
+          "triangles": 338,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4000000059604645,
+              -0.2800000011920929,
+              -1.649999976158142
+            ],
+            "max": [
+              0.4000000059604645,
+              0.16510309278964996,
+              1.649999976158142
+            ]
+          },
+          "pivots": [],
+          "description": "3.30 m rounded touring SUP: coral deck stripes, diamond grip pad, carry handle and crossed cargo elastic",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_sup_a_lod1"
+        },
+        "watersports_sup_a_lod1": {
+          "node": "watersports_sup_a_lod1",
+          "size": [
+            0.8,
+            0.45,
+            3.3
+          ],
+          "origin": "waterline-centre",
+          "triangles": 52,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4000000059604645,
+              -0.2800000011920929,
+              -1.649999976158142
+            ],
+            "max": [
+              0.4000000059604645,
+              0.12700000405311584,
+              1.649999976158142
+            ]
+          },
+          "pivots": [],
+          "description": "3.30 m rounded touring SUP: coral deck stripes, diamond grip pad, carry handle and crossed cargo elastic",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_sup_b": {
+          "node": "watersports_sup_b",
+          "size": [
+            0.78,
+            0.45,
+            3.35
+          ],
+          "origin": "waterline-centre",
+          "triangles": 338,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.38999998569488525,
+              -0.2800000011920929,
+              -1.6749999523162842
+            ],
+            "max": [
+              0.38999998569488525,
+              0.16510309278964996,
+              1.6749999523162842
+            ]
+          },
+          "pivots": [],
+          "description": "3.35 m blue touring SUP with tapered nose, split deck pad and bow cargo ties",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_sup_b_lod1"
+        },
+        "watersports_sup_b_lod1": {
+          "node": "watersports_sup_b_lod1",
+          "size": [
+            0.78,
+            0.45,
+            3.35
+          ],
+          "origin": "waterline-centre",
+          "triangles": 52,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.38999998569488525,
+              -0.2800000011920929,
+              -1.6749999523162842
+            ],
+            "max": [
+              0.38999998569488525,
+              0.12700000405311584,
+              1.6749999523162842
+            ]
+          },
+          "pivots": [],
+          "description": "3.35 m blue touring SUP with tapered nose, split deck pad and bow cargo ties",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_sup_c": {
+          "node": "watersports_sup_c",
+          "size": [
+            0.82,
+            0.45,
+            3.2
+          ],
+          "origin": "waterline-centre",
+          "triangles": 338,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4099999964237213,
+              -0.2800000011920929,
+              -1.600000023841858
+            ],
+            "max": [
+              0.4099999964237213,
+              0.16510309278964996,
+              1.600000023841858
+            ]
+          },
+          "pivots": [],
+          "description": "3.20 m stable gold SUP with broad shoulders, striped deck, black EVA grip pad and carry loop",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_sup_c_lod1"
+        },
+        "watersports_sup_c_lod1": {
+          "node": "watersports_sup_c_lod1",
+          "size": [
+            0.82,
+            0.45,
+            3.2
+          ],
+          "origin": "waterline-centre",
+          "triangles": 52,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4099999964237213,
+              -0.2800000011920929,
+              -1.600000023841858
+            ],
+            "max": [
+              0.4099999964237213,
+              0.12700000405311584,
+              1.600000023841858
+            ]
+          },
+          "pivots": [],
+          "description": "3.20 m stable gold SUP with broad shoulders, striped deck, black EVA grip pad and carry loop",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_paddle": {
+          "node": "watersports_paddle",
+          "size": [
+            0.22,
+            1.85,
+            0.07
+          ],
+          "origin": "floor-centre",
+          "triangles": 184,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.10999999940395355,
+              0,
+              -0.012000000104308128
+            ],
+            "max": [
+              0.10999999940395355,
+              1.8320000171661377,
+              0.04998495429754257
+            ]
+          },
+          "pivots": [
+            "watersports_paddle-pivot_blade_section",
+            "watersports_paddle-pivot_handle_section"
+          ],
+          "description": "Two-piece 1.85 m SUP paddle with broad spoon blade, adjustment collar and T grip",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_paddle_lod1"
+        },
+        "watersports_paddle_lod1": {
+          "node": "watersports_paddle_lod1",
+          "size": [
+            0.22,
+            1.85,
+            0.07
+          ],
+          "origin": "floor-centre",
+          "triangles": 58,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.10999999940395355,
+              0,
+              -0.012000000104308128
+            ],
+            "max": [
+              0.10999999940395355,
+              1.8320000171661377,
+              0.041999999433755875
+            ]
+          },
+          "pivots": [
+            "watersports_paddle_lod1-pivot_blade_section",
+            "watersports_paddle_lod1-pivot_handle_section"
+          ],
+          "description": "Two-piece 1.85 m SUP paddle with broad spoon blade, adjustment collar and T grip",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_kiteboard": {
+          "node": "watersports_kiteboard",
+          "size": [
+            0.42,
+            0.225,
+            1.4
+          ],
+          "origin": "waterline-centre",
+          "triangles": 368,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.20999999344348907,
+              -0.06499999761581421,
+              -0.699999988079071
+            ],
+            "max": [
+              0.20999999344348907,
+              0.1492398977279663,
+              0.699999988079071
+            ]
+          },
+          "pivots": [],
+          "description": "1.40 m twin-tip kite board with upturned tips, two EVA pads, footstraps and four shallow fins",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_kiteboard_lod1"
+        },
+        "watersports_kiteboard_lod1": {
+          "node": "watersports_kiteboard_lod1",
+          "size": [
+            0.42,
+            0.225,
+            1.4
+          ],
+          "origin": "waterline-centre",
+          "triangles": 72,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.20999999344348907,
+              -0.06499999761581421,
+              -0.699999988079071
+            ],
+            "max": [
+              0.20999999344348907,
+              0.10700000077486038,
+              0.699999988079071
+            ]
+          },
+          "pivots": [],
+          "description": "1.40 m twin-tip kite board with upturned tips, two EVA pads, footstraps and four shallow fins",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_foilboard": {
+          "node": "watersports_foilboard",
+          "size": [
+            0.86,
+            1.12,
+            1.55
+          ],
+          "origin": "waterline-centre",
+          "triangles": 400,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4300000071525574,
+              -0.8999999761581421,
+              -0.7749999761581421
+            ],
+            "max": [
+              0.4300000071525574,
+              0.20233117043972015,
+              0.7749999761581421
+            ]
+          },
+          "pivots": [],
+          "description": "1.55 m kite foil board with visible long mast, front hydrofoil, rear stabiliser and footstraps",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_foilboard_lod1"
+        },
+        "watersports_foilboard_lod1": {
+          "node": "watersports_foilboard_lod1",
+          "size": [
+            0.86,
+            1.12,
+            1.55
+          ],
+          "origin": "waterline-centre",
+          "triangles": 100,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4300000071525574,
+              -0.8999999761581421,
+              -0.7749999761581421
+            ],
+            "max": [
+              0.4300000071525574,
+              0.1599999964237213,
+              0.7749999761581421
+            ]
+          },
+          "pivots": [],
+          "description": "1.55 m kite foil board with visible long mast, front hydrofoil, rear stabiliser and footstraps",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_kite_bar": {
+          "node": "watersports_kite_bar",
+          "size": [
+            0.6,
+            0.16,
+            0.08
+          ],
+          "origin": "floor-centre",
+          "triangles": 236,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.28200000524520874,
+              0.002205771394073963,
+              -0.027000000700354576
+            ],
+            "max": [
+              0.28200000524520874,
+              0.14499999582767487,
+              0.04899999871850014
+            ]
+          },
+          "pivots": [],
+          "description": "Kite control bar with contrasting grips, central depower swivel, line leaders and safety loop",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_kite_bar_lod1"
+        },
+        "watersports_kite_bar_lod1": {
+          "node": "watersports_kite_bar_lod1",
+          "size": [
+            0.6,
+            0.16,
+            0.08
+          ],
+          "origin": "floor-centre",
+          "triangles": 66,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.27000001072883606,
+              0,
+              -0.027000000700354576
+            ],
+            "max": [
+              0.27000001072883606,
+              0.14499999582767487,
+              0.03999999910593033
+            ]
+          },
+          "pivots": [],
+          "description": "Kite control bar with contrasting grips, central depower swivel, line leaders and safety loop",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_kite_flying": {
+          "node": "watersports_kite_flying",
+          "size": [
+            7.04,
+            1.86,
+            2.6
+          ],
+          "origin": "floor-centre",
+          "triangles": 580,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -3.463757038116455,
+              9.71445146547012e-17,
+              -1.287171721458435
+            ],
+            "max": [
+              3.463757038116455,
+              1.8600000143051147,
+              1.284999966621399
+            ]
+          },
+          "pivots": [
+            "watersports_kite_flying-pivot_wing"
+          ],
+          "description": "Inflatable 7 m kite wing in a flying arch: curved thin canopy, striped panels, white stitched seams and inflated leading edge",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_kite_flying_lod1"
+        },
+        "watersports_kite_flying_lod1": {
+          "node": "watersports_kite_flying_lod1",
+          "size": [
+            7.04,
+            1.86,
+            2.6
+          ],
+          "origin": "floor-centre",
+          "triangles": 136,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -3.457974433898926,
+              9.71445146547012e-17,
+              -1.284999966621399
+            ],
+            "max": [
+              3.457974433898926,
+              1.8600000143051147,
+              1.284999966621399
+            ]
+          },
+          "pivots": [
+            "watersports_kite_flying_lod1-pivot_wing"
+          ],
+          "description": "Inflatable 7 m kite wing in a flying arch: curved thin canopy, striped panels, white stitched seams and inflated leading edge",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        },
+        "watersports_kite_sand": {
+          "node": "watersports_kite_sand",
+          "size": [
+            7.04,
+            0.59,
+            2.6
+          ],
+          "origin": "floor-centre",
+          "triangles": 580,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -3.415527105331421,
+              2.7755575615628914e-17,
+              -1.290912389755249
+            ],
+            "max": [
+              3.415527105331421,
+              0.5899999737739563,
+              1.284999966621399
+            ]
+          },
+          "pivots": [
+            "watersports_kite_sand-pivot_wing"
+          ],
+          "description": "Inflatable kite resting on the sand, flattened trailing canopy with inflated leading edge and five visible struts",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod1": "watersports_kite_sand_lod1"
+        },
+        "watersports_kite_sand_lod1": {
+          "node": "watersports_kite_sand_lod1",
+          "size": [
+            7.04,
+            0.59,
+            2.6
+          ],
+          "origin": "floor-centre",
+          "triangles": 136,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -3.399338960647583,
+              2.7755575615628914e-17,
+              -1.284999966621399
+            ],
+            "max": [
+              3.399338960647583,
+              0.5899999737739563,
+              1.284999966621399
+            ]
+          },
+          "pivots": [
+            "watersports_kite_sand_lod1-pivot_wing"
+          ],
+          "description": "Inflatable kite resting on the sand, flattened trailing canopy with inflated leading edge and five visible struts",
+          "tags": [
+            "watersports",
+            "boards"
+          ],
+          "lod": 1
+        }
+      }
+    },
+    {
+      "glb": "watersports/watersports_boats.glb",
+      "bytes": 345824,
+      "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe",
+      "assets": {
+        "watersports_kayak_single": {
+          "node": "watersports_kayak_single",
+          "size": [
+            0.75,
+            0.48,
+            3.4
+          ],
+          "origin": "waterline-centre",
+          "triangles": 510,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.375,
+              -0.17000000178813934,
+              -1.7000000476837158
+            ],
+            "max": [
+              0.375,
+              0.3100000023841858,
+              1.7000000476837158
+            ]
+          },
+          "pivots": [],
+          "description": "Single sea kayak with recessed open cockpit, seat, deck cords and pointed ends.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_kayak_single_lod1"
+        },
+        "watersports_kayak_single_lod1": {
+          "node": "watersports_kayak_single_lod1",
+          "size": [
+            0.75,
+            0.48,
+            3.4
+          ],
+          "origin": "waterline-centre",
+          "triangles": 108,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.375,
+              -0.17000000178813934,
+              -1.7000000476837158
+            ],
+            "max": [
+              0.375,
+              0.3100000023841858,
+              1.7000000476837158
+            ]
+          },
+          "pivots": [],
+          "description": "Single sea kayak with recessed open cockpit, seat, deck cords and pointed ends.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_kayak_double": {
+          "node": "watersports_kayak_double",
+          "size": [
+            0.86,
+            0.51,
+            4.6
+          ],
+          "origin": "waterline-centre",
+          "triangles": 664,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4300000071525574,
+              -0.1899999976158142,
+              -2.299999952316284
+            ],
+            "max": [
+              0.4300000071525574,
+              0.3100000023841858,
+              2.299999952316284
+            ]
+          },
+          "pivots": [],
+          "description": "Tandem sea kayak with two separated open cockpits, backrests and deck lashing.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_kayak_double_lod1"
+        },
+        "watersports_kayak_double_lod1": {
+          "node": "watersports_kayak_double_lod1",
+          "size": [
+            0.86,
+            0.51,
+            4.6
+          ],
+          "origin": "waterline-centre",
+          "triangles": 130,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.4300000071525574,
+              -0.1899999976158142,
+              -2.299999952316284
+            ],
+            "max": [
+              0.4300000071525574,
+              0.3100000023841858,
+              2.299999952316284
+            ]
+          },
+          "pivots": [],
+          "description": "Tandem sea kayak with two separated open cockpits, backrests and deck lashing.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_rowing_boat": {
+          "node": "watersports_rowing_boat",
+          "size": [
+            1.36,
+            0.72,
+            3.6
+          ],
+          "origin": "waterline-centre",
+          "triangles": 660,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.7049999833106995,
+              -0.23999999463558197,
+              -1.8066062927246094
+            ],
+            "max": [
+              0.7049999833106995,
+              0.5008741617202759,
+              1.8182578086853027
+            ]
+          },
+          "pivots": [],
+          "description": "Open wooden rowing dinghy with three thwarts, keel, ribs and paired oarlocks.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_rowing_boat_lod1"
+        },
+        "watersports_rowing_boat_lod1": {
+          "node": "watersports_rowing_boat_lod1",
+          "size": [
+            1.36,
+            0.72,
+            3.6
+          ],
+          "origin": "waterline-centre",
+          "triangles": 90,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.6800000071525574,
+              -0.23590399324893951,
+              -1.7999999523162842
+            ],
+            "max": [
+              0.6800000071525574,
+              0.47999998927116394,
+              1.7999999523162842
+            ]
+          },
+          "pivots": [],
+          "description": "Open wooden rowing dinghy with three thwarts, keel, ribs and paired oarlocks.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_lancha": {
+          "node": "watersports_lancha",
+          "size": [
+            2.1,
+            1.6,
+            7.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 983,
+          "parts": 4,
+          "bounds": {
+            "min": [
+              -1.0677943229675293,
+              -0.3799999952316284,
+              -3.5074999034404755
+            ],
+            "max": [
+              1.0719895362854004,
+              1.2339999675750732,
+              3.5172958374023438
+            ]
+          },
+          "pivots": [
+            "watersports_lancha-pivot_outboard",
+            "watersports_lancha-pivot_propeller"
+          ],
+          "description": "Seven-metre fibreglass fishing lancha: sheer bow, open working deck, console, screen and articulated outboard.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_lancha_lod1"
+        },
+        "watersports_lancha_lod1": {
+          "node": "watersports_lancha_lod1",
+          "size": [
+            2.1,
+            1.6,
+            7.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 188,
+          "parts": 4,
+          "bounds": {
+            "min": [
+              -1.0499999523162842,
+              -0.37590399384498596,
+              -3.4999998807907104
+            ],
+            "max": [
+              1.0499999523162842,
+              1.2200000286102295,
+              3.5
+            ]
+          },
+          "pivots": [
+            "watersports_lancha_lod1-pivot_outboard",
+            "watersports_lancha_lod1-pivot_propeller"
+          ],
+          "description": "Seven-metre fibreglass fishing lancha: sheer bow, open working deck, console, screen and articulated outboard.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_oar": {
+          "node": "watersports_oar",
+          "size": [
+            0.18,
+            0.065,
+            2.1
+          ],
+          "origin": "floor-centre",
+          "triangles": 92,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.09000000357627869,
+              0.0043541742488741875,
+              -1.0499999523162842
+            ],
+            "max": [
+              0.09000000357627869,
+              0.060645826160907745,
+              1.0499999523162842
+            ]
+          },
+          "pivots": [],
+          "description": "Full-length wooden oar with a shaped blade, leather collar and round grip.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_oar_lod1"
+        },
+        "watersports_oar_lod1": {
+          "node": "watersports_oar_lod1",
+          "size": [
+            0.18,
+            0.065,
+            2.1
+          ],
+          "origin": "floor-centre",
+          "triangles": 24,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.09000000357627869,
+              0.008500000461935997,
+              -1.0499999523162842
+            ],
+            "max": [
+              0.09000000357627869,
+              0.05649999901652336,
+              1.0499999523162842
+            ]
+          },
+          "pivots": [],
+          "description": "Full-length wooden oar with a shaped blade, leather collar and round grip.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_anchor": {
+          "node": "watersports_anchor",
+          "size": [
+            0.56,
+            0.67,
+            0.28
+          ],
+          "origin": "floor-centre",
+          "triangles": 166,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.2800000011920929,
+              0,
+              -0.14000000059604645
+            ],
+            "max": [
+              0.2800000011920929,
+              0.649644672870636,
+              0.14000000059604645
+            ]
+          },
+          "pivots": [],
+          "description": "Small iron fluke anchor with stock, crown and shackle eye.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_anchor_lod1"
+        },
+        "watersports_anchor_lod1": {
+          "node": "watersports_anchor_lod1",
+          "size": [
+            0.56,
+            0.67,
+            0.28
+          ],
+          "origin": "floor-centre",
+          "triangles": 63,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.2800000011920929,
+              0,
+              -0.14000000059604645
+            ],
+            "max": [
+              0.2800000011920929,
+              0.6495559811592102,
+              0.14000000059604645
+            ]
+          },
+          "pivots": [],
+          "description": "Small iron fluke anchor with stock, crown and shackle eye.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_rope_coil": {
+          "node": "watersports_rope_coil",
+          "size": [
+            0.68,
+            0.09,
+            0.68
+          ],
+          "origin": "floor-centre",
+          "triangles": 520,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.31889092922210693,
+              0.004261569119989872,
+              -0.3165088891983032
+            ],
+            "max": [
+              0.34982290863990784,
+              0.08277641236782074,
+              0.30832064151763916
+            ]
+          },
+          "pivots": [],
+          "description": "Three turns of weathered mooring rope with a loose tail.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_rope_coil_lod1"
+        },
+        "watersports_rope_coil_lod1": {
+          "node": "watersports_rope_coil_lod1",
+          "size": [
+            0.68,
+            0.09,
+            0.68
+          ],
+          "origin": "floor-centre",
+          "triangles": 90,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.32214686274528503,
+              0.010038390755653381,
+              -0.2429197132587433
+            ],
+            "max": [
+              0.2735896408557892,
+              0.08063647896051407,
+              0.3004365861415863
+            ]
+          },
+          "pivots": [],
+          "description": "Three turns of weathered mooring rope with a loose tail.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_lifebuoy": {
+          "node": "watersports_lifebuoy",
+          "size": [
+            0.76,
+            0.14,
+            0.76
+          ],
+          "origin": "waterline-centre",
+          "triangles": 432,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.3799999952316284,
+              -0.04811844602227211,
+              -0.3799999952316284
+            ],
+            "max": [
+              0.3799999952316284,
+              0.06411844491958618,
+              0.3799999952316284
+            ]
+          },
+          "pivots": [],
+          "description": "Orange rescue ring with four white reflective bands and an outer grab rope.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_lifebuoy_lod1"
+        },
+        "watersports_lifebuoy_lod1": {
+          "node": "watersports_lifebuoy_lod1",
+          "size": [
+            0.76,
+            0.14,
+            0.76
+          ],
+          "origin": "waterline-centre",
+          "triangles": 48,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.3799999952316284,
+              -0.04811844602227211,
+              -0.3799999952316284
+            ],
+            "max": [
+              0.3799999952316284,
+              0.06411844491958618,
+              0.3799999952316284
+            ]
+          },
+          "pivots": [],
+          "description": "Orange rescue ring with four white reflective bands and an outer grab rope.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_wooden_boat_maria_del_mar": {
+          "node": "watersports_wooden_boat_maria_del_mar",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 794,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.9177953004837036,
+              0,
+              -2.755788564682007
+            ],
+            "max": [
+              0.9219893217086792,
+              0.9208978414535522,
+              2.767380475997925
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name Maria del Mar.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_wooden_boat_maria_del_mar_lod1"
+        },
+        "watersports_wooden_boat_maria_del_mar_lod1": {
+          "node": "watersports_wooden_boat_maria_del_mar_lod1",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 92,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.8999999761581421,
+              0.004095999989658594,
+              -2.750999927520752
+            ],
+            "max": [
+              0.8999999761581421,
+              0.8999999761581421,
+              2.75
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name Maria del Mar.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_wooden_boat_la_esperanza": {
+          "node": "watersports_wooden_boat_la_esperanza",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 794,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.9177953004837036,
+              0,
+              -2.755788564682007
+            ],
+            "max": [
+              0.9219893217086792,
+              0.9208978414535522,
+              2.767380475997925
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name La Esperanza.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_wooden_boat_la_esperanza_lod1"
+        },
+        "watersports_wooden_boat_la_esperanza_lod1": {
+          "node": "watersports_wooden_boat_la_esperanza_lod1",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 92,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.8999999761581421,
+              0.004095999989658594,
+              -2.750999927520752
+            ],
+            "max": [
+              0.8999999761581421,
+              0.8999999761581421,
+              2.75
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name La Esperanza.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_wooden_boat_san_pedro": {
+          "node": "watersports_wooden_boat_san_pedro",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 794,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.9177953004837036,
+              0,
+              -2.755788564682007
+            ],
+            "max": [
+              0.9219893217086792,
+              0.9208978414535522,
+              2.767380475997925
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name San Pedro.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_wooden_boat_san_pedro_lod1"
+        },
+        "watersports_wooden_boat_san_pedro_lod1": {
+          "node": "watersports_wooden_boat_san_pedro_lod1",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 92,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.8999999761581421,
+              0.004095999989658594,
+              -2.750999927520752
+            ],
+            "max": [
+              0.8999999761581421,
+              0.8999999761581421,
+              2.75
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name San Pedro.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        },
+        "watersports_wooden_boat_brisa": {
+          "node": "watersports_wooden_boat_brisa",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 794,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.9177953004837036,
+              0,
+              -2.755788564682007
+            ],
+            "max": [
+              0.9219893217086792,
+              0.9208978414535522,
+              2.767380475997925
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name Brisa.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod1": "watersports_wooden_boat_brisa_lod1"
+        },
+        "watersports_wooden_boat_brisa_lod1": {
+          "node": "watersports_wooden_boat_brisa_lod1",
+          "size": [
+            1.8,
+            0.9,
+            5.5
+          ],
+          "origin": "floor-centre",
+          "triangles": 92,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.8999999761581421,
+              0.004095999989658594,
+              -2.750999927520752
+            ],
+            "max": [
+              0.8999999761581421,
+              0.8999999761581421,
+              2.75
+            ]
+          },
+          "pivots": [],
+          "description": "Beached, open planked fishing boat with painted transom name Brisa.",
+          "tags": [
+            "watersports",
+            "boats"
+          ],
+          "lod": 1
+        }
+      }
+    },
+    {
+      "glb": "watersports/watersports_pier.glb",
+      "bytes": 306296,
+      "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391",
+      "assets": {
+        "watersports_buoy": {
+          "node": "watersports_buoy",
+          "size": [
+            0.5,
+            0.53,
+            0.5
+          ],
+          "origin": "waterline-centre",
+          "triangles": 60,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.25,
+              -0.15000000596046448,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.3799999952316284,
+              0.25
+            ]
+          },
+          "pivots": [],
+          "description": "Simple high-visibility swim buoy, 60 triangles including its attachment peg.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_buoy_lod1"
+        },
+        "watersports_buoy_lod1": {
+          "node": "watersports_buoy_lod1",
+          "size": [
+            0.5,
+            0.53,
+            0.5
+          ],
+          "origin": "waterline-centre",
+          "triangles": 16,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.25,
+              -0.15000000596046448,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              0.2800000011920929,
+              0.25
+            ]
+          },
+          "pivots": [],
+          "description": "Simple high-visibility swim buoy, 60 triangles including its attachment peg.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_bell_buoy": {
+          "node": "watersports_bell_buoy",
+          "size": [
+            1.0,
+            1.6,
+            1.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 150,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.5,
+              -0.2800000011920929,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              1.3200000524520874,
+              0.5
+            ]
+          },
+          "pivots": [
+            "watersports_bell_buoy-pivot_bell_clapper"
+          ],
+          "description": "Moored bell buoy with triangular open tower, suspended bell and moving clapper.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_bell_buoy_lod1"
+        },
+        "watersports_bell_buoy_lod1": {
+          "node": "watersports_bell_buoy_lod1",
+          "size": [
+            1.0,
+            1.6,
+            1.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 58,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.5,
+              -0.2800000011920929,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              1.3200000524520874,
+              0.5
+            ]
+          },
+          "pivots": [
+            "watersports_bell_buoy_lod1-pivot_bell_clapper"
+          ],
+          "description": "Moored bell buoy with triangular open tower, suspended bell and moving clapper.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_swimline_segment": {
+          "node": "watersports_swimline_segment",
+          "size": [
+            3.024,
+            0.14,
+            0.18
+          ],
+          "origin": "waterline-centre",
+          "triangles": 112,
+          "parts": 4,
+          "bounds": {
+            "min": [
+              -1.5,
+              -0.07000000029802322,
+              -0.09000000357627869
+            ],
+            "max": [
+              1.5,
+              0.07000000029802322,
+              0.09000000357627869
+            ]
+          },
+          "pivots": [],
+          "description": "Three-metre swim-rope module with three mesh-instanced floats; repeat endpoints at 3 m spacing.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_swimline_segment_lod1"
+        },
+        "watersports_swimline_segment_lod1": {
+          "node": "watersports_swimline_segment_lod1",
+          "size": [
+            3.024,
+            0.14,
+            0.18
+          ],
+          "origin": "waterline-centre",
+          "triangles": 42,
+          "parts": 4,
+          "bounds": {
+            "min": [
+              -1.5,
+              -0.07000000029802322,
+              -0.07794228941202164
+            ],
+            "max": [
+              1.5,
+              0.07000000029802322,
+              0.07794228941202164
+            ]
+          },
+          "pivots": [],
+          "description": "Three-metre swim-rope module with three mesh-instanced floats; repeat endpoints at 3 m spacing.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_diving_raft": {
+          "node": "watersports_diving_raft",
+          "size": [
+            3.0,
+            1.65,
+            3.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 524,
+          "parts": 14,
+          "bounds": {
+            "min": [
+              -1.5,
+              -0.8999999761581421,
+              -1.4925000220537186
+            ],
+            "max": [
+              1.5,
+              0.7447831630706787,
+              1.4925000220537186
+            ]
+          },
+          "pivots": [],
+          "description": "Three-metre square timber diving raft on flotation drums, with shared deck planks and swim ladder.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_diving_raft_lod1"
+        },
+        "watersports_diving_raft_lod1": {
+          "node": "watersports_diving_raft_lod1",
+          "size": [
+            3.0,
+            1.65,
+            3.0
+          ],
+          "origin": "waterline-centre",
+          "triangles": 116,
+          "parts": 4,
+          "bounds": {
+            "min": [
+              -1.5,
+              -0.8999999761581421,
+              -1.5
+            ],
+            "max": [
+              1.5,
+              0.6189078688621521,
+              1.5
+            ]
+          },
+          "pivots": [],
+          "description": "Three-metre square timber diving raft on flotation drums, with shared deck planks and swim ladder.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_sunken_moped": {
+          "node": "watersports_sunken_moped",
+          "size": [
+            0.62,
+            1.1,
+            1.72
+          ],
+          "origin": "floor-centre",
+          "triangles": 640,
+          "parts": 3,
+          "bounds": {
+            "min": [
+              -0.30399999022483826,
+              0,
+              -0.8272746801376343
+            ],
+            "max": [
+              0.28999999165534973,
+              1.1002590656280518,
+              0.8272746801376343
+            ]
+          },
+          "pivots": [
+            "watersports_sunken_moped-pivot_wheel_front",
+            "watersports_sunken_moped-pivot_wheel_rear"
+          ],
+          "description": "Low-detail encrusted commuter moped dive target, with corroded frame, saddle and open wheels.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_sunken_moped_lod1"
+        },
+        "watersports_sunken_moped_lod1": {
+          "node": "watersports_sunken_moped_lod1",
+          "size": [
+            0.62,
+            1.1,
+            1.72
+          ],
+          "origin": "floor-centre",
+          "triangles": 152,
+          "parts": 3,
+          "bounds": {
+            "min": [
+              -0.28999999165534973,
+              0,
+              -0.8399999737739563
+            ],
+            "max": [
+              0.28999999165534973,
+              1.0423204898834229,
+              0.8399999737739563
+            ]
+          },
+          "pivots": [
+            "watersports_sunken_moped_lod1-pivot_wheel_front",
+            "watersports_sunken_moped_lod1-pivot_wheel_rear"
+          ],
+          "description": "Low-detail encrusted commuter moped dive target, with corroded frame, saddle and open wheels.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_sunken_anchor_tyre": {
+          "node": "watersports_sunken_anchor_tyre",
+          "size": [
+            1.3,
+            0.67,
+            0.8
+          ],
+          "origin": "floor-centre",
+          "triangles": 442,
+          "parts": 3,
+          "bounds": {
+            "min": [
+              -0.6500000059604645,
+              0,
+              -0.4000000059604645
+            ],
+            "max": [
+              0.6500000059604645,
+              0.649644672870636,
+              0.4000000059604645
+            ]
+          },
+          "pivots": [],
+          "description": "Encrusted anchor and discarded tyre together as a shallow-bay discovery.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_sunken_anchor_tyre_lod1"
+        },
+        "watersports_sunken_anchor_tyre_lod1": {
+          "node": "watersports_sunken_anchor_tyre_lod1",
+          "size": [
+            1.3,
+            0.67,
+            0.8
+          ],
+          "origin": "floor-centre",
+          "triangles": 111,
+          "parts": 2,
+          "bounds": {
+            "min": [
+              -0.6500000059604645,
+              0,
+              -0.4000000059604645
+            ],
+            "max": [
+              0.6500000059604645,
+              0.6495559811592102,
+              0.4000000059604645
+            ]
+          },
+          "pivots": [],
+          "description": "Encrusted anchor and discarded tyre together as a shallow-bay discovery.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_deck": {
+          "node": "watersports_pier_deck",
+          "size": [
+            3.0,
+            0.22,
+            2.0
+          ],
+          "origin": "floor-centre",
+          "triangles": 184,
+          "parts": 11,
+          "bounds": {
+            "min": [
+              -1.5,
+              0,
+              -1
+            ],
+            "max": [
+              1.5,
+              0.22049999982118607,
+              1
+            ]
+          },
+          "pivots": [],
+          "description": "Two-metre-long, three-metre-wide pier deck module: ten repeated planks over bearers.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_deck_lod1"
+        },
+        "watersports_pier_deck_lod1": {
+          "node": "watersports_pier_deck_lod1",
+          "size": [
+            3.0,
+            0.22,
+            2.0
+          ],
+          "origin": "floor-centre",
+          "triangles": 36,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -1.5,
+              0,
+              -1
+            ],
+            "max": [
+              1.5,
+              0.2199999988079071,
+              1
+            ]
+          },
+          "pivots": [],
+          "description": "Two-metre-long, three-metre-wide pier deck module: ten repeated planks over bearers.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_pile": {
+          "node": "watersports_pier_pile",
+          "size": [
+            0.32,
+            3.6,
+            0.32
+          ],
+          "origin": "floor-centre",
+          "triangles": 16,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.1599999964237213,
+              0,
+              -0.1599999964237213
+            ],
+            "max": [
+              0.1599999964237213,
+              3.5999999046325684,
+              0.1599999964237213
+            ]
+          },
+          "pivots": [],
+          "description": "Low-cost timber pile with vertical grain and a barnacle band: 16 near triangles, six far.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_pile_lod1"
+        },
+        "watersports_pier_pile_lod1": {
+          "node": "watersports_pier_pile_lod1",
+          "size": [
+            0.32,
+            3.6,
+            0.32
+          ],
+          "origin": "floor-centre",
+          "triangles": 6,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.1599999964237213,
+              0,
+              -0.1599999964237213
+            ],
+            "max": [
+              0.1599999964237213,
+              3.5999999046325684,
+              0.1599999964237213
+            ]
+          },
+          "pivots": [],
+          "description": "Low-cost timber pile with vertical grain and a barnacle band: 16 near triangles, six far.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_crossbrace": {
+          "node": "watersports_pier_crossbrace",
+          "size": [
+            2.4,
+            1.5,
+            0.16
+          ],
+          "origin": "floor-centre",
+          "triangles": 44,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -1.1882673501968384,
+              0.007819955237209797,
+              -0.07999999821186066
+            ],
+            "max": [
+              1.1882673501968384,
+              1.4921799898147583,
+              0.09399999678134918
+            ]
+          },
+          "pivots": [],
+          "description": "Diagonal timber brace with iron end plates; pins between adjacent pile rows.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_crossbrace_lod1"
+        },
+        "watersports_pier_crossbrace_lod1": {
+          "node": "watersports_pier_crossbrace_lod1",
+          "size": [
+            2.4,
+            1.5,
+            0.16
+          ],
+          "origin": "floor-centre",
+          "triangles": 12,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -1.1882673501968384,
+              0.007819955237209797,
+              -0.07999999821186066
+            ],
+            "max": [
+              1.1882673501968384,
+              1.4921799898147583,
+              0.07999999821186066
+            ]
+          },
+          "pivots": [],
+          "description": "Diagonal timber brace with iron end plates; pins between adjacent pile rows.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_handrail": {
+          "node": "watersports_pier_handrail",
+          "size": [
+            2.0,
+            0.98,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 72,
+          "parts": 3,
+          "bounds": {
+            "min": [
+              -1.0000000074505806,
+              0,
+              -0.07000000029802322
+            ],
+            "max": [
+              1.0000000074505806,
+              0.9800000190734863,
+              0.07000000029802322
+            ]
+          },
+          "pivots": [],
+          "description": "Two-metre handrail bay with top rail, intermediate rail and two shared posts.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_handrail_lod1"
+        },
+        "watersports_pier_handrail_lod1": {
+          "node": "watersports_pier_handrail_lod1",
+          "size": [
+            2.0,
+            0.98,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 24,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -1,
+              0,
+              -0.05999999865889549
+            ],
+            "max": [
+              1,
+              0.9800000190734863,
+              0.05999999865889549
+            ]
+          },
+          "pivots": [],
+          "description": "Two-metre handrail bay with top rail, intermediate rail and two shared posts.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_post": {
+          "node": "watersports_pier_post",
+          "size": [
+            0.14,
+            0.98,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 36,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.07000000029802322,
+              0,
+              -0.07000000029802322
+            ],
+            "max": [
+              0.07000000029802322,
+              0.9800000190734863,
+              0.07000000029802322
+            ]
+          },
+          "pivots": [],
+          "description": "Separate square pier railing post with a weathered cap and foot plate.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_post_lod1"
+        },
+        "watersports_pier_post_lod1": {
+          "node": "watersports_pier_post_lod1",
+          "size": [
+            0.14,
+            0.98,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 12,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.07000000029802322,
+              0,
+              -0.07000000029802322
+            ],
+            "max": [
+              0.07000000029802322,
+              0.9800000190734863,
+              0.07000000029802322
+            ]
+          },
+          "pivots": [],
+          "description": "Separate square pier railing post with a weathered cap and foot plate.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_mooring_cleat": {
+          "node": "watersports_mooring_cleat",
+          "size": [
+            0.36,
+            0.16,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 116,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.1599999964237213,
+              0,
+              -0.07000000029802322
+            ],
+            "max": [
+              0.1599999964237213,
+              0.1566506326198578,
+              0.07000000029802322
+            ]
+          },
+          "pivots": [],
+          "description": "Galvanised two-horn mooring cleat with a bolted base.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_mooring_cleat_lod1"
+        },
+        "watersports_mooring_cleat_lod1": {
+          "node": "watersports_mooring_cleat_lod1",
+          "size": [
+            0.36,
+            0.16,
+            0.14
+          ],
+          "origin": "floor-centre",
+          "triangles": 14,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.18000000715255737,
+              0,
+              -0.07000000029802322
+            ],
+            "max": [
+              0.18000000715255737,
+              0.1599999964237213,
+              0.07000000029802322
+            ]
+          },
+          "pivots": [],
+          "description": "Galvanised two-horn mooring cleat with a bolted base.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_ladder": {
+          "node": "watersports_pier_ladder",
+          "size": [
+            0.66,
+            3.0,
+            0.38
+          ],
+          "origin": "floor-centre",
+          "triangles": 260,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              0,
+              -0.1785951852798462
+            ],
+            "max": [
+              0.32877641916275024,
+              2.9982588291168213,
+              0.1899999976158142
+            ]
+          },
+          "pivots": [],
+          "description": "Galvanised water-access ladder with curved grab handles and eight non-slip rungs.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_ladder_lod1"
+        },
+        "watersports_pier_ladder_lod1": {
+          "node": "watersports_pier_ladder_lod1",
+          "size": [
+            0.66,
+            3.0,
+            0.38
+          ],
+          "origin": "floor-centre",
+          "triangles": 72,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.328000009059906,
+              0,
+              -0.1756937950849533
+            ],
+            "max": [
+              0.32491859793663025,
+              2.8768045902252197,
+              0.18799999356269836
+            ]
+          },
+          "pivots": [],
+          "description": "Galvanised water-access ladder with curved grab handles and eight non-slip rungs.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_rod_holder": {
+          "node": "watersports_rod_holder",
+          "size": [
+            0.13,
+            0.43,
+            0.16
+          ],
+          "origin": "floor-centre",
+          "triangles": 100,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.06499999761581421,
+              0,
+              -0.08900000154972076
+            ],
+            "max": [
+              0.06499999761581421,
+              0.4300000071525574,
+              0.050405994057655334
+            ]
+          },
+          "pivots": [],
+          "description": "Open tubular fishing-rod holder with a clamp and drain opening.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_rod_holder_lod1"
+        },
+        "watersports_rod_holder_lod1": {
+          "node": "watersports_rod_holder_lod1",
+          "size": [
+            0.13,
+            0.43,
+            0.16
+          ],
+          "origin": "floor-centre",
+          "triangles": 36,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.06499999761581421,
+              0,
+              -0.0794999971985817
+            ],
+            "max": [
+              0.06499999761581421,
+              0.4300000071525574,
+              0.05299999937415123
+            ]
+          },
+          "pivots": [],
+          "description": "Open tubular fishing-rod holder with a clamp and drain opening.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_lamp": {
+          "node": "watersports_pier_lamp",
+          "size": [
+            0.66,
+            2.85,
+            0.66
+          ],
+          "origin": "floor-centre",
+          "triangles": 204,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              0,
+              -0.3138486444950104
+            ],
+            "max": [
+              0.33000001311302185,
+              2.8499999046325684,
+              0.3138486444950104
+            ]
+          },
+          "pivots": [],
+          "description": "Weathered pier lamp with hood, protective cage, pale lens and timber mounting post.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_lamp_lod1"
+        },
+        "watersports_pier_lamp_lod1": {
+          "node": "watersports_pier_lamp_lod1",
+          "size": [
+            0.66,
+            2.85,
+            0.66
+          ],
+          "origin": "floor-centre",
+          "triangles": 56,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              0,
+              -0.33000001311302185
+            ],
+            "max": [
+              0.33000001311302185,
+              2.8499999046325684,
+              0.33000001311302185
+            ]
+          },
+          "pivots": [],
+          "description": "Weathered pier lamp with hood, protective cage, pale lens and timber mounting post.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_bait_crate": {
+          "node": "watersports_bait_crate",
+          "size": [
+            0.58,
+            0.34,
+            0.42
+          ],
+          "origin": "floor-centre",
+          "triangles": 252,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.29989999532699585,
+              0,
+              -0.20999999344348907
+            ],
+            "max": [
+              0.29989999532699585,
+              0.3400000035762787,
+              0.20999999344348907
+            ]
+          },
+          "pivots": [],
+          "description": "Open slatted bait crate with corner stiles, rope handles and a removable-looking lid rim.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_bait_crate_lod1"
+        },
+        "watersports_bait_crate_lod1": {
+          "node": "watersports_bait_crate_lod1",
+          "size": [
+            0.58,
+            0.34,
+            0.42
+          ],
+          "origin": "floor-centre",
+          "triangles": 60,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -0.28999999165534973,
+              0,
+              -0.20999999344348907
+            ],
+            "max": [
+              0.28999999165534973,
+              0.3400000035762787,
+              0.20999999344348907
+            ]
+          },
+          "pivots": [],
+          "description": "Open slatted bait crate with corner stiles, rope handles and a removable-looking lid rim.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        },
+        "watersports_pier_end_platform": {
+          "node": "watersports_pier_end_platform",
+          "size": [
+            4.0,
+            1.2,
+            3.0
+          ],
+          "origin": "floor-centre",
+          "triangles": 352,
+          "parts": 11,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -1.5
+            ],
+            "max": [
+              2,
+              1.2000000476837158,
+              1.5
+            ]
+          },
+          "pivots": [],
+          "description": "Pier-head platform with repeated deck planks, outer rails and a central swim-ladder gap.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod1": "watersports_pier_end_platform_lod1"
+        },
+        "watersports_pier_end_platform_lod1": {
+          "node": "watersports_pier_end_platform_lod1",
+          "size": [
+            4.0,
+            1.2,
+            3.0
+          ],
+          "origin": "floor-centre",
+          "triangles": 132,
+          "parts": 1,
+          "bounds": {
+            "min": [
+              -2,
+              0,
+              -1.5
+            ],
+            "max": [
+              2,
+              1.2000000476837158,
+              1.5
+            ]
+          },
+          "pivots": [],
+          "description": "Pier-head platform with repeated deck planks, outer rails and a central swim-ladder gap.",
+          "tags": [
+            "watersports",
+            "pier"
+          ],
+          "lod": 1
+        }
+      }
+    }
+  ]
+}
