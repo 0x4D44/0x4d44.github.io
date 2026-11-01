@@ -1,0 +1,1545 @@
+{
+  "version": 1,
+  "method": "OpenAI built-in image generator",
+  "license": "CC0-1.0",
+  "notes": "Selected original source prompts, hashes, crop rectangles and visually measured animation registration. Raw high-resolution source PNGs are not shipped. No external reference images.",
+  "sources": {
+    "board_decks": {
+      "id": "board_decks",
+      "prompt": "Use case: photorealistic-natural. Asset type: beach game texture atlas. Create a landscape 2:1 aspect image, target 1024x512. EXACT strict grid of FOUR equal-width columns and TWO equal-height rows, eight separate surf/SUP/windsurf/kite board deck designs. Each cell independently contains ONE complete board photographed strictly orthographic top-down, nose upward, tail downward, no fins visible, no perspective. Whole design must fit within the central 80 percent of its cell, no crossing row or column midlines. Pale warm neutral background. Row1 four boards: long rounded SUP ochre/teal wave pattern and dark diamond deck pad; windsurf coral/navy geometric diagonal; SUP cobalt/cream sunburst with ribbed pad; twin-tip short rectangular mint/vermillion stripes. Row2: twin-tip navy/saffron chevrons; windsurf turquoise/white flowing curves; SUP off-white/sea-green leaf geometry and ribbed pad; twin-tip red/cream geometric blocks. Distinct original graphics, modest salt scuffs, realistic fibreglass and rubber texture. Flat even diffuse daylight with no cast shadows. No letters, logos, branding, watermark, people, text or captions. All eight boards isolated with generous gaps and matching consistent photographic detail.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        1024,
+        512
+      ],
+      "grid": [
+        4,
+        2
+      ],
+      "transparentRequested": false,
+      "rawSha256": "4785b3fb67b17c2ff3fa13f2c2c185835994c2f281d8b3dbbde347003113e45f",
+      "rawBytes": 1939640,
+      "rawSize": [
+        1774,
+        887
+      ],
+      "rawMode": "RGB",
+      "alphaRange": [
+        255,
+        255
+      ],
+      "alphaZeroFraction": 0.0,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            444,
+            444
+          ]
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            444,
+            0,
+            443,
+            444
+          ]
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            887,
+            0,
+            443,
+            444
+          ]
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            1330,
+            0,
+            444,
+            444
+          ]
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            0,
+            444,
+            444,
+            443
+          ]
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            444,
+            444,
+            443,
+            443
+          ]
+        },
+        {
+          "index": 6,
+          "sourceRectPx": [
+            887,
+            444,
+            443,
+            443
+          ]
+        },
+        {
+          "index": 7,
+          "sourceRectPx": [
+            1330,
+            444,
+            444,
+            443
+          ]
+        }
+      ],
+      "inspection": {
+        "countVerified": 8,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels"
+      }
+    },
+    "boat_hull_paint": {
+      "id": "boat_hull_paint",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: boat_hull_paint. Subject: Flat scuffed fibreglass fishing-boat hull paint. Upper 56 percent white/off-white paint; thin red waterline stripe across the middle at 56 to 62 percent height; lower 38 percent cobalt blue paint. Small rope scars and superficial paint scuffs, faint dirty waterline. Straight horizontal continuous bands. No boat silhouette, no letters or badges, no rivets. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile horizontally left-to-right only; preserve white above red stripe above cobalt blue below. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/boat_hull_paint.png",
+      "sha256": "3987fc8191564d87fbe175a5ff9454dd2e0f04ba5e229eaf10f8b128643ecd28",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "3987fc8191564d87fbe175a5ff9454dd2e0f04ba5e229eaf10f8b128643ecd28",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "boat_names": {
+      "id": "boat_names",
+      "prompt": "Use case: photorealistic-natural. Asset type: transparent boat-name decal atlas. Create landscape2:1 aspect target512x256, EXACT regular TWO columns by TWO rows, four equal cells. ONLY hand-painted boat-name LETTERING, fully transparent background with real alpha, no boards, no transom, no paper, no outlines/shadows behind letters, no opaque rectangles, no checkerboard baked into pixels. Four complete original cream and muted red painted name decals, subtle paint-brush grain, nautical hand-lettering, readable at small scale. Top-left EXACT text 'Maria del Mar'; top-right EXACT text 'La Esperanza'; bottom-left EXACT text 'San Pedro'; bottom-right EXACT text 'Brisa'. Maria deliberately has NO accent. Text must match exactly and be fully contained in central80percent of each cell. Slightly arched lettering is fine but use clean strong strokes, cream and red alternating small flourishes. No extra text, brands, logos, watermark, setting or cast shadows. Four separate names evenly spaced. Transparent background.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        512,
+        256
+      ],
+      "grid": [
+        2,
+        2
+      ],
+      "transparentRequested": true,
+      "expectedText": [
+        "Maria del Mar",
+        "La Esperanza",
+        "San Pedro",
+        "Brisa"
+      ],
+      "rawSha256": "00e299fe358c27ec8c7d0659a73dd653a13e247c7b756525da8fcff9af2c05b6",
+      "rawBytes": 1684233,
+      "rawSize": [
+        1774,
+        887
+      ],
+      "rawMode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaZeroFraction": 0.57613988,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            887,
+            444
+          ],
+          "mainAlphaBoundsPx": [
+            449,
+            105,
+            429,
+            273
+          ],
+          "mainAlphaPixels": 51480,
+          "nonzeroAlphaPixels": 167362,
+          "opaqueAlphaPixels": 107951
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            887,
+            0,
+            887,
+            444
+          ],
+          "mainAlphaBoundsPx": [
+            1121,
+            89,
+            639,
+            244
+          ],
+          "mainAlphaPixels": 62300,
+          "nonzeroAlphaPixels": 153701,
+          "opaqueAlphaPixels": 103362
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            0,
+            444,
+            887,
+            443
+          ],
+          "mainAlphaBoundsPx": [
+            380,
+            494,
+            495,
+            348
+          ],
+          "mainAlphaPixels": 58945,
+          "nonzeroAlphaPixels": 184860,
+          "opaqueAlphaPixels": 120809
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            887,
+            444,
+            887,
+            443
+          ],
+          "mainAlphaBoundsPx": [
+            1010,
+            496,
+            266,
+            264
+          ],
+          "mainAlphaPixels": 38423,
+          "nonzeroAlphaPixels": 161037,
+          "opaqueAlphaPixels": 110299
+        }
+      ],
+      "inspection": {
+        "countVerified": 4,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels",
+        "textVerified": [
+          "Maria del Mar",
+          "La Esperanza",
+          "San Pedro",
+          "Brisa"
+        ]
+      }
+    },
+    "canvas_stripe": {
+      "id": "canvas_stripe",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: canvas_stripe. Subject: Thick cotton umbrella canvas with a faint visible weave and equally spaced vertical bands of OFF-WHITE and NEUTRAL MEDIUM GREY. This is an entirely grayscale tintable albedo map, no coloured pigments whatsoever, no saturated colour. Four grey bands alternating with four white bands, very slight cloth wear, no folds or creases. Physical scale: this entire image represents 1 metres by 1 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/canvas_stripe.png",
+      "sha256": "9791f8f3d6b12394685f8bfebb06560a249a1818105d47301f2513b013f1f7d1",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "9791f8f3d6b12394685f8bfebb06560a249a1818105d47301f2513b013f1f7d1",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "caustic_tile": {
+      "id": "caustic_tile",
+      "prompt": "Use case: photorealistic-natural. Asset type: one seamless square caustic light mask final256x256 for underwater shader. Pure BLACK full-square background crossed by softly glowing thin WHITE interconnected irregular rounded cellular lines, bright focused underwater sunlight caustic network as from a clear shallow lagoon. Line widths varied, organic rounded cells moderately large, no filled white areas; black interiors, high contrast, soft edges. Perfectly orthographic, no sand, no objects,no blue tint,no color, no perspective, no text,no border; seamless repeated matching all opposite edges. Original caustic pattern.",
+      "method": "OpenAI built-in image generator",
+      "rawSha256": "1bac2b5a85f9584206229d6ab21921e0ad61bede9f30aad7c43981c7b7115904",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "crab_shells": {
+      "id": "crab_shells",
+      "prompt": "Use case: photorealistic-natural. Asset type: transparent coastal game sprite atlas. Create a SQUARE image target256x256 in EXACT TWO columns and TWO rows equal cells. THREE separate natural coastal objects; bottom-right cell MUST BE EMPTY TRANSPARENT. Top-left cell: a pale sand-coloured ghost crab viewed exactly TOP-DOWN with anatomically correct two claws, eight walking legs, stalk eyes, soft natural ivory shell, complete intact limbs. Top-right cell: one conch shell viewed in clear side/three-quarter profile, weathered cream/pink ridges and visible opening. Bottom-left cell: one pale peach scallop shell in top-down view, fan-shaped radiating ridges. Bottom-right NOTHING. Each of three objects fully contained within central75percent of its own cell with at least12percent transparent padding. No sand, rocks, scenery, ground plane, cast shadows, labels, borders, letters, logos or watermark. Fully transparent background with actual alpha, no baked checkerboard. Photographic fine detail, flat even diffuse daylight, neutral colour and natural imperfections.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        256,
+        256
+      ],
+      "grid": [
+        2,
+        2
+      ],
+      "transparentRequested": true,
+      "cells": [
+        "ghost_crab",
+        "conch",
+        "scallop",
+        "empty"
+      ],
+      "rawSha256": "416460d891ebc3b9c9d3062f0e20fe547edb1dc210ed104db8fc3bb14af460d6",
+      "rawBytes": 1346728,
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaZeroFraction": 0.67199443,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            31,
+            90,
+            573,
+            489
+          ],
+          "mainAlphaPixels": 117516,
+          "nonzeroAlphaPixels": 176107,
+          "opaqueAlphaPixels": 117517
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            627,
+            0,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            673,
+            140,
+            551,
+            405
+          ],
+          "mainAlphaPixels": 134055,
+          "nonzeroAlphaPixels": 142919,
+          "opaqueAlphaPixels": 134055
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            0,
+            627,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            54,
+            695,
+            535,
+            484
+          ],
+          "mainAlphaPixels": 186763,
+          "nonzeroAlphaPixels": 195611,
+          "opaqueAlphaPixels": 186763
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            627,
+            627,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": null,
+          "mainAlphaPixels": 0,
+          "nonzeroAlphaPixels": 1157,
+          "opaqueAlphaPixels": 0
+        }
+      ],
+      "inspection": {
+        "countVerified": 3,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels"
+      }
+    },
+    "fish_sprites": {
+      "id": "fish_sprites",
+      "prompt": "Use case: photorealistic-natural. Asset type: transparent game fish animation atlas. Create landscape2:1 aspect, target512x256, EXACT THREE equal columns by TWO equal rows. Six independent realistic reef-fish cutouts, strict SIDE PROFILE all facing RIGHT, fully transparent background with real alpha and no underwater scene. Each whole fish completely contained within central80percent of cell with clear margin, no overlap. Column1 is a silver jack with silver scales, forked tail, subtle blue back. Column2 is a yellow-striped grunt with silver body and clear multiple thin yellow horizontal stripes. Column3 is a blue tang with vivid cobalt-blue body, black palette-shaped markings, bright yellow tail. TOP row shows each species with tail swept slightly toward viewer; BOTTOM row repeats SAME species, matching same body/head position, scale, markings, and facing right, but tail swept away for a two-frame swim cycle. Preserve each silhouette and visible fins. Flat uniform diffuse daylight, no cast shadows, no sparkle glare, finely detailed photographic scales. No numbers, text, captions, logos, watermarks, bubbles, plants or borders. Transparent outside all6fish.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        512,
+        256
+      ],
+      "grid": [
+        3,
+        2
+      ],
+      "transparentRequested": true,
+      "frames": [
+        "silver_jack_tail_left",
+        "grunt_tail_left",
+        "blue_tang_tail_left",
+        "silver_jack_tail_right",
+        "grunt_tail_right",
+        "blue_tang_tail_right"
+      ],
+      "rawSha256": "fe22e9838ed59120d2b556dca2fb8864b6b25de1ace734f9a4470ebfcdcd93c7",
+      "rawBytes": 1566695,
+      "rawSize": [
+        1774,
+        887
+      ],
+      "rawMode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaZeroFraction": 0.62035553,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            644,
+            443
+          ],
+          "mainAlphaBoundsPx": [
+            32,
+            78,
+            603,
+            313
+          ],
+          "mainAlphaPixels": 87130,
+          "nonzeroAlphaPixels": 102399,
+          "opaqueAlphaPixels": 87135,
+          "registrationAnchorPx": [
+            574.06,
+            249.6
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "jack"
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            645,
+            0,
+            585,
+            443
+          ],
+          "mainAlphaBoundsPx": [
+            656,
+            119,
+            543,
+            284
+          ],
+          "mainAlphaPixels": 79732,
+          "nonzeroAlphaPixels": 93223,
+          "opaqueAlphaPixels": 79736,
+          "registrationAnchorPx": [
+            1142.61,
+            257.05
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "grunt"
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            1231,
+            0,
+            543,
+            443
+          ],
+          "mainAlphaBoundsPx": [
+            1271,
+            114,
+            482,
+            293
+          ],
+          "mainAlphaPixels": 86877,
+          "nonzeroAlphaPixels": 96466,
+          "opaqueAlphaPixels": 86878,
+          "registrationAnchorPx": [
+            1691.89,
+            222.01
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "tang"
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            0,
+            443,
+            638,
+            444
+          ],
+          "mainAlphaBoundsPx": [
+            18,
+            473,
+            618,
+            313
+          ],
+          "mainAlphaPixels": 89320,
+          "nonzeroAlphaPixels": 102992,
+          "opaqueAlphaPixels": 89321,
+          "registrationAnchorPx": [
+            576.08,
+            644.95
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "jack"
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            638,
+            443,
+            582,
+            444
+          ],
+          "mainAlphaBoundsPx": [
+            641,
+            516,
+            560,
+            281
+          ],
+          "mainAlphaPixels": 82532,
+          "nonzeroAlphaPixels": 97609,
+          "opaqueAlphaPixels": 82534,
+          "registrationAnchorPx": [
+            1144.53,
+            651.87
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "grunt"
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            1220,
+            443,
+            554,
+            444
+          ],
+          "mainAlphaBoundsPx": [
+            1238,
+            503,
+            517,
+            304
+          ],
+          "mainAlphaPixels": 91945,
+          "nonzeroAlphaPixels": 104693,
+          "opaqueAlphaPixels": 91945,
+          "registrationAnchorPx": [
+            1691.88,
+            618.01
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "tang"
+        }
+      ],
+      "inspection": {
+        "countVerified": 6,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels",
+        "registration": "Anchors measured from visible pupil centers against pixel grids, then dark-pixel centroid within eye ROI. For each animation group use one shared scale and shared union bounds relative to anchor; translate frames so anchor lands on same output pixel. Source silhouettes vary slightly; this fixes position/scale drift, not photogrammetric anatomy."
+      }
+    },
+    "foam_noise": {
+      "id": "foam_noise",
+      "prompt": "Use case: photorealistic-natural. Asset type: one seamless square white sea-foam texture with real TRANSPARENT background, final 256x256. Fine white bubbles and gently connected lace tendrils of foam, irregular organic interconnected holes of varied sizes, foam occupies about half of surface. White foam with soft antialiased partially transparent edges and COMPLETELY transparent open water holes; no colored ocean or ground. Flat even orthographic, no cast shadow, no perspective, no text, no border, no margin. Delicate natural seafoam microstructure in a square matching repeat at all edges. Original, no logos.",
+      "method": "OpenAI built-in image generator",
+      "rawSha256": "f21214c902d3995d8d2fa8ee3af0f26550b0eb0512de04fdf77d085e1bf0e820",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGBA"
+    },
+    "gull_sprites": {
+      "id": "gull_sprites",
+      "prompt": "Use case: photorealistic-natural. Asset type: transparent game animation sprite sheet. Create one VERY WIDE 4:1 aspect image, target1024x256, EXACTLY EIGHT evenly spaced equal-width columns in ONE ROW. No second row. Eight separate photorealistic side-view cutout sprites of the SAME adult gull with white head/body, light grey wings with black tips, yellow beak/legs, facing RIGHT in every cell. Real alpha fully transparent background everywhere around birds; no scenery, no ground, no cast shadows, no baked checkerboard. Frame1 flying wing fully UP; frame2 flying wing diagonal UP; frame3 flying wings level outward in a narrow side silhouette; frame4 flying wings fully DOWN. Frame5 standing upright. Frame6 walking, left foot forward. Frame7 walking, right foot forward. Frame8 cleaning/preening chest with beak lowered. Four flying bodies share same central body position; four ground poses share common feet baseline. Entire bird including wing tips stays inside its own narrow cell, at least10percent clear margins. Matched size, identical plumage, natural believable poses and anatomy; four distinct flap silhouettes. Flat even diffuse daylight, feather detail, NO text, numbers, captions, logos or borders. Strict eight columns across with gaps.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        1024,
+        256
+      ],
+      "grid": [
+        8,
+        1
+      ],
+      "transparentRequested": true,
+      "frames": [
+        "flap_up",
+        "flap_rising",
+        "flap_level",
+        "flap_down",
+        "standing",
+        "walking_left",
+        "walking_right",
+        "cleaning"
+      ],
+      "rawSha256": "23604ed63d0e547722fa2d9388980e7b3d243970a2aacf9be3bfbcd5d3c4a188",
+      "rawBytes": 505617,
+      "rawSize": [
+        2172,
+        724
+      ],
+      "rawMode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaZeroFraction": 0.87668582,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            271,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            20,
+            134,
+            237,
+            350
+          ],
+          "mainAlphaPixels": 33325,
+          "nonzeroAlphaPixels": 38641,
+          "opaqueAlphaPixels": 33325,
+          "registrationAnchorPx": [
+            219.43,
+            414.0
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "flap"
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            271,
+            0,
+            264,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            285,
+            209,
+            235,
+            273
+          ],
+          "mainAlphaPixels": 27457,
+          "nonzeroAlphaPixels": 33031,
+          "opaqueAlphaPixels": 27457,
+          "registrationAnchorPx": [
+            481.5,
+            412.83
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "flap"
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            535,
+            0,
+            281,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            551,
+            396,
+            251,
+            83
+          ],
+          "mainAlphaPixels": 11751,
+          "nonzeroAlphaPixels": 16340,
+          "opaqueAlphaPixels": 11751,
+          "registrationAnchorPx": [
+            766.0,
+            409.62
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "flap"
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            816,
+            0,
+            267,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            830,
+            396,
+            241,
+            212
+          ],
+          "mainAlphaPixels": 17525,
+          "nonzeroAlphaPixels": 21477,
+          "opaqueAlphaPixels": 17525,
+          "registrationAnchorPx": [
+            1035.33,
+            406.5
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "flap"
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            1083,
+            0,
+            268,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            1096,
+            354,
+            243,
+            220
+          ],
+          "mainAlphaPixels": 16242,
+          "nonzeroAlphaPixels": 21032,
+          "opaqueAlphaPixels": 16242,
+          "registrationAnchorPx": [
+            1300,
+            364.75
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": null
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            1351,
+            0,
+            266,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            1364,
+            376,
+            241,
+            198
+          ],
+          "mainAlphaPixels": 15451,
+          "nonzeroAlphaPixels": 20919,
+          "opaqueAlphaPixels": 15451,
+          "registrationAnchorPx": [
+            1568,
+            387.5
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "walk"
+        },
+        {
+          "index": 6,
+          "sourceRectPx": [
+            1617,
+            0,
+            269,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            1629,
+            376,
+            246,
+            199
+          ],
+          "mainAlphaPixels": 15625,
+          "nonzeroAlphaPixels": 20912,
+          "opaqueAlphaPixels": 15625,
+          "registrationAnchorPx": [
+            1836.43,
+            387.43
+          ],
+          "registrationAnchorKind": "visible eye centre",
+          "registrationGroup": "walk"
+        },
+        {
+          "index": 7,
+          "sourceRectPx": [
+            1886,
+            0,
+            286,
+            724
+          ],
+          "mainAlphaBoundsPx": [
+            1898,
+            376,
+            232,
+            202
+          ],
+          "mainAlphaPixels": 16747,
+          "nonzeroAlphaPixels": 21563,
+          "opaqueAlphaPixels": 16747,
+          "registrationAnchorPx": null,
+          "registrationAnchorKind": "static pose; no matched-cycle anchor",
+          "registrationGroup": null
+        }
+      ],
+      "inspection": {
+        "countVerified": 8,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels",
+        "registration": "Anchors measured from visible pupil centers against pixel grids, then dark-pixel centroid within eye ROI. For each animation group use one shared scale and shared union bounds relative to anchor; translate frames so anchor lands on same output pixel. Source silhouettes vary slightly; this fixes position/scale drift, not photogrammetric anatomy."
+      }
+    },
+    "jetty_planks": {
+      "id": "jetty_planks",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: jetty_planks. Subject: Weathered silver-grey hardwood pier deck planks with fine vertical lengthwise wood grain, dark nail heads in plausible pairs, narrow black gaps, salt bleaching and modest chipped edges. Parallel planks running from top to bottom, no perspective, no water visible between boards. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/jetty_planks.png",
+      "sha256": "01637bcb9803a61a0d583c9ff4494af5f5c09fa49d6c0eaf90fccd07d055a806",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "01637bcb9803a61a0d583c9ff4494af5f5c09fa49d6c0eaf90fccd07d055a806",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "pile_wood": {
+      "id": "pile_wood",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: pile_wood. Subject: A close flat unwrapped rectangular surface of creosote-dark brown timber pile. Strong fine vertical wood grain. Lower quarter carries muted green tidal slime, scattered tiny white barnacles and a few small dark mussels, upper part is mostly weathered dark timber. This is a surface swatch, not a cylindrical pile photographed in space. Physical scale: this entire image represents 1.5 metres by 1.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile horizontally left-to-right only; top is dark timber and bottom is tidal growth, do not repeat vertically. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/pile_wood.png",
+      "sha256": "2075b3a39f2f5f64de5c4f2961544c4864873fc7c9574df4ea79b0bf12274692",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "2075b3a39f2f5f64de5c4f2961544c4864873fc7c9574df4ea79b0bf12274692",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "promenade_pavers": {
+      "id": "promenade_pavers",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: promenade_pavers. Subject: An EXACT six columns by six rows square grid of 36 sand-coloured concrete promenade pavers. Each paver is 40 cm square. Orthographic view, square pavers equal dimensions and aligned perfectly with image axes, narrow sand-filled joints. Small natural variation and occasional fine hairline cracks. Image edges run along the centres of boundary joints so opposite edges tile naturally. No staggered brick pattern. Physical scale: this entire image represents 2.4 metres by 2.4 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/promenade_pavers.png",
+      "sha256": "b6a5d2da09d8232de65bc4415d54b6107509857ab896c49dce0ad990aea233f5",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "b6a5d2da09d8232de65bc4415d54b6107509857ab896c49dce0ad990aea233f5",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "rock_sea": {
+      "id": "rock_sea",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: rock_sea. Subject: Angular grey-brown granite breakwater boulder surfaces with natural mineral grains, white salt crust, scattered black wet patches, sparse small white barnacle clusters arranged in tidal bands. Fill the entire square with the rough granite surface, no isolated object silhouette. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/rock_sea.png",
+      "sha256": "d978576f5152bd9f65abfa45b8b58c743ea538b81e561e882d41814e62731d08",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "d978576f5152bd9f65abfa45b8b58c743ea538b81e561e882d41814e62731d08",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "rope_hemp": {
+      "id": "rope_hemp",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: rope_hemp. Subject: A dense surface of thick twisted tan hemp ropes laid tightly side by side, all running vertically from top to bottom. Fine fibrous strands, alternating natural helical twists, neutral tan, no knots, no loose ends, no frame. Fill the full square with ropes. Physical scale: this entire image represents 0.5 metres by 0.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile along rope length vertically top-to-bottom; preserve continuous twisted strands at the top and bottom edges. Target final texture size 256 by 256 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/rope_hemp.png",
+      "sha256": "6032f1414714680ccf702071718402a7026b404e64565aa4c7efcb0c272e220e",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "6032f1414714680ccf702071718402a7026b404e64565aa4c7efcb0c272e220e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "sails_kites": {
+      "id": "sails_kites",
+      "prompt": "Use case: photorealistic-natural. Asset type: game texture atlas. Create one landscape image exactly 2:1 aspect, target 1024x512 pixels. A precise contact atlas of TWELVE original beach-sports fabric panels, in a strict regular grid of SIX columns and TWO rows; each cell identical size, pale neutral cream background, each object fully inside its cell with 8 percent clear padding, no overlap, no borders, no labels. TOP ROW: six separate windsurf sails, straight-on orthographic view, upright triangular sail silhouette, detailed cloth panel seams, one clear translucent inspection window in EACH sail, printed bold race numbers 01, 02, 03, 04, 05, 06 respectively, varied colourways ochre/teal, coral/navy, cobalt/cream, mint/white, vermilion/yellow, turquoise/cream. BOTTOM ROW: six separate inflated kitesurf kite wings, each front view with broad curved wing shape and striped panels, white seams; colourways corresponding to the sail above. No boards, people, poles, strings or landscape. Realistic photographic fabric texture, even flat diffuse daylight, shadowless, no highlights or vignette. Original designs, no real brands, no logos. Keep strict six-column two-row geometry and readable numbers.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        1024,
+        512
+      ],
+      "grid": [
+        6,
+        2
+      ],
+      "transparentRequested": false,
+      "rawSha256": "e2a798757f9ccdeac166312013bc88afe5d2128d5c2b3fb07aa0e4d83d6ce9f1",
+      "rawBytes": 2139688,
+      "rawSize": [
+        1774,
+        887
+      ],
+      "rawMode": "RGB",
+      "alphaRange": [
+        255,
+        255
+      ],
+      "alphaZeroFraction": 0.0,
+      "sourceRows": [
+        0,
+        0.593010146561443,
+        1
+      ],
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            296,
+            526
+          ]
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            296,
+            0,
+            295,
+            526
+          ]
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            591,
+            0,
+            296,
+            526
+          ]
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            887,
+            0,
+            296,
+            526
+          ]
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            1183,
+            0,
+            295,
+            526
+          ]
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            1478,
+            0,
+            296,
+            526
+          ]
+        },
+        {
+          "index": 6,
+          "sourceRectPx": [
+            0,
+            526,
+            296,
+            361
+          ]
+        },
+        {
+          "index": 7,
+          "sourceRectPx": [
+            296,
+            526,
+            295,
+            361
+          ]
+        },
+        {
+          "index": 8,
+          "sourceRectPx": [
+            591,
+            526,
+            296,
+            361
+          ]
+        },
+        {
+          "index": 9,
+          "sourceRectPx": [
+            887,
+            526,
+            296,
+            361
+          ]
+        },
+        {
+          "index": 10,
+          "sourceRectPx": [
+            1183,
+            526,
+            295,
+            361
+          ]
+        },
+        {
+          "index": 11,
+          "sourceRectPx": [
+            1478,
+            526,
+            296,
+            361
+          ]
+        }
+      ],
+      "inspection": {
+        "countVerified": 12,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels",
+        "note": "Generator row split is y=526, not half-height; six sails all numbered 01..06 and have windows; six kite wings below."
+      }
+    },
+    "sand_dry": {
+      "id": "sand_dry",
+      "prompt": "Use case: photorealistic-natural. Asset type: game material albedo, one seamless square photographic texture. Create sand_dry: warm pale-gold fine beach sand, tiny scattered broken white shells and dark mineral flecks, very subtle low wind ripples. Real-world patch 2.5 m by 2.5 m. Strict orthographic top-down, uniform flat even diffuse daylight, no cast shadows, no directional highlights, no vignette, no horizon, no objects, no labels, no border. Fully fill the square. Matching natural opposite edges for seamless repeating. Original natural surface, no brands. Target texture 1024x1024.",
+      "method": "OpenAI built-in image generator",
+      "rawSha256": "3062f9e5fa05d8d0243e2b30aaf39e73a6842b5b2a29169999cfbdd099271825",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "sand_wet": {
+      "id": "sand_wet",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: sand_wet. Subject: Smooth soaked beach sand, darker tan-brown than pale dry gold sand, very faint satin wet sheen with no specular hotspots, tiny bubble holes, a few short worm casts and scattered tiny broken shells. Physical scale: this entire image represents 2.5 metres by 2.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/sand_wet.png",
+      "sha256": "e26091135ff5ba6bcc8dd7184681256c0c2d003317090499f1d6cd8bb454bdd2",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "e26091135ff5ba6bcc8dd7184681256c0c2d003317090499f1d6cd8bb454bdd2",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "seabed_rock": {
+      "id": "seabed_rock",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seabed_rock. Subject: Rounded dark volcanic stones embedded in pale gritty seabed sand, a fine muted green algae film on stones and a few small white barnacles. Small plausible mixed sizes, natural dense distributed texture. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/seabed_rock.png",
+      "sha256": "e0d19df9ef3b517dba9983d2d9e679d682231bcec7630d3bd31da1eda64fbd2e",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "e0d19df9ef3b517dba9983d2d9e679d682231bcec7630d3bd31da1eda64fbd2e",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "seabed_sand": {
+      "id": "seabed_sand",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seabed_sand. Subject: Clean submerged pale grey-gold sand with gentle parallel ripple ridges of plausible shallow lagoon sand, a few tiny shell bits. No water surface, no baked caustics, no blue colour cast. The ripple lines run consistently horizontally across the square. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/seabed_sand.png",
+      "sha256": "bc997b2d6a22d7b0a5fdd43f66d437ad0f33b944ebcfae95a39957ac6642180b",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "bc997b2d6a22d7b0a5fdd43f66d437ad0f33b944ebcfae95a39957ac6642180b",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "seagrass_coral": {
+      "id": "seagrass_coral",
+      "prompt": "Use case: photorealistic-natural. Asset type: transparent game underwater vegetation cutout atlas for vertical cards. Create a SQUARE image target512x512, exact TWO columns and TWO rows of equal cells. THREE independent realistic cutout subjects, bottom-right cell completely empty transparent. Top-left: a lush tuft of turtle grass (Thalassia), long ribbon-like green leaves rising from one small base with several arched blades, clear individual leaves. Top-right: a compact branching coral head, original natural tan/pale-peach antler-like branches, intricate polyps, complete silhouette. Bottom-left: a rounded brain coral head, realistic olive-gold labyrinth grooves, wider than tall, complete silhouette. Bottom-right EMPTY. Straight front orthographic view for vertical game cards, each entire subject fits central76percent of cell with generous transparent margin, nothing touches neighbouring cells. Fully transparent background actual alpha, no seafloor, water, aquarium, bubbles, rocks, opaque bounding box, ground or cast shadows. Photographic organic detail, flat uniform diffuse daylight without dramatic lighting. No text, labels, logos, grid lines or watermark.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        512,
+        512
+      ],
+      "grid": [
+        2,
+        2
+      ],
+      "transparentRequested": true,
+      "cells": [
+        "turtle_grass",
+        "branching_coral",
+        "brain_coral",
+        "empty"
+      ],
+      "rawSha256": "9535c23c2369c59b362a2f8ad9516e0dafe4a182fca655213b166845d8b25cca",
+      "rawBytes": 1700427,
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaZeroFraction": 0.6205762,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            41,
+            38,
+            544,
+            582
+          ],
+          "mainAlphaPixels": 111523,
+          "nonzeroAlphaPixels": 177841,
+          "opaqueAlphaPixels": 111528
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            627,
+            0,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            650,
+            124,
+            579,
+            469
+          ],
+          "mainAlphaPixels": 174296,
+          "nonzeroAlphaPixels": 201968,
+          "opaqueAlphaPixels": 174297
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            0,
+            627,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": [
+            46,
+            742,
+            581,
+            443
+          ],
+          "mainAlphaPixels": 199179,
+          "nonzeroAlphaPixels": 208401,
+          "opaqueAlphaPixels": 199179
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            627,
+            627,
+            627,
+            627
+          ],
+          "mainAlphaBoundsPx": null,
+          "mainAlphaPixels": 0,
+          "nonzeroAlphaPixels": 8440,
+          "opaqueAlphaPixels": 0
+        }
+      ],
+      "inspection": {
+        "countVerified": 3,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels"
+      }
+    },
+    "seawall_concrete": {
+      "id": "seawall_concrete",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seawall_concrete. Subject: Poured pale grey concrete seawall surface, faint horizontal formwork lines, subtle white salt efflorescence staining, a few narrow aged orange-brown rust streaks from small rebar marks. Believable salt weathering and concrete pores. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/seawall_concrete.png",
+      "sha256": "ef521537d3df853be30382d6a76f5e90a37992d47c7ade3dd8f5d96987c24fc0",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "ef521537d3df853be30382d6a76f5e90a37992d47c7ade3dd8f5d96987c24fc0",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "signs_menus": {
+      "id": "signs_menus",
+      "prompt": "Use case: photorealistic-natural. Asset type: game sign texture atlas, readable Spanish typography. Create a landscape image EXACT 2:1 aspect, target1024x512, strict grid FIVE equal columns by TWO equal rows. Ten separate flat rectangular weathered wooden signboards, front-on orthographic, with 8 percent pale background padding around each. All signs centered inside their own cell, no overlapping. Hand-painted crisp high-contrast lettering, lightly weathered boards, restrained teal, ochre, red, cream and dark navy colours. Flat even diffuse daylight, NO cast shadows. Exactly these phrases in reading order, case exactly as written: TOP ROW cell1 'Zona de baño' with lowercase ñ including clear tilde; cell2 'Bandera roja'; cell3 'Prohibido el paso'; cell4 'Cocadas'; cell5 'Ceviche'. BOTTOM ROW cell1 'Jugos naturales'; cell2 'Helados'; cell3 'Alquiler de tablas'; cell4 'Cooperativa de pescadores'; cell5 'Salvavidas'. Wrap longer phrases into two or three centered lines to maximize letter size. SPELLING: baño is b-a-ñ-o, a clear tilde above the n, never bano. Cooperativa is C-o-o-p-e-r-a-t-i-v-a; pescadores is p-e-s-c-a-d-o-r-e-s. Do not invent any other words, prices, illustrations, brand logos, captions or watermark. Every text must be clean, completely visible, legible and spelled correctly.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        1024,
+        512
+      ],
+      "grid": [
+        5,
+        2
+      ],
+      "transparentRequested": false,
+      "expectedText": [
+        "Zona de baño",
+        "Bandera roja",
+        "Prohibido el paso",
+        "Cocadas",
+        "Ceviche",
+        "Jugos naturales",
+        "Helados",
+        "Alquiler de tablas",
+        "Cooperativa de pescadores",
+        "Salvavidas"
+      ],
+      "rawSha256": "5e3d9e4bd3f33045891255a22a63bfc2f1aee702fa529adb536e45f007266db6",
+      "rawBytes": 2729735,
+      "rawSize": [
+        1774,
+        887
+      ],
+      "rawMode": "RGB",
+      "alphaRange": [
+        255,
+        255
+      ],
+      "alphaZeroFraction": 0.0,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            355,
+            444
+          ]
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            355,
+            0,
+            355,
+            444
+          ]
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            710,
+            0,
+            354,
+            444
+          ]
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            1064,
+            0,
+            355,
+            444
+          ]
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            1419,
+            0,
+            355,
+            444
+          ]
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            0,
+            444,
+            355,
+            443
+          ]
+        },
+        {
+          "index": 6,
+          "sourceRectPx": [
+            355,
+            444,
+            355,
+            443
+          ]
+        },
+        {
+          "index": 7,
+          "sourceRectPx": [
+            710,
+            444,
+            354,
+            443
+          ]
+        },
+        {
+          "index": 8,
+          "sourceRectPx": [
+            1064,
+            444,
+            355,
+            443
+          ]
+        },
+        {
+          "index": 9,
+          "sourceRectPx": [
+            1419,
+            444,
+            355,
+            443
+          ]
+        }
+      ],
+      "inspection": {
+        "countVerified": 10,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels",
+        "textVerified": [
+          "Zona de baño",
+          "Bandera roja",
+          "Prohibido el paso",
+          "Cocadas",
+          "Ceviche",
+          "Jugos naturales",
+          "Helados",
+          "Alquiler de tablas",
+          "Cooperativa de pescadores",
+          "Salvavidas"
+        ],
+        "note": "All phrases visually checked on generated source; ñ tilde is clear. Review downsampled final atlas again."
+      }
+    },
+    "thatch_palm": {
+      "id": "thatch_palm",
+      "generator": "OpenAI built-in image_gen",
+      "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: thatch_palm. Subject: Dense overlapping dry palm-leaf thatch, individual narrow fronds and fibrous leaf edges, golden-brown mixed with bleached silver-grey, organic layered roof surface. No roof structure or sky, only thatch fills the square. Physical scale: this entire image represents 1.5 metres by 1.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+      "rawPath": "la-ladera/.scratch/beach-textures/raw/thatch_palm.png",
+      "sha256": "eb40a088ffa6ca4cf0276fb8846e00f369969489641daaa9da0eb98578a42b7b",
+      "licence": "Original AI-generated image; no third-party source image or brand artwork used.",
+      "rawSha256": "eb40a088ffa6ca4cf0276fb8846e00f369969489641daaa9da0eb98578a42b7b",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    },
+    "towels_bags": {
+      "id": "towels_bags",
+      "prompt": "Use case: photorealistic-natural. Asset type: game textile atlas. Make one SQUARE image, target512x512, with EXACT FOUR columns and FOUR rows of equal square cells. Sixteen independent flattened textile designs photographed straight overhead, shadowless flat diffuse daylight, pale neutral cream background, each design fully contained with generous 8 percent blank padding. First THREE rows: TWELVE beach towels, each a complete rectangular towel nose-to-tail aligned vertically, terry cotton with subtle fringe, different original patterns: Row1 teal-white stripes, red-white stripes, saffron-navy stripes, cobalt-cream zigzag. Row2 coral-and-turquoise blocks, ochre sunburst, green tropical leaf, navy small white fish silhouettes. Row3 cream-red diamonds, pale-blue wave pattern, pastel broad stripes, tan-and-white fine stripes. Fourth row: FOUR separate flat CANVAS BAG TOP panels (not entire upright bags), top-down views of rectangular zipped fabric tops with folded handles lying flat on each side; colours natural beige, faded blue, ochre, pale green. Realistic weave and weathering, no text, brands, logos or watermarks. No hanging textiles, no perspective, no objects overlapping cell boundaries. Strict4x4 regular packing.",
+      "tool": "built-in image_gen",
+      "targetSize": [
+        512,
+        512
+      ],
+      "grid": [
+        4,
+        4
+      ],
+      "transparentRequested": false,
+      "rawSha256": "fbce1aa9a193674994fe664cc6d9adf2b54d6e741de374c8959d81707fe303b6",
+      "rawBytes": 2655252,
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB",
+      "alphaRange": [
+        255,
+        255
+      ],
+      "alphaZeroFraction": 0.0,
+      "sourceCells": [
+        {
+          "index": 0,
+          "sourceRectPx": [
+            0,
+            0,
+            314,
+            314
+          ]
+        },
+        {
+          "index": 1,
+          "sourceRectPx": [
+            314,
+            0,
+            313,
+            314
+          ]
+        },
+        {
+          "index": 2,
+          "sourceRectPx": [
+            627,
+            0,
+            313,
+            314
+          ]
+        },
+        {
+          "index": 3,
+          "sourceRectPx": [
+            940,
+            0,
+            314,
+            314
+          ]
+        },
+        {
+          "index": 4,
+          "sourceRectPx": [
+            0,
+            314,
+            314,
+            313
+          ]
+        },
+        {
+          "index": 5,
+          "sourceRectPx": [
+            314,
+            314,
+            313,
+            313
+          ]
+        },
+        {
+          "index": 6,
+          "sourceRectPx": [
+            627,
+            314,
+            313,
+            313
+          ]
+        },
+        {
+          "index": 7,
+          "sourceRectPx": [
+            940,
+            314,
+            314,
+            313
+          ]
+        },
+        {
+          "index": 8,
+          "sourceRectPx": [
+            0,
+            627,
+            314,
+            313
+          ]
+        },
+        {
+          "index": 9,
+          "sourceRectPx": [
+            314,
+            627,
+            313,
+            313
+          ]
+        },
+        {
+          "index": 10,
+          "sourceRectPx": [
+            627,
+            627,
+            313,
+            313
+          ]
+        },
+        {
+          "index": 11,
+          "sourceRectPx": [
+            940,
+            627,
+            314,
+            313
+          ]
+        },
+        {
+          "index": 12,
+          "sourceRectPx": [
+            0,
+            940,
+            314,
+            314
+          ]
+        },
+        {
+          "index": 13,
+          "sourceRectPx": [
+            314,
+            940,
+            313,
+            314
+          ]
+        },
+        {
+          "index": 14,
+          "sourceRectPx": [
+            627,
+            940,
+            313,
+            314
+          ]
+        },
+        {
+          "index": 15,
+          "sourceRectPx": [
+            940,
+            940,
+            314,
+            314
+          ]
+        }
+      ],
+      "inspection": {
+        "countVerified": 16,
+        "paddingInstruction": "Crop sourceRectPx; for alpha use main object silhouette plus antialias fringe, then fit into final cell with at least 8% inset. Do not anisotropically resize source.",
+        "checkedBy": "atlas_sources agent visual inspection of actual generated pixels"
+      }
+    },
+    "water_ripple_n": {
+      "id": "water_ripple_n",
+      "prompt": "Use case: scientific-educational. Asset type: seamless tangent-space OpenGL +Y normal map for a realistic calm sea shader. Create one SQUARE water_ripple_n normal texture, final256x256. Soft overlapping small-water ripples and elongated rounded capillary cells of varied scale, no dominant direction, typical purple-blue normal-map colors, average (128,128,255), blue positive everywhere, variations in red/green encode surface slope. Orthographic mathematical surface normals, not a lit photograph, no albedo,no shadows,no light source, no black holes,no text,border,legend,objects. Perfectly seamless on all edges, continuous coherent natural ripples. Original. Full square coverage.",
+      "method": "OpenAI built-in image generator",
+      "rawSha256": "c4db48493833f8ef3870474439a27b5b5830dfe96e66681bd290af34c1c95d26",
+      "rawSize": [
+        1254,
+        1254
+      ],
+      "rawMode": "RGB"
+    }
+  }
+}

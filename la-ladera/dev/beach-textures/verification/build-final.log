@@ -1,0 +1,27 @@
+exported sand_dry
+exported sand_wet
+exported seabed_sand
+exported seabed_rock
+exported rock_sea
+exported seawall_concrete
+exported promenade_pavers
+exported jetty_planks
+exported pile_wood
+exported rope_hemp
+exported thatch_palm
+exported canvas_stripe
+exported boat_hull_paint
+exported water_ripple_n
+exported foam_noise
+exported caustic_tile
+exported sails_kites
+exported board_decks
+exported towels_bags
+exported signs_menus
+exported boat_names
+exported gull_sprites
+exported fish_sprites
+exported crab_shells
+exported seagrass_coral
+PNG + manifest bytes: 7,454,787 / 8,000,000
+RGBA8 full-mip GPU bytes: 58,370,684 / 167,772,160

@@ -1,0 +1,18 @@
+ok   textures                                                19.5 / 24 MB
+ok   models                                                  26.1 / 32 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       48.6 / 150 MB
+ok   estimated GPU texture memory                           307.7 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  2.53 MB  dev/beach-textures/eye-height-materials-1.png
+  2.28 MB  assets/textures/foliage_cards.png
+  2.13 MB  assets/models/furniture/furn_shop.glb
+  1.86 MB  dev/people-bodies-v2/before/torso-hands.png
+  1.86 MB  dev/beach-textures/eye-height-materials-2.png
+  1.82 MB  assets/models/people/people_lod.glb
+  1.59 MB  dev/people-bodies-v2/after/torso-hands.png
+PAYLOAD OK
