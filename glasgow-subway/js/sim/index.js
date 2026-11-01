@@ -15,6 +15,8 @@ import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
 import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
+import { cutStairHoles } from './stairs.js';
+import { Rats } from './rats.js';
 import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
@@ -88,6 +90,7 @@ class Sim {
       this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null);
       this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 6 : 18, this.quality, this.peopleLod) : null; this.saloonDone = false;
       this.scene.add(this.crowd.group); }
+    this.rats = new Rats(THREE); this.rats.onEvent = (kind, r) => this._ratEvent(kind, r);
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -486,7 +489,10 @@ class Sim {
   }
   _toPlatform() {
     const v = this.activeStation, inf = v.info, pt = this._lastPortal || (v.anchors.portals || [])[0] || { x: inf.xcP, z: 0 };
-    return this._teleport(() => { const w = this.walker; const px = (inf.xe + inf.xo) / 2; w.place(px, Math.max(-20, Math.min(20, pt.z - Math.sign(pt.z || 1) * 1.8)), 0); w.y = inf.PY; this.look.yaw = 0; this.look.pitch = 0; });
+    return this._teleport(() => {      // back on the platform the stairs came down to, a couple of metres from their foot, facing away from them
+      const w = this.walker, dir = Math.sign(pt.z || 1), px = pt.stair ? pt.x : (inf.xe + inf.xo) / 2, yaw = dir > 0 ? 0 : Math.PI;
+      w.place(px, Math.max(-20, Math.min(20, pt.z - dir * 1.8)), yaw); w.y = inf.PY; this.look.yaw = yaw; this.look.pitch = 0;
+    });
   }
 
   _boardTrain() {
@@ -587,7 +593,7 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
@@ -651,7 +657,7 @@ class Sim {
         const inf = cur.info; const g = cur.group;
         this.crowd.group.position.copy(g.position); this.crowd.group.rotation.copy(g.rotation);
         if (this.crowd.setWorld) this.crowd.setWorld(cur.zones, cur.obstacles.filter((o) => o.tall || Math.abs(o.y - cur.info.PY) < 1.2));
-        this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY));
+        this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY).concat(cur.crowdAvoid || []));
       }
     }
   }
@@ -870,7 +876,12 @@ class Sim {
           else if (nearEdge) msg = `The ${nm} train is in: walk to a door`;
         } }
       if (inf.hall && !this.context) {
-        for (const pt of (v.anchors.portals || [])) if (Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5) { this.context = { kind: 'portal', pt }; msg = '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
+        for (const pt of (v.anchors.portals || [])) {
+          const st = pt.stair, near = Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5;
+          const on = !!st && w.x > st.x0 - 0.05 && w.x < st.x1 + 0.05 && w.z > st.z0 - 0.05 && w.z < st.z1 + 0.05;     // on the flight (or its landing)
+          if (on && (w.z - st.exitZ) * st.dir >= 0 && w.y > st.yTop - 0.3 && !this.fadeLock) this._toAccess(pt);       // reached the top: through to the ticket hall
+          if (near || on) { this.context = { kind: 'portal', pt }; msg = on ? '<kbd>E</kbd> Go up to the ticket hall' : '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
+        }
         const ad = v.anchors.accessDoor;
         if (!this.context && ad && w.y < inf.PY + 0.6 && Math.hypot(w.x - ad.x, w.z - ad.z) < 1.8 && w.z < inf.rampZ0 + 2.4) { this.context = { kind: 'platform' }; msg = '<kbd>E</kbd> Go back down to the platform'; }
       }
@@ -1022,7 +1033,7 @@ class Sim {
         const lv = v.group.userData.psdLeaves;
         if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
       }
-      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position);
+      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position); this._updateRats(this.paused || this._modalOpen ? 0 : dt);
       if (this.saloon) { const sv = this.mode === 'ride' || this.mode === 'explore'; this.saloon.setEnabled(sv); if (sv) { if (!this.saloonDone) this._populateSaloon(); this.saloon.update(dt, this.time, null, this.camera.position); } }
       this._signal(svc);
       this.tms.update(dt, svc.info(), this.mode);
@@ -1060,6 +1071,21 @@ class Sim {
     let late = null;
     if (this.mode === 'drive' && svc.schedule) { const sched = svc.schedule.arr[svc.idx] + svc.lap * svc.schedule.period + (svc.t0 || 0); late = svc.phase === 'station' ? (svc.stopStatus && svc.stopStatus.late) : Math.max(svc.t - sched, -999); if (late != null && svc.phase !== 'station' && late < 0) late = null; }
     this.hud.update(info, { title, distText, sub, late });
+  }
+
+  /** explore only: the occasional rat on the track bed of the station you are standing in (see rats.js) */
+  _updateRats(dt) {
+    const R = this.rats; if (!R) return;
+    const v = this.activeStation, on = this.mode === 'explore' && this.ctxKind === 'station' && v && v.info && v.info.hall;
+    if (!on) { if (R.view) R.detach(); return; }
+    R.attach(v);
+    const sh = this.shuttle, bg = this.bg, w = this.walker;
+    R.update(dt, { walker: { x: w.x, z: w.z, y: w.y }, own: { state: sh.state, timer: sh.timer }, other: bg && bg.mode === 'shuttle' && bg.sh ? { state: bg.sh.state, timer: bg.sh.timer } : null });
+  }
+  _ratEvent(kind, r) {
+    if (kind !== 'bolt' || !this.audio || !this.audio.squeak) return;
+    const w = this.walker, d = Math.hypot(w.x - r.x, w.z - r.z);
+    if (d < 16) this.audio.squeak(Math.min(1, 3 / Math.max(d, 1.5)));
   }
 
   _lightPool() {
@@ -1208,7 +1234,7 @@ class Sim {
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
       stationView: async (i) => this._prepare(i),
-      peopleAudit: () => this._peopleAudit(),
+      peopleAudit: () => this._peopleAudit(), rats: () => this.rats,
       peopleBind: () => { const c = this.crowd, T = this.THREE; if (!c.chars) return null; let miss = 0, tracks = 0, lodMiss = 0; const bad = new Set();
         for (const lod of [false, true]) for (const ch of c.chars) { if (lod && !ch.lodNode) continue; const o = c._clone(ch, lod); const seen = new Set();
           for (const cat of Object.keys(ch.pools)) for (const clip of ch.pools[cat]) for (const k of clip.tracks) { const nm = k.name.replace(/\.(quaternion|position|scale)$/, ''); const key = nm; if (seen.has(key)) continue; seen.add(key); tracks++; if (!T.PropertyBinding.findNode(o, nm)) { lod ? lodMiss++ : miss++; bad.add(ch.id + ':' + nm); } } }
@@ -1240,7 +1266,7 @@ class Sim {
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
     const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
-    this.audio.dispose(); this.hud.dispose();
+    this.audio.dispose(); this.hud.dispose(); if (this.rats) this.rats.dispose();
     for (const v of this.stationViews.values()) v.dispose();
     // geometries AND materials/textures (GLB maps, canvas textures) - otherwise every start/dispose cycle leaks ~27 GPU textures
     const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap', 'lightMap'];

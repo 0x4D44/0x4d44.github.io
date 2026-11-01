@@ -7,6 +7,7 @@ import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, 
 import { hallPosterZone, ceilingAtHallX, hallWallClutter } from './hall.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 import { kitParts, instanceKit, placeMatrix } from './kit.js';
+import { buildStairs, stairZ, STAIR } from './stairs.js';
 
 export const PY = 0.695;           // platform surface above rail head
 export const EDGE = 1.5;          // track centre to platform edge
@@ -48,6 +49,7 @@ export function buildStation(THREE, o) {
   const PLraw = Math.max(st.platform && st.platform.lengthM || 45, trainLen + 6) / 2;
   const PL = useHall ? 22.5 : useVault ? Math.ceil(PLraw / 0.6) * 0.6 : PLraw;
   let W, xe, xo, otherTrackX, xa, xb, vaultT = 0, hallHL = 0, hallHR = 0;   // hallHL/HR: hall half-widths to the left/right wall (hall frame)
+  let hallG = null, hallMat = null, hallToL = null;                          // the placed hall clone, its tile materials and the hall->local mapping (the platform-end stairs are built in hall coordinates)
   if (useHall) {
     xe = HL.xe; xo = HL.xo; otherTrackX = HL.otherTrackX; W = Math.abs(xo - xe);
     const hh = hall.info.hallHalfWidth || [8, 8], wm = hall.tpl.userData.wallX;   // the measured wall surfaces beat the nominal half-widths (island halls: walls at 5.02, nominal 4.25)
@@ -160,6 +162,8 @@ export function buildStation(THREE, o) {
     if (psdN) psdN.traverse((m) => { if (m.isMesh && m.material && /orange/.test(m.material.name)) leaves.push(m); });
     group.userData.psdLeaves = leaves;
     hg.traverse((n) => { n.userData.shared = true; });
+    hallG = hg; hallToL = toL; hallMat = { dado: null, wall: null };
+    hg.traverse((n) => { if (!n.isMesh || !n.material || Array.isArray(n.material)) return; const nm = n.material.name || ''; if (!hallMat.dado && /^dado_/.test(nm)) hallMat.dado = n.material; else if (!hallMat.wall && /^wall_/.test(nm)) hallMat.wall = n.material; });
     // lights (hall empties light_k_j) and exit markers
     const portals = [];
     hg.traverse((n) => {
@@ -404,10 +408,40 @@ export function buildStation(THREE, o) {
     const doorM = new THREE.MeshBasicMaterial({ color: 0xffd9a0, side: THREE.DoubleSide }); const dd = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.1), doorM); dd.position.set(rc, PY + 1.05, rampZ0 + 0.03); dd.rotation.y = 0; group.add(dd);
     plane(rc, PY + 2.4, rampZ0 + 0.06, 0, 1, 2.2, 0.55, new THREE.MeshBasicMaterial({ map: way('To platforms', '#0f2a4a'), side: THREE.DoubleSide }));
     anchors.accessDoor = { x: rc, z: rampZ0 + 1.0, y: PY };
-    // way-out signs hung above each exit marker on the platform
+    // the way out: a real flight of steps at each platform end, rising through a stairwell opening cut in the hall ceiling (see stairs.js), with a way-out sign
+    // hung over its foot. (Without a stair spec - the ceiling cut failed - the exit is only marked by the sign and a faint floor disc.)
+    const specs = hall.tpl.userData.stairs || [], sgn = HL.sg, own = HL.ownX, rectL = (r) => {
+      const [xa2, za2] = hallToL(r.x0, r.z0), [xb2, zb2] = hallToL(r.x1, r.z1);
+      return { x0: Math.min(xa2, xb2), x1: Math.max(xa2, xb2), z0: Math.min(za2, zb2), z1: Math.max(za2, zb2) };
+    };
+    const signMat = new THREE.MeshBasicMaterial({ map: way('Way out / Stairs', '#14532d') }), rodMat = new THREE.MeshLambertMaterial({ color: 0x15171a }); ownMats.push(signMat, rodMat);
+    anchors.stairs = [];
     for (const pt of (anchors.portals || [])) {
-      for (const f of [1, -1]) plane(pt.x, 2.9, pt.z + f * 0.05, 0, f, 1.6, 0.4, new THREE.MeshBasicMaterial({ map: way('Way out / Stairs', '#14532d'), side: THREE.DoubleSide }));
-      const ring = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ color: 0x2bd47a, transparent: true, opacity: 0.35, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.set(pt.x, PY + 0.02, pt.z); group.add(ring);
+      const hx = sgn * pt.x + own, hz = sgn * pt.z;                      // the marker, back in the hall frame
+      const sp = specs.reduce((b, q) => (!b || Math.hypot(q.x - hx, q.d * STAIR.foot - hz) < Math.hypot(b.x - hx, b.d * STAIR.foot - hz) ? q : b), null);
+      if (!sp || Math.hypot(sp.x - hx, sp.d * 21 - hz) > 1.5) {         // no stair for this marker: keep the old floor disc
+        const ring = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24), new THREE.MeshBasicMaterial({ color: 0x2bd47a, transparent: true, opacity: 0.35, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.set(pt.x, PY + 0.02, pt.z); group.add(ring);
+        for (const f of [1, -1]) plane(pt.x, 2.9, pt.z + f * 0.05, 0, f, 1.6, 0.4, signMat);
+        continue;
+      }
+      const dado = hallMat.dado ? hallMat.dado.clone() : null, wallM = hallMat.wall ? hallMat.wall.clone() : null; if (dado) ownMats.push(dado); if (wallM) ownMats.push(wallM);
+      const st = buildStairs(THREE, sp, { dado, wall: wallM });
+      st.group.rotation.y = hallG.rotation.y; st.group.position.copy(hallG.position); group.add(st.group); ownMats.push(...st.owned);
+      // portal = the spot at the foot where passengers leave / join the platform
+      const [px, pz] = hallToL(sp.x, stairZ(sp, -0.45)); pt.x = px; pt.z = pz;
+      const ra = rectL(st.ramp), tp = rectL(st.top), dl = sgn * sp.d, footZ = sgn * stairZ(sp, 0), endZ = sgn * stairZ(sp, sp.uE);
+      const up = footZ < endZ;           // local z grows with the climb?
+      zones.push({ kind: 'ramp', x0: ra.x0, x1: ra.x1, z0: ra.z0, z1: ra.z1, y0: up ? st.ramp.yFoot : sp.yTop, y1: up ? sp.yTop : st.ramp.yFoot, push: 0, lane: 'stairs', prio: true, name: 'stairs' });
+      zones.push({ kind: 'flat', x0: tp.x0, x1: tp.x1, z0: tp.z0, z1: tp.z1, y: sp.yTop, prio: true, name: 'stairtop' });
+      for (const o of st.obstacles) { const r = rectL(o); obstacles.push({ ...r, y: -99, tall: true }); }
+      for (const l of st.lights) { const [lx, lz] = hallToL(l.x, l.z); lights.push({ ...l, x: lx, z: lz }); }
+      const av = rectL(st.avoid); (anchors.stairAvoid = anchors.stairAvoid || []).push(av);
+      pt.stair = { x0: ra.x0, x1: ra.x1, z0: Math.min(ra.z0, tp.z0), z1: Math.max(ra.z1, tp.z1), yTop: sp.yTop, dir: dl, exitZ: sgn * stairZ(sp, sp.uT + 0.5), foot: [px, pz] };
+      anchors.stairs.push(pt.stair);
+      // way-out sign hung over the foot, both faces, on two rods from the ceiling
+      const sz = sgn * stairZ(sp, -0.35), top = sp.ceilMin, sx = pt.x;
+      for (const f of [1, -1]) plane(sx, 2.85, sz + f * 0.05, 0, f, 1.6, 0.4, signMat);
+      for (const rx of [-0.7, 0.7]) { const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, top - 3.05, 6), rodMat); rod.position.set(sx + rx, (top + 3.05) / 2, sz); group.add(rod); }
     }
   }
   plane(cx, Hc + 3.1, gz - 0.1, 0, -1, 4.2, 0.7, new THREE.MeshBasicMaterial({ map: way('Tickets - Gates', '#6b2020'), side: THREE.DoubleSide }));
@@ -490,7 +524,7 @@ export function buildStation(THREE, o) {
     group.traverse((o) => { if (o.userData.shared || o.isInstancedMesh) return; if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { if (m.map && m.map.userData && m.map.userData.canvas) m.map.dispose(); m.dispose(); }); } });
     ownMats.forEach((m) => m.dispose()); indicators.forEach((i) => i.tex.dispose());
   };
-  return { group, zones, obstacles, anchors, info, update, dispose, lights, style, facts, indicators };
+  return { group, zones, obstacles, anchors, info, update, dispose, lights, style, facts, indicators, crowdAvoid: anchors.stairAvoid || [] };
 }
 
 /** Place the station group in the world from the Track stop's straightened frame. */

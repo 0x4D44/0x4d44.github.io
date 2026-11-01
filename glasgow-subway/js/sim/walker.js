@@ -21,6 +21,7 @@ export class Walker {
     for (const zn of this.zones) {
       if (!inZone(zn, x, z, 0.0)) continue;
       const h = zoneHeight(zn, x, z), d = Math.abs(h - nearY);
+      if (zn.prio && d < 0.75) return h;      // a staircase rising out of a floor (the platform): while you are on the steps they win, whatever the floor beside them says
       if (d < bd) { bd = d; best = h; }
     }
     return best == null ? null : (bd < 0.75 || nearY > 1e8 ? best : null);
