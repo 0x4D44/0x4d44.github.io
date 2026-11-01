@@ -180,12 +180,18 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
         build_bay(sal, P, a, bb, CFG, end_a=(bi > 0), end_b=(not wc and bi < len(bays) - 1))
         if bb - a > 0.6: benches.append((yc + s * a, yc + s * bb))
         if wc:
+            # Two folded tip-up seats per side in the free wall strip between the cab partition (inner face CAB_Y - 0.025) and the first door's edge
+            # (a - 0.05).  The strip is only ~0.83 m: the old layout (0.40 m frames at b - 0.3 / b - 0.75, b = CAB_Y - 0.2) put the second seat and the
+            # blue priority sign ~0.28 m INSIDE the doorway, so they showed through the open door.  Pack them flush against the partition instead.
+            sw_f, sw_p, gap = 0.36, 0.324, 0.03                 # frame / moquette panel widths along the car, gap between the two seats
+            hi = CAB_Y - 0.03
+            assert hi - 2 * sw_f - gap > a - 0.05, 'cab-end tip-up seats would overlap the doorway'
             for sg in (-1, 1):
                 for k in (0, 1):
-                    yy = b - 0.3 - k * 0.45
-                    sal.box(P(sg * (RI - 0.06), yy, FLOOR + 0.75), (0.05, 0.4, 0.40), 'plastic_dark')
-                    sal.box(P(sg * (RI - 0.09), yy, FLOOR + 0.75), (0.03, 0.36, 0.36), 'seat_moquette')
-            sal.box(P(RI - 0.04, b - 0.7, 1.55), (0.02, 0.3, 0.3), 'sign_blue')
+                    yy = hi - sw_f / 2 - k * (sw_f + gap)
+                    sal.box(P(sg * (RI - 0.06), yy, FLOOR + 0.75), (0.05, sw_f, 0.40), 'plastic_dark')
+                    sal.box(P(sg * (RI - 0.09), yy, FLOOR + 0.75), (0.03, sw_p, 0.36), 'seat_moquette')
+            sal.box(P(RI - 0.04, hi - sw_f / 2 - (sw_f + gap), 1.55), (0.02, 0.27, 0.3), 'sign_blue')
     # ---- orange poles at x=+-0.58, curved tops to the overhead rails at x=+-0.45
     pole_ys = []
     for d in DOORS:
