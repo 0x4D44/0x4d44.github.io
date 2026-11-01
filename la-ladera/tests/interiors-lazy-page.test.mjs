@@ -7,7 +7,7 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch } from './chrome.mjs';
 
-let b, page, lazyFinal = null;
+let b, page, lazyFinal = null, lazyContents = null;
 const kit = (expr, timeout) => page.eval(`(async () => JSON.stringify(await (async () => { const K = window.__k; ${expr} })()))()`, timeout).then(JSON.parse);
 
 /** Runs IN the page once: the little kit every test below uses (all through the public surface: __ladera, ctx.interiors, ctx.interact). */
@@ -33,7 +33,7 @@ function installKit() {
   /** Interior groups that have any geometry in them (the groups exist, empty, from the plan on). */
   K.made = () => [...c.batch.groups].filter(([k, g]) => k.endsWith('.int') && c.buildings.has(k.slice(0, -4)) && g.meshes.length > 0).length;
   /** The furniture's interact items (`int:`), as a count and a hash of their ids (the seat items carry the running number of an anchor: `sita57`, which follows the order the data was made in; that number is not
-   *  part of the comparison). The containers' (`cont:`) are made when the player goes into a house, so they are the walking's, not the barrio's. */
+   *  part of the comparison). The containers' (`cont:`) are made when the player goes into a house, so they are the walking's, not the barrio's (what they hold is compared by K.contents). */
   K.itemSig = () => {
     const ids = [...c.interact.items.keys()].filter((id) => /^int:/.test(id)).map((id) => id.replace(/sita\d+$/, 'sita')).sort();
     let h = 2166136261; for (const id of ids) for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
@@ -44,6 +44,21 @@ function installKit() {
     const st = L.state();
     return { buildings: st.buildings, furniture: [...c.buildings.values()].reduce((n, bp) => n + (bp.furniture?.length ?? 0), 0), anchors: st.anchors, lights: st.lights, discoveries: st.discoveries, npcs: st.npcs,
       errors: st.errors, items: K.itemSig(), made: K.made(), sealed: c.interiors?.sealed ?? null, built: c.interiors?.built ?? null, late: c.interiors?.stats.late ?? null, pending: c.staged?.pending.length ?? null };
+  };
+  /** The contents plan and the drawers (contents.js): wakes the containers of every building (a page whose data has sealed), then digests the plan (the papers and finds of every household), the slot every one
+   *  was pinned to, and what makeContents puts in every slot. The eager page's answer is the one the lazy page's has to be (the plan reads every building's furniture: a wake before the seal made it from a bare barrio). */
+  K.contents = async () => {
+    const { makeContents, contentStats } = await import('/la-ladera/js/interiors/contents.js'), C = c.containers;
+    for (const bid of [...C.pending.keys()]) C.activate(bid);
+    const plan = c.contentPlan; if (!plan) return null;
+    const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
+    const units = plan.units.map((u) => `${u.bid}|${u.hh.id}|${u.papers.join(',')}|${u.finds.join(',')}`), slots = [];
+    for (const list of C.byBuilding.values()) for (const S of list) slots.push(`${S.id}|${S.plan?.paper ?? '-'}|${S.plan?.find ?? '-'}|${hash(JSON.stringify(makeContents(c, S)))}`);
+    slots.sort();
+    const st = contentStats(c), out = { buildings: C.byBuilding.size, slots: slots.length, households: units.length, plan: hash(units.join('\n')), pins: hash(slots.map((s) => s.split('|').slice(0, 3).join('|')).join('\n')),
+      drawers: hash(slots.join('\n')), orphans: st.orphans, planned: st.planned, pinned: { papers: st.papers, finds: st.finds } };
+    for (const id of [...C.byBuilding.keys()]) C.deactivate(id);
+    return out;
   };
   return true;
 }
@@ -149,7 +164,7 @@ test('a door of a house that is not made waits for it, says so after a moment, a
   assert.equal(r.errors, 0);
 });
 
-test('a teleport into a house that is not made lands in a furnished room: the house is made in that call, its containers wake, its furniture is there, nothing is bare', async (t) => {
+test('a teleport into a house that is not made lands in a furnished room: the house is made in that call, its containers wake (once the data pass has sealed), its furniture is there, nothing is bare', async (t) => {
   const r = await kit(`
     const L = __ladera, c = L.ctx, m = c.interiors; await m.whenPacks();
     const F = K.farthest(); if (!F) return { skip: 'no far building' };
@@ -159,10 +174,12 @@ test('a teleport into a house that is not made lands in a furnished room: the ho
     const bp = c.buildings.get(F.id), g = c.batch.groups.get(F.id + '.int'), rec = c.visibility.ints.find((i) => i.bid === F.id), st = L.state();
     L.render();
     const first = { indoors: st.indoors, building: st.building, furniture: bp.furniture?.length ?? 0, meshes: g?.meshes.length ?? 0, visible: g?.obj.visible, on: rec?.on, ready: rec?.ready };
-    L.step(70);                                                                                              // (a second of play: the 4 Hz scan wakes the containers of the house the player is in)
+    L.step(70);                                                                                              // (a second of play: the 4 Hz scan has had its turns)
+    const early = { sealed: m.sealed, slots: (c.containers.byBuilding.get(F.id) ?? []).length };            // (the containers sleep while the data pass is under way, see the second boot below; they wake once it has sealed)
+    const sealedAt = m.sealed ? 0 : await K.until(() => m.sealed, 30000); L.step(70);
     const slots = c.containers.byBuilding.get(F.id) ?? [], woke = { slots: slots.length, reachable: slots.filter((s) => s.reachable).length };
     const frames = await K.until(() => m.ready(F.id), 6000);                                                 // (and it is warm a little later: the room was shown meanwhile)
-    return { id: F.id, ready0, furn0, first, woke, ready: m.ready(F.id), frames, ensured: m.stats.ensured - e0, late: m.stats.late - late0, errors: L.state().errors };`, 120000);
+    return { id: F.id, ready0, furn0, first, early, sealedAt, woke, ready: m.ready(F.id), frames, ensured: m.stats.ensured - e0, late: m.stats.late - late0, errors: L.state().errors };`, 240000);
   if (r.skip) return t.skip(r.skip);
   assert.equal(r.ready0, false, `${r.id} was not made before the teleport`);
   assert.equal(r.ensured, 1, 'made in the call of the teleport (its hook)');
@@ -170,7 +187,9 @@ test('a teleport into a house that is not made lands in a furnished room: the ho
   assert.equal(r.first.indoors, true); assert.equal(r.first.building, r.id);
   assert.ok(r.first.furniture > 0, `${r.first.furniture} furniture records (${r.furn0} before)`);
   assert.ok(r.first.meshes > 0 && r.first.visible === true && r.first.on === true && r.first.ready === true, `the interior's meshes are in the scene and shown at the first frame (${JSON.stringify(r.first)})`);
-  assert.ok(r.woke.slots > 0 && r.woke.reachable > 0, `its containers woke: ${r.woke.slots} slots, ${r.woke.reachable} reachable`);
+  if (!r.early.sealed) assert.equal(r.early.slots, 0, 'no container woke while the data pass was under way');
+  assert.ok(r.sealedAt >= 0, 'the data pass sealed');
+  assert.ok(r.woke.slots > 0 && r.woke.reachable > 0, `its containers woke once the data had sealed: ${r.woke.slots} slots, ${r.woke.reachable} reachable`);
   assert.equal(r.ready, true, `and it was warm after ${r.frames} frames`);
   assert.equal(r.errors, 0);
 });
@@ -215,6 +234,38 @@ test('once everything is made (settle) the barrio is the one an eager boot makes
   assert.equal(lazyFinal.made, 109, 'every building has its interior in the scene');
 });
 
+test('a second lazy boot, the player in a house in its first seconds: no container wakes until the data pass has sealed (the contents plan reads every building\'s furniture), and settled, every drawer holds what the eager boot\'s holds', async (t) => {
+  page = await b.open('la-ladera/index.html?autostart&manual&lazy=1');                  // (a boot of its own: the player walks into a house at once, which the near-radius test above must not have seen)
+  await page.eval('__ladera.setHour(10)');
+  await page.fn(installKit);
+  const r = await kit(`
+    const L = __ladera, c = L.ctx, m = c.interiors; await m.whenPacks();
+    const p = { ...c.player.s }, cands = [...c.buildings.values()].filter((bp) => bp.entrances?.length).sort((a, z) => K.gap(a, p.x, p.z) - K.gap(z, p.x, p.z));
+    let B = null;
+    for (const bp of cands.slice(0, 12)) {                                                                   // (the nearest house with openable furniture: it is made in the call of the teleport)
+      const en = bp.entrances[0], [ix, iy, iz] = en.inside;
+      L.teleport(ix, iz, { y: iy, yaw: en.yawIn ?? 0 }); L.step(2);
+      if (c.containers?.pending.has(bp.id)) { B = bp; break; }
+    }
+    if (!B) return { skip: 'no near building with openable furniture' };
+    L.step(70);                                                                                              // (a second of play: the 4 Hz scan has had its turns)
+    const C = c.containers, e = C.pending.get(B.id), q = c.player.s;
+    return { id: B.id, sealed: m.sealed, furnished: m.summary().data, near: Math.hypot(q.x - e.cx, q.z - e.cz) - e.r < 10 && e.group.obj.visible !== false, woke: C.byBuilding.size, activations: C.activations,
+      plan: c.contentPlan !== undefined, errors: L.state().errors };`, 120000);
+  if (r.skip) return t.skip(r.skip);
+  await page.eval('window.__ladera.settle({ timeout: 300000 }).then(() => true)', 400000);
+  lazyContents = await kit('return await K.contents();', 240000);                       // (every building's containers woken: the plan, the pins and the drawers; the eager page is asked the same below)
+  assert.equal(r.sealed, false, `the data pass had sealed already (${r.furnished} buildings furnished): there is nothing to hold back, and this test proves nothing`);
+  assert.ok(r.furnished < 20, `${r.furnished} of 109 buildings furnished: most of the barrio is still bare`);
+  assert.equal(r.near, true, `the player is within reach of the fronts of ${r.id} and its interior is shown: only the data pass keeps its containers asleep`);
+  assert.equal(r.woke, 0, `a container woke with ${r.furnished} of 109 buildings furnished`);
+  assert.equal(r.activations, 0);
+  assert.equal(r.plan, false, `the contents plan was made with ${r.furnished} of 109 buildings furnished: it plans the unfurnished ones without a limit, so the drawers differ from the eager boot's`);
+  assert.equal(r.errors, 0);
+  assert.ok(lazyContents && lazyContents.buildings > 100, `${lazyContents?.buildings} buildings with openable furniture woke once settled`);
+  assert.equal(lazyContents.orphans, 0, 'a paper or a find planned with no slot of its own');
+});
+
 test('the eager boot is the default and is unchanged: no queue, no manager, every interior made before the milestone, the same world the lazy boot settles to', async () => {
   page = await b.open('la-ladera/index.html?autostart&manual&lazy=0');                  // (`lazy=0` says it outright: LADERA_LAZY=1 turns every page that does not name `lazy=` into a lazy one)
   await page.fn(installKit);
@@ -226,4 +277,8 @@ test('the eager boot is the default and is unchanged: no queue, no manager, ever
   assert.ok(lazyFinal, 'the lazy boot settled in the test before');
   for (const k of ['buildings', 'furniture', 'anchors', 'lights', 'npcs', 'made', 'items']) assert.equal(lazyFinal[k], e[k], `${k}: lazy ${lazyFinal[k]} and eager ${e[k]}`);
   assert.equal(lazyFinal.discoveries[1], e.discoveries[1], 'the total of discoveries (what the walking before it has found is not part of it)');
+  // the contents plan reads every building's furniture, so what the drawers hold is the same only if no container woke before the data pass sealed (the second lazy boot above holds that back)
+  const ec = await kit('return await K.contents();', 240000);
+  assert.ok(lazyContents, 'the second lazy boot settled and woke its containers in the test before');
+  assert.deepEqual(lazyContents, ec, 'the plan, the slots every paper and find lie in and what every drawer holds: the lazy barrio differs from the eager one');
 });
