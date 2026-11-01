@@ -25,33 +25,33 @@ export function curve(pts) {
 const SHAPES = {
   huia: {
     kind: "saloon", doors: 4, bonnetT: [0.075, 0.33], bumper: [0.075, 0.07],
-    top: [[0, 0.56], [0.03, 0.66], [0.08, 0.76], [0.2, 0.86], [0.33, 0.92], [0.55, 0.94], [0.82, 0.965], [0.95, 0.955], [1, 0.86]],
+    top: [[0, 0.54], [0.03, 0.64], [0.08, 0.74], [0.2, 0.82], [0.3, 0.875], [0.5, 0.91], [0.8, 0.915], [0.93, 0.9], [1, 0.82]],
     wid: [[0, 0.74], [0.03, 0.9], [0.1, 0.985], [0.2, 1], [0.8, 1], [0.93, 0.97], [1, 0.84]],
-    cab: { t0: 0.335, rs: 0.5, re: 0.715, t1: 0.795, roof: 1.395, w: 0.76, bPillar: true, tum: 0.2, bt: 0.535, boot: 0.835 },
-    sill: 0.2, wing: "gt", scoop: "bonnet", roofScoop: true, nTop: 3.4, lamp: "round", spotBar: true,
+    cab: { t0: 0.29, rs: 0.43, re: 0.68, t1: 0.775, g1: 0.55, roof: 1.395, w: 0.77, bPillar: true, tum: 0.2, bt: 0.49, boot: 0.80 },
+    sill: 0.2, flare: 1, wingH: 0.3, wing: "gt", scoop: "bonnet", roofScoop: true, nTop: 3.4, lamp: "round", spotBar: true,
     rim: 0x8a8d92, spokes: 10, rimStyle: "mesh",
   },
   kea: {
     kind: "hatch", doors: 2, bonnetT: [0.08, 0.34], bumper: [0.075, 0.075],
-    top: [[0, 0.54], [0.03, 0.66], [0.09, 0.78], [0.22, 0.87], [0.36, 0.925], [0.6, 0.95], [0.9, 0.96], [1, 0.9]],
+    top: [[0, 0.52], [0.03, 0.64], [0.09, 0.75], [0.2, 0.83], [0.3, 0.875], [0.5, 0.9], [0.8, 0.915], [0.93, 0.905], [1, 0.84]],
     wid: [[0, 0.78], [0.04, 0.93], [0.1, 0.99], [0.2, 1], [0.85, 1], [0.95, 0.96], [1, 0.86]],
-    cab: { t0: 0.32, rs: 0.46, re: 0.79, t1: 0.985, roof: 1.41, w: 0.77, bPillar: true, tum: 0.16 },
-    sill: 0.2, wing: "roof", scoop: "none", roofScoop: false, nTop: 3.0, lamp: "wide", spotBar: false,
+    cab: { t0: 0.3, rs: 0.43, re: 0.78, t1: 0.975, roof: 1.41, w: 0.78, bPillar: true, tum: 0.16 },
+    sill: 0.2, flare: 1.2, wing: "roof", scoop: "none", roofScoop: false, nTop: 3.0, lamp: "wide", spotBar: false,
     rim: 0xe8e8ec, spokes: 5, rimStyle: "spoke",
   },
   takahe: {
     kind: "kit", doors: 2, bonnetT: [0.08, 0.38], bumper: [0.09, 0.08],
-    top: [[0, 0.5], [0.03, 0.6], [0.1, 0.71], [0.25, 0.79], [0.4, 0.84], [0.6, 0.865], [0.88, 0.89], [1, 0.82]],
+    top: [[0, 0.5], [0.03, 0.6], [0.1, 0.7], [0.22, 0.77], [0.32, 0.82], [0.5, 0.855], [0.8, 0.875], [0.93, 0.86], [1, 0.8]],
     wid: [[0, 0.8], [0.05, 0.94], [0.12, 1], [0.8, 1], [0.94, 0.97], [1, 0.86]],
-    cab: { t0: 0.375, rs: 0.5, re: 0.66, t1: 0.86, roof: 1.37, w: 0.74, bPillar: false, tum: 0.28 },
+    cab: { t0: 0.3, rs: 0.43, re: 0.7, t1: 0.88, g1: 0.4, roof: 1.37, w: 0.75, bPillar: false, tum: 0.26 },
     sill: 0.19, wing: "small", scoop: "side", roofScoop: true, nTop: 2.6, lamp: "slit", spotBar: false,
     rim: 0xd9a72b, spokes: 6, rimStyle: "spoke",
   },
   piwakawaka: {
     kind: "coupe", doors: 2, bonnetT: [0.07, 0.42], bumper: [0.07, 0.07],
-    top: [[0, 0.54], [0.03, 0.64], [0.08, 0.72], [0.28, 0.8], [0.45, 0.86], [0.7, 0.9], [0.9, 0.93], [1, 0.84]],
+    top: [[0, 0.52], [0.03, 0.62], [0.08, 0.7], [0.28, 0.77], [0.4, 0.82], [0.6, 0.865], [0.85, 0.89], [1, 0.8]],
     wid: [[0, 0.74], [0.04, 0.92], [0.1, 0.985], [0.2, 1], [0.82, 1], [0.94, 0.98], [1, 0.86]],
-    cab: { t0: 0.43, rs: 0.57, re: 0.69, t1: 0.88, roof: 1.31, w: 0.76, bPillar: false, tum: 0.3 },
+    cab: { t0: 0.35, rs: 0.49, re: 0.67, t1: 0.86, g1: 0.55, roof: 1.31, w: 0.77, bPillar: false, tum: 0.3 },
     sill: 0.2, wing: "duck", scoop: "bonnet-low", roofScoop: false, nTop: 2.9, lamp: "pop", spotBar: true,
     rim: 0x1c1c20, spokes: 5, rimStyle: "spoke",
   },
@@ -65,7 +65,7 @@ export function dimsFor(spec) {
   const L = spec.length || 4.2, W = spec.width || 1.75, H = spec.height || 1.4;
   const a = spec.wheelbase * (1 - (spec.weightFront ?? 0.55)); // CoM -> front axle
   const b = spec.wheelbase - a; // CoM -> rear axle
-  const frontOv = (L - spec.wheelbase) * 0.46, rearOv = (L - spec.wheelbase) - frontOv;
+  const frontOv = (L - spec.wheelbase) * 0.56, rearOv = (L - spec.wheelbase) - frontOv;
   const zF = -(a + frontOv), zR = b + rearOv;
   const zAt = (t) => zF + t * (zR - zF);
   const tAt = (z) => (z - zF) / (zR - zF);
