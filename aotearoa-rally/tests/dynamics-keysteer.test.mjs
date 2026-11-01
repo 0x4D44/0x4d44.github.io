@@ -187,3 +187,45 @@ test("R40 gravel bend: every car holds at least 60 km/h round a 40 m radius bend
     assert.ok(!off && minV >= U * 0.8, `${id}: min speed ${(minV * 3.6).toFixed(0)} km/h, off road ${off}`);
   }
 });
+
+// ---- round 7: verge pull and brake pedal ----
+test("brake pedal: a full press reaches 90% brake within 70 ms (keyboard friendly)", () => {
+  const st = flatStage(SURFACE.TARMAC);
+  const v = createVehicle(CARS.huia, { tyre: "tarmac" });
+  v.reset(st.startPose, 100 / 3.6, st);
+  const inp = { steer: 0, throttle: 0, brake: 1, handbrake: 0, gearUp: false, gearDown: false };
+  for (let i = 0; i < Math.round(0.07 / DT); i++) { v.step(DT, inp, st); v.state.events.length = 0; }
+  assert.ok(v.state.brake >= 0.9, `brake ${v.state.brake.toFixed(2)} after 70 ms`);
+});
+
+// ---- round 7: speed-dependent downforce ----
+test("downforce: a held key on gravel corners harder at 150 km/h than at 60 km/h (lateral g up by >= 8%, every car) and still stays under 1 g", () => {
+  const g = (id, kmh) => {
+    const r = keyRun(id, "GRAVEL", "gravel", kmh / 3.6, Infinity, 1.9);
+    let sum = 0, n = 0;
+    for (let i = 0; i < r.t.length; i++) if (r.t[i] >= 0.8 && r.t[i] <= 1.8) { sum += r.yawRate[i] * r.speed[i] / 9.81; n++; }
+    return sum / n;
+  };
+  for (const id of CAR_IDS) {
+    const lo = g(id, 60), hi = g(id, 150);
+    assert.ok(hi >= lo * 1.08, `${id}: ${lo.toFixed(3)} g at 60 km/h, ${hi.toFixed(3)} g at 150 km/h`);
+    assert.ok(hi < 1.0, `${id}: ${hi.toFixed(3)} g at 150 km/h`);
+  }
+});
+
+// ---- round 7: straight-line ABS on tarmac ----
+test("tarmac ABS: Huia and Kea stop from 100 km/h in under 46 m on tarmac (wheels no longer lock), gravel stops are untouched (>= 67 m), nobody drops under 40 m", () => {
+  const stop = (id, surf, tyre) => {
+    const st = flatStage(surf);
+    const v = createVehicle(CARS[id], { tyre });
+    v.reset(st.startPose, 100 / 3.6, st);
+    const inp = { steer: 0, throttle: 0, brake: 1, handbrake: 0, gearUp: false, gearDown: false };
+    const d0 = v.state.distance;
+    for (let i = 0; i < 120 * 15 && v.state.speed > 0.5; i++) { v.step(DT, inp, st); v.state.events.length = 0; }
+    return v.state.distance - d0;
+  };
+  for (const id of ["huia", "kea"]) { const d = stop(id, SURFACE.TARMAC, "tarmac"); assert.ok(d < 46, `${id}: ${d.toFixed(1)} m on tarmac`); }
+  for (const id of CAR_IDS) { const d = stop(id, SURFACE.TARMAC, "tarmac"); assert.ok(d >= 40, `${id}: ${d.toFixed(1)} m on tarmac, floor 40`); }
+  const g = stop("huia", SURFACE.GRAVEL, "gravel");
+  assert.ok(g >= 67, `huia gravel ${g.toFixed(1)} m`);
+});

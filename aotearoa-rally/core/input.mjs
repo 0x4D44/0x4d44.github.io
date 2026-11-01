@@ -258,7 +258,7 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
       // keyboard smoothing: steering ramps in, snaps back faster; pedals ramp briefly
       kbSteer = rawKeys ? approach(kbSteer, k.steer, (k.steer ? 5 : 9) * dt) : shapeKeySteer(kbSteer, k.steer, speed, dt);
       kbThrottle = approach(kbThrottle, k.throttle, (k.throttle ? 7 : 12) * dt);
-      kbBrake = approach(kbBrake, k.brake, (k.brake ? 9 : 14) * dt);
+      kbBrake = approach(kbBrake, k.brake, (k.brake ? 16 : 14) * dt);
       let steer = kbSteer, throttle = kbThrottle, brake = kbBrake, handbrake = k.handbrake;
       let gUp = k.gearUp, gDown = k.gearDown;
       if (k.steer || k.throttle || k.brake) info.lastDevice = "keyboard";
