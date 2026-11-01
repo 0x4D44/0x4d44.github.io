@@ -41,7 +41,8 @@ export class Crowd {
   /** stream of people from a to b that vanish at b (boarding) or fade after reaching (alighting) */
   stream(from, to, n, y0, y1, spread = 0.4) {
     for (let i = 0; i < n && this.people.length < this.max; i++) {
-      const p = this.add({ x: from.x + (this.rng() - 0.5) * spread, z: from.z + (this.rng() - 0.5) * spread, y: y0, yaw: 0, mode: 'go', tx: to.x + (this.rng() - 0.5) * spread, tz: to.z + (this.rng() - 0.5) * spread, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: i * 0.45 + this.rng() * 0.3 });
+      const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread);
+      const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: 0, mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: i * 0.45 + this.rng() * 0.3 });
       p.hidden = true;
     }
   }
@@ -228,7 +229,7 @@ export class AnimCrowd {
     if (state === 'walk' || state === 'go') cat = 'walk';
     else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
-    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : 'idle'; }   // no talk/wave/point: gesturing at nobody looks like flailing arms
+    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : 'idle'; }   // idle poses only: talk/wave/point and the phone clips (hands raised, no phone prop in the model) read as flailing arms
     let clip = this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
@@ -257,10 +258,43 @@ export class AnimCrowd {
     return false;
   }
   _free(x, z, r, self) {
+    if (!this._onFloor(x, z)) return false;
     if (this._nearWalker(x, z, 0.75 + r * 0.5, 0)) return false;
     for (const a of this.avoid) if (x > a.x0 - r && x < a.x1 + r && z > a.z0 - r && z < a.z1 + r) return false;
     for (const q of this.people) if (q !== self && !q.hidden && q.obj && !q.static && (q.x - x) ** 2 + (q.z - z) ** 2 < 0.45 * 0.45) return false;
     return true;
+  }
+  // ------------------------------------------------------------------ colliders
+  /** The station's floor footprint: people may only stand on the platform slabs (never over the tracks / bore / hall walls) and never inside obstacles. */
+  setWorld(zones, obstacles) { this.floor = (zones || []).filter((z) => z.name === 'platform'); this.solid = obstacles || []; }
+  _onFloor(x, z, m = 0.22) {
+    const F = this.floor; if (!F || !F.length) return true;
+    let ok = false; for (const f of F) if (x >= f.x0 + m && x <= f.x1 - m && z >= f.z0 + m && z <= f.z1 - m) { ok = true; break; }
+    if (!ok) return false;
+    for (const o of this.solid || []) { const cx = Math.min(o.x1, Math.max(o.x0, x)), cz = Math.min(o.z1, Math.max(o.z0, z)); if ((x - cx) ** 2 + (z - cz) ** 2 < 0.25 * 0.25) return false; }
+    return true;
+  }
+  /** nearest point on the platform slab (inset by m): where a streaming passenger heads for when its real destination (stairs, train door) is off the slab */
+  _toFloor(x, z, m = 0.3) {
+    const F = this.floor; if (!F || !F.length) return { x, z };
+    let best = null, bd = 1e9;
+    for (const f of F) { const cx = Math.min(f.x1 - m, Math.max(f.x0 + m, x)), cz = Math.min(f.z1 - m, Math.max(f.z0 + m, z)), d = (cx - x) ** 2 + (cz - z) ** 2; if (d < bd) { bd = d; best = { x: cx, z: cz }; } }
+    return best;
+  }
+  /** people are solid: push overlapping pairs apart (never off the floor) */
+  _separate(dt) {
+    const P = this.people, R = 0.5, k = Math.min(1, dt * 10);
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i]; if (a.static || a.hidden || !a.obj || (a.delay > 0)) continue;
+      for (let j = i + 1; j < P.length; j++) {
+        const b = P[j]; if (b.static || b.hidden || !b.obj || (b.delay > 0)) continue;
+        let dx = b.x - a.x, dz = b.z - a.z; const d2 = dx * dx + dz * dz; if (d2 >= R * R) continue;
+        let d = Math.sqrt(d2); if (d < 1e-4) { dx = Math.cos(i * 2.4); dz = Math.sin(i * 2.4); d = 1; }
+        const push = (R - d) * 0.5 * k, ux = dx / d * push, uz = dz / d * push;
+        if (this._onFloor(a.x - ux, a.z - uz)) { a.x -= ux; a.z -= uz; }
+        if (this._onFloor(b.x + ux, b.z + uz)) { b.x += ux; b.z += uz; }
+      }
+    }
   }
   populate(n, rect, y, avoid = []) {
     this.avoid = avoid;
@@ -284,7 +318,7 @@ export class AnimCrowd {
       used.push(best); best.mode = 'queue'; best.tx = s.x; best.tz = s.z; best.qyaw = s.yaw; best.speed = Math.max(best.speed || 1, 1); best.wait = 0; this._enter(best, 'walk'); }
     return used.length;
   }
-  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; q.tx = door(q).x; q.tz = door(q).z; q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
+  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25); q.tx = d.x; q.tz = d.z; } q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
   /** seated / standing passengers riding in a car: slots in the parent's (car group) frame: seated {x,y,z,yaw,seatY,mode:'sit'} (x,z = pelvis position),
    *  standing {x,y,z,yaw,mode:'stand'|'pole', maxH} (maxH = tallest allowed person: headroom(x) - 0.08) */
   seat(parent, slots) {
@@ -310,6 +344,7 @@ export class AnimCrowd {
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~9.5k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
     let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
+    this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       p.stateT += dt;
@@ -329,8 +364,8 @@ export class AnimCrowd {
         } else if (p.mode === 'go') {
           if (p.delay > 0) { p.delay -= dt; continue; }
           if (p.hidden) { p.hidden = false; p.obj.visible = true; this._enter(p, 'go', 0); }
-          const d = this._step(p, dt, p.speed, true); if (yAt) p.y = yAt(p.x, p.z, p.y);
-          if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35) { this._drop(p); this.people.splice(i, 1); continue; }
+          const moved = this._step(p, dt, p.speed, true); if (yAt) p.y = yAt(p.x, p.z, p.y); p.stuckT = moved ? 0 : (p.stuckT || 0) + dt;
+          if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
         }
       }
       // soft avoidance: step away from the user's body instead of standing in their face
@@ -346,7 +381,13 @@ export class AnimCrowd {
   }
   _step(p, dt, sp, ghost) {
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz) || 1, k = Math.min(d, sp * dt) / d, nx = p.x + dx * k, nz = p.z + dz * k;
-    if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person
+    if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person / off the slab
+    if (ghost && !this._onFloor(nx, nz, 0.12)) {   // streaming passengers slide along walls and the platform edge instead of crossing them
+      const sx = p.x + dx * k, sz = p.z + dz * k;
+      if (this._onFloor(sx, p.z, 0.12)) { p.x = sx; p.yaw = Math.atan2(-dx, -dz); return true; }
+      if (this._onFloor(p.x, sz, 0.12)) { p.z = sz; p.yaw = Math.atan2(-dx, -dz); return true; }
+      return false;
+    }
     p.x = nx; p.z = nz; p.yaw = Math.atan2(-dx, -dz); return true;
   }
   // ------------------------------------------------------------------ audit (regression tests)

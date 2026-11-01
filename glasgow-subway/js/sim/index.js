@@ -14,7 +14,7 @@ import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
-import { layoutFor, loadGLB, disposeTemplate, lookHints, HALL_FULL } from './hall.js';
+import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, HALL_FULL } from './hall.js';
 import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
@@ -62,7 +62,7 @@ class Sim {
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
     this.walkable = await this._json('models/train_walkable.json');
     this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
-    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleGltf = peopleTpl; this.peopleVariants = null; this.peopleLod = await this._optG('models/people_lod.glb');
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; try { frontFaceSigns(kioskTpl); } catch (e) {} this.peopleGltf = peopleTpl; this.peopleVariants = null; this.peopleLod = await this._optG('models/people_lod.glb');
     { const pm = await this._json('models/people_meta.json'); if (peopleTpl && pm && pm.people) { peopleTpl.meta = {}; for (const q of pm.people) peopleTpl.meta[q.id] = q; } } this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
     try { const SU = await import('three/addons/utils/SkeletonUtils.js'); this.SU = SU; } catch (e) { console.warn('[sim] SkeletonUtils unavailable', e && e.message); this.SU = null; }
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
@@ -73,6 +73,7 @@ class Sim {
     this.savedPR = r.getPixelRatio();
     try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
+    try { frontFaceSigns(trainTpl.scene, /^route_map_panel$/); } catch (e) {}   // exterior roundels: never mirrored from behind
     this.trainView = new TrainView(THREE, trainTpl.scene, {});
     this.scene.add(this.trainView.root);
     this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
@@ -366,6 +367,7 @@ class Sim {
     if (this.entrances.has(id)) return this.entrances.get(id);
     const info = this.hallIndex && this.hallIndex.stations[id]; if (!info || !info.entrance) return null;
     let tpl = null; try { tpl = await loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + info.entrance)); } catch (e) { console.warn('[sim] entrance missing', id); }
+    try { frontFaceSigns(tpl); } catch (e) {}
     this.entrances.set(id, tpl); return tpl;
   }
   async _teleport(fn) {
@@ -424,7 +426,7 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { fixHallSigns(tpl, this.hallIndex.stations[id]); frontFaceSigns(tpl, /^route_map_panel$/); } catch (e) { console.warn('[sim] hall sign fix', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
@@ -481,11 +483,13 @@ class Sim {
     // crowd: only for the nearest displayed station
     let cur = null, bd = 1e9;
     for (const [i, v] of this.stationViews) { const st = this.track.stops[i]; const d = Math.abs(wrapL(st.sc - s + L / 2, L) - L / 2); if (d < bd) { bd = d; cur = v; } }
+    if (this.mode === 'explore' && this.stationViews.get(this.exploreIdx)) { cur = this.stationViews.get(this.exploreIdx); bd = 0; }   // on foot: the crowd belongs to YOUR platform, not to wherever the (hidden) train has wandered
     if (cur !== this.crowdFor && bd < 300) {
       this.crowd.clear(); this.crowdFor = cur;
       if (cur) {
         const inf = cur.info; const g = cur.group;
         this.crowd.group.position.copy(g.position); this.crowd.group.rotation.copy(g.rotation);
+        if (this.crowd.setWorld) this.crowd.setWorld(cur.zones, cur.obstacles.filter((o) => o.tall || Math.abs(o.y - cur.info.PY) < 1.2));
         this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY));
       }
     }

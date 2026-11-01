@@ -4,6 +4,7 @@
 // Origin = platform centre on the (straightened) track. Group is rotated/positioned into the world.
 // Also returns walker zones / obstacles (in x_l, z_l) and interaction anchors.
 import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText } from './gfx.js';
+import { hallPosterZone } from './hall.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 import { kitParts, instanceKit, placeMatrix } from './kit.js';
 
@@ -255,7 +256,8 @@ export function buildStation(THREE, o) {
     const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
     const z = -PL + 8 + i * ((2 * PL - 16) / Math.max(1, nPanels - 1)) * (nPanels > 1 ? 1 : 0);
     const wx = island ? xb : xb; // far wall (platform back wall for side type; other track wall for island)
-    plane(wx - S * 0.04, 1.55, z + 0.0, -S, 0, 0.95, 1.2, mat);
+    if (useHall) { const pz = hallPosterZone(hall.info), ph = pz.y1 - pz.y0; plane(wx - S * 0.04, (pz.y0 + pz.y1) / 2, z + 0.0, -S, 0, 0.95 * ph / 1.2, ph, mat); }   // above the name band, not on top of it
+    else plane(wx - S * 0.04, 1.55, z + 0.0, -S, 0, 0.95, 1.2, mat);
     panelPos.push({ z, x: wx, title: st.name, body });
     infoMats.push(mat);
   }
