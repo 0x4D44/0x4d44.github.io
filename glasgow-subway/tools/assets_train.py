@@ -443,9 +443,12 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
     cab.cyl(P(br, Y(0.60), DZ + 0.03), 0.055, 0.06, 'steel_dark', seg=14)                          # brake handle
     cab.cyl(P(br, Y(0.60), DZ + 0.10), 0.013, 0.12, 'steel_bright', seg=8)
     cab.box(P(br, Y(0.60), DZ + 0.17), (0.10, 0.03, 0.03), 'button_red')
+    # The button row and the emergency mushroom sit on the driver's RIGHT.  The rear cab is the front cab mirrored in x (x -> s*x): built as
+    # `DX + dxx + 0.35` / `0.72` the rear row landed at x = 0.97..1.24 - the red button poking through the +x body skin and the amber one floating
+    # 0.1 m outside the train beside the nose (two tiny red/yellow "lights" hovering next to the driver's cab).
     for dxx, mm in ((0.20, 'button_green'), (0.29, 'button_green'), (0.38, 'button_red'), (0.47, 'button_amber')):
-        cab.cyl(P(DX + dxx + 0.35, Y(0.56), DZ - 0.03), 0.022, 0.02, mm, seg=12)
-    cab.cyl(P(0.72, Y(0.56), DZ - 0.02), 0.035, 0.05, 'button_red', seg=14)
+        cab.cyl(P(s * (-0.42 + dxx + 0.35), Y(0.56), DZ - 0.03), 0.022, 0.02, mm, seg=12)
+    cab.cyl(P(0.72 * s, Y(0.56), DZ - 0.02), 0.035, 0.05, 'button_red', seg=14)
     cab.box(P(0, Y(1.2), 2.12), (0.0001, 0.0001, 0.0001), 'plastic_black') if False else None
     # driver's seat: cushion centre t=0.98, back t=1.18 (eyes ~1.0 m behind the glass)
     cab.cyl(P(DX, Y(0.98), FLOOR + 0.2), 0.05, 0.3, 'steel_dark', seg=8)
