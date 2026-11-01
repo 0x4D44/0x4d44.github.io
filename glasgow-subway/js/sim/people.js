@@ -131,6 +131,7 @@ export class AnimCrowd {
       const lodNode = lodGltf ? (lodGltf.scene.getObjectByName('person_' + m[1])) : null;
       this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
     }
+    for (const c of this.chars) if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) { this._extendHem(c.node); if (c.lodNode) this._extendHem(c.lodNode); }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
@@ -138,6 +139,36 @@ export class AnimCrowd {
     for (const k of Object.keys(shared)) shared[k] = shared[k];
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
+  }
+  /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
+   *  band at the midriff. Find the top's centred lower hem loop and extrude it straight down (same skin weights) so it tucks inside the skirt. Patches the shared geometry once. */
+  _extendHem(root, drop = 0.13) {
+    const THREE = this.THREE;
+    root.traverse((o) => {
+      if (!o.isSkinnedMesh || !o.material || !/sweater|jacket|camisole|shirt-knit/i.test(o.material.name || '')) return;
+      const g = o.geometry; if (g.userData.hemExt) return; g.userData.hemExt = true;
+      const P = g.attributes.position, idx = g.index; if (!idx) return;
+      const key = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3);
+      const canon = new Map(), cid = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { const k = key(i); let c = canon.get(k); if (c == null) { c = i; canon.set(k, c); } cid[i] = c; }
+      const ec = new Map(), dir = new Map();   // undirected edge use count, and its directed original
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = cid[idx.getX(t + e)], b = cid[idx.getX(t + (e + 1) % 3)]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b]); }
+      const adj = new Map(), edges = []; for (const [k, n] of ec) if (n === 1) { const [a, b] = dir.get(k); edges.push([a, b]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      // connected loops of boundary vertices; the torso hem = the loop that encloses x = 0 (and z centre) with the lowest mean y
+      const seen = new Set(), loops = []; for (const v of adj.keys()) { if (seen.has(v)) continue; const comp = [], st = [v]; seen.add(v); while (st.length) { const u = st.pop(); comp.push(u); for (const w of adj.get(u)) if (!seen.has(w)) { seen.add(w); st.push(w); } } loops.push(comp); }
+      let best = null, bestY = 1e9;
+      for (const L of loops) { let x0 = 1e9, x1 = -1e9, y = 0; for (const v of L) { x0 = Math.min(x0, P.getX(v)); x1 = Math.max(x1, P.getX(v)); y += P.getY(v); } y /= L.length; if (x0 < -0.05 && x1 > 0.05 && L.length > 8 && y < bestY) { bestY = y; best = new Set(L); } }
+      if (!best) return;
+      const nv = new Map(), attrs = Object.keys(g.attributes), n0 = P.count; let add = 0;
+      for (const v of best) nv.set(v, n0 + add++);
+      for (const name of attrs) {   // glTF attributes can be interleaved (array is the shared buffer): read through stride/offset, write a plain packed copy
+        const A = g.attributes[name], it = A.itemSize, stride = A.isInterleavedBufferAttribute ? A.data.stride : it, off = A.isInterleavedBufferAttribute ? A.offset : 0, src = A.isInterleavedBufferAttribute ? A.data.array : A.array;
+        const arr = new src.constructor((n0 + add) * it); for (let i = 0; i < n0; i++) for (let c = 0; c < it; c++) arr[i * it + c] = src[i * stride + off + c];
+        for (const [v, w] of nv) { for (let c = 0; c < it; c++) arr[w * it + c] = src[v * stride + off + c]; if (name === 'position') arr[w * 3 + 1] -= drop; }
+        g.setAttribute(name, new THREE.BufferAttribute(arr, it, A.normalized));
+      }
+      const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
+      const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
+    });
   }
   _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
@@ -372,14 +403,27 @@ export class AnimCrowd {
       if (!p.static && this.walker && p.mode !== 'go') { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.25 && d > 1e-4) { const k = Math.min(1.25 - d, 1.4 * dt); p.x += (dx / d) * k; p.z += (dz / d) * k; if (p.rect) { p.x = Math.min(p.rect.x1, Math.max(p.rect.x0, p.x)); p.z = Math.min(p.rect.z1, Math.max(p.rect.z0, p.z)); } } }
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
+      this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
       if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
-      if (dist < this.rAnim && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if ((dist < this.rAnim || p.v > 0.2) && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
     }
   }
+  /** ground speed (m/s) at which the walk cycle's planted foot does not slip: on the real skinned soles the mean contact-point speed over the stance is the asset's own
+   *  `walkSpeedMps` x ~1.07 (adults 1.02-1.10, children 1.06-1.09 across the rigs), so nothing needs measuring at run time */
+  _strideOf(ch) { return ch.walkSpeed * 1.07; }
+  /** stride matching: the walk cycle's playback rate follows the speed the person ACTUALLY moved this frame (steering, separation, the user's
+   *  body-avoidance shove and wall slides all included), so planted feet stay planted instead of skating. */
+  _pace(p, dt) {
+    if (p.px == null || !(dt > 0)) { p.px = p.x; p.pz = p.z; p.v = 0; return; }
+    const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
+    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
+    if ((p.state === 'walk' || p.state === 'go') && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
+  }
   _step(p, dt, sp, ghost) {
+    sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching below handles the rest)
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz) || 1, k = Math.min(d, sp * dt) / d, nx = p.x + dx * k, nz = p.z + dz * k;
     if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person / off the slab
     if (ghost && !this._onFloor(nx, nz, 0.12)) {   // streaming passengers slide along walls and the platform edge instead of crossing them
