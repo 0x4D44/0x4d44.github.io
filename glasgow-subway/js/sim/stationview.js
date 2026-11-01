@@ -3,8 +3,8 @@
 //   x_l = lateral (right of the direction of travel), y = metres above rail head, z_l = -u (forward = -z).
 // Origin = platform centre on the (straightened) track. Group is rotated/positioned into the world.
 // Also returns walker zones / obstacles (in x_l, z_l) and interaction anchors.
-import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText } from './gfx.js';
-import { hallPosterZone } from './hall.js';
+import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText, drawIndicator } from './gfx.js';
+import { hallPosterZone, ceilingAtHallX } from './hall.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 import { kitParts, instanceKit, placeMatrix } from './kit.js';
 
@@ -82,6 +82,7 @@ export function buildStation(THREE, o) {
 
   const group = new THREE.Group(); group.name = 'station_' + st.id;
   const zones = [], obstacles = [], anchors = {}, anim = [], lights = [], ownMats = [];
+  const indicators = [];
 
   // ------------ materials (textured vault tiles tinted per station when available; canvas fallback otherwise)
   const vmat = (name) => { if (!useVault) return null; let m = null; for (const arr of [VP.sec, VP.end]) for (const p of arr) { const mm = Array.isArray(p.mat) ? p.mat : [p.mat]; for (const x of mm) if (x.name === name) m = x; } return m; };
@@ -165,6 +166,22 @@ export function buildStation(THREE, o) {
     });
     for (const pl of HL.platLocal) zones.push({ kind: 'flat', x0: pl.x0, x1: pl.x1, z0: -PL, z1: PL, y: PY, name: 'platform' });
     anchors.portals = portals; anchors.hallPlat = HL.platLocal;
+    // ---- hanging next-train indicators: one board per platform (two positions, both faces), hung from the real ceiling height there
+    { const hi = hall.info, tx = hi.trackX || [], mBlack = new THREE.MeshLambertMaterial({ color: 0x15171a }); ownMats.push(mBlack);
+      (hi.platforms || []).forEach(([a, b]) => {
+        const lines = []; if (tx[1] != null && Math.min(Math.abs(a - tx[1]), Math.abs(b - tx[1])) < 2.4) lines.push('outer'); if (tx[0] != null && Math.min(Math.abs(a - tx[0]), Math.abs(b - tx[0])) < 2.4) lines.push('inner');
+        if (!lines.length) return;
+        const xcH = (a + b) / 2, xl = HL.sg * (xcH - HL.ownX), ceil = ceilingAtHallX(hi, xcH), top = ceil - 0.12;
+        let h = 0.72; if (top - h < 2.8) h = Math.max(0.5, top - 2.8); const w = h * 640 / 192;
+        const tex = canvasTex(THREE, 640, 192, (g, cw, ch) => drawIndicator(g, cw, ch, lines.map((l) => ({ line: l, name: l === 'outer' ? 'OUTER' : 'INNER', sub: l === 'outer' ? 'clockwise' : 'anticlockwise', eta: '-' }))));
+        const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }); ownMats.push(mat);
+        const ind = { tex, lines, draw: (rows) => { const g = tex.image.getContext('2d'); drawIndicator(g, 640, 192, rows); tex.needsUpdate = true; }, key: '' }; indicators.push(ind);
+        for (const zz of [-5.5, 5.5]) {
+          for (const fs of [1, -1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); m.position.set(xl, top - h / 2, zz + fs * 0.03); if (fs < 0) m.rotation.y = Math.PI; group.add(m); }
+          for (const rx of [-0.45, 0.45]) { const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, ceil + 0.05 - top, 6), mBlack); rod.position.set(xl + rx * w, (top + ceil + 0.05) / 2, zz); group.add(rod); }
+          const box = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, h + 0.06, 0.04), mBlack); box.position.set(xl, top - h / 2, zz); group.add(box);
+        }
+      }); }
   } else if (useVault) {
     const n = Math.round((2 * PL) / 1.2), secM = [], ribM = [], endM = [];
     for (let k = 0; k < n; k++) { const z = -PL + 0.6 + k * 1.2; (VP.rib && k % 5 === 2 ? ribM : secM).push(placeMatrix(THREE, vaultT, 0, z, 0)); }
@@ -449,9 +466,9 @@ export function buildStation(THREE, o) {
   const update = (t) => { for (const e of escMeshes) e.mat.map.offset.y = (-t * 0.9 * e.dir) % 1; };
   const dispose = () => {
     group.traverse((o) => { if (o.userData.shared || o.isInstancedMesh) return; if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { if (m.map && m.map.userData && m.map.userData.canvas) m.map.dispose(); m.dispose(); }); } });
-    ownMats.forEach((m) => m.dispose());
+    ownMats.forEach((m) => m.dispose()); indicators.forEach((i) => i.tex.dispose());
   };
-  return { group, zones, obstacles, anchors, info, update, dispose, lights, style, facts };
+  return { group, zones, obstacles, anchors, info, update, dispose, lights, style, facts, indicators };
 }
 
 /** Place the station group in the world from the Track stop's straightened frame. */

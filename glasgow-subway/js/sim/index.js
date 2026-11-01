@@ -498,6 +498,33 @@ class Sim {
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
     this.hud.toast('Welcome to ' + this.svc.station.name, 'info', 3);
   }
+  // ------------------------------------------------------------------ next-train indicators
+  _fmtEta(sec) { return sec == null ? '-' : sec === 0 ? 'In station' : sec <= 20 ? 'Due' : Math.ceil(sec / 60) + ' min'; }
+  /** seconds until the circle's train next reaches station `id` (0 = standing in it, null = unknown) */
+  _lineEta(line, id) {
+    const rec = this.tracks[line]; if (!rec || !rec.svc) return null; const svc = rec.svc, L = rec.track.length;
+    if (this.mode === 'explore' && this.track.stops[this.exploreIdx] && this.track.stops[this.exploreIdx].station === id) {   // the station you stand in: the shuttle state machine IS the timetable
+      const sh = rec === this.tracks[this.line] ? this.shuttle : rec.sh;
+      if (!sh) return null;
+      if (sh.state === 'dwell') return 0;
+      if (sh.state === 'arriving') return Math.max(0, svc.distToStop) / Math.max(svc.train.v, 4);
+      if (sh.state === 'wait') return (sh.timer || 0) + 24;
+      if (sh.state === 'leaving') return this.shuttle.headway * 0.85;
+      return null;
+    }
+    if (svc.phase === 'station' && svc.stop.station === id) return 0;
+    const k = rec.track.stops.findIndex((x) => x.station === id); if (k < 0) return null;
+    return wrapL(rec.track.stops[k].s - svc.train.s, L) / 6.5;
+  }
+  _updateIndicators() {
+    for (const v of this.stationViews.values()) {
+      if (!v.indicators || !v.indicators.length) continue; const id = v.station.id;
+      for (const ind of v.indicators) {
+        const rows = ind.lines.map((l) => ({ line: l, name: l === 'outer' ? 'OUTER' : 'INNER', sub: l === 'outer' ? 'clockwise' : 'anticlockwise', eta: this._fmtEta(this._lineEta(l, id)) }));
+        const key = rows.map((r) => r.eta).join('|'); if (key === ind.key) continue; ind.key = key; ind.draw(rows);
+      }
+    }
+  }
   /** where the other circle's train docks relative to the platforms (primary hall frame): the platform + edge nearest its track */
   _bgPlat() {
     const v = this.activeStation; if (!v || !v.info.hall || !v.anchors.hallPlat) return null; const ox = v.info.otherTrackX; let best = null;
@@ -965,6 +992,7 @@ class Sim {
     if (underground) {
       if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore');   // before the crowd is (re)populated
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
+      this._indT = (this._indT || 0) - dt; if (this._indT <= 0) { this._indT = 0.5; this._updateIndicators(); }
       this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive'); this._bgUpdateView(dt);
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
       if (this.mode === 'explore') { if (this._tw !== 'x') { this.tunnel.setWindow(60, 45); this._tw = 'x'; } this.tunnel.update(track, track.stops[this.exploreIdx].sc); }

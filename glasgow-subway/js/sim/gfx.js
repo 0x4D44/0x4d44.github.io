@@ -129,3 +129,20 @@ export function infoPanelTexture(THREE, title, body, style) {
     g.fillStyle = style.trim; g.fillRect(0, h - 14, w, 14);
   });
 }
+
+/** Dot-matrix style "next train" board: rows = [{ name, sub, eta }] (eta already formatted: 'Due', '2 min', 'In station', '-'). */
+export function drawIndicator(g, w, h, rows) {
+  g.fillStyle = '#07090b'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#2a2f36'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
+  const n = Math.max(1, rows.length), rh = (h - 16) / n;
+  rows.forEach((r, i) => {
+    const y0 = 8 + i * rh, cy = y0 + rh / 2;
+    g.textBaseline = 'middle'; g.textAlign = 'left';
+    g.fillStyle = r.line === 'inner' ? '#7fd4ff' : '#ffb02e';
+    g.font = `700 ${Math.round(rh * 0.40)}px "Courier New", monospace`; g.fillText(r.name, 22, cy - rh * 0.12);
+    g.fillStyle = '#8a8f96'; g.font = `600 ${Math.round(rh * 0.22)}px "Courier New", monospace`; g.fillText(r.sub, 24, cy + rh * 0.26);
+    g.textAlign = 'right'; g.fillStyle = r.eta === 'Due' || r.eta === 'In station' ? '#ffffff' : '#ffb02e';
+    g.font = `700 ${Math.round(rh * 0.52)}px "Courier New", monospace`; g.fillText(r.eta, w - 24, cy);
+    if (i < n - 1) { g.fillStyle = '#1b1f24'; g.fillRect(14, y0 + rh - 1, w - 28, 2); }
+  });
+}
