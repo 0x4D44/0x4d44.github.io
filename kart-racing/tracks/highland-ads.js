@@ -68,7 +68,7 @@ export function buildAds(H) {
       let nx = -T.x - side * rx * 0.28, nz = -T.z - side * rz * 0.28; const nl = Math.hypot(nx, nz); nx /= nl; nz /= nl;
       ry = Math.atan2(nx, nz);
       const lx = Math.cos(ry), lz = -Math.sin(ry);   // board's local +x in world
-      const posts = [-1, 1].map((sg) => ({ x: a.x + lx * sg * bw * 0.36, z: a.z + lz * sg * bw * 0.36 }));
+      const posts = [-1, 1].map((sg) => ({ x: a.x + lx * sg * bw * 0.36 - nx * 0.62, z: a.z + lz * sg * bw * 0.36 - nz * 0.62 }));   // behind the backing box, so nothing pokes through the face
       const gmax = Math.max(gy(posts[0].x, posts[0].z), gy(posts[1].x, posts[1].z), gy(a.x, a.z));
       const yb = Math.max(gmax + lift, a.y + lift * 0.8);
       cx = a.x; cz = a.z; cy = yb + bh / 2;
@@ -86,7 +86,7 @@ export function buildAds(H) {
       parts.push(part(new THREE.BoxGeometry(bw + 0.5, 0.18, 0.4), mat(cx + nx * 0.02, cy + bh / 2 + 0.28, cz + nz * 0.02, 1, 1, 1, 0, ry, 0), 0x8a8e96));
       spot(cx + nx * 0.1, cy + bh / 2 + 0.55, cz + nz * 0.1, ry, bw);
       // lamp glow cones
-      for (let i = 0; i < (bw > 9 ? 3 : 2); i++) { const n = bw > 9 ? 3 : 2, ox = (-0.5 + (i + 0.5) / n) * bw * 0.9; cones.push({ x: cx + lx * ox + nx * 0.8, y: cy + bh / 2 + 0.2, z: cz + lz * ox + nz * 0.8, ry, h: bh * 0.9, r: bw / n * 0.5 }); }
+      for (let i = 0; i < (bw > 9 ? 3 : 2); i++) { const n = bw > 9 ? 3 : 2, ox = (-0.5 + (i + 0.5) / n) * bw * 0.9; const cr = bw / n * 0.5, off = cr * 0.6 + 0.35; cones.push({ x: cx + lx * ox + nx * off, y: cy + bh / 2 + 0.2, z: cz + lz * ox + nz * off, ry, h: bh * 0.9, r: cr }); }
     }
     mesh.position.set(cx + (kind === "gantry" ? 0 : 0) + Math.sin(ry) * 0.04, cy, cz + Math.cos(ry) * 0.04); mesh.rotation.y = ry; mesh.name = "ad-" + id;
     group.add(mesh); panels.push(mesh);
@@ -95,7 +95,7 @@ export function buildAds(H) {
   // soft light spill (additive cones)
   if (cones.length) {
     const cp = [], cg = new THREE.ConeGeometry(1, 1, 10, 1, true); cg.translate(0, -0.5, 0);
-    const list = cones.map((c) => { const g = cg.clone(); g.scale(c.r, c.h, c.r * 0.6); g.rotateX(0.35); g.rotateY(c.ry); g.translate(c.x, c.y, c.z); return g; });
+    const list = cones.map((c) => { const g = cg.clone(); g.scale(c.r, c.h, c.r * 0.6); g.rotateX(-0.2); g.rotateY(c.ry); g.translate(c.x, c.y, c.z); return g; });
     const merged = new THREE.BufferGeometry(); const pos = [], idx = []; let o = 0;
     for (const g of list) { const p = g.attributes.position, ix = g.index; for (let i = 0; i < p.count; i++) pos.push(p.getX(i), p.getY(i), p.getZ(i)); for (let i = 0; i < ix.count; i++) idx.push(ix.getX(i) + o); o += p.count; }
     merged.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); merged.setIndex(idx);

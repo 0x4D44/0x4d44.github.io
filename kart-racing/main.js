@@ -440,6 +440,8 @@ class Game {
         if (me) { audio.play("wall", { impact }); chase.setShake?.(Math.min(1, (impact || 6) / 16)); }
         if ((impact || 6) > 4) fx.burst(k.position, "impact", { count: 6, scale: 0.6 });
       });
+      k.on("moo", () => { if (me) audio.play("moo"); });
+      k.on("baa", () => { if (me) audio.play("baa"); });
       k.on("spin", () => { if (me) chase.setShake?.(0.8); });
       k.on("boost", () => { if (me) audio.play("boost"); fx.burst(k.position, "sparkle", { color: 0xffa040, count: 6 }); });
       k.on("driftlevel", (n) => { if (me) audio.play("drift-level", { level: n }); });
