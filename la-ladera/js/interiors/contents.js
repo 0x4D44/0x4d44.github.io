@@ -280,7 +280,8 @@ const hangColour = (i, hh, key) => (OWN_COLOUR.has(i.id) || hv(key, 'pal') < 0.3
 export function makeContents(ctx, S) {
   const hh = S.hh ?? householdOf(S) ?? FALLBACK_HH, slot = S.slot, rng = makeRng(hashStr(`${S.id}|${hh.seed ?? 0}`));
   const room = S.bp?.rooms?.find((r) => r.id === S.rec?.room), elev = Math.max(0, (S.loc?.y0 ?? 0) - (room?.y ?? 0));      // how high the piece hangs over the floor of its room (a wall cupboard)
-  const pk = new Packer(slot, elev), out = [], [cmin, cmax] = slot.cap ?? [3, 5];
+  let pk = new Packer(slot, elev);
+  const out = [], [cmin, cmax] = slot.cap ?? [3, 5];
   // the school's one household is its caretaker (an elder), but its lockers and desks are the pupils': what a child carries (a rucksack, exercise books, boots, the team shirt) belongs in them (R2e-002)
   const who = S.bp?.lot?.kind === 'school' ? { ...hh, kind: 'students', kids: Math.max(hh.kids ?? 0, 30), teen: true } : hh;
   let k = 0;
@@ -290,16 +291,20 @@ export function makeContents(ctx, S) {
   const pid = S.plan?.paper, fid = S.plan?.find;
   // A thing that inspect-bindings.json binds takes its library model's footprint first (inspect.js `modelFor`: from the manifest's numbers, so the packing never depends on what has loaded),
   // then, if that does not fit at three sizes, the footprint of its old stand-in, as before: nothing is ever squeezed out for being a model.
-  if (pid && paperById.has(pid)) {
+  // (each puts its thing down in the packer `q` and returns { o, pos } for `add`, or null when it is not planned or does not fit)
+  const putPaper = (q) => {
+    if (!(pid && paperById.has(pid))) return null;
     const p = paperById.get(pid), base = paperLook(p.cover, `${S.id}|${pid}`), tries = [];
     for (const sc of [1, 0.8, 0.6]) { const m = modelFor(pid, null, sc); if (m) tries.push({ it: { ...base, w: m.w, h: m.h, d: m.d }, model: m }); }
     for (const sc of [1, 0.75, 0.55]) tries.push({ it: { ...base, w: base.w * sc, d: base.d * sc } });
     for (const { it, model } of tries) {
-      const pos = pk.put(it, start); if (!pos) continue;
-      add({ ...it, cover: p.cover, ...(model ? { model } : {}), paper: { id: pid, kind: p.kind, prompt: PAPER_PROMPT[p.kind] ?? 'Leer' }, line: ['Un papel doblado.', 'A folded paper.'] }, pos); break;
+      const pos = q.put(it, start); if (!pos) continue;
+      return { o: { ...it, cover: p.cover, ...(model ? { model } : {}), paper: { id: pid, kind: p.kind, prompt: PAPER_PROMPT[p.kind] ?? 'Leer' }, line: ['Un papel doblado.', 'A folded paper.'] }, pos };
     }
-  }
-  if (fid && findById.has(fid)) {
+    return null;
+  };
+  const putFind = (q) => {
+    if (!(fid && findById.has(fid))) return null;
     const f = findById.get(fid), size = f.size ?? 0.04, own = f.in ?? 'loose', tries = [];
     for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.75], ['loose', 0.55]]) { const m = modelFor(fid, size, sc); if (m) tries.push({ wrap, sc, m }); }
     for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.7], ['loose', 0.45]]) tries.push({ wrap, sc });
@@ -307,13 +312,21 @@ export function makeContents(ctx, S) {
       let d;
       if (m) { const b = wrapDims(wrap); d = { w: Math.max(b ? b.w + 0.01 : 0, m.w), d: Math.max(b ? b.d + 0.01 : 0, m.d), h: (b?.h ?? 0) + m.h }; }          // the model rests on its base
       else d = findDims(f.shape, size * sc, wrap);
-      const pos = pk.put({ w: d.w, h: d.h, d: d.d, avoidRail: true }, start + 3) ?? pk.put({ w: d.w, h: d.h, d: d.d }, start + 3);
+      const pos = q.put({ w: d.w, h: d.h, d: d.d, avoidRail: true }, start + 3) ?? q.put({ w: d.w, h: d.h, d: d.d }, start + 3);
       if (!pos) continue;
-      add({ sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''], ...(glints(f) ? { glint: true } : {}) }, pos);
-      pk.guard = { eyes: eyesFor(slot, elev), t: [pos.x, pos.y + pos.h / 2, pos.z] };                // nothing that is put down after the find may stand on a sight line to its middle
-      break;
+      q.guard = { eyes: eyesFor(slot, elev), t: [pos.x, pos.y + pos.h / 2, pos.z] };                // nothing that is put down after the find may stand on a sight line to its middle
+      return { o: { sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''], ...(glints(f) ? { glint: true } : {}) }, pos };
     }
+    return null;
+  };
+  let keys = [putPaper(pk), putFind(pk)];
+  // (R4-206) the paper goes down first, so nothing kept it off the sight line to the find: a nightstand drawer's letter lay beside the coin and its padded edge stood on the line from the eye a step to the side.
+  // When the paper hides the find, the find goes down first and the paper after it, under the guard; where the paper then does not fit, the first order stands
+  if (keys[0] && keys[1] && pk.hides(keys[0].pos.x, keys[0].pos.y, keys[0].pos.z, keys[0].pos)) {
+    const q = new Packer(slot, elev), f2 = putFind(q), p2 = f2 && putPaper(q);
+    if (f2 && p2) { pk = q; keys = [p2, f2]; }
   }
+  for (const key of keys) if (key) add(key.o, key.pos);
   // the ordinary things (a wide drawer holds more than a nightstand's: about one thing per 0.03 m2 of the tray that came out)
   const area = slot.surf.reduce((a, sf) => a + (sf.panel === undefined ? 0 : (sf.x1 - sf.x0) * (sf.z1 - sf.z0)), 0), more = Math.max(0, Math.min(3, Math.round(area / 0.03) - cmax));
   const want = Math.max(cmin + more - out.length, 1) + rng.int(0, Math.max(0, cmax - cmin));
