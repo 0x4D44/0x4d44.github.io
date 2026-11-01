@@ -4,6 +4,14 @@ The lead relayed, verbatim: "Arthur chose the big option for the beachfront: opt
 
 Status: DESIGN ONLY (A5). No code, no shipped file touched. Tags: **[M]** measured on today's tree in this session (headless, low priority, quiet box), **[A]** an assumption or a budget I chose (change it if you disagree), **[I]** inference, not measured. Spanish names are proposals. Paths are relative to `la-ladera/`. Each ask is addressed to an owner; the lead copies it into `dev/REQUESTS.md`.
 
+## Decisions (Arthur, 2026-11-01)
+
+- **The beach replaces the far valley city** (fork 5 below is answered: yes). The headland village and lighthouse stand in for it.
+- Geometry and textures for the beach come from Codex libraries (props, water-sports gear and boats, textures and sprites; prompts sent 2026-11-01, base 3854209) instead of procedural Blender by A5, A2 and A4. A5 still owns the world and coast code and the placement, A1 the water, swimming and audio, A2 the promenade and pier architecture, A4 the people and sports.
+- The beach is built as a second sector that loads after the playable milestone (see `FEATURE-LAZY.md`), so it does not add to boot.
+- Current gates replace the budgets quoted below: 150 MB shipped, 800 MB GPU, 2,500 calls, 6 M triangles, boot 40 s (the 60 MB and 25 s figures are out of date).
+- Order: lazy interiors and staged packs first (A1), then this feature, then round 6.
+
 ## 0. The answer on one screen
 
 1. **Where.** The plot stays 200 x 200 m. Sea level is y = -1.20 m (plot datum) [A]. From the south edge (z = 100): promenade z 100-108, sea wall, 29 m of dry sand, a foreshore, the waterline at z = 144.2, waist-deep at z = 161, swimming from z = 175, a buoy line at z = 210 (3.0 m deep), a hard stop at z = 220. The walkable area grows by 24 k m2 (+61 %) [A]. East and west the beach is held by the existing x = +-99.4 walls and two rock groynes; beyond them the shore curves south into two headlands that frame the bay.
