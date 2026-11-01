@@ -28,6 +28,7 @@ const LOOK_CLEAR = 0.42;                 // lookPose: a bystander this near the 
 const AISLE = 0.8;                       // a keeper's post that _makeShops has to find lies at least this far from the way a customer walks in: a walker is pushed off a way that passes nearer a standing person (npc.js separation)
 const SWEPT_R = 0.3;                     // waypoints: a body's width for a leg a lane offset made (npc.js BODY.radius 0.25 and a hand); physics.segmentBlocked tests the line alone, so a fence end 0.2 m off it passed
 const SWEPT_STEP = 0.15;                 // metres between the places of a leg tried for that body
+const SAME_LEVEL = 2.2;                  // near(): people this far apart in height are not neighbours (another floor of a building, the terrace above a street); the nurse upstairs pushed the patient below her off the way to the seat, and the patient stalled short of it
 
 /** Places people can be asked about. plan.landmarks when A5 supplies enough of them, else derived from plazas / civic lots / shops. */
 export function collectLandmarks(plan) {
@@ -435,9 +436,9 @@ export class PeopleSim {
     const i0 = Math.floor((s.x - r) / cs), i1 = Math.floor((s.x + r) / cs), j0 = Math.floor((s.z - r) / cs), j1 = Math.floor((s.z + r) / cs);
     for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
       const a = this._grid.get(this._key(i, j)); if (!a) continue;
-      for (let k = 0; k < a.length; k++) { const o = a[k]; if (o !== npc && (o.st.x - s.x) ** 2 + (o.st.z - s.z) ** 2 < r2) out.push(o); }
+      for (let k = 0; k < a.length; k++) { const o = a[k]; if (o !== npc && (o.st.x - s.x) ** 2 + (o.st.z - s.z) ** 2 < r2 && Math.abs(o.st.y - s.y) < SAME_LEVEL) out.push(o); }
     }
-    const P = this.player; if ((P.x - s.x) ** 2 + (P.z - s.z) ** 2 < r2 && Math.abs(P.y - s.y) < 2.2) out.push(P);
+    const P = this.player; if ((P.x - s.x) ** 2 + (P.z - s.z) ** 2 < r2 && Math.abs(P.y - s.y) < SAME_LEVEL) out.push(P);
     return out;
   }
 
