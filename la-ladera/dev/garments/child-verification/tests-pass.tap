@@ -1,0 +1,250 @@
+TAP version 13
+# Subtest: every required everyday garment key exists in both sizes and every applicable state
+ok 1 - every required everyday garment key exists in both sizes and every applicable state
+  ---
+  duration_ms: 41.09653
+  type: 'test'
+  ...
+# Subtest: every piece stays inside its independent real dimension range in metres, including LOD
+ok 2 - every piece stays inside its independent real dimension range in metres, including LOD
+  ---
+  duration_ms: 56.299878
+  type: 'test'
+  ...
+# Subtest: every piece stays inside its actual 800-triangle or 240-triangle LOD budget
+ok 3 - every piece stays inside its actual 800-triangle or 240-triangle LOD budget
+  ---
+  duration_ms: 35.655643
+  type: 'test'
+  ...
+# Subtest: the generated child GLB and child manifest together stay within 700000 bytes
+ok 4 - the generated child GLB and child manifest together stay within 700000 bytes
+  ---
+  duration_ms: 59.392624
+  type: 'test'
+  ...
+# Subtest: small and big assets carry the declared age bands and approximately 55/75 percent sizing
+ok 5 - small and big assets carry the declared age bands and approximately 55/75 percent sizing
+  ---
+  duration_ms: 39.071486
+  type: 'test'
+  ...
+# Subtest: the child set reuses the adult fabric palette and atlas without embedded textures
+ok 6 - the child set reuses the adult fabric palette and atlas without embedded textures
+  ---
+  duration_ms: 34.176934
+  type: 'test'
+  ...
+# Subtest: the child library remains an object-only companion outside the main registration manifest
+ok 7 - the child library remains an object-only companion outside the main registration manifest
+  ---
+  duration_ms: 37.450461
+  type: 'test'
+  ...
+# Subtest: the checked-in child library passes the complete validator with actual generated files
+ok 8 - the checked-in child library passes the complete validator with actual generated files
+  ---
+  duration_ms: 37.047457
+  type: 'test'
+  ...
+# Subtest: an oversized binary mesh fails the real-size gate even after its metadata is refreshed
+ok 9 - an oversized binary mesh fails the real-size gate even after its metadata is refreshed
+  ---
+  duration_ms: 527.605136
+  type: 'test'
+  ...
+# reject-oversize: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an undersized binary mesh fails the lower real-size bound with accurate metadata
+ok 10 - an undersized binary mesh fails the lower real-size bound with accurate metadata
+  ---
+  duration_ms: 304.950589
+  type: 'test'
+  ...
+# reject-undersize: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an extra valid high-detail triangle batch fails the 800-triangle gate
+ok 11 - an extra valid high-detail triangle batch fails the 800-triangle gate
+  ---
+  duration_ms: 473.065928
+  type: 'test'
+  ...
+# reject-high-triangles: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an extra valid LOD triangle batch fails the 240-triangle gate
+ok 12 - an extra valid LOD triangle batch fails the 240-triangle gate
+  ---
+  duration_ms: 458.851805
+  type: 'test'
+  ...
+# reject-lod-triangles: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: a missing required key fails independently of the remaining GLB geometry
+ok 13 - a missing required key fails independently of the remaining GLB geometry
+  ---
+  duration_ms: 221.009414
+  type: 'test'
+  ...
+# reject-missing-key: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: valid extra GLB payload fails the combined file-size gate
+ok 14 - valid extra GLB payload fails the combined file-size gate
+  ---
+  duration_ms: 402.661762
+  type: 'test'
+  ...
+# reject-payload-budget: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: child budget limits cannot be relaxed by editing manifest data
+ok 15 - child budget limits cannot be relaxed by editing manifest data
+  ---
+  duration_ms: 90.808553
+  type: 'test'
+  ...
+# Subtest: declared child scale and age bands cannot contradict the fixed size contract
+ok 16 - declared child scale and age bands cannot contradict the fixed size contract
+  ---
+  duration_ms: 74.785417
+  type: 'test'
+  ...
+# Subtest: adult validation accepts its exact child companion but rejects an extra child-prefixed GLB
+ok 17 - adult validation accepts its exact child companion but rejects an extra child-prefixed GLB
+  ---
+  duration_ms: 160.404243
+  type: 'test'
+  ...
+# Subtest: complete library requires all 23 adult garments and 67 applicable object states
+ok 18 - complete library requires all 23 adult garments and 67 applicable object states
+  ---
+  duration_ms: 9.060265
+  type: 'test'
+  ...
+# Subtest: partial mode validates a development subset but cannot masquerade as complete
+ok 19 - partial mode validates a development subset but cannot masquerade as complete
+  ---
+  duration_ms: 13.178364
+  type: 'test'
+  ...
+# Subtest: missing generated GLB fails, restoring its real bytes recovers the library
+ok 20 - missing generated GLB fails, restoring its real bytes recovers the library
+  ---
+  duration_ms: 15.849554
+  type: 'test'
+  ...
+# Subtest: missing a required state cannot be hidden by an otherwise valid manifest
+ok 21 - missing a required state cannot be hidden by an otherwise valid manifest
+  ---
+  duration_ms: 7.043803
+  type: 'test'
+  ...
+# Subtest: unlisted model files and unlisted scene roots fail complete mode
+ok 22 - unlisted model files and unlisted scene roots fail complete mode
+  ---
+  duration_ms: 8.892201
+  type: 'test'
+  ...
+# Subtest: recolouring metadata cannot silently name an unknown material
+ok 23 - recolouring metadata cannot silently name an unknown material
+  ---
+  duration_ms: 0.897534
+  type: 'test'
+  ...
+# Subtest: embedded textures, skins and animations are forbidden
+ok 24 - embedded textures, skins and animations are forbidden
+  ---
+  duration_ms: 0.425432
+  type: 'test'
+  ...
+# Subtest: binary corruption is read from accessor bytes, including NaN and invalid indices
+ok 25 - binary corruption is read from accessor bytes, including NaN and invalid indices
+  ---
+  duration_ms: 0.602779
+  type: 'test'
+  ...
+# Subtest: degenerate triangles and stale accessor bounds are rejected
+ok 26 - degenerate triangles and stale accessor bounds are rejected
+  ---
+  duration_ms: 0.399082
+  type: 'test'
+  ...
+# Subtest: missing normals, UVs and colours cannot become invisible bad exports
+ok 27 - missing normals, UVs and colours cannot become invisible bad exports
+  ---
+  duration_ms: 0.646295
+  type: 'test'
+  ...
+# Subtest: truncated files, buffer overreads and scene cycles fail cleanly
+ok 28 - truncated files, buffer overreads and scene cycles fail cleanly
+  ---
+  duration_ms: 0.651542
+  type: 'test'
+  ...
+# Subtest: measurement includes child transforms and rejects moved asset origins
+ok 29 - measurement includes child transforms and rejects moved asset origins
+  ---
+  duration_ms: 0.599904
+  type: 'test'
+  ...
+# Subtest: metadata bounds and footprint are independently compared with geometry
+ok 30 - metadata bounds and footprint are independently compared with geometry
+  ---
+  duration_ms: 11.995666
+  type: 'test'
+  ...
+# Subtest: LOD must be both under its cap and a meaningful simplification
+ok 31 - LOD must be both under its cap and a meaningful simplification
+  ---
+  duration_ms: 8.478787
+  type: 'test'
+  ...
+# Subtest: triangle limits cannot be raised in manifest data
+ok 32 - triangle limits cannot be raised in manifest data
+  ---
+  duration_ms: 7.976109
+  type: 'test'
+  ...
+# Subtest: all runtime files count towards the byte budget, including unreferenced data
+ok 33 - all runtime files count towards the byte budget, including unreferenced data
+  ---
+  duration_ms: 8.708764
+  type: 'test'
+  ...
+# Subtest: unsafe referenced paths cannot escape the model directory
+ok 34 - unsafe referenced paths cannot escape the model directory
+  ---
+  duration_ms: 8.518097
+  type: 'test'
+  ...
+# Subtest: adult scope and applicable state exceptions are required
+ok 35 - adult scope and applicable state exceptions are required
+  ---
+  duration_ms: 7.707915
+  type: 'test'
+  ...
+# Subtest: provenance IDs and furniture catalogue bindings must resolve to existing contracts
+ok 36 - provenance IDs and furniture catalogue bindings must resolve to existing contracts
+  ---
+  duration_ms: 13.874223
+  type: 'test'
+  ...
+# Subtest: assortments reject incompatible states and unknown palette variants
+ok 37 - assortments reject incompatible states and unknown palette variants
+  ---
+  duration_ms: 7.66483
+  type: 'test'
+  ...
+# Subtest: stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+ok 38 - stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+  ---
+  duration_ms: 11.930122
+  type: 'test'
+  ...
+# Subtest: the checked-in garment library satisfies the complete export contract
+ok 39 - the checked-in garment library satisfies the complete export contract
+  ---
+  duration_ms: 92.701455
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3351.874583

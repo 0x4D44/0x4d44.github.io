@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: sized data preserves every age, size, state, palette and original source root
+ok 1 - sized data preserves every age, size, state, palette and original source root
+  ---
+  duration_ms: 25.162238
+  type: 'test'
+  ...
+# Subtest: manifest loading keeps overlapping child and teen source keys distinct
+ok 2 - manifest loading keeps overlapping child and teen source keys distinct
+  ---
+  duration_ms: 6.281944
+  type: 'test'
+  ...
+# Subtest: page startup loads both sized libraries once and draws their measured LOD roots
+ok 3 - page startup loads both sized libraries once and draws their measured LOD roots
+  ---
+  duration_ms: 186.094597
+  type: 'test'
+  ...
+# Subtest: missing libraries fall back independently and a failed download can be retried
+ok 4 - missing libraries fall back independently and a failed download can be retried
+  ---
+  duration_ms: 132.761668
+  type: 'test'
+  ...
+# Subtest: a missing named LOD root cannot be reported as a loaded garment
+ok 5 - a missing named LOD root cannot be reported as a loaded garment
+  ---
+  duration_ms: 82.857565
+  type: 'test'
+  ...
+# Subtest: garments off clears sized readiness without requesting either library
+ok 6 - garments off clears sized readiness without requesting either library
+  ---
+  duration_ms: 2.628942
+  type: 'test'
+  ...
+# Subtest: the generator rejects duplicate sized keys instead of overwriting garments
+ok 7 - the generator rejects duplicate sized keys instead of overwriting garments
+  ---
+  duration_ms: 20.683931
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 710.885033

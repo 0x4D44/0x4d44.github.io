@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { manifestAssetKey } from '../js/core/asset-keys.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const MODELS = resolve(HERE, '..', 'assets', 'models');
@@ -50,6 +51,39 @@ export function garmentsDataModule(modelsDir = MODELS) {
     lines.push(`  { id: '${b.id}', kind: '${b.kind}', keys: ${JSON.stringify(b.catalogueKeys).replace(/"/g, "'").replace(/,/g, ', ')}, items: [${items}] },`);
   }
   lines.push('];');
+  lines.push('');
+  // Keep the adult export and its furnishing contract intact. Sized libraries have
+  // their own age-qualified keys because 56 child/teen source node names overlap.
+  const sized = new Map(), palettes = {};
+  for (const age of ['child', 'teen']) {
+    const manifestName = `manifest.garments_${age}.json`, manifest = read(manifestName);
+    if (manifest.set !== `garments_${age}` || manifest.ageGroup !== age) throw new Error(`${manifestName}: invalid age group`);
+    const palette = read(manifest.palette); palettes[age] = palette.variants;
+    for (const file of manifest.files) for (const [sourceKey, a] of Object.entries(file.assets)) {
+      if (a.ageGroup !== age || !['small', 'big'].includes(a.sizeClass) || !STATES.includes(a.state)) throw new Error(`${sourceKey}: invalid age, size or state`);
+      if (sourceKey !== `garment_${a.garment}_${a.sizeClass}_${a.state}`) throw new Error(`${sourceKey}: inconsistent garment key`);
+      if (!a.variants?.length || a.variants.some((v) => !palette.variants[v])) throw new Error(`${sourceKey}: unknown colour variant`);
+      const key = manifestAssetKey(manifest, sourceKey);
+      if (sized.has(key)) throw new Error(`${key}: duplicate sized garment`);
+      sized.set(key, { age, size: a.sizeClass, garment: a.garment, state: a.state, variants: a.variants,
+        dimensions: a.size.map(m3), glb: file.glb, node: a.node ?? sourceKey,
+        lod: { glb: a.lod.glb, node: a.lod.node, triangles: a.lod.triangles } });
+    }
+  }
+  lines.push('/** Child and teen manifests: age-qualified asset key -> age/size tags, dimensions in metres, colour variants and named detail/LOD roots. */');
+  lines.push('// Sources: assets/models/manifest.garments_child.json, manifest.garments_teen.json and their palettes.');
+  lines.push('export const SIZED_GARMENTS = {');
+  for (const [key, g] of [...sized].sort(([a], [b]) => a.localeCompare(b))) lines.push(`  ${key}: ${JSON.stringify(g)},`);
+  lines.push('};');
+  lines.push('');
+  lines.push('/** Each age library owns its variant namespace; the adult VARIANTS export above is unchanged. */');
+  lines.push('export const SIZED_VARIANTS = {');
+  for (const [age, variants] of Object.entries(palettes)) {
+    lines.push(`  ${age}: {`);
+    for (const [id, v] of Object.entries(variants)) lines.push(`    ${id}: ${hex(v.color)},`);
+    lines.push('  },');
+  }
+  lines.push('};');
   lines.push('');
   return lines.join('\n');
 }

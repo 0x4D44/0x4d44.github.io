@@ -1,0 +1,9 @@
+PASS + KILLED 1/8 complete child and teen sets retain exact bytes across adult directory replacement
+PASS + KILLED 2/8 absent companion sets are valid for a first adult build
+PASS + KILLED 3/8 incomplete set is rejected without data loss: garments/garments_child.glb
+PASS + KILLED 4/8 incomplete set is rejected without data loss: manifest.garments_child.json
+PASS + KILLED 5/8 incomplete set is rejected without data loss: garments/garments_teen.glb
+PASS + KILLED 6/8 incomplete set is rejected without data loss: manifest.garments_teen.json
+PASS + KILLED 7/8 incomplete set is rejected without data loss: garments/teen
+PASS + KILLED 8/8 companions are read from the selected output tree only
+Builder companion preservation: 8/8 contracts passed; 8/8 mutations killed; source assets untouched.

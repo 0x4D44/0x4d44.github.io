@@ -1,0 +1,37 @@
+TAP version 13
+# Subtest: the child set reuses the adult fabric palette and atlas without embedded textures
+not ok 1 - the child set reuses the adult fabric palette and atlas without embedded textures
+  ---
+  duration_ms: 41.293819
+  type: 'test'
+  location: '<la-ladera>/tests/garments-child.test.mjs:250:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'garments/wrong-prints.png'
+    - 'garments/prints.png'
+                ^
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'garments/prints.png'
+  actual: 'garments/wrong-prints.png'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<la-ladera>/tests/garments-child.test.mjs:253:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.898447

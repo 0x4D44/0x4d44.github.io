@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: oversize real LOD piece makes the size acceptance test fail
+not ok 1 - oversize real LOD piece makes the size acceptance test fail
+  ---
+  duration_ms: 103.504288
+  type: 'test'
+  location: '<isolated-fixture>/25/garments-teen.test.mjs:174:36'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejects (file://<isolated-fixture>/25/garments-teen.test.mjs:33:47)
+    TestContext.<anonymous> (file://<isolated-fixture>/25/garments-teen.test.mjs:185:3)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198.508182

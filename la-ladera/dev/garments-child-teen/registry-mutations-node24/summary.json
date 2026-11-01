@@ -1,0 +1,66 @@
+{
+  "node": "v24.22.1",
+  "namedTests": 7,
+  "passedBaselines": 8,
+  "killed": 8,
+  "total": 8,
+  "sourceUnchanged": true,
+  "cases": [
+    {
+      "id": "generated-age",
+      "test": "sized data preserves every age, size, state, palette and original source root",
+      "file": "js/interiors/garments_data.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "age-namespace",
+      "test": "manifest loading keeps overlapping child and teen source keys distinct",
+      "file": "js/core/asset-keys.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "page-startup",
+      "test": "page startup loads both sized libraries once and draws their measured LOD roots",
+      "file": "js/interiors/index.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "cached-detail-parts",
+      "test": "page startup loads both sized libraries once and draws their measured LOD roots",
+      "file": "js/interiors/garments-sized.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "failed-download-retry",
+      "test": "missing libraries fall back independently and a failed download can be retried",
+      "file": "js/core/assets.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "named-lod-readiness",
+      "test": "a missing named LOD root cannot be reported as a loaded garment",
+      "file": "js/interiors/garments-sized.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "garments-off",
+      "test": "garments off clears sized readiness without requesting either library",
+      "file": "js/interiors/garments-sized.js",
+      "status": 1,
+      "outcome": "killed"
+    },
+    {
+      "id": "duplicate-generator-key",
+      "test": "the generator rejects duplicate sized keys instead of overwriting garments",
+      "file": "tools/garments_data.mjs",
+      "status": 1,
+      "outcome": "killed"
+    }
+  ]
+}

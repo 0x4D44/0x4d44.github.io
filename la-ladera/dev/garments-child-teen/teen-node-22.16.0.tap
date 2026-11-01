@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: teen acceptance: every required key and LOD exists in the generated GLB
+ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+  ---
+  duration_ms: 72.150438
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece is inside its real dimension range
+ok 2 - teen acceptance: every piece is inside its real dimension range
+  ---
+  duration_ms: 55.521128
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece stays within its high and LOD triangle budgets
+ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+  ---
+  duration_ms: 43.452334
+  type: 'test'
+  ...
+# Subtest: teen acceptance: complete generated payload stays under 700000 bytes
+ok 4 - teen acceptance: complete generated payload stays under 700000 bytes
+  ---
+  duration_ms: 1.760186
+  type: 'test'
+  ...
+# Subtest: the checked-in teen library satisfies the extended independent validator
+ok 5 - the checked-in teen library satisfies the extended independent validator
+  ---
+  duration_ms: 73.949477
+  type: 'test'
+  ...
+# Subtest: dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+ok 6 - dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+  ---
+  duration_ms: 36.4914
+  type: 'test'
+  ...
+# Subtest: removing a real key makes the key acceptance test fail
+ok 7 - removing a real key makes the key acceptance test fail
+  ---
+  duration_ms: 375.313361
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+# \# fail 2
+# Subtest: oversize real high piece makes the size acceptance test fail
+ok 8 - oversize real high piece makes the size acceptance test fail
+  ---
+  duration_ms: 415.05388
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_tshirt_cream_small_flat: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: oversize real LOD piece makes the size acceptance test fail
+ok 9 - oversize real LOD piece makes the size acceptance test fail
+  ---
+  duration_ms: 597.775793
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_tshirt_cream_small_flat LOD: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: extra real high triangle batches make the triangle acceptance test fail
+ok 10 - extra real high triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 406.019689
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_tshirt_cream_small_flat: 928 triangles exceed 800'
+# \# fail 1
+# Subtest: extra real LOD triangle batches make the triangle acceptance test fail
+ok 11 - extra real LOD triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 411.384904
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_tshirt_cream_small_flat LOD: 312 triangles exceed 240'
+# \# fail 1
+# Subtest: extra payload makes the same byte-budget acceptance test fail
+ok 12 - extra payload makes the same byte-budget acceptance test fail
+  ---
+  duration_ms: 382.657452
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 4 - teen acceptance: complete generated payload stays under 700000 bytes
+#   error: 'teen runtime payload 1379737 exceeds 700000 bytes'
+# \# fail 1
+# Subtest: mutable catalogue and manifest cannot relax independent dimensions or budgets
+ok 13 - mutable catalogue and manifest cannot relax independent dimensions or budgets
+  ---
+  duration_ms: 40.429129
+  type: 'test'
+  ...
+# Subtest: unlisted teen GLBs are rejected instead of hiding inside the payload budget
+ok 14 - unlisted teen GLBs are rejected instead of hiding inside the payload budget
+  ---
+  duration_ms: 45.318004
+  type: 'test'
+  ...
+# Subtest: malformed variant lists are reported without aborting validation
+ok 15 - malformed variant lists are reported without aborting validation
+  ---
+  duration_ms: 63.139096
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3108.16405

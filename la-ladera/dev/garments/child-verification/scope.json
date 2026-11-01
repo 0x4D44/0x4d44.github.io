@@ -1,0 +1,19 @@
+{
+  "baseCommit": "621ff65dd086969373e17ae18a2eb8f01997e9be",
+  "branch": "codex/la-ladera-child-garments-20261031",
+  "unchangedSourceFilesChecked": 151,
+  "runtimeJsFilesUnchanged": 140,
+  "changedProtectedPaths": [],
+  "mainRegistrationManifestUnchanged": true,
+  "adultRuntimeAssetsUnchanged": true,
+  "childFiles": {
+    "assets/models/garments/garments_child.glb": {
+      "bytes": 540212,
+      "sha256": "1c6c3c7c30cff154cc73f450e9efb25f2af279f2f2fd871fc619267d3ff1dfb2"
+    },
+    "assets/models/manifest.garments_child.json": {
+      "bytes": 73916,
+      "sha256": "7fb41efca5a233702342ce71609db8294b3769354098e27f397d5a8dd5fbfc8d"
+    }
+  }
+}

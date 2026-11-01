@@ -1,0 +1,8 @@
+Node v24.22.1
+KILLED generated-age: sized data preserves every age, size, state, palette and original source root
+KILLED age-namespace: manifest loading keeps overlapping child and teen source keys distinct
+KILLED page-startup: page startup loads both sized libraries once and draws their measured LOD roots
+KILLED cached-detail-parts: page startup loads both sized libraries once and draws their measured LOD roots
+KILLED failed-download-retry: missing libraries fall back independently and a failed download can be retried
+KILLED named-lod-readiness: a missing named LOD root cannot be reported as a loaded garment
+KILLED garments-off: garments off clears sized readiness without requesting either library

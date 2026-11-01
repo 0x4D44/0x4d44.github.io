@@ -9,6 +9,7 @@
 // Each asset = one top-level node of the GLB; its origin is the asset origin (floor level, centre or back).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { manifestAssetKey } from './asset-keys.js';
 
 export class Assets {
   constructor(ctx) {
@@ -29,7 +30,11 @@ export class Assets {
       try {
         const m = await read(f);
         for (const set of m?.files ?? []) {
-          for (const [name, meta] of Object.entries(set.assets ?? {})) this.entries.set(name, { name, glb: set.glb, node: meta.node ?? name, ...meta });
+          for (const [key, meta] of Object.entries(set.assets ?? {})) {
+            const name = manifestAssetKey(m, key);
+            const tags = name === key ? {} : { age: m.ageGroup, tags: ['garment', m.ageGroup, meta.sizeClass, ...(meta.tags ?? [])] };
+            this.entries.set(name, { name, glb: set.glb, node: meta.node ?? key, ...meta, ...tags });
+          }
         }
       } catch (e) { console.warn('[assets] manifest', f, e); }
     }

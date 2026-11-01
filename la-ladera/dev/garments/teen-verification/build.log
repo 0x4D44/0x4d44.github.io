@@ -1,0 +1,391 @@
+tshirt_cream_folded: 191/78 high/LOD
+tshirt_cream_hung: 116/52 high/LOD
+tshirt_cream_flat: 116/52 high/LOD
+tshirt_teal_folded: 191/78 high/LOD
+tshirt_teal_hung: 116/52 high/LOD
+tshirt_teal_flat: 116/52 high/LOD
+tshirt_sun_folded: 191/78 high/LOD
+tshirt_sun_hung: 116/52 high/LOD
+tshirt_sun_flat: 116/52 high/LOD
+shorts_chino_folded: 191/72 high/LOD
+shorts_chino_hung: 98/40 high/LOD
+shorts_chino_flat: 98/40 high/LOD
+crop_top_rib_folded: 192/78 high/LOD
+crop_top_rib_hung: 104/40 high/LOD
+crop_top_rib_flat: 104/40 high/LOD
+crop_top_boxy_folded: 192/78 high/LOD
+crop_top_boxy_hung: 116/52 high/LOD
+crop_top_boxy_flat: 116/52 high/LOD
+lycra_shorts_folded: 192/72 high/LOD
+lycra_shorts_hung: 92/40 high/LOD
+lycra_shorts_flat: 92/40 high/LOD
+lycra_trousers_folded: 102/48 high/LOD
+lycra_trousers_hung: 92/40 high/LOD
+lycra_trousers_flat: 92/40 high/LOD
+denim_shorts_folded: 191/72 high/LOD
+denim_shorts_hung: 104/40 high/LOD
+denim_shorts_flat: 104/40 high/LOD
+denim_jeans_folded: 102/48 high/LOD
+denim_jeans_hung: 104/40 high/LOD
+denim_jeans_flat: 104/40 high/LOD
+dress_short_folded: 192/48 high/LOD
+dress_short_hung: 108/48 high/LOD
+dress_short_flat: 108/48 high/LOD
+dress_knee_folded: 191/48 high/LOD
+dress_knee_hung: 110/44 high/LOD
+dress_knee_flat: 110/44 high/LOD
+dress_midi_folded: 192/48 high/LOD
+dress_midi_hung: 110/44 high/LOD
+dress_midi_flat: 110/44 high/LOD
+dress_maxi_folded: 192/48 high/LOD
+dress_maxi_hung: 110/44 high/LOD
+dress_maxi_flat: 110/44 high/LOD
+hoodie_folded: 232/78 high/LOD
+hoodie_hung: 160/72 high/LOD
+hoodie_flat: 160/72 high/LOD
+joggers_folded: 102/48 high/LOD
+joggers_hung: 92/40 high/LOD
+joggers_flat: 92/40 high/LOD
+school_jumper_folded: 192/78 high/LOD
+school_jumper_hung: 128/56 high/LOD
+school_jumper_flat: 128/56 high/LOD
+school_polo_folded: 192/78 high/LOD
+school_polo_hung: 118/52 high/LOD
+school_polo_flat: 118/52 high/LOD
+school_trousers_folded: 102/48 high/LOD
+school_trousers_hung: 98/40 high/LOD
+school_trousers_flat: 98/40 high/LOD
+school_skirt_folded: 192/48 high/LOD
+school_skirt_hung: 88/18 high/LOD
+school_skirt_flat: 88/18 high/LOD
+socks_pair_folded: 191/48 high/LOD
+socks_pair_flat: 176/84 high/LOD
+cap_hung: 192/96 high/LOD
+cap_flat: 191/96 high/LOD
+light_jacket_folded: 231/78 high/LOD
+light_jacket_hung: 134/56 high/LOD
+light_jacket_flat: 134/56 high/LOD
+underwear_briefs_folded: 192/48 high/LOD
+underwear_briefs_hung: 78/30 high/LOD
+underwear_briefs_flat: 78/30 high/LOD
+underwear_boxers_folded: 192/72 high/LOD
+underwear_boxers_hung: 92/40 high/LOD
+underwear_boxers_flat: 92/40 high/LOD
+swim_onepiece_folded: 192/78 high/LOD
+swim_onepiece_hung: 116/60 high/LOD
+swim_onepiece_flat: 116/60 high/LOD
+swim_shorts_folded: 192/72 high/LOD
+swim_shorts_hung: 92/40 high/LOD
+swim_shorts_flat: 92/40 high/LOD
+school_shoes_pair_flat: 232/80 high/LOD
+sandals_pair_flat: 200/68 high/LOD
+INFO Draco mesh compression is available, use library at /tmp/la-ladera-tools/blender-4.5.3-linux-x64/4.5/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+19:53:26 | INFO: Starting glTF 2.0 export
+19:53:26 | INFO: Extracting primitive: prototype
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.001
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.001
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.002
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.002
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.003
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.003
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.004
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.004
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.005
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.005
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.006
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.006
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.007
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.007
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.008
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.008
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.009
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.009
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.010
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.010
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.011
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.011
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.012
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.012
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.013
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.013
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.014
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.014
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.015
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.015
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.016
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.016
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.017
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.017
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.018
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.018
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.019
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.019
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.020
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.020
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.021
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.021
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.022
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.022
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.023
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.023
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.024
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.024
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.025
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.025
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.026
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.026
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.027
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.027
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.028
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.028
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.029
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.029
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.030
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.030
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.031
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.031
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.032
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.032
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.033
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.033
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.034
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.034
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.035
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.035
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.036
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.036
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.037
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.037
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.038
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.038
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.039
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.039
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.040
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.040
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.041
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.041
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.042
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.042
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.043
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.043
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.044
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.044
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.045
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.045
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.046
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.046
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.047
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.047
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.048
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.048
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.049
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.049
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.050
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.050
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.051
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.051
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.052
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.052
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.053
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.053
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.054
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.054
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.055
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.055
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.056
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.056
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.057
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.057
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.058
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.058
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.059
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.059
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.060
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.060
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.061
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.061
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.062
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.062
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.063
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.063
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.064
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.064
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.065
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.065
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.066
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.066
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.067
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.067
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.068
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.068
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.069
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.069
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.070
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.070
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.071
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.071
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.072
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype-lod.072
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.073
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.074
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.075
+19:53:26 | INFO: Primitives created: 1
+19:53:26 | INFO: Extracting primitive: prototype.076
+19:53:26 | INFO: Primitives created: 1
+19:53:27 | INFO: Finished glTF 2.0 export in 0.312286376953125 s
+
+PASS garments_teen (complete): 162 states, 29 garments, 679737/700000 bytes, max 232/96 high/LOD triangles
+
+EXPORTED teen: 29 styles, 162 states + LODs, 679737/700000 bytes; GLB 563196 bytes.
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:38:15)
+
+Blender quit
