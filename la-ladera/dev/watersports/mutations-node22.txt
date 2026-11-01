@@ -1,0 +1,27 @@
+BASELINE 25/25 passed; Node v22.16.0
+KILLED W01 complete: remove a physical GLB
+KILLED W02 nan: write NaN into a POSITION float while re-pinning file SHA
+KILLED W03 accessor: extend POSITION count beyond its bufferView
+KILLED W04 uv: write UV=1.5 into the real binary
+KILLED W05 index: write an index equal to the vertex count
+KILLED W06 transform: reflect a scene-root scale
+KILLED W07 normal: zero an actual vertex normal
+KILLED W08 lod: remove a far root declaration
+KILLED W09 triangles: repeat near primitives 100 times with honest counts
+KILLED W10 pivot: rename an actual sail pivot
+KILLED W11 hash: stale the GLB SHA-256 pin
+KILLED W12 png: flip an atlas IDAT byte without repairing its CRC
+KILLED W13 draft: increase floating draft metadata without moving geometry
+KILLED W14 anchors: put a climb end below its start in both JSON sources
+KILLED W15 boot: register watersports in the boot manifest
+KILLED W16 instances: replace repeated plank/float mesh references with unique meshes
+KILLED W17 colourways: remove one requested sail colourway
+KILLED W18 textpin: change catalogue content after its LF hash was pinned
+KILLED W19 hull-exterior: reverse actual hull winding and normals together, preserving their agreement
+KILLED L01 line-end: mutate the catenary endpoint assignment
+KILLED L02 line-sag: discard 90 percent of requested slack
+KILLED L03 line-degenerate: divide the degenerate span branch by distance
+KILLED L04 line-bounds: remove the segment-count guard
+KILLED L05 line-buffer: allocate instead of reusing the supplied segment buffer
+KILLED V01 variant: mutate source UVs instead of cloning the affected geometry
+MUTATIONS 25/25 killed; Node v22.16.0

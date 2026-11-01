@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: W19 nearest exterior hull surfaces face outwards even when normals and winding agree
+ok 1 - W19 nearest exterior hull surfaces face outwards even when normals and winding agree
+  ---
+  duration_ms: 389.262496
+  type: 'test'
+  ...
+# Coplanar stern-cap negative control: generic binary checks passed; exterior overlap assertion rejected it.
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 402.751153

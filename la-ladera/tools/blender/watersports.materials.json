@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "atlas": "assets/textures/watersports/",
+  "materials": {
+    "watersports_fabric": {
+      "baseColor": "watersports_base.png",
+      "normal": "watersports_normal.png",
+      "orm": "watersports_orm.png",
+      "alphaMode": "OPAQUE",
+      "metalness": 1,
+      "roughness": 1,
+      "vertexColors": true,
+      "doubleSided": true
+    },
+    "watersports_atlas": {
+      "baseColor": "watersports_base.png",
+      "normal": "watersports_normal.png",
+      "orm": "watersports_orm.png",
+      "alphaMode": "OPAQUE",
+      "metalness": 1,
+      "roughness": 1,
+      "vertexColors": true,
+      "doubleSided": false
+    },
+    "watersports_alpha": {
+      "baseColor": "watersports_base.png",
+      "normal": "watersports_normal.png",
+      "orm": "watersports_orm.png",
+      "alphaMode": "MASK",
+      "alphaCutoff": 0.45,
+      "metalness": 1,
+      "roughness": 1,
+      "vertexColors": true,
+      "doubleSided": true
+    },
+    "watersports_window": {
+      "baseColor": "watersports_base.png",
+      "normal": "watersports_normal.png",
+      "orm": "watersports_orm.png",
+      "alphaMode": "BLEND",
+      "depthWrite": false,
+      "metalness": 0,
+      "roughness": 1,
+      "vertexColors": true,
+      "doubleSided": true
+    }
+  }
+}

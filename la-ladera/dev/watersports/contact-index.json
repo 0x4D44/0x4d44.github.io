@@ -1,0 +1,6409 @@
+{
+  "version": 1,
+  "method": "imported GLB; external PBR atlas; Cycles CPU",
+  "complete": true,
+  "shots": [
+    {
+      "key": "watersports_wooden_boat_maria_del_mar",
+      "kind": "transom",
+      "image": "watersports_wooden_boat_maria_del_mar-transom.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          0.002097010612487793,
+          1.6,
+          -5.0034590969085695
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          -2.5307885646820067
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "81b9ae6d27c3c7192015e92b2e69c5f5b2200eb3faf7962f5ce79c1d6dccd8bf",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_maria_del_mar-transom.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          16,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_la_esperanza",
+      "kind": "transom",
+      "image": "watersports_wooden_boat_la_esperanza-transom.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          0.002097010612487793,
+          1.6,
+          -5.0034590969085695
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          -2.5307885646820067
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "ea5eecb3cb75bb2d719e0185f4c002f5c3beb8e67619b3d9573752e1138a7381",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_la_esperanza-transom.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          332,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_san_pedro",
+      "kind": "transom",
+      "image": "watersports_wooden_boat_san_pedro-transom.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          0.002097010612487793,
+          1.6,
+          -5.0034590969085695
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          -2.5307885646820067
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "2c9811596b0faab290db193b2dedc6fe2b2831dc264d657296a50a13297155b2",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_san_pedro-transom.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          648,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_brisa",
+      "kind": "transom",
+      "image": "watersports_wooden_boat_brisa-transom.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          0.002097010612487793,
+          1.6,
+          -5.0034590969085695
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          -2.5307885646820067
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "44b12b6181169026051c277e60d1fb05489a3278f12dc6ff13a831bbeff761bc",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_brisa-transom.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          964,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kayak_single",
+      "kind": "eye",
+      "image": "watersports_kayak_single-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.375,
+          -0.17000000178813934,
+          -1.7000000476837158
+        ],
+        "max": [
+          0.375,
+          0.3100000023841858,
+          1.7000000476837158
+        ]
+      },
+      "camera": {
+        "position": [
+          3.682328087158204,
+          1.6,
+          3.747072105102539
+        ],
+        "target": [
+          0.5750000000000001,
+          0.8149999991059304,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "726e9abf4b38d45bd038104b538dc5d20e10c34613824551c6ff36cedc93f7b4",
+      "contactSheet": {
+        "sourceImage": "watersports_kayak_single-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          16,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kayak_single",
+      "kind": "catalogue",
+      "image": "watersports_kayak_single-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.375,
+          -0.17000000178813934,
+          -1.7000000476837158
+        ],
+        "max": [
+          0.375,
+          0.3100000023841858,
+          1.7000000476837158
+        ]
+      },
+      "camera": {
+        "position": [
+          2.7744000778198243,
+          2.5996000712513925,
+          3.345600093841553
+        ],
+        "target": [
+          0.0,
+          0.07000000029802322,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "40ced54c34390ae80022b120a67b8f71bb27e4eea0ffc186bb91bc9d60c8bc25",
+      "contactSheet": {
+        "sourceImage": "watersports_kayak_single-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kayak_double",
+      "kind": "eye",
+      "image": "watersports_kayak_double-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4300000071525574,
+          -0.1899999976158142,
+          -2.299999952316284
+        ],
+        "max": [
+          0.4300000071525574,
+          0.3100000023841858,
+          2.299999952316284
+        ]
+      },
+      "camera": {
+        "position": [
+          4.7790319128417975,
+          1.6,
+          5.06956789489746
+        ],
+        "target": [
+          0.5750000000000001,
+          0.8050000011920929,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "e17bd520cd4669330f873c4a46a825b57bbc897745fe0f52cba477403e63d33c",
+      "contactSheet": {
+        "sourceImage": "watersports_kayak_double-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          392,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kayak_double",
+      "kind": "catalogue",
+      "image": "watersports_kayak_double-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4300000071525574,
+          -0.1899999976158142,
+          -2.299999952316284
+        ],
+        "max": [
+          0.4300000071525574,
+          0.3100000023841858,
+          2.299999952316284
+        ]
+      },
+      "camera": {
+        "position": [
+          3.7535999221801757,
+          3.4823999314308165,
+          4.526399906158447
+        ],
+        "target": [
+          0.0,
+          0.06000000238418579,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "073a7c25ca15cc598dc75cfd7f3da61130a97b4f011e7f9f88a419644177787d",
+      "contactSheet": {
+        "sourceImage": "watersports_kayak_double-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_lancha",
+      "kind": "eye",
+      "image": "watersports_lancha-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.0677943229675293,
+          -0.3799999952316284,
+          -3.507499933242798
+        ],
+        "max": [
+          1.0719895362854004,
+          1.2339999675750732,
+          3.5172958374023438
+        ]
+      },
+      "camera": {
+        "position": [
+          6.997198957366944,
+          1.6,
+          7.746784874992371
+        ],
+        "target": [
+          0.5770976066589355,
+          0.7100000023841858,
+          0.004897952079772949
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "23d6999ad66458fab5d0aff64df5b6d2dfe8b6f9078fad15fb57d801b8b13a23",
+      "contactSheet": {
+        "sourceImage": "watersports_lancha-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          1144,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_lancha",
+      "kind": "catalogue",
+      "image": "watersports_lancha-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.0677943229675293,
+          -0.3799999952316284,
+          -3.507499933242798
+        ],
+        "max": [
+          1.0719895362854004,
+          1.2339999675750732,
+          3.5172958374023438
+        ]
+      },
+      "camera": {
+        "position": [
+          5.734330955505371,
+          5.653448039531708,
+          6.917296990394592
+        ],
+        "target": [
+          0.002097606658935547,
+          0.4269999861717224,
+          0.004897952079772949
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "d3bc9c00d2500f496715a8cdc0ac676d19fbc2d18c6361db9385ef5254bc45dc",
+      "contactSheet": {
+        "sourceImage": "watersports_lancha-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          1053,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "eye",
+      "image": "watersports_windsurf_rig-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          6.385138164764405,
+          1.6,
+          6.745306506198884
+        ],
+        "target": [
+          0.5750000000000001,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "31644e3611698918d645382046fc4538c9e15cffe5b292c59b710c8c8d4520b5",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          16,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "catalogue",
+      "image": "watersports_windsurf_rig-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "a9f77160c71e07a9b7f5757ef9bc9f8e83148c82b2c3414a6f8a3f221d125642",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_sand",
+      "kind": "eye",
+      "image": "watersports_windsurf_sand-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -2.4600000381469727,
+          0.0,
+          -1.4320731163024902
+        ],
+        "max": [
+          2.4309866428375244,
+          0.667999804019928,
+          1.3899999856948853
+        ]
+      },
+      "camera": {
+        "position": [
+          5.489938434028626,
+          1.6,
+          5.923294328784942
+        ],
+        "target": [
+          0.5604933023452758,
+          0.9,
+          -0.02103656530380249
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "ccf9715bf244d01e600de2ed83468efce2fb398a57362cf57c005d21a2568d8a",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_sand-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          392,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_sand",
+      "kind": "catalogue",
+      "image": "watersports_windsurf_sand-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -2.4600000381469727,
+          0.0,
+          -1.4320731163024902
+        ],
+        "max": [
+          2.4309866428375244,
+          0.667999804019928,
+          1.3899999856948853
+        ]
+      },
+      "camera": {
+        "position": [
+          4.455463849830628,
+          4.409561283540726,
+          5.369222036075592
+        ],
+        "target": [
+          -0.014506697654724121,
+          0.333999902009964,
+          -0.02103656530380249
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "493a4af3300b87f8e1ecf5429313b782f1516276ce6c01021d6c309807e111a6",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_sand-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_derigged",
+      "kind": "eye",
+      "image": "watersports_windsurf_derigged-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.8799999952316284,
+          0.0,
+          -1.149999976158142
+        ],
+        "max": [
+          0.8479999303817749,
+          0.2993311882019043,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          3.504893062633668,
+          1.6,
+          3.5524004969824223
+        ],
+        "target": [
+          0.5589999675750733,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "94042df97ac65ec453f18b38dadd5037f0f2f639af1863a45ede0f3e9e5193ae",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_derigged-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          768,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_derigged",
+      "kind": "catalogue",
+      "image": "watersports_windsurf_derigged-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.8799999952316284,
+          0.0,
+          -1.149999976158142
+        ],
+        "max": [
+          0.8479999303817749,
+          0.2993311882019043,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          2.33825783876648,
+          2.296194829598999,
+          2.838958021142578
+        ],
+        "target": [
+          -0.016000032424926758,
+          0.14966559410095215,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "4a048ac14728947b79cb243f2eda84b7325074f55aa57a84ff700bbc622b75b2",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_derigged-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_a",
+      "kind": "eye",
+      "image": "watersports_sup_a-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4000000059604645,
+          -0.2800000011920929,
+          -1.649999976158142
+        ],
+        "max": [
+          0.4000000059604645,
+          0.16510309278964996,
+          1.649999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          3.9528482711914075,
+          1.6,
+          4.073287621142579
+        ],
+        "target": [
+          0.5750000000000001,
+          0.7599999994039536,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "da8047c8865443e60f14375c5756a607c9b5c0232967230228d43ea7edaf1da1",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_a-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          1144,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_a",
+      "kind": "catalogue",
+      "image": "watersports_sup_a-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4000000059604645,
+          -0.2800000011920929,
+          -1.649999976158142
+        ],
+        "max": [
+          0.4000000059604645,
+          0.16510309278964996,
+          1.649999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          2.692799961090088,
+          2.397751510322094,
+          3.2471999530792233
+        ],
+        "target": [
+          0.0,
+          -0.057448454201221466,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "77b3c48644e66601188ae6a5ea1e09ebf40613803730660d89dc92b49aab20e1",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_a-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_b",
+      "kind": "eye",
+      "image": "watersports_sup_b-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.38999998569488525,
+          -0.2800000011920929,
+          -1.6749999523162842
+        ],
+        "max": [
+          0.38999998569488525,
+          0.16510309278964996,
+          1.6749999523162842
+        ]
+      },
+      "camera": {
+        "position": [
+          4.004027742382813,
+          1.6,
+          4.135004042285156
+        ],
+        "target": [
+          0.5750000000000001,
+          0.7599999994039536,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "eeb8fdcfe8850b960636ca327a08ab9ce04c1a1608af181ba8b33a0b8d8a2104",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_b-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          16,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_b",
+      "kind": "catalogue",
+      "image": "watersports_sup_b-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.38999998569488525,
+          -0.2800000011920929,
+          -1.6749999523162842
+        ],
+        "max": [
+          0.38999998569488525,
+          0.16510309278964996,
+          1.6749999523162842
+        ]
+      },
+      "camera": {
+        "position": [
+          2.7335999221801757,
+          2.434951474845409,
+          3.2963999061584466
+        ],
+        "target": [
+          0.0,
+          -0.057448454201221466,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "19d95d1bc8bf1053c460a956bbda08efccff534d60b8ebc236e3db290e18b058",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_b-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_c",
+      "kind": "eye",
+      "image": "watersports_sup_c-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4099999964237213,
+          -0.2800000011920929,
+          -1.600000023841858
+        ],
+        "max": [
+          0.4099999964237213,
+          0.16510309278964996,
+          1.600000023841858
+        ]
+      },
+      "camera": {
+        "position": [
+          3.850489328808594,
+          1.6,
+          3.949854778857422
+        ],
+        "target": [
+          0.5750000000000001,
+          0.7599999994039536,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "d7374b80a43bee5e4a6fb5cada6ebab4a7c90570e35b498d8cd0c37af456d8a8",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_c-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          392,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_sup_c",
+      "kind": "catalogue",
+      "image": "watersports_sup_c-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4099999964237213,
+          -0.2800000011920929,
+          -1.600000023841858
+        ],
+        "max": [
+          0.4099999964237213,
+          0.16510309278964996,
+          1.600000023841858
+        ]
+      },
+      "camera": {
+        "position": [
+          2.6112000389099124,
+          2.323351581275463,
+          3.148800046920776
+        ],
+        "target": [
+          0.0,
+          -0.057448454201221466,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "2a86ecd669efe26a8feb31fa2628b4c7d9d3896615d8fb3a14fe5a63a573a07a",
+      "contactSheet": {
+        "sourceImage": "watersports_sup_c-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_paddle",
+      "kind": "eye",
+      "image": "watersports_paddle-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.10999999940395355,
+          0.0,
+          -0.012000000104308128
+        ],
+        "max": [
+          0.10999999940395355,
+          1.8320000171661377,
+          0.04998495429754257
+        ]
+      },
+      "camera": {
+        "position": [
+          2.9190220379638676,
+          1.6,
+          2.8266148104858404
+        ],
+        "target": [
+          0.575,
+          0.9160000085830688,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "e82b98e666d07259167b17d4baa0ec6c26b7a2eaf97a6eb4ca57304bec1b08ce",
+      "contactSheet": {
+        "sourceImage": "watersports_paddle-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          768,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_paddle",
+      "kind": "catalogue",
+      "image": "watersports_paddle-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.10999999940395355,
+          0.0,
+          -0.012000000104308128
+        ],
+        "max": [
+          0.10999999940395355,
+          1.8320000171661377,
+          0.04998495429754257
+        ]
+      },
+      "camera": {
+        "position": [
+          1.8686400175094606,
+          2.6197600245475767,
+          2.2723524982109664
+        ],
+        "target": [
+          0.0,
+          0.9160000085830688,
+          0.018992477096617222
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "187619995f1ea5704b48440a730f2861af6a118a9c6c903c7607d23cee3d200c",
+      "contactSheet": {
+        "sourceImage": "watersports_paddle-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kiteboard",
+      "kind": "eye",
+      "image": "watersports_kiteboard-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          -0.06499999761581421,
+          -0.699999988079071
+        ],
+        "max": [
+          0.20999999344348907,
+          0.1492398977279663,
+          0.699999988079071
+        ]
+      },
+      "camera": {
+        "position": [
+          2.961245116949464,
+          1.6,
+          2.8775308763214116
+        ],
+        "target": [
+          0.5750000000000001,
+          0.8675000011920929,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "7e8d9381e59ed1ec7c45e22b2998ded334aab4862a2a65d7d3ed431bb147db0d",
+      "contactSheet": {
+        "sourceImage": "watersports_kiteboard-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          1144,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kiteboard",
+      "kind": "catalogue",
+      "image": "watersports_kiteboard-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          -0.06499999761581421,
+          -0.699999988079071
+        ],
+        "max": [
+          0.20999999344348907,
+          0.1492398977279663,
+          0.699999988079071
+        ]
+      },
+      "camera": {
+        "position": [
+          1.142399980545044,
+          1.0837199323177338,
+          1.3775999765396116
+        ],
+        "target": [
+          0.0,
+          0.04211995005607605,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "4f9312007c05bf27f859207e68b71078312bf3e35e7e94e9fc66459230c64a00",
+      "contactSheet": {
+        "sourceImage": "watersports_kiteboard-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_foilboard",
+      "kind": "eye",
+      "image": "watersports_foilboard-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4300000071525574,
+          -0.8999999761581421,
+          -0.7749999761581421
+        ],
+        "max": [
+          0.4300000071525574,
+          0.20233117043972015,
+          0.7749999761581421
+        ]
+      },
+      "camera": {
+        "position": [
+          3.6594799727630614,
+          1.6,
+          3.7195199671554557
+        ],
+        "target": [
+          0.5750000000000001,
+          0.450000011920929,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f104d5865fc316c7569432993439ffc748e086e7c70f4a5013f0523c805d82d3",
+      "contactSheet": {
+        "sourceImage": "watersports_foilboard-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          16,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_foilboard",
+      "kind": "catalogue",
+      "image": "watersports_foilboard-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.4300000071525574,
+          -0.8999999761581421,
+          -0.7749999761581421
+        ],
+        "max": [
+          0.4300000071525574,
+          0.20233117043972015,
+          0.7749999761581421
+        ]
+      },
+      "camera": {
+        "position": [
+          1.9901872253025006,
+          1.4657480672695395,
+          2.3999316540412505
+        ],
+        "target": [
+          0.0,
+          -0.34883440285921097,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "a17db25376bef3c8b5b53ec5202a4d3862938269f471b78a60a902d2f85b6e6e",
+      "contactSheet": {
+        "sourceImage": "watersports_foilboard-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_bar",
+      "kind": "eye",
+      "image": "watersports_kite_bar-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.28200000524520874,
+          0.002205771394073963,
+          -0.027000000700354576
+        ],
+        "max": [
+          0.28200000524520874,
+          0.14499999582767487,
+          0.04899999871850014
+        ]
+      },
+      "camera": {
+        "position": [
+          3.1544478080000014,
+          1.6,
+          3.110510592000001
+        ],
+        "target": [
+          0.5750000000000001,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "768f2da340da216bb91926680d938f9140ccda5980b39afca4a38485e4c47cc8",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_bar-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          392,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_bar",
+      "kind": "catalogue",
+      "image": "watersports_kite_bar-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.28200000524520874,
+          0.002205771394073963,
+          -0.027000000700354576
+        ],
+        "max": [
+          0.28200000524520874,
+          0.14499999582767487,
+          0.04899999871850014
+        ]
+      },
+      "camera": {
+        "position": [
+          0.4602240085601807,
+          0.49321889141574504,
+          0.5659760093316436
+        ],
+        "target": [
+          0.0,
+          0.07360288361087441,
+          0.01099999900907278
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "c2d3f11d1fba8993156337ac3f5f83adcf64893511df6247d147580201f3e62a",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_bar-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "eye",
+      "image": "watersports_kite_flying-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          7.166251486206052,
+          1.6,
+          7.947187973594663
+        ],
+        "target": [
+          0.5749999999999997,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "aba974e8678b74567ae9b0245fdcc5a2d014dacac9db16512832563b953d863c",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          768,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "catalogue",
+      "image": "watersports_kite_flying-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "746b1f9d28c382499f7cc0d24b80bd8f41d6c4ce0d317515845e3150a517cc92",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_sand",
+      "kind": "eye",
+      "image": "watersports_kite_sand-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.415527105331421,
+          2.7755575615628914e-17,
+          -1.290912389755249
+        ],
+        "max": [
+          3.415527105331421,
+          0.5899999737739563,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          7.087540235900878,
+          1.6,
+          7.85040113172531
+        ],
+        "target": [
+          0.5749999999999997,
+          0.9,
+          -0.002956211566925049
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "bab91a83270c7671f406dd1c604fb56ed778fb8394753dfb1cd9b1a6e62f6234",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_sand-eye.png",
+        "sheet": "contact-eye-01.jpg",
+        "rectangle": [
+          1144,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_sand",
+      "kind": "catalogue",
+      "image": "watersports_kite_sand-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.415527105331421,
+          2.7755575615628914e-17,
+          -1.290912389755249
+        ],
+        "max": [
+          3.415527105331421,
+          0.5899999737739563,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.574140235900879,
+          5.377304319620133,
+          6.718801131725312
+        ],
+        "target": [
+          0.0,
+          0.29499998688697815,
+          -0.002956211566925049
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f5b6eb95d858584bb1611049ecd6b0299c2a40b1200bf6185993ab36f7835b5d",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_sand-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_rowing_boat",
+      "kind": "eye",
+      "image": "watersports_rowing_boat-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.7049999833106995,
+          -0.23999999463558197,
+          -1.8066062927246094
+        ],
+        "max": [
+          0.7049999833106995,
+          0.5008741617202759,
+          1.8182578086853027
+        ]
+      },
+      "camera": {
+        "position": [
+          4.285376095507813,
+          1.6,
+          4.480102814328003
+        ],
+        "target": [
+          0.5750000000000001,
+          0.780000002682209,
+          0.00582575798034668
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "34d870cff2b23d7967f2c74e3c3c46bea0326ab32317850916bfb8cc82817743",
+      "contactSheet": {
+        "sourceImage": "watersports_rowing_boat-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          768,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_rowing_boat",
+      "kind": "catalogue",
+      "image": "watersports_rowing_boat-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.7049999833106995,
+          -0.23999999463558197,
+          -1.8066062927246094
+        ],
+        "max": [
+          0.7049999833106995,
+          0.5008741617202759,
+          1.8182578086853027
+        ]
+      },
+      "camera": {
+        "position": [
+          3.3128357995605473,
+          3.150963841965199,
+          4.000715986862183
+        ],
+        "target": [
+          0.0,
+          0.13043708354234695,
+          0.00582575798034668
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "d654a0facf31bdd58388bdc849439b5ca1e8f13aec0fa5e5c574b71364d94084",
+      "contactSheet": {
+        "sourceImage": "watersports_rowing_boat-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          738,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_oar",
+      "kind": "eye",
+      "image": "watersports_oar-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.09000000357627869,
+          0.0043541742488741875,
+          -1.0499999523162842
+        ],
+        "max": [
+          0.09000000357627869,
+          0.060645826160907745,
+          1.0499999523162842
+        ]
+      },
+      "camera": {
+        "position": [
+          2.8780784000000006,
+          1.6,
+          2.777241600000001
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "cb90868861acb6f7e39c6edae36fefab13ca88c6db69b1b54ce2f493f8640955",
+      "contactSheet": {
+        "sourceImage": "watersports_oar-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          16,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_oar",
+      "kind": "catalogue",
+      "image": "watersports_oar-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.09000000357627869,
+          0.0043541742488741875,
+          -1.0499999523162842
+        ],
+        "max": [
+          0.09000000357627869,
+          0.060645826160907745,
+          1.0499999523162842
+        ]
+      },
+      "camera": {
+        "position": [
+          1.7135999221801759,
+          1.5948999292515218,
+          2.066399906158447
+        ],
+        "target": [
+          0.0,
+          0.032500000204890966,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "02948bd4ad4ea21dc93ffbb9849eca19d1eb3e3bc441f0c35ab91ac052262581",
+      "contactSheet": {
+        "sourceImage": "watersports_oar-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          1053,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_anchor",
+      "kind": "eye",
+      "image": "watersports_anchor-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.2800000011920929,
+          0.0,
+          -0.14000000059604645
+        ],
+        "max": [
+          0.2800000011920929,
+          0.649644672870636,
+          0.14000000059604645
+        ]
+      },
+      "camera": {
+        "position": [
+          3.1544478080000014,
+          1.6,
+          3.110510592000001
+        ],
+        "target": [
+          0.5750000000000001,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "932f39e1dba900e4b189f065eb3d8d2dc1144b7c5300d79d491bd04769860dd9",
+      "contactSheet": {
+        "sourceImage": "watersports_anchor-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          392,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_anchor",
+      "kind": "catalogue",
+      "image": "watersports_anchor-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.2800000011920929,
+          0.0,
+          -0.14000000059604645
+        ],
+        "max": [
+          0.2800000011920929,
+          0.649644672870636,
+          0.14000000059604645
+        ]
+      },
+      "camera": {
+        "position": [
+          0.8312125632019046,
+          1.0826926146488192,
+          1.002344561508179
+        ],
+        "target": [
+          0.0,
+          0.324822336435318,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "26fd54e81da87af408237ac2b7418beb36434418e01f7b136f626f13e3a757d7",
+      "contactSheet": {
+        "sourceImage": "watersports_anchor-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          1053,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_rope_coil",
+      "kind": "eye",
+      "image": "watersports_rope_coil-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.31889092922210693,
+          0.004261569119989872,
+          -0.3165088891983032
+        ],
+        "max": [
+          0.34982290863990784,
+          0.08277641236782074,
+          0.30832064151763916
+        ]
+      },
+      "camera": {
+        "position": [
+          3.169913797708902,
+          1.6,
+          3.106416468159669
+        ],
+        "target": [
+          0.5904659897089005,
+          0.9,
+          -0.004094123840332031
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "0dc405ed6ccb734d777efb431d17f5cd807d2a7c956d5a1da0c5cbde8607b117",
+      "contactSheet": {
+        "sourceImage": "watersports_rope_coil-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          768,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_rope_coil",
+      "kind": "catalogue",
+      "image": "watersports_rope_coil-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.31889092922210693,
+          0.004261569119989872,
+          -0.3165088891983032
+        ],
+        "max": [
+          0.34982290863990784,
+          0.08277641236782074,
+          0.30832064151763916
+        ]
+      },
+      "camera": {
+        "position": [
+          0.6999550544916155,
+          0.6676119615752043,
+          0.8213191601623536
+        ],
+        "target": [
+          0.015465989708900452,
+          0.043518990743905306,
+          -0.004094123840332031
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "84c4a409764a141e7cc2e3856b87b9b2bbdc56263997b0ba81e7d5a86b2233b0",
+      "contactSheet": {
+        "sourceImage": "watersports_rope_coil-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          1053,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_lifebuoy",
+      "kind": "eye",
+      "image": "watersports_lifebuoy-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.3799999952316284,
+          -0.04811844602227211,
+          -0.3799999952316284
+        ],
+        "max": [
+          0.3799999952316284,
+          0.06411844491958618,
+          0.3799999952316284
+        ]
+      },
+      "camera": {
+        "position": [
+          2.939645374264146,
+          1.6,
+          2.8514841277891163
+        ],
+        "target": [
+          0.5750000000000001,
+          0.875940776988864,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "db1fe79d1163c0cd18f8ef1ae8c299ebbe794d177a9ef4eb7f7649f12012f40e",
+      "contactSheet": {
+        "sourceImage": "watersports_lifebuoy-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          1144,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_lifebuoy",
+      "kind": "catalogue",
+      "image": "watersports_lifebuoy-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.3799999952316284,
+          -0.04811844602227211,
+          -0.3799999952316284
+        ],
+        "max": [
+          0.3799999952316284,
+          0.06411844491958618,
+          0.3799999952316284
+        ]
+      },
+      "camera": {
+        "position": [
+          0.8712801375468753,
+          0.8024024778002198,
+          1.0506613423359377
+        ],
+        "target": [
+          0.0,
+          0.007999999448657036,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "fa640445ed8f153d4616dff623024f9270bdf544a78db35381e905ca7d80183f",
+      "contactSheet": {
+        "sourceImage": "watersports_lifebuoy-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          1053,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_maria_del_mar",
+      "kind": "eye",
+      "image": "watersports_wooden_boat_maria_del_mar-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          5.624831660270692,
+          1.6,
+          6.092770092010498
+        ],
+        "target": [
+          0.5770970106124877,
+          0.9,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f909b27cf59fb845ba19761a0db9234683b629f2f65a1f8ba10ba4fe21e99332",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_maria_del_mar-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          16,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_maria_del_mar",
+      "kind": "catalogue",
+      "image": "watersports_wooden_boat_maria_del_mar-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          4.509002947807312,
+          4.569686686992645,
+          5.440594291687011
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "c046c10ed8a6e727e2ba0760ef57f9ccd5cfc07433e01a9add7573fa502d11cf",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_maria_del_mar-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          1368,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_la_esperanza",
+      "kind": "eye",
+      "image": "watersports_wooden_boat_la_esperanza-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          5.624831660270692,
+          1.6,
+          6.092770092010498
+        ],
+        "target": [
+          0.5770970106124877,
+          0.9,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f0a093231dd3201d27ea891787097517b03f452173222c5654a307f9853fca99",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_la_esperanza-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          392,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_la_esperanza",
+      "kind": "catalogue",
+      "image": "watersports_wooden_boat_la_esperanza-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          4.509002947807312,
+          4.569686686992645,
+          5.440594291687011
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "2cd113f8974433cfddbe5571ae0562affcff19755e02fa294fb5528bdffcd418",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_la_esperanza-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          1368,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_san_pedro",
+      "kind": "eye",
+      "image": "watersports_wooden_boat_san_pedro-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          5.624831660270692,
+          1.6,
+          6.092770092010498
+        ],
+        "target": [
+          0.5770970106124877,
+          0.9,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "e9f4902c938fbaa07945e7ef191b821146df8fa52fc1cb7334a61e6d4d1ba584",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_san_pedro-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          768,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_san_pedro",
+      "kind": "catalogue",
+      "image": "watersports_wooden_boat_san_pedro-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          4.509002947807312,
+          4.569686686992645,
+          5.440594291687011
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "06dd981b1c7736a507f8b077e667655507bf13fd25a189273fb39e5d2cb4fb14",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_san_pedro-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          1368,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_brisa",
+      "kind": "eye",
+      "image": "watersports_wooden_boat_brisa-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          5.624831660270692,
+          1.6,
+          6.092770092010498
+        ],
+        "target": [
+          0.5770970106124877,
+          0.9,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "655212c3e8e3084d527b6d0c06218248e663e5b4994f9f6732fbb307deb735da",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_brisa-eye.png",
+        "sheet": "contact-eye-02.jpg",
+        "rectangle": [
+          1144,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_wooden_boat_brisa",
+      "kind": "catalogue",
+      "image": "watersports_wooden_boat_brisa-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_boats.glb",
+        "sha256": "f4a50e6b70b5108b39a81124a1009d63041ad8283dded3f368930f953444f7fe"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.9177953004837036,
+          0.0,
+          -2.755788564682007
+        ],
+        "max": [
+          0.9219893217086792,
+          0.9208978414535522,
+          2.767380475997925
+        ]
+      },
+      "camera": {
+        "position": [
+          4.509002947807312,
+          4.569686686992645,
+          5.440594291687011
+        ],
+        "target": [
+          0.002097010612487793,
+          0.4604489207267761,
+          0.005795955657958984
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "0f8f57c8f5127794c78161134fc5c8f5971809f7b1edc21dd214e4aeb9a40d10",
+      "contactSheet": {
+        "sourceImage": "watersports_wooden_boat_brisa-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          1368,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_buoy",
+      "kind": "eye",
+      "image": "watersports_buoy-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.25,
+          -0.15000000596046448,
+          -0.25
+        ],
+        "max": [
+          0.25,
+          0.3799999952316284,
+          0.25
+        ]
+      },
+      "camera": {
+        "position": [
+          2.8026800068092355,
+          1.6,
+          2.686320008211136
+        ],
+        "target": [
+          0.5750000000000001,
+          0.8249999970197678,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f76b654f7e57cc3687ad9befe5041027a1be8aad1aec60f07f59ce5e993788de",
+      "contactSheet": {
+        "sourceImage": "watersports_buoy-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          16,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_buoy",
+      "kind": "catalogue",
+      "image": "watersports_buoy-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.25,
+          -0.15000000596046448,
+          -0.25
+        ],
+        "max": [
+          0.25,
+          0.3799999952316284,
+          0.25
+        ]
+      },
+      "camera": {
+        "position": [
+          0.8506445679292972,
+          0.8905876889240587,
+          1.0257772730912111
+        ],
+        "target": [
+          0.0,
+          0.11499999463558197,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "7f79894b45648abba1d1740eaf23dd38a12c2dedd5e6b3a62e8485a01e4dc9e8",
+      "contactSheet": {
+        "sourceImage": "watersports_buoy-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          1368,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_bell_buoy",
+      "kind": "eye",
+      "image": "watersports_bell_buoy-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.5,
+          -0.2800000011920929,
+          -0.5
+        ],
+        "max": [
+          0.5,
+          1.3200000524520874,
+          0.5
+        ]
+      },
+      "camera": {
+        "position": [
+          2.9511920013618473,
+          1.6,
+          2.8654080016422268
+        ],
+        "target": [
+          0.5750000000000001,
+          0.7599999994039536,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "c4d7882e273e040898a123d21ae16751613fe133b88589b92e74d585cdb85d55",
+      "contactSheet": {
+        "sourceImage": "watersports_bell_buoy-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          392,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_bell_buoy",
+      "kind": "catalogue",
+      "image": "watersports_bell_buoy-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.5,
+          -0.2800000011920929,
+          -0.5
+        ],
+        "max": [
+          0.5,
+          1.3200000524520874,
+          0.5
+        ]
+      },
+      "camera": {
+        "position": [
+          2.0471808686370854,
+          2.386547288210869,
+          2.46865928276825
+        ],
+        "target": [
+          0.0,
+          0.5200000256299973,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "53bed86278cf8b6f62490d4c7341ada4861330003842a1b3b067db1c525ad998",
+      "contactSheet": {
+        "sourceImage": "watersports_bell_buoy-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          1683,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_swimline_segment",
+      "kind": "eye",
+      "image": "watersports_swimline_segment-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          -0.07000000029802322,
+          -0.09000000357627869
+        ],
+        "max": [
+          1.5,
+          0.07000000029802322,
+          0.09000000357627869
+        ]
+      },
+      "camera": {
+        "position": [
+          3.9614000000000003,
+          1.6,
+          4.0836
+        ],
+        "target": [
+          0.575,
+          0.8649999998509884,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "4859c651e8cf1553826e992575fb920b70e03f790e9679847f82864b7bb62848",
+      "contactSheet": {
+        "sourceImage": "watersports_swimline_segment-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          768,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_swimline_segment",
+      "kind": "catalogue",
+      "image": "watersports_swimline_segment-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          -0.07000000029802322,
+          -0.09000000357627869
+        ],
+        "max": [
+          1.5,
+          0.07000000029802322,
+          0.09000000357627869
+        ]
+      },
+      "camera": {
+        "position": [
+          2.448,
+          2.2319999999999998,
+          2.9519999999999995
+        ],
+        "target": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "d9676c1d3e50344137985d2e1dbe3328920aa37245e63c919e1730102b955f22",
+      "contactSheet": {
+        "sourceImage": "watersports_swimline_segment-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          1683,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_diving_raft",
+      "kind": "eye",
+      "image": "watersports_diving_raft-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          -0.8999999761581421,
+          -1.4925000667572021
+        ],
+        "max": [
+          1.5,
+          0.7447831630706787,
+          1.4925000667572021
+        ]
+      },
+      "camera": {
+        "position": [
+          4.822900160000001,
+          1.6,
+          5.122467840000001
+        ],
+        "target": [
+          0.575,
+          0.450000011920929,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": true,
+      "figureHeightMetres": 1.8,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "5460f36a3c730fa5f700f204abc13dff50e13e76cc3f244e38c5933c9517c7e2",
+      "contactSheet": {
+        "sourceImage": "watersports_diving_raft-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          1144,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_diving_raft",
+      "kind": "catalogue",
+      "image": "watersports_diving_raft-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          -0.8999999761581421,
+          -1.4925000667572021
+        ],
+        "max": [
+          1.5,
+          0.7447831630706787,
+          1.4925000667572021
+        ]
+      },
+      "camera": {
+        "position": [
+          4.314212440473602,
+          3.8559382303586696,
+          5.202432648806401
+        ],
+        "target": [
+          0.0,
+          -0.07760840654373169,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f89bd42467a67a46f06789507f6c4cbcd90d0d95ae2abe530c77257d79a7cb80",
+      "contactSheet": {
+        "sourceImage": "watersports_diving_raft-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          1683,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_sunken_moped",
+      "kind": "eye",
+      "image": "watersports_sunken_moped-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.30399999022483826,
+          0.0,
+          -0.8272746801376343
+        ],
+        "max": [
+          0.28999999165534973,
+          1.1002590656280518,
+          0.8272746801376343
+        ]
+      },
+      "camera": {
+        "position": [
+          3.147447808715257,
+          1.6,
+          3.110510592000001
+        ],
+        "target": [
+          0.5680000007152558,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "57b87407dc11244e8f0d7097c3fc60936be31635bb5008031aa72fbfd47f74fd",
+      "contactSheet": {
+        "sourceImage": "watersports_sunken_moped-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          16,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_sunken_moped",
+      "kind": "catalogue",
+      "image": "watersports_sunken_moped-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.30399999022483826,
+          0.0,
+          -0.8272746801376343
+        ],
+        "max": [
+          0.28999999165534973,
+          1.1002590656280518,
+          0.8272746801376343
+        ]
+      },
+      "camera": {
+        "position": [
+          1.8898105431996313,
+          2.2795744391968387,
+          2.2873303600546877
+        ],
+        "target": [
+          -0.006999999284744263,
+          0.5501295328140259,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "c68ebf4ffef592df277c8f7385999bae681123d589af3b05b7c639d1941cdc3f",
+      "contactSheet": {
+        "sourceImage": "watersports_sunken_moped-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          1683,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_sunken_anchor_tyre",
+      "kind": "eye",
+      "image": "watersports_sunken_anchor_tyre-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.6499999761581421,
+          0.0,
+          -0.4000000059604645
+        ],
+        "max": [
+          0.6499999761581421,
+          0.649644672870636,
+          0.4000000059604645
+        ]
+      },
+      "camera": {
+        "position": [
+          3.3837320029343765,
+          1.6,
+          3.3870003564796884
+        ],
+        "target": [
+          0.5750000000000001,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "5ed3238389a461382c76f7c9180c9baa387afba067e1a508760fc0a00d821376",
+      "contactSheet": {
+        "sourceImage": "watersports_sunken_anchor_tyre-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          392,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_sunken_anchor_tyre",
+      "kind": "catalogue",
+      "image": "watersports_sunken_anchor_tyre-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.6499999761581421,
+          0.0,
+          -0.4000000059604645
+        ],
+        "max": [
+          0.6499999761581421,
+          0.649644672870636,
+          0.4000000059604645
+        ]
+      },
+      "camera": {
+        "position": [
+          1.4903475677343754,
+          1.6836686481931307,
+          1.7971838316796878
+        ],
+        "target": [
+          0.0,
+          0.324822336435318,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "7b2b4bd36eb4e75442307537dbc298a7e74c29889995c9e2010ab12217d5e16d",
+      "contactSheet": {
+        "sourceImage": "watersports_sunken_anchor_tyre-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          1683,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_deck",
+      "kind": "eye",
+      "image": "watersports_pier_deck-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.5,
+          0.22049999237060547,
+          1.0
+        ]
+      },
+      "camera": {
+        "position": [
+          3.9614000000000003,
+          1.6,
+          4.0836
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "e3653d1d82b7e415e6a3f8285923ccdfd57a1973381b6652f39ef1c6d6ce9f4e",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_deck-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          768,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_deck",
+      "kind": "catalogue",
+      "image": "watersports_pier_deck-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.5,
+          0.22049999237060547,
+          1.0
+        ]
+      },
+      "camera": {
+        "position": [
+          2.74176,
+          2.6100899961853026,
+          3.30624
+        ],
+        "target": [
+          0.0,
+          0.11024999618530273,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f7fc741a5c59f2b00bc28122af7f435379e0e1cb481657802e1ab14adcf4ff30",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_deck-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          1998,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_pile",
+      "kind": "eye",
+      "image": "watersports_pier_pile-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0.0,
+          -0.1599999964237213
+        ],
+        "max": [
+          0.1599999964237213,
+          3.5999999046325684,
+          0.1599999964237213
+        ]
+      },
+      "camera": {
+        "position": [
+          4.687639891052247,
+          1.6,
+          4.959359868621826
+        ],
+        "target": [
+          0.5750000000000001,
+          1.7999999523162842,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "252ab8acd0f2b4f5406ff6e09ee493d6131757675bbe936e734365afdeff7e60",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_pile-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          1144,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_pile",
+      "kind": "catalogue",
+      "image": "watersports_pier_pile-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0.0,
+          -0.1599999964237213
+        ],
+        "max": [
+          0.1599999964237213,
+          3.5999999046325684,
+          0.1599999964237213
+        ]
+      },
+      "camera": {
+        "position": [
+          3.67199990272522,
+          5.147999863624573,
+          4.427999882698058
+        ],
+        "target": [
+          0.0,
+          1.7999999523162842,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "2a2dc8b79ec3990cfbcd1dc8002d24ee07a8155c38f353d7d6099a9f0d7b3dc2",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_pile-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          1998,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_crossbrace",
+      "kind": "eye",
+      "image": "watersports_pier_crossbrace-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.1882673501968384,
+          0.007819955237209797,
+          -0.07999999821186066
+        ],
+        "max": [
+          1.1882673501968384,
+          1.4921799898147583,
+          0.09399999678134918
+        ]
+      },
+      "camera": {
+        "position": [
+          3.4526523155212407,
+          1.6,
+          3.4701101451873777
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "f829daa7ef2b3ad2ff7e9ed3eddf3f135d55b7f8d2e730057f018e4f764552fb",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_crossbrace-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          16,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_crossbrace",
+      "kind": "catalogue",
+      "image": "watersports_pier_crossbrace-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.1882673501968384,
+          0.007819955237209797,
+          -0.07999999821186066
+        ],
+        "max": [
+          1.1882673501968384,
+          1.4921799898147583,
+          0.09399999678134918
+        ]
+      },
+      "camera": {
+        "position": [
+          2.1719625933837894,
+          2.7303188076700273,
+          2.6261313618946076
+        ],
+        "target": [
+          0.0,
+          0.749999972525984,
+          0.006999999284744263
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "0d8ac70db51bcaea8224fe76b246933c992acff23e75ece55aadd9ce97cfe16b",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_crossbrace-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          1998,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_handrail",
+      "kind": "eye",
+      "image": "watersports_pier_handrail-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          1.0,
+          0.9800000190734863,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          3.453848,
+          1.6,
+          3.471552
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "61750738808ad98f6951e9c16ff4c7034b91e0778b532abc2af2c4e9f15fd7e6",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_handrail-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          392,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_handrail",
+      "kind": "catalogue",
+      "image": "watersports_pier_handrail-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          1.0,
+          0.9800000190734863,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          1.6320000000000001,
+          1.9780000095367432,
+          1.9679999999999997
+        ],
+        "target": [
+          0.0,
+          0.49000000953674316,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "1155278c77ea5134ca1f3f05b33deebe4486d4cefa0de8f478c522ded792d0fa",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_handrail-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          1998,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_post",
+      "kind": "eye",
+      "image": "watersports_pier_post-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.07000000029802322,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          0.07000000029802322,
+          0.9800000190734863,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          2.8780784000000006,
+          1.6,
+          2.777241600000001
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "866be22924465e191ef162fc79750dd69c4dbd7888615c2bb58bfc3f9fdac07c",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_post-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          768,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_post",
+      "kind": "catalogue",
+      "image": "watersports_pier_post-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.07000000029802322,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          0.07000000029802322,
+          0.9800000190734863,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          0.9996000194549561,
+          1.4014000272750855,
+          1.205400023460388
+        ],
+        "target": [
+          0.0,
+          0.49000000953674316,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "ce8e7e8b8e5a6128a009dbfb89e361d0414bd97378e30242cbcc174a8b998d10",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_post-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          1998,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_mooring_cleat",
+      "kind": "eye",
+      "image": "watersports_mooring_cleat-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          0.1599999964237213,
+          0.1566506326198578,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          2.878078400000001,
+          1.6,
+          2.777241600000001
+        ],
+        "target": [
+          0.5750000000000001,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "725813c5e5a8ef2a1945528ae6d4079c5ca37d7a16b2b3447ff825d7a6884751",
+      "contactSheet": {
+        "sourceImage": "watersports_mooring_cleat-eye.png",
+        "sheet": "contact-eye-03.jpg",
+        "rectangle": [
+          1144,
+          828,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_mooring_cleat",
+      "kind": "catalogue",
+      "image": "watersports_mooring_cleat-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0.0,
+          -0.07000000029802322
+        ],
+        "max": [
+          0.1599999964237213,
+          0.1566506326198578,
+          0.07000000029802322
+        ]
+      },
+      "camera": {
+        "position": [
+          0.32754892067871105,
+          0.376972861634636,
+          0.3949854631713868
+        ],
+        "target": [
+          0.0,
+          0.0783253163099289,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "df6ff4d98ca397a6c155e4f0b2d20edaecf365491c7e91394fbfbf24421ec261",
+      "contactSheet": {
+        "sourceImage": "watersports_mooring_cleat-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          2313,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_ladder",
+      "kind": "eye",
+      "image": "watersports_pier_ladder-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          0.0,
+          -0.1785951852798462
+        ],
+        "max": [
+          0.32877641916275024,
+          2.9982588291168213,
+          0.1899999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          4.410624395773889,
+          1.6,
+          4.631751932718277
+        ],
+        "target": [
+          0.5743882030248643,
+          1.4991294145584106,
+          0.005702406167984009
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "57b052d3220715cf8b8637a195dbd1330dd4416ed2042bf90b753427b51751fa",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_ladder-eye.png",
+        "sheet": "contact-eye-04.jpg",
+        "rectangle": [
+          16,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_ladder",
+      "kind": "catalogue",
+      "image": "watersports_pier_ladder-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          0.0,
+          -0.1785951852798462
+        ],
+        "max": [
+          0.32877641916275024,
+          2.9982588291168213,
+          0.1899999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          3.0576122087240223,
+          4.287510125637054,
+          3.693560765981674
+        ],
+        "target": [
+          -0.0006117969751358032,
+          1.4991294145584106,
+          0.005702406167984009
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "617a092e3301508fc791c93d0188e231e21fb174adc8e14f356eaae2839d1ae4",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_ladder-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          332,
+          2313,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_rod_holder",
+      "kind": "eye",
+      "image": "watersports_rod_holder-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          0.0,
+          -0.08900000154972076
+        ],
+        "max": [
+          0.06499999761581421,
+          0.4300000071525574,
+          0.050405994057655334
+        ]
+      },
+      "camera": {
+        "position": [
+          2.8780784000000006,
+          1.6,
+          2.777241600000001
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "d6f8779990764a0690ea81144371a4cdb6d7bcf1d56684fd5f6c43b359a915fa",
+      "contactSheet": {
+        "sourceImage": "watersports_rod_holder-eye.png",
+        "sheet": "contact-eye-04.jpg",
+        "rectangle": [
+          392,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_rod_holder",
+      "kind": "catalogue",
+      "image": "watersports_rod_holder-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          0.0,
+          -0.08900000154972076
+        ],
+        "max": [
+          0.06499999761581421,
+          0.4300000071525574,
+          0.050405994057655334
+        ]
+      },
+      "camera": {
+        "position": [
+          0.43860000729560855,
+          0.614900010228157,
+          0.5096030050516128
+        ],
+        "target": [
+          0.0,
+          0.2150000035762787,
+          -0.019297003746032715
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "60a78ec6719c61e69f55c337e2152acdbf6be1b55bb9dbc8e6ce5fa12341fcaa",
+      "contactSheet": {
+        "sourceImage": "watersports_rod_holder-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          648,
+          2313,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_lamp",
+      "kind": "eye",
+      "image": "watersports_pier_lamp-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          0.0,
+          -0.3138486444950104
+        ],
+        "max": [
+          0.33000001311302185,
+          2.8499999046325684,
+          0.3138486444950104
+        ]
+      },
+      "camera": {
+        "position": [
+          4.221540677978517,
+          1.6,
+          4.397299052856447
+        ],
+        "target": [
+          0.5750000000000001,
+          1.4249999523162842,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "051033fc423cfecb459fa2c6e7e910369061de35d127ea8ef083ab3e804331e0",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_lamp-eye.png",
+        "sheet": "contact-eye-04.jpg",
+        "rectangle": [
+          768,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_lamp",
+      "kind": "catalogue",
+      "image": "watersports_pier_lamp-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          0.0,
+          -0.3138486444950104
+        ],
+        "max": [
+          0.33000001311302185,
+          2.8499999046325684,
+          0.3138486444950104
+        ]
+      },
+      "camera": {
+        "position": [
+          2.90699990272522,
+          4.075499863624573,
+          3.505499882698059
+        ],
+        "target": [
+          0.0,
+          1.4249999523162842,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "dae8cfdd1a48e6cc5738ea2e2346800ae1637202bee380b9e304bd7a96fe4e57",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_lamp-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          964,
+          2313,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_bait_crate",
+      "kind": "eye",
+      "image": "watersports_bait_crate-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.29989999532699585,
+          0.0,
+          -0.20999999344348907
+        ],
+        "max": [
+          0.29989999532699585,
+          0.3400000035762787,
+          0.20999999344348907
+        ]
+      },
+      "camera": {
+        "position": [
+          3.1544478080000014,
+          1.6,
+          3.110510592000001
+        ],
+        "target": [
+          0.5750000000000001,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "fa290806e50c9337742e6b964c69ac5a45dd7f73dc1ae854e5e1995344ca6e4b",
+      "contactSheet": {
+        "sourceImage": "watersports_bait_crate-eye.png",
+        "sheet": "contact-eye-04.jpg",
+        "rectangle": [
+          1144,
+          108,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_bait_crate",
+      "kind": "catalogue",
+      "image": "watersports_bait_crate-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.29989999532699585,
+          0.0,
+          -0.20999999344348907
+        ],
+        "max": [
+          0.29989999532699585,
+          0.3400000035762787,
+          0.20999999344348907
+        ]
+      },
+      "camera": {
+        "position": [
+          0.7701382682962502,
+          0.8721848934700145,
+          0.9286961470631252
+        ],
+        "target": [
+          0.0,
+          0.17000000178813934,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "62387591220ef3522aa437ffbf14a8ce9095f12f8e4140b3e4d5c1a1264ec992",
+      "contactSheet": {
+        "sourceImage": "watersports_bait_crate-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          1280,
+          2313,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_end_platform",
+      "kind": "eye",
+      "image": "watersports_pier_end_platform-eye.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -2.0,
+          0.0,
+          -1.5
+        ],
+        "max": [
+          2.0,
+          1.2000000476837158,
+          1.5
+        ]
+      },
+      "camera": {
+        "position": [
+          4.777400000000001,
+          1.6,
+          5.0676000000000005
+        ],
+        "target": [
+          0.575,
+          0.9,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": 1.6,
+        "figureHeightMetres": 1.8
+      },
+      "floating": false,
+      "figureHeightMetres": 1.8,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "fe8c7b719b98847e628924c306222a55c27fa306cbab5a7437add79a2db91796",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_end_platform-eye.png",
+        "sheet": "contact-eye-04.jpg",
+        "rectangle": [
+          16,
+          468,
+          360,
+          344
+        ]
+      }
+    },
+    {
+      "key": "watersports_pier_end_platform",
+      "kind": "catalogue",
+      "image": "watersports_pier_end_platform-catalogue.png",
+      "variant": null,
+      "variantFamily": null,
+      "source": {
+        "file": "watersports/watersports_pier.glb",
+        "sha256": "83f90896cad0945368ad931256250fd2f1439ab0c47b811aaeb9cfdd57bc1391"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -2.0,
+          0.0,
+          -1.5
+        ],
+        "max": [
+          2.0,
+          1.2000000476837158,
+          1.5
+        ]
+      },
+      "camera": {
+        "position": [
+          4.585684992000001,
+          4.781065751841859,
+          5.529796608000001
+        ],
+        "target": [
+          0.0,
+          0.6000000238418579,
+          0.0
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "43b047347848767d2c08ba5b671ea23d3614ce695a122487df6072ecfe0a4773",
+      "contactSheet": {
+        "sourceImage": "watersports_pier_end_platform-catalogue.png",
+        "sheet": "catalogue.jpg",
+        "rectangle": [
+          16,
+          2628,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_coral.png",
+      "variant": "sail_coral",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "ac50b7237a2647a3497bf100e6d1803b6488d6a01d34a8ea237d1850c1fef6f2",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_coral.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          332,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_teal.png",
+      "variant": "sail_teal",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "25dc35fd5ecbcf74ae58e2fc672b44cf8765db365e7fdfc9e1594a6944b639aa",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_teal.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          1596,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_gold.png",
+      "variant": "sail_gold",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "4d8e2ba80235afbb4635e94392a5b9077c33bf910b3ff44f273bd4e3aac08ab7",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_gold.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          648,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_blue.png",
+      "variant": "sail_blue",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "7af4e7af184a17d3d2a64609baf5bbfbf91103e03cd40c76175ab796344c3c82",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_blue.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          16,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_lime.png",
+      "variant": "sail_lime",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "5d801067cd59170a07a45a7665c4b622de0eeb528dc5bee66df433b7ab66981a",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_lime.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          964,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_windsurf_rig",
+      "kind": "variant",
+      "image": "watersports_windsurf_rig-variant-sail_plum.png",
+      "variant": "sail_plum",
+      "variantFamily": "sail",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -0.33000001311302185,
+          -0.3199999928474426,
+          -1.6720731258392334
+        ],
+        "max": [
+          0.33000001311302185,
+          4.220986843109131,
+          1.149999976158142
+        ]
+      },
+      "camera": {
+        "position": [
+          5.187623361396791,
+          6.680385313463212,
+          5.9946268903732305
+        ],
+        "target": [
+          0.0,
+          1.9504934251308441,
+          -0.26103657484054565
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": true,
+      "figureHeightMetres": null,
+      "waterlineY": 0,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "fe381563955e5c02208ff76a4bbb77550a08b704437897c43bdfa390af88f65f",
+      "contactSheet": {
+        "sourceImage": "watersports_windsurf_rig-variant-sail_plum.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          1280,
+          108,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_coral.png",
+      "variant": "kite_coral",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "2db5cb0c3f91664f9a827caf0de4e2b7a63e8a060fc25781950acfede1359cbe",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_coral.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          332,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_teal.png",
+      "variant": "kite_teal",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "7b5caaa154052ff1be9badb675989f5ff84008f92f32073b32101348a7049596",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_teal.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          1596,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_gold.png",
+      "variant": "kite_gold",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "eb27094e2abfc5a46b1ef6e39e9e33284131af2febbe888b5a137f55e691ccb8",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_gold.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          648,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_blue.png",
+      "variant": "kite_blue",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "ff0188735ca961dea6f823f64e4ef7b118544094ee7fba9e365b572380aced6c",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_blue.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          16,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_lime.png",
+      "variant": "kite_lime",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "b98031a387615198b2f76b6d6a3e2ee9d85dbfe56ddab5159354cda10e6accc9",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_lime.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          964,
+          423,
+          300,
+          299
+        ]
+      }
+    },
+    {
+      "key": "watersports_kite_flying",
+      "kind": "variant",
+      "image": "watersports_kite_flying-variant-kite_plum.png",
+      "variant": "kite_plum",
+      "variantFamily": "kite",
+      "source": {
+        "file": "watersports/watersports_boards.glb",
+        "sha256": "a7e5547677e44365d6aaa1782abfc1874caca26ded21b7a4277980dcedd2da0e"
+      },
+      "atlasSha256": {
+        "baseColor": "e1ead26995f10c751251d859496b6527afb0bb22bd5cc553d3e3bdd4319fe93d",
+        "normal": "62f4d98c3537329b278628292a9698dfeeaf176a4aad52728913c984a752f68b",
+        "orm": "174014452e5c53003e7b278073c292e121fe97e3d0226a303aa80acfba2216ab"
+      },
+      "bounds": {
+        "min": [
+          -3.463757038116455,
+          9.71445146547012e-17,
+          -1.287171721458435
+        ],
+        "max": [
+          3.463757038116455,
+          1.8600000143051147,
+          1.284999966621399
+        ]
+      },
+      "camera": {
+        "position": [
+          5.652851486206055,
+          6.084070479869842,
+          6.815587973594665
+        ],
+        "target": [
+          0.0,
+          0.9300000071525574,
+          -0.0010858774185180664
+        ],
+        "lensMm": 38.0,
+        "eyeHeightMetres": null,
+        "figureHeightMetres": null
+      },
+      "floating": false,
+      "figureHeightMetres": null,
+      "waterlineY": null,
+      "samples": 8,
+      "threads": 4,
+      "size": [
+        512,
+        384
+      ],
+      "persistentRenderData": true,
+      "denoising": true,
+      "sourceImageSha256": "eb9c5b745b3a526bb05e29966ffa71cc700e0e726629a2eeb85c38fd7b552132",
+      "contactSheet": {
+        "sourceImage": "watersports_kite_flying-variant-kite_plum.png",
+        "sheet": "colourways-and-transoms.jpg",
+        "rectangle": [
+          1280,
+          423,
+          300,
+          299
+        ]
+      }
+    }
+  ],
+  "sheets": [
+    {
+      "path": "contact-eye-01.jpg",
+      "bytes": 213007,
+      "sha256": "d107f858d90cde1914c37e4911f518382899ca1b1f266d5647de4de85b323b0a"
+    },
+    {
+      "path": "contact-eye-02.jpg",
+      "bytes": 218044,
+      "sha256": "e49c5df75a57c2fd2447711762f37675f3856bf887a90e8fb08fa7b3721a9539"
+    },
+    {
+      "path": "contact-eye-03.jpg",
+      "bytes": 214333,
+      "sha256": "dc9f67fa8171b6cf64224738bc07170df6acd3a58d3d4c79aa60a20cfff5e6b5"
+    },
+    {
+      "path": "contact-eye-04.jpg",
+      "bytes": 110230,
+      "sha256": "ffc60eaf36ec2fc5ed287620a127b7078edbbeee9c901a8774e033be185cc11e"
+    },
+    {
+      "path": "catalogue.jpg",
+      "bytes": 600135,
+      "sha256": "e78767ba69e84e0dacf95fd58debc9ea05d071f99ab628c5761e9761d34ac9d9"
+    },
+    {
+      "path": "colourways-and-transoms.jpg",
+      "bytes": 278373,
+      "sha256": "cfbbbb7fa475ce21d4760174d9184db97dc796cd2fcfd6558f29c56a225a8ca8"
+    }
+  ]
+}
