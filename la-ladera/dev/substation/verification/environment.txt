@@ -1,0 +1,19 @@
+Captured 2026-11-01. Linux; headless Blender5.0.1 and hidden Chrome/SwiftShader.
+All acceptance scripts import tests/nice.mjs; Blender and browser capture use tools/nice.mjs --idle.
+No mouse or speaker access; no game boot.
+
+$ git rev-parse origin/main
+38542092094aaf0101cc9920fd8628fcdaf0ac35
+exit 0
+
+$ git merge-base --is-ancestor 38542092094aaf0101cc9920fd8628fcdaf0ac35 origin/main
+
+exit 0
+
+$ git branch --show-current
+codex/la-ladera-substation-library-20261101
+exit 0
+
+$ /tmp/ladera-node22/node-v22.16.0-linux-x64/bin/node --version
+v22.16.0
+exit 0

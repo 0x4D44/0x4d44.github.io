@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: C01 exact symmetric catenary matches an independent analytic curve
+ok 1 - C01 exact symmetric catenary matches an independent analytic curve
+  ---
+  duration_ms: 1.172783
+  type: 'test'
+  ...
+# Subtest: C02 unequal endpoint heights match known cosh parameters and arc length
+ok 2 - C02 unequal endpoint heights match known cosh parameters and arc length
+  ---
+  duration_ms: 0.320062
+  type: 'test'
+  ...
+# Subtest: C03 arbitrary 3D span preserves endpoints and specified midpoint sag
+ok 3 - C03 arbitrary 3D span preserves endpoints and specified midpoint sag
+  ---
+  duration_ms: 0.577778
+  type: 'test'
+  ...
+# Subtest: C04 shallow and steep spans remain finite with equal arc samples
+ok 4 - C04 shallow and steep spans remain finite with equal arc samples
+  ---
+  duration_ms: 2.643043
+  type: 'test'
+  ...
+# Subtest: C05 instances are bounded short segments without gaps or disconnected endpoints
+ok 5 - C05 instances are bounded short segments without gaps or disconnected endpoints
+  ---
+  duration_ms: 1.152983
+  type: 'test'
+  ...
+# Subtest: C06 reversing endpoints yields the same geometric cable
+ok 6 - C06 reversing endpoints yields the same geometric cable
+  ---
+  duration_ms: 0.259279
+  type: 'test'
+  ...
+# Subtest: C07 malformed points and invalid sag parameters are rejected
+ok 7 - C07 malformed points and invalid sag parameters are rejected
+  ---
+  duration_ms: 0.602105
+  type: 'test'
+  ...
+# Subtest: C08 short-segment instance limits prevent unbounded allocation
+ok 8 - C08 short-segment instance limits prevent unbounded allocation
+  ---
+  duration_ms: 0.236776
+  type: 'test'
+  ...
+# Subtest: C09 Three adapter uses one reusable cylinder with correct instance transforms
+ok 9 - C09 Three adapter uses one reusable cylinder with correct instance transforms
+  ---
+  duration_ms: 3.235944
+  type: 'test'
+  ...
+# Subtest: C10 variant recipes preserve voltage levels and frozen span data
+ok 10 - C10 variant recipes preserve voltage levels and frozen span data
+  ---
+  duration_ms: 1.621418
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25.615048

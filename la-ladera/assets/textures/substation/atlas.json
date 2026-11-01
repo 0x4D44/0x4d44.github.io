@@ -1,0 +1,2225 @@
+{
+  "version": 1,
+  "license": "CC0-1.0",
+  "originalProceduralSurfaces": true,
+  "font": {
+    "family": "DejaVu Sans Bold",
+    "rasterizedOnly": true,
+    "sha256": "5c1247acef7f2b8522a31742c76d6adcb5569bacc0be7ceaa4dc39dd252ce895"
+  },
+  "shared": {
+    "cells": {
+      "galvanised": {
+        "index": 0,
+        "rect": [
+          0,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.00390625,
+          0.00390625,
+          0.12109375,
+          0.24609375
+        ]
+      },
+      "rusted_steel": {
+        "index": 1,
+        "rect": [
+          128,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.12890625,
+          0.00390625,
+          0.24609375,
+          0.24609375
+        ]
+      },
+      "porcelain_brown": {
+        "index": 2,
+        "rect": [
+          256,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.25390625,
+          0.00390625,
+          0.37109375,
+          0.24609375
+        ]
+      },
+      "porcelain_grey": {
+        "index": 3,
+        "rect": [
+          384,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.37890625,
+          0.00390625,
+          0.49609375,
+          0.24609375
+        ]
+      },
+      "paint_uk": {
+        "index": 4,
+        "rect": [
+          512,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.50390625,
+          0.00390625,
+          0.62109375,
+          0.24609375
+        ]
+      },
+      "paint_lightgrey": {
+        "index": 5,
+        "rect": [
+          640,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.62890625,
+          0.00390625,
+          0.74609375,
+          0.24609375
+        ]
+      },
+      "paint_co": {
+        "index": 6,
+        "rect": [
+          768,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.75390625,
+          0.00390625,
+          0.87109375,
+          0.24609375
+        ]
+      },
+      "paint_peeling": {
+        "index": 7,
+        "rect": [
+          896,
+          768,
+          128,
+          256
+        ],
+        "uv": [
+          0.87890625,
+          0.00390625,
+          0.99609375,
+          0.24609375
+        ]
+      },
+      "concrete_clean": {
+        "index": 8,
+        "rect": [
+          0,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.00390625,
+          0.25390625,
+          0.12109375,
+          0.49609375
+        ]
+      },
+      "concrete_damp": {
+        "index": 9,
+        "rect": [
+          128,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.12890625,
+          0.25390625,
+          0.24609375,
+          0.49609375
+        ]
+      },
+      "concrete_algae": {
+        "index": 10,
+        "rect": [
+          256,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.25390625,
+          0.25390625,
+          0.37109375,
+          0.49609375
+        ]
+      },
+      "gravel": {
+        "index": 11,
+        "rect": [
+          384,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.37890625,
+          0.25390625,
+          0.49609375,
+          0.49609375
+        ]
+      },
+      "rubber": {
+        "index": 12,
+        "rect": [
+          512,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.50390625,
+          0.25390625,
+          0.62109375,
+          0.49609375
+        ]
+      },
+      "brick": {
+        "index": 13,
+        "rect": [
+          640,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.62890625,
+          0.25390625,
+          0.74609375,
+          0.49609375
+        ]
+      },
+      "rendered_block": {
+        "index": 14,
+        "rect": [
+          768,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.75390625,
+          0.25390625,
+          0.87109375,
+          0.49609375
+        ]
+      },
+      "oil_stain": {
+        "index": 15,
+        "rect": [
+          896,
+          512,
+          128,
+          256
+        ],
+        "uv": [
+          0.87890625,
+          0.25390625,
+          0.99609375,
+          0.49609375
+        ]
+      },
+      "wood": {
+        "index": 16,
+        "rect": [
+          0,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.00390625,
+          0.50390625,
+          0.12109375,
+          0.74609375
+        ]
+      },
+      "fence_green": {
+        "index": 17,
+        "rect": [
+          128,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.12890625,
+          0.50390625,
+          0.24609375,
+          0.74609375
+        ]
+      },
+      "glass": {
+        "index": 18,
+        "rect": [
+          256,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.25390625,
+          0.50390625,
+          0.37109375,
+          0.74609375
+        ]
+      },
+      "lamp": {
+        "index": 19,
+        "rect": [
+          384,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.37890625,
+          0.50390625,
+          0.49609375,
+          0.74609375
+        ]
+      },
+      "copper": {
+        "index": 20,
+        "rect": [
+          512,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.50390625,
+          0.50390625,
+          0.62109375,
+          0.74609375
+        ]
+      },
+      "dry_vegetation": {
+        "index": 21,
+        "rect": [
+          640,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.62890625,
+          0.50390625,
+          0.74609375,
+          0.74609375
+        ]
+      },
+      "black_steel": {
+        "index": 22,
+        "rect": [
+          768,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.75390625,
+          0.50390625,
+          0.87109375,
+          0.74609375
+        ]
+      },
+      "white": {
+        "index": 23,
+        "rect": [
+          896,
+          256,
+          128,
+          256
+        ],
+        "uv": [
+          0.87890625,
+          0.50390625,
+          0.99609375,
+          0.74609375
+        ]
+      },
+      "steel_dark": {
+        "index": 24,
+        "rect": [
+          0,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.00390625,
+          0.75390625,
+          0.12109375,
+          0.99609375
+        ]
+      },
+      "moss": {
+        "index": 25,
+        "rect": [
+          128,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.12890625,
+          0.75390625,
+          0.24609375,
+          0.99609375
+        ]
+      },
+      "chainlink": {
+        "index": 26,
+        "rect": [
+          256,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.25390625,
+          0.75390625,
+          0.37109375,
+          0.99609375
+        ]
+      },
+      "palisade": {
+        "index": 27,
+        "rect": [
+          384,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.37890625,
+          0.75390625,
+          0.49609375,
+          0.99609375
+        ]
+      },
+      "warning_yellow": {
+        "index": 28,
+        "rect": [
+          512,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.50390625,
+          0.75390625,
+          0.62109375,
+          0.99609375
+        ]
+      },
+      "paint_control": {
+        "index": 29,
+        "rect": [
+          640,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.62890625,
+          0.75390625,
+          0.74609375,
+          0.99609375
+        ]
+      },
+      "battery": {
+        "index": 30,
+        "rect": [
+          768,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.75390625,
+          0.75390625,
+          0.87109375,
+          0.99609375
+        ]
+      },
+      "roof": {
+        "index": 31,
+        "rect": [
+          896,
+          0,
+          128,
+          256
+        ],
+        "uv": [
+          0.87890625,
+          0.75390625,
+          0.99609375,
+          0.99609375
+        ]
+      }
+    },
+    "gutter": 4,
+    "columns": 8,
+    "rows": 4,
+    "baseColor": {
+      "path": "shared-basecolor.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 662835,
+      "sha256": "3af2de83bba2c698ab6f2d6700e925d09b6db32e35a2410083b11d58ff3e6931",
+      "channels": 3,
+      "gpuBytesRGBA8WithMips": 5592404,
+      "colorSpace": "sRGB"
+    },
+    "normal": {
+      "path": "shared-normal.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 850792,
+      "sha256": "c2e11cc783e088e8c49ab3bf08858acdc0897ff21318ac4ff5422a9113e5eb9d",
+      "channels": 3,
+      "gpuBytesRGBA8WithMips": 5592404,
+      "colorSpace": "linear"
+    },
+    "orm": {
+      "path": "shared-orm.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 259635,
+      "sha256": "0f0f3927cca8836fb4390d52b71e5888fb9bc5a6bf121bb7ea91bb680f2d4f32",
+      "channels": 3,
+      "gpuBytesRGBA8WithMips": 5592404,
+      "colorSpace": "linear"
+    }
+  },
+  "variants": {
+    "uk": {
+      "atlas": {
+        "path": "signs-uk.png",
+        "width": 2048,
+        "height": 1024,
+        "bytes": 120218,
+        "sha256": "abb1293219b9b902de30e4d2a4905c953407af5ca21ab5e79a4559ff40a19b9c",
+        "channels": 3,
+        "gpuBytesRGBA8WithMips": 11184812
+      },
+      "language": "en",
+      "cells": [
+        {
+          "id": "danger_death",
+          "index": 0,
+          "text": "DANGER OF DEATH",
+          "lines": [
+            "DANGER OF DEATH"
+          ],
+          "detectedText": "DANGER OF DEATH",
+          "rawDetectedText": "DANGER OF DEATH",
+          "rect": [
+            0,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.8828125,
+            0.24609375,
+            0.9921875
+          ],
+          "pixelSha256": "44f152fb54e07b25c5d134efe09a88b05d1005dfb7dffc585628c6cbe4bff2a9",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "voltage",
+          "index": 1,
+          "text": "DANGER – 132 000 VOLTS",
+          "lines": [
+            "DANGER –",
+            "132 000 VOLTS"
+          ],
+          "detectedText": "DANGER - 132 000 VOLTS",
+          "rawDetectedText": "DANGER -\n132 000 VOLTS",
+          "rect": [
+            512,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.8828125,
+            0.49609375,
+            0.9921875
+          ],
+          "pixelSha256": "0545d2bf96156cd13f2912671de32c76de650601a0661a1fa3284d185fde7a17",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "keep_out",
+          "index": 2,
+          "text": "KEEP OUT",
+          "lines": [
+            "KEEP OUT"
+          ],
+          "detectedText": "KEEP OUT",
+          "rawDetectedText": "KEEP OUT",
+          "rect": [
+            1024,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.8828125,
+            0.74609375,
+            0.9921875
+          ],
+          "pixelSha256": "3b6477b6f8ad4144d8b424a64c9c14ef46d20f22f09ed059c794675b85d231da",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "authorised",
+          "index": 3,
+          "text": "NO UNAUTHORISED ACCESS",
+          "lines": [
+            "NO UNAUTHORISED",
+            "ACCESS"
+          ],
+          "detectedText": "NO UNAUTHORISED ACCESS",
+          "rawDetectedText": "NO UNAUTHORISED\nACCESS",
+          "rect": [
+            1536,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.8828125,
+            0.99609375,
+            0.9921875
+          ],
+          "pixelSha256": "94615795098e4ed50880867f03592ce5ec8f27952efc1c59879948dd95821d7f",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "substation",
+          "index": 4,
+          "text": "ELECTRICITY SUBSTATION",
+          "lines": [
+            "ELECTRICITY",
+            "SUBSTATION"
+          ],
+          "detectedText": "ELECTRICITY SUBSTATION",
+          "rawDetectedText": "ELECTRICITY\nSUBSTATION",
+          "rect": [
+            0,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.7578125,
+            0.24609375,
+            0.8671875
+          ],
+          "pixelSha256": "11885a9a064dc3a13a619c37c3a4333b6c1f6fc86c41547ff4b8f715cb133740",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "grid_rating",
+          "index": 5,
+          "text": "T1 132/33 kV 40 MVA",
+          "lines": [
+            "T1 132/33 kV",
+            "40 MVA"
+          ],
+          "detectedText": "T1 132/33 kV 40 MVA",
+          "rawDetectedText": "T1 132/33 kV\n40 MVA",
+          "rect": [
+            512,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.7578125,
+            0.49609375,
+            0.8671875
+          ],
+          "pixelSha256": "6f1515402443dc1645880b1659a750b63616ebd8aa17d6f1cfa8574f8c56e855",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "mv_breaker",
+          "index": 6,
+          "text": "CB 33-2",
+          "lines": [
+            "CB 33-2"
+          ],
+          "detectedText": "CB 33-2",
+          "rawDetectedText": "CB 33-2",
+          "rect": [
+            1024,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.7578125,
+            0.74609375,
+            0.8671875
+          ],
+          "pixelSha256": "ef0dad16264eb3c8e86c10dc59f18fe3debddc0635fab9550bf2b177a70a13d0",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "tx2",
+          "index": 7,
+          "text": "TX2",
+          "lines": [
+            "TX2"
+          ],
+          "detectedText": "TX2",
+          "rawDetectedText": "TX2",
+          "rect": [
+            1536,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.7578125,
+            0.99609375,
+            0.8671875
+          ],
+          "pixelSha256": "8d4bdbbf65dc6ec4b90f1cc0656e9a4a88309e00825203419c38cd206a72c826",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "do_not_touch",
+          "index": 8,
+          "text": "DO NOT TOUCH",
+          "lines": [
+            "DO NOT TOUCH"
+          ],
+          "detectedText": "DO NOT TOUCH",
+          "rawDetectedText": "DO NOT TOUCH",
+          "rect": [
+            0,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.6328125,
+            0.24609375,
+            0.7421875
+          ],
+          "pixelSha256": "f8469cf799748b777afd71985e0d80a6dcc8e2bb269e67a3b6864f85aa2c666d",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "isolate",
+          "index": 9,
+          "text": "ISOLATE BEFORE MAINTENANCE",
+          "lines": [
+            "ISOLATE BEFORE",
+            "MAINTENANCE"
+          ],
+          "detectedText": "ISOLATE BEFORE MAINTENANCE",
+          "rawDetectedText": "ISOLATE BEFORE\nMAINTENANCE",
+          "rect": [
+            512,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.6328125,
+            0.49609375,
+            0.7421875
+          ],
+          "pixelSha256": "d5a964203d303c477dcccf4f0e66a52002d445482feb4cf983d3a23c8706c273",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "earth",
+          "index": 10,
+          "text": "EARTH CONNECTION",
+          "lines": [
+            "EARTH CONNECTION"
+          ],
+          "detectedText": "EARTH CONNECTION",
+          "rawDetectedText": "EARTH CONNECTION",
+          "rect": [
+            1024,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.6328125,
+            0.74609375,
+            0.7421875
+          ],
+          "pixelSha256": "cd57a57f889a668c96943e5b964404a2f4b323ff1b3bde6e3c1e50f25fe552ea",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "battery",
+          "index": 11,
+          "text": "BATTERY ROOM",
+          "lines": [
+            "BATTERY ROOM"
+          ],
+          "detectedText": "BATTERY ROOM",
+          "rawDetectedText": "BATTERY ROOM",
+          "rect": [
+            1536,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.6328125,
+            0.99609375,
+            0.7421875
+          ],
+          "pixelSha256": "1c7c69366292f7fcc5c47b8fc4fea0cdc2a8569de453f5bf6e50816e1173509c",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "oil",
+          "index": 12,
+          "text": "INSULATING OIL",
+          "lines": [
+            "INSULATING OIL"
+          ],
+          "detectedText": "INSULATING OIL",
+          "rawDetectedText": "INSULATING OIL",
+          "rect": [
+            0,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.5078125,
+            0.24609375,
+            0.6171875
+          ],
+          "pixelSha256": "7473550b809e3aef30af485b33ce9b82b4f49977960dc8adb0db4d7931768df6",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "fire",
+          "index": 13,
+          "text": "FIRE POINT",
+          "lines": [
+            "FIRE POINT"
+          ],
+          "detectedText": "FIRE POINT",
+          "rawDetectedText": "FIRE POINT",
+          "rect": [
+            512,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.5078125,
+            0.49609375,
+            0.6171875
+          ],
+          "pixelSha256": "fefe27bc18c00921f07b1575699deb96c3cc10dac02aedfd87abcf088e1c8a11",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "control",
+          "index": 14,
+          "text": "CONTROL ROOM",
+          "lines": [
+            "CONTROL ROOM"
+          ],
+          "detectedText": "CONTROL ROOM",
+          "rawDetectedText": "CONTROL ROOM",
+          "rect": [
+            1024,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.5078125,
+            0.74609375,
+            0.6171875
+          ],
+          "pixelSha256": "42eff87961bc7adaeef4f2b092eb49590738c52609eed891eb2cfda65d04d11e",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "emergency",
+          "index": 15,
+          "text": "EMERGENCY EXIT",
+          "lines": [
+            "EMERGENCY EXIT"
+          ],
+          "detectedText": "EMERGENCY EXIT",
+          "rawDetectedText": "EMERGENCY EXIT",
+          "rect": [
+            1536,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.5078125,
+            0.99609375,
+            0.6171875
+          ],
+          "pixelSha256": "5fb75727546f868e7190e6a6d779ec828694684e14900fc155d8523fa300d292",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "first_aid",
+          "index": 16,
+          "text": "FIRST AID",
+          "lines": [
+            "FIRST AID"
+          ],
+          "detectedText": "FIRST AID",
+          "rawDetectedText": "FIRST AID",
+          "rect": [
+            0,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.3828125,
+            0.24609375,
+            0.4921875
+          ],
+          "pixelSha256": "dcd5a6278a55a8b1f2cd5adf1b76ce04616c1fb1711437be9d4b122c6eb26b2a",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "no_smoking",
+          "index": 17,
+          "text": "NO SMOKING",
+          "lines": [
+            "NO SMOKING"
+          ],
+          "detectedText": "NO SMOKING",
+          "rawDetectedText": "NO SMOKING",
+          "rect": [
+            512,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.3828125,
+            0.49609375,
+            0.4921875
+          ],
+          "pixelSha256": "3ea86ac889ad2fb08cc6a18da9815ebf4625c557ed5424712c7c4c800816dbbe",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "live",
+          "index": 18,
+          "text": "LIVE EQUIPMENT",
+          "lines": [
+            "LIVE EQUIPMENT"
+          ],
+          "detectedText": "LIVE EQUIPMENT",
+          "rawDetectedText": "LIVE EQUIPMENT",
+          "rect": [
+            1024,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.3828125,
+            0.74609375,
+            0.4921875
+          ],
+          "pixelSha256": "3ecf04670fdef7bac12ad61844cf4fe833ee091b28117190b5659580a7a76783",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit01",
+          "index": 19,
+          "text": "CIRCUIT 1",
+          "lines": [
+            "CIRCUIT 1"
+          ],
+          "detectedText": "CIRCUIT 1",
+          "rawDetectedText": "CIRCUIT 1",
+          "rect": [
+            1536,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.3828125,
+            0.99609375,
+            0.4921875
+          ],
+          "pixelSha256": "b188e7be7b7eb3fde5408bd0654392113055d7b4a9dce33288ea80762bf47716",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit02",
+          "index": 20,
+          "text": "CIRCUIT 2",
+          "lines": [
+            "CIRCUIT 2"
+          ],
+          "detectedText": "CIRCUIT 2",
+          "rawDetectedText": "CIRCUIT 2",
+          "rect": [
+            0,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.2578125,
+            0.24609375,
+            0.3671875
+          ],
+          "pixelSha256": "2fb19a0f88f155bcf61d3d4dcdadc6e0a7d6e4ee37736946060ef05f04cf4b5a",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit03",
+          "index": 21,
+          "text": "CIRCUIT 3",
+          "lines": [
+            "CIRCUIT 3"
+          ],
+          "detectedText": "CIRCUIT 3",
+          "rawDetectedText": "CIRCUIT 3",
+          "rect": [
+            512,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.2578125,
+            0.49609375,
+            0.3671875
+          ],
+          "pixelSha256": "858fb445d97dbf0dc307316746b387248b53fd542062b6224640f0e194e1ca3f",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "dist_rating",
+          "index": 22,
+          "text": "T2 33/11 kV 15 MVA",
+          "lines": [
+            "T2 33/11 kV",
+            "15 MVA"
+          ],
+          "detectedText": "T2 33/11 kV 15 MVA",
+          "rawDetectedText": "T2 33/11 kV\n15 MVA",
+          "rect": [
+            1024,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.2578125,
+            0.74609375,
+            0.3671875
+          ],
+          "pixelSha256": "1a38d003fcd5aa85548f188f999d8a74bde725a0d00e64c66de804ac244e87be",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "charger",
+          "index": 23,
+          "text": "BATTERY CHARGER",
+          "lines": [
+            "BATTERY CHARGER"
+          ],
+          "detectedText": "BATTERY CHARGER",
+          "rawDetectedText": "BATTERY CHARGER",
+          "rect": [
+            1536,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.2578125,
+            0.99609375,
+            0.3671875
+          ],
+          "pixelSha256": "ffe082cb12aba15c72e0fd5571aeff112e844751a9201022a24cdb8dd5a3f763",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "neutral",
+          "index": 24,
+          "text": "NEUTRAL",
+          "lines": [
+            "NEUTRAL"
+          ],
+          "detectedText": "NEUTRAL",
+          "rawDetectedText": "NEUTRAL",
+          "rect": [
+            0,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.1328125,
+            0.24609375,
+            0.2421875
+          ],
+          "pixelSha256": "249bf6060571964d22152f4a5109d9e656dc3cc9e18636816af5dfc61399b0a2",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "gate",
+          "index": 25,
+          "text": "KEEP GATE CLOSED",
+          "lines": [
+            "KEEP GATE CLOSED"
+          ],
+          "detectedText": "KEEP GATE CLOSED",
+          "rawDetectedText": "KEEP GATE CLOSED",
+          "rect": [
+            512,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.1328125,
+            0.49609375,
+            0.2421875
+          ],
+          "pixelSha256": "6a70ba89406448b165799c1348d5acf3fbb15400dedf10639fef669e57757863",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "inspection",
+          "index": 26,
+          "text": "SAFETY SIGNS",
+          "lines": [
+            "SAFETY SIGNS"
+          ],
+          "detectedText": "SAFETY SIGNS",
+          "rawDetectedText": "SAFETY SIGNS",
+          "rect": [
+            1024,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.1328125,
+            0.74609375,
+            0.2421875
+          ],
+          "pixelSha256": "b746fd5ad8b3810a0974990e32ede043164add74a994a26aab4e11d91ab964e9",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "schematic",
+          "index": 27,
+          "text": "SINGLE LINE DIAGRAM",
+          "lines": [
+            "SINGLE LINE DIAGRAM"
+          ],
+          "detectedText": "SINGLE LINE DIAGRAM",
+          "rawDetectedText": "SINGLE LINE DIAGRAM",
+          "rect": [
+            1536,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.1328125,
+            0.99609375,
+            0.2421875
+          ],
+          "pixelSha256": "cc13e8bc59df8d8cc16e989e5717f5650cb1f0c2fa48d4ee27b4c6f0c7acb133",
+          "language": "en",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "number01",
+          "index": 28,
+          "text": "01",
+          "lines": [
+            "01"
+          ],
+          "detectedText": "01",
+          "rawDetectedText": "01",
+          "rect": [
+            0,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.0078125,
+            0.24609375,
+            0.1171875
+          ],
+          "pixelSha256": "f01abe8c9f59872dd2f1b59d50079410dcd41c0f1f68ca3d2eb12d0986e8ea98",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number02",
+          "index": 29,
+          "text": "02",
+          "lines": [
+            "02"
+          ],
+          "detectedText": "02",
+          "rawDetectedText": "02",
+          "rect": [
+            512,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.0078125,
+            0.49609375,
+            0.1171875
+          ],
+          "pixelSha256": "bd315282516759e416b14ce1c9c55bc8405b97a996be7c4994b665f5e3b55bbb",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number03",
+          "index": 30,
+          "text": "03",
+          "lines": [
+            "03"
+          ],
+          "detectedText": "03",
+          "rawDetectedText": "03",
+          "rect": [
+            1024,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.0078125,
+            0.74609375,
+            0.1171875
+          ],
+          "pixelSha256": "ecdbdc180fe0fb72bf29ae8fc3ba13c13da6a70055855c30d0f9b85c47253500",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number04",
+          "index": 31,
+          "text": "04",
+          "lines": [
+            "04"
+          ],
+          "detectedText": "04",
+          "rawDetectedText": "04",
+          "rect": [
+            1536,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.0078125,
+            0.99609375,
+            0.1171875
+          ],
+          "pixelSha256": "b6da3419d0b90eeb5fa9c68be0430d4ce63d1a6f26f073a2e957d54a9b614cf4",
+          "language": "en",
+          "sharedTechnicalMarking": true
+        }
+      ],
+      "materials": {
+        "substation_paint": {
+          "cell": "paint_uk"
+        },
+        "substation_porcelain": {
+          "cell": "porcelain_grey"
+        },
+        "substation_concrete_weathered": {
+          "cell": "concrete_damp"
+        },
+        "substation_signs": {
+          "atlas": "signs-uk.png"
+        }
+      },
+      "ocr": {
+        "engine": "tesseract",
+        "version": "tesseract 5.3.4",
+        "language": "eng",
+        "cropInset": [
+          24,
+          20,
+          24,
+          20
+        ],
+        "scale": 3,
+        "tessdataSha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+      }
+    },
+    "co": {
+      "atlas": {
+        "path": "signs-co.png",
+        "width": 2048,
+        "height": 1024,
+        "bytes": 142269,
+        "sha256": "63d157b3c64e2e2f8db62822c7f67a060cc99a98b349c47aca0345e5aabd90b0",
+        "channels": 3,
+        "gpuBytesRGBA8WithMips": 11184812
+      },
+      "language": "es",
+      "cells": [
+        {
+          "id": "danger_death",
+          "index": 0,
+          "text": "PELIGRO DE MUERTE",
+          "lines": [
+            "PELIGRO DE MUERTE"
+          ],
+          "detectedText": "PELIGRO DE MUERTE",
+          "rawDetectedText": "PELIGRO DE MUERTE",
+          "rect": [
+            0,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.8828125,
+            0.24609375,
+            0.9921875
+          ],
+          "pixelSha256": "51762d4fe41f8ef366187c74710c86aa136a94506da748b1444abd958e12618a",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "voltage",
+          "index": 1,
+          "text": "PELIGRO – ALTA TENSIÓN 115 000 V",
+          "lines": [
+            "PELIGRO – ALTA TENSIÓN",
+            "115 000 V"
+          ],
+          "detectedText": "PELIGRO - ALTA TENSIÓN 115 000 V",
+          "rawDetectedText": "PELIGRO - ALTA TENSIÓN\n115 000 V",
+          "rect": [
+            512,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.8828125,
+            0.49609375,
+            0.9921875
+          ],
+          "pixelSha256": "d620e63db15763687555d7e52195a95a6575059e505dc533299c4899e1b77cf5",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "keep_out",
+          "index": 2,
+          "text": "PROHIBIDO EL PASO",
+          "lines": [
+            "PROHIBIDO EL PASO"
+          ],
+          "detectedText": "PROHIBIDO EL PASO",
+          "rawDetectedText": "PROHIBIDO EL PASO",
+          "rect": [
+            1024,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.8828125,
+            0.74609375,
+            0.9921875
+          ],
+          "pixelSha256": "696b889d8d98f098e570b7a9f06da17b4a3478d2b6951da6613e92e864cbda19",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "authorised",
+          "index": 3,
+          "text": "SOLO PERSONAL AUTORIZADO",
+          "lines": [
+            "SOLO PERSONAL",
+            "AUTORIZADO"
+          ],
+          "detectedText": "SOLO PERSONAL AUTORIZADO",
+          "rawDetectedText": "SOLO PERSONAL\nAUTORIZADO",
+          "rect": [
+            1536,
+            0,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.8828125,
+            0.99609375,
+            0.9921875
+          ],
+          "pixelSha256": "ad31f3e1349ab16d83c80980d965894ecb052aea986ee73606547174fcf7a383",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "substation",
+          "index": 4,
+          "text": "SUBESTACIÓN",
+          "lines": [
+            "SUBESTACIÓN"
+          ],
+          "detectedText": "SUBESTACIÓN",
+          "rawDetectedText": "SUBESTACIÓN",
+          "rect": [
+            0,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.7578125,
+            0.24609375,
+            0.8671875
+          ],
+          "pixelSha256": "0ff2dbbad6f86d81b56e2722233984ad7f939ff44a9f67ebd3c3a1de2475012d",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "grid_rating",
+          "index": 5,
+          "text": "T1 115/34.5 kV 40 MVA",
+          "lines": [
+            "T1 115/34.5 kV",
+            "40 MVA"
+          ],
+          "detectedText": "T1 115/34.5 kV 40 MVA",
+          "rawDetectedText": "T1 115/34.5 kV\n40 MVA",
+          "rect": [
+            512,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.7578125,
+            0.49609375,
+            0.8671875
+          ],
+          "pixelSha256": "01723ff722ade363a572029351ccf7d424ed58da63e074a675005cb79c229865",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "mv_breaker",
+          "index": 6,
+          "text": "OCB 34.5-2",
+          "lines": [
+            "OCB 34.5-2"
+          ],
+          "detectedText": "OCB 34.5-2",
+          "rawDetectedText": "OCB 34.5-2",
+          "rect": [
+            1024,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.7578125,
+            0.74609375,
+            0.8671875
+          ],
+          "pixelSha256": "1aa3fd979522617e8ab5a33084aeb8910cb4d77e3e2380a8e75dd47327e21d2f",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "tx2",
+          "index": 7,
+          "text": "S/E",
+          "lines": [
+            "S/E"
+          ],
+          "detectedText": "S/E",
+          "rawDetectedText": "S/E",
+          "rect": [
+            1536,
+            128,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.7578125,
+            0.99609375,
+            0.8671875
+          ],
+          "pixelSha256": "333b8c2655a23edfe7399c54b7ae62d9131ed9127dfafa90cf455a748c746778",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "do_not_touch",
+          "index": 8,
+          "text": "NO TOCAR",
+          "lines": [
+            "NO TOCAR"
+          ],
+          "detectedText": "NO TOCAR",
+          "rawDetectedText": "NO TOCAR",
+          "rect": [
+            0,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.6328125,
+            0.24609375,
+            0.7421875
+          ],
+          "pixelSha256": "3d2746e181ddbc7cb140199df1cc37a43f8e10129f8e02c573376aaab79a0fe6",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "isolate",
+          "index": 9,
+          "text": "AISLAR ANTES DEL MANTENIMIENTO",
+          "lines": [
+            "AISLAR ANTES DEL",
+            "MANTENIMIENTO"
+          ],
+          "detectedText": "AISLAR ANTES DEL MANTENIMIENTO",
+          "rawDetectedText": "AISLAR ANTES DEL\nMANTENIMIENTO",
+          "rect": [
+            512,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.6328125,
+            0.49609375,
+            0.7421875
+          ],
+          "pixelSha256": "d852e3fd461ad881673c6e5d908eec723a189f9bac306bbfb7057b06a607bc06",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "earth",
+          "index": 10,
+          "text": "CONEXIÓN A TIERRA",
+          "lines": [
+            "CONEXIÓN A TIERRA"
+          ],
+          "detectedText": "CONEXIÓN A TIERRA",
+          "rawDetectedText": "CONEXIÓN A TIERRA",
+          "rect": [
+            1024,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.6328125,
+            0.74609375,
+            0.7421875
+          ],
+          "pixelSha256": "36bd3e5c64ef0a2edd0ea2c7b02808a09592049206c83bbeac778984b5687bb9",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "battery",
+          "index": 11,
+          "text": "SALA DE BATERÍAS",
+          "lines": [
+            "SALA DE BATERÍAS"
+          ],
+          "detectedText": "SALA DE BATERÍAS",
+          "rawDetectedText": "SALA DE BATERÍAS",
+          "rect": [
+            1536,
+            256,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.6328125,
+            0.99609375,
+            0.7421875
+          ],
+          "pixelSha256": "ec30d713d32607f7fbcbccbe4b89cbed441c5f849012d46d2bf024aa00cfa2d6",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "oil",
+          "index": 12,
+          "text": "ACEITE AISLANTE",
+          "lines": [
+            "ACEITE AISLANTE"
+          ],
+          "detectedText": "ACEITE AISLANTE",
+          "rawDetectedText": "ACEITE AISLANTE",
+          "rect": [
+            0,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.5078125,
+            0.24609375,
+            0.6171875
+          ],
+          "pixelSha256": "997b7163b6d9c6ae6eb724dd4488328c492b65d803b65eb3920da6ed1b4e86a4",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "fire",
+          "index": 13,
+          "text": "PUNTO CONTRA INCENDIOS",
+          "lines": [
+            "PUNTO CONTRA",
+            "INCENDIOS"
+          ],
+          "detectedText": "PUNTO CONTRA INCENDIOS",
+          "rawDetectedText": "PUNTO CONTRA\nINCENDIOS",
+          "rect": [
+            512,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.5078125,
+            0.49609375,
+            0.6171875
+          ],
+          "pixelSha256": "500f788e6e8fa8beb49c35fa80afdda55d30892853bb6656bfb63dd1f30420c2",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "control",
+          "index": 14,
+          "text": "SALA DE CONTROL",
+          "lines": [
+            "SALA DE CONTROL"
+          ],
+          "detectedText": "SALA DE CONTROL",
+          "rawDetectedText": "SALA DE CONTROL",
+          "rect": [
+            1024,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.5078125,
+            0.74609375,
+            0.6171875
+          ],
+          "pixelSha256": "723de54e0b27dd0fbbb8f973755472d3aea8429eefcb1fa346f1f0712478e4d3",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "emergency",
+          "index": 15,
+          "text": "SALIDA DE EMERGENCIA",
+          "lines": [
+            "SALIDA DE EMERGENCIA"
+          ],
+          "detectedText": "SALIDA DE EMERGENCIA",
+          "rawDetectedText": "SALIDA DE EMERGENCIA",
+          "rect": [
+            1536,
+            384,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.5078125,
+            0.99609375,
+            0.6171875
+          ],
+          "pixelSha256": "fb927bb2a05f3ea446428408c313012f3ed8e416e400b369a05fd12944cc60f5",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "first_aid",
+          "index": 16,
+          "text": "PRIMEROS AUXILIOS",
+          "lines": [
+            "PRIMEROS AUXILIOS"
+          ],
+          "detectedText": "PRIMEROS AUXILIOS",
+          "rawDetectedText": "PRIMEROS AUXILIOS",
+          "rect": [
+            0,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.3828125,
+            0.24609375,
+            0.4921875
+          ],
+          "pixelSha256": "89d95385c52bed56f6d8874ca7f3aead8be51413cdb6ab0fccbee451e3c72326",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "no_smoking",
+          "index": 17,
+          "text": "PROHIBIDO FUMAR",
+          "lines": [
+            "PROHIBIDO FUMAR"
+          ],
+          "detectedText": "PROHIBIDO FUMAR",
+          "rawDetectedText": "PROHIBIDO FUMAR",
+          "rect": [
+            512,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.3828125,
+            0.49609375,
+            0.4921875
+          ],
+          "pixelSha256": "f95318d83883bde8a858bce6b0ebdeea48f55715e6278d7b806be4e72b850563",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "live",
+          "index": 18,
+          "text": "EQUIPO EN TENSIÓN",
+          "lines": [
+            "EQUIPO EN TENSIÓN"
+          ],
+          "detectedText": "EQUIPO EN TENSIÓN",
+          "rawDetectedText": "EQUIPO EN TENSIÓN",
+          "rect": [
+            1024,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.3828125,
+            0.74609375,
+            0.4921875
+          ],
+          "pixelSha256": "07cb7425afcb1501310bacc7a44d4e4a510d65a4e78e9f6928a2ecabbba1443a",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit01",
+          "index": 19,
+          "text": "CIRCUITO 1",
+          "lines": [
+            "CIRCUITO 1"
+          ],
+          "detectedText": "CIRCUITO 1",
+          "rawDetectedText": "CIRCUITO 1",
+          "rect": [
+            1536,
+            512,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.3828125,
+            0.99609375,
+            0.4921875
+          ],
+          "pixelSha256": "6b4d9af7e6b2b94cf6813e0364c3f7e33d8a4cb18d6d7c1884817798dea68371",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit02",
+          "index": 20,
+          "text": "CIRCUITO 2",
+          "lines": [
+            "CIRCUITO 2"
+          ],
+          "detectedText": "CIRCUITO 2",
+          "rawDetectedText": "CIRCUITO 2",
+          "rect": [
+            0,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.2578125,
+            0.24609375,
+            0.3671875
+          ],
+          "pixelSha256": "9bb61864c0e73e95b6896f6f51ce4c4c9c12502fae2656d5f000706af56011b0",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "circuit03",
+          "index": 21,
+          "text": "CIRCUITO 3",
+          "lines": [
+            "CIRCUITO 3"
+          ],
+          "detectedText": "CIRCUITO 3",
+          "rawDetectedText": "CIRCUITO 3",
+          "rect": [
+            512,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.2578125,
+            0.49609375,
+            0.3671875
+          ],
+          "pixelSha256": "98059a520f5ebfb4e747100c08c5a0379f3583abbe1d56711afad0096c6b9ea3",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "dist_rating",
+          "index": 22,
+          "text": "T2 34.5/13.2 kV 15 MVA",
+          "lines": [
+            "T2 34.5/13.2 kV",
+            "15 MVA"
+          ],
+          "detectedText": "T2 34.5/13.2 kV 15 MVA",
+          "rawDetectedText": "T2 34.5/13.2 kV\n15 MVA",
+          "rect": [
+            1024,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.2578125,
+            0.74609375,
+            0.3671875
+          ],
+          "pixelSha256": "12e6930415fee628f08358bd796701e1c11ebb494b4c1fdef19d9a5d5eaa0152",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "charger",
+          "index": 23,
+          "text": "CARGADOR DE BATERÍAS",
+          "lines": [
+            "CARGADOR DE BATERÍAS"
+          ],
+          "detectedText": "CARGADOR DE BATERÍAS",
+          "rawDetectedText": "CARGADOR DE BATERÍAS",
+          "rect": [
+            1536,
+            640,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.2578125,
+            0.99609375,
+            0.3671875
+          ],
+          "pixelSha256": "fd93d6bcbfe4e3093ca3de2b9a0fd99b32450f10ef866081e8fd9ed3adf09529",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "neutral",
+          "index": 24,
+          "text": "NEUTRO",
+          "lines": [
+            "NEUTRO"
+          ],
+          "detectedText": "NEUTRO",
+          "rawDetectedText": "NEUTRO",
+          "rect": [
+            0,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.1328125,
+            0.24609375,
+            0.2421875
+          ],
+          "pixelSha256": "9015963b954f2e8878c7bc5fd02f26c4abe845152734656f4d1b10768fa73af4",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "gate",
+          "index": 25,
+          "text": "MANTENER CERRADO",
+          "lines": [
+            "MANTENER CERRADO"
+          ],
+          "detectedText": "MANTENER CERRADO",
+          "rawDetectedText": "MANTENER CERRADO",
+          "rect": [
+            512,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.1328125,
+            0.49609375,
+            0.2421875
+          ],
+          "pixelSha256": "2c31fe68e776b496f40c1e5c35c7fa43d687b876b8f5bb30e9de53d2d56e30ca",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "inspection",
+          "index": 26,
+          "text": "SEÑALIZACIÓN",
+          "lines": [
+            "SEÑALIZACIÓN"
+          ],
+          "detectedText": "SEÑALIZACIÓN",
+          "rawDetectedText": "SEÑALIZACIÓN",
+          "rect": [
+            1024,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.1328125,
+            0.74609375,
+            0.2421875
+          ],
+          "pixelSha256": "18393a9aaa066c193a28f7dc192efdd0b5e7130f1e215675e88cd6a7c4fc5ba0",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "schematic",
+          "index": 27,
+          "text": "DIAGRAMA UNIFILAR",
+          "lines": [
+            "DIAGRAMA UNIFILAR"
+          ],
+          "detectedText": "DIAGRAMA UNIFILAR",
+          "rawDetectedText": "DIAGRAMA UNIFILAR",
+          "rect": [
+            1536,
+            768,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.1328125,
+            0.99609375,
+            0.2421875
+          ],
+          "pixelSha256": "fa0cc84f9a5dc61aaa8b07626bbe205520a45108a9dd33afeb2b7a8e3b02094c",
+          "language": "es",
+          "sharedTechnicalMarking": false
+        },
+        {
+          "id": "number01",
+          "index": 28,
+          "text": "01",
+          "lines": [
+            "01"
+          ],
+          "detectedText": "01",
+          "rawDetectedText": "01",
+          "rect": [
+            0,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.00390625,
+            0.0078125,
+            0.24609375,
+            0.1171875
+          ],
+          "pixelSha256": "f01abe8c9f59872dd2f1b59d50079410dcd41c0f1f68ca3d2eb12d0986e8ea98",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number02",
+          "index": 29,
+          "text": "02",
+          "lines": [
+            "02"
+          ],
+          "detectedText": "02",
+          "rawDetectedText": "02",
+          "rect": [
+            512,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.25390625,
+            0.0078125,
+            0.49609375,
+            0.1171875
+          ],
+          "pixelSha256": "bd315282516759e416b14ce1c9c55bc8405b97a996be7c4994b665f5e3b55bbb",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number03",
+          "index": 30,
+          "text": "03",
+          "lines": [
+            "03"
+          ],
+          "detectedText": "03",
+          "rawDetectedText": "03",
+          "rect": [
+            1024,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.50390625,
+            0.0078125,
+            0.74609375,
+            0.1171875
+          ],
+          "pixelSha256": "ecdbdc180fe0fb72bf29ae8fc3ba13c13da6a70055855c30d0f9b85c47253500",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        },
+        {
+          "id": "number04",
+          "index": 31,
+          "text": "04",
+          "lines": [
+            "04"
+          ],
+          "detectedText": "04",
+          "rawDetectedText": "04",
+          "rect": [
+            1536,
+            896,
+            512,
+            128
+          ],
+          "uv": [
+            0.75390625,
+            0.0078125,
+            0.99609375,
+            0.1171875
+          ],
+          "pixelSha256": "b6da3419d0b90eeb5fa9c68be0430d4ce63d1a6f26f073a2e957d54a9b614cf4",
+          "language": "es",
+          "sharedTechnicalMarking": true
+        }
+      ],
+      "materials": {
+        "substation_paint": {
+          "cell": "paint_co"
+        },
+        "substation_porcelain": {
+          "cell": "porcelain_brown"
+        },
+        "substation_concrete_weathered": {
+          "cell": "concrete_algae"
+        },
+        "substation_signs": {
+          "atlas": "signs-co.png"
+        }
+      },
+      "ocr": {
+        "engine": "tesseract",
+        "version": "tesseract 5.3.4",
+        "language": "spa",
+        "cropInset": [
+          24,
+          20,
+          24,
+          20
+        ],
+        "scale": 3,
+        "tessdataSha256": "6f2e04d02774a18f01bed44b1111f2cd7f3ba7ac9dc4373cd3f898a40ea6b464"
+      }
+    }
+  },
+  "textureBytes": 2035749,
+  "gpuBytesRGBA8WithMips": 39146836
+}

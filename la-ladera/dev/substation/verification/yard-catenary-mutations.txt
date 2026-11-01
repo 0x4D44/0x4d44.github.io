@@ -1,0 +1,24 @@
+BASELINE substation-catenary.test.mjs: 10/10 passed
+BASELINE substation-yard.test.mjs: 11/11 passed
+KILLED C01: symmetric analytic fixture: increase midpoint sag by 20%
+KILLED C02: unequal-height analytic fixture: raise end by 1 m
+KILLED C03: 3D fixture: change sag from 1.75 m to 2 m
+KILLED C04: finite-curve fixtures: supply a negative sag
+KILLED C05: instance fixture: permit 3 m segments instead of 0.6 m
+KILLED C06: reverse-span fixture: use a different sag
+KILLED C07: rejection fixture: replace NaN coordinate with valid input
+KILLED C08: allocation-rejection fixture: raise instance budget so it no longer rejects
+KILLED C09: renderer fixture: change conductor radius to 0.2 m
+KILLED C10: Colombia recipe fixture: replace 34.5 kV with 33 kV
+KILLED Y01: plan fixture: change metre units to centimetres
+KILLED Y02: inventory fixture: remove the second grid transformer
+KILLED Y03: parity fixture: move one Colombia equipment instance by 1 m
+KILLED Y04: anchor fixture: remove the chair seat slot
+KILLED Y05: route fixture: cut a waypoint through a transformer
+KILLED Y06: nav fixture: shrink live-transformer keep-out to 0.2 m
+KILLED Y07: entry fixture: start route away from the gate
+KILLED Y08: schema rejection fixture: replace invalid version with valid version
+KILLED Y09: intersection fixture: translate test polygon away from crossing segment
+KILLED Y10: regeneration fixture: move generated first transformer by 1 m
+KILLED Y11: line fixture: reference a nonexistent tower
+Substation yard/catenary mutation check: 21/21 intended test failures under Node v22.16.0
