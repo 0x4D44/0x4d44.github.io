@@ -1,0 +1,6 @@
+PASS beach textures: 25 entries, 51 PNGs, 70 atlas cells
+Payload: 7,454,787 / 8,000,000 bytes (PNGs + manifest)
+GPU: 58,370,684 / 167,772,160 bytes (RGBA8, all mip levels)
+Seams: 75 opposite-edge comparisons; tolerance max 0 / mean 0 per 8-bit channel
+Animation registration: 5 groups, 12 frames; reviewed eye anchors and shared group scales
+Sign legibility: recorded visual proof and exact Spanish metadata; no automated OCR claim

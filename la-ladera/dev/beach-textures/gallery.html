@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>La Ladera beach texture review</title>
+  <style>
+    :root { color-scheme: light; font: 15px/1.5 system-ui, sans-serif; color: #273e42; background: #e8e9e3; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1000px; margin: auto; }
+    h1 { margin: 0 0 5px; font-size: 25px; }
+    p { margin: 0 0 14px; max-width: 850px; }
+    select, button { font: inherit; margin: 0 8px 12px 0; padding: 6px 10px; }
+    canvas { display: block; width: min(100%, 900px); height: auto; background: #e8e9e3; }
+    #caption { margin-top: 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Beach texture review</h1>
+  <p>Actual PNGs under neutral light. Camera: 1.60 m; reference figure: 1.80 m. Material panels use metre-scale UVs. Atlas panels are enlarged proof displays, not world objects.</p>
+  <label>Texture <select id="choice" aria-label="Texture"></select></label>
+  <button id="view" type="button">Oblique view</button>
+  <div id="stage"></div><p id="caption">Loading the independent beach manifest…</p>
+</main>
+<script type="module">
+import * as THREE from '../../vendor/three/build/three.module.min.js';
+
+const TEX_BASE = new URL('../../assets/textures/', location.href);
+const EYE_M = 1.6, FIGURE_M = 1.8, WIDTH = 600, HEIGHT = 360;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(WIDTH, HEIGHT);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+document.querySelector('#stage').append(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#e8e9e3');
+scene.add(new THREE.HemisphereLight('#ffffff', '#a5a9a3', 2.0));
+const key = new THREE.DirectionalLight('#ffffff', 1.65); key.position.set(-4, 7, 5); scene.add(key);
+const fill = new THREE.DirectionalLight('#e4edf5', .7); fill.position.set(4, 3, 2); scene.add(fill);
+const camera = new THREE.PerspectiveCamera(36, WIDTH / HEIGHT, .05, 40);
+const neutral = new THREE.MeshStandardMaterial({ color: '#c1c6c4', roughness: .88 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ color: '#d9dcd6', roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -.005; scene.add(ground);
+const grid = new THREE.GridHelper(24, 24, '#b7bfbb', '#c9cfca'); grid.position.y = -.002; scene.add(grid);
+
+// The reference is built in metres, at floor zero; it is never scaled to fit the panel.
+const figure = new THREE.Group(); figure.position.set(1.65, 0, .22);
+function part(geometry, position) { const m = new THREE.Mesh(geometry, neutral); m.position.set(...position); figure.add(m); return m; }
+part(new THREE.SphereGeometry(.12, 16, 12), [0, 1.68, 0]);
+part(new THREE.CylinderGeometry(.065, .065, .09, 12), [0, 1.515, 0]);
+part(new THREE.CapsuleGeometry(.16, .27, 6, 12), [0, 1.205, 0]);
+part(new THREE.SphereGeometry(.17, 12, 10), [0, .93, 0]).scale.set(1, .65, .75);
+for (const s of [-1, 1]) {
+  part(new THREE.CapsuleGeometry(.065, .60, 6, 10), [s * .105, .445, 0]);
+  part(new THREE.BoxGeometry(.13, .08, .25), [s * .105, .04, .065]);
+  const arm = part(new THREE.CapsuleGeometry(.05, .49, 6, 10), [s * .225, 1.105, 0]); arm.rotation.z = s * .08;
+  part(new THREE.SphereGeometry(.052, 10, 8), [s * .249, .81, 0]);
+}
+scene.add(figure);
+const rulerMat = new THREE.LineBasicMaterial({ color: '#526965' });
+const rulerPoints = [new THREE.Vector3(2.04, 0, .23), new THREE.Vector3(2.04, FIGURE_M, .23)];
+for (let y = 0; y <= FIGURE_M + 1e-6; y += .1) rulerPoints.push(new THREE.Vector3(2.04, y, .23), new THREE.Vector3(2.04 + (Math.round(y * 10) % 5 ? .055 : .10), y, .23));
+scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rulerPoints), rulerMat));
+const figBox = new THREE.Box3().setFromObject(figure);
+const figureHeight = figBox.max.y - figBox.min.y;
+if (Math.abs(figureHeight - FIGURE_M) > .00001 || Math.abs(figBox.min.y) > .00001) throw new Error('Reference figure is not exactly 1.8 m above ground');
+
+const content = new THREE.Group(); scene.add(content);
+const loader = new THREE.TextureLoader(), cache = new Map();
+async function original(path, colourSpace) {
+  const key = path + '|' + colourSpace;
+  if (!cache.has(key)) cache.set(key, loader.loadAsync(new URL(path, TEX_BASE).href).then((t) => { t.colorSpace = colourSpace; return t; }));
+  return cache.get(key);
+}
+function clearContent() {
+  content.traverse((o) => { if (!o.geometry) return; o.geometry.dispose(); for (const m of Array.isArray(o.material) ? o.material : [o.material]) { for (const k of ['map', 'normalMap', 'roughnessMap']) if (m[k]?.userData.reviewClone) m[k].dispose(); m.dispose(); } });
+  content.clear();
+}
+function configured(texture, x, y, axes) {
+  const out = texture.clone(); out.userData.reviewClone = true;
+  out.wrapS = axes.includes('x') ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+  out.wrapT = axes.includes('y') ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+  out.repeat.set(axes.includes('x') ? x : 1, axes.includes('y') ? y : 1);
+  out.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); out.needsUpdate = true;
+  return out;
+}
+function checkerTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const d = c.getContext('2d');
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { d.fillStyle = (x + y) % 2 ? '#d4dcd6' : '#718c83'; d.fillRect(x * 16, y * 16, 16, 16); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const checker = checkerTexture();
+let manifest, currentView = 'front';
+const effects = new Set(['water_ripple_n', 'foam_noise', 'caustic_tile']);
+
+async function draw(id, view = 'front') {
+  const e = manifest.textures[id]; if (!e) throw new Error('Unknown beach texture: ' + id);
+  clearContent();
+  const isAtlas = e.uv === 'unit', isWater = id === 'water_ripple_n', axes = e.tileAxes || [];
+  const size = Array.isArray(e.size) ? e.size : [e.size, e.size];
+  const tile = e.tile || 1;
+  const panelW = isAtlas || axes.includes('x') ? 3 : tile;
+  const panelH = isAtlas ? 3 * size[1] / size[0] : axes.includes('y') ? 2.4 : tile;
+  const colourSpace = e.mapColorSpace === 'linear' ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+  const [albedo, normal, rough] = await Promise.all([
+    original(e.map, colourSpace),
+    e.normal ? original(e.normal, THREE.NoColorSpace) : null,
+    e.rough ? original(e.rough, THREE.NoColorSpace) : null,
+  ]);
+  function material(w, h) {
+    const props = { color: isWater ? '#559fa6' : '#ffffff', roughness: rough ? 1 : isWater ? .23 : e.roughness ?? .85, metalness: 0, side: THREE.DoubleSide };
+    if (!isWater) props.map = configured(albedo, w / tile, h / tile, axes);
+    if (isWater || normal) { props.normalMap = configured(isWater ? albedo : normal, w / tile, h / tile, axes); props.normalScale = new THREE.Vector2(e.normalScale ?? 1, e.normalScale ?? 1); }
+    if (rough) props.roughnessMap = configured(rough, w / tile, h / tile, axes);
+    if (e.alpha) { props.transparent = true; props.alphaTest = .02; }
+    // Sprite/atlas proof colours stay directly readable; PBR swatches use the rendered light response.
+    return isAtlas || id === 'foam_noise' || id === 'caustic_tile'
+      ? new THREE.MeshBasicMaterial({ map: props.map, transparent: !!e.alpha, alphaTest: e.alpha ? .02 : 0, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial(props);
+  }
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), material(panelW, panelH));
+  wall.position.set(-.48, panelH / 2 + .04, 0); content.add(wall);
+  if (isAtlas || e.alpha) {
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), new THREE.MeshBasicMaterial({ map: checker, side: THREE.DoubleSide }));
+    back.position.copy(wall.position); back.position.z = -.015; content.add(back);
+  } else {
+    const floorDepth = axes.includes('y') ? 2.2 : tile;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(panelW, floorDepth), material(panelW, floorDepth));
+    floor.rotation.x = -Math.PI / 2; floor.position.set(-.48, .005, floorDepth / 2); content.add(floor);
+  }
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(wall.geometry), new THREE.LineBasicMaterial({ color: '#7b8980' })); edges.position.copy(wall.position); edges.position.z = .003; content.add(edges);
+  camera.position.set(view === 'oblique' ? 2.45 : 0, EYE_M, view === 'oblique' ? 6.0 : 5.9);
+  camera.lookAt(.08, 1.30, .3); renderer.render(scene, camera);
+  currentView = view;
+  document.querySelector('#choice').value = id;
+  const description = isAtlas ? `Atlas proof panel ${panelW.toFixed(1)} × ${panelH.toFixed(2)} m; display size only` : `${tile} m texture repeat; repeat axes ${axes.join(', ') || 'none'}`;
+  document.querySelector('#caption').textContent = `${id} · ${view} · ${size[0]} × ${size[1]} px · ${description} · camera 1.60 m / figure 1.80 m`;
+  return { id, view, kind: isAtlas ? 'atlas' : effects.has(id) ? 'effect' : 'material', cameraHeightM: camera.position.y, figureHeightM: figureHeight, figureBaseM: figBox.min.y, panelSizeM: [panelW, panelH], panelIsProofDisplay: isAtlas, tileM: isAtlas ? null : tile, repeatAxes: axes, maps: { map: e.map, normal: e.normal || (isWater ? e.map : null), rough: e.rough || null }, alpha: !!e.alpha, dimensions: size };
+}
+
+async function sheet(ids, title) {
+  const c = document.createElement('canvas'); c.width = 1200; c.height = 100 + ids.length * 400;
+  const d = c.getContext('2d'); d.fillStyle = '#e8e9e3'; d.fillRect(0, 0, c.width, c.height);
+  d.fillStyle = '#243e43'; d.font = 'bold 27px sans-serif'; d.fillText(title, 24, 38);
+  d.font = '16px sans-serif'; d.fillText('Camera 1.60 m · figure 1.80 m · front / oblique · metre-scale PBR swatches', 24, 67);
+  d.font = '13px sans-serif'; d.fillText('Atlas panels are proof displays. Checkerboard behind cards is a review aid, not baked into the PNG.', 24, 89);
+  const rows = [];
+  for (let i = 0; i < ids.length; i++) {
+    const y = 100 + i * 400;
+    for (let v = 0; v < 2; v++) {
+      const record = await draw(ids[i], v ? 'oblique' : 'front'); rows.push(record);
+      d.drawImage(renderer.domElement, v * 600, y, 600, 360);
+      d.fillStyle = '#254249'; d.font = 'bold 16px sans-serif'; d.fillText(`${ids[i]} / ${record.view}`, v * 600 + 20, y + 376);
+      d.font = '13px sans-serif'; d.fillStyle = '#5d6c69';
+      d.fillText(record.panelIsProofDisplay ? 'Enlarged atlas proof; see cell contact sheet for individual designs' : `${record.tileM} m repeat · ${record.dimensions.join(' × ')} px · actual normal / roughness where supplied`, v * 600 + 20, y + 394);
+    }
+  }
+  return { image: c.toDataURL('image/png'), rows, width: c.width, height: c.height };
+}
+
+const ready = (async () => {
+  const r = await fetch(new URL('manifest.beach.json', TEX_BASE)); if (!r.ok) throw new Error(`Beach manifest HTTP ${r.status}`);
+  manifest = await r.json();
+  const ids = Object.keys(manifest.textures); if (ids.length !== 25) throw new Error(`Expected 25 texture entries, got ${ids.length}`);
+  const choice = document.querySelector('#choice');
+  for (const id of ids) { const option = document.createElement('option'); option.value = option.textContent = id; choice.append(option); }
+  choice.addEventListener('change', () => draw(choice.value, currentView).catch(report));
+  document.querySelector('#view').addEventListener('click', () => draw(choice.value, currentView === 'front' ? 'oblique' : 'front').catch(report));
+  await draw(ids[0]);
+  return { ids, cameraHeightM: EYE_M, figureHeightM: figureHeight, figureBaseM: figBox.min.y, threeRevision: THREE.REVISION };
+})();
+function report(error) { document.querySelector('#caption').textContent = String(error); console.error(error); }
+ready.catch(report);
+window.__beachReview = { ready, draw, sheet, ids: () => Object.keys(manifest.textures) };
+</script>
+</body>
+</html>

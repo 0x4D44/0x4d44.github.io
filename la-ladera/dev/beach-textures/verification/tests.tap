@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: [complete] complete requested pack decodes and fits byte/GPU budgets
+ok 1 - [complete] complete requested pack decodes and fits byte/GPU budgets
+  ---
+  duration_ms: 984.16841
+  type: 'test'
+  ...
+# Subtest: [png_filters] decoder reconstructs all five PNG filters and indexed alpha
+ok 2 - [png_filters] decoder reconstructs all five PNG filters and indexed alpha
+  ---
+  duration_ms: 4.026534
+  type: 'test'
+  ...
+# Subtest: [png_damage] PNG decoder rejects corrupt CRC, truncation, illegal filters and trailing bytes
+ok 3 - [png_damage] PNG decoder rejects corrupt CRC, truncation, illegal filters and trailing bytes
+  ---
+  duration_ms: 1.568569
+  type: 'test'
+  ...
+# Subtest: [dimensions] decoded dimensions and power-of-two rules survive truthful re-pinning
+ok 4 - [dimensions] decoded dimensions and power-of-two rules survive truthful re-pinning
+  ---
+  duration_ms: 422.691999
+  type: 'test'
+  ...
+# Subtest: [sha_pins] a changed binary pin cannot silently pass
+ok 5 - [sha_pins] a changed binary pin cannot silently pass
+  ---
+  duration_ms: 131.427666
+  type: 'test'
+  ...
+# Subtest: [shifted_edge] shifting only one decoded edge fails even with fresh hashes and totals
+ok 6 - [shifted_edge] shifting only one decoded edge fails even with fresh hashes and totals
+  ---
+  duration_ms: 821.594196
+  type: 'test'
+  ...
+# Subtest: [alpha_pixels] an opaque backdrop fails the promised alpha contract after re-pinning
+ok 7 - [alpha_pixels] an opaque backdrop fails the promised alpha contract after re-pinning
+  ---
+  duration_ms: 199.91593
+  type: 'test'
+  ...
+# Subtest: [atlas_cells] overlapping occupied cells are rejected despite valid normalized UVs
+ok 8 - [atlas_cells] overlapping occupied cells are rejected despite valid normalized UVs
+  ---
+  duration_ms: 222.473299
+  type: 'test'
+  ...
+# Subtest: [spanish_text] Spanish metadata keeps the requested ñ and exact signs
+ok 9 - [spanish_text] Spanish metadata keeps the requested ñ and exact signs
+  ---
+  duration_ms: 159.148219
+  type: 'test'
+  ...
+# Subtest: [provenance] every image needs original generation provenance and a source hash
+ok 10 - [provenance] every image needs original generation provenance and a source hash
+  ---
+  duration_ms: 137.775869
+  type: 'test'
+  ...
+# Subtest: [payload_budget] extra files cannot hide outside declared totals or inflate the 8 MB limit
+ok 11 - [payload_budget] extra files cannot hide outside declared totals or inflate the 8 MB limit
+  ---
+  duration_ms: 135.870704
+  type: 'test'
+  ...
+# Subtest: [gpu_budget] GPU accounting includes full mip chains and a fixed non-overridable cap
+ok 12 - [gpu_budget] GPU accounting includes full mip chains and a fixed non-overridable cap
+  ---
+  duration_ms: 208.618063
+  type: 'test'
+  ...
+# Subtest: [lf_text_pins] CRLF checkout text validates against LF pins while real content changes fail
+ok 13 - [lf_text_pins] CRLF checkout text validates against LF pins while real content changes fail
+  ---
+  duration_ms: 315.002301
+  type: 'test'
+  ...
+# Subtest: [sign_proof] visual text proof must be a complete decoded rendered PNG, not just a declared filename
+ok 14 - [sign_proof] visual text proof must be a complete decoded rendered PNG, not just a declared filename
+  ---
+  duration_ms: 96.975142
+  type: 'test'
+  ...
+# Subtest: [offline] new pack stays out of the active model and texture manifests
+ok 15 - [offline] new pack stays out of the active model and texture manifests
+  ---
+  duration_ms: 123.497512
+  type: 'test'
+  ...
+# Subtest: [normal_data] normal PNGs contain unit forward-facing tangent vectors after re-pinning
+ok 16 - [normal_data] normal PNGs contain unit forward-facing tangent vectors after re-pinning
+  ---
+  duration_ms: 175.866629
+  type: 'test'
+  ...
+# Subtest: [missing_and_paths] complete mode rejects missing PNGs and paths outside the asset pack
+ok 17 - [missing_and_paths] complete mode rejects missing PNGs and paths outside the asset pack
+  ---
+  duration_ms: 290.238403
+  type: 'test'
+  ...
+# Subtest: [animation_registration] matched animation anchors, loops and real transparent content bounds are enforced
+ok 18 - [animation_registration] matched animation anchors, loops and real transparent content bounds are enforced
+  ---
+  duration_ms: 535.003736
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4983.91102

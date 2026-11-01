@@ -1,0 +1,1019 @@
+TAP version 13
+# Subtest: [complete] complete requested pack decodes and fits byte/GPU budgets
+not ok 1 - [complete] complete requested pack decodes and fits byte/GPU budgets
+  ---
+  duration_ms: 723.492655
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    contract: --complete rejects preview/partial output
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:82:10
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: [png_filters] decoder reconstructs all five PNG filters and indexed alpha
+not ok 2 - [png_filters] decoder reconstructs all five PNG filters and indexed alpha
+  ---
+  duration_ms: 1.941469
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    PNG filter 0 must reconstruct every source byte
+    + actual - expected
+
+      Buffer(256) [Uint8Array] [
+    +   64,
+    -   0,
+        73,
+        146,
+        219,
+        36,
+        109,
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 0
+    1: 73
+    2: 146
+    3: 219
+    4: 36
+    5: 109
+    6: 182
+    7: 255
+    8: 72
+    9: 145
+    10: 218
+    11: 35
+    12: 108
+    13: 181
+    14: 254
+    15: 71
+    16: 144
+    17: 217
+    18: 34
+    19: 107
+    20: 180
+    21: 253
+    22: 70
+    23: 143
+    24: 216
+    25: 33
+    26: 106
+    27: 179
+    28: 252
+    29: 69
+    30: 142
+    31: 215
+    32: 32
+    33: 105
+    34: 178
+    35: 251
+    36: 68
+    37: 141
+    38: 214
+    39: 31
+    40: 104
+    41: 177
+    42: 250
+    43: 67
+    44: 140
+    45: 213
+    46: 30
+    47: 103
+    48: 176
+    49: 249
+    50: 66
+    51: 139
+    52: 212
+    53: 29
+    54: 102
+    55: 175
+    56: 248
+    57: 65
+    58: 138
+    59: 211
+    60: 28
+    61: 101
+    62: 174
+    63: 247
+    64: 64
+    65: 137
+    66: 210
+    67: 27
+    68: 100
+    69: 173
+    70: 246
+    71: 63
+    72: 136
+    73: 209
+    74: 26
+    75: 99
+    76: 172
+    77: 245
+    78: 62
+    79: 135
+    80: 208
+    81: 25
+    82: 98
+    83: 171
+    84: 244
+    85: 61
+    86: 134
+    87: 207
+    88: 24
+    89: 97
+    90: 170
+    91: 243
+    92: 60
+    93: 133
+    94: 206
+    95: 23
+    96: 96
+    97: 169
+    98: 242
+    99: 59
+    100: 132
+    101: 205
+    102: 22
+    103: 95
+    104: 168
+    105: 241
+    106: 58
+    107: 131
+    108: 204
+    109: 21
+    110: 94
+    111: 167
+    112: 240
+    113: 57
+    114: 130
+    115: 203
+    116: 20
+    117: 93
+    118: 166
+    119: 239
+    120: 56
+    121: 129
+    122: 202
+    123: 19
+    124: 92
+    125: 165
+    126: 238
+    127: 55
+    128: 128
+    129: 201
+    130: 18
+    131: 91
+    132: 164
+    133: 237
+    134: 54
+    135: 127
+    136: 200
+    137: 17
+    138: 90
+    139: 163
+    140: 236
+    141: 53
+    142: 126
+    143: 199
+    144: 16
+    145: 89
+    146: 162
+    147: 235
+    148: 52
+    149: 125
+    150: 198
+    151: 15
+    152: 88
+    153: 161
+    154: 234
+    155: 51
+    156: 124
+    157: 197
+    158: 14
+    159: 87
+    160: 160
+    161: 233
+    162: 50
+    163: 123
+    164: 196
+    165: 13
+    166: 86
+    167: 159
+    168: 232
+    169: 49
+    170: 122
+    171: 195
+    172: 12
+    173: 85
+    174: 158
+    175: 231
+    176: 48
+    177: 121
+    178: 194
+    179: 11
+    180: 84
+    181: 157
+    182: 230
+    183: 47
+    184: 120
+    185: 193
+    186: 10
+    187: 83
+    188: 156
+    189: 229
+    190: 46
+    191: 119
+    192: 192
+    193: 9
+    194: 82
+    195: 155
+    196: 228
+    197: 45
+    198: 118
+    199: 191
+    200: 8
+    201: 81
+    202: 154
+    203: 227
+    204: 44
+    205: 117
+    206: 190
+    207: 7
+    208: 80
+    209: 153
+    210: 226
+    211: 43
+    212: 116
+    213: 189
+    214: 6
+    215: 79
+    216: 152
+    217: 225
+    218: 42
+    219: 115
+    220: 188
+    221: 5
+    222: 78
+    223: 151
+    224: 224
+    225: 41
+    226: 114
+    227: 187
+    228: 4
+    229: 77
+    230: 150
+    231: 223
+    232: 40
+    233: 113
+    234: 186
+    235: 3
+    236: 76
+    237: 149
+    238: 222
+    239: 39
+    240: 112
+    241: 185
+    242: 2
+    243: 75
+    244: 148
+    245: 221
+    246: 38
+    247: 111
+    248: 184
+    249: 1
+    250: 74
+    251: 147
+    252: 220
+    253: 37
+    254: 110
+    255: 183
+  actual:
+    0: 64
+    1: 73
+    2: 146
+    3: 219
+    4: 36
+    5: 109
+    6: 182
+    7: 255
+    8: 72
+    9: 145
+    10: 218
+    11: 35
+    12: 108
+    13: 181
+    14: 254
+    15: 71
+    16: 144
+    17: 217
+    18: 34
+    19: 107
+    20: 180
+    21: 253
+    22: 70
+    23: 143
+    24: 216
+    25: 33
+    26: 106
+    27: 179
+    28: 252
+    29: 69
+    30: 142
+    31: 215
+    32: 32
+    33: 105
+    34: 178
+    35: 251
+    36: 68
+    37: 141
+    38: 214
+    39: 31
+    40: 104
+    41: 177
+    42: 250
+    43: 67
+    44: 140
+    45: 213
+    46: 30
+    47: 103
+    48: 176
+    49: 249
+    50: 66
+    51: 139
+    52: 212
+    53: 29
+    54: 102
+    55: 175
+    56: 248
+    57: 65
+    58: 138
+    59: 211
+    60: 28
+    61: 101
+    62: 174
+    63: 247
+    64: 64
+    65: 137
+    66: 210
+    67: 27
+    68: 100
+    69: 173
+    70: 246
+    71: 63
+    72: 136
+    73: 209
+    74: 26
+    75: 99
+    76: 172
+    77: 245
+    78: 62
+    79: 135
+    80: 208
+    81: 25
+    82: 98
+    83: 171
+    84: 244
+    85: 61
+    86: 134
+    87: 207
+    88: 24
+    89: 97
+    90: 170
+    91: 243
+    92: 60
+    93: 133
+    94: 206
+    95: 23
+    96: 96
+    97: 169
+    98: 242
+    99: 59
+    100: 132
+    101: 205
+    102: 22
+    103: 95
+    104: 168
+    105: 241
+    106: 58
+    107: 131
+    108: 204
+    109: 21
+    110: 94
+    111: 167
+    112: 240
+    113: 57
+    114: 130
+    115: 203
+    116: 20
+    117: 93
+    118: 166
+    119: 239
+    120: 56
+    121: 129
+    122: 202
+    123: 19
+    124: 92
+    125: 165
+    126: 238
+    127: 55
+    128: 128
+    129: 201
+    130: 18
+    131: 91
+    132: 164
+    133: 237
+    134: 54
+    135: 127
+    136: 200
+    137: 17
+    138: 90
+    139: 163
+    140: 236
+    141: 53
+    142: 126
+    143: 199
+    144: 16
+    145: 89
+    146: 162
+    147: 235
+    148: 52
+    149: 125
+    150: 198
+    151: 15
+    152: 88
+    153: 161
+    154: 234
+    155: 51
+    156: 124
+    157: 197
+    158: 14
+    159: 87
+    160: 160
+    161: 233
+    162: 50
+    163: 123
+    164: 196
+    165: 13
+    166: 86
+    167: 159
+    168: 232
+    169: 49
+    170: 122
+    171: 195
+    172: 12
+    173: 85
+    174: 158
+    175: 231
+    176: 48
+    177: 121
+    178: 194
+    179: 11
+    180: 84
+    181: 157
+    182: 230
+    183: 47
+    184: 120
+    185: 193
+    186: 10
+    187: 83
+    188: 156
+    189: 229
+    190: 46
+    191: 119
+    192: 192
+    193: 9
+    194: 82
+    195: 155
+    196: 228
+    197: 45
+    198: 118
+    199: 191
+    200: 8
+    201: 81
+    202: 154
+    203: 227
+    204: 44
+    205: 117
+    206: 190
+    207: 7
+    208: 80
+    209: 153
+    210: 226
+    211: 43
+    212: 116
+    213: 189
+    214: 6
+    215: 79
+    216: 152
+    217: 225
+    218: 42
+    219: 115
+    220: 188
+    221: 5
+    222: 78
+    223: 151
+    224: 224
+    225: 41
+    226: 114
+    227: 187
+    228: 4
+    229: 77
+    230: 150
+    231: 223
+    232: 40
+    233: 113
+    234: 186
+    235: 3
+    236: 76
+    237: 149
+    238: 222
+    239: 39
+    240: 112
+    241: 185
+    242: 2
+    243: 75
+    244: 148
+    245: 221
+    246: 38
+    247: 111
+    248: 184
+    249: 1
+    250: 74
+    251: 147
+    252: 220
+    253: 37
+    254: 110
+    255: 183
+  operator: 'deepStrictEqual'
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:96:12
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: [png_damage] PNG decoder rejects corrupt CRC, truncation, illegal filters and trailing bytes
+not ok 3 - [png_damage] PNG decoder rejects corrupt CRC, truncation, illegal filters and trailing bytes
+  ---
+  duration_ms: 0.621324
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'throws'
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:106:10
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [dimensions] decoded dimensions and power-of-two rules survive truthful re-pinning
+not ok 4 - [dimensions] decoded dimensions and power-of-two rules survive truthful re-pinning
+  ---
+  duration_ms: 213.79089
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:120:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [sha_pins] a changed binary pin cannot silently pass
+not ok 5 - [sha_pins] a changed binary pin cannot silently pass
+  ---
+  duration_ms: 149.13976
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:126:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [shifted_edge] shifting only one decoded edge fails even with fresh hashes and totals
+not ok 6 - [shifted_edge] shifting only one decoded edge fails even with fresh hashes and totals
+  ---
+  duration_ms: 48.622674
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: 'edge-shift mutation must damage a real opposite edge'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:139:10
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [alpha_pixels] an opaque backdrop fails the promised alpha contract after re-pinning
+not ok 7 - [alpha_pixels] an opaque backdrop fails the promised alpha contract after re-pinning
+  ---
+  duration_ms: 141.318833
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:150:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [atlas_cells] overlapping occupied cells are rejected despite valid normalized UVs
+not ok 8 - [atlas_cells] overlapping occupied cells are rejected despite valid normalized UVs
+  ---
+  duration_ms: 123.502874
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:159:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [spanish_text] Spanish metadata keeps the requested ñ and exact signs
+not ok 9 - [spanish_text] Spanish metadata keeps the requested ñ and exact signs
+  ---
+  duration_ms: 240.288821
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:165:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [provenance] every image needs original generation provenance and a source hash
+not ok 10 - [provenance] every image needs original generation provenance and a source hash
+  ---
+  duration_ms: 142.621952
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:171:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [payload_budget] extra files cannot hide outside declared totals or inflate the 8 MB limit
+not ok 11 - [payload_budget] extra files cannot hide outside declared totals or inflate the 8 MB limit
+  ---
+  duration_ms: 150.008016
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:177:13
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [gpu_budget] GPU accounting includes full mip chains and a fixed non-overridable cap
+not ok 12 - [gpu_budget] GPU accounting includes full mip chains and a fixed non-overridable cap
+  ---
+  duration_ms: 0.533552
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    rectangular texture full mip count
+    + actual - expected
+
+    + 1398108
+    - 2796204
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2796204
+  actual: 1398108
+  operator: 'strictEqual'
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:183:10
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [lf_text_pins] CRLF checkout text validates against LF pins while real content changes fail
+not ok 13 - [lf_text_pins] CRLF checkout text validates against LF pins while real content changes fail
+  ---
+  duration_ms: 158.120862
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    text input pins: LF SHA-256 mismatch: tools/textures/beach.catalog.json
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:195:10
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [sign_proof] visual text proof must be a complete decoded rendered PNG, not just a declared filename
+not ok 14 - [sign_proof] visual text proof must be a complete decoded rendered PNG, not just a declared filename
+  ---
+  duration_ms: 134.826523
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:206:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [offline] new pack stays out of the active model and texture manifests
+not ok 15 - [offline] new pack stays out of the active model and texture manifests
+  ---
+  duration_ms: 152.363146
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:215:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [normal_data] normal PNGs contain unit forward-facing tangent vectors after re-pinning
+not ok 16 - [normal_data] normal PNGs contain unit forward-facing tangent vectors after re-pinning
+  ---
+  duration_ms: 207.233397
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:225:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [missing_and_paths] complete mode rejects missing PNGs and paths outside the asset pack
+not ok 17 - [missing_and_paths] complete mode rejects missing PNGs and paths outside the asset pack
+  ---
+  duration_ms: 109.568914
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:231:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: [animation_registration] matched animation anchors, loops and real transparent content bounds are enforced
+not ok 18 - [animation_registration] matched animation anchors, loops and real transparent content bounds are enforced
+  ---
+  duration_ms: 173.182574
+  type: 'test'
+  location: '/tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    expected the intentionally corrupted input to fail
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejected (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:73:10)
+    file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:245:3
+    TestContext.<anonymous> (file:///tmp/ladera-beach-export-tp87h8l1/la-ladera/tests/beach-textures.test.mjs:15:35)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 0
+# fail 18
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2893.373868
