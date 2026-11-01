@@ -528,7 +528,7 @@ class Sim {
     addEventListener('blur', this._blur = () => { this.keys.clear(); });   // no stuck movement keys after alt-tab
     let drag = null;
     this._pd = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} this.audio.start();
-      if (e.pointerType === 'mouse' && !this._modalOpen && !this.paused && this.mode !== 'street' && document.pointerLockElement !== canvas) this._requestLock(); };
+      if (e.pointerType === 'mouse' && !this._modalOpen && !this.paused && document.pointerLockElement !== canvas) this._requestLock(); };
     this._pm = (e) => {
       if (this._forceLock || document.pointerLockElement === canvas) { this._lookDelta(e.movementX || 0, e.movementY || 0); return; }
       if (!drag || e.pointerId !== drag.id) return; this._lookDelta(e.clientX - drag.x, e.clientY - drag.y); drag.x = e.clientX; drag.y = e.clientY;   // drag-to-look fallback (no pointer lock / denied / touch)
@@ -556,7 +556,7 @@ class Sim {
     const h = this._hintEl; if (!h) return;
     const fine = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches;
     this._hintT = Math.max(0, (this._hintT || 0) - dt);
-    const show = fine && this.mode && this.mode !== 'street' && !this._modalOpen && this._hintT > 0 && !this._lockDenied;
+    const show = fine && this.mode && !this._modalOpen && this._hintT > 0 && !this._lockDenied;
     h.textContent = this._locked ? 'Esc to release the mouse' : 'Click to look with the mouse - Esc to release';
     h.style.opacity = show ? '0.85' : '0';
   }
