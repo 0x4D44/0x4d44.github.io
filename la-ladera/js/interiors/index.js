@@ -10,16 +10,20 @@ import * as R from './rooms.js';
 import { shopRoom } from './shops.js';
 import * as S from './special.js';
 import { wallsRect } from '../core/physics.js';
-import { collectStories } from './stories.js';
+import { collectStories, collectInteractableStories, collectDiscoveryStories } from './stories.js';
 import { dressRooms } from './garments.js';
-import { buildInterior as buildMeshes, loadInteriorAssets as preload, loadGarmentAssets } from './build.js';
+import { buildInterior as buildMeshes, buildInteriorSteps as buildMeshSteps, loadInteriorAssets as preload, loadGarmentAssets, prepareAtlas } from './build.js';
 import { loadInspectAssets } from './inspect.js';
 import { planShopGoods } from './goods.js';
 import { loadGoodsAssets } from './goods-render.js';
 
 /** The page's entry: the furniture's models, the clothes', the close-inspection things' and the shop stock's come down together (four sets, build.js, inspect.js and goods-render.js: the furniture tests call `preload` alone and see only the furniture). */
 export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx), loadInspectAssets(ctx), loadGoodsAssets(ctx)]); };
+/** The same four sets one by one, for a boot that asks for them in stages (js/main.js `?lazy=1`: the meshes need the first three, the drawers the fourth). */
+export const loadFurnitureAssets = (ctx) => preload(ctx);
+export { loadGarmentAssets, loadInspectAssets, loadGoodsAssets, prepareAtlas };
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
+export const buildInteriorSteps = (ctx, bp) => buildMeshSteps(ctx, bp);
 
 const PI = Math.PI;
 export const BLOCK_MIN_H = 1.1;
@@ -196,7 +200,14 @@ function emitLights(E, room, L, hh, recs) {
 }
 
 // ------------------------------------------------------------------ main
-export function furnishBuilding(ctx, bp) {
+/**
+ * Furnish one building as a RESUMABLE job: a generator that yields at the seams of the work (after each room's furnisher, its healing and its pocket cure, after the garments, after each
+ * room's records), so that a caller with a frame budget (js/interiors/lazy.js) can spread it over frames. `furnishBuilding` is this generator run to its end: the same code in the same
+ * order, so a full boot makes the same world byte for byte (tests/interiors-lazy.test.mjs holds it to that). The module's id counter (layout.js `getUid`) belongs to the job: the runner saves
+ * it at every yield and puts it back at every resume.
+ * `o.lazy`: the last step differs. Only the objects' prompts are registered here; the discoveries wait for the runner (`collectDiscoveryStories`), which runs them in the order of a full boot.
+ */
+export function* furnishSteps(ctx, bp, o = {}) {
   if (bp.interior) return;
   const lot = bp.lot ?? {};
   // own stream: independent of how much the other modules drew from ctx.rng (stable per world seed + lot); it is only ever forked, so contents.js can replay the households
@@ -206,6 +217,7 @@ export function furnishBuilding(ctx, bp) {
   bp.colliders ??= { walls: [], floors: [] }; bp.colliders.walls ??= [];
   const E = makeEnv(ctx, bp, rng);
   const interior = bp.interior = { hh: [], rooms: {}, inter: [], layouts: new Map(), shopType: null };
+  if (o.lazy) interior.walls0 = bp.colliders.walls.length;                                     // the walls from here on are the furniture's: the runner adds just those to the physics world
   const rooms = roomsInOrder(bp), built = [];
   for (const room of rooms) {
     const hh = E.householdFor(room);
@@ -218,22 +230,27 @@ export function furnishBuilding(ctx, bp) {
     try {
       const furnisher = room.noFurnish ? R.lightOnly : strip ? R.thin : pickFurnisher(bp, room, L);
       furnisher(L, E, hh);
+      yield 'furnisher';
       R.ensureFixtures(L, E, hh, furnisher);                   // the toilet, sink, stove, fridge or bed this room is defined by, however small the plan made it
     } catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    yield 'fixtures';
     let removed = L.heal(), bedroll = null;
     try { bedroll = R.ensureSleep(L, E, hh); if (bedroll) removed = removed.concat(L.heal([bedroll])); }       // a bedroom whose bed healing took out still gets somewhere to sleep
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    yield 'heal';
     try { removed = removed.concat(L.curePockets({ protect: bedroll ? [bedroll] : [] })); }                    // no dead-end lane or niche between 0.55 and 0.85 m is left for a walker to wedge in (layout.js `pockets`)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'pockets ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
     interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those)
     built.push({ room, hh, L });
+    yield 'pockets';
   }
   // a home whose kitchens are all too small for a fridge keeps it in the dining or living room (every room is furnished by now, so the lanes it must keep are known)
   if (bp.lot?.kind && !['chapel', 'school', 'clinic', 'hall'].includes(bp.lot.kind) && !(E.shopType ?? lot.shop)) R.ensureHomeFridge(built);
   // every room is furnished: which of them are untidy, and the clothes that lie about (garments.js: the beds are made or unmade to match, nothing else moves)
   try { interior.garments = dressRooms(E, built); }
   catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'garments ' + String(e?.message ?? e), stack: e?.stack }); console.error('[garments]', bp.id, e); }
+  yield 'garments';
   for (const { room, hh, L } of built) {
     // records
     for (const it of L.items) {
@@ -256,9 +273,24 @@ export function furnishBuilding(ctx, bp) {
     }
     emitAnchors(E, room, L, hh);
     emitLights(E, room, L, hh);
+    yield 'records';
   }
   interior.hh = [...E.hhs.values()];
   interior.shopType = E.shopType ?? lot.shop ?? null;
   planShopGoods(bp);                                                                           // the stock of the shelves and counters: its own list (bp.goods), nothing in the layout, no collider
-  collectStories(ctx, bp, E);
+  if (o.lazy) collectInteractableStories(ctx, bp, E); else collectStories(ctx, bp, E);
+  return E;                                                                                    // (lazy.js hands it to the discovery cursor)
+}
+
+/** Furnish one building, all of it, now (a full boot, the tests and the probes). */
+export function furnishBuilding(ctx, bp, o) { for (const _ of furnishSteps(ctx, bp, o)); }        // eslint-disable-line no-unused-vars
+export { collectDiscoveryStories };
+
+/**
+ * The finishes of a building's rooms (`room.finish`: floor, wall, ceiling, trim) WITHOUT furnishing it. The shell (arch/finish.js) and the footstep sounds read them, and a lazy boot builds every
+ * shell before any building is furnished. The same call furnishSteps makes first for each room, from the same forked streams: the same finishes, and furnishing sets them again, unchanged.
+ */
+export function finishBuilding(ctx, bp) {
+  const rng = furnishRng(ctx, bp), E = makeEnv(ctx, bp, rng);
+  for (const room of roomsInOrder(bp)) finishRoom(room, E.householdFor(room), rng, bp);
 }

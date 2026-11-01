@@ -96,6 +96,34 @@ export class Visibility {
     return ints.length;
   }
 
+  /**
+   * One interior made after `collect()` (interiors/lazy.js, `?lazy=1`): it joins the budget with the same box and shadow policy `collect()` gives every group, and takes the visibility it would have from
+   * where the player stands now (not the `visible = true` of a new group: a building 60 m away must not be drawn for the frame before the next scan). False when the building has no interior group.
+   */
+  addInterior(bid, { now = false } = {}) {
+    const id = bid + '.int', g = this.ctx.batch.groups.get(id); if (!g) return null;
+    const box = new THREE.Box3();
+    for (const m of g.meshes) { const geo = m.geometry; if (!geo.boundingBox) geo.computeBoundingBox(); box.union(geo.boundingBox); }
+    g.obj.traverse((o) => { if (o.isMesh && !o.userData.keepShadow) o.castShadow = false; });
+    if (box.isEmpty()) box.setFromCenterAndSize(g.obj.position, new THREE.Vector3(1, 1, 1));
+    // not drawn until warm: its programs are built and its textures are up (engine/warm.js LateWarm), or the player is already at it (`now`: show what there is, as an eager boot would)
+    const lw = this.ctx.lateWarm, wait = !now && !!lw;
+    const rec = { id, bid, obj: g.obj, box, on: false, ready: !wait };
+    g.obj.visible = false;
+    const at = this.ints.findIndex((it) => it.id === id);
+    if (at >= 0) this.ints[at] = rec; else this.ints.push(rec);
+    this.acc = 1;
+    const shown = () => { rec.ready = true; this.acc = 1; if (this.ctx.player) this.update(0, true); };
+    if (!wait) { this.update(0, true); return Promise.resolve(rec); }
+    return lw.warm(g.obj).then(() => { shown(); return rec; });
+  }
+  /** The player is at this interior: it is shown now, warm or not (the programs it still needs compile in the frame, as they did before the warm-up existed). */
+  releaseInterior(bid) {
+    const it = this.ints.find((x) => x.bid === bid); if (!it || it.ready !== false) return false;
+    it.ready = true; this.acc = 1; if (this.ctx.player) this.update(0, true);
+    return true;
+  }
+
   /** dt in seconds; force = evaluate now (after a teleport). */
   update(dt, force = false) {
     const pl = this.ctx.player; if (!pl || !this.ints.length) return;
@@ -106,6 +134,7 @@ export class Visibility {
     const p = this.p.set(s.x, s.y + 1.2, s.z), indoors = !!pl.indoors, mine = pl.building;
     let shown = 0;
     for (const it of this.ints) {
+      if (it.ready === false) continue;                                   // made after the boot and not warm yet (addInterior): stays hidden
       const d = it.box.distanceToPoint(p);
       const R = indoors ? INDOOR_OTHERS : INT_RANGE;
       const own = mine != null && it.bid === mine && (indoors || d < 6);
