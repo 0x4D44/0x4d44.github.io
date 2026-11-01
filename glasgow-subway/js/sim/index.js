@@ -282,7 +282,7 @@ class Sim {
     if (fresh) this.walker.place(0.0, -2.0, 0);
     this.look.yaw = 0; this.look.pitch = 0;
     this.scene.fog.density = 0.026;
-    this.hud.toast('Riding as a passenger. WASD to walk, N: get off at next stop, E at the front: driver\'s cab.', 'info', 5);
+    this.hud.toast('Riding as a passenger. WASD to walk, N: get off at next stop, X: change circle at a station, E at the front: driver\'s cab.', 'info', 5);
   }
 
   enterExplore(stopIdx, fromRide = false) {
@@ -402,6 +402,13 @@ class Sim {
     this.walker.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + doorZ, -inf.S * Math.PI / 2); this.look.yaw = this.walker.yaw; this.look.pitch = 0;
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
     this.hud.toast('Welcome to ' + this.svc.station.name, 'info', 3);
+  }
+  /** Passenger: cross the platform and board the other circle's train at this station (outer <-> inner). */
+  changeTrains() {
+    const svc = this.svc; if (this.mode !== 'ride' || !svc || svc.phase !== 'station') { this.hud.toast('You can change trains while the train is standing at a station.', 'info', 3); return; }
+    const other = this.line === 'outer' ? 'inner' : 'outer';
+    this.hud.toast(`Changing to the ${other} circle at ${svc.station.name}...`, 'info', 3);
+    this.go({ mode: 'ride', line: other, station: svc.stop.station, diff: this.sel.diff });
   }
   _stepOut() { this._setupTrainWalker(); this.walker.place(0, this.doorZ[0], 0); this._alight(); }
   _takeCab() {
@@ -592,7 +599,8 @@ class Sim {
       else if (kk === 'c') { this.look.yaw = 0; this.look.pitch = -0.05; }
       else used = /^Arrow/.test(kk);
     } else if (this.mode === 'ride') {
-      if (kk === 'n') { this.alightNext = !this.alightNext; this.hud.toast(this.alightNext ? 'You will get off at ' + this.svc.station.name : 'Staying on board', 'info'); }
+      if (kk === 'x') this.changeTrains();
+      else if (kk === 'n') { this.alightNext = !this.alightNext; this.hud.toast(this.alightNext ? 'You will get off at ' + this.svc.station.name : 'Staying on board', 'info'); }
       else used = /^(w|a|s|d|Shift|Arrow.*)$/.test(kk);
     } else used = /^(w|a|s|d|Shift|Arrow.*| )$/.test(kk);
     if (used) e.preventDefault();
@@ -705,6 +713,7 @@ class Sim {
         const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.6) && Math.abs(w.x) > 0.45;
         if (nearDoor) { this.context = { kind: 'alight' }; msg = `<kbd>E</kbd> Step off at ${svc.station.name}`; }
         else msg = `${svc.station.name}: walk to an open door and press E to get off`;
+        msg += `  <kbd>X</kbd> Change to the ${this.line === 'outer' ? 'inner' : 'outer'} circle`;
       } else if (this.alightNext) msg = `Getting off at ${svc.station.name}`;
     } else if (this.mode === 'street') {
       const st = this.street; if (Math.hypot(w.x - st.stair.x, w.z - st.stair.z) < 4.2) { this.context = { kind: 'descend' }; msg = '<kbd>E</kbd> Take the stairs down to the platform'; }
@@ -860,7 +869,7 @@ class Sim {
     if (this.mode === 'drive') {
       sub = svc.phase === 'station' ? (svc.doorsClosed ? (svc.signalGreen ? 'Signal clear - depart' : `Dwell ${Math.ceil(info.dwellLeft)} s`) : 'Doors open') : `${this.line === 'outer' ? 'Outer' : 'Inner'} circle - ${svc.diff.label}`;
       if (svc.phase === 'station') title = 'At: ' + svc.station.name;
-    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + upNext.name; sub = this.alightNext ? 'Getting off here' : 'Press N to get off at the next stop'; }
+    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + upNext.name; sub = this.alightNext ? 'Getting off here' : 'N: get off at next stop'; }
     else if (this.mode === 'explore') { title = this.activeStation ? this.activeStation.station.name : ''; sub = this.shuttle.state === 'wait' ? `Next train ${fmtTime(this.shuttle.timer)}` : (this.shuttle.state === 'arriving' ? 'Train arriving' : this.shuttle.state === 'dwell' ? 'Train at platform' : ''); distText = ''; }
     else if (this.mode === 'street') { title = 'Street level'; sub = ''; distText = ''; }
     let late = null;
