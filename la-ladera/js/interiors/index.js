@@ -243,6 +243,8 @@ export function* furnishSteps(ctx, bp, o = {}) {
     let removed = L.heal(), bedroll = null;
     try { bedroll = R.ensureSleep(L, E, hh); if (bedroll) removed = removed.concat(L.heal([bedroll])); }       // a bedroom whose bed healing took out still gets somewhere to sleep
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    try { R.ensureStorage(L, E, hh); }                                                                         // a bedroom whose wardrobe, dresser or trunk healing took out keeps its clothes somewhere again (rooms.js)
+    catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'storage ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     yield 'heal';
     try { removed = removed.concat(L.curePockets({ protect: bedroll ? [bedroll] : [] })); }                    // no dead-end lane or niche between 0.55 and 0.85 m is left for a walker to wedge in (layout.js `pockets`)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'pockets ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }

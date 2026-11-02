@@ -766,6 +766,50 @@ export function fillBeds(L, E, hh, beds, owed, parents) {
   L.sleeps = places; L.owed = owed;
   return places;
 }
+/** A dresser's drawers are used standing 0.55 m from the front with a body's 0.3 m of free floor round the feet: 0.85 m, not the 0.6 m the catalogue keeps clear. The zone also stops other pieces
+ *  from taking that floor afterwards. The bedroom of a flat (3.16 x 2.87 m) with a double bed along its long wall left 0.69 m to a dresser whose four drawers then had no place to stand
+ *  (R4-118: a front nobody can stand in front of is decoration; 44 of the barrio's drawers were). */
+const DRESSER_FRONT = { ...CATALOG.dresser_4, clear: [0.9, 0, 0] };
+/** Can a person stand at the front of this piece, in the part of the room a door leads to? The test of reach.js `standSpots` (the same spots, the same `standable`) without the sight line: the
+ *  floor in front of a piece can be free and still be a closed pocket between the piece, a bed and a door's sweep. */
+export function frontStand(L, it, conn = L.connectivity()) {
+  const zf = it.d / 2;
+  for (const d of [1.0, 0.85, 0.7, 0.55]) for (const s of [0, -0.25, 0.25]) {
+    const [x, z] = L.rel(it, s, zf + d);
+    if (L.standable(x, z, conn, 0.3)) return true;
+  }
+  return false;
+}
+/** A dresser (a wall pose with 0.9 m of floor in front of it) whose drawers a person can stand at: the first pose the wall gives, else the next that does (null when no pose does). */
+export function dresserAt(L) {
+  const o = { prio: 2, awayDoors: true, def: DRESSER_FRONT };
+  const d = L.wall('dresser_4', 'any', o);
+  if (!d || frontStand(L, d)) return d;
+  L.remove(d);
+  for (const p of L.wallPoses('dresser_4', 'any', o)) {
+    L._commit(p, o);
+    if (frontStand(L, p)) return p;
+    L.remove(p);
+  }
+  return null;
+}
+const KEEPS = /^(wardrobe|dresser|chest_trunk|coat_rack)/;
+/** A bedroom too small or too crowded for a wardrobe still has somewhere to keep clothes: a trunk, else a metal wardrobe, else a trunk with its 0.5 m front zone waived (a lid opens upward, and the
+ *  room is still never cut in two: a 6 to 9 m2 room with a bed and two doors often has a free wall for it and no 0.5 m in front), else pegs and a shelf on the wall (no bedroom of the barrio is
+ *  bare of storage). Does nothing in a room that keeps clothes already. */
+function storageFallback(L) {
+  const keeps = () => L.items.some((i) => KEEPS.test(i.name));
+  if (!keeps()) any(() => L.wall('chest_trunk', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }),
+    () => L.wall('chest_trunk', 'any', { prio: 1, noClear: true, awayDoors: true }));
+  if (!keeps()) { L.hang('coat_rack_wall', 'any', { y: 1.6 }); L.hang('shelf_wall', 'any', { y: 1.5 }); }
+  return keeps();
+}
+/** After heal(): a bedroom whose wardrobe, dresser or trunk the healing took out (a piece that cut the room, or walled a bed in) is left with nowhere to keep clothes: the fallback of the dressing
+ *  runs again on the room as it is now. A furnished bedroom only; true when the room keeps clothes (before or after). */
+export function ensureStorage(L, E, hh) {
+  if (L.room.type !== 'bedroom' || !L.role || L.W < 0.9 || L.D < 0.9) return true;
+  return storageFallback(L);
+}
 /** Everything a bedroom has besides its bed: nightstands and lamps, storage, the study corner, a rug, wall decor, clutter. */
 function bedroomDress(L, E, hh, role, bed) {
   const rng = L.rng, area = floorArea(L);
@@ -796,15 +840,10 @@ function bedroomDress(L, E, hh, role, bed) {
     const wn = area >= 10 && role === 'master' ? 'wardrobe_3' : 'wardrobe_2';
     any(() => L.wall(wn, 'any', { at: 'corner', prio: 1, awayDoors: true }), () => L.wall('wardrobe_2', 'any', { prio: 1, awayDoors: true }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }));
   }
-  if (area >= 8.5) any(() => L.wall('dresser_4', 'any', { prio: 2, awayDoors: true }));
+  if (area >= 8.5) dresserAt(L);
   if (study && area >= 8) L.wall('bookshelf', 'any', { prio: 2 });
-  // a bedroom too small or too crowded for a wardrobe still has somewhere to keep clothes: a trunk, else a metal wardrobe, else a trunk with its 0.5 m front zone waived (a lid opens upward, and the room is
-  // still never cut in two: a 6 to 9 m2 room with a bed and two doors often has a free wall for it and no 0.5 m in front), else pegs and a shelf on the wall (no bedroom of the barrio is bare of storage).
   // It comes after the study corner: a child's desk is worth more than a trunk, and a trunk placed first took the desk's wall in the small study rooms (the barrio lost most of its study desks).
-  const keeps = () => L.items.some((i) => /^(wardrobe|dresser|chest_trunk|coat_rack)/.test(i.name));
-  if (!keeps()) any(() => L.wall('chest_trunk', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }),
-    () => L.wall('chest_trunk', 'any', { prio: 1, noClear: true, awayDoors: true }));
-  if (!keeps()) { L.hang('coat_rack_wall', 'any', { y: 1.6 }); L.hang('shelf_wall', 'any', { y: 1.5 }); }
+  storageFallback(L);
   if (role === 'kids' || role === 'child') { L.free('toy_pile', { rad: 3, prio: 2 }); if (rng.chance(0.7)) L.free('school_bag', { rad: 3, prio: 2 }); art(L, E, 'kids', 'any'); if (rng.chance(0.6)) art(L, E, 'kids', 'any'); }
   if (role === 'teen' || role === 'student') { if (hh.hobby === 'football' || rng.chance(0.4)) art(L, E, 'sport', 'any'); else art(L, E, 'music', 'any'); if (hh.hobby === 'music') L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 }); }
   if (role === 'elder' && hh.altar) {

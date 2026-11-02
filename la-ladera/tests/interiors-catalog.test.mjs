@@ -203,6 +203,11 @@ test('a building built from the models: every modelled record is drawn from its 
       }
     }
     if (g.length > 36) problems.push(`${bp.id}: ${g.length} materials (limit 36)`);   // 34 before the 177-piece library: its pieces add a few more materials to the busiest interiors
+    // the TVs of a building share its screen glow (build.js alternativeSeed): a flat and a tube one at most, not one pair of materials per set (T16 drew four and was the 37th mesh)
+    for (const [what, re] of [['flat', /^tv_screen_[ab]$/], ['tube', /^tv_screen_crt_[ab]$/]]) {
+      const glows = [...new Set(g.map((m) => m.userData.matKey.split('#')[0]).filter((k) => re.test(k)))];
+      if (glows.length > 1) problems.push(`${bp.id}: ${glows.length} ${what} screen glows (${glows}); the TVs of a building share one`);
+    }
     if (t > 100000) problems.push(`${bp.id}: ${t} triangles in one interior (limit 100000)`);   // 90000 before the library; the page gate is tests/metrics.mjs (2.5 M triangles, 1800 calls)
     meshes.push(g.length); tris.push(t);
   }

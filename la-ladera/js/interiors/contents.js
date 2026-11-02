@@ -377,11 +377,13 @@ export function makeContents(ctx, S) {
   const cands = ITEMS.filter((i) => i.pools.has(slot.pool) && whenOk(i.when, who))
     .map((i) => ({ i, k: -Math.log(1e-9 + rng.next()) / (i.pools.get(slot.pool) * (i.when ? 2 : 1) * lean(i)) })).sort((a, b) => a.k - b.k);
   // a hanging rail is never bare (R4-211, R2e-004: a third of the wardrobes opened to an empty rail): the clothes hang first, from half to nine tenths of the rail, the middle first,
-  // and a kind that already hangs there is much less likely to come again; the things of the shelves are picked as before
+  // and a kind that already hangs there is much less likely to come again; the things of the shelves are picked as before. The clothes of everyone who sleeps in the room hang on its rail:
+  // a tenth of the rail more for each sleeper beyond the first, up to a full rail (the beds follow the household, R4-303, so a wardrobe of 0.46 m of rail serves four or five people)
   if (slot.rail && pk.rail.spots.length) {
     const hangs = ITEMS.filter((i) => i.sh === 'hang' && i.pools.has(slot.pool) && whenOk(i.when, who)), room = pk.rail.spots.length, used = new Map();
     if (hangs.length) {
-      const n = Math.max(Math.min(2, room), Math.round(room * (0.5 + 0.4 * rng.next())));
+      const sleepers = Math.max(1, S.bp?.interior?.layouts?.get(S.rec?.room)?.sleeps ?? 1);
+      const n = Math.max(Math.min(2, room), Math.round(room * Math.min(1, 0.5 + 0.4 * rng.next() + 0.1 * (sleepers - 1))));
       for (let h = 0; h < n; h++) {
         const i = rng.weighted(hangs, (g) => (g.pools.get(slot.pool) * (g.when ? 2 : 1) * lean(g)) / (1 + 3 * (used.get(g.id) ?? 0)));
         const pos = pk.put({ w: i.w, h: i.h, d: i.d, hang: true }, 0); if (!pos) continue;
