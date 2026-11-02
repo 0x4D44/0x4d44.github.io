@@ -74,7 +74,7 @@ export async function loadInteriorAssets(ctx) {
  * here, each key pointed at its LOD file, and loaded into a set of their own, `ctx.garmentGlb`: `ctx.interiorGlb` stays the furniture's, one entry per key of the furniture catalogue
  * (the furniture tests hold it to that). A record whose key is in either set draws from its model; anything else keeps its stand-in (a patch of cloth), so a file that is missing or
  * broken costs the look of the clothes and never the room. Nothing is requested when the clothes are switched off (`?garments=0`: there are no records to draw).
- * The page keeps its adult/child preload. An explicit consumer can opt into teen with { sizeTags: ['teen'] }, or request all three libraries; this does not place anything.
+ * Unless told otherwise this loads the adult and child libraries; { sizeTags: ['teen'] } asks for the teen one (or any list of the three). The page asks for all three (index.js: garments.js PAGE_GARMENT_SIZES).
  */
 export async function loadGarmentAssets(ctx, options = {}) {
   const keys = garmentKeysFor(options.sizeTags);

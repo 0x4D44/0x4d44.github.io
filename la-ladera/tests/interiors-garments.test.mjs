@@ -17,13 +17,13 @@ import { inspectAsset, parseGLB, validateGarments } from '../tools/blender/garme
 import { furnishedBatch, obbOf, corners, penetration, rectOb, roomOf, catalogOf, landing } from './interiors-lib.mjs';
 import { CATALOG } from '../js/interiors/catalog.js';
 import { GARMENTS, VARIANTS, STATES, ASSORTMENTS, GARMENT_FILES } from '../js/interiors/garments_data.js';
-import { GARMENT_KEYS, garmentKey, lodFile, registerGarmentAssets, tidinessOf, classOf, isChildRoom, walkLanes, uOf, CLASS, NEAT_LOTS, CHILD_ROLES, LIMITS, STOCK_HOSTS, KIND_SHIFT, garmentsOff } from '../js/interiors/garments.js';
+import { GARMENT_KEYS, ALL_GARMENT_KEYS, PAGE_GARMENT_SIZES, garmentKey, lodFile, registerGarmentAssets, tidinessOf, classOf, isChildRoom, walkLanes, uOf, CLASS, NEAT_LOTS, CHILD_ROLES, LIMITS, STOCK_HOSTS, KIND_SHIFT, garmentsOff } from '../js/interiors/garments.js';
 import { mkObb } from '../js/interiors/layout.js';
 import { garmentsDataModule } from '../tools/garments_data.mjs';
 import { drawStandin } from '../js/interiors/standins.js';
 import { MeshBuilder } from '../js/core/mesh.js';
 import { buildInterior, loadInteriorAssets, loadGarmentAssets } from '../js/interiors/build.js';
-import { loadInteriorAssets as pageLoad } from '../js/interiors/index.js';
+import { loadInteriorAssets as pageLoad, loadGarmentAssets as pageClothes } from '../js/interiors/index.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MODELS = join(ROOT, 'assets', 'models');
@@ -36,9 +36,10 @@ const manifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments.json'),
 const childManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments-child.json'), 'utf8'));
 const childCatalogue = JSON.parse(readFileSync(join(ROOT, 'tools', 'blender', 'garments-child.catalog.json'), 'utf8'));
 const assetRows = (man, sizeTag) => man.files.flatMap((f) => Object.entries(f.assets).map(([key, a]) => ({ key, a, file: f.glb, sizeTag })));
-const adultAssets = assetRows(manifest, 'adult'), childAssets = assetRows(childManifest, 'child');
-const assets = [...adultAssets, ...childAssets];
-const isGarmentFile = (path) => /^(?:garments|garments-child)\//.test(path);
+const teenManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments-teen.json'), 'utf8'));
+const adultAssets = assetRows(manifest, 'adult'), childAssets = assetRows(childManifest, 'child'), teenAssets = assetRows(teenManifest, 'teen');
+const assets = [...adultAssets, ...childAssets];                                               // (what a load of the clothes asks for unless it names the libraries)
+const isGarmentFile = (path) => /^(?:garments|garments-child|garments-teen)\//.test(path);
 const CHILD_IDS = [
   'child_school_shirt', 'child_school_polo', 'child_pinafore', 'child_school_trousers', 'child_school_shorts',
   'child_tshirt', 'child_hoodie', 'child_jeans', 'child_skirt', 'child_dress', 'child_pyjama_top', 'child_pyjama_bottoms',
@@ -446,7 +447,8 @@ const gltfs = new GLTFLoader();
 const stub = new Map();
 ctx.mat = (key) => { let m = stub.get(key); if (!m) stub.set(key, m = { name: key, isMaterial: true, userData: {}, dispose() {} }); return m; };
 const requested = [];                                                                            // every file the last boot() asked the asset loader for
-/** Load the models the way the page does (index.js: the furniture's and the clothes', two loads and two sets); `steps` runs only some of them, in that order ('page' is index.js's own entry). */
+/** Load the models the way the page does (index.js: the furniture's and the clothes', two loads and two sets); `steps` runs only some of them, in that order ('page' is index.js's own entry, 'pageClothes' its
+ *  clothes load alone: main.js's `?lazy=1` boot calls that one; 'clothes' is build.js's own, which asks for the adult and child libraries unless told otherwise). */
 async function boot(withGarments, steps = ['page']) {
   ctx.assets.entries.clear(); ctx.assets.loaded.clear(); requested.length = 0;
   ctx.interiorGlb = ctx.garmentGlb = undefined;                                                  // a context nothing has loaded into yet
@@ -459,7 +461,7 @@ async function boot(withGarments, steps = ['page']) {
   });
   const before = (ctx.errors ?? []).length, warn = console.warn;
   console.warn = () => {};                                                                       // (assets.preload logs each file it could not load)
-  const loads = { furniture: loadInteriorAssets, clothes: loadGarmentAssets, page: pageLoad };
+  const loads = { furniture: loadInteriorAssets, clothes: loadGarmentAssets, page: pageLoad, pageClothes };
   try { for (const s of steps) await loads[s](ctx); } finally { console.warn = warn; }
   return (ctx.errors ?? []).slice(before);
 }
@@ -482,7 +484,7 @@ const INTERIOR_CAP = 100000;                                                    
 test('with the library\'s files: every garment loads and draws from its LOD model, its triangles are the ones the data counts, and no interior goes over 100000 because of its clothes', async () => {
   const errors = await boot(true);
   report(errors.map((e) => e.message), 'errors while loading the models');
-  report(GARMENT_KEYS.filter((k) => !ctx.garmentGlb.has(k)), 'garment keys that did not load');
+  report(ALL_GARMENT_KEYS.filter((k) => !ctx.garmentGlb.has(k)), 'garment keys that did not load (the page loads the adult, child and teen libraries)');
   const problems = [];
   const dressed = bps.filter((b) => b.interior.garments.garments > 0);
   assert.ok(dressed.length >= 60, `${dressed.length} buildings with clothes`);
@@ -502,7 +504,7 @@ test('with the library\'s files: every garment loads and draws from its LOD mode
 test('without the library\'s files: the game still boots, and every garment is drawn as a patch of cloth', async () => {
   const errors = await boot(false);
   report(errors.map((e) => e.message), 'errors while loading without the garment files (a missing model is a stand-in, not an error)');
-  assert.equal(GARMENT_KEYS.filter((k) => ctx.garmentGlb.has(k)).length, 0, 'a garment key loaded although its files are absent');
+  assert.equal(ALL_GARMENT_KEYS.filter((k) => ctx.garmentGlb.has(k)).length, 0, 'a garment key loaded although its files are absent');
   assert.ok(ctx.interiorGlb.has('bed_single') || ctx.interiorGlb.size > 20, 'the furniture models should still load');
   const problems = [];
   for (const bp of sample()) {
@@ -521,7 +523,7 @@ test('without the library\'s files: the game still boots, and every garment is d
 test('the clothes are invisible to the furniture pipeline: not in the keys it lists, not in the catalogue it hashes, not a property of the pieces it sizes', () => {
   const man = JSON.parse(readFileSync(join(MODELS, 'manifest.furniture.json'), 'utf8')), keys = Object.keys(CATALOG);
   assert.equal(createHash('sha256').update(JSON.stringify(CATALOG)).digest('hex'), man.generator.catalogSha256, 'the catalogue the pipeline hashes is not the one the furniture models were made from: something the clothes add shows in Object.keys or JSON.stringify');
-  const shown = GARMENT_KEYS.filter((k) => keys.includes(k) || !CATALOG[k]);
+  const shown = ALL_GARMENT_KEYS.filter((k) => keys.includes(k) || !CATALOG[k]);
   assert.equal(shown.length, 0, `${shown.length} garment keys enumerable, or not reachable as CATALOG[key]: ${shown.slice(0, 4)}`);
   assert.ok(!keys.some((k) => CATALOG[k].garment || CATALOG[k].arch === 'garment'), 'a garment piece among the keys');
   for (const k of ['bed_single', 'bed_double', 'chair_plastic']) {
@@ -539,12 +541,24 @@ test('the two loads are apart: the furniture load asks for no garment file and k
   const furniture = [...ctx.interiorGlb].sort();
   await boot(true, ['clothes', 'furniture']);                                                    // the clothes first: their registered keys must not turn into furniture roots when the furniture loads
   assert.deepEqual([...ctx.interiorGlb].sort(), furniture, 'the furniture set is not what the furniture load alone makes');
-  assert.equal(GARMENT_KEYS.filter((k) => ctx.interiorGlb.has(k)).length, 0, 'a garment key in the furniture set');
+  assert.equal(ALL_GARMENT_KEYS.filter((k) => ctx.interiorGlb.has(k)).length, 0, 'a garment key in the furniture set');
+  // The page loads all three libraries (the loose clothes of a house are drawn from each: garments.js EXTRAS), build.js's own load the adult and child ones unless it is told otherwise.
+  const six = [...new Set(assets.map(({ a }) => a.lod.glb))].sort(), nine = [...new Set([...assets, ...teenAssets].map(({ a }) => a.lod.glb))].sort();
+  assert.equal(six.length, 6); assert.equal(nine.length, 9);
+  assert.deepEqual([...PAGE_GARMENT_SIZES].sort(), Object.keys(GARMENT_FILES).sort(), 'the page loads every library there is');
   await boot(true, ['page']);                                                                    // index.js's entry (main.js calls it) does both, each into its own set
   assert.deepEqual([...ctx.interiorGlb].sort(), furniture, 'the page entry\'s furniture set is not what the furniture load alone makes');
-  assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'the page entry did not load the clothes');
+  assert.deepEqual([...ctx.garmentGlb].sort(), [...ALL_GARMENT_KEYS].sort(), 'the page entry did not load the clothes of all three libraries');
+  assert.deepEqual(garmentFiles().sort(), nine, 'the page entry asks for the nine LOD files (adult, child, teen; flat, folded, hung) and nothing else');
+  await boot(true, ['pageClothes']);                                                             // the clothes alone, as main.js's `?lazy=1` boot asks for them
+  assert.deepEqual([...ctx.garmentGlb].sort(), [...ALL_GARMENT_KEYS].sort(), 'the page\'s clothes load did not load all three libraries');
+  assert.deepEqual(garmentFiles().sort(), nine, 'the page\'s clothes load asks for the nine LOD files and nothing else');
+  assert.equal(ctx.interiorGlb, undefined, 'the page\'s clothes load touched the furniture set');
+  const main = readFileSync(join(ROOT, 'js', 'main.js'), 'utf8');
+  assert.match(main, /import \{[^}]*\bloadGarmentAssets\b[^}]*\} from '\.\/interiors\/index\.js'/, 'main.js takes its clothes load from the interiors entry (index.js), which asks for the three libraries; build.js\'s asks for two');
+  assert.doesNotMatch(main, /interiors\/build\.js/, 'main.js reaches past the interiors entry into build.js');
   await boot(true, ['clothes']);
-  assert.deepEqual(garmentFiles().sort(), [...new Set(assets.map(({ a }) => a.lod.glb))].sort(), 'the clothes load asks for all six adult/child LOD files and nothing else');
+  assert.deepEqual(garmentFiles().sort(), six, 'the clothes load asks for all six adult/child LOD files and nothing else');
   assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'every garment key, and only those, loaded');
   ctx.assets.loaded.clear(); ctx.assets.load = (path) => Promise.reject(new Error('404 ' + path));      // a retry is a fresh load: files that are gone now leave their keys on the stand-ins
   const warn = console.warn; console.warn = () => {};
@@ -555,5 +569,9 @@ test('the two loads are apart: the furniture load asks for no garment file and k
   assert.deepEqual(garmentFiles(), [], 'the clothes are switched off and a garment file was asked for');
   assert.equal(ctx.garmentGlb.size, 0);
   assert.equal(GARMENT_KEYS.filter((k) => ctx.assets.has(k)).length, 0, 'the clothes are switched off and their keys were registered');
+  globalThis.__noGarments = true;
+  try { await boot(true, ['page']); } finally { delete globalThis.__noGarments; }
+  assert.deepEqual(garmentFiles(), [], 'the clothes are switched off and the page entry asked for a garment file');
+  assert.equal(ALL_GARMENT_KEYS.filter((k) => ctx.assets.has(k)).length, 0, 'the clothes are switched off and the page entry registered their keys');
   await boot(true);
 });
