@@ -1,26 +1,25 @@
 # ALM-BUG-FLU-00009 — sulzer-12lda28 scrolls sideways by 8px at tablet width (768px)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** sulzer-12lda28
 - **Raised:** 2026-11-02T05:16:47Z
 - **Discovery source:** Automation
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20261102T051825Z-e2ff7f8c
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-FLU-00009-run-fix-20261102T051825Z-e2ff7f8c
-- **Owner base:** 07f2a8ac56c7931fe7a5ccdda73400acb774b13e
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-11-02T05:18:25Z
-- **Owner until:** 2026-11-02T09:18:25Z
-- **Owner session:** flux/2a9090d7-08f7-48c7-bee8-7b7d1d963ab2 (run fix-20261102T051825Z-e2ff7f8c)
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-11-02T05:16:47Z, raised via `deltic bugs new --land` model=claude-opus-5-5@medium)
+- **State history:** Open (2026-11-02T05:16:47Z, raised via `deltic bugs new --land` model=claude-opus-5-5@medium) -> Fixed (2026-11-02T05:41:54Z, deltic:auto role=fix run=fix-20261102T051825Z-e2ff7f8c branch=task/bug-ALM-BUG-FLU-00009-run-fix-20261102T051825Z-e2ff7f8c code=fc0c67217bbb90442a500d3c82edd555c7dc73a6 gate=manual)
 
 ## Observation
 
