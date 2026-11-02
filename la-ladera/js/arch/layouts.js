@@ -10,8 +10,12 @@ const ti = T_INT;
 
 const landingAt = (S) => (S.core ? S.core.landing : null);
 
-/** Smallest bedroom (m2) and narrowest (m) the front band of a private floor is cut into two for; a band that cannot give two of them stays one bedroom. */
-const PRIV_BED_AREA = 5.0, PRIV_BED_W = 1.9;
+/**
+ * Smallest bedroom (m2) and narrowest (m) a cell of the front band of a private floor may be when the band is cut into two; a band that cannot give two of them stays one bedroom. A single bed
+ * (0.9 x 1.9 m) with 0.5 m beside it is a room 1.55 x 2.5 (arch-rowhouse), and its door leaves 0.8 m of the wall clear beside it for the head of the bed (R4-103): 0.9 + 0.8 + the 0.1 m margin of the
+ * door is 1.8 m. 4.8 m2 is what the narrowest rowhouse bands (4.06 m wide, 2.5 m deep) give the half over the hall.
+ */
+const PRIV_BED_AREA = 4.8, PRIV_BED_W = 1.8;
 
 /**
  * A private floor of a home (R4-301, R4-302, R1-101: a bathroom reached through one bedroom or two, a bedroom reached through another). A bedroom is a LEAF of the door tree: the floor's hub is the
@@ -48,8 +52,9 @@ function privateFloor(S, g, k) {
   S.link(overStair, core, { atX: g.coreLeft ? -Infinity : Infinity });
   S.link(core, hall, { atZ: rcz(lz) });
   // The room over the hall is under 2 m wide on the narrowest lots: its door goes to the end the stair is on and the far strip stays free for a bed (R4-103). The leaf swings into the bedroom,
-  // not into the hall: the landing's door opens into the hall at the same corner and the two leaves would sweep over each other.
-  if (overRest) S.link(overRest, hall, { atX: g.coreLeft ? -Infinity : Infinity, swing: -1 });
+  // not into the hall: the landing's door opens into the hall at the same corner and the two leaves would sweep over each other. (A leaf opens into `rooms[swing]`: the bedroom is the second room
+  // of its door, as the landing's and the bathroom's are; the interiors read `rooms[swing]`, so a `swing` of -1 would name no room at all.)
+  if (overRest) S.link(hall, overRest, { atX: g.coreLeft ? -Infinity : Infinity });
   S.link(hall, bath);
   S.spare(oldDoors - (S.seq.door - n0));
 }
