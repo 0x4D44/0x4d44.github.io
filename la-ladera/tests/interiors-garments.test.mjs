@@ -285,9 +285,13 @@ test('over the 109 real buildings: neat, lived-in and messy bedrooms all occur; 
   console.log(`# garments: ${bps.length} buildings, ${allRooms.length} rooms; bedrooms (not a child's) ${bed.length}: neat ${fmt(100 * share(bed, 'neat'))}% lived ${fmt(100 * share(bed, 'lived'))}% messy ${fmt(100 * share(bed, 'messy'))}%; clothes in ${withClothes.length}/${homes.length} homes, ${bps.reduce((n, b) => n + garmentsOf(b).length, 0)} garments`);
 });
 
-test('the household sets the mess: students leave more about than families, the elders\' own rooms are never messy', () => {
+test('the household sets the mess: students leave more about than families, the elders\' own rooms are never messy', async () => {
   const mean = (rows) => rows.reduce((n, r) => n + r.m, 0) / rows.length;
-  const beds = allRooms.filter((r) => r.cls === 'bedroom' && r.level !== 'child');
+  // The bedrooms of the default world and of seeds 11 and 23 (each world is A2's planner on another seed): since A2's planner gives the second household of a building a living room
+  // where it had two bedrooms, the default world alone has 7 student bedrooms where 10 are asked. The guard and the verdicts are unchanged.
+  const worlds = [real];
+  for (const seed of [11, 23]) worlds.push(await furnishedBatch({ real: true, seed }));
+  const beds = worlds.flatMap((w) => w.bps.flatMap(roomsOf)).filter((r) => r.cls === 'bedroom' && r.level !== 'child');
   const kind = (k) => beds.filter((r) => hhOf(r.bp, r.rec.hh)?.kind === k);
   assert.ok(kind('students').length >= 10 && kind('elder').length >= 10, `${kind('students').length} student and ${kind('elder').length} elder bedrooms: too few to compare`);
   assert.ok(mean(kind('students')) > mean(kind('family')) + 0.05 && mean(kind('family')) > mean(kind('elder')) + 0.05, `mean mess: students ${fmt(mean(kind('students')))}, family ${fmt(mean(kind('family')))}, elder ${fmt(mean(kind('elder')))}`);

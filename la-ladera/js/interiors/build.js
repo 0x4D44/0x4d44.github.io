@@ -162,6 +162,13 @@ export function glbParts(ctx, name) {
   return parts;
 }
 
+/** What picks the alternative of a palette channel: the record id, except for a television. A screen's glow is part of its channel, and a building whose TVs each picked their own showed up to four
+ *  screen materials (two flat, two tube): one draw call each, in the busiest interiors the 37th mesh of the building (interiors-catalog 'bounded draw calls'). The TVs of one building share the
+ *  flat glow and the tube glow of that building, two materials at most, and buildings still differ from each other. */
+function alternativeSeed(rec) {
+  return /^tv_(flat|crt|wall)$/.test(rec.name ?? '') ? `${String(rec.id).split('.')[0]}:${rec.name === 'tv_crt' ? 'crt' : 'flat'}` : rec.id;
+}
+
 /** The part's geometry with its shades multiplied by the tint (cached per tint colour: palettes are small). */
 function tintedGeometry(p, tint) {
   let g = p.tinted.get(tint);
@@ -191,7 +198,7 @@ function drawGlb(ctx, b, rec, c) {
     if (p.made && unmade) continue;
     if (p.unmade && !unmade) continue;
     if (p.magnets && !rec.flags?.magnets) continue;
-    if (p.ch) { chosen[p.ch] ??= Math.floor(u01(rec.id, 11 + p.ch.charCodeAt(0)) * p.choices) % p.choices; if (chosen[p.ch] !== p.k) continue; }
+    if (p.ch) { chosen[p.ch] ??= Math.floor(u01(alternativeSeed(rec), 11 + p.ch.charCodeAt(0)) * p.choices) % p.choices; if (chosen[p.ch] !== p.k) continue; }
     const shaded = p.tint && tint != null && p.colored;
     draws.push({ p, geometry: shaded ? tintedGeometry(p, tint) : p.geometry, col: p.tint && !p.colored && tint != null ? tint : undefined });
   }

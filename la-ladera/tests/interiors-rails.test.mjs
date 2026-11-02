@@ -58,6 +58,24 @@ test('every hanging rail of the barrio carries clothes (R4-211, R2e-004: 10 of 1
   assert.ok(hung / rails >= 4.5, `only ${(hung / rails).toFixed(1)} garments a rail`);
 });
 
+test('the clothes of everyone who sleeps in the room hang on its rail (R4-303 put four and five sleepers in rooms whose wardrobe has 0.46 m of rail): the rails of rooms for four or more are fuller than those of rooms for one or two', () => {
+  const g = { few: { n: 0, hung: 0, places: 0 }, many: { n: 0, hung: 0, places: 0 } };
+  for (const bp of w.bps) {
+    C.activate(bp.id);
+    for (const S of C.byBuilding.get(bp.id) ?? []) {
+      const rail = S.slot.rail, sleeps = bp.interior.layouts.get(S.rec.room)?.sleeps ?? 0;
+      if (!rail || !sleeps) continue;
+      const e = sleeps >= 4 ? g.many : sleeps <= 2 ? g.few : null; if (!e) continue;
+      e.n++; e.hung += makeContents(w.ctx, S).filter((o) => o.sh === 'hang').length; e.places += railSpots(rail).length;
+    }
+    C.deactivate(bp.id);
+  }
+  const fill = (e) => e.hung / e.places;
+  console.log(`# rails by sleepers: ${g.few.n} rails of rooms for one or two hang ${(100 * fill(g.few)).toFixed(0)}% of their places, ${g.many.n} of rooms for four or more ${(100 * fill(g.many)).toFixed(0)}%`);
+  assert.ok(g.few.n >= 30 && g.many.n >= 15, `${g.few.n} rails of rooms for one or two, ${g.many.n} of rooms for four or more`);
+  assert.ok(fill(g.many) >= fill(g.few) + 0.1, `rooms for four or more hang ${(100 * fill(g.many)).toFixed(0)}% of their rail places, rooms for one or two ${(100 * fill(g.few)).toFixed(0)}%: the rail does not follow the people`);
+});
+
 test('every hung garment has a cut of its own (a plank in a colour read as nothing on a rail): all twelve draw several parts, inside their box, and the cuts differ', () => {
   const hangs = ITEMS.filter((i) => i.sh === 'hang'), sig = new Set();
   assert.equal(hangs.length, 12);
