@@ -53,10 +53,10 @@ export function shapeAxis(v, deadzone = 0.14, curve = 1.6) {
  * @param {number} dt       seconds
  */
 export const KEY_STEER = Object.freeze({ fullSpeed: 45, lockAtSpeed: 0.7, windOn: [10, 7], windSlow: [5, 3.5], fastTo: 0.5, centre: [9, 14] });
-export function shapeKeySteer(current, dir, speed, dt) {
+export function shapeKeySteer(current, dir, speed, dt, lockAtSpeed = KEY_STEER.lockAtSpeed) {
   const f = clamp(Math.abs(Number.isFinite(speed) ? speed : 0) / KEY_STEER.fullSpeed, 0, 1);
   const lerp = (a, b) => a + (b - a) * f;
-  const target = dir * lerp(1, KEY_STEER.lockAtSpeed);
+  const target = dir * lerp(1, lockAtSpeed);
   const winding = dir !== 0 && (current === 0 || Math.sign(current) === dir) && Math.abs(target) >= Math.abs(current);
   // a tap bites at once (fast wind-on up to half the lock), the rest of the lock comes on gently so a held key stays controllable
   const rate = winding ? (Math.abs(current) < KEY_STEER.fastTo * Math.abs(target) ? lerp(...KEY_STEER.windOn) : lerp(...KEY_STEER.windSlow)) : lerp(...KEY_STEER.centre);
@@ -196,6 +196,8 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
   let tiltListener = null;
 
   const api = {
+    /** Key-steer lock at speed (0..1); undefined = the standard KEY_STEER value. Set by the game for Easy handling. */
+    keyLock: undefined,
     get bindings() {
       return bindings;
     },
@@ -256,7 +258,7 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
     poll(dt = 1 / 60, speed = 0) {
       const k = enabled ? mapKeyboard(keys, bindings) : { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
       // keyboard smoothing: steering ramps in, snaps back faster; pedals ramp briefly
-      kbSteer = rawKeys ? approach(kbSteer, k.steer, (k.steer ? 5 : 9) * dt) : shapeKeySteer(kbSteer, k.steer, speed, dt);
+      kbSteer = rawKeys ? approach(kbSteer, k.steer, (k.steer ? 5 : 9) * dt) : shapeKeySteer(kbSteer, k.steer, speed, dt, api.keyLock);
       kbThrottle = approach(kbThrottle, k.throttle, (k.throttle ? 7 : 12) * dt);
       kbBrake = approach(kbBrake, k.brake, (k.brake ? 16 : 14) * dt);
       let steer = kbSteer, throttle = kbThrottle, brake = kbBrake, handbrake = k.handbrake;
