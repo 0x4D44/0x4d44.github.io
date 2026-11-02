@@ -6,15 +6,16 @@
 - **Area:** sulzer-12lda28
 - **Raised:** 2026-11-02T05:16:47Z
 - **Discovery source:** Automation
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20261102T051825Z-e2ff7f8c
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-FLU-00009-run-fix-20261102T051825Z-e2ff7f8c
+- **Owner base:** 07f2a8ac56c7931fe7a5ccdda73400acb774b13e
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-11-02T05:18:25Z
+- **Owner until:** 2026-11-02T09:18:25Z
+- **Owner session:** flux/2a9090d7-08f7-48c7-bee8-7b7d1d963ab2 (run fix-20261102T051825Z-e2ff7f8c)
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
