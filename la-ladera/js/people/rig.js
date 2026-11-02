@@ -43,6 +43,52 @@ export function recolourAttribute(src, slots, spec) {
   return new THREE.BufferAttribute(out, 4, true);
 }
 
+// ---- the face fill (R3-108) --------------------------------------------------------------------------------------------------------------------
+// "Under shop lighting the faces of dark-skinned residents go nearly black at 0.9 m, and a hat brim puts an elder's face in full shadow." A shop at dusk, or a brim, leaves a face
+// at a few per cent of its own colour, and the deeper the skin the less that is. So, within talking range, skin is never left darker than `floor` of its own colour: the way a
+// fill light would lift a shadow, and no more (a lit face is above the floor and keeps every bit of its shading; a face past `far` is untouched, so the streets keep their mood).
+// Two things keep it from being a glow. The floor is shaped like a light from the viewer's side (`shape` at the edge of the face, the whole of it where the face looks at you), so
+// the nose and the cheek keep their form; and it follows the mood of the hour (`night`: a dark face in a dark street is what the night looks like, and the night's blue light is
+// not what a flat skin-coloured floor would be), full by day and in any lit room, `night` of it in the open at night.
+// It rides the one shared material (no light is added, so nothing recompiles when somebody walks up), finds skin by its recolour slot (alpha = 8 * 16 / 255 in COLOR_0, see
+// the top of this file) and measures the range from the eye (vViewPosition).
+export const SKIN_ALPHA = (8 * 16) / 255;
+export const SKIN_FILL = { floor: 0.3, near: 1.4, far: 3.4, shape: 0.45, night: 0.3 };
+/** The one uniform of the fill, shared by every people material: the share of the floor the hour allows (skinMood). */
+export const SKIN_MOOD = { value: 1 };
+/** The share of the floor that applies: 1 by day and indoors, `least` in the open in the dead of night (`night`, `indoor`: 0..1, the look system's own blends). */
+export function skinMood(night = 0, indoor = 0, least = SKIN_FILL.night) {
+  const c = (v) => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0));
+  return 1 - (1 - least) * c(night) * (1 - c(indoor));
+}
+/** The GLSL that goes after `#include <lights_fragment_end>` (the lighting is done, `reflectedLight` is final but for the occlusion map the people do not have). */
+export function skinFillChunk(f = SKIN_FILL) {
+  const g = (v) => v.toFixed(3);
+  return `#ifdef USE_COLOR_ALPHA
+	{
+		float ladSkin = 1.0 - smoothstep( 0.012, 0.03, abs( diffuseColor.a - ${g(SKIN_ALPHA)} ) );
+		float ladNear = 1.0 - smoothstep( ${g(f.near)}, ${g(f.far)}, length( vViewPosition ) );
+		float ladFace = ${g(f.shape)} + ${g(1 - f.shape)} * saturate( dot( normal, geometryViewDir ) );
+		vec3 ladHave = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+		reflectedLight.indirectDiffuse += max( diffuseColor.rgb * ( ${g(f.floor)} * ladFace * ladSkinMood ) - ladHave, vec3( 0.0 ) ) * ladSkin * ladNear;
+	}
+#endif`;
+}
+/** Give a people material the face fill (once); the shared look uniforms (shaderpatch.js) are still applied first, as for every material. */
+export function patchSkinFill(m) {
+  if (!m || m.userData?.ladSkinFill || typeof m.onBeforeCompile !== 'function') return m;
+  m.userData = { ...(m.userData ?? {}), ladSkinFill: true };
+  m.onBeforeCompile = function peopleSkinFill(shader, renderer) {
+    THREE.Material.prototype.onBeforeCompile?.call(this, shader, renderer);
+    shader.uniforms.ladSkinMood = SKIN_MOOD;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_pars_begin>', '#include <lights_pars_begin>\nuniform float ladSkinMood;')
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>\n${skinFillChunk()}`);
+  };
+  m.customProgramCacheKey = () => 'people-skin-fill-v2';
+  return m;
+}
+
 export class CharacterLibrary {
   /** root = the models folder (holds manifest.people.json, whose `people` block names the files; a missing LOD file is never requested). */
   constructor(root = './assets/models/') {
@@ -94,7 +140,7 @@ export class CharacterLibrary {
       ch.node.traverse((o) => {
         if (!o.isSkinnedMesh) return;
         const mats = Array.isArray(o.material) ? o.material : [o.material];
-        for (const m of mats) { m.envMapIntensity = 0.7; m.needsUpdate = true; }
+        for (const m of mats) { m.envMapIntensity = 0.7; patchSkinFill(m); m.needsUpdate = true; }
       });
     }
     return this;

@@ -62,11 +62,11 @@ PEOPLE = [
     dict(id='b_escolar', kind='boy', H=1.32, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='trousers', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#c0392b'), tags=['boy', 'kid', 'student', 'uniform']),
     dict(id='g_escolar', kind='girl', H=1.24, skin=2, build=1.0, hair=(0, 'pigtails'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='skirt', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#e0609a'), lips='#c07078', tags=['girl', 'kid', 'student', 'uniform']),
     # ---- P3 cast: more silhouettes (heavier, slimmer, taller) and the hair styles the first 25 did not use (slick, sidepart, topknot, buzz)
-    dict(id='m_joven', kind='man', H=1.77, skin=3, build=0.94, hair=(0, 'slick'), eye='#2a1a10', top='#2f7d5a', top_style='football', sleeve='short', bot_style='jeans', bot='#3a4a66', shoe=('trainer', '#f2f2f2', '#e6e6e6'), tags=['man', 'adult', 'young']),
+    dict(id='m_joven', kind='man', H=1.77, skin=3, build=0.94, hair=(0, 'slick'), eye='#2a1a10', top='#2f7d5a', top_style='tshirt', sleeve='short', bot_style='jeans', bot='#3a4a66', shoe=('trainer', '#f2f2f2', '#e6e6e6'), tags=['man', 'adult', 'young']),
     dict(id='w_vecina', kind='woman', H=1.56, skin=3, build=1.28, hair=(1, 'sidepart'), eye='#3a2a1a', top='#8f9a5b', top_style='jumper', sleeve='long', bot_style='trousers', bot='#4a5a7a', shoe=('shoe', '#3a2a1e', '#2a1e14'), glasses=True, lips='#a8524a', tags=['woman', 'adult', 'home']),
     dict(id='m_don', kind='man', H=1.68, skin=2, build=1.30, hair=(5, 'receding'), eye='#3a2a1a', top='#9bb0c8', top_style='shirt', sleeve='short', bot_style='trousers', bot='#5a5a64', shoe=('shoe', '#2a1c14', '#1a120c'), stubble=True, tags=['man', 'adult']),
     dict(id='w_joven', kind='woman', H=1.65, skin=4, build=0.88, hair=(0, 'topknot'), eye='#2a1a10', top='#f2c14e', top_style='tshirt', sleeve='short', bot_style='jeans', bot='#3d5b86', shoe=('trainer', '#f2f2f2', '#ffffff'), bag=('shoulder', '#7a4a2a'), lips='#8a3a3a', tags=['woman', 'adult', 'young']),
-    dict(id='m_rapado', kind='teen', H=1.73, skin=5, build=1.0, hair=(0, 'buzz'), eye='#2a1a10', top='#c0392b', top_style='football', sleeve='short', bot_style='shorts', bot='#1b1b22', shoe=('trainer', '#e6e6e6', '#ffffff'), tags=['man', 'teen']),
+    dict(id='m_rapado', kind='teen', H=1.73, skin=5, build=1.0, hair=(0, 'buzz'), eye='#2a1a10', top='#c0392b', top_style='hoodie', sleeve='long', bot_style='shorts', bot='#1b1b22', shoe=('trainer', '#e6e6e6', '#ffffff'), tags=['man', 'teen']),
 ]
 
 # Keep the original procedural recipes intact as a regeneration fallback. Runtime
