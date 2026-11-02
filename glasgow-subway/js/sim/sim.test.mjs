@@ -6,6 +6,7 @@ import { Train, stockFrom, notchToCmd } from './dynamics.js';
 import { Service, baselineRunTimes } from './service.js';
 import { doorPermission, berthingScore, punctualityScore, buildSchedule, platformInterval, platformSide, DIFFICULTY, paxExchange } from './rules.js';
 import { KMH } from './util.js';
+import { Walker } from './walker.js';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -148,4 +149,22 @@ test('easy mode auto-brakes to stop at platform even with power held', () => {
   for (let i = 0; i < 2500 && !arrived; i++) { svc.update(0.1); if (svc.phase === 'run') svc.setLever(3); }
   assert.ok(arrived, 'stopped at next station'); assert.ok(Math.abs(arrived.err) < 3, 'err ' + arrived.err);
   assert.equal(svc.score.trips, 0);
+});
+
+test('walker: glides round a standing passenger in the aisle, still stops dead at a wall, and does not dither when the aisle is shut', () => {
+  const aisle = (obs) => { const w = new Walker(); w.setWorld([{ kind: 'flat', y: 0, x0: -0.62, x1: 0.62, z0: -40, z1: 40 }], obs); w.place(0, 30, 0); return w; };
+  const person = (x, z) => ({ x0: x - 0.17, x1: x + 0.17, z0: z - 0.17, z1: z + 0.17, y: 0, tall: true, soft: true });
+  for (const dt of [1 / 60, 0.1]) for (const px of [-0.3, -0.2, -0.14, 0.14, 0.2, 0.3]) {
+    const w = aisle([person(px, 10), person(-px, 6), person(px, 2)]);   // three riders, alternating sides, walked straight at (W held, no strafing)
+    for (let i = 0; i < 6000 && w.z > -20; i++) w.update(dt, 1, 0);
+    assert.ok(w.z <= -20, `walked past three standing passengers (dt ${dt.toFixed(3)}, first at x=${px}): stopped at z=${w.z.toFixed(2)}`);
+    assert.ok(Math.abs(w.x) <= 0.62 + 1e-9, 'stayed inside the aisle');
+  }
+  const wall = aisle([{ x0: -0.62, x1: 0.62, z0: 9.9, z1: 10.1, y: 0, tall: true }]);   // not a person: no sliding about, it simply blocks
+  for (let i = 0; i < 1200; i++) wall.update(1 / 60, 1, 0);
+  assert.ok(wall.z > 10.1 && wall.z < 10.5 && Math.abs(wall.x) < 0.1, `stopped square against the wall (z=${wall.z.toFixed(2)}, x=${wall.x.toFixed(3)})`);
+  const shut = aisle([person(-0.2, 10), person(0.2, 10)]);   // two riders shoulder to shoulder: no way past, and no shuffling about trying
+  for (let i = 0; i < 1000; i++) shut.update(1 / 60, 1, 0);
+  const x0 = shut.x, z0 = shut.z; for (let i = 0; i < 300; i++) shut.update(1 / 60, 1, 0);
+  assert.ok(shut.z > 10, 'cannot walk through two people'); assert.ok(Math.abs(shut.x - x0) < 1e-6 && Math.abs(shut.z - z0) < 1e-6, 'settled, not dithering');
 });

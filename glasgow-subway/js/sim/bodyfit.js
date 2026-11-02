@@ -31,6 +31,11 @@ export function fitHair(THREE, root, o = {}) {
   const hair = [], blockers = [];
   root.traverse((m) => { if (!m.isSkinnedMesh || !m.material || !m.geometry || !m.geometry.attributes.position) return; if (isHair(m)) hair.push(m); else if (isBlocker(m)) blockers.push(m); });
   if (!hair.length || !blockers.length) return null;
+  if (hair.every((m) => m.geometry.userData.hairFit)) {   // already fitted (every AnimCrowd runs this on the same shared character geometry): skip the triangle grid
+    const done = hair.map((m) => m.geometry.userData.hairFitStats).filter(Boolean), tot = { hairVerts: 0, moved: 0, max: 0 };
+    for (const s of done) { tot.hairVerts += s.hairVerts; tot.moved += s.moved; tot.max = Math.max(tot.max, s.max); }
+    return tot.hairVerts ? tot : null;
+  }
   const neck = jointBind(THREE, hair[0], /^neck_01(_\d+)?$/); if (!neck) return null;
   const stats = { hairVerts: 0, moved: 0, max: 0 };
   // triangle grid over (x, y) for the vertical line tests
@@ -79,11 +84,12 @@ export function fitHair(THREE, root, o = {}) {
       }
       for (let i = 0; i < n; i++) d[i] = back[i] >= front[i] ? back[i] : -front[i];
     }
+    const gs = g.userData.hairFitStats = { hairVerts: n, moved: 0, max: 0 };   // kept on the geometry: later fitHair() calls on the same (shared) geometry return it instead of redoing the work
     for (let i = 0; i < n; i++) {
       if (!d[i]) continue;
       const y = P.getY(i), k = Math.max(0, Math.min(1, (neck.y + fade - y) / (fade * 0.6))), w = k * k * (3 - 2 * k);   // 1 at / below the neck joint, 0 at the top of the fade
       const push = d[i] * w; if (Math.abs(push) < 1e-4) continue;
-      P.setZ(i, P.getZ(i) + push); stats.moved++; stats.max = Math.max(stats.max, Math.abs(push));
+      P.setZ(i, P.getZ(i) + push); stats.moved++; stats.max = Math.max(stats.max, Math.abs(push)); gs.moved++; gs.max = Math.max(gs.max, Math.abs(push));
     }
     if (P.isInterleavedBufferAttribute) P.data.needsUpdate = true; else P.needsUpdate = true;
     stats.hairVerts += n;
