@@ -2,7 +2,7 @@
 //   loadInteriorAssets(ctx)   preload the furniture GLBs, the clothes' and the close-inspection things' (stand-in boxes, cloth patches and flat shapes are used for anything not loaded)
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
-import { Layout, resetUid } from './layout.js';
+import { Layout, resetUid, SLEEP_REACH } from './layout.js';
 import { freePoint, snapStand, customerFloor } from './reach.js';
 import { CATALOG, seatOffsets } from './catalog.js';
 import { finishRoom, householdForRoom, householdKey, furnishRng, roomsInOrder } from './household.js';
@@ -82,32 +82,10 @@ function makeEnv(ctx, bp, rng) {
 }
 
 // ------------------------------------------------------------------ anchors
-/** How far from a sleeper's anchor the nearest floor a body can stand on may be (m): the stuck probe wants a standing node within 1.4 m of every anchor and its nodes are 0.3 m apart. */
-export const SLEEP_REACH = 1.0;
-/** Where on a bed the sleeper lies, in the bed's frame: the middle, unless the nearest floor a body can stand on is farther than `SLEEP_REACH` from it (a bed reached from its foot only is
- *  1.26 m and more from its middle: 75 of the barrio's 282 beds were over 1.05 m, and the probe's 0.3 m lattice found no node within 1.4 m of two of them). Then the least slide toward that floor
- *  that brings it in range, as far as the mattress holds a body: across it up to the width less 0.28 m, along it up to 0.3 m (the feet over the end), 0.5 m in all (the anchor stays within
- *  0.6 m of the bed's middle: interiors-data 'anchors'). Else the slide that gets nearest. */
-export function sleepSpot(L, it, conn) {
-  const r = L.r, cw = L.W / conn.nx, ch = L.D / conn.nz, R = 1.7, spots = [];
-  const i0 = Math.max(0, Math.floor((it.x - R - r.x0) / cw)), i1 = Math.min(conn.nx - 1, Math.floor((it.x + R - r.x0) / cw));
-  const j0 = Math.max(0, Math.floor((it.z - R - r.z0) / ch)), j1 = Math.min(conn.nz - 1, Math.floor((it.z + R - r.z0) / ch));
-  for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) if (conn.comp[iz * conn.nx + ix] === conn.main) spots.push([r.x0 + (ix + 0.5) * cw, r.z0 + (iz + 0.5) * ch]);
-  if (!spots.length || conn.main < 0) return [0, 0];
-  const reach = (lx, lz) => { const [x, z] = L.rel(it, lx, lz); let m = Infinity; for (const [sx, sz] of spots) m = Math.min(m, Math.hypot(sx - x, sz - z)); return m; };
-  const d0 = reach(0, 0);
-  if (d0 <= SLEEP_REACH) return [0, 0];
-  const lat = Math.max(0, it.w / 2 - 0.28);
-  let ok = null, near = { d: d0, lx: 0, lz: 0 };
-  for (let lx = -lat; lx <= lat + 1e-9; lx += 0.05) for (let lz = -0.3; lz <= 0.3 + 1e-9; lz += 0.05) {
-    const cost = Math.hypot(lx, lz); if (cost > 0.5) continue;
-    const d = reach(lx, lz);
-    if (d <= SLEEP_REACH && (!ok || cost < ok.cost)) ok = { cost, lx, lz };
-    if (d < near.d - 1e-9) near = { d, lx, lz };
-  }
-  const pick = ok ?? near;
-  return [+pick.lx.toFixed(3), +pick.lz.toFixed(3)];
-}
+export { SLEEP_REACH };
+/** Where on a bed the sleeper lies, in the bed's frame (layout.js `sleeperSpot`, which the layout's own judgement of a bed's reach asks too): the middle, unless the nearest floor a body can stand on is
+ *  farther than `SLEEP_REACH` from it; then the least slide on the mattress toward that floor that brings it in range. */
+export const sleepSpot = (L, it, conn) => { const s = L.sleeperSpot(it, conn); return [s.lx, s.lz]; };
 
 function emitAnchors(E, room, L, hh) {
   const { bp, ctx } = E, fr = bp.frame, rotY = bp.lot.rotY ?? 0;

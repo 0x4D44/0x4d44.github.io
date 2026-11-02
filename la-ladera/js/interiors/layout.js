@@ -160,6 +160,29 @@ export const fixtureRank = (it) => { for (const [re, k] of FIXTURE_RANK) if (re.
 
 const COOK_REACH = 1.2;                    // the farthest from a stove's middle a cook is placed (a stove is 0.6 m deep and the cook stands 0.5 m off its face)
 
+/** How far from a sleeper's anchor the nearest floor a body can stand on may be (m): the stuck probe wants a standing node within 1.4 m of every anchor and its nodes are 0.3 m apart (`sleeperSpot` slides the sleeper on the mattress to be within this of it). */
+export const SLEEP_REACH = 1.0;
+/** How far from that floor a bed may be left, after the slide, and still be one somebody can walk up to: `SLEEP_REACH` and the 0.15 m the layout's 0.1 m cells and the probe's 0.3 m lattice cost between them (a sleeper
+ *  1.15 m from a free cell is 1.36 m from a lattice node at the worst; the probe wants 1.4). Round 6: the final stuck walk never reached the sleepers of 7 beds, 1.4-2.0 m from the nearest floor it had
+ *  (interiors-deadends.test.mjs, "a bed someone can walk up to"). */
+export const SLEEP_WALK = SLEEP_REACH + 0.15;
+/** What a person sleeps on and must be able to walk up to (a crib is the baby's, a mattress stood on its edge is put away by day). */
+const SLEEPERS = new Set(['bed', 'cot', 'bunk', 'mattress']);
+/** The places on a mattress the sleeper may lie, nearest the middle first: [lx, lz, cost] in the bed's frame, across it up to the width less 0.28 m (`lat`), along it up to 0.3 m, 0.5 m in all (the same 0.05 m lattice
+ *  `sleeperSpot` slides over, built the same way). One list per width. */
+const _slides = new Map();
+function slideList(lat) {
+  const key = Math.round(lat * 1000);
+  let l = _slides.get(key);
+  if (!l) {
+    l = [[0, 0, 0]];
+    for (let lx = -lat; lx <= lat + 1e-9; lx += 0.05) for (let lz = -0.3; lz <= 0.3 + 1e-9; lz += 0.05) { const cost = Math.hypot(lx, lz); if (cost <= 0.5) l.push([lx, lz, cost]); }
+    l.sort((a, b) => a[2] - b[2]);
+    _slides.set(key, l);
+  }
+  return l;
+}
+
 /** What `curePockets` may slide (never the plumbing, the cooker, a counter or anything else fixed to a wall) and what it may drop (clutter only: no seat, table or storage). */
 const SHIFTABLE = new Set(['bed', 'bunk', 'cot', 'mattress', 'cabinet', 'sofa', 'armchair', 'chair', 'stool', 'table', 'tableRound', 'desk', 'dresser', 'shelf', 'chest', 'plant', 'cylinder', 'sacks', 'cans', 'tires', 'wheelbarrow', 'crates', 'rack', 'bench', 'vitrine', 'wallunit']);
 const DROPPABLE = new Set(['plant', 'cylinder', 'sacks', 'cans', 'tires', 'wheelbarrow', 'crates', 'rack']);
@@ -464,7 +487,9 @@ export class Layout {
     }
     let flood = null;                                    // the room with `it` in it, flooded once: a seat or a bed asks both questions below of the same flood
     if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it, flood = this._floodWith(it))) return false;    // never cut the room in two (>= 0.7 m passages)
-    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it, false, flood)) return false;             // a seat or bed someone cannot walk up to is useless
+    const fl = o.noConn ? null : this._floods(it, flood);                                                    // (the room with `it` in it, flooded as the two questions below need it)
+    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it, false, flood, fl)) return false;           // a seat or bed someone cannot walk up to is useless
+    if (!o.noConn && it.block && !flat && this._shutsBed(it, fl)) return false;                              // and nothing may shut in a bed that could be walked up to without it
     return true;
   }
 
@@ -891,8 +916,9 @@ export class Layout {
    *  cook anchor (a standing spot within 0.9 m of the point 0.5 m in front of it, found with the 0.34 m body), so it is asked here the same way, and the spot must be one a cook can work from
    *  (within `COOK_REACH` of the stove's middle: interiors-data.test.mjs 'anchors' takes no cook further off), so a stove never ends without a cook. `flood`: the flood of the room with `it` in it (a
    *  candidate's: `valid()` has it from the connection test), which every piece but a stove reads; the stove's is another flood (a 0.34 m body). */
-  _accessOk(it, present = false, flood = null) {
-    if (flood && it.c.arch !== 'stove') return this.inMainRegion(it.x, it.z, flood, Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1));
+  _accessOk(it, present = false, flood = null, fl = null) {
+    const cells = Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1);
+    if (flood && it.c.arch !== 'stove') return this.inMainRegion(it.x, it.z, flood, cells) && this._sleeperOk(it, fl ?? this._floods(it, flood));
     if (!present) this.items.push(it);
     try {
       if (it.c.arch === 'stove') {
@@ -900,8 +926,89 @@ export class Layout {
         return !!s && Math.hypot(s[0] - it.x, s[1] - it.z) <= COOK_REACH;
       }
       const c = this.connectivity();
-      return this.inMainRegion(it.x, it.z, c, Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1));
+      return this.inMainRegion(it.x, it.z, c, cells) && this._sleeperOk(it, { f40: () => c, f34: () => this.connectivity(0.34) });
     } finally { if (!present) this.items.pop(); }
+  }
+  /** The floods of the room with `it` standing in it, each made when a check first asks for it: the lanes' (0.4 m body: `f40`, the one the caller may have) and the anchors' (0.34 m: `f34`). */
+  _floods(it, f40 = null) {
+    let f34 = null;
+    return { f40: () => (f40 ??= this._floodWith(it, 0.4)), f34: () => (f34 ??= this._floodWith(it, 0.34)) };
+  }
+  /** The old test of `_accessOk` alone (the piece, in the room, has a free main-region cell within its own radius and 0.8 m): a person gets to the bed, if not to the sleeper. */
+  _reachable(it) { return this.inMainRegion(it.x, it.z, this.connectivity(), Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1)); }
+  /**
+   * Where on a bed the sleeper lies, in the bed's frame, and how far from there the nearest floor a body can stand on is: { lx, lz, d }. The middle, unless that floor is farther than `SLEEP_REACH` from it
+   * (a bed reached from its foot only is 1.26 m and more from its middle: 75 of the barrio's 282 beds were over 1.05 m, and the probe's 0.3 m lattice found no node within 1.4 m of two of them). Then the least
+   * slide toward that floor that brings it in range, as far as the mattress holds a body: across it up to the width less 0.28 m, along it up to 0.3 m (the feet over the end), 0.5 m in all (the anchor stays within
+   * 0.6 m of the bed's middle: interiors-data 'anchors'). Else the slide that gets nearest. `d`: Infinity when no cell of the main region lies within 1.7 m of the bed's middle (a bed with no way to it), 0 when
+   * the room has no door floor to judge by. `conn`: the room's `connectivity()` (index.js `emitAnchors` asks with the 0.34 m body).
+   */
+  sleeperSpot(it, conn) {
+    const r = this.r, cw = this.W / conn.nx, ch = this.D / conn.nz, R = 1.7, spots = [];
+    const i0 = Math.max(0, Math.floor((it.x - R - r.x0) / cw)), i1 = Math.min(conn.nx - 1, Math.floor((it.x + R - r.x0) / cw));
+    const j0 = Math.max(0, Math.floor((it.z - R - r.z0) / ch)), j1 = Math.min(conn.nz - 1, Math.floor((it.z + R - r.z0) / ch));
+    for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) if (conn.comp[iz * conn.nx + ix] === conn.main) spots.push([r.x0 + (ix + 0.5) * cw, r.z0 + (iz + 0.5) * ch]);
+    if (conn.main < 0) return { lx: 0, lz: 0, d: 0 };
+    if (!spots.length) return { lx: 0, lz: 0, d: Infinity };
+    const reach = (lx, lz) => { const [x, z] = this.rel(it, lx, lz); let m = Infinity; for (const [sx, sz] of spots) m = Math.min(m, Math.hypot(sx - x, sz - z)); return m; };
+    const d0 = reach(0, 0);
+    if (d0 <= SLEEP_REACH) return { lx: 0, lz: 0, d: d0 };
+    const lat = Math.max(0, it.w / 2 - 0.28);
+    let ok = null, near = { d: d0, lx: 0, lz: 0 };
+    for (let lx = -lat; lx <= lat + 1e-9; lx += 0.05) for (let lz = -0.3; lz <= 0.3 + 1e-9; lz += 0.05) {
+      const cost = Math.hypot(lx, lz); if (cost > 0.5) continue;
+      const d = reach(lx, lz);
+      if (d <= SLEEP_REACH && (!ok || cost < ok.cost)) ok = { cost, d, lx, lz };
+      if (d < near.d - 1e-9) near = { d, lx, lz };
+    }
+    const pick = ok ?? near;
+    return { lx: +pick.lx.toFixed(3), lz: +pick.lz.toFixed(3), d: pick.d };
+  }
+  /** `sleeperSpot(it, conn).d <= bound`, asked without the search for the least slide (a layout asks it of every pose it tries): the first slide of the mattress that puts the sleeper within `bound` of a free
+   *  main-region cell says yes, the middle first. Only the cells within `bound` + 0.5 m of the bed's middle can count, for a slide is 0.5 m at most. */
+  sleeperWithin(it, conn, bound) {
+    if (conn.main < 0) return true;
+    const r = this.r, cw = this.W / conn.nx, ch = this.D / conn.nz, reach = bound + 0.5, lim = reach * reach, b2 = bound * bound, xs = [], zs = [];
+    const i0 = Math.max(0, Math.floor((it.x - reach - r.x0) / cw)), i1 = Math.min(conn.nx - 1, Math.floor((it.x + reach - r.x0) / cw));
+    const j0 = Math.max(0, Math.floor((it.z - reach - r.z0) / ch)), j1 = Math.min(conn.nz - 1, Math.floor((it.z + reach - r.z0) / ch));
+    for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) {
+      if (conn.comp[iz * conn.nx + ix] !== conn.main) continue;
+      const x = r.x0 + (ix + 0.5) * cw, z = r.z0 + (iz + 0.5) * ch, dx = x - it.x, dz = z - it.z;
+      if (dx * dx + dz * dz <= lim) { xs.push(x); zs.push(z); }
+    }
+    if (!xs.length) return false;
+    const c = Math.cos(it.ry), s = Math.sin(it.ry), n = xs.length;
+    for (const [lx, lz] of slideList(Math.max(0, it.w / 2 - 0.28))) {
+      const x = it.x + lx * c + lz * s, z = it.z - lx * s + lz * c;
+      for (let k = 0; k < n; k++) { const dx = xs[k] - x, dz = zs[k] - z; if (dx * dx + dz * dz <= b2) return true; }
+    }
+    return false;
+  }
+  /** Can a person walk up to the sleeper of this bed: floor to stand on within `SLEEP_WALK` of where `sleeperSpot` puts it? Not a bed (or a crib): yes. `fl`: the floods of the room as the caller has it
+   *  (`_floods`); the anchors' 0.34 m body is asked only when the lanes' 0.4 m says no. */
+  _sleeperOk(it, fl) {
+    if (!SLEEPERS.has(it.c.arch)) return true;
+    return this.sleeperWithin(it, fl.f40(), SLEEP_WALK) || this.sleeperWithin(it, fl.f34(), SLEEP_WALK);
+  }
+  /** Would `it` (a blocker, not yet placed) shut in a bed that a person could walk up to without it? A piece that comes after the beds must leave each of them its way to the sleeper. `fl`: the floods of the
+   *  room with `it` in it. Beds that are shut in without it are not its doing. */
+  _shutsBed(it, fl) {
+    for (const b of this.items) {
+      if (b === it || !b.floor || b.parent || !SLEEPERS.has(b.c.arch)) continue;
+      if (!this._sleeperOk(b, fl) && this._wasOk(b)) return true;
+    }
+    return false;
+  }
+  /** Could a person walk up to the sleeper of `b` in the room as it stands now? A search asks it of every pose it tries, and the room is the same for a thousand of them: the answer is kept
+   *  until the blockers, or the list they are in, change. */
+  _wasOk(b) {
+    let h = this.items.length | 0;
+    for (const i of this.items) if (i.floor && i.block) h = Math.imul(Math.imul(Math.imul(h, 31) + Math.round(i.x * 1000) | 0, 31) + Math.round(i.z * 1000) | 0, 31) + Math.round(i.ry * 1000) + Math.round(i.w * 100) * 7 + Math.round(i.d * 100) * 13 | 0;
+    let s = this._was;
+    if (!s || s.h !== h || s.items !== this.items || s.n !== this.items.length) s = this._was = { h, items: this.items, n: this.items.length, f40: null, f34: null, ok: new Map() };
+    let ok = s.ok.get(b);
+    if (ok === undefined) { ok = this._sleeperOk(b, { f40: () => (s.f40 ??= this.connectivity()), f34: () => (s.f34 ??= this.connectivity(0.34)) }); s.ok.set(b, ok); }
+    return ok;
   }
   /** Is (x,z) a place a person can stand: inside the room (0.3 m off the walls), clear of furniture and stair openings, and connected to a door (no walled-off pocket)? */
   standable(x, z, conn = this.connectivity(), clear = 0.27) {
@@ -1161,17 +1268,18 @@ export class Layout {
   heal(protect = []) {
     const removed = [], keep = new Set(protect);
     // seats and beds that later furniture walled in: drop the seat (or, for an essential bed, its lowest-priority neighbour)
+    const far = new Set();                               // beds a person gets to, but not to the sleeper, that no single piece's going frees (a bed the furnisher placed on a `noConn` rung: a bed beats an empty bedroom): left as they are
     for (let guard = 0; guard < 24; guard++) {
-      const bad = this.items.filter((i) => i.floor && this._needsAccess(i) && !this._accessOk(i, true));
+      const bad = this.items.filter((i) => i.floor && this._needsAccess(i) && !far.has(i) && !this._accessOk(i, true));
       if (!bad.length) break;
-      const b = bad[0];
+      const b = bad[0], tooFar = SLEEPERS.has(b.c.arch) && this._reachable(b);
       let victim = b.prio > 0 && !keep.has(b) ? b : null;
       for (const reach of [2.2, 3.4]) {                  // the pieces that wall a bed in are not always within 2.2 m of its middle (a 1.9 m bed across a 2.3 m room: a bucket and a cot at 2.7 m)
         if (victim) break;
         const cands = this.blockers().filter((o) => o !== b && o.prio > 0 && !keep.has(o) && Math.hypot(o.x - b.x, o.z - b.z) < reach).sort((p, q) => q.prio - p.prio);
-        victim = cands.find((o) => this._without(o, () => this._accessOk(b, true))) ?? cands[0] ?? null;      // the least valuable piece whose going frees it (the gas bottle beside a stove is not what shuts the cook in)
+        victim = cands.find((o) => this._without(o, () => this._accessOk(b, true))) ?? (tooFar ? null : cands[0]) ?? null;      // the least valuable piece whose going frees it (the gas bottle beside a stove is not what shuts the cook in)
       }
-      if (!victim) break;
+      if (!victim) { if (!tooFar) break; far.add(b); continue; }
       this.remove(victim); removed.push(victim);
     }
     for (let guard = 0; guard < 40; guard++) {
