@@ -455,8 +455,9 @@ export class Layout {
       if (it.block && b !== o.tuck) for (const z of b.zones ?? []) if (obbOverlap(it.ob, z, -0.01)) return false;
       if (b.block) for (const z of zones) if (obbOverlap(z, b.ob, -0.01)) return false;
     }
-    if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it)) return false;    // never cut the room in two (>= 0.7 m passages)
-    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it)) return false;             // a seat or bed someone cannot walk up to is useless
+    let flood = null;                                    // the room with `it` in it, flooded once: a seat or a bed asks both questions below of the same flood
+    if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it, flood = this._floodWith(it))) return false;    // never cut the room in two (>= 0.7 m passages)
+    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it, false, flood)) return false;             // a seat or bed someone cannot walk up to is useless
     return true;
   }
 
@@ -466,7 +467,7 @@ export class Layout {
     const sin = Math.sin(ry), swap = Math.abs(sin) > 0.7071;           // quarter turns swap the footprint extents for AABB purposes
     const w = c.size[0], d = c.size[2];
     const it = {
-      id: `${this.room.id}.i${(_uid++).toString(36)}`, name, c, room: this.room.id, floor: true,
+      id: o.id ?? `${this.room.id}.i${(_uid++).toString(36)}`, name, c, room: this.room.id, floor: true,        // (`o.id`: a pass that runs after the clothes names its pieces itself, so the ids of the clothes' pass and of its own never depend on each other: shelves.js)
       x: r2(cx), z: r2(cz), y: this.room.y ?? 0, ry: r2(ry), w, d, h: c.size[1],
       block: c.block !== false && !c.wall && !c.ceil && c.top !== true && c.size[1] >= 0.2,           // (`top: true` = stands on a surface; a table's `top: 'oilcloth_floral'` is its cloth, and the table blocks)
       prio: o.prio ?? 1, tint: o.tint ?? null, tags: c.tags, ob: mkObbSC(cx, cz, w, d, ry, Math.cos(ry), sin), swap,
@@ -644,11 +645,12 @@ export class Layout {
     return null;
   }
 
-  /** Put a small item on top of a surface item. o: { at:'center'|'left'|'right'|number(-1..1), depth: -1..1, ry, tint } */
+  /** Put a small item on top of a surface item. o: { at:'center'|'left'|'right'|number(-1..1), px: metres from the middle of the surface (exactly there or nowhere: a shelf's brackets are in the way), depth: -1..1, ry, tint, id }.
+   *  The surface is as wide as the record says (a hung shelf can be cut to a wall: `w`), not as the catalogue's piece. */
   top(parent, name, o = {}) {
     if (!parent) return null;
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
-    const pw = parent.c.size[0], pd = parent.c.size[2];
+    const pw = parent.w ?? parent.c.size[0], pd = parent.d ?? parent.c.size[2];
     const w = c.size[0], d = c.size[2];
     if (w > pw + 0.02 || d > pd + 0.02) return null;
     parent.tops ??= [];
@@ -656,8 +658,11 @@ export class Layout {
     const span = Math.max(0, pw - w - 0.06);
     const cands = [];
     const lx = typeof at === 'number' ? at * span / 2 : at === 'left' ? -span / 2 : at === 'right' ? span / 2 : 0;
-    cands.push(lx);
-    for (let k = -4; k <= 4; k++) cands.push(k * span / 8);
+    if (o.px != null) cands.push(o.px);
+    else {
+      cands.push(lx);
+      for (let k = -4; k <= 4; k++) cands.push(k * span / 8);
+    }
     const dz = (o.depth ?? 0) * Math.max(0, pd - d - 0.04) / 2;
     for (const px of cands) {
       const ok = parent.tops.every((t) => Math.abs(t.px - px) >= (t.w + w) / 2 + 0.02 || Math.abs(t.pz - dz) >= (t.d + d) / 2 + 0.02);
@@ -710,11 +715,18 @@ export class Layout {
       it.floor = false; it.wall = true; it.block = false; it.y = (this.room.y ?? 0) + ys; it.h = h; it.w = w; it.zones = [];
       it.wallSide = cd.wall; it.u = cd.u;
       if (o.over) it.overOf = o.over;                                              // (a picture over a bed: it goes where the bed goes)
-      it.wallSlot = { wall: cd.wall, u0: cd.u - w / 2, u1: cd.u + w / 2, y0: ys, y1: ys + h };
+      it.wallSlot = { wall: cd.wall, u0: cd.u - w / 2, u1: cd.u + w / 2, y0: ys, y1: ys + h, d: depth };
       this.decor[cd.wall].push(it.wallSlot);
       return this._commit(it, o);
     }
     return null;
+  }
+  /** The floor plan of a hung piece `depth` deep on `wall` between `u0` and `u1`: the slab of room it takes. */
+  _slab(wall, u0, u1, depth) {
+    const wi = wallInfo(this.r, wall);
+    return wi.ax === 'x'
+      ? mkObb((u0 + u1) / 2, wi.base + wi.nz * depth / 2, u1 - u0, depth, 0)
+      : mkObb(wi.base + wi.nx * depth / 2, (u0 + u1) / 2, depth, u1 - u0, 0);
   }
   _wallFree(wall, u0, u1, y0, y1, depth, o = {}) {
     for (const ob of this.obs[wall]) {
@@ -723,14 +735,19 @@ export class Layout {
       else if (y1 > ob.sill - 0.08 && y0 < ob.top + 0.08) return false;
     }
     for (const s of this.decor[wall]) if (u1 > s.u0 - 0.04 && u0 < s.u1 + 0.04 && y1 > s.y0 - 0.04 && y0 < s.y1 + 0.04) return false;
-    const wi = wallInfo(this.r, wall);
-    const slab = wi.ax === 'x'
-      ? mkObb((u0 + u1) / 2, wi.base + wi.nz * depth / 2, u1 - u0, depth, 0)
-      : mkObb(wi.base + wi.nx * depth / 2, (u0 + u1) / 2, depth, u1 - u0, 0);
+    const slab = this._slab(wall, u0, u1, depth);
     for (const b of this.items) {
       if (!b.floor || !b.block || b === o.inside) continue;                // (`inside`: the piece this thing belongs in - the shower head in the shower's own cubicle)
       if (b.h <= y0 + (o.lap ?? 0.04)) continue;         // the decor hangs above this piece of furniture (`lap`: how far its top may reach up into the decor; a garment's hem must clear it)
       if (obbOverlap(slab, b.ob, 0.01)) return false;    // furniture flush against the wall would swallow the decor
+    }
+    // a piece hung on the next wall reaches out over this corner (a kitchen cabinet is 0.34 m deep): a shelf hung beside it would pass through its side (13 of the barrio's 444 wall shelves did)
+    for (const w2 of WALLS) {
+      if (w2 === wall) continue;
+      for (const s of this.decor[w2]) {
+        if (!(s.d > 0) || y1 <= s.y0 + 0.01 || y0 >= s.y1 - 0.01) continue;
+        if (obbOverlap(slab, this._slab(w2, s.u0, s.u1, s.d), 0.01)) return false;
+      }
     }
     return true;
   }
@@ -852,19 +869,23 @@ export class Layout {
   /** How split the room is: pieces the landings fall into, landings buried in furniture, and free cells no landing reaches (0.01 m2 each). */
   _connScore() { return this._scoreOf(this.connectivity()); }
   _scoreOf(c) { return { comps: distinctComps(c.ids), orphan: c.orphan, lost: c.lost }; }
-  /** Would the room stay as connected as it started if `it` (a blocker candidate) stood here? Pockets up to ~0.4 m2 are tolerated. */
-  _connOk(it) {
+  /** The flood (`connectivity()`) of the room with `it` (a candidate, not placed) standing in it. */
+  _floodWith(it, inflate) {
     this.items.push(it);
-    try {
-      const a = this._connScore(), b = this._base ?? { comps: 1, orphan: 0, lost: 0 };
-      return a.comps <= b.comps && a.lost <= b.lost && a.orphan <= Math.max(b.orphan, 40);
-    } finally { this.items.pop(); }
+    try { return this.connectivity(inflate); } finally { this.items.pop(); }
+  }
+  /** Would the room stay as connected as it started if `it` (a blocker candidate) stood here? Pockets up to ~0.4 m2 are tolerated. `c`: the flood of the room with `it` in it, when the caller has it. */
+  _connOk(it, c = this._floodWith(it)) {
+    const a = this._scoreOf(c), b = this._base ?? { comps: 1, orphan: 0, lost: 0 };
+    return a.comps <= b.comps && a.lost <= b.lost && a.orphan <= Math.max(b.orphan, 40);
   }
   _needsAccess(it) { return !!it.c.seat || ['bed', 'cot', 'bunk', 'mattress', 'stove'].includes(it.c.arch); }       // (a stove too: the cook stands in front of it)
   /** Can a person walk up to `it` from the doors (a free main-region cell within reach of its centre)? A stove: can the cook stand at it? That is the question index.js `emitAnchors` asks for the
    *  cook anchor (a standing spot within 0.9 m of the point 0.5 m in front of it, found with the 0.34 m body), so it is asked here the same way, and the spot must be one a cook can work from
-   *  (within `COOK_REACH` of the stove's middle: interiors-data.test.mjs 'anchors' takes no cook further off), so a stove never ends without a cook. */
-  _accessOk(it, present = false) {
+   *  (within `COOK_REACH` of the stove's middle: interiors-data.test.mjs 'anchors' takes no cook further off), so a stove never ends without a cook. `flood`: the flood of the room with `it` in it (a
+   *  candidate's: `valid()` has it from the connection test), which every piece but a stove reads; the stove's is another flood (a 0.34 m body). */
+  _accessOk(it, present = false, flood = null) {
+    if (flood && it.c.arch !== 'stove') return this.inMainRegion(it.x, it.z, flood, Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1));
     if (!present) this.items.push(it);
     try {
       if (it.c.arch === 'stove') {

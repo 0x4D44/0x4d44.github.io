@@ -45,6 +45,7 @@ export const DECALS = {
   price_minutos: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
   price_modista: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
   price_taller: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_solda: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
   menu_board: { w: 0.90, h: 1.10, y: 0.95, frame: 0x3a2a1c, kind: 'shop' },
   // every trade's own lettering (shops.js hangs it on the wall a customer faces from the street door, over the back door when the room is tall enough: y 2.2 + h <= ceiling)
   sign_tienda: { w: 0.90, h: 0.34, y: 1.9, frame: 0x6b4226, kind: 'shop' },
@@ -55,6 +56,7 @@ export const DECALS = {
   sign_modista: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
   sign_zapa: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
   sign_taller: { w: 0.90, h: 0.34, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
+  sign_soldadura: { w: 0.90, h: 0.34, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
   sign_tinto: { w: 0.80, h: 0.34, y: 1.7, frame: 0x3a2a1c, kind: 'shop' },
   sign_pan: { w: 0.90, h: 0.34, y: 1.9, frame: 0x6b4226, kind: 'shop' },
   sign_pharma: { w: 0.44, h: 0.44, y: 1.9, frame: null, kind: 'shop' },
