@@ -1,7 +1,7 @@
 // Highland Fling - built structures: ruined castle (gatehouse on the road), the high stone road viaduct (the road crosses OVER the railway,
 // then leaps the burn), the Glenfinnan-style rail viaduct (a little steam train crosses), cottages, distillery, standing stones, flags.
 import * as THREE from "three";
-import { TAU, LOCH, S, BURN, VIADUCT, PIPER, lochR, burnQuery, vnoise } from "./highland-geo.js";
+import { TAU, LOCH, S, BURN, VIADUCT, PIPER, lochR, burnQuery, vnoise, inRailZone } from "./highland-geo.js";
 import { stoneCanvas, toTexture, saltireCanvas, lionCanvas } from "./highland-tex.js";
 
 const S3 = 3;   // stone texture tile (m)
@@ -286,7 +286,7 @@ export function buildStructs(H) {
       part(new THREE.BoxGeometry(2.4, 1.1, 1.0), mat(4.8, 0.55, 1.2), 0x4a3426),   // peat stack
     ];
     const cgeo = bake(cp), cots = [];
-    const spots = scatterSpots(14, 17, 60, (x, z) => lochR(x, z) > 1.3 && burnQuery(x, z).d > 14 && !(Math.abs(z - VIADUCT.z) < 22 && x > 60 && x < 260) && !(z > 360 && x > 180 && x < 430) && !(x > 90 && x < 255 && z > 180 && z < 312) && Math.hypot(x - PIPER.x, z - PIPER.z) > 30 && gyOK(x, z));
+    const spots = scatterSpots(14, 17, 60, (x, z) => lochR(x, z) > 1.3 && burnQuery(x, z).d > 14 && !(Math.abs(z - VIADUCT.z) < 22 && x > 60 && x < 260) && !(z > 360 && x > 180 && x < 430) && !(x > 90 && x < 255 && z > 180 && z < 312) && !inRailZone(x, z, 6) && Math.hypot(x - PIPER.x, z - PIPER.z) > 30 && gyOK(x, z));
     for (const p of spots) { const l = track.locate({ x: p.x, z: p.z }), sp = track.sample(l.s); cots.push({ x: p.x, z: p.z, ry: Math.atan2(sp.tangent.x, sp.tangent.z) + (l.lateral > 0 ? -Math.PI / 2 : Math.PI / 2) + R(-0.25, 0.25), sx: R(0.95, 1.15), c: pick([0xffffff, 0xf4f0e6, 0xece6d6]) }); }
     instanced(cgeo, lam({ vertexColors: true }), cots, "cottages"); blobShadows(cots, 4.5);
     for (const c of cots) track.addObstacle(c.x, c.z, 4.0, -50, 200);

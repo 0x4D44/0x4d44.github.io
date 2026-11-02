@@ -1,6 +1,6 @@
 // Highland Fling - vegetation, rocks, mountains, livestock (coos + sheep), dry-stone dykes.
 import * as THREE from "three";
-import { TAU, LOCH, lochR, burnQuery, VIADUCT, PIPER, vnoise } from "./highland-geo.js";
+import { TAU, LOCH, lochR, burnQuery, VIADUCT, PIPER, vnoise, inRailZone } from "./highland-geo.js";
 
 export function buildNature(H) {
   const { track, X, K, rng } = H;
@@ -10,7 +10,7 @@ export function buildNature(H) {
   const gy = X.groundY;
   const castleZone = (x, z) => Math.hypot(x - 300, z - 430) < 135 && z > 360;
   const piperZone = (x, z) => Math.hypot(x - PIPER.x, z - PIPER.z) < 24;   // the giant piper's island
-  const free = (x, z, pad = 0) => lochR(x, z) > 1.22 + pad * 0.004 && burnQuery(x, z).d > 9 && !(Math.abs(z - VIADUCT.z) < 24 && x > VIADUCT.x0 - 10 && x < VIADUCT.x1 + 10) && !castleZone(x, z) && !piperZone(x, z);
+  const free = (x, z, pad = 0) => lochR(x, z) > 1.22 + pad * 0.004 && burnQuery(x, z).d > 9 && !(Math.abs(z - VIADUCT.z) < 24 && x > VIADUCT.x0 - 10 && x < VIADUCT.x1 + 10) && !castleZone(x, z) && !piperZone(x, z) && !inRailZone(x, z);
   const onSide = (s, side, off) => at(s, side * (wallDist + off));
 
   // ---------- Scots pines
@@ -72,7 +72,7 @@ export function buildNature(H) {
   instanced(brG, lam({}), bracken, "bracken");
 
   const rockG = new THREE.DodecahedronGeometry(1, 0), pebG = new THREE.TetrahedronGeometry(1, 0);
-  const rocks = scatter(150, wallDist + 3, 260, { filter: (x, z) => lochR(x, z) > 1.0 && burnQuery(x, z).d > 5 && !(Math.abs(z - VIADUCT.z) < 22 && x > VIADUCT.x0 - 8 && x < VIADUCT.x1 + 8) && !castleZone(x, z) && !piperZone(x, z) })
+  const rocks = scatter(150, wallDist + 3, 260, { filter: (x, z) => lochR(x, z) > 1.0 && burnQuery(x, z).d > 5 && !(Math.abs(z - VIADUCT.z) < 22 && x > VIADUCT.x0 - 8 && x < VIADUCT.x1 + 8) && !castleZone(x, z) && !piperZone(x, z) && !inRailZone(x, z) })
     .map((p) => ({ x: p.x, z: p.z, y: -0.2, sx: R(0.8, 3.2), sy: R(0.7, 2.2), sz: R(0.8, 3), ry: rng() * 6, rx: R(-0.3, 0.3), c: pick([0x8a8a86, 0x75766f, 0x9b9a92, 0x6c6e6a, 0x8d8576]) }));
   instanced(rockG, lam({ flatShading: true }), rocks, "rocks"); blobShadows(rocks, 1.4);
   // loch-shore pebbles
