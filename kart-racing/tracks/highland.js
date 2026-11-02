@@ -7,6 +7,7 @@ import { buildStructs } from "./highland-structs.js";
 import { buildAds } from "./highland-ads.js";
 import { buildPiper, buildGiantPiper } from "./highland-piper.js";
 import { buildNessie } from "./highland-nessie.js";
+import { buildRail } from "./highland-rail.js";
 
 const theme = {
   shoulder: 4.0, kerb: [0xb3202a, 0x16365f], wallBase: "#e6e1d2", wallAccent: "#9b1c24", wallText: ["HIGHLAND FLING", "APEX KARTS", "WEE DRAM", "MIND THE COOS"],
@@ -103,17 +104,19 @@ export default {
       if (tm) {
         const pa = tm.geometry.attributes.position, ca = tm.geometry.attributes.color, nrm = tm.geometry.attributes.normal;
         const heatherA = new THREE.Color(0x80609a), heatherB = new THREE.Color(0xa070b4), bracken = new THREE.Color(0x6e7a36), rust = new THREE.Color(0x8a6532), grass = new THREE.Color(0x4a6f38), peat = new THREE.Color(0x4a3f33), scree = new THREE.Color(0x7d786e), t = new THREE.Color(), road = new THREE.Color(0x56733a);
-        for (let i = 0; i < pa.count; i++) {
-          const x = pa.getX(i), z = pa.getZ(i), y = pa.getY(i), n1 = vnoise(x / 70 + 3, z / 70), n2 = vnoise(x / 19, z / 19), n3 = vnoise(x / 150 - 9, z / 150 + 4);
+        // (shared with the rail stretch's hill meshes, so they match the terrain they grow out of; the returned colour is reused)
+        H.groundColor = (x, z, y, ny) => {
+          const n1 = vnoise(x / 70 + 3, z / 70), n2 = vnoise(x / 19, z / 19), n3 = vnoise(x / 150 - 9, z / 150 + 4);
           t.copy(grass).lerp(bracken, sm(0.35, 0.7, n1));
           t.lerp(rust, 0.55 * sm(0.55, 0.85, n3) * (1 - n2 * 0.4));
           t.lerp(n2 > 0.5 ? heatherB : heatherA, sm(0.4, 0.62, vnoise(x / 55 + 11, z / 55 - 5)) * (0.55 + 0.45 * sm(1, 14, y)));
           const d = track.nearestDist(x, z);
           t.lerp(road, 0.45 * (1 - sm(14, 40, d)));
           const lr = lochR(x, z); if (lr < 1.35) t.lerp(peat, 0.7 * (1 - sm(1.05, 1.35, lr)));
-          const slope = 1 - nrm.getY(i); t.lerp(scree, sm(0.18, 0.5, slope));
-          const v = 1.08 + 0.2 * n2; ca.setXYZ(i, t.r * v, t.g * v, t.b * v);
-        }
+          t.lerp(scree, sm(0.18, 0.5, 1 - ny));
+          return t.multiplyScalar(1.08 + 0.2 * n2);
+        };
+        for (let i = 0; i < pa.count; i++) { const c = H.groundColor(pa.getX(i), pa.getZ(i), pa.getY(i), nrm.getY(i)); ca.setXYZ(i, c.r, c.g, c.b); }
         ca.needsUpdate = true;
       }
     }
@@ -178,6 +181,7 @@ export default {
     buildAds(H);
     buildPiper(H);
     buildGiantPiper(H);
+    buildRail(H);   // after the piper: it chains onto track.onRaceStart
 
     // ---- recolour the generic start-area flags in Scottish colours
     {

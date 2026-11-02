@@ -23,6 +23,12 @@ export const BURN = (() => {   // Catmull-Rom smoothed so the stream meanders
 export const VIADUCT = { z: 237, x0: 84, x1: 234, pw: 90, pe: 228, cx: 176, vx0: 98.6, vx1: 216.2, floor: 3.5, deck: 16.5, wall: 0.24 };
 // the road crosses OVER the railway on a high stone viaduct (s range of the bridged glen; terrain is released from the road there)
 export const GLEN_S = { a: 1796, b: 1968 };
+// the "Banana Express" branch line: a straight single track alongside the road on its left, running between two hills with stone-faced tunnel portals.
+// pw/pe = the portal front-face planes (x), z = the line, bw = half the trackbed; the hills sit behind the portals (centre hillDx behind the face, hillRx/hillRz semi-axes, hillH high).
+// The golden ticket lies by the road at ticketS (lateral ticketLat, - = left), just before the stretch; the train is dispatched when the leader is `dispatch` m short of portalS (the road s abeam the west portal).
+export const RAIL = { z: 309, pw: -90, pe: 48, bw: 3.3, hillH: 19, hillRx: 30, hillRz: 20, hillDx: 13.5, ticketS: 1503, ticketLat: -3, portalS: 1544, dispatch: 26 };
+// the rail stretch and its two hills (+ a margin): keep trees, rocks, cottages and the like out of it
+export const inRailZone = (x, z, pad = 0) => x > RAIL.pw - 52 - pad && x < RAIL.pe + 52 + pad && Math.abs(z - RAIL.z) < 30 + pad;
 
 export const sm = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 export const hash2 = (ix, iz) => { let h = Math.imul(ix, 374761393) ^ Math.imul(iz, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
