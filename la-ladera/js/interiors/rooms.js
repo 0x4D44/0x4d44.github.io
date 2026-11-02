@@ -159,6 +159,7 @@ export function solveFixtures(L, slots, o = {}) {
         for (const name of names) for (const along of so.alongToo ? [false, true] : [false]) {
           let n = 0;
           for (const it of L.wallPoses(name, 'any', { prio: 0, ...so, ...rung.o, along })) {
+            if (so.accept && !so.accept(it)) continue;                                                   // (a slot may take only some of the valid poses: the extra beds of a bedroom keep off its windows)
             nodes++;
             L._commit(it, {}); if (rung.o.noClear) it.zones = [];
             const rest = dfs(order, i + 1);
@@ -612,19 +613,85 @@ function placeBed(L, E, hh, names, o = {}) {
   }
   return null;
 }
+/** The sleeping places each bed gives (a crib is the baby's and comes with the master room's dressing; a mattress leaned on the wall is stood away by day). */
+const PLACES = { bed_double: 2, bed_double_wood: 2, bed_bunk: 2, bed_single: 1, bed_single_metal: 1, bed_cot: 1, mattress_floor: 1 };
+const placesOf = (b) => PLACES[b?.name] ?? 0;
+/** The sleeping places a household needs in all: both grown-ups (one for an old man or woman alone), every child, a grandparent (the baby has a crib besides). */
+export const householdPlaces = (hh) => (hh.kind === 'elder' ? 1 : 2) + (hh.kind === 'students' || hh.kind === 'couple' ? 0 : (hh.kids ?? 0)) + (hh.kind === 'family' && hh.elder ? 1 : 0);
+/**
+ * The sleeping places bedroom number `i` owes its household, by who lives there and how many bedrooms there are (`E.bedroomCount`): the parents (or a couple) share a double in the first, the little children
+ * are together in the next (a bunk holds two), a teenager has a room of his own, a grandparent the last, and the one bedroom of a flat holds everybody. Students have a bed each. 0: the room is nobody's
+ * (a study, a guest room, an old man's room) and keeps the one bed its role gives it.
+ */
+export function bedsOwed(E, hh, i) {
+  const n = Math.max(1, E.bedroomCount ? E.bedroomCount(hh) : 1), last = n - 1;
+  if (hh.kind === 'couple') return i === 0 ? 2 : 0;
+  if (hh.kind === 'students') return n === 1 ? (i === 0 ? 2 : 0) : (i < 2 ? 1 : 0);
+  if (hh.kind === 'elder') return 0;
+  const teen = hh.teen ? 1 : 0, little = Math.max(0, (hh.kids ?? 0) - teen), grand = hh.kind === 'family' && hh.elder ? 1 : 0;
+  const at = { little: Math.min(1, last), teen: Math.min(2, last), grand: n >= 4 ? 3 : n === 3 ? (teen ? 1 : 2) : last };
+  return (i === 0 ? 2 : 0) + (at.little === i ? little : 0) + (at.teen === i ? teen : 0) + (at.grand === i ? grand : 0);
+}
+/** One more bed for a room that owes more sleeping places than its first bed gave: a bunk when two are owed (the compact way), else a single; the room's lanes stay (never the rungs that cut them), and a mattress on the floor is the last resort. Null: the room cannot hold more. */
+function extraBed(L, E, hh, left) {
+  const names = left >= 2 ? ['bed_bunk', 'bed_single', 'bed_single_metal'] : ['bed_single', 'bed_single_metal'], accept = awayFromWindows(L);
+  for (const ns of [names, ['mattress_floor']]) for (const o of [{ sideNeed: 0.3, awayDoors: true }, { awayDoors: true }, {}, { noClear: true }]) for (const along of [false, true]) for (const n of ns) {
+    const b = wallWhere(L, n, { prio: 0, connAll: true, ...o, along }, accept);
+    if (b) { if (o.noClear) b.zones = []; b.flags = { unmade: L.rng.chance(1 - hh.tidy) }; return b; }
+  }
+  return null;
+}
+/** The first valid wall pose of `name` that `accept` takes, placed (`L.wall` takes the first valid one, whatever it stands in front of). */
+function wallWhere(L, name, o, accept) {
+  for (const it of L.wallPoses(name, 'any', o)) { if (!accept(it)) continue; L._commit(it, o); return it; }
+  return null;
+}
+/** A bed that stood under a window would shorten its curtain (the barrio's cloth must stay floor-length on at least half of its folds: interiors-curtains.test.mjs): the extra beds keep off the windows. */
+const awayFromWindows = (L) => (it) => !L._windowHit(it.ob, 99);
+/**
+ * The greedy order (the first bed on the best wall, the next on what is left) can shut out a bed that the room does hold: the first bed across the middle of a 9 m2 room with a door in each of two
+ * facing walls leaves neither half a second bed, and no double fits in a half at all, but two singles along the walls do. Search the beds all at once instead (solveFixtures, as `repackBedroom` does
+ * for one): a double for the parents (two singles when no double fits), a bunk for every pair of children, a single for the odd one; the richest list first, each shorter than the last, and the first
+ * that places every bed and gives more places than the greedy answer wins. The room holds only the greedy beds now. Returns the beds placed (null, the room as it was, when no list gives more than `have`).
+ */
+function repackBeds(L, hh, owed, parents, have) {
+  const o = { awayDoors: true, alongToo: true, connAll: true }, accept = awayFromWindows(L);
+  const NAMES = { double: hh.income ? ['bed_double_wood', 'bed_double'] : ['bed_double', 'bed_double_wood'], bunk: ['bed_bunk'], single: hh.income ? ['bed_single'] : ['bed_single_metal', 'bed_single'] };
+  const rest = owed - (parents ? 2 : 0), tail = [...Array(Math.floor(rest / 2)).fill('bunk'), ...(rest % 2 ? ['single'] : [])], lists = [];
+  if (parents) {
+    for (let n = tail.length; n >= 0; n--) lists.push(['double', ...tail.slice(0, n)]);
+    for (let n = tail.length; n >= 0; n--) lists.push(['single', 'single', ...tail.slice(0, n)]);
+  } else {
+    for (let n = tail.length; n >= 1; n--) lists.push(tail.slice(0, n));
+    if (rest === 2) lists.push(['single', 'single']);                                                  // two sleepers: a bunk, or a bed each
+  }
+  const places = (l) => l.reduce((s, k) => s + (k === 'single' ? 1 : 2), 0);
+  const twin = (l) => (l.filter((k) => k === 'single').length >= 2 ? 1 : 0);                             // (two singles in the place of a double, or beside the children's)
+  lists.sort((x, y) => places(y) - places(x) || twin(x) - twin(y));                                         // (a stable sort: the double before two singles, a bunk before two singles: it is the compact way)
+  const snap = L.snapshot();
+  for (const list of lists) {
+    if (places(list) <= have) continue;
+    L.clear();
+    const got = solveFixtures(L, list.map((k, n) => slot(NAMES[k], n || k === 'bunk' ? { ...o, accept } : o)), { maxRung: 3, budget: 60, fan: 5 });      // (the first bed stands where it always stood; the others, and any bunk, keep off the windows: a bunk is 1.75 m high and would hide one)
+    if (got) { for (const b of got) b.flags = { unmade: L.rng.chance(1 - hh.tidy) }; return got; }
+  }
+  L.restore(snap);
+  return null;
+}
 export function bedroom(L, E, hh) {
-  const rng = L.rng, area = floorArea(L), role = E.roleOverride ?? bedroomRole(E, hh);
+  const rng = L.rng, area = floorArea(L), i = E.state(hh).beds, role = E.roleOverride ?? bedroomRole(E, hh);
   E.lastRole = role; L.role = role;
-  const tiny = area < 5.5;
+  const owed = bedsOwed(E, hh, i);
   let beds = [];
   const single = hh.income ? ['bed_single'] : ['bed_single_metal', 'bed_single'];
   switch (role) {
-    case 'master': beds = [placeBed(L, E, hh, tiny ? single : hh.income ? ['bed_double_wood', 'bed_double'] : ['bed_double', 'bed_double_wood'] )]; break;
+    case 'master': beds = [placeBed(L, E, hh, hh.income ? ['bed_double_wood', 'bed_double'] : ['bed_double', 'bed_double_wood'])]; break;     // (a couple's bed is a double, however small the room: no double that fits gives the single of the fallback below, and the second single comes with the extra beds)
     case 'elder': beds = [placeBed(L, E, hh, rng.chance(0.5) ? ['bed_single_metal', 'bed_single'] : ['bed_double', 'bed_single'])]; break;
-    case 'kids': beds = area >= 8 ? [placeBed(L, E, hh, ['bed_bunk', 'bed_single'])] : [placeBed(L, E, hh, ['bed_bunk', 'bed_single'])]; break;
+    case 'kids': beds = [placeBed(L, E, hh, owed === 1 ? single : ['bed_bunk', 'bed_single'])]; break;
     case 'student': {
+      if (owed >= 2) { beds = [placeBed(L, E, hh, ['bed_bunk', 'bed_single_metal', 'bed_single'])]; break; }      // two students in one room: a bunk (it leaves the walls the desk and the wardrobe want)
       const a = placeBed(L, E, hh, ['bed_single_metal', 'bed_single']); beds = [a];
-      if (area >= 8 && rng.chance(0.7)) beds.push(placeBed(L, E, hh, ['bed_single', 'mattress_floor'], { sideNeed: 0.2 }));
+      if (!owed && area >= 8 && rng.chance(0.7)) beds.push(placeBed(L, E, hh, ['bed_single', 'mattress_floor'], { sideNeed: 0.2 }));
       break;
     }
     case 'study': beds = [placeBed(L, E, hh, ['bed_single', 'bed_cot'], { sideNeed: 0.3 })]; break;        // a study with a guest bed: every bedroom has a real one
@@ -639,7 +706,65 @@ export function bedroom(L, E, hh) {
     if (!b) b = any(() => L.wall('mattress_leaning', 'any', { prio: 1 }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true, keepLateral: 0.05 }));
     if (b) beds = [b];
   }
-  bedroomDress(L, E, hh, role, beds[0]);
+  const first = beds.slice(), have = first.reduce((s, x) => s + placesOf(x), 0), parents = i === 0 && hh.kind !== 'students' && hh.kind !== 'elder';
+  if (owed <= have || first[0]?.name === 'mattress_leaning') { L.sleeps = have; L.owed = owed; bedroomDress(L, E, hh, role, first[0]); return; }
+  // The household owes more places than the first bed gives. Dress the room as it is first (the one to beat), then try one bed more, two more ... as many as the household owes, the most first:
+  // a bed set stays only if the room still keeps its clothes (and a study room its desk) as well as it did, after the healing it will get (a wardrobe walled in a bed and healing took it out
+  // again: 4 bedrooms of the barrio were left with no storage, 2 pegs-only that had a wall for a trunk, 4 study rooms with no desk, 20 wardrobes - and a tenth of the hung clothes - gone).
+  const base = grab(L);
+  bedroomDress(L, E, hh, role, first[0]);
+  const lean = bedroomKeeps(L, role), leanState = grab(L);
+  for (let target = owed; target > have; target--) {
+    put(L, base);
+    const bs = first.slice();
+    fillBeds(L, E, hh, bs, target, parents);
+    if (bs.length === first.length && bs.every((x, k) => x === first[k])) break;                  // nothing more fits at this size, so nothing more fits at a smaller one
+    bedroomDress(L, E, hh, role, bs[0]);
+    const keeps = bedroomKeeps(L, role);
+    if (keeps >= lean) { L.owed = owed; return; }                                                  // (fillBeds left L.sleeps: the places the room holds)
+  }
+  put(L, leanState); L.sleeps = have; L.owed = owed;
+}
+const STUDY_ROLES = new Set(['teen', 'student', 'study', 'child']);
+/** A copy of the room's state that `restore` can put back after more than `snapshot` holds: healing and dressing edit the item list and the wall slots in place. */
+function grab(L) {
+  const s = L.snapshot();
+  return { ...s, items: [...s.items], decor: Object.fromEntries(WALLS.map((w) => [w, [...s.decor[w]]])) };
+}
+/** The room put back as `grab` saw it (a copy of the copy, so the same state can be put back again). */
+function put(L, s) { L.restore({ ...s, items: [...s.items], decor: Object.fromEntries(WALLS.map((w) => [w, [...s.decor[w]]])) }); }
+/** What healing would take out of the room as it stands (the room is put back exactly as it was). */
+function healTrial(L) {
+  const saved = grab(L), removed = L.heal();
+  put(L, saved);
+  return removed;
+}
+/** How well a dressed bedroom keeps what the census tests hold every bedroom to, once healing has had its say: somewhere to keep clothes (a wardrobe, whose rail carries the household's hung
+ *  clothes: 3; a dresser or trunk: 2; pegs only: 1) and, in a study room of 8 m2 or more, its desk (1). 4 is the whole of it. */
+function bedroomKeeps(L, role) {
+  const gone = new Set(healTrial(L)), has = (re) => L.items.some((i) => !gone.has(i) && re.test(i.name));
+  return (has(/^wardrobe/) ? 3 : has(/^(dresser|chest_trunk)/) ? 2 : has(/^coat_rack/) ? 1 : 0) + (!STUDY_ROLES.has(role) || floorArea(L) < 8 || has(/^desk_/) ? 1 : 0);
+}
+/**
+ * The household sleeps here: after the room's first bed (or beds) is down, a bed for each person owed one as the room's free walls allow, one by one and then the whole-room search. `beds` is
+ * the list of beds the room has (extended or replaced in place); `parents`: the first two places are a couple's. Returns the places the room holds now (a mattress leaned on the wall
+ * means the room is too tight for more); `L.owed` and `L.sleeps` keep what the household owed it and what it holds (the bed census reads both).
+ */
+export function fillBeds(L, E, hh, beds, owed, parents) {
+  let places = beds.reduce((s, b) => s + placesOf(b), 0);
+  if (beds[0]?.name !== 'mattress_leaning') {
+    for (let k = 0; places < owed && k < 4; k++) {
+      const b = extraBed(L, E, hh, owed - places);
+      if (!b) break;
+      beds.push(b); places += placesOf(b);
+    }
+    if (places < owed && owed >= 2) {
+      const got = repackBeds(L, hh, owed, parents, places);
+      if (got) { beds.splice(0, beds.length, ...got); places = beds.reduce((s, b) => s + placesOf(b), 0); }
+    }
+  }
+  L.sleeps = places; L.owed = owed;
+  return places;
 }
 /** Everything a bedroom has besides its bed: nightstands and lamps, storage, the study corner, a rug, wall decor, clutter. */
 function bedroomDress(L, E, hh, role, bed) {

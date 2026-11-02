@@ -138,7 +138,8 @@ export function registerFronts(ctx, bp, group, log) {
   for (const S of list) {
     const r = S.slot.rect; S.pos = worldPoint(S, (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, S.slot.zf + 0.1);
     const L = bp.interior?.layouts?.get(S.rec.room);
-    S.reachable = !L || frontSpots(S, conns.get(L) ?? conns.set(L, L.connectivity()).get(L)).length > 0;       // a paper in a nightstand wedged behind a bed would never be read
+    S.spots = L ? frontSpots(S, conns.get(L) ?? conns.set(L, L.connectivity()).get(L)) : [];            // (contents.js guards the sight lines from the first of them)
+    S.reachable = !L || S.spots.length > 0;                                                             // a paper in a nightstand wedged behind a bed would never be read
   }
   // R4-118: a front nobody can stand in front of (a nightstand between the bed and the wall, a dresser behind a bed) is a decoration: no prompt, no contents, no paper or find is planned into it,
   // so a visitor is never offered what cannot be opened and never has to look for a find that cannot be reached

@@ -112,7 +112,7 @@ export const furnishRng = (ctx, bp) => makeRng((hashStr('furnish:' + bp.id) ^ (c
 export const roomsInOrder = (bp) => [...(bp.rooms ?? [])].sort((a, b) => (a.floor - b.floor) || (a.id < b.id ? -1 : 1));
 
 /** The household a room belongs to: one per house, per flat of an apartment block, per cuarto of a tenement ... (a string; the households of a building are its distinct keys). */
-function householdKey(bp, room) {
+export function householdKey(bp, room) {
   const lot = bp.lot ?? {};
   let flat = 'all';
   if (lot.kind === 'apartments') flat = `f${room.floor}${room.flat ?? room.unit ?? ''}`;

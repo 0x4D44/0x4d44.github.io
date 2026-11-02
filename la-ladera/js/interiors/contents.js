@@ -212,9 +212,16 @@ export function railSpots(r) {
 
 /** The eyes of a person who opens the slot, in the piece's frame (carcass.js EYE_AT, EYE_Y: 0.75 m from the carcass, 1.6 m up; the middle of the slot and a step to each side; a drawer's tray is
  *  `travel` further out, so the eye is that much nearer to its things). `elev` = how high the piece's base hangs over the floor. */
-export function eyesFor(slot, elev = 0) {
+export function eyesFor(slot, elev = 0, spots = []) {
   const ez = (slot.zf ?? 0) + EYE_AT - (slot.kind === 'drawer' ? slot.travel ?? 0 : 0), ey = EYE_Y - elev, ex = (slot.rect.x0 + slot.rect.x1) / 2;
-  return [[ex, ey, ez], [ex - 0.25, ey, ez + 0.25], [ex + 0.25, ey, ez + 0.25]];
+  return [[ex, ey, ez], [ex - 0.25, ey, ez + 0.25], [ex + 0.25, ey, ez + 0.25], ...spots.map(([sx, sz]) => [sx, ey, sz])];
+}
+/** The first three of the places a person can stand to use the slot (reach.js standSpots, kept by containers.js registerFronts), in the piece's frame: the first of them can be half a metre to a side of the
+ *  slot and 0.7 m from its front, where none of the three default eyes is (a rag stood on the line from a spot at the end of a counter to a lottery earring under the sink: R4-208 again). */
+function spotEyes(S) {
+  const sp = S.spots, rec = S.rec; if (!sp?.length || !rec) return [];
+  const cs = Math.cos(rec.ry ?? 0), sn = Math.sin(rec.ry ?? 0);
+  return sp.slice(0, 3).map(([x, z]) => { const dx = x - rec.x, dz = z - rec.z; return [dx * cs - dz * sn, dx * sn + dz * cs]; });
 }
 /** Does the sight line from `e` to `t` (piece-local points) pass through the box { x0, x1, y0, y1, z0, z1 } before it reaches `t`? A slab test along the segment. */
 export function crosses(e, t, b) {
@@ -338,13 +345,15 @@ export function makeContents(ctx, S) {
     const f = findById.get(fid), size = f.size ?? 0.04, own = f.in ?? 'loose', tries = [];
     for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.75], ['loose', 0.55]]) { const m = modelFor(fid, size, sc); if (m) tries.push({ wrap, sc, m }); }
     for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.7], ['loose', 0.45]]) tries.push({ wrap, sc });
-    for (const { wrap, sc, m } of tries) {
+    // every size is tried off the floor of the clothes' own space first (a smaller find on a shelf is seen, a full-size one under the hanging clothes is not: a signed shirt lay there in a
+    // metal wardrobe whose shelves are 0.37 m wide), and only when none fits anywhere else does the find lie there
+    for (const avoidRail of [true, false]) for (const { wrap, sc, m } of tries) {
       let d;
       if (m) { const b = wrapDims(wrap); d = { w: Math.max(b ? b.w + 0.01 : 0, m.w), d: Math.max(b ? b.d + 0.01 : 0, m.d), h: (b?.h ?? 0) + m.h }; }          // the model rests on its base
       else d = findDims(f.shape, size * sc, wrap);
-      const pos = q.put({ w: d.w, h: d.h, d: d.d, avoidRail: true }, start + 3) ?? q.put({ w: d.w, h: d.h, d: d.d }, start + 3);
+      const pos = q.put({ w: d.w, h: d.h, d: d.d, ...(avoidRail ? { avoidRail } : {}) }, start + 3);
       if (!pos) continue;
-      q.guard = { eyes: eyesFor(slot, elev), t: [pos.x, pos.y + pos.h / 2, pos.z] };                // nothing that is put down after the find may stand on a sight line to its middle
+      q.guard = { eyes: eyesFor(slot, elev, spotEyes(S)), t: [pos.x, pos.y + pos.h / 2, pos.z] };      // nothing that is put down after the find may stand on a sight line to its middle
       return { o: { sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''], ...(glints(f) ? { glint: true } : {}) }, pos };
     }
     return null;
