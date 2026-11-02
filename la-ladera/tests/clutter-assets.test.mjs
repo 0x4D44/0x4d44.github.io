@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { inflateSync } from 'node:zlib';
 import { inspectGlb, validateClutter, ROOT, REQUIRED_KEYS, MAX_BYTES } from '../tools/blender/clutter_validate.mjs';
 import { readGlb } from '../tools/blender/glb_info.mjs';
 
@@ -201,4 +202,18 @@ test('TEETH: catalogue paths cannot escape the model directory', (t) => {
   const root = fixture(t); editJson(root, MANIFEST, (m) => { m.files[0].glb = 'clutter/../../../../outside.glb'; });
   const r = validateClutter({ projectRoot: root, complete: true });
   assert.equal(r.ok, false); assert.match(errorText(r), /path escapes/);
+});
+
+// R3-111: the Feria del Barrio poster read "SABADO". The atlas is drawn by clutter_atlas.py (pixel font, scale 3, "SÁBADO" at x 75.5, y 161 of the poster's cell at x 512), so the acute accent is two 3 x 3 blocks over the
+// second letter, at x 611..616, y 155..160 of the atlas.
+test('the Feria del Barrio poster says SÁBADO: the acute accent is inked over the A (R3-111)', () => {
+  const b = readFileSync(resolve(ROOT, 'assets/textures/clutter/decals.png')), idat = []; let o = 8, w = 0;
+  while (o < b.length) { const n = b.readUInt32BE(o), tag = b.toString('latin1', o + 4, o + 8); if (tag === 'IHDR') w = b.readUInt32BE(o + 8); if (tag === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + n)); o += 12 + n; }
+  const raw = inflateSync(Buffer.concat(idat)), dark = (x, y) => { const k = y * (w * 4 + 1) + 1 + x * 4; return raw[k] + raw[k + 1] + raw[k + 2] < 300; };      // (filter 0 on every row: clutter_atlas.py)
+  const inked = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (dark(x, y)) n++; return n; };
+  assert.equal(w, 1024);
+  assert.ok(inked(611, 155, 616, 160) >= 16, 'the accent is there: two blocks of nine pixels, over the A');
+  assert.equal(inked(591, 155, 596, 160), 0, 'and not over the S, nor above the B (nothing is inked in the two rows above the letters but the accent)');
+  assert.equal(inked(629, 155, 634, 160), 0);
+  assert.ok(inked(611, 161, 616, 182) >= 30, 'the letter itself is below it (its apex and its bar: 36 pixels in these columns)');
 });
