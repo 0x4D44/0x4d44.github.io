@@ -93,7 +93,7 @@ const RUNGS = [
   { winOk: true },
   { winOk: true, noClear: true },
   { winOk: true, noClear: true, noConn: true },
-  { winOk: true, noClear: true, noConn: true, keepLateral: 0.05 },      // the door's own width always stays clear (data test: 0.7 m in front of every door)
+  { winOk: true, noClear: true, noConn: true, keepLateral: 0.05 },      // the door's own width always stays clear (layout.js DOOR_LANE deep: data test 0.7 m, interiors-doorlane the walk)
 ];
 const HOLD = new Set(['stove', 'bed', 'cot', 'bunk', 'mattress', 'mattress_up']);   // the space in front of a stove and beside a bed is what makes them usable: it never gives way
 export function placeEssential(L, names, o = {}) {
@@ -625,7 +625,7 @@ export function kitchen(L, E, hh) {
     any(() => L.wall('sink_kitchen', 'any', { prio: 0 }), () => L.wall('counter_base', 'any', { prio: 0 }));
   }
   if (!L.find('stove_gas')) {                      // a kitchen with three doors in four square metres: let the door sweeps overlap, keep the lanes
-    L.relaxKeeps(0.7);
+    L.relaxKeeps();
     for (const w of L.wallsByFree()) {
       const got = L.run(w.wall, ['stove_gas', 'counter_base', 'sink_kitchen'], { fromEnd: rng.chance(0.5), prio: 0, skipMissing: true });
       if (got.some((i) => i.name === 'stove_gas')) { run = got; break; }
@@ -810,7 +810,7 @@ function* bedroomSteps(L, E, hh) {
   if (!beds.length) {                                           // the plan left no room for the bed this role wants: any bed beats an empty bedroom
     const small = ['bed_single', 'bed_single_metal', 'mattress_floor'];
     let b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
-    if (!b && L.relaxKeeps(0.7)) b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
+    if (!b && L.relaxKeeps()) b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
     if (!b) b = any(() => L.wall('mattress_leaning', 'any', { prio: 1 }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true, keepLateral: 0.05 }));
     if (b) beds = [b];
   }
