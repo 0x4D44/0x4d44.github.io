@@ -5,7 +5,7 @@
 import { Layout, resetUid } from './layout.js';
 import { freePoint, snapStand } from './reach.js';
 import { CATALOG, seatOffsets } from './catalog.js';
-import { finishRoom, householdForRoom, furnishRng, roomsInOrder } from './household.js';
+import { finishRoom, householdForRoom, householdKey, furnishRng, roomsInOrder } from './household.js';
 import * as R from './rooms.js';
 import { shopRoom } from './shops.js';
 import * as S from './special.js';
@@ -68,6 +68,12 @@ function makeEnv(ctx, bp, rng) {
     ctx, bp, rng, lot, hhs: new Map(), states: new Map(), notes: [],
     state(hh) { let s = this.states.get(hh.id); if (!s) this.states.set(hh.id, s = { beds: 0 }); return s; },
     householdFor(room) { return householdForRoom(rng, bp, room, this.hhs, ctx); },
+    /** How many bedrooms the household has (who sleeps where depends on it: a flat has one, and everybody sleeps in it). Asked of the plan's rooms and keys alone: no household is made out of order. */
+    bedroomCount(hh) {
+      const c = (this.bedrooms ??= new Map());
+      if (!c.has(hh.id)) c.set(hh.id, (bp.rooms ?? []).filter((r) => r.type === 'bedroom' && !(lot.kind === 'unfinished' && (r.outdoor || r.floor > 0)) && householdKey(bp, r) === hh.id).length);
+      return c.get(hh.id);
+    },
   };
   return E;
 }
