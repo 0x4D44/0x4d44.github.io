@@ -6,6 +6,9 @@
 //                    under it is slimmed (bind pose), so a leg swinging forward no longer comes out through the cloth (see the long comments above fitLegs).
 //   trimUnderSkirt() - load time, once per geometry: the part of a top that lies under a skirt's waist edge is not drawn (it only pokes out through the cloth).
 //   trimWebbing()  - load time, once per geometry: the triangles of the simplified bodies that join a hand to a thigh are dropped (they stretch into skin-coloured flaps).
+//   armRig() / armAxes() / armClip() - load time: the shared clips hang the arms where a slimmer body has room for them, so hands and forearms sink into hips,
+//                    skirts and coats. Each character's arm clips are re-keyed with the upper arms turned out by a few degrees (angles solved offline, see armfit.js).
+//   armProbe()     - measuring stick for that fit (tests and tools/armfit.mjs; not used while the game runs).
 // All maths runs in the meshes' bind space, which is where the garment, skin and hair of one character share a skeleton.
 
 const isHair = (m) => /^alpha_hair/i.test(m.material.name || '');
@@ -370,4 +373,114 @@ export function trimWebbing(THREE, root) {
     if (g.userData.webbing) { stats.meshes++; stats.dropped += g.userData.webbing; }
   });
   return stats.dropped ? stats : null;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Arms kept out of the body.
+// The shared clips (idle, walk, sit, hold-the-rail ...) were keyed on one slimmer body: the arms hang and swing where that body has room for them. On the
+// real characters - hips and thighs, a skirt's flare, a coat's hem, a hoodie - the forearm and hand end up inside the body and vanish (4-13 cm deep in
+// almost every standing clip, 18 cm in walk_bag). A vertex-shader push cannot cure it: the hand would only be squashed flat against the outline. The cure is
+// the one an animator uses - turn the arm out from the shoulder until the hand clears the hip. Each character's arm clips are re-keyed once, at load, with
+// every upper-arm key turned (abducted) by a constant angle about the axis that carries the hanging arm outwards. The angles (per character, clip and side)
+// were solved offline against the real skinned skin + cloth, as the smallest turn that leaves the forearm and hand outside the outline of everything else
+// near them; they live in armfit.js and tools/armfit.mjs regenerates them. Premultiplying every key of a slerped track by one rotation is exact, so the
+// baked clip plays just like the original with the shoulders turned.
+
+const armBones = (root) => { const b = {}; root.traverse((o) => { if (o.isBone) b[o.name.replace(/_\d+$/, '')] = o; }); return b; };
+
+/** What a rig needs for turning its arms out, read in the bind pose of the template: per side the outward direction (in the shoulder's parent frame) and the
+ *  direction of the upper arm to the elbow (in the upper arm's own frame). null when the rig has no arms. */
+export function armRig(THREE, root) {
+  root.updateMatrixWorld(true);
+  const b = armBones(root), rq = new THREE.Quaternion(), rp = new THREE.Vector3(); root.getWorldQuaternion(rq); root.getWorldPosition(rp);
+  const lat = new THREE.Vector3(1, 0, 0).applyQuaternion(rq), rig = {};   // the character's left-right axis: the rig faces +/- z
+  for (const sd of ['l', 'r']) {
+    const up = b['upperarm_' + sd], lo = b['lowerarm_' + sd]; if (!up || !lo || !up.parent || lo.position.lengthSq() < 1e-10) return null;
+    const pq = new THREE.Quaternion(), sp = new THREE.Vector3(); up.parent.getWorldQuaternion(pq); up.getWorldPosition(sp);
+    const sgn = Math.sign(sp.sub(rp).dot(lat)) || 1;
+    rig[sd] = { out: lat.clone().multiplyScalar(sgn).applyQuaternion(pq.clone().invert()).normalize(), dir: lo.position.clone().normalize() };
+  }
+  return rig;
+}
+
+/** The axis (in the shoulder's parent frame) that turns this clip's hanging upper arm outwards, per side - the arm's direction x the outward direction, from the
+ *  clip's first key. A side is missing when the arm already points straight out (nothing to turn). Clip tracks must carry the canonical bone names. */
+export function armAxes(THREE, rig, clip) {
+  const ax = {};
+  for (const sd of ['l', 'r']) {
+    const r = rig && rig[sd], tr = clip.tracks.find((t) => t.name === 'upperarm_' + sd + '.quaternion'); if (!r || !tr) continue;
+    const d = r.dir.clone().applyQuaternion(new THREE.Quaternion(tr.values[0], tr.values[1], tr.values[2], tr.values[3])), a = new THREE.Vector3().crossVectors(d, r.out);
+    if (a.lengthSq() > 0.04) ax[sd] = a.normalize();
+  }
+  return ax;
+}
+
+/** A copy of the clip (same name, same length, the other tracks shared) whose upper-arm keys are turned out by degL / degR degrees about axes[side]. */
+export function armClip(THREE, clip, axes, degL, degR) {
+  const q = new THREE.Quaternion(), a = new THREE.Quaternion(); let changed = false;
+  const tracks = clip.tracks.map((tr) => {
+    const m = /^upperarm_([lr])\.quaternion$/.exec(tr.name); if (!m) return tr;
+    const deg = m[1] === 'l' ? degL : degR, ax = axes[m[1]]; if (!ax || !(deg > 0.05)) return tr;
+    q.setFromAxisAngle(ax, deg * Math.PI / 180); const nt = tr.clone(), v = nt.values;
+    for (let i = 0; i < v.length; i += 4) { a.set(v[i], v[i + 1], v[i + 2], v[i + 3]).premultiply(q); v[i] = a.x; v[i + 1] = a.y; v[i + 2] = a.z; v[i + 3] = a.w; }
+    changed = true; return nt;
+  });
+  return changed ? new THREE.AnimationClip(clip.name, clip.duration, tracks, clip.blendMode) : clip;
+}
+
+/** Measuring stick for the arm fit. Wraps one clone (canonical bone names) of a character: pose(clip, t) poses it and files everything that is not an arm into a
+ *  height x depth grid of left / right outline extents; depth(turn) then says, per side, how deep the forearm / hand (and the upper arm beyond the shoulder) lie
+ *  inside that outline: the 95th percentile (m) of the vertices' distance inside the outermost body vertex found within about +-3 cm up and +-6 cm front-back.
+ *  turn = { l: [axis, radians], r: [axis, radians] } turns the shoulders further, for the solver. Returns { l, r, nl, nr } (n = vertices deeper than 2 cm). */
+export function armProbe(THREE, obj) {
+  const meshes = []; obj.traverse((m) => { if (m.isSkinnedMesh && m.skeleton && m.geometry.attributes.skinIndex && m.geometry.attributes.skinWeight) meshes.push(m); });
+  const bones = armBones(obj), v = new THREE.Vector3(), q = new THREE.Quaternion(), mixer = new THREE.AnimationMixer(obj);
+  const ARM = /^(hand|thumb|index|middle|ring|pinky|lowerarm)/i, UP = /^upperarm/i, NY = 128, NZ = 56, Y0 = -0.1, Z0 = -1.1, DY = 0.02, DZ = 0.04;
+  const gmax = new Float32Array(NY * NZ), gmin = new Float32Array(NY * NZ);
+  const parts = meshes.map((m) => {   // per vertex: 0 body, 1 forearm / hand, 2 upper arm; and the side of an arm vertex
+    const g = m.geometry, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, n = g.attributes.position.count, names = m.skeleton.bones.map((b) => b.name.replace(/_\d+$/, '')),
+      kind = new Int8Array(n), side = new Int8Array(n), arm = [];
+    for (let i = 0; i < n; i++) {
+      let best = 0, bi = 0; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (w > best) { best = w; bi = SI.getComponent(i, c); } }
+      const nm = names[bi] || ''; kind[i] = ARM.test(nm) ? 1 : UP.test(nm) ? 2 : 0; side[i] = /_l$/.test(nm) ? 1 : /_r$/.test(nm) ? -1 : 0; if (kind[i] && side[i]) arm.push(i);
+    }
+    return { m, kind, side, arm: Int32Array.from(arm) };
+  });
+  const cell = (y, z) => Math.max(0, Math.min(NY - 1, Math.floor((y - Y0) / DY))) * NZ + Math.max(0, Math.min(NZ - 1, Math.floor((z - Z0) / DZ)));
+  const saved = { l: new THREE.Quaternion(), r: new THREE.Quaternion() }, sh = { l: new THREE.Vector3(), r: new THREE.Vector3() };
+  let act = null;
+  const skinAll = () => { obj.updateMatrixWorld(true); for (const p of parts) p.m.skeleton.update(); };
+  return {
+    /** pose the clone at time t of the clip and file the body into the grid */
+    pose(clip, t) {
+      if (!act || act.getClip() !== clip) { mixer.stopAllAction(); mixer.uncacheRoot(obj); act = mixer.clipAction(clip); act.play(); }
+      mixer.setTime(t); skinAll(); gmax.fill(-9); gmin.fill(9);
+      const inv = new THREE.Matrix4().copy(obj.matrixWorld).invert();   // everything is measured in the clone's own frame (x = left-right, y = up, z = front-back)
+      for (const sd of ['l', 'r']) { const b = bones['upperarm_' + sd]; saved[sd].copy(b.quaternion); b.getWorldPosition(sh[sd]).applyMatrix4(inv); }
+      for (const p of parts) {
+        const n = p.kind.length, M = new THREE.Matrix4().multiplyMatrices(inv, p.m.matrixWorld);
+        for (let i = 0; i < n; i++) { if (p.kind[i]) continue; p.m.getVertexPosition(i, v).applyMatrix4(M); const c = cell(v.y, v.z); if (v.x > gmax[c]) gmax[c] = v.x; if (v.x < gmin[c]) gmin[c] = v.x; }
+      }
+    },
+    /** burial of the arms in the pose, with the shoulders turned further by turn (or not at all) */
+    depth(turn) {
+      const bl = bones.upperarm_l, br = bones.upperarm_r;
+      if (turn) for (const sd of ['l', 'r']) if (turn[sd] && turn[sd][0]) bones['upperarm_' + sd].quaternion.premultiply(q.setFromAxisAngle(turn[sd][0], turn[sd][1]));
+      skinAll();
+      const ds = { l: [], r: [] }, inv = new THREE.Matrix4().copy(obj.matrixWorld).invert();
+      for (const p of parts) for (let j = 0, M = new THREE.Matrix4().multiplyMatrices(inv, p.m.matrixWorld); j < p.arm.length; j++) {
+        const i = p.arm[j], sd = p.side[i] > 0 ? 'l' : 'r'; p.m.getVertexPosition(i, v).applyMatrix4(M);
+        if (p.kind[i] === 2 && v.distanceTo(sh[sd]) < 0.14) continue;   // the shoulder itself belongs to the body
+        const sg = sh[sd].x >= 0 ? 1 : -1, cy = Math.floor((v.y - Y0) / DY), cz = Math.floor((v.z - Z0) / DZ); let ext = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+          const yy = cy + dy, zz = cz + dz; if (yy < 0 || yy >= NY || zz < 0 || zz >= NZ) continue; const c = yy * NZ + zz, e = sg > 0 ? gmax[c] : -gmin[c]; if (e > ext && e < 5) ext = e;
+        }
+        ds[sd].push(Math.max(0, ext - sg * v.x));
+      }
+      bl.quaternion.copy(saved.l); br.quaternion.copy(saved.r);   // the mixer will not rewrite an unchanged key: leave the bones as it left them
+      const pct = (a) => { if (a.length < 8) return 0; a.sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(a.length * 0.95))]; };
+      return { l: pct(ds.l), r: pct(ds.r), nl: ds.l.filter((d) => d > 0.02).length, nr: ds.r.filter((d) => d > 0.02).length };
+    },
+  };
 }
