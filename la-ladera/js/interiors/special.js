@@ -3,7 +3,7 @@ import { CATALOG } from './catalog.js';
 import { KNEEHOLE } from './carcass.js';
 import { opposite, wallInfo, wallPoint, mkObb } from './layout.js';
 import { decalDef } from './decals.js';
-import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM, fillBeds, householdPlaces } from './rooms.js';
+import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM, fillBeds, householdPlaces, seatTable, tablePoses } from './rooms.js';
 import { art, clock, own } from './decor.js';
 import { SHOP_FITOUTS } from './shops.js';
 import { chapelFurnish } from '../arch/chapel_interior.js';
@@ -109,8 +109,9 @@ export function classroom(L, E, hh) {
     const d = L.at(dn, x, z, ry, { prio: 1 });
     if (d) { n++; if (rng.chance(0.25)) { const p = L.top(d, 'books_stack', { at: 'center' }); void p; } }
   }
-  any(() => L.wall('locker_pair', 'any', { prio: 2, awayDoors: true })); any(() => L.wall('cubby_shelf', 'any', { prio: 2, awayDoors: true }));
-  any(() => L.wall('bookshelf', 'any', { prio: 2, awayDoors: true }));
+  const side = ['-z', '+z', '-x', '+x'].filter((w) => w !== bw);                          // (never on the board's wall: a 1.8 m locker pair stood in front of the chalkboard and hid its middle, the cubby shelf its end: R4-305)
+  any(() => L.wall('locker_pair', side, { prio: 2, awayDoors: true })); any(() => L.wall('cubby_shelf', side, { prio: 2, awayDoors: true }));
+  any(() => L.wall('bookshelf', side, { prio: 2, awayDoors: true }));
   L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
   D(L, 'alphabet_chart', 'any', { y: 1.65 }); D(L, 'flag_co', 'any', { y: 1.7 }); D(L, 'times_table', 'any'); D(L, 'schedule', 'any');
   art(L, E, 'kids', 'any'); art(L, E, 'kids', 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {}); L.hang('coat_rack_wall', 'any', { y: 1.2 });
@@ -193,7 +194,7 @@ export function studio(L, E, hh) {
   if (run[0]) L.top(run[0], 'dish_rack', { at: 'center' });
   any(() => L.wall('water_stand', 'any', { at: 'corner', prio: 2 }));
   const t = any(() => L.wall('table_formica_4', 'any', { prio: 1, awayDoors: true }));
-  if (t) chairsAround(L, t, 2, ['chair_plastic', 'stool_wood']);
+  if (t) seatTable(L, t, ['chair_plastic', 'stool_wood'], 2, () => tablePoses(L, t.name, [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2], [0, PI / 2], true));          // (the beds of a crowded household leave the table few poses: it goes where a chair fits, or out)
   any(() => L.wall('wardrobe_2', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('dresser_4', 'any', { prio: 1 }));
   const stand = any(() => L.wall('tv_stand', 'any', { prio: 2, awayDoors: true }), () => L.wall('side_table', 'any', { prio: 2 }));
   if (stand) L.top(stand, hh.income ? 'tv_flat' : 'tv_crt', { at: 'center' });
@@ -377,9 +378,10 @@ export function musicRoom(L, E, hh) {
     const [x, z] = wallPoint(L.r, bw, u, t);
     L.at(seat, x, z, ry, { prio: 1 });
   }
-  const cub = any(() => L.wall('cubby_shelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf_low', 'any', { prio: 1 }));
+  const side = ['-z', '+z', '-x', '+x'].filter((w) => w !== bw);                          // (the board's wall stays clear, as in the classroom)
+  const cub = any(() => L.wall('cubby_shelf', side, { prio: 1, awayDoors: true }), () => L.wall('bookshelf_low', side, { prio: 1 }));
   if (cub) L.top(cub, 'radio_boombox', { at: 'center' });
-  any(() => L.wall('bookshelf', 'any', { prio: 2, awayDoors: true }));
+  any(() => L.wall('bookshelf', side, { prio: 2, awayDoors: true }));
   for (let k = 0; k < 2; k++) L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 });
   L.wall('speaker', 'any', { at: 'corner', prio: 2 });
   art(L, E, 'music', 'any'); art(L, E, 'music', 'any'); D(L, 'schedule', 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {});

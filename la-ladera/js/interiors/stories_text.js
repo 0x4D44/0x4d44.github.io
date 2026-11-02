@@ -233,6 +233,9 @@ export const SAY = {
   price_taller: [
     ['Cambio de aceite $25.000, pinchazo $8.000. Las motos se entregan antes de que cierren las calles.', 'Oil change $25,000, puncture $8,000. Motorbikes are handed back before the streets close.'],
   ],
+  price_solda: [
+    ['Reja de ventana $95.000 el metro, portón sencillo $480.000. El presupuesto no cuesta nada: el maestro lo mide con la cinta, ahí mismo.', 'Window grille $95,000 a metre, plain gate $480,000. The quote costs nothing: the master measures it with his tape, right there.'],
+  ],
   menu_board: [
     ['El menú del día: sopa, seco y jugo. Todo por poca plata.', 'The set menu: soup, main course and juice. All for very little.'],
   ],

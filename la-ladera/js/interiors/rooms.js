@@ -3,7 +3,7 @@
 // stove beside a gas cylinder, toilet/shower/basin with front clearance, chairs tucked around tables, decor hung clear of doors/windows.
 import { CATALOG } from './catalog.js';
 import { KNEEHOLE } from './carcass.js';
-import { opposite, wallInfo, wallPoint, WALLS } from './layout.js';
+import { opposite, wallInfo, wallPoint, WALLS, getUid, setUid } from './layout.js';
 import { decalDef } from './decals.js';
 import { art, clock, mirror, notice } from './decor.js';
 
@@ -141,19 +141,51 @@ const permutations = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => permutati
  * rung that works wins; `o.maxRung` stops short of the rungs that cut a room's lanes (a kitchen or a bedroom with two doors). The room should hold nothing else (call
  * L.clear() first). Returns the placed items in slot order, or null with the room as it was. `o.budget` caps the poses tried per rung, `o.fan` the poses tried per piece
  * (the tests turn both down to see which rooms need the search).
+ * The search is a resumable job too (`solveFixturesSteps`): a bedroom of 6 m2 with four beds to find is 100 000 poses and more, 300 to 800 ms, and a frame has 4 ms for the interiors (lazy.js).
+ * It yields every `SOLVE_SLICE` poses tried and never changes what it finds (the same poses in the same order: the room is only left alone between two of them); `solveFixtures` is it run to its end.
  */
-export function solveFixtures(L, slots, o = {}) {
+export function solveFixtures(L, slots, o = {}) { return drain(solveFixturesSteps(L, slots, o)); }
+/** A resumable job run to its end: the sync form of the generators below (`solveFixtures`, `fillBeds`, `bedroom`, `ensureFixtures`). */
+const drain = (g) => { for (let r = g.next(); ; r = g.next()) if (r.done) return r.value; };
+/** Poses the solver tries between two yields: about 2 ms (a pose costs 2 microseconds when it fails early and 30 to 60 when it reaches the floods). */
+export const SOLVE_SLICE = 1000;
+/**
+ * The key of each slot (its pieces and its options): two orders of the same pieces in the same options are one search, and an order that found nothing leaves the room as it was, so the second of them
+ * would find nothing again. The solver runs only the first (a list of four beds, two of them alike, has 12 searches to make and not 24) and takes the ids the second would have taken, so
+ * that the world is the same. A Map slot -> key; null (every order is run) when a piece could draw a tint from the room's stream (`Layout._commit` does when the household has none for its colours: the
+ * stream would not be the one it was) or an option is not a plain value.
+ */
+function slotKeys(L, slots) {
+  const fns = new Map(), keys = new Map();
+  try {
+    for (const s of slots) {
+      if (s.o.jitter) return null;
+      for (const n of s.names) { const c = CATALOG[n]; if (c.cols && c.cols !== 'none' && L.hh?.tints?.[c.cols] == null) return null; }
+      const parts = [];
+      for (const k of Object.keys(s.o).sort()) {
+        const v = s.o[k];
+        if (typeof v === 'function') { if (!fns.has(v)) fns.set(v, fns.size); parts.push(`${k}=#${fns.get(v)}`); }
+        else if (v !== null && typeof v === 'object' && !Array.isArray(v)) return null;
+        else parts.push(`${k}=${JSON.stringify(v)}`);
+      }
+      keys.set(s, `${s.names.join(',')}|${parts.join(',')}`);
+    }
+  } catch { return null; }
+  return keys;
+}
+export function* solveFixturesSteps(L, slots, o = {}) {
   const top = Math.min(o.maxRung ?? SOLVE_RUNGS.length - 1, SOLVE_RUNGS.length - 1), maxNodes = o.budget ?? 120, fan = o.fan ?? 6;
   const keeps = L.keep, size = (s) => Math.max(...s.names.map((n) => CATALOG[n].size[0] * CATALOG[n].size[2]));
-  const biggestFirst = slots.slice().sort((a, b) => size(b) - size(a));
+  const biggestFirst = slots.slice().sort((a, b) => size(b) - size(a)), keys = o.dedupe === false ? null : slotKeys(L, slots);        // (`o.dedupe: false`: every order is run, as the tests do to see what the shortcut saves)
+  let mark = L.checks ?? 0;                                                                            // the poses tried when the job last yielded
   try {
     for (let k = 0; k <= top; k++) {
-      const rung = SOLVE_RUNGS[k];
+      const rung = SOLVE_RUNGS[k], failed = new Map();                                                 // (failed: the orders of this rung that found nothing -> the ids they took)
       L.keep = keeps;
       if (rung.sweep) L.sweepKeeps();
       let nodes = 0, start = L.checks ?? 0;
       const spent = () => nodes > maxNodes || (L.checks ?? 0) - start > 40 * maxNodes;      // poses committed, and poses merely tried (a rejected pose is cheap: 40 per node)
-      const dfs = (order, i) => {
+      const dfs = function* (order, i) {
         if (i === order.length) return [];
         const { names, o: so } = order[i];
         for (const name of names) for (const along of so.alongToo ? [false, true] : [false]) {
@@ -162,18 +194,23 @@ export function solveFixtures(L, slots, o = {}) {
             if (so.accept && !so.accept(it)) continue;                                                   // (a slot may take only some of the valid poses: the extra beds of a bedroom keep off its windows)
             nodes++;
             L._commit(it, {}); if (rung.o.noClear) it.zones = [];
-            const rest = dfs(order, i + 1);
+            const rest = yield* dfs(order, i + 1);
             if (rest) return [it, ...rest];
             L.remove(it);
             if (++n >= fan || spent()) break;
+            if ((L.checks ?? 0) - mark >= SOLVE_SLICE) { mark = L.checks ?? 0; yield 'solve'; }           // (between two poses, with only the pieces above this one placed: nothing else reads the room)
           }
           if (spent()) return null;
         }
         return null;
       };
       for (const order of permutations(biggestFirst)) {
-        const got = dfs(order, 0);
+        const key = keys ? order.map((s) => keys.get(s)).join('/') : null, took = key === null ? undefined : failed.get(key);
+        if (took !== undefined) { setUid(getUid() + took); continue; }                                  // (the same search as one that found nothing: it takes the ids it took)
+        const uid0 = getUid();
+        const got = yield* dfs(order, 0);
         if (got) return slots.map((s) => got[order.indexOf(s)]);
+        if (key !== null) failed.set(key, getUid() - uid0);
         nodes = 0; start = L.checks ?? 0;                  // each order gets its own budget; the rungs that cut lanes try the biggest piece first only
         if (k >= 4) break;
       }
@@ -192,17 +229,17 @@ export const bathSlots = (hh) => [slot(['shower_tray', 'shower_small'], { at: 'c
 /** The three pieces a kitchen is defined by, as solver slots (stove, sink, fridge; the small ones under 5.5 m2). */
 export const kitchenSlots = (L) => { const small = floorArea(L) < 5.5; return [slot(['stove_gas']), slot(small ? ['sink_small', 'sink_kitchen'] : ['sink_kitchen', 'sink_small']), slot(small ? ['fridge_small'] : ['fridge', 'fridge_small'])]; };
 /** A bathroom the furnisher could not complete: clear it and let the solver find the arrangement of shower, toilet and basin the plan's room really holds, then dress it. */
-function repackBathroom(L, E, hh) {
+function* repackBathroomSteps(L, E, hh) {
   const snap = L.snapshot();
   L.clear();
-  const got = solveFixtures(L, bathSlots(hh));
+  const got = yield* solveFixturesSteps(L, bathSlots(hh));
   if (!got) { L.restore(snap); return false; }
   bathroomDress(L, E, hh, got[0], got[2]);
   return true;
 }
 /** Bathroom: a toilet, a basin and a shower (tray + the electric head on the wall), whatever the plan gave. */
-function ensureBathroom(L, E, hh) {
-  if (!bathFixtures(L) && repackBathroom(L, E, hh)) { ensureShowerHead(L); return; }
+function* ensureBathroomSteps(L, E, hh) {
+  if (!bathFixtures(L) && (yield* repackBathroomSteps(L, E, hh))) { ensureShowerHead(L); return; }
   if (!hasItem(L, SHOWER)) placeEvicting(L, ['shower_tray', 'shower_small'], { at: 'corner' });
   if (!hasItem(L, /^toilet$/)) placeEvicting(L, ['toilet'], {});
   if (!hasItem(L, BASIN)) placeEvicting(L, hh.income ? ['basin_vanity', 'basin_pedestal'] : ['basin_pedestal'], {});
@@ -218,38 +255,38 @@ function ensureShowerHead(L) {
     () => L.hang('shower_head_electric', 'any', o), () => L.hang('shower_head_electric', 'any', { ...o, y: 1.75 }));
 }
 /** A kitchen without its stove or sink: clear it, let the solver put both on the walls the plan's room has (the run of counters is dressed around them afterwards). */
-function repackKitchen(L, E, hh) {
+function* repackKitchenSteps(L, E, hh) {
   const snap = L.snapshot(), needBoth = !hasItem(L, /^stove_/) || !hasItem(L, SINK), slots = kitchenSlots(L);
   L.clear();
-  let got = solveFixtures(L, slots, { maxRung: 3 });
-  if (!got && needBoth) got = solveFixtures(L, slots.slice(0, 2), { maxRung: 3 });
+  let got = yield* solveFixturesSteps(L, slots, { maxRung: 3 });
+  if (!got && needBoth) got = yield* solveFixturesSteps(L, slots.slice(0, 2), { maxRung: 3 });
   if (!got) { L.restore(snap); return false; }
   const f = got[2]; if (f) f.flags = { magnets: true };
   kitchenDress(L, E, hh, [got[0]]);
   return true;
 }
 /** Kitchen: a stove, a sink and a fridge. */
-function ensureKitchen(L, E, hh) {
+function* ensureKitchenSteps(L, E, hh) {
   const small = floorArea(L) < 5.5;
-  if (!hasItem(L, /^stove_/) || !hasItem(L, SINK) || !hasItem(L, /^fridge/)) repackKitchen(L, E, hh);
+  if (!hasItem(L, /^stove_/) || !hasItem(L, SINK) || !hasItem(L, /^fridge/)) yield* repackKitchenSteps(L, E, hh);
   if (!hasItem(L, /^stove_/)) placeEvicting(L, ['stove_gas'], {});
   if (!hasItem(L, SINK)) placeEvicting(L, small ? ['sink_small', 'sink_kitchen'] : ['sink_kitchen', 'sink_small'], {});
   if (!hasItem(L, /^fridge/)) { const f = placeEvicting(L, small ? ['fridge_small'] : ['fridge', 'fridge_small'], {}); if (f) f.flags = { magnets: true }; }
 }
 /** A bedroom without a real bed: clear it and let the solver find one pose that leaves every door its lane, then dress the room around it. Null when none does. */
-function repackBedroom(L, E, hh) {
+function* repackBedroomSteps(L, E, hh) {
   const snap = L.snapshot();
   L.clear();
-  const got = solveFixtures(L, [slot(L.role === 'kids' ? ['bed_bunk', 'bed_single', 'bed_single_metal', 'bed_cot'] : ['bed_single', 'bed_single_metal', 'bed_cot'], { awayDoors: true, alongToo: true })], { maxRung: 3 });
+  const got = yield* solveFixturesSteps(L, [slot(L.role === 'kids' ? ['bed_bunk', 'bed_single', 'bed_single_metal', 'bed_cot'] : ['bed_single', 'bed_single_metal', 'bed_cot'], { awayDoors: true, alongToo: true })], { maxRung: 3 });
   if (!got) { L.restore(snap); return null; }
   got[0].flags = { unmade: L.rng.chance(1 - hh.tidy) };
   bedroomDress(L, E, hh, L.role, got[0]);
   return got[0];
 }
 /** Bedroom: a real bed (a frame, not a mattress leaned on the wall) when the plan left room for one. */
-function ensureBedroom(L, E, hh) {
+function* ensureBedroomSteps(L, E, hh) {
   if (hasItem(L, REAL_BED)) return;
-  if (repackBedroom(L, E, hh)) return;
+  if (yield* repackBedroomSteps(L, E, hh)) return;
   if (L.role === 'study') return;                                                                                    // a study keeps whatever its furnisher gave it
   const lean = L.items.filter((i) => i.name === 'mattress_leaning' || i.name === 'mattress_floor');
   for (const m of lean) L.remove(m);
@@ -269,11 +306,13 @@ export function ensureSleep(L, E, hh) {
   return m;
 }
 /** Called after a home furnisher: the defining fixtures of the room are there or the plan really has no wall for them. */
-export function ensureFixtures(L, E, hh, furnisher) {
+export function ensureFixtures(L, E, hh, furnisher) { drain(ensureFixturesSteps(L, E, hh, furnisher)); }
+/** `ensureFixtures` as a resumable job (index.js `furnishSteps`): the searches of a kitchen's stove, sink and fridge or a bathroom's three fixtures yield every `SOLVE_SLICE` poses. */
+export function* ensureFixturesSteps(L, E, hh, furnisher) {
   if (L.W < 0.9 || L.D < 0.9) return;
-  if (furnisher === bathroom) ensureBathroom(L, E, hh);
-  else if (furnisher === kitchen) ensureKitchen(L, E, hh);
-  else if (furnisher === bedroom) ensureBedroom(L, E, hh);
+  if (furnisher === bathroom) yield* ensureBathroomSteps(L, E, hh);
+  else if (furnisher === kitchen) yield* ensureKitchenSteps(L, E, hh);
+  else if (furnisher === bedroom) yield* ensureBedroomSteps(L, E, hh);
 }
 /**
  * Every home has a fridge. When no kitchen could hold one (a 1.6 m wide rowhouse kitchen with the stove and the sink along its only free wall) it stands in the dining room,
@@ -291,14 +330,14 @@ export function ensureHomeFridge(built) {
   return null;
 }
 
-/** Chairs tucked around a table (n of them, as many as fit). */
+/** Chairs tucked around a table (n of them, as many as fit). `o.dense`: a chair to every 0.55 m of a side and no hand's breadth to spare (a 1 m table seats two on a side, not one). */
 export function chairsAround(L, table, n, names, o = {}) {
   if (!table) return [];
   const rng = L.rng, out = [];
   const hw = table.c.size[0] / 2, hd = table.c.size[2] / 2;
   const sides = [];
   const longX = hw >= hd;
-  const cnt = (len) => Math.max(1, Math.min(3, Math.floor(len / 0.55)));
+  const cnt = (len) => Math.max(1, Math.min(3, Math.floor((o.dense ? len + 0.1 : len) / 0.55 + 1e-6)));
   const mk = (lx0, lz0, dx, dz, k, dry, gapAxis) => {
     for (let i = 0; i < k; i++) {
       const t = k === 1 ? 0 : (i / (k - 1) - 0.5) * (k - 1) * 0.55;
@@ -318,6 +357,69 @@ export function chairsAround(L, table, n, names, o = {}) {
     if (it) out.push(it);
   }
   return out;
+}
+/** The poses to try a table at, best first: free in the room round `near`, then against a wall (the long side along it, the chairs on the open side); `wallFirst` the other way round (a small kitchen). */
+export function* tablePoses(L, name, near, rys, wallFirst = false) {
+  const free = function* () { let k = 0; for (const it of L.freePoses(name, near, { rys, prio: 0 })) { yield it; if (++k >= 24) return; } };
+  const wall = function* () { let k = 0; for (const it of L.wallPoses(name, 'any', { prio: 0, awayDoors: true })) { yield it; if (++k >= 24) return; } };
+  yield* wallFirst ? wall() : free();
+  yield* wallFirst ? free() : wall();
+}
+/**
+ * A table where no chair can be pulled up seats nobody (R4-304: 41 of the barrio's 119 tables had no chair or stool: in the passage of a 1.93 m dining room, between a door and a wall, beside a toy pile).
+ * With fewer than `need` chairs, the table and what stands round it come out and its other poses (`poses()`, started once the table is out) are tried, the chairs a little denser; the first that
+ * seats `need` stays, else the one that seats most (the first, when none seats more). Returns { table, chairs }.
+ */
+function reseat(L, table, chairs, names, n, poses, need = 2) {
+  if (chairs.length >= need) return { table, chairs };
+  const drop = (t, cs) => { for (const c of cs) L.remove(c); L.remove(t); };
+  const put = (t, cs) => { L._commit(t, {}); for (const c of cs) L._commit(c, {}); };
+  drop(table, chairs);
+  let best = { table, chairs }, tried = 0;
+  for (const it of poses()) {
+    tried++;
+    L._commit(it, {});
+    const cs = chairsAround(L, it, n, names, { dense: true });
+    if (cs.length >= need) return { table: it, chairs: cs };
+    if (cs.length > best.chairs.length) best = { table: it, chairs: cs };
+    drop(it, cs);
+  }
+  put(best.table, best.chairs);
+  return best;
+}
+/**
+ * A table with its chairs, or no table: `reseat`, and where that still leaves fewer than `need` chairs the room's decoration (plants, toys, shoes, a side table, a pantry: whatever has priority 2
+ * or less) comes out for a second try and goes back where it still fits; a table nobody can sit at (a 1.6 m passage between two doors, a galley) is taken out rather than left bare. Returns the table (null: taken out).
+ */
+export function seatTable(L, first, names, n, poses, need = 2) {
+  let r = reseat(L, first, chairsAround(L, first, n, names), names, n, poses, need);
+  if (r.chairs.length < need) {
+    const soft = L.items.filter((i) => i.floor && !i.parent && i.prio >= 2 && i.c.size[1] >= 0.05 && i !== r.table && !r.chairs.includes(i));
+    const kids = soft.map((s) => L.items.filter((x) => x.parent === s));
+    for (const s of soft) L.remove(s);
+    r = reseat(L, r.table, r.chairs, names, n, poses, need);
+    soft.forEach((s, k) => { if (!L.valid(s, {})) return; L._commit(s, {}); for (const c of kids[k]) L._commit(c, {}); });
+  }
+  if (r.chairs.length) return r.table;
+  L.remove(r.table);
+  return null;
+}
+
+const EATING_TABLE = /^table_(formica_4|formica_6|wood_6|round_small)$/, SITS = new Set(['chair', 'stool', 'bench']);
+/** The chairs, stools and benches drawn up to a table: those within a hand's breadth beyond its edge, in its own frame. */
+export function seatsAt(L, t) {
+  const c = Math.cos(t.ry), s = Math.sin(t.ry), hw = t.c.size[0] / 2 + 0.55, hd = t.c.size[2] / 2 + 0.55;
+  return L.items.filter((x) => x !== t && x.floor && !x.parent && SITS.has(x.c.arch) && Math.abs((x.x - t.x) * c - (x.z - t.z) * s) <= hw && Math.abs((x.x - t.x) * s + (x.z - t.z) * c) <= hd);
+}
+/** After healing: a table whose chairs were taken out (healing drops a seat that later furniture walled in) gets seats somewhere they fit, or goes itself, since a table nobody can sit at is a prop
+ *  (R4-304: tenement rooms with a table and no chair). Returns the tables taken out. */
+export function ensureSeats(L) {
+  const gone = [];
+  for (const t of L.items.filter((i) => i.floor && !i.parent && EATING_TABLE.test(i.name))) {
+    if (seatsAt(L, t).length) continue;
+    if (!seatTable(L, t, ['chair_plastic', 'stool_wood'], t.c.size[0] > 1.2 ? 4 : 2, () => tablePoses(L, t.name, [t.x, t.z], [0, PI / 2], true))) gone.push(t);
+  }
+  return gone;
 }
 
 /** Ceiling fixture of a room (bulb / tube / fan). Records L.fixture for the light + mesh stage. */
@@ -470,10 +572,11 @@ export function diningSet(L, E, hh, annex) {
   const tname = area > 15 || annex ? rng.pick(['table_formica_6', 'table_wood_6']) : area > 9 ? 'table_formica_6' : 'table_formica_4';
   const rys = longX ? [0, PI / 2] : [PI / 2, 0];
   const cx = annex ? (longX ? L.r.x1 - L.W * 0.25 : (L.r.x0 + L.r.x1) / 2) : (L.r.x0 + L.r.x1) / 2, cz = annex ? (longX ? (L.r.z0 + L.r.z1) / 2 : L.r.z1 - L.D * 0.25) : (L.r.z0 + L.r.z1) / 2;
-  const table = any(() => L.free(tname, { near: [cx, cz], rad: annex ? 2.0 : 0.9, rys, prio: 0 }), () => L.free('table_formica_4', { near: [cx, cz], rad: 1.4, rys, prio: 0 }), () => L.free('table_round_small', { near: [cx, cz], rad: 1.6, prio: 0 }));
+  const first = any(() => L.free(tname, { near: [cx, cz], rad: annex ? 2.0 : 0.9, rys, prio: 0 }), () => L.free('table_formica_4', { near: [cx, cz], rad: 1.4, rys, prio: 0 }), () => L.free('table_round_small', { near: [cx, cz], rad: 1.6, prio: 0 }));
+  if (!first) return null;
+  const names = hh.plastic ? ['chair_plastic'] : hh.income ? ['chair_wood_padded', 'chair_wood'] : ['chair_wood'], n = first.w > 1.2 ? 6 : 4;
+  const table = seatTable(L, first, names, n, () => tablePoses(L, first.name, [cx, cz], first.name === 'table_round_small' ? [0] : rys));       // (a table whose chairs do not fit goes elsewhere, or goes: R4-304)
   if (!table) return null;
-  const names = hh.plastic ? ['chair_plastic'] : hh.income ? ['chair_wood_padded', 'chair_wood'] : ['chair_wood'];
-  chairsAround(L, table, table.w > 1.2 ? 6 : 4, names);
   if (rng.chance(0.6)) L.top(table, 'fruit_bowl', { at: 'center' });
   else L.top(table, 'vase_flowers', { at: 'center' });
   return table;
@@ -564,11 +667,13 @@ function kitchenDress(L, E, hh, run) {
   if (stove && rng.chance(0.7)) L.hang('pot_rack_wall', stove.wallSide ?? 'any', { over: stove, y: 1.5 });
   // table with seats
   if (area >= 9) {
-    const t = any(() => L.free('table_formica_4', { near: [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2], rad: 1.3, rys: L.W >= L.D ? [0, PI / 2] : [PI / 2, 0], prio: 1 }));
-    if (t) { chairsAround(L, t, 4, hh.plastic ? ['chair_plastic'] : ['chair_wood', 'stool_wood']); L.top(t, rng.chance(0.5) ? 'fruit_bowl' : 'thermos_set', { at: 'center' }); }
+    const mid = [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2], rys = L.W >= L.D ? [0, PI / 2] : [PI / 2, 0], names = hh.plastic ? ['chair_plastic'] : ['chair_wood', 'stool_wood'];
+    const first = any(() => L.free('table_formica_4', { near: mid, rad: 1.3, rys, prio: 1 }));
+    const t = first && seatTable(L, first, names, 4, () => tablePoses(L, first.name, mid, rys));
+    if (t) L.top(t, rng.chance(0.5) ? 'fruit_bowl' : 'thermos_set', { at: 'center' });
   } else if (area >= 5.5) {
-    const s = any(() => L.wall('table_formica_4', 'any', { prio: 2, awayDoors: true }), () => L.wall('side_table', 'any', { prio: 2 }));
-    if (s) chairsAround(L, s, 2, ['stool_wood', 'chair_plastic']);
+    const first = any(() => L.wall('table_formica_4', 'any', { prio: 2, awayDoors: true }), () => L.wall('side_table', 'any', { prio: 2 })), names = ['stool_wood', 'chair_plastic'];
+    if (first) seatTable(L, first, names, 2, () => tablePoses(L, first.name, [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2], [0, PI / 2], true));
   }
   any(() => L.wall('water_stand', 'any', { at: 'corner', prio: 2 }), () => L.wall('bucket_big', 'any', { at: 'corner', prio: 2 }));
   if (hh.income) any(() => L.wall('washing_machine', 'any', { at: 'corner', prio: 2 }));
@@ -654,7 +759,7 @@ const awayFromWindows = (L) => (it) => !L._windowHit(it.ob, 99);
  * for one): a double for the parents (two singles when no double fits), a bunk for every pair of children, a single for the odd one; the richest list first, each shorter than the last, and the first
  * that places every bed and gives more places than the greedy answer wins. The room holds only the greedy beds now. Returns the beds placed (null, the room as it was, when no list gives more than `have`).
  */
-function repackBeds(L, hh, owed, parents, have) {
+function* repackBedsSteps(L, hh, owed, parents, have) {
   const o = { awayDoors: true, alongToo: true, connAll: true }, accept = awayFromWindows(L);
   const NAMES = { double: hh.income ? ['bed_double_wood', 'bed_double'] : ['bed_double', 'bed_double_wood'], bunk: ['bed_bunk'], single: hh.income ? ['bed_single'] : ['bed_single_metal', 'bed_single'] };
   const rest = owed - (parents ? 2 : 0), tail = [...Array(Math.floor(rest / 2)).fill('bunk'), ...(rest % 2 ? ['single'] : [])], lists = [];
@@ -672,13 +777,16 @@ function repackBeds(L, hh, owed, parents, have) {
   for (const list of lists) {
     if (places(list) <= have) continue;
     L.clear();
-    const got = solveFixtures(L, list.map((k, n) => slot(NAMES[k], n || k === 'bunk' ? { ...o, accept } : o)), { maxRung: 3, budget: 60, fan: 5 });      // (the first bed stands where it always stood; the others, and any bunk, keep off the windows: a bunk is 1.75 m high and would hide one)
+    const got = yield* solveFixturesSteps(L, list.map((k, n) => slot(NAMES[k], n || k === 'bunk' ? { ...o, accept } : o)), { maxRung: 3, budget: 60, fan: 5 });      // (the first bed stands where it always stood; the others, and any bunk, keep off the windows: a bunk is 1.75 m high and would hide one)
     if (got) { for (const b of got) b.flags = { unmade: L.rng.chance(1 - hh.tidy) }; return got; }
   }
   L.restore(snap);
   return null;
 }
-export function bedroom(L, E, hh) {
+export function bedroom(L, E, hh) { drain(bedroomSteps(L, E, hh)); }
+bedroom.steps = bedroomSteps;                                  // (index.js `furnishSteps` runs the furnisher as a resumable job when it has one)
+/** The furnisher of a bedroom as a resumable job: it yields between its phases and every `SOLVE_SLICE` poses of the bed search (the 4 beds a 6 m2 room is owed are a search of 100 000 poses and more); `bedroom` is it run to its end. */
+function* bedroomSteps(L, E, hh) {
   const rng = L.rng, area = floorArea(L), i = E.state(hh).beds, role = E.roleOverride ?? bedroomRole(E, hh);
   E.lastRole = role; L.role = role;
   const owed = bedsOwed(E, hh, i);
@@ -714,14 +822,18 @@ export function bedroom(L, E, hh) {
   const base = grab(L);
   bedroomDress(L, E, hh, role, first[0]);
   const lean = bedroomKeeps(L, role), leanState = grab(L);
+  yield 'bed';
   for (let target = owed; target > have; target--) {
     put(L, base);
     const bs = first.slice();
-    fillBeds(L, E, hh, bs, target, parents);
+    yield* fillBedsSteps(L, E, hh, bs, target, parents);
     if (bs.length === first.length && bs.every((x, k) => x === first[k])) break;                  // nothing more fits at this size, so nothing more fits at a smaller one
+    yield 'bed';
     bedroomDress(L, E, hh, role, bs[0]);
+    yield 'bed';
     const keeps = bedroomKeeps(L, role);
     if (keeps >= lean) { L.owed = owed; return; }                                                  // (fillBeds left L.sleeps: the places the room holds)
+    yield 'bed';
   }
   put(L, leanState); L.sleeps = have; L.owed = owed;
 }
@@ -750,16 +862,19 @@ function bedroomKeeps(L, role) {
  * the list of beds the room has (extended or replaced in place); `parents`: the first two places are a couple's. Returns the places the room holds now (a mattress leaned on the wall
  * means the room is too tight for more); `L.owed` and `L.sleeps` keep what the household owed it and what it holds (the bed census reads both).
  */
-export function fillBeds(L, E, hh, beds, owed, parents) {
+export function fillBeds(L, E, hh, beds, owed, parents) { return drain(fillBedsSteps(L, E, hh, beds, owed, parents)); }
+/** `fillBeds` as a resumable job: it yields after each bed laid one by one and, in the whole-room search, every `SOLVE_SLICE` poses. */
+function* fillBedsSteps(L, E, hh, beds, owed, parents) {
   let places = beds.reduce((s, b) => s + placesOf(b), 0);
   if (beds[0]?.name !== 'mattress_leaning') {
     for (let k = 0; places < owed && k < 4; k++) {
       const b = extraBed(L, E, hh, owed - places);
+      yield 'bed';
       if (!b) break;
       beds.push(b); places += placesOf(b);
     }
     if (places < owed && owed >= 2) {
-      const got = repackBeds(L, hh, owed, parents, places);
+      const got = yield* repackBedsSteps(L, hh, owed, parents, places);
       if (got) { beds.splice(0, beds.length, ...got); places = beds.reduce((s, b) => s + placesOf(b), 0); }
     }
   }

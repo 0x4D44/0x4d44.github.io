@@ -3,7 +3,7 @@
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
 import { Layout, resetUid } from './layout.js';
-import { freePoint, snapStand } from './reach.js';
+import { freePoint, snapStand, customerFloor } from './reach.js';
 import { CATALOG, seatOffsets } from './catalog.js';
 import { finishRoom, householdForRoom, householdKey, furnishRng, roomsInOrder } from './household.js';
 import * as R from './rooms.js';
@@ -12,6 +12,7 @@ import * as S from './special.js';
 import { wallsRect } from '../core/physics.js';
 import { collectStories, collectInteractableStories, collectDiscoveryStories } from './stories.js';
 import { dressRooms } from './garments.js';
+import { dressShelves } from './shelves.js';
 import { buildInterior as buildMeshes, buildInteriorSteps as buildMeshSteps, loadInteriorAssets as preload, loadGarmentAssets, prepareAtlas } from './build.js';
 import { loadInspectAssets } from './inspect.js';
 import { planShopGoods } from './goods.js';
@@ -110,10 +111,15 @@ function emitAnchors(E, room, L, hh) {
   const { bp, ctx } = E, fr = bp.frame, rotY = bp.lot.rotY ?? 0;
   const fy = bp.lot.y + (room.y ?? 0);
   const conn = L.connectivity(0.34);                       // the body's own width (0.3 m radius) plus a hand: a 0.75 m gap between a sink and a fridge is a way through for a cook
+  let at = null;                                           // (the room-frame point the last standing anchor was put at)
   const A = (kind, lx0, lz0, lry, extra = {}) => {
     let lx = lx0, lz = lz0;
     if (extra.raw) { if (!L.inMainRegion(...(extra.chk ?? [lx0, lz0]), conn, Math.ceil((extra.rad ?? 1) / 0.1))) return null; }            // seats and beds must be reachable from a door (a bed: from the middle of it, not from where the sleeper lies)
-    else { const p = snapStand(L, lx0, lz0, conn); if (!p) return null; [lx, lz] = p; }   // standing spots must be free floor
+    else {
+      const p = snapStand(L, lx0, lz0, conn); if (!p) return null; [lx, lz] = p;           // standing spots must be free floor
+      if (extra.floor && !extra.floor.has(lx, lz)) return null;                            // ... and a customer's, floor the street reaches without passing the keeper (reach.js `customerFloor`)
+      at = [lx, lz];
+    }
     const [wx, , wz] = fr.toWorld(lx, 0, lz);
     const a = ctx.addAnchor({ kind, x: +wx.toFixed(3), y: +(fy + (extra.dy ?? 0)).toFixed(3), z: +wz.toFixed(3), ry: +(rotY + lry).toFixed(4), building: bp.id, room: room.id, tags: extra.tags ?? [], capacity: 1, seatH: extra.seatH, owner: extra.owner, item: extra.item });
     bp.anchors.push(a); return a;
@@ -151,8 +157,9 @@ function emitAnchors(E, room, L, hh) {
     if (c.arch === 'rack' && c.tags.includes('laundry')) { const [x, z] = L.rel(it, 0, it.d / 2 + 0.45); A('laundry', x, z, it.ry + PI, { tags: ['rack'] }); }
     if (it.flags?.altar) { const [x, z] = L.rel(it, 0, it.d / 2 + 0.6); A('pray', x, z, it.ry + PI, { tags: ['altar', it.flags.chapel ? 'chapel' : 'home'] }); }
     if (it.flags?.counter) {
-      const [kx, kz] = L.rel(it, 0, -(it.d / 2 + 0.5)); A('counter', kx, kz, it.ry, { tags: ['shopkeeper', E.shopType ?? 'shop'], owner: hh.id });
-      for (const s of it.w > 1.5 ? [-0.5, 0.5] : [0]) { const [x, z] = L.rel(it, s, it.d / 2 + 0.55); A('customer', x, z, it.ry + PI, { tags: ['customer', E.shopType ?? 'shop'] }); }
+      const [kx, kz] = L.rel(it, 0, -(it.d / 2 + 0.5)), keeper = A('counter', kx, kz, it.ry, { tags: ['shopkeeper', E.shopType ?? 'shop'], owner: hh.id });
+      const floor = keeper ? customerFloor(L, at, (l) => l.kind === 'door' && ['exterior', 'shutter', 'gate'].includes((bp.doors ?? []).find((d) => d.id === l.door)?.kind)) : null;       // (what the street reaches with the keeper at his post: no customer spot is past him)
+      for (const s of it.w > 1.5 ? [-0.5, 0.5] : [0]) { const [x, z] = L.rel(it, s, it.d / 2 + 0.55); A('customer', x, z, it.ry + PI, { tags: ['customer', E.shopType ?? 'shop'], floor }); }
       const [lx, lz] = L.rel(it, it.w / 2 + 0.2, it.d / 2 + 0.35); A('lean', lx, lz, it.ry + PI, { tags: ['counter'] });
     }
     if (c.arch === 'fruitstand' || c.arch === 'chopblock' || c.arch === 'oven') { const [x, z] = L.rel(it, 0, -(it.d / 2 + 0.4)); A('vend', x, z, it.ry, { tags: [it.name] }); }
@@ -235,9 +242,9 @@ export function* furnishSteps(ctx, bp, o = {}) {
     // noFurnish: A2 keeps stair cores empty -> bulb + notice only; strips under 0.9 m get wall-hung things only
     try {
       const furnisher = room.noFurnish ? R.lightOnly : strip ? R.thin : pickFurnisher(bp, room, L);
-      furnisher(L, E, hh);
+      if (furnisher.steps) yield* furnisher.steps(L, E, hh); else furnisher(L, E, hh);        // (a furnisher with a long search is a job of its own that yields in it: rooms.js `bedroom.steps`)
       yield 'furnisher';
-      R.ensureFixtures(L, E, hh, furnisher);                   // the toilet, sink, stove, fridge or bed this room is defined by, however small the plan made it
+      yield* R.ensureFixturesSteps(L, E, hh, furnisher);       // the toilet, sink, stove, fridge or bed this room is defined by, however small the plan made it
     } catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     yield 'fixtures';
     let removed = L.heal(), bedroll = null;
@@ -248,6 +255,8 @@ export function* furnishSteps(ctx, bp, o = {}) {
     yield 'heal';
     try { removed = removed.concat(L.curePockets({ protect: bedroll ? [bedroll] : [] })); }                    // no dead-end lane or niche between 0.55 and 0.85 m is left for a walker to wedge in (layout.js `pockets`)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'pockets ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    try { removed = removed.concat(R.ensureSeats(L)); }                                                        // a table whose chairs healing took out (a seat later furniture walled in) gets them back, or goes (rooms.js)
+    catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'seats ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
     interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those)
     built.push({ room, hh, L });
@@ -258,6 +267,8 @@ export function* furnishSteps(ctx, bp, o = {}) {
   // every room is furnished: which of them are untidy, and the clothes that lie about (garments.js: the beds are made or unmade to match, nothing else moves)
   try { interior.garments = dressRooms(E, built); }
   catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'garments ' + String(e?.message ?? e), stack: e?.stack }); console.error('[garments]', bp.id, e); }
+  try { interior.shelves = dressShelves(E, built); }                                                           // what stands on the wall shelves (shelves.js): after the garments, from its own streams, so nothing placed before moves
+  catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'shelves ' + String(e?.message ?? e), stack: e?.stack }); console.error('[shelves]', bp.id, e); }
   yield 'garments';
   for (const { room, hh, L } of built) {
     // records

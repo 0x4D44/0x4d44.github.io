@@ -23,8 +23,9 @@ export const GOODS_FIXTURES = {
   parts_shelf: { layout: 'shelf', maxItems: 30, stockParts: { 2: 'cardboard', 3: 'metal_steel' } },
   shop_counter_glass: { layout: 'case', maxItems: 14 },
   pharmacy_counter: { layout: 'case', maxItems: 20, rows: 2 },
-  bread_case_glass: { maxItems: 16, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.46, d: 0.36, h: 0.6 }] },       // the hero's glass case: floor 0.514, glass to 1.174
-  fridge_meat: { maxItems: 14, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.66, d: 0.46, h: 0.6 }] },
+  // The hero's glass case: floor 0.514, glass to 1.174. Two rows (R4-308: one row of 3 round loaves and 2 cheeses): the small breads go in two, the round loaf (0.23 m) is too deep for a half of the case and stays on the shelves and racks.
+  bread_case_glass: { maxItems: 24, rows: 2, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.46, d: 0.36, h: 0.6 }] },
+  fridge_meat: { maxItems: 24, rows: 2, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.66, d: 0.46, h: 0.6 }] },     // two rows (a chicken lies side-on in its half): a butcher's case is full
   // The shop's glass-door drinks cooler (a piece that opens: carcass.js fridgeBox, stand-in): four glass shelves at 0.048 / 0.512 / 0.962 / 1.412, the bottles two rows deep in the back 0.2 m of each
   // (the 0.15 m in front of them is where what a person takes out lies: carcass.js `strip`), at most `perSurface` on a shelf so the whole cooler costs about 56 bottles.
   fridge_drinks: { maxItems: 56, rows: 2, gap: 0.012, perSurface: 14, surfaces: [0.048, 0.512, 0.962, 1.412].map((y) => ({ x: 0, z: 0.04, y, w: 0.72, d: 0.2, h: 0.42 })) },
@@ -59,7 +60,7 @@ export const GOODS_ASSORTMENTS = {
     shelf_cafe: ['goods_round_loaf', 'goods_bread_roll', 'goods_baguette', 'goods_croissant', 'goods_flour_bag', 'goods_preserves_jar'],
     fridge_drinks: ['goods_milk_bottle', 'goods_juice_bottle', 'goods_soda_bottle'],
     bread_rack: ['goods_baguette', 'goods_round_loaf', 'goods_bread_roll', 'goods_croissant'],
-    bread_case_glass: ['goods_croissant', 'goods_bread_roll', 'goods_round_loaf', 'goods_baguette', 'goods_cheese_wedge'],
+    bread_case_glass: ['goods_croissant', 'goods_bread_roll', 'goods_baguette', 'goods_bread_roll'],               // (no cheese: a bakery's case holds bread; the roll stands for the pan de bono and the almojábana of its price list)
     dough_table: ['goods_flour_bag', 'goods_bread_roll', 'goods_round_loaf'],
   },
   fruver: {
@@ -73,11 +74,10 @@ export const GOODS_ASSORTMENTS = {
   },
   carniceria: {
     fridge_meat: ['goods_steak', 'goods_sausages', 'goods_chicken'],
-    butcher_block: ['goods_steak', 'goods_sausages', 'goods_chicken'],
-    fridge_drinks: ['goods_soda_bottle', 'goods_juice_bottle', 'goods_milk_bottle'],
+    butcher_block: ['goods_steak', 'goods_sausages', 'goods_chicken'],                                              // (no drinks cooler in a butcher's: the two butchers carried 112 bottles)
   },
   peluqueria: {
-    barber_station: ['goods_tonic_bottle', 'goods_sugar_jar'],
+    barber_station: ['goods_tonic_bottle'],                                                                         // (hair tonic: not the jar of sugar)
     shop_counter_short: ['goods_potted_flower', 'goods_tonic_bottle'],
   },
   ferreteria: {
@@ -85,7 +85,7 @@ export const GOODS_ASSORTMENTS = {
     shop_counter_wood: ['goods_hammer', 'goods_pliers', 'goods_rope_coil', 'goods_paint_tin'],
   },
   drogueria: {
-    shelf_pharma: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle', 'goods_remedy_box', 'goods_milk_bottle', 'goods_sugar_jar'],      // (formula milk and a jar of ointment: three products on a pharmacy shelf are a pattern, five are a stock)
+    shelf_pharma: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle', 'goods_remedy_box'],             // medicine boxes (four label designs), bandages, a syrup: a pharmacy sold 51 jars of AZÚCAR and 33 bottles of milk (R4-308)
     pharmacy_counter: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle'],
   },
   cafe: {
@@ -120,6 +120,6 @@ export const GOODS_ASSORTMENTS = {
   },
   taller: {
     parts_shelf: ['goods_rope_coil', 'goods_paint_tin', 'goods_hammer', 'goods_pliers'],
-    workbench_metal: ['goods_hammer', 'goods_pliers', 'goods_paint_tin', 'goods_rope_coil'],
+    workbench_metal: ['goods_hammer', 'goods_pliers', 'goods_paint_tin'],
   },
 };
