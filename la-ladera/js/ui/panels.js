@@ -182,9 +182,11 @@ export function journalPanel(ctx) {
     found.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
     const rest = items.filter((d) => !ctx.discover.found.has(d.id));
     const tag = (d) => h('em', { class: 'kind' }, KIND[d.kind] ?? d.kind ?? '');
+    const settled = ctx.discover.settled;                       // a lazy boot that is still furnishing has made only the world's discoveries: the total is '…' and the bar waits (review R2b-002)
     return h('div', { class: 'jpane', role: 'tabpanel' },
-      h('div', { class: 'jhead' }, h('strong', {}, `${found.length} de ${items.length} descubrimientos`), h('small', {}, 'Camina, mira, abre puertas: lo que encuentres se anota aquí.')),
-      meter(found.length, items.length),
+      h('div', { class: 'jhead' }, h('strong', {}, `${found.length} de ${settled ? items.length : ctx.discover.totalLabel} descubrimientos`), h('small', {}, 'Camina, mira, abre puertas: lo que encuentres se anota aquí.')),
+      meter(found.length, settled ? items.length : 0),
+      settled ? null : h('p', { class: 'note' }, 'Las casas siguen llegando: el total se completa en unos segundos. · The houses are still coming in; the total fills in shortly.'),
       found.length ? h('div', { class: 'jgrid' }, found.map((d) => h('div', { class: 'jitem' }, tag(d), h('b', {}, d.name), d.en ? h('span', {}, d.en) : null))) : null,
       rest.length ? h('h3', {}, 'Por descubrir · Still to find') : null,
       rest.length ? pending(items) : items.length ? h('p', { class: 'note' }, 'Lo has descubierto todo. · You have found everything.') : null,
@@ -225,7 +227,7 @@ export function journalPanel(ctx) {
     title: 'Diario del barrio',
     render(body, o = {}) {
       const c = counts();
-      const tabs = [['discover', 'Descubrimientos', 'Discoveries', `${ctx.discover.count} de ${ctx.discover.total}`], ['papers', 'Papeles y hallazgos', 'Papers and finds', `${c.papers} · ${c.finds}`]];
+      const tabs = [['discover', 'Descubrimientos', 'Discoveries', `${ctx.discover.count} de ${ctx.discover.totalLabel}`], ['papers', 'Papeles y hallazgos', 'Papers and finds', `${c.papers} · ${c.finds}`]];
       const bar = h('div', { class: 'jtabs', role: 'tablist' }, tabs.map(([id, es, en, n]) => h('button', {
         type: 'button', role: 'tab', class: 'jtab' + (tab === id ? ' on' : ''), 'aria-selected': tab === id ? 'true' : 'false', 'data-tab': id,
         onclick: () => { tab = id; this.render(body, { focusTab: true }); },
