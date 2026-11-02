@@ -3,7 +3,7 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/people-speech.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { langRank, rankVoices, pickVoice, voiceGender, pitchFor, Speech, LANG_RANK } from '../js/people/speech.js';
+import { langRank, rankVoices, pickVoice, chooseVoice, voiceCast, voiceGender, pitchFor, Speech, LANG_RANK } from '../js/people/speech.js';
 import { voiceFor, AGE } from '../js/people/personas.js';
 
 const V = (name, lang, local = true) => ({ name, lang, localService: local, voiceURI: name });
@@ -63,9 +63,9 @@ test('speak(): utterance uses the best Spanish voice, its language, and the pers
   } finally { b.restore(); }
 });
 
-test('one voice for everybody (Chrome with no Spanish speech packs: "Google español", women, no gendered name): men are deeper, grandfathers deepest, boys and women untouched', async () => {
+test('one voice for everybody (Chrome with one Spanish speech pack: "Google español de Estados Unidos", a woman, no gendered name): men are deeper, grandfathers deepest, boys and women untouched', async () => {
   const google = rankVoices([V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)]);
-  assert.equal(voiceGender(google[0]), '?', 'the premise: neither name says a gender'); assert.equal(google[0].name, 'Google español de Estados Unidos', 'and es-US is the one everybody gets');
+  assert.equal(voiceGender(google[0]), '?', 'the premise: neither name says a gender'); assert.equal(google[0].name, 'Google español de Estados Unidos', 'and es-US ranks first (alone, it is the one everybody gets)');
   const ids = Array.from({ length: 60 }, (_, i) => 'n' + i), P = (g, a) => ids.map((id) => pitchFor(google[0], voiceFor(id, g, a)));
   const men = P('m', 'adult'), women = P('f', 'adult'), elders = P('m', 'elder'), grandmas = P('f', 'elder'), boys = P('m', 'kid'), girls = P('f', 'kid');
   assert.ok(Math.max(...men) <= 0.76, `a man at ${Math.max(...men).toFixed(2)}`); assert.ok(Math.min(...men) >= 0.55);
@@ -82,14 +82,70 @@ test('one voice for everybody (Chrome with no Spanish speech packs: "Google espa
   assert.equal(pitchFor(raul, vm), vm.pitch); assert.ok(pitchFor(raul, vf) > vf.pitch * 1.25); assert.equal(pitchFor(sabina, vf), vf.pitch); assert.ok(pitchFor(sabina, vm) < vm.pitch * 0.75);
   assert.equal(pitchFor(raul, voiceFor('n7', 'f', 'kid')), voiceFor('n7', 'f', 'kid').pitch, 'a girl is not raised on a man\'s voice');
   assert.equal(pitchFor(null, { pitch: 1, gender: 'm' }), 0.72, 'no voice at all (the babble): a man is lower than a woman'); assert.equal(pitchFor(google[0], { pitch: 1 }), 1, 'a reader without a sex or age is untouched');
-  // the utterance carries it
-  const b = fakeBrowser({ voices: [V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)] });
+  // the utterance carries it (with one voice; two have voices of their own, below)
+  const b = fakeBrowser({ voices: [V('Google español de Estados Unidos', 'es-US', false)] });
   try {
     const sp = new Speech({ ui: toasts() }).init(), say = async (o) => { const n = b.spoken.length; sp.speak('Buenas tardes.', o); await new Promise((r) => setTimeout(r, 70)); return b.spoken[n]; };
     const um = await say(vm), uf = await say(vf), ub = await say(voiceFor('n7', 'm', 'kid'));
     assert.equal(um.voice.name, 'Google español de Estados Unidos'); assert.equal(uf.voice.name, um.voice.name, 'the one voice');
     assert.ok(Math.abs(um.pitch - pitchFor(google[0], vm)) < 1e-9 && um.pitch < 0.8, `the man's utterance at ${um.pitch}`); assert.ok(uf.pitch >= 0.9 && ub.pitch >= 1.2, `woman ${uf.pitch}, boy ${ub.pitch}`);
     assert.ok(uf.pitch - um.pitch >= 0.2, 'on the same voice the woman is clearly higher'); sp.cancel();
+  } finally { b.restore(); }
+});
+
+// ---- two voices or more: a woman and a man each get voices of their own (round 6 R3-109: with Chrome's "Google español" and "Google español de Estados Unidos" all 34 speakers had the es-US voice, and every man
+// was that woman at 0.62 to 0.73, so that everybody sounded like one actor)
+const ID60 = Array.from({ length: 60 }, (_, i) => 'n' + i), SEEDS = Array.from({ length: 24 }, (_, i) => i * 37 + 5);
+const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+const who = (ranked, gender) => [...new Set(SEEDS.map((seed) => pickVoice(ranked, { gender, seed }).name))].sort();       // every voice the sex gets, over many persons
+
+test('two Spanish voices with no gendered name (Chrome\'s es-ES and es-US): the women have the better language, the men the other voice, and no grown-up is pitched outside 0.85 to 1.1', () => {
+  const ranked = rankVoices([V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)]);
+  assert.deepEqual(who(ranked, 'f'), ['Google español de Estados Unidos']); assert.deepEqual(who(ranked, 'm'), ['Google español'], 'not the women\'s voice lowered');
+  assert.equal(chooseVoice(ranked, { gender: 'f' }).apart, true); assert.equal(chooseVoice(ranked, { gender: 'm' }).apart, true);
+  const P = (g, a) => ID60.map((id) => { const o = voiceFor(id, g, a), { voice, apart } = chooseVoice(ranked, { gender: g, seed: o.seed }); return pitchFor(voice, { ...o, apart }); });
+  for (const [g, a] of [['m', 'adult'], ['f', 'adult'], ['m', 'elder'], ['f', 'elder']]) { const p = P(g, a); assert.ok(Math.min(...p) >= 0.85 - 1e-9 && Math.max(...p) <= 1.1 + 1e-9, `${g} ${a}: ${Math.min(...p).toFixed(2)} to ${Math.max(...p).toFixed(2)}`); }
+  assert.ok(mean(P('f', 'adult')) - mean(P('m', 'adult')) >= 0.04, 'the man is still a little deeper than the woman');
+  assert.ok(Math.min(...P('m', 'kid')) >= 1.1 && Math.min(...P('f', 'kid')) >= 1.1 && Math.min(...P('m', 'teen')) >= 0.9, 'children stay high, and a teenage boy is not lowered: the band is for grown-ups');
+});
+
+test('named voices: a woman gets a woman\'s name and a man a man\'s, in the best language (es-CO, es-MX, es-419 before es-ES); several of one sex share the people out', () => {
+  const all = [V('Microsoft Helena', 'es-ES'), V('Microsoft Pablo', 'es-ES'), V('Microsoft Sabina', 'es-MX'), V('Microsoft Raul', 'es-MX'), V('Microsoft Salome Online', 'es-CO'), V('Microsoft Gonzalo Online', 'es-CO'),
+    V('Camila', 'es-419'), V('Mateo', 'es-419')];
+  const pick = (list) => { const r = rankVoices(list); return [who(r, 'f'), who(r, 'm')]; };
+  assert.deepEqual(pick(all), [['Microsoft Salome Online'], ['Microsoft Gonzalo Online']], 'es-CO first');
+  assert.deepEqual(pick(all.filter((v) => v.lang !== 'es-CO')), [['Microsoft Sabina'], ['Microsoft Raul']], 'then es-MX');
+  assert.deepEqual(pick(all.filter((v) => v.lang !== 'es-CO' && v.lang !== 'es-MX')), [['Camila'], ['Mateo']], 'then es-419');
+  assert.deepEqual(pick(all.filter((v) => v.lang === 'es-ES')), [['Microsoft Helena'], ['Microsoft Pablo']], 'and es-ES when it is all there is');
+  assert.deepEqual(pick([...all, V('Paloma', 'es-CO')]), [['Microsoft Salome Online', 'Paloma'], ['Microsoft Gonzalo Online']], 'two women in the best language share the women');
+  const mixed = rankVoices([V('Colombian Voice', 'es-CO'), V('Microsoft Sabina', 'es-MX'), V('Microsoft Raul', 'es-MX'), V('Microsoft Helena', 'es-MX'), V('Elvira', 'es-ES')]);
+  assert.deepEqual([who(mixed, 'f'), who(mixed, 'm')], [['Colombian Voice'], ['Microsoft Raul']], 'es-CO still wins for the women (a voice with no gendered name is theirs), and the men have the best voice that is a man\'s');
+});
+
+test('voices with no gendered name of one language are dealt out in turn, women first; one voice, or none that suits a man, keeps today\'s sharing; the settings panel\'s choice is everybody\'s', () => {
+  const three = rankVoices([V('Voz A', 'es-MX'), V('Voz B', 'es-MX'), V('Voz C', 'es-MX')]);
+  assert.deepEqual([who(three, 'f'), who(three, 'm')], [['Voz A', 'Voz C'], ['Voz B']]);
+  const one = rankVoices([V('Google español de Estados Unidos', 'es-US', false)]);
+  assert.equal(voiceCast(one).apart, false); assert.equal(chooseVoice(one, { gender: 'm' }).voice.name, 'Google español de Estados Unidos'); assert.equal(chooseVoice(one, { gender: 'm' }).apart, false);
+  const women = rankVoices([V('Microsoft Sabina', 'es-MX'), V('Microsoft Helena', 'es-ES')]);          // every voice is a woman's: nobody is left for the men
+  const man = chooseVoice(women, { gender: 'm' });
+  assert.equal(voiceCast(women).apart, false); assert.equal(man.voice.name, 'Microsoft Sabina', 'a man shares the best voice'); assert.equal(man.apart, false);
+  assert.ok(pitchFor(man.voice, { ...voiceFor('n7', 'm', 'adult'), apart: man.apart }) < 0.8, 'and is lowered, as ever');
+  const two = rankVoices([V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)]);
+  const chosen = chooseVoice(two, { gender: 'm', seed: 3, preferURI: 'Google español' });
+  assert.equal(chosen.voice.name, 'Google español'); assert.equal(chosen.apart, false, 'one voice for everybody: nobody is apart');
+  assert.equal(chooseVoice(two, { gender: '?', seed: 3 }).apart, false, 'a reader of no sex has the best voice, as ever');
+  assert.equal(voiceCast([]).apart, false); assert.equal(chooseVoice([], {}).voice, null);
+});
+
+test('speak(): with two voices a man and a woman are spoken on different voices, and a grown-up\'s utterance pitch stays inside 0.85 to 1.1', async () => {
+  const b = fakeBrowser({ voices: [V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)] });
+  try {
+    const sp = new Speech({ ui: toasts() }).init(), say = async (o) => { const n = b.spoken.length; sp.speak('Buenas tardes.', o); await new Promise((r) => setTimeout(r, 70)); return b.spoken[n]; };
+    const um = await say(voiceFor('n7', 'm', 'adult')), uf = await say(voiceFor('n7', 'f', 'adult')), ue = await say(voiceFor('n9', 'm', 'elder')), ub = await say(voiceFor('n7', 'm', 'kid'));
+    assert.equal(uf.voice.name, 'Google español de Estados Unidos'); assert.equal(um.voice.name, 'Google español', 'the man has the other voice'); assert.equal(ue.voice.name, 'Google español'); assert.equal(ub.voice.name, 'Google español');
+    for (const u of [um, uf, ue]) assert.ok(u.pitch >= 0.85 - 1e-9 && u.pitch <= 1.1 + 1e-9, `pitch ${u.pitch}`);
+    assert.ok(ub.pitch >= 1.2, `a boy at ${ub.pitch}`); sp.cancel();
   } finally { b.restore(); }
 });
 
