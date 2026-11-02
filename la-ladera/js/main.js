@@ -214,17 +214,15 @@ async function boot() {
     });
     st.run();
   };
-  /** The small, non-blocking note of how much of the barrio has come in (on the title card and in play alike): it takes no input and goes away when the queue is empty. */
+  /** The small, non-blocking note of how much of the barrio has come in (on the title card and in play alike): it takes no input and goes away when the queue is empty.
+   *  Where it sits is css/ladera.css (`#stream`; while it is up `body.streaming` lifts the place label clear of it, and a phone puts it at the top: review R2b-003 / R2a-004). */
   const streamCue = (st) => {
     const el = document.createElement('div'), bar = document.createElement('i');
     el.id = 'stream'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'off'); el.lang = 'es';
-    Object.assign(el.style, { position: 'fixed', left: '12px', bottom: 'max(12px, env(safe-area-inset-bottom))', zIndex: '21', pointerEvents: 'none', font: '600 11px/1.2 system-ui, sans-serif', letterSpacing: '.08em',
-      color: '#f1e6d6', textShadow: '0 1px 3px #000', opacity: '.85', transition: 'opacity .6s', maxWidth: '60vw' });
-    Object.assign(bar.style, { display: 'block', height: '2px', marginTop: '4px', width: '0%', background: '#e9a23b', transition: 'width .4s' });
-    const text = document.createTextNode(''); el.append(text, bar); document.body.append(el);
+    const text = document.createTextNode(''); el.append(text, bar); document.body.append(el); document.body.classList.add('streaming');
     const paint = () => { const p = Math.round(st.progress * 100); text.nodeValue = `${st.label || 'Cargando el barrio'} · ${p} %`; bar.style.width = p + '%'; };
     st.onChange(paint); paint();
-    return { done() { el.style.opacity = '0'; setTimeout(() => el.remove(), 900); } };
+    return { done() { el.style.opacity = '0'; document.body.classList.remove('streaming'); setTimeout(() => el.remove(), 900); } };
   };
 
   const t0 = performance.now();

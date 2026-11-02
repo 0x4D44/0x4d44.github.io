@@ -72,7 +72,10 @@ program is created inside a frame after the milestone. Geometry is not pre-uploa
 
 1. People appear about 17-18 s after the milestone (measured on the fast boot and at 120 ms / 8 Mbit/s alike: the data pass of the interiors is the gate, they need every anchor), not before it.
    A player who waits at the arrival point sees the street empty for that long. Alternative: spawn a first batch (the five arrival NPCs) early; not done, it needs A4's sim.
-2. The journal's "N de M" shows a partial M until the data pass seals (`ctx.discover.totalLabel` returns `…`; no UI file was touched).
+2. Every "N de M" (the discovery toast, the pause card's counter, the journal's tab, header and bar) prints `ctx.discover.totalLabel` for M, so it reads `…` until the data pass seals (32 of the 149 are the world's) and the number after it
+   (review round 6, R2b-002 / R2a-003: they used to read `total`, the partial one). The seal (`interiors:sealed`) draws the counters that are on screen again, an open journal included. The bar of a journal opened before the seal stays empty.
+   The progress cue (`#stream`) sits in the bottom-left corner with the place label lifted above it while it is up (`body.streaming`), and at the top between the Almanac pill and the round buttons on a phone (R2b-003 / R2a-004:
+   it was drawn over the label's English line). `tests/ui-lazy-hud.test.mjs`.
 3. A door can say "Un momento..." (400 ms rule) if the player outruns the queue; the radius (60 m) makes this rare at walking speed, a sprint into a far house is the case.
 4. Streaming spends frames on a CPU-bound machine: see section 6 (8-9 frames in 1200 are over 50 ms); the people spawn (about 130 ms) and animals (30-60 ms) are single calls in A4's code, and a room's furnisher is one
    indivisible step of 25-46 ms in A3's. A hooks patch for A4's spawn (sliced, a person a frame) is possible; it is not delivered (it needs A4's files, and the frames it would fix are 2 of 1200).

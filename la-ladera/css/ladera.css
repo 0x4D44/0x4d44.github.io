@@ -35,9 +35,19 @@ small { font: 400 .55em var(--sans); opacity: .6; letter-spacing: .03em; }
 #toast.rich em { display: block; font: 700 10px/1.2 var(--sans); font-style: normal; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
 #toast.rich b { display: block; margin-top: 3px; font: 400 21px/1.2 var(--serif); }
 #toast.rich span { display: block; margin-top: 2px; font: italic 400 13px/1.3 var(--serif); opacity: .75; }
-#place { position: absolute; left: 16px; bottom: max(14px, env(safe-area-inset-bottom)); font: 600 12px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; opacity: 0; text-shadow: 0 1px 4px #000, 0 0 12px #000; max-width: 60vw; }
+#place { position: absolute; left: 16px; bottom: max(14px, env(safe-area-inset-bottom)); font: 600 12px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; opacity: 0; text-shadow: 0 1px 4px #000, 0 0 12px #000; max-width: 60vw; transition: bottom .3s; }
 #place.on { animation: placein 6s ease both; }
 #place small { display: block; margin-top: 3px; font: italic 400 12px/1.2 var(--serif); letter-spacing: .04em; text-transform: none; opacity: .8; }
+/* ?lazy=1: the note of how much of the barrio has come in (js/main.js streamCue; it takes no input). It is the bottom line of the bottom-left corner, one line high, and while it is up (`body.streaming`)
+   the place label stands above it, so the two never share a line (review R2b-003 / R2a-004). On a phone the corner is the thumbs' (the stick, the buttons): there the note goes to the top, between the
+   Almanac pill and the round buttons, wrapping to two lines at most, and the place label keeps its own spot. */
+#stream { position: fixed; left: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 21; max-width: 60vw; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; pointer-events: none;
+  font: 600 11px/1.2 var(--sans); letter-spacing: .08em; color: #f1e6d6; text-shadow: 0 1px 3px #000; opacity: .85; transition: opacity .6s; }
+#stream i { display: block; height: 2px; margin-top: 4px; width: 0%; background: var(--accent); transition: width .4s; }
+body.streaming #place { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 26px); }
+body.streaming:not(.touch) #subtitle { bottom: max(5vh, calc(max(12px, env(safe-area-inset-bottom)) + 26px)); }       /* (a short window: 5vh is less than the note's height) */
+body.touch #stream { top: 14px; bottom: auto; left: 120px; right: 120px; max-width: none; white-space: normal; }
+body.touch.streaming #place { bottom: 168px; }
 @keyframes placein { 0% { opacity: 0; transform: translateY(5px); } 10% { opacity: .9; transform: none; } 78% { opacity: .9; } 100% { opacity: 0; } }
 body.touch #subtitle { bottom: 132px; }
 body.touch #place { bottom: 168px; }
