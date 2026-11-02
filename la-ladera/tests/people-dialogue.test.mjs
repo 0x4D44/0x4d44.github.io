@@ -5,7 +5,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BANK } from '../js/people/lines/index.js';
-import { Dialogue, withArticle, theEn, polish, clockLine, directionsTo, period, takeLine, inWindow, fillTokens, newLineMemory } from '../js/people/dialogue.js';
+import { Dialogue, withArticle, theEn, polish, clockLine, directionsTo, period, takeLine, inWindow, lineFits, fillTokens, newLineMemory } from '../js/people/dialogue.js';
+import { PERSONAS } from '../js/people/personas.js';
+import { collectLandmarks } from '../js/people/sim.js';
 import { makeRng } from '../js/core/rng.js';
 import { buildData } from './headless.mjs';
 
@@ -306,4 +308,98 @@ test('"Mi señora" is "my wife" in English and "mi esposo" is "my husband": the 
   const m = fillTokens({ es: mine[0], en: mine[1] }, { gender: 'm' }), f = fillTokens({ es: mine[0], en: mine[1] }, { gender: 'f' });
   assert.match(m.es, /^Mi señora trae/); assert.match(m.en, /^My wife brings/); assert.match(f.es, /^Mi esposo trae/); assert.match(f.en, /^My husband brings/);
   for (const p of Object.values(BANK.personas)) for (const [k, pool] of Object.entries(p)) if (Array.isArray(pool)) for (const l of pool) if (Array.isArray(l) && typeof l[1] === 'string') assert.doesNotMatch(l[1], /\bMy spouse\b|\bmy spouse\b|nearly hung me up|\bworth a look at\b/, `${k}: ${l[1]}`);
+});
+
+// ---- R3-106: lines that name the hour carry its window; R3-111: the barber's goodbye -------------------------------------------------------------
+const again1 = () => ({ met: 1, lastHour: null, used: {}, heard: new Set() });                 // somebody met once: their next greeting is an "again" line
+/** What `persona` says to 80 different visitors at `hour` when asked `ask` ('open': the greeting, 'bye', or a topic), as one string. */
+const saidAt = (persona, hour, ask, o = {}) => {
+  const out = new Set();
+  for (let s = 1; s <= 80; s++) {
+    const d = dlg(persona, { hour, seed: s, id: 'h' + s, gender: o.gender ?? 'f', shopName: o.shopName, mem: o.again ? again1() : null }), first = d.open().line.es;
+    out.add(ask === 'open' ? first : d.pick(ask).line?.es ?? '');
+  }
+  return [...out].join(' | ');
+};
+test('a line that names the hour is said only in it: no lunch waiting at supper time, no harsh sun at dusk or after dark (R3-106)', () => {
+  const M = { gender: 'm' }, shop = (name) => ({ shopName: name });
+  // the builder's wife: lunch at lunchtime, supper after it, neither before ten (the sheet: "con el almuerzo" at 17:20 and 18:25)
+  for (const h of [8, 17.3, 18.4, 21]) assert.doesNotMatch(saidAt('obrero', h, 'family', M), /almuerzo/, `obrero, family, ${h}`);
+  assert.match(saidAt('obrero', 12, 'family', M), /almuerzo/);
+  assert.match(saidAt('obrero', 18.4, 'family', M), /con la comida|en la casa/); assert.doesNotMatch(saidAt('obrero', 8, 'family', M), /con la comida/);
+  // "with the sun and the mortar", "the sun is harsh", "especially in the sun": by day only (the sheet: 19:35 and 18:25)
+  assert.doesNotMatch(saidAt('obrero', 19.6, 'mood', M), /\bsol\b/); assert.match(saidAt('obrero', 10, 'mood', M), /con el sol y la mezcla/);
+  assert.doesNotMatch(saidAt('enfermera', 19.6, 'bye'), /el sol es duro/); assert.match(saidAt('enfermera', 10, 'bye'), /el sol es duro/);
+  assert.doesNotMatch(saidAt('enfermera', 19.6, 'open', { again: true }), /el sol es traicionero/); assert.match(saidAt('enfermera', 10, 'open', { again: true }), /el sol es traicionero/);
+  assert.doesNotMatch(saidAt('drogueria', 18.4, 'wares', shop('Droguería La Salud')), /con el sol/); assert.match(saidAt('drogueria', 10, 'wares', shop('Droguería La Salud')), /con el sol/);
+  // what the day has done by now
+  assert.doesNotMatch(saidAt('drogueria', 8, 'mood', shop('Droguería La Salud')), /Toda la mañana/); assert.match(saidAt('drogueria', 12, 'mood', shop('Droguería La Salud')), /Toda la mañana/);
+  assert.doesNotMatch(saidAt('restaurante', 9, 'mood', shop('Corrientazo Doña Lucía')), /se llenó al almuerzo/); assert.match(saidAt('restaurante', 15, 'mood', shop('Corrientazo Doña Lucía')), /se llenó al almuerzo/);
+  assert.doesNotMatch(saidAt('restaurante', 19, 'wares', shop('Corrientazo Doña Lucía')), /almuerzo del día/); assert.match(saidAt('restaurante', 12, 'wares', shop('Corrientazo Doña Lucía')), /almuerzo del día/);
+  assert.doesNotMatch(saidAt('restaurante', 17.3, 'open', shop('Corrientazo Doña Lucía')), /almuerzo|almuerza/); assert.match(saidAt('restaurante', 13, 'open', shop('Corrientazo Doña Lucía')), /almuerzo|almuerza/);
+  assert.doesNotMatch(saidAt('vecina', 9, 'mood'), /Hoy hice sancocho/); assert.match(saidAt('vecina', 14, 'mood'), /Hoy hice sancocho/);
+  assert.doesNotMatch(saidAt('mototaxista', 8, 'mood', M), /varias carreras/); assert.match(saidAt('mototaxista', 11, 'mood', M), /varias carreras/);
+  assert.doesNotMatch(saidAt('nino', 9, 'mood'), /no hubo tarea/); assert.match(saidAt('nino', 15, 'mood'), /no hubo tarea/);
+  assert.doesNotMatch(saidAt('adolescente', 18.2, 'open'), /hasta las nueve/); assert.match(saidAt('adolescente', 20.5, 'open'), /hasta las nueve/);
+  assert.doesNotMatch(saidAt('vecina', 21.3, 'open'), /casi buenas noches/);
+  // a reply to a purchase is not windowed, so it names no part of the day
+  for (const [id, p] of Object.entries(BANK.personas)) for (const it of p.items ?? []) assert.doesNotMatch(it.say[0], /esta (tarde|mañana|noche)/, `${id}.${it.id}`);
+});
+test('a pool with an hour window never runs dry: at every quarter hour each persona has a line for every topic, and its greeting pool one for every hour of its period (R3-106)', () => {
+  const TOPICS = ['mood', 'job', 'wares', 'barrio', 'family', 'news', 'tip', 'bye', 'again'], bad = [];
+  for (const [id, p] of Object.entries(PERSONAS)) {
+    const own = BANK.personas[id]; if (!own) continue;
+    const npc = { persona: id, age: p.age ?? 'adult', shopName: p.kind === 'shop' ? 'Tienda X' : null };
+    const keys = [...TOPICS, ...['m', 'a', 'e', 'n'].map((k) => 'greet_' + k)].filter((k) => own[k]?.length || BANK.shared[k]?.length);
+    for (const k of keys) {
+      const per = /^greet_(.)$/.exec(k)?.[1], tiers = [own[k], BANK.shared[k]].filter(Boolean);
+      for (let h = 0; h < 24; h += 0.25) if ((!per || period(h) === per) && !tiers.some((t) => t.some((l) => lineFits(l[2], npc, h)))) bad.push(`${id}.${k} at ${h}`);
+    }
+  }
+  assert.deepEqual(bad.slice(0, 12), []);
+});
+test('the barber\'s goodbye is a thing a person says: "Aquí lo espero cuando quiera retocarse", not "the doors are open" (R3-111)', () => {
+  const bye = BANK.personas.peluqueria.bye.map((l) => l[0]);
+  assert.ok(bye.includes('Aquí {lo} espero cuando quiera retocarse.'), bye.join(' | ')); assert.ok(!bye.some((s) => /puertas están abiertas/.test(s)));
+  const said = new Set(); for (let s = 1; s <= 60; s++) { const d = dlg('peluqueria', { hour: 10, seed: s, id: 'p' + s, gender: 'm', shopName: 'Barbería El Corte Fino', address: s % 2 ? 'm' : 'f' }); d.open(); said.add(d.pick('bye').line.es); }
+  assert.ok([...said].some((s) => /^Aquí (lo|la) espero cuando quiera retocarse\.$/.test(s)), [...said].join(' | '));
+});
+
+// ---- R3-107: directions are not one template, and the far places can be asked about ------------------------------------------------------------------
+test('directions say one thing in several ways: no phrase is most of the answers of its band, a slope past 6 m names the stairs, the near band keeps "ahí no más" (R3-107)', () => {
+  const rng = makeRng(11), at = { x: 0, y: 2, z: 0, yaw: 0 }, N = 400;
+  const ask = (z, dy = 0) => Array.from({ length: N }, () => directionsTo({ name: 'Panadería La Esperanza', en: 'Bakery', kind: 'shop', x: 0, y: 2 + dy, z }, at, rng));
+  const share = (list, re) => list.filter((a) => re.test(a.es)).length / list.length;
+  // the sheet counted 31 of 42 answers saying "a una cuadra larga" and 28 saying "más o menos al mismo nivel"
+  const block = ask(-30), level = ask(-70);
+  assert.ok(share(block, /a una cuadra larga/) < 0.3, `a block: ${share(block, /a una cuadra larga/)}`); assert.ok(share(level, /más o menos al mismo nivel/) < 0.3, `level: ${share(level, /más o menos al mismo nivel/)}`);
+  for (const [name, list] of Object.entries({ near: ask(-8), block, two: level, far: ask(-120), farther: ask(-200), up: ask(-30, 4), stairsUp: ask(-30, 9), down: ask(-30, -4), stairsDown: ask(-30, -9), high: ask(-30, 20) })) {
+    assert.ok(new Set(list.map((a) => a.es)).size >= 20, `${name}: ${new Set(list.map((a) => a.es)).size} different answers in ${N}`);
+    assert.ok(new Set(list.map((a) => a.en)).size === 1, `${name}: the English subtitle says one thing: ${[...new Set(list.map((a) => a.en))].join(' / ')}`);
+  }
+  assert.ok(ask(-8).every((a) => a.es.includes('ahí no más')), 'the near band always says it');
+  const stairs = (list, word) => list.every((a) => /escaleras/.test(a.es) && a.es.includes(word));
+  assert.ok(stairs(ask(-30, 9), 'cuesta arriba') && stairs(ask(-30, -9), 'cuesta abajo'), 'between 6 and 12 m: the stairs, and still "cuesta arriba" / "cuesta abajo"');
+  assert.ok(ask(-30, 20).every((a) => /escaleras/.test(a.es)) && ask(-30, -20).every((a) => /escaleras/.test(a.es)), 'past 12 m: the stairs');
+  assert.ok(ask(-30, 4).every((a) => /cuesta arriba/.test(a.es) && !/escalera/.test(a.es)) && ask(-30, -4).every((a) => /cuesta abajo/.test(a.es) && !/escalera/.test(a.es)), 'a slope of 3 to 6 m is no stairs');
+  assert.ok(ask(-30).every((a) => !/escalera|cuesta/.test(a.es)), 'level ground is neither');
+  assert.ok(ask(-30).some((a) => /^Mire, la Panadería La Esperanza queda /.test(a.es)) && ask(-30).every((a) => /^Mire, /.test(a.es)), 'the opening stays');
+  assert.ok(Array.from({ length: 60 }, () => directionsTo({ name: 'Tienda', x: 0, y: 2, z: 30 }, at, rng).es).every((s) => /^La Tienda queda /.test(s) && /Se devuelve/.test(s)), 'behind the visitor: "Se devuelve y sigue"');
+  assert.ok(ask(-30).every((a) => /\.$/.test(a.es) && !/\. [a-záéíóúñ]/.test(a.es) && !/ a el | de el /.test(a.es)), 'one sentence, no "a el"');
+});
+test('the "where" menu always offers a place a stranger crosses the barrio for, and a visitor who asks five neighbours is offered each of them (R3-107)', async () => {
+  const { plan } = await buildData({ furnish: false, colliders: false });
+  const lms = collectLandmarks(plan), sp = plan.spawn, player = { x: sp.x, y: plan.heightAt(sp.x, sp.z), z: sp.z, yaw: 0 };       // the foot of the barrio: the lower street
+  const MAJOR = new Set(['viewpoint', 'plaza', 'chapel', 'school']), majors = lms.filter((l) => MAJOR.has(l.kind) && Math.hypot(l.x - sp.x, l.z - sp.z) >= 25).map((l) => l.id);
+  assert.ok(majors.includes('mirador') && majors.includes('chapel') && majors.length >= 5, `the premise: ${majors.join()}`);
+  const ask = (seed, memory) => {
+    const d = new Dialogue({ npc: { id: 'n' + seed, persona: 'vecino', name: 'Don Luis', gender: 'm', x: sp.x, z: sp.z, mem: null }, bank: BANK, rng: makeRng(seed), hour: 10, world: { landmarks: lms, player, discoveries: [] }, memory });
+    d.open(); return d.pick('where').choices.map((c) => c.id).filter((id) => id.startsWith('lm:')).map((id) => id.slice(3));
+  };
+  for (let seed = 1; seed <= 40; seed++) { const ids = ask(seed, null); assert.equal(ids.length, 3, ids.join()); assert.ok(ids.some((id) => majors.includes(id)), `seed ${seed}: ${ids.join()} offers no major place`); assert.equal(new Set(ids).size, 3); }
+  const memory = newLineMemory(), offered = new Set();
+  for (let k = 1; k <= majors.length; k++) for (const id of ask(100 + k, memory)) offered.add(id);
+  for (const id of majors) assert.ok(offered.has(id), `${id}: offered by none of ${majors.length} neighbours (${[...offered].join()})`);
+  const town = newLineMemory();
+  assert.ok(new Set(Array.from({ length: 40 }, (_, k) => ask(200 + k, town).join())).size >= 8, 'the neighbours do not all offer the same three');
 });

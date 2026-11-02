@@ -160,6 +160,8 @@ try {
   const t0 = Date.now();
   const p = await b.open(`la-ladera/index.html?autostart${QUERY ? '&' + QUERY : ''}`);
   const bootMs = Date.now() - t0;
+  // `--query lazy=1`: the boot ends at the playable milestone and the rest of the barrio streams in behind it; the views are of the barrio once it is built (a no-op for the default, eager boot)
+  await p.eval('(window.__ladera.settled || Promise.resolve()).then(() => true)', 900000);
   let s = await p.eval('__ladera.state()');
   report.boot = { seconds: fmt(bootMs / 1000), stages: s.timings, errors: s.errors };
   progress(`boot complete: ${report.boot.seconds} s`);
@@ -228,6 +230,7 @@ try {
   // ---- 2. soak in deterministic manual mode ---------------------------------------------------------------------
   progress('booting deterministic soak');
   const p2 = await b.open(`la-ladera/index.html?autostart&manual${QUERY ? '&' + QUERY : ''}`);
+  await p2.eval('__ladera.settle ? __ladera.settle({ timeout: 900000 }).then(() => true) : true', 1000000);   // (manual: nothing pumps the queue between steps; settle() does. A no-op for the eager boot)
   // --trap is the detector's self-test: it walls the walker in where it stands, so the run MUST report a stuck event (and exit 1).
   if (argv.includes('--trap')) await p2.eval(`(() => { const [x, , z] = __ladera.state().pos, P = __ladera.ctx.physics, r = 1.2; for (const [a, b, c, d] of [[x - r, z - r, x + r, z - r], [x + r, z - r, x + r, z + r], [x + r, z + r, x - r, z + r], [x - r, z + r, x - r, z - r]]) P.addWall({ x1: a, z1: b, x2: c, z2: d }); })()`);
   report.soak = await p2.eval(SOAK_JS(SOAK), 20 * 60 * 1000);

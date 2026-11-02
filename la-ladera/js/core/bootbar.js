@@ -22,6 +22,20 @@ export const STAGES = [
   ['start', 2, 'Casi listo…'], ['warm', 18, 'Calentando la primera vista… (tarda unos segundos)', true], ['textures', 10, 'Cargando texturas…'],
 ];
 
+/**
+ * The stages of a `?lazy=1` boot (js/main.js, dev/FEATURE-LAZY.md): the card goes away at the PLAYABLE milestone, so the furnishing, the interiors' geometry, the models of the furniture and the
+ * people are not stages of it any more (the 'furnish' stage only gives the rooms their finishes; 'models' waits for the street's clutter and the vehicles only; 'people' is empty). Same names as
+ * STAGES, so the stage code is the page's own; the shares are those of the time each takes now (the warm-up compiles the first views only).
+ */
+export const STAGES_LAZY = [
+  ['load', 10, 'Abriendo La Ladera…'],
+  ['engine', 2, 'Encendiendo la luz…'], ['materials', 2, 'Mezclando pinturas y materiales…'], ['assets', 2, 'Leyendo el inventario…'],
+  ['plan', 4, 'Trazando calles y escaleras…'], ['world', 9, 'Levantando el cerro…'], ['arch', 2, 'Pensando cada casa…'],
+  ['furnish', 2, 'Pintando los cuartos…'], ['models', 6, 'Trayendo la calle…'], ['colliders', 1, 'Poniendo las paredes en su sitio…'], ['build', 14, 'Construyendo casas y tiendas…'],
+  ['props', 14, 'Plantando árboles y postes…'], ['flush', 3, 'Juntándolo todo…'], ['glow', 1, 'Encendiendo las farolas…'], ['people', 0, 'Despertando a los vecinos…'],
+  ['start', 2, 'Casi listo…'], ['warm', 18, 'Calentando la primera vista…', true], ['textures', 8, 'Cargando texturas…'],
+];
+
 export const CREEP_AFTER_MS = 1200;   // silent this long: the stage starts to creep
 export const CREEP_CEIL = 0.8;        // ... toward this share of its weight, never past it
 export const CREEP_RATE = 0.03;       // ... closing this part of the remaining way on every tick (main.js ticks every 300 ms: about 10 % of the way per second)

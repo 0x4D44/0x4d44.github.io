@@ -2,7 +2,7 @@
 // Either gender can run any shop: speaker forms use {o|a}. {shop} = "la <shop name>" with its article. Prices are spoken as words (TTS reads digits badly).
 // `items` feed the "Quisiera comprar algo" menu (the player asks the Colombian way: "¿Me regala ...?").  Keep every shop distinct: no shared openings.
 const SHOP_TOPICS = ['buy', 'wares', 'job', 'barrio', 'news', 'family', 'tip', 'where'];
-const SHOP_MENU = { job: ['¿Hace cuánto tiene este negocio?', 'How long have you had this business?'], wares: ['¿Qué me recomienda hoy?', 'What do you recommend today?'], buy: ['Quisiera comprar algo.', "I'd like to buy something."] };
+const SHOP_MENU = { job: ['¿Cómo es su oficio?', 'What is your trade like?'], wares: ['¿Qué me recomienda hoy?', 'What do you recommend today?'], buy: ['Quisiera comprar algo.', "I'd like to buy something."] };
 const base = { topics: SHOP_TOPICS, menu: SHOP_MENU };
 /** One purchase: es/en = what the player says, name = [es, en] for the toast, say = the shopkeeper's answer (price spoken in words). */
 const it = (id, es, en, name, price, say) => ({ id, es, en, name, price, say });
@@ -114,7 +114,7 @@ export default {
     family: [['Mi hermana me ayuda los sábados con las uñas y los tintes.', 'My sister helps me on Saturdays with nails and dye.']],
     barrio: [['Este es el barrio donde todos salen bien peinados para la misa del domingo.', 'This is the barrio where everyone comes out well groomed for Sunday Mass.']],
     tip: [['Vaya a la cancha y busque a Pelusa, el gato que vive en la pared. A quien lo ve, le trae suerte.', 'Go to the court and look for Pelusa, the cat who lives in the wall. He brings luck to whoever sees him.']],
-    bye: [['Que se vea muy bien. ¡Chao!', 'Look great. Bye!'], ['Las puertas están abiertas cuando quiera retocarse.', 'The doors are open whenever you want a touch-up.']],
+    bye: [['Que se vea muy bien. ¡Chao!', 'Look great. Bye!'], ['Aquí {lo} espero cuando quiera retocarse.', "I'll be here whenever you want a touch-up."]],
     buy_ask: [['Claro. ¿Qué servicio le hago?', 'Of course. Which service shall I do for you?']],
     items: [
       it('corte', '¿Me hace un corte de cabello?', 'Could you give me a haircut?', ['un corte de cabello', 'a haircut'], 10000, ['Siéntese en la silla. Son diez mil pesos.', "Take the chair. That's ten thousand pesos."]),
@@ -153,9 +153,9 @@ export default {
     greet_e: [['Buenas noches. Estoy de turno hasta tarde, dígame.', "Good evening. I'm on duty until late, tell me."], ['Buenas noches. ¿Algo urgente?', 'Good evening. Anything urgent?']],
     greet_n: [['Esta noche estamos de turno. ¿Qué le duele?', "We're on night duty tonight. What hurts?"]],
     again: [['Espero que ya se sienta mejor. ¿Le sirvió lo que le di?', 'I hope you feel better now. Did what I gave you help?'], ['Otra vez por aquí. ¿Le volvió el dolor?', 'Back again. Did the pain come back?']],
-    mood: [['Toda la mañana atendiendo, la gente anda con gripa.', "I've been serving all morning, people are down with the flu."], ['Bien, gracias. Con tantos resfriados no me da el tiempo.', "Well, thank you. With so many colds I don't have a minute."]],
+    mood: [['Toda la mañana atendiendo, la gente anda con gripa.', "I've been serving all morning, people are down with the flu.", { from: 10.5, to: 19 }], ['Bien, gracias. Con tantos resfriados no me da el tiempo.', "Well, thank you. With so many colds I don't have a minute."]],
     job: [['Hace veinte años atiendo esta droguería. Aquí me consulta hasta el cura.', 'I have run this pharmacy for twenty years. Even the priest consults me here.'], ['Yo no formulo, solo oriento. Para lo serio, el puesto de salud.', "I don't prescribe, I only advise. For anything serious, the health post."]],
-    wares: [['Tengo analgésicos, jarabes, suero, curitas y vitaminas.', 'I have painkillers, syrups, rehydration salts, plasters and vitamins.'], ['Para la gripa, mucho líquido y reposo. Y si sigue, al médico.', 'For flu, lots of fluids and rest. And if it continues, see a doctor.'], ['El suero oral es lo mejor para la deshidratación, sobre todo con el sol.', 'Oral rehydration salts are best for dehydration, especially in the sun.']],
+    wares: [['Tengo analgésicos, jarabes, suero, curitas y vitaminas.', 'I have painkillers, syrups, rehydration salts, plasters and vitamins.'], ['Para la gripa, mucho líquido y reposo. Y si sigue, al médico.', 'For flu, lots of fluids and rest. And if it continues, see a doctor.'], ['El suero oral es lo mejor para la deshidratación, sobre todo con el sol.', 'Oral rehydration salts are best for dehydration, especially in the sun.', { from: 8, to: 17 }]],
     news: [['El sábado viene una brigada de vacunación al puesto de salud.', 'On Saturday a vaccination drive comes to the health post.'], ['Con los cambios de clima hay mucha gripa. Abríguese, que el frío baja en la tarde.', 'With the weather changes there is a lot of flu. Wrap up, the cold comes down in the evening.']],
     family: [['Mi hija estudia medicina en la universidad. Será la doctora del barrio.', 'My daughter studies medicine at university. She will be the barrio doctor.']],
     barrio: [['En este barrio la salud se cuida entre vecinos. Hasta se prestan el termómetro.', 'In this barrio health is looked after among neighbours. They even lend each other the thermometer.']],
@@ -195,13 +195,13 @@ export default {
   restaurante: {
     ...base,
     greet_m: [['Buenos días. Todavía estamos con el desayuno: caldo, huevos y arepa.', "Good morning. We're still on breakfast: broth, eggs and arepa."], ['¡Buenos días! Más tarde sale el almuerzo del día.', 'Good morning! Later comes the set lunch of the day.']],
-    greet_a: [['Buenas tardes. Hoy hay sopa, seco y jugo. ¿Almuerza?', 'Good afternoon. Today there is soup, a main course and juice. Are you having lunch?'], ['¡Buenas! Pase, que todavía queda del almuerzo del día.', "Hey there! Come in, there's still some of the set lunch."]],
+    greet_a: [['Buenas tardes. Hoy hay sopa, seco y jugo. ¿Almuerza?', 'Good afternoon. Today there is soup, a main course and juice. Are you having lunch?', { to: 16 }], ['¡Buenas! Pase, que todavía queda del almuerzo del día.', "Hey there! Come in, there's still some of the set lunch.", { to: 16.5 }]],       // (the set lunch is over by half past four: the shared afternoon greetings take the rest)
     greet_e: [['Buenas noches. Ya solo queda el corrientazo. ¿Se anima?', "Good evening. Only the set meal is left. Are you up for it?"], ['Buenas noches. La cocina cierra pronto, dígame qué le sirvo.', 'Good evening. The kitchen closes soon, tell me what to serve.']],
     greet_n: [['La cocina ya cerró, pero algo se le calienta. ¿Qué se le antoja?', "The kitchen's closed, but I can warm you something up. What do you fancy?"]],
     again: [['¿Se le antojó el sancocho otra vez? Hoy cambió la sopa.', 'Fancy the sancocho again? The soup changed today.'], ['Qué gusto ver{lo}. La sopa de hoy es de mondongo.', "Good to see you. Today's soup is tripe soup."]],
-    mood: [['Hoy el comedor se llenó al almuerzo. ¡Feliz!', 'The dining room filled up at lunch today. Delighted!'], ['Bien, gracias. Ollas y pedidos todo el día; ya ni sé qué hora es.', "Fine, thanks. Pots and orders all day; I've lost track of the time."]],
+    mood: [['Hoy el comedor se llenó al almuerzo. ¡Feliz!', 'The dining room filled up at lunch today. Delighted!', { from: 14 }], ['Bien, gracias. Ollas y pedidos todo el día; ya ni sé qué hora es.', "Fine, thanks. Pots and orders all day; I've lost track of the time."]],
     job: [['Cocino desde las cinco de la mañana. El secreto es la paciencia y el fogón.', 'I cook from five in the morning. The secret is patience and the stove.'], ['Este restaurante lo abrió mi mamá. Yo sigo sus recetas sin cambiarles una coma.', 'My mother opened this restaurant. I follow her recipes without changing a comma.']],
-    wares: [['El almuerzo del día trae sopa, seco, ensalada y jugo. Y repetición de arroz.', 'The set lunch comes with soup, main course, salad and juice. And a second helping of rice.'], ['Los domingos hacemos sancocho de gallina en fogón de leña. Se acaba antes de las dos.', 'On Sundays we make hen sancocho on a wood fire. It runs out before two.'], ['El jugo de mora en leche es el favorito de la casa.', 'Blackberry juice with milk is the house favourite.']],
+    wares: [['El almuerzo del día trae sopa, seco, ensalada y jugo. Y repetición de arroz.', 'The set lunch comes with soup, main course, salad and juice. And a second helping of rice.', { from: 6, to: 16 }], ['Los domingos hacemos sancocho de gallina en fogón de leña. Se acaba antes de las dos.', 'On Sundays we make hen sancocho on a wood fire. It runs out before two.'], ['El jugo de mora en leche es el favorito de la casa.', 'Blackberry juice with milk is the house favourite.']],
     news: [['Subió el gas de la pipeta. Es lo que más nos duele en la cocina.', "The price of the gas cylinder went up. It's what hurts most in the kitchen."], ['El sábado hay bazar con comida típica en la plazoleta. Voy a llevar mis buñuelos.', "On Saturday there's a bazaar with traditional food in the little square. I'll bring my buñuelos."]],
     family: [['Mi hija me ayuda con las mesas y mi hijo con los domicilios.', 'My daughter helps me with the tables and my son with the deliveries.']],
     barrio: [['Aquí todos se conocen y se saludan por el nombre. Almorzar acá es como estar en casa.', 'Here everyone knows each other and greets by name. Having lunch here is like being at home.']],
@@ -278,7 +278,7 @@ export default {
     bye: [['Que le quede muy bien lo que lleve. A la orden.', 'May what you take look great on you. At your service.'], ['Cuando necesite una puntada, pase por aquí.', 'When you need a stitch, come by.']],
     buy_ask: [['Claro. ¿Qué arreglo le hago?', 'Of course. Which alteration shall I do for you?']],
     items: [
-      it('ruedo', '¿Me sube un ruedo?', 'Could you take up a hem for me?', ['un ruedo arreglado', 'a hem taken up'], 6000, ['Se lo dejo listo esta tarde. Seis mil pesos.', "I'll have it ready this afternoon. Six thousand pesos."]),
+      it('ruedo', '¿Me sube un ruedo?', 'Could you take up a hem for me?', ['un ruedo arreglado', 'a hem taken up'], 6000, ['Se lo dejo listo hoy mismo. Seis mil pesos.', "I'll have it ready today. Six thousand pesos."]),
       it('cierre', '¿Me cambia un cierre?', 'Could you replace a zip for me?', ['un cierre nuevo', 'a new zip'], 8000, ['Con gusto. Ocho mil pesos.', 'My pleasure. Eight thousand pesos.']),
       it('boton', '¿Me cose un botón?', 'Could you sew on a button for me?', ['un botón cosido', 'a button sewn on'], 2000, ['Eso es rapidito. Dos mil pesos.', "That's quick. Two thousand pesos."]),
     ],

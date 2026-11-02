@@ -60,6 +60,12 @@ export function makeG(ctx, bp) {
 }
 
 // ---- exterior face --------------------------------------------------------------------------------------------------------------
+// A roof hut (the caseta, roof.js) is four walls round the stair head. Its north and south walls take the corners (their runs reach the hut's outer corners); its west and east walls stand between
+// them (their runs are the inner length, from the inside face of the north wall to the inside face of the south wall). The outer face of a west or east wall must therefore run on past the end of its
+// run by one wall thickness each way, to the outer corner, or the end of the north or south wall stands open: a slot as high as the hut at every corner, and a door at the end of a west or east wall
+// (where the stair puts it) with no wall beyond its frame. Their inner faces stop at the run, where they meet the inner faces of the north and south walls.
+const bridge = (wl) => !!wl.caseta && (wl.side === 'west' || wl.side === 'east');
+
 function outerFace(G, wl) {
   const { S, b, fs } = G, k = wl.floor, yk = k * S.fh, s = OUT[wl.side], t = wl.t, plane = wl.at + s * t / 2, caseta = !!wl.caseta;
   const top = (u) => (caseta ? yk + CASETA_H : wl.open ? yk + PRETIL_H : k === S.F - 1 ? G.rm.wallTop(wl, u) : yk + S.fh);
@@ -69,7 +75,8 @@ function outerFace(G, wl) {
   const m = caseta ? 'plaster_rough' : fs.m;
   const cuts = k === 0 && !caseta ? [0.0, 0.5, 0.95] : [];
   const damp = (y) => { if (caseta || k > 0) return 1; const h = y; return h <= 0 ? 1 : 0.55 + 0.45 * Math.min(1, h / 0.95); };
-  columns(wl.a0, wl.a1, holes, G.rm.breaks(wl)).forEach((c, ci) => {
+  const grow = bridge(wl) ? t : 0;
+  columns(wl.a0 - grow, wl.a1 + grow, holes, G.rm.breaks(wl)).forEach((c, ci) => {
     const jit = 0.94 + 0.06 * hash01(wl.id, ci);
     const solids = [];
     if (!c.hole) solids.push([yBot, top(c.ua), top(c.ub)]);
@@ -104,7 +111,7 @@ function faceCells(G, k, wl, plane, side) {
 function innerFace(G, wl, side) {
   const { S, b, fs } = G, k = wl.floor, yk = k * S.fh, t = wl.t, plane = wl.at + side * t / 2, caseta = !!wl.caseta;
   let fa = wl.a0, fb = wl.a1;
-  if (wl.ext) { const inset = caseta && (wl.side === 'west' || wl.side === 'east') ? 0 : t; fa += inset; fb -= inset; }
+  if (wl.ext) { const inset = bridge(wl) ? 0 : t; fa += inset; fb -= inset; }
   if (fb - fa < 1e-3) return;
   const cells = faceCells(G, k, wl, plane, side);
   const holes = wl.openings.map((o) => ({ u0: o.u0, u1: o.u1, y0: yk + o.y0, y1: yk + o.y1 }));

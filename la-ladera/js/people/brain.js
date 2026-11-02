@@ -14,6 +14,8 @@ const pickW = (rng, list) => { let t = 0; for (const [, w] of list) t += w; let 
 const span = (rng, a, b) => a + rng.next() * (b - a);
 const yawTo = (ax, az, bx, bz) => Math.atan2(bx - ax, bz - az);
 const dist2d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+/** A node of the street graph somebody may stop on (stand about, dwell at a site, wait at the stand): not a door, and not a stair. A stair is one body wide between its rails and every walker keeps its middle (`waypoints`): whoever stops there leaves the next walker no way round, and the separation steering pushes that walker into the rails, where it stays. */
+const stopNode = (n) => n.kind !== 'door' && n.kind !== 'stair';
 const RADIUS = { shopkeeper: 18, elder: 55, kid: 90, teen: 110, homemaker: 90, neighbour: 120, worker: 60 };
 const HIDDEN_WORK = new Set(['enfermera']);
 
@@ -101,7 +103,7 @@ export class Brain {
     const from = nav.nearest(npc.x, npc.z, 40, npc.y), to = nav.nearest(p.x, p.z, o.snapD ?? 16, p.y);
     if (from < 0 || to < 0 || !W.inMain(to)) return false;
     const idx = nav.path(from, to); if (!idx) { npc.pathFails = (npc.pathFails ?? 0) + 1; return false; }
-    const pts = W.waypoints(npc, idx); pts.push({ x: p.x, z: p.z, y: p.y });
+    const pts = W.waypoints(npc, idx, p); pts.push({ x: p.x, z: p.z, y: p.y });         // (the leg to p is judged with the lane's: the end supports of a bench round the spot)
     return npc.walk(W, pts, arrive, this.speedFor(npc, o));
   }
 
@@ -110,7 +112,7 @@ export class Brain {
     const W = this.w, nav = W.nav, from = nav.nearest(a.x, a.z, 10, a.y), to = nav.nearest(b.x, b.z, snapD, b.y);
     if (from < 0 || to < 0 || !W.inMain(from) || !W.inMain(to)) return null;
     const idx = from === to ? [from] : nav.path(from, to); if (!idx) return null;
-    const pts = W.waypoints({ x: a.x, z: a.z, lane: npc.lane }, idx); pts.push({ x: b.x, z: b.z, y: b.y });
+    const pts = W.waypoints({ x: a.x, z: a.z, lane: npc.lane }, idx, b); pts.push({ x: b.x, z: b.z, y: b.y });
     return pts;
   }
 
@@ -147,13 +149,13 @@ export class Brain {
   unoccupied(npc, n, r = 2.5) { return !(this.w.npcs ?? []).some((m) => m !== npc && !m.away && dist2d(m, n) < r); }
   /** The nodes of the fan for one part, clear of whoever is there: the part's own band of it (the two who talk 10-16 m ahead, the walker 16-24 m, the one who stands 24-30 m: nobody walks through another), else all of the fan. */
   fanNodes(npc, near, part) {
-    const W = this.w, [a, b] = ARRIVAL_BANDS[part] ?? [0, 99], any = (n) => W.inMain(n.i) && n.kind !== 'door' && this.unoccupied(npc, n);
+    const W = this.w, [a, b] = ARRIVAL_BANDS[part] ?? [0, 99], any = (n) => W.inMain(n.i) && stopNode(n) && this.unoccupied(npc, n);
     const own = W.nav.nodes.filter((n) => any(n) && ahead({ ...near, min: near.min + a, max: Math.min(near.max, near.min + b) }, n));
     return own.length ? own : W.nav.nodes.filter((n) => any(n) && ahead(near, n));
   }
   /** Somebody walking away up the street: from a node of the fan to one beyond it, in the corridor the player looks along, so the figure is still on the street half a minute later. */
   arrive_walk(npc, o) {
-    const W = this.w, r = npc.rng, nav = W.nav, near = o.near, ok = (n) => W.inMain(n.i) && n.kind !== 'door';
+    const W = this.w, r = npc.rng, nav = W.nav, near = o.near, ok = (n) => W.inMain(n.i) && stopNode(n);
     const from = spreadNodes(npc, this.fanNodes(npc, near, 'walk'), W.npcs ?? []);
     const to = [45, 30, 20].map((min) => nav.nodes.filter((n) => ok(n) && ahead({ ...near, min, max: min + 40 }, n))).find((l) => l.length);
     if (!from.length || !to) return false;
@@ -333,7 +335,7 @@ export class Brain {
   do_wander(npc, o = {}) {
     const W = this.w, nav = W.nav, r = npc.rng, rad = RADIUS[npc.routine] ?? 110, hn = nav.nodes[npc.homeNode] ?? nav.nodes[0];
     if (o.instant) {
-      const ref = o.near, ok = (n) => W.inMain(n.i) && n.kind !== 'door' && (!ref || (dist2d(n, ref) >= ref.min && dist2d(n, ref) <= ref.max));
+      const ref = o.near, ok = (n) => W.inMain(n.i) && stopNode(n) && (!ref || (dist2d(n, ref) >= ref.min && dist2d(n, ref) <= ref.max));
       const cands = []; for (let k = 0; k < 60 && cands.length < 6; k++) { const c = nav.nodes[nav.randomNode(r, null)]; if (ok(c) && !cands.includes(c)) cands.push(c); }
       if (!cands.length) return false;
       const apart = spreadNodes(npc, cands, W.npcs ?? []), nd = apart[Math.floor(r.next() * apart.length)];       // not beside a twin, not on top of anybody (R3-006)
@@ -343,7 +345,7 @@ export class Brain {
     const from = nav.nearest(npc.x, npc.z, 30, npc.y); if (from < 0) return false;
     const cands = [];
     for (let k = 0; k < 10; k++) {
-      const j = nav.randomNode(r, (n) => W.inMain(n.i) && n.kind !== 'door'), n = nav.nodes[j];
+      const j = nav.randomNode(r, (n) => W.inMain(n.i) && stopNode(n)), n = nav.nodes[j];
       const dh = dist2d(n, hn), dc = dist2d(n, npc);
       if (dh > rad || dc < 8) continue;
       cands.push({ j, n, score: -Math.abs(dc - 26) + r.next() * 12 });
@@ -589,7 +591,7 @@ export class Brain {
     if (!lot) return this.leisure(npc, o);
     if (lot.kind === 'workshop') return o.instant ? this.hideAway(npc, lot.id, 'work') : this.goIn(npc, lot.id, 'work');       // the workshop's bench: homelife.js draws the worker there
     const ent = W.spots.entrance(lot.id, ['main', 'shop']), c = ent?.outside ?? { x: lot.x, z: lot.z, y: lot.y };
-    const near = (n) => W.inMain(n.i) && n.kind !== 'door' && dist2d(n, c) < 13;
+    const near = (n) => W.inMain(n.i) && stopNode(n) && dist2d(n, c) < 13;
     const around = W.nav.nodes.filter(near); if (!around.length) return this.leisure(npc, o);
     const nodes = spreadNodes(npc, around, W.npcs ?? []);                 // the site is shared: not beside a twin, not on top of the others
     const nd = nodes[Math.floor(r.next() * nodes.length)];
@@ -611,7 +613,7 @@ export class Brain {
 
   motoWait(npc, o = {}) {
     const W = this.w, lm = W.landmarks.find((l) => l.id === 'busstop') ?? W.landmarks[0], r = npc.rng;
-    const around = W.nav.nodes.filter((n) => W.inMain(n.i) && n.kind !== 'door' && dist2d(n, lm) < 9);
+    const around = W.nav.nodes.filter((n) => W.inMain(n.i) && stopNode(n) && dist2d(n, lm) < 9);
     if (!around.length) return this.leisure(npc, o);
     const nodes = spreadNodes(npc, around, W.npcs ?? []);                 // three riders at one stand: three different corners of it (R3-006: n37 and n59 stood 0.5 m apart)
     const nd = nodes[Math.floor(r.next() * nodes.length)];

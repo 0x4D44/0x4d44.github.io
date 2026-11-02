@@ -34,7 +34,7 @@ function PIPE_TUNE() {
   }
   return (_pipeEv = out);
 }
-const MIN_GAP = { bump: 0.06, wall: 0.08, hit: 0.1, "item-roll": 0.02, "ui-move": 0.03, "drift-level": 0.05, throw: 0.05, moo: 0.9, baa: 0.9 };
+const MIN_GAP = { bump: 0.06, wall: 0.08, hit: 0.1, "item-roll": 0.02, "ui-move": 0.03, "drift-level": 0.05, throw: 0.05, moo: 0.9, baa: 0.9, plop: 0.06, whistle: 1.5, ticket: 0.4 };
 
 function driveCurve(k, n = 1024) {
   const c = new Float32Array(n);
@@ -400,6 +400,25 @@ export class GameAudio {
         this._tone({ type: "sawtooth", f0: 118, f1: 82, dur: 1.15, vol: 0.34, a: 0.12, d: 0.3, s: 0.7, r: 0.4, vib: { f: 5.5, depth: 9 }, filt: { type: "lowpass", f0: 420, f1: 1100, q: 3 }, send: 0.2, force: true });
         this._tone({ type: "sawtooth", f0: 236, f1: 160, dur: 1.0, vol: 0.12, a: 0.15, d: 0.3, s: 0.6, r: 0.4, vib: { f: 5.5, depth: 14 }, filt: { type: "bandpass", f0: 650, f1: 420, q: 4 }, send: 0.2, force: true });
         this._tone({ type: "sine", f0: 59, f1: 41, dur: 0.9, vol: 0.28, a: 0.1, d: 0.3, s: 0.5, r: 0.3, force: true });
+        break;
+      }
+      case "plop": {   // a banana landing on the tarmac: a soft thud
+        const s = this._spatial(o, false); if (!s) break;
+        this._tone({ type: "sine", f0: 240, f1: 90, dur: 0.12, vol: 0.16 * s.gain, a: 0.002, pan: s.pan });
+        this._noise({ dur: 0.07, vol: 0.05 * s.gain, a: 0.002, filt: { type: "lowpass", f0: 1400 }, pan: s.pan });
+        break;
+      }
+      case "whistle": {   // a steam whistle: two notes a minor third apart, a long call and a short answer
+        const s = this._spatial(o, false); if (!s) break;
+        for (const [f, dly, dur] of [[587, 0, 1.0], [698, 0, 1.0], [587, 1.15, 0.45], [698, 1.15, 0.45]]) {
+          this._tone({ type: "square", f0: f, f1: f * 0.985, dur, vol: 0.075 * s.gain, a: 0.05, d: 0.1, s: 0.8, r: 0.2, delay: dly, filt: { type: "lowpass", f0: 2400, q: 1.5 }, pan: s.pan, vib: { f: 6, depth: 6 }, send: 0.25, force: true });
+        }
+        this._noise({ dur: 1.0, vol: 0.05 * s.gain, a: 0.04, filt: { type: "bandpass", f0: 3200, q: 1.2 }, pan: s.pan });
+        break;
+      }
+      case "ticket": {   // the golden ticket: a bright rising chime
+        for (let i = 0; i < 4; i++) this._tone({ type: "triangle", f0: 660 * Math.pow(1.26, i), dur: 0.22, vol: 0.14, a: 0.004, delay: i * 0.06, send: 0.3, force: true });
+        this._noise({ dur: 0.3, vol: 0.05, a: 0.01, filt: { type: "highpass", f0: 5000 } });
         break;
       }
       case "wall": {

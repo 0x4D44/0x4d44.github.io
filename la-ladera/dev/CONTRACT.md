@@ -142,7 +142,8 @@ Room = { id:'L07.f1.r3', floor:int (0=ground), type:(vocab ROOM_TYPES), name?:'S
   finish:{ floor, wall, wainscot?:{mat,h}, ceiling, baseboard, trim, floorTint?, wallTint? }  // matKeys; A3 fills in furnishBuilding, A2 reads it in buildBuilding (defaults if absent)
 }
 Door   = { id, kind:'exterior'|'interior'|'gate'|'shutter'|'arch', x,z,y (local, centre on the floor line), nx,nz (unit normal in local frame pointing from rooms[0] into rooms[1]),
-           w:0.9, h:2.1, rooms:[roomIdOrNull, roomIdOrNull], hinge:'left'|'right', swing:0|1 (which side it opens into), mat }
+           w:0.9, h:2.1, rooms:[roomIdOrNull, roomIdOrNull], hinge:'left'|'right', swing:0|1 (which side it opens into), mat,
+           loop?:string (only on a plan that declares a ring of circulation on purpose, the school's cloister: see the door budget below) }
 Window = { id, room, x,z (local, on the wall line), y (sill height, local), w, h, nx,nz (unit normal pointing OUT of the room), kind:'casement'|'sliding'|'fixed'|'louvre', grille:bool }
 Stair  = { id, floors:[i,j], from:[x,z] to:[x,z] (local, bottom -> top of the flight), width, steps, rise, run, hole:[[x,z]..] }
 Entrance = { id, doorId, kind:'main'|'shop'|'alley'|'service'|'roof', outside:[x,y,z] (WORLD, ~1.2 m outside the door at walking height), inside:[x,y,z] (WORLD, ~1.0 m inside),
@@ -150,6 +151,10 @@ Entrance = { id, doorId, kind:'main'|'shop'|'alley'|'service'|'roof', outside:[x
 ```
 * **Every building has >= 1 `Entrance`** whose door opens (E, or bump) - no locked doors. `rooms` tile each floor (no gaps) and every room is reachable from an Entrance by walking through
   doors/openings/stairs (A2 tests this with the physics kernel). `roof.walkable` buildings have a stair to the roof.
+* **Door budget** (A2, `js/arch/state.js budgetDoors`, pinned by `tests/arch-doorbudget.test.mjs`): on every floor the interior doors and arches (those between two rooms) are a TREE over the rooms, so a room is
+  reached one way and no two doors join the same two rooms; a ring of circulation exists only where the layout declares it (`S.loops = '<why>'`, today the school's cloister: its doors carry `loop:'<why>'`).
+  A wet room has one door (a toilet block's washroom excepted) and a bedroom at most two (three only where two of them lead to its own bath and utility room). Exterior doors, shutters and the roof door are outside the budget. A door that stays keeps the id its layout gave it,
+  so ids have gaps (`L08.d2` is gone) and are never reused; the rooms, their ids and rects do not depend on the budget.
 * Group names: **`${id}.ext`** = the whole architectural shell, outside AND inside surfaces (always drawn); **`${id}.int`** = furnishings, decor, clutter (A1 hides it beyond ~28 m).
   Put nothing else in other groups. A2 owns `.ext`; A3 owns `.int`. Dynamic things (door leaves, fans, TVs) are separate Object3Ds you add to `ctx.batch.object(id + '.ext'|'.int')`.
 

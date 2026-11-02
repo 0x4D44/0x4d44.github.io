@@ -61,3 +61,14 @@ test("a manifest index.html asked for early is taken once, with or without the '
     assert.equal(takePrefetched('./assets/models/nothing.json'), null, 'what was not asked for is null: the caller fetches it');
   } finally { globalThis.__laderaPre = saved; }
 });
+
+test('an early request that came back empty is asked for again, once, by the default reader (review R2b-001)', async () => {
+  const savedPre = globalThis.__laderaPre, savedFetch = globalThis.fetch, urls = [];
+  try {
+    globalThis.__laderaPre = { 'assets/models/manifest.json': Promise.resolve(null), 'assets/models/a.json': Promise.reject(new Error('socket')) };    // index.html's get() resolves null on failure
+    globalThis.fetch = async (u) => { urls.push(String(u)); const k = String(u).split('/').pop(); return { ok: k in SETS, json: async () => SETS[k] }; };
+    const a = new Assets({}); await a.init();
+    assert.deepEqual(urls.slice(0, 2), ['./assets/models/manifest.json', './assets/models/a.json'], 'each failed early answer is fetched again');
+    assert.deepEqual([...a.entries.keys()].sort(), ['chair', 'lamp', 'rug', 'table'], 'and the registry is whole');
+  } finally { globalThis.__laderaPre = savedPre; globalThis.fetch = savedFetch; }
+});

@@ -8,19 +8,20 @@
 import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
-import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
+import { drawStandin, drawAddon, setAtlas, tintFor, u01 } from './standins.js';
 import { layoutOf } from './carcass.js';
 import { foldMaterials } from './fold.js';
 import { deferContainers } from './containers.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
-import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
+import { buildRotors, buildTvGlow, makeTvGlowMaterial, makeTvScreens } from './anim.js';
 import { ALL_GARMENT_KEYS, garmentKeysFor, registerGarmentAssets, garmentsOff } from './garments.js';
 import { GOODS_FIXTURES } from './goods-assortments.js';
 import { buildGoods } from './goods-render.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
+const STEP_RECORDS = 6;                                                            // pieces drawn between two yields of buildInteriorSteps
 
 const disposeParts = (parts) => { for (const p of parts) { p.geometry.dispose(); for (const g of p.tinted.values()) g.dispose(); } };
 
@@ -38,17 +39,29 @@ async function preloadModels(ctx, names, into) {
   }
 }
 
+/**
+ * The decal atlas (ONE canvas of every poster and notice, 70-110 ms of painting in one call), the TV glow material and the TV screens' picture, browser only; made once. `?lazy=1` calls this behind the title card (main.js),
+ * so no frame of play carries it; the eager boot's `loadInteriorAssets` calls it as ever.
+ */
+export function prepareAtlas(ctx) {
+  if (ctx.interiorAtlasMade) return ctx.interiorAtlas ?? null;
+  ctx.interiorAtlasMade = true;
+  try {
+    const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
+    if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
+    makeTvGlowMaterial(ctx);
+    makeTvScreens(ctx);
+  } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
+  return ctx.interiorAtlas ?? null;
+}
+
 /** Preload the GLBs of every furniture key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). The clothes load apart (loadGarmentAssets). */
 export async function loadInteriorAssets(ctx) {
   ctx.interiorGlb = new Set();
   // A retry may replace a previously failed model. Do not retain flattened parts from an older load.
   for (const parts of ctx.interiorGlbParts?.values() ?? []) disposeParts(parts);
   ctx.interiorGlbParts = new Map();
-  try {
-    const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
-    if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
-    makeTvGlowMaterial(ctx);
-  } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
+  prepareAtlas(ctx);
   const a = ctx.assets;
   if (!a?.names) return;
   const names = a.names().filter((n) => CATALOG[n] && !CATALOG[n].garment && !CATALOG[n].ware);        // (a clothes key registered by an earlier loadGarmentAssets, and the shop goods, are not furniture roots: goods-render.js loadGoodsAssets)
@@ -72,6 +85,14 @@ export async function loadGarmentAssets(ctx, options = {}) {
 }
 
 const _tc = new THREE.Color();
+
+/** The glass of a TV: u along its width, v up its height over the part's own extent, so one picture covers it whatever the model's UVs are. */
+function screenUV(geometry) {
+  geometry.computeBoundingBox();
+  const { min, max } = geometry.boundingBox, pa = geometry.attributes.position, uv = new Float32Array(pa.count * 2), w = max.x - min.x || 1, h = max.y - min.y || 1;
+  for (let i = 0; i < pa.count; i++) { uv[i * 2] = (pa.getX(i) - min.x) / w; uv[i * 2 + 1] = (pa.getY(i) - min.y) / h; }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
 
 /** Reject a broken part before any vertices are appended to a building. Checked once per loaded asset. */
 function checkPart(geometry, name) {
@@ -116,7 +137,10 @@ export function glbParts(ctx, name) {
     try { node.traverse((o) => {
       if (!o.isMesh) return;
       const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
-      const matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      let matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      if (/^tv_screen_[ab]$/.test(matKey ?? '')) {                                  // (D28) a screen shows a picture: planar UVs over its glass; the tube set's glass, a cap of a sphere, has a pair of its own
+        screenUV(geometry); if (name === 'tv_crt') matKey = matKey.replace('screen_', 'screen_crt_');
+      }
       try {
         checkPart(geometry, o.name);
         if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
@@ -179,8 +203,10 @@ function drawGlb(ctx, b, rec, c) {
 /**
  * Build the interior meshes of one building from `bp.furniture` (made by furnishBuilding). Safe to call once per building; it flushes its
  * own group straight away so the temporary vertex arrays of one building are released before the next one is built.
+ * It is a resumable job (a generator, yielding between the shop stock, every few pieces and before the flush) so that js/interiors/lazy.js can build a room's worth of
+ * furniture in time slices; `buildInterior` runs it to its end, the same code in the same order.
  */
-export function buildInterior(ctx, bp) {
+export function* buildInteriorSteps(ctx, bp) {
   const recs = bp.furniture;
   if (!recs?.length) return;
   const id = `${bp.id}.int`, lot = bp.lot ?? {};
@@ -191,8 +217,10 @@ export function buildInterior(ctx, bp) {
   const st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
   const goods = buildGoods(ctx, bp, group);                                        // the shop stock first (goods.js plan, goods-render.js): a fixture it stocks is drawn without its own stock below
   st.goods = goods.stats;
-  let reported = 0;
+  let reported = 0, k = 0;
+  yield 'goods';
   for (const original of recs) {
+    if (++k % STEP_RECORDS === 0) yield 'records';
     const c = original.decal ? decalDef(original.decal) : CATALOG[original.name];
     if (!c) { st.failed++; continue; }
     const rec = goods.replaced.has(original.id) ? { ...original, flags: { ...original.flags, stockReplaced: true } } : original;       // (a copy: the plan stays pure data)
@@ -207,7 +235,7 @@ export function buildInterior(ctx, bp) {
           if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, name: rec.name, message: 'model fallback: ' + String(e?.message ?? e) });
         }
       }
-      if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
+      if (n) { st.glb++; n += drawAddon(b, rec, c); } else { n = drawStandin(b, rec, c); st.standin++; }          // (a library model that carries none of what hangs on it: the butcher's rail of hooks)
       st.prims += n;
     } catch (e) {
       st.failed++;
@@ -219,6 +247,7 @@ export function buildInterior(ctx, bp) {
     st.fans = buildRotors(ctx, bp, group, recs, CATALOG);
     st.tvs = buildTvGlow(ctx, bp, b, recs, CATALOG);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'dressing ' + String(e?.message ?? e), stack: e?.stack }); }
+  yield 'dressing';
   st.folded = foldMaterials(b);                                                    // the rare materials move into a neighbour's mesh: fewer draw calls (fold.js)
   st.tris = b.tris; st.materials = b.accs.size;
   ctx.batch.flush(id);
@@ -226,3 +255,6 @@ export function buildInterior(ctx, bp) {
   catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'containers ' + String(e?.message ?? e), stack: e?.stack }); }
   if (bp.interior) bp.interior.stats = st;
 }
+
+/** Build one building's interior meshes, all of it, now (a full boot, the tests and the probes). */
+export function buildInterior(ctx, bp) { for (const _ of buildInteriorSteps(ctx, bp)); }     // eslint-disable-line no-unused-vars

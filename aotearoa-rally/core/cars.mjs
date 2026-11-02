@@ -98,7 +98,7 @@ export const CARS = {
     suspension: { spring: 41000, damper: 3500, travel: 0.22, antiRollFront: 10000, antiRollRear: 5000 },
     aero: { cd: 0.37, area: 1.9, downforce: 0.1 },
     surfGrip: { gravel: 0.97, dirt: 1.0, tarmac: 0.885, mud: 1.08, snow: 1.06, pumice: 1.08 },
-    handling: { gripFront: 1.04, gripRear: 0.95, liftRotate: 1.3, rearLoose: 1.5 },
+    handling: { gripFront: 1.04, gripRear: 0.95, liftRotate: 1.3, rearLoose: 1.5, absTarmac: 0.62, downforce: 0.3 },
     stats: { power: 7, grip: 7, handling: 9, acceleration: 8, toughness: 5 },
     liveries: [
       { name: "Alpine Parrot", body: 0xe86a1c, accent: 0x1a1a1a, number: 4, sponsor: SPONSOR },
@@ -141,7 +141,7 @@ export const CARS = {
     suspension: { spring: 38000, damper: 3300, travel: 0.22, antiRollFront: 12000, antiRollRear: 6000 },
     aero: { cd: 0.33, area: 1.8, downforce: 0.14 },
     surfGrip: { gravel: 1.03, dirt: 0.94, tarmac: 1.04, mud: 0.91, snow: 0.955, pumice: 0.97 },
-    handling: { gripFront: 1.05, gripRear: 1.0, frontLoose: 1.08 },
+    handling: { gripFront: 1.05, gripRear: 1.0, frontLoose: 1.08, absTarmac: 0.12, downforce: 0.4 },
     stats: { power: 5, grip: 7, handling: 8, acceleration: 6, toughness: 6 },
     liveries: [
       { name: "Blue Takahē", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: SPONSOR },
@@ -183,8 +183,8 @@ export const CARS = {
     clutchTorque: 1000,
     suspension: { spring: 40000, damper: 3600, travel: 0.23, antiRollFront: 11000, antiRollRear: 5000 },
     aero: { cd: 0.34, area: 1.95, downforce: 0.12 },
-    surfGrip: { gravel: 0.96, dirt: 0.93, tarmac: 1.08, mud: 0.96, snow: 1.08, pumice: 1.03 },
-    handling: { gripFront: 1.0, gripRear: 0.97, rearLoose: 1.38, frontLoose: 1.12, liftRotate: 4.2 },
+    surfGrip: { gravel: 0.96, dirt: 0.93, tarmac: 1.08, mud: 0.96, snow: 1.05, pumice: 1.03 },
+    handling: { gripFront: 1.0, gripRear: 0.97, rearLoose: 1.52, frontLoose: 1.14, liftRotate: 4.2, absTarmac: 0.4 },
     stats: { power: 9, grip: 6, handling: 6, acceleration: 7, toughness: 6 },
     liveries: [
       { name: "Fantail Gold", body: 0xe4b21c, accent: 0x14141c, number: 10, sponsor: SPONSOR },

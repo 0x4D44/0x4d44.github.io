@@ -11,7 +11,9 @@ import { buildData } from './headless.mjs';
 import { buildBuilding } from '../js/arch/index.js';
 import { makeRoofModel } from '../js/arch/shellroof.js';
 import { PRETIL_H } from '../js/arch/roof.js';
-import { WEATHER_KINDS, ITEMS, PAINTERS, DAMP_LEVELS, paintDecalAtlas, ensureDecalAtlas, planWeather, assignDampLevels, patchTint } from '../js/arch/weather.js';
+import { WEATHER_KINDS, ITEMS, PAINTERS, DAMP_LEVELS, paintDecalAtlas, ensureDecalAtlas, planWeather, assignDampLevels, patchTint, peelTint } from '../js/arch/weather.js';
+import { lin } from '../js/arch/mb.js';
+import { PALETTE } from '../js/core/config.js';
 import { assignPosters, posterCount, POSTER_COUNT, paintPoster, paintSignAtlas } from '../js/arch/signs.js';
 
 const real = await buildData({ furnish: false });
@@ -340,6 +342,94 @@ test('no stickers (R1-D22): peeling is torn out of noise, never drawn: no outlin
     const torn = edges / (2 * Math.sqrt(Math.PI * firm));
     if (torn < 2.2) problems.push(`peel:${i}: an edge scoring ${torn.toFixed(2)}, want a torn one (2.2 and more; a clean disc scores 1.3)`);
   }
+  assert.deepEqual(problems, []);
+});
+
+// ---- peeling once more (R1-D22, round 6: "a pale blob on the purple wall", "a ring of grey flecks over the windows") --------------------------------------
+/** Depth of every marked pixel from the edge of the mark (0 on the edge itself), 4-neighbour breadth-first; -1 where nothing is marked. */
+function depthOf(mask, w, h) {
+  const depth = new Int16Array(w * h).fill(-1), q = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const k = y * w + x;
+    if (mask[k] && (x === 0 || !mask[k - 1] || x === w - 1 || !mask[k + 1] || y === 0 || !mask[k - w] || y === h - 1 || !mask[k + w])) { depth[k] = 0; q.push(k); }
+  }
+  for (let i = 0; i < q.length; i++) {
+    const k = q[i], x = k % w, y = (k / w) | 0;
+    for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) if (nx >= 0 && ny >= 0 && nx < w && ny < h && mask[ny * w + nx] && depth[ny * w + nx] < 0) { depth[ny * w + nx] = depth[k] + 1; q.push(ny * w + nx); }
+  }
+  return depth;
+}
+const lumaOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+const toLinear = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+/** The mean colour (linear) of the marked pixels (opacity 0.2 and more) of a peel picture as it is seen on a wall: the picture times the vertex tint, blended over the wall. */
+function seenOn(pic, tint, wall) {
+  const { width: w, height: h, data } = pic, sum = [0, 0, 0];
+  let n = 0;
+  for (let k = 0; k < w * h; k++) {
+    const a = data[4 * k + 3] / 255;
+    if (a < 0.2) continue;
+    for (let c = 0; c < 3; c++) sum[c] += toLinear(data[4 * k + c]) * tint[c] * a + wall[c] * (1 - a);
+    n++;
+  }
+  return sum.map((s) => s / n);
+}
+
+test('no stickers (R1-D22): a peeled patch has no hard edge anywhere (no step of half an opacity between two pixels), and its rim is no paler than its middle', () => {
+  const problems = [];
+  for (let i = 0; i < ITEMS.peel.n; i++) {
+    const pic = pictureOf(runPainter('peel', i));
+    if (!pic) { problems.push(`peel:${i} does not write one picture`); continue; }
+    const { width: w, height: h, data } = pic, A = (k) => data[4 * k + 3] / 255, mask = new Uint8Array(w * h);
+    let step = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const k = y * w + x;
+      if (A(k) >= 0.2) mask[k] = 1;
+      if (x < w - 1) step = Math.max(step, Math.abs(A(k) - A(k + 1)));
+      if (y < h - 1) step = Math.max(step, Math.abs(A(k) - A(k + w)));
+    }
+    if (step > 0.5) problems.push(`peel:${i}: two neighbouring pixels differ by ${step.toFixed(2)} in opacity: a cut edge (a feathered one stays under 0.5)`);
+    const depth = depthOf(mask, w, h), rim = [0, 0], mid = [0, 0];
+    for (let k = 0; k < w * h; k++) {
+      const part = depth[k] < 0 ? null : depth[k] <= 3 ? rim : depth[k] >= 7 ? mid : null;
+      if (part) { part[0] += lumaOf([data[4 * k], data[4 * k + 1], data[4 * k + 2]]); part[1]++; }
+    }
+    if (rim[1] < 200 || mid[1] < 200) problems.push(`peel:${i}: only ${rim[1]} rim pixels and ${mid[1]} middle pixels to compare`);
+    else if (rim[0] / rim[1] > mid[0] / mid[1] + 4) problems.push(`peel:${i}: the rim (${(rim[0] / rim[1]).toFixed(0)}) is paler than the middle (${(mid[0] / mid[1]).toFixed(0)}): a pale ring`);
+  }
+  assert.deepEqual(problems, []);
+});
+
+test('no stickers (R1-D22): on every facade colour a peeled patch is a shade of that wall, in its hue and neither a pale blob nor a hole', () => {
+  const problems = [], strong = [[0.15, 0.02, 0.38], [0.012, 0.06, 0.48], [0.7, 0.25, 0.02], [0.75, 0.08, 0.26], [0.55, 0.03, 0.02], [0.02, 0.4, 0.3]], pics = Array.from({ length: ITEMS.peel.n }, (_, i) => pictureOf(runPainter('peel', i)));
+  for (const [name, wall] of [...PALETTE.facade.map((h) => [`#${h.toString(16)}`, lin(h)]), ...strong.map((w) => [`strong ${w}`, w])]) {
+    const tint = peelTint(wall);
+    if (!Array.isArray(tint) || tint.length !== 3 || tint.some((v) => !(v >= 0.05 && v <= 1))) { problems.push(`${name}: the tint ${tint} is not three channels in 0.05 to 1`); continue; }
+    const mean = (wall[0] + wall[1] + wall[2]) / 3, chroma = Math.max(...wall) - Math.min(...wall);
+    for (let i = 0; i < ITEMS.peel.n; i++) {
+      const seen = seenOn(pics[i], tint, wall), ratio = lumaOf(seen) / lumaOf(wall);
+      if (!(ratio > 0.4 && ratio < 1.6)) problems.push(`${name} peel:${i}: the patch is ${ratio.toFixed(2)} times as light as the wall (a pale blob or a hole; want 0.4 to 1.6)`);
+      if (chroma > 0.15) {                                                              // the patch leans the way the wall does: the cosine of the two colour directions (what is left once the grey is taken out)
+        const m = (seen[0] + seen[1] + seen[2]) / 3, a = seen.map((v) => v - m), b = wall.map((v) => v - mean), cos = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (Math.hypot(...a) * Math.hypot(...b) || 1);
+        if (cos < 0.7) problems.push(`${name} peel:${i}: the patch is ${seen.map((v) => v.toFixed(2))} on a wall of ${wall.map((v) => v.toFixed(2))}: not that wall's hue (cosine ${cos.toFixed(2)})`);
+      }
+    }
+  }
+  assert.deepEqual(problems, []);
+});
+
+test('no stickers (R1-D22): the planner tints every peeled patch with the colour of its wall, the ones that are forced onto a low wall too', () => {
+  const problems = [], dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  let peels = 0, forced = 0;
+  for (const [name, o] of [['house', { F: 3, W: 7 }], ['shophouse', { shop: true, W: 5 }], ['terrace', { party: { left: true, right: true }, W: 4.5 }]]) for (let n = 0; n < 40; n++) for (const low of [false, true]) {
+    const { G, kit } = stubFacade(`P${name}${n}${low ? 'low' : ''}`, o);
+    if (low) kit.limitAt = () => 0.52;                      // a front under a roof half a metre high: only the scan that gives every front its third kind fits a mark, and the smallest peel is one that does
+    for (const m of planWeather(G, kit)) if (m.kind === 'peel') {
+      peels++; if (low && m.side === 'front') forced++;
+      const want = peelTint(G.fs.wall);
+      if (!m.tint || dist(m.tint, want) > 1e-9) problems.push(`${G.bp.id}: a peeled patch is tinted ${m.tint}, want ${want}`);
+    }
+  }
+  assert.ok(peels >= 60 && forced >= 10, `${peels} peeled patches, ${forced} of them forced, in 240 stub walls: the seeds no longer reach the code under test`);
   assert.deepEqual(problems, []);
 });
 

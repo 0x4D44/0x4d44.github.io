@@ -2,6 +2,7 @@
 // every entrance.outside (kind 'door'), a small grid inside every plaza / court / mirador. Pure data.
 import { Physics, wallsRect } from '../core/physics.js';
 import { project, pointAt, pointInPoly, polyDistPoint, footprint, segDist, clamp } from './geom.js';
+import { SIDEWALK } from './plan.js';
 
 const NODE_KIND = { road: 'street', street: 'street', alley: 'alley', stair: 'stair', path: 'path' };
 
@@ -74,6 +75,8 @@ export function buildNav(plan, plazaById) {
       hwOf.set(nd.id, Math.max(hwOf.get(nd.id) || 0, st.width / 2));
       if (prev && prev.node !== nd) link(prev.node, nd);
       chain.push({ s, node: nd }); prev = chain[chain.length - 1];
+      // a street with a sidewalk: `pave` is how far the middle of the pavement lies from the centre line, the lane people walk in (people/sim.js `waypoints`; R3-105: they walked the yellow line, 80 % of the time)
+      if (st.sidewalk && nd.kind === 'street') nd.pave = Math.max(nd.pave ?? 0, +(st.width / 2 - SIDEWALK.w / 2).toFixed(2));
     }
     chains.set(st.id, chain);
   }

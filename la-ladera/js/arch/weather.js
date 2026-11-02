@@ -68,11 +68,10 @@ function fadeRound(g, w, h, from = 0.5) {
   g.fillStyle = gr; g.fillRect(-1, -1, 2, 2); g.restore();
 }
 
-// What shows where the top coat has gone: [the old coat, the bare ground under it]. (A decal cannot know the wall it lies on, and a cream or yellow patch of its own on a blue wall is a
-// sticker, R1-D22.) So neither is a colour from another palette: the old coat is a chalky grey laid on the wall at a third to a half of full strength, so the wall's own colour comes
-// through it and the patch is that wall, faded and dulled (on a blue wall and on a white one alike), and the ground is a dull plaster-and-cement brown-grey that no paint job owns.
-const PEEL_COAT = [[176, 168, 154], [164, 168, 170], [182, 170, 142], [160, 156, 150], [188, 180, 168], [168, 160, 148]];
-const PEEL_BARE = [[142, 130, 116], [128, 126, 124], [152, 134, 112], [134, 124, 110], [144, 132, 120], [120, 114, 106]];
+// What shows where the top coat has gone: the bare plaster under it. (A decal cannot know the wall it lies on, and a grey or cream patch of its own on a blue or a purple wall is a sticker,
+// R1-D22, twice.) So the picture is only a dull, even plaster grey and the vertex tint `peelTint` works the wall's own hue into it, wall by wall: a hole in a violet wall is a greyed violet.
+const PEEL_BARE = [[176, 170, 160], [168, 168, 166], [182, 172, 156], [172, 166, 156], [178, 170, 162], [164, 160, 154]];
+const PEEL_TOP = 196;                                                                  // the lightest a speck of it may be (a speck of 200 and over is a pale fleck on any wall)
 const TAGNAMES = ['LOBO', 'ZETA', 'KIKE', 'RIKO', 'SOL', 'NK', 'TITO', 'MAYA'];
 
 /** Smooth 2-D value noise over a w x h grid, rms about 0.3 per unit of amplitude (octaves: amplitude, lattice step in pixels). */
@@ -91,6 +90,16 @@ function fbm2(r, w, h, oct) {
   return out;
 }
 const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+/** Blur a w x h RGBA picture (bytes, not premultiplied) in place with a 3 x 3 binomial kernel, `passes` times, so that no edge in it is a step of one pixel. */
+function soften(px, w, h, passes = 1) {
+  const n = w * h, a = new Float32Array(n * 4), t = new Float32Array(n * 4);
+  for (let k = 0; k < n; k++) { const al = px[k * 4 + 3] / 255; a[k * 4] = px[k * 4] * al; a[k * 4 + 1] = px[k * 4 + 1] * al; a[k * 4 + 2] = px[k * 4 + 2] * al; a[k * 4 + 3] = al; }       // premultiplied: a clear pixel has no colour to bleed
+  for (let s = 0; s < passes; s++) {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 4; c++) { const o = (y * w + x) * 4 + c; t[o] = (a[x > 0 ? o - 4 : o] + 2 * a[o] + a[x < w - 1 ? o + 4 : o]) / 4; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 4; c++) { const o = (y * w + x) * 4 + c; a[o] = (t[y > 0 ? o - 4 * w : o] + 2 * t[o] + t[y < h - 1 ? o + 4 * w : o]) / 4; }
+  }
+  for (let k = 0; k < n; k++) { const al = a[k * 4 + 3]; if (al < 0.002) { px[k * 4] = px[k * 4 + 1] = px[k * 4 + 2] = px[k * 4 + 3] = 0; continue; } px[k * 4] = a[k * 4] / al; px[k * 4 + 1] = a[k * 4 + 1] / al; px[k * 4 + 2] = a[k * 4 + 2] / al; px[k * 4 + 3] = Math.round(al * 255); }
+}
 /** The half-axes (fractions of the width and the height) of the old coat's envelope, by variant: round, tall (a run down the wall), wide, a cluster, large, a low wedge. */
 const PEEL_SHAPE = [[0.3, 0.3], [0.2, 0.38], [0.38, 0.22], [0.31, 0.27], [0.38, 0.36], [0.33, 0.21]];
 /** A soft round blot: `a0` opaque in the middle, nothing at the rim. */
@@ -143,37 +152,39 @@ const PAINT = {
     fade(g, w, h, [0.08, 0.08, 0, 0.12]);
   },
   peel(g, w, h, i, r) {
-    // Paint that has come away, and nothing like a sticker (R1-D22: a pale outline, a ring of flecks, a colour of its own). Painted pixel by pixel from noise, so that its shape is
-    // torn, not drawn: the old coat is where one field is high, the bare ground where another is, islands of paint stand in the old coat, and every edge is a step a pixel or two wide
-    // with no line along it. The old coat is chalky and a third to a half as strong as paint (PEEL_COAT), so the wall's own colour comes through it, on a blue wall and on a white
-    // one alike; the bare ground is the dull brown-grey of plaster and cement (PEEL_BARE). Where the top coat stands over the hole its lip shades the edge inside, up and to the left;
-    // round the whole of it the plaster is wet and a little darker, and a few scraps lift beside it. A few thin runs of water leave the hole.
-    const coat = PEEL_COAT[i % PEEL_COAT.length], bare = PEEL_BARE[i % PEEL_BARE.length], [ax, ay] = PEEL_SHAPE[i % PEEL_SHAPE.length], rx = ax * w, ry = ay * h;
+    // Paint that has come away, and nothing like a sticker (R1-D22, twice: a ring of grey flecks round a core, and a pale blob on a purple wall). Painted pixel by pixel from noise, so that the
+    // shape is torn, not drawn, and then softened, so that no edge of it is a step of one pixel. The picture is only bare plaster in a dull, even grey (PEEL_BARE): the vertex tint
+    // (`peelTint`) turns it into the plaster of THIS wall, a greyed shade of the wall's own colour, so that a hole in a violet wall is a greyed violet and not a grey sticker. There is no old
+    // coat laid round the hole (that was the pale ring): round it the wall is only a little wetter and darker, fading out over a hand's breadth. The hole is thin enough to let the grain of
+    // the wall come through it; where the top coat stands over it, its lip shades the plaster, up and to the left; a stand of paint is left in it here and there, and a few pits lie round it.
+    // A thin run of water leaves the hole.
+    const bare = PEEL_BARE[i % PEEL_BARE.length], [ax, ay] = PEEL_SHAPE[i % PEEL_SHAPE.length], rx = ax * w, ry = ay * h;
     const cx = w / 2 + (r() - 0.5) * 0.08 * w, cy = h / 2 + (r() - 0.5) * 0.08 * h;
-    const bx = cx + (r() - 0.5) * rx * 0.7, by = cy + (r() - 0.35) * ry * 0.6, brx = rx * (0.4 + 0.2 * r()), bry = ry * (0.4 + 0.2 * r());
+    const bx = cx + (r() - 0.5) * rx * 0.5, by = cy + (r() - 0.35) * ry * 0.5, brx = rx * (0.74 + 0.16 * r()), bry = ry * (0.74 + 0.16 * r());
     const n1 = fbm2(r, w, h, [[1, 52], [0.6, 24], [0.36, 10], [0.2, 4.5]]), n2 = fbm2(r, w, h, [[1, 40], [0.6, 17], [0.36, 7], [0.2, 3.5]]);       // the two outlines
-    const mot = fbm2(r, w, h, [[1, 18], [0.6, 6], [0.5, 2]]), isl = fbm2(r, w, h, [[1, 15], [0.5, 6]]), sp = fbm2(r, w, h, [[1, 12], [0.5, 4.5]]), fl = fbm2(r, w, h, [[1, 5], [0.6, 2.5]]);   // mottle, islands of paint, spots of bare ground, flecks
-    const tA = 0.2, tB = 0.12, E = 0.04;
+    const mot = fbm2(r, w, h, [[1, 18], [0.6, 6], [0.5, 2]]), isl = fbm2(r, w, h, [[1, 15], [0.5, 6]]), sp = fbm2(r, w, h, [[1, 12], [0.5, 4.5]]), fl = fbm2(r, w, h, [[1, 5], [0.6, 2.5]]);   // mottle, stands of paint, pits, grain
+    const tA = 0.2, tB = 0.02, E = 0.1;
     const at = (x, y) => clamp(Math.round(y), 0, h - 1) * w + clamp(Math.round(x), 0, w - 1);
-    const sA = (x, y) => { const ex = (x - cx) / rx, ey = (y - cy) / ry; return 1 - ex * ex - ey * ey + 0.45 * n1[at(x, y)]; };                         // > tA: the old coat shows
-    const sB = (x, y) => { const ex = (x - bx) / brx, ey = (y - by) / bry; return 1 - ex * ex - ey * ey + 0.5 * n2[at(x, y)]; };                          // > tB (and inside the old coat): bare
-    const bareAt = (x, y) => Math.max(sstep(tB - E, tB + E, sB(x, y)), sstep(0.3, 0.36, sp[at(x, y)])) * sstep(tA + 0.04, tA + 0.14, sA(x, y));        // 1 where the ground is bare: a core, and spots about it
+    const reach = (x, y) => { const ex = (x - cx) / rx, ey = (y - cy) / ry; return 1 - ex * ex - ey * ey + 0.45 * n1[at(x, y)]; };                 // > tA: inside the damage
+    const core = (x, y) => { const ex = (x - bx) / brx, ey = (y - by) / bry; return 1 - ex * ex - ey * ey + 0.55 * n2[at(x, y)]; };                // > tB: the main hole
+    const holeAt = (x, y) => {                                                                                                                       // 1 where the plaster is bare: the hole and its pits, less the stands of paint
+      const k = at(x, y), stand = sstep(0.5, 0.6, isl[k]) * sstep(0.1, 0.4, core(x, y));
+      return Math.max(sstep(tB - E, tB + E, core(x, y)), sstep(0.3, 0.42, sp[k])) * sstep(tA + 0.02, tA + 0.18, reach(x, y)) * (1 - stand);
+    };
     const img = g.createImageData(w, h), px = img.data;
     let al = 0, cr = 0, cg = 0, cb = 0;
     const over = (c, f, a) => { a *= f; if (a < 0.003) return; const na = a + al * (1 - a); cr = (c[0] * a + cr * al * (1 - a)) / na; cg = (c[1] * a + cg * al * (1 - a)) / na; cb = (c[2] * a + cb * al * (1 - a)) / na; al = na; };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const k = y * w + x, a = sA(x, y), m = mot[k];
-      al = 0; cr = coat[0]; cg = coat[1]; cb = coat[2];
-      const inA = sstep(tA - E, tA + E, a), inB = bareAt(x, y);
-      over([58, 44, 30], 0.13 * sstep(tA - 0.9, tA, a), 0.8 + 0.4 * m);                                                                       // the wet round it
-      const pocket = sstep(0.5, 0.58, isl[k]) * sstep(tA + 0.12, tA + 0.4, a);                                                                 // a stand of paint left in the old coat
-      over([coat[0] * (1 + 0.12 * m), coat[1] * (1 + 0.12 * m), coat[2] * (1 + 0.12 * m)], inA * (1 - pocket), 0.46 * (0.9 + 0.2 * m));          // the old coat
-      over([bare[0] * (1 + 0.12 * fl[k]), bare[1] * (1 + 0.12 * fl[k]), bare[2] * (1 + 0.12 * fl[k])], inB, 0.82 * (0.92 + 0.16 * m));         // the bare ground
-      over([30, 22, 14], inA * (1 - sstep(tA - E, tA + E, sA(x - 3, y - 3.5))), 0.3);                                                          // the lip of the top coat shades the old coat
-      over([24, 18, 12], inB * (1 - bareAt(x - 3.5, y - 5)), 0.4);                                                                             // and the old coat shades the bare ground
-      over(coat, sstep(0.52, 0.6, fl[k]) * sstep(tA - 0.42, tA - 0.1, a) * (1 - inA), 0.4);                                                    // scraps lifting beside it
+      const k = y * w + x, m = mot[k], hole = holeAt(x, y), shade = 1 + 0.14 * m + 0.1 * fl[k];
+      al = 0; cr = bare[0]; cg = bare[1]; cb = bare[2];
+      over([58, 44, 30], 0.15 * sstep(tA - 1.1, tA + 0.1, reach(x, y)) * (1 - hole), 0.8 + 0.4 * m);                                           // the wall round the hole is wetter and a shade darker
+      over([Math.min(PEEL_TOP, bare[0] * shade), Math.min(PEEL_TOP, bare[1] * shade), Math.min(PEEL_TOP, bare[2] * shade)], hole, 0.76 * (0.9 + 0.2 * m));      // the bare plaster, thin enough for the wall's grain to come through, never a pale fleck
+      over([46, 38, 30], hole * sstep(0.15, 0.6, -m), 0.2);                                                                                     // damper, darker plaster where it stays wet
+      over([24, 18, 12], hole * (1 - holeAt(x - 3, y - 4.5)), 0.34);                                                                            // the lip of the top coat shades the plaster beside it
+      over([24, 18, 12], hole * (1 - holeAt(x - 7, y - 10)), 0.12);                                                                             // and, softer, a little further
       const p = k * 4; px[p] = cr; px[p + 1] = cg; px[p + 2] = cb; px[p + 3] = Math.round(al * 255);
     }
+    soften(px, w, h);
     const tr = g.getTransform ? g.getTransform() : null;
     g.putImageData(img, tr ? tr.e : 0, tr ? tr.f : 0);
     g.lineCap = 'round';
@@ -303,22 +314,24 @@ const PAINT = {
     fade(g, w, h, [0.12, 0.12, 0, 0.15]);
   },
   efflor(g, w, h, i, r) {
-    // Salts on brick: the lower courses are dark with wet, and a thin bloom of white dust lies on them, thickest under the top of the wet where it dried out. A crust, not a stripe.
-    const lo = fbm(r, w + 4), hi = fbm(r, w + 4, [[1, 30], [0.5, 11], [0.2, 4]]), reach = new Float32Array(w), dark = [44, 30, 24], salt = [238, 235, 224];
+    // Salts on brick: the lower courses are dark with wet, and the salt that rose with the water has dried on them as a CRUST: hard little flecks and ragged patches of them, thickest just under the
+    // top of the wet, where it evaporates. Never a haze and never a soft blot: a translucent white laid over red brick is pink, and a blur hanging on a wall reads as a puff of smoke (R1-105, worst at
+    // night, when a pale decal is the brightest thing at the foot of the wall). So no gradient of salt, no blurred disc: every fleck is a small hard rectangle that is mostly opaque, and the brick between
+    // the flecks stays brick.
+    const lo = fbm(r, w + 4), hi = fbm(r, w + 4, [[1, 30], [0.5, 11], [0.2, 4]]), reach = new Float32Array(w), dark = [44, 30, 24], salts = [[206, 202, 190], [192, 188, 176], [218, 214, 202], [176, 170, 158]];
     for (let x = 0; x < w; x++) {
       reach[x] = clamp(0.6 + 0.14 * lo[x] + 0.2 * Math.max(0, hi[x]), 0.25, 0.97);
       const top = h * (1 - reach[x]), gr = g.createLinearGradient(0, top, 0, h);
       gr.addColorStop(0, rgba(dark, 0)); gr.addColorStop(0.5, rgba(dark, 0.12)); gr.addColorStop(1, rgba(dark, 0.36));
       g.fillStyle = gr; g.fillRect(x, 0, 1, h);
-      const bl = g.createLinearGradient(0, top - 3, 0, top + h * 0.5), thick = 0.07 + 0.2 * Math.max(0, hi[x]) + 0.03 * lo[x];
-      bl.addColorStop(0, rgba(salt, 0)); bl.addColorStop(0.2, rgba(salt, Math.max(0.03, thick))); bl.addColorStop(1, rgba(salt, 0));
-      g.fillStyle = bl; g.fillRect(x, 0, 1, h);
     }
-    for (let k = 0; k < 12; k++) {                                                                                                                               // thicker crust here and there: wide and low, laid along the courses
-      const x = r() * w, y = h * (1 - reach[x | 0] * (0.5 + 0.45 * r())), rad = 10 + r() * 20;
-      g.save(); g.translate(x, y); g.scale(1, 0.28); soft(g, 0, 0, rad, salt, 0.12 + r() * 0.12); g.restore();
+    const fleck = (x, y, wd, ht, a) => { g.fillStyle = rgba(salts[Math.floor(r() * salts.length)], a); g.fillRect(x, y, wd, ht); };
+    const crusts = 7 + Math.floor(r() * 4);
+    for (let k = 0; k < crusts; k++) {                                                                                                         // ragged crusts: flecks heaped in an ellipse wider than it is tall, along the courses
+      const x0 = 6 + r() * (w - 12), y0 = h * (1 - reach[x0 | 0] * (0.55 + 0.4 * r())), rx = 7 + r() * 16, ry = 2.2 + r() * 3.2, n = 16 + Math.floor(r() * 22);
+      for (let q = 0; q < n; q++) { const a = r() * 6.283, d = Math.sqrt(r()); fleck(x0 + Math.cos(a) * rx * d, y0 + Math.sin(a) * ry * d, 1 + r() * 3.4, 0.9 + r() * 1.5, 0.5 + r() * 0.42); }
     }
-    for (let k = 0; k < 110; k++) { const x = r() * w; g.fillStyle = rgba(salt, 0.18 + r() * 0.4); g.fillRect(x, h * (1 - reach[x | 0] * (0.4 + 0.6 * r())), 0.8 + r() * 2.4, 0.7 + r() * 1.1); }   // crystals along the mortar
+    for (let k = 0, n = 70 + Math.floor(r() * 40); k < n; k++) { const x = r() * w; fleck(x, h * (1 - reach[x | 0] * (0.35 + 0.65 * r())), 0.8 + r() * 1.8, 0.7 + r() * 1.0, 0.3 + r() * 0.5); }   // crystals along the mortar, over the whole wet height
     fade(g, w, h, [0.12, 0.12, 0, 0]);
   },
 };
@@ -392,6 +405,13 @@ export function patchTint(variant, wall) {
   }
   return null;
 }
+/**
+ * The vertex tint (linear) of a peeled patch on a wall of this colour. The picture is a plain grey plaster. The plaster of a wall whose paint has stood for years has taken the wall's colour
+ * (it has bled into it), so the hole is a greyed shade of the wall, half the wall and half cement: never a grey or a beige of its own (R1-D22: a pale blob on a purple wall).
+ */
+export function peelTint(wall) {
+  return wall.map((v, k) => clamp(v * 0.45 + [0.72, 0.68, 0.62][k] * 0.55, 0.05, 1));
+}
 
 // ---- how high the damp climbs: one level for each lot, no two neighbours alike ---------------------------------------------------------------------------
 /** Heights (m) the wet can reach on a front. A lot gets one of them (`assignDampLevels`), so that a street does not wear one tide line from end to end (review R1-D05). */
@@ -434,7 +454,7 @@ const FOOD = ['panaderia', 'restaurante', 'cafe', 'carniceria'];
 export function planWeather(G, kit) {
   const { S, bp, fs } = G, fh = S.fh, yF = S.F * fh, yTop = S.openTop ? (S.F - 1) * fh + PRETIL_H : yF, marks = [];
   let ctr = 0; const rnd = () => hash01(bp.id, 1000 + ctr++), hv = (n) => hash01(bp.id, 900 + n);
-  const brick = !!fs.brick || kit.kind === 'unfinished', peeling = fs.m === 'paint_peeling_soft';
+  const brick = !!fs.brick || kit.kind === 'unfinished', peeling = fs.m === 'paint_peeling_soft', peelOpt = () => ({ tint: peelTint(fs.wall) });
   const age = (kit.inst ? 0.55 : 1) * (0.2 + 0.8 * hv(0));                                  // 0 freshly painted .. 1 neglected
   // how high the wet climbs: a level for the lot (the front), and a side wall is always a good deal lower or higher than that (a different wall, other ground behind it)
   const level = dampLevelOf(G.ctx, G.lot, bp.id), wallK = (side) => { if (side === 'front') return 1; const t = hv(side === 'left' ? 21 : 22); return t < 0.5 ? 0.6 + 0.5 * t : 0.9 + 0.4 * t; };
@@ -529,7 +549,7 @@ export function planWeather(G, kit) {
     // -- peeling and repaired patches, cracks at the corners of windows
     if (!brick) {
       const nPeel = Math.round(age * (peeling ? 1 : front ? 2.6 : 1.6) * (0.5 + rnd()));
-      for (let k = 0; k < nPeel; k++) place('peel', side, 0.4 + 0.55 * rnd(), wallReg(side, 0.5));
+      for (let k = 0; k < nPeel; k++) place('peel', side, 0.4 + 0.55 * rnd(), wallReg(side, 0.5), peelOpt());
       const nPatch = (rnd() < 0.55 ? 1 : 0) + (age > 0.65 && rnd() < 0.6 ? 1 : 0);
       for (let k = 0; k < nPatch; k++) {
         const u = rnd(), variant = u < 0.3 ? 0 : u < 0.65 ? 1 : u < 0.82 ? 2 : 3;                      // a render patch, a roller-painted square, a sheet of zinc, boards
@@ -574,7 +594,7 @@ export function planWeather(G, kit) {
     }
     return null;
   };
-  const FORCE = { damp: scanDamp, streak: () => scan('streak', 0.8, 0.2, yTop), stain: () => scan('stain', 0.7, 0.3, yTop), peel: () => scan('peel', 0.45, 0.3, yTop), patch: () => scan('patch', 0.35, 0.3, yTop, { variant: 0, tint: patchTint(0, fs.wall) }), crack: () => scan('crack', 0.45, 0.3, yTop) };
+  const FORCE = { damp: scanDamp, streak: () => scan('streak', 0.8, 0.2, yTop), stain: () => scan('stain', 0.7, 0.3, yTop), peel: () => scan('peel', 0.45, 0.3, yTop, peelOpt()), patch: () => scan('patch', 0.35, 0.3, yTop, { variant: 0, tint: patchTint(0, fs.wall) }), crack: () => scan('crack', 0.45, 0.3, yTop) };
   for (const k of ['damp', 'streak', 'stain', 'peel', 'patch', 'crack']) { if (kinds().size >= 3) break; if (!kinds().has(k)) FORCE[k](); }
   // the condensate of an air-conditioner dribbles down the wall under it (more where the paint is old). Planned last, from hashes of its own, so that no other mark moves.
   for (const a of G.recs) {

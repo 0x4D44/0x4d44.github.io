@@ -25,7 +25,7 @@ export default {
     ['¡Buenas! Ya está refrescando, ¿sí o qué?', "Hey! It's getting chilly, isn't it?"],
     ['Buenas noches, joven. ¿Todavía paseando?', 'Good evening. Still out walking?'],
     ['Buenas noches. Qué lindas se ven las luces desde aquí.', 'Good evening. The lights look lovely from here.'],
-    ['Buenas tardes… bueno, ya casi buenas noches. ¿Cómo está?', 'Good afternoon… well, nearly evening. How are you?'],
+    ['Buenas tardes… bueno, ya casi buenas noches. ¿Cómo está?', 'Good afternoon… well, nearly evening. How are you?', { to: 19.5 }],
   ],
   greet_n: [
     ['Uy, a esta hora… buenas noches. ¿No tiene sueño?', 'Oh, at this hour… good evening. Not sleepy?'],

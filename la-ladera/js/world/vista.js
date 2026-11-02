@@ -1,5 +1,6 @@
 // VISTA (A5): the city the plot looks onto. Boxes for the houses of the far land (the valley to the south, the opposite hillside, the flanks), a church,
-// four towers, a TV mast on the northern ridge, and a glow point for every lit window and every beacon (ctx.glow extras, one Points draw call in all).
+// four towers, a TV mast on the northern ridge, and a glow point for every lit window and every beacon (ctx.glow extras, one Points draw call in all). Part of the houses stand under a
+// pitched roof (roofHat / hatFaces: gable, hip or shed) and half the roof huts of the flat ones are set-back rooms (houseParts), so the far hills are not one box repeated (R1-D20).
 // vistaSites() / farHouses() / vistaLights() are pure functions of the plan: they run under node and are tested there. buildVista() only draws them.
 // Group world.vista: no shadows, a handful of draw calls (one per material).
 // The modelled vista kit (vista-kit.js + vista-plan.js, Codex's GLB terraces, instanced with distance LODs) is built BEFORE this file: where it stands, farHouses keeps off it (kitZones),
@@ -43,7 +44,7 @@ export function vistaSites(plan) {
 const WALLS = [[0.86, 0.78, 0.62], [0.82, 0.52, 0.38], [0.58, 0.64, 0.72], [0.78, 0.72, 0.82], [0.64, 0.72, 0.56], [0.86, 0.62, 0.64], [0.72, 0.70, 0.66], [0.92, 0.86, 0.72],
   [0.50, 0.58, 0.78], [0.84, 0.68, 0.38], [0.70, 0.40, 0.30], [0.62, 0.62, 0.60],        // paint, raw brick and bare concrete: what a hillside barrio is made of
   [0.28, 0.46, 0.74], [0.30, 0.62, 0.46], [0.92, 0.62, 0.20], [0.82, 0.30, 0.34], [0.94, 0.84, 0.30], [0.56, 0.36, 0.66]];   // and the bolder coats of the near streets: blue, green, orange, red, yellow, violet
-const ROOFS = [['roof_tile_clay', [0.95, 0.80, 0.72]], ['corrugated_zinc', [0.80, 0.82, 0.84]], ['concrete_bare', [0.62, 0.62, 0.60]], ['corrugated_zinc', [0.70, 0.46, 0.38]], ['concrete_bare', [0.35, 0.50, 0.72]]];
+export const ROOFS = [['roof_tile_clay', [0.95, 0.80, 0.72]], ['corrugated_zinc', [0.80, 0.82, 0.84]], ['concrete_bare', [0.62, 0.62, 0.60]], ['corrugated_zinc', [0.70, 0.46, 0.38]], ['concrete_bare', [0.35, 0.50, 0.72]]];
 
 /**
  * The houses of the far land (R1-D15: "dice thrown on a lawn"): ROWS of houses that follow the contours, wall to wall, the way a hillside barrio is built. A row starts where
@@ -158,9 +159,60 @@ export function windowCorners({ x, y, z, nx, nz, w, h }) {
   return [[x - tx * a, y - b, z - tz * a], [x + tx * a, y - b, z + tz * a], [x + tx * a, y + b, z + tz * a], [x - tx * a, y + b, z - tz * a]];
 }
 
+// The roofs of the far houses (R1-D20, round 6: "the houses are still flat-windowed boxes of identical form"). The flat slab is still the top of every house (the tests walk it); on part of the tile and zinc
+// houses a pitched roof now stands on a plain lid instead: a gable with its front to the street, a hip, or a mono-pitch shed ("a una agua"). Pure and in the house's frame, like houseParts, so the node
+// tests walk the very numbers buildVista draws. No random stream: a hash of the house.
+export const HAT_FLOORS = 5;                                        // a block of six floors keeps its flat roof
+export const HAT_REACH = 450;                                       // beyond this many metres from the plot's rim a roof is a pixel or two high, and the vista keeps its triangles
+export const EAVE = 0.25;                                           // how far a pitched roof stands out over the front and the back wall, m
+export const HAT_SHARE = { roof_tile_clay: 0.9, corrugated_zinc: 0.7 };   // the share of the houses of each roof material under a pitched roof (the concrete ones stay flat)
+const SLOPE = { roof_tile_clay: [0.42, 0.56], corrugated_zinc: [0.2, 0.3] };   // the tangent of the pitch: 23 to 29 degrees for tile, 11 to 17 for zinc
+
+/** The pitched roof of a far house, or null when it keeps its flat slab: { form: 'gable' | 'hip' | 'shed', rise (the ridge above the lid, m), lift (the lid above the wall's top: the slab's thickness within DETAIL, 0 beyond) }. */
+export function roofHat(plan, h) {
+  const g = gap(h), mat = ROOFS[h.roof][0], share = HAT_SHARE[mat];
+  if (!share || g > HAT_REACH || h.floors > HAT_FLOORS) return null;
+  const r = (a) => h01(h.i * 977 + a, h.j * 131 + 7, plan.seed + 340);
+  if (r(1) >= share) return null;
+  const tile = mat === 'roof_tile_clay', form = tile ? (r(2) < 0.62 ? 'gable' : 'hip') : (r(2) < 0.6 ? 'shed' : 'gable'), [t0, t1] = SLOPE[mat], tan = t0 + (t1 - t0) * r(3);
+  const rise = form === 'shed' ? Math.min(1.7, (h.d + 2 * EAVE) * (0.12 + 0.12 * r(3))) : form === 'hip' ? Math.min(1.9, (Math.min(h.w, h.d) / 2 + EAVE) * tan) : Math.min(2.2, (h.w / 2) * tan);
+  return { form, rise: +Math.max(0.8, rise).toFixed(3), lift: g > DETAIL ? 0 : 0.25 };      // (a low zinc roof on a narrow house is still 0.8 m at the ridge: under that it does not read)
+}
+
+/**
+ * The faces of a house's pitched roof in world coordinates, standing on the lid at y = wall top + hat.lift: `roof` (in the roof's own material) and `wall` (a gable end or a back wall, in the house's paint). Three
+ * corners are a triangle, four a quad, counter-clockwise from outside. Where a house shares a wall the roof stops at it (an open end stands out 15 cm), so two neighbours meet without a gap.
+ */
+export function hatFaces(h, hat) {
+  const cs = Math.cos(h.ry), sn = Math.sin(h.ry), P = (x, y, z) => [h.x + x * cs + z * sn, y, h.z - x * sn + z * cs];
+  const hw = h.w / 2, hd = h.d / 2, y = h.y + h.h + hat.lift, k = hat.rise, party = h.party ?? {};
+  const xa = -hw - (party.left ? 0 : 0.15), xb = hw + (party.right ? 0 : 0.15), xm = (xa + xb) / 2, z0 = -hd - EAVE, z1 = hd + EAVE, roof = [], wall = [];
+  if (hat.form === 'gable') {                                                                                         // ridge front to back
+    roof.push([P(xa, y, z0), P(xa, y, z1), P(xm, y + k, z1), P(xm, y + k, z0)], [P(xb, y, z1), P(xb, y, z0), P(xm, y + k, z0), P(xm, y + k, z1)]);
+    wall.push([P(-hw, y, hd), P(hw, y, hd), P(xm, y + k, hd)], [P(hw, y, -hd), P(-hw, y, -hd), P(xm, y + k, -hd)]);
+  } else if (hat.form === 'shed') {                                                                                   // high at the back, falling to the front; the ends are closed in the roof's own sheet
+    roof.push([P(xa, y, z1), P(xb, y, z1), P(xb, y + k, z0), P(xa, y + k, z0)], [P(xa, y, z0), P(xa, y, z1), P(xa, y + k, z0)], [P(xb, y, z1), P(xb, y, z0), P(xb, y + k, z0)]);
+    wall.push([P(hw, y, -hd), P(-hw, y, -hd), P(-hw, y + k, -hd), P(hw, y + k, -hd)]);
+  } else {                                                                                                            // hip: four slopes round a ridge along the longer side (a pyramid when the plan is nearly square)
+    const W = xb - xa, D = z1 - z0, zm = (z0 + z1) / 2, rl = Math.abs(W - D) / 2;
+    if (rl < 0.4) {
+      const top = P(xm, y + k, zm);
+      roof.push([P(xa, y, z1), P(xb, y, z1), top], [P(xb, y, z1), P(xb, y, z0), top], [P(xb, y, z0), P(xa, y, z0), top], [P(xa, y, z0), P(xa, y, z1), top]);
+    } else if (W >= D) {
+      const l = P(xm - rl, y + k, zm), r = P(xm + rl, y + k, zm);
+      roof.push([P(xa, y, z1), P(xb, y, z1), r, l], [P(xb, y, z0), P(xa, y, z0), l, r], [P(xb, y, z1), P(xb, y, z0), r], [P(xa, y, z0), P(xa, y, z1), l]);
+    } else {
+      const f = P(xm, y + k, zm + rl), b = P(xm, y + k, zm - rl);
+      roof.push([P(xa, y, z0), P(xa, y, z1), f, b], [P(xb, y, z1), P(xb, y, z0), b, f], [P(xa, y, z1), P(xb, y, z1), f], [P(xb, y, z0), P(xa, y, z0), b]);
+    }
+  }
+  return { roof, wall };
+}
+
 /**
  * The windows, doors and roof items of one far house (empty beyond DETAIL m of the rim). windows/doors: { x, y, z, nx, nz, w, h, face, floor, col } (the centre of a quad 4 cm off the wall);
  * boxes: { mat, lx, lz, y, sx, sy, sz, col } in the house's frame, y the bottom; tanks: { lx, lz, y, r, h, col }. A window never sits lower than 25 cm above the ground outside it.
+ * A house under a pitched roof (roofHat) has no roof items: a tank or a stair hut would stand in the air on a slope.
  */
 export function houseParts(plan, h, far = farOf(plan)) {
   const out = { windows: [], doors: [], boxes: [], tanks: [] };
@@ -185,6 +237,7 @@ export function houseParts(plan, h, far = farOf(plan)) {
       out.windows.push({ x, y, z, nx: f.nx, nz: f.nz, w: WIN.w, h: WIN.h, face: fi, floor: fl, col: glass });
     }
   });
+  if (roofHat(plan, h)) return out;                                                                      // a pitched roof carries nothing on it
   const hw = (h.w + 0.3) / 2, hd = (h.d + 0.3) / 2, y0 = top + 0.25, paint = WALLS[h.wall].map((v) => Math.min(1, v * h.tone * 0.94)), flat = ROOFS[h.roof][0] === 'concrete_bare';
   const kind = r(30), sx = r(31) < 0.5 ? -1 : 1, sz = r(32) < 0.5 ? -1 : 1;
   if (r(33) < 0.55) out.tanks.push({ lx: sx * (hw - 0.9), lz: sz * (hd - 0.9), y: y0, r: 0.55, h: 1.15, col: r(34) < 0.6 ? [0.1, 0.1, 0.12] : [0.12, 0.26, 0.5] });
@@ -194,9 +247,9 @@ export function houseParts(plan, h, far = farOf(plan)) {
   if (kind < 0.3 && flat) {                                                                              // an unfinished top: rebar at the corners and along the edges
     for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, -1], [0, 1]]) out.boxes.push({ mat: 'plaster_a', lx: u * (hw - 0.3), lz: v * (hd - 0.3), y: y0, sx: 0.07, sy: 0.9 + 0.9 * r(35 + (u + 1) * 2 + (v + 1) / 2), sz: 0.07, col: [0.44, 0.24, 0.13] });
   } else {
-    if (kind < 0.62) {                                                                                   // a stair hut at the corner opposite the tank
-      const hx = Math.min(hw - 0.2, 1.5), hz = Math.min(hd - 0.2, 1.5);
-      out.boxes.push({ mat: 'plaster_rough', lx: -sx * (hw - hx - 0.2), lz: -sz * (hd - hz - 0.2), y: y0, sx: 2 * hx, sy: 2.45, sz: 2 * hz, col: paint });
+    if (kind < 0.62) {                                                                                   // a stair hut at the corner opposite the tank, or (half of them) a room: a floor set back from the front, with a terrace before it
+      const room = r(36) < 0.5, hx = Math.min(hw - 0.2, room ? hw * (out.tanks.length ? 0.45 : 0.5 + 0.2 * r(37)) : 1.5), hz = Math.min(hd - 0.2, room ? hd * (0.4 + 0.2 * r(38)) : 1.5);
+      out.boxes.push({ mat: 'plaster_rough', lx: -sx * (hw - hx - 0.2), lz: room ? -(hd - hz - 0.2) : -sz * (hd - hz - 0.2), y: y0, sx: 2 * hx, sy: room ? 2.7 : 2.45, sz: 2 * hz, col: paint });
     }
     if (flat) parapet();                                                                                 // and a low parapet round a flat roof
   }
@@ -255,11 +308,17 @@ export function buildVista(K) {
     const col = WALLS[h.wall].map((v, k) => haze(Math.min(1, v * h.tone), [0.8, 0.77, 0.74][k])), top = h.y + h.h, [rm, rc0] = ROOFS[h.roof], rc = rc0.map((v, k) => haze(v, [0.8, 0.77, 0.74][k]));
     const cs = Math.cos(h.ry), sn = Math.sin(h.ry), party = h.party ?? {}, x0 = -h.w / 2 - (party.left ? 0 : 0.15), x1 = h.w / 2 + (party.right ? 0 : 0.15), mx = (x0 + x1) / 2;
     const sides = [...(party.left ? ['nx'] : []), ...(party.right ? ['px'] : [])];
-    b.box('plaster_rough', h.x, (h.y - 1.6 + top) / 2, h.z, h.w, top - h.y + 1.6, h.d, { ry: h.ry, col, skip: ['ny', 'py', ...sides] });
-    if (dist > DETAIL) {                                                                                            // under a pixel of overhang out here: the roof is its top face alone
-      const P = (lx, lz) => [h.x + lx * cs + lz * sn, top, h.z - lx * sn + lz * cs];
+    const hat = roofHat(plan, h), lid = hat ? hat.lift : 0;                                                         // a pitched roof stands on a lid, and the wall goes up to it
+    b.box('plaster_rough', h.x, (h.y - 1.6 + top + lid) / 2, h.z, h.w, top + lid - h.y + 1.6, h.d, { ry: h.ry, col, skip: ['ny', 'py', ...sides] });
+    if (dist > DETAIL || hat) {                                                                                     // under a pixel of overhang out here: the roof is its top face alone (and a pitched roof stands on that face)
+      const P = (lx, lz) => [h.x + lx * cs + lz * sn, top + lid, h.z - lx * sn + lz * cs];
       b.quad(rm, P(-h.w / 2, h.d / 2), P(h.w / 2, h.d / 2), P(h.w / 2, -h.d / 2), P(-h.w / 2, -h.d / 2), { col: rc });
     } else b.box(rm, h.x + mx * cs, top + 0.125, h.z - mx * sn, x1 - x0, 0.25, h.d + 0.3, { ry: h.ry, col: rc, skip: ['ny', ...sides] });          // no overhang and no edge on a party side: the two roofs meet
+    if (hat) {                                                                                                      // the pitched roof itself (hatFaces: the numbers the tests walk)
+      const faces = hatFaces(h, hat), put = (m, q, c) => (q.length === 4 ? b.quad(m, q[0], q[1], q[2], q[3], { col: c }) : b.tri(m, q[0], q[1], q[2], { col: c }));
+      for (const q of faces.roof) put(rm, q, rc);
+      for (const q of faces.wall) put('plaster_rough', q, col);
+    }
     const slab = (g) => (g > DETAIL ? 0 : 0.25);                                                                    // the roof slab of a house: none beyond DETAIL
     for (const [e, nb] of [[1, party.right ? houses[hi + 1] : null], [-1, party.left ? houses[hi - 1] : null]]) {      // a party wall is the neighbour's too, but the part of it above the lower roof is still a wall
       const y0 = nb && nb.y + nb.h + slab(gap(nb)), y1 = top + slab(dist);
