@@ -293,21 +293,21 @@ export class Physics {
   }
 
   /**
-   * Is a character at (x,z) shut in? It walks the free space round the character in steps of 0.12 m (where a step really ends, push-out included)
-   * and gives up the moment it gets K steps (0.84 m) away. null = there is room to go on (an ordinary wall, a lane, a room); else how far the pocket
+   * Is a character at (x,z) shut in? It walks the free space round the character in steps of 0.12 m (where a step really ends, push-out included, the feet
+   * on whatever surface is within a step of them there: a ramp or a flight carries them with it) and gives up the moment it gets K steps (0.84 m) away. null = there is room to go on (an ordinary wall, a lane, a room); else how far the pocket
    * reaches from (x,z), in metres: a character wedged inside furniture's wall zones (0), or in a sliver between two outlines. Eight trials per spot
    * it can stand on, about 60 in the open; a pocket as big as the search allows costs at most a couple of thousand (K = 20: about ten thousand).
    */
   _pocket(x, z, y, R, H, STEP, SL, K = 7) {
-    const D = 0.12, W = 2 * K + 1, px = [x], pz = [z];
+    const D = 0.12, W = 2 * K + 1, px = [x], pz = [z], py = [y];
     let seen = this._seen.get(K);
     if (!seen) this._seen.set(K, seen = new Uint8Array(W * W));
     seen.fill(0); seen[K * W + K] = 1;
     let reach = 0;
     while (px.length) {
-      const cx = px.pop(), cz = pz.pop();
+      const cx = px.pop(), cz = pz.pop(), cy = py.pop();
       for (const [di, dj] of NB) {
-        const p = this._stepPos(y, cx + di * D, cz + dj * D, R, H, STEP, SL);
+        const p = this._stepPos(cy, cx + di * D, cz + dj * D, R, H, STEP, SL);
         if (!p) continue;
         const a = Math.round((p[0] - x) / D) + K, b = Math.round((p[1] - z) / D) + K;
         if (a <= 0 || b <= 0 || a >= W - 1 || b >= W - 1) return null;                // got 0.84 m away: there is room
@@ -315,6 +315,10 @@ export class Physics {
         seen[b * W + a] = 1;
         reach = Math.max(reach, Math.hypot(p[0] - x, p[1] - z));
         px.push(p[0]); pz.push(p[1]);
+        // The feet go where the surface goes: on a flight the walker climbs or comes down, and the slab or the next flight that was 2.8 m above the landing is not 1.4 m above a body on the half
+        // landing (a fixed feet height made every body on a stair "shut in": under the flight above, over the landing's slab, nothing to walk to: R6 R2a, 299 of 648 presses 'crossed' the core's wall).
+        const f = this._surf(p[0], p[1], cy, STEP, H);
+        py.push(f.best > -Infinity && Math.abs(f.best - cy) <= STEP ? f.best : cy);
       }
     }
     return reach;
