@@ -1,7 +1,8 @@
 // A2: the stairs, walked by the REAL player in the page's world (guard walls, props, furniture), with the player's own stall net on (review R6: R2a-001, R2a-002).
 //  * R2a-001: L31's stair could not be walked up from floor 1 to 2 or from 2 to 3: the retaining boxes' invisible guard lines (world/walls.js) ran on through the building and one stood across the
 //    half landing, so the walker stopped at y 11.35 and 14.15 and only a jump got him onto the next flight. 28 of the 109 buildings had a guard line inside the footprint. The lines now stop at the outline
-//    (`outsideLots`), and the sweep below walks every flight of every stair up, down and crouched: all of them arrive, nobody is lifted by the stall net.
+//    (`outsideLots`) and a lip of 0.15 m over the floor goes on inside it (id 'lip': it keeps the box under the building shut to a body on the pad, world-mesh), and the sweep below walks every flight of
+//    every stair up, down and crouched: all of them arrive, nobody is lifted by the stall net.
 //  * R2a-002: the nook under the first flight is closed by a panel; the panel was a room wall (2.8 m) and the nook is a pocket, so a body put there (a teleport onto the divider line, R2a's
 //    "arch + 1.2 m", or the push-out from the divider's end) was 'crossed' by the stall net through the core's outer wall into the next room or the next house (74 of 102 stairwells, 54 of them into another
 //    room or house). The panel now stops at NOOK_H (1.9 m): a jump cannot clear it, the rescue may cross it, and the body lands on the landing in front of it.
@@ -11,7 +12,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { buildData } from './headless.mjs';
 import { Player } from '../js/engine/player.js';
-import { outsideLots } from '../js/world/walls.js';
+import { Physics } from '../js/core/physics.js';
+import { outsideLots, splitAtLots, FLOOR_LIP } from '../js/world/walls.js';
 import { NOOK_H } from '../js/arch/colliders.js';
 
 const data = await buildData({ world: true, furnish: true, clutter: false, vehicles: false });
@@ -81,6 +83,55 @@ test('R2a-001: no guard line of the page\'s world runs through a building (28 of
   const planted = [...walls, { id: 'guard', x1: a[0], z1: a[2], x2: b[0], z2: b[2] }];
   assert.ok(guardsInside(planted, B).includes('L31'), 'a planted line across L31 is found (and across its neighbours: it runs 2 m past each side)');
   assert.deepEqual(guardsInside([{ id: 'guard', x1: a[0], z1: a[2], x2: bp.frame.toWorld(o.x0 + 0.04, 0, (o.z0 + o.z1) / 2)[0], z2: bp.frame.toWorld(o.x0 + 0.04, 0, (o.z0 + o.z1) / 2)[2] }], [bp]), [], 'a line that ends in the wall (4 cm in) is no line through the building');
+});
+
+test('splitAtLots: the pieces of a line inside a footprint come back too, each with the footprint it lies in', () => {
+  const sq = [[0, 0], [4, 0], [4, 6], [0, 6]], r2 = (v) => JSON.parse(JSON.stringify(v, (k, x) => (typeof x === 'number' ? Math.round(x * 100) / 100 : x)));
+  for (const f of [sq, [...sq].reverse()]) {
+    assert.deepEqual(r2(splitAtLots({ x1: -3, z1: 3, x2: 7, z2: 3 }, [f])), { out: [[[-3, 3], [0, 3]], [[4, 3], [7, 3]]], inn: [[[0, 3], [4, 3], 0]] }, 'a line across the building: two ends outside, the middle inside');
+    assert.deepEqual(r2(splitAtLots({ x1: 1, z1: 2, x2: 3, z2: 5 }, [f])), { out: [], inn: [[[1, 2], [3, 5], 0]] }, 'a line wholly inside is all inside');
+    assert.deepEqual(r2(splitAtLots({ x1: -3, z1: 8, x2: 7, z2: 8 }, [f])), { out: [[[-3, 8], [7, 8]]], inn: [] }, 'a line clear of it is all outside');
+  }
+  const two = splitAtLots({ x1: -3, z1: 3, x2: 12, z2: 3 }, [sq, [[6, 0], [9, 0], [9, 6], [6, 6]]]);
+  assert.deepEqual(r2(two.inn), [[[0, 3], [4, 3], 0], [[6, 3], [9, 3], 1]], 'two plots: each piece names its own');
+  assert.deepEqual(r2(two.out), r2(outsideLots({ x1: -3, z1: 3, x2: 12, z2: 3 }, [sq, [[6, 0], [9, 0], [9, 6], [6, 6]]])), 'outsideLots is the outside half');
+});
+
+/**
+ * Cutting the guard lines off at the building outline (R2a-001) left the retaining box open under the building to a body on its pad (0.3 m under the floor): world-mesh's walkers of the far side, who start
+ * on a lot's pad, ended inside the box. What stands of a line inside a building is a lip, FLOOR_LIP over the floor (walls.js): the kernel lets a wall hold a body whose feet are over 0.4 m under its top.
+ */
+test('R2a-001, the box under a building: of every guard line that ran through one only a lip stands (id lip, 0.15 m over the floor): a body on the floor walks over it, a body on the pad is held by it', () => {
+  const lips = physics.walls.filter((w) => w.id === 'lip');
+  assert.ok(lips.length > 20, `${lips.length} lips in the world`);
+  const mid = (w) => [(w.x1 + w.x2) / 2, (w.z1 + w.z2) / 2], lotOf = (w) => B.find((bp) => inPoly(bp.footprint, ...mid(w)));
+  /** does a body with its feet at `y` walk across the middle of `w` (0.8 m before it to 0.8 m past it, 5 cm a frame) in a kernel that holds `walls` only? */
+  const crosses = (w, y, walls) => {
+    const k = new Physics(); k.setTerrain(() => y); k.addWalls(walls);
+    const [mx, mz] = mid(w), l = Math.hypot(w.x2 - w.x1, w.z2 - w.z1), nx = -(w.z2 - w.z1) / l, nz = (w.x2 - w.x1) / l;
+    const s = { x: mx - nx * 0.8, y, z: mz - nz * 0.8, vy: 0, onGround: true };
+    for (let i = 0; i < 40; i++) k.move(s, nx * 0.05, nz * 0.05, 1 / 60);
+    return (s.x - mx) * nx + (s.z - mz) * nz > 0.3;
+  };
+  const wrong = [], inside = [];
+  for (const w of lips) {
+    const bp = lotOf(w);
+    if (!bp) { wrong.push(`lip at ${mid(w).map((v) => v.toFixed(1))}: in no building`); continue; }
+    if (w.y1 > bp.lot.y + FLOOR_LIP + 1e-9) wrong.push(`${bp.id}: a lip ${(w.y1 - bp.lot.y).toFixed(2)} m over the floor`);
+    inside.push([w, bp]);
+  }
+  assert.deepEqual(wrong.slice(0, 6), []);
+  const heldFloor = [], loose = [];
+  for (const [w, bp] of inside) {                                                              // head on at the middle of each piece, however short: its zone is a disc round it
+    if (!crosses(w, bp.lot.y, [w])) heldFloor.push(bp.id);                                    // on the floor: nothing holds him
+    if (crosses(w, bp.lot.y - 0.3, [w])) loose.push(bp.id);                                    // on the pad (the lot's own ground, 0.3 m under the floor): the lip holds him
+  }
+  assert.deepEqual(heldFloor, [], 'a body on the floor is held by a lip');
+  assert.deepEqual(loose, [], 'a body on the pad walks across a lip');
+  // TEETH: the check sees both faults. A piece 2 m taller than the lip (the old full-height guard line) holds a body on the floor; with no wall at all a body on the pad walks across.
+  const [w, bp] = inside[0];
+  assert.equal(crosses(w, bp.lot.y, [{ ...w, y1: bp.lot.y + 2 }]), false, 'TEETH: a full-height line holds a body on the floor');
+  assert.equal(crosses(w, bp.lot.y - 0.3, []), true, 'TEETH: without the lip a body on the pad walks across');
 });
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------- R2a-001: every flight, walked

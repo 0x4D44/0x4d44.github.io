@@ -214,13 +214,24 @@ export function guardTop(H, poly, nodeH = H) {
 }
 
 /**
- * The pieces of the wall `w` ({ x1, z1, x2, z2 }) that lie outside every building footprint in `fps` (convex polygons, as `footprint()` makes them). A retaining box that runs up to a lot used to leave
- * its guard lines standing INSIDE the building, a wall across rooms on 28 of the 109 (one across L31's half landing: its stair could not be turned, R2a-001). The building's own walls close the line at its
- * outline, and the cap of a line that stops there (0.1 + the walker's 0.3) is still inside the wall (0.22 m) and the 0.3 m a walker keeps off it, so nothing inside is pushed.
+ * What is left of a guard line where it runs on through a building: a lip, this much above the building's floor (`lot.y`) and no more, id 'lip'. A retaining box that runs up to a lot used to leave its guard
+ * lines standing INSIDE the building at full height, a wall across rooms on 28 of the 109 (one across L31's half landing: its stair could not be turned, R2a-001). Cutting them off at the outline instead
+ * (4a531eb) left the box open under every one of those buildings to a body on the pad: world-mesh 'nobody can stand inside a tall retaining wall' had 7 more walkers end inside it (10 of 324 `fill/far`), each
+ * one starting inside a lot, on its pad, which the test's bare lot walls do not close. The lip keeps it shut: the pad inside every lot lies 0.3 m under the floor, so a body on the pad (or lower) has its feet
+ * 0.45 m or more under the lip's top and is held (a wall blocks a walker whose feet are over WALL_CLEAR = 0.4 m under its top), while a body on a floor has them 0.15 m under it, which the kernel ignores, and
+ * the people's sight lines ignore a top under 0.2 m (physics.js segmentBlocked). It is not a guard line (id 'guard' is the lines of the open ground that no jump may clear, world-mesh): nobody jumps it from
+ * outside, the building's own walls stand in between.
  */
-export function outsideLots(w, fps) {
+export const FLOOR_LIP = 0.15;
+
+/**
+ * The pieces of the wall `w` ({ x1, z1, x2, z2 }) outside every building footprint in `fps` (convex polygons, as `footprint()` makes them) and inside them: `{ out: [[p, q]...], inn: [[p, q, k]...] }`,
+ * `k` the index in `fps` of the footprint a piece lies in. The outside pieces keep the line's full height, the inside ones are cut down to FLOOR_LIP over the building's floor (`buildRetaining`'s addGuard).
+ */
+export function splitAtLots(w, fps) {
   const dx = w.x2 - w.x1, dz = w.z2 - w.z1, cuts = [];
-  for (const f of fps) {
+  for (let k = 0; k < fps.length; k++) {
+    const f = fps[k];
     let area = 0, t0 = 0, t1 = 1;
     for (let i = 0; i < f.length; i++) { const a = f[i], c = f[(i + 1) % f.length]; area += a[0] * c[1] - c[0] * a[1]; }
     const sg = area >= 0 ? 1 : -1;
@@ -231,22 +242,34 @@ export function outsideLots(w, fps) {
       const t = -num / den;
       if (den > 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
     }
-    if (t1 - t0 > 1e-6) cuts.push([t0, t1]);
+    if (t1 - t0 > 1e-6) cuts.push([t0, t1, k]);
   }
-  if (!cuts.length) return [[[w.x1, w.z1], [w.x2, w.z2]]];
+  if (!cuts.length) return { out: [[[w.x1, w.z1], [w.x2, w.z2]]], inn: [] };
   cuts.sort((p, q) => p[0] - q[0]);
-  const out = [], len = Math.hypot(dx, dz), at = (t) => [w.x1 + dx * t, w.z1 + dz * t];
+  const out = [], inn = [], len = Math.hypot(dx, dz), at = (t) => [w.x1 + dx * t, w.z1 + dz * t];
   let cur = 0;
-  for (const [a, c] of cuts) { if (a > cur && (a - cur) * len > 0.02) out.push([at(cur), at(a)]); cur = Math.max(cur, c); }
+  for (const [a, c, k] of cuts) {
+    if (a > cur && (a - cur) * len > 0.02) out.push([at(cur), at(a)]);
+    const s = Math.max(a, cur);
+    if (c > s && (c - s) * len > 0.02) inn.push([at(s), at(c), k]);
+    cur = Math.max(cur, c);
+  }
   if (cur < 1 && (1 - cur) * len > 0.02) out.push([at(cur), at(1)]);
-  return out;
+  return { out, inn };
 }
+
+/** The pieces of the wall `w` that lie outside every building footprint in `fps` (see splitAtLots). */
+export const outsideLots = (w, fps) => splitAtLots(w, fps).out;
 
 export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = findCorners(runs)) {
   const H = plan.heightAt, b = ctx.batch.builder('world.walls'), phys = ctx.physics, rnd = ctx.rng.fork('world:walls');
-  const stats = { runs: 0, metres: 0, guards: 0, faces: 0, fills: 0, corners: corners.length }, look = new Map();
+  const stats = { runs: 0, metres: 0, guards: 0, faces: 0, fills: 0, lips: 0, corners: corners.length }, look = new Map();
   const lotFps = plan.lots.map((l) => footprint(l, 0));
-  const addGuard = (w) => { for (const [p, q] of outsideLots(w, lotFps)) phys.addWall({ ...w, x1: p[0], z1: p[1], x2: q[0], z2: q[1] }); };   // a guard line stops at a building's outline
+  const addGuard = (w) => {                                           // a guard line is a lip over a building's floor inside its outline (FLOOR_LIP), full height outside
+    const { out, inn } = splitAtLots(w, lotFps);
+    for (const [p, q] of out) phys.addWall({ ...w, x1: p[0], z1: p[1], x2: q[0], z2: q[1] });
+    for (const [p, q, k] of inn) { const y1 = Math.min(w.y1, plan.lots[k].y + FLOOR_LIP); if (y1 > w.y0) { phys.addWall({ ...w, id: 'lip', x1: p[0], z1: p[1], x2: q[0], z2: q[1], y1 }); stats.lips++; } }
+  };
   const memo = new Float32Array(NODES * NODES).fill(NaN);              // the height at each lattice node, read once (guardTop: a stretch reads some 400, its neighbour mostly the same)
   const nodeH = (x, z) => {
     const i = Math.round((x + HALF) / CELL), j = Math.round((z + HALF) / CELL);
