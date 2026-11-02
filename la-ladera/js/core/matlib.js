@@ -45,7 +45,7 @@ export class MaterialLib {
   async init() {
     try {
       const early = takePrefetched('./assets/textures/manifest.json');       // asked for by index.html while the modules came down (core/assets.js)
-      if (early) { const j = await early; if (j) this.manifest = j.textures ?? {}; return; }
+      if (early) { const j = await Promise.resolve(early).catch(() => null); if (j) { this.manifest = j.textures ?? {}; return; } }   // a failed early request falls through to the fetch below (review R2b-001)
       const r = await fetch('./assets/textures/manifest.json', { cache: 'no-cache' });
       if (r.ok) this.manifest = (await r.json()).textures ?? {};
     } catch { /* no textures yet: flat colours */ }

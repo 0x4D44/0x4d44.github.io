@@ -30,7 +30,8 @@ export class Assets {
    * Node tests pass a reader that loads the same files from disk, so furnishing logic (which only needs the
    * manifest metadata - size, footprint, tags - never the GLB bytes) can be tested without a browser.
    */
-  async init(read = (p) => takePrefetched(this.root + p) ?? fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)) {
+  async init(read = (p) => Promise.resolve(takePrefetched(this.root + p)).catch(() => null)   // the early request failed or was never made: ask again, once, from here (review R2b-001)
+    .then((hit) => hit ?? fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null))) {
     const root = await read('manifest.json');
     // The listed manifests are read together, not one after another: at 120 ms of latency twelve sequential reads were ~2 s of the boot with the connection idle (review R2e-001).
     // They are merged in the listed order afterwards, so a name that two manifests declare still resolves to the later one, exactly as before.

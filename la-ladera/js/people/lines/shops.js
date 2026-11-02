@@ -2,7 +2,7 @@
 // Either gender can run any shop: speaker forms use {o|a}. {shop} = "la <shop name>" with its article. Prices are spoken as words (TTS reads digits badly).
 // `items` feed the "Quisiera comprar algo" menu (the player asks the Colombian way: "¿Me regala ...?").  Keep every shop distinct: no shared openings.
 const SHOP_TOPICS = ['buy', 'wares', 'job', 'barrio', 'news', 'family', 'tip', 'where'];
-const SHOP_MENU = { job: ['¿Hace cuánto tiene este negocio?', 'How long have you had this business?'], wares: ['¿Qué me recomienda hoy?', 'What do you recommend today?'], buy: ['Quisiera comprar algo.', "I'd like to buy something."] };
+const SHOP_MENU = { job: ['¿Cómo es su oficio?', 'What is your trade like?'], wares: ['¿Qué me recomienda hoy?', 'What do you recommend today?'], buy: ['Quisiera comprar algo.', "I'd like to buy something."] };
 const base = { topics: SHOP_TOPICS, menu: SHOP_MENU };
 /** One purchase: es/en = what the player says, name = [es, en] for the toast, say = the shopkeeper's answer (price spoken in words). */
 const it = (id, es, en, name, price, say) => ({ id, es, en, name, price, say });
