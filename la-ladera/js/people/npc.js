@@ -12,6 +12,8 @@ const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 export const BODY = { radius: 0.25, height: 1.7, stepUp: 0.5, maxSlope: 0.9, gravity: 9.8 };
+const ROOM_STEPS = [0.5, 0.9];       // metres to either side of a stalled walker that _roomySide looks at
+const LEDGE = 0.25;                  // metres: a push that takes a walker down more than this in one step has taken it over an edge (a stair's riser is 0.2; a flight comes down 0.08 a step)
 
 export class Npc {
   constructor(o) {
@@ -134,14 +136,19 @@ export class Npc {
         if (ahead > 0) { slow = Math.min(slow, 0.35 + 0.65 * (od / R)); fx += -uz * k * 0.9 * this.sideDir; fz += ux * k * 0.9 * this.sideDir; }   // slip to one side
       }
     }
-    let vx = ux * sp * slow + fx, vz = uz * sp * slow + fz;
+    const px = ux * sp * slow, pz = uz * sp * slow;                         // the way on, alone
+    let vx = px + fx, vz = pz + fz;
     if (this.sidestep > 0) { this.sidestep -= dt; if (!this.detour) { vx += -uz * this.sideDir * 0.9; vz += ux * this.sideDir * 0.9; } }          // (a walker going back out of a slot does not also wander sideways)
     const vl = Math.hypot(vx, vz); if (vl > sp * 1.15) { vx *= sp * 1.15 / vl; vz *= sp * 1.15 / vl; }
     this.targetRy = Math.atan2(vx, vz);
     const turn = Math.abs(angDiff(this.ry, this.targetRy));
     const go = turn > 1.3 ? 0.25 : 1;                                       // pivot before striding off
     s.blocked = false;
+    const x0 = s.x, y0 = s.y, z0 = s.z, grounded = s.onGround;
     w.physics.move(s, vx * go * dt, vz * go * dt, dt, this.body);
+    // A push (a neighbour's, the slip, the sidestep) must not take a walker over an edge: on a flight of 2 m with no rail on its east side, n39 and n83 met head-on, both slipped east, and n39 stepped off the flight, 0.4 m down onto
+    // a bank too steep to climb back (13.6 h of the 12:00 soak, (-25.0, -19.5, y21.4); it stood there for 12 s). The step that drops a walker more than LEDGE is taken back and the walker goes on along its way alone.
+    if (grounded && (vx !== px || vz !== pz) && (!s.onGround || s.y < y0 - LEDGE)) { s.x = x0; s.y = y0; s.z = z0; s.vy = 0; s.onGround = true; w.physics.move(s, px * go * dt, pz * go * dt, dt, this.body); }
     this.moving = true; this.curSpeed = vl * go;
     // stuck detection: little net progress for a while
     this.checkT += dt;
@@ -151,6 +158,7 @@ export class Npc {
         this.stuckT += 0.5; this.stuckTotal += 0.5; this.maxStuck = Math.max(this.maxStuck, this.stuckT);
         if (this.stuckT >= 1) {
           this.sidestep = 0.8; this.sideDir = this.rng.chance(0.5) ? 1 : -1;
+          this.sideDir = this._roomySide(w, ux, uz) || this.sideDir;
           // a waypoint under somebody who stands there is out of reach (the stander's push holds the walker 0.35 m off it, and the point is only reached within 0.55): a second of that and near enough is there (the soak: n85
           // against n49 on the phone in the road, three runs at him in 4 s and an unstick). Not a door, a tight point (furniture) or the goal: those are reached or `unstick`ed
           if (!this.detour && this.pi < this.path.length - 1 && !pt.door && !pt.tight && d < 1.2) { this.pi++; this.stuckT = 0; }
@@ -160,6 +168,17 @@ export class Npc {
         if (this.stuckT >= 4) w.brain.unstick(this, w);
       } else { this.stuckT = Math.max(0, this.stuckT - 1); if (this.detour) this.detour.stall = 0; }
     }
+  }
+
+  /**
+   * Which way to sidestep: +1 / -1 along the lateral (-uz, ux) of the way on, whichever side has more room (a body's width clear of every wall at 0.5 m and at 0.9 m), or 0 when both have as much.
+   * A coin flip sent a walker pinched between a building's corner and somebody standing on the pavement into the corner half the time (n29 and n44 at (-34.0, 49.9), the 21:00 soak).
+   */
+  _roomySide(w, ux, uz) {
+    const ph = w.physics, s = this.st, B = this.body; if (!ph?._overlaps) return 0;
+    const room = (side) => { let n = 0; for (const d of ROOM_STEPS) { if (ph._overlaps(s.x - uz * side * d, s.z + ux * side * d, s.y, B.radius, B.height)) break; n++; } return n; };
+    const a = room(1), b = room(-1);
+    return a === b ? 0 : a > b ? 1 : -1;
   }
 
   /**
