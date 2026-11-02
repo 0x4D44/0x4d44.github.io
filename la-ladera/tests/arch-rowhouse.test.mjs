@@ -1,7 +1,8 @@
 // A2: rowhouse plans (js/arch/layouts.js `rowhouseGeo`, review R4-007: "the rowhouses share one plan: 4 m2 kitchens, the same tiny second bedroom").
 //  * a kitchen of at least 5 m2 beside a dining room, a bathroom in a strip behind the stair on every storey, bedrooms with room for a real bed (a single bed is 0.9 x 1.9 m
-//    with 0.5 m beside it): two beside the stair, or one long one where the second would fall under 5 m2;
-//  * the lots differ: the stair against the party wall or on either side, a bathroom strip and a front room of different depths, one or two bedrooms beside the stair.
+//    with 0.5 m beside it): the front band is cut along the stair wall into two where both halves keep 5 m2 and 1.9 m, else it is one bedroom; the rest column is the one hub room
+//    (landing -> hub -> bath), so a bedroom is a leaf of the door tree and the bath is never behind one (round 6 R4-301 / R1-101);
+//  * the lots differ: the stair against the party wall or on either side, a bathroom strip and a front room of different depths, one or two bedrooms on a floor.
 // node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/arch-rowhouse.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ const of = (bp, type, floor) => bp.rooms.filter((r) => r.type === type && (floor
 const stairwell = (bp) => of(bp, 'stairwell', 0)[0];
 const bathOf = (bp, floor) => of(bp, 'bathroom', floor)[0];
 const coreLeftOf = (bp) => { const c = stairwell(bp).rect; return (c.x0 + c.x1) / 2 < 0; };
-const oneUp = (bp) => of(bp, 'bedroom', 1).length === 2;                                  // upstairs: the front bedroom and ONE long one beside the stair
+const oneUp = (bp) => of(bp, 'bedroom', 1).length === 1;                                  // upstairs: the front band is ONE bedroom (it cannot be cut in two at 5 m2 and 1.9 m)
 
 /** What a plan has to give, whatever the lot: the problems of one rowhouse plan with at least two storeys. */
 function problems(bp, tag = bp.id) {
@@ -38,7 +39,32 @@ function problems(bp, tag = bp.id) {
     need(Math.abs(b.rect.x0 - core.rect.x0) < 1e-6 && Math.abs(b.rect.x1 - core.rect.x1) < 1e-6 && b.rect.z1 <= core.rect.z0 + 1e-6, `the bathroom on floor ${k} is not in the strip behind the stair`);
   }
   for (const r of of(bp, 'bedroom')) { const [short, long] = sides(r); need(area(r) >= 5.0 - 1e-9 && short >= 1.55 && long >= 2.5, `bedroom ${r.id} ${short.toFixed(2)} x ${long.toFixed(2)}`); }
-  need(of(bp, 'bedroom', 1).length >= 2 && of(bp, 'bedroom', 1).length <= 3, `${of(bp, 'bedroom', 1).length} bedrooms upstairs`);
+  need(of(bp, 'bedroom', 1).length >= 1 && of(bp, 'bedroom', 1).length <= 3, `${of(bp, 'bedroom', 1).length} bedrooms upstairs`);
+  // the household of a private floor: interiors/household.js keys a home's households on the occupants of its rooms, so a floor whose first bedroom is not the family's drops the family from the
+  // barrio's roster and moves the name of every household after it (the first cut of the round-6 plan lost it in 14 rowhouses: 50 of the 86 residents changed home)
+  for (const k of [...new Set(of(bp, 'bedroom').filter((r) => r.floor >= 1).map((r) => r.floor))]) {
+    const fam = of(bp, 'bedroom', k).filter((r) => r.occupant === 'family').length;
+    need(fam === 1, `floor ${k} has ${fam} bedrooms of the family household (the family's is the first bedroom of the floor)`);
+  }
+  // a bedroom is a leaf (round 6, R4-301 and R1-101): ONE door to another room, never onto another bedroom, and 0.8 m or more of the wall that door is in stays clear beside it for the head of a bed (R4-103)
+  for (const r of of(bp, 'bedroom')) {
+    if (r.floor < 1) continue;
+    const ds = bp.doors.filter((d) => !d.ext && d.rooms.includes(r.id) && d.rooms[0] && d.rooms[1]);
+    need(ds.length === 1, `bedroom ${r.id} has ${ds.length} doors to other rooms`);
+    for (const d of ds) {
+      const other = bp.rooms.find((q) => q.id === d.rooms.find((id) => id !== r.id)), x = d.wall.dir === 'x', lo = x ? r.rect.x0 : r.rect.z0, hi = x ? r.rect.x1 : r.rect.z1, at = x ? d.x : d.z;
+      const free = Math.max(at - d.w / 2 - lo, hi - at - d.w / 2);
+      need(other.type !== 'bedroom', `bedroom ${r.id} opens onto the bedroom ${other.id}`);
+      need(free >= 0.8 - 1e-9, `bedroom ${r.id}: its door leaves ${free.toFixed(2)} m of the wall clear`);
+    }
+  }
+  // the hub: on every upstairs floor the landing opens onto the hall (a sitting room when it is big) and the bathroom hangs off the hall, never off a bedroom
+  for (const b of of(bp, 'bathroom')) {
+    if (b.floor < 1) continue;
+    const bd = bp.doors.filter((d) => d.rooms.includes(b.id) && d.rooms[0] && d.rooms[1]), hub = bd.length === 1 ? bp.rooms.find((q) => q.id === bd[0].rooms.find((id) => id !== b.id)) : null, land = bp.rooms.find((q) => q.core && q.floor === b.floor);
+    need(!!hub && ['living', 'hall'].includes(hub.type), `the bathroom on floor ${b.floor} opens onto ${hub ? `a ${hub.type}` : 'no single room'}, not onto the hall`);
+    need(!hub || !land || bp.doors.some((d) => d.rooms.includes(land.id) && d.rooms.includes(hub.id)), `the hall of floor ${b.floor} has no door onto the landing`);
+  }
   // the roof round the stair head: no sliver of terrace (a loft, a clothes line and a chair need a room to stand in)
   for (const t of of(bp, 'terrace')) need(area(t) >= 3.95 && sides(t)[0] >= 1.2, `terrace ${t.id} ${sides(t)[0].toFixed(2)} x ${sides(t)[1].toFixed(2)}`);
   return out;
@@ -50,15 +76,15 @@ test('every rowhouse of the barrio has a kitchen of at least 5 m2, a bathroom be
   assert.deepEqual(bad.slice(0, 10), [], `${bad.length} problems`);
 });
 
-test('the rowhouses of the barrio do not share one plan: one or two bedrooms beside the stair, the stair on either side, bathroom strips and front rooms of different depths', () => {
+test('the rowhouses of the barrio do not share one plan: one or two bedrooms on a floor, the stair on either side, bathroom strips and front rooms of different depths', () => {
   const sigs = new Map(), bd = [], df = [];
   for (const bp of rows) {
-    const b = bathOf(bp, 0), l = of(bp, 'living', 0)[0], key = `${oneUp(bp) ? 'one-long-bedroom' : 'two-bedrooms'} ${coreLeftOf(bp) ? 'stair-left' : 'stair-right'} strip${Math.round((b.rect.z1 - b.rect.z0) * 4)}`;
+    const b = bathOf(bp, 0), l = of(bp, 'living', 0)[0], key = `${oneUp(bp) ? 'one-bedroom' : 'two-bedrooms'} ${coreLeftOf(bp) ? 'stair-left' : 'stair-right'} strip${Math.round((b.rect.z1 - b.rect.z0) * 4)}`;
     sigs.set(key, (sigs.get(key) ?? 0) + 1); bd.push(b.rect.z1 - b.rect.z0); df.push(l.rect.z1 - l.rect.z0);
   }
   const show = [...sigs].map(([k, n]) => `${k}:${n}`).join(', ');
   assert.ok(sigs.size >= 4, `${sigs.size} distinct plans: ${show}`);
-  for (const w of ['one-long-bedroom', 'two-bedrooms', 'stair-left', 'stair-right']) assert.ok([...sigs].filter(([k]) => k.includes(w)).reduce((a, [, n]) => a + n, 0) >= 4, `fewer than four ${w} plans: ${show}`);
+  for (const w of ['one-bedroom', 'two-bedrooms', 'stair-left', 'stair-right']) assert.ok([...sigs].filter(([k]) => k.includes(w)).reduce((a, [, n]) => a + n, 0) >= 4, `fewer than four ${w} plans: ${show}`);
   assert.ok(Math.max(...bd) - Math.min(...bd) >= 0.3, `bathroom strips ${Math.min(...bd).toFixed(2)}..${Math.max(...bd).toFixed(2)} m deep`);
   assert.ok(Math.max(...df) - Math.min(...df) >= 0.25, `front rooms ${Math.min(...df).toFixed(2)}..${Math.max(...df).toFixed(2)} m deep`);
 });
@@ -104,29 +130,36 @@ test('sweep: from 8.5 m deep and 4.2 m wide up, every rowhouse plan keeps its ki
     if (coreLeftOf(bp)) left++; else right++;
   }
   assert.deepEqual(bad.slice(0, 10), [], `${bad.length} problems in ${n} plans`);
-  assert.ok(one > 100 && two > 100 && left > 100 && right > 100, `variants: one long bedroom ${one}, two ${two}, stair left ${left}, right ${right}`);
+  assert.ok(one > 100 && two > 100 && left > 100 && right > 100, `variants: one bedroom ${one}, two ${two}, stair left ${left}, right ${right}`);
   const lot = { ...base, w: 4.5, d: 9, floors: 2, party: parties[3], seed: 7 };
   assert.equal(JSON.stringify(planBuilding(makeCtx([]), lot).rooms), JSON.stringify(planBuilding(makeCtx([]), lot).rooms), 'the same lot plans the same twice');
 });
 
-test('a bedroom of a rowhouse floor that opens onto the next bedroom keeps a free strip for a bed: its short-wall doors sit at the stair end and 0.8 m or more of wall is clear beyond them (R4-103)', () => {
-  const problems = [];
-  let n = 0;
-  for (const bp of rows) for (const r of bp.rooms) {
-    if (r.type !== 'bedroom' || r.floor < 1) continue;
-    // The doors in its short walls (between rooms one behind the other) that join it to another bedroom. R4-103 was written for the middle bedroom, which had two of them (to the front and to the
-    // back bedroom); the door budget keeps one door between two bedrooms (the landing reaches the front and the middle one: `arch-doorbudget.test.mjs`), so it has the one onto the back bedroom.
-    const ds = bp.doors.filter((d) => !d.ext && d.rooms.includes(r.id) && d.wall.dir === 'x' && d.rooms.every((id) => bp.rooms.find((q) => q.id === id).type === 'bedroom'));
-    if (!ds.length) continue;
-    const core = bp.rooms.find((q) => q.core && q.floor === r.floor);
-    if (!core) { problems.push(`${r.id}: no stair on its floor`); continue; }
-    n++;
-    const low = (core.rect.x0 + core.rect.x1) / 2 < (r.rect.x0 + r.rect.x1) / 2;                // the stair is on the low-x side of the room
-    const free = low ? r.rect.x1 - Math.max(...ds.map((d) => d.x + d.w / 2)) : Math.min(...ds.map((d) => d.x - d.w / 2)) - r.rect.x0;
-    if (free < 0.8) problems.push(`${r.id}: ${free.toFixed(2)} m of free wall beyond its doors (stair on the ${low ? 'low' : 'high'} side, room ${(r.rect.x1 - r.rect.x0).toFixed(2)} m wide)`);
-  }
-  assert.ok(n >= 10, `${n} bedrooms with a short-wall door onto another bedroom on the real barrio`);
-  assert.deepEqual(problems, []);
+test('TEETH: the plan checks find a bedroom that opens onto another, a bathroom behind a bedroom and a door in the middle of a narrow bedroom, planted in copies of a real rowhouse (which is clean) (R4-103, R4-301)', () => {
+  const split = rows.find((bp) => of(bp, 'bedroom', 1).length === 2 && Math.min(...of(bp, 'bedroom', 1).map((r) => sides(r)[0])) < 2.3);
+  assert.ok(split, 'a rowhouse of the barrio whose floor is cut into two bedrooms, one of them under 2.3 m wide');
+  assert.deepEqual(problems(split), []);
+  const [a, b] = of(split, 'bedroom', 1), narrow = sides(a)[0] < sides(b)[0] ? a : b, bath = bathOf(split, 1);
+  const copy = (f) => ({ ...split, doors: f(split.doors.map((d) => ({ ...d }))) });
+  const templ = split.doors.find((d) => !d.ext && d.rooms[0] && d.rooms[1] && d.rooms.includes(a.id));
+  // a door between the two bedrooms of the floor: neither is a leaf any more, and one opens onto the other
+  const joined = problems(copy((ds) => [...ds, { ...templ, id: 'X.d99', rooms: [a.id, b.id] }]));
+  assert.ok(joined.some((s) => s.includes(`bedroom ${a.id} has 2 doors`)) && joined.some((s) => s.includes(`opens onto the bedroom`)), joined.join('; '));
+  // the bathroom's door onto a bedroom instead of the hall: the owner's complaint, landing - bedroom - bath
+  const behind = problems(copy((ds) => ds.map((d) => (d.rooms.includes(bath.id) ? { ...d, rooms: [a.id, bath.id] } : d))));
+  assert.ok(behind.some((s) => s.includes('opens onto a bedroom, not onto the hall')), behind.join('; '));
+  // the narrow bedroom's door in the middle of its wall: two 0.5 m strips, no room for the head of a bed
+  const centred = problems(copy((ds) => ds.map((d) => {
+    if (!d.rooms.includes(narrow.id)) return d;
+    const x = d.wall.dir === 'x';
+    return { ...d, [x ? 'x' : 'z']: x ? (narrow.rect.x0 + narrow.rect.x1) / 2 : (narrow.rect.z0 + narrow.rect.z1) / 2 };
+  })));
+  assert.ok(centred.some((s) => s.includes(`bedroom ${narrow.id}: its door leaves`)), centred.join('; '));
+  // the family's bedroom of the floor losing its household (the roster of the barrio's households hangs on it)
+  const lost = problems({ ...split, rooms: split.rooms.map((r) => (r.type === 'bedroom' && r.floor === 1 && r.occupant === 'family' ? { ...r, occupant: undefined } : r)) });
+  assert.ok(lost.some((s) => s.includes('floor 1 has 0 bedrooms of the family household')), lost.join('; '));
+  // and the real barrio has bedrooms to be checked
+  assert.ok(rows.reduce((n, bp) => n + of(bp, 'bedroom').filter((r) => r.floor >= 1).length, 0) >= 30, 'bedrooms upstairs in the rowhouses of the barrio');
 });
 
 test('a lot too small for the strip keeps the plain house plan: a rowhouse under 8.2 m deep or narrower than 4.1 m still plans, rooms reachable, as before', () => {
