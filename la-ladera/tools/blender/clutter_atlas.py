@@ -51,6 +51,7 @@ FONT = {
     '9': ('01110','10001','10001','01111','00001','00001','01110'),
     '-': ('000','000','000','111','000','000','000'),
     ' ': ('000','000','000','000','000','000','000'),
+    'Á': ('01110','10001','10001','11111','10001','10001','10001'),   # an A; text() draws the acute accent over it (two blocks, in the two rows above the letter)
 }
 
 
@@ -101,6 +102,9 @@ def write_atlas(path):
             for row, bits in enumerate(glyph):
                 for col, bit in enumerate(bits):
                     if bit == '1': rect(x + col * scale + (6 - row) * slant, y + row * scale, scale, scale, c)
+            if ch == 'Á':
+                rect(x + 2 * scale + 7 * slant, y - scale, scale, scale, c)
+                rect(x + 3 * scale + 8 * slant, y - 2 * scale, scale, scale, c)
             x += (len(glyph[0]) + 1) * scale
     def paper(c, seed):
         rng = random.Random(seed)
@@ -134,7 +138,7 @@ def write_atlas(path):
             text('FERIA',44,5,(249,226,176))
             text('DEL BARRIO',103,3,ink)
             line((39,142),(217,142),2,ink)
-            text('SABADO',161,3,ink)
+            text('SÁBADO',161,3,ink)
             text('10 - 17',197,3,ink)
         elif name == 'repair_sign':
             paper((216,220,186),9)

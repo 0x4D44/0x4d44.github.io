@@ -11,7 +11,10 @@
 // drew as radial fans, the pattern the review saw at (-40, 10).) Three fetches in one pass, no branch (a texture read inside a divergent branch has undefined derivatives);
 // the world position and normal come from the vertex shader (`vLadW`, `vLadN`). `n` is the smoothed vertex normal and `face` the triangle's own (from the screen derivatives of the world
 // position): the terrain lattice smooths its normals across a step, so the flat triangles at the foot of a near-vertical cut (and along its lip) carried a steep interpolated normal, were read from
-// the side where the height hardly changes, and smeared into streaks 0.5 m wide (R1-D24, (-40, 10), a camera behind a retaining face); a flat face is never side-projected, whatever its corners say. The repeat is the map's own (metric UVs, `tile` metres per repeat), so a pixel of side texture
+// the side where the height hardly changes, and smeared into streaks 0.5 m wide (R1-D24, (-40, 10), a camera behind a retaining face); a flat face is never side-projected, whatever its corners say. The other way round is the same smoothing: a riser of 3 m over half a metre (face |y| 0.14) carries the
+// corner normals of the flat ground above it (|y| 0.7 to 0.97), so the larger of the two said "flat" and the riser kept the planar x-z uvs, one row of texels stretched down it (R1-108, the
+// notch beside the stair at (5, 30)): a face steeper than ~72 degrees (|y| below 0.30) is therefore side-projected whatever its corners say, fading out by |y| 0.50 (~60 degrees): a flat
+// triangle never has a face that steep, so the foot and the lip of a cut (R1-D24) are untouched. The repeat is the map's own (metric UVs, `tile` metres per repeat), so a pixel of side texture
 // is as big as a pixel of top texture. The normal map keeps the top projection (it only shades; its tangent frame comes from the screen derivatives of the uv, so it stays
 // stable). Materials without a map are left as they are. Not for instanced or skinned meshes (terrain is neither).
 import * as THREE from 'three';
@@ -22,6 +25,7 @@ export const TRI_FRAGMENT = `#ifdef USE_MAP
 	vec3 ladC = cross( dFdx( vLadW ), dFdy( vLadW ) );
 	float ladFy = abs( ladC.y ) / max( length( ladC ), 1.0e-9 );
 	float ladSteep = 1.0 - smoothstep( 0.55, 0.88, max( abs( ladN.y ), ladFy ) );
+	ladSteep = max( ladSteep, 1.0 - smoothstep( 0.30, 0.50, abs( ladC.y ) / max( length( ladC ), 1.0e-9 ) ) );
 	vec2 ladB = pow( abs( ladN.xz ), vec2( 4.0 ) );
 	float ladX = ladB.x / ( ladB.x + ladB.y + 1.0e-6 );
 	vec4 ladSide = mix( texture2D( map, vec2( vLadW.x, vLadW.y ) * ladRep ), texture2D( map, vec2( vLadW.z, vLadW.y ) * ladRep ), ladX );

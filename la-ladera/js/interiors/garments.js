@@ -102,9 +102,9 @@ const MIX = {
   bed: [['tshirt', 6], ['shorts', 3], ['leggings', 2], ['crop_top', 2], ['nightdress', 2], ['socks_pair', 1.5], ['sock_single', 1], ['cap', 0.5]],
   seat: [['tshirt', 6], ['shorts', 3], ['crop_top', 2], ['socks_pair', 1], ['cap', 0.5]],
   hung: [['tshirt', 6], ['crop_top', 2], ['shorts', 2], ['nightdress', 2], ['leggings', 1]],
-  floor: [['tshirt', 5], ['shorts', 3], ['leggings', 2], ['crop_top', 2], ['nightdress', 1.2], ['socks_pair', 3], ['sock_single', 2], ['underwear', 1], ['briefs', 1], ['boxers', 1],
-    ['panties', 0.8], ['knickers', 0.8], ['bra', 1], ['tights', 0.8], ['cap', 1], ['sun_hat', 0.4], ['straw_hat', 0.4]],
-  bath: [['socks_pair', 3], ['sock_single', 2], ['underwear', 2], ['briefs', 1.5], ['boxers', 1.5], ['panties', 1.5], ['knickers', 1.5], ['bra', 1], ['tshirt', 2], ['shorts', 1.5]],
+  floor: [['tshirt', 6], ['shorts', 4], ['leggings', 3], ['crop_top', 2.5], ['nightdress', 1.5], ['socks_pair', 1.5], ['sock_single', 0.8], ['underwear', 0.5], ['briefs', 0.5], ['boxers', 0.4],
+    ['panties', 0.4], ['knickers', 0.4], ['bra', 0.5], ['tights', 0.6], ['cap', 0.5], ['sun_hat', 0.3], ['straw_hat', 0.2]],
+  bath: [['socks_pair', 1.5], ['sock_single', 0.7], ['underwear', 1.5], ['briefs', 1], ['boxers', 1], ['panties', 1], ['knickers', 1], ['bra', 0.7], ['tshirt', 4], ['shorts', 3], ['leggings', 1], ['crop_top', 1.5]],
 };
 const ARCH_BED = new Set(['bed', 'mattress']);
 const ARCH_SEAT = new Set(['chair', 'sofa', 'armchair']);
@@ -113,7 +113,7 @@ const ARCH_SEAT = new Set(['chair', 'sofa', 'armchair']);
 function plan(cls, level, rng) {
   if (cls === 'bedroom') {
     if (level === 'lived') return { bed: 0, seat: rng.chance(0.6) ? 1 : 0, hung: rng.chance(0.3) ? 1 : 0, floor: rng.int(1, 2) };
-    return { bed: rng.int(2, 4), seat: rng.int(1, 2), hung: rng.int(0, 1), floor: rng.int(3, 6) };
+    return { bed: rng.int(3, 5), seat: rng.int(1, 3), hung: rng.int(0, 2), floor: rng.int(2, 5) };       // (the beds, the chairs and the wall hooks take the shirts: most floors have no room for one)
   }
   if (cls === 'bathroom') return { bed: 0, seat: 0, hung: 0, floor: level === 'lived' ? rng.int(1, 2) : rng.int(3, 5) };
   const seat = rng.chance(0.6) ? 1 : 0;
@@ -288,30 +288,44 @@ export function floorGrid(S) {
   return G;
 }
 
+const SMALL = 0.19;                                                                       // m2: the footprint under which a garment is a sock or underwear (a pair of boxers is 0.175)
 /** On the floor, away from the lanes: mostly beside the pieces people dress and undress at (the bed, the wardrobe, a chair), the rest anywhere; the garment is chosen to fit the gap it lies in. */
 function onFloor(S, hosts, mix) {
   const L = S.L, G = (S.grid ??= floorGrid(S));
-  for (let k = 0; k < 8; k++) {
+  for (let k = 0; k < 16; k++) {
+    // The garment comes first, by the weights of the mix, and then a gap that holds it, tried a few times (a shirt needs 0.9 m of bare floor, a sock 0.4 m, and most gaps are small: choosing the gap
+    // first and keeping only what fits it left a floor of socks and underwear, 62% of the clothes of the barrio, R4-211). The last attempts fall back to the old way, so a tight room still gets its sock.
+    const first = k < 10;
+    const pick0 = first ? pickGarment(S, mix) : null;
+    if (pick0 && pick0.g.flat[0] * pick0.g.flat[2] < SMALL && S.rng.chance(0.55)) continue;      // (a sock finds a gap in every room, a shirt in few: they would still be most of the floor)
+    const need = pick0 ? Math.max(0.1, Math.min(Math.hypot(pick0.g.flat[0], pick0.g.flat[2]) / 2, 0.46) * 0.6 - 0.02) : 0.1;
     const open = [];
-    for (let c = 0; c < G.blk.length; c++) if (!G.blk[c] && G.clr[c] >= 0.1) open.push(c);
-    if (!open.length) return null;
-    let c = S.rng.pick(open);
-    if (hosts.length && S.rng.chance(0.65)) {                                           // the nearest of a few free cells to one of the pieces
-      const h = S.rng.pick(hosts), at = (q) => G.at(q % G.nx, Math.floor(q / G.nx)), near = (q) => { const [x, z] = at(q); return Math.hypot(x - h.x, z - h.z) - G.clr[q]; };
-      for (let j = 0; j < 6; j++) { const q = S.rng.pick(open); if (near(q) < near(c)) c = q; }
+    for (let c = 0; c < G.blk.length; c++) if (!G.blk[c] && G.clr[c] >= need) open.push(c);
+    if (!open.length) { if (first) continue; return null; }
+    for (let tr = 0; tr < (first ? 8 : 1); tr++) {
+      let c = S.rng.pick(open);
+      if (hosts.length && S.rng.chance(0.65)) {                                           // the nearest of a few free cells to one of the pieces
+        const h = S.rng.pick(hosts), at = (q) => G.at(q % G.nx, Math.floor(q / G.nx)), near = (q) => { const [x, z] = at(q); return Math.hypot(x - h.x, z - h.z) - G.clr[q]; };
+        for (let j = 0; j < 6; j++) { const q = S.rng.pick(open); if (near(q) < near(c)) c = q; }
+      }
+      const [x0, z0] = G.at(c % G.nx, Math.floor(c / G.nx)), x = r3(x0), z = r3(z0), reach = G.clr[c] + 0.04;       // (the record keeps three decimals: the box tested is the box that lies there, not one a hair off a lane's edge)
+      let pick = pick0;
+      if (!pick) {
+        const fit = mix.filter(([id]) => Math.hypot(GARMENTS[id].flat[0], GARMENTS[id].flat[2]) / 2 <= reach);
+        if (!fit.length) continue;
+        pick = pickGarment(S, fit);
+        if (pick.g.flat[0] * pick.g.flat[2] < SMALL && S.rng.chance(0.8)) continue;        // (a sock fits every gap: left alone it would still be most of what lies about; a room that gets none is just tidier)
+      }
+      const [gw, , gd] = pick.g.flat, ry = r3(S.rng.next() * 2 * PI), ob = mkObb(x, z, gw, gd, ry);
+      if (!L.inside(ob, -0.06) || !free(S, ob, 0.02)) continue;
+      if (L.items.some((b) => b.floor && (b.block ? obbOverlap(ob, b.ob, 0.04) : b.c.size[1] >= 0.04 && obbOverlap(ob, b.ob, 0.015)))) continue;       // a hand clear of every piece of furniture, and off the shoes, the baskets, the bins (a rug or a mat is fine to lie on)
+      if (L.keep.some((q) => obbOverlap(ob, q.obb ?? mkObb((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2, q.x1 - q.x0, q.z1 - q.z0, 0), 0.06))) continue;      // the doors' sweeps, the entrance corridor, the stairs
+      if (S.lanesOf().hits(ob)) continue;
+      const it = lay(S, null, garmentKey(pick.id, 'flat'), x, z, ry, pick);
+      if (!it) return null;
+      G.block(ob);
+      return it;
     }
-    const [x, z] = G.at(c % G.nx, Math.floor(c / G.nx)), reach = G.clr[c] + 0.04;
-    const fit = mix.filter(([id]) => Math.hypot(GARMENTS[id].flat[0], GARMENTS[id].flat[2]) / 2 <= reach);
-    if (!fit.length) continue;
-    const pick = pickGarment(S, fit), [gw, , gd] = pick.g.flat, ry = S.rng.next() * 2 * PI, ob = mkObb(x, z, gw, gd, ry);
-    if (!L.inside(ob, -0.06) || !free(S, ob, 0.02)) continue;
-    if (L.items.some((b) => b.floor && (b.block ? obbOverlap(ob, b.ob, 0.04) : b.c.size[1] >= 0.04 && obbOverlap(ob, b.ob, 0.015)))) continue;       // a hand clear of every piece of furniture, and off the shoes, the baskets, the bins (a rug or a mat is fine to lie on)
-    if (L.keep.some((q) => obbOverlap(ob, q.obb ?? mkObb((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2, q.x1 - q.x0, q.z1 - q.z0, 0), 0.06))) continue;      // the doors' sweeps, the entrance corridor, the stairs
-    if (S.lanesOf().hits(ob)) continue;
-    const it = lay(S, null, garmentKey(pick.id, 'flat'), x, z, ry, pick);
-    if (!it) return null;
-    G.block(ob);
-    return it;
   }
   return null;
 }

@@ -1,7 +1,8 @@
 // Outdoor lettering and paint (A5): three murals painted straight onto the tall retaining walls (6-8 m wide, 3 m+ tall, weathered, ragged brush edge, no frame),
 // the welcome boards on the gate arch, a blue street-name plaque on an iron post at the start of every street, hand-painted boards (garden, eggs, thanks) and the
 // chalk hopscotch on the Almendros plaza. Shop fascias, blades, ghost signs and posters are A2's (arch/signs.js, material `sign_atlas`); this is the other,
-// separate pair of atlases: material `world_sign` (2048 x 1024: boards, plaques, chalk, the posters and tags of the perimeter walls) and `world_mural` (1024 x 1560: the three paintings, 1024 x 512 each).
+// separate pair of atlases: material `world_sign` (2048 x 1024: boards, plaques, chalk, the posters and tags of the perimeter walls) and `world_mural` (1024 x 2080: the three paintings, 1024 x 512 each,
+// and under them the four of the perimeter wall, 504 x 252 each).
 // Painted at boot (Canvas2D -> DataTexture, rows flipped so v = 1 - y/H, like the foliage atlas). Under Node there is no canvas:
 // K.signs stays null and every panel is a flat tinted board, so the placement code (and its tests) run the same everywhere.
 import * as THREE from 'three';
@@ -30,7 +31,14 @@ const regionOf = (key) => (key.startsWith('plaque.') ? plaqueRegion(+key.slice(7
 
 // the murals: one 1024 x 512 region each, stacked with 8 px gutters (in the order of ART below)
 const MW = 1024, MH = 512, MGAP = 8;
-const muralRegion = (key) => { const i = ART.findIndex((a) => a.key === key); return i < 0 ? undefined : [0, i * (MH + MGAP), MW, MH]; };
+// R1-106: under them, the perimeter wall's own paintings (EDGE_ART below): 504 x 252 each, two to a 512 x 260 cell, so the atlas grows by one 260 px row for every two.
+const muralRegion = (key) => {
+  const i = ART.findIndex((a) => a.key === key);
+  if (i >= 0) return [0, i * (MH + MGAP), MW, MH];
+  const j = EDGE_ART.findIndex((a) => a.key === key);
+  return j < 0 ? undefined : [(j % 2) * 512 + 4, ART.length * (MH + MGAP) + Math.floor(j / 2) * 260 + 4, EW, EH];
+};
+const muralAtlasHeight = () => ART.length * (MH + MGAP) + Math.ceil(EDGE_ART.length / 2) * 260;
 /** [u0, vBottom, u1, vTop] of a region of a W x H atlas, half a texel inside; a key with no region is a bug, so it throws with the key's name */
 const uvIn = (reg, W, H, key) => {
   if (!reg) throw new Error(`sign atlas: no region for "${key}"`);
@@ -183,12 +191,177 @@ const ART = [
   { key: 'mural.cerro', id: 'cerro', name: 'El Cerro Verde', en: 'The hill the way its children draw it: green, with a house on every step. "The hillside is ours".', paint: paintCerro, focus: 400, seed: 313 },
 ];
 
+// ---------------------------------------------------------------------------------------------------- the paintings of the perimeter wall (R1-106)
+// The three murals above are discoveries: each hangs on one street wall, once. The back wall of the plot (edgewall.js) used to hang the same three again as filler ("the discovery is seen again as a filler
+// panel"). It has four paintings of its own now, made the same way (flat shapes on a 640 x 320 scene, painted 1.6x onto 1024 x 512, weathered) and brought down to 504 x 252, which is plenty for a
+// painting 3 to 4 m wide. No picture here is cropped (the wall gives them a fixed 2:1 shape), and none of them calls scale() (world-signs.test.mjs counts the scale() calls of the discovery pictures).
+function leafAt(g, x, y, len, ang, col) {
+  g.save(); g.translate(x, y); g.rotate(ang);
+  g.fillStyle = col; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.5, -len * 0.3, len, 0); g.quadraticCurveTo(len * 0.5, len * 0.3, 0, 0); g.fill();
+  g.strokeStyle = 'rgba(0,30,20,0.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 0); g.lineTo(len * 0.9, 0); g.stroke();
+  g.restore();
+}
+
+/** A football pitch at dusk under two floodlights: a kick and a run, a goal on the right. */
+function paintCancha(g, w, h, v = FULL) {
+  const R = rng32(21), skin = '#b97a4e';
+  const sky = g.createLinearGradient(0, 0, 0, 215); sky.addColorStop(0, '#0d1f4a'); sky.addColorStop(0.6, '#7a3b7c'); sky.addColorStop(1, '#f08a5d'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 44; i++) { g.fillStyle = `rgba(255,255,255,${0.3 + R() * 0.5})`; circle(g, R() * w, R() * 120, 0.8 + R() * 1.3); }
+  poly(g, [[0, 196], [70, 156], [150, 180], [240, 146], [330, 178], [420, 142], [520, 176], [640, 150], [640, h], [0, h]], '#2b2650');
+  for (let i = 0; i < 54; i++) { g.fillStyle = R() < 0.7 ? '#ffd166' : '#ff9f1c'; g.fillRect(8 + R() * 624, 168 + R() * 42, 4, 5); }
+  for (const [x, f] of [[44, 1], [596, -1]]) {
+    poly(g, [[x - 18, 80], [x + 18, 80], [x + f * 250, 250], [x + f * 80, 250]], 'rgba(255,244,190,0.14)');
+    g.fillStyle = '#1a1a22'; g.fillRect(x - 3, 74, 6, 160); g.fillStyle = '#2a2a34'; g.fillRect(x - 26, 52, 52, 24);
+    g.fillStyle = '#fff7c2'; for (let i = 0; i < 6; i++) circle(g, x - 17 + (i % 3) * 17, 59 + Math.floor(i / 3) * 11, 4.6);
+  }
+  const turf = g.createLinearGradient(0, 214, 0, h); turf.addColorStop(0, '#2f9150'); turf.addColorStop(1, '#1c6535'); g.fillStyle = turf; g.fillRect(0, 214, w, h - 214);
+  for (let i = -2; i < 11; i++) poly(g, [[i * 64 + 30, 214], [i * 64 + 62, 214], [i * 64 + 12, h], [i * 64 - 20, h]], 'rgba(255,255,255,0.07)');
+  g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 226); g.lineTo(w, 226); g.moveTo(320, 226); g.lineTo(320, 312); g.stroke();
+  g.beginPath(); g.ellipse(320, 270, 80, 24, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = '#f4f4ee'; g.lineWidth = 5; g.beginPath(); g.moveTo(556, 232); g.lineTo(556, 170); g.lineTo(636, 170); g.lineTo(636, 232); g.stroke();
+  g.strokeStyle = 'rgba(244,244,238,0.4)'; g.lineWidth = 1.5; g.beginPath();
+  for (let x = 566; x < 636; x += 10) { g.moveTo(x, 172); g.lineTo(x, 230); }
+  for (let y = 182; y < 232; y += 10) { g.moveTo(558, y); g.lineTo(634, y); }
+  g.stroke();
+  const player = (x, y, dir, shirt, shorts, kick) => {                                  // feet at (x, y), facing dir (mirrored with transform, not scale)
+    g.save(); g.transform(dir, 0, 0, 1, x, y); g.lineCap = 'round'; g.lineJoin = 'round';
+    const leg = (hx, kx, ky, ax, ay) => {
+      g.strokeStyle = skin; g.lineWidth = 10; g.beginPath(); g.moveTo(hx, -52); g.lineTo(kx, ky); g.lineTo(ax, ay); g.stroke();
+      g.strokeStyle = '#f4f4ee'; g.lineWidth = 11; g.beginPath(); g.moveTo(kx + (ax - kx) * 0.5, ky + (ay - ky) * 0.5); g.lineTo(ax, ay); g.stroke();
+      g.fillStyle = '#16141a'; g.beginPath(); g.ellipse(ax + 6, ay + 2, 11, 5, 0, 0, Math.PI * 2); g.fill();
+    };
+    leg(-6, -8, -28, -11, -4); if (kick) leg(8, 26, -36, 50, -26); else leg(8, 14, -28, 22, -6);
+    poly(g, [[-16, -64], [16, -64], [19, -44], [-19, -44]], shorts);
+    g.fillStyle = shirt; rrect(g, -17, -102, 34, 42, 9); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.9)'; g.fillRect(-17, -86, 34, 7);
+    g.strokeStyle = skin; g.lineWidth = 8; g.beginPath(); g.moveTo(-13, -94); g.lineTo(-32, kick ? -78 : -66); g.moveTo(13, -94); g.lineTo(32, kick ? -108 : -78); g.stroke();
+    g.fillStyle = skin; circle(g, 0, -114, 12.5);
+    g.fillStyle = '#1b1411'; g.beginPath(); g.ellipse(0, -121, 13, 8, 0, Math.PI, 0); g.fill();
+    g.fillStyle = '#15110f'; circle(g, 4, -114, 1.8);
+    g.restore();
+  };
+  player(206, 258, 1, '#d62839', '#f4f4ee', true); player(436, 260, -1, '#ffd23f', '#1d4e89', false);
+  g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(252, 246); g.quadraticCurveTo(268, 232, 284, 228); g.stroke();      // the ball's track
+  g.fillStyle = '#f6f6f2'; circle(g, 300, 222, 11); poly(g, [[300, 215], [306, 220], [304, 227], [296, 227], [294, 220]], '#26262c');
+  viewBanner(g, v, 272, 40, 'GOOOL DEL BARRIO', '#ffd23f', '#14406b', '#2a2220');
+}
+
+/** The cable car over the hill: cabins on the line between two towers, the houses climbing under it. */
+function paintCable(g, w, h, v = FULL) {
+  const R = rng32(23);
+  const sky = g.createLinearGradient(0, 0, 0, 230); sky.addColorStop(0, '#4fa9e6'); sky.addColorStop(0.7, '#bfe6f5'); sky.addColorStop(1, '#fdf1cf'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#fff3a8'; circle(g, 566, 62, 30);
+  g.fillStyle = 'rgba(255,255,255,0.95)';
+  for (const [cx, cy] of [[110, 76], [300, 50], [430, 96]]) { circle(g, cx, cy, 16); circle(g, cx + 18, cy + 4, 13); circle(g, cx - 18, cy + 5, 12); g.fillRect(cx - 24, cy + 5, 48, 11); }
+  poly(g, [[0, 170], [80, 128], [190, 150], [300, 112], [420, 146], [540, 120], [640, 150], [640, h], [0, h]], '#8fbfd0');
+  poly(g, [[0, 214], [120, 172], [260, 198], [400, 162], [520, 190], [640, 170], [640, h], [0, h]], '#5fa37a');
+  poly(g, [[0, 250], [140, 226], [320, 244], [470, 222], [640, 240], [640, h], [0, h]], '#3f8a52');
+  const hc = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#f78c6b', '#c77dff', '#ffe5b4'];
+  for (let row = 0; row < 3; row++) for (let x = 6 + row * 9; x < w - 20; x += 24 + R() * 10) {
+    const y = 262 + row * 12 - Math.abs(x - 320) * 0.05 - R() * 10, hw = 17 + R() * 8, hh = 12 + R() * 7;
+    g.fillStyle = hc[Math.floor(R() * hc.length)]; g.fillRect(x, y - hh, hw, hh); poly(g, [[x - 2, y - hh], [x + hw / 2, y - hh - 8], [x + hw + 2, y - hh]], '#8a4b32');
+    g.fillStyle = '#2b2a33'; g.fillRect(x + hw * 0.2, y - hh * 0.6, 4, 5);
+  }
+  const cy = (t) => 36 + 130 * t + 46 * 4 * t * (1 - t);                                  // the cable: from the top left to the lower right, sagging between its towers
+  for (const t of [0.22, 0.76]) {
+    const x = t * w, y = cy(t);
+    g.strokeStyle = '#2f3038'; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 24, 266); g.lineTo(x - 5, y + 4); g.moveTo(x + 24, 266); g.lineTo(x + 5, y + 4); g.stroke();
+    g.lineWidth = 3; g.beginPath(); g.moveTo(x - 17, y + 60); g.lineTo(x + 17, y + 60); g.moveTo(x - 12, y + 100); g.lineTo(x + 12, y + 100); g.stroke();
+    g.fillStyle = '#2f3038'; g.fillRect(x - 28, y - 3, 56, 8);
+  }
+  g.strokeStyle = '#25252c'; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= w; x += 8) { const y = cy(x / w); if (x) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke();
+  for (const [t, col] of [[0.08, '#e63946'], [0.47, '#ffd23f'], [0.64, '#3a86ff'], [0.92, '#2ec4b6']]) {
+    const x = t * w, y = cy(t);
+    g.strokeStyle = '#25252c'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 22); g.stroke();
+    g.fillStyle = col; rrect(g, x - 25, y + 20, 50, 38, 9); g.fill();
+    g.fillStyle = '#d9f2ff'; g.fillRect(x - 20, y + 27, 40, 15); g.fillStyle = 'rgba(40,40,60,0.35)'; g.fillRect(x - 1, y + 27, 2, 15);
+    g.fillStyle = '#c68c5a'; circle(g, x - 10, y + 37, 3.6); circle(g, x + 9, y + 37, 3.6); g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(x - 25, y + 50, 50, 8);
+  }
+  viewBanner(g, v, 276, 38, 'SUBIMOS JUNTOS', '#fff3c4', '#17406b', '#2a2220');
+}
+
+/** A hummingbird feeding at a big red hibiscus, the leaves dark round them. */
+function paintColibri(g, w, h, v = FULL) {
+  const R = rng32(29);
+  const bg = g.createLinearGradient(0, 0, w, h); bg.addColorStop(0, '#06505c'); bg.addColorStop(1, '#16868f'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 10; i++) { g.fillStyle = `rgba(255,255,255,${0.035 + R() * 0.05})`; circle(g, R() * w, R() * 260, 30 + R() * 70); }
+  g.strokeStyle = '#1d6b3f'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.moveTo(520, 330); g.bezierCurveTo(540, 250, 470, 210, 468, 150); g.stroke();
+  leafAt(g, 528, 290, 120, -2.5, '#1f8a4c'); leafAt(g, 520, 262, 110, -0.4, '#2aa05a'); leafAt(g, 470, 214, 90, -3.0, '#167a40'); leafAt(g, 560, 322, 100, -1.1, '#25944f'); leafAt(g, 440, 60, 100, 0.9, '#1c7d46');
+  const flower = (cx, cy, r, c1, c2, turn) => {
+    for (let i = 0; i < 5; i++) {
+      g.save(); g.translate(cx, cy); g.rotate((i / 5) * Math.PI * 2 + turn);
+      const gr = g.createLinearGradient(0, 0, 0, -r); gr.addColorStop(0, c2); gr.addColorStop(1, c1); g.fillStyle = gr;
+      g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(-r * 0.62, -r * 0.2, -r * 0.55, -r * 1.05, 0, -r); g.bezierCurveTo(r * 0.55, -r * 1.05, r * 0.62, -r * 0.2, 0, 0); g.fill();
+      g.restore();
+    }
+    g.strokeStyle = '#fff3b0'; g.lineWidth = Math.max(2, r * 0.04); g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + r * 0.42, cy - r * 0.34); g.stroke();
+    g.fillStyle = '#ffd166'; circle(g, cx, cy, r * 0.12); circle(g, cx + r * 0.42, cy - r * 0.34, r * 0.07);
+  };
+  flower(600, 66, 38, '#ff9f1c', '#b3541e', 0.3); flower(398, 262, 30, '#ff6b9d', '#a3265c', 1.1); flower(468, 142, 86, '#e63946', '#8c1630', -0.3);
+  g.save(); g.translate(222, 152); g.rotate(-0.12);                                          // the bird, hovering: beak toward the flower
+  poly(g, [[-40, 6], [-120, 40], [-112, 56]], '#12603f'); poly(g, [[-40, 10], [-132, 60], [-118, 74]], '#0f4a8a'); poly(g, [[-36, 14], [-96, 78], [-80, 86]], '#12603f');
+  g.fillStyle = 'rgba(190,225,255,0.5)'; g.beginPath(); g.ellipse(-4, -62, 18, 66, 0.55, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#1b9a66'; g.beginPath(); g.ellipse(0, 12, 58, 26, -0.15, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#e9f7e4'; g.beginPath(); g.ellipse(14, 24, 40, 14, -0.15, 0, Math.PI); g.fill();
+  g.fillStyle = '#1479b8'; g.beginPath(); g.ellipse(-20, -2, 30, 12, -0.15, Math.PI, 0); g.fill();
+  g.fillStyle = '#1b9a66'; circle(g, 66, -6, 21); g.fillStyle = '#d4145a'; g.beginPath(); g.ellipse(76, 6, 14, 8, 0.3, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; circle(g, 70, -12, 6.4); g.fillStyle = '#111'; circle(g, 72, -12, 3.2);
+  poly(g, [[84, -8], [176, -30], [84, 0]], '#1a1a1e');
+  g.fillStyle = 'rgba(210,235,255,0.8)'; g.beginPath(); g.ellipse(-14, -52, 22, 74, -0.25, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(30,70,110,0.5)'; g.lineWidth = 2; g.stroke();
+  g.restore();
+  for (let i = 0; i < 40; i++) { g.fillStyle = 'rgba(255,240,180,0.7)'; circle(g, R() * w, R() * 260, 0.8 + R() * 1.8); }
+  viewBanner(g, v, 276, 38, 'QUE FLOREZCA EL BARRIO', '#ffe8a3', '#7b1e3a', '#2a2220');
+}
+
+/** Coffee: a branch heavy with cherries, a cup steaming under the sun, the terraces of the farm behind. */
+function paintCafe(g, w, h, v = FULL) {
+  const R = rng32(31);
+  const sky = g.createLinearGradient(0, 0, 0, 220); sky.addColorStop(0, '#ffe3a3'); sky.addColorStop(1, '#f7a860'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 20; i++) { const a = (i / 20) * Math.PI * 2; poly(g, [[500, 112], [500 + Math.cos(a - 0.05) * 320, 112 + Math.sin(a - 0.05) * 320], [500 + Math.cos(a + 0.05) * 320, 112 + Math.sin(a + 0.05) * 320]], 'rgba(255,240,190,0.2)'); }
+  g.fillStyle = '#ffd166'; circle(g, 500, 112, 62); g.fillStyle = '#fff0b0'; circle(g, 500, 112, 44);
+  poly(g, [[0, 182], [90, 142], [200, 170], [330, 124], [450, 168], [560, 150], [640, 176], [640, h], [0, h]], '#6f9f7c');
+  poly(g, [[0, 224], [140, 186], [300, 212], [440, 182], [640, 208], [640, h], [0, h]], '#3f7d52');
+  for (let row = 0; row < 3; row++) {
+    const y = 226 + row * 15; g.fillStyle = row % 2 ? '#2f6b3a' : '#35793f'; g.fillRect(0, y, w, 15);
+    for (let x = 6 + (row % 2) * 10; x < w; x += 20) { g.fillStyle = '#1d5a2e'; circle(g, x, y + 6, 8); g.fillStyle = '#d62828'; circle(g, x - 3, y + 5, 1.8); circle(g, x + 4, y + 9, 1.8); }
+  }
+  g.strokeStyle = '#5a3b22'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(-10, 38); g.bezierCurveTo(80, 52, 150, 96, 250, 92); g.stroke();
+  for (const [x, y, len, ang, col] of [[40, 44, 96, 0.9, '#1e5c2e'], [96, 58, 104, -0.5, '#27703a'], [140, 76, 92, 1.0, '#1e5c2e'], [190, 90, 100, -0.7, '#2a7a3e'], [60, 46, 84, -1.0, '#27703a'], [226, 94, 84, 0.5, '#1e5c2e']]) leafAt(g, x, y, len, ang, col);
+  for (const [x, y] of [[58, 66], [114, 84], [172, 106], [228, 108], [88, 40]]) for (let k = 0; k < 5; k++) {
+    const cx = x + (k % 3) * 10 - 8, cy2 = y + Math.floor(k / 2) * 9; g.fillStyle = '#c1121f'; circle(g, cx, cy2, 7.5); g.fillStyle = 'rgba(255,255,255,0.55)'; circle(g, cx - 2.4, cy2 - 2.6, 2);
+  }
+  g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.ellipse(440, 262, 70, 10, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#efe8d8'; g.beginPath(); g.ellipse(440, 258, 62, 11, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#fbf7ee'; g.lineWidth = 8; g.beginPath(); g.arc(490, 232, 17, -1.25, 1.35); g.stroke();
+  g.fillStyle = '#fbf7ee'; g.beginPath(); g.moveTo(394, 212); g.lineTo(404, 252); g.quadraticCurveTo(440, 266, 476, 252); g.lineTo(486, 212); g.closePath(); g.fill();
+  g.fillStyle = '#e1d8c3'; g.beginPath(); g.ellipse(440, 212, 46, 10, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#4a2c1a'; g.beginPath(); g.ellipse(440, 214, 39, 7, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#2b5a9e'; g.fillRect(398, 236, 84, 6);
+  g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 6; g.lineCap = 'round';
+  for (const x0 of [418, 440, 462]) { g.beginPath(); g.moveTo(x0, 204); g.bezierCurveTo(x0 - 14, 188, x0 + 14, 172, x0, 154); g.stroke(); }
+  viewBanner(g, v, 276, 38, 'CAFÉ DE MI TIERRA', '#fff3c4', '#5a2e12', '#2a2220');
+}
+
+/**
+ * The perimeter wall's own paintings (R1-106): atlas key, painter, weathering seed. They share the mural atlas, in 504 x 252 regions two to a row under the three discoveries; edgewall.js hangs them
+ * (a fixed 2:1 shape) and never hangs a discovery mural again.
+ */
+const EDGE_ART = [
+  { key: 'edge.cancha', paint: paintCancha, seed: 321 },
+  { key: 'edge.cable', paint: paintCable, seed: 322 },
+  { key: 'edge.colibri', paint: paintColibri, seed: 323 },
+  { key: 'edge.cafe', paint: paintCafe, seed: 324 },
+];
+const EW = 504, EH = 252;                                                               // a region of a perimeter painting (2:1), in a 512 x 260 cell (4 px of gutter all round)
+export const EDGE_MURAL_ASPECT = EW / EH;
+export const edgeMuralKeys = () => EDGE_ART.map((a) => a.key);
+
 /**
  * Years of sun, rain and splashes on a painting of w x h px (region-local coordinates, clipped to its region): sun fade (strongest at the top), plaster grain, dark rain
  * streaks, a damp dirty foot, flecks and peeled patches where the paint is gone (pale plaster, rimmed in shadow) and a hand-ragged edge (alpha 0: the wall shows
- * beyond it) instead of a frame.
+ * beyond it) instead of a frame. `soft` (the perimeter wall's paintings): the peeled patches are faint and feathered, with no rim and no stain.
  */
-function weather(g, w, h, seed) {
+function weather(g, w, h, seed, soft = false) {
   const R = rng32(seed);
   const fade = g.createLinearGradient(0, 0, 0, h);
   fade.addColorStop(0, 'rgba(228,216,192,0.24)'); fade.addColorStop(0.55, 'rgba(228,216,192,0.09)'); fade.addColorStop(1, 'rgba(228,216,192,0.02)');
@@ -218,7 +391,12 @@ function weather(g, w, h, seed) {
       const a = (k / n) * Math.PI * 2, q = rr * (0.5 + 0.5 * R()), x = cx + Math.cos(a) * q * 1.5, y = cy + Math.sin(a) * q;
       if (k) g.lineTo(x, y); else g.moveTo(x, y);
     }
-    g.closePath(); g.fillStyle = 'rgba(204,194,174,0.95)'; g.fill();           // bare plaster
+    g.closePath();
+    if (soft) {                                                                // R1-106 / R1-D22: on the perimeter wall's paintings a patch is a faint, feathered pale, with no rim and no stain: it read as a pebble stuck on
+      g.shadowColor = 'rgba(206,196,176,0.8)'; g.shadowBlur = 9; g.fillStyle = 'rgba(206,196,176,0.5)'; g.fill(); g.shadowBlur = 0; g.shadowColor = 'rgba(0,0,0,0)';
+      continue;
+    }
+    g.fillStyle = 'rgba(204,194,174,0.95)'; g.fill();                          // bare plaster
     g.lineWidth = 2; g.strokeStyle = 'rgba(92,78,62,0.5)'; g.stroke();         // the lifted paint's rim, in shadow
     g.fillStyle = 'rgba(120,106,90,0.18)'; g.fillRect(cx - rr * 1.2, cy + rr * 0.45, rr * 2.4, rr * 0.5);   // a damp stain along its lower side
   }
@@ -420,8 +598,8 @@ function toTexture(g, W, H, bare) {
  * Returns { texture, uv(key), mural: { texture, uv(key) } }: the boards atlas and the mural atlas, each uv() = [u0, vBottom, u1, vTop] of a region, half a texel inside.
  */
 export function makeSignAtlas(plan, murals = []) {
-  const MAH = ART.length * (MH + MGAP), cv = makeCanvas(AW, AH), mc = makeCanvas(MW, MAH); if (!cv || !mc) return null;
-  const g = cv.getContext('2d', { willReadFrequently: true }), mg = mc.getContext('2d', { willReadFrequently: true }); if (!g || !mg) return null;
+  const MAH = muralAtlasHeight(), cv = makeCanvas(AW, AH), mc = makeCanvas(MW, MAH), scratch = makeCanvas(MW, MH); if (!cv || !mc || !scratch) return null;
+  const g = cv.getContext('2d', { willReadFrequently: true }), mg = mc.getContext('2d', { willReadFrequently: true }), sg = scratch.getContext('2d'); if (!g || !mg || !sg) return null;
   g.clearRect(0, 0, AW, AH); mg.clearRect(0, 0, MW, MAH);
   paintRegions(g, signItems(plan), regionOf);
   const picture = (a, i) => (c, w, h) => {                                       // the scene is 640 x 320; a wall squarer than 2:1 shows the part of it around the focus, stretched to fill the region
@@ -430,6 +608,13 @@ export function makeSignAtlas(plan, murals = []) {
     weather(c, w, h, a.seed);
   };
   paintRegions(mg, ART.map((a, i) => [a.key, picture(a, i)]), muralRegion);
+  const edgePicture = (a) => (c, w, h) => {                                      // R1-106: painted and weathered like the discoveries (1024 x 512, on a scratch canvas), then brought down to the region
+    sg.setTransform(1, 0, 0, 1, 0, 0); sg.globalCompositeOperation = 'source-over'; sg.clearRect(0, 0, MW, MH);
+    sg.save(); sg.setTransform(MW / 640, 0, 0, MH / 320, 0, 0); a.paint(sg, 640, 320, FULL); sg.restore();
+    weather(sg, MW, MH, a.seed, true);
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(scratch, 0, 0, MW, MH, 0, 0, w, h);
+  };
+  paintRegions(mg, EDGE_ART.map((a) => [a.key, edgePicture(a)]), muralRegion);
   return {
     texture: toTexture(g, AW, AH, [236, 236, 228]), canvas: cv,
     uv: (key) => uvIn(regionOf(key), AW, AH, key),

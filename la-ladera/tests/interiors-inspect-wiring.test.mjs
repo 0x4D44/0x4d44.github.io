@@ -16,7 +16,8 @@ import { FINDS } from '../js/interiors/finds.js';
 import { PAPERS } from '../js/interiors/papers.js';
 import { ITEMS } from '../js/interiors/props.js';
 import { Pen } from '../js/interiors/standins.js';
-import { drawContent, makeContents } from '../js/interiors/contents.js';
+import { drawContent, makeContents, householdOf } from '../js/interiors/contents.js';
+import { resolveFind } from '../js/interiors/content.js';
 import { buildInterior } from '../js/interiors/build.js';
 import { loadInteriorAssets as pageLoad } from '../js/interiors/index.js';
 import { INSPECT, INSPECT_KEYS, BINDINGS, POSES, SCALES, MARGIN, COIN, modelFor, loadInspectAssets, inspectParts } from '../js/interiors/inspect.js';
@@ -280,7 +281,7 @@ test('E on a find asks for the hold-up with its model, name and line; a paper an
       else {
         const rec = FINDS.find((f) => f.id === o.find);
         assert.equal(held.length, 1, `${what}: one hold-up asked for`); const h = held[0];
-        assert.equal(h.id, o.find); assert.ok(h.name.es.startsWith(rec.name.es), `the name (and the place, as the toast gives it): ${h.name.es}`); assert.equal(h.name.en, rec.name.en); assert.deepEqual(h.react, rec.react, 'the line of the find');
+        assert.equal(h.id, o.find); assert.ok(h.name.es.startsWith(rec.name.es), `the name (and the place, as the toast gives it): ${h.name.es}`); assert.equal(h.name.en, rec.name.en); assert.deepEqual(h.react, resolveFind(rec, householdOf(S)).react, 'the line of the find, with its household\'s tokens filled ({T}: the team the signed shirt is of)');
         assert.ok(Array.isArray(h.tag) && /^Hallazgo · .+ [1-9]\d* de [1-9]\d*$/.test(h.tag[0]) && /^Find · .+ [1-9]\d* of [1-9]\d*$/.test(h.tag[1]), `the tag says the shelf and the count, as the toast does (the HUD is hidden while it is held): ${h.tag}`);
         if (what === 'model') assert.equal(h.model.key, BINDINGS[o.find], 'with the model it is drawn with');
         else assert.equal(h.model, null, 'no model: the hold-up has nothing to hold and declines (holdup.test.mjs)');

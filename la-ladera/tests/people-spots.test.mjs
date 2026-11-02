@@ -6,6 +6,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Spots, FIT, FIT_REACH } from '../js/people/spots.js';
 import { PeopleSim, standClear } from '../js/people/sim.js';
+import { Physics } from '../js/core/physics.js';
+import { makeRng } from '../js/core/rng.js';
+import { WANT } from '../js/people/homelife.js';
+import { project } from '../js/world/geom.js';
 import { buildData, readAssetJson } from './headless.mjs';
 
 const poi = (id, kind, x, z, y = 0) => ({ id, kind, x, y, z, ry: 0 });
@@ -39,6 +43,22 @@ test('Spots.fit: only the outdoor corners people stand on in the open (chat, sta
   assert.deepEqual(make().fit(round(FIT_REACH + 0.5)), [], 'free ground only beyond the reach: every corner stays');
 });
 
+test('Spots.fit: a lean spot a prop stands on slides along its wall by the least step that frees it (to the other side when one is shut); the spot the prop does not touch, one with no free place along the wall, another kind under a prop, and a fit not told about props stay', () => {
+  const lean = (id, x) => ({ ...poi(id, 'lean', x, 0), ry: 0 });                 // faces +z, so the wall it leans on runs along x
+  const make = () => spotsOf([lean('A', 0), lean('B', 10), lean('C', 20), poi('D', 'bench', 30, 0), lean('E', 40)]);
+  const prop = (list) => (x, z) => list.some(([bx, bz, br]) => Math.hypot(x - bx, z - bz) < br);
+  const props = [[0, 0.1, 0.5], [10, 0, 5], [30, 0, 0.5], [40, 0, 0.5], [40.6, 0, 0.3]];       // a post on A; a planter round B wider than any slide; a post under the bench D; a post on E with another beside it on its right
+  const spots = make(), solid = prop(props), moved = spots.fit(() => true, undefined, solid);
+  assert.deepEqual(moved.map((s) => s.id).sort(), ['A', 'E'], 'the two lean spots with room along the wall moved');
+  const A = at(spots, 'A'), E = at(spots, 'E');
+  assert.ok(A.z === 0 && A.x > 0.4 && A.x < 0.8, `A slid along the wall to its right, by the least step (x ${A.x.toFixed(2)}, z ${A.z})`);
+  assert.ok(E.z === 0 && E.x < 39.6 && E.x > 39.2, `E, with its right side shut by the second post, slid to the left (x ${E.x.toFixed(2)})`);
+  for (const s of [A, E]) assert.ok(!solid(s.x, s.z), `${s.id} stands clear of the props now`);
+  assert.deepEqual([A.x0, A.z0, E.x0, E.z0], [0, 0, 40, 0], 'the old places are kept');
+  for (const [id, x] of [['B', 10], ['C', 20], ['D', 30]]) assert.equal(at(spots, id).x, x, `${id} stays`);
+  assert.deepEqual(make().fit(() => true), [], 'a fit that is not told about props moves no lean spot');
+});
+
 test('standClear: a wall within the body, another level and a drop beside it each refuse a place', () => {
   const ph = (o = {}) => ({
     _overlaps: o.wall ? () => true : () => false,
@@ -69,6 +89,32 @@ test('Spots.screen: an outdoor place with no way in is cut and pick and nearest 
   assert.deepEqual(spotsOf([poi('A', 'bench', 0, 0)]).screen(() => undefined), [], 'a verdict of nothing is not a no');
 });
 
+test('PeopleSim.wayTo: a lean place with a prop still standing on it (no free place along its wall) has no way and is cut; a lean place on free ground and another kind under a prop keep theirs', () => {
+  const sim = new PeopleSim({ physics: { _overlaps: (x) => x < 5, segmentBlocked: () => false } });          // a prop over everything left of x = 5
+  sim.nav = { nearest: () => -1 };                                                                        // no node in range: the last leg is not judged
+  assert.equal(sim.wayTo({ kind: 'lean', x: 1, z: 0, y: 0 }), false, 'a prop on the place: the leaner would walk into it and stand there for ever');
+  assert.equal(sim.wayTo({ kind: 'lean', x: 9, z: 0, y: 0 }), true, 'free ground');
+  assert.equal(sim.wayTo({ kind: 'bench', x: 1, z: 0, y: 0 }), true, 'a bench is judged by its last leg alone, as before');
+});
+
+// ---- a prop square across the goal (found by a soak: n59, held two minutes at (-31.5, 86.6) by a place 0.6 m behind a 1.23 m planter) ----------------------------------------------------------------------
+// The two worlds below are cut from the page's (the lean place poi29 of lot L10, the bench poi260 of the Plazoleta de los Almendros): the last leg runs from the node nearest the place to the place.
+const wallsOf = (list) => { const ph = new Physics(); ph.setTerrain(() => 0); for (const w of list) ph.addWall({ y0: 0.1, y1: 1.8, id: 'prop', t: 0.02, ...w }); return ph; };
+const sideBox = (x, z0, z1) => [[x, z0, x + 0.12, z0], [x + 0.12, z0, x + 0.12, z1], [x + 0.12, z1, x, z1], [x, z1, x, z0]].map(([x1, z1, x2, z2]) => ({ x1, z1, x2, z2 }));      // a bench's end support: 0.12 m by 0.5 m
+const wayOf = (ph, node, y = 0) => { const sim = Object.create(PeopleSim.prototype); sim.physics = ph; sim.nav = { nodes: [{ x: node[0], z: node[1], y }], nearest: () => 0 }; return sim; };
+const building = { x1: -34.6, z1: 84.79, x2: -27.19, z2: 84.79, t: 0.11, y0: 0.1, y1: 4 };               // the front wall of L10, 0.6 m behind the lean place
+const planter = { x1: -30.13, z1: 85.98, x2: -31.36, z2: 86.02, t: 0.36 };                               // 1.23 m wide, standing across the line from the street node (-30, 88) to the place (-30.68, 85.4)
+const bench = [...sideBox(26.48, 50.55, 51.05), ...sideBox(24.88, 50.55, 51.05)];                         // the node (27.3, 50.5), the seat (25.74, 50.7): the line runs through the corner of the east support
+test('PeopleSim.wayTo: a low wall that stands square across the goal (a planter 0.6 m before a lean place) leaves no way and the place is cut; the end of a bench\'s support the line crosses at its corner, a wall beside the line and a place nothing crosses keep theirs', () => {
+  const lean = { kind: 'lean', x: -30.68, z: 85.4, y: 0 };
+  assert.equal(wayOf(wallsOf([building]), [-30, 88]).wayTo(lean), true, 'nothing across the leg: the place is on offer');
+  assert.equal(wayOf(wallsOf([building, planter]), [-30, 88]).wayTo(lean), false, 'a walker sent from the node slides to and fro in front of the planter: the place is cut');
+  assert.equal(wayOf(wallsOf([building, { ...planter, x1: -29.0, x2: -29.5 }]), [-30, 88]).wayTo(lean), true, 'the planter stands beside the line: no wall crosses it');
+  assert.equal(wayOf(wallsOf(bench), [27.3, 50.5]).wayTo({ kind: 'bench', x: 25.74, z: 50.7, y: 0 }), true, 'a support the line crosses at its corner is got round: the bench is on offer');
+  const fence = { x1: -31.5, z1: 86, x2: -29.8, z2: 86, t: 0.02, y0: 0.1, y1: 2.6 };
+  assert.equal(wayOf(wallsOf([building, fence]), [-30, 88]).wayTo(lean), false, 'a wall as tall as a fence is still no way, and is decided without sending anybody');
+});
+
 test('the page\'s world: no place a person can pick lies behind a fence from the node they walk to (the court-side benches and fence leans stand outside the chain-link)', async (t) => {
   const { ctx } = await buildData({ furnish: true, colliders: true, world: true });
   ctx.hour = 12;
@@ -82,7 +128,25 @@ test('the page\'s world: no place a person can pick lies behind a fence from the
   t.diagnostic(`${sim.spotsCut.length} of ${outdoor.length} outdoor places cut: ${sim.spotsCut.map((s) => s.id + ' ' + s.kind).join(', ')}`);
   if (!behind.length) t.diagnostic('the world has no place behind a fence now; the checks below hold trivially');
   assert.deepEqual(behind.filter((s) => !s.cut).map((s) => s.id + ' ' + s.kind), [], 'places behind a fence are still on offer');
-  assert.deepEqual(sim.spotsCut.filter((s) => !shut(s)).map((s) => s.id + ' ' + s.kind), [], 'places cut for a wall that is no fence (a small prop, which the walker slides round)');
+  // a place cut for a wall that is no fence (a prop) must be one a real walker never gets to (R3: the lean place of L10 behind a planter held n59 two minutes), and every place left on offer one it does
+  sim.setPlayer(500, 0, 500);                                                                             // (nobody about: the walker is alone with the ground)
+  const arrives = (s) => {                                                                                // the walk of brain.goPoint (lane, pavement, the last leg) from the node nearest the place; four tries of 30 s, a different roll of the sidestep each
+    const me = sim.npcs.find((n) => !n.away) ?? sim.npcs[0], N = nav.nodes[nav.nearest(s.x, s.z, 16, s.y)], orig = sim.brain.unstick; let stuck = false;
+    if (!N) return true;                                                                                  // (no node in range: goPoint refuses the place, which is no walk)
+    sim.brain.unstick = () => { stuck = true; };
+    try {
+      for (let k = 0; k < 4; k++) {
+        me.rng = makeRng(77 + k).fork('t'); sim.placeNpc(me, N.x, N.z, N.y, 0); me.stuckT = 0; me.away = false; stuck = false;
+        let done = false; if (!sim.brain.goPoint(me, { x: s.x, y: s.y, z: s.z }, () => { done = true; })) return false;
+        for (let t = 0; t < 30 && !done && !stuck; t += 0.05) { me.step(0.05, sim); sim.t += 0.05; }
+        if (done) return true;
+      }
+      return false;
+    } finally { sim.brain.unstick = orig; }
+  };
+  const propOn = (s) => s.kind === 'lean' && sim._solidAt(s.x, s.z, s.y);
+  assert.deepEqual(sim.spotsCut.filter((s) => !shut(s) && !propOn(s) && arrives(s)).map((s) => s.id + ' ' + s.kind), [], 'places cut for a wall that is no fence, though a walker gets to them');
+  assert.deepEqual(outdoor.filter((s) => !s.cut && nav.nearest(s.x, s.z, 16, s.y) >= 0 && !arrives(s)).map((s) => `${s.id} ${s.kind} (${s.x.toFixed(2)}, ${s.z.toFixed(2)})`), [], 'places on offer that a walker sent from the node nearest them never gets to (a prop square across the goal)');
   assert.deepEqual(sim.spotsCut.map((s) => s.id).sort(), outdoor.filter((s) => s.cut).map((s) => s.id).sort(), 'spotsCut lists exactly the places cut');
   assert.ok(sim.spotsCut.length <= Math.ceil(outdoor.length * 0.05), `${sim.spotsCut.length} of ${outdoor.length} outdoor places cut: a test that cuts so many is cutting places people can walk to`);
   for (const kind of ['bench', 'lean', 'play', 'chat']) {
@@ -108,6 +172,33 @@ test('a three-hour soak in the page\'s world (dawn to the mid-morning): nobody i
   assert.equal(near.length, 0, `${near.length} of ${snags.length} snags of the soak were at the court (${[...new Set(near.map((e) => e.id))].join(', ')}): somebody was sent to a bench outside its fence`);
   assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
 });
+
+// ---- the head of a stair (people/brain.js `stopNode`) and the waiting row of the clinic (people/sim.js `near`) ----------------------------------------------------------------------------------
+// The builders of the L40 site dwelt on the nodes of the flight beside it (a node within 13 m of the site was a place to stand): every walker who met one on the stair was pushed by the separation steering into the
+// rails at its head, (-21.1, 1.42, 16.04), and stayed there until `unstick` moved it: n54 at 8:33, n78 at 12:40 and n47 at 13:41, each in the four hours from its own start. A flight has no room for a stander.
+// The patients of the clinic (L09) stalled 0.7 m short of the seats a455 and a456 (5 of the 9 snags of the four hours from 8:00): the nurse at her post upstairs (a478, directly over the way to those seats) was a
+// neighbour of whoever walked below her, `near` having no height, and the walker was pushed off the way until `unstick` sat it down.
+for (const h0 of [8, 12, 16, 20]) {
+  test(`a four-hour soak in the page's world from ${h0}:00: nobody is pinned on a stair or at the waiting row of the clinic`, async () => {
+    const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
+    ctx.hour = h0;
+    const meta = await readAssetJson('people/people_meta.json');
+    const sim = new PeopleSim(ctx);
+    assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+    const sp = plan.spawn; sim.setPlayer(sp.x, sp.y ?? 0, sp.z, 0);
+    const stairs = sim.nav.nodes.filter((n) => n.kind === 'stair'), seats = sim.homelife.info(sim.lots.clinic).anchors.filter(WANT.wait), snags = [], orig = sim.brain.unstick.bind(sim.brain);
+    assert.ok(stairs.length >= 5, `the graph has stairs (${stairs.length} nodes)`);
+    assert.ok(seats.length >= 6, `the clinic has a waiting row (${seats.length} seats)`);
+    sim.brain.unstick = (npc, W) => { snags.push({ id: npc.id, x: npc.x, y: npc.y, z: npc.z, h: ctx.hour }); return orig(npc, W); };
+    for (let t = 0; t < 4 * 3600; t += 0.1) { ctx.hour = (h0 + t / 3600) % 24; sim.step(0.1); }
+    const list = (l) => l.map((e) => `${e.id} ${e.h.toFixed(2)} h (${e.x.toFixed(1)}, ${e.z.toFixed(1)}, ${e.y.toFixed(1)})`).join('; ');
+    const on = snags.filter((e) => stairs.some((n) => Math.hypot(e.x - n.x, e.z - n.z) < 2.5 && Math.abs(e.y - n.y) < 2));
+    assert.equal(on.length, 0, `${on.length} of ${snags.length} snags of the soak were on a stair: ${list(on)}`);
+    const row = snags.filter((e) => seats.some((a) => Math.hypot(e.x - a.x, e.z - a.z) < 1.6 && Math.abs(e.y - a.y) < 1.5));
+    assert.equal(row.length, 0, `${row.length} of ${snags.length} snags of the soak were at the waiting row of the clinic: ${list(row)}`);
+    assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
+  });
+}
 
 // ---- the lane a walker keeps to ----------------------------------------------------------------------------------------------------------------------------------------------------
 // `waypoints` (people/sim.js) turns a path over the graph into the points a walker steers to, each moved 0.55 to 1.25 m to one side of its node (keep to your right).
@@ -149,6 +240,95 @@ test('waypoints: a leg across a wall (a bench\'s end support standing in the lan
   for (let k = 0, prev = walker; k < chain.length; prev = chain[k++]) assert.ok(!two.segmentBlocked(prev.x, prev.z, chain[k].x, chain[k].z), `leg ${k} is clear`);
 });
 
+test('waypoints: a leg the line clears but a body does not (the end of a fence 0.3 m off the lane) goes back to the graph at both ends; what stands within a body of the walker\'s own feet does not take the lane away', () => {
+  const end = { x: 2, z: 1.3 };                                 // the end of a fence beside the lane of the first leg: the line z = 1 passes it by 0.3 m, which physics.segmentBlocked (the line alone) clears
+  const ph = { _overlaps: (x, z, y, R) => Math.hypot(x - end.x, z - end.z) < R + 0.2, segmentBlocked: () => false };
+  const w = lane(row, ph).waypoints(walker, [0, 1, 2]);
+  assert.deepEqual(w.map((p) => [p.x, p.z]), [[0, 0], [4, 0], [8, 1.0]], 'the two ends of the leg a body cannot walk are on their nodes, the last point keeps its lane');
+  for (let k = 1; k < w.length; k++) for (let s = 0; s <= 1; s += 0.05) assert.ok(!ph._overlaps(w[k - 1].x + (w[k].x - w[k - 1].x) * s, w[k - 1].z + (w[k].z - w[k - 1].z) * s, 0, 0.25), `leg ${k} is wide enough for a body`);
+  const foot = { _overlaps: (x, z) => Math.hypot(x, z) < 0.28, segmentBlocked: () => false };        // a bench support at the walker's feet
+  assert.deepEqual(lane(row, foot).waypoints(walker, [0, 1, 2]).map((p) => [p.x, p.z]), [[0, 1.0], [4, 1.0], [8, 1.0]], 'the place the walker stands in is the world\'s: the first leg out of it keeps its lane');
+});
+
+test('waypoints: given the goal the walker goes on to, the leg from the last lane point to it is judged with the others (the end supports of a bench round the spot)', () => {
+  const post = { x: 8.9, z: 0.75 };                             // a support beside the way from the last lane point (8, 1) to the goal (9.5, 0), 0.35 m off that line
+  const ph = { _overlaps: (x, z, y, R) => Math.hypot(x - post.x, z - post.z) < R + 0.2, segmentBlocked: () => false };
+  assert.deepEqual(lane(row, ph).waypoints(walker, [0, 1, 2]).map((p) => [p.x, p.z]), [[0, 1.0], [4, 1.0], [8, 1.0]], 'with no goal there is no last leg to judge: the lane is kept');
+  const w = lane(row, ph).waypoints(walker, [0, 1, 2], { x: 9.5, y: 0, z: 0 });
+  assert.deepEqual(w.map((p) => [p.x, p.z]), [[0, 1.0], [4, 1.0], [8, 0]], 'the last point goes back to its node: from there the way to the goal is wide enough');
+});
+
+// ---- the pavement is the lane (R3-105: at 17:12 people walked the yellow line of the street, 42 % of the walkers of Calle del Sol within 0.8 m of it, 9 % on the pavement) ----------------------------------------------------
+// world/nav.js gives the nodes of a street with a sidewalk `pave`, the distance of the middle of the pavement from the centre line (hw - SIDEWALK.w / 2: 3.55 on the 8 m road, 2.05 on the 5 m street).
+const pav = [0, 4, 8].map((x) => ({ x, z: 0, pave: 3.55 }));
+test('waypoints: on a street with a pavement the lane is the middle of the pavement on the right of the way, off it a little by the walker\'s own lane; both ways round, and a street with no pavement keeps its lane', () => {
+  const ph = { _overlaps: () => false };
+  for (const [l, z] of [[0.55, 3.41], [0.9, 3.55], [1.25, 3.69]]) {
+    const w = lane(pav, ph).waypoints({ ...walker, lane: l }, [0, 1, 2]);
+    assert.deepEqual(w.map((p) => [p.x, +p.z.toFixed(2)]), [[0, z], [4, z], [8, z]], `lane ${l}: on the pavement on the right of a walker going east (south)`);
+  }
+  const back = lane(pav, ph).waypoints({ ...walker, x: 8, lane: 0.9 }, [2, 1, 0]);
+  assert.deepEqual(back.map((p) => [p.x, +p.z.toFixed(2)]), [[8, -3.55], [4, -3.55], [0, -3.55]], 'going west the right is the other pavement');
+  assert.deepEqual(lane(pav.map(({ x, z }) => ({ x, z })), ph).waypoints(walker, [0, 1, 2]).map((p) => p.z), [1.0, 1.0, 1.0], 'with no `pave` the ordinary lane is kept');
+  const mixed = lane([pav[0], pav[1], { x: 8, z: 0 }], ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(mixed.map((p) => +p.z.toFixed(2)), [3.55, 0.9, 0.9], 'a node with no pavement (a junction) and its neighbour on the way take the ordinary lane: the walker crosses there, not on the line of a leg to nowhere');
+  const stair = lane([pav[0], pav[1], { x: 8, z: 0, kind: 'stair' }], ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(stair.map((p) => +p.z.toFixed(2)), [3.55, 0, 0], 'a stair and the node before it are walked on the graph');
+});
+
+test('waypoints: a pavement lane that is blocked (a lamp post, a bin) steps down to the road beside the kerb, not to the middle of the street; a leg across a post does the same to both its ends, and the legs round it are clear', () => {
+  const bin = { x: 4, z: 3.55 };                                // a bin on the pavement at the middle node
+  const ph = { _overlaps: (x, z) => Math.hypot(x - bin.x, z - bin.z) < 0.45 };
+  const w = lane(pav, ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(w.map((p) => [p.x, +p.z.toFixed(2)]), [[0, 3.55], [4, 2.56], [8, 3.55]], 'the middle point stands off the kerb (72 % of the way out), the others stay on the pavement');
+  const post = [2, 3.2, 2, 3.9];                                // a post across the pavement between the first two nodes
+  const ph2 = { _overlaps: () => false, segmentBlocked: (x1, z1, x2, z2) => hits(x1, z1, x2, z2, ...post) };
+  const v = lane(pav, ph2).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(v.map((p) => [p.x, +p.z.toFixed(2)]), [[0, 2.56], [4, 2.56], [8, 3.55]], 'both ends of the blocked leg step down once; the last keeps the pavement');
+  for (let k = 1; k < v.length; k++) assert.ok(!ph2.segmentBlocked(v[k - 1].x, v[k - 1].z, v[k].x, v[k].z), `leg ${k} is clear`);
+  const two = { _overlaps: () => false, segmentBlocked: (x1, z1, x2, z2) => hits(x1, z1, x2, z2, ...post) || hits(x1, z1, x2, z2, 2, 2.2, 2, 2.9) };      // and a second post in the way of the road beside the kerb
+  const u = lane(pav, two).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.ok(u[0].z < 2.56 && u[1].z < 2.56, `a second step down for the two ends (z ${u[0].z.toFixed(2)}, ${u[1].z.toFixed(2)})`);
+  for (let k = 1; k < u.length; k++) assert.ok(!two.segmentBlocked(u[k - 1].x, u[k - 1].z, u[k].x, u[k].z), `leg ${k} is clear after the second step`);
+});
+
+test('the page\'s world: a soak of an hour from 16:30 puts the walkers of Calle del Sol and Calle del Comercio on their pavements, not on the yellow line, and nobody is stuck on them', async (t) => {
+  const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
+  ctx.hour = 16.5;
+  const meta = await readAssetJson('people/people_meta.json');
+  const sim = new PeopleSim(ctx);
+  assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+  const sp = plan.spawn; sim.setPlayer(sp.x, sp.y ?? 0, sp.z, 0);
+  const streets = plan.streets.filter((s) => s.sidewalk), snags = [], orig = sim.brain.unstick.bind(sim.brain);
+  assert.deepEqual(streets.map((s) => s.id), ['S1', 'S2'], 'the streets with a sidewalk');
+  const paved = sim.nav.nodes.filter((n) => n.pave != null);
+  assert.ok(paved.length > 100 && paved.every((n) => n.kind === 'street'), `the nodes of the two streets carry the pavement lane (${paved.length})`);
+  sim.brain.unstick = (npc, W) => { snags.push({ id: npc.id, x: npc.x, z: npc.z }); return orig(npc, W); };
+  const seen = { S1: { line: 0, pave: 0, all: 0 }, S2: { line: 0, pave: 0, all: 0 } };
+  for (let s = 0, next = 0; s < 3600; s += 0.1) {
+    ctx.hour = (16.5 + s / 3600) % 24; sim.step(0.1);
+    if (s < next) continue; next = s + 1;
+    for (const n of sim.npcs) {
+      if (n.away || n.mode !== 'walk') continue;
+      for (const st of streets) {
+        const d = project(st._d.pts, st._d.cum, n.x, n.z).d, hw = st.width / 2;
+        if (d > hw + 0.3 || Math.abs(n.y - plan.heightAt(n.x, n.z)) > 1.2) continue;
+        const b = seen[st.id]; b.all++; if (d < 0.8) b.line++; if (d >= hw - 0.9) b.pave++;
+        break;
+      }
+    }
+  }
+  for (const id of ['S1', 'S2']) {
+    const b = seen[id], line = b.line / b.all, pave = b.pave / b.all;
+    t.diagnostic(`${id}: ${b.all} walker-seconds: ${(100 * line).toFixed(0)} % within 0.8 m of the yellow line, ${(100 * pave).toFixed(0)} % on the pavement`);
+    assert.ok(b.all > 3000, `${id}: ${b.all} walker-seconds seen`);
+    assert.ok(line < 0.2, `${id}: ${(100 * line).toFixed(0)} % of the walkers kept to the yellow line (it was 39 to 42 %)`);
+    assert.ok(pave > 0.3, `${id}: only ${(100 * pave).toFixed(0)} % were on the pavement (it was 9 %)`);
+  }
+  assert.deepEqual(snags.filter((e) => streets.some((st) => project(st._d.pts, st._d.cum, e.x, e.z).d < st.width / 2 + 1)).map((e) => `${e.id} (${e.x.toFixed(1)}, ${e.z.toFixed(1)})`), [], 'nobody was stuck on a street with a pavement');
+  assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
+});
+
 test('the page\'s world: no lane offset puts a waypoint in a solid or a leg across a wall, on any edge of the graph at the narrowest and the widest lane', async (t) => {
   const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
   ctx.hour = 9;
@@ -175,6 +355,42 @@ test('the page\'s world: no lane offset puts a waypoint in a solid or a leg acro
   assert.deepEqual(bad.slice(0, 12), [], `${bad.length} lane offsets lead into a solid or across a wall`);
 });
 
+test('the page\'s world: no lane offset leg is too narrow for a body (the end of the court\'s fence, a slot between two guard rails), on any edge of the graph a body can walk, at the narrowest and the widest lane', async (t) => {
+  const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
+  ctx.hour = 9;
+  const meta = await readAssetJson('people/people_meta.json');
+  const sim = new PeopleSim(ctx);
+  assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+  const ph = ctx.physics, N = sim.nav.nodes;
+  // may a body (0.28 m) walk a -> b? What lies within 0.3 m of an end that is a graph node, or the place the walker stands, is the world's own and does not count
+  const wide = (a, b, skipA, skipB) => {
+    const L = Math.hypot(b.x - a.x, b.z - a.z);
+    for (let d = 0; d <= L + 1e-9; d += 0.1) {
+      if ((skipA && d < 0.3) || (skipB && L - d < 0.3)) continue;
+      const s = L ? d / L : 1;
+      if (ph._overlaps(a.x + (b.x - a.x) * s, a.z + (b.z - a.z) * s, a.y + (b.y - a.y) * s, 0.28, 1.5)) return false;
+    }
+    return true;
+  };
+  const onNode = (p, n) => p.x === n.x && p.z === n.z;
+  let edges = 0; const bad = [];
+  for (const [a, b] of plan.nav.edges.map(([p, q]) => [N.findIndex((n) => n.id === p), N.findIndex((n) => n.id === q)])) {
+    if (a < 0 || b < 0 || !wide(N[a], N[b], true, true)) continue;                           // (an edge of the graph itself that a body cannot walk is the world's to fix, not the lane's)
+    edges++;
+    for (const l of [0.55, 1.25]) for (const path of [[a, b], [b, a]]) {
+      const from = N[path[0]], w = sim.waypoints({ x: from.x, y: from.y, z: from.z, lane: l }, path);
+      let prev = { x: from.x, y: from.y, z: from.z };
+      for (const [k, p] of w.entries()) {
+        if (!wide(prev, p, k === 0 || onNode(prev, N[path[k - 1]]), onNode(p, N[path[k]]))) bad.push(`${N[path[0]].id}->${N[path[1]].id} lane ${l}: the leg to (${p.x.toFixed(2)}, ${p.z.toFixed(2)}) is too narrow for a body`);
+        prev = p;
+      }
+    }
+  }
+  t.diagnostic(`${edges} edges a body can walk, checked at two lanes, both ways round`);
+  assert.ok(edges > 400, `${edges} edges`);
+  assert.deepEqual(bad.slice(0, 12), [], `${bad.length} lane legs a body cannot walk`);
+});
+
 test('the page\'s world: no chat corner, standing place, greeting step or phone corner is under a tree, a lamp post or a planter once the people are built', async (t) => {
   const { ctx } = await buildData({ furnish: true, colliders: true, world: true });
   ctx.hour = 9;
@@ -190,6 +406,22 @@ test('the page\'s world: no chat corner, standing place, greeting step or phone 
     assert.ok(!ctx.physics._overlaps(s.x, s.z, s.y, NEED[s.kind], 1.5), `${s.kind} corner ${s.id} at (${s.x.toFixed(2)}, ${s.z.toFixed(2)}) is inside a solid`);
   }
   for (const s of needed) { const m = at(sim.spots, s.id); assert.ok(Math.hypot(m.x - s.x, m.z - s.z) <= FIT_REACH + 1e-9, `${s.id} moved ${Math.hypot(m.x - s.x, m.z - s.z).toFixed(2)} m`); }
+});
+
+test('the page\'s world: no lean place on offer has a prop standing on it (a lamp post or a planter against the wall): those that had slid along the wall, or were cut', async (t) => {
+  const { ctx } = await buildData({ furnish: true, colliders: true, world: true });
+  ctx.hour = 9;
+  const meta = await readAssetJson('people/people_meta.json'), ph = ctx.physics;
+  const raw = new Spots({ plan: ctx.plan, anchors: [], buildings: ctx.buildings });
+  const had = raw.list('lean').filter((s) => ph._overlaps(s.x, s.z, s.y, 0.25, 1.5));
+  t.diagnostic(`${had.length} of ${raw.list('lean').length} lean places have a prop on them as the plan made them: ${had.map((s) => s.id).join(', ')}`);
+  const sim = new PeopleSim(ctx);
+  assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+  const offered = sim.spots.list('lean').filter((s) => s.src === 'poi' && !s.cut);
+  assert.deepEqual(offered.filter((s) => ph._overlaps(s.x, s.z, s.y, 0.25, 1.5)).map((s) => s.id), [], 'lean places a person can be sent to with a prop on them (the leaner walks into it and stands there for ever)');
+  for (const s of had) { const m = at(sim.spots, s.id); assert.ok(m.cut || Math.hypot(m.x - s.x, m.z - s.z) <= 0.9 + 1e-9, `${s.id} moved ${Math.hypot(m.x - s.x, m.z - s.z).toFixed(2)} m along its wall`); }
+  assert.ok(sim.spotsCut.filter((s) => s.kind === 'lean').length <= Math.ceil(had.length / 2), 'most of them slid to a free place: cutting is for the few that have none');
+  assert.deepEqual(sim.spotsCut.map((s) => s.id).sort(), sim.spots.all.filter((s) => s.src === 'poi' && s.cut).map((s) => s.id).sort(), 'spotsCut lists exactly the places cut');
 });
 
 // ---- the keeper's post --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -225,6 +457,41 @@ test('_makeShops: a post that lies inside a piece of furniture moves to free flo
   assert.ok(!real(now.x, now.z, now.y, 0.25, 1.5), 'and it is free floor');
   assert.ok(sim.canReach(sim.shops.get(lot).ent, now), 'that the door reaches');
   for (const k of keys) if (k !== lot) assert.deepEqual([sim.shops.get(k).post.x, sim.shops.get(k).post.z], [was.get(k).x, was.get(k).z], `${k}'s post stays`);
+});
+
+// A counter set against a wall has no keeper side: the post 1.7 m beyond the customer spot lay in the stairwell of the flat above (L52, L31), the entry hall (L19, L41) or the street (L20), and the keeper
+// stood there, shut off from his own shop and out of the way of every reviewer's camera (`lookPose` could not frame n18 of L52). A post in the customers' room that sat on the way they walk in
+// stopped a neighbour against the counter for ever (L61: the soak's `unstick`).
+test('_makeShops: every keeper stands on the shop\'s floor, in the room of the customers and off the way they walk in, in the plain and in the page\'s world', async (t) => {
+  const roomIdAt = (bp, p, y) => {                              // the room whose clear rectangle holds p on the floor at height y (independent of sim.js)
+    const [lx, , lz] = bp.frame.toLocal(p.x, y, p.z), floor = bp.floors.reduce((best, F) => (Math.abs(F.y + bp.lot.y - y) < Math.abs(best.y + bp.lot.y - y) ? F : best), bp.floors[0]);
+    return bp.rooms.find((q) => q.floor === floor.index && lx >= q.rect.x0 - 1e-3 && lx <= q.rect.x1 + 1e-3 && lz >= q.rect.z0 - 1e-3 && lz <= q.rect.z1 + 1e-3)?.id ?? null;
+  };
+  const off = (p, a, b) => {                                    // the distance of p from the leg a -> b
+    const dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz, u = l2 > 1e-9 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)) : 0;
+    return Math.hypot(p.x - a.x - dx * u, p.z - a.z - dz * u);
+  };
+  const meta = await readAssetJson('people/people_meta.json');
+  for (const world of [false, true]) {
+    const { ctx } = await buildData({ furnish: true, colliders: true, ...(world ? { world: true } : {}) });
+    const sim = new PeopleSim(ctx);
+    assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+    const bad = []; let withCust = 0;
+    for (const [lot, s] of sim.shops) {
+      const bp = ctx.buildings.get(lot), y = s.ent.inside.y;
+      if (Math.abs(s.post.y - y) > 0.9) bad.push(`${lot}: the post is at ${s.post.y.toFixed(1)}, the door at ${y.toFixed(1)}: another storey`);
+      if (!s.cust.length) continue;
+      withCust++;
+      const here = roomIdAt(bp, s.post, y), there = roomIdAt(bp, s.cust[0], y);
+      if (here !== there) bad.push(`${lot} (${s.type}): the keeper is in ${here}, the customers in ${there}`);
+      let aisle = Infinity;
+      for (const c of s.cust) { const way = [s.ent.inside, ...sim.indoor.route(lot, s.ent.inside, c, y)]; for (let i = 0; i + 1 < way.length; i++) aisle = Math.min(aisle, off(s.post, way[i], way[i + 1])); }
+      if (aisle < 0.8 - 1e-9) bad.push(`${lot} (${s.type}): the post is ${aisle.toFixed(2)} m from the way the customers walk in`);
+    }
+    t.diagnostic(`${world ? 'page' : 'plain'} world: ${sim.shops.size} shops, ${withCust} with customer spots`);
+    assert.ok(withCust >= 15, `${withCust} shops with customer spots`);
+    assert.deepEqual(bad, [], `${world ? 'the page\'s' : 'the plain'} world`);
+  }
 });
 
 test('an indoor anchor keeps the piece of furniture it was made for (homelife.slideOf finds the sofa by it); a spot of the plan has none', () => {

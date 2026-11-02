@@ -105,6 +105,11 @@ const REAR_LOOSE = 1.25; // round 6: rear axle grip on loose ground, so the stro
 const CS_INTO = 0.1;
 /** One-line owner lever: scales tyre grip (front and rear) on loose surfaces only (gravel, dirt, mud, snow, pumice); tarmac untouched. 1 = as designed. */
 export const LOOSE_GRIP_SCALE = 1.0;
+const ABS_T_SLIP = 0.08, ABS_T_GAIN = 20;
+/** Extra tyre grip (fraction) reached at DF_V0 + DF_V1 m/s; nothing at or below DF_V0 (22 m/s = 79 km/h). */
+export const DOWNFORCE = 0.2;
+const DF_V0 = 30, DF_V1 = 12;
+const PLOUGH_LOCAL = 0.1; // share of the along-track plough drag applied at the wheel (the rest acts at the centre of mass)
 const GOV_LOOSE = 0.4, GOV_CAP = 0.45;
 export const isLooseSurf = (id) => LOOSE_SURF[id] === 1;
 const LOOSE_SURF = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]; // by SURFACE id: gravel, dirt, (tarmac), mud, snow, pumice
@@ -166,6 +171,8 @@ export function createVehicle(spec, options = {}) {
   // front-axle grip on loose ground only (gravel, dirt, mud, snow, pumice): keeps the nose biting for a keyboard driver; fades in with the steering angle so straight-line braking is unchanged; tarmac untouched
   const frontLoose = spec.handling && spec.handling.frontLoose !== undefined ? spec.handling.frontLoose : FRONT_LOOSE;
   const rearLoose = spec.handling && spec.handling.rearLoose !== undefined ? spec.handling.rearLoose : REAR_LOOSE;
+  const absTarmac = spec.handling && spec.handling.absTarmac !== undefined ? spec.handling.absTarmac : 1; // share of the straight-line tarmac ABS applied (1 = full)
+  const dfCar = spec.handling && spec.handling.downforce !== undefined ? spec.handling.downforce : DOWNFORCE; // grip gained at full speed (fraction)
   const ltGain = spec.handling && spec.handling.liftRotate !== undefined ? spec.handling.liftRotate : (spec.drivetrain === "AWD" ? LT_GAIN_AWD : spec.drivetrain === "FWD" ? LT_GAIN_FWD : LT_GAIN_RWD);
 
   // box (for obstacle/wall collisions): z positive = back
@@ -554,7 +561,7 @@ export function createVehicle(spec, options = {}) {
     }
     // pedal ramps (digital friendly)
     D.thr += clamp(tThr - D.thr, -12 * dt, 6 * dt);
-    D.brk += clamp(tBrk - D.brk, -14 * dt, 10 * dt);
+    D.brk += clamp(tBrk - D.brk, -14 * dt, 16 * dt);
     D.hb += clamp(inHb - D.hb, -10 * dt, 14 * dt);
     if (tThr === 0 && D.thr < 0.003) D.thr = 0;
     thrEff = D.thr; brkEff = D.brk; hbEff = D.hb;
@@ -737,6 +744,8 @@ export function createVehicle(spec, options = {}) {
     }
 
     processInput(dt, input, fs, stage);
+    // round 7: speed-dependent downforce (arcade rally): tyre grip rises above DF_V0 so high-speed steering keeps authority; zero at and below the low-speed scenarios
+    const downF = 1 + dfCar * clamp((spd - DF_V0) / DF_V1, 0, 1) * (1 - clamp(D.brk * 2, 0, 1)); // not while braking: stopping distances stay as designed
 
     // ----- steering -----
     {
@@ -829,6 +838,7 @@ export function createVehicle(spec, options = {}) {
     }
     // ----- suspension forces (pass 2) + tyre forces -----
     let Fx = 0, Fy = -m * G, Fz = 0, Tx = 0, Ty = 0, Tz = 0;
+    let ploughX = 0, ploughY = 0, ploughZ = 0;
     const rho = RHO;
     // aero
     {
@@ -927,7 +937,7 @@ export function createVehicle(spec, options = {}) {
       let fxT = 0, fyT = 0;
       w.dFx = 0; w.fxTyre = 0;
       if (fz > 1) {
-        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (LOOSE_SURF[w.surf] ? LOOSE_GRIP_SCALE : 1) * (w.front ? spec.handling.gripFront * (LOOSE_SURF[w.surf] ? 1 + (frontLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) : 1) : spec.handling.gripRear * (LOOSE_SURF[w.surf] ? 1 + (rearLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) * (1 - clamp(brkEff * 2, 0, 1)) : 1)) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
+        const grip = downF * tyreGrip[w.surf] * sgTab[w.surf] * (LOOSE_SURF[w.surf] ? LOOSE_GRIP_SCALE : 1) * (w.front ? spec.handling.gripFront * (LOOSE_SURF[w.surf] ? 1 + (frontLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) : 1) : spec.handling.gripRear * (LOOSE_SURF[w.surf] ? 1 + (rearLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) * (1 - clamp(brkEff * 2, 0, 1)) : 1)) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
         const o = tyreForce(fzT, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
         fxT = o.fx; fyT = o.fy;
         // stiction safety: forces must not overshoot the slip velocity in one step
@@ -946,7 +956,13 @@ export function createVehicle(spec, options = {}) {
         fxT -= roll * th;
         const plough = si.drag * fz / G;
         const sp2 = Math.sqrt(vxw * vxw + vyw * vyw);
-        if (plough > 0 && sp2 > 0.01) { fxT -= plough * vxw; fyT -= plough * vyw; }
+        if (plough > 0 && sp2 > 0.01) {
+          // round 8: the along-track drag stops the car but must not twist it: all but PLOUGH_LOCAL of it acts at the centre of mass (no yaw moment),
+          // so one wheel on a verge slows the car without swinging the heading. The sideways part stays at the wheel (it damps slides).
+          const pl = plough * vxw;
+          fxT -= PLOUGH_LOCAL * pl; fyT -= plough * vyw;
+          ploughX += fwx * pl; ploughY += fwy * pl; ploughZ += fwz * pl;
+        }
         w.dFx = o.dFxdw;
         ws.slipRatio = o.kappa; ws.slipAngle = o.alpha; ws.skid = o.skid;
         w.skidS = o.skid;
@@ -973,6 +989,8 @@ export function createVehicle(spec, options = {}) {
       Tz += rxw * fyw - ryw * fxw;
       w.xcPrev = w.xc;
     }
+
+    Fx -= (1 - PLOUGH_LOCAL) * ploughX; Fy -= (1 - PLOUGH_LOCAL) * ploughY; Fz -= (1 - PLOUGH_LOCAL) * ploughZ;
 
     // ----- drivetrain -----
     let sumW = 0, nW = 0, wF = 0, wRr = 0;
@@ -1077,9 +1095,12 @@ export function createVehicle(spec, options = {}) {
       const front = w.front;
       let bkT = brkEff * (front ? bF : bR2);
       // ABS-like modulation (assist): ease the brake on a wheel that is locking so it keeps steering and gripping
-      if (opts.assist > 0 && bkT > 0 && spd > 3 && Math.abs(D.steerIn) > 0.12) { // only while turning: straight-line stops keep their natural lock-up distance
+      if (opts.assist > 0 && bkT > 0 && spd > 3 && Math.abs(D.steerIn) > 0.12) { // only while turning: on loose ground straight-line stops keep their natural lock-up distance
         const kk = s.wheels[i].slipRatio;
         if (kk < -0.16) bkT *= clamp(1 - (-kk - 0.16) * 4.5 * Math.min(1, opts.assist * 3), 0.3, 1);
+      } else if (opts.assist > 0 && bkT > 0 && spd > 3 && w.surf === SURFACE.TARMAC) { // round 7: straight-line ABS on tarmac only (loose ground locks up on purpose: the locked wheel digs in)
+        const kk = s.wheels[i].slipRatio;
+        if (kk < -ABS_T_SLIP) bkT *= 1 - absTarmac * (1 - clamp(1 - (-kk - ABS_T_SLIP) * ABS_T_GAIN * Math.min(1, opts.assist * 3), 0.25, 1));
       }
       let bt = bkT + against;
       if (!front) bt += hbEff * 3200;

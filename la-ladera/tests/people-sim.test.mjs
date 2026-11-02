@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildData, readAssetJson } from './headless.mjs';
-import { PeopleSim } from '../js/people/sim.js';
+import { PeopleSim, keeperFacing } from '../js/people/sim.js';
 import { Spots } from '../js/people/spots.js';
 import { Indoor } from '../js/people/indoor.js';
 import { NavGraph } from '../js/people/nav.js';
@@ -16,6 +16,7 @@ import { BODY, Npc } from '../js/people/npc.js';
 import { awake, blockAt, keeperBedH, SCHOOL, SHOP_HOURS, shopOpen, shopWindow } from '../js/people/schedule.js';
 import { makeVariant, slotRatio, skinShade } from '../js/people/look.js';
 import { makeRng } from '../js/core/rng.js';
+import { Physics } from '../js/core/physics.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = (f) => readFileSync(resolve(ROOT, 'js/people', f), 'utf8');
@@ -118,7 +119,7 @@ test('the day: shops open and shut with their hours, a keeper whose shop has shu
 });
 
 // ---- shopkeepers -----------------------------------------------------------------------------------------------------------------------------------
-test('shopkeepers: at noon every shop is open and its keeper stands at the post on flat floor, inside, facing the customers; few posts are sealed in', () => {
+test('shopkeepers: at noon every shop is open and its keeper stands at the post on flat floor, inside, facing the customers (the door, where they lie behind him) and never with his back to the door; few posts are sealed in', () => {
   const sim = fresh(12); run(sim, 6);
   const shopLots = plan.lots.filter((l) => l.shop);                                    // (counted from the plan: the plan grows, the number of shops with it)
   assert.ok(shopLots.length >= 15, `${shopLots.length} shop lots in the plan`);
@@ -133,15 +134,34 @@ test('shopkeepers: at noon every shop is open and its keeper stands at the post 
     const hs = ph.heightsAt(shop.post.x, shop.post.z), fy = shop.ent.inside.y;       // (measured here, not with the code under test)
     assert.ok(hs.some((h) => Math.abs(h - fy) <= 0.12) && !hs.some((h) => h > fy + 0.12 && h < fy + 1.85), `${shop.lot}: the post is on flat floor, not in a stairwell or under a ramp (surfaces ${hs.map((h) => h.toFixed(2))})`);
     assert.ok(Math.abs(angDiff(k.ry, shop.post.ry)) < 0.7, `${shop.lot}: the keeper faces ${shop.post.ry.toFixed(2)}, not ${k.ry.toFixed(2)}`);
-    const c = shop.cust[0];
+    const c = shop.cust[0], door = shop.ent.inside, toDoor = Math.atan2(door.x - shop.post.x, door.z - shop.post.z);
     if (c) {
-      const d = dist2(shop.post, c);
+      const d = dist2(shop.post, c), toC = Math.atan2(c.x - shop.post.x, c.z - shop.post.z);
       assert.ok(d >= 1.0 && d <= 3.6, `${shop.lot}: the post is ${d.toFixed(1)} m from the first customer spot (across a counter)`);
-      assert.ok(Math.abs(angDiff(Math.atan2(c.x - shop.post.x, c.z - shop.post.z), shop.post.ry)) < 1.0, `${shop.lot}: the post faces the customers`);
+      // (R3-103) the customers' spot lies behind a keeper who faces the door in 5 shops (the counter stands against the wall, so he waits on its customer side; the stall faces the back wall): there the door wins
+      assert.ok(Math.abs(angDiff(toDoor, toC)) > 1.9 || Math.abs(angDiff(toC, shop.post.ry)) < 1.0, `${shop.lot}: the post faces the customers`);
     }
+    if (dist2(shop.post, door) >= 0.6) assert.ok(Math.abs(angDiff(toDoor, shop.post.ry)) <= 1.0, `${shop.lot}: the post faces the door within 57 degrees, not away from it or side-on (${Math.abs(angDiff(toDoor, shop.post.ry)).toFixed(2)} rad off): R3-103`);
     if (shop.sealed) sealed++;
   }
   assert.ok(sealed <= Math.ceil(sim.shops.size * 0.4), `${sealed} of ${sim.shops.size} posts are sealed in by furniture (the keeper never leaves them); more means the interiors changed`);
+});
+
+test('keeperFacing (R3-103): a keeper with his back to the door, or side-on to it, is turned toward it, only as far as it takes; one who faces it is left as he stands; one whose customers lie behind him faces the door', () => {
+  const post = { x: 0, z: 0 }, door = { x: 0, z: 4 };                                         // the door straight ahead: yaw 0
+  const off = (ry, d = door) => Math.abs(angDiff(ry, Math.atan2(d.x - post.x, d.z - post.z)));
+  assert.equal(keeperFacing(0.3, post, door), 0.3, 'facing the door within 55 degrees: as authored');
+  assert.equal(keeperFacing(-0.9, post, [door]), -0.9, 'a list of doors works the same');
+  const side = keeperFacing(Math.PI / 2, post, door);
+  assert.ok(off(side) > 0.9 && off(side) <= 0.961, `side-on is turned to the edge of the cone, not to the door (${off(side).toFixed(3)} rad off)`);
+  assert.ok(off(keeperFacing(Math.PI, post, door)) <= 0.961, 'his back to the door: turned to within 55 degrees of it');
+  assert.ok(off(keeperFacing(Math.PI, post, door, { x: 0, z: -1.7 })) < 1e-9, 'the customers behind him, against the wall: he faces the door');
+  const cust = { x: 1.7, z: -0.3 }, toCust = (ry) => off(ry, cust), face = keeperFacing(Math.atan2(cust.x, cust.z), post, door, cust);       // the customers 100 degrees off the door
+  assert.ok(off(face) <= 0.961 && toCust(face) < 1.0, `the customers off to the side: turned only as far as the cone, they stay in front of him (door ${off(face).toFixed(2)}, customers ${toCust(face).toFixed(2)} rad off)`);
+  const two = [{ x: 0, z: 4 }, { x: 4, z: 4 }];                                              // the shop's door and the main door: within the cone of both
+  for (const ry of [Math.PI / 2, -Math.PI / 2, Math.PI, 2.4]) { const r = keeperFacing(ry, post, two); assert.ok(two.every((d) => off(r, d) <= 0.961), `two doors, from ${ry.toFixed(2)}: ${two.map((d) => off(r, d).toFixed(2))} rad off`); }
+  assert.equal(keeperFacing(Math.PI, post, { x: 0, z: 0.4 }), Math.PI, 'a door under 0.6 m away has no direction: as authored');
+  assert.equal(keeperFacing(Math.PI, post, null), Math.PI, 'no door inside: as authored');
 });
 
 test('shopkeepers: they open on the hour, go out to sweep or lean and come back, and the shop shuts at night', () => {
@@ -266,6 +286,75 @@ test('doors: from the step outside, through the door (it opens on request) and i
   assert.ok(asked.size >= Math.floor(targets.length * 0.85), `${asked.size} doors were asked to open (door:request) for ${targets.length} entrances`);
 });
 
+// A slot behind a rail: west wall x = 0, a rail at x = 0.9 that starts 0.6 m south of the mouth, a wall across the south end (z = 3). A body of 0.25 m has 0.34 m to stand in, and a waypoint on the far side
+// of the rail is straight through it. (The L40 stair head, (-21.1, 1.43, y16.04): a passer-by's push shoved a walker in there, and the 16:00 soak of people-spots saw it stand 5 s until `unstick`.)
+const slotWorld = (people = []) => {
+  const phys = new Physics(); phys.setTerrain(() => 0);
+  for (const [x1, z1, x2, z2] of [[0, 0, 0, 3], [0.9, 0.6, 0.9, 3], [0, 3, 0.9, 3]]) phys.addWall({ x1, z1, x2, z2, t: 0.05, y0: 0, y1: 3 });
+  const w = { t: 0, unstuck: 0, near: () => people, physics: phys, brain: { next() {}, unstick(n) { w.unstuck++; n.stuckT = 1.5; } } };
+  const npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
+  npc.place(0.45, 0, 2.6, 0);                                                          // at the dead end
+  npc.walk(w, [{ x: 1.6, y: 0, z: 0.3 }, { x: 1.6, y: 0, z: 3.6 }], null, 1.3); npc.pi = 1;   // the first point is behind it, the second beyond the rail
+  return { npc, w };
+};
+test('a walker pinned in a slot with nobody about goes back to its last waypoint and on, quickly and without an unstick (the head of the L40 stair)', () => {
+  const { npc, w } = slotWorld();
+  let t = 0, out = null;
+  for (; t < 20 && npc.mode === 'walk'; t += 0.02) { npc.step(0.02, w); w.t += 0.02; if (out == null && npc.z < 1.0) out = t; }
+  assert.equal(w.unstuck, 0, `${w.unstuck} calls to unstick`);
+  assert.equal(npc.mode, 'idle', 'it got to the end of its walk');
+  assert.ok(out != null && out < 4, `it was out of the slot after ${out?.toFixed(1)} s (nothing but unstick got it out before, and a stub unstick leaves it there)`);
+  assert.ok(t < 10, `and at the end of the walk after ${t.toFixed(1)} s`);
+  assert.equal(npc.backs, 1, 'with one way back');
+});
+test('a walker held by somebody walking beside it does not go back (a crowd clears by waiting; it is only a wall that needs the way out)', () => {
+  const { npc, w } = slotWorld([{ x: 3, z: 2, y: 0, mode: 'walk', moving: true, st: { x: 3, y: 0, z: 2 } }]);
+  for (let t = 0; t < 3; t += 0.02) { npc.step(0.02, w); w.t += 0.02; assert.equal(npc.detour, null, `a way back was taken at ${t.toFixed(1)} s with somebody walking beside it`); }
+  assert.equal(npc.backs, 0);
+});
+test('but somebody standing there is no reason to wait: it goes back all the same (a person who chats on the pavement stays; the soak: n75 pinned 8 s beside n52)', () => {
+  const { npc, w } = slotWorld([{ x: 3, z: 2, y: 0, mode: 'idle', moving: false, st: { x: 3, y: 0, z: 2 } }]);
+  for (let t = 0; t < 4 && npc.backs === 0; t += 0.02) { npc.step(0.02, w); w.t += 0.02; }
+  assert.equal(npc.backs, 1, 'a way back was taken');
+});
+test('a way back that is held up too is given up after a second: somebody stands on the last waypoint, so the walker is held off it (the 12:00 soak, a seller on the stair landing and n51)', () => {
+  const { npc, w } = slotWorld([{ x: 1.5, z: 0.5, y: 0, mode: 'idle', moving: false, st: { x: 1.5, y: 0, z: 0.5 } }]);          // 0.22 m from the last waypoint (1.6, 0.3): his push holds the walker 0.5 m off him
+  let on = null, off = null, held = 0;
+  for (let t = 0; t < 9 && off == null; t += 0.02) {
+    npc.step(0.02, w); w.t += 0.02;
+    if (on == null && npc.detour) on = t; else if (on != null && !npc.detour) off = t;
+    if (npc.detour && Math.hypot(npc.x - 1.5, npc.z - 0.5) < 0.62) held += 0.02;                      // (the walker is up against him)
+  }
+  assert.ok(on != null, 'it went back');
+  assert.ok(off != null && off - on < 4.5, `and gave the way back up after ${(off - on).toFixed(1)} s (2 s and then 2 s a metre was all it was allowed before)`);
+  assert.ok(held > 0.8 && held < 1.8, `after ${held.toFixed(1)} s held against him`);
+});
+test('the sidestep has its chance first: a walker it frees (slow along a wall, 15 degrees off square to it) is not sent back', () => {
+  const phys = new Physics(); phys.setTerrain(() => 0);
+  phys.addWall({ x1: 2, z1: -50, x2: 2, z2: 50, t: 0.05, y0: 0, y1: 3 });             // a long wall; the waypoint is beyond it: 0.34 m/s along it, 0.17 m a check, under the 0.23 m of "stalled"
+  const w = { t: 0, near: () => [], physics: phys, brain: { next() {}, unstick() {} } }, npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
+  npc.place(1.0, 0, 0, 0); npc.walk(w, [{ x: 0.5, y: 0, z: 0 }, { x: 39.6, y: 0, z: 10.4 }], null, 1.3); npc.pi = 1;
+  for (let t = 0; t < 4; t += 0.02) { npc.step(0.02, w); w.t += 0.02; }
+  assert.ok(npc.maxStuck >= 1, `it counted as stalled (${npc.maxStuck} s), so the sidestep was tried`);
+  assert.equal(npc.backs, 0, 'and it was the sidestep that got it on, not a way back');
+  assert.ok(npc.z > 1, `${npc.z.toFixed(1)} m on along the wall`);
+});
+
+test('a waypoint under somebody who stands there is skipped once the walker has been held off it for a second; a tight point (furniture) and a door are not', () => {
+  const stander = { x: 3.0, z: 0, y: 0, mode: 'idle', moving: false, st: { x: 3.0, y: 0, z: 0 } };      // on the phone in the road, 0.6 m short of the first waypoint: his push holds the walker 0.5 m off him, 1.1 m off the point
+  const run = (first) => {
+    let at = 0;                                                                                          // the furthest waypoint the walker has got to in 3.5 s: held off the first, it is pinned from about 2 s on
+    const w = { t: 0, near: () => [stander], physics: { move(s, dx) { s.x += dx; } }, brain: { next() {}, unstick() {} } };      // z is held: no slipping aside
+    const npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
+    npc.place(0, 0, 0, 0); npc.walk(w, [{ x: 3.6, y: 0, z: 0, ...first }, { x: 9, y: 0, z: 0 }, { x: 12, y: 0, z: 0 }], null, 1.3);
+    for (let t = 0; t < 3.5; t += 0.02) { npc.step(0.02, w); w.t += 0.02; at = Math.max(at, npc.pi); }
+    return at;
+  };
+  assert.ok(run({}) >= 1, 'an ordinary point is given up');
+  assert.equal(run({ tight: true }), 0, 'a tight point is not');
+  assert.equal(run({ door: 'D1' }), 0, 'a door is not');
+});
+
 test('the walker hugs an indoor route: a `tight` point is reached within 0.32 m (no corner cutting round furniture), an ordinary one within 0.55 m', () => {
   const reachedAt = (tight) => {                                                       // a walker on open floor with a stub world: how far from the first point does it turn to the second?
     const npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
@@ -309,6 +398,18 @@ test('nav: a person on the street below a plaza is given a street node, not the 
   assert.equal(g.nearest(1, 0, 16, 4.05), street, 'on the street: the street node, though the plaza node is closer on the map');
   assert.equal(g.nearest(1, 0, 16, 7), plaza, 'on the plaza: the plaza node');
   assert.equal(g.nearest(1, 0), plaza, 'with no height given: the nearest on the map');
+});
+
+test('near: a person on another floor (2.2 m or more up or down) is no neighbour, so the nurse upstairs does not push the patient below her off the way to the seat; the player is judged the same way', () => {
+  const sim = Object.create(PeopleSim.prototype); sim._grid = new Map(); sim._near = []; sim._cs = 3;
+  const at = (id, x, y, z, extra = {}) => ({ id, away: false, st: { x, y, z }, ...extra });
+  const me = at('me', 0, 0.6, 0);
+  sim.npcs = [me, at('beside', 1, 0.6, 0), at('step', 0, 1.9, 1), at('above', 0.4, 3.6, 0.3), at('below', -0.5, -2.4, 0), at('far', 9, 0.6, 0), at('away', 0.5, 0.6, 0.5, { away: true })];
+  sim.player = { x: 0, y: 0.6, z: -1, isPlayer: true };
+  sim._rebuildGrid();
+  const ids = () => sim.near(me, 2).map((o) => o.isPlayer ? 'player' : o.id).sort();
+  assert.deepEqual(ids(), ['beside', 'player', 'step'], 'the person beside, the one on the stair 1.3 m up and the player; not the floor above (3 m), the floor below (3 m), the far one or the one indoors');
+  sim.player.y = 3.6; assert.deepEqual(ids(), ['beside', 'step'], 'the player on the floor above is no neighbour either');
 });
 
 test('indoor route: a corridor that runs along a door in its wall is not threaded through the door; a way through the doorway is', () => {

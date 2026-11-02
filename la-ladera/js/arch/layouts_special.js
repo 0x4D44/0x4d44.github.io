@@ -124,7 +124,9 @@ export function planCourtyard(S) {
       S.link(main, near);
     }
     S.link(near, bath);
-    if (util) S.link(near, util);
+    // the store opens onto the gallery, not through a bedroom: upstairs that is its one door, made in the place of the bedroom's (the same slot and the same hinge draw, so the ids and the streams after it do
+    // not move); the ground floor makes both below and the door budget keeps the gallery's
+    if (util && (ground || !linkBest(S, util, [g1Rooms(k).g2], { min: 1.0 }))) S.link(near, util);
     const core = S.coreRooms[k];
     if (!ground && core) linkBest(S, core, [main], { min: 0.95 });         // upstairs the landing reaches the back rooms through its side wall
     const walk = ground ? [g1Rooms(0).g2, g1Rooms(0).g1] : [];
@@ -307,6 +309,7 @@ export function planSchool(S) {
   const southR = wc1 ? libR : R(sx0, dz0, x1, z1), upper = nUp === 2 ? cutX(southR, (southR.x0 + southR.x1) / 2) : [southR];        // below the strip upstairs: one room, or two on a wide lot
   const zoneG = R(Rt1.x0, dz0, x1, z1), spG = stallPlan(rw(zoneG), rd(zoneG), 2);                                                  // downstairs: two rows of cubicles, boys' and girls', or the two rooms of old
 
+  S.loops = 'cloister';                                                                       // on purpose: the hall, the strip, the galleries and the stair open onto the yard and onto each other (state.js budgetDoors keeps those doors whole)
   if (hasCore) { S.stairStyle = style; S.placeCore(M(coreR), 'z', true); S.addCoreRooms(); }  // the landing faces the corridor behind it and the entrance hall beside it
   const landingZ = fz0 + SD / 2;
 

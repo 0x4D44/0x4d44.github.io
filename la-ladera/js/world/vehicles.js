@@ -3,7 +3,7 @@
 import { tube, quadOut } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointAt, project } from './geom.js';
-import { vehicleMatrix } from './vehicle-library.js';
+import { vehicleMatrix, lookHash } from './vehicle-library.js';
 import { buildParkedLibrary } from './vehicle-placement.js';
 
 /** footprints [width, length] of the placed things, the one source for their colliders and for the arrival-view test */
@@ -81,12 +81,82 @@ function mudguard(b, y, z, R, hw, a0, a1, col, n = 6) {
   for (let i = 0; i < n; i++) { const t0 = a0 + ((a1 - a0) * i) / n, t1 = a0 + ((a1 - a0) * (i + 1)) / n; quadOut(b, 'car_paint', P(t0, -1), P(t1, -1), P(t1, 1), P(t0, 1), c, { col }); }
 }
 
+// ---------------------------------------------------------------------------------------------------- roof racks and taxis (R1-103: "add a few more variations")
+/**
+ * The flat top of each parked design in its own frame (+z = front): the height of the roof, where it runs (z0 at the back, z1 at the front) and half its width. The two hatchbacks are measured on the
+ * models (tests/world-vehicles-variety.test.mjs measures them again, so a re-exported model fails there and not as a rack hung in the air); `procedural` is the box roof of the car drawn without the library.
+ */
+export const ROOF = {
+  vehicle_hatchback_a: { y: 1.5, z0: -0.85, z1: 0.27, hw: 0.7 },
+  vehicle_hatchback_b: { y: 1.55, z0: -1.3, z1: 0.27, hw: 0.7 },
+  procedural: { y: 1.49, z0: -0.61, z1: 0.29, hw: 0.7 },
+};
+export const RACK_LOADS = ['bare', 'bundle', 'ladder', 'planks'];
+/** The share of the cars along a road that wear a roof rack (per cent), before a road short of racks is made up. */
+export const RACK_SHARE = 42;
+/** A road of cars has at least this many taxis and racked cars: the dice may leave it short, so the last cars of the road are made up. */
+export const ROAD_MIN = { taxis: 2, racks: 2 };
+const TARPS = [[0.02, 0.08, 0.22], [0.03, 0.12, 0.05], [0.42, 0.16, 0.03], [0.2, 0.2, 0.19]];
+const WOOD = [0.5, 0.34, 0.2], ROPE = [0.55, 0.45, 0.22], ZINC = [0.62, 0.64, 0.66], IRON = [0.05, 0.05, 0.055];
+
+/**
+ * Whether the car at (x, z) wears a roof rack, and which: from its place alone, by the hash its look uses and no random stream, so no car, bike or prop moves. `force` gives it one anyway.
+ * `used` holds the loads the road's earlier racks carry: the load is the first, from a hashed start, that none of them has (so while there are fewer racks than loads, no two are alike). A rack that is
+ * made up (`force`) always carries something: an empty rack is for the cars that chose one.
+ */
+export function rackFor(x, z, force = false, used = new Set()) {
+  const h = lookHash(x, z, 11);
+  if (!force && h % 100 >= RACK_SHARE) return null;
+  const pool = force ? RACK_LOADS.filter((l) => l !== 'bare') : RACK_LOADS, start = (h >>> 8) % pool.length;
+  const load = pool.map((_, i) => pool[(start + i) % pool.length]).find((l) => !used.has(l)) ?? pool[start];
+  return { load, tarp: (h >>> 12) % TARPS.length, zinc: ((h >>> 16) & 1) === 1 };
+}
+
+/**
+ * What a car of the road is. `taxi` is the street's own roll, `taxis` and `racks` are what the road has so far (`used`: the loads of its racks) and `remaining` counts this car and those still to come.
+ * A road that the dice leave short of ROAD_MIN has its last cars made taxis and the ones before them take racks (a taxi has its sign on the roof, not a load); a roll for one more taxi is not taken
+ * when the cars still to come would then be too few for the racks the road still wants.
+ */
+export function roadRole({ x, z, remaining, taxis, racks, taxi, used }) {
+  const needTaxis = Math.max(0, ROAD_MIN.taxis - taxis), needRacks = Math.max(0, ROAD_MIN.racks - racks);
+  const isTaxi = remaining <= needTaxis || (taxi && remaining - 1 >= Math.max(0, needTaxis - 1) + needRacks);
+  return { taxi: isTaxi, rack: isTaxi ? null : rackFor(x, z, remaining <= needTaxis + needRacks, used) };
+}
+
+/** A roof rack in the car's frame: two rails on four feet, cross bars over them, and (by `rack.load`) what is tied on. About a hundred triangles. */
+function roofRack(b, roof, rack) {
+  const { y, z0, z1 } = roof, zA = z0 + 0.08, zB = z1 - 0.08, len = zB - zA, zc = (zA + zB) / 2, hx = 0.58, bars = len > 1.2 ? 3 : 2, top = y + 0.099;
+  const mat = rack.zinc ? 'galvanised' : 'iron_black', col = rack.zinc ? ZINC : IRON, tarp = TARPS[rack.tarp % TARPS.length];
+  for (const sx of [-1, 1]) {
+    b.box(mat, sx * hx, y + 0.052, zc, 0.04, 0.034, len, { col, skip: ['ny'] });                                                          // a rail along the roof
+    for (const z of [zA + 0.04, zB - 0.04]) b.box('bumper', sx * hx, y + 0.017, z, 0.05, 0.034, 0.05, { col: IRON, skip: ['ny'] });    // on its two feet
+  }
+  for (let i = 0; i < bars; i++) b.box(mat, 0, y + 0.084, zA + 0.07 + (i * (len - 0.14)) / (bars - 1), 1.3, 0.03, 0.04, { col, skip: ['ny'] });   // the cross bars over the rails
+  if (rack.load === 'bundle') {                                          // a tarpaulin roll lashed down
+    const l = Math.min(len + 0.1, 1.5);
+    b.box('bag', 0, top + 0.13, zc, 1.0, 0.26, l, { col: tarp, skip: ['ny'] });
+    b.box('bag', 0.08, top + 0.33, zc - 0.05, 0.66, 0.14, l * 0.6, { col: tarp.map((c) => c * 1.25), skip: ['ny'] });
+    for (const f of [-0.3, 0.3]) b.box('bag', 0, top + 0.13, zc + f * l, 1.03, 0.28, 0.03, { col: ROPE, skip: ['ny'] });
+  } else if (rack.load === 'ladder') {                                   // a builder's ladder, hanging out over the boot
+    const r0 = zA - 0.95, r1 = r0 + 2.8, yy = top + 0.018, lx = 0.12, hw = 0.2;
+    for (const s of [-1, 1]) tube(b, 'galvanised', [lx + s * hw, yy, r0], [lx + s * hw, yy, r1], 0.018, 0.018, 4, { col: ZINC, caps: false });
+    for (let z = r0 + 0.2; z < r1 - 0.1; z += 0.36) tube(b, 'galvanised', [lx - hw, yy, z], [lx + hw, yy, z], 0.011, 0.011, 4, { col: ZINC, caps: false });
+  } else if (rack.load === 'planks') {                                   // three boards, one on top, tied with a rope, and longer than the car's roof
+    for (const [px, lift, len2, dz] of [[-0.1, 0, 3.0, -0.35], [0.1, 0, 2.7, -0.2], [0, 0.036, 2.5, -0.45]]) b.box('wood_dark', px, top + 0.018 + lift, zc + dz, 0.19, 0.035, len2, { col: WOOD, skip: ['ny'] });
+    b.box('bag', 0, top + 0.04, zc - 0.1, 0.5, 0.1, 0.03, { col: ROPE, skip: ['ny'] });
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------- the vehicles
-/** A small hatchback / sedan seen all over Colombia (taxis are yellow). Lofted body, glasshouse with pillars, arches, lamps, yellow plates. */
+/** A small hatchback / sedan seen all over Colombia (taxis are yellow). Lofted body, glasshouse with pillars, arches, lamps, yellow plates. `o.rack` ({ load, tarp, zinc }) puts a roof rack on it. */
 export function car(K, b, x, y, z, ry, pitch, o) {
   const key = Math.abs(Math.round(x * 13 + z * 7)) % 2 ? 'vehicle_hatchback_a' : 'vehicle_hatchback_b';
+  // the rack is its own group and casts no shadow: the parked library's cars cast none either, and a ladder's shadow beside a car without one would look pasted on
+  const load = (roof) => { if (o.rack && roof) { const lb = K.b('vehicle-load', x, z, { cast: false }); posed(K, lb, x, y, z, ry, pitch, () => roofRack(lb, roof, o.rack)); } };
   if (K.ctx.vehicleLibrary?.place(key, x, y, z, ry, pitch, o)) {
-    if (o.taxi) posed(K, b, x, y, z, ry, pitch, () => b.box('light_roof', 0, K.ctx.vehicleLibrary.meta(key).size[1] + .06, -.16, .5, .12, .2, { col: WHITE }));
+    const roof = ROOF[key];
+    if (o.taxi) posed(K, b, x, y, z, ry, pitch, () => b.box('light_roof', 0, (roof?.y ?? K.ctx.vehicleLibrary.meta(key).size[1]) + .06, -.16, .5, .12, .2, { col: WHITE }));
+    load(roof);
     return key;
   }
   const body = rgb(o.hex), dark = shade(body, 0.5), sill = [0.12, 0.12, 0.13];
@@ -125,6 +195,7 @@ export function car(K, b, x, y, z, ry, pitch, o) {
     b.box('sign_route', 0, 0.48, 1.99, 0.34, 0.15, 0.015, { col: PLATE }); b.box('sign_route', 0, 0.6, -1.99, 0.34, 0.15, 0.015, { col: PLATE });   // yellow plates
     if (o.taxi) { b.box('light_roof', 0, 1.55, -0.16, 0.5, 0.12, 0.2, { col: WHITE }); b.box('bumper', 0, 0.95, -1.99, 0.2, 0.05, 0.01, { col: BLACK }); }
   });
+  load(ROOF.procedural);
 }
 
 /** A 125-200 cc street bike: frame, tank, two-tone plastics, telescopic fork, bars with mirrors, lamp, exhaust, swingarm. `hex2` = side panels / fender. */
@@ -318,8 +389,17 @@ export function gasCylinders(K, b, x, z, ry, r) {
 // ---------------------------------------------------------------------------------------------------- placement
 export function buildVehicles(K) {
   const { plan, occ, ctx, H } = K, R = K.rng('vehicles');
-  const stats = { cars: 0, taxis: 0, motos: 0, bikes: 0, busetas: 0, carts: 0, bins: 0, rubbish: 0, cylinders: 0 };
+  const stats = { cars: 0, taxis: 0, racks: 0, motos: 0, bikes: 0, busetas: 0, carts: 0, bins: 0, rubbish: 0, cylinders: 0 };
   const carCols = [0xf4f4f0, 0xf4f4f0, 0xb8222a, 0x9aa0a6, 0x2b4f7e, 0x1c1c20, 0xd9cfa8, 0x3d6b4a];
+  // R1-103: the list above is dealt at random, so three of seven cars came out white. A colour that was already dealt is swapped for one that was not (maroon, teal, steel, pale blue are added to the
+  // pool); the draw on the street's random stream is untouched, so no car, bike or prop moves. Once every colour is out they repeat. (The library tints each car to its colour; vehicle-library.js.)
+  const carPool = [...new Set([...carCols, 0x6d3037, 0x2d9590, 0x7f8a94, 0xa9c3dc])], dealt = new Map();
+  const dealCar = (pick, x, z) => {
+    let col = pick;
+    if (dealt.has(col)) { const fresh = carPool.filter((c) => !dealt.has(c)); if (fresh.length) col = fresh[lookHash(x, z, 3) % fresh.length]; }
+    dealt.set(col, (dealt.get(col) ?? 0) + 1);
+    return col;
+  };
   const motoCols = [[0xb8222a, 0x1c1c20], [0x2b4f7e, 0xe8e8e0], [0xe8e8e0, 0xb8222a], [0x1c1c20, 0xb8222a], [0xf2c230, 0x1c1c20], [0xd8702a, 0x1c1c20], [0x2f7a4a, 0xe8e8e0], [0x6a6e74, 0x1c1c20]];
   const nonStair = plan.streets.filter((s) => s.kind !== 'stair');
   const farFromOthers = (st, x, z, m) => nonStair.every((o) => o === st || project(o._d.pts, o._d.cum, x, z).d > o.width / 2 + m);
@@ -343,15 +423,20 @@ export function buildVehicles(K) {
   for (const st of plan.streets.filter((s) => s.kind === 'road')) {
     const hw = st.width / 2, lane = hw - 0.9 - 1.0, d = st._d, rr = R.fork('cars:' + st.id);
     const want = 7;
-    let placed = 0;
+    let placed = 0, taxis = 0, racks = 0;
+    const loads = new Set();
     for (let t = 0; t < 120 && placed < want; t++) {
       const s = rr.range(6, st.len - 6), q = pointAt(d.pts, d.cum, s), sd = rr.chance(0.5) ? 1 : -1;
       const x = q.x - q.tz * lane * sd, z = q.z + q.tx * lane * sd, ry = Math.atan2(q.tx, q.tz) + (sd > 0 ? 0 : Math.PI) + rr.range(-0.04, 0.04);
       if (!okSpot(st, x, z, x, z, 1.9, 4.1, ry)) continue;
-      const taxi = rr.chance(0.18), y = H(x, z) + 0.04, pitch = pitchOf(x, z, ry);
-      const model = car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : rr.pick(carCols), taxi });
+      // R1-103: the street's own roll makes the taxis; a road left short of taxis or of roof racks is made up at its last cars (roadRole), from the place alone, so no random stream moves
+      const role = roadRole({ x, z, remaining: want - placed, taxis, racks, used: loads, taxi: rr.chance(0.18) }), y = H(x, z) + 0.04, pitch = pitchOf(x, z, ry);
+      const model = car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: role.taxi ? 0xf2c21b : dealCar(rr.pick(carCols), x, z), taxi: role.taxi, rack: role.rack });
       K.rect(x, z, ...envelope(model, SIZE.car), ry, ctx.vehicleLibrary?.meta(model)?.size[1] ?? 1.5, y, 0.05, true); // solid: no inside to be shut in
-      occ.take(x, z, 2.1); placed++; stats.cars++; if (taxi) stats.taxis++; rec(taxi ? 'taxi' : 'car', x, z, ry);
+      occ.take(x, z, 2.1); placed++; stats.cars++;
+      if (role.taxi) { stats.taxis++; taxis++; }
+      if (role.rack) { stats.racks++; racks++; loads.add(role.rack.load); }
+      rec(role.taxi ? 'taxi' : 'car', x, z, ry, role.rack ? { rack: role.rack.load } : {});
     }
   }
   // ---- the buseta waits on the road near the bus stop. The 7.8 m between the gate hardware (z 98) and the Comercio crossing (z 90.4) is too short for it,

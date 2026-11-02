@@ -25,6 +25,7 @@ export class Npc {
     this.mem = { met: 0, lastHour: null, used: {}, heard: new Set() };
     this.tier = 2; this.dist = 1e9; this.visible = false; this.accum = 0;
     this.stuckT = 0; this.lastX = 0; this.lastZ = 0; this.checkT = 0; this.sidestep = 0; this.sideDir = 1; this.stuckTotal = 0; this.maxStuck = 0;
+    this.detour = null; this.backs = 0; this.fromX = 0; this.fromZ = 0;   // _backOut: the way back to the last waypoint {x, z, t} while it is on, how often this walk has used it, where the walk began
     this.talkWith = null; this.prevMode = null; this.item = null; this.view = null; this.clipName = null;
     this.fx = 0; this.fz = 0;           // steering force accumulator (reused)
     // daily life (brain.js): where they are, what they hold, what happens when the current task ends
@@ -45,11 +46,11 @@ export class Npc {
   get x() { return this.st.x; } get y() { return this.st.y; } get z() { return this.st.z; }
   get display() { return this.name.display; }
 
-  place(x, y, z, ry = 0) { const s = this.st; s.x = x; s.y = y; s.z = z; s.vy = 0; s.onGround = true; this.ry = this.targetRy = ry; this.lastX = x; this.lastZ = z; }
+  place(x, y, z, ry = 0) { const s = this.st; s.x = x; s.y = y; s.z = z; s.vy = 0; s.onGround = true; this.ry = this.targetRy = ry; this.lastX = x; this.lastZ = z; this.detour = null; }
 
   /** Stand and play logical animation `act` for `secs` of world time, then run `then(npc, w)` or (without one) ask the brain what next. */
   stand(w, act = 'idle', secs = 5, face = null, then = null) {
-    this.dropGate(w); this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.moving = false; this.speed = 0; this.then = then;
+    this.dropGate(w); this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.detour = null; this.moving = false; this.speed = 0; this.then = then;
     if (face != null) this.targetRy = face;
   }
 
@@ -58,6 +59,7 @@ export class Npc {
     if (!pts?.length) { this.stand(w, 'idle', 1); return false; }
     this.dropGate(w); this.path = pts; this.pi = 0; this.mode = 'walk'; this.arrive = arrive; this.speed = speed ?? this.speedBase * (0.92 + this.rng.next() * 0.16); this.then = null;
     this.stuckT = 0; this.checkT = 0; this.lastX = this.st.x; this.lastZ = this.st.z; this.moving = true; this.act = 'walk';
+    this.detour = null; this.backs = 0; this.fromX = this.st.x; this.fromZ = this.st.z;
     return true;
   }
 
@@ -110,13 +112,15 @@ export class Npc {
   }
 
   _walk(dt, w) {
-    const s = this.st, pt = this.path?.[this.pi];
+    const s = this.st;
+    if (this.detour && (this.detour.t -= dt) <= 0) this.detour = null;                                           // (_backOut: on its way back to the last waypoint, which is the one place it is sure to be free)
+    const pt = this.detour ?? this.path?.[this.pi];
     if (!pt) { this._arrived(w); return; }
     let dx = pt.x - s.x, dz = pt.z - s.z, d = Math.hypot(dx, dz);
-    const last = this.pi === this.path.length - 1, reach = last ? 0.28 : pt.tight ? 0.32 : 0.55;           // indoor routes (indoor.js) hug the furniture: no corner cutting
+    const last = !this.detour && this.pi === this.path.length - 1, reach = this.detour ? 0.32 : last ? 0.28 : pt.tight ? 0.32 : 0.55;           // indoor routes (indoor.js) hug the furniture: no corner cutting
     const dp = pt.door ? pt : this.path[this.pi + 1]?.door ? this.path[this.pi + 1] : null;                   // an inner door is the next point, or the one after it (the step before the door)
     if (dp && this.gate !== dp.door && Math.hypot(dp.x - s.x, dp.z - s.z) < 2.6) { this.dropGate(w); this.gate = dp.door; w.doors?.hold?.(dp.door, this.id); }       // open it as we come near
-    if (d < reach) { if (pt.door) this.dropGate(w); this.pi++; if (this.pi >= this.path.length) { this._arrived(w); return; } return; }
+    if (d < reach) { if (this.detour) { this.detour = null; return; } if (pt.door) this.dropGate(w); this.pi++; if (this.pi >= this.path.length) { this._arrived(w); return; } return; }
     let ux = dx / d, uz = dz / d, sp = this.speed;
     // steering: separate from others and from the player; hold back for a twin who walks my way in front of me (twins.js: two of one character do not walk side by side, R3-006)
     let fx = 0, fz = 0, slow = 1;
@@ -131,7 +135,7 @@ export class Npc {
       }
     }
     let vx = ux * sp * slow + fx, vz = uz * sp * slow + fz;
-    if (this.sidestep > 0) { this.sidestep -= dt; vx += -uz * this.sideDir * 0.9; vz += ux * this.sideDir * 0.9; }
+    if (this.sidestep > 0) { this.sidestep -= dt; if (!this.detour) { vx += -uz * this.sideDir * 0.9; vz += ux * this.sideDir * 0.9; } }          // (a walker going back out of a slot does not also wander sideways)
     const vl = Math.hypot(vx, vz); if (vl > sp * 1.15) { vx *= sp * 1.15 / vl; vz *= sp * 1.15 / vl; }
     this.targetRy = Math.atan2(vx, vz);
     const turn = Math.abs(angDiff(this.ry, this.targetRy));
@@ -145,14 +149,35 @@ export class Npc {
       const moved = Math.hypot(s.x - this.lastX, s.z - this.lastZ); this.lastX = s.x; this.lastZ = s.z; this.checkT = 0;
       if (moved < this.speed * 0.5 * 0.35) {
         this.stuckT += 0.5; this.stuckTotal += 0.5; this.maxStuck = Math.max(this.maxStuck, this.stuckT);
-        if (this.stuckT >= 1) { this.sidestep = 0.8; this.sideDir = this.rng.chance(0.5) ? 1 : -1; }
+        if (this.stuckT >= 1) {
+          this.sidestep = 0.8; this.sideDir = this.rng.chance(0.5) ? 1 : -1;
+          // a waypoint under somebody who stands there is out of reach (the stander's push holds the walker 0.35 m off it, and the point is only reached within 0.55): a second of that and near enough is there (the soak: n85
+          // against n49 on the phone in the road, three runs at him in 4 s and an unstick). Not a door, a tight point (furniture) or the goal: those are reached or `unstick`ed
+          if (!this.detour && this.pi < this.path.length - 1 && !pt.door && !pt.tight && d < 1.2) { this.pi++; this.stuckT = 0; }
+        }
+        if (this.detour && (this.detour.stall = (this.detour.stall ?? 0) + 0.5) >= 1) this.detour = null;       // (a way back that is held up too, by somebody who stands on it, is given up after a second: the walker is out of the trap by then)
+        if (this.stuckT >= 1.5) this._backOut(w);
         if (this.stuckT >= 4) w.brain.unstick(this, w);
-      } else this.stuckT = Math.max(0, this.stuckT - 1);
+      } else { this.stuckT = Math.max(0, this.stuckT - 1); if (this.detour) this.detour.stall = 0; }
     }
   }
 
+  /**
+   * Stalled for a second and a half (the sidestep, at one second, has had its chance) with nobody walking within steering range: against a wall, not in a crowd, and waiting will not help. A passer-by's
+   * separation push can shove a walker past the end of a stair rail into the slot behind it (L40's stair head, (-21.1, 1.43, y16.04): 0.35 m wide, closed at the far end, its mouth behind the walker);
+   * there the straight line to the next waypoint runs through the rail and the sidestep has no room. The way out is the way in: back to the last waypoint (or where the walk began), a place the walk
+   * has already proved free, and on from there. Twice a walk at most; after that `unstick` (4 s) is what is left. Somebody who stands on that waypoint holds the walker off it too: the way back is given up
+   * after a second without progress (15.7 h of the 12:00 soak: n51 went back into a seller on the stair landing; the 16:00 one: n75 on S1 went back from a wall corner towards n52 and was out of the corner).
+   */
+  _backOut(w) {
+    if (this.detour || this.backs >= 2 || this.gate || !this.path) return;
+    const b = this.pi > 0 ? this.path[this.pi - 1] : { x: this.fromX, z: this.fromZ };
+    if (!b || Math.hypot(b.x - this.st.x, b.z - this.st.z) < 0.5 || w.near(this, TAIL_R).some((o) => o.mode === 'walk')) return;       // (somebody walking will move on; somebody standing there will not)
+    this.detour = { x: b.x, z: b.z, t: 2 + 2 * Math.hypot(b.x - this.st.x, b.z - this.st.z) / (this.speed || 1) }; this.backs++;       // (time enough to get there: a walker who gave up half way would be back in the slot at once)
+  }
+
   _arrived(w) {
-    this.moving = false; this.speed = 0; this.path = null;
+    this.moving = false; this.speed = 0; this.path = null; this.detour = null;
     const cb = this.arrive; this.arrive = null; this.mode = 'idle'; this.act = 'idle'; this.until = w.t + 0.1; this.then = null; this.carry = false;
     if (cb) cb(this, w);
   }

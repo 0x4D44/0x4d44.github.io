@@ -149,6 +149,8 @@ export function createFlow(ctx) {
   // ---- DOM wiring -------------------------------------------------------------------------------------------------------------
   el.start.addEventListener('click', flow.begin);
   el.resume.addEventListener('click', () => flow.resume());
+  // A click anywhere on the pause card's backdrop or blank space takes the pointer back (the lock is often lost without Esc: alt-tab, a notification, a refused re-lock); its buttons keep their own jobs.
+  el.pause.addEventListener('click', (e) => { if (flow.mode === 'paused' && !e.target.closest?.('button, a, input, select, textarea, [data-open]')) flow.resume(); });
   el.respawn.addEventListener('click', flow.respawn);
   el.pclose.addEventListener('click', () => flow.closePanel());
   el.menu.addEventListener('click', flow.pause);
@@ -202,13 +204,22 @@ export function createFlow(ctx) {
   const jbtn = document.querySelector('#pause [data-open="journal"]');
   const countEl = jbtn ? Object.assign(document.createElement('small'), { className: 'count' }) : null;
   if (jbtn) jbtn.insertBefore(countEl, jbtn.querySelector('kbd'));
-  const refreshCount = () => { if (countEl) countEl.textContent = `${ctx.discover.count}/${ctx.discover.total}`; };
+  // M in "N de M" is `totalLabel`: the number once it is final, an ellipsis while a lazy boot is still furnishing (the interiors' discoveries are made as the data pass goes, so `total` is only
+  // the world's 32 of 149 until then: review R2b-002 / R2a-003). It is final when the data pass seals ('interiors:sealed'): the counters that are on screen then are drawn again.
+  const refreshCount = () => { if (countEl) countEl.textContent = `${ctx.discover.count}/${ctx.discover.totalLabel}`; };
   ctx.events.on('discover', (d) => {
     if (!ctx.discover.order.includes(d.id)) ctx.discover.order.push(d.id);
     refreshCount();
     if (isFind(d)) { findToast(d); return; }
-    ctx.ui.toast({ tag: `Descubrimiento ${ctx.discover.count} de ${ctx.discover.total}`, title: d.name, sub: d.en }, 5600);
+    ctx.ui.toast({ tag: `Descubrimiento ${ctx.discover.count} de ${ctx.discover.totalLabel}`, title: d.name, sub: d.en }, 5600);
     ctx.audio?.chime?.();
+  });
+  ctx.events.on('interiors:sealed', () => {
+    refreshCount();
+    if (panel?.name === 'journal') {                                                                                   // the journal is open: its totals and its list of what is left are final now
+      const keep = el.pbody.scrollTop, a = document.activeElement, onTab = !!a?.closest?.('.jtab'), inBody = el.pbody.contains(a);
+      try { panel.def.render(el.pbody, { focusTab: onTab }); el.pbody.scrollTop = keep; if (inBody && !onTab) el.pclose.focus({ preventScroll: true }); } catch { /* the next opening draws it */ }
+    }
   });
   // A special find (a gold coin in a sock drawer): 'Hallazgo - <collection> n de m', its name in the subtitle language(s), and a coin ting (bigger for the rare ones).
   const findToast = (d) => {

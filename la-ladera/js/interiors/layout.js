@@ -27,31 +27,60 @@ export function wallPoint(rect, wall, u, t = 0) {
 export function opposite(w) { return { '-z': '+z', '+z': '-z', '-x': '+x', '+x': '-x' }[w]; }
 
 // ------------------------------------------------------------------ oriented boxes
-export function mkObb(cx, cz, w, d, ry) {
-  const c = Math.cos(ry), s = Math.sin(ry);
-  return { cx, cz, hx: w / 2, hz: d / 2, ry, ux: [c, -s], uz: [s, c] };
-}
+export function mkObb(cx, cz, w, d, ry) { return mkObbSC(cx, cz, w, d, ry, Math.cos(ry), Math.sin(ry)); }
+/** `mkObb` with the cosine and sine of `ry` already in hand (`_make` needs the sine for its own test). */
+function mkObbSC(cx, cz, w, d, ry, c, s) { return { cx, cz, hx: w / 2, hz: d / 2, ry, ux: [c, -s], uz: [s, c] }; }
+// The corners of a box, in the order (-1,-1), (1,-1), (1,1), (-1,1) of its (width, depth) half-extents. Every caller takes the corner from these two expressions, so none of them allocates one.
+const CORNER_A = [-1, 1, 1, -1], CORNER_B = [-1, -1, 1, 1];
+function cornerX(o, a, b) { return o.cx + o.ux[0] * a * o.hx + o.uz[0] * b * o.hz; }
+function cornerZ(o, a, b) { return o.cz + o.ux[1] * a * o.hx + o.uz[1] * b * o.hz; }
 export function obbCorners(o) {
   const out = [];
-  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) out.push([o.cx + o.ux[0] * a * o.hx + o.uz[0] * b * o.hz, o.cz + o.ux[1] * a * o.hx + o.uz[1] * b * o.hz]);
+  for (let i = 0; i < 4; i++) out.push([cornerX(o, CORNER_A[i], CORNER_B[i]), cornerZ(o, CORNER_A[i], CORNER_B[i])]);
   return out;
 }
-/** SAT overlap. m > 0 requires m metres of separation; m < 0 tolerates |m| of penetration (touching items). */
+const _ext = new Float64Array(4);
+/** [x0, x1, z0, z1]: the axis-aligned extent of a box's corners (the min and max `obbCorners` gives, taken in its order). The array is a shared scratch: read it before the next call. */
+function obbExtent(o) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < 4; i++) {
+    const x = cornerX(o, CORNER_A[i], CORNER_B[i]), z = cornerZ(o, CORNER_A[i], CORNER_B[i]);
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+  }
+  _ext[0] = x0; _ext[1] = x1; _ext[2] = z0; _ext[3] = z1;
+  return _ext;
+}
+/** SAT overlap. m > 0 requires m metres of separation; m < 0 tolerates |m| of penetration (touching items). The four axes are the two of each box, tried in that order, with the
+ *  same arithmetic as the loop this unrolls. The dot products that two axes share (a.ux . b.ux is also b.ux . a.ux) are taken once: the same two products added in the same order,
+ *  so the same bits. */
 export function obbOverlap(a, b, m = 0) {
   const dx = b.cx - a.cx, dz = b.cz - a.cz;
-  for (const ax of [a.ux, a.uz, b.ux, b.uz]) {
-    const dist = Math.abs(dx * ax[0] + dz * ax[1]);
-    const ra = a.hx * Math.abs(ax[0] * a.ux[0] + ax[1] * a.ux[1]) + a.hz * Math.abs(ax[0] * a.uz[0] + ax[1] * a.uz[1]);
-    const rb = b.hx * Math.abs(ax[0] * b.ux[0] + ax[1] * b.ux[1]) + b.hz * Math.abs(ax[0] * b.uz[0] + ax[1] * b.uz[1]);
-    if (dist >= ra + rb + m) return false;
-  }
+  const au = a.ux, av = a.uz, bu = b.ux, bv = b.uz;
+  const au0 = au[0], au1 = au[1], av0 = av[0], av1 = av[1], bu0 = bu[0], bu1 = bu[1], bv0 = bv[0], bv1 = bv[1];
+  const ahx = a.hx, ahz = a.hz, bhx = b.hx, bhz = b.hz;
+  const aXZ = Math.abs(au0 * av0 + au1 * av1), cXX = Math.abs(au0 * bu0 + au1 * bu1), cXZ = Math.abs(au0 * bv0 + au1 * bv1);
+  // axis a.ux
+  let ra = ahx * Math.abs(au0 * au0 + au1 * au1) + ahz * aXZ, rb = bhx * cXX + bhz * cXZ;
+  if (Math.abs(dx * au0 + dz * au1) >= ra + rb + m) return false;
+  // axis a.uz
+  const cZX = Math.abs(av0 * bu0 + av1 * bu1), cZZ = Math.abs(av0 * bv0 + av1 * bv1);
+  ra = ahx * aXZ + ahz * Math.abs(av0 * av0 + av1 * av1); rb = bhx * cZX + bhz * cZZ;
+  if (Math.abs(dx * av0 + dz * av1) >= ra + rb + m) return false;
+  // axis b.ux
+  const bXZ = Math.abs(bu0 * bv0 + bu1 * bv1);
+  ra = ahx * cXX + ahz * cZX; rb = bhx * Math.abs(bu0 * bu0 + bu1 * bu1) + bhz * bXZ;
+  if (Math.abs(dx * bu0 + dz * bu1) >= ra + rb + m) return false;
+  // axis b.uz
+  ra = ahx * cXZ + ahz * cZZ; rb = bhx * bXZ + bhz * Math.abs(bv0 * bv0 + bv1 * bv1);
+  if (Math.abs(dx * bv0 + dz * bv1) >= ra + rb + m) return false;
   return true;
 }
-/** Distance from a point to an OBB (0 inside). */
+/** Distance from a point to an OBB (0 inside). `Math.hypot(e, 0)` is `e` exactly, so a point level with a face skips the call. */
 export function obbDist(o, x, z) {
   const dx = x - o.cx, dz = z - o.cz;
   const lx = Math.abs(dx * o.ux[0] + dz * o.ux[1]), lz = Math.abs(dx * o.uz[0] + dz * o.uz[1]);
-  return Math.hypot(Math.max(0, lx - o.hx), Math.max(0, lz - o.hz));
+  const ex = Math.max(0, lx - o.hx), ez = Math.max(0, lz - o.hz);
+  return ez === 0 ? ex : ex === 0 ? ez : Math.hypot(ex, ez);
 }
 /** Does the segment (ax, az) -> (bx, bz) cross the box (or come within `m` m of it)? A slab test in the box's own frame. */
 export function segObb(o, ax, az, bx, bz, m = 0) {
@@ -67,6 +96,29 @@ export function segObb(o, ax, az, bx, bz, m = 0) {
   return true;
 }
 const rectObb = (r) => mkObb((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2, r.x1 - r.x0, r.z1 - r.z0, 0);
+/** `rectObb` of the rect (x0, x1, z0, z1) that stands for the keep-out `k`, cached on `k` and rebuilt whenever one of the four sides differs from the cached one (relaxKeeps and laneEntrance
+ *  move a keep-out's sides in place). The box is a pure function of the four sides, so a hit is exactly what a rebuild would return; nothing ever writes to a cached box. */
+const _rectObbs = new WeakMap();
+function cachedRectObb(k, x0, x1, z0, z1) {
+  const e = _rectObbs.get(k);
+  if (e !== undefined && e.x0 === x0 && e.x1 === x1 && e.z0 === z0 && e.z1 === z1) return e.obb;
+  const obb = rectObb({ x0, x1, z0, z1 });
+  if (e === undefined) _rectObbs.set(k, { x0, x1, z0, z1, obb }); else { e.x0 = x0; e.x1 = x1; e.z0 = z0; e.z1 = z1; e.obb = obb; }
+  return obb;
+}
+const _winZones = new WeakMap();
+let _stack = new Int32Array(4096);                    // the flood fill's stack, shared by every `connectivity()` call (grown when a room needs more)
+/** How many different values `new Set(ids.map((id, i) => (id >= 0 ? id : -100 - i))).size` holds: the pieces the landings fall into, each landing buried in furniture counted as a piece of its own. */
+function distinctComps(ids) {
+  let n = 0;
+  for (let i = 0; i < ids.length; i++) {
+    const v = ids[i] >= 0 ? ids[i] : -100 - i;
+    let seen = false;
+    for (let j = 0; j < i && !seen; j++) seen = (ids[j] >= 0 ? ids[j] : -100 - j) === v;
+    if (!seen) n++;
+  }
+  return n;
+}
 
 /** The architect's wall colliders in the building frame (our own blockers and closed-door slabs left out), cached per plan. */
 const _wallCache = new WeakMap();
@@ -111,6 +163,9 @@ export const seriousPocket = (p) => p.depth >= POCKET.deep || (p.depth >= POCKET
 
 let _uid = 0;
 export const resetUid = () => { _uid = 0; };
+/** The id counter belongs to the building being furnished: a resumable furnish job (index.js `furnishSteps`, driven by lazy.js) saves it when it yields and puts it back when it resumes. */
+export const getUid = () => _uid;
+export const setUid = (v) => { _uid = v; };
 
 export class Layout {
   /** o: { bp, room, rng, hh } */
@@ -340,24 +395,37 @@ export class Layout {
   blockers() { return this.items.filter((i) => i.floor && i.block); }
   /** Is the OBB entirely inside the room rect (small tolerance)? */
   inside(ob, tol = 0.004) {
-    const r = this.r;
-    for (const [x, z] of obbCorners(ob)) if (x < r.x0 - tol || x > r.x1 + tol || z < r.z0 - tol || z > r.z1 + tol) return false;
+    const r = this.r, x0 = r.x0 - tol, x1 = r.x1 + tol, z0 = r.z0 - tol, z1 = r.z1 + tol;
+    for (let i = 0; i < 4; i++) {                                    // the four corners of `obbCorners`, in its order, without building them
+      const a = CORNER_A[i], b = CORNER_B[i], x = cornerX(ob, a, b), z = cornerZ(ob, a, b);
+      if (x < x0 || x > x1 || z < z0 || z > z1) return false;
+    }
     return true;
   }
   /** Window zones in front of windows: tall items (top > sill) may not stand there. */
   _windowHit(ob, topH) {
     for (const wall of WALLS) for (const o of this.obs[wall]) {
       if (o.kind !== 'window' || topH <= o.sill - 0.02) continue;
-      const zr = this._wallRect(wall, o.u0 - 0.05, o.u1 + 0.05, 0.45);
-      if (obbOverlap(ob, rectObb(zr), -0.01)) return true;
+      if (obbOverlap(ob, this._windowZone(wall, o), -0.01)) return true;
     }
     return false;
+  }
+  /** The 0.45 m deep zone in front of a window, as a box: made once per window, and again if the window or the room's rect has changed since (it is a function of exactly those). */
+  _windowZone(wall, o) {
+    const r = this.r, e = _winZones.get(o);
+    if (e !== undefined && e.wall === wall && e.u0 === o.u0 && e.u1 === o.u1 && e.x0 === r.x0 && e.x1 === r.x1 && e.z0 === r.z0 && e.z1 === r.z1) return e.obb;
+    const obb = rectObb(this._wallRect(wall, o.u0 - 0.05, o.u1 + 0.05, 0.45));
+    _winZones.set(o, { wall, u0: o.u0, u1: o.u1, x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1, obb });
+    return obb;
   }
   /** First keep-out the footprint overlaps. `lateral` trims that much off each side of a door's keep-out (its 5 cm margin), never the depth in front of the door. */
   _keepHit(ob, lateral = 0) {
     for (const k of this.keep) {
-      let r = k.obb ?? rectObb(k);
-      if (lateral && !k.obb && k.u0 != null) r = rectObb(k.wall === '-z' || k.wall === '+z' ? { ...k, x0: k.x0 + lateral, x1: k.x1 - lateral } : { ...k, z0: k.z0 + lateral, z1: k.z1 - lateral });
+      const ko = k.obb;
+      let r;
+      if (ko) r = ko;
+      else if (lateral && k.u0 != null) r = k.wall === '-z' || k.wall === '+z' ? cachedRectObb(k, k.x0 + lateral, k.x1 - lateral, k.z0, k.z1) : cachedRectObb(k, k.x0, k.x1, k.z0 + lateral, k.z1 - lateral);
+      else r = ko ?? cachedRectObb(k, k.x0, k.x1, k.z0, k.z1);
       if (obbOverlap(ob, r, -0.01)) return k;
     }
     return null;
@@ -395,13 +463,13 @@ export class Layout {
   // ---------------------------------------------------------------- item construction
   _make(name, cx, cz, ry, o = {}) {
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
-    const swap = Math.abs(Math.sin(ry)) > 0.7071;           // quarter turns swap the footprint extents for AABB purposes
+    const sin = Math.sin(ry), swap = Math.abs(sin) > 0.7071;           // quarter turns swap the footprint extents for AABB purposes
     const w = c.size[0], d = c.size[2];
     const it = {
       id: `${this.room.id}.i${(_uid++).toString(36)}`, name, c, room: this.room.id, floor: true,
       x: r2(cx), z: r2(cz), y: this.room.y ?? 0, ry: r2(ry), w, d, h: c.size[1],
       block: c.block !== false && !c.wall && !c.ceil && c.top !== true && c.size[1] >= 0.2,           // (`top: true` = stands on a surface; a table's `top: 'oilcloth_floral'` is its cloth, and the table blocks)
-      prio: o.prio ?? 1, tint: o.tint ?? null, tags: c.tags, ob: mkObb(cx, cz, w, d, ry), swap,
+      prio: o.prio ?? 1, tint: o.tint ?? null, tags: c.tags, ob: mkObbSC(cx, cz, w, d, ry, Math.cos(ry), sin), swap,
     };
     if (c.bh != null) it.bh = c.bh;
     if (o.tuck) it.tuckTo = o.tuck;                         // (a chair pulled up to its desk: it goes where the desk goes)
@@ -558,10 +626,10 @@ export class Layout {
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
     const [tx, tz] = o.near ? this._pt(o.near) : [(this.r.x0 + this.r.x1) / 2, (this.r.z0 + this.r.z1) / 2];
     const rad = o.rad ?? 1.6, step = o.step ?? 0.1;
-    const cands = [];
+    const cands = [], jitter = o.jitter ?? 0.15;
     for (let dx = -rad; dx <= rad + 1e-6; dx += step) for (let dz = -rad; dz <= rad + 1e-6; dz += step) {
-      const x = tx + dx, z = tz + dz; if (Math.hypot(dx, dz) > rad) continue;
-      cands.push({ x, z, s: -Math.hypot(dx, dz) + this.rng.next() * (o.jitter ?? 0.15) });
+      const x = tx + dx, z = tz + dz, h = Math.hypot(dx, dz); if (h > rad) continue;
+      cands.push({ x, z, s: -h + this.rng.next() * jitter });
     }
     cands.sort((a, b) => b.s - a.s);
     const rys = o.ry != null ? [o.ry] : o.rys ?? [0, PI / 2, PI, -PI / 2];
@@ -714,21 +782,23 @@ export class Layout {
   connectivity(inflate = 0.4, cell = 0.1) {
     const r = this.r, nx = Math.max(1, Math.round(this.W / cell)), nz = Math.max(1, Math.round(this.D / cell));
     const cw = this.W / nx, ch = this.D / nz;
-    const blk = new Uint8Array(nx * nz);
-    const edge = 0.38;                                  // the kernel keeps a 0.3 m body (+ margin) off every wall
-    for (let iz = 0; iz < nz; iz++) {
-      const z = r.z0 + (iz + 0.5) * ch, zb = z < r.z0 + edge || z > r.z1 - edge;
-      for (let ix = 0; ix < nx; ix++) { const x = r.x0 + (ix + 0.5) * cw; if (zb || x < r.x0 + edge || x > r.x1 - edge) blk[iz * nx + ix] = 1; }
-    }
-    for (const it of this.blockers()) {                 // stamp only the neighbourhood of each blocker
-      const cs = obbCorners(it.ob);
-      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-      for (const [x, z] of cs) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    const blk = this._edgeBand(nx, nz, cw, ch).slice();            // a copy of the empty room's mask: the caller keeps `blk`, and reads it
+    const items = this.items;
+    for (let n = 0; n < items.length; n++) {            // stamp only the neighbourhood of each blocker
+      const it = items[n];
+      if (!(it.floor && it.block)) continue;            // (`blockers()`)
+      const ob = it.ob, e = obbExtent(ob), x0 = e[0], x1 = e[1], z0 = e[2], z1 = e[3];
       const i0 = Math.max(0, Math.floor((x0 - inflate - r.x0) / cw)), i1 = Math.min(nx - 1, Math.floor((x1 + inflate - r.x0) / cw));
       const j0 = Math.max(0, Math.floor((z0 - inflate - r.z0) / ch)), j1 = Math.min(nz - 1, Math.floor((z1 + inflate - r.z0) / ch));
-      for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) {
-        const k = iz * nx + ix; if (blk[k]) continue;
-        if (obbDist(it.ob, r.x0 + (ix + 0.5) * cw, r.z0 + (iz + 0.5) * ch) < inflate) blk[k] = 1;
+      const ocx = ob.cx, ocz = ob.cz, ux0 = ob.ux[0], ux1 = ob.ux[1], uz0 = ob.uz[0], uz1 = ob.uz[1], hx = ob.hx, hz = ob.hz;
+      for (let iz = j0; iz <= j1; iz++) {
+        const dz = (r.z0 + (iz + 0.5) * ch) - ocz;
+        for (let ix = i0; ix <= i1; ix++) {
+          const k = iz * nx + ix; if (blk[k]) continue;
+          const dx = (r.x0 + (ix + 0.5) * cw) - ocx;        // `obbDist(ob, x, z) < inflate`, cell by cell
+          const ex = Math.max(0, Math.abs(dx * ux0 + dz * ux1) - hx), ez = Math.max(0, Math.abs(dx * uz0 + dz * uz1) - hz);
+          if (ez === 0 ? ex < inflate : ex === 0 ? ez < inflate : Math.hypot(ex, ez) < inflate) blk[k] = 1;      // (`Math.hypot(e, 0)` is `e`, as in `obbDist`)
+        }
       }
     }
     const cellOf = (x, z) => [Math.min(nx - 1, Math.max(0, Math.floor((x - r.x0) / cw))), Math.min(nz - 1, Math.max(0, Math.floor((z - r.z0) / ch)))];
@@ -744,7 +814,8 @@ export class Layout {
       srcs.push({ l, cell: found });
     }
     const comp = new Int32Array(nx * nz).fill(-1); let nc = 0;
-    const stack = new Int32Array(nx * nz);
+    if (_stack.length < nx * nz) _stack = new Int32Array(nx * nz);
+    const stack = _stack;                               // (scratch for the flood: each cell is pushed once, and only what the flood itself pushed is read, so nothing stale is seen)
     const flood = (sx, sz) => {
       let sp = 0; stack[sp++] = sz * nx + sx; comp[sz * nx + sx] = nc;
       while (sp) {
@@ -764,11 +835,23 @@ export class Layout {
     for (let k = 0; k < comp.length; k++) if (!blk[k] && comp[k] < 0) orphan++;
     return { ok, ids, srcs, comp, nx, nz, blk, cellOf, orphan, lost, main: ids.find((i) => i >= 0) ?? -1 };
   }
-  /** How split the room is: pieces the landings fall into, landings buried in furniture, and free cells no landing reaches (0.01 m2 each). */
-  _connScore() {
-    const c = this.connectivity();
-    return { comps: new Set(c.ids.map((id, i) => (id >= 0 ? id : -100 - i))).size, orphan: c.orphan, lost: c.lost };
+  /** The mask `connectivity` starts from: the band of floor along the walls that no body may stand on. It is a function of the room's rect and the grid alone, so it is built once
+   *  (and again if the rect or the grid ever differs) and each call copies it. */
+  _edgeBand(nx, nz, cw, ch) {
+    const r = this.r, c = this._edge;
+    if (c !== undefined && c.nx === nx && c.nz === nz && c.cw === cw && c.ch === ch && c.x0 === r.x0 && c.x1 === r.x1 && c.z0 === r.z0 && c.z1 === r.z1) return c.mask;
+    const mask = new Uint8Array(nx * nz);
+    const edge = 0.38;                                  // the kernel keeps a 0.3 m body (+ margin) off every wall
+    for (let iz = 0; iz < nz; iz++) {
+      const z = r.z0 + (iz + 0.5) * ch, zb = z < r.z0 + edge || z > r.z1 - edge;
+      for (let ix = 0; ix < nx; ix++) { const x = r.x0 + (ix + 0.5) * cw; if (zb || x < r.x0 + edge || x > r.x1 - edge) mask[iz * nx + ix] = 1; }
+    }
+    this._edge = { nx, nz, cw, ch, x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1, mask };
+    return mask;
   }
+  /** How split the room is: pieces the landings fall into, landings buried in furniture, and free cells no landing reaches (0.01 m2 each). */
+  _connScore() { return this._scoreOf(this.connectivity()); }
+  _scoreOf(c) { return { comps: distinctComps(c.ids), orphan: c.orphan, lost: c.lost }; }
   /** Would the room stay as connected as it started if `it` (a blocker candidate) stood here? Pockets up to ~0.4 m2 are tolerated. */
   _connOk(it) {
     this.items.push(it);
@@ -797,7 +880,8 @@ export class Layout {
     const r = this.r;
     if (x < r.x0 + 0.3 || x > r.x1 - 0.3 || z < r.z0 + 0.3 || z > r.z1 - 0.3) return false;
     for (const k of this.keep) if (k.why?.startsWith('stair') && x > k.x0 - 0.15 && x < k.x1 + 0.15 && z > k.z0 - 0.15 && z < k.z1 + 0.15) return false;
-    for (const it of this.blockers()) if (obbDist(it.ob, x, z) < clear) return false;
+    const items = this.items;
+    for (let i = 0; i < items.length; i++) { const it = items[i]; if (it.floor && it.block && obbDist(it.ob, x, z) < clear) return false; }      // (`blockers()` without the filtered copy)
     return this.inMainRegion(x, z, conn, 4);
   }
   /** The standable point nearest (x,z) within `rad` metres, or null. */
@@ -833,18 +917,29 @@ export class Layout {
     const cs = o.cell ?? 0.05, lo = (o.squeeze ?? 0.275) - 1e-6, hi = (o.comfort ?? 0.425) - 1e-6, rimR = o.rim ?? 0.16, minLen = o.minLen ?? 0.3;
     const r = this.r, nx = Math.max(1, Math.round(this.W / cs)), nz = Math.max(1, Math.round(this.D / cs)), cw = this.W / nx, ch = this.D / nz, N = nx * nz;
     const px = (ix) => r.x0 + (ix + 0.5) * cw, pz = (iz) => r.z0 + (iz + 0.5) * ch;
+    const PX = new Float64Array(nx), PZ = new Float64Array(nz);       // the cell centres, each made by the expression above
+    for (let ix = 0; ix < nx; ix++) PX[ix] = px(ix);
+    for (let iz = 0; iz < nz; iz++) PZ[iz] = pz(iz);
     const field = (items) => {                            // distance from each cell centre to the nearest wall or blocker (capped a little over `comfort`)
       const cap = hi + 0.06, f = new Float32Array(N);
       for (let iz = 0; iz < nz; iz++) {
-        const z = pz(iz), dz = Math.min(z - r.z0, r.z1 - z);
-        for (let ix = 0; ix < nx; ix++) { const x = px(ix); f[iz * nx + ix] = Math.min(cap, dz, x - r.x0, r.x1 - x); }
+        const z = PZ[iz], dz = Math.min(z - r.z0, r.z1 - z);
+        for (let ix = 0; ix < nx; ix++) { const x = PX[ix]; f[iz * nx + ix] = Math.min(cap, dz, x - r.x0, r.x1 - x); }
       }
       for (const it of items) {
-        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-        for (const [x, z] of obbCorners(it.ob)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+        const ob = it.ob, e = obbExtent(ob), x0 = e[0], x1 = e[1], z0 = e[2], z1 = e[3];
         const i0 = Math.max(0, Math.floor((x0 - cap - r.x0) / cw)), i1 = Math.min(nx - 1, Math.floor((x1 + cap - r.x0) / cw));
         const j0 = Math.max(0, Math.floor((z0 - cap - r.z0) / ch)), j1 = Math.min(nz - 1, Math.floor((z1 + cap - r.z0) / ch));
-        for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) { const k = iz * nx + ix, d = obbDist(it.ob, px(ix), pz(iz)); if (d < f[k]) f[k] = d; }
+        const ocx = ob.cx, ocz = ob.cz, ux0 = ob.ux[0], ux1 = ob.ux[1], uz0 = ob.uz[0], uz1 = ob.uz[1], hx = ob.hx, hz = ob.hz;
+        for (let iz = j0; iz <= j1; iz++) {
+          const dz = PZ[iz] - ocz;
+          for (let ix = i0; ix <= i1; ix++) {              // `d = obbDist(ob, x, z); if (d < f[k]) f[k] = d`, with the box's fields in hand
+            const k = iz * nx + ix, dx = PX[ix] - ocx;
+            const ex = Math.max(0, Math.abs(dx * ux0 + dz * ux1) - hx), ez = Math.max(0, Math.abs(dx * uz0 + dz * uz1) - hz);
+            const d = ez === 0 ? ex : ex === 0 ? ez : Math.hypot(ex, ez);
+            if (d < f[k]) f[k] = d;
+          }
+        }
       }
       return f;
     };
@@ -866,18 +961,27 @@ export class Layout {
     const flood = (mask, from) => {                       // the part of the mask the seeds reach (8-neighbour: a gap between two corners is crossed on the diagonal)
       const m = new Uint8Array(N); let sp = 0;
       for (const k of from) if (!m[k]) { m[k] = 1; stack[sp++] = k; }
-      while (sp) {
-        const k = stack[--sp], x = k % nx;
-        for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
-          const X = x + dx, j = k + dz * nx + dx;
-          if ((!dx && !dz) || X < 0 || X >= nx || j < 0 || j >= N || !mask[j] || m[j]) continue;
-          m[j] = 1; stack[sp++] = j;
+      while (sp) {                                        // (the eight neighbours written out: which of them exist is the same test as the bounds of the loop it replaces; the mask reached does not depend on the order)
+        const k = stack[--sp], x = k % nx, hasL = x > 0, hasR = x + 1 < nx;
+        let j;
+        if (k >= nx) {
+          j = k - nx - 1; if (hasL && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+          j = k - nx; if (mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+          j = k - nx + 1; if (hasR && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+        }
+        j = k - 1; if (hasL && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+        j = k + 1; if (hasR && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+        if (k + nx < N) {
+          j = k + nx - 1; if (hasL && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+          j = k + nx; if (mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
+          j = k + nx + 1; if (hasR && mask[j] && !m[j]) { m[j] = 1; stack[sp++] = j; }
         }
       }
       return m;
     };
     const R = Math.ceil(rimR / cs), disc = [];
     for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) if ((dx * dx + dz * dz) * cs * cs <= rimR * rimR) disc.push([dx, dz]);
+    const discX = Int32Array.from(disc, (p) => p[0]), discZ = Int32Array.from(disc, (p) => p[1]), discN = disc.length;
     const zone = (items) => {                             // { A: reachable at the squeeze clearance, NZ: of that, what lies beyond the rim of the comfortable floor }
       const f = field(items), A = new Uint8Array(N), B = new Uint8Array(N);
       for (let k = 0; k < N; k++) { if (f[k] >= lo) A[k] = 1; if (f[k] >= hi) B[k] = 1; }
@@ -885,7 +989,7 @@ export class Layout {
       for (let iz = 0; iz < nz; iz++) for (let ix = 0; ix < nx; ix++) {
         const k = iz * nx + ix; if (!Bm[k]) continue;
         if (!((ix > 0 && Bm[k - 1]) && (ix + 1 < nx && Bm[k + 1]) && (iz > 0 && Bm[k - nx]) && (iz + 1 < nz && Bm[k + nx]))) {           // an edge cell of the comfortable floor: its rim is near
-          for (const [dx, dz] of disc) { const X = ix + dx, Z = iz + dz; if (X >= 0 && Z >= 0 && X < nx && Z < nz) near[Z * nx + X] = 1; }
+          for (let q = 0; q < discN; q++) { const X = ix + discX[q], Z = iz + discZ[q]; if (X >= 0 && Z >= 0 && X < nx && Z < nz) near[Z * nx + X] = 1; }
         }
       }
       const NZ = new Uint8Array(N);
@@ -894,9 +998,10 @@ export class Layout {
     };
     const key = `${cs}|${lo}|${hi}|${rimR}`;
     if (this._pockKey !== key) { this._pockBase = zone([]).NZ; this._pockKey = key; }       // what the empty room's own shape makes narrow
-    const { A, NZ: nz0, f } = zone(this.blockers()), NZ = new Uint8Array(N);
+    const blockers = this.blockers();
+    const { A, NZ: nz0, f } = zone(blockers), NZ = new Uint8Array(N);
     for (let k = 0; k < N; k++) if (nz0[k] && !this._pockBase[k]) NZ[k] = 1;
-    const lab = new Int32Array(N).fill(-1), found = [], blockers = this.blockers();
+    const lab = new Int32Array(N).fill(-1), found = [];
     const nb8 = (k) => { const x = k % nx, out = []; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dz) continue; const X = x + dx, j = k + dz * nx + dx; if (X < 0 || X >= nx || j < 0 || j >= N) continue; out.push(j); } return out; };
     for (let k0 = 0; k0 < N; k0++) {
       if (!NZ[k0] || lab[k0] >= 0) continue;

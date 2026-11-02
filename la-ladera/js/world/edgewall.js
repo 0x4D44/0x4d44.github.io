@@ -19,7 +19,7 @@ import { card, beam, tube, V } from './mk.js';
 import { TILE } from './sprites.js';
 import { OCC } from './occupancy.js';
 import { drape } from './flora.js';
-import { panel as signPanel, wallPanel as muralPanel } from './signs.js';
+import { panel as signPanel, wallPanel as muralPanel, edgeMuralKeys, EDGE_MURAL_ASPECT } from './signs.js';
 
 // ---------------------------------------------------------------------------------------------------- constants
 export const EDGE = Object.freeze({
@@ -52,7 +52,7 @@ export const HUES = Object.freeze([
 const FRAMES = [0xf1ede2, 0xf1ede2, 0x2b4d86, 0x2d5b46, 0x5b3b25];       // window frames: white (most), blue, green, brown
 const DOORS = [0x2c4f86, 0x2d5b46, 0x7a2f26, 0x555a5e, 0x3a3228];
 const ROOFS = ['tanks', 'tank', 'dish', 'leanto', 'mast', 'rebar'];
-const MURALS = ['mural.condor', 'mural.fiesta', 'mural.cerro'];
+export const MURALS = edgeMuralKeys();       // R1-106: the wall's own four paintings (signs.js EDGE_ART). The three discovery murals hang once, on their street walls, and are not hung again here as filler
 export const BLOCKING = OCC.ROAD | OCC.PLAZA | OCC.STAIR | OCC.LOT | OCC.DOOR | OCC.NAV;      // what a panel's ground may not hold for a stretch (or a door) to stand against it
 
 // ---------------------------------------------------------------------------------------------------- the plan (pure)
@@ -248,22 +248,23 @@ function planGaps(r, runs, blocked) {
 }
 
 /**
- * The whole plan of both walls. `H` = heightAt; `occ` (optional) = the occupancy grid; `avoid` = [{ x, z, r }] points a stretch keeps away from (points of interest, landmarks);
- * `murals` = K.murals (the walls of the three paintings, for their shape). Returns { seed, sides: { e, w } } with, per side, `stretches` (see planStretch) and `gaps`.
- * Same seed, same plan; another seed another.
+ * The whole plan of both walls. `H` = heightAt; `occ` (optional) = the occupancy grid; `avoid` = [{ x, z, r }] points a stretch keeps away from (points of interest, landmarks).
+ * Returns { seed, sides: { e, w } } with, per side, `stretches` (see planStretch) and `gaps`. Same seed, same plan; another seed another.
  */
-export function planEdge({ seed, H, occ = null, avoid = [], murals = null }) {
+export function planEdge({ seed, H, occ = null, avoid = [] }) {
   const R = makeRng(seed).fork('edgewall'), out = { seed, sides: {} };
-  const aspect = (key) => { const m = murals?.[MURALS.indexOf(key)]; return m ? Math.max(1.7, Math.min(2.6, m.W / m.h)) : 2.0; };
+  const aspect = () => EDGE_MURAL_ASPECT;                                                               // every painting of the wall is 2:1 (they are not cropped to a wall's shape, as the discoveries are)
   for (const id of ['e', 'w']) {
     const sg = id === 'e' ? 1 : -1, r = R.fork(id), ax = sg * EDGE.AT;
     const hi = Array.from({ length: P }, (_, k) => { const s = zOf(k); return Math.max(H(ax, s), H(ax, s + 1), H(ax, s + 2)); });     // the highest of the three samples periphery.js takes
     const blocked = (k) => blockedPanel(occ, avoid, sg, k), runs = planRuns(r.fork('runs'), blocked);
-    // art: every third of the stretches that are long enough (8 m and more), a mural, a mural, a tag, ...; the paintings and tags rotate so neighbours differ
-    const arts = new Map(); let eligible = 0, shown = 0;
+    // art: every third of the stretches that are long enough (8 m and more), a mural, a mural, a tag, ...; the paintings and tags rotate so neighbours differ. The paintings are dealt from
+    // their own count (not the count of paintings and tags, which brought the first one back after a single tag), and the west wall starts half a deck on: no painting twice on a wall
+    // while there are fewer than four of them, and the two walls do not show the same one at the same place in their order (R1-106)
+    const arts = new Map(); let eligible = 0, shown = 0, painted = 0;
     runs.forEach(([, n], i) => {
       if (n < 4) return;
-      if ((eligible++ + (id === 'e' ? 1 : 0)) % 3 === 0) { const tag = shown % 3 === 2; arts.set(i, tag ? { kind: 'tag', key: `tag.${shown % 2}` } : { kind: 'mural', key: MURALS[(shown + (id === 'e' ? 0 : 1)) % MURALS.length] }); shown++; }
+      if ((eligible++ + (id === 'e' ? 1 : 0)) % 3 === 0) { const tag = shown % 3 === 2; arts.set(i, tag ? { kind: 'tag', key: `tag.${shown % 2}` } : { kind: 'mural', key: MURALS[(painted++ + (id === 'e' ? 0 : MURALS.length >> 1)) % MURALS.length] }); shown++; }
     });
     const stretches = [], prev = { hue: -1, roof: null };
     runs.forEach(([k0, n], i) => {
@@ -322,7 +323,7 @@ function worldRecord(K) {
   const W = (K.ctx.world ??= {});
   if (!W.edge) {
     const plan = K.plan, avoid = [...(plan.pois ?? []), ...(plan.landmarks ?? [])].filter((p) => Math.abs(p.x) > 70).map((p) => ({ x: p.x, z: p.z, r: p.radius ?? 3 }));
-    W.edge = { plan: planEdge({ seed: plan.seed, H: K.H, occ: K.occ, avoid, murals: K.murals }), features: [], lit: 0, glows: 0, leafTris: 0, tops: { e: [], w: [] }, raised: { e: 0, w: 0 }, doors: 0, meters: 0, footings: 0, murals: 0, tags: 0 };
+    W.edge = { plan: planEdge({ seed: plan.seed, H: K.H, occ: K.occ, avoid }), features: [], lit: 0, glows: 0, leafTris: 0, tops: { e: [], w: [] }, raised: { e: 0, w: 0 }, doors: 0, meters: 0, footings: 0, murals: 0, tags: 0 };
   }
   return W.edge;
 }

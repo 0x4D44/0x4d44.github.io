@@ -57,6 +57,9 @@ const BASE_TOPICS = ['mood', 'job', 'barrio', 'family', 'news', 'tip', 'where', 
 const FALLBACK_MENU = ['Cuénteme algo más.', 'Tell me more.'];
 const TOLD = Object.freeze({});          // the key, in the session's line memory (a WeakMap), of the places the barrio has told a stranger lately (R3-022)
 const RECENT_TIPS = 4;                   // so many of them wait before anybody names one again
+const MAJOR_KINDS = new Set(['viewpoint', 'plaza', 'chapel', 'school']);       // the places a stranger crosses the barrio for: every "where" menu offers one of them (R3-107)
+const OFFERED = Object.freeze({});       // the key, in the session's line memory, of the major places the menus have offered lately
+const RECENT_OFFERS = 8;
 
 /** How the player is addressed: [masculine, feminine]. `joven`, `usted` and the like are invariant and are written plainly in the lines. */
 export const FORMS = {
@@ -169,11 +172,38 @@ export function clockLine(h) {
   return { es, en };
 }
 
+// ---- directions -------------------------------------------------------------------------------------------------------------------------
+// Each clause of an answer ("cuesta arriba, a una cuadra larga, a mano derecha") is one of several ways of saying the same thing, so a stranger who asks three people does not hear one sentence three times
+// (R3-107: 31 of 42 answers said "a una cuadra larga", 28 "más o menos al mismo nivel"). The English keeps one wording per clause: it is the subtitle, and says what the Spanish says.
+// A slope past 6 m always has stairs on the way (every one of the 152 routes of the plan that climbs or drops more than 6 m between two landmarks crosses a stair node), so those phrases say so.
 const DIRS = {
-  front: ['todo derecho', 'recto, de frente'], right: ['a mano derecha', 'a su derecha'], left: ['a mano izquierda', 'a su izquierda'],
-  back: ['por donde usted venía', 'para atrás'],
+  front: ['todo derecho', 'recto, de frente', 'derechito', 'de frente'],
+  right: ['a mano derecha', 'a su derecha', 'por la derecha', 'hacia la derecha'],
+  left: ['a mano izquierda', 'a su izquierda', 'por la izquierda', 'hacia la izquierda'],
+  back: ['por donde usted venía', 'para atrás', 'hacia atrás'],
 };
 const DIR_EN = { front: 'straight ahead', right: 'on your right', left: 'on your left', back: 'back the way you came' };
+const BACK_TAIL = ['Se devuelve y sigue.', 'Se devuelve un poco y sigue.', 'Se devuelve y sigue derecho.'];
+const LEVEL = ['más o menos al mismo nivel', 'casi al mismo nivel', 'en plano', 'sin subir ni bajar', 'por lo plano'];
+/** Up to `max` metres of climb: the phrases ("cuesta arriba" stays in every phrase up to 12 m: it is what a visitor listens for). */
+const CLIMB = {
+  up: [[6, ['cuesta arriba', 'un poco cuesta arriba', 'cuesta arriba, subiendo']],
+    [12, ['cuesta arriba, por las escaleras', 'subiendo, cuesta arriba, por las escaleras', 'por las escaleras, cuesta arriba']],
+    [Infinity, ['bien arriba, por las escaleras', 'allá arriba, por las escaleras', 'cuesta arriba, un buen tramo de escaleras']]],
+  down: [[6, ['cuesta abajo', 'un poco cuesta abajo', 'cuesta abajo, bajando']],
+    [12, ['cuesta abajo, por las escaleras', 'bajando, cuesta abajo, por las escaleras', 'por las escaleras, cuesta abajo']],
+    [Infinity, ['bien abajo, por las escaleras', 'allá abajo, por las escaleras', 'cuesta abajo, un buen tramo de escaleras']]],
+};
+/** Up to `max` metres of distance: the phrases and the English (a block is about 40 m; the near band always says "ahí no más"). */
+const DIST = [
+  [18, ['ahí no más', 'ahí no más, a unos pasos', 'a unos pasos, ahí no más'], 'right there'],
+  [45, ['a una cuadra larga', 'a una cuadra más o menos', 'como a una cuadra', 'a una cuadra de aquí', 'a una cuadrita'], 'about a block away'],
+  [90, ['como a dos cuadras', 'a dos cuadras más o menos', 'a un par de cuadras', 'a dos cuadras largas', 'a unas dos cuadras'], 'a couple of blocks away'],
+  [150, ['como a tres cuadras', 'a unas tres cuadras', 'a un buen trecho, por allá'], 'quite far'],
+  [Infinity, ['bien lejos, por allá', 'lejos, lejos, por allá', 'a un buen camino, por allá', 'bien lejos de aquí'], 'quite far'],
+];
+const ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];     // the order of (slope, distance, side) in the Spanish answer
+const oneOf = (arr, rng) => arr[Math.floor((rng?.next() ?? 0) * arr.length) % arr.length];
 
 /**
  * Spanish + English walking directions from (px,pz) facing `yaw` (camera convention: yaw 0 looks toward -z) to a landmark { name, en, kind?, x, y?, z }.
@@ -188,15 +218,17 @@ export function directionsTo(lm, p, rng, o = {}) {
   const a = Math.abs(ang);
   const dir = a < 28 ? 'front' : a > 125 ? 'back' : ang > 0 ? 'right' : 'left';
   const dy = (lm.y ?? p.y ?? 0) - (p.y ?? 0);
-  const hill = dy > 3 ? ['cuesta arriba', 'uphill'] : dy < -3 ? ['cuesta abajo', 'downhill'] : ['más o menos al mismo nivel', 'at about the same level'];
-  const dist = d < 18 ? ['ahí no más', 'right there'] : d < 45 ? ['a una cuadra larga', 'about a block away'] : d < 90 ? ['como a dos cuadras', 'a couple of blocks away'] : ['bien lejos, por allá', 'quite far'];
-  const dn = DIRS[dir][Math.floor((rng?.next() ?? 0) * 2) % 2];
-  const where = `${hill[0]}, ${dist[0]}, ${dn}`, whereEn = `${hill[1]}, ${dist[1]}, ${DIR_EN[dir]}`;
+  const band = (T) => T.find(([max]) => Math.abs(dy) <= max)[1];
+  const hill = dy > 3 ? [oneOf(band(CLIMB.up), rng), 'uphill'] : dy < -3 ? [oneOf(band(CLIMB.down), rng), 'downhill'] : [oneOf(LEVEL, rng), 'at about the same level'];
+  const far = DIST.find(([max]) => d < max), dist = [oneOf(far[1], rng), far[2]];
+  const dn = oneOf(DIRS[dir], rng);
+  const parts = [hill[0], dist[0], dn], order = oneOf(ORDERS, rng);
+  const where = order.map((i) => parts[i]).join(', '), whereEn = `${hill[1]}, ${dist[1]}, ${DIR_EN[dir]}`;
   const name = withArticle(lm.name), nameEn = theEn(lm.en ?? lm.name, lm.kind);
   let es, en;
-  if (o.short) { es = dir === 'back' ? `Queda ${where}. Se devuelve y sigue.` : `Queda ${where}.`; en = `It's ${whereEn}.`; }
+  if (o.short) { es = dir === 'back' ? `Queda ${where}. ${oneOf(BACK_TAIL, rng)}` : `Queda ${where}.`; en = `It's ${whereEn}.`; }
   else {
-    es = dir === 'back' ? `${cap(name)} queda ${where}. Se devuelve y sigue.` : `Mire, ${name} queda ${where}.`;
+    es = dir === 'back' ? `${cap(name)} queda ${where}. ${oneOf(BACK_TAIL, rng)}` : `Mire, ${name} queda ${where}.`;
     en = `${cap(nameEn)} is ${whereEn}.`;
   }
   return { es: polish(es), en, dir, dist: d };
@@ -345,7 +377,8 @@ export class Dialogue {
 
   /**
    * The places the menu offers: nobody gives directions to the shop they stand in, or to a place a few steps away (NEAR m round the speaker), so those wait
-   * unless nothing else is left. Two of the nearest of the rest, one from far away, shuffled by rng: a variety of answers every time.
+   * unless nothing else is left. The nearest of the rest (the one answer that is always a short walk), one of the next three (so the neighbours do not all offer the same pair), and a
+   * place a stranger crosses the barrio for (a viewpoint, a plaza, the chapel, the school: `majorPlace`), so those are never out of reach however far down the hill the visitor stands (R3-107).
    */
   landmarkChoices() {
     if (this._lmc) return this._lmc;
@@ -354,8 +387,25 @@ export class Dialogue {
     const pool = away.length >= 3 ? away : every;
     const all = pool.filter((l) => !this.mem.heard.has('lm:' + l.id) || pool.length < 5);
     const sorted = [...all].sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z));
-    const pickN = [...sorted.slice(0, 2), ...this.rng.shuffle(sorted.slice(2)).slice(0, 1)].filter(Boolean);
-    return (this._lmc = pickN.slice(0, 3));
+    const picks = sorted.slice(0, 1), major = this.majorPlace(sorted.slice(1)), others = sorted.slice(1).filter((l) => l !== major);
+    if (others.length) picks.push(others[Math.floor(this.rng.next() * Math.min(3, others.length))]);
+    if (major) picks.push(major);
+    else { const left = others.filter((l) => !picks.includes(l)); if (left.length) picks.push(left[Math.floor(this.rng.next() * left.length)]); }
+    return (this._lmc = picks.slice(0, 3));
+  }
+
+  /**
+   * One of the major places among `rest`, taken in turn: the one the session's menus offered least recently (the barrio remembers the last RECENT_OFFERS, whoever was asked), the farthest first
+   * among those not offered yet, so a visitor who asks five people has been offered each of the five. Null when there is none.
+   */
+  majorPlace(rest) {
+    const majors = rest.filter((l) => MAJOR_KINDS.has(l.kind));
+    if (!majors.length) return null;
+    const seen = this.memory ? this.memory.get(OFFERED) ?? [] : this.mem.offered ?? [], p = this.world.player ?? this.npc, far = (l) => Math.hypot(l.x - p.x, l.z - p.z);
+    const best = [...majors].sort((a, b) => seen.lastIndexOf(a.id) - seen.lastIndexOf(b.id) || far(b) - far(a))[0];
+    const next = [...seen.filter((id) => id !== best.id), best.id].slice(-RECENT_OFFERS);
+    if (this.memory) this.memory.set(OFFERED, next); else this.mem.offered = next;
+    return best;
   }
 
   /**

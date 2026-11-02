@@ -10,6 +10,7 @@ const CAPACITY = { chat: 2, play: 6, bench: 1, sweep: 1, lean: 1, vend: 1, greet
 /** The outdoor spots people stand on in the open, and the radius of free ground each needs (a chat pair stands 0.4 m either side of the spot, a body is 0.2 m across): `Spots.fit` moves these off solids. */
 export const FIT = { chat: 0.65, stand: 0.5, greet: 0.3, phone: 0.3 };
 export const FIT_REACH = 1.6;         // metres: how far a spot may move off a tree trunk or a lamp post to find free ground
+const LEAN_SLIDE = 0.9;               // metres: how far a lean spot may slide along its wall off a prop that stands on it (it keeps to the wall; a lean spot is not a corner of the open)
 
 export class Spots {
   constructor({ plan = null, anchors = [], buildings = new Map() } = {}) {
@@ -28,8 +29,11 @@ export class Spots {
    * Move the outdoor spots people stand on in the open off whatever solid the world has put on them (a tree trunk, a lamp post, a planter: the plan places its corners before the props do; the
    * almond tree of the Plazoleta de los Almendros stood 0.23 m from a chat corner, so two women talked inside its trunk). Each spot of a kind in `FIT` that `clear(x, z, spot, radius)` refuses goes to
    * the nearest point of a widening ring (every 0.3 m, up to `reach`) that it accepts; a spot with no such point stays where it is. Returns the spots moved (the old place is kept as x0, z0).
+   * A lean spot is a place against a wall, so it is not moved by `clear` (which also asks for ground clear of a drop, and the wall is the point of it): when `solid(x, z, spot)` says a prop stands on
+   * it (a lamp post, a planter against the wall: a leaner walked into it and stood there for ever), it slides along the wall (at right angles to its facing) by the least step, up to LEAN_SLIDE
+   * either way, that `solid` refuses no more; one with no such place stays and `screen` cuts it.
    */
-  fit(clear, reach = FIT_REACH) {
+  fit(clear, reach = FIT_REACH, solid = null) {
     const moved = [];
     for (const s of this.all) {
       const R = FIT[s.kind];
@@ -39,6 +43,13 @@ export class Spots {
         const n = Math.max(8, Math.round(r * 20));
         for (let i = 0; i < n && !p; i++) { const a = (i / n) * Math.PI * 2, x = s.x + Math.sin(a) * r, z = s.z + Math.cos(a) * r; if (clear(x, z, s, R)) p = { x, z }; }
       }
+      if (p) { s.x0 = s.x; s.z0 = s.z; s.x = p.x; s.z = p.z; moved.push(s); }
+    }
+    if (solid) for (const s of this.all) {
+      if (s.kind !== 'lean' || s.src !== 'poi' || !solid(s.x, s.z, s)) continue;
+      const tx = Math.cos(s.ry), tz = -Math.sin(s.ry);
+      let p = null;
+      for (let d = 0.15; d <= LEAN_SLIDE + 1e-9 && !p; d += 0.15) for (const k of [1, -1]) { const x = s.x + tx * d * k, z = s.z + tz * d * k; if (!solid(x, z, s)) { p = { x, z }; break; } }
       if (p) { s.x0 = s.x; s.z0 = s.z; s.x = p.x; s.z = p.z; moved.push(s); }
     }
     return moved;

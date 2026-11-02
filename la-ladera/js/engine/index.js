@@ -174,9 +174,9 @@ export function startEngine(ctx, { hold = false } = {}) {
   // adaptive quality: step down after two slow 2-second windows; step back up only after a long run of fast ones,
   // never to a level that already failed within 90 s
   const ad = { acc: 0, n: 0, bad: 0, good: 0, t0: performance.now(), upAt: 0, bans: new Set(), lastUp: 0 };
-  const adapt = (dt) => {
+  const adapt = (dt, streamed = 0) => {
     if (ctx.qualityMode !== 'auto' || ctx.opts.manual || !ctx.running || document.hidden || performance.now() - ad.t0 < 4000) { ad.acc = ad.n = 0; return; }
-    ad.acc += dt; ad.n++;
+    ad.acc += Math.max(dt - streamed / 1000, dt * 0.6); ad.n++;                    // (the streaming work of the frame before this interval - core/budget.js - is not a slow machine: its quality is not lowered for it)
     if (ad.acc < 2) return;
     const ms = (ad.acc / ad.n) * 1000; ad.acc = ad.n = 0;
     const i = LEVELS.indexOf(ctx.quality), now = performance.now();
@@ -193,19 +193,19 @@ export function startEngine(ctx, { hold = false } = {}) {
     } else ad.good = 0;
   };
 
-  let last = performance.now(), acc = 0, frames = 0;
+  let last = performance.now(), acc = 0, frames = 0, streamedBefore = 0;
   const frame = (t) => {
     const dt = Math.min(Math.max((t - last) / 1000, 0), 1 / 20); last = t;
     if (ctx.running) ctx.step(dt);
     ctx.render();
     frames++; acc += dt;
     if (acc >= 0.5) { ctx.stats.fps = Math.round(frames / acc); ctx.stats.frameMs = +(1000 * acc / frames).toFixed(1); frames = 0; acc = 0; }
-    adapt(dt);
+    adapt(dt, streamedBefore); streamedBefore = ctx.streamMs ?? 0; ctx.streamMs = 0;      // (a frame's streaming account starts again at zero: core/budget.js)
     if (!ctx.opts.manual) requestAnimationFrame(frame);
   };
   ctx.running = !!ctx.running;
   let looping = false;
-  ctx.startLoop = () => { if (looping || ctx.opts.manual) return; looping = true; requestAnimationFrame((t) => { last = t; frame(t); }); };
+  ctx.startLoop = () => { if (looping || ctx.opts.manual) return; looping = true; ctx.loopOn = true; requestAnimationFrame((t) => { last = t; frame(t); }); };
   if (ctx.opts.manual) { ctx.step(0.016); ctx.render(); }
   else if (!hold) ctx.startLoop();
 }

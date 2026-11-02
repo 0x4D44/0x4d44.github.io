@@ -42,6 +42,7 @@ export class PlanState {
     this.patios = [];                   // open-air courts: [{ id (the ground-floor patio room), rect }] with a void through every storey above
     this.arcades = [];                  // openings in interior walls that are not doors: grilled windows and arcade bays onto a patio
     this.platforms = [];                // raised floors inside a room (a stage): [{ room, floor, rect, h }], walkable on top, climbed like a step
+    this.loops = null;                  // why the plan has a ring of circulation on purpose (a school's cloister), or null: budgetDoors keeps every door between two circulation rooms then
     this.seq = { door: 0, win: 0 };
     for (let i = 0; i <= this.F; i++) this.floorsData.push({ index: i, y: i * this.fh, h: this.h, rooms: [], voids: [], extWalls: [] });
   }
@@ -179,6 +180,41 @@ export class PlanState {
       b.openings.push({ side: side({ nx: -nx, nz: -nz }), from: round2(along[0]), to: round2(along[1]), door: id });
     }
     return door;
+  }
+
+  /**
+   * The door budget. A layout asks for the doors it wants (`link`); this keeps, on every floor, the interior doors that make a TREE over the rooms and drops the rest, so a room is reached one
+   * way and a door is never a second way into a room that another door already reaches (L08 had a loop on each of its three floors: a shop with two doors onto the same stair column, a living
+   * room and a landing that both opened onto the dining room, bedrooms that opened onto each other as well as onto the landing). A plan with a ring of circulation on purpose (the cloister of a
+   * school) says so once, `S.loops = '<why>'`: the doors between two circulation rooms (or the patio) are then kept whole, each marked `loop: '<why>'`, and everything else is still a tree.
+   * The rest are taken hubs first: a door weighs the sum of how little of a hub its two rooms are (the patio 0, a hall, corridor, landing or entry 1, any other room 2, a stair column 3), so a room
+   * opens onto the hall rather than onto its neighbour, a hall onto the patio before a room does, and a stair is a dead end that hangs off one room (the living room, the entry) and not a way
+   * through to the dining room unless nothing else leads there; doors of the same weight go in the order the layout made them.
+   * Nothing else about the plan moves: the rooms, the ids of the doors that stay and the draws of the random stream (a dropped door has made its hinge draw already, and the streams of the
+   * windows and the facade fork from it) are as the layout left them. Exterior doors are not part of the budget. Returns the doors it dropped.
+   */
+  budgetDoors() {
+    const type = new Map(this.rooms.map((r) => [r.id, r.type]));
+    const hub = (id) => { const t = type.get(id); return t === 'patio' ? 0 : t === 'stairwell' ? 3 : CIRCULATION.has(t) ? 1 : 2; };
+    const ring = (id) => type.get(id) === 'patio' || CIRCULATION.has(type.get(id));                    // a room the cloister runs through
+    const wish = this.doors.map((d, i) => ({ d, i, w: d.rooms[0] && d.rooms[1] ? hub(d.rooms[0]) + hub(d.rooms[1]) : -1 })).filter((q) => q.w >= 0);
+    if (this.loops) for (const { d } of wish) if (ring(d.rooms[0]) && ring(d.rooms[1])) d.loop = this.loops;
+    wish.sort((p, q) => (!!q.d.loop - !!p.d.loop) || p.w - q.w || p.i - q.i);
+    const parent = new Map(this.rooms.map((r) => [r.id, r.id]));
+    const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+    const drop = new Set();
+    for (const { d } of wish) {
+      const a = find(d.rooms[0]), b = find(d.rooms[1]);
+      if (a !== b) parent.set(a, b); else if (!d.loop) drop.add(d.id);
+    }
+    if (!drop.size) return [];
+    const gone = this.doors.filter((d) => drop.has(d.id));
+    this.doors.splice(0, this.doors.length, ...this.doors.filter((d) => !drop.has(d.id)));
+    for (const r of this.rooms) {
+      if (r.doors.some((id) => drop.has(id))) r.doors = r.doors.filter((id) => !drop.has(id));
+      if (r.openings.some((o) => drop.has(o.door))) r.openings = r.openings.filter((o) => !drop.has(o.door));
+    }
+    return gone;
   }
 
   /** Rect swept by the door leaf on the side it opens into (quarter disc bounding box), local frame. */

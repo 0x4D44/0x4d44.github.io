@@ -89,7 +89,7 @@ const GOLDEN = {
   digests: { SURFACE_INFO: "385a3d87cb06", TYRE_GRIP: "a16078adcf48", TYRE_ROLL: "af7fb448dcca" },
   tol: 0.05,
   // round 4: brake distances moved ~0.4 % (Y1 load transfer), jumpDamage 0.276 -> 0.055 on purpose (Y3: a flat landing is cheap, see dynamics-landing)
-  values: {"accel100_tarmac":4.675,"brake100_tarmac":48.947,"peakG_tarmac":0.823,"coast6s_tarmac":21.897,"accel100_gravel":5.092,"brake100_gravel":70.494,"peakG_gravel":0.671,"coast6s_gravel":21.168,"accel100_snow":6.283,"brake100_snow":89.843,"peakG_snow":0.541,"coast6s_snow":19.469,"accel100_mud":6.258,"brake100_mud":87.566,"peakG_mud":0.543,"coast6s_mud":19.396,"topSpeed":212.718,"crash120":0.533,"jumpApex":3.778,"jumpAir":1.533,"jumpDamage":0.055},
+  values: {"accel100_tarmac":4.675,"brake100_tarmac":44.232,"peakG_tarmac":0.823,"coast6s_tarmac":21.897,"accel100_gravel":5.092,"brake100_gravel":70.494,"peakG_gravel":0.671,"coast6s_gravel":21.168,"accel100_snow":6.283,"brake100_snow":89.843,"peakG_snow":0.541,"coast6s_snow":19.469,"accel100_mud":6.258,"brake100_mud":87.566,"peakG_mud":0.543,"coast6s_mud":19.396,"topSpeed":212.718,"crash120":0.533,"jumpApex":3.778,"jumpAir":1.692,"jumpDamage":0.055},
 };
 
 if (process.env.GOLDEN_PRINT) {

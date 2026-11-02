@@ -3,7 +3,7 @@ import { CATALOG } from './catalog.js';
 import { KNEEHOLE } from './carcass.js';
 import { opposite, wallInfo, wallPoint, mkObb } from './layout.js';
 import { decalDef } from './decals.js';
-import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM } from './rooms.js';
+import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM, fillBeds, householdPlaces } from './rooms.js';
 import { art, clock, own } from './decor.js';
 import { SHOP_FITOUTS } from './shops.js';
 import { chapelFurnish } from '../arch/chapel_interior.js';
@@ -179,10 +179,13 @@ export function workshop(L, E, hh) {
 /** A one-room home (tenement 'inquilinato' room): everything in one room. */
 export function studio(L, E, hh) {
   const rng = L.rng, area = L.W * L.D;
-  const bedNames = hh.kind === 'couple' || hh.kind === 'family' ? (area > 11 ? ['bed_double', 'bed_single'] : ['bed_single_metal', 'bed_single']) : ['bed_single_metal', 'bed_single', 'mattress_floor'];
+  const parents = hh.kind === 'couple' || hh.kind === 'family' || hh.kind === 'shopkeeper';
+  const bedNames = parents ? (area >= 9 ? ['bed_double', 'bed_single_metal', 'bed_single'] : ['bed_single_metal', 'bed_single']) : ['bed_single_metal', 'bed_single', 'mattress_floor'];
   let bed = null;
   for (const n of bedNames) { bed = any(() => L.wall(n, 'any', { prio: 0, sideNeed: 0.35, awayDoors: true })); if (bed) { bed.flags = { unmade: rng.chance(1 - hh.tidy) }; break; } }
-  if (bed && hh.kids && area > 10) any(() => L.wall(hh.babies ? 'bed_crib' : 'bed_bunk', 'any', { prio: 1 }));
+  // the whole household sleeps in this one room: a bed for each (a bunk holds two) as far as the beds leave the kitchen corner, the table and the lanes their floor (about a third of it)
+  if (bed) fillBeds(L, E, hh, [bed], Math.min(householdPlaces(hh), Math.max(2, Math.floor(area * 0.36))), parents);
+  if (bed && hh.babies && area > 10) any(() => L.wall('bed_crib', 'any', { prio: 1 }));
   // kitchen corner
   const run = L.run(L.wallsByFree()[0].wall, ['counter_base', 'stove_gas', 'counter_base'], { prio: 0, skipMissing: true, fromEnd: rng.chance(0.5) });
   const stove = L.find('stove_gas');
