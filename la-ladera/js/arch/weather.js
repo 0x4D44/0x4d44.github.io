@@ -447,18 +447,19 @@ const alongOf = (side, o) => (side === 'front' || side === 'back' ? o.x : o.z);
 const FOOD = ['panaderia', 'restaurante', 'cafe', 'carniceria'];
 
 /**
- * What the front (and the free side walls) of one building wear. Returns marks { kind, variant, side, u0, u1, y0, y1, flip, tint, off } in building-local wall
+ * What the front, the free side walls and the back wall (R1-102: nobody paints that one) of one building wear. Returns marks { kind, variant, side, u0, u1, y0, y1, flip, tint, off } in building-local wall
  * coordinates (u along the wall, y up). Deterministic in the building id. Needs the dressing already placed (`G.recs`, `G.balc`) so that no mark lies over a sign,
  * a meter, a unit or a balcony, and `kit.limitAt` so that none rises past the top of the wall.
  */
 export function planWeather(G, kit) {
   const { S, bp, fs } = G, fh = S.fh, yF = S.F * fh, yTop = S.openTop ? (S.F - 1) * fh + PRETIL_H : yF, marks = [];
-  let ctr = 0; const rnd = () => hash01(bp.id, 1000 + ctr++), hv = (n) => hash01(bp.id, 900 + n);
+  // the back wall draws from a stream of its own (2000 + n): the marks of the other walls, which were planned before it was weathered at all, stay where they were
+  let ctr = 0, bctr = 0, onBack = false; const rnd = () => (onBack ? hash01(bp.id, 2000 + bctr++) : hash01(bp.id, 1000 + ctr++)), hv = (n) => hash01(bp.id, 900 + n);
   const brick = !!fs.brick || kit.kind === 'unfinished', peeling = fs.m === 'paint_peeling_soft', peelOpt = () => ({ tint: peelTint(fs.wall) });
   const age = (kit.inst ? 0.55 : 1) * (0.2 + 0.8 * hv(0));                                  // 0 freshly painted .. 1 neglected
   // how high the wet climbs: a level for the lot (the front), and a side wall is always a good deal lower or higher than that (a different wall, other ground behind it)
-  const level = dampLevelOf(G.ctx, G.lot, bp.id), wallK = (side) => { if (side === 'front') return 1; const t = hv(side === 'left' ? 21 : 22); return t < 0.5 ? 0.6 + 0.5 * t : 0.9 + 0.4 * t; };
-  const sides = ['front', ...['left', 'right'].filter((s) => !S.party[s])];
+  const level = dampLevelOf(G.ctx, G.lot, bp.id), wallK = (side) => { if (side === 'front') return 1; const t = hv(side === 'left' ? 21 : side === 'right' ? 22 : 23); return t < 0.5 ? 0.6 + 0.5 * t : 0.9 + 0.4 * t; };
+  const sides = ['front', ...['left', 'right'].filter((s) => !S.party[s]), ...(S.party.back ? [] : ['back'])];                // (the back wall last: it is the one nobody paints)
   const occ = { front: [], back: [], left: [], right: [] };
   const addOcc = (side, u0, u1, y0, y1, tag) => occ[side]?.push({ u0, u1, y0, y1, tag });
   for (const w of bp.windows) { const u = alongOf(w.side, w); addOcc(w.side, u - w.w / 2 - 0.06, u + w.w / 2 + 0.06, w.floor * fh + w.y - 0.07, w.floor * fh + w.y + w.h + 0.06, 'window'); }
@@ -493,6 +494,7 @@ export function planWeather(G, kit) {
   const keyed = (list, salt) => list.map((q) => ({ q, k: hash01(String(q.id), salt) })).sort((a, b) => a.k - b.k).map((e) => e.q);
 
   for (const side of sides) {
+    onBack = side === 'back';
     const front = side === 'front', sp = span(side), lo = -sp / 2 + 0.06, hi = sp / 2 - 0.06;
     // -- rising damp (salts on brick) along the foot of the wall, in runs between whatever reaches down to it (doors, the drainpipe, pilasters, a shutter housing)
     const gaps = [[lo, hi]];
@@ -574,6 +576,7 @@ export function planWeather(G, kit) {
       }
     }
   }
+  onBack = false;
 
   // every front wears at least three kinds, whatever else was in the way: scan the free wall for the first spot that takes a smaller mark
   const kinds = () => new Set(marks.filter((m) => m.side === 'front').map((m) => m.kind));

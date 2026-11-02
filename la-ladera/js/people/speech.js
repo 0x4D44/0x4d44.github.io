@@ -4,7 +4,7 @@
 //   const h = sp.speak('Buenas tardes.', { pitch: 1, rate: 1, gender: 'f', seed: 12 });   // h.done: Promise<'spoken'|'fallback'|'cancelled'>
 //   sp.cancel();
 //
-// Voice ranking (first match wins): es-CO > es-MX > es-US/es-419 > es-AR > es-CL > es-ES > any es* > nothing.
+// Voice ranking (first match wins): es-CO > es-MX > es-US/es-419 > es-AR > es-CL > es-ES > any es* > nothing. With two or more Spanish voices women and men get voices of their own (voiceCast).
 // `window.speechSynthesis` is read at CALL time so tests can swap it for a spy.
 
 export const LANG_RANK = ['es-CO', 'es-MX', 'es-US', 'es-419', 'es-AR', 'es-CL', 'es-ES'];
@@ -34,13 +34,18 @@ export function rankVoices(voices) {
 export function voiceGender(v) { const n = v.name || ''; return FEMALE.test(n) ? 'f' : MALE.test(n) ? 'm' : '?'; }
 
 const MAN_ON_A_WOMANS_VOICE = 0.72, WOMAN_ON_A_MANS_VOICE = 1.3, DEEPEST = 0.55;       // (below DEEPEST an engine only rumbles)
+const GROWN_UP_PITCH = [0.85, 1.1];       // where the sexes have voices of their own an adult's or an elder's pitch stays inside this: the voice tells a man from a woman, not the pitch
 /**
- * The pitch to speak a person's lines with on `voice`. A browser with no Spanish speech packs has one or two voices ("Google español", "Google español de Estados
- * Unidos": women's voices with no gendered name, so voiceGender() is '?'): everybody would sound like the same woman. A man (not a boy) on a voice that is not a man's
- * is lowered by about a third, a woman on a man's voice raised by a third: the sexes still sound different when the browser has only one voice to give.
+ * The pitch to speak a person's lines with on `voice`. A browser with no Spanish speech packs has one voice ("Google español de Estados Unidos": a woman's voice with no
+ * gendered name, so voiceGender() is '?'): everybody would sound like the same woman. A man (not a boy) on a voice that is not a man's is lowered by about a third, a woman
+ * on a man's voice raised by a third: the sexes still sound different when the browser has only one voice to give.
+ * `apart` (chooseVoice: the browser has one voice for women and another for men) means the voice does that already: nothing is lowered or raised for the sex, and a grown-up's pitch
+ * (an adult's, an elder's: the persona's own spread by age and by person) is kept inside 0.85 to 1.1, where an engine still sounds like a person (a man on a woman's voice at 0.62
+ * did not). A child's and a teenager's stay as they are: they are what tells a boy from a grandfather.
  * `voice` null = no voice at all (the babble): treated as unknown.
  */
-export function pitchFor(voice, { gender = '?', age = 'adult', pitch = 1 } = {}) {
+export function pitchFor(voice, { gender = '?', age = 'adult', pitch = 1, apart = false } = {}) {
+  if (apart) return Math.max(0.1, Math.min(2, age === 'kid' || age === 'teen' ? pitch : Math.max(GROWN_UP_PITCH[0], Math.min(GROWN_UP_PITCH[1], pitch))));
   const vg = voice ? voiceGender(voice) : '?';
   let p = pitch;
   if (age !== 'kid') {
@@ -50,16 +55,47 @@ export function pitchFor(voice, { gender = '?', age = 'adult', pitch = 1 } = {})
   return Math.max(0.1, Math.min(2, p));
 }
 
-/** Choose a voice for an NPC: best language group, preferring the NPC's gender, spread by `seed` over equal candidates. */
-export function pickVoice(ranked, { gender = '?', seed = 0, preferURI = null } = {}) {
-  if (!ranked.length) return null;
-  if (preferURI) { const p = ranked.find((v) => v.voiceURI === preferURI || v.name === preferURI); if (p) return p; }
+/**
+ * How the browser's Spanish voices are shared between women and men. With one voice (or none) everybody has it and pitchFor tells the sexes apart: `apart` is false. With two or more
+ * a woman gets the best voice that suits a woman (named for one, else with no gendered name: those are Chrome's, and they are women's) and a man the best voice that suits a man (named
+ * for one, else with no gendered name) that is not hers: the better language first (es-CO, es-MX, es-US, es-419 ... es-ES), and inside a language a voice named for the sex before one that
+ * is not. Voices with no gendered name that are all of one language are dealt out in turn, women first, so that the men get some ("Google español" and "Google español de Estados
+ * Unidos": the women have es-US, the men es-ES). When no voice is left that suits a man (every other voice is a woman's) both go on sharing the best language group, as before.
+ * Returns the pools, spread over by `seed`: { f, m, apart }.
+ */
+export function voiceCast(ranked) {
+  const shared = { f: null, m: null, apart: false };
+  if (ranked.length < 2) return shared;
+  const rank = (v) => langRank(v.lang), suits = (v, g) => { const vg = voiceGender(v); return vg === g || vg === '?'; };
+  const pool = (g, from) => {                                                 // the best language that has a voice for `g`; the voices named for `g` first inside it
+    const ok = from.filter((v) => suits(v, g)); if (!ok.length) return [];
+    const top = ok.filter((v) => rank(v) === rank(ok[0])), named = top.filter((v) => voiceGender(v) === g);
+    return named.length ? named : top;
+  };
+  let f = pool('f', ranked); if (!f.length) return shared;
+  let m = pool('m', ranked.filter((v) => !f.includes(v)));
+  if (!m.length && f.length > 1 && f.every((v) => voiceGender(v) === '?')) { m = f.filter((_, i) => i % 2); f = f.filter((_, i) => i % 2 === 0); }
+  return m.length ? { f, m, apart: true } : shared;
+}
+
+/**
+ * Choose a voice for an NPC: { voice, apart } (voiceCast: women and men on voices of their own when the browser has two or more; else the best language group, preferring the NPC's gender),
+ * spread by `seed` over equal candidates. A voice the player chose in the settings panel is everybody's, and then nobody is `apart`.
+ */
+export function chooseVoice(ranked, { gender = '?', seed = 0, preferURI = null } = {}) {
+  if (!ranked.length) return { voice: null, apart: false };
+  if (preferURI) { const p = ranked.find((v) => v.voiceURI === preferURI || v.name === preferURI); if (p) return { voice: p, apart: false }; }
+  const cast = voiceCast(ranked), at = Math.abs(seed | 0);
+  if (cast.apart && (gender === 'f' || gender === 'm')) { const own = cast[gender]; return { voice: own[at % own.length], apart: true }; }
   const bestRank = langRank(ranked[0].lang);
   const group = ranked.filter((v) => langRank(v.lang) === bestRank);
   const same = group.filter((v) => voiceGender(v) === gender);
   const pool = same.length ? same : group;                       // the language ranking outranks gender: a Colombian voice beats a Mexican one of the "right" gender
-  return pool[Math.abs(seed | 0) % pool.length];
+  return { voice: pool[at % pool.length], apart: false };
 }
+
+/** The voice alone (chooseVoice). */
+export function pickVoice(ranked, o = {}) { return chooseVoice(ranked, o).voice; }
 
 export class Speech {
   constructor(ctx) {
@@ -165,9 +201,9 @@ export class Speech {
     }
     try {
       const u = new SpeechSynthesisUtterance(text);
-      const v = pickVoice(this.ranked, { gender: opts.gender ?? '?', seed: opts.seed ?? 0, preferURI: this.voiceURI });
+      const { voice: v, apart } = chooseVoice(this.ranked, { gender: opts.gender ?? '?', seed: opts.seed ?? 0, preferURI: this.voiceURI });
       if (v) { u.voice = v; u.lang = v.lang; } else u.lang = opts.lang ?? 'es-CO';
-      u.pitch = pitchFor(v, opts); u.rate = Math.max(0.5, Math.min(1.6, opts.rate ?? 1)); u.volume = Math.max(0, Math.min(1, this.volume));
+      u.pitch = pitchFor(v, { ...opts, apart }); u.rate = Math.max(0.5, Math.min(1.6, opts.rate ?? 1)); u.volume = Math.max(0, Math.min(1, this.volume));
       rec.mode = 'tts'; rec.voice = v ? v.name : null;
       u.onend = () => rec.finish('spoken');
       u.onerror = (e) => {

@@ -2200,7 +2200,7 @@
    "walkSpeedMps": 1.39,
    "walkFastSpeedMps": 2.24,
    "runSpeedMps": 3.76,
-   "tris": 7752,
+   "tris": 7592,
    "slots": {
     "top": {
      "id": 2,
@@ -2346,18 +2346,18 @@
    ],
    "skin": 2,
    "outfit": "trousers",
-   "heightM": 1.659,
+   "heightM": 1.673,
    "shoulderWidthM": 0.458,
    "eyeHeightM": 1.556,
    "seatRootDropM": 0.316,
    "seatedEyeHeightM": 1.24,
-   "seatedHeadTopM": 1.343,
+   "seatedHeadTopM": 1.357,
    "hipHeightM": 0.846,
    "legLengthM": 0.846,
    "walkSpeedMps": 1.32,
    "walkFastSpeedMps": 2.12,
    "runSpeedMps": 3.57,
-   "tris": 7417,
+   "tris": 7741,
    "slots": {
     "top": {
      "id": 2,
@@ -2519,7 +2519,7 @@
    "walkSpeedMps": 1.36,
    "walkFastSpeedMps": 2.19,
    "runSpeedMps": 3.68,
-   "tris": 7042,
+   "tris": 6799,
    "slots": {
     "top": {
      "id": 2,

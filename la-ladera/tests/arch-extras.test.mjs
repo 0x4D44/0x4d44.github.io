@@ -131,41 +131,46 @@ test('air-conditioners come in three kinds and five colours, each a function of 
   assert.ok(new Set(units.map((x) => x.r.col.join(','))).size >= 4, 'at least four colours');
   assert.ok(units.filter((x) => x.label === 'real').length >= 18, `${units.filter((x) => x.label === 'real').length} units on the real barrio`);
   for (const { bp, r } of units) {
-    const w = bp.windows.find((q) => q.side === 'front' && acLook(q.id).type === r.look && acLook(q.id).col.map((c) => +c.toFixed(2)).join(',') === r.col.join(',') && Math.abs((r.u0 + r.u1) / 2 - q.x) < q.w / 2 + 1.2);
-    assert.ok(w, `${bp.id}: a ${r.look} unit of colour ${r.col} is not the look of any window beside it`);
+    const w = bp.windows.find((q) => q.side === r.side && acLook(q.id).type === r.look && acLook(q.id).col.map((c) => +c.toFixed(2)).join(',') === r.col.join(',') && Math.abs((r.u0 + r.u1) / 2 - (r.side === 'front' || r.side === 'back' ? q.x : q.z)) < q.w / 2 + 1.2);
+    assert.ok(w, `${bp.id}: a ${r.look} unit of colour ${r.col} on the ${r.side} wall is not the look of any window beside it`);
   }
   assert.deepEqual(acLook('L00.w3'), acLook('L00.w3'));
+  assert.ok(units.filter((x) => x.label === 'real' && x.r.side !== 'front').length >= 20, 'the back and the side walls carry units too (round 6, R1-102)');
 });
+
+/** Where a wall's plane is, as `coveredBy` wants it: the axis along the wall, the way the wall looks (+1 / -1 along its normal), and the plane's distance from the middle of the building. */
+const wallOf = (S, side) => ({ dir: side === 'front' || side === 'back' ? 'x' : 'z', sign: side === 'front' || side === 'right' ? 1 : -1, half: (side === 'front' || side === 'back' ? S.D : S.W) / 2 });
 
 test('each kind of air-conditioner has the parts that make it that kind: a grille over a fan, a round fan, a window unit with louvres and a panel, and a line-set up the wall of some', () => {
   const seen = { split: 0, mini: 0, window: 0, lineSet: 0 };
   for (const { label, bp, r } of units) {
-    const ctx = SETS.find((s) => s[0] === label)[1], tris = localTris(ctx, bp), D = bp.shell.D / 2, u = (r.u0 + r.u1) / 2, name = `${label} ${bp.id} ${r.look}`;
+    const ctx = SETS.find((s) => s[0] === label)[1], tris = localTris(ctx, bp), u = (r.u0 + r.u1) / 2, name = `${label} ${bp.id} ${r.side} ${r.look}`, F = wallOf(bp.shell, r.side);
+    const cov = (o, mats, uu, yy) => coveredBy(tris, F.dir, F.sign * (F.half + o), F.sign, mats, uu, yy);         // the point (uu along the wall, yy) is covered by a triangle `o` m out from the wall, looking out
     if (r.look === 'split') {
       const y = r.y0 + 0.37, fc = u - 0.13;
-      assert.ok(coveredBy(tris, 'x', D + 0.345, 1, ['rail_metal'], fc + 0.12, y), `${name}: no dark guard over the fan`);
-      assert.ok(!coveredBy(tris, 'x', D + 0.345, 1, ['rail_metal'], fc + 0.17, y + 0.17), `${name}: the fan guard is a square, not a disc`);
-      assert.ok(coveredBy(tris, 'x', D + 0.349, 1, ['rail_metal'], fc + 0.025, y), `${name}: the fan has no hub`);
-      assert.ok(coveredBy(tris, 'x', D + 0.35, 1, ['rail_metal'], u + 0.27, y), `${name}: no vent strip`);
-      for (let i = 0; i < 4; i++) assert.ok(coveredBy(tris, 'x', D + 0.353, 1, ['door_metal'], u + 0.27, y - 0.15 + i * 0.1), `${name}: vent slat ${i} missing`);
+      assert.ok(cov(0.345, ['rail_metal'], fc + 0.12, y), `${name}: no dark guard over the fan`);
+      assert.ok(!cov(0.345, ['rail_metal'], fc + 0.17, y + 0.17), `${name}: the fan guard is a square, not a disc`);
+      assert.ok(cov(0.349, ['rail_metal'], fc + 0.025, y), `${name}: the fan has no hub`);
+      assert.ok(cov(0.35, ['rail_metal'], u + 0.27, y), `${name}: no vent strip`);
+      for (let i = 0; i < 4; i++) assert.ok(cov(0.353, ['door_metal'], u + 0.27, y - 0.15 + i * 0.1), `${name}: vent slat ${i} missing`);
       seen.split++;
       if (r.y1 > y + 0.5) {                                                                // the line-set: a white duct above the unit, ending in a dark hole
-        const up = [u + 0.28, u - 0.28].find((x) => coveredBy(tris, 'x', D + 0.047, 1, ['rail_metal'], x, y + 0.69));
+        const up = [u + 0.28, u - 0.28].find((x) => cov(0.047, ['rail_metal'], x, y + 0.69));
         assert.ok(up !== undefined, `${name}: a line-set was recorded but there is no hole at its top`);
-        assert.ok(coveredBy(tris, 'x', D + 0.045, 1, ['door_metal'], up, y + 0.4), `${name}: the line-set has no duct`);
+        assert.ok(cov(0.045, ['door_metal'], up, y + 0.4), `${name}: the line-set has no duct`);
         seen.lineSet++;
       }
     } else if (r.look === 'mini') {
       const y = r.y0 + 0.32;
-      assert.ok(coveredBy(tris, 'x', D + 0.255, 1, ['rail_metal'], u - 0.04 + 0.1, y), `${name}: no round fan`);
-      assert.ok(!coveredBy(tris, 'x', D + 0.255, 1, ['rail_metal'], u - 0.04 + 0.22, y) && !coveredBy(tris, 'x', D + 0.255, 1, ['rail_metal'], u - 0.04 + 0.125, y + 0.125), `${name}: the fan is a square, not a disc`);
-      assert.ok(coveredBy(tris, 'x', D + 0.259, 1, ['rail_metal'], u - 0.04 + 0.025, y), `${name}: the fan has no hub`);
+      assert.ok(cov(0.255, ['rail_metal'], u - 0.04 + 0.1, y), `${name}: no round fan`);
+      assert.ok(!cov(0.255, ['rail_metal'], u - 0.04 + 0.22, y) && !cov(0.255, ['rail_metal'], u - 0.04 + 0.125, y + 0.125), `${name}: the fan is a square, not a disc`);
+      assert.ok(cov(0.259, ['rail_metal'], u - 0.04 + 0.025, y), `${name}: the fan has no hub`);
       seen.mini++;
     } else {
       const y = r.y0 + 0.4;
-      for (let i = 0; i < 4; i++) assert.ok(coveredBy(tris, 'x', D + 0.348, 1, ['door_metal'], u - 0.05, y - 0.105 + i * 0.07), `${name}: louvre ${i} missing`);
-      assert.ok(coveredBy(tris, 'x', D + 0.345, 1, ['rail_metal'], u + 0.26, y + 0.1), `${name}: no control panel`);
-      assert.ok(coveredBy(tris, 'x', D + 0.012, 1, ['plaster_a'], u, y + 0.255) && coveredBy(tris, 'x', D + 0.012, 1, ['plaster_a'], u - 0.345, y), `${name}: no rendered band round the hole`);
+      for (let i = 0; i < 4; i++) assert.ok(cov(0.348, ['door_metal'], u - 0.05, y - 0.105 + i * 0.07), `${name}: louvre ${i} missing`);
+      assert.ok(cov(0.345, ['rail_metal'], u + 0.26, y + 0.1), `${name}: no control panel`);
+      assert.ok(cov(0.012, ['plaster_a'], u, y + 0.255) && cov(0.012, ['plaster_a'], u - 0.345, y), `${name}: no rendered band round the hole`);
       seen.window++;
     }
   }

@@ -15,6 +15,7 @@
 //   desc  - plain-language brief for the texture generator (what the real-world surface looks like)
 //   prio  - 1|2|3 generation order for the texture factory (1 = needed first)
 //   tri   - true: steep faces read the colour map from the side (engine/triplanar.js; ground_dirt, grass_patchy), for ground whose UVs are planar x-z
+//   room  - true: at night, from the street, a pane that carries a room seed shows a made-up room behind the glass (engine/windowroom.js; window_lit)
 //   glow  - emissive intensity at FULL NIGHT (the engine drives emissiveIntensity = glow * ctx.night); `window_lit` defaults to 2.4
 // The manifest entry may carry `tileScale` (< 1 when the processed swatch covers less than `tile` metres): repeat = 1 / (tile * tileScale).
 import * as THREE from 'three';
@@ -24,6 +25,7 @@ import arch from '../arch/matdefs.js';
 import interiors from '../interiors/matdefs.js';
 import people from '../people/matdefs.js';
 import { triplanar } from '../engine/triplanar.js';
+import { windowRoom, setRoomHour } from '../engine/windowroom.js';
 import { takePrefetched } from './assets.js';
 
 export const ALL_DEFS = { ...engine, ...world, ...arch, ...interiors, ...people };
@@ -136,6 +138,7 @@ export class MaterialLib {
       if (tex.map && d.alphaFromMap) m.transparent = true;
     }
     if (d.tri) triplanar(m);
+    if (d.room) { windowRoom(m); setRoomHour(m, this.ctx?.hour ?? 20); }        // the clock as it is now; engine/look.js setHour keeps it from here on
     this.cache.set(key, m);
     return m;
   }

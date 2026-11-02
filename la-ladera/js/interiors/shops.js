@@ -125,9 +125,9 @@ function dining(L, E, o) {
 
 /** A barber's chair facing its mirror on the service wall. It is placed under the room's walking rule (the aisle behind it stays >= 0.9 m; a chair that cuts the room is taken out
  *  again by healing, which is how L05 lost its only chair), so the gap to the wall closes from 0.12 m to 0.03 m before the chair gives up. */
-export function barberChair(L, sw) {
+export function barberChair(L, sw, at, others = []) {
   for (const gap of [0.12, 0.07, 0.03]) {
-    const ch = L.wall('barber_chair', sw, { flip: true, gap, noClear: true, prio: 1, awayDoors: true });
+    const ch = L.wall('barber_chair', sw, { flip: true, gap, noClear: true, prio: 1, awayDoors: true, ...(at != null ? { at } : {}), clearOf: others, clearBy: 0.55 });         // (0.55 m between two chairs: the barber walks between them)
     if (ch) return ch;
   }
   return null;
@@ -176,8 +176,7 @@ const FIT = {
     const c = counterAt(L, E, 'fridge_meat', sw, { shelfDepth: 0.3 });
     L.hang('meat_hooks', sw, { y: 1.65, jitter: 0.1 });
     any(() => L.wall('butcher_block', 'any', { prio: 1 }));
-    L.wall('fridge_drinks', 'any', { prio: 2 });
-    if (c) { L.top(c, 'phone_landline', { at: 'right' }); }
+    if (c) { L.top(c, 'phone_landline', { at: 'right' }); }                                  // (no drinks cooler: the butchers carried 112 bottles between them, R4-308)
     L.wall('bucket_big', 'any', { at: 'corner', prio: 2 });
     sign(L, 'sign_carne', sw); D(L, 'price_meat', 'any'); own(L, E, 'calendar_carne', 'any'); clock(L, E, 'any', {});
     E.shop = { counter: c };
@@ -188,8 +187,9 @@ const FIT = {
     const chairs = [];
     const mirror = (over) => L.hang('mirror_barber', sw, { over, y: 1.0, w: 1.2, h: 0.9, def: { ...CATALOG.mirror_barber, size: [1.2, 0.9, 0.03] }, deepOver: false });
     for (let k = 0; k < n; k++) {
+      const at = n > 1 ? (k + 0.5) / n : undefined;    // the chairs share the service wall out: two chairs 5 cm apart left the barber no room between them (R4-312)
       if (roomy) {                                     // a station under its mirror, the chair 0.55 m in front of it
-        const st = L.wall('barber_station', sw, { prio: 1 });
+        const st = L.wall('barber_station', sw, { prio: 1, at });
         if (!st) break;
         st.zones = [];                                 // the chair stands in the station's own clear zone
         mirror(st); L.top(st, 'bottles_group', { at: 'left' }); L.top(st, 'photo_frames', { at: 'right' });
@@ -197,7 +197,7 @@ const FIT = {
         const ch = L.at('barber_chair', cx, cz, st.ry + PI, { prio: 1, noClear: true }) ?? L.free('barber_chair', { near: [cx, cz], rad: 0.7, face: st, prio: 1, noClear: true });
         if (ch) { ch.flags = { barber: true }; chairs.push(ch); }
       } else {                                         // a narrow room has no counter: the chair faces its mirror on the wall at arm's length and the other wall stays the passage
-        const ch = barberChair(L, sw);
+        const ch = barberChair(L, sw, at, chairs);
         if (!ch) break;
         ch.flags = { barber: true }; chairs.push(ch); mirror(ch);
       }
@@ -221,6 +221,7 @@ const FIT = {
     any(() => L.wall('pipes_bundle', 'any', { prio: 2 }));
     any(() => L.wall('wheelbarrow', 'any', { prio: 2, at: 'corner' }));
     L.wall('bucket_big', 'any', { prio: 2 });
+    any(() => L.wall('broom', 'any', { prio: 2, at: 'corner' })); any(() => L.wall('mop_bucket', 'any', { prio: 2 }));          // what a hardware store sells besides tools: brooms and mops (the goods library has four hardware articles, R4-308)
     sign(L, 'sign_ferre', sw); D(L, 'price_ferre', 'any'); own(L, E, 'calendar_ferre', 'any'); clock(L, E, 'any', {});
     E.shop = { counter: c };
   },
@@ -318,6 +319,7 @@ const FIT = {
     E.shop = { counter: c, bench: cb };
   },
   taller(L, E, hh, sw) {
+    if (/solda/i.test(E.bp.lot?.name ?? '')) return soldadura(L, E, hh, sw);          // 'Taller de Soldadura El Chispa' is a welder's, not a motorbike mechanic's (R4-307)
     const rng = L.rng;
     for (let k = 0; k < (L.W * L.D > 18 ? 2 : 1); k++) any(() => L.free('motorbike', { rad: Math.max(L.W, L.D) / 2, prio: 1, rys: L.W >= L.D ? [0, PI] : [PI / 2, -PI / 2] }));
     any(() => L.wall('workbench_metal', sw, { prio: 0 })); any(() => L.wall('tool_cabinet_roll', 'any', { prio: 1 }));
@@ -329,6 +331,26 @@ const FIT = {
     E.shop = { counter: null };
   },
 };
+
+/** A welder's workshop, for a lot whose name says so ('Taller de Soldadura El Chispa'), from the library's own pieces: the metal bench with the pegboard over it (a second bench in a big room), the two gas
+ *  bottles stood together in a corner by the bench, bar stock (the pipes bundle) along a wall, the tool cabinet with the radio on it, the parts shelf, the quench drum, the tin of anticorrosive paint and the
+ *  bucket. No motorbike and no tyres: those are the mechanic's next door (R4-307). */
+function soldadura(L, E, hh, sw) {
+  const bench = any(() => L.wall('workbench_metal', sw, { prio: 0 }), () => L.wall('workbench_metal', 'any', { prio: 0 }));
+  if (L.W * L.D > 18) any(() => L.wall('workbench_metal', 'any', { prio: 1, awayDoors: true }));
+  const first = any(() => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner', ...(bench ? { near: bench, nearW: 1 } : {}) }), () => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner' }));
+  any(() => (first ? L.wall('gas_cylinder', first.wallSide, { prio: 1, near: first, nearW: 8 }) : null), () => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner' }));
+  any(() => L.wall('pipes_bundle', 'any', { prio: 1 }));
+  const cab = any(() => L.wall('tool_cabinet_roll', 'any', { prio: 1 }));
+  if (cab) L.top(cab, 'radio_boombox', { at: 'center' });
+  any(() => L.wall('parts_shelf', 'any', { prio: 1 }));
+  any(() => L.wall('oil_drum', 'any', { prio: 2, at: 'corner' }));
+  any(() => L.wall('paint_cans_stack', 'any', { prio: 2, at: 'corner' }));
+  L.wall('bucket_big', 'any', { prio: 2, at: 'corner' });
+  if (bench) L.hang('tool_pegboard', 'any', { y: 1.15, over: bench });
+  sign(L, 'sign_soldadura', sw); own(L, E, 'calendar_ferre', 'any'); art(L, E, 'sport', 'any'); D(L, 'price_solda', 'any'); clock(L, E, 'any', {});
+  E.shop = { counter: null };
+}
 
 export function shopRoom(L, E, hh) {
   const type = E.forceShop && FIT[E.forceShop] ? E.forceShop : E.bp.lot?.shop && FIT[E.bp.lot.shop] ? E.bp.lot.shop : 'tienda';

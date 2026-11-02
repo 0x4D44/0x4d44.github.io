@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { createSky } from './sky.js';
 import { installShaderPatches, lookUniforms } from './shaderpatch.js';
 import { clamp } from '../core/util.js';
+import { setRoomHour } from './windowroom.js';
 
 const D2R = Math.PI / 180;
 /** La Ladera sits near 6 deg N (Andean Colombia); declination -13 deg = late October. */
@@ -168,7 +169,7 @@ export class Look {
     st.exposure = p.exp; st.bloomThreshold = p.bloomT; st.bloomStrength = p.bloomS; st.saturation = p.sat;
     this.envDirty = true;
     this._applyLights();
-    for (const m of ctx.matlib?.glowing ?? []) m.emissiveIntensity = st.night ** 0.8 * (m.userData.glow ?? 2.4);
+    for (const m of ctx.matlib?.glowing ?? []) { m.emissiveIntensity = st.night ** 0.8 * (m.userData.glow ?? 2.4); setRoomHour(m, h); }   // a lit room's evening follows the clock (engine/windowroom.js)
     if (!silent) ctx.events.emit('time:change', { hour: h, night: st.night });
   }
 

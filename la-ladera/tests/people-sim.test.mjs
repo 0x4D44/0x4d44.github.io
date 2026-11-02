@@ -340,6 +340,51 @@ test('the sidestep has its chance first: a walker it frees (slow along a wall, 1
   assert.ok(npc.z > 1, `${npc.z.toFixed(1)} m on along the wall`);
 });
 
+// The pinch of the 21:00 soak (n29 and the child n44 at (-34.0, 49.9, y3.6)), in the page's own world: the pavement of the hill street runs along two buildings that front one line with a 1.2 m alley between them, the
+// child bounces on the lane, and the walker, held off him by his push, stands at the mouth of the alley with the building corner 0.5 m behind it. The sidestep was a coin flip: one side was the corner, and for
+// 5 seeds in 12 it stood there until `unstick`.
+const PINCH_WAY = [[-32.44, 51.15], [-34.33, 50.68], [-38.14, 49.76], [-40.18, 50.26], [-42.27, 49.75]];
+const pinchRun = (seed, child = true) => {
+  for (const [id] of ph.doors) ph.setDoor(id, false);
+  const gy = (x, z) => ph.groundAt(x, z, 99), kid = { x: -34.13, z: 50.57, y: gy(-34.13, 50.57), mode: 'idle', moving: false };
+  kid.st = { x: kid.x, y: kid.y, z: kid.z };
+  const w = { t: 0, unstuck: 0, near: () => (child ? [kid] : []), physics: ph, brain: { next() {}, unstick(n) { w.unstuck++; n.stuckT = 1.5; } } };
+  const npc = new Npc({ id: 'n29', rng: makeRng(seed).fork('n29') });
+  let arrived = false; npc.place(-31.2, gy(-31.2, 51.45), 51.45, 0); npc.walk(w, PINCH_WAY.map(([x, z]) => ({ x, y: gy(x, z), z })), () => { arrived = true; }, 1.3);
+  for (let t = 0; t < 40 && !arrived; t += 0.05) { npc.step(0.05, w); w.t += 0.05; }
+  return { arrived, t: w.t, unstuck: w.unstuck, x: npc.x, z: npc.z };
+};
+test('a walker pinched between the corner of a building and somebody standing on the pavement sidesteps away from the wall, whatever the coin says (the 21:00 soak, n29 and the child n44)', () => {
+  assert.ok(pinchRun(1, false).arrived, 'with nobody there the way is open (the walls leave a way)');
+  const bad = [];
+  for (let seed = 1; seed <= 12; seed++) { const r = pinchRun(seed); if (!r.arrived || r.unstuck) bad.push(`seed ${seed}: ${r.arrived ? 'got through' : 'stood at'} (${r.x.toFixed(1)}, ${r.z.toFixed(1)}) after ${r.t.toFixed(0)} s, ${r.unstuck} calls to unstick`); }
+  assert.deepEqual(bad, [], 'every seed got past the child without an unstick');
+});
+
+// A push must not take a walker over an edge (13.6 h of the 12:00 soak: n39 and n83 met head-on on the flight at (-26, -19.5), both slipped east, which is open, and n39 stepped off it, 0.4 m down onto a bank too steep to climb
+// back; it stood there for 12 s and three calls to `unstick`). A platform 0.7 m up with its east edge at x = 0 and nothing to stop a body there; the walker goes along it 0.35 m from the edge, pushed toward it by the
+// sidestep, or by somebody who stands close on its west side.
+const edgeRun = (how) => {
+  const phys = new Physics(); phys.setTerrain(() => 0);
+  phys.addFloor({ pts: [[-6, -9], [0, -9], [0, 9], [-6, 9]], y: 0.7 });
+  const o = { x: -0.7, z: -2, y: 0.7, mode: 'idle', moving: false, st: { x: -0.7, y: 0.7, z: -2 } };       // 0.35 m west of the walker's line: his push is 1.1 m/s toward the edge as the walker passes
+  const w = { t: 0, near: () => (how === 'neighbour' ? [o] : []), physics: phys, brain: { next() {}, unstick() {} } }, npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
+  npc.place(-0.35, 0.7, -5, 0); npc.walk(w, [{ x: -0.35, y: 0.7, z: -4.5 }, { x: -0.35, y: 0.7, z: 5 }], null, 1.3);
+  if (how === 'sidestep') { npc.sidestep = 4; npc.sideDir = -1; }                // the lateral is (-uz, ux) * sideDir and the walker goes south (+z): -1 is east
+  let low = Infinity;
+  for (let t = 0; t < 9 && npc.mode === 'walk'; t += 0.05) { npc.step(0.05, w); w.t += 0.05; low = Math.min(low, npc.y); }
+  return { low, z: npc.z, mode: npc.mode };
+};
+test('a push (the sidestep, a neighbour close on the other side) never takes a walker over an edge, and the walker goes on along its way', () => {
+  const calm = edgeRun('none');
+  assert.ok(calm.low > 0.69 && calm.mode === 'idle', `with nothing pushing it the walker keeps to the platform and gets to the end (lowest ${calm.low.toFixed(2)}, ${calm.mode})`);
+  for (const how of ['sidestep', 'neighbour']) {
+    const r = edgeRun(how);
+    assert.ok(r.low > 0.69, `${how}: the walker stepped off the edge (lowest y ${r.low.toFixed(2)}, the platform is at 0.7)`);
+    assert.equal(r.mode, 'idle', `${how}: and it got to the end of its way (z ${r.z.toFixed(1)})`);
+  }
+});
+
 test('a waypoint under somebody who stands there is skipped once the walker has been held off it for a second; a tight point (furniture) and a door are not', () => {
   const stander = { x: 3.0, z: 0, y: 0, mode: 'idle', moving: false, st: { x: 3.0, y: 0, z: 0 } };      // on the phone in the road, 0.6 m short of the first waypoint: his push holds the walker 0.5 m off him, 1.1 m off the point
   const run = (first) => {

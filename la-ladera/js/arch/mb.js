@@ -40,7 +40,8 @@ export function qd(b, key, a, bb, c, d, want, o = {}) {
 /** Triangle a,b,c wound so that the face looks along `want` (a direction vector), whatever order the points came in. */
 export function triFacing(b, key, a, bb, c, want, o = {}) {
   const n = cross(sub(bb, a), sub(c, a));
-  if (dot(n, want) < 0) b.tri(key, a, c, bb, o); else b.tri(key, a, bb, c, o);
+  if (dot(n, want) < 0) b.tri(key, a, c, bb, o.uv ? { ...o, uv: [o.uv[0], o.uv[1], o.uv[4], o.uv[5], o.uv[2], o.uv[3]] } : o);       // explicit uv follow their vertices when the pair swaps
+  else b.tri(key, a, bb, c, o);
 }
 
 /** The points of an arched head over an opening u0..u1 whose top is at yb: [u, y] from the springing on the left over the apex to the springing on the right (a half circle when the rise is half the width, else a half ellipse). */
@@ -112,4 +113,16 @@ export function hash01(str, n = 0) {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
   return (h >>> 0) / 4294967296;
+}
+
+// ---- the evening of a lit window (engine/windowroom.js reads it in the shader; R1-104) --------------------------------------------------------------------------------------------------------------
+/** When the lights of a lived-in room come on (clock hours) and go off (hours past midnight are 24+; 99 = on all night). A room draws one of each, so a street does not switch as one. */
+export const ROOM_ON = [17.5, 17.9, 18.3, 18.7, 19.1, 19.6, 20.1, 20.7];
+export const ROOM_OFF = [21.75, 22.25, 22.75, 23.5, 24, 24.5, 25.5, 99];
+/** The first colour channel of a pane that shows a room: 2 + (8 x the slot it comes on in + the slot it goes off in) + 0.999 x its look. a, b, c in 0..1 (hashes): the two slots, the look. */
+export function roomSeed(a, b, c) { return 2 + 8 * Math.min(7, Math.floor(a * 8)) + Math.min(7, Math.floor(b * 8)) + 0.999 * c; }
+/** Is the room of a pane whose first colour channel is `code` lit at clock hour `h`? (The shader's rule, in JS: hours before noon count as the end of the evening before.) */
+export function roomLitAt(code, h) {
+  const k = Math.floor(code - 2 + 0.0005), e = h < 12 ? h + 24 : h;
+  return e >= ROOM_ON[Math.floor(k / 8)] && e < ROOM_OFF[k % 8];
 }

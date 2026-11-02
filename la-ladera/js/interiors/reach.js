@@ -1,6 +1,6 @@
 // Standing spots in a furnished room (shared by the anchors in index.js and the interactables / discoveries in stories.js):
 // a point is standable when it is inside the room (0.3 m off the walls), clear of furniture and stair openings, and connected to a door.
-import { obbDist, segObb } from './layout.js';
+import { obbDist, segObb, mkObb } from './layout.js';
 
 /** The free floor point nearest the room centre that is at least `clear` metres from every blocker (or null). */
 export function freePoint(L, clear = 0.55, conn = L.connectivity()) {
@@ -42,6 +42,33 @@ const EYE = 1.6, LEAD = 0.35, LEAD_WALL = 0.75;                 // (the eye of a
 
 /** Nearest standable point to (x,z) within `rad` metres, or null. */
 export const snapStand = (L, x, z, conn, rad) => L.snapStand(x, z, conn, rad);
+
+/** How near a walker's centre may pass a keeper at his post (people/sim.js AISLE: a walker is pushed off a way that passes nearer a standing person, and a customer pushed off the aisle stood against the counter for ever, L61). */
+export const KEEPER_AISLE = 0.8;
+/**
+ * The floor of the room a customer can walk to from the street without passing the keeper at `post` ([x, z], the room frame): the free floor of the room (a body `inflate` wide, the anchors' own 0.34 m) with
+ * the keeper and KEEPER_AISLE round him taken out, flooded from the doors `isStreet(landing)` says are the street's. `has(x, z)` asks whether (x, z) is within 0.4 m of that floor (the reach `standable` allows a spot).
+ * The counter of a narrow shop leaves the customers a strip no body can stand in, and the spot a customer's anchor then snaps to may lie past the counter's end, where only the keeper's lane leads (L58, a 2.4 m
+ * butcher's: the second spot was reached down the lane the keeper stands in, the way in 0.05 m from his post): that is no customer spot. Null when there is nothing to judge by (no street door with floor to stand on).
+ */
+export function customerFloor(L, post, isStreet, inflate = 0.34) {
+  const half = KEEPER_AISLE - inflate, keeper = { floor: true, block: true, ob: mkObb(post[0], post[1], 2 * half, 2 * half, 0) };      // (a box `inflate` short of the aisle on each side: the flood grows every blocker by that much)
+  L.items.push(keeper);
+  let c; try { c = L.connectivity(inflate); } finally { L.items.pop(); }
+  const street = new Set(); c.srcs.forEach((s, k) => { if (c.ids[k] >= 0 && isStreet(s.l)) street.add(c.ids[k]); });
+  if (!street.size) return null;
+  return {
+    has(x, z, cells = 4) {
+      const [ix, iz] = c.cellOf(x, z);
+      for (let rad = 0; rad <= cells; rad++) for (let dz = -rad; dz <= rad; dz++) for (let dx = -rad; dx <= rad; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== rad) continue;
+        const X = ix + dx, Z = iz + dz;
+        if (X >= 0 && Z >= 0 && X < c.nx && Z < c.nz && street.has(c.comp[Z * c.nx + X])) return true;
+      }
+      return false;
+    },
+  };
+}
 
 /**
  * A spot just OUTSIDE an item's outline from where a person can use it (the interaction targeting rejects a target whose line of sight

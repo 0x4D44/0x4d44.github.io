@@ -4,9 +4,11 @@
 // more doors than seem necessary" (19 rooms, 18 doors: a loop on each of its three floors).
 //  * the census runs over all 109 buildings of the barrio and over the test lots, which cover every layout kind and a spread of plots;
 //  * a loop is allowed only where the plan calls for one: the layout says so with `S.loops = '<why>'` (state.js `budgetDoors`), and only the cloister of a school does;
-//  * wet rooms have one door (a toilet block's washroom is the one exception: its doors lead to its own cubicles), bedrooms at most two (the second leads on to the next room of the
-//    same household: the stair column reaches only the front of a storey, so the rooms behind it are reached through the ones before them; a third is allowed only when it and
-//    the second are the bedroom's own bath and utility room, as in the back band of a wide casa patio), and no room but a hall has more than four;
+//  * wet rooms have one door (a toilet block's washroom is the one exception: its doors lead to its own cubicles), and no room but a hall has more than four;
+//  * a bedroom is a LEAF of the door tree, never a way through (round 6, R4-301 / R4-302 / R1-101, the owner's own "strange layout": 83 floors had their only bathroom behind a bedroom, 41
+//    behind two, 40 bedrooms were reached only through another bedroom, and all 50 flats were railroads, hall - living - the one bedroom - kitchen - bath): a bedroom has one door to another
+//    room, and no room of any kind is reached only through a bedroom. The way in is the stair, the entry or a door to the street; the bath, the kitchen and the other bedrooms hang
+//    from a hub (the landing, a hall, a corridor or the living room). The plans were drawn to give that (layouts.js `privateFloor`, `flatHome`, `layoutApartments`);
 //  * no two door leaves swing over each other (doors that open straight onto each other: 79 pairs in 68 of the 109 buildings, every one beside a loop); the cubicle doors of a school's toilet
 //    block, which open into their 1 m passage, are the one exception.
 // node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/arch-doorbudget.test.mjs
@@ -53,19 +55,33 @@ function loops(bp) {
   }
   return out;
 }
-/** Wet rooms, bedrooms and crossroads: the rooms with more doors than the rule gives them. */
+/** Wet rooms, bedrooms and crossroads: the rooms with more doors than the rule gives them (a bedroom is a leaf: one door to another room; an outside door does not count against it). */
 function crowded(bp) {
   const out = [];
   for (const r of bp.rooms) {
     const n = doorsOf(bp, r).length;
     if (r.type === 'bathroom' && r.tag !== 'wash' && n !== 1) out.push(`${r.id} bathroom has ${n} doors`);
-    else if (r.type === 'bedroom' && n > 2) {                                // the third door is the bedroom's own bath and utility room (the back band of a wide casa patio), both leaves
-      const leaves = doorsOf(bp, r).map((d) => bp.rooms.find((q) => q.id === d.rooms.find((id) => id && id !== r.id))).filter((q) => ['bathroom', 'laundry', 'backroom'].includes(q.type) && doorsOf(bp, q).length === 1);
-      if (n > 3 || leaves.length < 2) out.push(`${r.id} bedroom has ${n} doors (${leaves.length} of them to its own bath or utility room)`);
-    }
+    else if (r.type === 'bedroom') { const inner = doorsOf(bp, r).filter(between).length; if (inner > 1) out.push(`${r.id} bedroom has ${inner} doors to other rooms (a bedroom is a leaf)`); }
     else if (n > MAX_DOORS && !CIRCULATION.has(r.type) && r.type !== 'patio' && r.tag !== 'wash') out.push(`${r.id} ${r.type} has ${n} doors`);
   }
   return out;
+}
+/** The rooms reached only through a bedroom. The way in is the stair (its landing or well), an entry hall or a door to the street; from there a bedroom is entered but never left (not even a bedroom
+ *  with a street door of its own). A room with no door is `stranded`'s business, and a roof terrace is not judged (the stair head's door is not a way in). */
+function behindBedrooms(bp) {
+  const adj = new Map(bp.rooms.map((r) => [r.id, []])), type = new Map(bp.rooms.map((r) => [r.id, r.type])), roots = new Set();
+  for (const d of bp.doors) {
+    if (between(d)) { adj.get(d.rooms[0]).push(d.rooms[1]); adj.get(d.rooms[1]).push(d.rooms[0]); }
+    else if (!d.roof) roots.add(d.rooms[0] || d.rooms[1]);
+  }
+  for (const r of bp.rooms) if (['stairwell', 'landing', 'entry'].includes(r.type)) roots.add(r.id);
+  const seen = new Set(roots), queue = [...roots];
+  while (queue.length) {
+    const c = queue.shift();
+    if (type.get(c) === 'bedroom') continue;
+    for (const n of adj.get(c)) if (!seen.has(n)) { seen.add(n); queue.push(n); }
+  }
+  return bp.rooms.filter((r) => !r.outdoor && r.type !== 'terrace' && adj.get(r.id).length && !seen.has(r.id));
 }
 /** Pairs of door leaves (arches have none) on one floor whose swing squares overlap by more than 2 dm2: two doors that open onto each other. `toilets` marks the pairs that both belong to one washroom. */
 function swings(bp) {
@@ -114,11 +130,25 @@ test('the interior doors of a floor are a tree: a door never joins two rooms tha
   assert.deepEqual(bad, []);
 });
 
-test('a wet room has one door (a toilet block\'s washroom, the passage to its cubicles, excepted); a bedroom at most two; only a hall has more than four', () => {
+test('a wet room has one door (a toilet block\'s washroom, the passage to its cubicles, excepted); a bedroom one door to another room; only a hall has more than four', () => {
   let wash = 0, baths = 0, bedrooms = 0;
   for (const { bp } of ALL) for (const r of bp.rooms) { if (r.type === 'bathroom') { baths++; if (r.tag === 'wash') wash++; } else if (r.type === 'bedroom') bedrooms++; }
   assert.ok(wash >= 2 && baths > 250 && bedrooms > 300, `rooms to look at: ${baths} bathrooms (${wash} washrooms), ${bedrooms} bedrooms`);
   assert.deepEqual(ALL.flatMap(({ tag, bp }) => crowded(bp).map((s) => `${tag} ${s}`)), []);
+});
+
+test('a bedroom is a leaf, never a way through: no bathroom, kitchen or other bedroom is reached only through a bedroom, in the barrio, its flats and the test lots (R4-301, R4-302, R1-101)', () => {
+  const bad = [];
+  let floors = 0, flats = 0, bedrooms = 0, baths = 0;
+  for (const { tag, bp } of ALL) {
+    flats += bp.rooms.filter((r) => r.unit && r.type === 'bedroom').length;
+    bedrooms += bp.rooms.filter((r) => r.type === 'bedroom').length;
+    baths += bp.rooms.filter((r) => r.type === 'bathroom').length;
+    floors += new Set(bp.rooms.filter((r) => r.type === 'bedroom').map((r) => r.floor)).size;
+    for (const r of behindBedrooms(bp)) bad.push(`${tag} ${bp.id} ${tail(r.id)} ${r.type} is reached only through a bedroom`);
+  }
+  assert.ok(floors > 200 && flats >= 50 && baths > 250, `rooms to look at: ${floors} floors with bedrooms, ${flats} flats, ${baths} bathrooms (${bedrooms} bedrooms)`);
+  assert.deepEqual(bad, []);
 });
 
 test('no two door leaves swing over each other (a toilet block\'s cubicle doors, which open into their passage, excepted)', () => {
@@ -131,13 +161,13 @@ test('the budget removes loops, never the way in: every indoor room has a door a
   assert.deepEqual(ALL.flatMap(({ tag, bp }) => stranded(bp).map((s) => `${tag} ${s}`)), []);
 });
 
-test('TEETH: each check finds the fault planted in a copy of L08 Droguería La Salud (and L08 itself is clean)', () => {
+test('TEETH: each check finds the fault planted in a copy of L08 Droguería La Salud and of the L06 flats (and both are clean)', () => {
   const l08 = real.buildings.find((b) => b.id === 'L08'), room = (id) => l08.rooms.find((r) => r.id === id);
   assert.ok(l08 && l08.rooms.length === 19, 'L08 has its 19 rooms');
   const mk = (extra, drop = []) => ({ ...l08, doors: [...l08.doors.filter((d) => !drop.includes(d.id)), ...extra] });
   const door = (id, a, b, o = {}) => ({ ...l08.doors.find((d) => d.kind === 'interior' && d.rooms.every(Boolean)), id, rooms: [a, b], floor: room(a).floor, ...o });
-  // L08 as planned: a tree on every floor, one door to each bathroom, nothing stranded
-  assert.deepEqual([duplicates(l08), loops(l08).undeclared, crowded(l08), stranded(l08)], [[], [], [], []]);
+  // L08 as planned: a tree on every floor, one door to each bathroom, every bedroom a leaf and nothing behind one, nothing stranded
+  assert.deepEqual([duplicates(l08), loops(l08).undeclared, crowded(l08), behindBedrooms(l08), stranded(l08)], [[], [], [], [], []]);
   // a second door between the dining room and the kitchen: a duplicate pair, and a loop
   const dup = mk([door('L08.x1', 'L08.f1.r2', 'L08.f1.r3')]);
   assert.equal(duplicates(dup).length, 1);
@@ -148,15 +178,25 @@ test('TEETH: each check finds the fault planted in a copy of L08 Droguería La S
   // a loop the plan declares (every door of the ring marked) is counted as declared, not as a fault (the kind decides whether it may be one)
   const ring = { ...l08, doors: [...l08.doors.map((d) => (['L08.d7', 'L08.d8'].includes(d.id) ? { ...d, loop: 'cloister' } : d)), door('L08.x3', 'L08.f1.r1', 'L08.f1.r2', { loop: 'cloister' })] };
   assert.deepEqual([loops(ring).undeclared.length, loops(ring).declared.length], [0, 1]);
-  // a second door into a bathroom, a third into a bedroom, a fifth into a shop
+  // a second door into a bathroom, a door between the two bedrooms of the top floor (each is no longer a leaf), a fifth into a shop
   assert.deepEqual(crowded(mk([door('L08.x4', 'L08.f1.r4', 'L08.f1.r0')])), ['L08.f1.r4 bathroom has 2 doors']);
-  assert.deepEqual(crowded(mk([door('L08.x5', 'L08.f2.r2', 'L08.f2.r1')])), ['L08.f2.r2 bedroom has 3 doors (0 of them to its own bath or utility room)']);
+  assert.deepEqual(crowded(mk([door('L08.x5', 'L08.f2.r1', 'L08.f2.r3')])), ['L08.f2.r1 bedroom has 2 doors to other rooms (a bedroom is a leaf)', 'L08.f2.r3 bedroom has 2 doors to other rooms (a bedroom is a leaf)']);
   assert.ok(crowded(mk([door('L08.x6', 'L08.f0.r2', 'L08.f0.r0'), door('L08.x7', 'L08.f0.r2', 'L08.f0.r1')])).some((s) => s.startsWith('L08.f0.r2 shop has 5 doors')));
+  // the bathroom of the top floor opening onto the bedroom instead of the living room (the owner's complaint: landing - bedroom - bedroom - bath), and a bedroom reached through the other one
+  const bathBehind = mk([door('L08.x9', 'L08.f2.r1', 'L08.f2.r4')], ['L08.d15']);
+  assert.deepEqual(behindBedrooms(bathBehind).map((r) => r.id), ['L08.f2.r4']);
+  assert.deepEqual(stranded(bathBehind), [], 'the bath is reached, only through a bedroom: the budget alone would not see it');
+  assert.deepEqual(behindBedrooms(mk([door('L08.x10', 'L08.f2.r1', 'L08.f2.r3')], ['L08.d14'])).map((r) => r.id), ['L08.f2.r1']);
+  // a flat as a railroad (hall - living - the one bedroom - kitchen - bath: the 50 flats of the barrio before round 6), made of L06's first flat, then left alone as planned
+  const l06 = real.buildings.find((b) => b.id === 'L06'), rail = { ...l06, doors: [...l06.doors.filter((d) => d.id !== 'L06.d3'), { ...l06.doors.find((d) => d.id === 'L06.d2'), id: 'L06.x1', rooms: ['L06.f0.r3', 'L06.f0.r4'] }] };
+  assert.deepEqual([duplicates(l06), loops(l06).undeclared, crowded(l06), behindBedrooms(l06), stranded(l06)], [[], [], [], [], []]);
+  assert.deepEqual(behindBedrooms(rail).map((r) => `${r.type} ${tail(r.id)}`), ['kitchen f0.r4', 'bathroom f0.r5']);
+  assert.deepEqual(crowded(rail), ['L06.f0.r3 bedroom has 2 doors to other rooms (a bedroom is a leaf)']);
   // a second leaf that swings over the landing's door of the bedroom floor: two doors that open onto each other
   assert.deepEqual(swings(l08), []);
   assert.deepEqual(swings(mk([door('L08.x8', 'L08.f2.r1', 'L08.f2.r2', { clear: l08.doors.find((d) => d.id === 'L08.d13').clear })])).map((s) => `${s.p.id}/${s.q.id}/${s.toilets}`), ['L08.d13/L08.x8/false']);
   // the doors of the bathroom taken away: a room nobody can enter
-  assert.deepEqual(stranded(mk([], ['L08.d16'])).filter((s) => s.includes('f2.r4')), ['L08.f2.r4 bathroom has no door']);
+  assert.deepEqual(stranded(mk([], ['L08.d15'])).filter((s) => s.includes('f2.r4')), ['L08.f2.r4 bathroom has no door']);
   // the doors of the stair landing taken away: a group of rooms with no way to the stair or the street
   assert.ok(stranded(mk([], ['L08.d12', 'L08.d13'])).some((s) => s.includes('floor 2: a group of rooms')));
 });

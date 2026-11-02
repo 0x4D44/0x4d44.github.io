@@ -172,6 +172,7 @@ const PAINT = {
   price_shoes: priceBoard('ZAPATERÍA', 'Arreglos', [['Media suela', '$18.000'], ['Tacón (par)', '$8.000'], ['Cremallera', '$12.000'], ['Pegar suela', '$10.000'], ['Limpiada', '$3.000'], ['Cordones (par)', '$2.000'], ['Tintura', '$15.000'], ['Plantillas', '$7.000']]),
   price_minutos: priceBoard('MINUTOS', 'Tarifas por minuto', [['A celular', '$200'], ['A fijo', '$100'], ['A Venezuela', '$450'], ['A España', '$500'], ['Internet (hora)', '$2.000'], ['Recarga mínima', '$2.000'], ['Impresión', '$300'], ['Fotocopia', '$100']]),
   price_modista: priceBoard('MODISTA', 'Arreglos y confección', [['Ruedo de pantalón', '$6.000'], ['Cambio de cierre', '$10.000'], ['Entallar camisa', '$12.000'], ['Arreglo de falda', '$8.000'], ['Vestido a medida', '$90.000'], ['Uniforme escolar', '$45.000'], ['Bordado', '$15.000'], ['Botones', '$1.000']]),
+  price_solda: priceBoard('SOLDADURA', 'Rejas, portones y estructuras', [['Reja de ventana (m²)', '$95.000'], ['Portón sencillo', '$480.000'], ['Reparar una reja', '$25.000'], ['Escalera metálica', '$190.000'], ['Soldadura (hora)', '$15.000'], ['Corte y doblez', '$8.000'], ['Anticorrosivo', '$12.000'], ['Presupuesto', 'gratis']]),
   price_taller: priceBoard('TALLER', 'Servicio de motos', [['Cambio de aceite', '$25.000'], ['Pinchazo', '$8.000'], ['Kit de arrastre', '$60.000'], ['Frenos', '$30.000'], ['Sincronización', '$55.000'], ['Lavado', '$10.000'], ['Bujía', '$12.000'], ['Revisión', '$15.000']]),
   barber_pole(g, w, h) {                                                       // the striped pole of every barber, behind glass
     bg(g, w, h, '#2a2a30'); const cap = h * 0.09;
@@ -195,6 +196,7 @@ const PAINT = {
   sign_papel: board({ bg: '#1f5fa8', fg: '#ffffff', fg2: '#ffe27a', title: 'PAPELERÍA', sub: 'Útiles · Copias · Impresiones', border: '#ffe27a' }),
   sign_modista: board({ bg: '#8a2a62', fg: '#fff0f6', fg2: '#ffd0e8', title: 'MODISTA', sub: 'Arreglos y confección', border: '#ffd0e8' }),
   sign_zapa: board({ bg: '#3a2a1c', fg: '#ffe9a8', fg2: '#f4e8d0', title: 'ZAPATERÍA', sub: 'Remontamos su calzado', border: '#c8a050' }),
+  sign_soldadura: board({ bg: '#2a2a2e', fg: '#ff9a3a', fg2: '#e8e8e8', title: 'TALLER DE SOLDADURA', sub: 'Rejas · Portones · Estructuras', border: '#ff9a3a' }),
   sign_taller: board({ bg: '#2a2a2e', fg: '#ffd23a', fg2: '#e8e8e8', title: 'TALLER DE MOTOS', sub: 'Mecánica · Frenos · Llantas', border: '#ffd23a' }),
   sign_tinto: board({ bg: '#2a1c14', fg: '#f2d050', fg2: '#f4e8d0', title: 'TINTO', sub: '$1.200 · pan y buñuelo', border: '#6b4226' }),
   sign_pan: board({ bg: '#7a3a1a', fg: '#f8e0a0', fg2: '#f4e8d0', title: 'PANADERÍA', sub: 'Pan caliente todo el día', border: '#d8a050', f: F.serif, f2: F.serif }),

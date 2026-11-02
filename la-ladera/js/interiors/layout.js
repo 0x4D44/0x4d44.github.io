@@ -9,6 +9,12 @@ const PI = Math.PI;
 const r2 = (v) => Math.round(v * 1000) / 1000;
 /** How far from a roof door's landing point (`entrance.outside`) the deck stays free of furniture: the disc a person steps onto when the door opens. */
 export const ROOF_CLEAR = 0.9;
+/** How deep in front of a doorway, from the room's inner face, the floor stays clear of furniture. A body 0.3 m in radius that walks in straight from the door plane and stops 0.5 m past it (R2a's walk,
+ *  A2's doorwalk) has its front 0.8 m past the plane: 0.745 m from the face of an 0.11 m wall, and a piece may reach 1 cm into a keep-out, and the walk's own slack is 1 cm: 0.77 m. The lane was 0.75 m
+ *  (a leaf that swings away) and 0.7 m (the relaxed and swept keep-outs): a trunk's end 0.8 m past the plane stopped the walker 3 mm short in 6 doors of the barrio, at 0.1275 m off the middle of
+ *  the opening. No deeper than that: at 0.85 m the 2.02 x 1.41 m rowhouse bathroom (door in the middle of the short wall) loses its basin, for the shower, the toilet and the basin fill the 2.02 m
+ *  wall only with a lane of about 0.77 m or less (six rooms of the barrio). */
+export const DOOR_LANE = 0.77;
 
 /** Geometry of one wall of a rect: along axis, extent, the wall coordinate, inward normal and the facing of items against it. */
 export function wallInfo(rect, wall) {
@@ -193,8 +199,8 @@ export class Layout {
       const w = d.w ?? 0.9, leaf = d.kind !== 'arch' && d.kind !== 'shutter';
       let swingIn = leaf;                                // unknown swing: assume the leaf sweeps into this room (conservative)
       if (leaf && d.swing != null && d.rooms) swingIn = d.rooms[d.swing] === room.id;
-      const depth = d.kind === 'shutter' ? 0.9 : (swingIn ? w + 0.08 : 0.75);
-      this._opening(s.wall, s.u - w / 2, s.u + w / 2, depth, 'door', { door: d.id, h: d.h ?? 2.1 });
+      const depth = d.kind === 'shutter' ? 0.9 : (swingIn ? w + 0.08 : DOOR_LANE);
+      this._opening(s.wall, s.u - w / 2, s.u + w / 2, depth, 'door', { door: d.id, h: d.h ?? 2.1, swingIn });
       // the street door: the first 3 m straight in stay free (the tour test and every first-time visitor walk in along it)
       const ent = (bp.entrances ?? []).find((e) => e.doorId === d.id);
       if (ent?.inside && bp.frame?.toLocal) {                   // only the room the visitor steps into
@@ -223,7 +229,7 @@ export class Layout {
     this._openEdges();
     // three doors in under nine square metres (a rowhouse kitchen, a bedroom that is half a hall): the sweeps would leave no wall for a bed or a stove
     const nDoors = WALLS.reduce((n, w) => n + this.obs[w].filter((o) => o.kind === 'door').length, 0);
-    if (nDoors >= 3 && this.W * this.D < 9) this.relaxKeeps(0.7);
+    if (nDoors >= 3 && this.W * this.D < 9) this.relaxKeeps();
   }
   /** Sides with no wall at all (a terrace open to the next one, a yard): every open run of >= 0.75 m is a way in, like a door. */
   _openEdges() {
@@ -275,7 +281,7 @@ export class Layout {
     const wi = wallInfo(this.r, wall);
     const u0 = Math.min(a, b), u1 = Math.max(a, b);
     this.obs[wall].push({ u0, u1, kind, ...extra });
-    const k = { why: kind, wall, u0: u0 - 0.05, u1: u1 + 0.05, depth, door: extra.door, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };
+    const k = { why: kind, wall, u0: u0 - 0.05, u1: u1 + 0.05, depth, door: extra.door, swingIn: !!extra.swingIn, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };       // (`swingIn`: the whole rectangle of a leaf that sweeps into this room)
     this.keep.push(k);
     const mid = Math.min(wi.hi - 0.3, Math.max(wi.lo + 0.3, (u0 + u1) / 2));
     const [lx, lz] = wallPoint(this.r, wall, mid, 0.44);              // just past the 0.38 m band the body keeps off the wall
@@ -283,11 +289,11 @@ export class Layout {
   }
   /** A room with three doors in four square metres (a rowhouse kitchen): shrink every door's keep-out to `depth` so it can still hold what it is for.
    *  The leaf then sweeps through the corner of a counter, which nobody sees; the walking lanes stay guarded by the connectivity check. Returns how many shrank. */
-  relaxKeeps(depth = 0.7) {
+  relaxKeeps(depth = DOOR_LANE) {
     let n = 0;
     for (const k of this.keep) {
       if (k.why !== 'door' || k.depth == null || k.depth <= depth + 1e-6) continue;
-      Object.assign(k, this._wallRect(k.wall, k.u0, k.u1, depth)); k.depth = depth; n++;
+      Object.assign(k, this._wallRect(k.wall, k.u0, k.u1, depth)); k.depth = depth; k.swingIn = false; n++;
     }
     return n;
   }
@@ -303,17 +309,18 @@ export class Layout {
   }
   /** The door keep-outs as the leaf really sweeps (A2's `swingClear`: a quarter disc of the opening's width + 5 cm around the hinge post), plus a lane `lane` m deep in front
    *  of the opening where a body steps in, in place of the whole door-wide rectangle of width + 0.08 m. The rectangle's far corner, away from the hinge, is where a 2.0 x 1.4 m
-   *  bathroom finds the wall for its basin; the leaf still never touches anything. Rects of doors that swing away from the room (0.75 m) and those already relaxed are left as
-   *  they are. Replaces `this.keep` with a new array (keep the old one to put it back) and returns how many doors' rects it replaced. */
-  sweepKeeps(lane = 0.7) {
+   *  bathroom finds the wall for its basin; the leaf still never touches anything. Rects of doors that swing away from the room (already the lane: `DOOR_LANE`) and those already
+   *  relaxed are left as they are (`swingIn` marks the whole rectangle of a leaf that sweeps in). Replaces `this.keep` with a new array (keep the old one to put it back) and returns how
+   *  many doors' rects it replaced. */
+  sweepKeeps(lane = DOOR_LANE) {
     const doors = new Map((this.bp.doors ?? []).map((d) => [d.id, d]));
     const out = []; let n = 0;
     for (const k of this.keep) {
-      const d = k.why === 'door' && k.depth != null && k.depth > 0.76 ? doors.get(k.door) : null;
+      const d = k.why === 'door' && k.swingIn ? doors.get(k.door) : null;
       if (!d || d.kind === 'shutter' || (!d.double && d.hinge !== 'left' && d.hinge !== 'right')) { out.push(k); continue; }       // no hinge on record: keep the whole rectangle
       n++;
       const w = d.w ?? 0.9, reach = w + 0.05;
-      out.push({ ...k, ...this._wallRect(k.wall, k.u0, k.u1, lane), depth: lane });
+      out.push({ ...k, ...this._wallRect(k.wall, k.u0, k.u1, lane), depth: lane, swingIn: false });
       const posts = d.double ? [[k.u0 + 0.05, 1, w / 2 + 0.05], [k.u1 - 0.05, -1, w / 2 + 0.05]] : d.hinge === 'left' ? [[k.u0 + 0.05, 1, reach]] : [[k.u1 - 0.05, -1, reach]];
       for (const [uh, sg, rad] of posts) {
         const bands = 8;
@@ -455,8 +462,9 @@ export class Layout {
       if (it.block && b !== o.tuck) for (const z of b.zones ?? []) if (obbOverlap(it.ob, z, -0.01)) return false;
       if (b.block) for (const z of zones) if (obbOverlap(z, b.ob, -0.01)) return false;
     }
-    if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it)) return false;    // never cut the room in two (>= 0.7 m passages)
-    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it)) return false;             // a seat or bed someone cannot walk up to is useless
+    let flood = null;                                    // the room with `it` in it, flooded once: a seat or a bed asks both questions below of the same flood
+    if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it, flood = this._floodWith(it))) return false;    // never cut the room in two (>= 0.7 m passages)
+    if (!o.noConn && this._needsAccess(it) && !this._accessOk(it, false, flood)) return false;             // a seat or bed someone cannot walk up to is useless
     return true;
   }
 
@@ -466,7 +474,7 @@ export class Layout {
     const sin = Math.sin(ry), swap = Math.abs(sin) > 0.7071;           // quarter turns swap the footprint extents for AABB purposes
     const w = c.size[0], d = c.size[2];
     const it = {
-      id: `${this.room.id}.i${(_uid++).toString(36)}`, name, c, room: this.room.id, floor: true,
+      id: o.id ?? `${this.room.id}.i${(_uid++).toString(36)}`, name, c, room: this.room.id, floor: true,        // (`o.id`: a pass that runs after the clothes names its pieces itself, so the ids of the clothes' pass and of its own never depend on each other: shelves.js)
       x: r2(cx), z: r2(cz), y: this.room.y ?? 0, ry: r2(ry), w, d, h: c.size[1],
       block: c.block !== false && !c.wall && !c.ceil && c.top !== true && c.size[1] >= 0.2,           // (`top: true` = stands on a surface; a table's `top: 'oilcloth_floral'` is its cloth, and the table blocks)
       prio: o.prio ?? 1, tint: o.tint ?? null, tags: c.tags, ob: mkObbSC(cx, cz, w, d, ry, Math.cos(ry), sin), swap,
@@ -644,11 +652,12 @@ export class Layout {
     return null;
   }
 
-  /** Put a small item on top of a surface item. o: { at:'center'|'left'|'right'|number(-1..1), depth: -1..1, ry, tint } */
+  /** Put a small item on top of a surface item. o: { at:'center'|'left'|'right'|number(-1..1), px: metres from the middle of the surface (exactly there or nowhere: a shelf's brackets are in the way), depth: -1..1, ry, tint, id }.
+   *  The surface is as wide as the record says (a hung shelf can be cut to a wall: `w`), not as the catalogue's piece. */
   top(parent, name, o = {}) {
     if (!parent) return null;
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
-    const pw = parent.c.size[0], pd = parent.c.size[2];
+    const pw = parent.w ?? parent.c.size[0], pd = parent.d ?? parent.c.size[2];
     const w = c.size[0], d = c.size[2];
     if (w > pw + 0.02 || d > pd + 0.02) return null;
     parent.tops ??= [];
@@ -656,8 +665,11 @@ export class Layout {
     const span = Math.max(0, pw - w - 0.06);
     const cands = [];
     const lx = typeof at === 'number' ? at * span / 2 : at === 'left' ? -span / 2 : at === 'right' ? span / 2 : 0;
-    cands.push(lx);
-    for (let k = -4; k <= 4; k++) cands.push(k * span / 8);
+    if (o.px != null) cands.push(o.px);
+    else {
+      cands.push(lx);
+      for (let k = -4; k <= 4; k++) cands.push(k * span / 8);
+    }
     const dz = (o.depth ?? 0) * Math.max(0, pd - d - 0.04) / 2;
     for (const px of cands) {
       const ok = parent.tops.every((t) => Math.abs(t.px - px) >= (t.w + w) / 2 + 0.02 || Math.abs(t.pz - dz) >= (t.d + d) / 2 + 0.02);
@@ -710,11 +722,18 @@ export class Layout {
       it.floor = false; it.wall = true; it.block = false; it.y = (this.room.y ?? 0) + ys; it.h = h; it.w = w; it.zones = [];
       it.wallSide = cd.wall; it.u = cd.u;
       if (o.over) it.overOf = o.over;                                              // (a picture over a bed: it goes where the bed goes)
-      it.wallSlot = { wall: cd.wall, u0: cd.u - w / 2, u1: cd.u + w / 2, y0: ys, y1: ys + h };
+      it.wallSlot = { wall: cd.wall, u0: cd.u - w / 2, u1: cd.u + w / 2, y0: ys, y1: ys + h, d: depth };
       this.decor[cd.wall].push(it.wallSlot);
       return this._commit(it, o);
     }
     return null;
+  }
+  /** The floor plan of a hung piece `depth` deep on `wall` between `u0` and `u1`: the slab of room it takes. */
+  _slab(wall, u0, u1, depth) {
+    const wi = wallInfo(this.r, wall);
+    return wi.ax === 'x'
+      ? mkObb((u0 + u1) / 2, wi.base + wi.nz * depth / 2, u1 - u0, depth, 0)
+      : mkObb(wi.base + wi.nx * depth / 2, (u0 + u1) / 2, depth, u1 - u0, 0);
   }
   _wallFree(wall, u0, u1, y0, y1, depth, o = {}) {
     for (const ob of this.obs[wall]) {
@@ -723,14 +742,19 @@ export class Layout {
       else if (y1 > ob.sill - 0.08 && y0 < ob.top + 0.08) return false;
     }
     for (const s of this.decor[wall]) if (u1 > s.u0 - 0.04 && u0 < s.u1 + 0.04 && y1 > s.y0 - 0.04 && y0 < s.y1 + 0.04) return false;
-    const wi = wallInfo(this.r, wall);
-    const slab = wi.ax === 'x'
-      ? mkObb((u0 + u1) / 2, wi.base + wi.nz * depth / 2, u1 - u0, depth, 0)
-      : mkObb(wi.base + wi.nx * depth / 2, (u0 + u1) / 2, depth, u1 - u0, 0);
+    const slab = this._slab(wall, u0, u1, depth);
     for (const b of this.items) {
       if (!b.floor || !b.block || b === o.inside) continue;                // (`inside`: the piece this thing belongs in - the shower head in the shower's own cubicle)
       if (b.h <= y0 + (o.lap ?? 0.04)) continue;         // the decor hangs above this piece of furniture (`lap`: how far its top may reach up into the decor; a garment's hem must clear it)
       if (obbOverlap(slab, b.ob, 0.01)) return false;    // furniture flush against the wall would swallow the decor
+    }
+    // a piece hung on the next wall reaches out over this corner (a kitchen cabinet is 0.34 m deep): a shelf hung beside it would pass through its side (13 of the barrio's 444 wall shelves did)
+    for (const w2 of WALLS) {
+      if (w2 === wall) continue;
+      for (const s of this.decor[w2]) {
+        if (!(s.d > 0) || y1 <= s.y0 + 0.01 || y0 >= s.y1 - 0.01) continue;
+        if (obbOverlap(slab, this._slab(w2, s.u0, s.u1, s.d), 0.01)) return false;
+      }
     }
     return true;
   }
@@ -852,19 +876,23 @@ export class Layout {
   /** How split the room is: pieces the landings fall into, landings buried in furniture, and free cells no landing reaches (0.01 m2 each). */
   _connScore() { return this._scoreOf(this.connectivity()); }
   _scoreOf(c) { return { comps: distinctComps(c.ids), orphan: c.orphan, lost: c.lost }; }
-  /** Would the room stay as connected as it started if `it` (a blocker candidate) stood here? Pockets up to ~0.4 m2 are tolerated. */
-  _connOk(it) {
+  /** The flood (`connectivity()`) of the room with `it` (a candidate, not placed) standing in it. */
+  _floodWith(it, inflate) {
     this.items.push(it);
-    try {
-      const a = this._connScore(), b = this._base ?? { comps: 1, orphan: 0, lost: 0 };
-      return a.comps <= b.comps && a.lost <= b.lost && a.orphan <= Math.max(b.orphan, 40);
-    } finally { this.items.pop(); }
+    try { return this.connectivity(inflate); } finally { this.items.pop(); }
+  }
+  /** Would the room stay as connected as it started if `it` (a blocker candidate) stood here? Pockets up to ~0.4 m2 are tolerated. `c`: the flood of the room with `it` in it, when the caller has it. */
+  _connOk(it, c = this._floodWith(it)) {
+    const a = this._scoreOf(c), b = this._base ?? { comps: 1, orphan: 0, lost: 0 };
+    return a.comps <= b.comps && a.lost <= b.lost && a.orphan <= Math.max(b.orphan, 40);
   }
   _needsAccess(it) { return !!it.c.seat || ['bed', 'cot', 'bunk', 'mattress', 'stove'].includes(it.c.arch); }       // (a stove too: the cook stands in front of it)
   /** Can a person walk up to `it` from the doors (a free main-region cell within reach of its centre)? A stove: can the cook stand at it? That is the question index.js `emitAnchors` asks for the
    *  cook anchor (a standing spot within 0.9 m of the point 0.5 m in front of it, found with the 0.34 m body), so it is asked here the same way, and the spot must be one a cook can work from
-   *  (within `COOK_REACH` of the stove's middle: interiors-data.test.mjs 'anchors' takes no cook further off), so a stove never ends without a cook. */
-  _accessOk(it, present = false) {
+   *  (within `COOK_REACH` of the stove's middle: interiors-data.test.mjs 'anchors' takes no cook further off), so a stove never ends without a cook. `flood`: the flood of the room with `it` in it (a
+   *  candidate's: `valid()` has it from the connection test), which every piece but a stove reads; the stove's is another flood (a 0.34 m body). */
+  _accessOk(it, present = false, flood = null) {
+    if (flood && it.c.arch !== 'stove') return this.inMainRegion(it.x, it.z, flood, Math.ceil((Math.hypot(it.w, it.d) / 2 + 0.8) / 0.1));
     if (!present) this.items.push(it);
     try {
       if (it.c.arch === 'stove') {

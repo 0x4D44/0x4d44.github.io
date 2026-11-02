@@ -336,8 +336,11 @@ function registerSlotTarget(C, S, list) {
   const slab = (z1) => boxHit(S, r.x0 - PAD, r.x1 + PAD, r.y0 - PAD, r.y1 + PAD, zf - 0.16, z1);
   const closedHit = slab(zf + SLAB_OUT), openHit = travel ? slab(zf + SLAB_OUT + travel) : closedHit;
   S.target = ctx.interact.register({
-    // a wall cupboard hangs over a counter: the kernel's sight line is a body sweep that stops `lead` short of the box, and the counter (inflated by the body's width) would block it
-    id: `cont:${S.id}`, kind: 'container', x, y, z, radius: RADIUS, reach: 1.3, static: true, group: `cont:${S.bid}`, building: S.bid, lead: S.rec.kind === 'wall' ? 0.75 : 0.35, pri: 1,
+    // a wall cupboard hangs over a counter: the kernel's sight line is a body sweep that stops `lead` short of the box, and the counter (inflated by the body's width) would block it.
+    // `firm` (R2b-007): while the crosshair is ON a front, no point target takes the aim from it, however centred and near it is. A story object (stories.js) stands in FRONT of its piece, near the sight
+    // line to the piece's fronts, and is enabled by a ray test of the whole piece, so "Mirar el mostrador" took the aim from L08's cash drawer at every spot, "Ver la tele" from the TV stand's doors and
+    // "Abrir la llave" from the sink's. A person or a seat in front of the front still wins: that is a shaped hit, and the nearest ranks first.
+    id: `cont:${S.id}`, kind: 'container', x, y, z, radius: RADIUS, reach: 1.3, static: true, group: `cont:${S.bid}`, building: S.bid, lead: S.rec.kind === 'wall' ? 0.75 : 0.35, pri: 1, firm: true,
     enabled: (c) => list.group.obj?.visible !== false && !readerBusy(c),
     hit: (c, it, eye, dir) => {
       const t = (S.state === 'closed' ? closedHit : openHit)(c, it, eye, dir);
@@ -397,11 +400,12 @@ function useObject(C, S, o, hh, ctx = C.ctx) {
   if (disc?.mark) disc.mark(d);
   else if (disc && !disc.found.has(d.id)) { disc.items.set(d.id, d); disc.found.add(d.id); ctx.events?.emit?.('discover', d); }
   if (!S.foundEmitted) { S.foundEmitted = true; ctx.events?.emit?.('find', { id: f.id, name: f.es, en: f.en, kind: f.kind, collection: f.collection, rarity: f.rarity, building: S.bid, x, y, z }); }
-  // (R4-206) and the find is picked up and held to the eyes, large and turning, until Esc puts it back (holdup.js). Only a find with a model of the library is held: the rest keep the glint and the toast.
+  // (R4-206) and the find is picked up and held to the eyes, large and turning, until Esc puts it back (holdup.js). A find with a model of the library is held as it; every other find as the
+  // close-up of its own kind that generic.js builds from its shape, tint and size (R2b-004: 44 of the 64 had no model and were never held).
   // The HUD, and the toast with it, is hidden while it is held, so the caption says what the toast says: the shelf with its count, and the name with the place it was found.
-  const n = col.counts().byCollection[f.collection], m = FINDS.reduce((k, x) => k + (x.collection === f.collectionId ? 1 : 0), 0), has = n != null && m > 0;
+  const n = col.counts().byCollection[f.collection], m = FINDS.reduce((k, x) => k + (x.collection === f.collectionId ? 1 : 0), 0), has = n != null && m > 0, rec = FINDS.find((x) => x.id === f.id);
   ctx.holdup?.open?.({
-    id: f.id, name: { es: d.name, en: f.en }, react: f.react, rarity: f.rarity, model: o.model ?? null,
+    id: f.id, name: { es: d.name, en: f.en }, react: f.react, rarity: f.rarity, model: o.model ?? null, generic: rec ? { id: f.id, shape: rec.shape, tint: rec.tint, size: rec.size } : null,
     tag: [`Hallazgo · ${f.collection}${has ? ` ${n} de ${m}` : ''}`, `Find · ${f.collectionEn ?? f.collection}${has ? ` ${n} of ${m}` : ''}`],
   });
 }

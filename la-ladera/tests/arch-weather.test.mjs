@@ -94,7 +94,7 @@ test('the marks are real quads: one non-casting wall_decal mesh a building, ever
     if (pos.count !== 4 * n) problems.push(`${tag}: ${pos.count / 4} quads for ${n} marks`);
     for (let i = 0; i < pos.count; i++) {
       const [lx, , lz] = bp.frame.toLocal(pos.getX(i), pos.getY(i), pos.getZ(i));
-      const off = Math.min(Math.abs(lz - (S.D / 2 + 0.008)), Math.abs(lx + S.W / 2 + 0.008), Math.abs(lx - S.W / 2 - 0.008));
+      const off = Math.min(Math.abs(lz - (S.D / 2 + 0.008)), Math.abs(lz + (S.D / 2 + 0.008)), Math.abs(lx + S.W / 2 + 0.008), Math.abs(lx - S.W / 2 - 0.008));          // (the front, the back and the two sides: the back wall is weathered too since round 6)
       if (off > 1e-3) { problems.push(`${tag}: a decal vertex lies ${off.toFixed(3)} m from every wall plane`); break; }
       if ((pos.getX(i) - c[0]) * nor.getX(i) + (pos.getZ(i) - c[2]) * nor.getZ(i) <= 0) { problems.push(`${tag}: a decal faces into the building`); break; }
     }

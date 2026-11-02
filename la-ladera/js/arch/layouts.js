@@ -10,9 +10,59 @@ const ti = T_INT;
 
 const landingAt = (S) => (S.core ? S.core.landing : null);
 
+/**
+ * Smallest bedroom (m2) and narrowest (m) a cell of the front band of a private floor may be when the band is cut into two; a band that cannot give two of them stays one bedroom. A single bed
+ * (0.9 x 1.9 m) with 0.5 m beside it is a room 1.55 x 2.5 (arch-rowhouse), and its door leaves 0.8 m of the wall clear beside it for the head of the bed (R4-103): 0.9 + 0.8 + the 0.1 m margin of the
+ * door is 1.8 m. 4.8 m2 is what the narrowest rowhouse bands (4.06 m wide, 2.5 m deep) give the half over the hall.
+ */
+const PRIV_BED_AREA = 4.8, PRIV_BED_W = 1.8;
+
+/**
+ * A private floor of a home (R4-301, R4-302, R1-101: a bathroom reached through one bedroom or two, a bedroom reached through another). A bedroom is a LEAF of the door tree: the floor's hub is the
+ * stair's landing and the rest column beside it, which is ONE room (the hall: a sitting room upstairs when it is big) with the bathroom hanging off it. The bedrooms are the front band, cut along the
+ * wall between the two columns: the room over the stair opens onto the landing, the one over the hall onto the hall, and the family has the larger of the two. A band that cannot give two bedrooms
+ * of PRIV_BED_AREA m2 stays one, and the household of the ground floor sleeps there.
+ * The door count of the plan it replaces (4 doors, 5 where the rest column held two rooms) is kept with `spare`, so the ids and the streams after it stay as they were.
+ */
+function privateFloor(S, g, k) {
+  const core = S.coreRooms[k], lz = landingAt(S), Rb = g.restB, Dr = rd(Rb), away = g.coreLeft ? 'east' : 'west', F = g.front, c = core.rect;
+  const [overStairR, overRestR] = g.coreLeft ? [R(F.x0, F.z0, c.x1, F.z1), R(Rb.x0, F.z0, F.x1, F.z1)] : [R(c.x0, F.z0, F.x1, F.z1), R(F.x0, F.z0, Rb.x1, F.z1)];
+  const fits = (r) => rw(r) >= PRIV_BED_W - 1e-9 && rw(r) * rd(r) >= PRIV_BED_AREA - 1e-9;
+  const two = fits(overStairR) && fits(overRestR), oldDoors = Dr >= 4.9 && !g.upOne ? 5 : 4;          // the rest column held two rooms (five doors) or one (four)
+  let area = rw(Rb) * Dr;
+  if (!g.back) { const { beside, bw, bd } = bathCut(rw(Rb), Dr); area = beside ? (rw(Rb) - bw - ti) * Dr : rw(Rb) * (Dr - bd - ti); }
+  const stairBig = rw(overStairR) * rd(overStairR) > rw(overRestR) * rd(overRestR) + 1e-9;
+  // the rooms, in the order that keeps the ids of the plan before: the family's bedroom first (the old front band), the hall (the old room beside the stair), the bathroom last
+  let overStair, overRest = null, hall, bath;
+  if (two) {
+    const first = S.addRoom(k, 'bedroom', stairBig ? overStairR : overRestR, { occupant: 'family' });
+    hall = S.addRoom(k, area >= 9 ? 'living' : 'hall', Rb);
+    const second = oldDoors === 5 ? S.addRoom(k, 'bedroom', stairBig ? overRestR : overStairR) : null;
+    bath = g.back ? S.addRoom(k, 'bathroom', g.back) : carveBath(S, hall, k, away);
+    const last = second ?? S.addRoom(k, 'bedroom', stairBig ? overRestR : overStairR);
+    [overStair, overRest] = stairBig ? [first, last] : [last, first];
+  } else {
+    overStair = S.addRoom(k, 'bedroom', F, { occupant: 'family' });
+    hall = S.addRoom(k, area >= 9 ? 'living' : 'hall', Rb);
+    bath = g.back ? S.addRoom(k, 'bathroom', g.back) : carveBath(S, hall, k, away);
+  }
+  const n0 = S.seq.door;
+  // The room over the stair is only as wide as the stair column (2 m): its door goes to the outer end of the landing's wall (`link` clamps an infinite `at` to the wall's 0.1 m margin), away from the
+  // landing's door to the hall, and the strip beyond it stays free for a bed (R4-103).
+  S.link(overStair, core, { atX: g.coreLeft ? -Infinity : Infinity });
+  S.link(core, hall, { atZ: rcz(lz) });
+  // The room over the hall is under 2 m wide on the narrowest lots: its door goes to the end the stair is on and the far strip stays free for a bed (R4-103). The leaf swings into the bedroom,
+  // not into the hall: the landing's door opens into the hall at the same corner and the two leaves would sweep over each other. (A leaf opens into `rooms[swing]`: the bedroom is the second room
+  // of its door, as the landing's and the bathroom's are; the interiors read `rooms[swing]`, so a `swing` of -1 would name no room at all.)
+  if (overRest) S.link(hall, overRest, { atX: g.coreLeft ? -Infinity : Infinity });
+  S.link(hall, bath);
+  S.spare(oldDoors - (S.seq.door - n0));
+}
+
 /** One floor of a "home" (rooms around a stair core): public = sala/comedor/cocina, private = dormitorios. */
 function homeFloor(S, g, k, role) {
   const pub = role === 'public';
+  if (!pub && g.orient !== 'x' && S.coreRooms[k]) return privateFloor(S, g, k);
   const front = S.addRoom(k, pub ? 'living' : 'bedroom', g.front, pub ? {} : { occupant: 'family' });
   const core = S.coreRooms[k], lz = landingAt(S);
   const away = g.coreLeft ? 'east' : 'west';
@@ -52,15 +102,16 @@ function flatHome(S, k = 0) {
   const [B, front] = cutSouth(inner, clamp(0.4 * Di, 2.6, 4.4));
   const sala = S.addRoom(k, 'living', front);
   const away = S.rng.chance(0.5) ? 'east' : 'west';
-  if (rd(B) >= 4.9) {
-    const [dorm, cocina] = stack(S, k, B, [['bedroom', clamp(rd(B) * 0.55, 2.4, 3.6), { occupant: 'family' }], ['kitchen', null]]);
-    const bath = carveBath(S, cocina, k, away);
-    S.link(sala, dorm); S.link(dorm, cocina); S.link(cocina, bath);
-  } else if (rw(B) >= 4.8) {                                   // shallow back band: bedroom | kitchen(+bath)
+  // The bedroom is a leaf off the living room, the kitchen and the bath hang off the living room too (R4-301: a deep back band used to run living -> bedroom -> kitchen -> bath).
+  if (rw(B) >= 4.8) {                                          // back band wide enough for two rooms: bedroom | kitchen(+bath), however deep
     const [w, e] = cutX(B, B.x0 + clamp(rw(B) * 0.5, 2.2, 3.4));
     const dorm = S.addRoom(k, 'bedroom', w, { occupant: 'family' }), cocina = S.addRoom(k, 'kitchen', e);
     const bath = carveBath(S, cocina, k, 'east');
     S.link(sala, dorm); S.link(sala, cocina); S.link(cocina, bath);
+  } else if (rd(B) >= 4.9) {                                   // deep and narrow: kitchen (+bath) behind the living room, the bedroom behind the kitchen
+    const [cocina, dorm] = stack(S, k, B, [['kitchen', clamp(rd(B) * 0.45, 2.4, 3.6)], ['bedroom', null, { occupant: 'family' }]]);
+    const bath = carveBath(S, cocina, k, away);
+    S.link(sala, cocina); S.link(cocina, bath); S.link(cocina, dorm);
   } else {
     const cocina = S.addRoom(k, 'kitchen', B);
     const bath = rd(B) >= 3.6 && rw(B) >= 2.4 ? carveBath(S, cocina, k, away) : null;   // carve first: a door placed before the cut can end up off the kitchen's wall
@@ -144,19 +195,9 @@ function flatFloor(S, g, k) {
   const core = S.coreRooms[k], lz = landingAt(S), Rb = g.restB, Dr = rd(Rb), away = g.coreLeft ? 'east' : 'west', own = { occupant: 'shopkeeper' };
   const ds = clamp(Dr * 0.5 - 0.1, 2.4, 3.6), restSide = g.coreLeft ? 'right' : 'left';
   const lit = (r) => { r.needsWindow = true; return r; };                  // genWindows lights a flagged room whose bays left it without glass (openings.js lightFlagged)
-  // (the bedroom behind the kitchen has the back wall and the side wall of the rest column to look out of: not when both are party walls)
-  if (g.back && Dr >= 4.9 && rw(Rb) >= FLAT_BED_W - 1e-9 && !(S.party.back && S.party[restSide])) {
-    const living = lit(S.addRoom(k, 'living', g.front));
-    const [kit, bed] = stack(S, k, Rb, [['kitchen', ds], ['bedroom', null, own]]);
-    lit(bed);
-    const bath = S.addRoom(k, 'bathroom', g.back);
-    S.link(living, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
-    S.link(core, kit, { atZ: rcz(lz) });
-    S.link(living, kit, { kind: 'arch', w: 1.2 });
-    S.link(kit, bed, { atX: g.coreLeft ? -Infinity : Infinity });
-    S.link(bed, bath);
-    return;
-  }
+  // The plan this lot used to have (the living room in front, the kitchen and then the bedroom in the rest column, the bath behind the bedroom: the bath through the bedroom, R4-301) is gone: such a
+  // lot is split or a studio now. Its five doors are kept with `spare`, so the ids and the streams after them stay as they were.
+  const wasStack = g.back && Dr >= 4.9 && rw(Rb) >= FLAT_BED_W - 1e-9 && !(S.party.back && S.party[restSide]);
   const fw = rw(g.front), fd = rd(g.front), across = rw(core.rect);
   const wA = Math.max(across + 0.3, fw / 2 - ti / 2), wB = fw - wA - ti;
   const split = wB >= FLAT_BED_W - 1e-9 && wA * fd >= FLAT_LIVING_AREA;
@@ -170,15 +211,18 @@ function flatFloor(S, g, k) {
   if (Dr >= 4.9) [south, north] = stack(S, k, Rb, [[split ? 'dining' : 'living', ds], ['kitchen', null]]);
   else south = north = S.addRoom(k, 'kitchen', Rb);
   const bath = g.back ? S.addRoom(k, 'bathroom', g.back) : carveBath(S, north, k, away);
+  const n0 = S.seq.door;
   if (split) {
     S.link(living, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
     S.link(living, bedroom, { atZ: -Infinity });
+    // (this arch closes the ring living - landing - south, the heaviest door of it, so the budget always drops it: a lot that had the five doors of the old plan does without it, `spare` counts it)
     const len = wallLen(living, south);
-    if (len >= 1.5) S.link(living, south, { kind: 'arch', w: Math.min(1.2, len - 0.3) });
+    if (len >= 1.5 && !wasStack) S.link(living, south, { kind: 'arch', w: Math.min(1.2, len - 0.3) });
   } else S.link(core, bedroom, { atX: rcx(core.rect) });
   S.link(core, south, { atZ: rcz(lz) });
   if (south !== north) S.link(south, north);
   S.link(north, bath);
+  if (wasStack) S.spare(5 - (S.seq.door - n0));
 }
 
 /** Shop below, home above. Ground floor = columns [entry | core | back] + [shop | backroom]. */
@@ -290,11 +334,23 @@ export function layoutApartments(S) {
     flats.forEach(([u, away], ui) => {
       const o = { unit: 'ab'[ui], occupant: orng.weighted(FLAT_OCC, (t) => t[1])[0] };
       first ??= o;
-      const [sala, dorm, cocina] = stack(S, k, u, [['living', ds, o], ['bedroom', dd, o], ['kitchen', null, o]]);
+      // The living room is the MIDDLE band: the flat's one door (hall -> living) opens into it, and the bedroom in front of it and the kitchen behind it are leaves off it, the bath hangs off the kitchen.
+      // A flat used to run hall -> living -> bedroom -> kitchen -> bath, the kitchen and the bath through the bedroom (R4-301). The rooms are made in the old order (living, bedroom, kitchen), so a
+      // room's id keeps its type; a middle band that the hall does not reach for 1.1 m falls back to the old order.
+      const [restB, bedBand] = cutSouth(u, dd), [restK, livBand] = cutSouth(restB, ds);
+      const hubOk = wallLen({ rect: hallRect }, { rect: livBand }) >= 1.1;
+      let sala, dorm, cocina;
+      if (hubOk) {
+        sala = S.addRoom(k, 'living', livBand, o); dorm = S.addRoom(k, 'bedroom', bedBand, o); cocina = S.addRoom(k, 'kitchen', restK, o);
+      } else [sala, dorm, cocina] = stack(S, k, u, [['living', ds, o], ['bedroom', dd, o], ['kitchen', null, o]]);
       const bath = carveBath(S, cocina, k, away, FLAT_BATH);
       bath.unit = o.unit; bath.occupant = o.occupant;
-      S.link(hall, sala, { atZ: sala.rect.z1 - 1.0 });
-      S.link(sala, dorm); S.link(dorm, cocina); S.link(cocina, bath);
+      if (hubOk) {
+        S.link(hall, sala); S.link(sala, dorm); S.link(sala, cocina); S.link(cocina, bath);
+      } else {
+        S.link(hall, sala, { atZ: sala.rect.z1 - 1.0 });
+        S.link(sala, dorm); S.link(dorm, cocina); S.link(cocina, bath);
+      }
     });
     // the hall and the stair are nobody's home but must be in a household (interiors/household.js keys every room): the floor's first flat's, so the block has no household
     // without a bedroom (a resident cast into one would have no bed of their own)

@@ -50,10 +50,12 @@ function terrace({ plan }) {
 /**
  * Walk every route at every lane with the real Npc._walk over the page's physics. The walker starts on its lane, at the first waypoint and facing the second (a pedestrian who comes along the street is on
  * its lane already; one set down on the node itself would cut the first corner from the wrong side). A walk fails on an unstick (4 s without progress) or when it does not arrive within a metre of its last
- * waypoint in 40 s.
+ * waypoint in 40 s. It is HELD when the walker's own stall counter reaches a second (`npc.maxStuck`: the sidestep fires then). Since the round-6 walker rules (a waypoint a walker is held off for a second is given up,
+ * a way back that goes nowhere is given up) a walker held at the end of the wall gets on before the 4 s of `unstick`: a held walk is no failure, but it is what the node's place causes. `stalls` is every walk's
+ * own total of seconds spent held (`npc.stuckTotal`), in the order of the routes and the lanes: two runs over the same routes can be compared walk by walk.
  */
 function walkAll({ ctx, sim }, routes, lanes = LANES, legs = (lane, a, r) => sim.waypoints({ lane, x: a.x, z: a.z }, r)) {
-  const N = sim.nav.nodes, ph = ctx.physics, bad = []; let walks = 0;
+  const N = sim.nav.nodes, ph = ctx.physics, bad = [], held = [], stalls = []; let walks = 0;
   for (const r of routes) for (const lane of lanes) {
     const a = N[r[0]], npc = new Npc({ id: 't', rng: ctx.rng.fork('terrace:' + lane + r.join()), lane, speedBase: 1.3 });
     const pts = legs(lane, a, r), end = pts[pts.length - 1];
@@ -65,8 +67,10 @@ function walkAll({ ctx, sim }, routes, lanes = LANES, legs = (lane, a, r) => sim
     walks++;
     const arrived = Math.hypot(npc.st.x - end.x, npc.st.z - end.z) <= 1.0;
     if (unstick || !arrived) bad.push(`${r.join('>')} lane ${lane}: ${unstick} unstick${arrived ? '' : ', never arrived'}`);
+    if (npc.maxStuck >= 1) held.push(`${r.join('>')} lane ${lane}: held ${npc.maxStuck} s`);
+    stalls.push(npc.stuckTotal);
   }
-  return { walks, bad };
+  return { walks, bad, held, stalls };
 }
 
 /**
@@ -114,13 +118,19 @@ test('TEETH: put the corner planter back and the walks stall again', async () =>
   } finally { back.on = false; }
 });
 
-test('TEETH: put the corner node back where the plan had it and a walk stalls again', async () => {
+// With the node back no walk reaches `unstick` any more: the walker before R3-105 (56a80a8: a waypoint it is held off for a second is given up) had 13 unsticks, 4 s each, in these 270 walks, and a walker held at the end of
+// the wall now gets on within two seconds (the sidestep to the side with room helps too). What the node's place still does is hold them longer. The same legs are walked twice, the node where the fit put it and where the plan
+// had it, and compared walk by walk: with it back 20 of the 270 walks are held half a second or more longer, 5 the other way round (21 and 3 before the sidestep rule and before the waypoint rule: the rules change how long
+// a stall lasts, not which walks have one).
+test('TEETH: put the corner node back where the plan had it and the walks are held longer again', async () => {
   const W = await page(), { nw, routes } = terrace(W), N = W.sim.nav.nodes[W.plan.nav.nodes.indexOf(nw)], moved = [N.x, N.z];
   assert.ok(nw.from && Math.hypot(nw.x - nw.from[0], nw.z - nw.from[1]) > 0.3, 'the node was moved');
+  const fit = walkAll(W, routes, LANES, preFixLegs(W)).stalls;               // the node where the fit put it
   [N.x, N.z] = nw.from;
   try {
-    const { walks, bad } = walkAll(W, routes, LANES, preFixLegs(W));
-    assert.ok(bad.length >= 1, `none of ${walks} walks stalls with the node back`);
+    const { walks, stalls } = walkAll(W, routes, LANES, preFixLegs(W));      // the node where the plan had it
+    const longer = stalls.filter((s, i) => s > fit[i] + 0.4).length, shorter = stalls.filter((s, i) => fit[i] > s + 0.4).length;
+    assert.ok(longer >= 10 && longer >= 2 * shorter, `${longer} of ${walks} walks are held longer with the node back, ${shorter} the other way round`);
   } finally { [N.x, N.z] = moved; }
 });
 
@@ -128,8 +138,10 @@ test('TEETH: the way in that was dropped (n247-n424) is the one that stalled: wa
   const W = await page(), { ctx, plan } = W, T = terrace(W), fit = ctx.world.navFit;
   assert.deepEqual(fit.scraped.map(([a, b]) => pair(a, b)), [pair('n247', 'n424')], 'the plan has the one scraping way in, and it is dropped');
   assert.ok(!plan.nav.edges.some(([a, b]) => pair(a, b) === pair('n247', 'n424')), 'and it is gone from plan.nav');
-  const e = plan.nav.nodes.find((n) => n.id === 'n247'), { walks, bad } = lineOnly(W.sim, () => walkAll(W, T.via(e)));
-  assert.ok(bad.length >= 5, `only ${bad.length} of ${walks} walks stall on the dropped way in`);
+  // 12 of the 210 walks are held for a second or more, against 0 of the 210 on the way in that stays (5 reached `unstick` before the sidestep went to the side with room, 3 do now: the count of unsticks follows
+  // the recovery rules, the holds do not)
+  const e = plan.nav.nodes.find((n) => n.id === 'n247'), { walks, held } = lineOnly(W.sim, () => walkAll(W, T.via(e)));
+  assert.ok(held.length >= 8, `only ${held.length} of ${walks} walks are held on the dropped way in`);
 });
 
 test('the dropped way in leaves the graph whole, and the corner planter goes only where a way in meets a retaining wall: the other three corners of the plaza, and every other plaza, keep theirs', async () => {

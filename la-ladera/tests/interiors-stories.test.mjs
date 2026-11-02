@@ -182,7 +182,7 @@ test('every reachable seat can be sat on; the sofas and armchairs of each home a
 });
 
 test('targeting (R4-009): 1 to 1.3 m in front of a seat, looking at it, E offers "Sentarse" - never a fan, clock, mirror or picture', () => {
-  const problems = []; let tried = 0, skipped = 0, walled = 0;
+  const problems = []; let tried = 0, skipped = 0, walled = 0, fromSide = 0;
   for (const [name, w] of worlds) {
     const byB = new Map(w.bps.map((b) => [b.id, b])), phs = new Map();
     for (const seat of ours(w).filter((i) => i.kind === 'sit')) {
@@ -193,26 +193,33 @@ test('targeting (R4-009): 1 to 1.3 m in front of a seat, looking at it, E offers
       let ph = phs.get(bp.id); if (!ph) phs.set(bp.id, ph = physicsFor(bp));
       const f = [Math.sin(a.ry), Math.cos(a.ry)], side = [f[1], -f[0]];
       let spot = null, cut = false;                             // a free spot 1 to 1.3 m in front of the seat that SEES the seat's interaction point (the first one found)
-      for (const d of [1.1, 1.0, 1.2, 1.3]) for (const s of [0, -0.3, 0.3]) {
-        if (spot) break;
-        const wx = a.x + f[0] * d + side[0] * s, wz = a.z + f[1] * d + side[1] * s, [lx, , lz] = bp.frame.toLocal(wx, a.y, wz);
-        if (lx < room.rect.x0 + 0.35 || lx > room.rect.x1 - 0.35 || lz < room.rect.z0 + 0.35 || lz > room.rect.z1 - 0.35) continue;
-        if (!standable(L, lx, lz, conn, 0.3)) continue;                                      // a spot a person can reach (not a walled-off pocket between a sofa and an armchair)
+      const look = (dx, dz, d, s) => {                           // the spot d metres from the seat along (dx, dz), s metres to the side of that line
+        const wx = a.x + dx * d + dz * s, wz = a.z + dz * d - dx * s, [lx, , lz] = bp.frame.toLocal(wx, a.y, wz);
+        if (lx < room.rect.x0 + 0.35 || lx > room.rect.x1 - 0.35 || lz < room.rect.z0 + 0.35 || lz > room.rect.z1 - 0.35) return;
+        if (!standable(L, lx, lz, conn, 0.3)) return;                                        // a spot a person can reach (not a walled-off pocket between a sofa and an armchair)
         // a desk row in between: the kernel never offers what it cannot see. The sight line runs from the eye to where the view ray enters the seat's own box
         // (minus the lead the target asks for: the body's width), not to the seat's centre, which is inside the outline of the piece itself
         let endX = seat.x, endZ = seat.z;
         if (typeof seat.hit === 'function') {
           const e = { x: wx, y: a.y + 1.64, z: wz }, dl = Math.hypot(a.x - wx, a.y + (a.seatH ?? 0.45) + 0.15 - e.y, a.z - wz);
           const v = { x: (a.x - wx) / dl, y: (a.y + (a.seatH ?? 0.45) + 0.15 - e.y) / dl, z: (a.z - wz) / dl }, t = seat.hit(null, seat, e, v);
-          if (!(t >= 0)) continue;
+          if (!(t >= 0)) return;
           const tt = t > (seat.lead ?? 0.08) ? t - (seat.lead ?? 0.08) : 0;
           endX = e.x + v.x * tt; endZ = e.z + v.z * tt;
         }
-        if (ph.segmentBlocked(wx, wz, endX, endZ, a.y + 1.64 - 1.4, 1.2)) { cut = true; continue; }
+        if (ph.segmentBlocked(wx, wz, endX, endZ, a.y + 1.64 - 1.4, 1.2)) { cut = true; return; }
         spot = [wx, wz];
+      };
+      for (const d of [1.1, 1.0, 1.2, 1.3]) for (const s of [0, -0.3, 0.3]) if (!spot) look(f[0], f[1], d, s);
+      // A chair at a table has the table in front of it: nobody walks up to it across the table. A seat that every free spot in front cannot see is looked at from its open side, behind it and
+      // then beside it (round 6, R4-304: every table has its chairs); it counts as walled only when no free spot round it sees it.
+      let viaSide = false;
+      if (!spot && cut) {
+        for (const [dx, dz] of [[-f[0], -f[1]], [side[0], side[1]], [-side[0], -side[1]]]) for (const d of [1.0, 1.1, 1.2]) for (const s of [0, -0.3, 0.3]) if (!spot) look(dx, dz, d, s);
+        viaSide = !!spot;
       }
       if (!spot) { if (cut) walled++; else skipped++; continue; }
-      tried++;
+      tried++; if (viaSide) fromSide++;
       const ictx = { physics: ph, player: null }, inter = new Interact(ictx);              // the real targeting, with this building's own interactables
       for (const x of ours(w)) if (x.building === bp.id) inter.register({ ...x });         // register() (not items.set): the kernel scans its dyn list and 4 m grid, not the map
       const eye = { x: spot[0], y: a.y + 1.64, z: spot[1] }, tx = a.x, ty = a.y + (a.seatH ?? 0.45) + 0.15, tz = a.z;
@@ -226,6 +233,7 @@ test('targeting (R4-009): 1 to 1.3 m in front of a seat, looking at it, E offers
       if (got?.kind !== 'sit') problems.push(`${name} ${bp.id} ${itemId}: E offers ${got ? JSON.stringify(promptOf(w, got)) + ' (' + got.id + ')' : 'nothing'} instead of Sentarse`);
     }
   }
+  console.log(`# targeting: ${tried} seats offered from a free spot (${fromSide} of them from behind or beside: a table in front), ${walled} walled off from every side, ${skipped} with no free spot`);
   assert.ok(tried >= 20, `only ${tried} seats had a free spot in front (${skipped} skipped, ${walled} walled off by furniture)`);
   assert.ok(walled <= 0.1 * (tried + walled), `${walled} of ${tried + walled} seats cannot be seen from any free spot in front (desks between): the seat is not offered from the open side`);
   report(problems, `of ${tried} seats lose E to something else`);
