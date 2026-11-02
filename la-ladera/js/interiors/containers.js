@@ -400,11 +400,12 @@ function useObject(C, S, o, hh, ctx = C.ctx) {
   if (disc?.mark) disc.mark(d);
   else if (disc && !disc.found.has(d.id)) { disc.items.set(d.id, d); disc.found.add(d.id); ctx.events?.emit?.('discover', d); }
   if (!S.foundEmitted) { S.foundEmitted = true; ctx.events?.emit?.('find', { id: f.id, name: f.es, en: f.en, kind: f.kind, collection: f.collection, rarity: f.rarity, building: S.bid, x, y, z }); }
-  // (R4-206) and the find is picked up and held to the eyes, large and turning, until Esc puts it back (holdup.js). Only a find with a model of the library is held: the rest keep the glint and the toast.
+  // (R4-206) and the find is picked up and held to the eyes, large and turning, until Esc puts it back (holdup.js). A find with a model of the library is held as it; every other find as the
+  // close-up of its own kind that generic.js builds from its shape, tint and size (R2b-004: 44 of the 64 had no model and were never held).
   // The HUD, and the toast with it, is hidden while it is held, so the caption says what the toast says: the shelf with its count, and the name with the place it was found.
-  const n = col.counts().byCollection[f.collection], m = FINDS.reduce((k, x) => k + (x.collection === f.collectionId ? 1 : 0), 0), has = n != null && m > 0;
+  const n = col.counts().byCollection[f.collection], m = FINDS.reduce((k, x) => k + (x.collection === f.collectionId ? 1 : 0), 0), has = n != null && m > 0, rec = FINDS.find((x) => x.id === f.id);
   ctx.holdup?.open?.({
-    id: f.id, name: { es: d.name, en: f.en }, react: f.react, rarity: f.rarity, model: o.model ?? null,
+    id: f.id, name: { es: d.name, en: f.en }, react: f.react, rarity: f.rarity, model: o.model ?? null, generic: rec ? { id: f.id, shape: rec.shape, tint: rec.tint, size: rec.size } : null,
     tag: [`Hallazgo · ${f.collection}${has ? ` ${n} de ${m}` : ''}`, `Find · ${f.collectionEn ?? f.collection}${has ? ` ${n} of ${m}` : ''}`],
   });
 }

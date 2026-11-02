@@ -2,17 +2,20 @@
 // picks it up: the thing hangs in front of the eyes, large, and turns for a few seconds (a coin shows its face and its edge, a watch its dial and its strap), with its name and its line below it;
 // Esc (or E, or the x) puts it back and the game goes on.
 //
-//   ctx.holdup.open({ id, name: { es, en }, tag: [es, en], react: { es, en }, model: { key } }) -> true | false (false: no model of the library has loaded for it, or no panel layer)
+//   ctx.holdup.open({ id, name: { es, en }, tag: [es, en], react: { es, en }, model: { key }, generic: { id, shape, tint, size } }) -> true | false (false: nothing to hold, or no panel layer)
 //   ctx.holdup.close(), .isOpen, .update(t) (the pose t seconds after it was lifted: the frame loop's, and the tests'), .state(), .group (the thing in the scene, or null)
 //   events  'holdup:open' { id }   'holdup:close' { id, seconds }
 //
 // It rides A1's panel machinery (ui/flow.js `addPanel` is the one hook this file needs there): the pointer is released, the world waits and Esc closes ONLY the hold-up, back to the game, exactly
 // like the reader. The thing itself is drawn by the scene's own renderer, in the scene, in front of the camera: a panel with no backdrop leaves the view clear and puts the caption at the bottom.
-//   * Only a thing with a MODEL of the inspect library is held (inspect-bindings.json binds them): a find that only has its flat stand-in shape would be a pale polygon at ten times its size, which
-//     reads worse than the speck in the drawer. It keeps the glint (glint.js) and the toast.
+//   * A thing with a MODEL of the inspect library (inspect-bindings.json binds them) is held as that model, once it has loaded. Any other find is held as the close-up of its own kind that the caller
+//     describes in `generic` (finds.js: shape, tint, size): generic.js builds it in code, in the library's own materials (R2b-004: 44 of 64 finds had no model and were never held). That includes a bound
+//     find whose model has not loaded or failed to. The flat stand-in of the drawer (props.js) is never held: it would be a pale polygon at ten times its size, which reads worse than the speck in the drawer.
+//     A thing with neither a model nor a `generic` is not held (false): it keeps the glint (glint.js) and the toast.
 //   * It is held at a fixed size (HOLD.SIZE along its longest side) whatever it is: a gold coin four centimetres across and a pair of knickers thirty are both readable at arm's length.
 import * as THREE from 'three';
 import { inspectParts, INSPECT } from './inspect.js';
+import { genericModel } from './generic.js';
 
 /** Metres: how long the longest side of what is held is, how far in front of the eyes it hangs, how far under the line of sight; seconds the thing turns before it rests facing the eyes; whole turns. */
 export const HOLD = { SIZE: 0.2, DIST: 0.42, LOWER: 0.012, SECONDS: 5.5, TURNS: 2, MIN_SCALE: 0.7, MAX_SCALE: 10, LEAN: 0.2, LIFT: 0.22 };
@@ -50,13 +53,18 @@ function lifted(ctx) {
   };
 }
 
-/** The picture of a thing: { inner, size: [w, h, d] metres } (its own up +Y and front +Z, centred on the origin as modelled), or null when its model has not loaded. */
+/**
+ * The picture of a thing: { inner, size: [w, h, d] metres, own } (its own up +Y and front +Z, centred on the origin as modelled), or null when there is nothing to draw: the library model has not
+ * loaded and the caller described no generic one. `own` = the geometries this made itself (a generic close-up's), which `drop` disposes; a library model's belong to the asset cache and never are.
+ */
 function build(ctx, h, mat) {
-  const m = h.model, parts = m?.key ? inspectParts(ctx, m.key) : null;
+  const m = h.model, lib = m?.key ? inspectParts(ctx, m.key) : null, g = lib?.length ? null : h.generic ? genericModel(h.generic) : null;
+  const parts = lib?.length ? lib : g?.parts;
   if (!parts?.length) return null;
-  const inner = new THREE.Group();
-  for (const p of parts) { const mm = mat(p.matKey); if (mm) inner.add(new THREE.Mesh(p.geometry, mm)); }          // (the geometry belongs to the asset cache: never disposed here)
-  return inner.children.length ? { inner, size: INSPECT[m.key]?.s ?? [0.05, 0.05, 0.01] } : null;
+  const inner = new THREE.Group(), own = g ? g.parts.map((p) => p.geometry) : null;
+  for (const p of parts) { const mm = mat(p.matKey); if (mm) inner.add(new THREE.Mesh(p.geometry, mm)); }
+  if (!inner.children.length) { for (const geo of own ?? []) geo.dispose(); return null; }
+  return { inner, size: g ? g.size : INSPECT[m.key]?.s ?? [0.05, 0.05, 0.01], own };
 }
 
 const raf = (fn) => globalThis.requestAnimationFrame?.(fn) ?? 0, caf = (id) => globalThis.cancelAnimationFrame?.(id);
@@ -87,6 +95,7 @@ export function createHoldUp(ctx) {
     const c = S.cur; if (!c) return null;
     S.cur = null; caf(S.raf); S.raf = 0;
     c.group.removeFromParent();
+    for (const geo of c.own ?? []) geo.dispose();                                              // a generic close-up's own geometry (a library model's is the asset cache's)
     return c;
   };
   /** The one place a hold-up ends (any way it ends). */
@@ -128,7 +137,7 @@ export function createHoldUp(ctx) {
       group.scale.setScalar(holdScale(Math.max(...built.size)));
       group.traverse((o) => { o.frustumCulled = false; if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; o.renderOrder = 5; } });
       ctx.scene.add(group);
-      S.cur = { ...h, group }; S.t0 = performance.now();
+      S.cur = { ...h, group, own: built.own }; S.t0 = performance.now();
       ensureCss(); f.addPanel('holdup', panel);
       f.openPanel('holdup');
       if (f.current !== 'holdup') { drop(); return false; }

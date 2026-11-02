@@ -257,7 +257,7 @@ test('opening a drawer with a model in it: the model is in the open drawer, it i
   }
 });
 
-test('E on a find asks for the hold-up with its model, name and line; a paper and an ordinary thing do not; a find with no model is still found and asks with no model (R4-206)', () => {
+test('E on a find asks for the hold-up with its model, name and line, and its own record for the generic close-up; a paper and an ordinary thing do not; a find with no model is still found and asks with no model (R4-206, R2b-004)', () => {
   const held = [], real = ctx.holdup;
   ctx.holdup = { open(h) { held.push(h); return true; } };
   try {
@@ -283,8 +283,9 @@ test('E on a find asks for the hold-up with its model, name and line; a paper an
         assert.equal(held.length, 1, `${what}: one hold-up asked for`); const h = held[0];
         assert.equal(h.id, o.find); assert.ok(h.name.es.startsWith(rec.name.es), `the name (and the place, as the toast gives it): ${h.name.es}`); assert.equal(h.name.en, rec.name.en); assert.deepEqual(h.react, resolveFind(rec, householdOf(S)).react, 'the line of the find, with its household\'s tokens filled ({T}: the team the signed shirt is of)');
         assert.ok(Array.isArray(h.tag) && /^Hallazgo · .+ [1-9]\d* de [1-9]\d*$/.test(h.tag[0]) && /^Find · .+ [1-9]\d* of [1-9]\d*$/.test(h.tag[1]), `the tag says the shelf and the count, as the toast does (the HUD is hidden while it is held): ${h.tag}`);
+        assert.deepEqual(h.generic, { id: rec.id, shape: rec.shape, tint: rec.tint, size: rec.size }, 'the find\'s own record, for the close-up the hold-up draws (generic.js) when the library has no model, or it has not loaded');
         if (what === 'model') assert.equal(h.model.key, BINDINGS[o.find], 'with the model it is drawn with');
-        else assert.equal(h.model, null, 'no model: the hold-up has nothing to hold and declines (holdup.test.mjs)');
+        else assert.equal(h.model, null, 'no library model: the hold-up draws the generic close-up from h.generic (generic.test.mjs, holdup.test.mjs)');
         assert.ok(ctx.discover.found.has(`find:${o.find}:${S.bid}`), `${what}: found, held up or not`);
       }
       if (what === 'paper') assert.equal(ctx.reader.opened.length, 1, 'the reader opens, not the hold-up');

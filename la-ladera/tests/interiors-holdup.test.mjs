@@ -142,7 +142,7 @@ test('the hold-up: its own copy of the materials (the drawer keeps its look), th
   assert.equal(hold.open(find('oro_libra')), true); assert.equal(panel.key({ code: 'KeyE' }), true, 'a bare event without stopImmediatePropagation (a test, an old page) still closes'); assert.equal(hold.isOpen, false);
 });
 
-test('the hold-up: no model, no hold-up (a find with only its stand-in shape is not held up as a pale polygon), and no panel layer, no hold-up', async () => {
+test('the hold-up: no model and no generic close-up, no hold-up (a find with only its stand-in shape is not held up as a pale polygon), and no panel layer, no hold-up', async () => {
   const { ctx, hold, events } = await world();
   assert.equal(hold.open(find('aretes_perlas', null)), false, 'no model bound');
   assert.equal(hold.open(find('x', { key: 'inspect_no_such_model' })), false, 'a model that is not in the library');

@@ -11,6 +11,7 @@ import { INSPECT, BINDINGS } from '../js/interiors/inspect_data.js';
 import { GOODS_CATALOG } from '../js/interiors/goods-catalog.js';
 import { FINDS } from '../js/interiors/finds.js';
 import { GLINT } from '../js/interiors/glint.js';
+import { holdScale } from '../js/interiors/holdup.js';
 
 const TRIES = +(process.env.A3_TRIES || 24);
 let b, page;
@@ -399,7 +400,55 @@ test('E on a find that has a model of the library holds it up to the eyes (R4-20
   await L(`C.close(S.id, true); L.step(2); return 1;`);
 });
 
-test('a treasure glints where it lies (R4-206: a speck of colour seen from 1.6 m above reads as nothing): the open slot has a star over the find, a finger above its top and nowhere else, it twinkles between its floor and its full size, and it goes with the slot when that closes', async () => {
+test('E on a find with no model in the library holds up its generic close-up all the same (R2b-004: 44 of the 64 finds had nothing to hold): at the size every find is held at, drawn on the screen, under the toast\'s caption; Esc puts it back and frees it', async () => {
+  await kit(`const c = __ladera.ctx; if (c.flow.mode === 'panel') c.flow.closePanel(); __ladera.step(2); return c.mode;`);
+  const f = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers, bound = ${JSON.stringify(Object.keys(BINDINGS))}; let n = 0;
+    for (const bp of c.buildings.values()) {
+      if (!C.pending.has(bp.id)) continue;
+      if (n++ >= ${TRIES}) break;
+      L.enter(bp.id); L.step(70);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        if (!S.reachable || !S.plan?.find || bound.includes(S.plan.find)) continue;
+        C.open(S.id); L.step(40);
+        const k = S.objs.findIndex((o) => o.find && !o.model);
+        if (k >= 0) { const t = S.targets[k], spot = await __a3.aim(S.id, 'cont:' + S.id + ':' + k, [t.x, t.y, t.z]); if (spot) return { bid: bp.id, sid: S.id, k, spot, find: S.objs[k].find }; }
+        C.close(S.id, true); L.step(2);
+      }
+    }
+    return null;`);
+  assert.ok(f, `no slot with a find that has no model could be aimed at in ${TRIES} buildings`);
+  const L = (e) => kit(`const L = __ladera, c = L.ctx, C = c.containers, S = C.slots.get(${JSON.stringify(f.sid)}); ${e}`);
+  const pix = `const pix = async (w = 320, h = 180) => { const img = new Image(); img.src = L.shot({ w, h }); await img.decode(); const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, w, h).data; };`;
+  await L(`${pix} L.step(3); window.__a3.pix0 = await pix(); return 1;`);
+  await page.key('KeyE'); await tick(120);
+  const h = await L(`${pix}
+    const g = c.holdup.group, cam = c.camera, fwd = cam.getWorldDirection(new c.THREE.Vector3()), to = g ? g.position.clone().sub(cam.position) : null, ndc = g ? g.position.clone().project(cam) : null;
+    const after = await pix(), before = window.__a3.pix0, W = 320, H = 180; let s = 0, n = 0;
+    for (let y = Math.round(H * 0.3); y < Math.round(H * 0.7); y++) for (let x = Math.round(W * 0.3); x < Math.round(W * 0.7); x++) { const i = (y * W + x) * 4; s += Math.abs(after[i] - before[i]) + Math.abs(after[i + 1] - before[i + 1]) + Math.abs(after[i + 2] - before[i + 2]); n += 3; }
+    const box = g ? new c.THREE.Box3().setFromObject(g, true).getSize(new c.THREE.Vector3()) : null, q = (sel) => document.querySelector(sel)?.textContent ?? '', meshes = []; g?.traverse((o) => { if (o.isMesh) meshes.push(o.material.name); });
+    return { mode: c.mode, running: c.running, current: c.flow.current, open: c.holdup.isOpen, inScene: !!g && c.scene.children.includes(g), along: to ? to.dot(fwd) : null, dist: to?.length() ?? null, ndc: ndc && [ndc.x, ndc.y], scale: g?.scale.x ?? null, meshes,
+      long: box ? Math.max(box.x, box.y, box.z) : null, diff: s / n, name: q('#panel .hd-name'), react: q('#panel .hd-react'), hint: q('#panel .hd-hint'), tag: q('#panel .hd-tag'), lot: S.bp.lot?.name ?? null, state: S.state, found: c.discover.found.has('find:' + ${JSON.stringify(f.find)} + ':' + S.bid) };`);
+  const rec = FINDS.find((x) => x.id === f.find), want = holdScale(rec.size) * rec.size;
+  assert.equal(h.open, true, `E on the ${f.find} (no model) did not hold it up: ${JSON.stringify({ mode: h.mode, current: h.current })}`);
+  assert.deepEqual([h.mode, h.running, h.current], ['panel', false, 'holdup'], 'the world should wait while it is held');
+  assert.ok(h.found, 'the find is found as before (the toast and the discovery are the old ones)'); assert.ok(h.inScene, 'the thing is in the scene');
+  assert.ok(h.meshes.length > 0 && h.meshes.every((m) => /^inspect_[a-z]+(#[0-9a-f]{6})?$/.test(m)), `it is drawn in the library's own materials: ${h.meshes}`);
+  assert.ok(Math.abs(h.scale - holdScale(rec.size)) < 1e-6, `it is held at the scale of its size (${h.scale} for ${rec.size} m)`);
+  assert.ok(Math.abs(h.along - 0.42) < 0.03 && h.dist > 0.38 && h.dist < 0.48, `it hangs ${h.along} m in front of the eyes (${h.dist} m away)`);
+  assert.ok(Math.abs(h.ndc[0]) < 0.12 && Math.abs(h.ndc[1]) < 0.12, `it is in the middle of the screen (${h.ndc})`);
+  assert.ok(h.long > want * 0.5 && h.long < want * 1.6, `it is ${h.long} m long to the eye, ${want.toFixed(3)} m expected`);
+  assert.ok(h.lot && h.name.startsWith(`${rec.name.es} · ${h.lot}`) && h.react.length > 3 && /Esc/.test(h.hint) && /^Hallazgo · .+ [1-9]\d* de [1-9]\d*$/.test(h.tag), `the caption says what the toast says: ${JSON.stringify([h.tag, h.name, h.react, h.hint])}`);
+  console.log(`# ${f.find} (generic close-up, ${rec.shape}) in ${f.sid}: held ${h.dist.toFixed(2)} m away, ${h.long.toFixed(3)} m long, the middle of the screen changed by ${h.diff.toFixed(1)} of 255; caption ${JSON.stringify(h.name + ' | ' + h.react)}`);
+  assert.ok(h.diff > 4, `the thing is not drawn: the middle of the screen changed by only ${h.diff.toFixed(1)} of 255`);
+  await page.key('Escape'); await tick(80);
+  const e1 = await L(`return { mode: c.mode, running: c.running, current: c.flow.current, open: c.holdup.isOpen, group: !!c.holdup.group, inScene: c.scene.children.some((q) => q.name === 'holdup'), state: S.state, pauseShown: !document.getElementById('pause').classList.contains('hidden'), errors: L.state().errors };`);
+  assert.deepEqual([e1.mode, e1.current, e1.open, e1.group, e1.inScene, e1.pauseShown], ['play', null, false, false, false, false], 'Esc puts the thing back and gives the game back (no pause menu)');
+  assert.equal(e1.state, 'open', 'Esc closed only the hold-up: the drawer stays open'); assert.ok(!e1.errors?.length, `errors ${JSON.stringify(e1.errors)}`);
+  await L(`C.close(S.id, true); L.step(2); return 1;`);
+});
+
+test('a treasure glints where it lies (R4-206: a speck of colour seen from 1.6 m above reads as nothing):the open slot has a star over the find, a finger above its top and nowhere else, it twinkles between its floor and its full size, and it goes with the slot when that closes', async () => {
   const f = await kit(`
     const L = __ladera, c = L.ctx, C = c.containers; let n = 0;
     for (const bp of c.buildings.values()) {
