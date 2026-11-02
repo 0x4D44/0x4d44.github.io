@@ -26,13 +26,28 @@ export class Walker {
     }
     return best == null ? null : (bd < 0.75 || nearY > 1e8 ? best : null);
   }
-  blocked(x, z, y) {
+  /** the obstacle a walker standing at (x, z, y) would be overlapping, or null */
+  blocker(x, z, y) {
     for (const o of this.obstacles) {
       if (!o.tall && Math.abs(o.y - y) > 1.2) continue;
       const cx = clamp(x, o.x0, o.x1), cz = clamp(z, o.z0, o.z1);
-      if ((x - cx) ** 2 + (z - cz) ** 2 < this.radius * this.radius) return true;
+      if ((x - cx) ** 2 + (z - cz) ** 2 < this.radius * this.radius) return o;
     }
-    return false;
+    return null;
+  }
+  blocked(x, z, y) { return !!this.blocker(x, z, y); }
+  /** Someone is standing in the way (`soft` obstacle: a passenger): rather than stopping dead against them, slide along their front and round them, on the side that has room
+   *  (a pure sideways move never shortens the distance to a face we are standing off, so it cannot be refused the way the old forward-and-sideways step was). */
+  _glide(o, mx, mz, tryMove) {
+    const len = Math.hypot(mx, mz), px = -mz / len, pz = mx / len, k = len * 1.1;
+    const cx = (o.x0 + o.x1) / 2, cz = (o.z0 + o.z1) / 2, abreast = Math.abs(px) * (o.x1 - o.x0) / 2 + Math.abs(pz) * (o.z1 - o.z0) / 2 + this.radius + 0.02;
+    const room = (s) => { const x = cx + px * s * abreast, z = cz + pz * s * abreast, h = this.heightAt(x, z, this.y); return h != null && !this.blocked(x, z, h) && (!this.headroomFn || this.headroomFn(x, z) >= this.minHead); };
+    const lean = (this.x - cx) * px + (this.z - cz) * pz;
+    let s = this.glideObs === o ? this.glideSide : (lean < -0.02 ? -1 : 1);   // keep to the side chosen a moment ago (no dithering), else the side we are already leaning to
+    if (!room(s)) s = -s;
+    if (!room(s)) return false;                                               // shoulder to shoulder with the wall: no way past
+    this.glideObs = o; this.glideSide = s;
+    return tryMove(this.x + px * s * k + mx * 0.5, this.z + pz * s * k + mz * 0.5) || tryMove(this.x + px * s * k, this.z + pz * s * k);
   }
   /** forward/strafe in [-1,1]; yaw 0 faces local -z. */
   update(dt, fwd, strafe) {
@@ -56,8 +71,14 @@ export class Walker {
     };
     let did = tryMove(this.x + mx, this.z + mz);
     if (!did) { if (Math.abs(mx) > 1e-6 && tryMove(this.x + mx, this.z)) did = true; else if (Math.abs(mz) > 1e-6 && tryMove(this.x, this.z + mz)) did = true; }
-    if (!did) {   // blocked head-on (e.g. a standing passenger): side-step around it, whichever side is free
-      const len = Math.hypot(mx, mz); if (len > 1e-6) { const px = -mz / len, pz = mx / len, k = len * 1.1; if (!tryMove(this.x + px * k + mx * 0.5, this.z + pz * k + mz * 0.5)) tryMove(this.x - px * k + mx * 0.5, this.z - pz * k + mz * 0.5); }
+    if (did) this.glideObs = null;
+    else {   // blocked head-on (e.g. a standing passenger): side-step around it, whichever side is free
+      const len = Math.hypot(mx, mz);
+      if (len > 1e-6) {
+        const o = this.blocker(this.x + mx, this.z + mz, this.heightAt(this.x + mx, this.z + mz, this.y) ?? this.y);
+        if (o && o.soft) this._glide(o, mx, mz, tryMove);
+        else { const px = -mz / len, pz = mx / len, k = len * 1.1; if (!tryMove(this.x + px * k + mx * 0.5, this.z + pz * k + mz * 0.5)) tryMove(this.x - px * k + mx * 0.5, this.z - pz * k + mz * 0.5); }
+      }
     }
     const h = this.heightAt(this.x, this.z, this.y);
     if (h != null) { this.y += (h - this.y) * clamp(dt * 14, 0, 1); if (Math.abs(h - this.y) < 0.002) this.y = h; }

@@ -315,6 +315,20 @@ try {
   ok('rats visit now and then while the tracks are quiet (>=3 visits in 400 s, at most 3 out at once)', rat.visits >= 3 && rat.maxLive <= 3, `visits=${rat.visits} maxLive=${rat.maxLive}`);
   ok('no rat is ever on a track while its train is in the station or within 60 m of it', rat.viol === 0 && rat.trains >= 2, `viol=${rat.viol} trains=${rat.trains} ${rat.worst}`);
   await p.close();
+  // ---------------------------------------------------------------- both circles' trains carry passengers (island platform: the other circle's train stands across the platform)
+  p = await open(browser, 'mode=explore&station=kinning-park&line=outer');
+  const sal = await ev(p, async () => {
+    const s = __sim.sim; let n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 20000) { s.tick(0.1); s.sync(0.05); }
+    for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }   // (the other train is seated a car a frame)
+    const before = __sim.saloons(), audit = __sim.peopleAudit(), bgDwell = s.bg.sh.state === 'dwell', line0 = s.line;
+    await __sim.boardOther(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
+    return { bgDwell, line0, before, audit: { bad: audit.bad, trains: audit.trains }, after: __sim.saloons(), line1: s.line, mode: s.mode };
+  });
+  const trains = Object.values(sal.before);
+  ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', sal.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.perCar[i] === 0))), JSON.stringify(sal.before));
+  ok('riders of both circles pass the people audit (feet, seats, ceiling, walls, overlaps)', sal.audit.bad.length === 0 && Object.keys(sal.audit.trains).length === 2, JSON.stringify(sal.audit));
+  ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== sal.line0 && ['outer', 'inner'].every((l) => sal.after[l].total === sal.before[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify(sal.after));
+  await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');
   for (const line of ['outer', 'inner']) {
