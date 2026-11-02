@@ -336,8 +336,11 @@ function registerSlotTarget(C, S, list) {
   const slab = (z1) => boxHit(S, r.x0 - PAD, r.x1 + PAD, r.y0 - PAD, r.y1 + PAD, zf - 0.16, z1);
   const closedHit = slab(zf + SLAB_OUT), openHit = travel ? slab(zf + SLAB_OUT + travel) : closedHit;
   S.target = ctx.interact.register({
-    // a wall cupboard hangs over a counter: the kernel's sight line is a body sweep that stops `lead` short of the box, and the counter (inflated by the body's width) would block it
-    id: `cont:${S.id}`, kind: 'container', x, y, z, radius: RADIUS, reach: 1.3, static: true, group: `cont:${S.bid}`, building: S.bid, lead: S.rec.kind === 'wall' ? 0.75 : 0.35, pri: 1,
+    // a wall cupboard hangs over a counter: the kernel's sight line is a body sweep that stops `lead` short of the box, and the counter (inflated by the body's width) would block it.
+    // `firm` (R2b-007): while the crosshair is ON a front, no point target takes the aim from it, however centred and near it is. A story object (stories.js) stands in FRONT of its piece, near the sight
+    // line to the piece's fronts, and is enabled by a ray test of the whole piece, so "Mirar el mostrador" took the aim from L08's cash drawer at every spot, "Ver la tele" from the TV stand's doors and
+    // "Abrir la llave" from the sink's. A person or a seat in front of the front still wins: that is a shaped hit, and the nearest ranks first.
+    id: `cont:${S.id}`, kind: 'container', x, y, z, radius: RADIUS, reach: 1.3, static: true, group: `cont:${S.bid}`, building: S.bid, lead: S.rec.kind === 'wall' ? 0.75 : 0.35, pri: 1, firm: true,
     enabled: (c) => list.group.obj?.visible !== false && !readerBusy(c),
     hit: (c, it, eye, dir) => {
       const t = (S.state === 'closed' ? closedHit : openHit)(c, it, eye, dir);
