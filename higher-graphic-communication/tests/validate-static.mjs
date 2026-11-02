@@ -85,6 +85,10 @@ test("every check placeholder has a question set, and every question is well-for
         assert.equal(new Set(q.opts).size, q.opts.length, `${id}: options are distinct`);
         assert.ok(q.why, `${id}: explanation`);
       } else assert.ok(q.marks >= 1 && q.model, `${id}: marks and marking guidance`);
+      if (q.fig) {
+        const scripts = await Promise.all(WIDGET_PAGES.map(([, s]) => read(s)));
+        assert.ok(scripts.some((js) => js.includes(`HG.figures["${q.fig}"] =`)), `${id}: figure ${q.fig} is drawn by a page script`);
+      }
     }
   }
 });

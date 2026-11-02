@@ -341,6 +341,7 @@ svg .paper2 { fill: var(--paper-2); }
 .q { border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 10px; }
 .q:first-of-type { border-top: 0; }
 .q-stem { font-weight: 700; margin: 0 0 6px; }
+.q-fig { margin: 4px 0 8px; max-width: 220px; }
 .q-marks { font-weight: 400; color: var(--muted); font-size: .85rem; }
 .q-opts { display: grid; gap: 6px; margin: 6px 0; }
 .q-opt {
