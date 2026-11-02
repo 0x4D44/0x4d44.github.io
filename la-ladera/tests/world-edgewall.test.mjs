@@ -11,7 +11,7 @@ import { generatePlan } from '../js/world/plan.js';
 import { buildWorld } from '../js/world/terrain.js';
 import { buildProps } from '../js/world/props.js';
 import { EDGE, HUES, BLOCKING, planEdge, zOf } from '../js/world/edgewall.js';
-import { muralKeys, signKeys } from '../js/world/signs.js';
+import { muralKeys, edgeMuralKeys, signKeys } from '../js/world/signs.js';
 import { SEED, makePlan, badAttributes } from './world-lib.mjs';
 
 const glowLog = { list: [], add(g) { this.list.push(g); return g; } };      // the engine's glow registry, which headless contexts do not have: a recorder
@@ -273,7 +273,7 @@ test('R1-D21: the dressing is the same every time for one seed and another for a
 test('R1-D21: the walls differ stretch from stretch: hues, roof items, windows, paintings in the atlas, drainpipes, creepers, doors, meter boards and footings (TEETH: a one-colour wall is found)', () => {
   const hueRuns = (side) => { const bad = []; let last = -1; for (const q of side.stretches) for (const b of q.bays) { if (b.hue === last) bad.push(`${q.id}: two neighbouring houses are both ${HUES[b.hue].name}`); last = b.hue; } return bad; };
   const roofRuns = (side) => side.stretches.flatMap((q, i) => (i && q.roof.pkg === side.stretches[i - 1].roof.pkg ? [`${q.id}: the same roof package as its neighbour`] : []));
-  const keys = new Set([...muralKeys(), ...signKeys(A.plan)]);
+  const keys = new Set([...muralKeys(), ...edgeMuralKeys(), ...signKeys(A.plan)]);
   for (const id of SIDES) {
     const side = REC.plan.sides[id], st = side.stretches;
     assert.deepEqual(hueRuns(side), []); assert.deepEqual(roofRuns(side), []);
@@ -293,6 +293,34 @@ test('R1-D21: the walls differ stretch from stretch: hues, roof items, windows, 
   assert.ok(tris >= REC.murals * 4, `${tris} triangles of paintings for ${REC.murals} paintings`);
   assert.ok(hueRuns({ stretches: [{ id: 'x', bays: [{ hue: 2 }, { hue: 2 }] }] }).length === 1, 'TEETH: two neighbouring houses of one hue are found');
   assert.ok(roofRuns({ stretches: [{ roof: { pkg: 'dish' } }, { id: 'y', roof: { pkg: 'dish' } }] }).length === 1, 'TEETH: two neighbouring roofs alike are found');
+});
+
+/** What is wrong with the paintings of one wall, in the order they hang: a discovery mural (those hang once, on their street walls), a stranger, two neighbours alike, one hung twice while all four are on offer. */
+const paintingProblems = (keys) => keys.flatMap((k, i) => [
+  muralKeys().includes(k) ? `${k} is a discovery mural, hung again as filler` : null,
+  !edgeMuralKeys().includes(k) && !muralKeys().includes(k) ? `${k} is not one of the wall's paintings` : null,
+  i && keys[i - 1] === k ? `${k} twice in a row` : null,
+  keys.indexOf(k) !== i && keys.length <= edgeMuralKeys().length ? `${k} hung twice with only ${keys.length} paintings on the wall` : null,
+]).filter(Boolean);
+
+test('R1-106: the perimeter wall hangs paintings of its own, never a discovery mural again, and none twice in a row (TEETH: the old three-mural deck, a twin and a repeat are each found)', () => {
+  const seen = [];
+  for (const id of SIDES) {
+    const keys = REC.plan.sides[id].stretches.filter((q) => q.art?.kind === 'mural').map((q) => q.art.key);
+    assert.ok(keys.length >= 1, `side ${id}: at least one painting`);
+    assert.deepEqual(paintingProblems(keys), [], `side ${id}: ${keys}`);
+    seen.push(keys);
+  }
+  assert.notEqual(seen[0][0], seen[1][0], 'the two walls do not start with the same painting');
+  assert.ok(new Set(seen.flat()).size >= 3, `${new Set(seen.flat()).size} different paintings on the two walls: ${seen.flat()}`);
+  const hung = REC.features.filter((f) => f.kind === 'mural').map((f) => f.key);                            // what the build really hung (and found a region for: a throw would have left the wall plain)
+  assert.equal(hung.length, REC.murals);
+  assert.deepEqual(hung.filter((k) => !edgeMuralKeys().includes(k)), [], 'the walls hang only their own paintings');
+  assert.deepEqual(A.errors ?? [], []);
+  assert.equal(paintingProblems(['mural.condor', 'mural.fiesta', 'mural.cerro']).length, 3, 'TEETH: the old deck, three discovery murals, is found');
+  assert.ok(paintingProblems(['edge.cafe', 'edge.cafe']).length >= 1, 'TEETH: two alike in a row are found');
+  assert.equal(paintingProblems(['edge.cafe', 'edge.cable', 'edge.cafe']).length, 1, 'TEETH: one hung twice with fewer than four on the wall is found');
+  assert.deepEqual(paintingProblems(['edge.cafe', 'edge.cable', 'edge.cancha', 'edge.colibri', 'edge.cafe']), [], 'a fifth painting may bring the first one back');
 });
 
 test('R1-D21: some windows are lit at night: one glow in each lit window, switching on at different times (TEETH: a glow outside a window is found)', () => {

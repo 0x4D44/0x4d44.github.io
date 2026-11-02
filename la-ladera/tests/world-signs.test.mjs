@@ -11,7 +11,7 @@ import { buildWorld } from '../js/world/terrain.js';
 import { buildOccupancy } from '../js/world/occupancy.js';
 import { makeKit } from '../js/world/kit.js';
 import { buildBoundary } from '../js/world/periphery.js';
-import { makeSignAtlas, buildSigns, planMurals, claimMurals, signKeys, muralKeys } from '../js/world/signs.js';
+import { makeSignAtlas, buildSigns, planMurals, claimMurals, signKeys, muralKeys, edgeMuralKeys, EDGE_MURAL_ASPECT } from '../js/world/signs.js';
 import { SEED } from './world-lib.mjs';
 
 /** A canvas that only records the clip rectangles, the text and the scales: every other method is a no-op (gradients and text metrics answer), getImageData hands back opaque white. */
@@ -55,12 +55,15 @@ test('every sign key has one region of the atlas, regions do not overlap, and th
   const [atlas, log] = withCanvas(() => makeSignAtlas(plan, []));
   assert.ok(atlas?.mural, 'an atlas and a mural atlas came back');
   assert.equal(makeSignAtlas.errors, undefined, `painter or region errors: ${makeSignAtlas.errors}`);
-  const keys = signKeys(plan), mkeys = muralKeys();
+  const keys = signKeys(plan), mkeys = muralKeys(), ekeys = edgeMuralKeys();
   assert.ok(keys.includes('gate.in') && keys.includes('rayuela') && keys.filter((k) => k.startsWith('plaque.')).length === plan.streets.length && mkeys.length === 3, keys.join(' '));
-  assert.equal(log.rect.length, keys.length + mkeys.length, 'one clipped region painted per key');
-  assert.ok(log.fillText.length >= keys.length + 3, `${log.fillText.length} pieces of lettering painted`);
+  assert.ok(ekeys.length === 4 && ekeys.every((k) => k.startsWith('edge.') && !mkeys.includes(k)) && new Set(ekeys).size === 4, `the perimeter wall has four paintings of its own (R1-106): ${ekeys}`);
+  assert.equal(log.rect.length, keys.length + mkeys.length + ekeys.length, 'one clipped region painted per key');
+  assert.ok(log.fillText.length >= keys.length + 3 + 4, `${log.fillText.length} pieces of lettering painted`);
   assert.deepEqual(regionProblems(keys, atlas.uv), []);
-  assert.deepEqual(regionProblems(mkeys, atlas.mural.uv), []);
+  assert.deepEqual(regionProblems([...mkeys, ...ekeys], atlas.mural.uv), []);
+  assert.equal(EDGE_MURAL_ASPECT, 2, 'the wall hangs every one of its paintings 2:1');
+  for (const k of ekeys) { const [u0, v0, u1, v1] = atlas.mural.uv(k), W = 1024, H = 2080; assert.ok(Math.abs((u1 - u0) * W / ((v1 - v0) * H) - EDGE_MURAL_ASPECT) < 0.02, `${k}: its region is 2:1`); }
   assert.throws(() => atlas.uv('plaque.99'), /no region for "plaque.99"/);
   assert.throws(() => atlas.mural.uv('mural.nope'), /no region for "mural.nope"/);
   assert.throws(() => atlas.uv('mural.condor'), /no region/, 'a mural is not on the boards atlas');
@@ -78,9 +81,9 @@ test('a painting on a wall squarer than 2:1 shows the middle of its scene, cropp
 test('every sign key the world code names is painted: hand.*, gate.*, mural.*, rayuela (TEETH: the scan sees the code and a made-up key would be caught)', () => {
   const dir = new URL('../js/world/', import.meta.url), found = new Map();
   for (const f of readdirSync(dir).filter((n) => n.endsWith('.js'))) {
-    for (const m of readFileSync(new URL(f, dir), 'utf8').matchAll(/['"`]((?:hand|gate|mural)\.[a-z]+|rayuela)['"`]/g)) found.set(m[1], f);
+    for (const m of readFileSync(new URL(f, dir), 'utf8').matchAll(/['"`]((?:hand|gate|mural|edge)\.[a-z]+|rayuela)['"`]/g)) found.set(m[1], f);
   }
-  const have = new Set([...signKeys(plan), ...muralKeys()]);
+  const have = new Set([...signKeys(plan), ...muralKeys(), ...edgeMuralKeys()]);
   assert.deepEqual([...found].filter(([k]) => !have.has(k)), [], 'a key the code uses has no region');
   assert.ok(found.size >= 9 && found.has('hand.huerta') && found.has('mural.cerro') && found.has('gate.out'), `${found.size} literals found: ${[...found.keys()].join(' ')}`);
   assert.equal(have.has('hand.nope'), false);
@@ -228,11 +231,12 @@ test('with the atlas painted, every sign and mural quad the world builds points 
   const board = signKeys(ctx.plan).map((k) => atlas.uv(k)), signUV = uvs(ctx.mat('world_sign'));
   assert.ok(signUV.length >= 100, `${signUV.length} sign vertices`);
   assert.deepEqual(signUV.filter((q) => !board.some((r) => inside(q, r))).slice(0, 3), [], 'every board vertex lies in a painted region');
-  const murals = muralKeys().map((k) => atlas.mural.uv(k)), muralUV = uvs(ctx.mat('world_mural'));
-  assert.deepEqual(muralUV.filter((q) => !murals.some((r) => inside(q, r))).slice(0, 3), [], 'every mural vertex lies in a painted region');
-  for (const [i, r] of murals.entries()) {
-    const mine = muralUV.filter((q) => inside(q, r));
-    const reach = [Math.min(...mine.map((q) => q[0])) - r[0], r[2] - Math.max(...mine.map((q) => q[0])), Math.min(...mine.map((q) => q[1])) - r[1], r[3] - Math.max(...mine.map((q) => q[1]))];
-    assert.ok(reach.every((d) => Math.abs(d) < 1e-6), `mural ${i} shows its whole region: ${reach}`);
-  }
+  const murals = muralKeys().map((k) => atlas.mural.uv(k)), edges = edgeMuralKeys().map((k) => atlas.mural.uv(k)), muralUV = uvs(ctx.mat('world_mural'));
+  assert.deepEqual(muralUV.filter((q) => ![...murals, ...edges].some((r) => inside(q, r))).slice(0, 3), [], 'every mural vertex lies in a painted region');
+  const reachOf = (r) => { const mine = muralUV.filter((q) => inside(q, r)); return [Math.min(...mine.map((q) => q[0])) - r[0], r[2] - Math.max(...mine.map((q) => q[0])), Math.min(...mine.map((q) => q[1])) - r[1], r[3] - Math.max(...mine.map((q) => q[1]))]; };
+  for (const [i, r] of murals.entries()) assert.ok(reachOf(r).every((d) => Math.abs(d) < 1e-6), `mural ${i} shows its whole region: ${reachOf(r)}`);
+  // R1-106: the perimeter wall (edgewall.js, built by buildBoundary above) hangs its own paintings: each one it uses shows its whole region, and it uses more than one
+  const used = edges.filter((r) => muralUV.some((q) => inside(q, r)));
+  assert.ok(used.length >= 2, `${used.length} of the perimeter wall's own paintings are hung`);
+  for (const r of used) assert.ok(reachOf(r).every((d) => Math.abs(d) < 1e-6), `a perimeter painting shows its whole region: ${reachOf(r)}`);
 });
