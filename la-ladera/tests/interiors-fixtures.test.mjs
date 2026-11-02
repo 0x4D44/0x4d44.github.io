@@ -3,7 +3,7 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-fixtures.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Layout, fixtureRank, mkObb, obbDist } from '../js/interiors/layout.js';
+import { Layout, fixtureRank, mkObb, obbDist, DOOR_LANE } from '../js/interiors/layout.js';
 import { bathroom, ensureFixtures, ensureHomeFridge, solveFixtures, slot, kitchenSlots, REAL_BED, SHOWER } from '../js/interiors/rooms.js';
 import { makeRng } from '../js/core/rng.js';
 import { barberChair } from '../js/interiors/shops.js';
@@ -52,9 +52,10 @@ function narrowBath(hinge) {
 }
 const box = (x, z, s = 0.2) => mkObb(x, z, s, s, 0);
 
-test('sweepKeeps(): the leaf\'s quarter disc and a 0.7 m lane stay blocked, the far corner of the whole-door rectangle is free', () => {
+test('sweepKeeps(): the leaf\'s quarter disc and the door lane (DOOR_LANE) stay blocked, the far corner of the whole-door rectangle is free', () => {
   // door 0.9 m wide at z -3.78..-2.88 in the -x wall; the hinge post is at the low end (left) or the high end (right) of it
-  for (const [hinge, nearHinge, farCorner] of [['left', [0.85, -3.7], [0.85, -2.95]], ['right', [0.85, -2.96], [0.85, -3.7]]]) {
+  const farX = 0.01 + DOOR_LANE + 0.17;                          // (the 0.2 m box probing the far corner starts 7 cm past the end of the lane; a fixed 0.85 cleared the old 0.7 m lane by 4 cm and sat 3 cm inside the 0.77 m one)
+  for (const [hinge, nearHinge, farCorner] of [['left', [0.85, -3.7], [farX, -2.95]], ['right', [0.85, -2.96], [farX, -3.7]]]) {
     const { L } = narrowBath(hinge);
     assert.ok(L._keepHit(box(...farCorner)), `${hinge}: the rectangle of width + 0.08 m covers the far corner`);
     assert.equal(L.sweepKeeps(), 1, `${hinge}: one door's rectangle replaced`);

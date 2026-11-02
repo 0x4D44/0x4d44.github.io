@@ -9,6 +9,12 @@ const PI = Math.PI;
 const r2 = (v) => Math.round(v * 1000) / 1000;
 /** How far from a roof door's landing point (`entrance.outside`) the deck stays free of furniture: the disc a person steps onto when the door opens. */
 export const ROOF_CLEAR = 0.9;
+/** How deep in front of a doorway, from the room's inner face, the floor stays clear of furniture. A body 0.3 m in radius that walks in straight from the door plane and stops 0.5 m past it (R2a's walk,
+ *  A2's doorwalk) has its front 0.8 m past the plane: 0.745 m from the face of an 0.11 m wall, and a piece may reach 1 cm into a keep-out, and the walk's own slack is 1 cm: 0.77 m. The lane was 0.75 m
+ *  (a leaf that swings away) and 0.7 m (the relaxed and swept keep-outs): a trunk's end 0.8 m past the plane stopped the walker 3 mm short in 6 doors of the barrio, at 0.1275 m off the middle of
+ *  the opening. No deeper than that: at 0.85 m the 2.02 x 1.41 m rowhouse bathroom (door in the middle of the short wall) loses its basin, for the shower, the toilet and the basin fill the 2.02 m
+ *  wall only with a lane of about 0.77 m or less (six rooms of the barrio). */
+export const DOOR_LANE = 0.77;
 
 /** Geometry of one wall of a rect: along axis, extent, the wall coordinate, inward normal and the facing of items against it. */
 export function wallInfo(rect, wall) {
@@ -193,8 +199,8 @@ export class Layout {
       const w = d.w ?? 0.9, leaf = d.kind !== 'arch' && d.kind !== 'shutter';
       let swingIn = leaf;                                // unknown swing: assume the leaf sweeps into this room (conservative)
       if (leaf && d.swing != null && d.rooms) swingIn = d.rooms[d.swing] === room.id;
-      const depth = d.kind === 'shutter' ? 0.9 : (swingIn ? w + 0.08 : 0.75);
-      this._opening(s.wall, s.u - w / 2, s.u + w / 2, depth, 'door', { door: d.id, h: d.h ?? 2.1 });
+      const depth = d.kind === 'shutter' ? 0.9 : (swingIn ? w + 0.08 : DOOR_LANE);
+      this._opening(s.wall, s.u - w / 2, s.u + w / 2, depth, 'door', { door: d.id, h: d.h ?? 2.1, swingIn });
       // the street door: the first 3 m straight in stay free (the tour test and every first-time visitor walk in along it)
       const ent = (bp.entrances ?? []).find((e) => e.doorId === d.id);
       if (ent?.inside && bp.frame?.toLocal) {                   // only the room the visitor steps into
@@ -223,7 +229,7 @@ export class Layout {
     this._openEdges();
     // three doors in under nine square metres (a rowhouse kitchen, a bedroom that is half a hall): the sweeps would leave no wall for a bed or a stove
     const nDoors = WALLS.reduce((n, w) => n + this.obs[w].filter((o) => o.kind === 'door').length, 0);
-    if (nDoors >= 3 && this.W * this.D < 9) this.relaxKeeps(0.7);
+    if (nDoors >= 3 && this.W * this.D < 9) this.relaxKeeps();
   }
   /** Sides with no wall at all (a terrace open to the next one, a yard): every open run of >= 0.75 m is a way in, like a door. */
   _openEdges() {
@@ -275,7 +281,7 @@ export class Layout {
     const wi = wallInfo(this.r, wall);
     const u0 = Math.min(a, b), u1 = Math.max(a, b);
     this.obs[wall].push({ u0, u1, kind, ...extra });
-    const k = { why: kind, wall, u0: u0 - 0.05, u1: u1 + 0.05, depth, door: extra.door, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };
+    const k = { why: kind, wall, u0: u0 - 0.05, u1: u1 + 0.05, depth, door: extra.door, swingIn: !!extra.swingIn, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };       // (`swingIn`: the whole rectangle of a leaf that sweeps into this room)
     this.keep.push(k);
     const mid = Math.min(wi.hi - 0.3, Math.max(wi.lo + 0.3, (u0 + u1) / 2));
     const [lx, lz] = wallPoint(this.r, wall, mid, 0.44);              // just past the 0.38 m band the body keeps off the wall
@@ -283,11 +289,11 @@ export class Layout {
   }
   /** A room with three doors in four square metres (a rowhouse kitchen): shrink every door's keep-out to `depth` so it can still hold what it is for.
    *  The leaf then sweeps through the corner of a counter, which nobody sees; the walking lanes stay guarded by the connectivity check. Returns how many shrank. */
-  relaxKeeps(depth = 0.7) {
+  relaxKeeps(depth = DOOR_LANE) {
     let n = 0;
     for (const k of this.keep) {
       if (k.why !== 'door' || k.depth == null || k.depth <= depth + 1e-6) continue;
-      Object.assign(k, this._wallRect(k.wall, k.u0, k.u1, depth)); k.depth = depth; n++;
+      Object.assign(k, this._wallRect(k.wall, k.u0, k.u1, depth)); k.depth = depth; k.swingIn = false; n++;
     }
     return n;
   }
@@ -303,17 +309,18 @@ export class Layout {
   }
   /** The door keep-outs as the leaf really sweeps (A2's `swingClear`: a quarter disc of the opening's width + 5 cm around the hinge post), plus a lane `lane` m deep in front
    *  of the opening where a body steps in, in place of the whole door-wide rectangle of width + 0.08 m. The rectangle's far corner, away from the hinge, is where a 2.0 x 1.4 m
-   *  bathroom finds the wall for its basin; the leaf still never touches anything. Rects of doors that swing away from the room (0.75 m) and those already relaxed are left as
-   *  they are. Replaces `this.keep` with a new array (keep the old one to put it back) and returns how many doors' rects it replaced. */
-  sweepKeeps(lane = 0.7) {
+   *  bathroom finds the wall for its basin; the leaf still never touches anything. Rects of doors that swing away from the room (already the lane: `DOOR_LANE`) and those already
+   *  relaxed are left as they are (`swingIn` marks the whole rectangle of a leaf that sweeps in). Replaces `this.keep` with a new array (keep the old one to put it back) and returns how
+   *  many doors' rects it replaced. */
+  sweepKeeps(lane = DOOR_LANE) {
     const doors = new Map((this.bp.doors ?? []).map((d) => [d.id, d]));
     const out = []; let n = 0;
     for (const k of this.keep) {
-      const d = k.why === 'door' && k.depth != null && k.depth > 0.76 ? doors.get(k.door) : null;
+      const d = k.why === 'door' && k.swingIn ? doors.get(k.door) : null;
       if (!d || d.kind === 'shutter' || (!d.double && d.hinge !== 'left' && d.hinge !== 'right')) { out.push(k); continue; }       // no hinge on record: keep the whole rectangle
       n++;
       const w = d.w ?? 0.9, reach = w + 0.05;
-      out.push({ ...k, ...this._wallRect(k.wall, k.u0, k.u1, lane), depth: lane });
+      out.push({ ...k, ...this._wallRect(k.wall, k.u0, k.u1, lane), depth: lane, swingIn: false });
       const posts = d.double ? [[k.u0 + 0.05, 1, w / 2 + 0.05], [k.u1 - 0.05, -1, w / 2 + 0.05]] : d.hinge === 'left' ? [[k.u0 + 0.05, 1, reach]] : [[k.u1 - 0.05, -1, reach]];
       for (const [uh, sg, rad] of posts) {
         const bands = 8;
