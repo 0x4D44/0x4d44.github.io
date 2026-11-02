@@ -303,22 +303,24 @@ const PAINT = {
     fade(g, w, h, [0.12, 0.12, 0, 0.15]);
   },
   efflor(g, w, h, i, r) {
-    // Salts on brick: the lower courses are dark with wet, and a thin bloom of white dust lies on them, thickest under the top of the wet where it dried out. A crust, not a stripe.
-    const lo = fbm(r, w + 4), hi = fbm(r, w + 4, [[1, 30], [0.5, 11], [0.2, 4]]), reach = new Float32Array(w), dark = [44, 30, 24], salt = [238, 235, 224];
+    // Salts on brick: the lower courses are dark with wet, and the salt that rose with the water has dried on them as a CRUST: hard little flecks and ragged patches of them, thickest just under the
+    // top of the wet, where it evaporates. Never a haze and never a soft blot: a translucent white laid over red brick is pink, and a blur hanging on a wall reads as a puff of smoke (R1-105, worst at
+    // night, when a pale decal is the brightest thing at the foot of the wall). So no gradient of salt, no blurred disc: every fleck is a small hard rectangle that is mostly opaque, and the brick between
+    // the flecks stays brick.
+    const lo = fbm(r, w + 4), hi = fbm(r, w + 4, [[1, 30], [0.5, 11], [0.2, 4]]), reach = new Float32Array(w), dark = [44, 30, 24], salts = [[206, 202, 190], [192, 188, 176], [218, 214, 202], [176, 170, 158]];
     for (let x = 0; x < w; x++) {
       reach[x] = clamp(0.6 + 0.14 * lo[x] + 0.2 * Math.max(0, hi[x]), 0.25, 0.97);
       const top = h * (1 - reach[x]), gr = g.createLinearGradient(0, top, 0, h);
       gr.addColorStop(0, rgba(dark, 0)); gr.addColorStop(0.5, rgba(dark, 0.12)); gr.addColorStop(1, rgba(dark, 0.36));
       g.fillStyle = gr; g.fillRect(x, 0, 1, h);
-      const bl = g.createLinearGradient(0, top - 3, 0, top + h * 0.5), thick = 0.07 + 0.2 * Math.max(0, hi[x]) + 0.03 * lo[x];
-      bl.addColorStop(0, rgba(salt, 0)); bl.addColorStop(0.2, rgba(salt, Math.max(0.03, thick))); bl.addColorStop(1, rgba(salt, 0));
-      g.fillStyle = bl; g.fillRect(x, 0, 1, h);
     }
-    for (let k = 0; k < 12; k++) {                                                                                                                               // thicker crust here and there: wide and low, laid along the courses
-      const x = r() * w, y = h * (1 - reach[x | 0] * (0.5 + 0.45 * r())), rad = 10 + r() * 20;
-      g.save(); g.translate(x, y); g.scale(1, 0.28); soft(g, 0, 0, rad, salt, 0.12 + r() * 0.12); g.restore();
+    const fleck = (x, y, wd, ht, a) => { g.fillStyle = rgba(salts[Math.floor(r() * salts.length)], a); g.fillRect(x, y, wd, ht); };
+    const crusts = 7 + Math.floor(r() * 4);
+    for (let k = 0; k < crusts; k++) {                                                                                                         // ragged crusts: flecks heaped in an ellipse wider than it is tall, along the courses
+      const x0 = 6 + r() * (w - 12), y0 = h * (1 - reach[x0 | 0] * (0.55 + 0.4 * r())), rx = 7 + r() * 16, ry = 2.2 + r() * 3.2, n = 16 + Math.floor(r() * 22);
+      for (let q = 0; q < n; q++) { const a = r() * 6.283, d = Math.sqrt(r()); fleck(x0 + Math.cos(a) * rx * d, y0 + Math.sin(a) * ry * d, 1 + r() * 3.4, 0.9 + r() * 1.5, 0.5 + r() * 0.42); }
     }
-    for (let k = 0; k < 110; k++) { const x = r() * w; g.fillStyle = rgba(salt, 0.18 + r() * 0.4); g.fillRect(x, h * (1 - reach[x | 0] * (0.4 + 0.6 * r())), 0.8 + r() * 2.4, 0.7 + r() * 1.1); }   // crystals along the mortar
+    for (let k = 0, n = 70 + Math.floor(r() * 40); k < n; k++) { const x = r() * w; fleck(x, h * (1 - reach[x | 0] * (0.35 + 0.65 * r())), 0.8 + r() * 1.8, 0.7 + r() * 1.0, 0.3 + r() * 0.5); }   // crystals along the mortar, over the whole wet height
     fade(g, w, h, [0.12, 0.12, 0, 0]);
   },
 };
