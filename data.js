@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "bogle-castle",
+    title: "Bogle Castle",
+    tagline: "A Doom-like first-person shooter in a haunted Scottish castle: fight from the kirkyard through the forest, the distillery and the tower to the mad Laird's lab and free Ailsa. How fast you get there picks one of three endings. Written in mdhavers, a Scots programming language, compiled to WebAssembly.",
+    url: "https://0x4d44.github.io/bogle-castle/",
+    illustration: "ill-bogle",
+    date: "2026-11-02T05:15:00",
+    year: 2026,
+    tags: ["games"],
+    real: true,
+  },
+  {
     slug: "skyblitz",
     title: "SKYBLITZ",
     tagline: "An arcade air-racing Grand Prix: eight pilots, four courses from a tropical archipelago to aurora glaciers, loops, barrel rolls, shortcuts, ten power-ups and AI rivals that fight back. Three.js, synthesised audio and ferrosintesis-rendered music; keyboard, gamepad or touch; no build. Early build: still being tuned.",
@@ -2123,7 +2134,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["aotearoa-rally", "southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "kart-racing", "skyblitz", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["aotearoa-rally", "southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "kart-racing", "skyblitz", "bogle-castle", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "pigeon-protocol", "bunched",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
