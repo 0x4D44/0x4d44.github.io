@@ -109,13 +109,15 @@ test('sweep: from 8.5 m deep and 4.2 m wide up, every rowhouse plan keeps its ki
   assert.equal(JSON.stringify(planBuilding(makeCtx([]), lot).rooms), JSON.stringify(planBuilding(makeCtx([]), lot).rooms), 'the same lot plans the same twice');
 });
 
-test('the middle bedroom of a rowhouse floor keeps a free strip for a bed: both its short-wall doors sit at the stair end and 0.8 m or more of wall is clear beyond them (R4-103)', () => {
+test('a bedroom of a rowhouse floor that opens onto the next bedroom keeps a free strip for a bed: its short-wall doors sit at the stair end and 0.8 m or more of wall is clear beyond them (R4-103)', () => {
   const problems = [];
   let n = 0;
   for (const bp of rows) for (const r of bp.rooms) {
     if (r.type !== 'bedroom' || r.floor < 1) continue;
-    const ds = bp.doors.filter((d) => !d.ext && d.rooms.includes(r.id) && d.wall.dir === 'x');   // doors in the short walls (between rooms one behind the other)
-    if (ds.length !== 2 || Math.abs(ds[0].z - ds[1].z) < 1) continue;                           // the middle bedroom has one in the wall to the front room and one in the wall to the back room (the front bedroom's two are on one wall)
+    // The doors in its short walls (between rooms one behind the other) that join it to another bedroom. R4-103 was written for the middle bedroom, which had two of them (to the front and to the
+    // back bedroom); the door budget keeps one door between two bedrooms (the landing reaches the front and the middle one: `arch-doorbudget.test.mjs`), so it has the one onto the back bedroom.
+    const ds = bp.doors.filter((d) => !d.ext && d.rooms.includes(r.id) && d.wall.dir === 'x' && d.rooms.every((id) => bp.rooms.find((q) => q.id === id).type === 'bedroom'));
+    if (!ds.length) continue;
     const core = bp.rooms.find((q) => q.core && q.floor === r.floor);
     if (!core) { problems.push(`${r.id}: no stair on its floor`); continue; }
     n++;
@@ -123,7 +125,7 @@ test('the middle bedroom of a rowhouse floor keeps a free strip for a bed: both 
     const free = low ? r.rect.x1 - Math.max(...ds.map((d) => d.x + d.w / 2)) : Math.min(...ds.map((d) => d.x - d.w / 2)) - r.rect.x0;
     if (free < 0.8) problems.push(`${r.id}: ${free.toFixed(2)} m of free wall beyond its doors (stair on the ${low ? 'low' : 'high'} side, room ${(r.rect.x1 - r.rect.x0).toFixed(2)} m wide)`);
   }
-  assert.ok(n >= 10, `${n} middle bedrooms with two short-wall doors on the real barrio`);
+  assert.ok(n >= 10, `${n} bedrooms with a short-wall door onto another bedroom on the real barrio`);
   assert.deepEqual(problems, []);
 });
 

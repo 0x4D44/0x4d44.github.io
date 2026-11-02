@@ -58,7 +58,7 @@ function pieceOf(spot) {
 const FIT = {
   cook: { on: ['cook'], in: ['kitchen'] },
   wash: { on: ['wash'], in: ['kitchen', 'bathroom'] },
-  laundry: { on: ['laundry'], in: ['terrace', 'patio', 'balcony', 'kitchen', 'backroom'] },
+  laundry: { on: ['laundry'], in: ['terrace', 'patio', 'balcony', 'kitchen', 'backroom', 'laundry'] },       // ('laundry': the Lavadero, whose basin, rack and basket are the anchors: interiors/rooms.js `laundry`, index.js A('laundry'))
   sweep: { on: ['sweep'], in: null },
   eat: { on: ['sit'], in: ['dining', 'kitchen'] },
   tv: { on: ['tv'], in: ['living', 'bedroom', 'dining'] },

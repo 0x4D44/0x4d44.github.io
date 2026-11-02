@@ -154,6 +154,26 @@ test('a find lies where it can be seen (R4-208, R4-206: of 162 finds 40 were not
   assert.equal(underClothes, 0, `${underClothes} finds lie on the floor under the hanging clothes`);
 });
 
+test('a paper never hides the find beside it (R4-206: the letter went down first, and its padded edge stood on the line from one eye to the coin in a nightstand drawer of the real barrio): the find goes down first when the paper would hide it', () => {
+  // the drawer of a nightstand_a (the one of L21.f1.r1, the household's letter and coin as planned), cut from A2's real barrio
+  const slot = {
+    i: 0, kind: 'drawer', group: 'nightstand', rect: { x0: -0.208, x1: 0.208, y0: 0.372, y1: 0.518 }, zf: 0.19, travel: 0.285, pool: 'nightstand_drawer', cap: [3, 5], who: 'El cajón de la mesita',
+    surf: [{ x0: -0.176, x1: 0.176, z0: -0.085, z1: 0.154, y: 0.384, h: 0.13, panel: 0.134, cot: 0.43, zr: -0.156 }],
+  };
+  const S = { id: 'L21.f1.r1.i2bx#0', slot, plan: { paper: 'carta_abuela', find: 'moneda_antigua' }, hh: w.bps.find((bp) => bp.interior?.hh?.length).interior.hh[0] };
+  const objs = makeContents(w.ctx, S), f = objs.find((o) => o.find), p = objs.find((o) => o.paper);
+  assert.ok(f && p, `the coin and the letter are both in the drawer (${objs.map((o) => o.item ?? o.paper?.id ?? o.find ?? o.sh).join(', ')})`);
+  const eyes = eyesFor(slot, 0), t = [f.x, f.y + f.h / 2, f.z], hiding = [];
+  for (const o of objs) {
+    if (o === f) continue;
+    const b = { x0: o.x - o.w / 2 - GUARD_PAD, x1: o.x + o.w / 2 + GUARD_PAD, y0: o.y - 0.015, y1: o.y + o.h + GUARD_PAD, z0: o.z - o.d / 2 - GUARD_PAD, z1: o.z + o.d / 2 + GUARD_PAD };
+    if (eyes.some((e) => crosses(e, t, b))) hiding.push(o.item ?? o.paper?.id ?? o.sh);
+  }
+  assert.deepEqual(hiding, [], `${hiding.join(', ')} stand on a sight line to the coin`);
+  assert.deepEqual(objs.map((o) => o.k), objs.map((_, i) => i), 'the objects keep their order (k counts from 0)');
+  assert.ok(objs[0].paper && objs[1].find, 'the letter comes first and the coin second, whichever went down first');
+});
+
 test('every treasure and every small find in the barrio carries the flag the glint layer draws a star over (R4-206: a speck in a drawer reads as nothing); the big funny and tender things do not', () => {
   let finds = 0, glinting = 0; const bad = [];
   for (const bp of w.bps) {
