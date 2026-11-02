@@ -98,7 +98,7 @@ export function planCourtyard(S) {
     const gk1 = room(k, 'corridor', Rg1), gk2 = room(k, 'corridor', Rg2);
     const sk = Rside ? room(k, 'bedroom', Rside, { occupant: 'young' }) : null;
     const ra = room(k, 'bedroom', R(x0, fz0, pcx - ti / 2, z1), { occupant: 'family' }), rb = room(k, 'bedroom', R(pcx + ti / 2, fz0, x1, z1), { occupant: k % 2 ? 'young' : 'family' });
-    S.link(ra, rb);
+    // (no door between the two front bedrooms: it was the one way from the stair's gallery to the bath's, so the bath was behind two bedrooms (R4-301). The back band joins the galleries now: `backFloor`)
     linkBest(S, ra, [gk1, gk2]); linkBest(S, rb, [gk2, gk1]);
     if (sk) S.link(sk, gk2);
     const core = S.coreRooms[k];
@@ -108,25 +108,36 @@ export function planCourtyard(S) {
     for (const r of [ra, rb, ...back.rooms]) { const sw = S.arcade(r, M(Rp), { w: 1.3, sill: SILL, h: 1.15, grille: true }); void sw; }
   }
 
-  /** The back band of one floor: [stair core] [kitchen | bedroom(s)] [utility + bath] */
+  /**
+   * The back band of one floor: [stair core] [kitchen | sitting room] [(dining room)] [utility + bath]. Upstairs it is the way between the stair's gallery and the bath's (R4-301: the two galleries were joined
+   * through the two front bedrooms, and the bath, the store and the east gallery were behind both): the landing opens onto the sitting room, the sitting room onto the passage (the utility strip's front room)
+   * that gives onto the east gallery and the bath, so no bedroom is a way through. The bedrooms are the front band and the side room, each a leaf off a gallery.
+   */
   function backFloor(k) {
     const ground = k === 0;
-    const main = room(k, ground ? 'kitchen' : 'bedroom', backR, ground ? {} : { occupant: 'family' });
-    const { bath, util } = bathStrip(S, main, k, flip ? 'west' : 'east', { utility: ground ? 'laundry' : 'backroom' });
+    const main = room(k, ground ? 'kitchen' : 'living', backR, ground ? {} : { occupant: 'family' });
+    const { bath, util } = bathStrip(S, main, k, flip ? 'west' : 'east', { utility: ground ? 'laundry' : 'hall' });
     const rooms = [main];
     let near = main;
-    if (rw(main.rect) >= 5.8) {                                         // wide: kitchen beside the stair, a bedroom beside the bath
+    if (rw(main.rect) >= 5.8) {                                         // wide: the kitchen (the sitting room upstairs) beside the stair, a dining room beside the strip
       const [w, e] = cutX(main.rect, (main.rect.x0 + main.rect.x1) / 2);
       const [kitchenPart, otherPart] = flip ? [e, w] : [w, e];
       main.rect = kitchenPart;
-      near = S.addRoom(k, ground ? 'bedroom' : 'bedroom', otherPart, { occupant: 'family' });
+      near = S.addRoom(k, 'dining', otherPart);
       rooms.push(near);
       S.link(main, near);
     }
-    S.link(near, bath);
-    // the store opens onto the gallery, not through a bedroom: upstairs that is its one door, made in the place of the bedroom's (the same slot and the same hinge draw, so the ids and the streams after it do
-    // not move); the ground floor makes both below and the door budget keeps the gallery's
-    if (util && (ground || !linkBest(S, util, [g1Rooms(k).g2], { min: 1.0 }))) S.link(near, util);
+    // the bath hangs off the utility room (the passage upstairs), which opens onto the gallery; a strip with no utility room gives the bath the gallery's own door. Never through a bedroom (R4-301).
+    if (util) S.link(util, bath);
+    else if (!linkBest(S, bath, [g1Rooms(k).g2], { min: 0.95 })) S.link(near, bath);
+    // The utility room opens onto the gallery and onto the room beside it. Downstairs the door budget keeps one of the two (the gallery's); upstairs both stay, and the room beside the strip also opens onto
+    // the gallery where the strip does not reach it (a side room in the way): the back band is the bridge between the galleries.
+    if (util) {
+      const gal = g1Rooms(k), viaGallery = ground || linkBest(S, util, [gal.g2], { min: 1.0 });
+      if (!ground && near !== main) linkBest(S, near, [gal.g2, gal.g1], { min: 1.0 });
+      S.link(near, util);
+      if (!ground && !viaGallery && near === main) S.spare(1);          // the door the front bedrooms' one used to be (keeps the ids and the streams after it)
+    }
     const core = S.coreRooms[k];
     if (!ground && core) linkBest(S, core, [main], { min: 0.95 });         // upstairs the landing reaches the back rooms through its side wall
     const walk = ground ? [g1Rooms(0).g2, g1Rooms(0).g1] : [];
