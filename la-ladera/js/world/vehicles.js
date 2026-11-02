@@ -3,7 +3,7 @@
 import { tube, quadOut } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointAt, project } from './geom.js';
-import { vehicleMatrix } from './vehicle-library.js';
+import { vehicleMatrix, lookHash } from './vehicle-library.js';
 import { buildParkedLibrary } from './vehicle-placement.js';
 
 /** footprints [width, length] of the placed things, the one source for their colliders and for the arrival-view test */
@@ -320,6 +320,15 @@ export function buildVehicles(K) {
   const { plan, occ, ctx, H } = K, R = K.rng('vehicles');
   const stats = { cars: 0, taxis: 0, motos: 0, bikes: 0, busetas: 0, carts: 0, bins: 0, rubbish: 0, cylinders: 0 };
   const carCols = [0xf4f4f0, 0xf4f4f0, 0xb8222a, 0x9aa0a6, 0x2b4f7e, 0x1c1c20, 0xd9cfa8, 0x3d6b4a];
+  // R1-103: the list above is dealt at random, so three of seven cars came out white. A colour that was already dealt is swapped for one that was not (maroon, teal, steel, pale blue are added to the
+  // pool); the draw on the street's random stream is untouched, so no car, bike or prop moves. Once every colour is out they repeat. (The library tints each car to its colour; vehicle-library.js.)
+  const carPool = [...new Set([...carCols, 0x6d3037, 0x2d9590, 0x7f8a94, 0xa9c3dc])], dealt = new Map();
+  const dealCar = (pick, x, z) => {
+    let col = pick;
+    if (dealt.has(col)) { const fresh = carPool.filter((c) => !dealt.has(c)); if (fresh.length) col = fresh[lookHash(x, z, 3) % fresh.length]; }
+    dealt.set(col, (dealt.get(col) ?? 0) + 1);
+    return col;
+  };
   const motoCols = [[0xb8222a, 0x1c1c20], [0x2b4f7e, 0xe8e8e0], [0xe8e8e0, 0xb8222a], [0x1c1c20, 0xb8222a], [0xf2c230, 0x1c1c20], [0xd8702a, 0x1c1c20], [0x2f7a4a, 0xe8e8e0], [0x6a6e74, 0x1c1c20]];
   const nonStair = plan.streets.filter((s) => s.kind !== 'stair');
   const farFromOthers = (st, x, z, m) => nonStair.every((o) => o === st || project(o._d.pts, o._d.cum, x, z).d > o.width / 2 + m);
@@ -349,7 +358,7 @@ export function buildVehicles(K) {
       const x = q.x - q.tz * lane * sd, z = q.z + q.tx * lane * sd, ry = Math.atan2(q.tx, q.tz) + (sd > 0 ? 0 : Math.PI) + rr.range(-0.04, 0.04);
       if (!okSpot(st, x, z, x, z, 1.9, 4.1, ry)) continue;
       const taxi = rr.chance(0.18), y = H(x, z) + 0.04, pitch = pitchOf(x, z, ry);
-      const model = car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : rr.pick(carCols), taxi });
+      const model = car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : dealCar(rr.pick(carCols), x, z), taxi });
       K.rect(x, z, ...envelope(model, SIZE.car), ry, ctx.vehicleLibrary?.meta(model)?.size[1] ?? 1.5, y, 0.05, true); // solid: no inside to be shut in
       occ.take(x, z, 2.1); placed++; stats.cars++; if (taxi) stats.taxis++; rec(taxi ? 'taxi' : 'car', x, z, ry);
     }
