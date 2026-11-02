@@ -221,6 +221,9 @@ try {
   ok('people scale: every character <= 1.80 m (+2 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.82 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
   const bind = await ev(p, () => __sim.peopleBind());
   ok('every clip binds on all characters (53-bone rig) and on the LOD models', bind && bind.chars >= 20 && bind.miss === 0 && bind.lodMiss === 0, JSON.stringify(bind));
+  const pf = await ev(p, () => __sim.peopleFit());
+  ok('skirts / dresses / kilts are held off the thighs (every wearer fitted, LOD too, sane thigh radii, thigh skin slimmed, strength switch works) and no skin triangle joins a hand to a leg',
+    pf && pf.rows.length >= 9 && pf.rows.every((r) => r.g >= 1 && r.gLod >= 1 && r.thigh >= 0.05 && r.thigh <= 0.14) && pf.rows.filter((r) => r.slim > 0).length >= 8 && pf.k1 === 1 && pf.k0 === 0 && pf.kEnd === 1 && pf.web === 0, JSON.stringify(pf));
   ok('user eye height is 1.50-1.55 m standing', pi.eye >= 1.49 && pi.eye <= 1.555, 'eye=' + pi.eye.toFixed(3));
   const sitT = await ev(p, () => { const s = __sim, sim = s.sim, w = s.walker(), tv = sim.trainView; const rg = sim.walkable.cars[1].benchZRanges[0];
     let zs = null; for (let z = rg[0] + 0.4; z < rg[1] - 0.4; z += 0.1) if (!sim.saloon.people.some((q) => q.state === 'sit' && Math.abs(q.x) > 0.5 && Math.abs(q.z + tv.carInfo[tv.cars.indexOf(q.parent)].zc - z) < 0.8)) { zs = z; break; }

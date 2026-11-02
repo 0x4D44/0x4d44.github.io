@@ -1,6 +1,6 @@
 // Instanced low-poly people (platform crowd, boarding/alighting streams).
 import { mulberry32, clamp } from './util.js';
-import { fitHair } from './bodyfit.js';
+import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing } from './bodyfit.js';
 
 const PALETTE = [0x2f3b52, 0x6b2d2d, 0x2d5a3b, 0x7a6a4f, 0x1f1f24, 0x8a4f7a, 0x3d6a8a, 0xb5523b, 0x56585c, 0xc0a040, 0x2a2a5a];
 const SKIN = [0xf0c8a0, 0xd9a577, 0xa8714a, 0x7a4a2e, 0xf5d3b8];
@@ -138,7 +138,14 @@ export class AnimCrowd {
     }
     for (const c of this.chars) if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) { this._extendHem(c.node); if (c.lodNode) this._extendHem(c.lodNode); }
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
-    for (const c of this.chars) { const h = fitHair(THREE, c.node), hl = c.lodNode ? fitHair(THREE, c.lodNode) : null; this.fit[c.id] = { hair: h, hairLod: hl }; }
+    for (const c of this.chars) {
+      const h = fitHair(THREE, c.node), hl = c.lodNode ? fitHair(THREE, c.lodNode) : null, skirted = /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit);
+      // skirts held off the thighs (shader patch + slimmed thigh skin). The lower level of detail (all but the 8 nearest people) has cloth made of far bigger flat faces, so its hidden skin gives way more.
+      const legs = skirted ? fitLegs(THREE, c.node) : null, legsLod = skirted && c.lodNode ? fitLegs(THREE, c.lodNode, { radii: legs && legs.radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
+      const trim = skirted ? trimUnderSkirt(THREE, c.node) : null, trimLod = skirted && c.lodNode ? trimUnderSkirt(THREE, c.lodNode) : null;   // tops: nothing drawn under the skirt's waist edge
+      const web = trimWebbing(THREE, c.node), webLod = c.lodNode ? trimWebbing(THREE, c.lodNode) : null;   // the simplified body has a few triangles joining a hand to a thigh
+      this.fit[c.id] = { hair: h, hairLod: hl, legs, legsLod, trim, trimLod, web, webLod };
+    }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
@@ -178,6 +185,10 @@ export class AnimCrowd {
       const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
     });
   }
+  /** strength of the skirt-off-the-legs push (1 = on, the default; 0 = off, for before / after comparisons) */
+  setLegFit(k) { legFit.k.value = k; }
+  /** triangles still joining a hand to a leg anywhere in the character templates (0 once bodyfit's trimWebbing has run), for the tests */
+  webbing() { let n = 0; for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isSkinnedMesh) n += countWebbing(m); }); return n; }
   _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
