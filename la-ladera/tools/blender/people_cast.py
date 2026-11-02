@@ -37,7 +37,7 @@ LOOKS = {
     'g_escolar': ('Afro-Colombian', '#986b4f', '#30251f', 'pigtails', (.65, .10, .25), 9),
     'm_joven': ('mestizo', '#a97654', '#30251e', 'slick', (.26, .24, .50), 25),
     'w_vecina': ('mestizo', '#b17e5e', '#584033', 'sidepart', (.24, .28, .48), 56),
-    'm_don': ('European-descent', '#c59777', '#898279', 'receding', (.12, .13, .75), 63),
+    'm_don': ('European-descent', '#c59777', '#898279', 'short', (.12, .13, .75), 63),
     'w_joven': ('Afro-Colombian', '#946346', '#30251f', 'topknot', (.67, .10, .23), 24),
     'm_rapado': ('Afro-Colombian', '#82553c', '#25201c', 'buzz', (.73, .10, .17), 17),
 }
@@ -75,11 +75,11 @@ WARDROBES = {
     'w_beata': dict(top='#716875', inner='#d5ccbb', bot='#34343a', top_fabric='wool_coat', cloth_wear=.28),
     'b_escolar': dict(top='#e4e4da', bot='#647b9b', top_fabric='cotton', top_tucked=True, cloth_wear=.08),
     'g_escolar': dict(top='#e5e4d8', bot='#647b9b', top_fabric='cotton', top_tucked=True, cloth_wear=.08),
-    'm_joven': dict(top='#4b826d', bot='#43546c', top_fabric='jersey', shirt_trim='#dbd9c1', cloth_wear=.20),
+    'm_joven': dict(top='#4b826d', bot='#43546c', top_fabric='jersey', top_secondary='#2f5a4a', cloth_wear=.20),
     'w_vecina': dict(top='#92936b', bot='#4f6379', top_fabric='knit', top_secondary='#697454', cloth_wear=.30),
     'm_don': dict(top='#9bafb9', bot='#585962', top_fabric='stripe_cotton', top_tucked=True, cloth_wear=.20),
     'w_joven': dict(top='#d1ae64', bot='#4f6c8a', top_fabric='jersey', top_secondary='#557e77', top_print='leaf', cloth_wear=.17),
-    'm_rapado': dict(top='#ae6355', bot='#353a43', top_fabric='jersey', shirt_trim='#d9d2b8', cloth_wear=.23),
+    'm_rapado': dict(top='#ae6355', bot='#353a43', top_fabric='jersey', cloth_wear=.23),
 }
 
 
