@@ -46,6 +46,17 @@ const OPTION_RULES = {
   voice: (v) => clamp(num(v, 1), 0, 1), ambience: (v) => clamp(num(v, 0.7), 0, 1),
   voiceName: (v) => (typeof v === "string" && v.length <= 120 && !["__proto__", "constructor", "prototype"].includes(v) ? v : ""), // "" is Auto; anything odd falls back to it
 };
+/**
+ * Handling preset ("standard" | "easy"), saved on the profile beside the options (not inside them, so the option table stays as pinned).
+ * Easy: assist at full strength, half damage, a smaller keyboard lock at speed. It is built only from options the physics and input
+ * layers already take. An Easy run is never a personal best (it is quicker than Standard).
+ */
+export const HANDLING_IDS = Object.freeze(["standard", "easy"]);
+export const HANDLING = Object.freeze({
+  standard: Object.freeze({ id: "standard", label: "Standard" }),
+  easy: Object.freeze({ id: "easy", label: "Easy", assist: 0.7, damageMul: 0.5, keyLockAtSpeed: 0.5 }),
+});
+export const sanitiseHandling = (v) => (v === "easy" ? "easy" : "standard");
 /** Fill defaults and clamp every known option; unknown keys are dropped. */
 export function sanitiseOptions(o) {
   const out = {};
@@ -108,6 +119,11 @@ export function vehicleOptionsFor(spec, setup, options) {
   if (o.difficulty && DIFFICULTY[o.difficulty]) out.damageScale = DIFFICULTY[o.difficulty].damageScale;
   if (o.gearbox) out.auto = o.gearbox !== "manual";
   if (o.steerAssist != null) out.assist = clamp(num(o.steerAssist), 0, 1) * 0.7;
+  if (sanitiseHandling(o.handling) === "easy") {
+    const E = HANDLING.easy;
+    out.assist = E.assist;
+    out.damageScale = (out.damageScale ?? 1) * E.damageMul;
+  }
   return out;
 }
 
@@ -154,6 +170,7 @@ function sanitiseProfile(p) {
       for (const [cid, arr] of Object.entries(cars)) if (safeKey(cid) && Array.isArray(arr) && arr.length < 40 && arr.every((v) => Number.isFinite(v))) slot(out.splits, sid)[cid] = arr;
     }
   out.options = sanitiseOptions(p.options);
+  if (sanitiseHandling(p.handling) === "easy") out.handling = "easy";
   if (p.stats && typeof p.stats === "object") {
     out.stats.stagesFinished = num(p.stats.stagesFinished);
     out.stats.championships = num(p.stats.championships);
@@ -297,6 +314,13 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
     },
     get options() {
       return profile.options;
+    },
+    get handling() {
+      return sanitiseHandling(profile.handling);
+    },
+    setHandling(v) {
+      profile.handling = sanitiseHandling(v);
+      return profile.handling;
     },
     setOption(key, value) {
       if (!Object.hasOwn(DEFAULT_OPTIONS, key)) return false;
