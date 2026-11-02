@@ -28,6 +28,9 @@ const LOOK_CLEAR = 0.42;                 // lookPose: a bystander this near the 
 const AISLE = 0.8;                       // a keeper's post that _makeShops has to find lies at least this far from the way a customer walks in: a walker is pushed off a way that passes nearer a standing person (npc.js separation)
 const SWEPT_R = 0.3;                     // waypoints: a body's width for a leg a lane offset made (npc.js BODY.radius 0.25 and a hand); physics.segmentBlocked tests the line alone, so a fence end 0.2 m off it passed
 const SWEPT_STEP = 0.15;                 // metres between the places of a leg tried for that body
+const PAVE_SPREAD = 0.4;                 // waypoints: a walker's own lane (0.55 to 1.25) moves them this fraction of itself across the pavement (0.9 m wide, 0.4 m of it a body's centre can use), so a street's walkers are not one file
+const PAVE_STEPS = [1, 0.72, 0.5, 0.25, 0];   // waypoints: the fractions of a pavement lane tried while it is blocked: the road beside the kerb (a lamp post, a bin) first, the graph last
+const LANE_STEPS = [1, 0.6, 0.3, 0];     // waypoints: the same for any other lane (a plaza node near its edge)
 const SAME_LEVEL = 2.2;                  // near(): people this far apart in height are not neighbours (another floor of a building, the terrace above a street); the nurse upstairs pushed the patient below her off the way to the seat, and the patient stalled short of it
 const FRONT = 0.96;                      // keeperFacing: a keeper idles within this many radians (55 degrees) of the direction to the door
 const BEHIND = 1.9;                      // keeperFacing: ... unless the customers' spot lies more than this far (109 degrees) off the direction to the door: then he faces the door
@@ -393,7 +396,8 @@ export class PeopleSim {
   onReact(n, line, ev) { /* world: subtitle + voice */ }
 
   /**
-   * Graph path (node indices) -> waypoints with a "keep to your right" lane offset. A lane offset never leads over a drop, into a solid or across a wall: the offset point goes back towards its
+   * Graph path (node indices) -> waypoints with a "keep to your right" lane offset. On a street with a sidewalk (nodes with `pave`, world/nav.js) the lane is the middle of the pavement, on the right of the way
+   * the walker goes, and a pavement lane that is blocked (a lamp post, a bin) steps down to the road beside the kerb, then towards the centre, one step at a time, before it gives up. A lane offset never leads over a drop, into a solid or across a wall: the offset point goes back towards its
    * node while it is over a drop or inside a cart, a planter or a trunk, and where the leg to or from it still crosses a wall (a bench beside the edge of the graph, whose end supports stand in
    * the lane: eight people a day were pushed against one for four seconds) the walker keeps to the graph itself, which the world has proved clear.
    * A leg also has to be wide enough for a body: the line alone cleared the end of a fence 0.2 m off it and the 0.4 m slot between two guard rails, and the walker stood against them.
@@ -406,18 +410,22 @@ export class PeopleSim {
       const a = N[list[0]], b = N[list[1]], ex = b.x - a.x, ez = b.z - a.z;
       if ((npc.x - a.x) * ex + (npc.z - a.z) * ez > 0.5 * (ex * ex + ez * ez)) list = list.slice(1);
     }
-    const out = [], nodes = [], moved = [];
+    const out = [], nodes = [], moved = [], lanes = [];
     for (let k = 0; k < list.length; k++) {
       const nd = N[list[k]], p = N[list[Math.max(0, k - 1)]], q = N[list[Math.min(list.length - 1, k + 1)]];
       let tx = q.x - p.x, tz = q.z - p.z; const tl = Math.hypot(tx, tz);
-      let off = nd.kind === 'stair' || p.kind === 'stair' || q.kind === 'stair' ? 0 : Math.min(npc.lane, Math.max(0, (nd.w ?? 2) - 0.9));
+      // a street with a sidewalk (nav `pave`): the lane is the middle of the pavement, a little off it by the walker's own lane; the yellow line is for crossing (R3-105: 80 % of the walkers on Calle del Sol kept to it)
+      const pave = nd.pave != null && p.pave != null && q.pave != null && nd.kind !== 'stair';
+      let off = nd.kind === 'stair' || p.kind === 'stair' || q.kind === 'stair' ? 0 : pave ? nd.pave + (npc.lane - 0.9) * PAVE_SPREAD : Math.min(npc.lane, Math.max(0, (nd.w ?? 2) - 0.9));
       if (tl < 1e-6) off = 0; else { tx /= tl; tz /= tl; }
-      let px = nd.x - tz * off, pz = nd.z + tx * off;
       const room = (x, z) => ledgeSafe(this.physics, x, z, nd.y) && !this.physics?._overlaps?.(x, z, nd.y, 0.3, 1.5);
-      if (off > 0 && !room(px, pz)) {                                         // a plaza node near its edge: the lane would put the walker over the drop (it fell 3 m and could not get back), or inside a vendor's cart, a planter, a trunk
-        for (const f of [0.6, 0.3, 0]) { px = nd.x - tz * off * f; pz = nd.z + tx * off * f; if (f === 0 || room(px, pz)) break; }
+      // the fractions of the lane tried in turn while a point or a leg is no good: the pavement steps down to the road beside the kerb (a lamp post or a bin in the way) before it gives up the street's side; an ordinary lane tries 0.6, 0.3, the graph
+      const L = { fr: pave ? PAVE_STEPS : LANE_STEPS, i: 0, at: (f) => ({ x: nd.x - tz * off * f, z: nd.z + tx * off * f }), room };
+      let at = L.at(1);
+      if (off > 0 && !room(at.x, at.z)) {                                     // a plaza node near its edge: the lane would put the walker over the drop (it fell 3 m and could not get back), or inside a vendor's cart, a planter, a trunk
+        while (++L.i < L.fr.length) { at = L.at(L.fr[L.i]); if (L.fr[L.i] === 0 || room(at.x, at.z)) break; }
       }
-      out.push({ x: px, z: pz, y: nd.y }); nodes.push(nd); moved.push(px !== nd.x || pz !== nd.z);
+      out.push({ x: at.x, z: at.z, y: nd.y }); nodes.push(nd); moved.push(at.x !== nd.x || at.z !== nd.z); lanes.push(off > 0 ? L : null);
     }
     const ph = this.physics;
     if (goal) { out.push({ x: goal.x, z: goal.z, y: goal.y ?? out[out.length - 1].y }); nodes.push(null); moved.push(false); }        // the leg to the goal is judged with the others
@@ -425,12 +433,18 @@ export class PeopleSim {
       const r = this.sweptR ?? SWEPT_R;
       const crosses = (a, b, ma, mb) => ph.segmentBlocked(a.x, a.z, b.x, b.z, Math.min(a.y ?? b.y, b.y) + 0.2, 1.4) || bodyBlocked(ph, r, a, b, ma, mb);        // (the wall filter of physics.move: a top 0.4 m above the feet or more, a bottom under the head)
       const home = (k) => { out[k].x = nodes[k].x; out[k].z = nodes[k].z; moved[k] = false; };
-      for (let pass = 0, changed = true; pass < 3 && changed; pass++) {
+      const lower = (k) => {                                                  // an ordinary lane goes back to the graph; a pavement lane one step at a time (to the road beside the kerb first)
+        const L = lanes[k]; if (!L || L.fr === LANE_STEPS) return home(k);
+        let to; do { to = L.at(L.fr[++L.i]); } while (L.i < L.fr.length - 1 && !L.room(to.x, to.z));
+        out[k].x = to.x; out[k].z = to.z; moved[k] = L.fr[L.i] > 0;
+      };
+      const passes = lanes.some((L) => L && L.fr === PAVE_STEPS) ? 6 : 3;
+      for (let pass = 0, changed = true; pass < passes && changed; pass++) {
         changed = false;
         for (let k = 0, prev = { x: npc.x, z: npc.z, y: npc.y }; k < out.length; prev = out[k++]) {
           if (!(moved[k] || (k > 0 && moved[k - 1])) || !crosses(prev, out[k], k > 0 && moved[k - 1], moved[k])) continue;
-          if (moved[k]) { home(k); changed = true; }
-          if (k > 0 && moved[k - 1]) { home(k - 1); changed = true; }
+          if (moved[k]) { lower(k); changed = true; }
+          if (k > 0 && moved[k - 1]) { lower(k - 1); changed = true; }
         }
       }
     }

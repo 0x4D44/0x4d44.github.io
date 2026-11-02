@@ -95,7 +95,7 @@ export class NavGraph {
     const g = new NavGraph(), nav = plan?.nav, hy = plan?.heightAt ?? (() => 0);
     if (nav?.nodes?.length >= 4 && nav.edges?.length) {
       const ix = new Map();
-      for (const n of nav.nodes) ix.set(n.id, g.add(n.x, n.y ?? hy(n.x, n.z), n.z, n.kind ?? 'street', { id: n.id, w: n.w }));
+      for (const n of nav.nodes) ix.set(n.id, g.add(n.x, n.y ?? hy(n.x, n.z), n.z, n.kind ?? 'street', { id: n.id, w: n.w, ...(n.pave != null ? { pave: n.pave } : null) }));
       for (const [a, b] of nav.edges) { const A = ix.get(a), B = ix.get(b); if (A != null && B != null) g.link(A, B); }
       return g;
     }
