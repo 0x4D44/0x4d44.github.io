@@ -2,8 +2,8 @@
   "files": [
     {
       "path": "people/people.glb",
-      "bytes": 6923652,
-      "sha256": "b4af02dba31dafb3d27125775585d54e389b130a62ea693ee78b079786971b5f"
+      "bytes": 6920700,
+      "sha256": "b72471fbb94ea38bf1756be6bec3242cc4fc663ae5b8e5887beb943b75605cbc"
     },
     {
       "path": "people/people_albedo.jpg",
@@ -12,13 +12,13 @@
     },
     {
       "path": "people/people_lod.glb",
-      "bytes": 1904076,
-      "sha256": "f72038d9f7032485c900a76f8ece7ddcae7a2b90a2e89b798027f095fd658e03"
+      "bytes": 1905368,
+      "sha256": "a9984a9260a85b8d99f676178ec0e2dd42886fff9d1df1a4d67e7878d0b3e390"
     },
     {
       "path": "people/people_meta.json",
       "bytes": 45255,
-      "sha256": "fd9da061ebec41127c1bcf6bf3a642a3634bf1e6090fc5e49e9df87bb153bbe7"
+      "sha256": "e1eadd1c1f806fc7670959c5be7e5d993d630d658e82de6366c0ec96ac028e66"
     },
     {
       "path": "people/people_normal.jpg",

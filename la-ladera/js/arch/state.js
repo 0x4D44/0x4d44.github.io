@@ -183,6 +183,12 @@ export class PlanState {
   }
 
   /**
+   * Spend the hinge draws and the door ids of `n` interior doors a plan no longer makes (it used to draw them and the budget dropped them, or a plan change leaves the floor with fewer doors than it
+   * had): the ids of every door made after, and the random streams the windows and the facade fork from, stay as they were for the lots whose plan did not change.
+   */
+  spare(n = 1) { for (let i = 0; i < n; i++) { this.rng.next(); this.seq.door++; } }
+
+  /**
    * The door budget. A layout asks for the doors it wants (`link`); this keeps, on every floor, the interior doors that make a TREE over the rooms and drops the rest, so a room is reached one
    * way and a door is never a second way into a room that another door already reaches (L08 had a loop on each of its three floors: a shop with two doors onto the same stair column, a living
    * room and a landing that both opened onto the dining room, bedrooms that opened onto each other as well as onto the landing). A plan with a ring of circulation on purpose (the cloister of a

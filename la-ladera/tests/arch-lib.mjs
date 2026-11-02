@@ -91,9 +91,10 @@ export function testLots() {
 
 /**
  * Homes above a shop, ONE storey above it, numbered on from the last of `testLots` (T67 to T79) but kept out of it: the door and facade tests size their chunk counts by how far the test
- * lots spread, so a longer list would move their bounds. The barrio's 17 had a living room, a kitchen and a bathroom and nowhere to sleep. By plan: a rest column deep enough for two rooms
- * (kitchen, then the bedroom, 5 x 10, 4.5 x 10 and 5.5 x 10), a front band split into living room and bedroom (6 x 9, 5 x 9, 6 x 7 and the cornerstore and the two workshops), and the one
- * that is a studio (5 x 7: the front band is the bedroom).
+ * lots spread, so a longer list would move their bounds. The barrio's 17 had a living room, a kitchen and a bathroom and nowhere to sleep. By plan: a front band split into living room and bedroom
+ * (6 x 9, 5 x 9, 6 x 7, 5 x 10 twice, 5.5 x 10 and the cornerstore and the two workshops), a front band that is the bedroom with a living room beside the stair (4.5 x 10 and 4.2 x 11), and the two
+ * that are a studio (5 x 7 and 4.3 x 9: the front band is the bedroom). The rest column deep enough for two rooms, kitchen and then the bedroom with the bath behind it, is a plan no lot has any
+ * more (R4-301: 5 x 10, 4.5 x 10 and 5.5 x 10 had it).
  */
 export function shopHomeLots() {
   const { lots, mk } = lotMaker(67);

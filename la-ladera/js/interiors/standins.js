@@ -351,10 +351,10 @@ S.chest = (P, c, T) => {
 };
 S.shelfWall = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], col = T;
-  P.box(c.mat, 0, H - 0.03, 0, W, 0.03, D, col);                                       // the board is the top of the item; brackets under it
-  for (const sx of [-1, 1]) P.box('metal_dark', sx * (W / 2 - 0.08), 0, -D / 2 + 0.02, 0.02, H - 0.03, 0.03);
+  P.box(c.mat, 0, 0, 0, W, 0.025, D, col);                                             // the board is the bottom of the item, a bracket rises at each end of its back: the library model's (tools/blender/furn_assets_shop.py shelves), so what stands on the shelf stands on this
+  for (const sx of [-1, 1]) P.box(c.mat, sx * W * 0.35, 0.025, -D * 0.42, 0.025, H - 0.025, 0.025, col);
   const g = c.goods;
-  for (let j = 0; j < 4; j++) { const u = u01(P.id, j); P.flat(-W / 2 + 0.12 + j * (W - 0.24) / 3.2, H, 0, 0.08 + u * 0.06, 0.1 + u * 0.1, 0.08, pick(g === 'barber' ? [0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45] : [0xe4dccb, 0xb5603a, 0x6a8f5a, 0xd4a830], P.id, j)); }
+  if (g === 'barber') for (let j = 0; j < 4; j++) { const u = u01(P.id, j); P.flat(-W / 2 + 0.12 + j * (W - 0.24) / 3.2, 0.025, 0, 0.08 + u * 0.06, 0.1 + u * 0.1, 0.08, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, j)); }     // (the barber's bottles; the home's wall shelf is bare: what stands on it is a record of its own, shelves.js)
 };
 S.hooks = (P, c, T, r) => {
   const { W } = P, H = c.size[1], tags = c.tags, top = H - 0.05;              // the bar is the top of the item, things hang from it

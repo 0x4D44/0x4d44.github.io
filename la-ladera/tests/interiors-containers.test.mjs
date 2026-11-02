@@ -28,9 +28,11 @@ const { ctx, bps } = await world();
 const C = ctx.containers;
 const IDENTITY = new THREE.Quaternion();
 
-/** The ONE kernel of a building: its own physics (walls, furniture), its own Interact; the containers register their targets into it. */
-function withKernel(bp, fn) {
+/** The ONE kernel of a building: its own physics (walls, furniture), its own Interact; the containers register their targets into it. `stories`: the building's story objects (stories.js: "Mirar el
+ *  mostrador", "Ver la tele", "Abrir la llave", the lamp's switch ...) are registered beside them, as they are in the game. */
+function withKernel(bp, fn, stories = false) {
   const real = ctx.interact, ph = physicsFor(bp), ictx = { physics: ph, player: null }, inter = new Interact(ictx);
+  if (stories) for (const x of real.items.values()) if (x.building === bp.id && x.kind === 'object' && x.id.startsWith('int:')) inter.register({ ...x });
   ctx.interact = inter;
   try { return fn(inter, ictx, ph); } finally { ctx.interact = real; }
 }
@@ -297,6 +299,35 @@ test('targeting: from a free spot in front of a slot, aiming at it, E offers it 
   assert.ok(tried >= 40, `only ${tried} slots could be aimed at`);
   assert.ok(walled <= 0.1 * (tried + walled), `${walled} of ${tried + walled} slots cannot be seen from any free spot in front`);
   report(problems, `of ${tried} slots are not what E offers when aimed at from a spot that sees them`);
+});
+
+test('targeting beside the stories (R2b-007): with the building\'s story objects in the kernel too, a front aimed at from a spot that sees it is what E offers, never its own counter\'s, TV\'s or tap\'s line', () => {
+  const problems = [], lost = new Map();
+  let tried = 0, contested = 0;
+  for (const bp of bps.slice(0, Math.min(bps.length, +(process.env.A3_TARGET_BUILDINGS || 42)))) {
+    if (!C.pending.has(bp.id)) continue;
+    withKernel(bp, (inter, ictx, ph) => {
+      const alone = new Interact(ictx);                                                         // the same story objects WITHOUT the containers: would a story object take this aim?
+      for (const x of inter.items.values()) alone.register({ ...x });
+      C.activate(bp.id);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        const a = aimAt(S, ph); if (!a.eye) continue;
+        ictx.player = { eye: a.eye, _dir: a.dir, pitch: Math.asin(a.dir.y) };
+        tried++;
+        if (alone.update(a.eye, a.dir)) contested++;
+        const got = inter.update(a.eye, a.dir);
+        if (got?.id === `cont:${S.id}`) continue;
+        const what = got ? `${got.id} ${JSON.stringify(typeof got.prompt === 'function' ? got.prompt() : got.prompt)}` : 'nothing';
+        problems.push(`${bp.id} ${S.rec.name}#${S.slot.i}: E offers ${what}`);
+        lost.set(S.rec.name, (lost.get(S.rec.name) ?? 0) + 1);
+      }
+      for (const id of [...C.byBuilding.keys()]) C.deactivate(id);
+    }, true);
+  }
+  console.log(`# targeting beside the stories: ${tried} fronts aimed at, ${contested} of them in the line of a story object of their building, ${problems.length} lost${problems.length ? ' (' + [...lost].map(([k, n]) => k + ' x' + n).join(', ') + ')' : ''}`);
+  assert.ok(tried >= 40, `only ${tried} slots could be aimed at`);
+  assert.ok(contested >= 8, `only ${contested} of ${tried} aims were in the line of a story object: this world no longer shows that the front wins`);
+  report(problems, `of ${tried} fronts are not what E offers when aimed at, with the stories in the kernel`);
 });
 
 const DESK = /^(desk_|sewing_table)/;

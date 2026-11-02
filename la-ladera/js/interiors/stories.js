@@ -70,7 +70,7 @@ const DECAL = {
   price_list: ['Leer los precios', 'La lista de precios', 'price_list'], menu_board: ['Leer el menú', 'El menú', 'menu_board'],
   price_meat: ['Leer los precios', 'Los precios de la carne', 'price_meat'], price_bread: ['Leer los precios', 'Los precios del pan', 'price_bread'], price_hair: ['Leer las tarifas', 'Las tarifas', 'price_hair'],
   price_ferre: ['Leer los precios', 'La lista de precios', 'price_ferre'], price_papel: ['Leer los precios', 'La lista de precios', 'price_papel'], price_shoes: ['Leer las tarifas', 'Las tarifas', 'price_shoes'],
-  price_minutos: ['Leer las tarifas', 'Las tarifas', 'price_minutos'], price_modista: ['Leer las tarifas', 'Las tarifas', 'price_modista'], price_taller: ['Leer las tarifas', 'Las tarifas', 'price_taller'],
+  price_minutos: ['Leer las tarifas', 'Las tarifas', 'price_minutos'], price_modista: ['Leer las tarifas', 'Las tarifas', 'price_modista'], price_taller: ['Leer las tarifas', 'Las tarifas', 'price_taller'], price_solda: ['Leer las tarifas', 'Las tarifas', 'price_solda'],
   chalkboard: ['Leer el tablero', 'El tablero', 'chalkboard'], flag_co: ['Mirar la bandera', 'La bandera', 'flag_co'],
   alphabet_chart: ['Mirar la cartelera', 'La cartelera', 'school_chart'], times_table: ['Mirar la cartelera', 'La cartelera', 'school_chart'], schedule: ['Mirar el horario', 'El horario', 'school_chart'],
   eye_chart: ['Leer el cartel', 'El cartel', 'clinic_chart'], health_poster: ['Leer el cartel', 'El cartel', 'clinic_chart'], vaccines: ['Leer la cartilla', 'La cartilla', 'clinic_chart'],

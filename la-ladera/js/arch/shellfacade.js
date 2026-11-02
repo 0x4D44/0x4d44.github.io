@@ -1,9 +1,10 @@
 // Facade language (T2.3): everything on the OUTSIDE of the shell that is not wall, window or door. String courses and cornices, pilasters,
 // awnings and door canopies, lettered shop fascias and blade signs, balconies with railings / planters / laundry, split AC units, drainpipes, meter
 // boxes, painted ghost signs and posters, and the roof kit (water tanks, dishes, antennas, pigeon lofts, laundry lines, rebar stubs). Chapel,
-// school and clinic get their identity pieces (bell gable, cross, flag). Every choice is a hash of the building id, so no two neighbours repeat.
+// school and clinic get their identity pieces (bell gable, cross, flag). The back and the free side walls get the plainer fittings of `elevations` (units, pipes, extractors, zinc hoods,
+// the cable round the corner). Every choice is a hash of the building id, so no two neighbours repeat.
 // Draw-call diet: only materials the shell already uses, plus `sign_atlas` (one canvas for all lettering, see signs.js).
-import { lin, mulc, mixc, qd, hash01, triFacing, bar } from './mb.js';
+import { lin, mulc, mixc, qd, hash01, triFacing, bar, roomSeed } from './mb.js';
 import { CASETA_H } from './roof.js';
 import { buildingClutter } from '../world/clutter.js';
 import { signText, signColours, hexToLin, GHOST_COUNT, posterSetOf, handPainted, HAND_BG } from './signs.js';
@@ -89,6 +90,19 @@ function recorder(G) {
   return (kind, side, u0, u1, y0, y1, out = 0, extra) => { recs.push({ kind, side, u0: +u0.toFixed(3), u1: +u1.toFixed(3), y0: +y0.toFixed(3), y1: +y1.toFixed(3), out: +out.toFixed(3), ...extra }); };
 }
 
+/**
+ * A lean-to of zinc sheet on a wall (no new material): one grey slope from the top edge `ya` between `ua` and `ub` along the wall, `tp` out from it and `td` down, a lip along its low
+ * edge and two thin arms under it. The shop awning of tin and the hoods over side windows are this one piece.
+ */
+function tinHood(G, side, ua, ub, ya, tp, td) {
+  const { b } = G, fr = G.FR[side], zinc = mixc(hx(0x9aa0a4), G.fs.trim, 0.12), steel = hx(0x2b2e31), along = side === 'front' || side === 'back';
+  const A = fr.at(ua, ya, 0.01), B = fr.at(ub, ya, 0.01), C = fr.at(ub, ya - td, tp), E = fr.at(ua, ya - td, tp), up = [fr.n[0] * td, tp, fr.n[2] * td];
+  qd(b, 'door_metal', A, B, C, E, up, { col: zinc }); qd(b, 'door_metal', A, B, C, E, [-up[0], -up[1], -up[2]], { col: mulc(zinc, 0.55) });
+  const lip = fr.at((ua + ub) / 2, ya - td - 0.03, tp);
+  b.box('rail_metal', lip[0], lip[1], lip[2], along ? ub - ua : 0.04, 0.06, along ? 0.04 : ub - ua, { col: steel });
+  for (const u of [ua + 0.04, ub - 0.04]) { const a = fr.at(u, ya - td * 0.5 - 0.1, tp * 0.5); b.box('rail_metal', a[0], a[1], a[2], along ? 0.025 : tp, 0.025, along ? tp : 0.025, { col: steel }); }
+}
+
 // ---- courses, pilasters ----------------------------------------------------------------------------------------------------------------------
 function courses(G, kit) {
   const { S } = G, yF = S.F * S.fh;
@@ -124,10 +138,8 @@ function awning(G, kit) {
     const hh = (n) => hash01(G.bp.id, 430 + n), ya = d.h + 0.42, drop = 0.34 + 0.06 * hh(1), proj = 0.62 + 0.28 * hh(2);
     const w = Math.min(d.w + 0.9, S.W - 0.3), ua = clamp(d.x - w / 2, -S.W / 2 + 0.12, S.W / 2 - 0.12 - w), ub = ua + w;
     if (kit.awnTin) {                                                           // a lean-to of zinc sheet instead of striped cloth: one grey slope, a lip, two arms (no new material)
-      const tp = proj + 0.3, td = drop + 0.14, zinc = mixc(hx(0x9aa0a4), G.fs.trim, 0.12), A = [ua, ya, D2 + 0.01], B = [ub, ya, D2 + 0.01], C = [ub, ya - td, D2 + tp], E = [ua, ya - td, D2 + tp];
-      qd(b, 'door_metal', A, B, C, E, [0, tp, td], { col: zinc }); qd(b, 'door_metal', A, B, C, E, [0, -tp, -td], { col: mulc(zinc, 0.55) });
-      b.box('rail_metal', (ua + ub) / 2, ya - td - 0.03, D2 + tp, w, 0.06, 0.04, { col: hx(0x2b2e31) });
-      for (const u of [ua + 0.04, ub - 0.04]) b.box('rail_metal', u, ya - td * 0.5 - 0.1, D2 + tp * 0.5, 0.025, 0.025, tp, { col: hx(0x2b2e31) });
+      const tp = proj + 0.3, td = drop + 0.14;
+      tinHood(G, 'front', ua, ub, ya, tp, td);
       G.rec('awning', 'front', ua, ub, ya - td - 0.06, ya, tp, { style: 'tin' });
       return;
     }
@@ -190,13 +202,16 @@ function signs(G, kit) {
 function mirador(G, w, u, len, yk, dep) {
   const { S, b } = G, hv = (n) => hash01(w.id, 40 + n);
   const hgt = Math.min(2.2, S.fh - S.slab - 0.4), sill = 0.8 + 0.12 * hv(1), pz = dep - 0.03, concrete = [0.9, 0.9, 0.88];
-  const frameCol = hv(2) < 0.5 ? mulc(G.fs.trim, 1) : hx(0xf2efe6), lit = hv(3) < 0.4;
+  const frameCol = hv(2) < 0.5 ? mulc(G.fs.trim, 1) : hx(0xf2efe6), lit = hv(3) < 0.55;
   fbox(G, 'front', u, yk - 0.075, dep / 2, len, 0.15, dep, 'concrete_bare', concrete);                                      // floor slab
   fbox(G, 'front', u, yk + hgt + 0.06, dep / 2 + 0.02, len + 0.1, 0.12, dep + 0.08, 'concrete_bare', concrete);              // roof slab
   fbox(G, 'front', u, yk + sill / 2, pz, len - 0.04, sill, 0.05, 'plaster_a', G.fs.wall);                                    // solid breast under the glass
   for (const sg of [-1, 1]) fbox(G, 'front', u + sg * (len / 2 - 0.03), yk + hgt / 2, dep / 2, 0.05, hgt, dep - 0.06, 'plaster_a', G.fs.wall);   // solid cheeks
   const gu0 = u - len / 2 + 0.06, gu1 = u + len / 2 - 0.06, gy0 = yk + sill, gy1 = yk + hgt, P = (uu, y) => G.FR.front.at(uu, y, pz + 0.005);
-  b.quad(lit ? 'window_lit' : 'glass', P(gu0, gy0), P(gu1, gy0), P(gu1, gy1), P(gu0, gy1), { col: [1, 1, 1] });
+  // a lit mirador shows a room behind its glass at night, with its own evening (arch/shellwin.js, engine/windowroom.js; R1-104): the quad faces the street (+z) and u runs left to right as seen from it
+  const rw = gu1 - gu0, rh = gy1 - gy0, ruv = (uu, y) => [(uu - gu0) / rw, (y - gy0) / rh];
+  b.quad(lit ? 'window_lit' : 'glass', P(gu0, gy0), P(gu1, gy0), P(gu1, gy1), P(gu0, gy1),
+    lit ? { col: [roomSeed(hv(11), hv(12), hv(13)), rw, rh], uv: [...ruv(gu0, gy0), ...ruv(gu1, gy0), ...ruv(gu1, gy1), ...ruv(gu0, gy1)] } : { col: [1, 1, 1] });
   const n = Math.max(2, Math.round(len / 0.7));
   for (let i = 0; i <= n; i++) fbox(G, 'front', gu0 + ((gu1 - gu0) * i) / n, (gy0 + gy1) / 2, pz + 0.015, 0.045, gy1 - gy0, 0.05, 'frame_paint', frameCol);      // mullions
   for (const y of [gy0, gy1]) fbox(G, 'front', u, y, pz + 0.015, len - 0.1, 0.05, 0.05, 'frame_paint', frameCol);
@@ -268,55 +283,86 @@ export function acLook(id) {
 const AC_FOOT = { split: 0.37, mini: 0.32, window: 0.4 };
 /** The bare wall a unit keeps between its foot and a shop board under it, and how far up the wall it may climb to find that room. */
 const AC_CLEAR = 0.45, AC_LIFT = 0.8;
-/** A round fan opening on the front: a dark eight-sided disc of radius r at depth `o` from the wall, and a lighter hub 4 mm in front of it. */
-function fan(G, u, y, o, r, dark, hub) {
+/** A round fan opening on a wall: a dark eight-sided disc of radius r at depth `o` from the wall, and a lighter hub 4 mm in front of it. */
+function fan(G, side, u, y, o, r, dark, hub) {
+  const fr = G.FR[side], e = crs(UP, fr.n);                                         // e: along the wall, the way `plate` reads it
   for (const [rr, off, col] of [[r, o, dark], [r * 0.26, o + 0.004, hub]]) {
-    const c = G.FR.front.at(u, y, off), p = (i) => [c[0] + Math.cos((i / 8) * Math.PI * 2) * rr, c[1] + Math.sin((i / 8) * Math.PI * 2) * rr, c[2]];
-    for (let i = 0; i < 8; i++) triFacing(G.b, 'rail_metal', c, p(i), p(i + 1), [0, 0, 1], { col });
+    const c = fr.at(u, y, off), p = (i) => [c[0] + e[0] * Math.cos((i / 8) * Math.PI * 2) * rr, c[1] + Math.sin((i / 8) * Math.PI * 2) * rr, c[2] + e[2] * Math.cos((i / 8) * Math.PI * 2) * rr];
+    for (let i = 0; i < 8; i++) triFacing(G.b, 'rail_metal', c, p(i), p(i + 1), fr.n, { col });
   }
 }
-/** Draw one unit centred `u` along the front at height `y`; returns its half width. `toward` (+1 / -1) is the way to the window it serves (the line-set climbs on that side). */
-function acUnit(G, u, y, look, toward, busy) {
-  const { type, col } = look, dark = hx(0x303336), brk = hx(0x2b2e31), hub = hx(0x8a8f94);
+/** The face of a box that lies against each wall (nothing shows of it, so a fitting leaves it out). */
+const AGAINST = { front: 'nz', back: 'pz', left: 'px', right: 'nx' };
+/** Draw one unit on `side`, centred `u` along it at height `y`; returns its half width. `toward` (+1 / -1) is the way to the window it serves (the line-set climbs on that side). */
+function acUnit(G, side, u, y, look, toward, busy) {
+  const { type, col } = look, dark = hx(0x303336), brk = hx(0x2b2e31), hub = hx(0x8a8f94), fr = G.FR[side];
   let hw = 0.4, y0 = y - 0.37;
   if (type === 'split') {                                                           // the condenser: a box with a round fan behind a dark guard, a louvred vent strip, two brackets under it
-    fbox(G, 'front', u, y, 0.19, 0.8, 0.56, 0.3, 'door_metal', col);
-    fan(G, u - 0.13, y, 0.345, 0.19, dark, hub);
-    fbox(G, 'front', u + 0.27, y, 0.345, 0.18, 0.4, 0.01, 'rail_metal', hx(0x45494c));
-    for (let i = 0; i < 4; i++) plate(G, 'door_metal', G.FR.front.at(u + 0.27, y - 0.15 + i * 0.1, 0.353), [0, 0, 1], 0.16, 0.03, mulc(col, 0.92));          // slats of the casing's colour over the dark vent
-    for (const sg of [-1, 1]) fbox(G, 'front', u + sg * 0.3, y - 0.34, 0.14, 0.04, 0.04, 0.28, 'rail_metal', brk);
+    fbox(G, side, u, y, 0.19, 0.8, 0.56, 0.3, 'door_metal', col);
+    fan(G, side, u - 0.13, y, 0.345, 0.19, dark, hub);
+    fbox(G, side, u + 0.27, y, 0.345, 0.18, 0.4, 0.01, 'rail_metal', hx(0x45494c));
+    for (let i = 0; i < 4; i++) plate(G, 'door_metal', fr.at(u + 0.27, y - 0.15 + i * 0.1, 0.353), fr.n, 0.16, 0.03, mulc(col, 0.92));          // slats of the casing's colour over the dark vent
+    for (const sg of [-1, 1]) fbox(G, side, u + sg * 0.3, y - 0.34, 0.14, 0.04, 0.04, 0.28, 'rail_metal', brk);
   } else if (type === 'mini') {                                                     // a compact condenser: a small box with a round fan (an eight-sided disc and its hub), two brackets
     hw = 0.34; y0 = y - 0.32;
-    fbox(G, 'front', u, y, 0.14, 0.58, 0.46, 0.22, 'door_metal', col);
-    fan(G, u - 0.04, y, 0.255, 0.17, dark, hub);
-    for (const sg of [-1, 1]) fbox(G, 'front', u + sg * 0.22, y - 0.28, 0.12, 0.04, 0.04, 0.24, 'rail_metal', brk);
+    fbox(G, side, u, y, 0.14, 0.58, 0.46, 0.22, 'door_metal', col);
+    fan(G, side, u - 0.04, y, 0.255, 0.17, dark, hub);
+    for (const sg of [-1, 1]) fbox(G, side, u + sg * 0.22, y - 0.28, 0.12, 0.04, 0.04, 0.24, 'rail_metal', brk);
   } else {                                                                          // a window unit built into the wall: a box with louvres and a panel, a rendered band round the hole, a drip tube
     hw = 0.36; y0 = y - 0.4;
-    fbox(G, 'front', u, y, 0.17, 0.66, 0.42, 0.34, 'door_metal', col);
-    const P = (dx, dy, w, h, c, o) => plate(G, 'rail_metal', G.FR.front.at(u + dx, y + dy, o), [0, 0, 1], w, h, c);
+    fbox(G, side, u, y, 0.17, 0.66, 0.42, 0.34, 'door_metal', col);
+    const P = (dx, dy, w, h, c, o) => plate(G, 'rail_metal', fr.at(u + dx, y + dy, o), fr.n, w, h, c);
     P(-0.05, 0, 0.5, 0.3, dark, 0.345);
-    for (let i = 0; i < 4; i++) plate(G, 'door_metal', G.FR.front.at(u - 0.05, y - 0.105 + i * 0.07, 0.348), [0, 0, 1], 0.5, 0.04, mulc(col, 0.95));          // 4 cm slats of the casing's own colour over the dark opening: they still read as slats from the street
+    for (let i = 0; i < 4; i++) plate(G, 'door_metal', fr.at(u - 0.05, y - 0.105 + i * 0.07, 0.348), fr.n, 0.5, 0.04, mulc(col, 0.95));          // 4 cm slats of the casing's own colour over the dark opening: they still read as slats from the street
     P(0.26, 0.1, 0.1, 0.07, hx(0x4a4e52), 0.345);
-    for (const [dx, dy, w, h] of [[0, 0.255, 0.74, 0.05], [0, -0.255, 0.74, 0.05], [-0.345, 0, 0.05, 0.46], [0.345, 0, 0.05, 0.46]]) plate(G, 'plaster_a', G.FR.front.at(u + dx, y + dy, 0.012), [0, 0, 1], w, h, [0.72, 0.7, 0.66]);
-    const t = G.FR.front.at(u + 0.26, y - 0.4, 0.05); G.b.cyl('tank_plastic', t[0], t[1], t[2], 0.012, 0.19, 5, { col: hx(0xdcdad0), caps: false });
+    for (const [dx, dy, w, h] of [[0, 0.255, 0.74, 0.05], [0, -0.255, 0.74, 0.05], [-0.345, 0, 0.05, 0.46], [0.345, 0, 0.05, 0.46]]) plate(G, 'plaster_a', fr.at(u + dx, y + dy, 0.012), fr.n, w, h, [0.72, 0.7, 0.66]);
+    const t = fr.at(u + 0.26, y - 0.4, 0.05); G.b.cyl('tank_plastic', t[0], t[1], t[2], 0.012, 0.19, 5, { col: hx(0xdcdad0), caps: false });
   }
   let y1 = y + 0.28;
   if (type === 'split' && look.lineSet) {                                           // the refrigerant line-set: a white duct up the wall toward the window, ending in a hole
     const up = u + toward * 0.28;
-    if (!busy('front', up - 0.08, up + 0.08, y + 0.28, y + 0.72)) {
-      fbox(G, 'front', up, y + 0.5, 0.03, 0.055, 0.44, 0.03, 'door_metal', mulc(col, 1.04), ['nz']);
-      plate(G, 'rail_metal', G.FR.front.at(up, y + 0.69, 0.047), [0, 0, 1], 0.07, 0.07, hx(0x1a1b1c));
+    if (!busy(side, up - 0.08, up + 0.08, y + 0.28, y + 0.72)) {
+      fbox(G, side, up, y + 0.5, 0.03, 0.055, 0.44, 0.03, 'door_metal', mulc(col, 1.04), [AGAINST[side]]);
+      plate(G, 'rail_metal', fr.at(up, y + 0.69, 0.047), fr.n, 0.07, 0.07, hx(0x1a1b1c));
       y1 = y + 0.72;
     }
   }
   return { hw, y0, y1 };
 }
 
+/** The coordinate of an opening along the wall it is in. */
+const alongOf = (side, o) => (side === 'front' || side === 'back' ? o.x : o.z);
+/** A black service bundle with a thinner TV cable under it, held by white clips every 0.7 m, along `side` from `ua` to `ub` at height `yE`; recorded as `kind` (`cable` on the front, `drop` round the corner). */
+function cableRun(G, side, ua, ub, yE, kind) {
+  const len = ub - ua, x0 = (ua + ub) / 2, nClip = Math.max(2, Math.floor(len / 0.7)), along = side === 'front' || side === 'back', skip = [AGAINST[side], ...(along ? ['nx', 'px'] : ['nz', 'pz'])];
+  fbox(G, side, x0, yE, 0.014, len, 0.03, 0.026, 'rail_metal', hx(0x1b1c1e), skip);
+  fbox(G, side, x0, yE - 0.055, 0.01, len, 0.016, 0.018, 'rail_metal', hx(0x6a6d70), skip);
+  for (let i = 0; i < nClip; i++) fbox(G, side, ua + (len * (i + 0.5)) / nClip, yE - 0.025, 0.017, 0.034, 0.1, 0.032, 'door_metal', [0.88, 0.88, 0.85], [AGAINST[side]]);
+  G.rec(kind, side, ua, ub, yE - 0.1, yE + 0.02, 0.04, { clips: nClip });
+}
+/** A drainpipe up a wall from the ground to `top`, at `u` along it, clipped to the wall by a bracket every 1.3 m; recorded as a `pipe`. */
+function drainPipe(G, side, u, top) {
+  const p = G.FR[side].at(u, 0.12, 0.06);
+  G.b.cyl('tank_plastic', p[0], p[1], p[2], 0.032, top - 0.12, 6, { col: [0.78, 0.8, 0.78], caps: false });
+  for (let y = 0.5; y < top; y += 1.3) fbox(G, side, u, y, 0.03, 0.09, 0.03, 0.04, 'rail_metal', hx(0x2b2e31));
+  G.rec('pipe', side, u - 0.05, u + 0.05, 0.12, top, 0.1);
+}
+/** The fittings that keep each other apart without being asked (`busyAt`'s `every` widens that to whatever is on the wall). */
+const FITTINGS = ['ac', 'meter', 'pipe', 'poster', 'goods', 'vent', 'hood', 'drop'];
+/**
+ * Is any of the span u0..u1 x y0..y1 of a wall taken: by a window or an outside door of it (0.2 m margin round each; `except`: the one window a piece hangs from), or by a fitting
+ * this module already put up (`every`: by whatever is recorded on the wall)?
+ */
+function busyAt(G, side, u0, u1, y0, y1, every, except) {
+  const { S, bp } = G;
+  return bp.windows.some((w) => w !== except && w.side === side && (w.z !== undefined) && alongOf(side, w) + w.w / 2 + 0.2 > u0 && alongOf(side, w) - w.w / 2 - 0.2 < u1 && w.floor * S.fh + w.y + w.h + 0.2 > y0 && w.floor * S.fh + w.y - 0.2 < y1)
+    || bp.doors.some((d) => d.ext && d.side === side && alongOf(side, d) + d.w / 2 + 0.2 > u0 && alongOf(side, d) - d.w / 2 - 0.2 < u1 && d.floor * S.fh + d.h + 0.2 > y0 && d.floor * S.fh - 0.2 < y1)
+    || G.recs.some((r) => r.side === side && (every || FITTINGS.includes(r.kind)) && r.u1 + 0.05 > u0 && r.u0 - 0.05 < u1 && r.y1 > y0 && r.y0 < y1);
+}
+
 function wallFurniture(G, kit) {
   const { S, b, bp, ctx } = G, D2 = S.D / 2, A = ctx.signAtlas, hh = (n) => hash01(bp.id, 450 + n);
-  const busy = (side, u0, u1, y0, y1, every) => bp.windows.some((w) => w.side === side && (w.z !== undefined) && (side === 'front' || side === 'back' ? w.x : w.z) + w.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? w.x : w.z) - w.w / 2 - 0.2 < u1 && w.floor * S.fh + w.y + w.h + 0.2 > y0 && w.floor * S.fh + w.y - 0.2 < y1)
-    || bp.doors.some((d) => d.ext && d.side === side && (side === 'front' || side === 'back' ? d.x : d.z) + d.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? d.x : d.z) - d.w / 2 - 0.2 < u1 && d.floor * S.fh + d.h + 0.2 > y0 && d.floor * S.fh - 0.2 < y1)
-    || G.recs.some((r) => r.side === side && (every || ['ac', 'meter', 'pipe', 'poster', 'goods'].includes(r.kind)) && r.u1 + 0.05 > u0 && r.u0 - 0.05 < u1 && r.y1 > y0 && r.y0 < y1);   // what this function already put up (`every`: whatever is on the wall)
+  const busy = (side, u0, u1, y0, y1, every) => busyAt(G, side, u0, u1, y0, y1, every);
   // split air-conditioner condensers under upper (or institution ground-floor) windows
   let nac = 0;
   const wins = bp.windows.filter((w) => w.side === 'front' && (w.floor >= 1 || kit.inst) && w.w >= 0.9 && !(G.balc ?? []).some((q) => q.w === w)).sort((p, q) => hash01(p.id, 31) - hash01(q.id, 31));
@@ -333,18 +379,14 @@ function wallFurniture(G, kit) {
       if (u !== undefined) at = { u, y };
     }
     if (!at) continue;
-    const { u, y } = at, { hw, y0, y1 } = acUnit(G, u, y, look, w.x > u ? 1 : -1, busy);
+    const { u, y } = at, { hw, y0, y1 } = acUnit(G, 'front', u, y, look, w.x > u ? 1 : -1, busy);
     G.rec('ac', 'front', u - hw, u + hw, y0, y1, 0.35, { look: look.type, col: look.col.map((c) => +c.toFixed(2)) });
     nac++;
   }
   // drainpipe at one end of the front (and its brackets)
   if (kit.pipe) {
     const top = S.F * S.fh - 0.05, u = kit.pipeSide * (S.W / 2 - 0.1);
-    if (!S.party[kit.pipeSide < 0 ? 'left' : 'right'] && !busy('front', u - 0.1, u + 0.1, 0.1, top)) {
-      const p = G.FR.front.at(u, 0.12, 0.06); b.cyl('tank_plastic', p[0], p[1], p[2], 0.032, top - 0.12, 6, { col: [0.78, 0.8, 0.78], caps: false });
-      for (let y = 0.5; y < top; y += 1.3) fbox(G, 'front', u, y, 0.03, 0.09, 0.03, 0.04, 'rail_metal', hx(0x2b2e31));
-      G.rec('pipe', 'front', u - 0.05, u + 0.05, 0.12, top, 0.1);
-    }
+    if (!S.party[kit.pipeSide < 0 ? 'left' : 'right'] && !busy('front', u - 0.1, u + 0.1, 0.1, top)) drainPipe(G, 'front', u, top);
   }
   // the shop's stock hung out beside the shutter: a rail on the wall and bags / shoes / garments / nets on it, on the side with more wall
   if (kit.goods && kit.shopDoor) {
@@ -432,14 +474,115 @@ function wallFurniture(G, kit) {
     for (const uEnd of [corner(uM > 0 ? -1 : 1), corner(uM > 0 ? 1 : -1)]) for (const yE of [yTop, yTop - 0.12]) {
       if (run) break;
       const ua = Math.min(uEnd, uM), ub = Math.max(uEnd, uM);
-      if (ub - ua >= 0.7 && yE > 2.15 && clear(ua, ub, yE - 0.1, yE + 0.03)) run = { ua, ub, yE };
+      if (ub - ua >= 0.7 && yE > 2.15 && clear(ua, ub, yE - 0.1, yE + 0.03)) run = { ua, ub, yE, uEnd };
     }
     if (run) {
-      const { ua, ub, yE } = run, len = ub - ua, x0 = (ua + ub) / 2, nClip = Math.max(2, Math.floor(len / 0.7));
-      fbox(G, 'front', x0, yE, 0.014, len, 0.03, 0.026, 'rail_metal', hx(0x1b1c1e), ['nz', 'nx', 'px']);
-      fbox(G, 'front', x0, yE - 0.055, 0.01, len, 0.016, 0.018, 'rail_metal', hx(0x6a6d70), ['nz', 'nx', 'px']);
-      for (let i = 0; i < nClip; i++) fbox(G, 'front', ua + (len * (i + 0.5)) / nClip, yE - 0.025, 0.017, 0.034, 0.1, 0.032, 'door_metal', [0.88, 0.88, 0.85], ['nz']);
-      G.rec('cable', 'front', ua, ub, yE - 0.1, yE + 0.02, 0.04, { clips: nClip });
+      cableRun(G, 'front', run.ua, run.ub, run.yE, 'cable');
+      kit.cableEnd = { sg: Math.sign(run.uEnd), yE: run.yE };                         // the corner it ends at: the side wall there may carry it on (`elevations`)
+    }
+  }
+}
+
+// ---- the back and the side walls ----------------------------------------------------------------------------------------------------------------
+/** The rooms that vent outward: what a window of one of them stands beside an extractor or an air brick for. */
+const VENT_ROOMS = ['kitchen', 'bathroom', 'laundry', 'backroom'];
+/** The side of an extractor or air brick (m): a casing and its opening. */
+const VENT_SIZE = 0.32;
+/** An extractor (a grey casing with a round dark fan in it) or an air brick (a dark opening under four slats) in a wall, VENT_SIZE across, centred `u` along it at height `y`. */
+function vent(G, side, u, y, look) {
+  const fr = G.FR[side], dark = hx(0x303336), casing = [0.8, 0.81, 0.8];
+  if (look === 'extractor') {
+    fbox(G, side, u, y, 0.05, VENT_SIZE, VENT_SIZE, 0.1, 'door_metal', casing, [AGAINST[side]]);
+    fan(G, side, u, y, 0.105, 0.11, dark, hx(0x8a8f94));
+  } else {
+    fbox(G, side, u, y, 0.015, VENT_SIZE, VENT_SIZE, 0.03, 'door_metal', casing, [AGAINST[side]]);
+    plate(G, 'rail_metal', fr.at(u, y, 0.032), fr.n, VENT_SIZE - 0.06, VENT_SIZE - 0.06, dark);
+    for (let i = 0; i < 4; i++) plate(G, 'door_metal', fr.at(u, y - 0.09 + i * 0.06, 0.036), fr.n, VENT_SIZE - 0.06, 0.03, casing);
+  }
+}
+
+/**
+ * The back wall and the free side walls (R1-102, R4-311: "bare coloured boxes on lawn"). The front is dressed for the street; here it is plainer and more practical, and all of it comes
+ * from the pieces the front already has: an air-conditioner beside an upper window (`acUnit`, the same three looks), a drainpipe at a corner (`drainPipe`), an extractor or an air brick
+ * beside the kitchen's and the bathroom's windows, a zinc hood over a window that takes the sun (`tinHood`, the shop awning of tin), and the service cable going round the corner from
+ * the front (`cableRun`). A finished building only (an unfinished one is bare brick and rebar); a chapel gets the pipe and the cable only. Every choice is a hash of the building id and
+ * the wall (`h`), a stream of its own, so nothing on the front moves; every piece keeps clear of whatever is already on the wall (`busyAt`, `every`) and is recorded on `bp.facade`
+ * like the rest (`ac`, `pipe`, `vent`, `hood`, `drop`). Weather (`weather.js`) comes after and keeps clear of all of it.
+ */
+function elevations(G, kit) {
+  if (!kit.finished) return;
+  const { S, bp } = G, fh = S.fh, yF = S.F * fh, roomType = new Map((bp.rooms ?? []).map((r) => [r.id, r.type])), chapel = kit.kind === 'chapel';
+  const busy = (side, u0, u1, y0, y1, except) => busyAt(G, side, u0, u1, y0, y1, true, except);
+  for (const side of ['back', 'left', 'right']) {
+    if (S.party[side]) continue;
+    const span = G.FR[side].span, h = (n) => hash01(`${bp.id}|${side}`, 1100 + n), wins = bp.windows.filter((w) => w.side === side);
+    const byHash = (list, salt) => [...list].sort((p, q) => hash01(p.id, salt) - hash01(q.id, salt));
+    const half = VENT_SIZE / 2 + 0.03;
+    /** The three pieces a wall may take beside the air-conditioners: each returns whether it found room. */
+    const pipeAt = () => {                                                         // a drainpipe at a corner: the back wall's (the roof sheds to the back) at an end that is not a party wall, a side wall's at its back end
+      const ends = side === 'back' ? (h(11) < 0.5 ? [-1, 1] : [1, -1]).filter((sg) => !S.party[sg < 0 ? 'left' : 'right']).map((sg) => sg * (span / 2 - 0.1)) : S.party.back ? [] : [-span / 2 + 0.1];
+      const top = yF - 0.05, u = ends.find((e) => !busy(side, e - 0.1, e + 0.1, 0.1, top));
+      if (u === undefined) return false;
+      drainPipe(G, side, u, top);
+      return true;
+    };
+    const ventBy = (w, sg, look) => {                                              // an extractor or an air brick beside a window
+      const wu = alongOf(side, w), y = w.floor * fh + Math.min(w.y + w.h / 2, 2.0);
+      const u = [sg, -sg].map((s) => wu + s * (w.w / 2 + 0.45)).find((uu) => Math.abs(uu) < span / 2 - 0.3 && !busy(side, uu - half, uu + half, y - half, y + half));
+      if (u === undefined) return false;
+      vent(G, side, u, y, look);
+      G.rec('vent', side, u - VENT_SIZE / 2, u + VENT_SIZE / 2, y - VENT_SIZE / 2, y + VENT_SIZE / 2, 0.11, { look });
+      return true;
+    };
+    const hoodOver = (w) => {                                                      // a zinc hood over a window: the lean-to a household puts up over the one room that takes the sun
+      const wu = alongOf(side, w), ua = wu - w.w / 2 - 0.12, ub = wu + w.w / 2 + 0.12, ya = w.floor * fh + w.y + w.h + 0.26, tp = 0.5, td = 0.2;
+      if (w.arch || w.w < 0.7 || ua < -span / 2 + 0.1 || ub > span / 2 - 0.1 || ya > yF - 0.1 || busy(side, ua - 0.1, ub + 0.1, ya - td - 0.06, ya, w)) return false;
+      tinHood(G, side, ua, ub, ya, tp, td);
+      G.rec('hood', side, ua, ub, ya - td - 0.06, ya, tp, { window: w.id });
+      return true;
+    };
+    if (h(10) < (side === 'back' ? 0.65 : 0.35)) pipeAt();
+    // the service cable the front ended at a corner goes on round it, as far along this wall as it runs clear of the openings (the margins the front's run keeps: a thin cable passes close)
+    if (kit.cableEnd && !kit.pilasters && side === (kit.cableEnd.sg < 0 ? 'left' : 'right')) {
+      const { yE } = kit.cableEnd, uB = span / 2 - 0.08;
+      const clear = (u0, u1, y0, y1) => !wins.some((w) => alongOf(side, w) + w.w / 2 + 0.12 > u0 && alongOf(side, w) - w.w / 2 - 0.12 < u1 && w.floor * fh + w.y + w.h + 0.12 > y0 && w.floor * fh + w.y - 0.12 < y1)
+        && !bp.doors.some((d) => d.ext && d.side === side && alongOf(side, d) + d.w / 2 + 0.14 > u0 && alongOf(side, d) - d.w / 2 - 0.14 < u1 && d.floor * fh + d.h + 0.14 > y0 && d.floor * fh - 0.1 < y1)
+        && !G.recs.some((r) => r.side === side && r.u1 + 0.03 > u0 && r.u0 - 0.03 < u1 && r.y1 + 0.03 > y0 && r.y0 - 0.03 < y1);
+      let len = Math.min(span - 0.6, 2.4 + 3 * h(50));
+      while (len >= 0.7 && !clear(uB - len, uB, yE - 0.1, yE + 0.03)) len -= 0.1;
+      if (len >= 0.7) cableRun(G, side, uB - len, uB, yE, 'drop');
+    }
+    if (chapel) { if (!G.recs.some((r) => r.side === side)) pipeAt(); continue; }
+    // an air-conditioner beside an upper window (never on the ground floor: a side lane is walked, and the unit stands 0.35 m out at the height of a shoulder), where the building has them at the front; one in five of the others has one
+    const wantAC = kit.ac ? (h(0) < 0.55 ? 1 + Math.floor(h(1) * 2) : 0) : h(0) < 0.2 ? 1 : 0;
+    let nac = 0;
+    for (const w of byHash(wins.filter((q) => q.floor >= 1 && q.w >= 0.9), 31)) {
+      if (nac >= wantAC) break;
+      const wu = alongOf(side, w), y = w.floor * fh + 0.95, look = acLook(w.id), sgn = hash01(w.id, 32) < 0.5 ? -1 : 1;
+      const u = [sgn, -sgn].map((s) => clamp(wu + s * (w.w / 2 + 0.67), -span / 2 + 0.55, span / 2 - 0.55)).find((uu) => !busy(side, uu - 0.45, uu + 0.45, y - 0.4, y + 0.4));
+      if (u === undefined) continue;
+      const { hw, y0, y1 } = acUnit(G, side, u, y, look, wu > u ? 1 : -1, busy);
+      G.rec('ac', side, u - hw, u + hw, y0, y1, 0.35, { look: look.type, col: look.col.map((c) => +c.toFixed(2)) });
+      nac++;
+    }
+    // an extractor or an air brick beside the window of a kitchen, a bathroom, a laundry or a back room
+    const wantVent = h(20) < 0.6 ? 1 + (h(21) < 0.25 ? 1 : 0) : 0;
+    let nv = 0;
+    for (const w of byHash(wins.filter((q) => VENT_ROOMS.includes(roomType.get(q.room))), 22)) {
+      if (nv >= wantVent) break;
+      if (ventBy(w, h(25 + nv) < 0.5 ? -1 : 1, h(23 + nv) < 0.5 ? 'extractor' : 'airbrick')) nv++;
+    }
+    // a zinc hood over a window
+    const wantHood = h(40) < 0.4 ? 1 + (h(41) < 0.3 ? 1 : 0) : 0;
+    let nh = 0;
+    for (const w of byHash(wins, 42)) {
+      if (nh >= wantHood) break;
+      if (hoodOver(w)) nh++;
+    }
+    // no wall is left with nothing on it: a hood over a window, else an extractor beside one, else a pipe at a corner, whichever finds room first
+    if (!G.recs.some((r) => r.side === side)) {
+      const any = byHash(wins, 60);
+      if (!any.some(hoodOver) && !any.some((w) => ventBy(w, h(60) < 0.5 ? -1 : 1, h(61) < 0.5 ? 'extractor' : 'airbrick'))) pipeAt();
     }
   }
 }
@@ -729,7 +872,7 @@ export function buildFacade(G) {
   kit.limit = kit.limitAt(-G.S.W / 2 + 0.3, G.S.W / 2 - 0.3);
   kit.sign = signGeo(G, kit);
   courses(G, kit); pilasters(G, kit); awning(G, kit); signs(G, kit);
-  balconies(G, kit); wallFurniture(G, kit);
+  balconies(G, kit); wallFurniture(G, kit); elevations(G, kit);
   if (G.S.roofStyle === 'terrace') terraceKit(G, kit); else if (G.S.roofStyle === 'tile') tileKit(G, kit);
   if (kit.kind === 'chapel') chapel(G, kit); else if (kit.kind === 'school') school(G, kit); else if (kit.kind === 'clinic') clinic(G, kit);
   weatherFacade(G, kit);                                                                   // last: every mark keeps clear of what is already on the wall (weather.js)

@@ -289,7 +289,8 @@ add('curtain_window', 1.2, 1.4, 0.08, 'curtain', 'decor curtain window', { wall:
 const hide = (o, k, value) => Object.defineProperty(o, k, { value, enumerable: false, writable: true, configurable: true });
 
 // The surface a small thing lies on. A bed's catalogue height is its headboard's, a chair's its back's, so what lies on them is raised to the sheet / the seat: `topAdd`.
-const SHEET = { bed_single: 0.57, bed_single_metal: 0.59, bed_double: 0.57, bed_double_wood: 0.57, mattress_floor: 0.16 };            // the made blanket's top in the hero models (assets/models/heroes)
+// A wall shelf's catalogue height is its brackets', 0.2 m: what stands on it stands on the board, 25 mm over its bottom (measured on the library model, tests/interiors-shelves.test.mjs).
+const SHEET = { bed_single: 0.57, bed_single_metal: 0.59, bed_double: 0.57, bed_double_wood: 0.57, mattress_floor: 0.16, shelf_wall: 0.025 };            // the made blanket's top in the hero models (assets/models/heroes), the shelf's board in its library model
 for (const [k, y] of Object.entries(SHEET)) hide(CATALOG[k], 'topAdd', y - CATALOG[k].size[1]);
 for (const c of Object.values(CATALOG)) if (c.seat && ['chair', 'stool', 'sofa', 'armchair', 'bench'].includes(c.arch) && c.topAdd == null) hide(c, 'topAdd', c.seat[0] - c.size[1]);
 

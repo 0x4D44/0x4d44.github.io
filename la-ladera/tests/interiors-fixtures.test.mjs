@@ -3,7 +3,7 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-fixtures.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Layout, fixtureRank, mkObb, obbDist } from '../js/interiors/layout.js';
+import { Layout, fixtureRank, mkObb, obbDist, DOOR_LANE } from '../js/interiors/layout.js';
 import { bathroom, ensureFixtures, ensureHomeFridge, solveFixtures, slot, kitchenSlots, REAL_BED, SHOWER } from '../js/interiors/rooms.js';
 import { makeRng } from '../js/core/rng.js';
 import { barberChair } from '../js/interiors/shops.js';
@@ -52,9 +52,10 @@ function narrowBath(hinge) {
 }
 const box = (x, z, s = 0.2) => mkObb(x, z, s, s, 0);
 
-test('sweepKeeps(): the leaf\'s quarter disc and a 0.7 m lane stay blocked, the far corner of the whole-door rectangle is free', () => {
+test('sweepKeeps(): the leaf\'s quarter disc and the door lane (DOOR_LANE) stay blocked, the far corner of the whole-door rectangle is free', () => {
   // door 0.9 m wide at z -3.78..-2.88 in the -x wall; the hinge post is at the low end (left) or the high end (right) of it
-  for (const [hinge, nearHinge, farCorner] of [['left', [0.85, -3.7], [0.85, -2.95]], ['right', [0.85, -2.96], [0.85, -3.7]]]) {
+  const farX = 0.01 + DOOR_LANE + 0.17;                          // (the 0.2 m box probing the far corner starts 7 cm past the end of the lane; a fixed 0.85 cleared the old 0.7 m lane by 4 cm and sat 3 cm inside the 0.77 m one)
+  for (const [hinge, nearHinge, farCorner] of [['left', [0.85, -3.7], [farX, -2.95]], ['right', [0.85, -2.96], [farX, -3.7]]]) {
     const { L } = narrowBath(hinge);
     assert.ok(L._keepHit(box(...farCorner)), `${hinge}: the rectangle of width + 0.08 m covers the far corner`);
     assert.equal(L.sweepKeeps(), 1, `${hinge}: one door's rectangle replaced`);
@@ -239,6 +240,11 @@ function census(bps) {
   return out;
 }
 const found = census(real);
+/** Two more seeded worlds of A2's planner, built on first use (each takes as long as the default one). The two storage counts below hold the bedrooms of all three worlds: A2's planner now
+ *  fits a bed into rooms the old one left bare, so the default world alone gives fewer bedrooms without a wardrobe or dresser (42 where the guard asks for 50) and fewer kept to pegs (5 of 10). */
+const EXTRA_SEEDS = [11, 23];
+let extraWorlds;
+const moreWorlds = () => extraWorlds ??= (async () => { const out = []; for (const seed of EXTRA_SEEDS) out.push((await furnishedBatch({ real: true, seed })).bps); return out; })();
 const none = (what, list) => assert.equal(list.length, 0, `${list.length} ${what}:\n  ${list.slice(0, 12).join('\n  ')}${list.length > 12 ? '\n  ...' : ''}`);
 
 test('census: every bathroom of every plan has a toilet and a basin, and every home\'s a shower with its electric head', () => {
@@ -274,26 +280,30 @@ test('census: every bedroom of every plan has somewhere to keep clothes (a wardr
   none('bedrooms without a ceiling light', found.light);
 });
 
-test('the last resort of a bedroom is a trunk where one fits and pegs on the wall only where none does: most bedrooms without a wardrobe or dresser keep their clothes in a trunk', () => {
+test('the last resort of a bedroom is a trunk where one fits and pegs on the wall only where none does: most bedrooms without a wardrobe or dresser keep their clothes in a trunk', async () => {
   let bare = 0, trunk = 0;
-  for (const bp of real) for (const [rid, L] of bp.interior?.layouts ?? []) {
+  for (const bps of [real, ...await moreWorlds()]) for (const bp of bps) for (const [rid, L] of bp.interior?.layouts ?? []) {
     if (L.room.type !== 'bedroom' || !bp.interior.rooms[rid]?.role || has(L, /^(wardrobe|dresser)/)) continue;
     bare++; if (has(L, /^chest_trunk$/)) trunk++;
   }
-  assert.ok(bare >= 50, `${bare} bedrooms without a wardrobe or dresser to look at`);
+  assert.ok(bare >= 50, `${bare} bedrooms without a wardrobe or dresser to look at (the bedrooms of the default world and of seeds ${EXTRA_SEEDS})`);
   assert.ok(trunk >= bare * 0.5, `${trunk} of ${bare} bedrooms without a wardrobe or dresser have a trunk (about 60% when this was written; the rest have pegs)`);
 });
 
-test('a bedroom is left to pegs only where no trunk fits: none of the bedrooms with neither a wardrobe, a dresser nor a trunk has a wall for one when the trunk\'s 0.5 m front zone is waived (A2\'s door budget left rooms of 6 to 9 m2 with two keep-outs and a bed pegs-only that had room)', () => {
+test('a bedroom is left to pegs only where no trunk fits: none of the bedrooms with neither a wardrobe, a dresser nor a trunk has a wall for one when the trunk\'s 0.5 m front zone is waived (A2\'s door budget left rooms of 6 to 9 m2 with two keep-outs and a bed pegs-only that had room)', async () => {
   const missed = []; let pegs = 0;
-  for (const bp of real) for (const [rid, L] of bp.interior?.layouts ?? []) {
+  for (const bps of [real, ...await moreWorlds()]) for (const bp of bps) for (const [rid, L] of bp.interior?.layouts ?? []) {
     if (L.room.type !== 'bedroom' || !bp.interior.rooms[rid]?.role || has(L, /^(wardrobe|dresser|chest_trunk)/) || bp.interior.rooms[rid].removed?.includes('chest_trunk')) continue;
     pegs++;
     const t = L.wallPoses('chest_trunk', 'any', { prio: 1, noClear: true }).next();           // (healing took no trunk out of these rooms, so a pose that is free now was free when the storage was chosen: later pieces only take room)
     if (!t.done) missed.push(`${bp.id}.${rid} ${L.W.toFixed(2)} x ${L.D.toFixed(2)} m: a trunk fits at ${t.value.x},${t.value.z}`);
   }
-  assert.ok(pegs >= 10, `${pegs} bedrooms kept to pegs to look at`);
+  assert.ok(pegs >= 10, `${pegs} bedrooms kept to pegs to look at (the bedrooms of the default world and of seeds ${EXTRA_SEEDS})`);
   none('bedrooms kept to pegs although a trunk fits against a wall', missed);
+});
+
+test('census: the bedrooms of two more seeded worlds keep clothes somewhere too - healing took the only wardrobe or trunk out of a bedroom and nothing replaced it (seed 11: L42.f1.r4 and L102.f1.r1 were bare)', async () => {
+  for (const [i, bps] of (await moreWorlds()).entries()) none(`bedrooms of seed ${EXTRA_SEEDS[i]} with nowhere to keep clothes`, census(bps).storage);
 });
 
 test('study desks: a student\'s, a teenager\'s or a child\'s bedroom of 8 m2 or more keeps its desk, and the desk its chair (storage placed first once took the desk\'s wall: 2 desks left where 11 had stood)', () => {

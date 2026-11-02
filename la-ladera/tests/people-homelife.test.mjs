@@ -495,6 +495,7 @@ test('getting up: from each seat of the waiting room, the hall, the chapel and a
     for (let t = 0; t < 40 && !gone && !who.away; t += 0.1) { sim.step(0.1); gone = who.scene == null && sim.lotAt(who.x, who.z) == null; }
     if (!gone || (who.unstuckCount ?? 0) > u0 || (who.stuckTotal ?? 0) - st0 > 1) stuck.push(`${who.id} from ${s.id} (${kind}, ${roomOf(s).type} of ${lot}): out ${gone}${who.away ? ' (out of sight)' : ''}, unstuck ${(who.unstuckCount ?? 0) - u0}, stuck ${((who.stuckTotal ?? 0) - st0).toFixed(1)} s`);
     sim.homelife.drawn.delete(who); sim.brain.finish(who);
+    if (gone) used.delete(who);                                                                                    // (out in the street again, they can sit down at the next seat: a table with its chairs adds a seat, and there are only so many free adults about at ten o'clock)
   }
   assert.deepEqual(stuck, [], 'people shut in the furniture they got up from, or never out');
   assert.equal(sim.faults.length, 0, 'no faults');

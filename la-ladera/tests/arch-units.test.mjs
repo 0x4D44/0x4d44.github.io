@@ -214,7 +214,7 @@ test('the one home floor over a shop is a flat: its bedroom is at least 1.9 m wi
   }
 });
 
-test('the flat over a shop: the way from the landing to the kitchen, the dining room and the living room does not cross the bedroom, a living room beside the bedroom is 6 m2 at least, and the lots show all four plans', () => {
+test('the flat over a shop: the way from the landing to the kitchen, the dining room and the living room does not cross the bedroom, the bath is not behind it, a living room beside the bedroom is 6 m2 at least, and the lots show all three plans', () => {
   const kinds = new Set();
   for (const { bp } of oneStorey) {
     const U = units(bp), name = `${bp.id} (${bp.lot.kind} ${bp.lot.w} x ${bp.lot.d})`, bed = U.rooms.find((r) => r.type === 'bedroom' && r.floor === 1);
@@ -222,12 +222,16 @@ test('the flat over a shop: the way from the landing to the kitchen, the dining 
     const landing = U.rooms.find((r) => r.floor === 1 && r.core), seen = new Set([landing.id]), q = [landing.id];
     while (q.length) for (const id of U.nb.get(q.pop())) if (id !== bed.id && !seen.has(id) && U.byId.get(id).floor === 1) { seen.add(id); q.push(id); }
     for (const r of U.rooms) if (r.floor === 1 && ['living', 'dining', 'kitchen'].includes(r.type)) assert.ok(seen.has(r.id), `${name}: the ${r.type} is reached only through the bedroom`);
-    // which plan: [living | bedroom] side by side in the front band (split); the front band is the living room and the bedroom is behind the kitchen (stack); the front band is the bedroom,
-    // with a living room beside the stair (band) or none (studio)
+    // the bath is not behind the bedroom either (R4-301: the plan with the living room in front and the kitchen and then the bedroom behind the stair, the bath behind the bedroom, is gone)
+    const bath = U.rooms.find((r) => r.floor === 1 && r.type === 'bathroom'), seenBath = new Set([landing.id]), qb = [landing.id];
+    while (qb.length) for (const id of U.nb.get(qb.pop())) if (id !== bed.id && !seenBath.has(id) && U.byId.get(id).floor === 1) { seenBath.add(id); qb.push(id); }
+    assert.ok(seenBath.has(bath.id), `${name}: the bathroom is reached only through the bedroom`);
+    // which plan: [living | bedroom] side by side in the front band (split); the front band is the bedroom, with a living room beside the stair (band) or none (studio). The fourth, the front band
+    // as the living room with the bedroom behind the kitchen (stack), was the plan with the bath behind the bedroom: no lot has it any more
     const living = U.rooms.find((r) => r.floor === 1 && r.type === 'living'), kit = U.rooms.find((r) => r.floor === 1 && r.type === 'kitchen');
     const plan = !living ? 'studio' : Math.abs(living.rect.z0 - bed.rect.z0) < 0.02 && Math.abs(living.rect.z1 - bed.rect.z1) < 0.02 ? 'split' : kit.rect.z1 < bed.rect.z0 ? 'band' : 'stack';
     if (plan === 'split') assert.ok(rw(living.rect) * rd(living.rect) >= FLAT_LIVING_AREA - 1e-6, `${name}: the living room beside the bedroom is ${rw(living.rect).toFixed(2)} x ${rd(living.rect).toFixed(2)} (under ${FLAT_LIVING_AREA} m2)`);
     kinds.add(plan);
   }
-  assert.deepEqual([...kinds].sort(), ['band', 'split', 'stack', 'studio'], 'the lots exercise all four plans of a flat');
+  assert.deepEqual([...kinds].sort(), ['band', 'split', 'studio'], 'the lots exercise the three plans of a flat (and none puts the bedroom behind the kitchen)');
 });

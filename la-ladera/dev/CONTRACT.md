@@ -142,7 +142,7 @@ Room = { id:'L07.f1.r3', floor:int (0=ground), type:(vocab ROOM_TYPES), name?:'S
   finish:{ floor, wall, wainscot?:{mat,h}, ceiling, baseboard, trim, floorTint?, wallTint? }  // matKeys; A3 fills in furnishBuilding, A2 reads it in buildBuilding (defaults if absent)
 }
 Door   = { id, kind:'exterior'|'interior'|'gate'|'shutter'|'arch', x,z,y (local, centre on the floor line), nx,nz (unit normal in local frame pointing from rooms[0] into rooms[1]),
-           w:0.9, h:2.1, rooms:[roomIdOrNull, roomIdOrNull], hinge:'left'|'right', swing:0|1 (which side it opens into), mat,
+           w:0.9, h:2.1, rooms:[roomIdOrNull, roomIdOrNull], hinge:'left'|'right', swing:0|1 (the index into `rooms` of the room the leaf opens into: the door builder, `swingClear` and the furnisher all read it so; `tests/arch-leafsweep.test.mjs` holds every door to it), mat,
            loop?:string (only on a plan that declares a ring of circulation on purpose, the school's cloister: see the door budget below) }
 Window = { id, room, x,z (local, on the wall line), y (sill height, local), w, h, nx,nz (unit normal pointing OUT of the room), kind:'casement'|'sliding'|'fixed'|'louvre', grille:bool }
 Stair  = { id, floors:[i,j], from:[x,z] to:[x,z] (local, bottom -> top of the flight), width, steps, rise, run, hole:[[x,z]..] }
@@ -153,8 +153,12 @@ Entrance = { id, doorId, kind:'main'|'shop'|'alley'|'service'|'roof', outside:[x
   doors/openings/stairs (A2 tests this with the physics kernel). `roof.walkable` buildings have a stair to the roof.
 * **Door budget** (A2, `js/arch/state.js budgetDoors`, pinned by `tests/arch-doorbudget.test.mjs`): on every floor the interior doors and arches (those between two rooms) are a TREE over the rooms, so a room is
   reached one way and no two doors join the same two rooms; a ring of circulation exists only where the layout declares it (`S.loops = '<why>'`, today the school's cloister: its doors carry `loop:'<why>'`).
-  A wet room has one door (a toilet block's washroom excepted) and a bedroom at most two (three only where two of them lead to its own bath and utility room). Exterior doors, shutters and the roof door are outside the budget. A door that stays keeps the id its layout gave it,
-  so ids have gaps (`L08.d2` is gone) and are never reused; the rooms, their ids and rects do not depend on the budget.
+  A wet room has one door (a toilet block's washroom excepted). **A bedroom is a leaf of that tree, never a way through** (round 6, R4-301 / R4-302 / R1-101): it has one door to another room, and no room
+  of any kind is reached only through a bedroom; the way in is the stair, an entry hall or a street door, and the bath, the kitchen and the other bedrooms hang from a hub (landing, hall, corridor or living
+  room). The home plans are drawn for it (`js/arch/layouts.js` `privateFloor`, `flatHome`, `layoutApartments`; `layouts_special.js` for the courtyard): on a private floor the rest column beside the stair is one
+  hall (a sitting room when big) with the bath off it, and the front band is the bedrooms: cut in two, along the stair column's wall, wherever both halves keep 1.8 m and 4.8 m2 (so the home's second
+  household has a bedroom too; `tests/arch-bedrooms.test.mjs`), else one. Exterior doors, shutters and the roof door are outside the budget. A door that stays keeps the id its layout gave it,
+  so ids have gaps (`L08.d2` is gone) and are never reused (a plan that makes fewer doors than it used to spends the ids with `S.spare`); the rooms, their ids and rects do not depend on the budget.
 * Group names: **`${id}.ext`** = the whole architectural shell, outside AND inside surfaces (always drawn); **`${id}.int`** = furnishings, decor, clutter (A1 hides it beyond ~28 m).
   Put nothing else in other groups. A2 owns `.ext`; A3 owns `.int`. Dynamic things (door leaves, fans, TVs) are separate Object3Ds you add to `ctx.batch.object(id + '.ext'|'.int')`.
 
