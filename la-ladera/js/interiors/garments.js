@@ -4,9 +4,11 @@
 //                  more on the floor). A pure function of the building id, the room id and the household, so a house looks the same on every load. The household sets how
 //                  messy it tends to be (`hh.tidy`, shifted by who lives there: students more, the elders much less); the room's own hash draws the rest. Shops, the clinic, the
 //                  school, the chapel and the hall are always neat; a kitchen or a living room is at most lived-in; an elder's own room is never worse than lived-in; a child's room
-//                  (a role of kids, child or teen, or a bedroom with a bunk or a baby's crib) is not touched by this adult assortment pass. The child library has separate size tags.
+//                  (a role of kids, child or teen, or a bedroom with a bunk or a baby's crib) is not touched by this pass.
 //   * dressRooms   the pass that places the clothes (after every room of the building is furnished): garments go on the bed, on a seat, on a wall hook or on the floor, never
 //                  inside a piece of furniture and never on the lanes people walk (walkLanes). Its own random streams (forks of the building's), so no other piece moves.
+//   * mixOf        what a household leaves about: the adult staples (MIX), and from EXTRAS the teen cuts of the young (jeans, joggers, hoodies, dresses, the school's uniform where a
+//                  teenager lives) and the child cuts where children do. A child's room stays untouched, but the family's things lie about the rest of the house.
 //   * the assets   the garment GLBs are loaded through the interiors' catalogue path (build.js: `registerGarmentAssets` points each `garment_<id>_<state>` key at the LOD model);
 //                  without them a record draws as a flat cloth patch in its own colour (standins.js).
 // Pure data (no THREE, no DOM), so node and the page share the file.
@@ -31,10 +33,12 @@ export function garmentKeysFor(sizeTags = DEFAULT_GARMENT_SIZES) {
   return Object.entries(GARMENTS).filter(([, g]) => selected.has(g.sizeTag))
     .flatMap(([id, g]) => STATES.filter((s) => g[s]).map((s) => garmentKey(id, s)));
 }
-/** The page's existing adult/child preload contract. New placement passes opt into teen explicitly. */
+/** What a load of the clothes asks for unless it names the libraries: the adult and the child ones. */
 export const GARMENT_KEYS = garmentKeysFor();
-/** Every applicable key, including both teen size classes, for explicit library consumers. */
+/** Every applicable key, including both teen size classes. */
 export const ALL_GARMENT_KEYS = garmentKeysFor(Object.keys(GARMENT_FILES));
+/** The libraries the page loads (index.js): all three, for the loose clothes of a house are drawn from each (EXTRAS: the child cuts where children live, the teen cuts where the young do). */
+export const PAGE_GARMENT_SIZES = Object.freeze(['adult', 'child', 'teen']);
 /** The generated manifest paths keep adult, child and teen packs separate. One-argument calls retain the adult path. */
 export const lodFile = (state, sizeTag = 'adult') => GARMENT_FILES[sizeTag]?.[state];
 /** Each size's `garments_<state>_lod.glb` holds its garments in that state, as nodes `<key>_lod` (the garment manifests' `lod`). Interiors are merged per building: no per-object
@@ -98,14 +102,58 @@ export function tidinessOf(bp, room, hh, cls, role = null) {
 }
 
 // ------------------------------------------------------------------ what lies where
-const MIX = {
-  bed: [['tshirt', 6], ['shorts', 3], ['leggings', 2], ['crop_top', 2], ['nightdress', 2], ['socks_pair', 1.5], ['sock_single', 1], ['cap', 0.5]],
-  seat: [['tshirt', 6], ['shorts', 3], ['crop_top', 2], ['socks_pair', 1], ['cap', 0.5]],
-  hung: [['tshirt', 6], ['crop_top', 2], ['shorts', 2], ['nightdress', 2], ['leggings', 1]],
-  floor: [['tshirt', 6], ['shorts', 4], ['leggings', 3], ['crop_top', 2.5], ['nightdress', 1.5], ['socks_pair', 1.5], ['sock_single', 0.8], ['underwear', 0.5], ['briefs', 0.5], ['boxers', 0.4],
-    ['panties', 0.4], ['knickers', 0.4], ['bra', 0.5], ['tights', 0.6], ['cap', 0.5], ['sun_hat', 0.3], ['straw_hat', 0.2]],
-  bath: [['socks_pair', 1.5], ['sock_single', 0.7], ['underwear', 1.5], ['briefs', 1], ['boxers', 1], ['panties', 1], ['knickers', 1], ['bra', 0.7], ['tshirt', 4], ['shorts', 3], ['leggings', 1], ['crop_top', 1.5]],
+/** The staples every house leaves about (the adult library): [id, weight] by place. The weights are draws, not shares of what ends up lying there: a garment is drawn first and then looks for a gap
+ *  (onFloor), so a shirt finds one less often than a sock; and a gap too small for anything else is filled from what fits it (a sock, a cap, a pair of shoes) whatever their weights. The socks and
+ *  underwear weigh little here, for they were 42% of what lay about (R4-211) and are still about 18% of it. interiors-rails holds the result: tops, shorts and leggings 45% or more, socks and
+ *  underwear 45% or less, 400 garments in the barrio. */
+export const MIX = {
+  bed: [['tshirt', 6], ['leggings', 3.2], ['nightdress', 4.2], ['shorts', 0.9], ['crop_top', 0.7], ['socks_pair', 0.14], ['sock_single', 0.1], ['cap', 0.06]],
+  seat: [['tshirt', 6], ['shorts', 0.9], ['crop_top', 0.7], ['leggings', 1.1], ['socks_pair', 0.1], ['cap', 0.08]],
+  hung: [['tshirt', 6], ['nightdress', 3.2], ['crop_top', 0.7], ['shorts', 0.7], ['leggings', 1.1]],
+  floor: [['tshirt', 6], ['shorts', 1.4], ['leggings', 3.2], ['crop_top', 0.9], ['nightdress', 2.1], ['socks_pair', 0.16], ['sock_single', 0.08], ['underwear', 0.06], ['briefs', 0.06], ['boxers', 0.04],
+    ['panties', 0.04], ['knickers', 0.04], ['bra', 0.06], ['tights', 0.22], ['cap', 0.1], ['sun_hat', 0.06], ['straw_hat', 0.04]],
+  bath: [['socks_pair', 0.16], ['sock_single', 0.07], ['underwear', 0.16], ['briefs', 0.11], ['boxers', 0.11], ['panties', 0.11], ['knickers', 0.11], ['bra', 0.08], ['tshirt', 3], ['shorts', 1.2], ['leggings', 1.1], ['crop_top', 0.55]],
 };
+/**
+ * What the rest of the family's wash adds to the staples: [id, weight, places]. A teen cut is named by its style, for the size class goes on at the end (`teen_denim_jeans` is `_big` in a house of
+ * grown-ups, whose clothes are the library's larger size, and `_small` or `_big` where a teenager lives); a child's cut is named whole. Places: b = on a bed, s = over a seat, h = on a wall hook,
+ * f = on the bare floor, w = on a bathroom floor. No shorts, crop tops, socks or underwear here (the staples have them: 72% of the clothes of the barrio were those four, R4-309), and no swimwear
+ * (a hillside at 2 000 m: the dressmaker's window has none either).
+ */
+export const EXTRAS = {
+  everyday: [                                                                           // a house of any kind: jeans, joggers and hoodies, a jacket, dresses, a plain top, a pair of sandals
+    ['teen_denim_jeans', 4.5, 'bsfw'], ['teen_joggers', 3, 'bsfw'], ['teen_hoodie', 3, 'bshf'], ['teen_light_jacket', 2.5, 'bsh'], ['teen_lycra_trousers', 1, 'bf'],
+    ['teen_dress_knee', 2, 'bsh'], ['teen_dress_midi', 1.5, 'bsh'], ['teen_dress_short', 1, 'bsh'], ['teen_dress_maxi', 0.8, 'bh'],
+    ['teen_tshirt_cream', 1.2, 'bshfw'], ['teen_tshirt_teal', 1.2, 'bshfw'], ['teen_tshirt_sun', 1.2, 'bshfw'], ['teen_sandals_pair', 0.13, 'f'],
+  ],
+  school: [                                                                             // where a teenager lives: the school's uniform
+    ['teen_school_jumper', 2.5, 'bshf'], ['teen_school_polo', 2, 'bshfw'], ['teen_school_trousers', 2, 'bsf'], ['teen_school_skirt', 1, 'bshf'], ['teen_school_shoes_pair', 0.13, 'f'],
+  ],
+  children: [                                                                           // where children live: theirs (the child library; no swimwear)
+    ['child_tshirt', 2, 'bshfw'], ['child_hoodie', 1.5, 'bshf'], ['child_jeans', 1.5, 'bsf'], ['child_dress', 1, 'bsh'], ['child_skirt', 0.6, 'bshf'], ['child_cardigan', 1, 'bsh'],
+    ['child_pyjama_top', 1, 'bsf'], ['child_pyjama_bottoms', 1, 'bsf'], ['child_school_shirt', 1.5, 'bshf'], ['child_school_polo', 1.5, 'bsh'], ['child_school_trousers', 1.5, 'bsf'],
+    ['child_school_shorts', 0.8, 'bf'], ['child_pinafore', 0.8, 'bshf'], ['child_shoes', 0.1, 'f'], ['child_backpack', 0.8, 's'],
+  ],
+};
+/** How much of what lies about is drawn from EXTRAS rather than the staples: a house of grown-ups, more where a teenager lives, more where there are children, less in an elder's. */
+export const EXTRA_SHARE = { base: 0.14, teen: 0.10, kids: 0.08, elder: 0.6 };
+const PLACE_LETTER = { bed: 'b', seat: 's', hung: 'h', floor: 'f', bath: 'w' };
+/** Who lives in the house, as far as its wash goes: `teen` = a teenager (hh.teen), `kids` = children, `elder` = a household of elders. */
+export const wardrobeOf = (hh) => ({ teen: !!hh?.teen, kids: (hh?.kids ?? 0) > 0, elder: hh?.kind === 'elder' });
+/** The ids of an EXTRAS row in a house: a child's cut is itself, a teen cut one id per size class the house has. */
+export const extraIds = (id, w) => (GARMENTS[id] ? [id] : (w.teen ? ['small', 'big'] : ['big']).map((s) => `${id}_${s}`));
+/** The weighted list a house draws from at one place ('bed', 'seat', 'hung', 'floor', 'bath'): the staples, and the extras scaled to their share of the draws. */
+export function mixOf(place, hh) {
+  const w = wardrobeOf(hh), base = MIX[place], letter = PLACE_LETTER[place], extra = [];
+  for (const [id, weight, at] of [...EXTRAS.everyday, ...(w.teen ? EXTRAS.school : []), ...(w.kids ? EXTRAS.children : [])]) {
+    if (!at.includes(letter)) continue;
+    const ids = extraIds(id, w);
+    for (const g of ids) extra.push([g, weight / ids.length]);
+  }
+  const share = (EXTRA_SHARE.base + (w.teen ? EXTRA_SHARE.teen : 0) + (w.kids ? EXTRA_SHARE.kids : 0)) * (w.elder ? EXTRA_SHARE.elder : 1);
+  const total = (list) => list.reduce((n, m) => n + m[1], 0), scale = (share / (1 - share)) * (total(base) / total(extra));
+  return [...base, ...extra.map(([id, weight]) => [id, weight * scale])];
+}
 const ARCH_BED = new Set(['bed', 'mattress']);
 const ARCH_SEAT = new Set(['chair', 'sofa', 'armchair']);
 
@@ -113,7 +161,8 @@ const ARCH_SEAT = new Set(['chair', 'sofa', 'armchair']);
 function plan(cls, level, rng) {
   if (cls === 'bedroom') {
     if (level === 'lived') return { bed: 0, seat: rng.chance(0.6) ? 1 : 0, hung: rng.chance(0.3) ? 1 : 0, floor: rng.int(1, 2) };
-    return { bed: rng.int(3, 5), seat: rng.int(1, 3), hung: rng.int(0, 2), floor: rng.int(2, 5) };       // (the beds, the chairs and the wall hooks take the shirts: most floors have no room for one)
+    return { bed: rng.int(4, 6), seat: rng.int(1, 3), hung: rng.int(0, 2), floor: rng.int(2, 5) };       // (the beds, the chairs and the wall hooks take the shirts: most floors have no room for one; a bed takes
+    // four to six asked, about two thirds laid: the cuts of the wider mix are large)
   }
   if (cls === 'bathroom') return { bed: 0, seat: 0, hung: 0, floor: level === 'lived' ? rng.int(1, 2) : rng.int(3, 5) };
   const seat = rng.chance(0.6) ? 1 : 0;
@@ -180,7 +229,7 @@ export function walkLanes(L, half = LANE_HALF) {
 /** The per-room state of the pass: the room's stream, the garments placed so far (as boxes), the lanes and the floor grid (made once, when the first floor garment needs them), and the
  *  triangles the room may still spend on clothes (`allow`: a garment that would take it over is not put down). */
 export function roomState(L, rng, allow = Infinity) {
-  return { L, rng, taken: [], lanes: null, grid: null, lanesOf() { return (this.lanes ??= walkLanes(L)); }, n: 0, tris: 0, allow };
+  return { L, rng, taken: [], lanes: null, grid: null, lanesOf() { return (this.lanes ??= walkLanes(L)); }, n: 0, tris: 0, allow, shoesLeft: 1 };
 }
 /** A garment of the mix with a colour from the library's palette; after a few draws the first one of a footprint under `maxArea` (m2) when asked for a small thing. */
 function pickGarment(S, mix, maxArea = Infinity) {
@@ -211,17 +260,20 @@ function lay(S, parent, key, x, z, ry, pick, state = 'flat') {
   return it;
 }
 
-/** On a bed: inside the sheet (a hand's width of cloth over its edge), clear of the pillows at the head. */
+/** On a bed: inside the sheet (a hand's width of cloth over its edge), clear of the pillows at the head. A bed too crowded for another shirt laid out takes a small thing, and then one folded
+ *  (the wash brought in and left on the bed: the cuts of the wider mix are large, and four of them laid flat do not fit one sheet). */
 function onBed(S, bed, mix) {
   const L = S.L, w = bed.w, d = bed.d, over = 0.07;
   for (let k = 0; k < 16; k++) {
-    const pick = pickGarment(S, mix, k < 8 ? Infinity : 0.3), [gw, , gd] = pick.g.flat;
+    const pick = pickGarment(S, mix, k < 8 || k >= 12 ? Infinity : 0.3), state = k < 12 ? 'flat' : 'folded', pose = pick.g[state];
+    if (!pose) continue;                                                                               // (a pair of shoes has no folded pose, and none is left on a bed)
+    const [gw, , gd] = pose;
     const dry = (S.rng.chance(0.5) ? PI / 2 : 0) + (S.rng.next() - 0.5) * 0.5, [ex, ez] = extent(gw, gd, dry);
     const xr = (w + 2 * over - ex) / 2, lo = -d / 2 + 0.45 + ez / 2, hi = d / 2 + over - ez / 2;      // where its centre may be, in the bed's frame
     if (xr < 0 || lo > hi) continue;
     const [x, z] = L.rel(bed, (S.rng.next() * 2 - 1) * xr, lo + S.rng.next() * (hi - lo)), ob = mkObb(x, z, gw, gd, bed.ry + dry);
     if (!free(S, ob)) continue;
-    return lay(S, bed, garmentKey(pick.id, 'flat'), x, z, bed.ry + dry, pick);
+    return lay(S, bed, garmentKey(pick.id, state), x, z, bed.ry + dry, pick, state);
   }
   return null;
 }
@@ -289,15 +341,20 @@ export function floorGrid(S) {
 }
 
 const SMALL = 0.19;                                                                       // m2: the footprint under which a garment is a sock or underwear (a pair of boxers is 0.175)
-/** On the floor, away from the lanes: mostly beside the pieces people dress and undress at (the bed, the wardrobe, a chair), the rest anywhere; the garment is chosen to fit the gap it lies in. */
-function onFloor(S, hosts, mix) {
-  const L = S.L, G = (S.grid ??= floorGrid(S));
+const TOYS = /^(toy_pile|doll)/;
+/** Whether a child's toys lie within a hand's reach (0.3 m) of a spot: the family's clothes lie about the house, but not on top of what a child plays with. */
+const nearToys = (L, x, z) => L.items.some((b) => TOYS.test(b.name) && Math.hypot(b.x - x, b.z - z) < 0.3);
+const FOOTWEAR = /(^|_)(sandals|shoes)(_|$)/;                                             // (a pair is the smallest thing in the library: it fits every gap, so left alone it would be most of what lies about)
+/** On the floor, away from the lanes: mostly beside the pieces people dress and undress at (the bed, the wardrobe, a chair), the rest anywhere; the garment is chosen to fit the gap it lies in.
+ *  One room in two leaves a pair of shoes about, and never more than one pair (dressRooms sets `shoesLeft`). */
+function onFloor(S, hosts, all) {
+  const L = S.L, G = (S.grid ??= floorGrid(S)), mix = S.shoesLeft ? all : all.filter(([id]) => !FOOTWEAR.test(id));
   for (let k = 0; k < 16; k++) {
     // The garment comes first, by the weights of the mix, and then a gap that holds it, tried a few times (a shirt needs 0.9 m of bare floor, a sock 0.4 m, and most gaps are small: choosing the gap
     // first and keeping only what fits it left a floor of socks and underwear, 62% of the clothes of the barrio, R4-211). The last attempts fall back to the old way, so a tight room still gets its sock.
     const first = k < 10;
     const pick0 = first ? pickGarment(S, mix) : null;
-    if (pick0 && pick0.g.flat[0] * pick0.g.flat[2] < SMALL && S.rng.chance(0.55)) continue;      // (a sock finds a gap in every room, a shirt in few: they would still be most of the floor)
+    if (pick0 && pick0.g.flat[0] * pick0.g.flat[2] < SMALL && S.rng.chance(0.3)) continue;      // (a sock finds a gap in every room, a shirt in few: they would still be most of the floor)
     const need = pick0 ? Math.max(0.1, Math.min(Math.hypot(pick0.g.flat[0], pick0.g.flat[2]) / 2, 0.46) * 0.6 - 0.02) : 0.1;
     const open = [];
     for (let c = 0; c < G.blk.length; c++) if (!G.blk[c] && G.clr[c] >= need) open.push(c);
@@ -314,15 +371,16 @@ function onFloor(S, hosts, mix) {
         const fit = mix.filter(([id]) => Math.hypot(GARMENTS[id].flat[0], GARMENTS[id].flat[2]) / 2 <= reach);
         if (!fit.length) continue;
         pick = pickGarment(S, fit);
-        if (pick.g.flat[0] * pick.g.flat[2] < SMALL && S.rng.chance(0.8)) continue;        // (a sock fits every gap: left alone it would still be most of what lies about; a room that gets none is just tidier)
+        if (pick.g.flat[0] * pick.g.flat[2] < SMALL && S.rng.chance(0.5)) continue;        // (a sock fits every gap: left alone it would still be most of what lies about; a room that gets none is just tidier)
       }
       const [gw, , gd] = pick.g.flat, ry = r3(S.rng.next() * 2 * PI), ob = mkObb(x, z, gw, gd, ry);
       if (!L.inside(ob, -0.06) || !free(S, ob, 0.02)) continue;
       if (L.items.some((b) => b.floor && (b.block ? obbOverlap(ob, b.ob, 0.04) : b.c.size[1] >= 0.04 && obbOverlap(ob, b.ob, 0.015)))) continue;       // a hand clear of every piece of furniture, and off the shoes, the baskets, the bins (a rug or a mat is fine to lie on)
       if (L.keep.some((q) => obbOverlap(ob, q.obb ?? mkObb((q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2, q.x1 - q.x0, q.z1 - q.z0, 0), 0.06))) continue;      // the doors' sweeps, the entrance corridor, the stairs
-      if (S.lanesOf().hits(ob)) continue;
+      if (S.lanesOf().hits(ob) || nearToys(L, x, z)) continue;
       const it = lay(S, null, garmentKey(pick.id, 'flat'), x, z, ry, pick);
       if (!it) return null;
+      if (FOOTWEAR.test(pick.id)) S.shoesLeft--;
       G.block(ob);
       return it;
     }
@@ -337,7 +395,8 @@ function onWall(S, wardrobe, mix) {
   L.rng = S.rng;                                                                         // hang() draws jitter from the room's stream: use ours
   try {
     const o = { y: r3(1.78 - pick.g.hung[1]), jitter: 0.3, lap: -0.02, tint: pick.tint, ...(wardrobe ? { near: [wardrobe.x, wardrobe.z], nearW: 6 } : {}) };       // (lap: the hem clears a dresser by two fingers)
-    const it = (wardrobe?.wallSide && L.hang(key, wardrobe.wallSide, o)) || L.hang(key, 'any', o);
+    const hang = (side) => { const h = L.hang(key, side, o); if (h && nearToys(L, h.x, h.z)) { L.remove(h); return null; } return h; };           // (a hook over a toy pile is not used)
+    const it = (wardrobe?.wallSide && hang(wardrobe.wallSide)) || hang('any');
     if (!it) return null;
     it.block = false; it.flags = { variant: pick.variant };
     S.n++; S.tris += pick.g.hung[3];
@@ -417,15 +476,16 @@ export function dressRooms(E, built) {
       const p = plan(cls, level, S.rng), cap = Math.min(CLASS[cls].cap, LIMITS.building - out.garments);
       const seats = L.items.filter((i) => i.floor && ARCH_SEAT.has(i.c.arch) && i.c.seat);
       const wardrobe = L.items.find((i) => i.floor && i.c.tags.includes('wardrobe')) ?? null;
+      S.shoesLeft = S.rng.chance(0.5) ? 1 : 0;
       if (!beds.length) { p.floor += p.bed; p.bed = 0; }                                 // a place the room lacks gives its share to the floor
       if (!seats.length) { p.floor += p.seat; p.seat = 0; }
       const hosts = [...beds, ...(wardrobe ? [wardrobe] : []), ...seats];
       want = Math.min(cap, p.bed + p.seat + p.hung + p.floor);
-      const more = () => S.n < want && S.tris < S.allow;
-      for (let i = 0; i < p.bed && more(); i++) if (onBed(S, S.rng.pick(beds), MIX.bed)) by.bed++;
-      for (let i = 0; i < p.seat && more(); i++) if (onSeat(S, S.rng.pick(seats), MIX.seat)) by.seat++;
-      for (let i = 0; i < p.hung && more(); i++) if (onWall(S, wardrobe, MIX.hung)) by.hung++;
-      for (let i = 0; i < p.floor && more(); i++) if (onFloor(S, hosts, cls === 'bathroom' ? MIX.bath : MIX.floor)) by.floor++;
+      const more = () => S.n < want && S.tris < S.allow, mixes = {}, mix = (place) => (mixes[place] ??= mixOf(place, hh));       // (what this household's wash holds, drawn from once a place)
+      for (let i = 0; i < p.bed && more(); i++) if (onBed(S, S.rng.pick(beds), mix('bed'))) by.bed++;
+      for (let i = 0; i < p.seat && more(); i++) if (onSeat(S, S.rng.pick(seats), mix('seat'))) by.seat++;
+      for (let i = 0; i < p.hung && more(); i++) if (onWall(S, wardrobe, mix('hung'))) by.hung++;
+      for (let i = 0; i < p.floor && more(); i++) if (onFloor(S, hosts, mix(cls === 'bathroom' ? 'bath' : 'floor'))) by.floor++;
       by.plan = p;
     }
     out.garments += S.n; out.tris += S.tris;

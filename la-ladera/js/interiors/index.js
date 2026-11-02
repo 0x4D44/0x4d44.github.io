@@ -11,18 +11,20 @@ import { shopRoom } from './shops.js';
 import * as S from './special.js';
 import { wallsRect } from '../core/physics.js';
 import { collectStories, collectInteractableStories, collectDiscoveryStories } from './stories.js';
-import { dressRooms } from './garments.js';
+import { dressRooms, PAGE_GARMENT_SIZES } from './garments.js';
 import { dressShelves } from './shelves.js';
-import { buildInterior as buildMeshes, buildInteriorSteps as buildMeshSteps, loadInteriorAssets as preload, loadGarmentAssets, prepareAtlas } from './build.js';
+import { buildInterior as buildMeshes, buildInteriorSteps as buildMeshSteps, loadInteriorAssets as preload, loadGarmentAssets as loadClothes, prepareAtlas } from './build.js';
 import { loadInspectAssets } from './inspect.js';
 import { planShopGoods } from './goods.js';
 import { loadGoodsAssets } from './goods-render.js';
 
+/** The page's clothes: the adult, child and teen libraries (garments.js PAGE_GARMENT_SIZES; build.js asks for the first two unless told otherwise): the loose clothes of a house are drawn from all three. */
+export const loadGarmentAssets = (ctx, options = {}) => loadClothes(ctx, { sizeTags: PAGE_GARMENT_SIZES, ...options });
 /** The page's entry: the furniture's models, the clothes', the close-inspection things' and the shop stock's come down together (four sets, build.js, inspect.js and goods-render.js: the furniture tests call `preload` alone and see only the furniture). */
 export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx), loadInspectAssets(ctx), loadGoodsAssets(ctx)]); };
 /** The same four sets one by one, for a boot that asks for them in stages (js/main.js `?lazy=1`: the meshes need the first three, the drawers the fourth). */
 export const loadFurnitureAssets = (ctx) => preload(ctx);
-export { loadGarmentAssets, loadInspectAssets, loadGoodsAssets, prepareAtlas };
+export { loadInspectAssets, loadGoodsAssets, prepareAtlas };
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
 export const buildInteriorSteps = (ctx, bp) => buildMeshSteps(ctx, bp);
 
