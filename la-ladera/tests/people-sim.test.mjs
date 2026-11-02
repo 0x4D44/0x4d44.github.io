@@ -307,10 +307,27 @@ test('a walker pinned in a slot with nobody about goes back to its last waypoint
   assert.ok(t < 10, `and at the end of the walk after ${t.toFixed(1)} s`);
   assert.equal(npc.backs, 1, 'with one way back');
 });
-test('a walker held by people beside it does not go back (a crowd clears by waiting; it is only a wall that needs the way out)', () => {
-  const { npc, w } = slotWorld([{ x: 3, z: 2, y: 0, st: { x: 3, y: 0, z: 2 } }]);
-  for (let t = 0; t < 3; t += 0.02) { npc.step(0.02, w); w.t += 0.02; assert.equal(npc.detour, null, `a way back was taken at ${t.toFixed(1)} s with somebody beside it`); }
+test('a walker held by somebody walking beside it does not go back (a crowd clears by waiting; it is only a wall that needs the way out)', () => {
+  const { npc, w } = slotWorld([{ x: 3, z: 2, y: 0, mode: 'walk', moving: true, st: { x: 3, y: 0, z: 2 } }]);
+  for (let t = 0; t < 3; t += 0.02) { npc.step(0.02, w); w.t += 0.02; assert.equal(npc.detour, null, `a way back was taken at ${t.toFixed(1)} s with somebody walking beside it`); }
   assert.equal(npc.backs, 0);
+});
+test('but somebody standing there is no reason to wait: it goes back all the same (a person who chats on the pavement stays; the soak: n75 pinned 8 s beside n52)', () => {
+  const { npc, w } = slotWorld([{ x: 3, z: 2, y: 0, mode: 'idle', moving: false, st: { x: 3, y: 0, z: 2 } }]);
+  for (let t = 0; t < 4 && npc.backs === 0; t += 0.02) { npc.step(0.02, w); w.t += 0.02; }
+  assert.equal(npc.backs, 1, 'a way back was taken');
+});
+test('a way back that is held up too is given up after a second: somebody stands on the last waypoint, so the walker is held off it (the 12:00 soak, a seller on the stair landing and n51)', () => {
+  const { npc, w } = slotWorld([{ x: 1.5, z: 0.5, y: 0, mode: 'idle', moving: false, st: { x: 1.5, y: 0, z: 0.5 } }]);          // 0.22 m from the last waypoint (1.6, 0.3): his push holds the walker 0.5 m off him
+  let on = null, off = null, held = 0;
+  for (let t = 0; t < 9 && off == null; t += 0.02) {
+    npc.step(0.02, w); w.t += 0.02;
+    if (on == null && npc.detour) on = t; else if (on != null && !npc.detour) off = t;
+    if (npc.detour && Math.hypot(npc.x - 1.5, npc.z - 0.5) < 0.62) held += 0.02;                      // (the walker is up against him)
+  }
+  assert.ok(on != null, 'it went back');
+  assert.ok(off != null && off - on < 4.5, `and gave the way back up after ${(off - on).toFixed(1)} s (2 s and then 2 s a metre was all it was allowed before)`);
+  assert.ok(held > 0.8 && held < 1.8, `after ${held.toFixed(1)} s held against him`);
 });
 test('the sidestep has its chance first: a walker it frees (slow along a wall, 15 degrees off square to it) is not sent back', () => {
   const phys = new Physics(); phys.setTerrain(() => 0);
@@ -321,6 +338,21 @@ test('the sidestep has its chance first: a walker it frees (slow along a wall, 1
   assert.ok(npc.maxStuck >= 1, `it counted as stalled (${npc.maxStuck} s), so the sidestep was tried`);
   assert.equal(npc.backs, 0, 'and it was the sidestep that got it on, not a way back');
   assert.ok(npc.z > 1, `${npc.z.toFixed(1)} m on along the wall`);
+});
+
+test('a waypoint under somebody who stands there is skipped once the walker has been held off it for a second; a tight point (furniture) and a door are not', () => {
+  const stander = { x: 3.0, z: 0, y: 0, mode: 'idle', moving: false, st: { x: 3.0, y: 0, z: 0 } };      // on the phone in the road, 0.6 m short of the first waypoint: his push holds the walker 0.5 m off him, 1.1 m off the point
+  const run = (first) => {
+    let at = 0;                                                                                          // the furthest waypoint the walker has got to in 3.5 s: held off the first, it is pinned from about 2 s on
+    const w = { t: 0, near: () => [stander], physics: { move(s, dx) { s.x += dx; } }, brain: { next() {}, unstick() {} } };      // z is held: no slipping aside
+    const npc = new Npc({ id: 'u', rng: makeRng(1).fork('u') });
+    npc.place(0, 0, 0, 0); npc.walk(w, [{ x: 3.6, y: 0, z: 0, ...first }, { x: 9, y: 0, z: 0 }, { x: 12, y: 0, z: 0 }], null, 1.3);
+    for (let t = 0; t < 3.5; t += 0.02) { npc.step(0.02, w); w.t += 0.02; at = Math.max(at, npc.pi); }
+    return at;
+  };
+  assert.ok(run({}) >= 1, 'an ordinary point is given up');
+  assert.equal(run({ tight: true }), 0, 'a tight point is not');
+  assert.equal(run({ door: 'D1' }), 0, 'a door is not');
 });
 
 test('the walker hugs an indoor route: a `tight` point is reached within 0.32 m (no corner cutting round furniture), an ordinary one within 0.55 m', () => {

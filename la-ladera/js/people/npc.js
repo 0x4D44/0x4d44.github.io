@@ -149,23 +149,30 @@ export class Npc {
       const moved = Math.hypot(s.x - this.lastX, s.z - this.lastZ); this.lastX = s.x; this.lastZ = s.z; this.checkT = 0;
       if (moved < this.speed * 0.5 * 0.35) {
         this.stuckT += 0.5; this.stuckTotal += 0.5; this.maxStuck = Math.max(this.maxStuck, this.stuckT);
-        if (this.stuckT >= 1) { this.sidestep = 0.8; this.sideDir = this.rng.chance(0.5) ? 1 : -1; }
+        if (this.stuckT >= 1) {
+          this.sidestep = 0.8; this.sideDir = this.rng.chance(0.5) ? 1 : -1;
+          // a waypoint under somebody who stands there is out of reach (the stander's push holds the walker 0.35 m off it, and the point is only reached within 0.55): a second of that and near enough is there (the soak: n85
+          // against n49 on the phone in the road, three runs at him in 4 s and an unstick). Not a door, a tight point (furniture) or the goal: those are reached or `unstick`ed
+          if (!this.detour && this.pi < this.path.length - 1 && !pt.door && !pt.tight && d < 1.2) { this.pi++; this.stuckT = 0; }
+        }
+        if (this.detour && (this.detour.stall = (this.detour.stall ?? 0) + 0.5) >= 1) this.detour = null;       // (a way back that is held up too, by somebody who stands on it, is given up after a second: the walker is out of the trap by then)
         if (this.stuckT >= 1.5) this._backOut(w);
         if (this.stuckT >= 4) w.brain.unstick(this, w);
-      } else this.stuckT = Math.max(0, this.stuckT - 1);
+      } else { this.stuckT = Math.max(0, this.stuckT - 1); if (this.detour) this.detour.stall = 0; }
     }
   }
 
   /**
-   * Stalled for a second and a half (the sidestep, at one second, has had its chance) with nobody within steering range: against a wall, not in a crowd, and waiting will not help. A passer-by's
+   * Stalled for a second and a half (the sidestep, at one second, has had its chance) with nobody walking within steering range: against a wall, not in a crowd, and waiting will not help. A passer-by's
    * separation push can shove a walker past the end of a stair rail into the slot behind it (L40's stair head, (-21.1, 1.43, y16.04): 0.35 m wide, closed at the far end, its mouth behind the walker);
    * there the straight line to the next waypoint runs through the rail and the sidestep has no room. The way out is the way in: back to the last waypoint (or where the walk began), a place the walk
-   * has already proved free, and on from there. Twice a walk at most; after that `unstick` (4 s) is what is left.
+   * has already proved free, and on from there. Twice a walk at most; after that `unstick` (4 s) is what is left. Somebody who stands on that waypoint holds the walker off it too: the way back is given up
+   * after a second without progress (15.7 h of the 12:00 soak: n51 went back into a seller on the stair landing; the 16:00 one: n75 on S1 went back from a wall corner towards n52 and was out of the corner).
    */
   _backOut(w) {
     if (this.detour || this.backs >= 2 || this.gate || !this.path) return;
     const b = this.pi > 0 ? this.path[this.pi - 1] : { x: this.fromX, z: this.fromZ };
-    if (!b || Math.hypot(b.x - this.st.x, b.z - this.st.z) < 0.5 || w.near(this, TAIL_R).length) return;
+    if (!b || Math.hypot(b.x - this.st.x, b.z - this.st.z) < 0.5 || w.near(this, TAIL_R).some((o) => o.mode === 'walk')) return;       // (somebody walking will move on; somebody standing there will not)
     this.detour = { x: b.x, z: b.z, t: 2 + 2 * Math.hypot(b.x - this.st.x, b.z - this.st.z) / (this.speed || 1) }; this.backs++;       // (time enough to get there: a walker who gave up half way would be back in the slot at once)
   }
 

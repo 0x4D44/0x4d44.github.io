@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { Spots, FIT, FIT_REACH } from '../js/people/spots.js';
 import { PeopleSim, standClear } from '../js/people/sim.js';
 import { WANT } from '../js/people/homelife.js';
+import { project } from '../js/world/geom.js';
 import { buildData, readAssetJson } from './headless.mjs';
 
 const poi = (id, kind, x, z, y = 0) => ({ id, kind, x, y, z, ry: 0 });
@@ -217,6 +218,77 @@ test('waypoints: given the goal the walker goes on to, the leg from the last lan
   assert.deepEqual(lane(row, ph).waypoints(walker, [0, 1, 2]).map((p) => [p.x, p.z]), [[0, 1.0], [4, 1.0], [8, 1.0]], 'with no goal there is no last leg to judge: the lane is kept');
   const w = lane(row, ph).waypoints(walker, [0, 1, 2], { x: 9.5, y: 0, z: 0 });
   assert.deepEqual(w.map((p) => [p.x, p.z]), [[0, 1.0], [4, 1.0], [8, 0]], 'the last point goes back to its node: from there the way to the goal is wide enough');
+});
+
+// ---- the pavement is the lane (R3-105: at 17:12 people walked the yellow line of the street, 42 % of the walkers of Calle del Sol within 0.8 m of it, 9 % on the pavement) ----------------------------------------------------
+// world/nav.js gives the nodes of a street with a sidewalk `pave`, the distance of the middle of the pavement from the centre line (hw - SIDEWALK.w / 2: 3.55 on the 8 m road, 2.05 on the 5 m street).
+const pav = [0, 4, 8].map((x) => ({ x, z: 0, pave: 3.55 }));
+test('waypoints: on a street with a pavement the lane is the middle of the pavement on the right of the way, off it a little by the walker\'s own lane; both ways round, and a street with no pavement keeps its lane', () => {
+  const ph = { _overlaps: () => false };
+  for (const [l, z] of [[0.55, 3.41], [0.9, 3.55], [1.25, 3.69]]) {
+    const w = lane(pav, ph).waypoints({ ...walker, lane: l }, [0, 1, 2]);
+    assert.deepEqual(w.map((p) => [p.x, +p.z.toFixed(2)]), [[0, z], [4, z], [8, z]], `lane ${l}: on the pavement on the right of a walker going east (south)`);
+  }
+  const back = lane(pav, ph).waypoints({ ...walker, x: 8, lane: 0.9 }, [2, 1, 0]);
+  assert.deepEqual(back.map((p) => [p.x, +p.z.toFixed(2)]), [[8, -3.55], [4, -3.55], [0, -3.55]], 'going west the right is the other pavement');
+  assert.deepEqual(lane(pav.map(({ x, z }) => ({ x, z })), ph).waypoints(walker, [0, 1, 2]).map((p) => p.z), [1.0, 1.0, 1.0], 'with no `pave` the ordinary lane is kept');
+  const mixed = lane([pav[0], pav[1], { x: 8, z: 0 }], ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(mixed.map((p) => +p.z.toFixed(2)), [3.55, 0.9, 0.9], 'a node with no pavement (a junction) and its neighbour on the way take the ordinary lane: the walker crosses there, not on the line of a leg to nowhere');
+  const stair = lane([pav[0], pav[1], { x: 8, z: 0, kind: 'stair' }], ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(stair.map((p) => +p.z.toFixed(2)), [3.55, 0, 0], 'a stair and the node before it are walked on the graph');
+});
+
+test('waypoints: a pavement lane that is blocked (a lamp post, a bin) steps down to the road beside the kerb, not to the middle of the street; a leg across a post does the same to both its ends, and the legs round it are clear', () => {
+  const bin = { x: 4, z: 3.55 };                                // a bin on the pavement at the middle node
+  const ph = { _overlaps: (x, z) => Math.hypot(x - bin.x, z - bin.z) < 0.45 };
+  const w = lane(pav, ph).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(w.map((p) => [p.x, +p.z.toFixed(2)]), [[0, 3.55], [4, 2.56], [8, 3.55]], 'the middle point stands off the kerb (72 % of the way out), the others stay on the pavement');
+  const post = [2, 3.2, 2, 3.9];                                // a post across the pavement between the first two nodes
+  const ph2 = { _overlaps: () => false, segmentBlocked: (x1, z1, x2, z2) => hits(x1, z1, x2, z2, ...post) };
+  const v = lane(pav, ph2).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.deepEqual(v.map((p) => [p.x, +p.z.toFixed(2)]), [[0, 2.56], [4, 2.56], [8, 3.55]], 'both ends of the blocked leg step down once; the last keeps the pavement');
+  for (let k = 1; k < v.length; k++) assert.ok(!ph2.segmentBlocked(v[k - 1].x, v[k - 1].z, v[k].x, v[k].z), `leg ${k} is clear`);
+  const two = { _overlaps: () => false, segmentBlocked: (x1, z1, x2, z2) => hits(x1, z1, x2, z2, ...post) || hits(x1, z1, x2, z2, 2, 2.2, 2, 2.9) };      // and a second post in the way of the road beside the kerb
+  const u = lane(pav, two).waypoints({ ...walker, lane: 0.9 }, [0, 1, 2]);
+  assert.ok(u[0].z < 2.56 && u[1].z < 2.56, `a second step down for the two ends (z ${u[0].z.toFixed(2)}, ${u[1].z.toFixed(2)})`);
+  for (let k = 1; k < u.length; k++) assert.ok(!two.segmentBlocked(u[k - 1].x, u[k - 1].z, u[k].x, u[k].z), `leg ${k} is clear after the second step`);
+});
+
+test('the page\'s world: a soak of an hour from 16:30 puts the walkers of Calle del Sol and Calle del Comercio on their pavements, not on the yellow line, and nobody is stuck on them', async (t) => {
+  const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
+  ctx.hour = 16.5;
+  const meta = await readAssetJson('people/people_meta.json');
+  const sim = new PeopleSim(ctx);
+  assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+  const sp = plan.spawn; sim.setPlayer(sp.x, sp.y ?? 0, sp.z, 0);
+  const streets = plan.streets.filter((s) => s.sidewalk), snags = [], orig = sim.brain.unstick.bind(sim.brain);
+  assert.deepEqual(streets.map((s) => s.id), ['S1', 'S2'], 'the streets with a sidewalk');
+  const paved = sim.nav.nodes.filter((n) => n.pave != null);
+  assert.ok(paved.length > 100 && paved.every((n) => n.kind === 'street'), `the nodes of the two streets carry the pavement lane (${paved.length})`);
+  sim.brain.unstick = (npc, W) => { snags.push({ id: npc.id, x: npc.x, z: npc.z }); return orig(npc, W); };
+  const seen = { S1: { line: 0, pave: 0, all: 0 }, S2: { line: 0, pave: 0, all: 0 } };
+  for (let s = 0, next = 0; s < 3600; s += 0.1) {
+    ctx.hour = (16.5 + s / 3600) % 24; sim.step(0.1);
+    if (s < next) continue; next = s + 1;
+    for (const n of sim.npcs) {
+      if (n.away || n.mode !== 'walk') continue;
+      for (const st of streets) {
+        const d = project(st._d.pts, st._d.cum, n.x, n.z).d, hw = st.width / 2;
+        if (d > hw + 0.3 || Math.abs(n.y - plan.heightAt(n.x, n.z)) > 1.2) continue;
+        const b = seen[st.id]; b.all++; if (d < 0.8) b.line++; if (d >= hw - 0.9) b.pave++;
+        break;
+      }
+    }
+  }
+  for (const id of ['S1', 'S2']) {
+    const b = seen[id], line = b.line / b.all, pave = b.pave / b.all;
+    t.diagnostic(`${id}: ${b.all} walker-seconds: ${(100 * line).toFixed(0)} % within 0.8 m of the yellow line, ${(100 * pave).toFixed(0)} % on the pavement`);
+    assert.ok(b.all > 3000, `${id}: ${b.all} walker-seconds seen`);
+    assert.ok(line < 0.2, `${id}: ${(100 * line).toFixed(0)} % of the walkers kept to the yellow line (it was 39 to 42 %)`);
+    assert.ok(pave > 0.3, `${id}: only ${(100 * pave).toFixed(0)} % were on the pavement (it was 9 %)`);
+  }
+  assert.deepEqual(snags.filter((e) => streets.some((st) => project(st._d.pts, st._d.cum, e.x, e.z).d < st.width / 2 + 1)).map((e) => `${e.id} (${e.x.toFixed(1)}, ${e.z.toFixed(1)})`), [], 'nobody was stuck on a street with a pavement');
+  assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
 });
 
 test('the page\'s world: no lane offset puts a waypoint in a solid or a leg across a wall, on any edge of the graph at the narrowest and the widest lane', async (t) => {
