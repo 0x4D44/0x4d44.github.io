@@ -1,6 +1,6 @@
 // Windows (frame, glass, iron grille, sill, painted surround) and the static parts of doors (casings, shutter housings, entry steps).
 // The openings themselves (reveals) are cut by shell.js; door LEAVES are live objects in doors.js.
-import { lin, mulc, mixc, qd, hash01, OUT, wbox, bar, triFacing, archPts } from './mb.js';
+import { lin, mulc, mixc, qd, hash01, OUT, wbox, bar, triFacing, archPts, roomSeed } from './mb.js';
 import { shutterFrame } from './shutters.js';
 import { buildReja, rejaPattern } from './reja.js';
 
@@ -51,11 +51,20 @@ export function buildWindows(G) {
     }
     wbox(b, 'frame_paint', dir, uc, y0 + FRAME / 2, pF, ww - 2 * FRAME, FRAME, DEPTH, frameCol, hid(dir, 'u-', 'u+', 'y-'));
     const gu0 = uc - ww / 2 + FRAME, gu1 = uc + ww / 2 - FRAME, gy0 = y0 + FRAME, gy1 = y1 - FRAME;
-    const lit = hv(7) < (k === 0 ? 0.25 : 0.4);
+    // Which windows light up, and when, belongs to the ROOM behind them (all the windows of one room come on and go off together): a room is lived in of an evening (35 % of the rooms on the
+    // ground floor, 55 % upstairs), its lights come on some time between 17:30 and 20:40 and go off some time between 21:45 and 01:30, or stay on all night (engine/windowroom.js ROOM_ON / ROOM_OFF).
+    // So at 19:30 about as many windows glow as did before (25 / 40 %), more at 21:00, fewer again at 23:00, a few after midnight; the rest are dark glass all night (R1-104).
+    const rk = (n) => hash01(`${bp.id}:${w.room ?? w.id}`, n);
+    const lit = rk(7) < (k === 0 ? 0.35 : 0.55);
     const gm = lit ? 'window_lit' : 'glass';
+    // A lit pane shows a room behind the glass at night (engine/windowroom.js, R1-104). It says so in its colour: ( 2 + its evening (0..63) + the room's seed, the glass's width (negative when the quad's
+    // FRONT face is the inside), its height ); and in its uv: 0..1 across the whole window and up it, as the viewer in the street sees it, so the two sashes of one window show one room. Along +u the
+    // viewer outside sees the wall run left to right on the front and the left sides and right to left on the back and the right ones.
+    const rw = gu1 - gu0, rh = gy1 - gy0, flip = dir === 'x' ? s < 0 : s > 0, frontIsOut = dir === 'x' ? s > 0 : s < 0;
+    const roomCol = [roomSeed(rk(22), rk(23), hv(21)), (frontIsOut ? 1 : -1) * rw, rh], roomUv = (u, y) => [flip ? 1 - (u - gu0) / rw : (u - gu0) / rw, (y - gy0) / rh];
     const pane = (a, c, p) => {                                               // a glass pane between u=a..c at plane p (an arched head stops the plain pane at the springing; the arch is filled below)
-      const P = (u, y) => (dir === 'x' ? [u, y, p] : [p, y, u]);
-      b.quad(gm, P(a, gy0), P(c, gy0), P(c, rise ? ys : gy1), P(a, rise ? ys : gy1), { col: [1, 1, 1] });
+      const P = (u, y) => (dir === 'x' ? [u, y, p] : [p, y, u]), top = rise ? ys : gy1;
+      b.quad(gm, P(a, gy0), P(c, gy0), P(c, top), P(a, top), lit ? { col: roomCol, uv: [...roomUv(a, gy0), ...roomUv(c, gy0), ...roomUv(c, top), ...roomUv(a, top)] } : { col: [1, 1, 1] });
     };
     if (w.kind === 'louvre') {
       pane(gu0, gu1, pF + s * 0.03);                                           // glass behind the slats: slats alone leave the room open to the street
@@ -69,7 +78,7 @@ export function buildWindows(G) {
       pane(gu0, gu1, pF);
       if (rise) {                                                              // the glass of the round head: a fan from the middle of the springing line
         const g = archPts(gu0, gu1, gy1, rise - FRAME), want = dir === 'x' ? [0, 0, 1] : [-1, 0, 0];
-        for (let i = 0; i + 1 < g.length; i++) triFacing(b, gm, at3(uc, ys, pF), at3(g[i][0], g[i][1], pF), at3(g[i + 1][0], g[i + 1][1], pF), want, { col: [1, 1, 1] });
+        for (let i = 0; i + 1 < g.length; i++) triFacing(b, gm, at3(uc, ys, pF), at3(g[i][0], g[i][1], pF), at3(g[i + 1][0], g[i + 1][1], pF), want, lit ? { col: roomCol, uv: [...roomUv(uc, ys), ...roomUv(g[i][0], g[i][1]), ...roomUv(g[i + 1][0], g[i + 1][1])] } : { col: [1, 1, 1] });
       }
       if (ww > 1.7) wbox(b, 'frame_paint', dir, uc, (gy0 + gy1) / 2, pF, 0.04, gy1 - gy0, DEPTH, frameCol, hid(dir, 'y-', 'y+'));
     }

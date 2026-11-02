@@ -19,8 +19,9 @@ export default {
 
   // ---- glass ------------------------------------------------------------------------------------------------------------
   // See-through in daylight, glows warm at night (the engine drives emissiveIntensity = glow * ctx.night).
+  // At night, from the street, a window pane (arch/shellwin.js `pane`) shows a small room behind its glass instead of one flat glow: engine/windowroom.js (`room`). Panes without a room seed (the rose window, door lights) glow as they always did.
   window_lit: { color: 0xa9bfcc, rough: 0.06, metal: 0, alpha: 0.3, depthWrite: false, tex: false, vertexColors: false, env: 1.3, side: 'double',
-    emissive: 0xffc46b, glow: 2.2 },
+    emissive: 0xffc46b, glow: 2.2, room: true },
 
   // ---- plain-colour details (no texture needed) -------------------------------------------------------------------------
   grille_iron: { color: 0x1e2023, rough: 0.5, metal: 0.45, tex: false, vertexColors: true },

@@ -3,7 +3,7 @@
 // boxes, painted ghost signs and posters, and the roof kit (water tanks, dishes, antennas, pigeon lofts, laundry lines, rebar stubs). Chapel,
 // school and clinic get their identity pieces (bell gable, cross, flag). Every choice is a hash of the building id, so no two neighbours repeat.
 // Draw-call diet: only materials the shell already uses, plus `sign_atlas` (one canvas for all lettering, see signs.js).
-import { lin, mulc, mixc, qd, hash01, triFacing, bar } from './mb.js';
+import { lin, mulc, mixc, qd, hash01, triFacing, bar, roomSeed } from './mb.js';
 import { CASETA_H } from './roof.js';
 import { buildingClutter } from '../world/clutter.js';
 import { signText, signColours, hexToLin, GHOST_COUNT, posterSetOf, handPainted, HAND_BG } from './signs.js';
@@ -190,13 +190,16 @@ function signs(G, kit) {
 function mirador(G, w, u, len, yk, dep) {
   const { S, b } = G, hv = (n) => hash01(w.id, 40 + n);
   const hgt = Math.min(2.2, S.fh - S.slab - 0.4), sill = 0.8 + 0.12 * hv(1), pz = dep - 0.03, concrete = [0.9, 0.9, 0.88];
-  const frameCol = hv(2) < 0.5 ? mulc(G.fs.trim, 1) : hx(0xf2efe6), lit = hv(3) < 0.4;
+  const frameCol = hv(2) < 0.5 ? mulc(G.fs.trim, 1) : hx(0xf2efe6), lit = hv(3) < 0.55;
   fbox(G, 'front', u, yk - 0.075, dep / 2, len, 0.15, dep, 'concrete_bare', concrete);                                      // floor slab
   fbox(G, 'front', u, yk + hgt + 0.06, dep / 2 + 0.02, len + 0.1, 0.12, dep + 0.08, 'concrete_bare', concrete);              // roof slab
   fbox(G, 'front', u, yk + sill / 2, pz, len - 0.04, sill, 0.05, 'plaster_a', G.fs.wall);                                    // solid breast under the glass
   for (const sg of [-1, 1]) fbox(G, 'front', u + sg * (len / 2 - 0.03), yk + hgt / 2, dep / 2, 0.05, hgt, dep - 0.06, 'plaster_a', G.fs.wall);   // solid cheeks
   const gu0 = u - len / 2 + 0.06, gu1 = u + len / 2 - 0.06, gy0 = yk + sill, gy1 = yk + hgt, P = (uu, y) => G.FR.front.at(uu, y, pz + 0.005);
-  b.quad(lit ? 'window_lit' : 'glass', P(gu0, gy0), P(gu1, gy0), P(gu1, gy1), P(gu0, gy1), { col: [1, 1, 1] });
+  // a lit mirador shows a room behind its glass at night, with its own evening (arch/shellwin.js, engine/windowroom.js; R1-104): the quad faces the street (+z) and u runs left to right as seen from it
+  const rw = gu1 - gu0, rh = gy1 - gy0, ruv = (uu, y) => [(uu - gu0) / rw, (y - gy0) / rh];
+  b.quad(lit ? 'window_lit' : 'glass', P(gu0, gy0), P(gu1, gy0), P(gu1, gy1), P(gu0, gy1),
+    lit ? { col: [roomSeed(hv(11), hv(12), hv(13)), rw, rh], uv: [...ruv(gu0, gy0), ...ruv(gu1, gy0), ...ruv(gu1, gy1), ...ruv(gu0, gy1)] } : { col: [1, 1, 1] });
   const n = Math.max(2, Math.round(len / 0.7));
   for (let i = 0; i <= n; i++) fbox(G, 'front', gu0 + ((gu1 - gu0) * i) / n, (gy0 + gy1) / 2, pz + 0.015, 0.045, gy1 - gy0, 0.05, 'frame_paint', frameCol);      // mullions
   for (const y of [gy0, gy1]) fbox(G, 'front', u, y, pz + 0.015, len - 0.1, 0.05, 0.05, 'frame_paint', frameCol);
