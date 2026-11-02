@@ -1,6 +1,6 @@
 // Highland Fling: Scottish Highlands circuit - theme, terrain carving (loch, burn, glen), water, weather and the scenery orchestration.
 import * as THREE from "three";
-import { TAU, LOCH, LOCH2, GLEN_S, BURN, VIADUCT, sm, vnoise, lochR, burnQuery, burnBed } from "./highland-geo.js";
+import { TAU, LOCH, LOCH2, GLEN_S, BURN, VIADUCT, PIPER, sm, vnoise, lochR, burnQuery, burnBed, inRailZone } from "./highland-geo.js";
 import { tartanCanvas, TARTAN_RED, TARTAN_BLUE, TARTAN_GREEN, toTexture } from "./highland-tex.js";
 import { buildNature, silageBales } from "./highland-nature.js";
 import { buildStructs } from "./highland-structs.js";
@@ -25,6 +25,15 @@ export default {
   id: "highland",
   theme,
   terrainAmp: 14,
+
+  // seasonal decorations (season-*.js) keep clear of the lochs, the burn, the railway line and its hills, the glen under the viaduct and the piper
+  seasonBlocked(x, z, r) {
+    if (lochR(x, z) < 1.2 + r / 60) return true;
+    if (burnQuery(x, z).d < 5 + r) return true;
+    if (inRailZone(x, z, 8 + r)) return true;
+    if (Math.abs(z - VIADUCT.z) < 76 && x > 20 && x < 272) return true;
+    return Math.hypot(x - PIPER.x, z - PIPER.z) < 10 + r;
+  },
 
   // runs before the terrain is built: release the road-following constraint over the bridged glen + the humpback gully, so the terrain can fall away under the high road
   prepTerrain(track) {

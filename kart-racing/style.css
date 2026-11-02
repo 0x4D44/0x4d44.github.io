@@ -80,6 +80,14 @@ html, body { margin: 0; padding: 0; overflow: hidden; }
 .ak-checker { height: 14px; margin: 14px -20px 0; background: repeating-conic-gradient(#fff 0 25%, #111 0 50%) 0 0 / 14px 14px; box-shadow: 0 0 18px rgba(255,255,255,.25); }
 .ak-press { margin-top: 38px; font-size: clamp(14px, 2.4vw, 22px); letter-spacing: .3em; color: var(--white); animation: akBlink 1.3s ease-in-out infinite; text-shadow: 0 2px 8px #000; }
 @keyframes akBlink { 50% { opacity: .25; } }
+.ak-season { margin-top: 22px; padding: 6px 16px; border-radius: 999px; font-size: clamp(11px, 1.9vw, 15px); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #fff;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.35); box-shadow: 0 0 18px rgba(255,150,60,.35); text-shadow: 0 1px 4px #000; }
+@media (max-height: 520px) {   /* the badge adds a line: tighten the stack so it still clears the footer tagline */
+  .ak-seasonal .ak-logo .l1 { font-size: clamp(44px, min(17vw, 30vh), 190px); }
+  .ak-seasonal .ak-logo .l2 { font-size: clamp(28px, min(11vw, 19vh), 124px); }
+  .ak-seasonal .ak-season { margin-top: 8px; padding: 3px 12px; }
+  .ak-seasonal .ak-press { margin-top: 14px; }
+}
 .ak-title .tiny { position: absolute; bottom: 14px; left: 0; right: 0; font-size: 11px; color: var(--mute); letter-spacing: .15em; }
 
 /* ---------- main menu ---------- */
@@ -321,6 +329,9 @@ html, body { margin: 0; padding: 0; overflow: hidden; }
   .ak-how, .ak-items { grid-template-columns: 1fr; }
   .ak-panel { padding: 12px 14px; }
 }
+/* eight settings rows: keep the last one (Seasonal fun) on screen on common short windows */
+@media (min-width: 761px) and (max-height: 640px) { .ak-sets .ak-row { padding: 3px 0; } }
+@media (max-width: 760px) and (orientation: portrait) and (max-height: 700px) { .ak-sets { padding: 6px 14px; } .ak-sets .ak-row { padding: 4px 0; gap: 2px; } }
 /* portrait phones */
 @media (max-width: 760px) and (orientation: portrait) {
   .ak-main { padding: 60px 22px 20px; justify-content: flex-start; }

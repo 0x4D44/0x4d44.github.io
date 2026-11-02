@@ -164,7 +164,8 @@ function buildCentreline(def) {
 }
 
 // ---------------------------------------------------------------- the track
-export function createTrack(id) {
+// opts.season: a seasonal event ({id, snowy, ...} from seasons.js) or null; opts.decorate: season-decor.js's decorate(), run last. opts.low: Graphics=Low (the seasonal kit then halves its density).
+export function createTrack(id, opts = {}) {
   const def = TRACK_DEFS.find((d) => d.id === id) || TRACK_DEFS[0];
   const theme = THEMES[def.theme] || EXTRA_THEMES[def.theme].theme;
   const extra = EXTRA_THEMES[def.theme] || null;
@@ -486,7 +487,7 @@ export function createTrack(id) {
     m.name = "startline"; group.add(m);
   }
 
-  track._ctx = { THREE, extra, C, theme, def, hw, wallDist, cor, bridgeIdx, shore, lake, rng, own, anim, group, nearest, kerbL, kerbR, lineLat, canvas, toTex, noiseFill, bake, mat, part, col, groundTexture, Strips, WH, cells, ck, CELL };
+  track._ctx = { THREE, extra, C, theme, def, hw, wallDist, cor, bridgeIdx, shore, lake, rng, own, anim, group, nearest, kerbL, kerbR, lineLat, canvas, toTex, noiseFill, bake, mat, part, col, groundTexture, Strips, WH, cells, ck, CELL, season: opts.season || null, low: !!opts.low };
 
   track._ctx.groundClip = shore ? (shore.kind === "sea" ? { zMin: shore.z - 8 } : { zMax: shore.z }) : {};
   extra?.prepTerrain?.(track);   // theme hook: runs once before the terrain is built (may adjust track._ctx.cor etc.)
@@ -496,6 +497,11 @@ export function createTrack(id) {
 
   // ---- ground, sky, lights
   buildEnvironment(track, theme, def);
+
+  // ---- seasonal decorations (last, so they can see everything else; they use their own RNG and never disturb the base look)
+  if (opts.season && opts.decorate) {
+    try { opts.decorate(track, track._ctx, track._ctx.kit); } catch (e) { console.warn("[apex] seasonal decorations failed", e); }
+  }
 
   track.update = (dt, time) => { for (let i = 0; i < anim.length; i++) anim[i](dt, time); };
   track.dispose = () => { group.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); disposables.forEach((d) => d.dispose && d.dispose()); };
@@ -952,6 +958,7 @@ function buildScenery(track) {
 
   // ============================================================ theme dispatch
   const ctx = { at, instanced, blobShadows, scatter, ringAround, lam, basic, pick, R, stripedTex, addFlags };
+  X.kit = ctx;
   (X.extra?.scenery || { sunset: sceneSunset, snow: sceneSnow, neon: sceneNeon }[def.theme])(track, X, ctx);
 }
 

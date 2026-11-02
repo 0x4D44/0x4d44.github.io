@@ -3,7 +3,7 @@ import { ROSTER, ITEMS, DIFFICULTIES, LAP_OPTIONS, formatTime, clamp } from "./r
 
 const SETTINGS_KEY = "apexkarts.settings.v1";
 const PREFS_KEY = "apexkarts.prefs.v1";
-const DEFAULT_SETTINGS = { volume: 0.8, music: 0.6, sfx: 0.9, camera: "chase", touch: "auto", minimap: true, quality: "high" };
+const DEFAULT_SETTINGS = { volume: 0.8, music: 0.6, sfx: 0.9, camera: "chase", touch: "auto", minimap: true, quality: "high", seasons: "auto" };
 
 /* ---------- small helpers ---------- */
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -326,12 +326,13 @@ export class UI {
   }
 
   /* ----- title ----- */
-  showTitle(onContinue) {
+  showTitle(onContinue, badge) {
     const el = node(`
       <div class="ak-streaks">${Array.from({ length: 9 }, (_, i) => `<i style="top:${8 + i * 10 + (i % 3) * 3}%;animation-delay:${(i * 0.37).toFixed(2)}s;animation-duration:${(1.6 + (i % 4) * 0.4).toFixed(1)}s"></i>`).join("")}</div>
       <div class="ak-logo"><span class="l1">Apex</span><span class="l2">Karts</span><div class="ak-checker"></div></div>
+      ${badge ? `<div class="ak-season">${badge}</div>` : ""}
       <div class="ak-press ak-disp">Press any key &middot; Tap to start</div>
-      <div class="tiny">3D ARCADE KART RACING &middot; 8 RACERS &middot; 3 TRACKS &middot; GRAND PRIX</div>`, "ak-title");
+      <div class="tiny">3D ARCADE KART RACING &middot; 8 RACERS &middot; 3 TRACKS &middot; GRAND PRIX</div>`, badge ? "ak-title ak-seasonal" : "ak-title");
     this._setScreen("title", el, { focus: false });
     this._titleCb = onContinue || (() => {});
     el.addEventListener("pointerdown", (e) => { e.preventDefault(); this._fireTitle(); });
@@ -468,12 +469,13 @@ export class UI {
     const slider = (key, label) => `<div class="ak-row"><span>${label}</span><div class="val"><input type="range" min="0" max="100" step="5" data-nav data-k="${key}" value="${Math.round(s[key] * 100)}"><b class="num">${Math.round(s[key] * 100)}</b></div></div>`;
     const seg = (key, label, opts) => `<div class="ak-row"><span>${label}</span><div class="val"><div class="ak-seg" data-g="${key}">${opts.map(([v, t]) => `<button data-nav data-v="${v}">${t}</button>`).join("")}</div></div></div>`;
     const el = node(`${this._hdr("Settings", "Options")}
-      <div class="ak-body" style="justify-content:center;min-height:0"><div class="ak-panel ak-col ak-scroll" style="align-self:flex-start;max-height:100%">
+      <div class="ak-body" style="justify-content:center;min-height:0"><div class="ak-panel ak-col ak-scroll ak-sets" style="align-self:flex-start;max-height:100%">
         ${slider("volume", "Master volume")}${slider("music", "Music")}${slider("sfx", "Sound effects")}
         ${seg("camera", "Camera", [["chase", "Chase"], ["far", "Far"]])}
         ${seg("touch", "Touch controls", [["auto", "Auto"], ["on", "On"], ["off", "Off"]])}
         ${seg("minimap", "Minimap", [["true", "On"], ["false", "Off"]])}
         ${seg("quality", "Graphics", [["high", "High"], ["low", "Low"]])}
+        ${seg("seasons", "Seasonal fun", [["auto", "Auto"], ["off", "Off"], ["halloween", "\u{1F383}"], ["christmas", "\u{1F384}"], ["easter", "\u{1F430}"]])}
       </div></div>
       <div class="ak-foot"><button class="ak-btn pri" data-nav data-act="back">Done</button></div>`, "ak-dim");
     const refresh = () => el.querySelectorAll(".ak-seg").forEach((g) => g.querySelectorAll("button").forEach((b) => b.classList.toggle("on", String(this.settings[g.dataset.g]) === b.dataset.v)));

@@ -18,7 +18,7 @@ function fatal(msg) {
 
 // ---- dynamic imports so a missing module gives a clear message instead of a blank page ----
 async function loadModules() {
-  const names = ["trackdefs", "track", "kart", "controls", "camera", "ai", "items", "ui", "race", "audio", "effects"];
+  const names = ["trackdefs", "track", "seasons", "kart", "controls", "camera", "ai", "items", "ui", "race", "audio", "effects"];
   const mods = {};
   const missing = [];
   await Promise.all(names.map(async (n) => {
@@ -45,6 +45,8 @@ class Game {
     this.cup = null;
     this.botPlayer = false;
     this.tracks = new Map();
+    this.season = null;          // the seasonal event decorating the tracks right now (see seasons.js), or null
+    this.decor = null;           // season-decor.js, fetched only once an event is actually on
     this.activeTrack = null;
     this.disposeScene = null;
     this.karts = [];
@@ -115,10 +117,15 @@ class Game {
   applySettings(s) {
     if (!s) return;
     this.settings = s;
+    if (this._seasonMode !== undefined && (s.seasons || "auto") !== this._seasonMode) {
+      this.refreshSeason().then(() => { if (this.stateName === "menu") this.buildBackdrop(); });
+    }
     this.audio.setVolumes({ volume: s.volume, music: s.music, sfx: s.sfx });
     this.controls.setTouchMode?.(s.touch || "auto");
     this.chase.setMode?.(s.camera === "far" ? "far" : "chase");
     const low = s.quality === "low";
+    if (this._lowQ !== undefined && this._lowQ !== low && this.season) { this._dropTracks(); if (this.stateName === "menu") this.buildBackdrop(); }
+    this._lowQ = low;
     this.effects.setQuality(low ? "low" : "high");
     const wantShadow = !low;
     if (this.renderer.shadowMap.enabled !== wantShadow) {
@@ -166,14 +173,37 @@ class Game {
   }
 
   // ------------------------------------------------------------------ world
+  // Which seasonal event (if any) decorates the tracks: the calendar, the "Seasonal fun" setting and ?season= / ?date= decide.
+  async refreshSeason() {
+    const mode = this.settings?.seasons || "auto";
+    this._seasonMode = mode;
+    const sea = this.M.seasons.resolveSeason({ search: location.search, mode });
+    let ready = false;
+    if (sea) {
+      try { this.decor = this.decor || await import("./season-decor.js"); await this.decor.load(sea.id); ready = true; } catch (e) { console.warn("[apex] seasonal decorations unavailable", e); }
+    }
+    const next = ready ? sea : null;
+    if ((next ? next.id : null) === (this.season ? this.season.id : null)) return;
+    this.season = next;
+    this._dropTracks();
+  }
+
+  // tracks built under an old season (or Graphics density) are stale: drop the idle ones now, the one on screen when it is next left
+  _dropTracks() {
+    for (const [id, t] of [...this.tracks]) {
+      if (t === this.activeTrack) t._stale = true; else try { t.dispose?.(); } catch (e) { /* ignore */ }
+      this.tracks.delete(id);
+    }
+  }
+
   getTrack(id) {
     let t = this.tracks.get(id);
-    if (!t) { t = this.M.track.createTrack(id); this.tracks.set(id, t); }
+    if (!t) { t = this.M.track.createTrack(id, { season: this.season, decorate: this.decor?.decorate, low: this.settings?.quality === "low" }); this.tracks.set(id, t); }
     return t;
   }
 
   activateTrack(id) {
-    if (this.activeTrack && this.activeTrack.id === id) return this.activeTrack;
+    if (this.activeTrack && this.activeTrack.id === id && !this.activeTrack._stale) return this.activeTrack;
     this.deactivateTrack();
     const t = this.getTrack(id);
     this.scene.add(t.group);
@@ -186,6 +216,7 @@ class Game {
     if (!this.activeTrack) return;
     try { if (typeof this.disposeScene === "function") this.disposeScene(); } catch (e) { console.warn(e); }
     this.scene.remove(this.activeTrack.group);
+    if (this.activeTrack._stale) try { this.activeTrack.dispose?.(); } catch (e) { /* ignore */ }
     this.disposeScene = null;
     this.activeTrack = null;
   }
@@ -239,6 +270,7 @@ class Game {
   // ------------------------------------------------------------------ flow
   async boot() {
     $("boot-msg").textContent = "BUILDING TRACKS";
+    await this.refreshSeason();
     await new Promise((r) => requestAnimationFrame(r));
     await this.buildBackdrop();
     this.resize();
@@ -251,7 +283,7 @@ class Game {
       this.ui.hideLoading?.();
       this.quickStart(this._quickOpts());
     } else {
-      this.ui.showTitle(() => this.toMenu());
+      this.ui.showTitle(() => this.toMenu(), this.season ? `${this.season.emoji} ${this.season.name} special` : null);
     }
   }
 
