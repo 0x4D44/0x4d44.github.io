@@ -527,6 +527,13 @@
      4. Explain builder (cause + effect)
      ===================================================================== */
   // The questions, samples and marking live in dtp-explain.js (window.HGX), marked by papers-engine.js.
+  // the pre-flight check's depth question shows the poster too (quiz-dtp.js, fig: "recruit-poster")
+  let posterCopies = 0;
+  HG.figures["recruit-poster"] = () => {
+    const svg = S("svg", { viewBox: "0 0 300 424", class: "dp-hs-poster", role: "img", "aria-label": "The recruitment poster from the hotspot analyser, repeated here to refer to while you answer." });
+    recruitPoster(svg, `dp-qp${++posterCopies}`);
+    return svg;
+  };
   mount("w-explain", (box) => {
     const X = window.HGX;
     let qk = "emphasis";
