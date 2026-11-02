@@ -94,6 +94,23 @@ function realParts(ctx, key) {
   return parts;
 }
 
+/**
+ * The lowest point of each wheel in the model's own frame, [x, y, z] (y is 0 where the tyre touches the floor the model stands on). The placement fits a vehicle to the ground with them
+ * (R1-103: "wheels stay on the ground"); a model that names no wheel node gets none and is placed as before.
+ */
+function wheelPoints(ctx, key, meta) {
+  const gl = ctx.assets.loaded.get(meta.glb), root = gl?.scene.getObjectByName(meta.node ?? key), out = [];
+  if (!root) return out;
+  root.updateWorldMatrix(true, true);
+  const inverse = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  for (const name of meta.wheels ?? []) {
+    const node = gl.scene.getObjectByName(name); if (!node) continue;
+    const box = new THREE.Box3().setFromObject(node).applyMatrix4(inverse);
+    if (!box.isEmpty()) out.push([(box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2]);
+  }
+  return out;
+}
+
 function mergeParts(parts, bodyPaintTile) {
   const byMaterial = new Map();
   for (const { geometry, matKey } of parts) {
@@ -179,7 +196,7 @@ export class VehicleLibrary {
         parts.push(mergeParts(near, meta.paintTile)); parts.push(mergeParts(far, meta.paintTile));
         const triangles = parts.map((ps) => ps.reduce((n, p) => n + p.geometry.index.count / 3, 0));
         if (!(triangles[0] > triangles[1] && triangles[1] > 0 && triangles[1] <= 600 && triangles[0] <= 6000)) throw new Error('invalid triangle budget');
-        this.types.set(key, { key, meta, parts, triangles, records: [], meshes: [[], []] });
+        this.types.set(key, { key, meta, parts, triangles, records: [], meshes: [[], []], wheels: wheelPoints(ctx, key, meta) });
       } catch (error) {
         parts.flat().forEach((p) => p.geometry.dispose());
         this.rejected[key] = String(error.message ?? error);
@@ -189,6 +206,12 @@ export class VehicleLibrary {
 
   has(key) { return this.types.has(key); }
   meta(key) { return this.types.get(key)?.meta; }
+
+  /** How far each wheel's lowest point stands above (+) or below (-) the ground when `key` is posed like this; `heightAt(x, z)` is the ground. Empty when the model has no wheel points. */
+  wheelGaps(key, x, y, z, yaw, pitch, heightAt) {
+    const type = this.types.get(key), m = vehicleMatrix(x, y, z, yaw, pitch), p = new THREE.Vector3();
+    return (type?.wheels ?? []).map(([wx, wy, wz]) => { p.set(wx, wy, wz).applyMatrix4(m); return p.y - heightAt(p.x, p.z); });
+  }
 
   /** False means the caller must draw its existing procedural vehicle. No placeholder counts as a loaded vehicle. */
   place(key, x, y, z, yaw = 0, pitch = 0, options = {}) {
