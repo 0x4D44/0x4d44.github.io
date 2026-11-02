@@ -14,6 +14,8 @@ const TRIPLE_BOOST_TIME = 1.35;
 const BANANA_R = 1.6;
 const BANANA_ARM = 0.7;         // owner immune this long
 const MAX_BANANAS = 24;
+const THROWN_SCALE = 1.8;      // a lobbed banana is drawn this much bigger while it is in the air
+const THROW_G = 24;            // gravity for bananas lobbed from afar (e.g. by the Banana Express passengers)
 const GREEN_SPEED = 62;
 const GREEN_LIFE = 6.0;
 const GREEN_BOUNCES = 3;
@@ -46,6 +48,7 @@ export class ItemSystem {
     this.rng = rng || makeRng(7);
     this.hazards = [];       // {type:"banana", position, owner, age, mesh}
     this.projectiles = [];   // {type:"green"|"homing", position, owner, target, ...}
+    this.thrown = [];        // bananas in flight, lobbed from a distance: {mesh, vx, vy, vz, t, T, owner, arm, life, s}
     this.time = 0;
     this._rolls = new Map();       // kart -> {t, dur}
     this._lastUse = new Map();     // kart -> time
@@ -178,7 +181,9 @@ export class ItemSystem {
   reset() {
     for (const h of this.hazards) this._removeMesh(h.mesh);
     for (const p of this.projectiles) this._removeMesh(p.mesh);
+    for (const p of this.thrown) this._removeMesh(p.mesh);
     this.hazards.length = 0;
+    this.thrown.length = 0;
     this.projectiles.length = 0;
     for (const r of this._rings) { r.mesh.parent && r.mesh.parent.remove(r.mesh); r.mesh.material.dispose(); }
     this._rings.length = 0;
@@ -215,6 +220,7 @@ export class ItemSystem {
     }
     this._updateBoxes(dt, t);
     this._updateRolls(dt, race);
+    this._updateThrown(dt);
     this._updateHazards(dt);
     this._updateProjectiles(dt);
     this._updateBubbles(dt, t);
@@ -315,9 +321,7 @@ export class ItemSystem {
     this.effects?.burst?.(this._p, "boost", { kart, heading: kart.heading });
   }
 
-  _dropBanana(kart) {
-    const fx = Math.sin(kart.heading), fz = Math.cos(kart.heading);
-    const d = (kart.radius || 1.3) + 1.5;
+  _makeBanana() {
     const mesh = new THREE.Group();
     const body = new THREE.Mesh(this.bananaGeo, this.bananaMat);
     body.rotation.set(Math.PI / 2, 0, 0);
@@ -326,14 +330,56 @@ export class ItemSystem {
     const tip = new THREE.Mesh(this.bananaTipGeo, this.bananaTipMat);
     tip.position.set(0.55, 0.2, 0);
     mesh.add(tip);
+    return mesh;
+  }
+
+  _dropBanana(kart) {
+    const fx = Math.sin(kart.heading), fz = Math.cos(kart.heading);
+    const d = (kart.radius || 1.3) + 1.5;
+    const mesh = this._makeBanana();
     mesh.position.set(kart.position.x - fx * d, kart.position.y + 0.12, kart.position.z - fz * d);
     mesh.position.y = this._roadY(mesh.position, kart.s, 0.12);
     mesh.rotation.y = this.rng() * 6.28;
     this.root.add(mesh);
-    if (this.hazards.length >= MAX_BANANAS) { const old = this.hazards.shift(); this._removeMesh(old.mesh); }
-    this.hazards.push({ type: "banana", position: mesh.position, owner: kart, age: 0, mesh });
+    this._addHazard({ type: "banana", position: mesh.position, owner: kart, age: 0, mesh });
     this.audio?.play?.("banana", { kart });
     this.audio?.play?.("throw", { kart });
+  }
+
+  _addHazard(h) {
+    if (this.hazards.length >= MAX_BANANAS) { const old = this.hazards.shift(); this._removeMesh(old.mesh); }
+    this.hazards.push(h);
+  }
+
+  /** Lob a banana from `from` so it comes down on `to` after `T` s, where it lies like any dropped one.
+   *  opts: arm = seconds the owner stays immune to it, life = seconds before it rots away (0 = never), s = track position hint for the landing. */
+  throwBanana(from, to, T, owner, { arm = BANANA_ARM, life = 0, s = null } = {}) {
+    const mesh = this._makeBanana();
+    mesh.position.set(from.x, from.y, from.z);
+    mesh.scale.setScalar(THROWN_SCALE);   // bigger while it flies, so it reads from far off; normal size once it lies on the road
+    this.root.add(mesh);
+    const vx = (to.x - from.x) / T, vz = (to.z - from.z) / T, vy = (to.y - from.y + 0.5 * THROW_G * T * T) / T;
+    this.thrown.push({ mesh, vx, vy, vz, t: 0, T, owner, arm, life, s, tx: to.x, ty: to.y, tz: to.z, spin: 6 + this.rng() * 6 });
+    this.audio?.play?.("throw", { kart: { position: from } });
+  }
+
+  _updateThrown(dt) {
+    for (let i = this.thrown.length - 1; i >= 0; i--) {
+      const b = this.thrown[i], m = b.mesh;
+      b.t += dt;
+      if (b.t < b.T) {
+        m.position.set(m.position.x + b.vx * dt, m.position.y + b.vy * dt, m.position.z + b.vz * dt);
+        b.vy -= THROW_G * dt;
+        m.rotation.y += b.spin * dt; m.rotation.z += b.spin * 0.6 * dt;
+        continue;
+      }
+      // down: it lies on the road, flat, like a dropped one
+      m.position.set(b.tx, this._roadY({ x: b.tx, y: b.ty, z: b.tz }, b.s ?? b.owner?.s, 0.12), b.tz);
+      m.rotation.set(0, this.rng() * 6.28, 0); m.scale.setScalar(1);
+      this.thrown.splice(i, 1);
+      this._addHazard({ type: "banana", position: m.position, owner: b.owner, age: 0, mesh: m, arm: b.arm, life: b.life });
+      this.audio?.play?.("plop", { kart: { position: m.position } });
+    }
   }
 
   _makeShell(type) {
@@ -467,11 +513,12 @@ export class ItemSystem {
     for (let i = this.hazards.length - 1; i >= 0; i--) {
       const h = this.hazards[i];
       h.age += dt;
+      if (h.life && h.age > h.life) { this._removeMesh(h.mesh); this.hazards.splice(i, 1); continue; }   // a thrown one rots away
       h.mesh.rotation.y += dt * 0.4;
       const hp = h.position;
       for (let j = 0; j < karts.length; j++) {
         const k = karts[j];
-        if (k === h.owner && h.age < BANANA_ARM) continue;
+        if (k === h.owner && h.age < (h.arm ?? BANANA_ARM)) continue;
         const dx = k.position.x - hp.x, dz = k.position.z - hp.z;
         const r = BANANA_R + (k.radius || 1.3) * 0.4;
         if (dx * dx + dz * dz < r * r && Math.abs(k.position.y - hp.y) < 2.5) {

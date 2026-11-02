@@ -9,7 +9,7 @@ const PLAN = [
   [96, 1, "big", "haggis"], [172, -1, "small", "shortbread"], [262, 0, "gantry", "whisky"], [334, 1, "big", "midges"], [422, -1, "big", "fry"],
   [498, 1, "small", "tyres"], [566, 1, "big", "nessie", 6], [642, -1, "big", "rain"], [706, 1, "small", "seasons"], [764, -1, "big", "girder"], [806, 1, "small", "coos"],
   [1132, -1, "big", "wind"], [1204, 1, "small", "porridge"], [1274, 1, "big", "pipes"], [1346, -1, "hill", "cheer"], [1524, -1, "small", "kilts"],
-  [1566, 0, "gantry", "tyres"], [1646, 1, "big", "safari"], [1722, -1, "small", "broadband"], [2035, 1, "big", "opticians"], [2090, -1, "small", "midges"],
+  [1566, 0, "gantry", "tyres"], [1646, 1, "big", "safari"], [1722, 1, "small", "broadband"], [2035, 1, "big", "opticians"], [2090, -1, "small", "midges"],
   [2150, 1, "big", "seasons"], [2205, -1, "big", "whisky"], [2262, 1, "small", "haggis"], [2336, -1, "big", "porridge"], [2422, 0, "gantry", "cheer"],
 ];
 const SIZE = { big: [11.5, 5.75, 3.4], small: [6.6, 3.3, 2.0], hill: [17, 8.5, 5.0], gantry: [27, 6.75, 0] };
