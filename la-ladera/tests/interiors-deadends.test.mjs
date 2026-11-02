@@ -2,11 +2,12 @@
 // The stuck sweep (tests/stuck.mjs --cell 0.3) found four such pockets in A2's plans (L33, L45, L70, L89: a 0.6 m aisle between a bed and a wardrobe, a diagonal 0.6 m mouth between a bed and a wardrobe, a 0.6 m
 // slot between a box and a pile of sacks, a 0.77 m lane closed by a pot) and two beds (L04, L15) whose sleeper lies 1.3 m from any floor a body can stand on (the sweep wants a node within 1.4 m).
 // The sweep of the merged tree (68c8bee) found one more: the chapel's office L48.f0.r1, the visitor's chair beside the desk's own (see the section before "every plan").
+// The final battery's sweep (4d6444f) found 8 sleep anchors it never reached, in seven narrow bedrooms: beds stacked across them with no lane (see the last section, "a bed someone can walk up to").
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-deadends.test.mjs
 //   A3_PLANS=real   also judges every room and bed of A2's real world (default: the six lots below and the synthetic batch)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Layout, seriousPocket, obbDist, obbOverlap } from '../js/interiors/layout.js';
+import { Layout, seriousPocket, obbDist, obbOverlap, SLEEP_WALK } from '../js/interiors/layout.js';
 import { SLEEP_REACH } from '../js/interiors/index.js';
 import { makeRng } from '../js/core/rng.js';
 import { buildData } from './headless.mjs';
@@ -244,4 +245,119 @@ test('the cure leaves at most 7% of the rooms with a serious dead-end pocket (be
   }
   assert.ok(rooms >= 300, `${rooms} rooms`);
   assert.ok(serious <= rooms * 0.07, `${serious} of ${rooms} rooms keep a serious pocket (${(100 * serious / rooms).toFixed(1)}%, at most 7%):\n  ` + where.slice(0, 10).join('\n  '));
+});
+
+// ---------------------------------------------------------------- a bed someone can walk up to
+// The final battery's stuck walk (tests/stuck.mjs --cell 0.3 over 4d6444f) never reached 8 sleep anchors, a bunk's two among them: seven beds in narrow bedrooms (L03, L38, L42, L53, L62, L73, L107: 2.0-2.9 m wide)
+// where the extra beds of a crowded household (23d0bb2) had been stacked head to foot across the room with no lane between them a body fits. `Layout.valid` asked of a bed only whether a free cell of the main
+// region lay within the bed's own radius and 0.8 m (2.1 m for a double), and of the pieces that come after a bed nothing, so the sleeper lay 1.4-2.0 m from the nearest floor the walk reached (13 of the
+// barrio's 363 sleepers lay over 1.1 m from any floor a body can stand on). Now a bed needs floor within `SLEEP_WALK` of where `sleeperSpot` lays the sleeper, no later piece may shut a bed in, and `heal`
+// drops a bed it cannot open (a room's first bed is kept: the piece in its way goes).
+const HALF = PI / 2;
+/** L03.f1.r2's bedroom: 2.13 x 4.56 m (`D` m long), its door (an arch, so the 0.77 m lane) in the east wall 0.27 m from the south end. A bed lying across it fills all but a hand's breadth of the width. */
+function narrowBedroom(D = 4.56) {
+  const W = 2.13, rect = { x0: -2.28, z0: -0.28, x1: -2.28 + W, z1: -0.28 + D };
+  const room = { id: 'P.f0.r1', type: 'bedroom', floor: 0, rect, y: 0, h: 2.6 };
+  const bp = { id: 'P', rooms: [room], windows: [], stairs: [], entrances: [], colliders: { walls: [], floors: [] }, doors: [{ id: 'P.d1', x: rect.x1, z: 0.27, w: 0.9, kind: 'arch', rooms: [room.id] }] };
+  return new Layout({ bp, room, rng: makeRng(1), hh: { tints: {} } });
+}
+/** `name` lying across the room with its middle at (x, z), put there unchecked; `ask` makes the same sort of piece without placing it, for `valid()`. */
+const lay = (L, name, x, z, prio = 1) => L.at(name, x, z, HALF, { force: true, prio });
+const ask = (L, name, x, z, ry = HALF) => L._make(name, x, z, ry, { prio: 1 });
+const SINGLE = [-1.32, 1.22], DOUBLE = [-1.27, 2.46];                  // L03's poses (the double 2 cm further on, clear of the single)
+
+test('valid(): a bed is refused where its sleeper could be walked up to only across another bed', () => {
+  const alone = narrowBedroom();
+  assert.ok(alone.valid(ask(alone, 'bed_double_wood', ...DOUBLE)), 'with the south end of the room free the double is fine');
+  const L = narrowBedroom(); lay(L, 'bed_single', ...SINGLE);
+  for (const o of [{}, { noClear: true }]) assert.equal(L.valid(ask(L, 'bed_double_wood', ...DOUBLE), o), false, `a double behind the single, ${JSON.stringify(o)}`);
+  const first = narrowBedroom(); lay(first, 'bed_double_wood', ...DOUBLE);
+  assert.equal(first.valid(ask(first, 'bed_single', ...SINGLE)), false, 'and a single in front of the double would shut it in');
+});
+
+test('sleeperSpot(): the sleeper of a boxed-in bed lies farther than SLEEP_WALK from floor, one with floor beside it within SLEEP_REACH', () => {
+  const L = narrowBedroom(), single = lay(L, 'bed_single', ...SINGLE), dbl = lay(L, 'bed_double_wood', ...DOUBLE), conn = L.connectivity(0.34);
+  const boxed = L.sleeperSpot(dbl, conn), free = L.sleeperSpot(single, conn);
+  assert.ok(boxed.d > SLEEP_WALK, `the double's sleeper is ${boxed.d} m from floor to stand on`);
+  assert.ok(!L.sleeperWithin(dbl, conn, SLEEP_WALK), 'the quick form of the question says the same');
+  assert.ok(free.d <= SLEEP_REACH, `the single's sleeper is ${free.d} m from it`);
+  assert.ok(L.sleeperWithin(single, conn, SLEEP_REACH));
+});
+
+test('valid(): a piece that would shut a bed in is refused, one that leaves a way through is not', () => {
+  const L = narrowBedroom(); lay(L, 'bed_single', -1.32, 3.78);                    // a single at the north end, the south end free
+  const sofa = ask(L, 'sofa_3_vinyl', -1.25, 2.2), robe = ask(L, 'wardrobe_2', -1.6, 2.4);
+  assert.ok(L._connOk(sofa), 'the sofa cuts no door off: the only thing the room asked of it before');
+  assert.equal(L.valid(sofa), false, 'a sofa across the room, wall to wall, shuts the bed in');
+  assert.ok(L.valid(robe), 'a wardrobe that leaves a lane does not');
+});
+
+test('heal(): a bed nobody can walk up to goes; the room\'s first bed stays and the piece in its way goes instead', () => {
+  const names = (L) => L.items.filter((i) => i.floor).map((i) => i.name);
+  const extra = narrowBedroom(); lay(extra, 'bed_single', ...SINGLE); lay(extra, 'bed_double_wood', ...DOUBLE);
+  assert.deepEqual(extra.heal().map((i) => i.name), ['bed_double_wood'], 'the extra bed is the one that goes');
+  assert.deepEqual(names(extra), ['bed_single']);
+  const first = narrowBedroom(); lay(first, 'bed_single', ...SINGLE); lay(first, 'bed_double_wood', ...DOUBLE, 0);
+  assert.deepEqual(first.heal().map((i) => i.name), ['bed_single'], 'the double is the first bed (priority 0): the single goes');
+  assert.deepEqual(names(first), ['bed_double_wood']);
+});
+
+let barrioP;
+const barrio = () => (barrioP ??= buildData({}));
+const bedsOf = (L) => L.items.filter((i) => i.floor && !i.parent && SLEEP_ARCH.has(i.c.arch));
+
+test('sleeperWithin() is sleeperSpot().d <= bound for every bed of the barrio, on the lanes\' and the anchors\' floods, at the two bounds a layout asks', async () => {
+  const { buildings } = await barrio();
+  let n = 0; const bad = [];
+  for (const bp of buildings) for (const [rid, L] of bp.interior?.layouts ?? []) {
+    const beds = bedsOf(L); if (!beds.length) continue;
+    for (const inflate of [0.34, 0.4]) {
+      const conn = L.connectivity(inflate);
+      for (const b of beds) for (const bound of [SLEEP_REACH, SLEEP_WALK]) {
+        n++;
+        const d = L.sleeperSpot(b, conn).d;
+        if (L.sleeperWithin(b, conn, bound) !== d <= bound) bad.push(`${rid} ${b.name} @${inflate} <= ${bound}: the spot is ${d} m from floor`);
+      }
+    }
+  }
+  assert.ok(n >= 1200, `${n} comparisons`);
+  assert.equal(bad.length, 0, `${bad.length} disagree:\n  ` + bad.slice(0, 8).join('\n  '));
+});
+
+test('barrio: every sleeper lies within 1.1 m of floor a body can stand on (4d6444f: 13 of its 363 did not)', async () => {
+  const { buildings } = await barrio();
+  const rows = sleepers(buildings).filter((s) => s.bed), far = rows.filter((s) => s.dist > SLEEP_REACH + 0.1);
+  assert.ok(rows.length >= 360, `${rows.length} sleepers`);
+  assert.equal(far.length, 0, `${far.length} of ${rows.length} sleepers lie over ${SLEEP_REACH + 0.1} m from floor to stand on: ` + far.slice(0, 8).map((s) => `${s.a.room} ${s.bed.name} ${s.dist.toFixed(2)} m`).join(', '));
+});
+
+test('barrio: the rule costs no bed and no bedroom its bed (4d6444f: 306 beds a person sleeps on, 233 bedrooms with one)', async () => {
+  const { buildings } = await barrio();
+  let beds = 0, rooms = 0;
+  for (const bp of buildings) for (const [, L] of bp.interior?.layouts ?? []) {
+    const here = bedsOf(L).length;
+    beds += here;
+    if (L.room.type === 'bedroom' && here) rooms++;
+  }
+  assert.ok(beds >= 306, `${beds} beds`);
+  assert.ok(rooms >= 233, `${rooms} bedrooms with a bed`);
+});
+
+const STUCK_LOTS = ['L03', 'L38', 'L42', 'L53', 'L62', 'L73', 'L107'];
+const STUCK_ROOMS = ['L03.f1.r2', 'L38.f2.r3', 'L42.f1.r4', 'L53.f2.r4', 'L62.f1.r1', 'L73.f1.r1', 'L107.f0.r1'];      // bedroom of each, the beds of the 8 anchors
+const STUCK_OFFSETS = [[0, 0], [0, 0.12], [0.24, 0.12], [0, 0.18]];            // (the old layouts read missing at every one of 9 offsets tried)
+let stuck7P;
+const stuck7 = () => (stuck7P ??= buildData({ lots: STUCK_LOTS, furnish: true }));
+
+test('kernel: the sweep\'s walker finds a node to return from for every sleep anchor of the seven bedrooms the final stuck walk missed', async () => {
+  const { ctx, buildings } = await stuck7();
+  const bad = []; let n = 0;
+  for (const rid of STUCK_ROOMS) {
+    const bp = buildings.find((b) => rid.startsWith(b.id + '.'));
+    assert.ok(bp?.interior.layouts.get(rid), `${rid} is built`);
+    n += ctx.anchors.filter((a) => a.room === rid && a.kind === 'sleep').length;
+    for (const [ox, oz] of STUCK_OFFSETS) for (const m of sweep(ctx, bp, rid, ox, oz).missing) bad.push(`${rid} @${ox},${oz}: ${m.what} ${m.id} at ${m.x},${m.z} has no node to return from`);
+  }
+  assert.ok(n >= STUCK_ROOMS.length, `${n} sleep anchors`);
+  assert.equal(bad.length, 0, `${bad.length} problems:\n  ` + bad.slice(0, 12).join('\n  '));
 });
