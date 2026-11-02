@@ -139,14 +139,37 @@ export class PeopleSim {
 
   /**
    * Is there a way to the outdoor place `s`? A walker ends at the node nearest it (brain.goPoint) and goes straight on: false when a wall as tall as a fence (or a room wall) stands across that last leg,
-   * or, for a lean spot (which `Spots.fit` has slid off what it could), a prop still stands on the place itself. A place with no node in range is kept: goPoint refuses it as before.
+   * or, for a lean spot (which `Spots.fit` has slid off what it could), a prop still stands on the place itself, or a low wall (a prop) stands across the leg and a walker sent over it never gets there
+   * (`_walkerReaches`). A place with no node in range is kept: goPoint refuses it as before.
    */
   wayTo(s) {
     if (s.kind === 'lean' && this._solidAt(s.x, s.z, s.y)) return false;
     const nav = this.nav, to = nav.nearest(s.x, s.z, 16, s.y);
     if (to < 0) return true;
-    const N = nav.nodes[to];
-    return !this.physics?.segmentBlocked?.(N.x, N.z, s.x, s.z, Math.min(N.y, s.y), 1.6, null, 2.0);
+    const N = nav.nodes[to], ph = this.physics, y = Math.min(N.y, s.y);
+    if (ph?.segmentBlocked?.(N.x, N.z, s.x, s.z, y, 1.6, null, 2.0)) return false;
+    return !ph?.segmentBlocked?.(N.x, N.z, s.x, s.z, y, 1.6, null, 0) || this._walkerReaches(N, s);       // (a low wall across the last leg: the line cannot say whether a walker gets round it, so a walker is asked)
+  }
+
+  /**
+   * Does a walker get from node `a` to the place `b` over the ground alone (the world's colliders, nobody else about)? A prop across the last leg is no fence, and the walker slides round the end of a
+   * bench's support with a step aside; one that stands square across the goal it does not get round: it slides to and fro in front of it until `unstick` (the lean place of the lot L10 stands 0.6 m
+   * behind a 1.23 m planter: n59 was held for two minutes, and a walker sent there from the nearest node never arrived in 24 tries of 40 s). So the real walker (npc.js: its sidestep, its way back) is sent,
+   * up to four times with a different roll of its sidestep, 30 s each (a try that needs `unstick` has failed); the place has a way when one of them arrives. Only the places a low wall crosses are asked
+   * (a handful in all), so the build does not wait for it.
+   */
+  _walkerReaches(a, b) {
+    const ph = this.physics; if (!ph?.move) return true;
+    let arrived = false, stuck = false;
+    const w = { t: 0, physics: ph, near: () => [], doors: null, brain: { next() {}, unstick() { stuck = true; } } };
+    for (let k = 0; k < 4; k++) {
+      const npc = new Npc({ id: 'probe', rng: makeRng(k + 1).fork('probe') });
+      npc.place(a.x, a.y ?? b.y ?? 0, a.z, 0); stuck = false;
+      npc.walk(w, [{ x: b.x, y: b.y ?? a.y ?? 0, z: b.z }], () => { arrived = true; }, 1.3);
+      for (let t = 0; t < 30 && !arrived && !stuck; t += 0.05) { npc.step(0.05, w); w.t += 0.05; }
+      if (arrived) return true;
+    }
+    return false;
   }
   setPlayer(x, y, z, yaw = 0) { const P = this.player; P.x = x; P.y = y; P.z = z; P.yaw = yaw; }
 
