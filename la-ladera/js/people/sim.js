@@ -29,6 +29,8 @@ const AISLE = 0.8;                       // a keeper's post that _makeShops has 
 const SWEPT_R = 0.3;                     // waypoints: a body's width for a leg a lane offset made (npc.js BODY.radius 0.25 and a hand); physics.segmentBlocked tests the line alone, so a fence end 0.2 m off it passed
 const SWEPT_STEP = 0.15;                 // metres between the places of a leg tried for that body
 const SAME_LEVEL = 2.2;                  // near(): people this far apart in height are not neighbours (another floor of a building, the terrace above a street); the nurse upstairs pushed the patient below her off the way to the seat, and the patient stalled short of it
+const FRONT = 0.96;                      // keeperFacing: a keeper idles within this many radians (55 degrees) of the direction to the door
+const BEHIND = 1.9;                      // keeperFacing: ... unless the customers' spot lies more than this far (109 degrees) off the direction to the door: then he faces the door
 
 /** Places people can be asked about. plan.landmarks when A5 supplies enough of them, else derived from plazas / civic lots / shops. */
 export function collectLandmarks(plan) {
@@ -46,6 +48,24 @@ export function collectLandmarks(plan) {
 }
 
 const dist2d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+
+/**
+ * How a keeper stands at the post (R3-103). The first thing whoever walks in sees is his front, and the anchors authored for a counter, a stall or a bench face the customers' spot or the back wall:
+ * 6 of the 28 keepers had their back to the door and 8 more stood side-on to it. A post whose facing is more than FRONT off the direction to the door (`doors`: the points just inside the doors a
+ * visitor comes in by) is turned toward it, as far as it takes to be within FRONT of every door (the customers' side stays in front of him); a keeper whose customers lie behind that (`toward`, more
+ * than BEHIND off the way to the doors: the counter stands against the wall, so he waits on its customer side, or the stall faces the back wall) simply faces the door. A door under 0.6 m from the
+ * post has no direction to speak of.
+ */
+export function keeperFacing(ry, post, doors, toward = null) {
+  const ds = (Array.isArray(doors) ? doors : doors ? [doors] : []).filter((d) => Math.hypot(d.x - post.x, d.z - post.z) >= 0.6);
+  if (!ds.length) return ry;
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a)), dir = (d) => Math.atan2(d.x - post.x, d.z - post.z);
+  const mid = Math.atan2(ds.reduce((s, d) => s + Math.sin(dir(d)), 0), ds.reduce((s, d) => s + Math.cos(dir(d)), 0)), rel = ds.map((d) => wrap(dir(d) - mid));      // the way between the doors, and each door off it
+  const lo = Math.max(...rel) - FRONT, hi = Math.min(...rel) + FRONT, f = wrap(ry - mid);                                                                     // the facings within FRONT of every door: [lo, hi] off `mid`
+  if (f >= lo && f <= hi) return ry;
+  if (lo > hi || (toward && Math.abs(wrap(mid - dir(toward))) > BEHIND)) return mid;
+  return wrap(mid + (Math.abs(wrap(f - lo)) < Math.abs(wrap(f - hi)) ? lo : hi));
+}
 
 /** How far (x, z) is from the nearest leg of any of the walks `routes` (each a list of points {x, z}); Infinity without one. */
 function aisleOf(routes, p) {
@@ -257,6 +277,9 @@ export class PeopleSim {
         const want = Math.atan2(custs[0].x - post.x, custs[0].z - post.z), off = Math.atan2(Math.sin(want - post.ry), Math.cos(want - post.ry));
         if (Math.abs(off) > 0.6) post = { ...post, ry: want };
       }
+      const first = this.ctx.buildings?.get?.(lot.id)?.entrances?.[0], doors = ent?.inside ? [ent.inside] : [];                                       // the shop's door, and the building's first when it is another (L11: the workshop's shutter and its door)
+      if (first?.inside && first.kind !== 'roof' && doors.length && Math.abs(first.inside[1] - ent.inside.y) < 1.2 && Math.hypot(first.inside[0] - ent.inside.x, first.inside[2] - ent.inside.z) > 0.5) doors.push({ x: first.inside[0], z: first.inside[2] });
+      post = { ...post, ry: keeperFacing(post.ry, post, doors, custs[0] && dist2d(custs[0], post) <= 3.6 ? custs[0] : null) };          // and never with his back to the door or side-on to it (R3-103)
       let cpoint = custs[0] ? { x: custs[0].x, y: custs[0].y, z: custs[0].z, ry: custs[0].ry } : null;
       if (!cpoint && ent?.inside) cpoint = { x: ent.inside.x, y: ent.inside.y, z: ent.inside.z, ry: post.ry + Math.PI };
       this.shops.set(lot.id, { lot: lot.id, type: lot.shop, name: lot.name, open: false, keeper: null, post, cust: custs, cpoint: cpoint ?? post, ent, sealed });
