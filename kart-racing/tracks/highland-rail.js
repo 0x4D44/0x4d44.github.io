@@ -54,11 +54,19 @@ export function buildRail(H) {
 
   // ================================================================= hills + embankment: one heightfield laid over the terrain wherever it differs
   const hills = [{ xc: PW - RAIL.hillDx, dir: -1 }, { xc: PE + RAIL.hillDx, dir: 1 }];
+  const crag = (x, z) => { const a = 1 - Math.abs(2 * vnoise(x / 7 + 9, z / 7) - 1), b = 1 - Math.abs(2 * vnoise(x / 3.1, z / 3.1 + 5) - 1); return a * a * 0.7 + b * b * 0.3; };   // 0..1, ridged: rocky ribs
   const bump = (x, z) => {
     let b = 0;
     for (const h of hills) {
-      const ex = (x - h.xc) / RAIL.hillRx, ez = (z - Z) / RAIL.hillRz, e2 = ex * ex + ez * ez;
-      if (e2 < 1) b = Math.max(b, RAIL.hillH * Math.pow(1 - e2, 1.5) * (1 + 0.3 * (vnoise(x / 12 + h.dir * 5, z / 12) - 0.5)));   // a bell: soft at the foot, steepest around halfway up
+      // a bell (soft at the foot, steepest around halfway up) with a wobbly footprint, a lopsided crown and rocky ribs; every extra fades to nothing
+      // at the portal mouth, so the headwall still meets the hill square on and the bore stays inside it
+      const px = h.dir < 0 ? PW : PE, near = sm(5, 24, Math.hypot(x - px, (z - Z) * 0.7));
+      const wx = x + near * 9 * (vnoise(x / 17 + h.dir * 5, z / 17 + 3) - 0.5), wz = z + near * 9 * (vnoise(x / 17 - 2, z / 17 + h.dir * 7) - 0.5);
+      const ex = (wx - h.xc) / RAIL.hillRx, ez = (wz - Z) / RAIL.hillRz, e2 = ex * ex + ez * ez;
+      if (e2 < 1) {
+        const f = Math.pow(1 - e2, 1.5), lean = 1 + near * 0.2 * h.dir * ez;
+        b = Math.max(b, RAIL.hillH * f * lean * (1 + 0.3 * (vnoise(x / 12 + h.dir * 5, z / 12) - 0.5)) + near * 3.6 * f * (crag(x, z) - 0.4));
+      }
     }
     return b;
   };
@@ -90,11 +98,17 @@ export function buildRail(H) {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-    const nrm = g.attributes.normal, col = new Float32Array(gnx * gnz * 3), rock = new THREE.Color(0x77705f), rgb = [0, 0, 0];
+    const nrm = g.attributes.normal, col = new Float32Array(gnx * gnz * 3), rock = new THREE.Color(0x77705f), rockHi = new THREE.Color(0x938d80), snow = new THREE.Color(0xeef2f8), rgb = [0, 0, 0];
+    const snowy = !!(X.season && X.season.snowy);
     for (let k = 0; k < gnx * gnz; k++) {
-      colAt(pos[k * 3], pos[k * 3 + 2], rgb);
-      const w = 0.55 * sm(0.82, 0.55, nrm.getY(k));   // the steep cutting sides show a little rock through the heather
-      col[k * 3] = lerp(rgb[0], rock.r, w); col[k * 3 + 1] = lerp(rgb[1], rock.g, w); col[k * 3 + 2] = lerp(rgb[2], rock.b, w);
+      const x = pos[k * 3], z = pos[k * 3 + 2];
+      colAt(x, z, rgb);
+      const hh = (pos[k * 3 + 1] - gnd(x, z)) / RAIL.hillH, ny = nrm.getY(k), n = vnoise(x / 4, z / 4), r2 = vnoise(x / 1.7 + 4, z / 1.7);
+      let w = 0.55 * sm(0.82, 0.55, ny);   // the steep cutting sides show a little rock through the heather
+      w = Math.max(w, 0.55 * sm(0.6, 0.9, hh + 0.25 * (n - 0.5)) * sm(0.35, 0.65, n + 0.1), 0.4 * sm(0.84, 0.62, ny) * sm(0.1, 0.4, hh) * sm(0.25, 0.6, r2));   // rock breaks through in patches on the crown and the steep flanks, heather elsewhere
+      let r = lerp(rgb[0], lerp(rock.r, rockHi.r, r2), w), gg = lerp(rgb[1], lerp(rock.g, rockHi.g, r2), w), b = lerp(rgb[2], lerp(rock.b, rockHi.b, r2), w);
+      if (snowy) { const s = sm(0.3, 0.55, hh + 0.2 * (n - 0.5)) * sm(0.55, 0.9, ny + 0.2 * (r2 - 0.5)); r = lerp(r, snow.r, s); gg = lerp(gg, snow.g, s); b = lerp(b, snow.b, s); }   // winter: the knolls wear a snow cover
+      col[k * 3] = r; col[k * 3 + 1] = gg; col[k * 3 + 2] = b;
     }
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
     const gm = own(tm.material.clone()); gm.polygonOffset = true; gm.polygonOffsetFactor = -1; gm.polygonOffsetUnits = -1;

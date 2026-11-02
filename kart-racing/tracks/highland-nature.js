@@ -1,6 +1,7 @@
 // Highland Fling - vegetation, rocks, mountains, livestock (coos + sheep), dry-stone dykes.
 import * as THREE from "three";
 import { TAU, LOCH, lochR, burnQuery, VIADUCT, PIPER, vnoise, inRailZone } from "./highland-geo.js";
+import { buildPeaks } from "./highland-peaks.js";
 
 export function buildNature(H) {
   const { track, X, K, rng } = H;
@@ -143,16 +144,8 @@ export function buildNature(H) {
   instanced(sheepGeo, lam({ vertexColors: true }), sheep, "sheep"); blobShadows(sheep, 0.9);
   H.counts = { pines: pines.length, firs: firs.length, birches: birches.length, heather: heather.length, coos: coos.length, sheep: sheep.length };
 
-  // ---------- big mountains (munros): heather -> scree -> a dusting of snow on the tallest
-  const mgeo = new THREE.ConeGeometry(1, 1, 9, 7, true).translate(0, 0.5, 0);
-  { const pa = mgeo.attributes.position, cl = new Float32Array(pa.count * 3), lo = new THREE.Color(0x4d5a38), mid = new THREE.Color(0x6e5a78), hi = new THREE.Color(0x7d7b84), sn = new THREE.Color(0xe4e8ee), t = new THREE.Color();
-    for (let i = 0; i < pa.count; i++) {
-      const y = pa.getY(i), j = 0.09 * Math.sin(i * 12.9898) * (1 - y) + 0.05 * Math.sin(i * 3.7) * y;
-      pa.setXYZ(i, pa.getX(i) * (1 + j), y * (1 + 0.04 * Math.sin(i * 7.1)), pa.getZ(i) * (1 + j));
-      t.copy(lo).lerp(mid, Math.min(1, y / 0.35)).lerp(hi, Math.min(1, Math.max(0, (y - 0.45) / 0.3))).lerp(sn, Math.min(1, Math.max(0, (y - 0.86) / 0.08)));
-      cl[i * 3] = t.r; cl[i * 3 + 1] = t.g; cl[i * 3 + 2] = t.b;
-    }
-    mgeo.setAttribute("color", new THREE.BufferAttribute(cl, 3)); mgeo.computeVertexNormals(); }
+  // ---------- big mountains (munros) + the rolling braes in front of them: ridged, snow-capped meshes built in highland-peaks.js
+  // (the placements below keep drawing the same random numbers as before, so everything built after this stays where it was)
   const minTrackDist = (x, z) => { let d = 1e9; for (let i = 0; i < C.N; i += 3) { const dd = Math.hypot(x - C.px[i], z - C.pz[i]); if (dd < d) d = dd; } return d; };
   const mts = [];
   for (let k = 0; k < 34; k++) {
@@ -163,15 +156,13 @@ export function buildNature(H) {
     }
   }
   X.mountains = mts;
-  instanced(mgeo, lam({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), mts, "mountains");
-  // low rounded hills closer in (rolling braes behind the fields)
-  const hgeo = new THREE.SphereGeometry(1, 12, 6, 0, TAU, 0, Math.PI / 2);
+  // low rolling hills closer in (braes behind the fields)
   const hills = [];
   for (let k = 0; k < 26; k++) {
     const a = (k / 26) * TAU + R(-0.1, 0.1), sx = R(60, 120), sy = R(26, 55);
     for (let r = 300; r < 700; r += 20) { const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (minTrackDist(x, z) > sx * 1.0 + wallDist + 70) { hills.push({ x, z, y: -3, sx, sy, sz: sx * R(0.8, 1.3), ry: rng() * 6, c: pick([0x6a5d78, 0x58683c, 0x75687f, 0x6a7440, 0x7a6a6a]) }); break; } }
   }
-  instanced(hgeo, lam({}), hills, "hills");
+  buildPeaks(H, mts, hills);
 }
 
 // Highland corners get black-wrapped silage bales instead of the generic tyre walls (cheaper too).
