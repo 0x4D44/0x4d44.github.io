@@ -5,5 +5,5 @@ export const PAR_TIMES = {
   coromandel: { huia: 192.5, kea: 191.9, takahe: 186.5, piwakawaka: 189.1 },
   otago: { huia: 226.7, kea: 227.2, takahe: 227.6, piwakawaka: 233.7 },
   remarkables: { huia: 278.2, kea: 278.4, takahe: 292.8, piwakawaka: 293.0 },
-  fiordland: { huia: 357.9, kea: 355.2, takahe: 377.2, piwakawaka: 378.0 },
+  fiordland: { huia: 344.1, kea: 341.3, takahe: 362.4, piwakawaka: 363.2 },
 };

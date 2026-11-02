@@ -36,3 +36,16 @@ test("other stages: report min radius in the first 300 m", async () => {
     console.log(`# ${id}: min radius in first 300 m = ${k ? (1 / k).toFixed(0) : "inf"} m`);
   }
 });
+
+// Round 9: Fiordland opens on loose ground too: no corner under R87 in the first 1.2 km, and the first R<=45 corner is announced.
+test("Fiordland: no corner tighter than R87 in the first 1.2 km", () => {
+  const f = buildStage("fiordland");
+  if (BREAK === "hard-fiordland") for (let i = 71; i < 91; i++) f.curv[i] = 1 / 37;
+  let k = 0;
+  for (let i = 0; i <= 600; i++) k = Math.max(k, Math.abs(f.curv[i]));
+  assert.ok(1 / k >= 87, `min radius ${(1 / k).toFixed(0)} m`);
+  const first = f.curv.findIndex((c) => Math.abs(c) >= 1 / 45) * f.ds;
+  assert.ok(first > 1200, `first tight corner at s=${first}`);
+  const c = f.pacenotes.find((n) => (n.kind === "corner" || n.kind === "hairpin") && n.s + n.length >= first - 1);
+  assert.ok(f.pacenotes.some((n) => n.kind !== "surface" && n !== c && n.s <= c.s - 150 && n.s >= c.s - 400));
+});
