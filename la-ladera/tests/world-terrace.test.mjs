@@ -86,6 +86,12 @@ const preFixLegs = ({ sim }) => (lane, a, r) => {
   });
 };
 
+/**
+ * PeopleSim.waypoints also sends a lane leg back to the graph when a body 0.3 m wide cannot walk it (people-spots.test.mjs), and that alone keeps a walker clear of the corner planter and of the end of the
+ * wall that the two world fixes below took away. The TEETH that put them back judge the line alone (sweptR 0), the rule those fixes were made under.
+ */
+const lineOnly = (sim, fn) => { sim.sweptR = 0; try { return fn(); } finally { delete sim.sweptR; } };
+
 const corner = (plan) => { const P2 = plan.plazas.find((p) => p.id === 'P2'); return { P2, sites: [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => [P2.cx + sx * (P2.w / 2 - 0.55), P2.cz + sz * (P2.d / 2 - 0.55)]) }; };
 const planterAt = (ph, x, z) => ph.walls.filter((w) => w.on !== false && w.id === 'prop' && w.x1 === w.x2 && w.z1 === w.z2 && w.t > 0.4 && Math.hypot(w.x1 - x, w.z1 - z) < 0.1);
 
@@ -103,7 +109,7 @@ test('TEETH: put the corner planter back and the walks stall again', async () =>
   assert.equal(planterAt(W.ctx.physics, x, z).length, 0, 'the planter is not there');
   const back = W.ctx.physics.addWall({ x1: x, z1: z, x2: x, z2: z, t: 0.425, y0: 6.55, y1: 7.45, id: 'prop' });      // what buildPlanters put there before
   try {
-    const { walks, bad } = walkAll(W, routes);
+    const { walks, bad } = lineOnly(W.sim, () => walkAll(W, routes));
     assert.ok(bad.length >= 15, `only ${bad.length} of ${walks} walks stall with the planter back`);
   } finally { back.on = false; }
 });
@@ -122,7 +128,7 @@ test('TEETH: the way in that was dropped (n247-n424) is the one that stalled: wa
   const W = await page(), { ctx, plan } = W, T = terrace(W), fit = ctx.world.navFit;
   assert.deepEqual(fit.scraped.map(([a, b]) => pair(a, b)), [pair('n247', 'n424')], 'the plan has the one scraping way in, and it is dropped');
   assert.ok(!plan.nav.edges.some(([a, b]) => pair(a, b) === pair('n247', 'n424')), 'and it is gone from plan.nav');
-  const e = plan.nav.nodes.find((n) => n.id === 'n247'), { walks, bad } = walkAll(W, T.via(e));
+  const e = plan.nav.nodes.find((n) => n.id === 'n247'), { walks, bad } = lineOnly(W.sim, () => walkAll(W, T.via(e)));
   assert.ok(bad.length >= 5, `only ${bad.length} of ${walks} walks stall on the dropped way in`);
 });
 

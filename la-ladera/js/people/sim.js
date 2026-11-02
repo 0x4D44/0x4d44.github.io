@@ -25,6 +25,10 @@ export const TIER0 = 28, TIER1 = 70;     // full-rate simulation / 20 Hz / 5 Hz
 export const SEAT_TOP = 0.445;           // seat height the sit clips were authored for (people_build.py SEAT_TOP); a person on a higher or lower seat is moved up or down by the difference
 const POCKET_CELLS = 150;                // a closed slot of up to 6 m2 (0.2 m cells) behind a counter is a keeper's post, not another room
 const LOOK_CLEAR = 0.42;                 // lookPose: a bystander this near the line of sight (the aim capsule's 0.34 m radius plus a hand) is in the way (core/interact.js PERSON_R)
+const AISLE = 0.8;                       // a keeper's post that _makeShops has to find lies at least this far from the way a customer walks in: a walker is pushed off a way that passes nearer a standing person (npc.js separation)
+const SWEPT_R = 0.3;                     // waypoints: a body's width for a leg a lane offset made (npc.js BODY.radius 0.25 and a hand); physics.segmentBlocked tests the line alone, so a fence end 0.2 m off it passed
+const SWEPT_STEP = 0.15;                 // metres between the places of a leg tried for that body
+const SAME_LEVEL = 2.2;                  // near(): people this far apart in height are not neighbours (another floor of a building, the terrace above a street); the nurse upstairs pushed the patient below her off the way to the seat, and the patient stalled short of it
 
 /** Places people can be asked about. plan.landmarks when A5 supplies enough of them, else derived from plazas / civic lots / shops. */
 export function collectLandmarks(plan) {
@@ -42,6 +46,32 @@ export function collectLandmarks(plan) {
 }
 
 const dist2d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+
+/** How far (x, z) is from the nearest leg of any of the walks `routes` (each a list of points {x, z}); Infinity without one. */
+function aisleOf(routes, p) {
+  let best = Infinity;
+  for (const pts of routes) for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[Math.min(i + 1, pts.length - 1)], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz;
+    const t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)) : 0;
+    best = Math.min(best, Math.hypot(p.x - (a.x + dx * t), p.z - (a.z + dz * t)));
+  }
+  return best;
+}
+
+/**
+ * Does a body `r` wide walking from a to b touch a wall or a prop on the way? physics.segmentBlocked tests the line alone (r = 0 is that rule: nothing is swept). The ends that are no lane point (a graph
+ * node, the goal, where the walker stands: `movedA`, `movedB` say which are) are the world's own; nothing within a body of them counts, so a node beside a wall does not send its neighbours back to the graph.
+ */
+function bodyBlocked(ph, r, a, b, movedA = true, movedB = true) {
+  if (!(r > 0) || !ph?._overlaps) return false;
+  const L = Math.hypot(b.x - a.x, b.z - a.z), n = Math.max(1, Math.ceil(L / SWEPT_STEP)), ya = a.y ?? b.y ?? 0, yb = b.y ?? ya;
+  for (let i = 0; i <= n; i++) {
+    const s = i / n, d = s * L;
+    if ((!movedA && d < r) || (!movedB && L - d < r)) continue;
+    if (ph._overlaps(a.x + (b.x - a.x) * s, a.z + (b.z - a.z) * s, ya + (yb - ya) * s, r, 1.5)) return true;
+  }
+  return false;
+}
 
 /**
  * Standing at (x, z) with the feet at y: is there ground under the person and under every point `m` metres round (a lane offset, a push from a neighbour or a
@@ -81,8 +111,15 @@ export class PeopleSim {
 
   get hour() { return this.ctx.hour ?? 12; }
   inMain(i) { return this.comp ? this.comp[i] === this.mainComp : true; }
-  /** Is there a way to the outdoor place `s`? A walker ends at the node nearest it (brain.goPoint) and goes straight on: false when a wall as tall as a fence (or a room wall) stands across that last leg. A place with no node in range is kept: goPoint refuses it as before. */
+  /** Is a prop or a wall standing on (x, z) at the floor level y, as a body (the width of a leaner) would find it? */
+  _solidAt(x, z, y) { return !!this.physics?._overlaps?.(x, z, y, 0.25, 1.5); }
+
+  /**
+   * Is there a way to the outdoor place `s`? A walker ends at the node nearest it (brain.goPoint) and goes straight on: false when a wall as tall as a fence (or a room wall) stands across that last leg,
+   * or, for a lean spot (which `Spots.fit` has slid off what it could), a prop still stands on the place itself. A place with no node in range is kept: goPoint refuses it as before.
+   */
   wayTo(s) {
+    if (s.kind === 'lean' && this._solidAt(s.x, s.z, s.y)) return false;
     const nav = this.nav, to = nav.nearest(s.x, s.z, 16, s.y);
     if (to < 0) return true;
     const N = nav.nodes[to];
@@ -99,7 +136,7 @@ export class PeopleSim {
     const { comp, sizes } = nav.components(); this.comp = comp; this.mainComp = sizes.indexOf(Math.max(...sizes));
     this.landmarks = collectLandmarks(plan);
     this.spots = new Spots({ plan, anchors: ctx.anchors ?? [], buildings: ctx.buildings ?? new Map() });
-    this.spotsMoved = this.spots.fit((x, z, s, r) => standClear(this.physics, x, z, s.y, r));         // the corners the props landed on (the page builds the people after the props)
+    this.spotsMoved = this.spots.fit((x, z, s, r) => standClear(this.physics, x, z, s.y, r), undefined, (x, z, s) => this._solidAt(x, z, s.y));        // the corners the props landed on (the page builds the people after the props)
     this.spotsCut = this.spots.screen((s) => this.wayTo(s));                                           // the places the fence of the court shuts off from the street graph
     this.doors = new Doors(this); this.indoor = new Indoor(this); this.reactions = new Reactions(this);
     this._indexLots(plan); this._makeShops(plan); this.classroom = new Classroom(this); this.homelife = new Homelife(this);
@@ -178,12 +215,18 @@ export class PeopleSim {
       if (!lot.shop) continue;
       const ent = S.entrance(lot.id, ['shop', 'main']);
       const counters = S.inside(lot.id, 'counter'); let custs = S.inside(lot.id, 'customer');
-      let post = null;
+      let post = null, beyond = null;
       const c0 = counters.find((a) => (a.tags ?? []).includes('shopkeeper')) ?? counters[0];
       if (c0) post = { x: c0.x, y: c0.y, z: c0.z, ry: c0.ry };
       if (!post && custs[0]) {              // the keeper stands where the customer faces: 1.7 m beyond the customer along its facing, at the counter's far side
-        const a = custs[0], fx = Math.sin(a.ry), fz = Math.cos(a.ry);
-        for (const d of [1.7, 1.6, 1.8, 1.5, 1.9]) { const x = a.x + fx * d, z = a.z + fz * d; if (free(x, z, a.y)) { post = { x, y: a.y, z, ry: a.ry + Math.PI }; break; } }
+        const a = custs[0], fx = Math.sin(a.ry), fz = Math.cos(a.ry), sameRoom = this._sameRoom(lot.id, a);
+        for (const d of [1.7, 1.6, 1.8, 1.5, 1.9]) {
+          const x = a.x + fx * d, z = a.z + fz * d;
+          if (!sameRoom(x, z)) { beyond ??= { x, y: a.y, z, ry: a.ry + Math.PI }; continue; }        // a counter against a wall has no far side: the point is in the stairwell, the entry hall next door or the street (L52, L31, L19, L41, L20)
+          if (!free(x, z, a.y)) continue;
+          post = { x, y: a.y, z, ry: a.ry + Math.PI }; break;
+        }
+        if (!post) post = beyond;           // the far side is in another room: the keeper stands in the customers' room, nearest to it (found below)
       }
       if (!post) { const v = S.inside(lot.id, 'vend')[0] ?? S.inside(lot.id, 'work')[0]; if (v) post = { x: v.x, y: v.y, z: v.z, ry: v.ry }; }          // a stall or a workbench inside; never a street spot outside (the keeper would be out of the shop)
       if (!post && ent?.inside) {           // last resort: just inside the door, facing the street
@@ -198,12 +241,13 @@ export class PeopleSim {
       if (reach) {
         const y = ent.inside.y, flat = (p) => Indoor.flat(ph, p.x, p.z, y) && this.lotAt(p.x, p.z) === lot.id;      // on flat floor INSIDE the building
         custs = custs.filter((a) => flat(a) && this.indoor.canReach(reach, a));
+        const routes = custs.map((a) => [ent.inside, ...this.indoor.route(lot.id, ent.inside, a, y)]);          // the way each customer walks in: a post found below is off it (a customer pushed off a 1 m aisle by the keeper stood against the counter for ever, L61)
         const flatPost = flat(post), inFurniture = !!ph._overlaps?.(post.x, post.z, post.y, 0.25, 1.5);      // (a post on the seamstress's chair: the walker is pushed off the chair's outline for ever, L31)
-        if (!flatPost || inFurniture || !this.indoor.canReach(reach, post)) {
-          const own = flatPost ? this.indoor.reachable(lot.id, post, y) : null;                    // the pocket the post sits in
+        if (post === beyond || !flatPost || inFurniture || !this.indoor.canReach(reach, post)) {
+          const own = flatPost && post !== beyond ? this.indoor.reachable(lot.id, post, y) : null;                    // the pocket the post sits in
           if (own && own.count <= POCKET_CELLS) sealed = true;                                      // a slot behind the counter, closed on all sides: the keeper is placed there and stays
           else {
-            const alt = this._reachablePost(lot.id, reach, post, custs, y);
+            const alt = this._reachablePost(lot.id, reach, post, custs, y, routes);
             if (alt) post = alt;
             else post = { x: ent.inside.x, y, z: ent.inside.z, ry: Math.atan2(ent.outside.x - ent.inside.x, ent.outside.z - ent.inside.z) };       // last resort: just inside the door, facing the street
           }
@@ -228,18 +272,37 @@ export class PeopleSim {
   canReach(ent, p) { return !ent?.inside || this.indoor.canReach(this.reach(ent), p); }
 
   /**
-   * The nearest spot to `ideal` (a ring search, 0.5 to 3.5 m) on flat floor that the door can reach and that is 1.1 m clear of every customer spot, facing the first.
-   * The room of the customers (no door in between) comes first; null when the building offers none.
+   * The room of lot `lotId` that holds (x, z) at the floor level y: its id, null for a point that is in no room (inside a wall, in another storey), undefined when the building has no
+   * plan to say. A room is its clear interior rectangle (contract: Room.rect, in the building's own frame), so a point a wall's thickness away is in the next room, not this one.
    */
-  _reachablePost(lotId, reach, ideal, custs, y) {
-    const ph = this.physics, face = custs[0] ?? null, room = face ? this.indoor.reachable(lotId, face, y, false) : null;
-    for (const within of room ? [room, null] : [null]) {
+  _roomAt(lotId, x, z, y) {
+    const bp = this.ctx.buildings?.get?.(lotId); if (!bp?.rooms?.length || !bp.floors?.length || !bp.frame?.toLocal) return undefined;
+    const top = bp.lot?.y ?? 0; let fl = bp.floors[0];
+    for (const F of bp.floors) if (Math.abs((F.y ?? 0) + top - y) < Math.abs((fl.y ?? 0) + top - y)) fl = F;
+    const [lx, , lz] = bp.frame.toLocal(x, y, z), e = 0.001;
+    return bp.rooms.find((q) => q.floor === fl.index && lx >= q.rect.x0 - e && lx <= q.rect.x1 + e && lz >= q.rect.z0 - e && lz <= q.rect.z1 + e)?.id ?? null;
+  }
+
+  /** (x, z) -> is it in the room that holds the place `a` (every point is, when the building has no plan or `a` is in no room: no judgement)? */
+  _sameRoom(lotId, a) {
+    const room = this._roomAt(lotId, a.x, a.z, a.y);
+    return room ? (x, z) => this._roomAt(lotId, x, z, a.y) === room : () => true;
+  }
+
+  /**
+   * The nearest spot to `ideal` (a ring search, 0.5 to 3.5 m) on flat floor that the door can reach and that is 1.1 m clear of every customer spot, facing the first.
+   * The room of the customers (no door in between) comes first, then, given the walks the customers make in (`routes`), a spot AISLE m off them; null when the building offers none.
+   */
+  _reachablePost(lotId, reach, ideal, custs, y, routes = null) {
+    const ph = this.physics, face = custs[0] ?? null, room = face ? this.indoor.reachable(lotId, face, y, false) : null, sameRoom = face ? this._sameRoom(lotId, face) : () => true;
+    for (const within of room ? [room, null] : [null]) for (const aisle of routes?.length ? [AISLE, 0] : [0]) {
       let best = null, bs = 1e9;
       for (let r = 0.5; r <= 3.5; r += 0.3) for (let a = 0; a < 24; a++) {
         const th = (a / 24) * Math.PI * 2, x = ideal.x + Math.cos(th) * r, z = ideal.z + Math.sin(th) * r;
         if (ph._overlaps?.(x, z, y, 0.26, 1.5) || !Indoor.flat(ph, x, z, y) || this.lotAt(x, z) !== lotId || !this.indoor.canReach(reach, { x, z })) continue;
-        if (within && !this.indoor.canReach(within, { x, z })) continue;
+        if (within && (!this.indoor.canReach(within, { x, z }) || !sameRoom(x, z))) continue;
         if (custs.some((c) => Math.hypot(x - c.x, z - c.z) < 1.1)) continue;
+        if (aisle && aisleOf(routes, { x, z }) < aisle) continue;
         const dc = face ? Math.hypot(x - face.x, z - face.z) : 1.7, score = r + Math.abs(dc - 1.7) * 0.5;
         if (score < bs) { bs = score; best = { x, y, z, ry: face ? Math.atan2(face.x - x, face.z - z) : ideal.ry }; }
       }
@@ -310,8 +373,11 @@ export class PeopleSim {
    * Graph path (node indices) -> waypoints with a "keep to your right" lane offset. A lane offset never leads over a drop, into a solid or across a wall: the offset point goes back towards its
    * node while it is over a drop or inside a cart, a planter or a trunk, and where the leg to or from it still crosses a wall (a bench beside the edge of the graph, whose end supports stand in
    * the lane: eight people a day were pushed against one for four seconds) the walker keeps to the graph itself, which the world has proved clear.
+   * A leg also has to be wide enough for a body: the line alone cleared the end of a fence 0.2 m off it and the 0.4 m slot between two guard rails, and the walker stood against them.
+   * `this.sweptR` (SWEPT_R unless set) is that body's width; 0 judges the line alone, as before (world-terrace.test.mjs sets it, to show what its two world fixes are worth).
+   * `goal` ({ x, z, y }): where the walker goes on from the last point (brain.goPoint), so the last lane point is judged by the leg to it too (the end supports of a bench round the spot).
    */
-  waypoints(npc, idx) {
+  waypoints(npc, idx, goal = null) {
     const N = this.nav.nodes; let list = idx;
     if (list.length > 1) {                                       // already past the first node? start at the second
       const a = N[list[0]], b = N[list[1]], ex = b.x - a.x, ez = b.z - a.z;
@@ -331,18 +397,21 @@ export class PeopleSim {
       out.push({ x: px, z: pz, y: nd.y }); nodes.push(nd); moved.push(px !== nd.x || pz !== nd.z);
     }
     const ph = this.physics;
-    if (ph?.segmentBlocked && moved.some(Boolean)) {                           // the legs a lane offset made: any across a wall goes back to the graph
-      const crosses = (a, b) => ph.segmentBlocked(a.x, a.z, b.x, b.z, Math.min(a.y ?? b.y, b.y) + 0.2, 1.4);        // (the wall filter of physics.move: a top 0.4 m above the feet or more, a bottom under the head)
+    if (goal) { out.push({ x: goal.x, z: goal.z, y: goal.y ?? out[out.length - 1].y }); nodes.push(null); moved.push(false); }        // the leg to the goal is judged with the others
+    if (ph?.segmentBlocked && moved.some(Boolean)) {                           // the legs a lane offset made: any across a wall, or too narrow for a body, goes back to the graph
+      const r = this.sweptR ?? SWEPT_R;
+      const crosses = (a, b, ma, mb) => ph.segmentBlocked(a.x, a.z, b.x, b.z, Math.min(a.y ?? b.y, b.y) + 0.2, 1.4) || bodyBlocked(ph, r, a, b, ma, mb);        // (the wall filter of physics.move: a top 0.4 m above the feet or more, a bottom under the head)
       const home = (k) => { out[k].x = nodes[k].x; out[k].z = nodes[k].z; moved[k] = false; };
       for (let pass = 0, changed = true; pass < 3 && changed; pass++) {
         changed = false;
         for (let k = 0, prev = { x: npc.x, z: npc.z, y: npc.y }; k < out.length; prev = out[k++]) {
-          if (!(moved[k] || (k > 0 && moved[k - 1])) || !crosses(prev, out[k])) continue;
+          if (!(moved[k] || (k > 0 && moved[k - 1])) || !crosses(prev, out[k], k > 0 && moved[k - 1], moved[k])) continue;
           if (moved[k]) { home(k); changed = true; }
           if (k > 0 && moved[k - 1]) { home(k - 1); changed = true; }
         }
       }
     }
+    if (goal) out.pop();
     return out;
   }
 
@@ -367,9 +436,9 @@ export class PeopleSim {
     const i0 = Math.floor((s.x - r) / cs), i1 = Math.floor((s.x + r) / cs), j0 = Math.floor((s.z - r) / cs), j1 = Math.floor((s.z + r) / cs);
     for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
       const a = this._grid.get(this._key(i, j)); if (!a) continue;
-      for (let k = 0; k < a.length; k++) { const o = a[k]; if (o !== npc && (o.st.x - s.x) ** 2 + (o.st.z - s.z) ** 2 < r2) out.push(o); }
+      for (let k = 0; k < a.length; k++) { const o = a[k]; if (o !== npc && (o.st.x - s.x) ** 2 + (o.st.z - s.z) ** 2 < r2 && Math.abs(o.st.y - s.y) < SAME_LEVEL) out.push(o); }
     }
-    const P = this.player; if ((P.x - s.x) ** 2 + (P.z - s.z) ** 2 < r2 && Math.abs(P.y - s.y) < 2.2) out.push(P);
+    const P = this.player; if ((P.x - s.x) ** 2 + (P.z - s.z) ** 2 < r2 && Math.abs(P.y - s.y) < SAME_LEVEL) out.push(P);
     return out;
   }
 

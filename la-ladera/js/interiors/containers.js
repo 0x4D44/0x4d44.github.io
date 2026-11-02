@@ -8,6 +8,7 @@
 //  * Contents are lazy and deterministic (contents.js): nothing exists before the first open, and the same drawer shows the same things after a reload.
 //  * Nothing is made at boot. build.js only hands over each building's front log (deferContainers); a 4 Hz scan activates a building when the player comes
 //    within ACTIVATE metres of its fronts (slot objects, the barrio-wide content plan, one STATIC target per slot) and drops all of it again beyond DEACTIVATE.
+//    (`?lazy=1`: not before the data pass has sealed, so the plan sees every building furnished: `dataSealed`.)
 //  * Every slot is a STATIC shaped target of the interaction kernel (core/interact.js: a ray test against its own box, nearest hit wins, 4 m grid, so thousands
 //    cost nothing per frame); the things inside an open slot are registered while it is open and dropped with it (one group per slot).
 //    Everything closes by itself when the player leaves the building. Colliders never change (visual only).
@@ -75,9 +76,15 @@ export function deferContainers(ctx, bp, group, log) {
   return log.length;
 }
 
+/** ?lazy=1 (interiors/lazy.js): the contents plan is ONE plan for the barrio, made at the first wake and never again, and it counts the slots of every household of every FURNISHED building (contents.js
+ *  `kindsByHousehold`; a building not furnished yet is planned without a limit). A wake while the data pass is under way would make it from a barrio that is mostly bare, and the drawers would hold other
+ *  things than an eager boot's (papers and finds with no slot of their own, or lying in other slots). So nothing wakes until the pass has sealed (every building furnished). An eager boot has no manager and
+ *  furnishes everything before the first scan. */
+const dataSealed = (ctx) => ctx.interiors?.sealed !== false;
+
 /** Make a building's slots, plan its contents and register its static targets. */
 function activate(C, e) {
-  if (!e || e.active || e.failed) return false;
+  if (!e || e.active || e.failed || !dataSealed(C.ctx)) return false;
   try { e.active = registerFronts(C.ctx, e.bp, e.group, e.log) > 0; C.activations++; }
   catch (err) { e.failed = true; (C.ctx.errors ??= []).push({ stage: 'interiors', building: e.bp.id, message: 'containers ' + String(err?.message ?? err), stack: err?.stack }); }
   return e.active;

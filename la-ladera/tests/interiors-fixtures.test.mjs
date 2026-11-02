@@ -284,6 +284,18 @@ test('the last resort of a bedroom is a trunk where one fits and pegs on the wal
   assert.ok(trunk >= bare * 0.5, `${trunk} of ${bare} bedrooms without a wardrobe or dresser have a trunk (about 60% when this was written; the rest have pegs)`);
 });
 
+test('a bedroom is left to pegs only where no trunk fits: none of the bedrooms with neither a wardrobe, a dresser nor a trunk has a wall for one when the trunk\'s 0.5 m front zone is waived (A2\'s door budget left rooms of 6 to 9 m2 with two keep-outs and a bed pegs-only that had room)', () => {
+  const missed = []; let pegs = 0;
+  for (const bp of real) for (const [rid, L] of bp.interior?.layouts ?? []) {
+    if (L.room.type !== 'bedroom' || !bp.interior.rooms[rid]?.role || has(L, /^(wardrobe|dresser|chest_trunk)/) || bp.interior.rooms[rid].removed?.includes('chest_trunk')) continue;
+    pegs++;
+    const t = L.wallPoses('chest_trunk', 'any', { prio: 1, noClear: true }).next();           // (healing took no trunk out of these rooms, so a pose that is free now was free when the storage was chosen: later pieces only take room)
+    if (!t.done) missed.push(`${bp.id}.${rid} ${L.W.toFixed(2)} x ${L.D.toFixed(2)} m: a trunk fits at ${t.value.x},${t.value.z}`);
+  }
+  assert.ok(pegs >= 10, `${pegs} bedrooms kept to pegs to look at`);
+  none('bedrooms kept to pegs although a trunk fits against a wall', missed);
+});
+
 test('study desks: a student\'s, a teenager\'s or a child\'s bedroom of 8 m2 or more keeps its desk, and the desk its chair (storage placed first once took the desk\'s wall: 2 desks left where 11 had stood)', () => {
   const STUDY = new Set(['teen', 'student', 'study', 'child']);
   let rooms = 0, desks = 0, seated = 0;

@@ -68,6 +68,7 @@ export function planBuilding(ctx, lot) {
   const S = new PlanState(ctx, lot);
   resolveRoof(S);
   (LAYOUTS[S.kind] ?? layoutHouse)(S);
+  S.budgetDoors();                                                  // the layout asked for its doors; the plan keeps the ones that make a tree (state.js)
   S.foundY = foundationDepth(S);
   if (S.core?.guards) S.guards.push(...S.core.guards);
   genWindows(S);
