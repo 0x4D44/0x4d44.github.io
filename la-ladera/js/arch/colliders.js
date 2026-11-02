@@ -3,6 +3,14 @@ import { floorRamp } from '../core/physics.js';
 import { R, rectMinusRects, rpoly } from './geom.js';
 import { PRETIL_H } from './roof.js';
 
+/**
+ * The nook panel under the first flight stops 1.9 m above the floor, not at the ceiling: a jump (apex 0.66 m + the kernel's 0.4 m wall clearance) cannot clear it, but it is under the
+ * 2 m the kernel's rescue will not cross (physics.js `_unstick`: a wall 2 m or more above the feet is a room wall). The nook is a pocket nobody walks into (the panel closes it) and a
+ * body put there anyway (a teleport onto the divider line, a push-out from the divider's end) is lifted out across the panel to the landing or the street, as it is out of a closet
+ * behind furniture, never through the stair core's outer wall into the next room or the next house (review R6 R2a-002).
+ */
+export const NOOK_H = 1.9;
+
 export function buildColliders(S) {
   const fr = S.frame, y0w = fr.y, walls = [], floors = [];
   const wp = (x, z) => { const p = fr.toWorld(x, 0, z); return [p[0], p[2]]; };
@@ -63,7 +71,7 @@ export function buildColliders(S) {
     }
     for (const h of c.halfLandings) floors.push({ pts: wpoly(h.rect), y: y0w + h.y, id: `${S.lot.id}.half${h.t}` });
     for (const d of c.dividers) { const P = wp(...d.p1), Q = wp(...d.p2); walls.push({ x1: P[0], z1: P[1], x2: Q[0], z2: Q[1], t: d.half, y0: y0w + d.y0, y1: y0w + d.y1, id: `${S.lot.id}.div${d.t}` }); }
-    for (const n of c.nooks) { const P = wp(...n.p1), Q = wp(...n.p2); walls.push({ x1: P[0], z1: P[1], x2: Q[0], z2: Q[1], t: 0.06, y0: y0w + n.y0, y1: y0w + n.y1, id: `${S.lot.id}.nook${n.t}` }); }
+    for (const n of c.nooks) { const P = wp(...n.p1), Q = wp(...n.p2); walls.push({ x1: P[0], z1: P[1], x2: Q[0], z2: Q[1], t: 0.06, y0: y0w + n.y0, y1: y0w + n.y0 + NOOK_H, id: `${S.lot.id}.nook${n.t}` }); }
   }
   for (const g of S.guards) { const P = wp(...g.p1), Q = wp(...g.p2); walls.push({ x1: P[0], z1: P[1], x2: Q[0], z2: Q[1], t: 0.04, y0: y0w + g.y0, y1: y0w + g.y1, id: `${S.lot.id}.guard` }); }
 
