@@ -38,7 +38,11 @@
   var models = null;  // [{id,label,provider,created,variant}] oldest first
   function model(id) {
     for (var i = 0; i < models.length; i++) if (models[i].id === id) return models[i];
-    return { id: id, label: id, provider: id.indexOf("claude-") === 0 ? "anthropic" : "openai", created: "" };
+    // Models outside the question set (the image models): a readable name from the id.
+    var label = id === "chatgpt-image-latest" ? "ChatGPT Image (latest)"
+      : id.replace(/^gpt-image-/, "GPT Image ").replace(/-mini$/, " mini").replace(/-(flare|sunburst)$/, function (_, w) {
+        return " " + w.charAt(0).toUpperCase() + w.slice(1); });
+    return { id: id, label: label, provider: id.indexOf("claude-") === 0 ? "anthropic" : "openai", created: "" };
   }
   function order(ids) {  // model ids, oldest first
     var pos = {};

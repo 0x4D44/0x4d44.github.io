@@ -154,7 +154,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
       rep.length ? h("span", null, rep.map(function (o) { return h("span", { class: "q" }, [o.count + " of " + g.n + " begin “" + o.text + "…”"]); }))
         : h("span", { text: "All " + g.n + " open differently." })]));
     var names = g.names_top || [];
-    if (names.length) kids.push(h("div", { class: "fact" }, [h("b", { text: "Names" }),
+    if (names.length) kids.push(h("div", { class: "fact" }, [h("b", { text: "Names & places" }),
       h("span", null, names.slice(0, 6).map(function (n) { return h("span", { class: "chip", text: n.name + " ×" + n.count }); }))]));
     if (g.title_repeat != null) kids.push(h("div", { class: "fact" }, [h("b", { text: "Titles" }),
       h("span", { text: g.title_repeat === 0 ? "Ten different titles." : pct(g.title_repeat) + " of its titles are used more than once." })]));
