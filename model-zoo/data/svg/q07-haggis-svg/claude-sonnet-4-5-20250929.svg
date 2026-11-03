@@ -1,0 +1,174 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E0F6FF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="moorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B7355;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0826D;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="800" height="600" fill="url(#skyGrad)"/>
+  
+  <!-- Moor ground -->
+  <ellipse cx="400" cy="500" rx="450" ry="120" fill="url(#moorGrad)"/>
+  
+  <!-- Heather patches -->
+  <g opacity="0.7">
+    <circle cx="150" cy="480" r="15" fill="#8B5A8B"/>
+    <circle cx="165" cy="485" r="12" fill="#9370DB"/>
+    <circle cx="140" cy="490" r="10" fill="#8B5A8B"/>
+    
+    <circle cx="350" cy="490" r="18" fill="#9370DB"/>
+    <circle cx="370" cy="495" r="14" fill="#8B5A8B"/>
+    <circle cx="335" cy="500" r="11" fill="#9370DB"/>
+    
+    <circle cx="550" cy="485" r="16" fill="#8B5A8B"/>
+    <circle cx="570" cy="490" r="13" fill="#9370DB"/>
+    <circle cx="540" cy="495" r="12" fill="#8B5A8B"/>
+    
+    <circle cx="700" cy="495" r="14" fill="#9370DB"/>
+    <circle cx="720" cy="500" r="11" fill="#8B5A8B"/>
+    <circle cx="690" cy="505" r="10" fill="#9370DB"/>
+  </g>
+  
+  <!-- Scottish Gamekeeper -->
+  <g id="gamekeeper">
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      values="100,0; 700,0"
+      dur="8s"
+      repeatCount="indefinite"/>
+    
+    <!-- Legs running -->
+    <g id="legs">
+      <animate attributeName="opacity" values="1;1;1;1" dur="0.4s" repeatCount="indefinite"/>
+      <!-- Left leg -->
+      <rect x="240" y="380" width="8" height="35" fill="#654321">
+        <animate attributeName="transform" values="rotate(0 244 380); rotate(-20 244 380); rotate(20 244 380); rotate(0 244 380)" dur="0.4s" repeatCount="indefinite"/>
+      </rect>
+      <!-- Right leg -->
+      <rect x="255" y="380" width="8" height="35" fill="#654321">
+        <animate attributeName="transform" values="rotate(20 259 380); rotate(0 259 380); rotate(-20 259 380); rotate(20 259 380)" dur="0.4s" repeatCount="indefinite"/>
+      </rect>
+      <!-- Boots -->
+      <ellipse cx="244" cy="418" rx="6" ry="4" fill="#2F1F1F">
+        <animate attributeName="cy" values="418;422;418;422" dur="0.4s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="259" cy="418" rx="6" ry="4" fill="#2F1F1F">
+        <animate attributeName="cy" values="422;418;422;418" dur="0.4s" repeatCount="indefinite"/>
+      </ellipse>
+    </g>
+    
+    <!-- Kilt -->
+    <path d="M 235 360 L 232 380 L 238 380 L 238 360 Z" fill="#8B0000"/>
+    <path d="M 238 360 L 238 380 L 244 380 L 244 360 Z" fill="#006400"/>
+    <path d="M 244 360 L 244 380 L 250 380 L 250 360 Z" fill="#8B0000"/>
+    <path d="M 250 360 L 250 380 L 256 380 L 256 360 Z" fill="#006400"/>
+    <path d="M 256 360 L 256 380 L 262 380 L 262 360 Z" fill="#8B0000"/>
+    <path d="M 262 360 L 265 380 L 268 380 L 265 360 Z" fill="#006400"/>
+    
+    <!-- Body with tweed jacket -->
+    <rect x="237" y="330" width="28" height="30" fill="#556B2F" rx="2"/>
+    
+    <!-- Arms -->
+    <rect x="225" y="335" width="10" height="25" fill="#FFD7A8" rx="3">
+      <animate attributeName="transform" values="rotate(-30 230 335); rotate(-50 230 335); rotate(-30 230 335)" dur="0.4s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="267" y="335" width="10" height="25" fill="#FFD7A8" rx="3">
+      <animate attributeName="transform" values="rotate(30 272 335); rotate(50 272 335); rotate(30 272 335)" dur="0.4s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Head -->
+    <circle cx="250" cy="318" r="13" fill="#FFD7A8"/>
+    
+    <!-- Red hair -->
+    <ellipse cx="250" cy="310" rx="14" ry="10" fill="#B22222"/>
+    <path d="M 240 310 Q 238 315 240 318" fill="#B22222"/>
+    <path d="M 260 310 Q 262 315 260 318" fill="#B22222"/>
+    
+    <!-- Tam o'shanter (Scottish hat) -->
+    <ellipse cx="250" cy="305" rx="12" ry="4" fill="#000080"/>
+    <circle cx="250" cy="303" r="8" fill="#000080"/>
+    <circle cx="255" cy="300" r="2" fill="#DC143C"/>
+    
+    <!-- Face features -->
+    <circle cx="246" cy="316" r="1.5" fill="#000"/>
+    <circle cx="254" cy="316" r="1.5" fill="#000"/>
+    <path d="M 246 322 Q 250 324 254 322" fill="none" stroke="#000" stroke-width="1"/>
+    
+    <!-- Rifle -->
+    <rect x="215" y="340" width="35" height="3" fill="#4A4A4A" rx="1">
+      <animate attributeName="transform" values="rotate(-35 232 341); rotate(-45 232 341); rotate(-35 232 341)" dur="0.4s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  
+  <!-- Haggis chasing -->
+  <g id="haggis">
+    <animateTransform
+      attributeName="transform"
+      type="translate"
+      values="0,0; 600,0"
+      dur="8s"
+      repeatCount="indefinite"/>
+    
+    <!-- Body (round, furry) -->
+    <ellipse cx="80" cy="395" rx="25" ry="20" fill="#5C4033">
+      <animate attributeName="cy" values="395;392;395;398;395" dur="0.3s" repeatCount="indefinite"/>
+    </ellipse>
+    
+    <!-- Fur texture -->
+    <ellipse cx="70" cy="390" rx="8" ry="6" fill="#6D5244" opacity="0.6"/>
+    <ellipse cx="85" cy="393" rx="7" ry="5" fill="#6D5244" opacity="0.6"/>
+    <ellipse cx="75" cy="400" rx="6" ry="5" fill="#6D5244" opacity="0.6"/>
+    
+    <!-- Legs (short on one side, long on other - hillside haggis!) -->
+    <!-- Left legs (shorter) -->
+    <rect x="62" y="405" width="5" height="12" fill="#4A3626" rx="2">
+      <animate attributeName="height" values="12;10;12;14;12" dur="0.3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="70" y="405" width="5" height="12" fill="#4A3626" rx="2">
+      <animate attributeName="height" values="14;12;10;12;14" dur="0.3s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Right legs (longer) -->
+    <rect x="88" y="400" width="5" height="17" fill="#4A3626" rx="2">
+      <animate attributeName="height" values="17;15;17;19;17" dur="0.3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="96" y="400" width="5" height="17" fill="#4A3626" rx="2">
+      <animate attributeName="height" values="19;17;15;17;19" dur="0.3s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Head -->
+    <circle cx="100" cy="390" r="10" fill="#5C4033"/>
+    
+    <!-- Eyes (angry/determined) -->
+    <circle cx="97" cy="388" r="2" fill="#FFF"/>
+    <circle cx="97" cy="388" r="1" fill="#000"/>
+    <circle cx="103" cy="388" r="2" fill="#FFF"/>
+    <circle cx="103" cy="388" r="1" fill="#000"/>
+    
+    <!-- Snout -->
+    <ellipse cx="105" cy="392" rx="3" ry="2" fill="#3D2817"/>
+    
+    <!-- Tusks/teeth -->
+    <rect x="104" y="394" width="1.5" height="3" fill="#FFF"/>
+    <rect x="106" y="394" width="1.5" height="3" fill="#FFF"/>
+    
+    <!-- Ears -->
+    <ellipse cx="95" cy="383" rx="3" ry="5" fill="#5C4033"/>
+    <ellipse cx="105" cy="383" rx="3" ry="5" fill="#5C4033"/>
+  </g>
+  
+  <!-- More heather in foreground -->
+  <g opacity="0.5">
+    <circle cx="250" cy="510" r="12" fill="#9370DB"/>
+    <circle cx="265" cy="515" r="10" fill="#8B5A8B"/>
+    <circle cx="450" cy="512" r="13" fill="#9370DB"/>
+    <circle cx="470" cy="518" r="11" fill="#8B5A8B"/>
+  </g>
+</svg>

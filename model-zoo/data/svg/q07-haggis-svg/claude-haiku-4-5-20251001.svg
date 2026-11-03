@@ -1,0 +1,144 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @keyframes gamekeeperRun {
+        0% { transform: translateX(0px); }
+        50% { transform: translateX(300px); }
+        100% { transform: translateX(0px); }
+      }
+      
+      @keyframes haggisBounce {
+        0% { transform: translateX(-100px) translateY(0px); }
+        25% { transform: translateX(0px) translateY(-10px); }
+        50% { transform: translateX(150px) translateY(0px); }
+        75% { transform: translateX(300px) translateY(-10px); }
+        100% { transform: translateX(-100px) translateY(0px); }
+      }
+      
+      @keyframes legSwing {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(20deg); }
+      }
+      
+      .gamekeeper {
+        animation: gamekeeperRun 4s infinite ease-in-out;
+      }
+      
+      .haggis {
+        animation: haggisBounce 4s infinite ease-in-out;
+      }
+      
+      .legLeft {
+        animation: legSwing 0.6s infinite ease-in-out;
+        transform-origin: 35% 0%;
+      }
+      
+      .legRight {
+        animation: legSwing 0.6s infinite ease-in-out 0.3s;
+        transform-origin: 65% 0%;
+      }
+    </style>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="800" height="600" fill="#87CEEB"/>
+  
+  <!-- Heather moor background -->
+  <rect y="250" width="800" height="350" fill="#8B5A3C"/>
+  
+  <!-- Heather plants -->
+  <g opacity="0.6">
+    <ellipse cx="50" cy="350" rx="30" ry="40" fill="#6B4C4A"/>
+    <ellipse cx="150" cy="380" rx="35" ry="45" fill="#6B4C4A"/>
+    <ellipse cx="300" cy="360" rx="40" ry="50" fill="#6B4C4A"/>
+    <ellipse cx="450" cy="370" rx="35" ry="45" fill="#6B4C4A"/>
+    <ellipse cx="600" cy="350" rx="38" ry="48" fill="#6B4C4A"/>
+    <ellipse cx="750" cy="380" rx="32" ry="42" fill="#6B4C4A"/>
+  </g>
+  
+  <!-- Distant hills -->
+  <ellipse cx="200" cy="200" rx="200" ry="100" fill="#9B7B6B" opacity="0.5"/>
+  <ellipse cx="600" cy="180" rx="220" ry="110" fill="#9B7B6B" opacity="0.5"/>
+  
+  <!-- Haggis -->
+  <g class="haggis">
+    <!-- Body -->
+    <ellipse cx="150" cy="350" rx="45" ry="35" fill="#8B4513"/>
+    
+    <!-- Head -->
+    <circle cx="195" cy="330" r="25" fill="#8B4513"/>
+    
+    <!-- Eyes -->
+    <circle cx="205" cy="325" r="4" fill="#000"/>
+    <circle cx="205" cy="335" r="4" fill="#000"/>
+    
+    <!-- Snout -->
+    <ellipse cx="220" cy="330" rx="8" ry="6" fill="#6B3410"/>
+    
+    <!-- Horns -->
+    <path d="M 185 315 Q 180 305 175 305" stroke="#4A4A4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 205 315 Q 210 305 215 305" stroke="#4A4A4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- Legs -->
+    <rect x="135" y="375" width="8" height="30" rx="4" fill="#6B3410"/>
+    <rect x="160" y="375" width="8" height="30" rx="4" fill="#6B3410"/>
+    <rect x="175" y="375" width="8" height="30" rx="4" fill="#6B3410"/>
+    <rect x="200" y="375" width="8" height="30" rx="4" fill="#6B3410"/>
+    
+    <!-- Fur texture -->
+    <circle cx="140" cy="350" r="3" fill="#A0522D" opacity="0.5"/>
+    <circle cx="170" cy="345" r="3" fill="#A0522D" opacity="0.5"/>
+    <circle cx="155" cy="355" r="3" fill="#A0522D" opacity="0.5"/>
+  </g>
+  
+  <!-- Gamekeeper -->
+  <g class="gamekeeper">
+    <!-- Body -->
+    <rect x="320" y="310" width="25" height="50" rx="5" fill="#2D5016"/>
+    
+    <!-- Head -->
+    <circle cx="332.5" cy="295" r="18" fill="#D4A574"/>
+    
+    <!-- Red hair -->
+    <path d="M 315 285 Q 332.5 270 350 285" fill="#CC2200"/>
+    <ellipse cx="332.5" cy="275" rx="20" ry="18" fill="#CC2200"/>
+    
+    <!-- Face -->
+    <circle cx="328" cy="298" r="2" fill="#000"/>
+    <circle cx="337" cy="298" r="2" fill="#000"/>
+    <line x1="332.5" y1="302" x2="332.5" y2="305" stroke="#000" stroke-width="1"/>
+    
+    <!-- Arms -->
+    <rect x="310" y="320" width="10" height="35" rx="3" fill="#D4A574"/>
+    <rect x="345" y="320" width="10" height="35" rx="3" fill="#D4A574"/>
+    
+    <!-- Hands -->
+    <circle cx="315" cy="360" r="4" fill="#D4A574"/>
+    <circle cx="350" cy="360" r="4" fill="#D4A574"/>
+    
+    <!-- Kilt -->
+    <polygon points="320,360 345,360 350,405 315,405" fill="#8B0000"/>
+    <line x1="325" y1="360" x2="325" y2="405" stroke="#5C0000" stroke-width="1" opacity="0.5"/>
+    <line x1="330" y1="360" x2="330" y2="405" stroke="#5C0000" stroke-width="1" opacity="0.5"/>
+    <line x1="335" y1="360" x2="335" y2="405" stroke="#5C0000" stroke-width="1" opacity="0.5"/>
+    <line x1="340" y1="360" x2="340" y2="405" stroke="#5C0000" stroke-width="1" opacity="0.5"/>
+    
+    <!-- Sporran -->
+    <ellipse cx="332.5" cy="395" rx="12" ry="15" fill="#8B4513"/>
+    <line x1="325" y1="400" x2="330" y2="410" stroke="#A0522D" stroke-width="1"/>
+    <line x1="335" y1="400" x2="340" y2="410" stroke="#A0522D" stroke-width="1"/>
+    
+    <!-- Legs -->
+    <rect x="320" y="405" width="7" height="35" rx="2" fill="#2D2D2D"/>
+    <rect x="333" y="405" width="7" height="35" rx="2" fill="#2D2D2D"/>
+    
+    <!-- Shoes -->
+    <ellipse cx="323.5" cy="445" rx="5" ry="6" fill="#1A1A1A"/>
+    <ellipse cx="336.5" cy="445" rx="5" ry="6" fill="#1A1A1A"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="30" font-size="24" font-family="serif" fill="#333" text-anchor="middle" font-weight="bold">
+    Haggis Chase on the Moor
+  </text>
+</svg>

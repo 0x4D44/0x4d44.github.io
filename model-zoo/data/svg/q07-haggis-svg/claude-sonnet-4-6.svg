@@ -1,0 +1,517 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <style>
+      /* Sky gradient */
+      .sky { fill: url(#skyGrad); }
+      .ground { fill: url(#groundGrad); }
+
+      /* Gamekeeper running animation - moves right to left looping */
+      .keeper-group {
+        animation: keeperRun 6s linear infinite;
+      }
+      .haggis-group {
+        animation: haggisRun 6s linear infinite;
+      }
+
+      /* Leg animations */
+      .leg-front {
+        animation: legSwingFront 0.4s ease-in-out infinite alternate;
+        transform-origin: 10px 0px;
+      }
+      .leg-back {
+        animation: legSwingBack 0.4s ease-in-out infinite alternate;
+        transform-origin: 0px 0px;
+      }
+      .arm-front {
+        animation: armSwingFront 0.4s ease-in-out infinite alternate;
+        transform-origin: 0px 0px;
+      }
+      .arm-back {
+        animation: armSwingBack 0.4s ease-in-out infinite alternate;
+        transform-origin: 0px 0px;
+      }
+
+      /* Haggis wobble/roll */
+      .haggis-body {
+        animation: haggisWobble 0.3s ease-in-out infinite alternate;
+        transform-origin: 30px 20px;
+      }
+      .haggis-legs-left {
+        animation: haggisLegLeft 0.3s ease-in-out infinite alternate;
+        transform-origin: 10px 0px;
+      }
+      .haggis-legs-right {
+        animation: haggisLegRight 0.3s ease-in-out infinite alternate;
+        transform-origin: 10px 0px;
+      }
+
+      @keyframes keeperRun {
+        0%   { transform: translateX(800px); }
+        100% { transform: translateX(-200px); }
+      }
+      @keyframes haggisRun {
+        0%   { transform: translateX(900px); }
+        100% { transform: translateX(-100px); }
+      }
+      @keyframes legSwingFront {
+        from { transform: rotate(-25deg); }
+        to   { transform: rotate(25deg); }
+      }
+      @keyframes legSwingBack {
+        from { transform: rotate(25deg); }
+        to   { transform: rotate(-25deg); }
+      }
+      @keyframes armSwingFront {
+        from { transform: rotate(-35deg); }
+        to   { transform: rotate(35deg); }
+      }
+      @keyframes armSwingBack {
+        from { transform: rotate(35deg); }
+        to   { transform: rotate(-35deg); }
+      }
+      @keyframes haggisWobble {
+        from { transform: rotate(-8deg) scaleY(1); }
+        to   { transform: rotate(8deg) scaleY(0.92); }
+      }
+      @keyframes haggisLegLeft {
+        from { transform: rotate(-30deg); }
+        to   { transform: rotate(30deg); }
+      }
+      @keyframes haggisLegRight {
+        from { transform: rotate(30deg); }
+        to   { transform: rotate(-30deg); }
+      }
+
+      /* Heather flowers pulsing */
+      .heather-pulse {
+        animation: heatherPulse 2s ease-in-out infinite alternate;
+      }
+      @keyframes heatherPulse {
+        from { opacity: 0.7; }
+        to   { opacity: 1; }
+      }
+
+      /* Cloud drift */
+      .cloud1 { animation: cloudDrift1 20s linear infinite; }
+      .cloud2 { animation: cloudDrift2 28s linear infinite; }
+      .cloud3 { animation: cloudDrift3 35s linear infinite; }
+      @keyframes cloudDrift1 {
+        from { transform: translateX(-200px); }
+        to   { transform: translateX(900px); }
+      }
+      @keyframes cloudDrift2 {
+        from { transform: translateX(900px); }
+        to   { transform: translateX(-200px); }
+      }
+      @keyframes cloudDrift3 {
+        from { transform: translateX(-300px); }
+        to   { transform: translateX(1000px); }
+      }
+
+      /* Staff bob */
+      .staff {
+        animation: staffBob 0.4s ease-in-out infinite alternate;
+        transform-origin: 0px 60px;
+      }
+      @keyframes staffBob {
+        from { transform: rotate(-5deg); }
+        to   { transform: rotate(5deg); }
+      }
+
+      /* Hair bounce */
+      .hair {
+        animation: hairBounce 0.4s ease-in-out infinite alternate;
+        transform-origin: 10px 0px;
+      }
+      @keyframes hairBounce {
+        from { transform: skewX(-5deg); }
+        to   { transform: skewX(5deg); }
+      }
+
+      /* Exclamation marks */
+      .exclaim {
+        animation: exclaimFade 0.8s ease-in-out infinite alternate;
+      }
+      @keyframes exclaimFade {
+        from { opacity: 0; transform: translateY(0px); }
+        to   { opacity: 1; transform: translateY(-8px); }
+      }
+    </style>
+
+    <!-- Sky gradient -->
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7ec8e3"/>
+      <stop offset="100%" stop-color="#c9e8f5"/>
+    </linearGradient>
+
+    <!-- Ground/moor gradient -->
+    <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7a5c8a"/>
+      <stop offset="40%" stop-color="#6b4f7a"/>
+      <stop offset="100%" stop-color="#4a3356"/>
+    </linearGradient>
+
+    <!-- Hill gradient -->
+    <linearGradient id="hillGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8a6a9a"/>
+      <stop offset="100%" stop-color="#5a4070"/>
+    </linearGradient>
+
+    <!-- Haggis body gradient -->
+    <radialGradient id="haggisGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#c8a060"/>
+      <stop offset="60%" stop-color="#a07840"/>
+      <stop offset="100%" stop-color="#7a5428"/>
+    </radialGradient>
+
+    <!-- Haggis eye shine -->
+    <radialGradient id="eyeShine" cx="30%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </radialGradient>
+
+    <!-- Tartan pattern for kilt -->
+    <pattern id="tartan" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect width="12" height="12" fill="#2244aa"/>
+      <rect x="0" y="0" width="4" height="12" fill="#1133bb" opacity="0.7"/>
+      <rect x="8" y="0" width="4" height="12" fill="#1133bb" opacity="0.7"/>
+      <rect x="0" y="0" width="12" height="4" fill="#3366cc" opacity="0.5"/>
+      <rect x="0" y="8" width="12" height="4" fill="#3366cc" opacity="0.5"/>
+      <rect x="4" y="0" width="4" height="12" fill="#112288" opacity="0.3"/>
+      <rect x="0" y="4" width="12" height="4" fill="#112288" opacity="0.3"/>
+      <line x1="0" y1="0" x2="12" y2="12" stroke="#224411" stroke-width="1" opacity="0.4"/>
+      <line x1="12" y1="0" x2="0" y2="12" stroke="#224411" stroke-width="1" opacity="0.4"/>
+    </pattern>
+
+    <!-- Heather pattern -->
+    <pattern id="heatherPat" x="0" y="0" width="40" height="30" patternUnits="userSpaceOnUse">
+      <rect width="40" height="30" fill="#7a5c8a"/>
+      <!-- heather tufts -->
+      <circle cx="5" cy="20" r="4" fill="#9b6aaa"/>
+      <circle cx="5" cy="14" r="3" fill="#cc88cc"/>
+      <circle cx="8" cy="10" r="2" fill="#dd99dd"/>
+      <circle cx="2" cy="11" r="2" fill="#bb77bb"/>
+      <circle cx="20" cy="18" r="4" fill="#8a5a9a"/>
+      <circle cx="20" cy="12" r="3" fill="#cc88cc"/>
+      <circle cx="23" cy="8" r="2" fill="#ee99ee"/>
+      <circle cx="17" cy="9" r="2" fill="#bb77bb"/>
+      <circle cx="35" cy="22" r="3" fill="#9b6aaa"/>
+      <circle cx="35" cy="17" r="2.5" fill="#dd99dd"/>
+      <circle cx="37" cy="14" r="1.5" fill="#ffaaff"/>
+      <circle cx="32" cy="15" r="1.5" fill="#cc88cc"/>
+      <!-- stems -->
+      <line x1="5" y1="24" x2="5" y2="20" stroke="#5a3a6a" stroke-width="1.5"/>
+      <line x1="20" y1="24" x2="20" y2="18" stroke="#5a3a6a" stroke-width="1.5"/>
+      <line x1="35" y1="26" x2="35" y2="22" stroke="#5a3a6a" stroke-width="1.5"/>
+    </pattern>
+
+    <!-- Cloud definition -->
+    <g id="cloudShape">
+      <ellipse cx="50" cy="20" rx="40" ry="18" fill="white" opacity="0.9"/>
+      <ellipse cx="80" cy="25" rx="30" ry="15" fill="white" opacity="0.9"/>
+      <ellipse cx="20" cy="28" rx="25" ry="12" fill="white" opacity="0.9"/>
+      <ellipse cx="55" cy="30" rx="50" ry="14" fill="white" opacity="0.9"/>
+    </g>
+  </defs>
+
+  <!-- ===== BACKGROUND ===== -->
+  <!-- Sky -->
+  <rect width="800" height="600" class="sky"/>
+
+  <!-- Sun -->
+  <circle cx="680" cy="80" r="45" fill="#ffe060" opacity="0.85"/>
+  <circle cx="680" cy="80" r="52" fill="#ffe060" opacity="0.2"/>
+
+  <!-- Clouds -->
+  <g class="cloud1">
+    <use href="#cloudShape" transform="translate(-10, 60) scale(0.9)"/>
+  </g>
+  <g class="cloud2">
+    <use href="#cloudShape" transform="translate(300, 40) scale(1.1)"/>
+  </g>
+  <g class="cloud3">
+    <use href="#cloudShape" transform="translate(100, 100) scale(0.7)"/>
+  </g>
+
+  <!-- Distant hills -->
+  <ellipse cx="200" cy="350" rx="300" ry="120" fill="#8a6a9a" opacity="0.6"/>
+  <ellipse cx="600" cy="370" rx="280" ry="100" fill="#7a5a8a" opacity="0.5"/>
+  <ellipse cx="400" cy="340" rx="250" ry="90" fill="#9a7aaa" opacity="0.4"/>
+
+  <!-- Moor ground -->
+  <rect x="0" y="380" width="800" height="220" class="ground"/>
+
+  <!-- Heather overlay on ground -->
+  <rect x="0" y="370" width="800" height="230" fill="url(#heatherPat)" opacity="0.9"/>
+
+  <!-- Ground horizon line details -->
+  <ellipse cx="400" cy="378" rx="420" ry="20" fill="#9a7aaa" opacity="0.5"/>
+
+  <!-- Extra heather tufts (static, foreground) -->
+  <g class="heather-pulse">
+    <!-- Foreground heather left -->
+    <circle cx="30" cy="410" r="8" fill="#cc88cc"/>
+    <circle cx="25" cy="400" r="6" fill="#dd99ee"/>
+    <circle cx="35" cy="398" r="5" fill="#ffaaff"/>
+    <line x1="30" y1="418" x2="30" y2="410" stroke="#5a3a6a" stroke-width="2"/>
+
+    <circle cx="70" cy="415" r="7" fill="#bb77bb"/>
+    <circle cx="65" cy="406" r="5" fill="#cc88cc"/>
+    <circle cx="75" cy="404" r="4" fill="#ee99ee"/>
+    <line x1="70" y1="422" x2="70" y2="415" stroke="#5a3a6a" stroke-width="2"/>
+
+    <!-- Foreground heather right -->
+    <circle cx="730" cy="412" r="8" fill="#cc88cc"/>
+    <circle cx="725" cy="402" r="6" fill="#dd99ee"/>
+    <circle cx="737" cy="400" r="5" fill="#ffaaff"/>
+    <line x1="730" y1="420" x2="730" y2="412" stroke="#5a3a6a" stroke-width="2"/>
+
+    <circle cx="770" cy="408" r="7" fill="#bb77bb"/>
+    <circle cx="765" cy="399" r="5" fill="#cc88cc"/>
+    <circle cx="775" cy="397" r="4" fill="#ee99ee"/>
+    <line x1="770" y1="415" x2="770" y2="408" stroke="#5a3a6a" stroke-width="2"/>
+  </g>
+
+  <!-- Some rocks on the moor -->
+  <ellipse cx="150" cy="470" rx="25" ry="12" fill="#6a6a7a"/>
+  <ellipse cx="155" cy="465" rx="20" ry="9" fill="#8a8a9a"/>
+  <ellipse cx="600" cy="490" rx="30" ry="13" fill="#6a6a7a"/>
+  <ellipse cx="605" cy="484" rx="24" ry="10" fill="#8a8a9a"/>
+  <ellipse cx="350" cy="510" rx="18" ry="8" fill="#6a6a7a"/>
+  <ellipse cx="354" cy="505" rx="14" ry="6" fill="#8a8a9a"/>
+
+  <!-- ===== GAMEKEEPER (running left, so facing left) ===== -->
+  <g class="keeper-group">
+    <!-- Body group: gamekeeper runs at y=390 ground level -->
+    <g transform="translate(0, 355)">
+
+      <!-- Shadow -->
+      <ellipse cx="15" cy="95" rx="22" ry="6" fill="black" opacity="0.25"/>
+
+      <!-- Exclamation (fear!) -->
+      <text x="-15" y="-15" font-size="18" fill="#ff4400" font-weight="bold" class="exclaim">!</text>
+      <text x="-28" y="-10" font-size="14" fill="#ff6600" font-weight="bold" class="exclaim" style="animation-delay:0.2s">!</text>
+
+      <!-- Staff/crook -->
+      <g class="staff" transform="translate(-15, 10)">
+        <line x1="0" y1="0" x2="5" y2="70" stroke="#8B4513" stroke-width="3" stroke-linecap="round"/>
+        <!-- Crook curve -->
+        <path d="M5 0 Q-5 -8 -8 -15 Q-10 -22 -3 -24 Q4 -26 6 -18" stroke="#8B4513" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- Back leg -->
+      <g transform="translate(12, 52)" class="leg-front">
+        <rect x="-4" y="0" width="8" height="28" rx="4" fill="#e8c090"/>
+        <!-- shoe -->
+        <ellipse cx="0" cy="30" rx="7" ry="4" fill="#2a1a08"/>
+      </g>
+
+      <!-- Kilt -->
+      <path d="M0,40 L30,40 L32,70 L-2,70 Z" fill="url(#tartan)"/>
+      <!-- Kilt pleats -->
+      <line x1="4" y1="40" x2="2" y2="70" stroke="#1133aa" stroke-width="1" opacity="0.5"/>
+      <line x1="10" y1="40" x2="8" y2="70" stroke="#1133aa" stroke-width="1" opacity="0.5"/>
+      <line x1="16" y1="40" x2="15" y2="70" stroke="#1133aa" stroke-width="1" opacity="0.5"/>
+      <line x1="22" y1="40" x2="22" y2="70" stroke="#1133aa" stroke-width="1" opacity="0.5"/>
+      <!-- Kilt sporran -->
+      <ellipse cx="15" cy="62" rx="8" ry="6" fill="#c8a850"/>
+      <ellipse cx="15" cy="60" rx="6" ry="4" fill="#d4b860"/>
+      <circle cx="15" cy="59" r="2" fill="#8B6914"/>
+
+      <!-- Front leg -->
+      <g transform="translate(8, 52)" class="leg-back">
+        <rect x="-4" y="0" width="8" height="28" rx="4" fill="#d8b080"/>
+        <!-- sock -->
+        <rect x="-4" y="18" width="8" height="10" rx="2" fill="#f0f0f0"/>
+        <!-- shoe -->
+        <ellipse cx="0" cy="30" rx="7" ry="4" fill="#1a0a00"/>
+      </g>
+
+      <!-- Jacket/body -->
+      <rect x="2" y="15" width="26" height="30" rx="4" fill="#4a6a3a"/>
+      <!-- Jacket lapels -->
+      <path d="M14,15 L8,22 L14,24 Z" fill="#3a5a2a"/>
+      <path d="M16,15 L22,22 L16,24 Z" fill="#3a5a2a"/>
+      <!-- Buttons -->
+      <circle cx="15" cy="28" r="1.5" fill="#2a2a2a"/>
+      <circle cx="15" cy="34" r="1.5" fill="#2a2a2a"/>
+
+      <!-- Back arm -->
+      <g transform="translate(24, 18)" class="arm-back">
+        <rect x="-3" y="0" width="7" height="20" rx="3" fill="#3a5a2a"/>
+        <!-- hand -->
+        <ellipse cx="2" cy="21" rx="4" ry="3" fill="#d4956a"/>
+      </g>
+
+      <!-- Front arm (holding staff side) -->
+      <g transform="translate(2, 18)" class="arm-front">
+        <rect x="-3" y="0" width="7" height="20" rx="3" fill="#4a6a3a"/>
+        <!-- hand -->
+        <ellipse cx="2" cy="21" rx="4" ry="3" fill="#c4855a"/>
+      </g>
+
+      <!-- Neck -->
+      <rect x="11" y="8" width="8" height="10" rx="3" fill="#d4956a"/>
+
+      <!-- Head -->
+      <ellipse cx="15" cy="5" rx="12" ry="11" fill="#e0a070"/>
+      <!-- Ear -->
+      <ellipse cx="3" cy="5" rx="3" ry="4" fill="#d08860"/>
+
+      <!-- Red hair! -->
+      <g class="hair">
+        <!-- Flowing red hair -->
+        <ellipse cx="15" cy="-4" rx="13" ry="7" fill="#cc2200"/>
+        <!-- Hair tufts flying back (left since running left) -->
+        <path d="M5,-2 Q-5,-8 -12,-4 Q-8,2 -3,0 Z" fill="#dd3311"/>
+        <path d="M6,-5 Q-2,-14 -10,-12 Q-8,-6 -2,-5 Z" fill="#bb1100"/>
+        <path d="M10,-7 Q8,-16 2,-18 Q0,-12 5,-8 Z" fill="#cc2200"/>
+        <!-- Sideburns -->
+        <ellipse cx="4" cy="3" rx="3" ry="5" fill="#cc2200"/>
+      </g>
+
+      <!-- Eyes (wide with fear) -->
+      <ellipse cx="10" cy="4" rx="3" ry="3.5" fill="white"/>
+      <circle cx="9" cy="4" r="2" fill="#2a1a00"/>
+      <circle cx="8.5" cy="3.5" r="0.8" fill="white"/>
+      <!-- Eyebrows raised in alarm -->
+      <path d="M7,0 Q10,-2 13,0" stroke="#8a3300" stroke-width="1.5" fill="none"/>
+
+      <!-- Mouth open in alarm -->
+      <path d="M9,8 Q12,11 15,8" stroke="#8a3300" stroke-width="1.5" fill="#cc6644"/>
+
+      <!-- Deerstalker hat -->
+      <path d="M3,-4 Q15,-18 27,-4 Z" fill="#8a7a5a"/>
+      <rect x="3" y="-6" width="24" height="6" rx="2" fill="#9a8a6a"/>
+      <!-- Hat brim front -->
+      <ellipse cx="27" cy="-4" rx="5" ry="3" fill="#7a6a4a"/>
+      <!-- Hat brim back -->
+      <ellipse cx="3" cy="-4" rx="5" ry="3" fill="#7a6a4a"/>
+      <!-- Hat checks -->
+      <line x1="9" y1="-12" x2="9" y2="-5" stroke="#6a5a3a" stroke-width="1"/>
+      <line x1="15" y1="-15" x2="15" y2="-5" stroke="#6a5a3a" stroke-width="1"/>
+      <line x1="21" y1="-12" x2="21" y2="-5" stroke="#6a5a3a" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- ===== HAGGIS (chasing behind) ===== -->
+  <g class="haggis-group">
+    <g transform="translate(0, 390)">
+
+      <!-- Haggis shadow -->
+      <ellipse cx="30" cy="42" rx="28" ry="7" fill="black" opacity="0.22"/>
+
+      <!-- Haggis legs (back pair) -->
+      <g transform="translate(12, 30)" class="haggis-legs-right">
+        <rect x="-3" y="0" width="6" height="14" rx="3" fill="#6a4020"/>
+        <ellipse cx="0" cy="15" rx="5" ry="3" fill="#3a2010"/>
+      </g>
+      <g transform="translate(22, 30)" class="haggis-legs-right">
+        <rect x="-3" y="0" width="6" height="14" rx="3" fill="#6a4020"/>
+        <ellipse cx="0" cy="15" rx="5" ry="3" fill="#3a2010"/>
+      </g>
+
+      <!-- Haggis body (round, hairy creature) -->
+      <g class="haggis-body">
+        <!-- Main body - oval/rugby-ball shaped -->
+        <ellipse cx="30" cy="20" rx="30" ry="22" fill="url(#haggisGrad)"/>
+
+        <!-- Hairy texture overlay -->
+        <!-- Top hairs -->
+        <line x1="15" y1="0" x2="12" y2="-8" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="20" y1="-2" x2="18" y2="-11" stroke="#9a7040" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="25" y1="-3" x2="24" y2="-13" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="30" y1="-2" x2="30" y2="-12" stroke="#9a7040" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="35" y1="-2" x2="36" y2="-11" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="40" y1="0" x2="42" y2="-9" stroke="#9a7040" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Side hairs left -->
+        <line x1="2" y1="12" x2="-5" y2="10" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="18" x2="-6" y2="17" stroke="#9a7040" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="24" x2="-5" y2="25" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Side hairs right -->
+        <line x1="58" y1="12" x2="64" y2="10" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="58" y1="18" x2="65" y2="17" stroke="#9a7040" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="57" y1="24" x2="63" y2="25" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Bottom hairs -->
+        <line x1="15" y1="40" x2="13" y2="47" stroke="#7a5020" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="25" y1="42" x2="24" y2="49" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="35" y1="42" x2="36" y2="49" stroke="#7a5020" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="45" y1="40" x2="46" y2="47" stroke="#8a6030" stroke-width="1.5" stroke-linecap="round"/>
+
+        <!-- Body dark texture stripes suggesting banding/fur -->
+        <ellipse cx="30" cy="20" rx="30" ry="22" fill="none" stroke="#7a5028" stroke-width="0.5" opacity="0.4"/>
+        <path d="M5,14 Q30,10 55,14" stroke="#7a5028" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <path d="M3,20 Q30,16 57,20" stroke="#7a5028" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <path d="M5,26 Q30,22 55,26" stroke="#7a5028" stroke-width="0.8" fill="none" opacity="0.3"/>
+
+        <!-- Haggis face (left side = direction of chase = facing left) -->
+        <!-- Snout -->
+        <ellipse cx="5" cy="20" rx="7" ry="5" fill="#c49060"/>
+        <ellipse cx="2" cy="20" rx="4" ry="3" fill="#b08050"/>
+        <!-- Nostrils -->
+        <circle cx="2" cy="18" r="1" fill="#7a4820"/>
+        <circle cx="2" cy="22" r="1" fill="#7a4820"/>
+
+        <!-- Eyes - angry/determined haggis -->
+        <ellipse cx="10" cy="12" rx="4" ry="4" fill="url(#eyeShine)"/>
+        <circle cx="9" cy="12" r="2.5" fill="#cc4400"/>
+        <circle cx="8" cy="11" r="1" fill="white"/>
+        <!-- Angry eyebrow -->
+        <path d="M7,8 Q11,6 14,9" stroke="#5a3010" stroke-width="2" fill="none"/>
+
+        <!-- Tusks/teeth (bottom jaw) -->
+        <path d="M3,22 L1,28 L5,25 L3,22 Z" fill="#f0e8d0"/>
+        <path d="M6,24 L5,30 L8,27 L6,24 Z" fill="#f0e8d0"/>
+
+        <!-- Tail (right side, wagging in excitement) -->
+        <path d="M58,15 Q68,8 65,0" stroke="#9a7040" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M58,15 Q70,15 68,22" stroke="#8a6030" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Tail tuft -->
+        <circle cx="65" cy="0" r="4" fill="#b08840"/>
+        <circle cx="68" cy="22" r="3" fill="#b08840"/>
+      </g>
+
+      <!-- Haggis front legs (animated separately) -->
+      <g transform="translate(5, 30)" class="haggis-legs-left">
+        <rect x="-3" y="0" width="6" height="14" rx="3" fill="#7a5030"/>
+        <ellipse cx="0" cy="15" rx="5" ry="3" fill="#3a2010"/>
+      </g>
+      <g transform="translate(38, 32)" class="haggis-legs-left">
+        <rect x="-3" y="0" width="6" height="14" rx="3" fill="#7a5030"/>
+        <ellipse cx="0" cy="15" rx="5" ry="3" fill="#3a2010"/>
+      </g>
+
+      <!-- Dust/speed puffs behind haggis (right side) -->
+      <g opacity="0.6">
+        <circle cx="68" cy="38" r="5" fill="#c8b890" opacity="0.5">
+          <animate attributeName="r" values="3;7;3" dur="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.6;0.1;0.6" dur="0.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="75" cy="35" r="4" fill="#c8b890" opacity="0.4">
+          <animate attributeName="r" values="2;6;2" dur="0.5s" begin="0.15s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.1;0.5" dur="0.5s" begin="0.15s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="80" cy="40" r="3" fill="#c8b890" opacity="0.3">
+          <animate attributeName="r" values="2;5;2" dur="0.5s" begin="0.3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="0.5s" begin="0.3s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===== TITLE / LABEL ===== -->
+  <!-- Decorative border at top -->
+  <rect x="10" y="8" width="780" height="36" rx="8" fill="#2a1a3a" opacity="0.55"/>
+  <text x="400" y="32" font-family="Georgia, serif" font-size="18" fill="#f0d890" text-anchor="middle" font-style="italic">
+    The Highland Chase — A Haggis Pursues the Gamekeeper Across the Moor
+  </text>
+
+  <!-- Celtic-style corner decorations -->
+  <text x="20" y="32" font-family="serif" font-size="20" fill="#d4a840">☘</text>
+  <text x="760" y="32" font-family="serif" font-size="20" fill="#d4a840">☘</text>
+
+  <!-- Ground texture foreground strip -->
+  <rect x="0" y="540" width="800" height="60" fill="#5a3a6a" opacity="0.4"/>
+  <ellipse cx="200" cy="546" rx="100" ry="12" fill="#9a7aaa" opacity="0.2"/>
+  <ellipse cx="600" cy="548" rx="120" ry="10" fill="#9a7aaa" opacity="0.2"/>
+</svg>

@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fb8d8"/>
+      <stop offset="1" stop-color="#d4e4ef"/>
+    </linearGradient>
+    <linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a6a9e"/>
+      <stop offset="0.5" stop-color="#6b5a3a"/>
+      <stop offset="1" stop-color="#4a4327"/>
+    </linearGradient>
+    <radialGradient id="haggisBody" cx="0.4" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#7a5230"/>
+      <stop offset="1" stop-color="#4a3018"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="800" height="380" fill="url(#sky)"/>
+
+  <!-- Distant hills -->
+  <path d="M0 360 Q150 280 320 340 T640 320 T800 350 V380 H0 Z" fill="#9a8ab0" opacity="0.7"/>
+  <path d="M0 380 Q200 320 420 360 T800 360 V380 Z" fill="#7d6b94" opacity="0.6"/>
+
+  <!-- Moor ground -->
+  <rect y="360" width="800" height="240" fill="url(#moor)"/>
+
+  <!-- Heather tufts -->
+  <g fill="#9b59b6">
+    <g>
+      <animateTransform attributeName="transform" type="translate"
+        values="0 0; -8 0; 0 0" dur="3s" repeatCount="indefinite"/>
+      <circle cx="60" cy="430" r="6"/><circle cx="72" cy="425" r="5"/><circle cx="50" cy="425" r="5"/>
+      <circle cx="200" cy="470" r="7"/><circle cx="214" cy="464" r="6"/><circle cx="188" cy="464" r="6"/>
+      <circle cx="360" cy="440" r="6"/><circle cx="372" cy="435" r="5"/>
+      <circle cx="520" cy="490" r="8"/><circle cx="535" cy="483" r="6"/><circle cx="505" cy="483" r="6"/>
+      <circle cx="680" cy="450" r="7"/><circle cx="694" cy="444" r="6"/>
+      <circle cx="740" cy="500" r="6"/><circle cx="130" cy="520" r="7"/>
+      <circle cx="430" cy="520" r="6"/><circle cx="620" cy="540" r="7"/>
+    </g>
+  </g>
+  <g fill="#8e44ad">
+    <circle cx="300" cy="560" r="8"/><circle cx="314" cy="552" r="6"/>
+    <circle cx="560" cy="555" r="8"/><circle cx="90" cy="570" r="7"/>
+    <circle cx="700" cy="575" r="8"/><circle cx="420" cy="575" r="6"/>
+  </g>
+
+  <!-- Gamekeeper (running) -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-150 0; 950 0" dur="7s" repeatCount="indefinite"/>
+    <g transform="translate(0,0)">
+      <!-- bobbing -->
+      <animateTransform attributeName="transform" type="translate"
+        values="0 0; 0 -8; 0 0" dur="0.5s" repeatCount="indefinite"/>
+      <!-- legs -->
+      <g stroke="#3a3a2a" stroke-width="7" stroke-linecap="round">
+        <line x1="400" y1="440" x2="385" y2="480">
+          <animate attributeName="x2" values="385;415;385" dur="0.5s" repeatCount="indefinite"/>
+        </line>
+        <line x1="400" y1="440" x2="415" y2="480">
+          <animate attributeName="x2" values="415;385;415" dur="0.5s" repeatCount="indefinite"/>
+        </line>
+      </g>
+      <!-- kilt -->
+      <path d="M385 400 L415 400 L420 445 L380 445 Z" fill="#5a7a3a"/>
+      <path d="M390 400 L392 445 M400 400 L400 445 M410 400 L408 445" stroke="#3a5a1a" stroke-width="2"/>
+      <!-- torso jacket -->
+      <path d="M388 360 Q400 352 412 360 L414 402 L386 402 Z" fill="#6b5a3a"/>
+      <!-- arms -->
+      <g stroke="#6b5a3a" stroke-width="6" stroke-linecap="round">
+        <line x1="390" y1="368" x2="375" y2="390">
+          <animate attributeName="x2" values="375;388;375" dur="0.5s" repeatCount="indefinite"/>
+        </line>
+        <line x1="410" y1="368" x2="425" y2="390">
+          <animate attributeName="x2" values="425;412;425" dur="0.5s" repeatCount="indefinite"/>
+        </line>
+      </g>
+      <!-- head -->
+      <circle cx="400" cy="345" r="14" fill="#f2c9a0"/>
+      <!-- red hair -->
+      <path d="M386 342 Q384 325 400 325 Q416 325 414 342 Q410 335 400 335 Q390 335 386 342 Z" fill="#c0392b"/>
+      <path d="M388 336 Q392 328 400 329 Q408 328 412 336" fill="none" stroke="#a93226" stroke-width="2"/>
+      <!-- scared expression -->
+      <circle cx="395" cy="345" r="2" fill="#333"/>
+      <circle cx="405" cy="345" r="2" fill="#333"/>
+      <ellipse cx="400" cy="353" rx="3" ry="4" fill="#5a2a2a"/>
+      <!-- tam o shanter -->
+      <ellipse cx="400" cy="324" rx="15" ry="5" fill="#b03a2e"/>
+      <circle cx="400" cy="320" r="3" fill="#7a1a1a"/>
+    </g>
+  </g>
+
+  <!-- Haggis (chasing) -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-320 0; 780 0" dur="7s" repeatCount="indefinite"/>
+    <g>
+      <!-- hopping -->
+      <animateTransform attributeName="transform" type="translate"
+        values="0 0; 0 -20; 0 5; 0 0" dur="0.45s" repeatCount="indefinite"/>
+      <!-- little legs -->
+      <g stroke="#3a2510" stroke-width="5" stroke-linecap="round">
+        <line x1="290" y1="450" x2="282" y2="475">
+          <animate attributeName="x2" values="282;298;282" dur="0.45s" repeatCount="indefinite"/>
+        </line>
+        <line x1="320" y1="450" x2="328" y2="475">
+          <animate attributeName="x2" values="328;312;328" dur="0.45s" repeatCount="indefinite"/>
+        </line>
+      </g>
+      <!-- body -->
+      <ellipse cx="300" cy="420" rx="48" ry="38" fill="url(#haggisBody)"/>
+      <!-- casing seams -->
+      <path d="M260 400 Q300 390 340 400 M258 420 Q300 412 342 420 M262 440 Q300 434 338 440"
+        fill="none" stroke="#2e1d0d" stroke-width="2" opacity="0.5"/>
+      <!-- tied end on left -->
+      <path d="M252 420 L240 408 L246 420 L240 432 Z" fill="#6b4a28"/>
+      <!-- angry eyes -->
+      <circle cx="320" cy="408" r="8" fill="#fff"/>
+      <circle cx="336" cy="410" r="8" fill="#fff"/>
+      <circle cx="322" cy="409" r="4" fill="#000"/>
+      <circle cx="337" cy="411" r="4" fill="#000"/>
+      <!-- angry brows -->
+      <line x1="314" y1="398" x2="326" y2="404" stroke="#000" stroke-width="2.5"/>
+      <line x1="344" y1="402" x2="332" y2="406" stroke="#000" stroke-width="2.5"/>
+      <!-- mouth -->
+      <path d="M322 428 Q336 438 348 426" fill="none" stroke="#2a1505" stroke-width="3"/>
+      <!-- little teeth -->
+      <path d="M328 430 l3 4 l3 -4 Z M338 431 l3 4 l3 -4 Z" fill="#fff"/>
+    </g>
+  </g>
+
+  <!-- Drifting mist -->
+  <g fill="#ffffff" opacity="0.15">
+    <ellipse cx="150" cy="420" rx="120" ry="20">
+      <animate attributeName="cx" values="-150;950" dur="12s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="500" cy="480" rx="160" ry="24">
+      <animate attributeName="cx" values="-200;1000" dur="16s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+</svg>
