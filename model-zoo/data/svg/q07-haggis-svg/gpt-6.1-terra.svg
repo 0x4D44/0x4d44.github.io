@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">The great haggis chase</title>
+  <desc id="desc">A red-haired Scottish gamekeeper runs across a purple heather moor, pursued by a lively haggis.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#a7d9e0"/>
+      <stop offset="1" stop-color="#f6dfc1"/>
+    </linearGradient>
+    <linearGradient id="moor" x2="0.2" y2="1">
+      <stop stop-color="#918697"/>
+      <stop offset="1" stop-color="#534b62"/>
+    </linearGradient>
+    <linearGradient id="haggis" x2="0" y2="1">
+      <stop stop-color="#c99861"/>
+      <stop offset="1" stop-color="#805536"/>
+    </linearGradient>
+    <pattern id="tartan" width="18" height="18" patternUnits="userSpaceOnUse">
+      <rect width="18" height="18" fill="#436459"/>
+      <path d="M0 5h18M5 0v18" stroke="#263e3d" stroke-width="5"/>
+      <path d="M0 13h18M13 0v18" stroke="#c98b68" stroke-width="1.5"/>
+      <path d="M0 1h18M1 0v18" stroke="#afbc8e" stroke-width=".8"/>
+    </pattern>
+    <pattern id="heather" width="70" height="55" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#565564" stroke-width="1.4" stroke-linecap="round">
+        <path d="M9 55q1-12-5-19m5 19q2-14 8-21m-8 18 1-18"/>
+        <path d="M48 55q-1-14-7-22m7 22q2-13 9-20m-9 15 1-19"/>
+      </g>
+      <g fill="#b180ae">
+        <circle cx="4" cy="35" r="3"/><circle cx="8" cy="39" r="2.5"/><circle cx="16" cy="33" r="3"/>
+        <circle cx="12" cy="38" r="2.5"/><circle cx="10" cy="32" r="2.5"/>
+        <circle cx="41" cy="32" r="3"/><circle cx="44" cy="37" r="2.5"/><circle cx="49" cy="30" r="3"/>
+        <circle cx="54" cy="36" r="2.5"/><circle cx="57" cy="34" r="3"/>
+      </g>
+      <g fill="#d2a1c4">
+        <circle cx="5" cy="33" r="1.3"/><circle cx="16" cy="31" r="1.4"/>
+        <circle cx="40" cy="30" r="1.3"/><circle cx="49" cy="28" r="1.4"/><circle cx="57" cy="32" r="1.3"/>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="665" cy="108" r="48" fill="#fff2d4" opacity=".75"/>
+  <g fill="#fff8eb" opacity=".7">
+    <path d="M64 102q11-20 31-11 15-24 38-8 22-4 29 19z"/>
+    <path d="M341 65q9-15 25-8 12-20 30-7 17-3 24 15z"/>
+    <path d="M555 158q8-13 24-8 12-18 29-6 19-2 24 14z"/>
+  </g>
+  <g fill="none" stroke="#738b8e" stroke-width="2" stroke-linecap="round" opacity=".65">
+    <path d="M174 155q5-5 10 0 5-5 10 0"/>
+    <path d="M208 140q4-4 8 0 4-4 8 0"/>
+  </g>
+
+  <path d="M0 330 140 211l85 76 112-137 146 164 90-92 227 129v95H0z" fill="#a4b5b5"/>
+  <path d="m245 263 92-113 76 85-35-19-20 6-21-24-20 29-21-4z" fill="#d5dfd9" opacity=".8"/>
+  <path d="M0 359q110-90 233-47 86-65 175-15 83-72 191-30 103-9 201 69v139H0z" fill="#849a8e"/>
+  <path d="M0 381q126-68 250-20 95-53 211-7 111-67 221-13 67 0 118 27v151H0z" fill="#728979"/>
+  <path d="M0 405q146-51 293-14 131-50 267-17 128-38 240 2v224H0z" fill="url(#moor)"/>
+  <path d="M0 422q156-50 315-17 142-37 278-12 115-30 207-6v213H0z" fill="url(#heather)" opacity=".65"/>
+
+  <!-- The winding path -->
+  <path d="M800 438q-121-20-228 2-101 20-227 8-176-17-345 47v105h800z" fill="#c8b79c"/>
+  <path d="M800 456q-121-17-217 2-104 21-241 9-164-14-342 49v84h800z" fill="#d8c7a8"/>
+  <g fill="#aa9c89" opacity=".65">
+    <ellipse cx="95" cy="536" rx="10" ry="3"/><ellipse cx="338" cy="497" rx="8" ry="2"/>
+    <ellipse cx="672" cy="490" rx="11" ry="3"/><ellipse cx="457" cy="543" rx="7" ry="2"/>
+    <ellipse cx="733" cy="538" rx="6" ry="2"/><ellipse cx="213" cy="563" rx="12" ry="3"/>
+  </g>
+
+  <!-- Dust puffs -->
+  <g fill="#f4e5cb" opacity=".7">
+    <circle cx="179" cy="487" r="7">
+      <animate attributeName="r" values="3;10;3" dur="1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".7;0;.7" dur="1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="385" cy="477" r="6">
+      <animate attributeName="r" values="3;9;3" dur=".8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".6;0;.6" dur=".8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Haggis -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="208 383;218 377;208 383;201 379;208 383" dur=".8s" repeatCount="indefinite"/>
+    <ellipse cx="69" cy="111" rx="66" ry="7" fill="#544b49" opacity=".2"/>
+    <!-- Far legs -->
+    <g fill="none" stroke="#594334" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+      <g><path d="M34 77 26 98 15 103"/><animateTransform attributeName="transform" type="rotate" values="-20 34 77;25 34 77;-20 34 77" dur=".55s" repeatCount="indefinite"/></g>
+      <g><path d="M86 78 94 98 106 99"/><animateTransform attributeName="transform" type="rotate" values="25 86 78;-25 86 78;25 86 78" dur=".55s" repeatCount="indefinite"/></g>
+    </g>
+    <!-- Tied end of the casing -->
+    <path d="M17 40 1 29 5 45 0 53 18 55" fill="#9d6d45" stroke="#684936" stroke-width="3" stroke-linejoin="round"/>
+    <path d="m13 39 5 17" stroke="#e0ba83" stroke-width="3"/>
+    <ellipse cx="67" cy="53" rx="58" ry="39" fill="url(#haggis)" stroke="#684936" stroke-width="3"/>
+    <path d="M22 46q7-24 28-28" fill="none" stroke="#e8bd86" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+    <g fill="#79563b" opacity=".45">
+      <circle cx="41" cy="39" r="2"/><circle cx="58" cy="28" r="2"/><circle cx="48" cy="65" r="2.5"/>
+      <circle cx="72" cy="48" r="2"/><circle cx="31" cy="58" r="1.5"/>
+    </g>
+    <!-- Near legs -->
+    <g fill="none" stroke="#684936" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+      <g><path d="M42 79 50 100 64 103"/><animateTransform attributeName="transform" type="rotate" values="25 42 79;-25 42 79;25 42 79" dur=".55s" repeatCount="indefinite"/></g>
+      <g><path d="M94 77 85 100 73 104"/><animateTransform attributeName="transform" type="rotate" values="-25 94 77;25 94 77;-25 94 77" dur=".55s" repeatCount="indefinite"/></g>
+    </g>
+    <!-- Face -->
+    <ellipse cx="98" cy="42" rx="10" ry="11" fill="#fff8e9"/>
+    <circle cx="102" cy="43" r="4" fill="#352e2a"/>
+    <circle cx="103" cy="41" r="1.2" fill="#fff"/>
+    <path d="M90 28q8-6 15-1" fill="none" stroke="#684936" stroke-width="3" stroke-linecap="round"/>
+    <path d="M102 63q9 6 17-2" fill="none" stroke="#533a2c" stroke-width="3" stroke-linecap="round"/>
+    <path d="M110 67q4 4 8 0" fill="none" stroke="#df9d8c" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Running gamekeeper -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="465 270;478 265;465 270;457 266;465 270" dur=".8s" repeatCount="indefinite"/>
+    <ellipse cx="49" cy="225" rx="49" ry="6" fill="#544b49" opacity=".2"/>
+    <!-- Back arm -->
+    <g>
+      <path d="M35 83 13 103 0 92" fill="none" stroke="#435b4a" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="0" cy="92" r="6" fill="#e9af8c"/>
+      <animateTransform attributeName="transform" type="rotate" values="-30 35 83;35 35 83;-30 35 83" dur=".55s" repeatCount="indefinite"/>
+    </g>
+    <!-- Bag -->
+    <path d="M30 83 12 128l-12-3 4-25z" fill="#8d694d" stroke="#5c4938" stroke-width="2"/>
+    <path d="M3 106 17 110" stroke="#d8b581" stroke-width="2"/>
+    <!-- Back leg -->
+    <g>
+      <path d="M39 151 24 182 9 192" fill="none" stroke="#e2ab88" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="m17 185-9 6-5 11 18-2 7-9z" fill="#334a3f"/>
+      <path d="m4 200 19-2" stroke="#26372f" stroke-width="4" stroke-linecap="round"/>
+      <animateTransform attributeName="transform" type="rotate" values="-35 39 151;38 39 151;-35 39 151" dur=".55s" repeatCount="indefinite"/>
+    </g>
+    <!-- Front leg -->
+    <g>
+      <path d="M58 151 72 181 82 195" fill="none" stroke="#efbd98" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="m72 184 9-4 8 14-12 6z" fill="#58715a"/>
+      <path d="M77 197q5-5 11-4l10 5q3 3-1 5H79q-4-1-2-6z" fill="#303e36"/>
+      <animateTransform attributeName="transform" type="rotate" values="38 58 151;-35 58 151;38 58 151" dur=".55s" repeatCount="indefinite"/>
+    </g>
+    <!-- Jacket and kilt -->
+    <path d="M35 75q13-9 28-2l13 20-5 40-48-3 3-35z" fill="#596f52" stroke="#354d40" stroke-width="3"/>
+    <path d="M34 77 48 101l7-24" fill="#e4d6b9"/>
+    <path d="m48 99 4 22" stroke="#354d40" stroke-width="2"/>
+    <path d="M26 125q22 7 46 0l7 34q-28 9-57-1z" fill="url(#tartan)" stroke="#344d43" stroke-width="3"/>
+    <path d="M25 127q24 5 48 0" fill="none" stroke="#493e34" stroke-width="6"/>
+    <rect x="47" y="125" width="8" height="6" rx="1" fill="#d3bc88"/>
+    <path d="M47 135q9-4 16 0l-2 16q-7 6-13 0z" fill="#d4c4a2" stroke="#605443" stroke-width="2"/>
+    <path d="M50 140v5m5-5v5m5-5v5" stroke="#796b56" stroke-width="1.5"/>
+    <!-- Neck and head -->
+    <path d="M42 66v13q7 6 15 0l-2-16z" fill="#e5a985"/>
+    <path d="M30 35q3-20 25-20 20 2 21 20l7 11-7 4q0 18-15 21-20 2-27-15z" fill="#f0b994" stroke="#895e4b" stroke-width="2"/>
+    <!-- Red hair -->
+    <path d="M31 52q-10-7-6-19 1-21 25-22 18-1 25 15-12-6-21-2-3 10-17 10l2 12-4 8z" fill="#b84f2f"/>
+    <path d="M30 37q-7 5-3 15l7 5 2-15" fill="#c95b32"/>
+    <path d="M35 26q9-11 21-10" fill="none" stroke="#df8050" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="37" cy="45" r="5" fill="#e9aa87"/>
+    <circle cx="68" cy="37" r="4.5" fill="#fff8eb"/>
+    <circle cx="70" cy="37" r="2" fill="#34302d"/>
+    <path d="M63 29q5-4 10-1" fill="none" stroke="#a8462c" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="71" cy="57" rx="3.5" ry="4.5" fill="#75483c"/>
+    <!-- Cap and feather -->
+    <path d="M23 27q3-17 19-20 21-5 32 13l-2 6q-23-7-49 5z" fill="#405b48" stroke="#30483c" stroke-width="2"/>
+    <path d="M24 28q24-8 52-3" fill="none" stroke="#a7a36e" stroke-width="4"/>
+    <path d="M37 11Q26-4 33-15q3 13 15 22" fill="#7c7964" stroke="#4c574b" stroke-width="1.5"/>
+    <path d="M34-10 43 8" stroke="#d7caa7" stroke-width="1"/>
+    <!-- Front arm -->
+    <g>
+      <path d="M64 84 78 105 94 95" fill="none" stroke="#5e7657" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="95" cy="94" r="6" fill="#efb994"/>
+      <animateTransform attributeName="transform" type="rotate" values="35 64 84;-35 64 84;35 64 84" dur=".55s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- Foreground heather -->
+  <path d="M0 548q86-31 167-9 75-18 142 10 83-17 156 5 93-24 174-3 86-21 161-3v52H0z" fill="#676071"/>
+  <path d="M0 535q86-31 167-9 75-18 142 10 83-17 156 5 93-24 174-3 86-21 161-3v65H0z" fill="url(#heather)"/>
+  <g fill="none" stroke="#454f48" stroke-width="2" stroke-linecap="round">
+    <path d="M36 600q4-31-10-48m10 48q4-30 17-45"/>
+    <path d="M752 600q-2-31-17-48m17 48q3-30 17-46"/>
+  </g>
+  <g fill="#c28ab4">
+    <circle cx="26" cy="550" r="5"/><circle cx="31" cy="559" r="4"/><circle cx="53" cy="552" r="5"/><circle cx="48" cy="561" r="4"/>
+    <circle cx="735" cy="550" r="5"/><circle cx="741" cy="559" r="4"/><circle cx="770" cy="552" r="5"/><circle cx="764" cy="561" r="4"/>
+  </g>
+</svg>

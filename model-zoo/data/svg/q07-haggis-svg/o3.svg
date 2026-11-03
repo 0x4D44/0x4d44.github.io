@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+
+  <!-- Background sky -->
+  <rect x="0" y="0" width="800" height="600" fill="#87c9ff"/>
+
+  <!-- Heather-covered moor -->
+  <path d="M0 430 
+           Q 100 400 200 430 
+           T400 430 
+           T600 430 
+           T800 430 
+           L800 600 L0 600 Z" fill="#8e57a0"/>
+  <!-- Some tufts of heather -->
+  <g fill="#a86ebc" opacity="0.7">
+    <ellipse cx="60"  cy="430" rx="25" ry="8"/>
+    <ellipse cx="150" cy="435" rx="30" ry="10"/>
+    <ellipse cx="230" cy="428" rx="22" ry="7"/>
+    <ellipse cx="310" cy="433" rx="28" ry="9"/>
+    <ellipse cx="390" cy="429" rx="24" ry="8"/>
+    <ellipse cx="470" cy="434" rx="26" ry="9"/>
+    <ellipse cx="550" cy="430" rx="23" ry="8"/>
+    <ellipse cx="630" cy="432" rx="25" ry="8"/>
+    <ellipse cx="710" cy="428" rx="22" ry="7"/>
+  </g>
+
+  <!-- Invisible guiding path across the moor -->
+  <path id="moorPath" d="M-200 430 
+                          Q  50 400 200 430 
+                          T 600 430 
+                          T1000 430" fill="none" stroke="none"/>
+
+  <!-- Scottish gamekeeper -->
+  <g id="keeper">
+    <!-- body -->
+    <rect x="-15" y="360" width="30" height="55" rx="6" fill="#1e7e1e"/>
+    <!-- head -->
+    <circle cx="0" cy="345" r="15" fill="#f2c99c"/>
+    <!-- beard -->
+    <path d="M-13 345 q13 18 26 0" fill="#c65a28"/>
+    <!-- hat -->
+    <path d="M-18 330 h36 l-6 -12 h-24z" fill="#115011"/>
+    <!-- arms -->
+    <line x1="-15" y1="372" x2="-35" y2="390" stroke="#f2c99c" stroke-width="6" stroke-linecap="round"/>
+    <line x1="15"  y1="372" x2=" 35" y2="390" stroke="#f2c99c" stroke-width="6" stroke-linecap="round"/>
+    <!-- legs -->
+    <line x1="-8" y1="415" x2="-8" y2="440" stroke="#0d0d0d" stroke-width="6" stroke-linecap="round"/>
+    <line x1="8"  y1="415" x2="8"  y2="440" stroke="#0d0d0d" stroke-width="6" stroke-linecap="round"/>
+
+    <animateMotion dur="10s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#moorPath"/>
+    </animateMotion>
+  </g>
+
+  <!-- Haggis -->
+  <g id="haggis">
+    <!-- body -->
+    <ellipse cx="0" cy="380" rx="30" ry="20" fill="#8b5a2b" stroke="#5c3a17" stroke-width="2"/>
+    <!-- legs -->
+    <line x1="-15" y1="400" x2="-15" y2="420" stroke="#5c3a17" stroke-width="6" stroke-linecap="round"/>
+    <line x1=" 15" y1="400" x2=" 15" y2="420" stroke="#5c3a17" stroke-width="6" stroke-linecap="round"/>
+    <!-- eyes -->
+    <circle cx="-8" cy="372" r="3" fill="#ffffff"/>
+    <circle cx=" 8" cy="372" r="3" fill="#ffffff"/>
+    <circle cx="-8" cy="372" r="1.5" fill="#000000"/>
+    <circle cx=" 8" cy="372" r="1.5" fill="#000000"/>
+    <!-- little tail -->
+    <path d="M30 382 q10 -5 0 -10" fill="#8b5a2b" stroke="#5c3a17" stroke-width="2"/>
+
+    <animateMotion dur="9s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#moorPath"/>
+    </animateMotion>
+  </g>
+
+</svg>

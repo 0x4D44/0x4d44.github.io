@@ -1,0 +1,202 @@
+{
+ "gpt-4o-mini": {
+  "model": "gpt-4o-mini",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-4o": {
+  "model": "gpt-4o",
+  "sample": 0,
+  "error": "unbound prefix: line 23, column 2",
+  "fixes": [
+   "declared the missing xmlns:xlink namespace on <svg>"
+  ],
+  "status": "repaired",
+  "unsafe": false
+ },
+ "gpt-5-search-api": {
+  "model": "gpt-5-search-api",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-4.1": {
+  "model": "gpt-4.1",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-4.1-mini": {
+  "model": "gpt-4.1-mini",
+  "sample": 0,
+  "error": "unbound prefix: line 118, column 2",
+  "fixes": [
+   "declared the missing xmlns:xlink namespace on <svg>"
+  ],
+  "status": "repaired",
+  "unsafe": false
+ },
+ "gpt-5.1": {
+  "model": "gpt-5.1",
+  "sample": 0,
+  "error": "unbound prefix: line 112, column 2",
+  "fixes": [
+   "declared the missing xmlns:xlink namespace on <svg>"
+  ],
+  "status": "repaired",
+  "unsafe": false
+ },
+ "chat-latest": {
+  "model": "chat-latest",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.3-codex": {
+  "model": "gpt-5.3-codex",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.4-mini": {
+  "model": "gpt-5.4-mini",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5": {
+  "model": "gpt-5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.2": {
+  "model": "gpt-5.2",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.4": {
+  "model": "gpt-5.4",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5-nano": {
+  "model": "gpt-5-nano",
+  "sample": 0,
+  "error": "unbound prefix: line 106, column 2",
+  "fixes": [
+   "declared the missing xmlns:xlink namespace on <svg>"
+  ],
+  "status": "repaired",
+  "unsafe": false
+ },
+ "gpt-5.4-nano": {
+  "model": "gpt-5.4-nano",
+  "sample": 0,
+  "error": "duplicate attribute: line 227, column 55",
+  "fixes": [
+   "removed a repeated keySplines= attribute (line 227), keeping the first"
+  ],
+  "status": "repaired",
+  "unsafe": false
+ },
+ "gpt-5-mini": {
+  "model": "gpt-5-mini",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.6-luna": {
+  "model": "gpt-5.6-luna",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.6-sol": {
+  "model": "gpt-5.6-sol",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.5": {
+  "model": "gpt-5.5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.6-terra": {
+  "model": "gpt-5.6-terra",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.6-sol@pro": {
+  "model": "gpt-5.6-sol@pro",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.2-pro": {
+  "model": "gpt-5.2-pro",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6-sol": {
+  "model": "gpt-6-sol",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6-luna": {
+  "model": "gpt-6-luna",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "o3": {
+  "model": "o3",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6-astra": {
+  "model": "gpt-6-astra",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6.1-terra": {
+  "model": "gpt-6.1-terra",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6.1-sol": {
+  "model": "gpt-6.1-sol",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.5-pro": {
+  "model": "gpt-5.5-pro",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_output_tokens)"
+ },
+ "gpt-5-pro": {
+  "model": "gpt-5-pro",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-5.4-pro": {
+  "model": "gpt-5.4-pro",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_output_tokens)"
+ }
+}

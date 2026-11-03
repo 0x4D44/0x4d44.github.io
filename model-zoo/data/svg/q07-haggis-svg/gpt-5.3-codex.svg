@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9fd0ff"/>
+      <stop offset="100%" stop-color="#dff1ff"/>
+    </linearGradient>
+    <linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7a8f4b"/>
+      <stop offset="100%" stop-color="#4c5f2f"/>
+    </linearGradient>
+    <g id="heather">
+      <path d="M0,0 C2,-8 8,-8 10,0" fill="none" stroke="#6f3b86" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="2" cy="-5" r="1.8" fill="#9a5ab1"/>
+      <circle cx="6" cy="-7" r="1.8" fill="#a66ac0"/>
+      <circle cx="9" cy="-4" r="1.8" fill="#8f4ea8"/>
+    </g>
+
+    <g id="haggis">
+      <ellipse cx="0" cy="0" rx="52" ry="30" fill="#7a4f32"/>
+      <ellipse cx="-10" cy="-5" rx="40" ry="20" fill="#8b5d3d" opacity="0.7"/>
+      <circle cx="40" cy="-10" r="5" fill="#1f1f1f"/>
+      <circle cx="41.5" cy="-11.5" r="1.5" fill="#fff"/>
+      <path d="M50,-2 Q57,2 50,8" fill="none" stroke="#3a2418" stroke-width="3" stroke-linecap="round"/>
+      <g fill="#5e3a25">
+        <ellipse cx="-30" cy="24" rx="7" ry="5"/>
+        <ellipse cx="-8" cy="26" rx="7" ry="5"/>
+        <ellipse cx="14" cy="26" rx="7" ry="5"/>
+        <ellipse cx="36" cy="24" rx="7" ry="5"/>
+      </g>
+      <animateTransform attributeName="transform" type="translate"
+        values="0,0; 0,-4; 0,0; 0,-3; 0,0" dur="0.55s" repeatCount="indefinite"/>
+    </g>
+
+    <g id="gamekeeper">
+      <!-- legs -->
+      <g id="legs">
+        <rect x="-12" y="38" width="10" height="34" rx="4" fill="#3e2d1f"/>
+        <rect x="2" y="38" width="10" height="34" rx="4" fill="#3e2d1f"/>
+        <ellipse cx="-7" cy="74" rx="8" ry="4" fill="#20160f"/>
+        <ellipse cx="7" cy="74" rx="8" ry="4" fill="#20160f"/>
+        <animateTransform attributeName="transform" type="rotate"
+          values="12 0 40; -14 0 40; 12 0 40" dur="0.5s" repeatCount="indefinite"/>
+      </g>
+      <g id="legs2">
+        <rect x="-12" y="38" width="10" height="34" rx="4" fill="#3e2d1f"/>
+        <rect x="2" y="38" width="10" height="34" rx="4" fill="#3e2d1f"/>
+        <ellipse cx="-7" cy="74" rx="8" ry="4" fill="#20160f"/>
+        <ellipse cx="7" cy="74" rx="8" ry="4" fill="#20160f"/>
+        <animateTransform attributeName="transform" type="rotate"
+          values="-14 0 40; 12 0 40; -14 0 40" dur="0.5s" repeatCount="indefinite"/>
+      </g>
+      <!-- body -->
+      <rect x="-16" y="0" width="32" height="42" rx="8" fill="#2f5b34"/>
+      <rect x="-12" y="8" width="24" height="18" rx="3" fill="#3f7245"/>
+      <!-- arms -->
+      <g>
+        <rect x="-28" y="6" width="12" height="30" rx="5" fill="#2f5b34">
+          <animateTransform attributeName="transform" type="rotate"
+            values="-30 -16 8; 20 -16 8; -30 -16 8" dur="0.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="16" y="6" width="12" height="30" rx="5" fill="#2f5b34">
+          <animateTransform attributeName="transform" type="rotate"
+            values="20 16 8; -30 16 8; 20 16 8" dur="0.5s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+      <!-- head -->
+      <circle cx="0" cy="-14" r="14" fill="#f2c7a3"/>
+      <path d="M-13,-19 C-8,-34 8,-34 13,-19 C8,-25 -8,-25 -13,-19 Z" fill="#d14a2b"/>
+      <path d="M-6,-13 q6,6 12,0" fill="none" stroke="#9b3a22" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="-5" cy="-16" r="1.5" fill="#222"/>
+      <circle cx="5" cy="-16" r="1.5" fill="#222"/>
+      <path d="M-4,-8 Q0,-5 4,-8" fill="none" stroke="#b36f4f" stroke-width="1.5" stroke-linecap="round"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="0,0; 0,-3; 0,0; 0,-2; 0,0" dur="0.5s" repeatCount="indefinite"/>
+    </g>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+
+  <!-- distant hills -->
+  <path d="M0,360 C120,300 240,330 360,300 C500,265 650,300 800,260 L800,600 L0,600 Z" fill="#6f8150" opacity="0.7"/>
+  <path d="M0,400 C150,350 300,380 450,350 C620,320 720,360 800,340 L800,600 L0,600 Z" fill="#5f7243" opacity="0.85"/>
+
+  <!-- moor foreground -->
+  <path d="M0,430 C120,420 250,450 380,430 C520,408 640,445 800,425 L800,600 L0,600 Z" fill="url(#moor)"/>
+
+  <!-- heather patches -->
+  <g opacity="0.95">
+    <use href="#heather" x="70" y="470"/>
+    <use href="#heather" x="110" y="500"/>
+    <use href="#heather" x="170" y="480"/>
+    <use href="#heather" x="220" y="520"/>
+    <use href="#heather" x="290" y="490"/>
+    <use href="#heather" x="340" y="525"/>
+    <use href="#heather" x="410" y="500"/>
+    <use href="#heather" x="470" y="530"/>
+    <use href="#heather" x="540" y="495"/>
+    <use href="#heather" x="600" y="520"/>
+    <use href="#heather" x="670" y="490"/>
+    <use href="#heather" x="730" y="515"/>
+  </g>
+
+  <!-- chase animation -->
+  <g>
+    <g>
+      <use href="#gamekeeper" x="620" y="430"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="0,0; -760,20" dur="9s" repeatCount="indefinite"/>
+    </g>
+    <g>
+      <use href="#haggis" x="700" y="462"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="0,0; -760,20" dur="9s" begin="-1.1s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- light wind sway for heather -->
+  <g opacity="0.35">
+    <rect x="0" y="430" width="800" height="170" fill="none">
+      <animate attributeName="opacity" values="0.25;0.45;0.25" dur="4s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+</svg>

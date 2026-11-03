@@ -1,0 +1,358 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <!-- Sky gradient -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fd3ff"/>
+      <stop offset="0.55" stop-color="#cfe9ff"/>
+      <stop offset="1" stop-color="#f7fbff"/>
+    </linearGradient>
+
+    <!-- Moor gradient -->
+    <linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c6b3f"/>
+      <stop offset="1" stop-color="#244a2a"/>
+    </linearGradient>
+
+    <!-- Heather colors -->
+    <linearGradient id="heatherBloom" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b06ad6"/>
+      <stop offset="1" stop-color="#7f2ea6"/>
+    </linearGradient>
+
+    <!-- Subtle haze -->
+    <filter id="haze" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.2"/>
+      <feColorMatrix type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.35 0"/>
+    </filter>
+
+    <!-- Soft shadow -->
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+      <feOffset in="b" dx="0" dy="2" result="o"/>
+      <feColorMatrix in="o" type="matrix"
+        values="0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0.35 0" result="s"/>
+      <feMerge>
+        <feMergeNode in="s"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Animations -->
+    <style>
+      /* Cloud drift */
+      .cloud { opacity: 0.9; filter: url(#haze); }
+      .cloud1 { animation: drift1 22s linear infinite; }
+      .cloud2 { animation: drift2 30s linear infinite; }
+      .cloud3 { animation: drift3 26s linear infinite; }
+
+      @keyframes drift1 { from { transform: translateX(-180px);} to { transform: translateX(980px);} }
+      @keyframes drift2 { from { transform: translateX(820px);} to { transform: translateX(-260px);} }
+      @keyframes drift3 { from { transform: translateX(-260px);} to { transform: translateX(980px);} }
+
+      /* Parallax heather sway */
+      .sway1 { transform-origin: 50% 100%; animation: sway1 3.2s ease-in-out infinite alternate; }
+      .sway2 { transform-origin: 50% 100%; animation: sway2 4.0s ease-in-out infinite alternate; }
+      .sway3 { transform-origin: 50% 100%; animation: sway3 2.6s ease-in-out infinite alternate; }
+
+      @keyframes sway1 { from { transform: rotate(-1.2deg);} to { transform: rotate(1.4deg);} }
+      @keyframes sway2 { from { transform: rotate(1.0deg);} to { transform: rotate(-1.6deg);} }
+      @keyframes sway3 { from { transform: rotate(-1.8deg);} to { transform: rotate(1.0deg);} }
+
+      /* Runner motion across moor */
+      .runGroup { animation: chase 7s linear infinite; }
+      @keyframes chase {
+        0%   { transform: translate(880px, 0); }
+        100% { transform: translate(-980px, 0); }
+      }
+
+      /* Bobbing (feet impact) */
+      .bob { animation: bob 0.35s ease-in-out infinite alternate; }
+      @keyframes bob { from { transform: translateY(0); } to { transform: translateY(3px);} }
+
+      /* Leg swing */
+      .legA { transform-origin: 0px 0px; animation: legA 0.35s ease-in-out infinite alternate; }
+      .legB { transform-origin: 0px 0px; animation: legB 0.35s ease-in-out infinite alternate-reverse; }
+      @keyframes legA { from { transform: rotate(-18deg);} to { transform: rotate(22deg);} }
+      @keyframes legB { from { transform: rotate(20deg);} to { transform: rotate(-20deg);} }
+
+      /* Arm swing */
+      .armA { transform-origin: 0px 0px; animation: armA 0.35s ease-in-out infinite alternate; }
+      .armB { transform-origin: 0px 0px; animation: armB 0.35s ease-in-out infinite alternate-reverse; }
+      @keyframes armA { from { transform: rotate(20deg);} to { transform: rotate(-25deg);} }
+      @keyframes armB { from { transform: rotate(-18deg);} to { transform: rotate(22deg);} }
+
+      /* Haggis wobble */
+      .wobble { transform-origin: 50% 60%; animation: wobble 0.45s ease-in-out infinite alternate; }
+      @keyframes wobble { from { transform: rotate(-4deg) translateY(0);} to { transform: rotate(4deg) translateY(2px);} }
+
+      /* Blinking */
+      .blink { animation: blink 4.5s infinite; }
+      @keyframes blink {
+        0%, 94%, 100% { transform: scaleY(1); }
+        95%, 97% { transform: scaleY(0.15); }
+      }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="800" height="600" fill="url(#sky)"/>
+
+  <!-- Distant hills -->
+  <path d="M0,300 C140,260 220,270 330,292 C440,316 520,270 635,282 C715,291 760,275 800,260 L800,360 L0,360 Z"
+        fill="#4f7a57" opacity="0.65"/>
+  <path d="M0,330 C120,310 220,330 310,340 C420,354 520,320 620,332 C710,342 760,330 800,320 L800,400 L0,400 Z"
+        fill="#2e5a37" opacity="0.7"/>
+
+  <!-- Clouds -->
+  <g class="cloud cloud1" transform="translate(-180,0)">
+    <g transform="translate(80,90)">
+      <ellipse cx="0" cy="0" rx="55" ry="22" fill="#ffffff"/>
+      <ellipse cx="38" cy="-10" rx="42" ry="18" fill="#ffffff"/>
+      <ellipse cx="-38" cy="-8" rx="40" ry="17" fill="#ffffff"/>
+      <ellipse cx="18" cy="8" rx="48" ry="19" fill="#ffffff"/>
+    </g>
+  </g>
+  <g class="cloud cloud2" transform="translate(0,0)">
+    <g transform="translate(560,70)">
+      <ellipse cx="0" cy="0" rx="68" ry="24" fill="#ffffff"/>
+      <ellipse cx="48" cy="-10" rx="50" ry="20" fill="#ffffff"/>
+      <ellipse cx="-48" cy="-8" rx="48" ry="18" fill="#ffffff"/>
+      <ellipse cx="20" cy="10" rx="58" ry="21" fill="#ffffff"/>
+    </g>
+  </g>
+  <g class="cloud cloud3" transform="translate(-260,0)">
+    <g transform="translate(220,130)" opacity="0.9">
+      <ellipse cx="0" cy="0" rx="52" ry="20" fill="#ffffff"/>
+      <ellipse cx="36" cy="-10" rx="40" ry="16" fill="#ffffff"/>
+      <ellipse cx="-34" cy="-7" rx="38" ry="15" fill="#ffffff"/>
+      <ellipse cx="16" cy="8" rx="46" ry="17" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <!-- Moor ground -->
+  <path d="M0,360 C120,340 240,360 360,380 C500,404 620,392 800,360 L800,600 L0,600 Z" fill="url(#moor)"/>
+
+  <!-- Heather patches (midground) -->
+  <g opacity="0.95">
+    <g class="sway2" transform="translate(70,420)">
+      <path d="M0,120 C40,70 80,95 120,50 C155,12 210,32 240,0 C220,70 200,100 170,130 C120,180 60,160 0,190 Z"
+            fill="#2b5a30" opacity="0.55"/>
+      <g opacity="0.85">
+        <circle cx="60" cy="88" r="12" fill="url(#heatherBloom)"/>
+        <circle cx="92" cy="74" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="120" cy="58" r="11" fill="url(#heatherBloom)"/>
+        <circle cx="150" cy="78" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="170" cy="52" r="12" fill="url(#heatherBloom)"/>
+      </g>
+    </g>
+
+    <g class="sway1" transform="translate(470,430)">
+      <path d="M0,140 C55,95 95,110 140,70 C180,35 220,55 260,12 C240,82 220,120 190,150 C140,205 60,185 0,215 Z"
+            fill="#2a5a2f" opacity="0.55"/>
+      <g opacity="0.85">
+        <circle cx="70" cy="108" r="12" fill="url(#heatherBloom)"/>
+        <circle cx="105" cy="92" r="11" fill="url(#heatherBloom)"/>
+        <circle cx="140" cy="78" r="12" fill="url(#heatherBloom)"/>
+        <circle cx="175" cy="100" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="205" cy="72" r="12" fill="url(#heatherBloom)"/>
+      </g>
+    </g>
+
+    <g class="sway3" transform="translate(250,455)">
+      <path d="M0,120 C45,80 80,90 115,55 C150,25 185,42 220,10 C205,70 185,96 160,120 C120,160 55,150 0,175 Z"
+            fill="#28562d" opacity="0.55"/>
+      <g opacity="0.85">
+        <circle cx="55" cy="92" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="85" cy="78" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="118" cy="68" r="10" fill="url(#heatherBloom)"/>
+        <circle cx="148" cy="86" r="9" fill="url(#heatherBloom)"/>
+        <circle cx="172" cy="60" r="10" fill="url(#heatherBloom)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Chase scene: gamekeeper ahead, haggis behind -->
+  <g class="runGroup" filter="url(#softShadow)">
+    <!-- Place both on same baseline with slight offset -->
+    <g transform="translate(0,0)">
+      <!-- Gamekeeper -->
+      <g transform="translate(470,340)" class="bob">
+        <!-- Shadow on ground -->
+        <ellipse cx="0" cy="220" rx="34" ry="10" fill="#000" opacity="0.18"/>
+        <g transform="translate(0,180)">
+          <!-- Legs -->
+          <g transform="translate(-6,56)">
+            <g class="legA" transform="translate(-8,0)">
+              <path d="M0,0 C-6,18 -8,34 -5,55" stroke="#3a2a1f" stroke-width="10" stroke-linecap="round"/>
+              <path d="M-6,54 C-12,60 -18,63 -22,63" stroke="#1e1e1e" stroke-width="10" stroke-linecap="round"/>
+            </g>
+            <g class="legB" transform="translate(18,0)">
+              <path d="M0,0 C6,18 10,34 10,55" stroke="#3a2a1f" stroke-width="10" stroke-linecap="round"/>
+              <path d="M10,54 C14,60 20,63 26,63" stroke="#1e1e1e" stroke-width="10" stroke-linecap="round"/>
+            </g>
+          </g>
+
+          <!-- Torso (tweed jacket) -->
+          <path d="M-30,28 C-34,4 -18,-8 0,-8 C18,-8 34,4 30,28 C26,50 18,62 0,62 C-18,62 -26,50 -30,28 Z"
+                fill="#6b5b3f" stroke="#4b3f2c" stroke-width="2"/>
+          <!-- Shirt + tie -->
+          <path d="M-10,6 C-6,0 -3,-4 0,-4 C3,-4 6,0 10,6 L6,30 L0,38 L-6,30 Z"
+                fill="#e9efe8" opacity="0.95"/>
+          <path d="M0,10 L8,26 L0,34 L-8,26 Z" fill="#2f3d6e" opacity="0.9"/>
+
+          <!-- Arms -->
+          <g transform="translate(-28,26)" class="armA">
+            <path d="M0,0 C-18,10 -22,24 -18,38" stroke="#6b5b3f" stroke-width="10" stroke-linecap="round"/>
+            <path d="M-18,38 C-12,44 -6,46 0,44" stroke="#e2c3a6" stroke-width="9" stroke-linecap="round"/>
+          </g>
+          <g transform="translate(28,26)" class="armB">
+            <path d="M0,0 C18,10 22,24 18,38" stroke="#6b5b3f" stroke-width="10" stroke-linecap="round"/>
+            <path d="M18,38 C12,44 6,46 0,44" stroke="#e2c3a6" stroke-width="9" stroke-linecap="round"/>
+          </g>
+
+          <!-- Head -->
+          <g transform="translate(0,0)">
+            <ellipse cx="0" cy="-22" rx="18" ry="22" fill="#e2c3a6" stroke="#caa78c" stroke-width="1.5"/>
+            <!-- Red hair -->
+            <path d="M-18,-30 C-10,-46 10,-46 18,-30 C18,-15 12,-12 0,-12 C-12,-12 -18,-15 -18,-30 Z"
+                  fill="#d14b2a"/>
+            <path d="M-18,-26 C-10,-38 10,-38 18,-26" fill="none" stroke="#c33f22" stroke-width="2" opacity="0.7"/>
+
+            <!-- Eyes (blink) -->
+            <g class="blink" transform="translate(0,0)" style="transform-origin: 0px -22px;">
+              <ellipse cx="-6" cy="-22" rx="3" ry="2.2" fill="#1a1a1a"/>
+              <ellipse cx="6" cy="-22" rx="3" ry="2.2" fill="#1a1a1a"/>
+            </g>
+
+            <!-- Brows -->
+            <path d="M-11,-28 C-8,-30 -5,-30 -2,-28" fill="none" stroke="#7a2a18" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2,-28 C5,-30 8,-30 11,-28" fill="none" stroke="#7a2a18" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Nose -->
+            <path d="M0,-20 C-2,-14 -2,-12 0,-10" fill="none" stroke="#caa78c" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Mouth (worried) -->
+            <path d="M-7,-6 C-2,-2 2,-2 7,-6" fill="none" stroke="#7b3a2c" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Hat -->
+            <path d="M-22,-38 C-6,-54 6,-54 22,-38 L18,-34 C6,-44 -6,-44 -18,-34 Z"
+                  fill="#3a3e46"/>
+            <path d="M-26,-34 C-8,-28 8,-28 26,-34" stroke="#2b2e34" stroke-width="6" stroke-linecap="round"/>
+          </g>
+
+          <!-- Kilt -->
+          <g transform="translate(0,64)">
+            <path d="M-34,0 C-26,30 -18,54 0,54 C18,54 26,30 34,0 Z"
+                  fill="#2b5c5a" stroke="#1b3b3a" stroke-width="2"/>
+            <!-- Tartan lines -->
+            <path d="M-28,6 L28,6 M-30,18 L30,18 M-32,30 L32,30 M-28,42 L28,42"
+                  stroke="#17312f" stroke-width="2" opacity="0.65"/>
+            <path d="M-18,0 L-18,54 M0,0 L0,54 M18,0 L18,54"
+                  stroke="#0e2322" stroke-width="2" opacity="0.6"/>
+          </g>
+
+          <!-- Sporran -->
+          <g transform="translate(0,122)">
+            <path d="M-10,0 C-16,8 -16,22 -10,32 C-5,38 5,38 10,32 C16,22 16,8 10,0 C6,-6 -6,-6 -10,0 Z"
+                  fill="#2a1d16" stroke="#1a120e" stroke-width="2"/>
+            <circle cx="-4" cy="16" r="2" fill="#d6c08a"/>
+            <circle cx="4" cy="16" r="2" fill="#d6c08a"/>
+          </g>
+
+          <!-- Simple boot tops -->
+          <path d="M-30,168 C-24,160 -14,160 -8,168" fill="none" stroke="#1b1b1b" stroke-width="6" stroke-linecap="round"/>
+          <path d="M8,168 C14,160 24,160 30,168" fill="none" stroke="#1b1b1b" stroke-width="6" stroke-linecap="round"/>
+        </g>
+      </g>
+
+      <!-- Haggis -->
+      <g transform="translate(360,420)" class="bob">
+        <!-- Shadow -->
+        <ellipse cx="0" cy="140" rx="42" ry="12" fill="#000" opacity="0.18"/>
+        <g class="wobble" transform="translate(0,92)">
+          <!-- Body -->
+          <path d="M-55,24 C-55,-12 -22,-40 0,-40 C22,-40 55,-12 55,24 C55,56 30,78 0,78 C-30,78 -55,56 -55,24 Z"
+                fill="#8b6a4b" stroke="#6d513a" stroke-width="3"/>
+          <!-- Texture lines -->
+          <path d="M-35,-10 C-20,-2 -10,10 0,18 C10,26 22,34 35,44" fill="none" stroke="#7a5c42" stroke-width="2" opacity="0.75"/>
+          <path d="M-38,18 C-18,16 -6,26 8,38 C18,46 28,56 40,62" fill="none" stroke="#7a5c42" stroke-width="2" opacity="0.6"/>
+
+          <!-- Face -->
+          <g transform="translate(0,12)">
+            <ellipse cx="-16" cy="8" rx="6" ry="7" fill="#f3efe6" opacity="0.65"/>
+            <ellipse cx="16" cy="8" rx="6" ry="7" fill="#f3efe6" opacity="0.65"/>
+            <circle cx="-16" cy="8" r="2.2" fill="#1a1a1a"/>
+            <circle cx="16" cy="8" r="2.2" fill="#1a1a1a"/>
+            <path d="M-8,26 C-2,34 2,34 8,26" fill="none" stroke="#3b2417" stroke-width="3" stroke-linecap="round"/>
+            <path d="M-22,0 C-18,-4 -14,-4 -10,0" fill="none" stroke="#3b2417" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10,0 C14,-4 18,-4 22,0" fill="none" stroke="#3b2417" stroke-width="2" stroke-linecap="round"/>
+          </g>
+
+          <!-- Legs (short, comical) -->
+          <g transform="translate(0,74)">
+            <g class="legA" transform="translate(-24,0)">
+              <path d="M0,0 C-2,10 -2,20 2,28" stroke="#5b432f" stroke-width="10" stroke-linecap="round"/>
+              <path d="M2,28 C-6,32 -12,34 -18,34" stroke="#2b2017" stroke-width="10" stroke-linecap="round"/>
+            </g>
+            <g class="legB" transform="translate(24,0)">
+              <path d="M0,0 C2,10 2,20 -2,28" stroke="#5b432f" stroke-width="10" stroke-linecap="round"/>
+              <path d="M-2,28 C6,32 12,34 18,34" stroke="#2b2017" stroke-width="10" stroke-linecap="round"/>
+            </g>
+          </g>
+
+          <!-- Tail (little knot) -->
+          <g transform="translate(-52,30)">
+            <path d="M0,0 C-12,-4 -16,8 -6,14 C-2,16 4,14 8,10" fill="none" stroke="#6d513a" stroke-width="5" stroke-linecap="round"/>
+          </g>
+
+          <!-- Small "steam" puffs to imply frantic chase -->
+          <g opacity="0.55">
+            <circle cx="62" cy="-12" r="6" fill="#ffffff">
+              <animate attributeName="cy" values="-10;-22;-10" dur="0.9s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.6;0.25;0.6" dur="0.9s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="74" cy="0" r="4" fill="#ffffff">
+              <animate attributeName="cy" values="2;-10;2" dur="0.9s" begin="0.15s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.55;0.2;0.55" dur="0.9s" begin="0.15s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Foreground heather (for depth) -->
+  <g opacity="0.95">
+    <g class="sway1" transform="translate(0,470)">
+      <path d="M0,130 C90,70 170,110 250,55 C315,10 390,44 470,0 C530,34 610,22 800,70 L800,190 L0,190 Z"
+            fill="#1f4a27" opacity="0.65"/>
+      <g opacity="0.92">
+        <!-- repeated blooms -->
+        <g>
+          <circle cx="70" cy="86" r="13" fill="url(#heatherBloom)"/>
+          <circle cx="110" cy="72" r="11" fill="url(#heatherBloom)"/>
+          <circle cx="150" cy="92" r="12" fill="url(#heatherBloom)"/>
+          <circle cx="200" cy="70" r="13" fill="url(#heatherBloom)"/>
+          <circle cx="250" cy="88" r="12" fill="url(#heatherBloom)"/>
+          <circle cx="310" cy="64" r="13" fill="url(#heatherBloom)"/>
+          <circle cx="360" cy="90" r="12" fill="url(#heatherBloom)"/>
+          <circle cx="420" cy="72" r="13" fill="url(#heatherBloom)"/>
+          <circle cx="500" cy="88" r="12" fill="url(#heatherBloom)"/>
+          <circle cx="580" cy="64" r="13" fill="url(#heatherBloom)"/>
+          <circle cx="650" cy="88" r="12" fill="url(#heatherBloom)"/>
+          <circle cx="720" cy="74" r="13" fill="url(#heatherBloom)"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Subtle vignette -->
+  <rect x="-20" y="-20" width="840" height="640" fill="none" stroke="#000" stroke-width="60" opacity="0.08"/>
+</svg>

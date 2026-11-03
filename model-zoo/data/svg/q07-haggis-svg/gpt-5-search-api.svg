@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <style>
+    .moor { fill: #556B2F; }
+    .heather { fill: #8A2BE2; }
+    .haggis-body { fill: #8B4513; }
+    .haggis-leg { fill: #654321; }
+    .keeper-body { fill: #228B22; }
+    .keeper-pants { fill: #2E8B57; }
+    .keeper-hair { fill: #FF4500; }
+    .keeper-skin { fill: #FFE4C4; }
+    .keeper-boot { fill: #654321; }
+    .leg { fill: #000; }
+    /* Animations */
+    @keyframes keeper-run {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(500px); }
+    }
+    @keyframes haggis-run {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(450px); }
+    }
+    @keyframes leg-move {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(20deg); }
+      50% { transform: rotate(0deg); }
+      75% { transform: rotate(-20deg); }
+      100% { transform: rotate(0deg); }
+    }
+  </style>
+  <!-- Moor background -->
+  <rect width="800" height="600" class="moor"/>
+  <!-- Heather patches -->
+  <g>
+    <ellipse cx="150" cy="500" rx="200" ry="80" class="heather"/>
+    <ellipse cx="450" cy="520" rx="250" ry="100" class="heather"/>
+  </g>
+  <!-- Gamekeeper group -->
+  <g id="keeper" transform="translate(100,350)" style="animation: keeper-run 4s linear infinite;">
+    <!-- Body -->
+    <rect x="0" y="0" width="30" height="60" class="keeper-body"/>
+    <!-- Pants -->
+    <rect x="0" y="60" width="30" height="40" class="keeper-pants"/>
+    <!-- Boots -->
+    <rect x="0" y="100" width="12" height="20" class="keeper-boot"/>
+    <rect x="18" y="100" width="12" height="20" class="keeper-boot"/>
+    <!-- Head -->
+    <circle cx="15" cy="-15" r="15" class="keeper-skin"/>
+    <!-- Hair -->
+    <path d="M0,-25 Q15,-45 30,-25 Z" class="keeper-hair"/>
+    <!-- Arms -->
+    <line x1="0" y1="20" x2="-20" y2="40" stroke="#000" stroke-width="4"/>
+    <line x1="30" y1="20" x2="50" y2="40" stroke="#000" stroke-width="4"/>
+    <!-- Legs -->
+    <g transform="translate(5,100)" class="keeper-leg1">
+      <rect x="0" y="0" width="8" height="30" class="leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite;"/>
+    </g>
+    <g transform="translate(17,100)" class="keeper-leg2" >
+      <rect x="0" y="0" width="8" height="30" class="leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite offset(0.25);"/>
+    </g>
+  </g>
+  <!-- Haggis group -->
+  <g id="haggis" transform="translate(50,400)" style="animation: haggis-run 4s linear infinite;">
+    <!-- Body oval -->
+    <ellipse cx="0" cy="0" rx="50" ry="30" class="haggis-body"/>
+    <!-- Legs -->
+    <g transform="translate(-40,10)" class="haggis-leg1">
+      <rect x="0" y="0" width="10" height="25" class="haggis-leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite;"/>
+    </g>
+    <g transform="translate(-15,10)" class="haggis-leg2">
+      <rect x="0" y="0" width="10" height="25" class="haggis-leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite offset(0.25);"/>
+    </g>
+    <g transform="translate(15,10)" class="haggis-leg3">
+      <rect x="0" y="0" width="10" height="25" class="haggis-leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite offset(0.5);"/>
+    </g>
+    <g transform="translate(40,10)" class="haggis-leg4">
+      <rect x="0" y="0" width="10" height="25" class="haggis-leg" style="transform-origin: top; animation: leg-move 0.5s ease-in-out infinite offset(0.75);"/>
+    </g>
+  </g>
+</svg>

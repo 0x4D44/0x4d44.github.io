@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">A haggis chasing a Scottish gamekeeper across a heather moor</title>
+  <desc id="desc">A looping animated scene with a shaggy haggis running after a red-haired gamekeeper beneath drifting clouds.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc8dc"/>
+      <stop offset="0.62" stop-color="#c5dfd2"/>
+      <stop offset="1" stop-color="#e1d5b2"/>
+    </linearGradient>
+    <linearGradient id="hillBack" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#697b76"/>
+      <stop offset="1" stop-color="#4b5c54"/>
+    </linearGradient>
+    <linearGradient id="hillMid" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#596d5d"/>
+      <stop offset="1" stop-color="#354a3e"/>
+    </linearGradient>
+    <linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#5d6848"/>
+      <stop offset="1" stop-color="#273d32"/>
+    </linearGradient>
+    <linearGradient id="haggisFur" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#bc9668"/>
+      <stop offset="0.55" stop-color="#8e6847"/>
+      <stop offset="1" stop-color="#614732"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <g id="heather">
+      <path d="M0 20 Q2 4 5 0 M4 20 Q9 7 13 3 M7 19 Q15 10 19 8" fill="none" stroke="#754b78" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="5" cy="3" r="2.5" fill="#b277aa"/>
+      <circle cx="13" cy="6" r="2.2" fill="#9b6499"/>
+      <circle cx="18" cy="9" r="2" fill="#c083b5"/>
+      <path d="M0 20 Q9 16 20 20" fill="none" stroke="#354b35" stroke-width="3"/>
+    </g>
+    <g id="cloud">
+      <ellipse cx="38" cy="24" rx="38" ry="13" fill="#f5f4e8" opacity=".8"/>
+      <ellipse cx="15" cy="22" rx="18" ry="13" fill="#f5f4e8" opacity=".8"/>
+      <ellipse cx="62" cy="19" rx="25" ry="18" fill="#f5f4e8" opacity=".8"/>
+    </g>
+    <style>
+      .cloudFloat { animation: cloudFloat 25s linear infinite; }
+      .cloudFloat2 { animation: cloudFloat2 34s linear infinite; }
+      .haggisRun { animation: haggisRun 2.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+      .keeperRun { animation: keeperRun 2.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+      .legA { animation: legA .42s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: top center; }
+      .legB { animation: legB .42s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: top center; }
+      .armA { animation: armA .42s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: top center; }
+      .armB { animation: armB .42s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: top center; }
+      @keyframes cloudFloat { from { transform: translateX(-180px); } to { transform: translateX(820px); } }
+      @keyframes cloudFloat2 { from { transform: translateX(820px); } to { transform: translateX(-220px); } }
+      @keyframes haggisRun {
+        0%,100% { transform: translate(0,0) rotate(-2deg); }
+        50% { transform: translate(72px,-7px) rotate(3deg); }
+      }
+      @keyframes keeperRun {
+        0%,100% { transform: translate(0,0) rotate(1deg); }
+        50% { transform: translate(34px,-9px) rotate(-2deg); }
+      }
+      @keyframes legA { from { transform: rotate(28deg); } to { transform: rotate(-30deg); } }
+      @keyframes legB { from { transform: rotate(-30deg); } to { transform: rotate(28deg); } }
+      @keyframes armA { from { transform: rotate(-32deg); } to { transform: rotate(26deg); } }
+      @keyframes armB { from { transform: rotate(25deg); } to { transform: rotate(-34deg); } }
+    </style>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="676" cy="99" r="42" fill="#f8eab6" opacity=".72"/>
+  <g class="cloudFloat" opacity=".85">
+    <use href="#cloud" x="30" y="92"/>
+  </g>
+  <g class="cloudFloat2" opacity=".58">
+    <use href="#cloud" x="500" y="150" transform="scale(.72)"/>
+  </g>
+
+  <path d="M0 310 Q105 230 215 295 T405 277 T605 290 T800 244 L800 440 L0 440Z" fill="url(#hillBack)"/>
+  <path d="M0 359 Q120 285 250 345 T480 321 T680 348 T800 310 L800 470 L0 470Z" fill="url(#hillMid)"/>
+  <path d="M0 413 Q104 369 215 405 T438 389 T645 406 T800 380 L800 600 L0 600Z" fill="url(#moor)"/>
+
+  <g opacity=".6" filter="url(#soft)">
+    <path d="M35 374 Q130 342 230 370 T420 363" fill="none" stroke="#a9b59a" stroke-width="10"/>
+    <path d="M510 362 Q645 331 780 360" fill="none" stroke="#a9b59a" stroke-width="8"/>
+  </g>
+
+  <g opacity=".9">
+    <use href="#heather" x="32" y="410" transform="scale(1.2)"/>
+    <use href="#heather" x="102" y="448" transform="scale(1.4)"/>
+    <use href="#heather" x="173" y="405" transform="scale(.9)"/>
+    <use href="#heather" x="274" y="467" transform="scale(1.35)"/>
+    <use href="#heather" x="354" y="426" transform="scale(1.1)"/>
+    <use href="#heather" x="438" y="458" transform="scale(1.5)"/>
+    <use href="#heather" x="538" y="414" transform="scale(1.15)"/>
+    <use href="#heather" x="631" y="462" transform="scale(1.45)"/>
+    <use href="#heather" x="733" y="414" transform="scale(1.2)"/>
+    <use href="#heather" x="52" y="520" transform="scale(1.5)"/>
+    <use href="#heather" x="156" y="551" transform="scale(1.15)"/>
+    <use href="#heather" x="334" y="527" transform="scale(1.3)"/>
+    <use href="#heather" x="481" y="548" transform="scale(1.25)"/>
+    <use href="#heather" x="690" y="532" transform="scale(1.35)"/>
+  </g>
+
+  <path d="M0 502 Q140 470 270 500 T540 488 T800 507 L800 600 L0 600Z" fill="#263a2d" opacity=".72"/>
+  <path d="M0 570 Q150 530 310 565 T610 555 T800 570" fill="none" stroke="#172a24" stroke-width="9" opacity=".55"/>
+
+  <g class="haggisRun" transform="translate(165 382)">
+    <ellipse cx="76" cy="92" rx="82" ry="13" fill="#17261f" opacity=".35"/>
+    <g class="legA">
+      <path d="M39 103 Q34 127 23 143" fill="none" stroke="#5a402e" stroke-width="13" stroke-linecap="round"/>
+      <path d="M16 145 Q29 149 39 145" fill="none" stroke="#30281f" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <g class="legB">
+      <path d="M105 103 Q116 128 128 139" fill="none" stroke="#5a402e" stroke-width="13" stroke-linecap="round"/>
+      <path d="M121 142 Q135 145 145 140" fill="none" stroke="#30281f" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <path d="M16 78 Q14 38 49 25 Q91 7 133 36 Q157 53 145 89 Q132 116 92 119 Q46 122 16 78Z" fill="url(#haggisFur)" stroke="#4b392b" stroke-width="4"/>
+    <path d="M28 43 l-12 -13 M40 31 l-5 -18 M55 25 l-1 -18 M72 20 l5 -17 M91 22 l12 -16 M111 29 l18 -12 M128 43 l20 -4 M139 61 l20 5 M137 81 l18 13 M122 103 l14 15 M101 113 l6 18 M76 116 l-3 18 M52 111 l-11 16 M30 96 l-17 10" fill="none" stroke="#765438" stroke-width="6" stroke-linecap="round"/>
+    <path d="M111 48 Q150 40 166 61 Q178 78 157 93 Q136 105 111 91Z" fill="#a77b52" stroke="#4b392b" stroke-width="4"/>
+    <ellipse cx="153" cy="68" rx="5" ry="4" fill="#171714"/>
+    <circle cx="143" cy="59" r="3" fill="#fff6d0"/>
+    <path d="M164 75 q8 7 0 14" fill="none" stroke="#422d25" stroke-width="3" stroke-linecap="round"/>
+    <path d="M152 96 Q143 106 132 106" fill="none" stroke="#5a382d" stroke-width="4" stroke-linecap="round"/>
+    <path d="M18 61 Q-7 48 -15 67 Q2 76 19 78" fill="none" stroke="#765438" stroke-width="9" stroke-linecap="round"/>
+    <path d="M66 106 Q73 123 88 129" fill="none" stroke="#5d402e" stroke-width="9" stroke-linecap="round"/>
+  </g>
+
+  <g class="keeperRun" transform="translate(520 250)">
+    <ellipse cx="67" cy="286" rx="48" ry="10" fill="#17261f" opacity=".35"/>
+    <path d="M49 211 L43 276" stroke="#303c3b" stroke-width="13" stroke-linecap="round"/>
+    <path d="M82 211 L103 271" stroke="#303c3b" stroke-width="13" stroke-linecap="round"/>
+    <g class="legA">
+      <path d="M48 268 L27 306" stroke="#3a332d" stroke-width="10" stroke-linecap="round"/>
+      <path d="M17 309 Q31 315 43 307" fill="none" stroke="#201f1c" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <g class="legB">
+      <path d="M99 264 L128 294" stroke="#3a332d" stroke-width="10" stroke-linecap="round"/>
+      <path d="M124 298 Q138 302 148 294" fill="none" stroke="#201f1c" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <path d="M35 135 Q68 123 99 143 L108 216 Q74 232 37 215Z" fill="#526957" stroke="#263e35" stroke-width="4"/>
+    <path d="M38 202 Q70 218 106 203 L113 237 Q74 249 31 234Z" fill="#9c4f53" stroke="#382e2e" stroke-width="3"/>
+    <path d="M43 222 L102 224 M48 235 L95 237" stroke="#e2bf83" stroke-width="4"/>
+    <g class="armA">
+      <path d="M43 147 Q20 171 12 195" fill="none" stroke="#526957" stroke-width="13" stroke-linecap="round"/>
+      <circle cx="11" cy="197" r="7" fill="#d1936a"/>
+    </g>
+    <g class="armB">
+      <path d="M96 149 Q117 164 132 179" fill="none" stroke="#526957" stroke-width="13" stroke-linecap="round"/>
+      <circle cx="134" cy="181" r="7" fill="#d1936a"/>
+    </g>
+    <path d="M32 153 L18 87" stroke="#49382e" stroke-width="5"/>
+    <path d="M18 88 L135 215" stroke="#49382e" stroke-width="5"/>
+    <path d="M14 83 Q39 73 57 87" fill="none" stroke="#2c322e" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="70" cy="94" r="31" fill="#d1936a" stroke="#5a3b30" stroke-width="4"/>
+    <path d="M43 89 Q47 52 74 48 Q103 51 103 88 Q91 74 74 75 Q57 74 43 89Z" fill="#bd4d32"/>
+    <path d="M41 86 Q67 72 102 86 L106 69 Q75 48 41 68Z" fill="#29352f"/>
+    <path d="M32 68 Q75 49 113 69" fill="none" stroke="#202a27" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="80" cy="97" r="3.5" fill="#30231f"/>
+    <path d="M91 112 Q81 119 72 112" fill="none" stroke="#733d35" stroke-width="3" stroke-linecap="round"/>
+    <path d="M45 94 Q31 100 40 114" fill="none" stroke="#bd4d32" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <g opacity=".7">
+    <path d="M208 514 q12 -19 23 0 M220 514 q12 -25 24 0 M590 503 q10 -20 22 0 M603 503 q13 -24 26 0" fill="none" stroke="#a7679b" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
