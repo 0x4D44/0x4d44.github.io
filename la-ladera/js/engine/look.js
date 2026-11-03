@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { createSky } from './sky.js';
 import { installShaderPatches, lookUniforms } from './shaderpatch.js';
 import { clamp } from '../core/util.js';
-import { setRoomHour } from './windowroom.js';
+import { setRoomHour, syncRoomLooks } from './windowroom.js';
 
 const D2R = Math.PI / 180;
 /** La Ladera sits near 6 deg N (Andean Colombia); declination -13 deg = late October. */
@@ -225,6 +225,7 @@ export class Look {
     if (Math.abs(st.indoor - target) > 1e-3) { st.indoor += (target - st.indoor) * Math.min(1, dt * 2.5); this._applyLights(); }
     else if (st.indoor !== target) { st.indoor = target; this._applyLights(); }
     if (this.envDirty && (this.time - this.envAt > (this.timeScale ? 2.5 : 0) || this.envAt < 0)) this.refreshEnv();
+    if (ctx.roomSlots && this.time - (this._looksAt ?? -9) > 1) { this._looksAt = this.time; syncRoomLooks(ctx); }   // lit windows borrow their rooms' paint and lamp as rooms are furnished (engine/windowroom.js, R1-211)
     this.sky.uniforms.uTime.value = this.time;
     this.sky.mesh.position.copy(cam.position);
 

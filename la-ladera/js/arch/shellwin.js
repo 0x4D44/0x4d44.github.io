@@ -1,6 +1,6 @@
 // Windows (frame, glass, iron grille, sill, painted surround) and the static parts of doors (casings, shutter housings, entry steps).
 // The openings themselves (reveals) are cut by shell.js; door LEAVES are live objects in doors.js.
-import { lin, mulc, mixc, qd, hash01, OUT, wbox, bar, triFacing, archPts, roomSeed } from './mb.js';
+import { lin, mulc, mixc, qd, hash01, OUT, wbox, bar, triFacing, archPts, roomSeed, roomSlot, roomSize } from './mb.js';
 import { shutterFrame } from './shutters.js';
 import { buildReja, rejaPattern } from './reja.js';
 
@@ -59,9 +59,10 @@ export function buildWindows(G) {
     const gm = lit ? 'window_lit' : 'glass';
     // A lit pane shows a room behind the glass at night (engine/windowroom.js, R1-104). It says so in its colour: ( 2 + its evening (0..63) + the room's seed, the glass's width (negative when the quad's
     // FRONT face is the inside), its height ); and in its uv: 0..1 across the whole window and up it, as the viewer in the street sees it, so the two sashes of one window show one room. Along +u the
-    // viewer outside sees the wall run left to right on the front and the left sides and right to left on the back and the right ones.
+    // viewer outside sees the wall run left to right on the front and the left sides and right to left on the back and the right ones. The height also carries the room's slot in the room-look
+    // table (arch/mb.js `roomSlot`), so the card paints the real room's walls and lamp once it is furnished (R1-211).
     const rw = gu1 - gu0, rh = gy1 - gy0, flip = dir === 'x' ? s < 0 : s > 0, frontIsOut = dir === 'x' ? s > 0 : s < 0;
-    const roomCol = [roomSeed(rk(22), rk(23), hv(21)), (frontIsOut ? 1 : -1) * rw, rh], roomUv = (u, y) => [flip ? 1 - (u - gu0) / rw : (u - gu0) / rw, (y - gy0) / rh];
+    const roomCol = lit ? [roomSeed(rk(22), rk(23), hv(21)), (frontIsOut ? 1 : -1) * rw, roomSize(rh, roomSlot(G.ctx, bp.id, w.room))] : null, roomUv = (u, y) => [flip ? 1 - (u - gu0) / rw : (u - gu0) / rw, (y - gy0) / rh];
     const pane = (a, c, p) => {                                               // a glass pane between u=a..c at plane p (an arched head stops the plain pane at the springing; the arch is filled below)
       const P = (u, y) => (dir === 'x' ? [u, y, p] : [p, y, u]), top = rise ? ys : gy1;
       b.quad(gm, P(a, gy0), P(c, gy0), P(c, top), P(a, top), lit ? { col: roomCol, uv: [...roomUv(a, gy0), ...roomUv(c, gy0), ...roomUv(c, top), ...roomUv(a, top)] } : { col: [1, 1, 1] });
