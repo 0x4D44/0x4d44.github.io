@@ -15,9 +15,25 @@ const LEAN_SLIDE = 0.9;               // metres: how far a lean spot may slide a
 export class Spots {
   constructor({ plan = null, anchors = [], buildings = new Map() } = {}) {
     this.byKind = new Map(); this.all = []; this.claims = new Map(); this.buildings = buildings; this.lots = new Map((plan?.lots ?? []).map((l) => [l.id, l]));
+    this._seen = new Set();
     for (const p of plan?.pois ?? []) this._add({ id: p.id, src: 'poi', kind: p.kind, x: p.x, y: p.y ?? 0, z: p.z, ry: p.ry ?? 0, tags: p.tags ?? [], building: p.building ?? null });
-    for (const a of anchors ?? []) this._add({ id: a.id, src: 'anchor', kind: a.kind, x: a.x, y: a.y ?? 0, z: a.z, ry: a.ry ?? 0, tags: a.tags ?? [], building: a.building ?? null, room: a.room ?? null, seatH: a.seatH, item: a.item ?? null });
+    this.addAnchors(anchors);
     this._ent = new Map();
+  }
+
+  /**
+   * Anchors the registry has not seen yet (a lazy boot furnishes the buildings one at a time, after the people were put in: js/interiors/lazy.js): each anchor is taken once, whichever call brings it,
+   * so the list can be given again whole. Returns the spots made.
+   */
+  addAnchors(anchors) {
+    let n = 0;
+    for (const a of anchors ?? []) {
+      if (this._seen.has(a)) continue;
+      this._seen.add(a);
+      this._add({ id: a.id, src: 'anchor', kind: a.kind, x: a.x, y: a.y ?? 0, z: a.z, ry: a.ry ?? 0, tags: a.tags ?? [], building: a.building ?? null, room: a.room ?? null, seatH: a.seatH, item: a.item ?? null });
+      n++;
+    }
+    return n;
   }
 
   _add(s) {

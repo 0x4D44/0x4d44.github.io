@@ -5,6 +5,8 @@
 // spawn  the player stands on the ground at the plan's spawn and can walk uphill
 // doors  every building can be entered through every entrance by walking: aim at the door, press E when it is closed, walk in (real colliders)
 // talk   people can be aimed at, E starts a Spanish conversation (subtitle + the line "spoken" through the simulated speech), a reply works, leaving unlocks
+// The page boots EAGER here (tests/chrome.mjs adds `eager=1` to a URL that names no road, so every house is furnished and drawn when the tour starts). `LADERA_BOOT=lazy` tours the shipped boot instead
+// (the lazy default, settled before the first check: `__ladera.settle()`).
 import './nice.mjs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';

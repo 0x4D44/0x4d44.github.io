@@ -1,12 +1,14 @@
-// LAZY INTERIORS (A1, js/interiors/lazy.js, `?lazy=1`) in the REAL page: nothing here calls ensure() or drain() except where the test is about exactly that. The boot ends at the playable
-// milestone with no interior made; the interiors come as the player nears them (in slices of a frame, the nearest first), a door waits for its house, a teleport lands in a furnished room, and
-// once everything is made the barrio is the one an eager boot makes. The eager boot stays the default (`?lazy=1` is the only way in).
+// LAZY INTERIORS (A1, js/interiors/lazy.js, the default boot; `?lazy=1` still says it outright) in the REAL page: nothing here calls ensure() or drain() except where the test is about exactly that. The boot ends at the
+// playable milestone with no interior made; the interiors come as the player nears them (in slices of a frame, the nearest first), a door waits for its house, a teleport lands in a furnished room, and
+// once everything is made the barrio is the one an eager boot makes. The lazy boot is the DEFAULT (a page that says nothing about its boot takes it: the last test); `?eager=1` (or `?lazy=0`) is the full boot,
+// which the tests before it compare against.
 // Quiet box: the browser comes only from tests/chrome.mjs (headless, simulated pointer lock, speech recorded). ?manual: no animation loop, every frame is a step() here.
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-lazy-page.test.mjs
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { launch } from './chrome.mjs';
+import { launch, cpuBetween } from './chrome.mjs';
 
+const CALL_CEILING_MS = 250;     // what one call of a frame may do in work while the interiors stream (test 2): a whole interior in one call is 150-400 ms and more; a call that took this long of the clock is looked into, and held to this much CPU
 let b, page, lazyFinal = null, lazyContents = null;
 const kit = (expr, timeout) => page.eval(`(async () => JSON.stringify(await (async () => { const K = window.__k; ${expr} })()))()`, timeout).then(JSON.parse);
 
@@ -90,6 +92,7 @@ test('at the milestone no interior is made (only the chapel\'s furniture, which 
 });
 
 test('a house the player comes near is made before they reach it, in slices, the nearest first (and no step was a whole interior)', async (t) => {
+  const sampler = b.cpuSampler(25);                                                                                       // (the page's main thread's CPU, while the loop below runs: the last assertion)
   const r = await kit(`
     const L = __ladera, c = L.ctx, m = c.interiors; await m.whenPacks();
     const T = K.farthest(); if (!T) return { skip: 'no far building' };
@@ -99,24 +102,34 @@ test('a house the player comes near is made before they reach it, in slices, the
     L.teleport(spot[0], spot[1]); const p0 = { ...c.player.s };
     const nearB = [...c.buildings.values()].filter((bp) => K.gap(bp, spot[0], spot[1]) <= m.o.NEAR_M), near = new Set(nearB.map((bp) => bp.id));
     const was = [...near].filter((id) => m.ready(id)), when = new Map();
-    const calls = []; let frames = -1;
-    for (let i = 0; i < 8000 && when.size < near.size; i++) {
-      const t0 = performance.now(); L.step(1); calls.push(performance.now() - t0); if (i % 2 === 0) await K.sleep(2); frames = i;
+    const calls = [], slow = []; let frames = -1;                                                           // (slow: the calls that took the ceiling or more of the clock, with the epoch time they began at and what the JS heap did across them: a drop is a collection that ran inside)
+    const heap = () => (performance.memory ? performance.memory.usedJSHeapSize : 0);
+    const bpOf = (id) => c.buildings.get(id), shopOf = (bp) => !!bp.lot?.shop;
+    for (let i = 0; i < 16000 && when.size < near.size; i++) {                                              // (the shops of the whole barrio are furnished first: the houses of the radius come after them)
+      const h0 = heap(), t0 = performance.now(); L.step(1); const d = performance.now() - t0; calls.push(d); if (d >= ${CALL_CEILING_MS}) slow.push({ at: performance.timeOrigin + t0, ms: +d.toFixed(1), heapMB: +((heap() - h0) / 1e6).toFixed(1) });
+      if (i % 2 === 0) await K.sleep(2); frames = i;
       for (const id of near) if (!when.has(id) && m.ready(id)) when.set(id, i);
     }
-    for (let i = 0; i < 400; i++) { L.step(1); if (i % 2 === 0) await K.sleep(2); }                          // (and a little longer: what comes next is outside the radius)
+    // and a little longer, for what comes next, which is outside the radius: 400 frames at least, and until 14 houses beyond it have their data (how many steps a frame gets in is the box's: a starved renderer
+    // saw 10 of them in 400 frames where a quiet one sees 11-12, against the 10 asked below); a stream that has stopped is caught by the cap and the count below
+    const farHouses = () => dseq.filter((id) => !near.has(id) && !shopOf(bpOf(id))).length; let tail = 0;
+    for (; tail < 4000 && (tail < 400 || farHouses() < 14); tail++) { L.step(1); if (tail % 2 === 0) await K.sleep(2); }
     off(); off2();
     const p1 = c.player.s, moved = Math.hypot(p1.x - p0.x, p1.z - p0.z), gT = K.gap(T, spot[0], spot[1]);
-    const nearer = nearB.filter((bp) => K.gap(bp, spot[0], spot[1]) < gT - 0.01).map((bp) => bp.id);
+    const nearer = nearB.filter((bp) => K.gap(bp, spot[0], spot[1]) < gT - 0.01 && shopOf(bp) === shopOf(T)).map((bp) => bp.id);   // (the shops are furnished before the houses, wherever they stand: a house nearer than a shop waits for it)
     const behind = nearer.filter((id) => !was.includes(id) && when.get(id) > when.get(T.id) + 90);              // a nearer building made long after T (the warm-up may reorder a little; not by 1.5 s)
-    // the order of the DATA pass: every building of the radius whose data was not done comes before the first one outside it
-    const di = (list) => list.map((id) => dseq.indexOf(id)).filter((i) => i >= 0), dNear = di([...near]), dFar = dseq.map((id, i) => [id, i]).filter(([id]) => !near.has(id)).map(([, i]) => i);
+    // the order of the DATA pass (interiors/lazy.js _pick): what the player sees into (28 m), then every shop, then the houses of the radius, then the houses beyond it
+    const ringOf = (id) => K.gap(bpOf(id), spot[0], spot[1]) <= m.o.SEE_M;
+    const at = (pred) => dseq.map((id, i) => [id, i]).filter(([id]) => pred(id)).map(([, i]) => i), mx = (l) => (l.length ? Math.max(...l) : -1), mn = (l) => (l.length ? Math.min(...l) : -1);
+    const dShops = at((id) => shopOf(bpOf(id)) && !ringOf(id)), dNearH = at((id) => !shopOf(bpOf(id)) && near.has(id) && !ringOf(id)), dFarH = at((id) => !shopOf(bpOf(id)) && !near.has(id)), dFar = at((id) => !near.has(id));
     calls.sort((a, z) => a - z);
     return { T: T.id, gap: gT, ready: m.ready(T.id), frames, moved, ensured: m.stats.ensured - ensured0, late: m.stats.late - late0, nearN: near.size, wasN: was.length, built: when.size, nearerN: nearer.length, behind,
-      dataNear: dNear.length, dataFar: dFar.length, lastNearData: dNear.length ? Math.max(...dNear) : -1, firstFarData: dFar.length ? Math.min(...dFar) : -1,
+      dataShops: dShops.length, dataNearHouses: dNearH.length, dataFarHouses: dFarH.length, dataFar: dFar.length, lastShopData: mx(dShops), firstHouseData: mn([...dNearH, ...dFarH]), lastNearHouse: mx(dNearH), firstFarHouse: mn(dFarH),
       readyFar: seq.filter((id) => !near.has(id)).length, callMax: +calls[calls.length - 1].toFixed(1), callP95: +calls[Math.floor(calls.length * 0.95)].toFixed(1),
-      maxStepMs: +m.stats.maxStepMs.toFixed(1), slices: m.stats.slices - slices0, errors: L.state().errors };`, 240000);
+      maxStepMs: +m.stats.maxStepMs.toFixed(1), slices: m.stats.slices - slices0, slow, tail, errors: L.state().errors };`, 480000);
+  const cpu = await sampler.stop();
   if (r.skip) return t.skip(r.skip);                                                                                       // (the barrio has no such spot: nothing to say)
+  t.diagnostic(`${r.nearN} buildings within the radius made after ${r.frames} frames (${r.slices} slices); data events: ${r.dataShops} shops, ${r.dataNearHouses} houses of the radius, ${r.dataFarHouses} beyond it (after ${r.tail} frames more); longest call ${r.callMax} ms by the clock (p95 ${r.callP95} ms), the manager's longest step ${r.maxStepMs} ms`);
   assert.ok(r.gap > 35 && r.gap < 55, `the player stands ${r.gap.toFixed(0)} m from ${r.T}`);
   assert.equal(r.ready, true, `${r.T} is made and warm after ${r.frames} frames with the player standing still`);
   assert.equal(r.moved < 0.5, true, 'the player did not move: it was built ahead of them');
@@ -125,10 +138,19 @@ test('a house the player comes near is made before they reach it, in slices, the
   assert.equal(r.built, r.nearN, `every building within the radius is made and warm (${r.built} of ${r.nearN}; ${r.wasN} were before the teleport)`);
   assert.deepEqual(r.behind, [], 'no building nearer than the target was made long after it');
   assert.ok(r.dataFar > 0, 'the far data pass went on once the radius was done');
-  assert.ok(r.lastNearData < r.firstFarData, `the nearest first: the last building of the radius was furnished as number ${r.lastNearData} (${r.dataNear} of them), the first outside it as number ${r.firstFarData} (${r.dataFar} of them)`);
+  assert.ok(r.dataShops >= 5 && r.dataNearHouses >= 3 && r.dataFarHouses >= 10, `the spot has shops, houses of the radius and houses beyond it to tell apart: ${r.dataShops} / ${r.dataNearHouses} / ${r.dataFarHouses}`);
+  assert.ok(r.lastShopData < r.firstHouseData, `the street first: the last shop of the barrio was furnished as number ${r.lastShopData}, the first house outside the ring the player sees into as number ${r.firstHouseData} (its keeper comes in and its shutter goes up with the shop)`);
+  assert.ok(r.lastNearHouse < r.firstFarHouse, `the nearest first: the last house of the radius was furnished as number ${r.lastNearHouse} (${r.dataNearHouses} of them), the first house outside it as number ${r.firstFarHouse} (${r.dataFarHouses} of them)`);
   assert.equal(r.readyFar, 0, 'no interior outside the radius was drawn while the pass over the data was still going on');
   assert.ok(r.slices > 20, `${r.slices} slices of a frame did it`);
-  assert.ok(r.callMax < 250, `no call of a frame took ${r.callMax} ms (a whole interior in one call is 150-400 ms and more); p95 ${r.callP95} ms`);
+  // No step was a whole interior: no call of a frame did CALL_CEILING_MS of work. The clock alone cannot say it on a shared box: a renderer at idle priority is held for seconds while every core is busy (a call of 3.8 s that did 10 ms of
+  // work), so a call that took the ceiling or more of the clock is held to the CPU the page's main thread used while it ran (tests/chrome.mjs cpuSampler, cpuBetween: the thread's own cycles, so a collector or a compiler working on
+  // another thread of the renderer does not count; the process's count read 473 ms for a call in which no step ran for more than 50). Where that could not be read the clock decides. The reading is good to a few tens of ms (a call that
+  // blocks the thread is answered when it ends, so its CPU is read across it and a few ms of its neighbours). What was seen, and what fails it: dev/FEATURE-LAZY.md section 10, "Stalls, what they were".
+  const slow = r.slow.map((s) => ({ ...s, cpu: cpuBetween(cpu, s.at, s.at + s.ms) }));
+  if (slow.length) t.diagnostic(`${slow.length} call(s) took ${CALL_CEILING_MS} ms or more of the clock: ${slow.map((s) => `${s.ms} ms (${s.cpu == null ? 'CPU not read' : `${s.cpu.toFixed(0)} ms of CPU`}, heap ${s.heapMB >= 0 ? '+' : ''}${s.heapMB} MB)`).join(', ')}`);
+  const heavy = slow.filter((s) => s.cpu == null || s.cpu >= CALL_CEILING_MS);
+  assert.deepEqual(heavy, [], `no call of a frame did ${CALL_CEILING_MS} ms of work or more (a whole interior in one call is 150-400 ms and more; a negative heapMB is a collection that ran inside it); by the clock the longest took ${r.callMax} ms, p95 ${r.callP95} ms`);
   assert.equal(r.errors, 0);
 });
 
@@ -266,8 +288,8 @@ test('a second lazy boot, the player in a house in its first seconds: no contain
   assert.equal(lazyContents.orphans, 0, 'a paper or a find planned with no slot of its own');
 });
 
-test('the eager boot is the default and is unchanged: no queue, no manager, every interior made before the milestone, the same world the lazy boot settles to', async () => {
-  page = await b.open('la-ladera/index.html?autostart&manual&lazy=0');                  // (`lazy=0` says it outright: LADERA_LAZY=1 turns every page that does not name `lazy=` into a lazy one)
+test('the eager boot (`eager=1`) is unchanged: no queue, no manager, every interior made before the milestone, the same world the lazy boot settles to', async () => {
+  page = await b.open('la-ladera/index.html?autostart&manual&eager=1');                 // (it says so outright: a page that names neither `eager=` nor `lazy=` takes the road of the harness, tests/chrome.mjs)
   await page.fn(installKit);
   const e = await kit(`
     return { ...K.world(), staged: __ladera.ctx.staged === undefined, interiors: __ladera.ctx.interiors === undefined };`);
@@ -281,4 +303,24 @@ test('the eager boot is the default and is unchanged: no queue, no manager, ever
   const ec = await kit('return await K.contents();', 240000);
   assert.ok(lazyContents, 'the second lazy boot settled and woke its containers in the test before');
   assert.deepEqual(lazyContents, ec, 'the plan, the slots every paper and find lie in and what every drawer holds: the lazy barrio differs from the eager one');
+});
+
+test('a page that says nothing about its boot is the lazy one (the default, as shipped); `eager=1` and `lazy=0` are the full boot', async () => {
+  const road = async (query) => {                                                       // (two lots: a boot of a few seconds; `shipped`: the harness adds nothing to the URL)
+    await b.open(`la-ladera/index.html?${query}&lots=L00,L02`, { boot: 'shipped' });
+    return JSON.parse(await page.eval(`JSON.stringify((() => { const c = __ladera.ctx; return { lazy: !!c.opts.lazy, staged: c.staged !== undefined, interiors: c.interiors !== undefined,
+      furnished: [...c.buildings.values()].filter((bp) => bp.furniture?.length).length, chapels: [...c.buildings.values()].filter((bp) => bp.lot?.kind === 'chapel').length, buildings: c.buildings.size, errors: c.errors.length }; })())`));
+  };
+  const bare = await road('autostart&manual');
+  assert.equal(bare.lazy, true, 'no `lazy=` and no `eager=`: the boot is lazy');
+  assert.equal(bare.staged, true, 'the queue behind the milestone exists'); assert.equal(bare.interiors, true, 'and so does the manager');
+  assert.equal(bare.buildings, 2); assert.equal(bare.furnished, bare.chapels, 'nothing is furnished at the milestone but a chapel, which its shell draws');
+  assert.equal(bare.errors, 0);
+  for (const q of ['autostart&manual&eager=1', 'autostart&manual&lazy=0']) {
+    const e = await road(q);
+    assert.equal(e.lazy, false, `${q}: the full boot`); assert.equal(e.staged, false); assert.equal(e.interiors, false);
+    assert.equal(e.furnished, 2, `${q}: every building furnished before the milestone`); assert.equal(e.errors, 0);
+  }
+  const both = await road('autostart&manual&eager=1&lazy=1');
+  assert.equal(both.lazy, false, '`eager=1` wins when the URL says both');
 });

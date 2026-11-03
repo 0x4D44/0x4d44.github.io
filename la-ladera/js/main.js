@@ -10,8 +10,9 @@
 //            ?clutter=0 (original procedural exterior props; useful for comparisons and the asset fallback check)
 //            ?vehicles=0 (original procedural parked vehicles, for fallback and before/after checks)
 //            ?skip=animals (the barrio without its dogs, cats, birds, hens and mule: js/animals/); skip=people leaves them out too, they follow the people's graph
-//            ?lazy=1 (the title card goes away at a PLAYABLE milestone: interiors are furnished and drawn on demand and the models, people and animals stream in after it; dev/FEATURE-LAZY.md.
-//            Eager, the default, is the full boot of every release so far. `__ladera.ready` is the milestone, `__ladera.settled` is everything in.)
+//            The boot is LAZY by default: the title card goes away at a PLAYABLE milestone, the interiors are furnished and drawn on demand and the models, the people and the animals stream in after it;
+//            dev/FEATURE-LAZY.md. `__ladera.ready` is the milestone, `__ladera.settled` is everything in (`await __ladera.settle()` makes the rest NOW: a `?manual` page pumps nothing by itself).
+//            ?eager=1 (or ?lazy=0) is the full boot of every release before the lazy default: every interior furnished and drawn, everybody out, behind the card; `ready` is then the whole barrio.
 import { createContext } from './core/ctx.js';
 import { BootBar, STAGES, STAGES_LAZY, CREEP_TICK_MS } from './core/bootbar.js';
 import { Staged } from './core/staged.js';
@@ -40,7 +41,7 @@ const num = (k) => (q.has(k) && q.get(k) !== '' && Number.isFinite(+q.get(k)) ? 
 const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
-  debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'), lazy: q.get('lazy') === '1', warmTrace: q.has('warmtrace'),
+  debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'), lazy: q.get('eager') !== '1' && q.get('lazy') !== '0', warmTrace: q.has('warmtrace'),
   shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0', vehicles: q.get('vehicles') !== '0',
   vegetation: ['procedural', 'full'].includes(q.get('vegetation')) ? q.get('vegetation') : 'mixed',   // procedural: no library; full: library for every species; mixed: see PROCEDURAL_KEEP in world/vegetation.js,
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
@@ -148,7 +149,7 @@ async function boot() {
   };
   const startModels = () => {
     if (interiorLoad) return;
-    if (opts.lazy) {                                                                                      // ?lazy=1: only what the first views draw comes down before the milestone; the furniture, the clothes,
+    if (opts.lazy) {                                                                                      // lazy boot (the default): only what the first views draw comes down before the milestone; the furniture, the clothes,
       clutterLoad = calm(loadClutter(ctx));                                                               // the shop goods, the people and the rest are the units of the after-playable queue (beginStreams),
       vehicleLoad = calm(loadVehicles(ctx));                                                              // and no texture request is held back: the textures that materials ask for now are the first views'
       interiorLoad = Promise.resolve();
@@ -161,7 +162,7 @@ async function boot() {
     interiorLoad.then(() => {}, () => {}).then(opts.skip.has('people') ? free : startPeople);             // the people follow the interiors; with no people the textures do
   };
 
-  // ?lazy=1: what follows the PLAYABLE milestone (dev/FEATURE-LAZY.md). The queue is core/staged.js: a later sector registers a unit on `ctx.staged` and runs after these, without touching this file.
+  // The lazy boot (the default): what follows the PLAYABLE milestone (dev/FEATURE-LAZY.md). The queue is core/staged.js: a later sector registers a unit on `ctx.staged` and runs after these, without touching this file.
   const interiors = () => (ctx.interiors ??= new InteriorManager(ctx, { meshes: !opts.skip.has('interiors') }));
   /** The 'furnish' stage: the rooms' finishes (every shell reads them) and the chapel's furniture (its shell draws the altar and the candles); the rest of the furnishing waits for a reason. */
   const lazyFinishes = () => {
@@ -195,13 +196,17 @@ async function boot() {
     }
     if (!skipPeople) {
       st.register({ id: 'people-pack', label: 'Trayendo a los vecinos', weight: 10, needs: skipInteriors ? [] : ['interior-packs'], start: () => startPeople() });
-      st.register({ id: 'people', label: 'Despertando a los vecinos', weight: 2, needs: skipInteriors ? ['people-pack'] : ['people-pack', 'interiors-data'], start: async () => {
-        await paintFrame();                                                                                // (a frame of its own: the spawn is one call of about 90 ms)
-        spawnPeople(ctx); const showCrowd = holdBack('people');                                            // (this very task: no frame draws the crowd before its programs are built)
+      // The people do not wait for the furnishing (R3-210: the street stood empty, its shutters down, until the last of 109 buildings was furnished, then 86 people came at once): the cast is made when the
+      // models are in and comes into the barrio as the buildings are furnished, the people nearest the arrival first; a shopkeeper comes with his shop, which puts the shutter up (people/sim.js `build`).
+      st.register({ id: 'people', label: 'Despertando a los vecinos', weight: 2, needs: ['people-pack'], start: async () => {
+        await paintFrame();                                                                                // (a frame of its own: the cast is made in one call)
+        const world = spawnPeople(ctx, { progressive: !skipInteriors }); const showCrowd = holdBack('people');   // (this very task: no frame draws the crowd before its programs are built)
+        while (world?.prepareViews(5)) await paintFrame();                                                 // (every rig of the cast, hidden, a few a frame: 86 of them are ~110 ms in one call)
         await paintFrame();                                                                                // (and a frame between the two calls: the animals are another 30-60 ms)
         await loadAnimals(ctx); const showAnimals = holdBack('animals');
         try { await warmLate(['people', 'animals']); }                                                     // (hidden until their programs are built and their textures are up)
         finally { showCrowd?.(); showAnimals?.(); ctx.visibility?.skipHiddenMatrices?.(opts.skipHidden); } // (the crowd joins the matrix skip)
+        await world?.whenAllIn?.();                                                                        // (the unit is done when the last of the cast is in: the shopkeepers come with their shops)
       } });
     }
     st.register({ id: 'inspect-pack', label: 'Cosas de los cajones', weight: 2, needs: skipPeople ? (skipInteriors ? [] : ['interior-packs']) : ['people-pack'], start: async () => { await loadInspectAssets(ctx); requestLateMaterials(ctx); } });
@@ -249,7 +254,7 @@ async function boot() {
         }
       } finally { clearInterval(tick); }
       requestLateMaterials(ctx);                                // the materials of what a drawer builds when it opens: their textures come down with the others, the warm-up draws them (engine/warm.js)
-      if (opts.lazy && !opts.skip.has('furnish')) {              // ?lazy=1: the decal atlas (70-110 ms of painting, 20-45 ms of upload) is made here, behind the card, not in a frame of play
+      if (opts.lazy && !opts.skip.has('furnish')) {              // lazy boot: the decal atlas (70-110 ms of painting, 20-45 ms of upload) is made here, behind the card, not in a frame of play
         const atlas = prepareAtlas(ctx);
         try { if (atlas?.texture) ctx.renderer?.initTexture?.(atlas.texture); } catch { /* the first frame that draws it uploads it, as before */ }
       }
@@ -257,7 +262,7 @@ async function boot() {
     await stage('colliders', () => { if (opts.lazy) interiors().addShellColliders(); else for (const bp of ctx.buildings.values()) ctx.physics.add(bp.colliders ?? {}); });
     await stage('build', () => each([...ctx.buildings.values()], (bp) => {
       buildBuilding(ctx, bp);
-      if (!opts.lazy && !opts.skip.has('interiors')) buildInterior(ctx, bp);                               // (?lazy=1: the interiors' geometry is made on demand, interiors/lazy.js)
+      if (!opts.lazy && !opts.skip.has('interiors')) buildInterior(ctx, bp);                               // (the lazy boot: the interiors' geometry is made on demand, interiors/lazy.js)
     }, 'buildBuilding'));
     await stage('props', () => buildProps(ctx));
     await stage('flush', () => {
@@ -265,15 +270,15 @@ async function boot() {
       ctx.vehicleLibrary?.finalize();
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
-      if (opts.lazy) bakeLeaves(ctx);                           // ?lazy=1: the closed door leaves become static chunks here, behind the card (the doors' system did it at its first tick: 60-120 ms in the first frame)
+      if (opts.lazy) bakeLeaves(ctx);                           // lazy boot: the closed door leaves become static chunks here, behind the card (the doors' system did it at its first tick: 60-120 ms in the first frame)
     });
     // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
     await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
-    await stage('people', async () => { if (opts.lazy) return; await startPeople(); spawnPeople(ctx); await loadAnimals(ctx); });   // (?lazy=1: after the milestone, beginStreams)
+    await stage('people', async () => { if (opts.lazy) return; await startPeople(); spawnPeople(ctx); await loadAnimals(ctx); });   // (the lazy boot: after the milestone, beginStreams)
     await stage('start', () => {
       free();                                                   // (whatever happened to the people, the textures go now)
       startEngine(ctx, { hold: true });                         // the player and the camera are in place; the animation frames wait for the warm-up (below)
-      if (opts.lazy) new LateWarm(ctx).attach();                // ?lazy=1: what is added after the boot (interiors, people) is warmed a little at a time, off the frame (engine/warm.js)
+      if (opts.lazy) new LateWarm(ctx).attach();                // lazy boot: what is added after the boot (interiors, people) is warmed a little at a time, off the frame (engine/warm.js)
     });
     // every program, texture and geometry the game will ever draw is made now, behind the title card, instead of in the frame where the player walks into a house
     // (engine/warm.js; ?skip=warm leaves it out)
@@ -305,7 +310,7 @@ async function boot() {
   if (hintEl) hintEl.textContent = '';
   if (msg && ctx.errors.length) msg.textContent = `${ctx.errors.length} aviso(s) del sistema: ver la consola`;
   flow.ready();
-  if (opts.lazy) { ctx.timings.playable = ctx.timings.total; beginStreams(); } else resolveSettled(ctx);   // ?lazy=1: the milestone is this moment; everything after it is the queue's (ctx.staged)
+  if (opts.lazy) { ctx.timings.playable = ctx.timings.total; beginStreams(); } else resolveSettled(ctx);   // lazy boot: the milestone is this moment; everything after it is the queue's (ctx.staged)
   return ctx;
 }
 

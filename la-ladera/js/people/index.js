@@ -14,7 +14,12 @@ export async function loadPeople(ctx) {
   await world.load();
 }
 
-/** Create the NPC population (runs after physics/colliders exist). */
-export function spawnPeople(ctx) {
-  worlds.get(ctx)?.spawn();
+/**
+ * Create the NPC population (runs after physics/colliders exist). `o.progressive` (the lazy boot, js/main.js): the cast is made but comes into the barrio as the buildings are furnished (sim.js `build`).
+ * Returns the world (null when there is none), so that the boot can wait for the last arrival.
+ */
+export function spawnPeople(ctx, o = {}) {
+  const world = worlds.get(ctx) ?? null;
+  world?.spawn(null, o);
+  return world;
 }

@@ -17,7 +17,7 @@
 // Order-free by construction (checked, not assumed): furniture, rooms, finishes, colliders, goods, households, garments, the prompts and the lights as sets.
 import { furnishSteps, buildInteriorSteps, collectDiscoveryStories } from './index.js';
 import { getUid, setUid } from './layout.js';
-import { STREAM_MS, IDLE_STREAM_MS, streamLeft, streamSpend } from '../core/budget.js';
+import { STREAM_MS, IDLE_STREAM_MS, streamCap, streamLeft, streamSpend } from '../core/budget.js';
 
 const now = () => performance.now();
 
@@ -25,6 +25,7 @@ export const LAZY = Object.freeze({
   SLICE_MS: STREAM_MS,   // the most a frame of play spends on streaming work (core/budget.js: shared with the warm-up of what is added, so this is what is LEFT of it)
   IDLE_MS: IDLE_STREAM_MS, // ... while nobody plays (the title card, the pause menu, a panel): no gameplay frame to protect
   NEAR_M: 60,            // the meshes of every building whose footprint is within this of the player are made (the furnishings show from 28 m: engine/visibility.js INT_RANGE)
+  SEE_M: 28,             // ... and inside this (INT_RANGE) the interior is drawn the moment it is made, so a building this near is finished (data, meshes) before anything beyond it; the shops come next (`_pick`)
   REFRESH_M: 3,          // the distances are worked out again after the player has moved this far (or REFRESH_S seconds have passed)
   REFRESH_S: 0.5,
 });
@@ -36,6 +37,7 @@ class Job {
     this.bp = bp; this.i = i; this.id = bp.id;
     this.d = 0; this.m = 0;                           // data / meshes: 0 not started, 1 running, 2 done
     this.shown = false;                               // the meshes are in AND warm (programs built, textures up: engine/warm.js LateWarm): the interior may be seen and a door may open onto it
+    this.shop = !!bp.lot?.shop;                       // a shop's data lets its keeper in and its shutter up (people/sim.js onLotData): the far data pass does the shops before the houses
     this.gen = null; this.mgen = null; this.uid = 0; this.E = null; this.disc = false;
     this.dist = 1e9; this.urgent = 0; this.wait = []; this.walls = false;          // dist: not known until the player is (every building is equally far)
   }
@@ -134,7 +136,7 @@ export class InteriorManager {
   update(dt = 0) {
     if (dt > 0.045) { this.stats.skipped++; return; }                              // the last frame was already a long one: leave this one alone
     this._safety();
-    const ms = streamLeft(this.ctx, this.ctx.running ? this.o.SLICE_MS : this.o.IDLE_MS);   // what the frame's budget still has: the warm-up of what was added comes first (engine/warm.js)
+    const ms = streamLeft(this.ctx, this.ctx.running ? Math.max(this.o.SLICE_MS, streamCap(this.ctx)) : this.o.IDLE_MS);   // what the frame's budget still has (it grows while the frames have time to spare: core/budget.js): the warm-up of what was added comes first (engine/warm.js)
     if (ms >= 0.25) this.pump(ms);
   }
   /** An interior is warm: it may be seen. */
@@ -177,22 +179,32 @@ export class InteriorManager {
     for (const j of this.jobs) j.dist = gap(j.bp.bounds, p.x, p.z);
   }
 
-  /** The next job to advance, or null. Urgent first; then the building under way near the player; near ones before far ones; data before meshes within reach; the far data pass; the far meshes last. */
+  /**
+   * The next job to advance, or null. In this order:
+   *   1. what somebody waits for (a door, a teleport, a resident);
+   *   2. the buildings the player can see into (within SEE_M, the range interiors are drawn from: engine/visibility.js INT_RANGE), the nearest first: a building's data, its meshes at once, then the next;
+   *   3. the data of every shop, the nearest first, whatever its distance: a shop's data brings in its keeper and puts its shutter up (people/sim.js `onLotData`), and the street is seen from everywhere
+   *      (R3-210: the shutters stood down and the last shop opened at 120 s of 155, behind the data and the meshes of every house in reach);
+   *   4. the data of the houses within NEAR_M, the nearest first; 5. their meshes, the nearest first; 6. the data of the rest, the nearest first; 7. the meshes of the rest.
+   * (Measured over the barrio's data pass in plain Node, on 7dbc7c48: the 28 shops are 25 % of its work, and the last of them is made after 31 % of it, against 56 % under the round-6 order, the nearest building first; dev/FEATURE-LAZY.md section 10.)
+   */
   _pick() {
-    let best = null, bestKey = Infinity, wantData = null, wantMesh = null, dData = Infinity, dMesh = Infinity;
+    let best = null, bestKey = Infinity, wantData = null, wantMesh = null, wantShop = null, dData = Infinity, dMesh = Infinity, dShop = Infinity;
     const meshOk = this.packs && this.wantMeshes;
     for (const j of this.jobs) {
       const doneAll = j.d === 2 && (j.m === 2 || !meshOk);
       if (doneAll) continue;
       if (j.urgent && (j.d !== 2 || meshOk)) { const k = -1e12 + j.urgent; if (k < bestKey) { bestKey = k; best = j; } continue; }
-      if (j.d !== 2) { if (j.dist < dData) { dData = j.dist; wantData = j; } }
+      if (j.d !== 2) { if (j.dist < dData) { dData = j.dist; wantData = j; } if (j.shop && j.dist < dShop) { dShop = j.dist; wantShop = j; } }
       else if (meshOk && j.dist < dMesh) { dMesh = j.dist; wantMesh = j; }
     }
     if (best) return best;
-    // the nearest unbuilt interior inside the radius comes first (data, then meshes), then the far data pass, then the far meshes
-    const nearD = dData <= this.o.NEAR_M, nearM = dMesh <= this.o.NEAR_M;
-    if (nearD && (!nearM || dData <= dMesh)) return wantData;
-    if (nearM) return wantMesh;
+    const SEE = this.o.SEE_M, NEAR = this.o.NEAR_M;
+    if (dMesh <= SEE && dMesh <= dData) return wantMesh;                          // (a furnished building no farther than the next one to furnish: it is drawn at once)
+    if (dData <= SEE) return wantData;
+    if (wantShop) return wantShop;
+    if (dData <= NEAR) return wantData;
+    if (dMesh <= NEAR) return wantMesh;
     return wantData ?? wantMesh;
   }
 

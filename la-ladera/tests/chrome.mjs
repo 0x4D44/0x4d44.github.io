@@ -2,7 +2,7 @@
 //
 //   import { launch } from './chrome.mjs';
 //   const b = await launch({ width: 1280, height: 720 });          // starts a static server for the repo + Chrome
-//   const p = await b.open('la-ladera/index.html?autostart&manual'); // navigates and waits for __ladera.ready
+//   const p = await b.open('la-ladera/index.html?autostart&manual'); // navigates and waits for __ladera.ready (a URL that names neither `eager=` nor `lazy=` boots EAGER here: see Page.goto)
 //   console.log(await p.eval('__ladera.state()'));
 //   await p.canvasShot('out.jpg', { w: 1280 });                      // WebGL canvas via __ladera.shot (no HUD)
 //   await p.pageShot('out.png');                                     // full page via CDP (HUD + overlays)
@@ -47,6 +47,23 @@ export function findChrome() {
 
 async function freePort() {
   return new Promise((res, rej) => { const s = createNet(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); s.on('error', rej); });
+}
+
+/** The CPU a process used between two clock readings (epoch ms), in ms, from samples `[{ t, cpu }]` of its cumulative CPU (`t` epoch ms, `cpu` seconds: `launch().cpuSampler`), by straight lines between the samples; a time before the first
+ *  sample or after the last counts as that sample (no CPU is made up past either end). null when there are fewer than two samples. A reading of the clock is what the thread did plus what it waited for (on this shared box an idle-priority
+ *  renderer is held for seconds while every core is busy: a call of 3.7 s that did 10 ms of work): this is the part it did. */
+export function cpuBetween(samples, t0, t1) {
+  if (!samples || samples.length < 2) return null;
+  const last = samples[samples.length - 1];
+  const at = (t) => {
+    if (t <= samples[0].t) return samples[0].cpu;
+    if (t >= last.t) return last.cpu;
+    let lo = 0, hi = samples.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (samples[mid].t <= t) lo = mid; else hi = mid; }
+    const a = samples[lo], b = samples[hi];
+    return b.t === a.t ? b.cpu : a.cpu + (b.cpu - a.cpu) * (t - a.t) / (b.t - a.t);
+  };
+  return (at(t1) - at(t0)) * 1000;
 }
 
 /** Static server over `root` (default: the repo root) on an OS-assigned port. `gzip: true` compresses text (js, json, html, css, svg, wasm) for a client that accepts it, as GitHub Pages does: off by default,
@@ -113,18 +130,28 @@ class Page {
       await delay(step);
     }
   }
-  /** Navigate and wait for the game to finish booting (window.__ladera.ready). */
-  async goto(url, { ready = true, timeout = 240000 } = {}) {
+  /**
+   * Navigate and wait for the game to finish booting (window.__ladera.ready).
+   * THE ROAD A PAGE BOOTS BY (js/main.js, dev/FEATURE-LAZY.md): the shipped boot is LAZY (the card goes away at the playable milestone, the interiors, the people and the packs stream in behind it);
+   * `eager=1` (or `lazy=0`) is the full boot every release before it was (everything furnished, drawn and out before `ready`). A la-ladera URL that names `eager=` or `lazy=` keeps what it says. One that
+   * names neither takes `boot` (the `launch` option, else LADERA_BOOT):
+   *   eager     (the default) `eager=1` is added: a test written for the full boot (every house furnished and drawn, everybody out, at `ready`) is what it always was
+   *   lazy      the shipped boot, and the test starts once the barrio has settled (`__ladera.settle`, which also pumps the interiors of a `?manual` page): the same page test over the road a visitor takes
+   *   shipped   the shipped boot as it is: no `eager=1`, no waiting for the queue (a tool that measures the boot itself: tests/slownet.mjs, tests/metrics.mjs)
+   * (LADERA_LAZY=1 is the older name of LADERA_BOOT=lazy.)
+   */
+  async goto(url, { ready = true, timeout = 240000, boot = this.boot } = {}) {
     this.logs.length = this.errors.length = this.netErrors.length = 0;
-    // LADERA_LAZY=1: every la-ladera page boots through the lazy road (?lazy=1, dev/FEATURE-LAZY.md) and the test starts once the barrio has settled, so a page test that walks into houses meets the
-    // world an eager boot builds: the same test over the other road. A page that names `lazy=` itself keeps it.
-    const lazy = process.env.LADERA_LAZY === '1' && /la-ladera\/index\.html/.test(url) && !/[?&]lazy=/.test(url);
-    if (lazy) url += (url.includes('?') ? '&' : '?') + 'lazy=1';
+    const road = String(boot ?? process.env.LADERA_BOOT ?? (process.env.LADERA_LAZY === '1' ? 'lazy' : 'eager')).toLowerCase();
+    const bare = /la-ladera\/index\.html/.test(url) && !/[?&](lazy|eager)=/.test(url);
+    if (bare && road === 'eager') url += (url.includes('?') ? '&' : '?') + 'eager=1';
+    const lazy = bare && road === 'lazy';
     await this.send('Page.navigate', { url });
     await this.b.nice?.();                      // a navigation can start a new renderer: lower it too
-    await this.waitFor('document.readyState === "complete"', 60000);
+    const loadMs = Number(process.env.LADERA_LOAD_MS) || 60000;     // (how long a page may take to load and to show __ladera: a box whose cores are all busy needs more, e.g. LADERA_LOAD_MS=240000)
+    await this.waitFor('document.readyState === "complete"', loadMs);
     if (ready) {
-      await this.waitFor('!!window.__ladera && !!window.__ladera.ready', 60000);
+      await this.waitFor('!!window.__ladera && !!window.__ladera.ready', loadMs);
       const r = await this.send('Runtime.evaluate', { expression: 'window.__ladera.ready.then(() => true, (e) => String(e))', awaitPromise: true, returnByValue: true }, timeout);
       if (r.result.value !== true) throw new Error('boot failed: ' + JSON.stringify(r.result.value ?? r.exceptionDetails));
       if (lazy) {                               // (`settle` also pumps the interiors, which nothing does between steps in a ?manual page)
@@ -153,8 +180,9 @@ class Page {
 }
 
 /**
- * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), root, args, gzip (serve text compressed, as GitHub Pages does; see serve()).
- * Returns { open(path), page, close(), baseUrl, renderer }. There is no headed mode: `headless:false` throws.
+ * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), root, args, gzip (serve text compressed, as GitHub Pages does; see serve()), boot ('eager' | 'lazy' | 'shipped':
+ * the road a la-ladera URL that names neither `eager=` nor `lazy=` boots by; see Page.goto, default LADERA_BOOT, else eager).
+ * Returns { open(path), page, close(), baseUrl, renderer, cpuSeconds(), cpuSampler(ms) }. There is no headed mode: `headless:false` throws.
  */
 export async function launch(o = {}) {
   if (o.headless === false) throw new Error('chrome.mjs is headless-only: a visible browser window steals the user\'s focus');
@@ -203,16 +231,34 @@ export async function launch(o = {}) {
     } catch { /* browser busy or closing */ }
   };
   const niceTimer = setInterval(() => b.nice(), 2500); niceTimer.unref();
+  // The CPU the page's MAIN THREAD has used (seconds, cumulative: `ThreadTime` of CDP Performance.getMetrics, the thread's own cycles), or null when the page does not say. A test that holds a call to a number of milliseconds reads the
+  // clock, and the clock of a starved renderer runs on without it working (an idle-priority renderer on a busy box is held for seconds): cpuSampler + cpuBetween (above) give the part of a stretch of time the thread spent working.
+  // It is the thread's, not the process's (SystemInfo.getProcessInfo): a renderer has other threads, V8's collectors and compilers among them, that work while the main thread waits, and the process's count adds them in (a stretch
+  // in which no step of the interiors ran for 50 ms read 473 ms that way). The page answers on its main thread, so a call that blocks it is answered when it ends: the sample after it carries its whole CPU.
+  let perfOn = false;
+  const cpuSeconds = async () => {
+    try {
+      if (!perfOn) { await page.send('Performance.enable', {}, 5000); perfOn = true; }
+      const m = ((await page.send('Performance.getMetrics', {})).metrics ?? []).find((x) => x.name === 'ThreadTime');
+      return m && Number.isFinite(m.value) ? m.value : null;
+    } catch { return null; }
+  };
+  /** Samples cpuSeconds() every `ms` ms until `stop()`, which resolves the samples `[{ t: epoch ms (when the answer came), cpu: seconds }]` that `cpuBetween` reads. */
+  const cpuSampler = (ms = 25) => {
+    const samples = []; let on = true;
+    const loop = (async () => { while (on) { const c = await cpuSeconds(); if (c != null) samples.push({ t: Date.now(), cpu: c }); await delay(ms); } })();
+    return { samples, stop: async () => { on = false; await loop; return samples; } };
+  };
 
   const { targetId } = await b.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await b.send('Target.attachToTarget', { targetId, flatten: true });
-  const page = new Page(b, sessionId); await page.enable();
+  const page = new Page(b, sessionId); page.boot = o.boot; await page.enable();               // (o.boot: the road a bare la-ladera URL boots by: see Page.goto)
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: await readFile(new URL('./quiet-init.js', import.meta.url), 'utf8') });   // every later document, every frame
   await page.viewport(o.width ?? 1280, o.height ?? 720);
   await b.nice();
 
   const out = {
-    page, baseUrl: b.baseUrl,
+    page, baseUrl: b.baseUrl, cpuSeconds, cpuSampler,
     /** Open a repo-relative path (e.g. 'la-ladera/index.html?autostart&manual') and wait for boot. */
     open: async (path, opts) => { await page.goto(`${b.baseUrl}/${path.replace(/^\//, '')}`, opts); return page; },
     /** WebGL renderer string (tells you whether you got the GPU or SwiftShader). */

@@ -82,6 +82,9 @@ export class Homelife {
   /** Metres from (x, z) to the building's footprint box (0 inside it). */
   gap(lot, x, z) { const b = this.box(lot); return b ? Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.z0 - z, 0, z - b.z1)) : Infinity; }
 
+  /** What was read of a building before its places were all there (the lazy boot makes them as it goes, sim.js `onLotData`, and its residents come in one by one) is read again. */
+  forget(lot) { if (lot != null) this._info.delete(lot); }
+
   /** The anchors of a building with the type and household of the room each is in. */
   info(lot) {
     let I = this._info.get(lot);

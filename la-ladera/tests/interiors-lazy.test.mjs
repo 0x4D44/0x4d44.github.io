@@ -1,9 +1,10 @@
 // LAZY INTERIORS (js/interiors/lazy.js): the world a lazy boot makes is the eager world, byte for byte, whatever order the buildings are asked for in.
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-lazy.test.mjs
-//   LAZY_SABOTAGE=<cursor|uid|seal> breaks the property the matching test holds (proof the test can fail):
+//   LAZY_SABOTAGE=<cursor|uid|seal|order> breaks the property the matching test holds (proof the test can fail):
 //     cursor  the discoveries are made when a building's data is done, in the order the buildings were asked for, not in the boot's order
 //     uid     the module's id counter is not put back between the steps of two interleaved buildings
 //     seal    the anchors keep the order they were registered in
+//     order   the stream's order before the shops came first: the data of the whole radius (houses and shops by distance) ahead of the shops beyond it
 // What is compared (every section is a digest of what the section holds; a failing test names the sections that differ):
 //   exactly equal   furniture records, rooms, finishes, households, shop goods, stories, garments, discoveries (content AND order), the anchors (content, order, ids), the colliders of
 //                   the shells and of the furniture, the physics world's counts
@@ -31,6 +32,25 @@ if (SABOTAGE === 'uid') {                                       // the id counte
 }
 if (SABOTAGE === 'seal') {                                      // the anchors stay in the order they were registered in
   InteriorManager.prototype._seal = function () { this.sealed = true; };
+}
+if (SABOTAGE === 'order') {                                     // the order before the shops came first: the data of the whole radius (shops and houses by distance) ahead of the shops beyond it, then the meshes of the radius
+  InteriorManager.prototype._pick = function () {
+    let best = null, bestKey = Infinity, wantData = null, wantMesh = null, wantShop = null, dData = Infinity, dMesh = Infinity, dShop = Infinity;
+    const meshOk = this.packs && this.wantMeshes;
+    for (const j of this.jobs) {
+      if (j.d === 2 && (j.m === 2 || !meshOk)) continue;
+      if (j.urgent && (j.d !== 2 || meshOk)) { const k = -1e12 + j.urgent; if (k < bestKey) { bestKey = k; best = j; } continue; }
+      if (j.d !== 2) { if (j.dist < dData) { dData = j.dist; wantData = j; } if (j.shop && j.dist < dShop) { dShop = j.dist; wantShop = j; } }
+      else if (meshOk && j.dist < dMesh) { dMesh = j.dist; wantMesh = j; }
+    }
+    if (best) return best;
+    const nearD = dData <= this.o.NEAR_M, nearM = dMesh <= this.o.NEAR_M;
+    if (dMesh <= this.o.SEE_M && (!nearD || dMesh <= dData)) return wantMesh;
+    if (nearD) return wantData;
+    if (wantShop) return wantShop;
+    if (nearM) return wantMesh;
+    return wantData ?? wantMesh;
+  };
 }
 const sha = (s) => createHash('sha1').update(s).digest('hex').slice(0, 12);
 const J = (v) => JSON.stringify(v, (k, x) => (typeof x === 'function' ? undefined : x instanceof Map ? [...x] : x instanceof Set ? [...x] : x));
@@ -171,4 +191,33 @@ test('ready(), need() and whenReady() agree about what is built', async () => {
   assert.equal(mgr.ready('no such building'), true, 'an unknown id never holds a door');
 });
 
-if (SABOTAGE) test(`SABOTAGE=${SABOTAGE} is active`, () => { assert.ok(['cursor', 'uid', 'seal'].includes(SABOTAGE)); });
+test('the order of the stream: what the player sees into, every shop (its keeper and its shutter), the houses of the radius, their meshes, then the rest (R3-210: the last shop opened at 120 s of 155)', async () => {
+  const { ctx, mgr, plan } = await lazyWorld({ meshes: true });
+  const sp = plan.spawn; ctx.player = { s: { x: sp.x, y: 0, z: sp.z } };
+  mgr.setPacks(true); mgr._refresh(true);
+  const log = [];                                                                                          // the work is faked (a step just marks the job done): this is about WHICH job comes next
+  mgr._dataStep = (j) => { j.d = 2; log.push(['d', j]); };
+  mgr._meshStep = (j) => { j.m = 2; j.shown = true; log.push(['m', j]); };
+  for (let i = 0; i < 1000; i++) { const j = mgr._pick(); if (!j) break; mgr._step(j); }
+  const at = (kind, id) => log.findIndex(([k, j]) => k === kind && j.id === id), dist = (j) => j.dist;
+  const jobs = mgr.jobs.filter((j) => at('d', j.id) >= 0 || at('m', j.id) >= 0);
+  assert.equal(log.length, mgr.jobs.length * 2 - 1, 'every job is done once, data and meshes (the chapel\'s data was made before)');
+  const NEAR = mgr.o.NEAR_M, SEE = mgr.o.SEE_M;
+  const data = jobs.filter((j) => at('d', j.id) >= 0), ring = data.filter((j) => dist(j) <= SEE), shops = data.filter((j) => j.shop && dist(j) > SEE), shopsFar = shops.filter((j) => dist(j) > NEAR);
+  const nearHouses = data.filter((j) => !j.shop && dist(j) > SEE && dist(j) <= NEAR), farHouses = data.filter((j) => !j.shop && dist(j) > NEAR);
+  const nearMeshes = mgr.jobs.filter((j) => dist(j) > SEE && dist(j) <= NEAR), farMeshes = mgr.jobs.filter((j) => dist(j) > NEAR);
+  assert.ok(ring.length >= 3 && shops.length >= 10 && shopsFar.length >= 3 && nearHouses.length >= 5 && farHouses.length >= 10 && nearMeshes.length >= 3 && farMeshes.length >= 10, `the spawn has every kind of neighbour: ${[ring.length, shops.length, shopsFar.length, nearHouses.length, farHouses.length, nearMeshes.length, farMeshes.length]}`);
+  const last = (list, kind) => Math.max(...list.map((j) => at(kind, j.id))), first = (list, kind) => Math.min(...list.map((j) => at(kind, j.id)));
+  for (const j of ring) assert.equal(at('m', j.id), at('d', j.id) + 1, `${j.id} (${dist(j).toFixed(0)} m): a building the player sees into is drawn the moment it is furnished`);
+  assert.ok(last(ring, 'm') < first(shops, 'd'), 'what the player sees into is done (data and meshes) before the first shop beyond it');
+  assert.ok(last(shops, 'd') < first(nearHouses, 'd') && last(shops, 'd') < first(farHouses, 'd'), `every shop's data is in before the data of any house outside the ring, near or far (last shop ${last(shops, 'd')}, first house ${Math.min(first(nearHouses, 'd'), first(farHouses, 'd'))}): its keeper comes in and its shutter goes up`);
+  assert.ok(last(nearHouses, 'd') < first(nearMeshes, 'm'), 'the houses of the radius are furnished before the meshes of the radius');
+  assert.ok(last(nearMeshes, 'm') < first(farHouses, 'd'), 'the meshes of the radius come before the data of the far houses');
+  assert.ok(last(farHouses, 'd') < first(farMeshes, 'm') && last(shops, 'd') < first(farMeshes, 'm'), 'the far meshes are last');
+  for (const [name, list] of [['the ring', ring], ['the shops', shops], ['the houses of the radius', nearHouses], ['the far houses', farHouses]]) {
+    const ds = list.map((j) => [dist(j), at('d', j.id)]).sort((a, z) => a[1] - z[1]);
+    for (let i = 1; i < ds.length; i++) assert.ok(ds[i - 1][0] <= ds[i][0] + 1e-6, `the nearest first within ${name}`);
+  }
+});
+
+if (SABOTAGE) test(`SABOTAGE=${SABOTAGE} is active`, () => { assert.ok(['cursor', 'uid', 'seal', 'order'].includes(SABOTAGE)); });
