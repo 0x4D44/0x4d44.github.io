@@ -1,6 +1,6 @@
 // INTERIORS (A3): what is inside the containers. Three layers, all deterministic (a reload shows the same drawers):
 //   1. planContents(ctx)        ONE plan for the whole barrio, made from the lots, their households and (kindsByHousehold) the slots a FURNISHED household has to lay things in: every
-//                               building gets 1-2 papers from papers.js (no paper in more than 2 homes), the special finds of finds.js are spread so each type lands between its `min`
+//                               building gets 1-2 papers from papers.js (no paper in more than 2 homes, and those two APART metres from each other where the plan can), the special finds of finds.js are spread so each type lands between its `min`
 //                               and `max`, at most 3 per building, and no household is planned more papers, or more finds, than it has slots of the right kinds to hold (`holds`).
 //                               A building that is not furnished when the plan is made is planned without that limit, so make the plan once every building is furnished.
 //   2. planBuilding(ctx,bp,list) when a building's interior is built: its share of the plan is pinned to concrete slots (a diary to a nightstand, a coin to a dresser
@@ -22,6 +22,7 @@ import { modelFor } from './inspect.js';
 export { drawProp as drawContent };
 export const TOTALS = { papers: PAPERS.length, finds: FINDS.length };
 export const PAPER_CAP = 2, FINDS_PER_BUILDING = 3;
+export const APART = 100;                                                    // metres: the two homes that read the same paper stand at least this far apart where the plan can put them (a walk down one street does not read one letter twice)
 
 /** The container kinds of papers.js / finds.js `where` ARE the `group` of my carcass.js slots (the lead migrated the data to them, 22:41). */
 export const kindsOf = (group) => [group];
@@ -41,7 +42,7 @@ export function householdOf(S) {
 }
 
 // ------------------------------------------------------------------ 1. the barrio-wide plan
-function matchPapers(units, cands) {
+export function matchPapers(units, cands) {
   const byB = new Map();
   units.forEach((u, i) => { let b = byB.get(u.bid); if (!b) byB.set(u.bid, b = []); b.push(i); });
   const left = [...byB.entries()].map(([bid, us]) => {
@@ -50,15 +51,16 @@ function matchPapers(units, cands) {
     return { bid, edges, adj: [...edges.keys()].sort((a, b) => hv(bid, PAPERS[a].id) - hv(bid, PAPERS[b].id)), got: -1 };
   }).sort((a, b) => a.adj.length - b.adj.length || (a.bid < b.bid ? -1 : 1));             // the most constrained building chooses first
   const holders = PAPERS.map(() => []);
+  let cap = 1;                                                              // first as many buildings as there are papers get one of their own; only then does a paper go to a second home
   const assign = (li, seen) => {
     for (const pi of left[li].adj) {
       if (seen.has(pi)) continue; seen.add(pi);
-      if (holders[pi].length < PAPER_CAP) { holders[pi].push(li); left[li].got = pi; return true; }
+      if (holders[pi].length < cap) { holders[pi].push(li); left[li].got = pi; return true; }
       for (const lj of holders[pi]) if (lj !== li && assign(lj, seen)) { holders[pi].splice(holders[pi].indexOf(lj), 1); holders[pi].push(li); left[li].got = pi; return true; }
     }
     return false;
   };
-  for (let li = 0; li < left.length; li++) assign(li, new Set());
+  for (cap of [1, PAPER_CAP]) for (let li = 0; li < left.length; li++) if (left[li].got < 0) assign(li, new Set());
   return left.filter((l) => l.got >= 0).map((l) => ({ pi: l.got, ui: l.edges.get(l.got) }));
 }
 
@@ -92,6 +94,56 @@ function holds(u, items) {
   return items.every((_, i) => seat(i, []));
 }
 
+/** How far apart two buildings stand, in whole metres (the origins of their lots; a building with no place on the map is far from everything). */
+export function distances(bps) {
+  const at = new Map(bps.map((bp) => [bp.id, bp.lot]));
+  return (a, b) => { const p = at.get(a), q = at.get(b), d = p && q ? Math.hypot(p.x - q.x, p.z - q.z) : NaN; return Number.isFinite(d) ? Math.round(d) : Infinity; };
+}
+
+/** The papers of the plan so far are one paper in each of two homes more often than the pool of papers can avoid (109 buildings, 75 papers), and the matching does not look at where the homes are: one letter
+ *  was read in two houses 6 m apart (R2b-204, R2b-209). Move papers between households, the nearest pair first, for as long as a move puts the pairs further apart (`crowd`: 1 for two homes in one place, 0 from APART
+ *  on): a home gives its copy of a shared paper for one that is read nowhere or in one home far from it, or the two households swap their papers, and every move keeps what the plan promised: each household
+ *  has as many papers as before, each eligible for it and with a slot of its own (`cands`, `holds`), no home reads one twice, none is read in more than PAPER_CAP homes. Each move lowers the total, so it ends.
+ *  Returns how many moves it made. */
+export function spread(units, cands, use, held, homes, away) {
+  const crowd = (d) => (d < APART ? ((APART - d) / APART) ** 2 : 0);
+  const cost = (pi) => (homes[pi].length === 2 ? crowd(away(homes[pi][0], homes[pi][1])) : 0);
+  const unitsOf = new Map(); units.forEach((u, ui) => (unitsOf.get(u.bid) ?? unitsOf.set(u.bid, []).get(u.bid)).push(ui));
+  const readBy = (bid, id) => unitsOf.get(bid).find((ui) => units[ui].papers.includes(id));              // the household of a building that has the paper
+  const without = (ui, id) => units[ui].papers.filter((x) => x !== id).map((x) => paperById.get(x));
+  const move = (ui, from, to) => {
+    const u = units[ui], mine = held.get(u.bid);
+    u.papers[u.papers.indexOf(PAPERS[from].id)] = PAPERS[to].id; use[from]--; use[to]++;
+    homes[from].splice(homes[from].indexOf(u.bid), 1); homes[to].push(u.bid); mine.delete(PAPERS[from].id); mine.add(PAPERS[to].id);
+  };
+  let moves = 0;
+  for (let round = 0; round < 8; round++) {
+    let moved = 0;
+    for (const pi of PAPERS.map((_, i) => i).filter((i) => cost(i) > 0).sort((a, b) => cost(b) - cost(a) || a - b)) {
+      const was = cost(pi); if (!(was > 0)) continue;
+      let best = null;
+      const offer = (gain, tie, apply) => { if (gain > 1e-9 && (!best || gain > best.gain + 1e-9 || (gain > best.gain - 1e-9 && tie < best.tie))) best = { gain, tie, apply }; };
+      for (const side of [0, 1]) {
+        const rb = homes[pi][side], ob = homes[pi][1 - side], ri = readBy(rb, PAPERS[pi].id);              // the home that gives its copy up, and the one that keeps it
+        for (const qi of cands[ri]) {
+          if (qi === pi || held.get(rb).has(PAPERS[qi].id) || !holds(units[ri], [...without(ri, PAPERS[pi].id), PAPERS[qi]])) continue;
+          const tie = hv(rb, PAPERS[pi].id, PAPERS[qi].id);
+          if (use[qi] < PAPER_CAP) { offer(was - (use[qi] ? crowd(away(rb, homes[qi][0])) : 0), tie, () => move(ri, pi, qi)); continue; }
+          for (const cb of homes[qi]) {                                                                       // a paper read in two homes already: one of them takes this one instead
+            const ci = readBy(cb, PAPERS[qi].id), other = homes[qi].find((b) => b !== cb);
+            if (held.get(cb).has(PAPERS[pi].id) || !cands[ci].includes(pi) || !holds(units[ci], [...without(ci, PAPERS[qi].id), PAPERS[pi]])) continue;
+            offer(was + crowd(away(cb, other)) - crowd(away(ob, cb)) - crowd(away(rb, other)), tie, () => { move(ri, pi, qi); move(ci, qi, pi); });
+          }
+        }
+      }
+      if (best) { best.apply(); moved++; }
+    }
+    moves += moved;
+    if (!moved) break;
+  }
+  return moves;
+}
+
 /** Plan the whole barrio. Cached on ctx; recomputed only when the set of buildings changes. */
 export function planContents(ctx) {
   const bps = [...ctx.buildings.values()].sort(byId);
@@ -103,8 +155,9 @@ export function planContents(ctx) {
     for (const hh of bp.interior?.hh ?? householdsOf(ctx, bp)) units.push({ bid: bp.id, hh, lot: lotOf(bp), kinds: kinds?.get(hh.id) ?? null, papers: [], finds: [] });
   }
   const cands = units.map((u) => PAPERS.map((p, i) => (eligible(p, u.hh, u.lot, null) && fits(p, u) ? i : -1)).filter((i) => i >= 0));
-  const use = PAPERS.map(() => 0), held = new Map();                         // building id -> Set of paper ids
-  const give = (ui, pi) => { const u = units[ui]; u.papers.push(PAPERS[pi].id); use[pi]++; (held.get(u.bid) ?? held.set(u.bid, new Set()).get(u.bid)).add(PAPERS[pi].id); };
+  const use = PAPERS.map(() => 0), held = new Map(), homes = PAPERS.map(() => []);      // held: building id -> Set of paper ids; homes: paper index -> the ids of the buildings that hold it
+  const away = distances(bps);
+  const give = (ui, pi) => { const u = units[ui]; u.papers.push(PAPERS[pi].id); use[pi]++; homes[pi].push(u.bid); (held.get(u.bid) ?? held.set(u.bid, new Set()).get(u.bid)).add(PAPERS[pi].id); };
   for (const { pi, ui } of matchPapers(units, cands)) give(ui, pi);
   for (const ui of units.map((_, i) => i).sort((a, b) => hv(units[a].hh.id, 'p2') - hv(units[b].hh.id, 'p2'))) {      // a second paper wherever capacity is left
     const u = units[ui], mine = held.get(u.bid);
@@ -112,11 +165,12 @@ export function planContents(ctx) {
     const have = u.papers.map((id) => paperById.get(id));
     let best = -1, bs = Infinity;
     for (const pi of cands[ui]) {
-      if (use[pi] >= PAPER_CAP || mine.has(PAPERS[pi].id)) continue;
+      if (use[pi] >= PAPER_CAP || mine.has(PAPERS[pi].id) || (use[pi] && away(u.bid, homes[pi][0]) < APART)) continue;               // a paper a home already reads goes to a second one only far from it
       const s = use[pi] + hv(u.hh.id, PAPERS[pi].id); if (s < bs && holds(u, [...have, PAPERS[pi]])) { bs = s; best = pi; }                 // and only where it still has a slot of its own
     }
     if (best >= 0) give(ui, best);
   }
+  spread(units, cands, use, held, homes, away);
   // finds: the most constrained types first (the special lots), each placed `min` times (plus a few extras up to `max`), in the least loaded building that fits
   const loads = new Map();
   const order = FINDS.map((f) => ({ f, el: units.map((u, k) => (eligible(f, u.hh, u.lot, null) && fits(f, u) ? k : -1)).filter((k) => k >= 0) })).sort((a, b) => a.el.length - b.el.length || (a.f.id < b.f.id ? -1 : 1));

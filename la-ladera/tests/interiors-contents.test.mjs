@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { furnishedBatch } from './interiors-lib.mjs';
 import { buildInterior } from '../js/interiors/build.js';
 import { frontSpots } from '../js/interiors/containers.js';
-import { planContents, planBuilding, contentStats, PAPER_CAP, FINDS_PER_BUILDING, lotOf } from '../js/interiors/contents.js';
+import { planContents, planBuilding, contentStats, PAPER_CAP, FINDS_PER_BUILDING, lotOf, matchPapers, spread, distances } from '../js/interiors/contents.js';
 import { PAPERS, paperById } from '../js/interiors/papers.js';
 import { FINDS, findById } from '../js/interiors/finds.js';
 import { eligible, CONTAINER_KINDS } from '../js/interiors/content.js';
@@ -136,4 +136,156 @@ test('the plan is deterministic: planned again from the same buildings it is the
   const b = sig(planContents(ctx));
   assert.equal(b, a);
   assert.equal(plan.units.length > 100, true);
+});
+
+// ------------------------------------------------------------------ the same paper in two homes (R2b-204, R2b-209)
+// 109 buildings share the 75 papers of papers.js, so at least 34 papers are read in two homes whatever the plan does (PAPER_CAP 2), and the plan gives households a second paper where they have a slot left: about 60 are read in two.
+// What it can choose is WHICH two. A matching that ignored where the homes stand paired 25 of them under 50 m apart, two houses 6 m apart (L94 and L95) among them: a walk down one street met one letter twice.
+// (Not the plan's to mend: L11 and L44, the two workshops, may have only the two workshop papers of papers.js, so each reads both, 129 m apart.)
+const lotAt = new Map(bps.map((bp) => [bp.id, bp.lot]));
+const apart = (a, b) => Math.hypot(lotAt.get(a).x - lotAt.get(b).x, lotAt.get(a).z - lotAt.get(b).z);
+
+test('papers (R2b-204, R2b-209): a paper that two homes read is read in two homes that stand apart: none within 60 m (the plan paired 32 of them, one 6 m apart), and the median pair at least 85 m', () => {
+  const homes = new Map();                                                 // paper id -> the buildings that read it
+  for (const u of plan.units) for (const id of u.papers) (homes.get(id) ?? homes.set(id, new Set()).get(id)).add(u.bid);
+  const pairs = [...homes].filter(([, s]) => s.size === 2).map(([id, s]) => { const [a, b] = [...s]; return { id, a, b, d: apart(a, b) }; }).sort((p, q) => p.d - q.d);
+  const median = pairs.length ? pairs[Math.floor(pairs.length / 2)].d : 0;
+  console.log(`# papers: ${homes.size} of ${PAPERS.length} read somewhere, ${pairs.length} in two homes; the nearest pair ${pairs[0]?.d.toFixed(0)} m, the median ${median.toFixed(0)} m, ${pairs.filter((p) => p.d < 100).length} under 100 m`);
+  assert.ok(pairs.length >= 30, `${pairs.length} papers are read in two homes: the census looks at nothing (34 at least are forced, about 60 planned)`);
+  report(pairs.filter((p) => p.d < 60).map((p) => `${p.id}: ${p.a} and ${p.b} are ${p.d.toFixed(0)} m apart`), 'papers read in two homes less than 60 m apart');
+  assert.ok(median >= 85, `the median pair of homes that read one paper stands ${median.toFixed(0)} m apart, 85 m wanted`);
+});
+
+test('papers: no paper is read in two homes while a paper that no home reads was one of them could have had (the matching let two buildings share a letter and left another unread)', () => {
+  const read = new Set(plan.units.flatMap((u) => u.papers)), count = new Map();
+  for (const u of plan.units) for (const id of new Set(u.papers)) count.set(id, (count.get(id) ?? 0) + 1);
+  const fitsKinds = (p, u) => !u.kinds || p.where.some((k) => u.kinds.includes(k));
+  const free = (u) => PAPERS.filter((q) => !read.has(q.id) && eligible(q, u.hh, u.lot, null) && fitsKinds(q, u));
+  const bad = [];
+  for (const u of plan.units) for (const id of u.papers) if (count.get(id) >= 2 && free(u).length) bad.push(`${u.bid} ${u.hh.id} reads ${id}, which ${count.get(id) - 1} other home(s) read, and ${free(u)[0].id} is read nowhere`);
+  console.log(`# papers read nowhere: ${PAPERS.length - read.size}`);
+  report(bad, 'repeats with an unread paper in hand');
+});
+
+/** Units for the plan's own steps: one household to a building, no slots known (`kinds` null: it holds anything), every paper in `cands` its own to take. */
+const unitsOf = (n) => Array.from({ length: n }, (_, i) => ({ bid: `S${i}`, hh: { id: `S${i}.all` }, lot: {}, kinds: null, papers: [], finds: [] }));
+
+test('matchPapers: while there are papers to spare every building gets one of its own, and only when they run out does a paper go to a second home', () => {
+  for (const [n, k] of [[6, 6], [9, 9], [12, 12], [8, 12], [20, 20]]) {
+    const units = unitsOf(n), got = matchPapers(units, units.map(() => PAPERS.slice(0, k).map((_, i) => i)));
+    assert.equal(got.length, n, `${n} buildings and ${k} papers: every building gets one`);
+    assert.equal(new Set(got.map((g) => g.pi)).size, n, `${n} buildings and ${k} papers: no paper is given twice while another is unread`);
+  }
+  const units = unitsOf(10), got = matchPapers(units, units.map(() => [0, 1, 2, 3, 4])), per = new Map();
+  assert.equal(got.length, 10, '10 buildings and 5 papers: every building still gets one');
+  for (const g of got) per.set(g.pi, (per.get(g.pi) ?? 0) + 1);
+  assert.deepEqual([...per.values()].sort(), [2, 2, 2, 2, 2], '10 buildings and 5 papers: each paper is read in exactly two');
+});
+
+/** A hand-made state for `spread`: buildings on a line (`places`: id -> metres), each reading the papers `holding` lists (indexes into PAPERS); `cands` lists the papers each building could have. */
+function plant(places, holding, cands = null) {
+  const units = Object.keys(places).map((bid) => ({ bid, hh: { id: `${bid}.all` }, lot: {}, kinds: null, papers: holding[bid].map((i) => PAPERS[i].id), finds: [] }));
+  const top = 1 + Math.max(...Object.values(holding).flat()), use = PAPERS.map(() => 0), homes = PAPERS.map(() => []), held = new Map();
+  for (const u of units) { held.set(u.bid, new Set(u.papers)); for (const id of u.papers) { const pi = PAPERS.findIndex((p) => p.id === id); use[pi]++; homes[pi].push(u.bid); } }
+  return { units, cands: cands ?? units.map(() => PAPERS.slice(0, top).map((_, i) => i)), use, held, homes, away: (a, b) => Math.round(Math.abs(places[a] - places[b])) };
+}
+/** What `spread` promises whatever it moves: each building reads as many papers as before, none twice, in step with `held`, `homes` and `use`; each paper is read in at most PAPER_CAP homes, and only by a building that may have it. */
+function sound(S, counts) {
+  for (const [k, u] of S.units.entries()) {
+    assert.equal(u.papers.length, counts[k], `${u.bid} keeps its ${counts[k]} paper(s)`);
+    assert.equal(new Set(u.papers).size, u.papers.length, `${u.bid} reads no paper twice`);
+    assert.deepEqual([...S.held.get(u.bid)].sort(), [...u.papers].sort(), `${u.bid}: the set of its papers is in step`);
+    for (const id of u.papers) assert.ok(S.cands[k].includes(PAPERS.findIndex((p) => p.id === id)), `${u.bid} reads ${id}, which it may not have`);
+  }
+  PAPERS.forEach((p, pi) => {
+    const who = S.units.filter((u) => u.papers.includes(p.id)).map((u) => u.bid);
+    assert.deepEqual([...S.homes[pi]].sort(), who.sort(), `paper ${pi}: the homes are in step`);
+    assert.equal(S.use[pi], who.length, `paper ${pi}: its count is in step`);
+    assert.ok(who.length <= PAPER_CAP, `paper ${pi} is read in ${who.length} homes`);
+  });
+}
+
+test('spread: two pairs that each read one paper, the pair next door and the pair far away, swap so that each paper is read at both ends (R2b-209: one letter in two houses 6 m apart)', () => {
+  const S = plant({ A: 0, B: 10, C: 500, D: 510 }, { A: [0], B: [0], C: [1], D: [1] });
+  spread(S.units, S.cands, S.use, S.held, S.homes, S.away);
+  for (const pi of [0, 1]) { const [x, y] = S.homes[pi]; assert.ok(S.away(x, y) >= 400, `paper ${pi} is read in ${x} and ${y}, ${S.away(x, y)} m apart`); }
+  sound(S, [1, 1, 1, 1]);
+});
+
+test('spread: a home that shares a paper with one next door takes a paper that nobody reads instead; a pair already far apart is left alone', () => {
+  const near = plant({ A: 0, B: 10 }, { A: [0], B: [0] }, [[0, 1], [0, 1]]);
+  spread(near.units, near.cands, near.use, near.held, near.homes, near.away);
+  assert.deepEqual(near.use.slice(0, 2), [1, 1], 'the paper is read in one home, the other paper in the other');
+  sound(near, [1, 1]);
+  const far = plant({ A: 0, B: 500 }, { A: [0], B: [0] }, [[0, 1], [0, 1]]), was = far.units.map((u) => u.papers.join());
+  spread(far.units, far.cands, far.use, far.held, far.homes, far.away);
+  assert.deepEqual(far.units.map((u) => u.papers.join()), was, 'two homes 500 m apart keep their paper');
+});
+
+test('spread: it moves only within what a home may have, and never gives a home a paper it already reads', () => {
+  const bound = plant({ A: 0, B: 10 }, { A: [0], B: [0] }, [[0], [0]]);                         // neither may have another paper: the pair stays
+  spread(bound.units, bound.cands, bound.use, bound.held, bound.homes, bound.away);
+  assert.equal(bound.use[0], 2, 'the pair stays: there is nothing else for either');
+  sound(bound, [1, 1]);
+  const twice = plant({ A: 0, B: 10, C: 500 }, { A: [0, 1], B: [0], C: [1] });                   // A reads both papers, B shares one with A, C the other
+  spread(twice.units, twice.cands, twice.use, twice.held, twice.homes, twice.away);
+  sound(twice, [2, 1, 1]);
+});
+
+test('spread: a move that would not put a pair further apart is not made, and it says how many it made', () => {
+  const S = plant({ A: 0, B: 10, C: 5 }, { A: [0], B: [0], C: [1] }, [[0, 1], [0], [1]]);       // A could read paper 1, but C reads it 5 m away: no better than B 10 m away
+  assert.equal(spread(S.units, S.cands, S.use, S.held, S.homes, S.away), 0, 'no move is made');
+  assert.deepEqual(S.units.map((u) => u.papers.join()), [PAPERS[0].id, PAPERS[0].id, PAPERS[1].id], 'everyone keeps what they read');
+  sound(S, [1, 1, 1]);
+  const T = plant({ A: 0, B: 10 }, { A: [0], B: [0] }, [[0, 1], [0, 1]]);
+  assert.equal(spread(T.units, T.cands, T.use, T.held, T.homes, T.away), 1, 'a pair next door: one home takes the paper nobody reads, in one move');
+});
+
+// A household with its slots known (`kinds`) holds only the papers that each have a slot of a kind they ask for: a living room's wall unit takes a living-room paper, a bedroom's nightstand a bedroom's.
+const living = PAPERS.map((_, i) => i).filter((i) => PAPERS[i].where.includes('wallunit') && !PAPERS[i].where.includes('nightstand'));
+const bedroom = PAPERS.map((_, i) => i).filter((i) => PAPERS[i].where.includes('nightstand') && !PAPERS[i].where.includes('wallunit'));
+
+test('spread: a home takes another paper in place of one only where it keeps a slot for each of its papers (a paper for the wall unit gives way to one for the nightstand: one nightstand, two papers for it)', () => {
+  assert.ok(living.length >= 2 && bedroom.length >= 2, `the test needs two papers for a wall unit alone (${living.length}) and two for a nightstand alone (${bedroom.length})`);
+  const [w1] = living, [n1, n2] = bedroom;
+  const set = (kinds) => {
+    const S = plant({ A: 0, B: 10 }, { A: [w1], B: [w1, n1] }, [[w1], [w1, n1, n2]]);          // A is bound to its paper; B could swap w1 for n2
+    S.units[1].kinds = kinds;
+    return S;
+  };
+  const tight = set(['nightstand', 'wallunit']);                                                // n1 has the nightstand, so n2 would have none
+  assert.equal(spread(tight.units, tight.cands, tight.use, tight.held, tight.homes, tight.away), 0, 'no move: B has no slot for n2 beside n1');
+  assert.deepEqual(tight.units[1].papers, [PAPERS[w1].id, PAPERS[n1].id], 'B keeps both papers');
+  const roomy = set(['wallunit', 'nightstand', 'nightstand']);                                  // two nightstands: the move is a good one
+  assert.equal(spread(roomy.units, roomy.cands, roomy.use, roomy.held, roomy.homes, roomy.away), 1, 'a second nightstand: B takes n2');
+  assert.deepEqual(roomy.units[1].papers.slice().sort(), [PAPERS[n1].id, PAPERS[n2].id].sort(), 'B reads n1 and n2');
+  sound(roomy, [1, 2]);
+});
+
+test('spread: two homes swap papers only where each keeps a slot for each of its papers (the exchange: the other home would need a second wall-unit slot)', () => {
+  const [w1, w2] = living, [n1] = bedroom;
+  const set = (kinds) => {
+    const S = plant({ A: 0, B: 10, C: 500, D: 600 }, { A: [w1], B: [w1], C: [n1, w2], D: [n1] }, [[w1], [w1, n1], [n1, w2, w1], [n1]]);   // B could take n1 from C for w1, and D may not have w1
+    S.units[2].kinds = kinds;
+    return S;
+  };
+  const tight = set(['nightstand', 'wallunit']);                                                // w1 and w2 would share C's one wall unit
+  assert.equal(spread(tight.units, tight.cands, tight.use, tight.held, tight.homes, tight.away), 0, 'no swap: C has no second slot for a wall-unit paper');
+  assert.deepEqual(tight.units[2].papers, [PAPERS[n1].id, PAPERS[w2].id], 'C keeps its papers');
+  assert.equal(tight.use[w1], 2, 'w1 is still read next door');
+  const roomy = set(['nightstand', 'wallunit', 'wallunit']);
+  assert.equal(spread(roomy.units, roomy.cands, roomy.use, roomy.held, roomy.homes, roomy.away), 1, 'two wall units: C takes w1 and B takes n1');
+  assert.deepEqual(roomy.units[1].papers, [PAPERS[n1].id], 'B reads n1');
+  assert.deepEqual(roomy.units[2].papers.slice().sort(), [PAPERS[w1].id, PAPERS[w2].id].sort(), 'C reads w1 and w2');
+  sound(roomy, [1, 1, 2, 1]);
+});
+
+test('distances: the metres between two buildings along the ground (both axes), and none known for a building with no place on the map', () => {
+  const away = distances([{ id: 'a', lot: { x: 0, z: 0 } }, { id: 'b', lot: { x: 0, z: 60 } }, { id: 'c', lot: { x: 30, z: 40 } }, { id: 'd' }]);
+  assert.equal(away('a', 'b'), 60, 'a lot due north-south');
+  assert.equal(away('a', 'c'), 50, 'a 3-4-5 pair: both axes count');
+  assert.equal(away('a', 'a'), 0, 'a building is no distance from itself');
+  assert.equal(away('a', 'd'), Infinity, 'a building with no lot is far from everything');
+  assert.equal(away('d', 'd'), Infinity, '... itself too');
+  assert.equal(away('a', 'nobody'), Infinity, 'a building not in the list');
 });
