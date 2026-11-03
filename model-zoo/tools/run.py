@@ -17,6 +17,7 @@ PRICES = json.load(open(os.path.join(HERE, "prices.json")))
 QUESTIONS = {q["id"]: q for q in json.load(open(os.path.join(HERE, "questions.json")))}
 BUDGET = float(os.environ.get("ZOO_BUDGET", "23.0"))   # hard cap on estimated spend, USD
 WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
+EXCLUDE = os.environ.get("ZOO_EXCLUDE", "")  # regex of models to leave out of this run
 LOCK = threading.Lock()
 # gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.
 SAMPLE_CAP = {"gpt-5-pro": 3, "gpt-5.6-sol@pro": 3}
@@ -230,6 +231,8 @@ def ask(qids):
         have = {(r["model"], r["sample"]) for r in records(qid) if r.get("ok")}
         jobs = []
         for m, ep in sorted(models.items()):
+            if EXCLUDE and re.search(EXCLUDE, m):
+                continue
             n = q.get("samples_pro", 1) if is_pro(m) else q.get("samples", 1)
             n = min(n, SAMPLE_CAP.get(m, n))
             jobs += [(m, ep, s) for s in range(n) if (m, s) not in have]
