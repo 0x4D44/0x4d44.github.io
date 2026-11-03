@@ -4,8 +4,12 @@
 const SHOP_TOPICS = ['buy', 'wares', 'job', 'barrio', 'news', 'family', 'tip', 'where'];
 const SHOP_MENU = { job: ['¿Cómo es su oficio?', 'What is your trade like?'], wares: ['¿Qué me recomienda hoy?', 'What do you recommend today?'], buy: ['Quisiera comprar algo.', "I'd like to buy something."] };
 const base = { topics: SHOP_TOPICS, menu: SHOP_MENU };
-/** One purchase: es/en = what the player says, name = [es, en] for the toast, say = the shopkeeper's answer (price spoken in words). */
-const it = (id, es, en, name, price, say) => ({ id, es, en, name, price, say });
+/**
+ * One purchase: es/en = what the player says, name = [es, en] for the toast, say = the shopkeeper's answer (price spoken in words). `w` = { from, to }: the clock hours it is on sale, as a line's
+ * window (R3-207: the set lunch was sold at half past seven, right after "Todavía estamos con el desayuno"). The menu offers the first three items on sale, so a shop with a dish of the hour
+ * lists it before the ones it always sells, and has three on offer at every hour (people-bank.test.mjs).
+ */
+const it = (id, es, en, name, price, say, w = null) => ({ id, es, en, name, price, say, ...w });
 
 export default {
   tienda: {
@@ -208,10 +212,13 @@ export default {
     tip: [['Después de almorzar, suba por la escalinata. Es buena para bajar la comida y ver el barrio.', "After lunch, go up the stairway. It's good for walking it off and seeing the barrio."]],
     bye: [['Buen provecho y hasta luego.', 'Enjoy your meal and see you later.'], ['Vuelva mañana, que cambia el menú.', 'Come back tomorrow, the menu changes.']],
     buy_ask: [['Claro. ¿Qué le sirvo?', 'Of course. What shall I serve you?']],
-    items: [
-      it('almuerzo', '¿Me regala el almuerzo del día?', 'Could I have the set lunch?', ['el almuerzo del día', 'the set lunch'], 14000, ['Sopa, seco y jugo, ya se lo traigo. Catorce mil pesos.', "Soup, main and juice, I'll bring it now. Fourteen thousand pesos."]),
+    items: [                                                                                                 // (the dish of the hour first, then what is always on: its windows follow its greetings, "todavía estamos con el desayuno", "ya solo queda el corrientazo")
+      it('desayuno', '¿Me regala un caldo con huevo y arepa?', 'Could I have a broth with an egg and an arepa?', ['un caldo con arepa', 'a broth with arepa'], 7000, ['Caldo calientico, con su huevo y su arepa. Siete mil pesos.', 'Nice hot broth, with its egg and its arepa. Seven thousand pesos.'], { from: 5, to: 12 }),
+      it('almuerzo', '¿Me regala el almuerzo del día?', 'Could I have the set lunch?', ['el almuerzo del día', 'the set lunch'], 14000, ['Sopa, seco y jugo, ya se lo traigo. Catorce mil pesos.', "Soup, main and juice, I'll bring it now. Fourteen thousand pesos."], { from: 12, to: 16.5 }),
+      it('corrientazo', '¿Me regala el corrientazo?', 'Could I have the set meal?', ['el corrientazo', 'the set meal'], 12000, ['Lo que quedó de la olla, bien caliente. Doce mil pesos.', 'What was left in the pot, piping hot. Twelve thousand pesos.'], { from: 16.5, to: 22 }),
       it('jugo', '¿Me regala un jugo de mora?', 'Could I have a blackberry juice?', ['un jugo de mora', 'a blackberry juice'], 4000, ['En leche o en agua, como prefiera. Cuatro mil pesos.', 'With milk or water, as you prefer. Four thousand pesos.']),
       it('sopa', '¿Me regala una sopa sola?', 'Could I have just a soup?', ['una sopa', 'a soup'], 6000, ['Sopa calientica. Seis mil pesos.', 'A nice hot soup. Six thousand pesos.']),
+      it('tinto', '¿Me regala un tinto?', 'Could I have a black coffee?', ['un tinto', 'a black coffee'], 2000, ['Del termo, bien cargado. Dos mil pesos.', 'From the flask, nice and strong. Two thousand pesos.']),
     ],
   },
 

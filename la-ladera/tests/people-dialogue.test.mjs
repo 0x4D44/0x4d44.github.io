@@ -148,6 +148,21 @@ test('buying: a shop sells, the reply carries the price and the step reports the
   assert.ok(!it.choices.some((c) => c.id.startsWith('item:')), 'back at the main menu after a purchase');
 });
 
+test('buying (R3-207): the menu offers what is on sale at the hour (breakfast at half past seven, the set lunch from noon, never the lunch at breakfast), three things at every hour; nothing on sale, no "buy" topic', () => {
+  const buy = (hour) => { const d = dlg('restaurante', { gender: 'f', shopName: 'Restaurante Doña Rosa', hour, seed: 4 }); d.open(); return d.pick('buy').choices.map((c) => c.id); };
+  assert.deepEqual(buy(7.6), ['item:desayuno', 'item:jugo', 'item:sopa', 'back'], 'at 7:36 the kitchen is on breakfast ("todavía estamos con el desayuno")');
+  assert.deepEqual(buy(11.99), ['item:desayuno', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(12), ['item:almuerzo', 'item:jugo', 'item:sopa', 'back'], 'the set lunch from noon');
+  assert.deepEqual(buy(16.4), ['item:almuerzo', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(17.5), ['item:corrientazo', 'item:jugo', 'item:sopa', 'back'], 'in the evening only the set meal is left');
+  assert.deepEqual(buy(21.9), ['item:corrientazo', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(23.5), ['item:jugo', 'item:sopa', 'item:tinto', 'back'], 'and at night what a pot can warm');
+  for (let h = 0; h < 24; h += 0.25) assert.equal(buy(h).length, 4, `three things and the way back at ${h}`);
+  for (let h = 5; h < 12; h += 0.25) assert.ok(!buy(h).includes('item:almuerzo'), `no set lunch at ${h}`);
+  // a shop whose only dish is on sale from twelve to two has no "buy" topic before it, and the purchase is the first entry of the menu after it
+  const only = { ...BANK.personas.tienda, items: [{ ...BANK.personas.tienda.items[0], from: 12, to: 14 }] }, bank = { ...BANK, personas: { ...BANK.personas, tienda: only } };
+  const at = (hour) => new Dialogue({ npc: { id: 'n1', persona: 'tienda', name: 'Rosa', gender: 'f', mem: null, shopName: 'Tienda La Esperanza' }, bank, rng: makeRng(3), hour, world: { landmarks: LM, player: here, discoveries: [] }, address: 'm' });
+  assert.ok(!at(9).availableTopics().includes('buy')); assert.ok(!at(9).open().choices.some((c) => c.id === 'buy'), 'no purchase on the menu while nothing is on sale');
+  assert.ok(at(13).availableTopics().includes('buy')); assert.equal(at(13).open().choices[0].id, 'buy'); assert.ok(!at(14).availableTopics().includes('buy'), 'the window closes at two (to is exclusive)');
+});
+
 test('the hint no longer says "a el" and starts every sentence with a capital', () => {
   const disc = [{ id: 'd1', name: 'Mirador del Cielo', en: 'Sky Viewpoint', kind: 'viewpoint', x: 26, y: 29, z: -91, found: false }];
   for (let seed = 1; seed <= 12; seed++) {
