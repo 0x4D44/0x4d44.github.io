@@ -1,0 +1,47 @@
+/* Chapters: favourites, ask, relay, bill. Every selector is scoped to its chapter id. */
+
+/* Favourites */
+#favourites .takeaway { font: 600 17px/1.45 var(--serif); margin: 0 0 14px; max-width: 44em; }
+#favourites h3.sub, #relay h3.sub { font: 600 13px/1.3 var(--sans); color: var(--text-secondary); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 10px; }
+#favourites .bars { max-width: 760px; }
+#favourites .bar { cursor: default; }
+#favourites .bar:hover .fill { background: var(--seq-6); }
+#favourites .picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+#favourites .picks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; font-size: 13.5px; line-height: 1.3; }
+#favourites .picks .ans { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#favourites .picks .n { font: 12px/1.3 var(--mono); color: var(--text-secondary); }
+#favourites .picks i { grid-column: 1 / -1; display: block; height: 3px; margin-top: 2px; border-radius: 0 2px 2px 0; background: var(--seq-4); min-width: 2px; }
+#favourites .picks li.more .ans { color: var(--text-muted); font-style: italic; }
+#favourites table.data td.ans { max-width: 22em; overflow: hidden; text-overflow: ellipsis; }
+
+/* Ask them anything */
+#ask .card .answer { font: 15px/1.5 var(--serif); }
+#ask .card pre.art { font: 11px/1.15 var(--mono); white-space: pre; overflow-x: auto; max-width: 100%; margin: 0; padding: 6px 0; }
+#ask .grid.wide { align-items: start; }
+#ask .card h3 { flex-wrap: wrap; row-gap: 4px; }
+#ask .stepper { display: inline-flex; align-items: center; gap: 2px; margin-left: 8px; font: 12px var(--mono); color: var(--text-muted); font-weight: 400; }
+#ask .stepper .step { font: 12px/1 var(--sans); border: 1px solid var(--rule); background: var(--surface-1); color: var(--text-secondary); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
+#ask .stepper .step:disabled { opacity: .35; cursor: default; }
+
+/* Relay */
+#relay .relay { max-width: 44em; }
+#relay .relay p + p { margin-top: 1em; }
+#relay .relay .s:focus { outline: 2px solid var(--seq-3); outline-offset: 1px; background: var(--surface-2); }
+#relay table.data td.sent { white-space: normal; min-width: 18em; max-width: 40em; }
+#relay table.data tr.skipped td { color: var(--text-muted); font-style: italic; }
+
+/* Bill */
+#bill .scatter { width: 100%; margin: 4px 0 18px; }
+#bill .scatter svg { display: block; overflow: visible; }
+#bill .scatter .axis text { font: 11px var(--mono); fill: var(--text-muted); }
+#bill .scatter .axis text.title { font: 12px var(--sans); fill: var(--text-secondary); }
+#bill .scatter .axis line.grid { stroke: var(--rule); stroke-width: 1; }
+#bill .scatter .pt { stroke: var(--surface-1); stroke-width: 2; cursor: default; }
+#bill .scatter .pt.openai { fill: var(--openai); }
+#bill .scatter .pt.anthropic { fill: var(--anthropic); }
+#bill .scatter .pt:hover, #bill .scatter .pt:focus { stroke: var(--text-primary); outline: none; }
+#bill .scatter .labels text { font: 11.5px var(--sans); fill: var(--text-secondary); paint-order: stroke; stroke: var(--surface-0); stroke-width: 3px; stroke-linejoin: round; }
+#bill table.totals { max-width: 560px; margin-bottom: 8px; }
+#bill table.totals tr.sum td { font-weight: 700; border-bottom: 0; }
+#bill table.totals td:first-child { white-space: normal; }
+#bill table.totals th, #bill table.totals td { padding-left: 6px; padding-right: 6px; }
