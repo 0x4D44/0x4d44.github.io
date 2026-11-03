@@ -203,8 +203,8 @@ const FIT = {
       }
     }
     if (roomy) any(() => L.wall('shampoo_chair', 'any', { prio: 2 }));
-    else L.hang('shelf_barber', sw, { y: 1.0, at: 'start' });
     L.wall('bench_wood', 'any', { prio: 2, awayDoors: true });
+    if (!roomy) any(() => L.hang('shelf_barber', sw, { y: 1.0, at: 'start' }), () => L.hang('shelf_barber', 'any', { y: 1.0 }));       // (after the bench: the shelf goes where nobody who waits on it meets it with their head, R4-710; on another wall when the service wall is full)
     const c = any(() => L.wall('shop_counter_short', 'any', { prio: 1, awayDoors: true })); if (c) { L.top(c, 'phone_landline', { at: 'right' }); c.flags = { counter: true }; }
     sign(L, 'sign_barber', sw); D(L, 'barber_pole', sw, { near: streetPoint(L) ?? undefined, nearW: 3 }); D(L, 'price_hair', 'any'); art(L, E, 'sport', 'any'); clock(L, E, 'any', {});
     L.wall('cat_sitting', 'any', { at: 'corner', prio: 2 });

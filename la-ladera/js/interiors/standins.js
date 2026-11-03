@@ -1205,6 +1205,17 @@ S.decal = (P, c, T, r) => {
 };
 
 // ---- garments (the adult clothing library, garments.js): while the models are not loaded a garment is a cloth patch in its own colour, so an untidy room still reads as untidy
+/** What a hung garment hangs from (R2b-206: the clothes on the walls were flat panels with no hook in the wall): a hanger across its top edge (the hang point, local y = H), the hanger's wire up from the middle of the
+ *  bar, and the peg out of the wall the wire goes over (2 cm square, 7 cm out from the wall's face, or 3 cm past the middle of a thick thing: a hat, a bag). The library's model of a garment is the cloth alone, so
+ *  build.js draws this after it (`drawAddon`); the stand-in, which fills the garment's own box, does not. Nobody sees the tops, nor the back against the wall: 22 triangles, `HANGER_TRIS` in garments.js, which the pass
+ *  counts into the building's budget with the cloth. */
+const PEG = 0x6b4a2e, HANGER = 0x9a7549, WIRE = 0xa4a49d;
+function hangsFromPeg(P) {
+  const { W, H, D } = P, out = Math.max(0.07, D / 2 + 0.03);
+  P.flat(0, H - 0.008, 0, Math.min(W * 0.6, 0.5), 0.016, 0.012, HANGER, ['py', 'nz']);          // the bar of the hanger, across the cloth's shoulders
+  P.flat(0, H + 0.008, 0, 0.005, 0.045, 0.005, WIRE, ['py', 'ny', 'nz']);                         // its wire, up the middle
+  P.flat(0, H + 0.045, -D / 2 + out / 2, 0.02, 0.02, out, PEG, ['py']);                           // ... over the peg: from the wall's face out past the wire (the back of a part against the wall is left out by the Pen)
+}
 S.garment = (P, c, T) => {
   const { W, H, D } = P, col = T ?? 0xe8e1cf;
   if (c.state === 'hung') P.flat(0, H * 0.04, 0, W * 0.8, H * 0.92, Math.max(0.02, D * 0.6), col);              // hangs from its top edge: a thin panel
@@ -1270,9 +1281,9 @@ export const ADDONS = {
     });
   },
 };
-/** Draw what hangs on a library model of this record (build.js, after drawGlb), or nothing. Returns the number of primitives drawn. */
+/** Draw what hangs on a library model of this record (build.js, after drawGlb), or nothing: the butcher's cuts on their rail, the peg of a garment hung on the wall. Returns the number of primitives drawn. */
 export function drawAddon(b, rec, c) {
-  const f = ADDONS[rec.name]; if (!f) return 0;
+  const f = ADDONS[rec.name] ?? (c.hang && rec.kind === 'wall' ? hangsFromPeg : null); if (!f) return 0;
   const P = new Pen(b, rec, c);
   f(P, c, rec);
   return P.n;
