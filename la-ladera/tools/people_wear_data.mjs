@@ -88,6 +88,34 @@ export function checkWearAuthoringReports(fit, id, root = ROOT) {
   return pins;
 }
 
+/** Endpoint-collapse detail is authoring evidence; measured near/far triangle
+ * counts remain in every runtime garment. Pin the complete relocated maps and
+ * bind their result to those counts, which the validator checks against GLBs. */
+export function checkWearLodProvenance(fit, id, root = ROOT) {
+  const reference = fit.lodReductionReport;
+  if (reference?.path !== `dev/wear/lod-provenance/${id}.json` || reference.form !== 'LF')
+    throw new Error(`${id}: missing LOD provenance pin`);
+  const reportBytes = Buffer.from(readFileSync(join(root, reference.path), 'utf8').replace(/\r\n/g, '\n'));
+  if (reportBytes.length !== reference.bytes || createHash('sha256').update(reportBytes).digest('hex') !== reference.sha256)
+    throw new Error(`${id}: LOD provenance bytes changed`);
+  const report = JSON.parse(reportBytes), garments = fit.garments ?? {};
+  if (report.schema !== 1 || report.id !== id || !report.garments || Array.isArray(report.garments) ||
+      JSON.stringify(Object.keys(report.garments).sort()) !== JSON.stringify(Object.keys(garments).sort()) || Object.keys(garments).length === 0)
+    throw new Error(`${id}: LOD provenance identity or garment inventory changed`);
+  for (const [gid, garment] of Object.entries(garments)) {
+    const row = report.garments[gid];
+    if (own(garment, 'lodReduction')) throw new Error(`${id}/${gid}: duplicate inline LOD provenance`);
+    if (!Number.isSafeInteger(garment.tris) || garment.tris <= 0 || !Number.isSafeInteger(garment.farTris) || garment.farTris <= 0 ||
+        row?.triangles !== garment.farTris || row.targetTriangles !== Math.min(600, Math.floor(2 * garment.tris / 5)) || row.triangles > row.targetTriangles)
+      throw new Error(`${id}/${gid}: LOD provenance differs from measured triangles`);
+    if (!Number.isSafeInteger(row.sourceTriangles) || row.sourceTriangles < row.triangles ||
+        !Number.isSafeInteger(row.collapses) || row.collapses < 0 || !Number.isSafeInteger(row.seamCollapses) || row.seamCollapses < 0 || row.seamCollapses > row.collapses ||
+        !Array.isArray(row.topology) || row.topology.length === 0 || row.topology.some(pair => !Array.isArray(pair) || pair.length !== 2 || !Number.isSafeInteger(pair[0]) || !Number.isSafeInteger(pair[1]) || pair[1] < 0))
+      throw new Error(`${id}/${gid}: malformed LOD reduction provenance`);
+  }
+  return [{path:reference.path,form:'LF',bytes:reportBytes.length,sha256:reference.sha256}];
+}
+
 export function wearSources(root = ROOT) {
   const catalogue = read(join(root, 'tools/blender/people_wear.catalog.json'));
   const palette = read(join(root, 'assets/models', catalogue.palette));
@@ -157,6 +185,7 @@ export function buildWearManifest(root = ROOT) {
     if (!Array.isArray(components) || components.length === 0 || JSON.stringify(summary) !== JSON.stringify(reportedSummary))
       throw new Error(`${id}: current-body component provenance summary changed`);
     checkWearAuthoringReports(f, id, root);
+    checkWearLodProvenance(f, id, root);
     if (JSON.stringify(Object.keys(f.garments ?? {}).sort()) !== JSON.stringify(c.garments.map((g) => g.id).sort())) throw new Error(`${id}: wearable metadata is missing a garment`);
     const path = f.file.startsWith('wear/') ? f.file : `wear/${f.file}`;
     if (!/^wear\/[a-z0-9_]+\.glb(?:\.gz)?$/.test(path)) throw new Error(`${id}: wearable file path is outside the library`);

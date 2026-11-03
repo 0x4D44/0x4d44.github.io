@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { ROOT, PEOPLE_WEAR_SOURCE_PATHS, peopleWearSourceInputs, checkPeopleWearSourceInputs, checkWearAuthoringReports } from '../tools/people_wear_data.mjs';
+import { spawnSync } from 'node:child_process';
+import { ROOT, PEOPLE_WEAR_SOURCE_PATHS, peopleWearSourceInputs, checkPeopleWearSourceInputs, checkWearAuthoringReports, checkWearLodProvenance } from '../tools/people_wear_data.mjs';
 import { checkWearLodBudget, checkWearModelBudget, COMPRESSED_MODEL_BYTES } from '../tools/blender/people_wear_validate.mjs';
 
 // Independent list from the rebase contract; do not derive this oracle from the
@@ -209,4 +210,91 @@ test('wear authoring full proofs require actual pass pool and target arrays rath
     assert.throws(() => checkWearAuthoringReports(f.fit, 'm_don', f.root), new RegExp(`malformed ${phase} authoring proof`));
     f.save(field, phase);
   }
+});
+
+function lodReportFixture(t, eol = '\n') {
+  const scratch = join(ROOT, '.scratch'); mkdirSync(scratch, { recursive: true });
+  const root = mkdtempSync(join(scratch, 'wear-lod-proof-test-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const fit = { garments: { tshirt: { tris: 100, farTris: 30 }, trousers: { tris: 200, farTris: 64 } } };
+  const report = { schema: 1, id: 'm_don', garments: {
+    tshirt: { sourceTriangles: 40, triangles: 30, targetTriangles: 40, collapses: 5, seamCollapses: 2, topology: [[0, 2], [-2, 4]] },
+    trousers: { sourceTriangles: 70, triangles: 64, targetTriangles: 80, collapses: 3, seamCollapses: 1, topology: [[2, 0]] },
+  } };
+  const path = 'dev/wear/lod-provenance/m_don.json';
+  function save(value = report) {
+    const bytes = Buffer.from(JSON.stringify(value, null, 2) + '\n');
+    mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes.toString('utf8').replace(/\n/g, eol));
+    fit.lodReductionReport = { path, form: 'LF', bytes: bytes.length, sha256: digest(bytes) };
+    return bytes;
+  }
+  save(); return { root, fit, report, save };
+}
+
+test('wear LOD provenance pins the complete report identically in LF and CRLF form without mutating runtime counts', t => {
+  const lf = lodReportFixture(t), crlf = lodReportFixture(t, '\r\n'), before = structuredClone(lf.fit);
+  assert.deepEqual(checkWearLodProvenance(lf.fit, 'm_don', lf.root), [lf.fit.lodReductionReport]);
+  assert.deepEqual(checkWearLodProvenance(crlf.fit, 'm_don', crlf.root), [lf.fit.lodReductionReport]);
+  assert.deepEqual(lf.fit, before);
+});
+
+test('wear LOD provenance rejects redirected paths non-LF forms stale pins and changed report bytes', t => {
+  const f = lodReportFixture(t), other = 'dev/wear/lod-provenance/redirected.json';
+  writeFileSync(join(f.root, other), f.save());
+  for (const [key, value] of [['path', other], ['form', 'bytes']]) {
+    const invalid = structuredClone(f.fit); invalid.lodReductionReport[key] = value;
+    assert.throws(() => checkWearLodProvenance(invalid, 'm_don', f.root), /missing LOD provenance pin/);
+  }
+  for (const [key, value] of [['bytes', f.fit.lodReductionReport.bytes + 1], ['sha256', '0'.repeat(64)]]) {
+    const invalid = structuredClone(f.fit); invalid.lodReductionReport[key] = value;
+    assert.throws(() => checkWearLodProvenance(invalid, 'm_don', f.root), /LOD provenance bytes changed/);
+  }
+  const bytes = f.save(); writeFileSync(join(f.root, f.fit.lodReductionReport.path), Buffer.concat([bytes, Buffer.from('\n')]));
+  assert.throws(() => checkWearLodProvenance(f.fit, 'm_don', f.root), /LOD provenance bytes changed/);
+});
+
+test('wear LOD provenance rejects repinned foreign identities missing garments and invented garment maps', t => {
+  const f = lodReportFixture(t);
+  const invalid = [ { ...f.report, schema: 2 }, { ...f.report, id: 'w_vecina' }, { ...f.report, garments: { tshirt: f.report.garments.tshirt } },
+    { ...f.report, garments: { ...f.report.garments, invented: f.report.garments.tshirt } } ];
+  for (const report of invalid) {
+    f.save(report);
+    assert.throws(() => checkWearLodProvenance(f.fit, 'm_don', f.root), /LOD provenance identity or garment inventory changed/);
+  }
+});
+
+test('wear LOD provenance binds reduction results and the forty-percent target to measured near and far triangles', t => {
+  const f = lodReportFixture(t);
+  for (const [key, value] of [['triangles', 31], ['targetTriangles', 41]]) {
+    const changed = structuredClone(f.report); changed.garments.tshirt[key] = value; f.save(changed);
+    assert.throws(() => checkWearLodProvenance(f.fit, 'm_don', f.root), /LOD provenance differs from measured triangles/);
+  }
+  f.save();
+  for (const [key, value] of [['tris', 101], ['farTris', 31], ['tris', 0], ['farTris', .5]]) {
+    const changed = structuredClone(f.fit); changed.garments.tshirt[key] = value;
+    // 101 still has a target of40; choose a near count that changes that exact
+    // integer budget, rather than assuming a rounded ratio must change.
+    if (key === 'tris' && value === 101) changed.garments.tshirt.tris = 105;
+    assert.throws(() => checkWearLodProvenance(changed, 'm_don', f.root), /LOD provenance differs from measured triangles/);
+  }
+  const duplicated = structuredClone(f.fit); duplicated.garments.tshirt.lodReduction = f.report.garments.tshirt;
+  assert.throws(() => checkWearLodProvenance(duplicated, 'm_don', f.root), /duplicate inline LOD provenance/);
+});
+
+test('wear LOD provenance rejects impossible reduction counters and malformed component topology', t => {
+  const f = lodReportFixture(t);
+  for (const [key, value] of [['sourceTriangles', 29], ['collapses', -1], ['seamCollapses', 6],
+    ['topology', []], ['topology', [[0, 2.5]]], ['topology', [[0, -1]]], ['topology', [[0, 2, 3]]]]) {
+    const report = structuredClone(f.report); report.garments.tshirt[key] = value; f.save(report);
+    assert.throws(() => checkWearLodProvenance(f.fit, 'm_don', f.root), /malformed LOD reduction provenance/);
+  }
+});
+
+test('wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes', () => {
+  const child = spawnSync(process.env.PYTHON ?? 'python3', ['la-ladera/tools/blender/people_wear_lod_report_check.py'], {
+    cwd: join(ROOT, '..'), windowsHide: true, encoding: 'utf8', env: { ...process.env, LADERA_PRIO: 'idle' }, timeout: 30_000,
+  });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  assert.deepEqual(JSON.parse(child.stdout), { ok: true, garments: 2, reportBytesLF: JSON.parse(child.stdout).reportBytesLF, geometryFieldsUnchanged: true, fullMapsExact: true });
+  assert.ok(JSON.parse(child.stdout).reportBytesLF > 0);
 });

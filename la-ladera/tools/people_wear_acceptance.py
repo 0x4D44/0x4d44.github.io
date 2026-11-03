@@ -3,7 +3,9 @@
 Default --plan prints commands and audits dormant scope without running assets.
 --run executes complete collision sweeps, named suites, every mapped mutation,
 four strict sheets and the unchanged payload gate on the staged tree.
---mutations-only runs all four mapped Node mutation lanes on frozen inputs.
+--run --resume admits complete same-input parts only through the unchanged
+report merger; all later tests and browser/mutation stages run fresh again.
+--mutations-only runs all five mapped Node mutation lanes on frozen inputs.
 The browser fault lane additionally requires the passing four-sheet baseline.
 --payload-only exports EVERY staged la-ladera file into a clean task-owned tree
 and runs the unchanged payload gate there, with a complete exported inventory.
@@ -52,7 +54,9 @@ def digest(data):
 
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2)+'\n', encoding='utf8')
+    temporary=path.with_name(path.name+'.tmp')
+    temporary.write_text(json.dumps(value, indent=2)+'\n', encoding='utf8')
+    temporary.replace(path)
 
 
 def relative(path):
@@ -77,6 +81,7 @@ def source_snapshot():
         if (LADERA/name).is_file():
             paths.add(LADERA/name)
     paths.update((LADERA/'dev/wear/body-provenance').glob('*.json'))
+    paths.update((LADERA/'dev/wear/lod-provenance').glob('*.json'))
     paths.update((LADERA/'dev/wear/authoring').rglob('*.json'))
     rows=[]
     for path in sorted(paths):
@@ -159,12 +164,13 @@ def mutation_specs(node, out, suites):
     cases=[row for path in sorted((LADERA/'tools').glob('people_wear_mutations_*.json')) for row in json.loads(path.read_text())]
     result=[dict(name='managed',command=[sys.executable,'la-ladera/tools/people_wear_mutations.py','--node',node,'--out',relative(out/'mutations/managed')],
                  report=relative(out/'mutations/managed/report.json'),cases=[{key:row[key] for key in ('id','suite','test')} for row in cases])]
-    for name,stem in [('authoring','people-wear-authoring'),('packing','people-wear-pack')]:
+    for name,stem,folder in [('authoring','people-wear-authoring','authoring-mutation-proof'),
+                             ('packing','people-wear-pack','pack-mutation-proof'),
+                             ('layout','people-wear-layout','layout-mutation-proof')]:
         runner=LADERA/'tests'/(stem+'-mutations.mjs');source=runner.read_text()
         table=re.search(r'^const mutations = \[(.*?)^\];',source,re.M|re.S)
         need(table is not None,relative(runner)+': missing explicit mutation catalog')
         pairs=re.findall(r"\['([^']+)', '([^']+)'\]",table.group(1))
-        folder='authoring-mutation-proof' if name=='authoring' else 'pack-mutation-proof'
         result.append(dict(name=name,command=[node,'--import','./la-ladera/tests/register.mjs',relative(runner)],report='la-ladera/dev/wear/'+folder+'/report.json',
                            cases=[dict(id=ident,suite='la-ladera/tests/'+stem+'.test.mjs',test=test) for ident,test in pairs]))
     external=load_tool('people_wear_authoring_mutations.py')
@@ -267,13 +273,15 @@ def main():
     parser.add_argument('--out',default='la-ladera/dev/wear/acceptance')
     parser.add_argument('--jobs',type=int,default=2)
     parser.add_argument('--chrome',default=os.environ.get('CHROME_PATH','/usr/bin/google-chrome'))
+    parser.add_argument('--resume',action='store_true',help='with --run, retain only original-merger-verified current-input clearance parts; rerun all later stages')
     args=parser.parse_args();need(1<=args.jobs<=4,'clearance jobs must be 1..4')
+    need(not args.resume or args.run,'--resume requires --run')
     try:
         if os.getpriority(os.PRIO_PROCESS,0)<19:os.setpriority(os.PRIO_PROCESS,0,19)
     except (AttributeError,PermissionError):pass
     node=str(Path(shutil.which(args.node) or args.node).resolve())
     env=dict(os.environ,LADERA_PRIO='idle',CHROME_PATH=args.chrome)
-    for name in ('LADERA_WEAR_MUTATION','WEAR_AUTHOR_MUTATION','WEAR_PACK_MUTATION','PEOPLE_WEAR_LOD_TEST_MODULE','PEOPLE_WEAR_FACE_TEST_MODULE'):
+    for name in ('LADERA_WEAR_MUTATION','LADERA_WEAR_TARGET_PREVIEW','WEAR_AUTHOR_MUTATION','WEAR_PACK_MUTATION','WEAR_LAYOUT_MUTATION','PEOPLE_WEAR_LOD_TEST_MODULE','PEOPLE_WEAR_FACE_TEST_MODULE'):
         env.pop(name,None)
     need(subprocess.check_output([node,'--version'],env=env,text=True).strip()=='v22.16.0','exact Node v22.16.0 is required')
     out=(ROOT/args.out).resolve();need(out.is_relative_to(LADERA/'dev'),'acceptance output must stay under la-ladera/dev')
@@ -291,64 +299,102 @@ def main():
       browserMutations=dict(tests=len(browser_cases),mutations=len(browser_cases),cases=[dict(id=ident,test=test) for ident,test in browser_cases],requiresPassingFourSheetBaseline=True),
       expectedCoverage=dict(fits=23,designs=23,combinations=529,samplesPerFit=7763,designFitPoseStates=4106627,lodDesignFitPoseStates=8213254),
       payload='Unchanged payload.mjs on every staged la-ladera file exported to a clean task-owned tree; 24 MiB texture limit retained.',
-      mutationAudit='All four mapped Node mutation lanes run in --run or --mutations-only. The separate browser lane runs in --run after the strict four-sheet baseline. Planning does not count as execution.')
+      mutationAudit='All five mapped Node mutation lanes run in --run or --mutations-only. The separate browser lane runs in --run after the strict four-sheet baseline. Planning does not count as execution.')
     if not args.run and not args.payload_only and not args.mutations_only:
         print(json.dumps(plan,indent=2));return 0 if audit['ok'] else 1
-    out.mkdir(parents=True,exist_ok=True);write(out/'plan.json',plan);need(audit['ok'],'dormant/protected-source scope audit failed')
+    out.mkdir(parents=True,exist_ok=True);need(audit['ok'],'dormant/protected-source scope audit failed')
     if args.payload_only:
         write(out/'payload-result.json',clean_payload(node,out,env));return 0
     if args.mutations_only:
+        write(out/'plan.json',plan)
         initial=source_snapshot();write(out/'mutation-inputs-start.json',initial)
         result=run_mutations(mutations,out,env);final=source_snapshot();write(out/'mutation-inputs-end.json',final)
         result['inputsStable']=initial==final;result['ok']=result['ok'] and result['inputsStable'];write(out/'mutation-result.json',result)
         need(result['ok'],'mutation batch inputs changed');return 0
     need(Path(args.chrome).is_file(),'headless Chrome is required for the four strict contact sheets')
-    inputs=source_snapshot();write(out/'inputs-start.json',inputs)
-    result=dict(startedAt=now(),node='v22.16.0',scope=audit,complete=False,commands=[],failures=[],mutationAudit=plan['mutationAudit'])
+    existing=list((out/'clearance-parts').glob('*.json')) if (out/'clearance-parts').exists() else []
+    need(args.resume or not existing,'clearance reports already exist; use --run --resume to verify same-input reuse or choose a fresh --out')
+    attempt=out/'runs'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')
+    attempt.mkdir(parents=True)
+    # Preserve previous attempt logs, screenshots and complete aggregate reports.
+    # Only the fit-part paths are shared, allowing interrupted sweeps to resume.
+    commands['contactSheets']=node_base+['la-ladera/tests/people-wear-shots.mjs','--out',relative(attempt/'sheets'),'--gpu','swiftshader']
+    commands['browserMutations']=node_base+['la-ladera/tools/people_wear_browser_mutations.mjs','--baseline',relative(attempt/'sheets/people-wear-shots.json'),
+                                          '--baseline-inputs',relative(attempt/'inputs-start.json'),'--out',relative(attempt/'browser-mutations')]
+    mutations=mutation_specs(node,attempt,suites);plan.update(commands=commands,mutations=mutations,attempt=relative(attempt),resume=args.resume)
+    write(attempt/'plan.json',plan);write(out/'latest.json',dict(attempt=relative(attempt),startedAt=now()))
+    inputs=source_snapshot();write(attempt/'inputs-start.json',inputs)
+    result=dict(startedAt=now(),node='v22.16.0',scope=audit,complete=False,commands=[],reusedParts=[],failures=[],mutationAudit=plan['mutationAudit'],attempt=relative(attempt),prePayloadComplete=False)
+    def checkpoint():
+        write(attempt/'progress.json',result)
     try:
-        people=run_command(commands['people'],out/'people-complete',env);result['commands'].append(people)
+        people=run_command(commands['people'],attempt/'people-complete',env);result['commands'].append(people)
         p=json.loads((ROOT/people['stdout']['path']).read_text());need(people['exitCode']==0 and p['ok'] and p['complete'] and len(p['people'])==30 and p['clips']==32,'complete people validation failed')
+        checkpoint()
         (out/'clearance-parts').mkdir(exist_ok=True)
+        reusable=set()
+        if args.resume:
+            resume_command=node_base+['la-ladera/tools/people_wear_resume.mjs','--parts',relative(out/'clearance-parts'),'--report',relative(attempt/'resume.json')]
+            resumed=run_command(resume_command,attempt/'resume',env);result['commands'].append(resumed)
+            need(resumed['exitCode']==0,'existing clearance inputs changed or current structure failed; preserve these reports and choose a fresh output folder')
+            resume_report=json.loads((attempt/'resume.json').read_text());need(resume_report['compatible'],'cached reports belong to different inputs')
+            result['reusedParts']=resume_report['reusable'];reusable={row['id'] for row in resume_report['reusable']}
+            result['resumeProof']=dict(path=relative(attempt/'resume.json'),sha256=digest((attempt/'resume.json').read_bytes()))
+            checkpoint()
+        pending=[(ident,command) for ident,command in zip(ELIGIBLE,commands['clearance']) if ident not in reusable]
+        for ident,_ in pending:
+            old=out/'clearance-parts'/f'{ident}.json'
+            if old.exists():
+                previous=attempt/'previous-failed-parts'/old.name;previous.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(old,previous)
         with ThreadPoolExecutor(max_workers=args.jobs) as executor:
-            futures={executor.submit(run_command,command,out/'clearance-parts'/ident,env):ident for ident,command in zip(ELIGIBLE,commands['clearance'])}
-            for future in as_completed(futures):result['commands'].append(future.result())
+            futures={executor.submit(run_command,command,attempt/'clearance-parts'/ident,env):ident for ident,command in pending}
+            for future in as_completed(futures):
+                ident=futures[future];row=future.result();result['commands'].append(row)
+                part=out/'clearance-parts'/f'{ident}.json'
+                write(out/'clearance-parts'/f'{ident}.command.json',dict(command=row,report=dict(path=relative(part),sha256=digest(part.read_bytes())) if part.exists() else None))
+                checkpoint()
         need(all(row['exitCode']==0 for row in result['commands']),'one or more complete clearance parts failed; no fresh certificate published')
-        aggregate=node_base+['la-ladera/tools/blender/people_wear_validate.mjs','--mode','all','--aggregate',','.join(relative(out/'clearance-parts'/f'{ident}.json') for ident in ELIGIBLE),'--report',relative(out/'clearance.json')]
-        merged=run_command(aggregate,out/'clearance-aggregate',env);result['commands'].append(merged)
+        aggregate=node_base+['la-ladera/tools/blender/people_wear_validate.mjs','--mode','all','--aggregate',','.join(relative(out/'clearance-parts'/f'{ident}.json') for ident in ELIGIBLE),'--report',relative(attempt/'clearance.json')]
+        merged=run_command(aggregate,attempt/'clearance-aggregate',env);result['commands'].append(merged)
         need(merged['exitCode']==0,'complete clearance aggregation failed')
-        result['coverage']=check_clearance(json.loads((out/'clearance.json').read_text()))
-        shutil.copyfile(out/'clearance.json',LADERA/'dev/wear/clearance.json')
-        result['freshCertificate']=dict(path='la-ladera/dev/wear/clearance.json',sha256=digest((out/'clearance.json').read_bytes()))
+        result['coverage']=check_clearance(json.loads((attempt/'clearance.json').read_text()))
+        shutil.copyfile(attempt/'clearance.json',out/'clearance.json');shutil.copyfile(attempt/'clearance.json',LADERA/'dev/wear/clearance.json')
+        result['freshCertificate']=dict(path='la-ladera/dev/wear/clearance.json',sha256=digest((attempt/'clearance.json').read_bytes()))
+        checkpoint()
         for path,spec in zip(suites,commands['tests']):
-            row=run_command(spec['command'],out/'tests'/path.stem,env);result['commands'].append(row)
+            row=run_command(spec['command'],attempt/'tests'/path.stem,env);result['commands'].append(row)
             tap=(ROOT/row['stdout']['path']).read_text();passed=set(re.findall(r'^ok \d+ - (.+)$',tap,re.M))
             row['expectedNamedTests']=len(spec['names']);row['missingNamedPasses']=sorted(set(spec['names'])-passed)
             need(row['exitCode']==0 and not row['missingNamedPasses'] and not re.search(r'^not ok ',tap,re.M),relative(path)+': a named test failed or emitted no real TAP')
-        shots=run_command(commands['contactSheets'],out/'contact-sheets',env);result['commands'].append(shots)
-        sheets=json.loads((out/'sheets/people-wear-shots.json').read_text())
+            checkpoint()
+        shots=run_command(commands['contactSheets'],attempt/'contact-sheets',env);result['commands'].append(shots)
+        sheets=json.loads((attempt/'sheets/people-wear-shots.json').read_text())
         need(shots['exitCode']==0 and sheets['ok'] and not sheets['failures'],'strict contact-sheet runtime or browser checks failed')
         expected={('contact-near.jpg',0,'idle_a',.27),('contact-far.jpg',1,'idle_a',.27),('contact-walk.jpg',0,'walk',.19),('contact-seated.jpg',0,'sit_idle',.25)}
         need({(s['file'],s['lod'],s['clip'],s['phase']) for s in sheets['sheets']}==expected,'not all four exact contact-sheet requests completed')
         for sheet in sheets['sheets']:
             need(len(sheet['rows'])==23 and all([f['id'] for f in row['fits']]==['w_joven','m_tendero','w_vecina'] for row in sheet['rows']),'contact sheet omitted a design or evidence body')
-        result['contactSheets']=[dict(path=relative(out/'sheets'/s['file']),sha256=digest((out/'sheets'/s['file']).read_bytes())) for s in sheets['sheets']]
-        browser_mutations=run_command(commands['browserMutations'],out/'browser-mutations',env);result['commands'].append(browser_mutations)
-        browser_proof=json.loads((out/'browser-mutations/report.json').read_text())
+        result['contactSheets']=[dict(path=relative(attempt/'sheets'/s['file']),sha256=digest((attempt/'sheets'/s['file']).read_bytes())) for s in sheets['sheets']]
+        checkpoint()
+        browser_mutations=run_command(commands['browserMutations'],attempt/'browser-mutations',env);result['commands'].append(browser_mutations)
+        browser_proof=json.loads((attempt/'browser-mutations/report.json').read_text())
         need(browser_mutations['exitCode']==0 and browser_proof['ok'] and browser_proof['complete'] and browser_proof['inputsStable'],'browser mutation evidence did not pass on stable inputs')
         need(browser_proof['killed']==len(browser_cases) and {row['id'] for row in browser_proof['mutants']}=={row[0] for row in browser_cases},'browser mutation cases were omitted or changed')
-        result['browserMutations']=dict(report=relative(out/'browser-mutations/report.json'),sha256=digest((out/'browser-mutations/report.json').read_bytes()),
+        result['browserMutations']=dict(report=relative(attempt/'browser-mutations/report.json'),sha256=digest((attempt/'browser-mutations/report.json').read_bytes()),
                                        tests=len(browser_cases),killed=browser_proof['killed'])
-        result['mutations']=run_mutations(mutations,out,env)
-        result['payload']=clean_payload(node,out,env)
+        checkpoint()
+        result['mutations']=run_mutations(mutations,attempt,env)
+        result['prePayloadComplete']=True;checkpoint()
+        result['payload']=clean_payload(node,attempt,env)
     except Exception as error:
         result['failures'].append(str(error))
-    final=source_snapshot();write(out/'inputs-end.json',final)
+    final=source_snapshot();write(attempt/'inputs-end.json',final)
     result['inputsStable']=inputs==final
     if not result['inputsStable']:result['failures'].append('acceptance inputs changed during execution')
     result['finishedAt']=now();result['ok']=not result['failures']
     result['validationBatchComplete']=result['ok'];result['complete']=False
     result['completionScope']='Complete validators, named tests, all mapped mutations, contact sheets and payload. Human review of the four rendered sheets remains mandatory.'
-    write(out/'result.json',result);print(json.dumps({key:result.get(key) for key in ['ok','complete','validationBatchComplete','coverage','failures','completionScope']},indent=2))
+    write(attempt/'result.json',result);write(out/'result.json',result);print(json.dumps({key:result.get(key) for key in ['ok','complete','validationBatchComplete','coverage','failures','completionScope']},indent=2))
     return 0 if result['ok'] else 1
 
 

@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { ClosedSurface, identity, skinPositions } from '../tools/blender/people_wear_math.mjs';
 
 const source = process.env.PEOPLE_WEAR_FACE_TEST_MODULE ? pathToFileURL(process.env.PEOPLE_WEAR_FACE_TEST_MODULE).href : new URL('../tools/blender/people_wear_fit_faces.mjs', import.meta.url).href;
-const { repairFaceBranches, IDLE_FACE_GARMENTS, FACE_GARMENTS } = await import(source);
+const { repairFaceBranches, boundedMove, protectRest, restartStalledFaces, IDLE_FACE_GARMENTS, FACE_GARMENTS } = await import(source);
 const BARYCENTRIC = [[1 / 3, 1 / 3, 1 / 3], [.5, .5, 0], [0, .5, .5], [.5, 0, .5]];
 const point = (p, v) => Array.from(p.subarray(v * 3, v * 3 + 3));
 const inside = (surfaces, p) => surfaces.some(surface => surface.insideXYZ(...p));
@@ -163,5 +163,108 @@ test('face branch search resolves a narrow padded corridor between raw grid stat
   for (const triangle of pool.triangles) {
     const a = normal(before, triangle), b = normal(pool.decoded.attrs.POSITION, triangle);
     assert.ok(a.reduce((sum, value, k) => sum + value * b[k], 0) > 0, 'local proposals must preserve both welded face orientations');
+  }
+});
+
+function stalledFixture() {
+  const pool = cloth([[-.04,0,0],[.04,0,0],[0,.05,0],[-.055,.012,0],[-.025,.012,0]], [[0,1,2],[0,4,3]]);
+  pool.fittedInput = new Float64Array(pool.decoded.attrs.POSITION);
+  for (const v of pool.used) pool.original[v * 3 + 2] = -.002;
+  const reverseNeighbour = () => { for (const v of pool.membersFor.get(3)) pool.decoded.attrs.POSITION.set([-.025,-.012,0], v * 3); };
+  reverseNeighbour(); pool.maximum = Math.hypot(.03, .024, .002);
+  return { pool, reverseNeighbour, ...samples([box()]) };
+}
+const recoveryClock = overrides => ({ completedPasses: 98, maxPasses: 160, unimprovedPasses: 32, ...overrides });
+
+test('stalled face recovery requires sustained failure beside a reversed rest neighbour', () => {
+  for (const missing of ['sustained stall', 'reversed neighbour', 'failed probe']) {
+    const { pool, rest, contact } = stalledFixture(), clock = recoveryClock();
+    if (missing === 'sustained stall') clock.unimprovedPasses = 31;
+    if (missing === 'reversed neighbour') pool.decoded.attrs.POSITION.set(pool.fittedInput);
+    if (missing === 'failed probe') contact.surfaces = [box([1,1,1])];
+    const before = new Float32Array(pool.decoded.attrs.POSITION);
+    assert.equal(restartStalledFaces(pool, rest, contact, clock), false, 'recovery requires '+missing);
+    assert.deepEqual(pool.decoded.attrs.POSITION, before);
+    assert.equal(pool.orientationActive, undefined);
+  }
+});
+
+test('stalled face recovery runs once inside the remaining original pass budget', () => {
+  const { pool, rest, contact, reverseNeighbour } = stalledFixture(), before = new Float32Array(pool.decoded.attrs.POSITION);
+  assert.equal(restartStalledFaces(pool, rest, contact, recoveryClock({ completedPasses: 129 })), false, '31 remaining passes must not start a new recovery');
+  assert.deepEqual(pool.decoded.attrs.POSITION, before);
+  assert.equal(restartStalledFaces(pool, rest, contact, recoveryClock()), true);
+  assert.equal(pool.referenceRestartPass, 98);
+  reverseNeighbour(); const changed = new Float32Array(pool.decoded.attrs.POSITION);
+  assert.equal(restartStalledFaces(pool, rest, contact, recoveryClock()), false, 'a pool cannot restart a second time');
+  assert.deepEqual(pool.decoded.attrs.POSITION, changed);
+  assert.equal(pool.referenceRestartPass, 98);
+});
+
+test('stalled face recovery verifies the rest reset and preserves immutable raw movement history', () => {
+  const { pool, rest, contact } = stalledFixture(), original = new Float64Array(pool.original), fitted = new Float64Array(pool.fittedInput);
+  const maximum = pool.maximum, before = structuredClone(pool.decoded);
+  assert.equal(restartStalledFaces(pool, rest, contact, recoveryClock()), true);
+  assert.deepEqual(pool.original, original); assert.deepEqual(pool.fittedInput, fitted);
+  assert.equal(pool.maximum, maximum, 'recovery must retain earlier maximum movement');
+  assert.deepEqual(Array.from(pool.decoded.attrs.POSITION), Array.from(fitted));
+  assert.deepEqual(pool.decoded.indices, before.indices);
+  for (const key of Object.keys(before.attrs)) if (key !== 'POSITION') assert.deepEqual(pool.decoded.attrs[key], before.attrs[key]);
+  for (const v of pool.used) {
+    const p = point(pool.decoded.attrs.POSITION, v);
+    assert.ok(!inside(rest.surfaces, p));
+    assert.ok(distance(p, point(original, v)) <= .08);
+    for (const member of pool.membersFor.get(v)) assert.deepEqual(point(pool.decoded.attrs.POSITION, member), p);
+  }
+  const obstructed = stalledFixture();
+  for (const v of obstructed.pool.membersFor.get(1)) obstructed.pool.fittedInput.set([0,0,0], v * 3);
+  assert.throws(() => restartStalledFaces(obstructed.pool, obstructed.rest, obstructed.contact, recoveryClock()), /independently clear rest/);
+  const tooFar = stalledFixture();
+  for (const v of tooFar.pool.membersFor.get(1)) tooFar.pool.fittedInput.set([.3,0,0], v * 3);
+  assert.throws(() => restartStalledFaces(tooFar.pool, tooFar.rest, tooFar.contact, recoveryClock()), /original 80 mm/);
+});
+
+test('ordinary recovery proposals backtrack against the fixed rest reference for every welded face', () => {
+  for (const alreadyBent of [false, true]) {
+    const pool = cloth([[0,0,0],[.02,0,0],[0,.02,0]]);
+    pool.fittedInput = new Float64Array(pool.decoded.attrs.POSITION); pool.orientationActive = true;
+    if (alreadyBent) for (const v of pool.membersFor.get(0)) pool.decoded.attrs.POSITION.set([.009,.009,.012], v * 3);
+    const before = new Float32Array(pool.decoded.attrs.POSITION), original = new Float64Array(pool.original), posed = skinPositions(pool.decoded, [identity()]);
+    const delta = alreadyBent ? [.004,.004,0] : [.04,.04,0];
+    boundedMove(pool, 0, delta, posed, identity());
+    assert.ok(distance(point(pool.decoded.attrs.POSITION, 0), point(before, 0)) > 0, 'a safe partial move must remain available');
+    assert.ok(distance(point(pool.decoded.attrs.POSITION, 0), point(before, 0).map((v,k) => v+delta[k])) > .001, 'the full reversed proposal must be backtracked');
+    assert.deepEqual(pool.original, original);
+    for (const triangle of pool.triangles) {
+      const reference = normal(pool.fittedInput, triangle), current = normal(pool.decoded.attrs.POSITION, triangle);
+      assert.ok(reference.reduce((sum, v, k) => sum + v * current[k], 0) > 0, 'the initial rest reference cannot follow earlier accepted rotations');
+    }
+    for (const v of pool.used) {
+      const p = point(pool.decoded.attrs.POSITION, v);
+      assert.ok(distance(p, point(original, v)) <= .08);
+      assert.deepEqual(point(posed, v), p);
+      for (const member of pool.membersFor.get(v)) assert.deepEqual(point(pool.decoded.attrs.POSITION, member), p);
+    }
+  }
+});
+
+test('recovery rest protection avoids a partial reset that reverses a neighbouring face', () => {
+  const pool = cloth([[0,0,0],[.02,0,0],[0,.02,0]]);
+  pool.fittedInput = new Float64Array(pool.decoded.attrs.POSITION); pool.orientationActive = true;
+  for (const v of pool.used) {
+    pool.decoded.attrs.POSITION[v * 3] -= .04; pool.decoded.attrs.POSITION[v * 3 + 1] -= .04;
+  }
+  pool.maximum = Math.SQRT2 * .04;
+  const original = new Float64Array(pool.original), maximum = pool.maximum;
+  const { rest } = samples([box([-.11,-.11,0], [.09,.09,1])]);
+  assert.ok(inside(rest.surfaces, point(pool.decoded.attrs.POSITION, 0)));
+  for (const v of pool.used) assert.ok(!inside(rest.surfaces, point(pool.fittedInput, v)));
+  protectRest(pool, rest);
+  assert.deepEqual(Array.from(pool.decoded.attrs.POSITION), Array.from(pool.fittedInput), 'the verified full rest input must replace an unsafe partial reset');
+  assert.deepEqual(pool.original, original); assert.equal(pool.maximum, maximum);
+  for (const v of pool.used) assert.ok(!inside(rest.surfaces, point(pool.decoded.attrs.POSITION, v)));
+  for (const triangle of pool.triangles) {
+    const reference = normal(pool.fittedInput, triangle), current = normal(pool.decoded.attrs.POSITION, triangle);
+    assert.ok(reference.reduce((sum, v, k) => sum + v * current[k], 0) > 0);
   }
 });

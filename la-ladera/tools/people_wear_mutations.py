@@ -25,7 +25,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 SUITES = ["la-ladera/tests/people-wear.test.mjs", "la-ladera/tests/people-wear-runtime.test.mjs",
           "la-ladera/tests/people-wear-body.test.mjs", "la-ladera/tests/people-wear-rebase.test.mjs",
-          "la-ladera/tests/people-wear-fit-search.test.mjs", "la-ladera/tests/people-wear-target-branch.test.mjs"]
+          "la-ladera/tests/people-wear-fit-search.test.mjs", "la-ladera/tests/people-wear-target-branch.test.mjs",
+          "la-ladera/tests/people-wear-author-bounds.test.mjs"]
 DEPENDENCIES = [
     'tests/nice.mjs', 'tests/register.mjs', 'tests/hooks.mjs',
     'assets/models/manifest.people.json', 'assets/models/manifest.json',
@@ -36,12 +37,15 @@ DEPENDENCIES = [
     'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py',
     'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_fit_faces.mjs',
     'tools/blender/people_wear_fit_targets.mjs', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_target_search.mjs',
-    'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_math.mjs',
+    'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_layout.py', 'tools/blender/people_wear_math.mjs',
+    'tools/blender/people_wear_lod_report_check.py',
     'tools/blender/people_wear_validate.mjs', 'tools/blender/people_validate.mjs',
     'tools/people_wear_data.mjs', 'js/people/rig.js', 'js/people/wear.js',
     'js/people/wear_data.js', 'js/people/wear_geometry.js', 'js/people/wear_pose.js',
     'js/people/wear_correction.js', 'vendor/three/build/three.core.min.js',
     'vendor/three/examples/jsm/loaders/GLTFLoader.js',
+    'vendor/three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js',
+    'vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm',
 ]
 
 
@@ -76,7 +80,8 @@ def main():
     except (AttributeError, PermissionError):
         pass  # Each Node test also imports the repository's idle-priority shim.
     env = dict(os.environ, LADERA_PRIO="idle")
-    env.pop("LADERA_WEAR_MUTATION", None)
+    for name in ['LADERA_WEAR_MUTATION', 'LADERA_WEAR_TARGET_PREVIEW', 'WEAR_AUTHOR_MUTATION', 'WEAR_PACK_MUTATION', 'WEAR_LAYOUT_MUTATION', 'PEOPLE_WEAR_LOD_TEST_MODULE', 'PEOPLE_WEAR_FACE_TEST_MODULE']:
+        env.pop(name, None)
     node = subprocess.check_output([args.node, "--version"], env=env, text=True).strip()
     if node != "v22.16.0":
         raise RuntimeError(f"Required Node v22.16.0; got {node}")
@@ -129,7 +134,7 @@ def main():
 
     def snapshot():
         paths = set(tracked)
-        for directory in ['la-ladera/assets/models/wear', 'la-ladera/assets/models/people', 'la-ladera/dev/wear/body-provenance']:
+        for directory in ['la-ladera/assets/models/wear', 'la-ladera/assets/models/people', 'la-ladera/dev/wear/body-provenance', 'la-ladera/dev/wear/lod-provenance']:
             paths.update(str(path.relative_to(ROOT)) for path in (ROOT/directory).glob('*') if path.is_file())
         paths.update(str(path.relative_to(ROOT)) for path in (ROOT/'la-ladera/dev/wear/authoring').rglob('*.json') if path.is_file())
         for path in ['la-ladera/assets/models/manifest.people-wear.json', 'la-ladera/dev/wear/clearance.json']:

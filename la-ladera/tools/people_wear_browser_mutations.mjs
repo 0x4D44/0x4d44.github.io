@@ -4,7 +4,7 @@
 // baseline and its complete input snapshot are mandatory before any browser run.
 import '../tests/nice.mjs';
 import { readFile, writeFile, mkdir, mkdtemp, symlink } from 'node:fs/promises';
-import { resolve, dirname, relative } from 'node:path';
+import { resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { launch } from '../tests/chrome.mjs';
@@ -30,9 +30,8 @@ const cases = [
   {id:'gallery-unknown-garment', test:'gallery rejects an unknown rendered garment', entry:'render', render:drawSpec, error:'empty or unknown garment render request',
    from:'const entries = ids ? ids.map(id => wear.garments.get(id)) : wear.manifest.garments;', to:'__MARK__ const entries = [undefined];'},
   {id:'gallery-invalid-scale', test:'gallery rejects an invalid preview scale', entry:'render', render:drawSpec, error:'invalid preview scale',
-   from:'const tileW = Math.round(240 * scale), tileH = Math.round(352 * scale), groupW = tileW * PEOPLE.length;',
    // Inject before the existing guard, leaving the guard itself byte-for-byte.
-   to:null, before:"  assert(Number.isFinite(scale) && scale >= 1 && scale <= 3, 'invalid preview scale');", inject:'__MARK__ scale = 0;\n'},
+   before:"  assert(Number.isFinite(scale) && scale >= 1 && scale <= 3, 'invalid preview scale');", inject:'__MARK__ scale = 0;\n'},
   {id:'gallery-original-skeleton', test:'gallery preserves the resident skeleton when dressing', entry:'runtime', error:'wardrobe replaced original skeleton',
    before:'    assert(inst.mesh === original.mesh && inst.mesh.skeleton === original.skeleton, `${id}: wardrobe replaced original skeleton`);',
    inject:'__MARK__ inst.mesh.skeleton = inst.mesh.skeleton.clone();\n'},
@@ -145,7 +144,8 @@ if (args.includes('--list')) {
 need(process.version === 'v22.16.0', 'exact Node v22.16.0 is required');
 need(option('baseline') && option('baseline-inputs'), 'a passing original four-sheet --baseline and its --baseline-inputs snapshot are required');
 const out = resolve(ROOT, option('out','la-ladera/dev/wear/browser-mutation-proof'));
-need(out.startsWith(resolve(LADERA,'dev') + '/'), 'browser proof output must stay under la-ladera/dev');
+const outputRelative = relative(resolve(LADERA,'dev'),out);
+need(outputRelative && !outputRelative.startsWith('..') && !isAbsolute(outputRelative), 'browser proof output must stay under la-ladera/dev');
 const baselinePath = resolve(ROOT,option('baseline')), baselineInputsPath = resolve(ROOT,option('baseline-inputs'));
 const baseline = JSON.parse(await readFile(baselinePath,'utf8')), baselineInputs = JSON.parse(await readFile(baselineInputsPath,'utf8'));
 const expectedSheets = [['contact-near.jpg',0,'idle_a',0.27],['contact-far.jpg',1,'idle_a',0.27],['contact-walk.jpg',0,'walk',0.19],['contact-seated.jpg',0,'sit_idle',0.25]];
@@ -172,7 +172,7 @@ const stage = await mkdtemp(resolve(LADERA,'.scratch/wear-browser-mutations-'));
 await mkdir(resolve(stage,'la-ladera/tests'),{recursive:true});
 for (const name of ['assets','js','vendor']) await symlink(resolve(LADERA,name),resolve(stage,'la-ladera',name),process.platform === 'win32' ? 'junction' : 'dir');
 await writeFile(resolve(stage,'la-ladera/tests/people-wear-gallery.html'),await readFile(resolve(LADERA,'tests/people-wear-gallery.html')));
-await write(out+'/inputs-start.json',initial);
+await write(resolve(out,'inputs-start.json'),initial);
 const report = {schema:1,node:process.version,startedAt:new Date().toISOString(),complete:false,ok:false,
   baseline:{report:posix(baselinePath),sha256:sha(await readFile(baselinePath)),inputs:posix(baselineInputsPath),inputSha256:sha(await readFile(baselineInputsPath))},
   sourcePins:[{path:GALLERY,form:'LF',sha256:sha(gallery)},{path:SHOTS,form:'LF',sha256:sha(shots)}],stage:posix(stage),

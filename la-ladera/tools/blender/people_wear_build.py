@@ -76,6 +76,42 @@ def body_provenance_reference(ident, provenance):
     return summary
 
 
+def lod_provenance_reference(ident, fit):
+    """Hoist only the new endpoint-reduction maps, retaining exact measured LODs.
+
+    This changes JSON placement, never geometry or the garment measurements.
+    Existing reports are verified on repeat refreshes instead of being silently
+    replaced. Every full map remains an LF-pinned clearance-certificate input.
+    """
+    garments=fit.get('garments',{})
+    if not garments:raise RuntimeError(ident+': no garments for LOD provenance')
+    maps={gid:copy.deepcopy(gar['lodReduction']) for gid,gar in garments.items() if 'lodReduction' in gar}
+    relative='dev/wear/lod-provenance/'+ident+'.json'
+    path=ROOT/relative
+    if maps:
+        if set(maps)!=set(garments):raise RuntimeError(ident+': incomplete inline LOD provenance')
+        report={'schema':1,'id':ident,'garments':maps}
+    else:
+        pin=fit.get('lodReductionReport',{})
+        if pin.get('path')!=relative or pin.get('form')!='LF':raise RuntimeError(ident+': missing LOD provenance pin')
+        data=path.read_bytes().replace(b'\r\n',b'\n')
+        if pin.get('bytes')!=len(data) or pin.get('sha256')!=hashlib.sha256(data).hexdigest():
+            raise RuntimeError(ident+': LOD provenance bytes changed')
+        report=json.loads(data)
+    if report.get('schema')!=1 or report.get('id')!=ident or set(report.get('garments',{}))!=set(garments):
+        raise RuntimeError(ident+': LOD provenance identity or garment inventory changed')
+    for gid,gar in garments.items():
+        row=report['garments'][gid]
+        if row.get('triangles')!=gar['farTris'] or row.get('targetTriangles')!=min(600,(2*gar['tris'])//5):
+            raise RuntimeError(ident+'/'+gid+': LOD provenance differs from measured triangles')
+    if maps:
+        data=(json.dumps(report,indent=2)+'\n').encode('utf-8')
+        path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+        fit['lodReductionReport']={'path':relative,'form':'LF','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+        for gar in garments.values():del gar['lodReduction']
+    return fit['lodReductionReport']
+
+
 def read_glb(path):
     data=Path(path).read_bytes()
     if data[:2]==b'\x1f\x8b':data=gzip.decompress(data)
@@ -123,6 +159,7 @@ def refresh_metadata(compress=False):
                 prim=g['meshes'][byname[gar[field]]['mesh']]['primitives'][0]
                 gar[outfield]=g['accessors'][prim['indices']]['count']//3
                 gar['vertices' if field=='node' else 'farVertices']=g['accessors'][prim['attributes']['POSITION']]['count']
+        lod_provenance_reference(ident,fit)
     result['gpuGeometryBytes']=sum(f['gpuGeometryBytes'] for f in result['fits'].values())
     result['gpuGrowthBytes']=result['gpuGeometryBytes']+result['atlas']['gpuBytes']
     model_files=[ROOT/'assets/models'/f['file'] for f in result['fits'].values()]
@@ -141,6 +178,13 @@ def fit_rest(only=None, faces=False, author_jobs=4, resume_author=None):
     before final packing/publication; a failed fit cannot erase a successful
     solver result or accept a checkpoint from different numerical inputs.
     """
+    # Upgrade existing raw metadata before taking authoring fingerprints. This
+    # moves only new provenance maps; raw GLBs and every numerical field stay
+    # byte-identical, and content-verified author checkpoints see the new pins.
+    metadata_path=OUT/'metadata.json';raw_metadata=json.loads(metadata_path.read_text())
+    if any('lodReduction' in gar for fit in raw_metadata['fits'].values() for gar in fit['garments'].values()):
+        for ident,fit in raw_metadata['fits'].items():lod_provenance_reference(ident,fit)
+        metadata_path.write_text(json.dumps(raw_metadata,separators=(',',':'))+'\n')
     program=r'''
 
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
@@ -162,7 +206,8 @@ if(faces)for(const[id,fit]of Object.entries(meta.fits)){
 }
 mkdirSync(stage,{recursive:true});
 const dependencyPaths=['tools/blender/people_validate.mjs','tools/blender/people_wear_validate.mjs','tools/blender/people_wear_fit_faces.mjs','tools/blender/people_wear_fit_targets.mjs','tools/blender/people_wear_fit_search.mjs','tools/blender/people_wear_math.mjs','js/people/wear_geometry.js','js/people/wear_pose.js','tools/blender/people_clips.json.gz','tools/blender/people_contract.json'];
-dependencyPaths.push('tools/blender/people_wear_target_search.mjs','tools/blender/people_wear_pack.py');
+dependencyPaths.push('tools/blender/people_wear_target_search.mjs','tools/blender/people_wear_pack.py','tools/blender/people_wear_layout.py');
+dependencyPaths.push('vendor/three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js','vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm');
 dependencyPaths.push('tools/blender/people_wear_build.py','tools/blender/people_wear_shapes.py','tools/blender/people_wear_body.py','tools/blender/people_wear_body_guard.py','tools/blender/people_wear_lod.py','tools/blender/people_body.py','tools/blender/people_body_limbs.py','tools/blender/people_build.py','tools/blender/people_cast.py','tools/blender/people_head.py','tools/blender/people_tex.py');
 const dependencies=Object.fromEntries(dependencyPaths.map(path=>[path,sha(readFileSync('./la-ladera/'+path))]));
 let currentId=null;
@@ -270,6 +315,12 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
         raise RuntimeError(f'{len(failures)} adult fits failed; no fitted assets published. Fix the listed inputs, then retry --resume-author {stage}')
     pending = [];pending_reports=[]
     for ident,directory,fit,entry in completed:
+        # Verify every checkpoint output again before consuming it for final
+        # packing, including target streams as well as the full proof reports.
+        # The worker's retry guard alone cannot cover a subsequent file change.
+        for filename,digest in entry['outputHashes'].items():
+            if Path(filename).name!=filename or sha(directory/filename)!=digest:
+                raise RuntimeError(ident+': authored checkpoint output changed before packing: '+filename)
         base = directory/entry['stagedBase']
         reports=entry.get('reports',[])
         expected_reports={'rest','faces','seated'} if faces else {'rest'}
@@ -760,10 +811,13 @@ def repack_wear_lods(source, destination, fit, pose_targets=None, base_overrides
             writer.g['nodes'][ni]['extras']['sourceIndicesAccessor'] = copy_accessor(identity, 34963)
     destination.parent.mkdir(parents=True, exist_ok=True)
     writer.save(destination)
+    from people_wear_layout import reorder_wear_buffer_views
+    ordered, layout_metrics = reorder_wear_buffer_views(destination.read_bytes())
+    destination.write_bytes(ordered)
     cpu_bytes = sum(writer.g['accessors'][ai]['count'] * 12 for ai in target_accessors)
     return {'sourceBaseSha256': sha(source), 'outputSha256': sha(destination),
             'gpuGeometryBytes': writer.gpu, 'poseTargetCpuBytes': cpu_bytes,
-            'bodyPacking': body_packed['metrics'],
+            'bodyPacking': body_packed['metrics'], 'bufferLayout': layout_metrics,
             'poseTargetAccessors': len(target_accessors), 'bytes': destination.stat().st_size,
             'topologyChoices': choices, 'mappings': mappings, 'targets': target_metrics}
 
@@ -855,6 +909,7 @@ def build_fit(pd,recipes,source,catalog):
     compressed=Path(str(file)+'.gz')
     if compressed.exists():compressed.unlink()
     fit['gpuGeometryBytes']=g.gpu;fit['bytes']=file.stat().st_size;fit['sha256']=sha(file)
+    lod_provenance_reference(ident,fit)
     return fit
 
 

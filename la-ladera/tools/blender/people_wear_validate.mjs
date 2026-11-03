@@ -8,7 +8,7 @@ import { gunzipSync } from 'node:zlib';
 import { dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readGlb, parseGlb, readAccessor, decodePrimitive, CONTRACT } from './people_validate.mjs';
-import { buildWearManifest, wearDataModule, checkPeopleWearSourceInputs, checkWearAuthoringReports } from '../people_wear_data.mjs';
+import { buildWearManifest, wearDataModule, checkPeopleWearSourceInputs, checkWearAuthoringReports, checkWearLodProvenance } from '../people_wear_data.mjs';
 import { skinInfo, compareSkin, readPoseBank, poseSamples, sampleRotations, poseMatrices, skinPositions, usedVertices, ClosedSurface, checkPenetrations, blendedMatrix, inverseVector, transform, closestUnionExit, pushOutPose } from './people_wear_math.mjs';
 import { preparePoseTarget } from '../../js/people/wear_pose.js';
 import { boundedAuthorExit } from './people_wear_fit_search.mjs';
@@ -52,6 +52,14 @@ export function checkWearModelBudget(bytes) {
   need(Number.isSafeInteger(bytes) && bytes > 0 && bytes <= COMPRESSED_MODEL_BYTES,
     'wear compressed model payload exceeds 6,000,000 bytes or is invalid');
   return bytes;
+}
+
+/** Keep the original double-precision authoring trajectory, while enforcing
+ * the same immutable bind bound on the Float32 position eventually emitted. */
+export function measureAuthorDisplacement(original, candidate) {
+  const simulated = Math.hypot(...Array.from(candidate, (value, k) => value - original[k]));
+  const emitted = Math.hypot(...Array.from(candidate, (value, k) => Math.fround(value) - original[k]));
+  return Math.max(simulated, emitted);
 }
 const decodeCache = new WeakMap();
 const poseDeltaCache = new WeakMap();
@@ -413,7 +421,7 @@ export async function pushOutFit(glb, fit, { id, samples = null, passes = 8, pad
             let delta = inverseVector(matrix, correction.deltaWorld);
             const current = Array.from(a.POSITION.subarray(at, at + 3)), original = Array.from(pool.original.subarray(at, at + 3));
             let candidate = current.map((value, k) => value + delta[k]);
-            let displacement = Math.hypot(...candidate.map((value, k) => value - original[k]));
+            let displacement = measureAuthorDisplacement(original, candidate);
             if (displacement > maxMove && maxMove > padding && maxMove <= .18) {
               report.boundedSearches++;
               const alternative = boundedAuthorExit(surfaces, original, current, matrix, { padding, maxMove });
@@ -424,6 +432,8 @@ export async function pushOutFit(glb, fit, { id, samples = null, passes = 8, pad
               components: correction.components, joints: Array.from(a.JOINTS_0.subarray(vertex * 4, vertex * 4 + 4)).map(j => pool.rig.jointNames[j]), weights: Array.from(a.WEIGHTS_0.subarray(vertex * 4, vertex * 4 + 4)),
             }));
             a.POSITION.set(candidate, at);
+            displacement = measureAuthorDisplacement(original, a.POSITION.subarray(at, at + 3));
+            need(displacement <= maxMove, `${id}/${pool.entries[0].gid}: committed authoring position exceeds ${maxMove} m in simulation or Float32 export`);
             report.maxDisplacement = Math.max(report.maxDisplacement, displacement); moved.add(`${poolKey}/${vertex}`); corrections++;
             point = transform(matrix, Array.from(a.POSITION.subarray(at, at + 3)));
           }
@@ -578,6 +588,7 @@ function inputSnapshot(root, metadata, manifest, samples, mode) {
   const files = [...paths].sort().map(path => { const b = readFileSync(safePath(root, path)); return { path: `assets/models/${path}`, bytes: b.length, sha256: hash(b) }; });
   for (const [id, fit] of Object.entries(metadata.fits)) {
     files.push(...checkWearAuthoringReports(fit, id, project));
+    files.push(...checkWearLodProvenance(fit, id, project));
     const report = fit.bodySourceProvenance?.componentsReport;
     if (!report) continue; // A diagnostic pre-inventory build can retain inline provenance.
     need(report.path === `dev/wear/body-provenance/${id}.json` && report.form === 'LF', `${id}: invalid body provenance path or form`);
@@ -587,12 +598,13 @@ function inputSnapshot(root, metadata, manifest, samples, mode) {
   }
   for (const path of ['tools/blender/people_clips.json.gz', 'tools/blender/people_contract.json', 'tools/blender/people_wear.catalog.json',
     'tools/blender/people_wear_build.py', 'tools/blender/people_wear_shapes.py', 'tools/blender/people_wear_fit_faces.mjs', 'tools/blender/people_wear_fit_targets.mjs',
-    'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py', 'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_target_search.mjs',
+    'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py', 'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_layout.py', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_target_search.mjs',
     'tools/blender/people_build.py', 'tools/blender/people_cast.py',
     'tools/blender/people_body.py', 'tools/blender/people_body_limbs.py', 'tools/blender/people_tex.py', 'tools/blender/people_head.py',
     'tools/blender/people_validate.mjs', 'tools/blender/people_wear_math.mjs', 'tools/blender/people_wear_validate.mjs', 'tools/people_wear_data.mjs',
     'js/people/wear_data.js', 'js/people/wear_geometry.js', 'js/people/wear_pose.js', 'js/people/wear_correction.js', 'js/people/wear.js', 'js/people/rig.js',
-    'vendor/three/build/three.core.min.js', 'vendor/three/examples/jsm/loaders/GLTFLoader.js']) {
+    'vendor/three/build/three.core.min.js', 'vendor/three/examples/jsm/loaders/GLTFLoader.js',
+    'vendor/three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js', 'vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm']) {
     const b = readFileSync(resolve(project, path)); files.push({ path, bytes: b.length, sha256: hash(b) });
   }
   files.sort((a, b) => a.path.localeCompare(b.path));

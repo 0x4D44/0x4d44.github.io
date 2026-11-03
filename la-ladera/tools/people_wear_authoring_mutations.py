@@ -39,6 +39,11 @@ FACE_TESTS = [
     'face branch search never exchanges an old failed probe for a newly obstructed neighbor',
     'expanded static face authoring covers all 23 catalog designs including shoes and the three hats',
     'face branch search resolves a narrow padded corridor between raw grid stations',
+    'stalled face recovery requires sustained failure beside a reversed rest neighbour',
+    'stalled face recovery runs once inside the remaining original pass budget',
+    'stalled face recovery verifies the rest reset and preserves immutable raw movement history',
+    'ordinary recovery proposals backtrack against the fixed rest reference for every welded face',
+    'recovery rest protection avoids a partial reset that reverses a neighbouring face',
 ]
 SUITES = {
     'lod': ('tools/blender/people_wear_lod.py', 'tests/people-wear-lod.test.mjs', 'PEOPLE_WEAR_LOD_TEST_MODULE', LOD_TESTS),
@@ -61,6 +66,19 @@ CASES = [
     ('faces', 'trade_neighbor_failure', 4, 'for (const i of incident) {', 'for (const i of incident.filter(i => flags[i].some(Boolean))) {'),
     ('faces', 'omit_shoes_and_hats', 5, "  'shoes', 'cap', 'sun_hat', 'straw_hat']);", '  ]);'),
     ('faces', 'omit_fine_local_face_grid', 6, 'const localOffsets = BRANCH_OFFSETS.map(delta => delta.map((value, k) => value / 4 + a.POSITION[representative * 3 + k] - origin[k]));', 'const localOffsets = [];'),
+    ('faces', 'skip_stall_wait', 7, 'unimprovedPasses < ORIENTATION_RECOVERY_WAIT', 'false'),
+    ('faces', 'skip_reversed_neighbour', 7, 'if (!reversedBlockedNeighbour(pool, contact)) return false;', 'if (false) return false;'),
+    ('faces', 'allow_second_orientation_restart', 8, 'if (pool.orientationActive || unimprovedPasses', 'if (false || unimprovedPasses'),
+    ('faces', 'ignore_recovery_pass_budget', 8, 'maxPasses - completedPasses < ORIENTATION_RECOVERY_WAIT', 'false'),
+    ('faces', 'reset_recovery_raw_origin', 9, 'a.POSITION.set(pool.fittedInput); pool.orientationActive = true;', 'a.POSITION.set(pool.fittedInput); pool.original.set(pool.fittedInput); pool.orientationActive = true;'),
+    ('faces', 'reset_recovery_maximum', 9, 'a.POSITION.set(pool.fittedInput); pool.orientationActive = true;', 'a.POSITION.set(pool.fittedInput); pool.maximum = 0; pool.orientationActive = true;'),
+    ('faces', 'use_raw_for_recovery_rest', 9, 'a.POSITION.set(pool.fittedInput); pool.orientationActive = true;', 'a.POSITION.set(pool.original); pool.orientationActive = true;'),
+    ('faces', 'accept_obstructed_recovery_rest', 9, 'checked.vertexFailures === 0', 'true'),
+    ('faces', 'ignore_recovery_raw_bound', 9, 'displacement(decoded.attrs.POSITION, pool.original, v) <= MAX_MOVE', 'true'),
+    ('faces', 'no_ordinary_backtracking', 10, 'for (let step = 0; step < 10; step++) {', 'for (let step = 0; step < 1; step++) {'),
+    ('faces', 'forget_fixed_rest_reference', 10, 'const reference = faceNormal(triangle.map(v => pointAt(pool.fittedInput, v)));', 'const reference = faceNormal(triangle.map(v => pointAt(pool.decoded.attrs.POSITION, v)));'),
+    ('faces', 'accept_ordinary_reversal', 10, 'if (!keepsOrientation(reference, proposed)) return false;', 'if (false) return false;'),
+    ('faces', 'unsafe_partial_rest_reset', 11, 'if (!preservesFittedPatch(pool, v, start)) {', 'if (false) {'),
 ]
 
 

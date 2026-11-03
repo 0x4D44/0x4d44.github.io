@@ -264,5 +264,159 @@
         "to": "false"
       }
     ]
+  },
+  {
+    "id": "rebase-15-lod-lf",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance pins the complete report identically in LF and CRLF form without mutating runtime counts",
+    "description": "Hash authoring LOD report checkout text without LF normalization.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "const reportBytes = Buffer.from(readFileSync(join(root, reference.path), 'utf8').replace(/\\r\\n/g, '\\n'));",
+        "to": "const reportBytes = Buffer.from(readFileSync(join(root, reference.path), 'utf8'));"
+      }
+    ]
+  },
+  {
+    "id": "rebase-16-lod-path",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects redirected paths non-LF forms stale pins and changed report bytes",
+    "description": "Accept an existing redirected report or a non-LF pin form.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "reference?.path !== `dev/wear/lod-provenance/${id}.json` || reference.form !== 'LF'",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-16-lod-bytes",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects redirected paths non-LF forms stale pins and changed report bytes",
+    "description": "Omit the complete relocated LOD report byte fingerprint.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "reportBytes.length !== reference.bytes || createHash('sha256').update(reportBytes).digest('hex') !== reference.sha256",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-17-lod-identity",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects repinned foreign identities missing garments and invented garment maps",
+    "description": "Allow a report that names another resident or schema.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "report.schema !== 1 || report.id !== id || !report.garments",
+        "to": "!report.garments"
+      }
+    ]
+  },
+  {
+    "id": "rebase-18-lod-far",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance binds reduction results and the forty-percent target to measured near and far triangles",
+    "description": "Accept a reduction result different from the measured far triangle count.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row?.triangles !== garment.farTris || row.targetTriangles",
+        "to": "false || row.targetTriangles"
+      }
+    ]
+  },
+  {
+    "id": "rebase-18-lod-target",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance binds reduction results and the forty-percent target to measured near and far triangles",
+    "description": "Omit the exact forty-percent or600-triangle authoring target.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row.targetTriangles !== Math.min(600, Math.floor(2 * garment.tris / 5))",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-19-lod-source",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects impossible reduction counters and malformed component topology",
+    "description": "Allow a source cut with fewer triangles than its claimed reduction result.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "!Number.isSafeInteger(row.sourceTriangles) || row.sourceTriangles < row.triangles",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-19-lod-topology",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects impossible reduction counters and malformed component topology",
+    "description": "Accept malformed per-component topology pairs.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row.topology.some(pair => !Array.isArray(pair) || pair.length !== 2 || !Number.isSafeInteger(pair[0]) || !Number.isSafeInteger(pair[1]) || pair[1] < 0)",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-map",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Drop topology detail from the map while relocating it.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "maps={gid:copy.deepcopy(gar['lodReduction']) for gid,gar in garments.items() if 'lodReduction' in gar}",
+        "to": "maps={gid:{key:value for key,value in copy.deepcopy(gar['lodReduction']).items() if key!='topology'} for gid,gar in garments.items() if 'lodReduction' in gar}"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-count",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Accidentally remove the actual near triangle measurement during cleanup.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "for gar in garments.values():del gar['lodReduction']",
+        "to": "for gar in garments.values():gar.pop('tris',None);del gar['lodReduction']"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-repin",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Silently accept an existing changed LOD evidence report.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "if pin.get('bytes')!=len(data) or pin.get('sha256')!=hashlib.sha256(data).hexdigest():",
+        "to": "if False:"
+      }
+    ]
   }
 ]

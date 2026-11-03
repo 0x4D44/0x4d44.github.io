@@ -14,6 +14,7 @@ export const IDLE_FACE_GARMENTS = Object.freeze(['tshirt', 'shirt', 'blouse', 'j
   'socks_pair', 'briefs', 'boxers', 'bra', 'bikini_top', 'bikini_bottom', 'swimsuit_onepiece', 'swim_trunks', 'rash_vest',
   'shoes', 'cap', 'sun_hat', 'straw_hat']);
 const MAX_MOVE = 0.08, PAD = 0.002, RELAXATION = 0.25, ROUNDING_RESERVE = 0.000001;
+const ORIENTATION_RECOVERY_WAIT = 32;
 const BARYCENTRIC = Object.freeze([[1 / 3, 1 / 3, 1 / 3], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5]]);
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const equal = (a, b) => a?.length === b?.length && a.every((value, i) => value === b[i]);
@@ -62,11 +63,41 @@ function weld(pool) {
   pool.weldGroups = groups; pool.membersFor = membersFor;
 }
 
-function boundedMove(pool, vertex, delta, posed, matrix) {
+function preservesFittedPatch(pool, vertex, candidate) {
+  if (!pool.orientationActive) return true;
+  if (!pool.orientationPatches) {
+    const groups = new Map(), index = new Map();
+    for (const [v, members] of pool.membersFor) {
+      if (!groups.has(members)) groups.set(members, { selected: new Set(members), faces: [] });
+      index.set(v, groups.get(members));
+    }
+    for (const triangle of pool.triangles) {
+      const reference = faceNormal(triangle.map(v => pointAt(pool.fittedInput, v)));
+      for (const patch of new Set(triangle.map(v => index.get(v)))) patch.faces.push({ triangle, reference });
+    }
+    pool.orientationPatches = index;
+  }
+  const patch = pool.orientationPatches.get(vertex), a = pool.decoded.attrs;
+  for (const { triangle, reference } of patch.faces) {
+    const proposed = faceNormal(triangle.map(v => patch.selected.has(v) ? candidate : pointAt(a.POSITION, v)));
+    if (!keepsOrientation(reference, proposed)) return false;
+  }
+  return true;
+}
+
+export function boundedMove(pool, vertex, delta, posed, matrix) {
   const a = pool.decoded.attrs, offset = vertex * 3;
   const relative = [0, 1, 2].map(k => a.POSITION[offset + k] + delta[k] - pool.original[offset + k]);
   const length = Math.hypot(...relative), bound = MAX_MOVE - ROUNDING_RESERVE, scale = length > bound ? bound / length : 1;
-  const target = relative.map((value, k) => Math.fround(pool.original[offset + k] + value * scale));
+  let target = relative.map((value, k) => Math.fround(pool.original[offset + k] + value * scale));
+  if (pool.orientationActive) {
+    const desired = target, start = pointAt(a.POSITION, vertex); target = null;
+    for (let step = 0; step < 10; step++) {
+      const candidate = start.map((value, k) => Math.fround(value + (desired[k] - value) / 2 ** step));
+      if (preservesFittedPatch(pool, vertex, candidate)) { target = candidate; break; }
+    }
+    if (!target) return length > bound;
+  }
   for (const member of pool.membersFor.get(vertex)) {
     const at = member * 3, actual = target.map((value, k) => value - a.POSITION[at + k]);
     a.POSITION.set(target, at);
@@ -77,7 +108,7 @@ function boundedMove(pool, vertex, delta, posed, matrix) {
   return length > bound;
 }
 
-function protectRest(pool, sample) {
+export function protectRest(pool, sample) {
   const positions = skinPositions(pool.decoded, sample.matrices), a = pool.decoded.attrs;
   for (const v of pool.used) {
     const point = pointAt(positions, v); if (!inside(sample.surfaces, point)) continue;
@@ -87,6 +118,14 @@ function protectRest(pool, sample) {
       // The independently verified rest input is a safe fallback. The original
       // generated point can be inside; it is solely the displacement baseline.
       const start = pointAt(pool.fittedInput, v), posedStart = transform(matrix, start);
+      if (!preservesFittedPatch(pool, v, start)) {
+        // A partial reset can reverse a neighbour whose other corners moved.
+        // The full independently clear rest input preserves the fixed reference
+        // and the original displacement history; it does not create a new raw
+        // baseline or grant any additional outer authoring passes.
+        a.POSITION.set(pool.fittedInput); positions.set(skinPositions(pool.decoded, sample.matrices));
+        return;
+      }
       for (const member of pool.membersFor.get(v)) { a.POSITION.set(start, member * 3); positions.set(posedStart, member * 3); }
     }
   }
@@ -101,6 +140,38 @@ function inspectPool(pool, sample, { faces = true, correct = true, full = false 
     faceChecks++; if (inside(sample.surfaces, trianglePoint(positions, triangle, weights))) faceFailures++;
   }
   return { vertexChecks: pool.used.length, vertexFailures, faceChecks, faceFailures };
+}
+
+function reversedBlockedNeighbour(pool, contact) {
+  const positions = pushOutPose(pool.decoded, contact.matrices, contact.surfaces, { used: pool.used, padding: PAD, maxDistance: 0.18 }).posedPositions;
+  const affected = new Set();
+  for (const triangle of pool.triangles) {
+    if (!BARYCENTRIC.some(weights => inside(contact.surfaces, trianglePoint(positions, triangle, weights)))) continue;
+    for (const v of triangle) for (const member of pool.membersFor.get(v)) affected.add(member);
+  }
+  for (const triangle of pool.triangles) {
+    if (!triangle.some(v => affected.has(v))) continue;
+    if (!keepsOrientation(faceNormal(triangle.map(v => pointAt(pool.fittedInput, v))),
+      faceNormal(triangle.map(v => pointAt(pool.decoded.attrs.POSITION, v))))) return true;
+  }
+  return false;
+}
+
+/** Alternate authoring search for a sustained stall beside a reversed panel.
+ * Successful primary fitting keeps its original behaviour. Recovery can start
+ * once per pool, after four unsuccessful eight-pass branch-search intervals,
+ * and uses only the remaining original pass budget. The raw origin and maximum
+ * movement history are never reset. */
+export function restartStalledFaces(pool, rest, contact, { completedPasses, maxPasses, unimprovedPasses }) {
+  if (pool.orientationActive || unimprovedPasses < ORIENTATION_RECOVERY_WAIT || maxPasses - completedPasses < ORIENTATION_RECOVERY_WAIT) return false;
+  if (!reversedBlockedNeighbour(pool, contact)) return false;
+  const a = pool.decoded.attrs, decoded = { ...pool.decoded, attrs: { ...a, POSITION: new Float32Array(pool.fittedInput) } };
+  const checked = inspectPool({ ...pool, decoded }, rest, { faces: false, correct: false });
+  need(checked.vertexFailures === 0, `${pool.label}: orientation recovery requires independently clear rest input`);
+  for (const v of pool.used) need(displacement(decoded.attrs.POSITION, pool.original, v) <= MAX_MOVE,
+    `${pool.label}: orientation recovery rest input exceeds the original 80 mm bound`);
+  a.POSITION.set(pool.fittedInput); pool.orientationActive = true; pool.referenceRestartPass = completedPasses;
+  return true;
 }
 
 // A shortest exit can choose opposite sides of the arm/torso corridor for two
@@ -165,7 +236,7 @@ export function repairFaceBranches(pool, rest, contact) {
     report.attemptedGroups++;
     const origin = pointAt(pool.original, representative), matrices = new Map(members.map(v => [v, blendedMatrix(a, v, contact.matrices)]));
     const restMatrices = new Map(members.map(v => [v, blendedMatrix(a, v, rest.matrices)]));
-    const bindNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(a.POSITION, v)))]));
+    const bindNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(pool.orientationActive ? pool.fittedInput : a.POSITION, v)))]));
     const posedNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(positions, v)))]));
     let best = null;
     // The native arm/torso corridor can be narrower than the original 5 mm
@@ -321,8 +392,9 @@ export async function fitWearFaces(rawGlb, restFittedGlb, fit, { id, maxPasses =
     pool.triangles = [...unique.values()];
     const row = { garments: [...new Set(pool.entries.map(entry => entry.gid))], vertices: pool.used.length, weldGroups: pool.weldGroups.size,
       faceChecks: pool.allTriangles.length * 4, initialFaceFailures: inspectPool(pool, contact, { full: true }).faceFailures, passes: [], maximumDisplacementM: pool.maximum };
-    let final = inspectPool(pool, contact, { full: true }), bestFailures = final.faceFailures, stalledPasses = 0;
+    let final = inspectPool(pool, contact, { full: true }), bestFailures = final.faceFailures, stalledPasses = 0, unimprovedPasses = 0;
     for (let pass = 0; final.faceFailures && pass < maxPasses; pass++) {
+      const previousBest = bestFailures;
       const positions = pushOutPose(pool.decoded, contact.matrices, contact.surfaces, { used: pool.used, padding: PAD, maxDistance: 0.18 }).posedPositions;
       const matrices = new Map(Array.from(pool.used, v => [v, blendedMatrix(pool.decoded.attrs, v, contact.matrices)]));
       let corrections = 0, clamped = 0;
@@ -345,6 +417,12 @@ export async function fitWearFaces(rawGlb, restFittedGlb, fit, { id, maxPasses =
         (row.alternativeDirections ??= []).push({ pass: pass + 1, ...alternative });
         final = inspectPool(pool, contact, { full: true });
         bestFailures = Math.min(bestFailures, final.faceFailures); stalledPasses = 0;
+      }
+      unimprovedPasses = final.faceFailures < previousBest ? 0 : unimprovedPasses + 1;
+      if (final.faceFailures && restartStalledFaces(pool, rest, contact, { completedPasses: pass + 1, maxPasses, unimprovedPasses })) {
+        row.referenceRestartPass = pass + 1;
+        final = inspectPool(pool, contact, { full: true }); bestFailures = final.faceFailures;
+        stalledPasses = 0; unimprovedPasses = 0;
       }
       row.passes.push({ pass: pass + 1, corrections, clamped, faceFailures: final.faceFailures, maximumDisplacementM: pool.maximum });
     }
