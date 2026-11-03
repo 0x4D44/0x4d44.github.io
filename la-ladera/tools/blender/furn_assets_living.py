@@ -107,7 +107,7 @@ def table_formica(A, key, c):
     for sx in (-1, 1):
         for sz in (-1, 1):
             x, z = sx * (W / 2 - 0.06), sz * (D / 2 - 0.06)
-            A.cyl('metal_chrome', x, 0.016, z, 0.016, H - 0.066, 10, r1=0.019, caps=False)
+            A.cyl('metal_chrome', x, 0.016, z, 0.016, H - 0.046, 10, r1=0.019, caps=False)  # ends at H-.03, 1 cm inside the top
             A.cyl(FLAT, x, 0, z, 0.019, 0.018, 10, col=0x1c1c1c)
 
 
@@ -289,7 +289,8 @@ def practical_seating(A, key, c):
         round_=key in ('stool_bar','stool_wood')
         if round_: A.cyl(m,0,seat-.04,0,W/2,.04,16,col=shade(.97),tint=True)
         else: A.box(m,0,H-.03,0,W,.03,D,None,True,r=.01)
-        A.legs4(m,W,D,seat-.035,.03,inset=.035,col=shade(.9),tint=True,round_=key=='stool_bar')
+        leg_h=seat-(.02 if key=='stool_plastic' else .035)  # plastic seat starts at H-.03: bury the open leg ends by 1 cm
+        A.legs4(m,W,D,leg_h,.03,inset=.035,col=shade(.9),tint=True,round_=key=='stool_bar')
         for sz in (-1,1): A.box(m,0,seat*.35,sz*(D/2-.05),W-.1,.022,.022,None,True)
         if key=='stool_bar': A.box('plastic_solid',0,seat-.04,0,W*.9,.04,D*.9,None,True,r=.025)
         return
@@ -300,7 +301,7 @@ def practical_seating(A, key, c):
             pts=[(sx*W*.4,.035+((j-5)/5)**2*.065,-D*.47+j*D*.094) for j in range(11)]
             A.tube(m,pts,.022,8)
         for sz in (-1,1):
-            z=sz*D*(.27 if rocking else .4)
+            z=sz*D*(.27 if rocking else .3)  # metal legs sit under the .72D-deep seat; rear legs align with the back posts
             A.box(m,sx*W*.4,.05 if rocking else 0,z,.035,sh-(.05 if rocking else 0),.035,None,True)
         A.box(m,sx*W*.4,sh,-D*.3,.035,H-sh,.035,None,True)
     A.box(m,0,sh-.03,0,W*.94,.03,D*.72,None,True,r=.007)

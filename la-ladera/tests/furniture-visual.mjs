@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // Labelled contact sheets of the ACTUAL shipped furniture, in a neutral studio.
-// One browser and WebGL context render the entire catalogue through buildInterior and MaterialLib.
+// One browser and WebGL context render the entire catalogue through drawGlb and MaterialLib.
 //   CHROME_PATH=/path/to/chrome node la-ladera/tests/furniture-visual.mjs
 //   node la-ladera/tests/furniture-visual.mjs --out .scratch/furniture/visual --only bed_double,stove_gas
+//   node la-ladera/tests/furniture-visual.mjs --source runtime --out .scratch/furniture/runtime-models
+// Default source: base furniture library. 'runtime' inspects effective GLBs, including hero overrides;
+// the full-world test separately checks the procedural carcasses of opening furniture.
 // Output: 25 assets per PNG + report.json, all scratch files. LOOK at the PNGs; pixel checks do not judge art quality.
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -11,33 +14,43 @@ import { launch, REPO } from './chrome.mjs';
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => { const i = args.indexOf('--' + name); return i < 0 ? fallback : args[i + 1]; };
-const out = resolve(REPO, option('out', '.scratch/furniture/visual'));
+const source = option('source', 'library');
+assert.ok(['library', 'runtime'].includes(source), '--source must be library or runtime');
+const out = resolve(REPO, option('out', source === 'library' ? '.scratch/furniture/visual' : '.scratch/furniture/runtime-models'));
 const selected = option('only', '').split(',').filter(Boolean);
-const config = { width: 1800, height: 1510, cols: 5, rows: 5, pad: 20, gap: 10, header: 90, tileW: 344, tileH: 270, renderH: 218, selected };
+const rows = selected.length ? Math.min(5, Math.ceil(selected.length / 5)) : 5;
+const config = { width: 1800, height: 110 + rows * 280, cols: 5, rows, pad: 20, gap: 10, header: 90, tileW: 344, tileH: 270, renderH: 218, selected, source };
 const fixtureDir = resolve(REPO, '.scratch/furniture/visual-runtime');
 await mkdir(fixtureDir, { recursive: true }); await mkdir(out, { recursive: true });
 const manifest = JSON.parse(await readFile(new URL('../assets/models/manifest.furniture.json', import.meta.url), 'utf8'));
-const expectedFiles = (manifest.files ?? []).map((f) => '/la-ladera/assets/models/' + f.glb);
-assert.ok(expectedFiles.length, 'furniture manifest is empty: no models to visually verify');
+const catalogueKeys = new Set((manifest.files ?? []).flatMap((f) => Object.keys(f.assets ?? {})));
+assert.ok(catalogueKeys.size >= 120, 'furniture manifest has fewer than 120 models to visually verify');
+let manifests = [manifest];
+if (source === 'runtime') {
+  const root = JSON.parse(await readFile(new URL('../assets/models/manifest.json', import.meta.url), 'utf8'));
+  manifests = await Promise.all(root.files.map(async (file) => JSON.parse(await readFile(new URL('../assets/models/' + file, import.meta.url), 'utf8'))));
+}
+const effectiveFiles = new Map();
+for (const m of manifests) for (const f of m.files ?? []) for (const key of Object.keys(f.assets ?? {})) if (catalogueKeys.has(key)) effectiveFiles.set(key, f.glb);
+const expectedFiles = [...new Set(effectiveFiles.values())].map((file) => '/la-ladera/assets/models/' + file);
 
 // This function is serialized into the scratch fixture, not executed under Node.
 async function browserMain(settings) {
   const THREE = await import('three');
   const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
   const { createContext } = await import('/la-ladera/js/core/ctx.js');
-  const { makeFrame } = await import('/la-ladera/js/core/frame.js');
-  const { CATALOG, PAL } = await import('/la-ladera/js/interiors/catalog.js');
-  const { loadInteriorAssets, glbParts, buildInterior } = await import('/la-ladera/js/interiors/build.js');
+  const { CATALOG } = await import('/la-ladera/js/interiors/catalog.js');
+  const { glbParts } = await import('/la-ladera/js/interiors/build.js');
+  const { loadVisualFurniture, drawVisualFurniture } = await import('/la-ladera/tests/furniture-visual-lib.mjs');
   const ctx = createContext({ headless: true });
-  await ctx.matlib.init(); await ctx.assets.init(); await loadInteriorAssets(ctx);
+  await ctx.matlib.init();
+  const library = await loadVisualFurniture(ctx, { source: settings.source });
   const all = Object.keys(CATALOG), keys = settings.selected.length ? settings.selected : all;
   if (ctx.interiorGlb.size < 120) throw new Error('Only ' + ctx.interiorGlb.size + ' drawable furniture assets; minimum 120');
   for (const key of keys) if (!ctx.interiorGlb.has(key)) throw new Error('Missing GLB for catalogue key ' + key);
   // Request every model material before the first render, then wait for the real local textures.
   for (const key of keys) for (const part of glbParts(ctx, key)) ctx.mat(part.matKey);
   await ctx.matlib.whenReady();
-  // A wall-light halo belongs to the room behind a TV, not an isolated product view.
-  ctx.matlib.cache.delete('tv_glow');
   if (ctx.errors.length) throw new Error(JSON.stringify(ctx.errors));
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -61,10 +74,40 @@ async function browserMain(settings) {
   const camera = new THREE.PerspectiveCamera(34, (settings.tileW - 8) / settings.renderH, 0.01, 100);
   const gl = renderer.getContext();
   const pixels = new Uint8Array((settings.tileW - 8) * settings.renderH * 4);
-  const report = { totalCatalogue: all.length, loaded: ctx.interiorGlb.size, selected: keys.length, pages: Math.ceil(keys.length / (settings.cols * settings.rows)), glb: 0, standin: 0, failed: 0, items: [] };
+  const report = { source: library.source, files: library.files, totalCatalogue: all.length, loaded: ctx.interiorGlb.size, selected: keys.length, pages: Math.ceil(keys.length / (settings.cols * settings.rows)), glb: 0, standin: 0, failed: 0, items: [] };
   const labels = document.getElementById('labels');
 
-  function renderPage(page) {
+  // Read the same default-framebuffer RGBA pixels without forcing a GPU stall.
+  // PBO + fence follows Three's readRenderTargetPixelsAsync pattern; the studio
+  // reads a scissored canvas tile instead of a separate render target.
+  async function readPixels(x, y, width, height) {
+    const previous = gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING), buffer = gl.createBuffer();
+    let fence;
+    if (!buffer) throw new Error('Unable to allocate visual pixel readback buffer');
+    try {
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+      gl.bufferData(gl.PIXEL_PACK_BUFFER, pixels.byteLength, gl.STREAM_READ);
+      gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+      fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      if (!fence) throw new Error('Unable to create visual pixel readback fence');
+      gl.flush();
+      const started = performance.now();
+      for (;;) {
+        const status = gl.clientWaitSync(fence, 0, 0);
+        if (status === gl.ALREADY_SIGNALED || status === gl.CONDITION_SATISFIED) break;
+        if (status === gl.WAIT_FAILED || gl.isContextLost()) throw new Error('Visual pixel readback failed');
+        if (performance.now() - started > 10_000) throw new Error('Visual pixel readback timed out');
+        await new Promise((resolve) => setTimeout(resolve, 4));
+      }
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, pixels);
+    } finally {
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, previous);
+      if (fence) gl.deleteSync(fence);
+      gl.deleteBuffer(buffer);
+    }
+  }
+
+  async function renderPage(page) {
     const perPage = settings.cols * settings.rows, list = keys.slice(page * perPage, (page + 1) * perPage);
     if (!list.length) throw new Error('Empty contact-sheet page ' + page);
     renderer.setScissorTest(false); renderer.setViewport(0, 0, settings.width, settings.height); renderer.clear();
@@ -72,14 +115,8 @@ async function browserMain(settings) {
     document.getElementById('range').textContent = `${page * perPage + 1}–${page * perPage + list.length} / ${keys.length} assets · Sheet ${page + 1} / ${report.pages}`;
     const items = [];
     for (let i = 0; i < list.length; i++) {
-      const key = list[i], c = CATALOG[key], palette = PAL[c.cols] ?? PAL.none;
-      const id = 'contact-' + key, kind = c.ceil ? 'ceil' : c.wall ? 'wall' : c.top === true ? 'top' : 'floor';
-      const bp = { id, lot: {}, frame: makeFrame(0, 0, 0), rooms: [], windows: [], interior: {}, furniture: [{
-        id: 'contact.' + key, name: key, x: 0, y: kind === 'ceil' ? c.size[1] : 0, z: 0, ry: 0, kind,
-        w: c.size[0], h: c.size[1], d: c.size[2], tint: c.cols === 'none' ? undefined : palette[0], flags: { magnets: true },
-      }] };
-      buildInterior(ctx, bp);
-      const group = ctx.batch.groups.get(id + '.int'), stats = bp.interior.stats;
+      const key = list[i], c = CATALOG[key];
+      const { group, stats, kind, file: modelFile } = drawVisualFurniture(ctx, key);
       if (stats.glb !== 1 || stats.standin || stats.failed) throw new Error(key + ': not rendered from its GLB: ' + JSON.stringify(stats));
       group.obj.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       group.obj.updateMatrixWorld(true);
@@ -97,7 +134,7 @@ async function browserMain(settings) {
       renderer.setViewport(vx, vy, vw, settings.renderH); renderer.setScissor(vx, vy, vw, settings.renderH);
       // Count non-background pixels with the floor hidden, so a blank tile cannot pass on the studio set alone.
       ground.visible = false; renderer.render(scene, camera);
-      gl.readPixels(vx, vy, vw, settings.renderH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      await readPixels(vx, vy, vw, settings.renderH);
       const background = [pixels[0], pixels[1], pixels[2]]; let visiblePixels = 0;
       for (let j = 0; j < pixels.length; j += 4) {
         if (Math.abs(pixels[j] - background[0]) + Math.abs(pixels[j + 1] - background[1]) + Math.abs(pixels[j + 2] - background[2]) > 25) visiblePixels++;
@@ -110,16 +147,16 @@ async function browserMain(settings) {
       const title = document.createElement('b'); title.textContent = String(page * perPage + i + 1).padStart(3, '0') + '  ' + key;
       const dims = document.createElement('span'); dims.textContent = c.size.map((n) => n.toFixed(2)).join(' × ') + ' m  ·  ' + kind;
       label.append(title, dims); tile.append(label); labels.append(tile);
-      const item = { key, size: c.size, kind, visiblePixels, triangles: stats.tris, materials: stats.materials, glb: stats.glb, standin: stats.standin, failed: stats.failed };
+      const item = { key, file: modelFile, size: c.size, kind, visiblePixels, triangles: stats.tris, materials: stats.materials, glb: stats.glb, standin: stats.standin, failed: stats.failed };
       items.push(item); report.items.push(item); report.glb += stats.glb; report.standin += stats.standin; report.failed += stats.failed;
       for (const mesh of group.meshes) mesh.geometry.dispose();
-      group.obj.removeFromParent(); ctx.batch.groups.delete(id + '.int');
+      group.obj.removeFromParent(); ctx.batch.groups.delete(group.id);
     }
     if (ctx.errors.length) throw new Error(JSON.stringify(ctx.errors));
     return items;
   }
   window.__furniture = { renderPage, report, errors: () => ctx.errors };
-  return { loaded: report.loaded, selected: report.selected, pages: report.pages, totalCatalogue: all.length };
+  return { source: library.source, files: library.files, loaded: report.loaded, selected: report.selected, pages: report.pages, totalCatalogue: all.length };
 }
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><base href="/la-ladera/">
@@ -130,10 +167,10 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><base href="/la-l
 #studio{position:absolute;inset:0;z-index:0}#labels{inset:0}header,#labels,footer{position:absolute;z-index:1}header{left:24px;right:24px;top:18px}h1{font-size:27px;letter-spacing:.03em;margin:0 0 8px}header p{font-size:14px;margin:0;color:#5d625d}#range{position:absolute;right:0;top:9px;font-size:17px;color:#454c45}
 .tile{position:absolute;border:1px solid #d6d3cb;border-radius:7px;overflow:hidden}.label{position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;background:#eeebe4;border-top:1px solid #dedbd3}.label b{display:block;font:600 14px monospace;white-space:nowrap}.label span{display:block;font-size:12px;color:#5e645d;margin-top:4px}
 footer{bottom:8px;left:24px;right:24px;font-size:12px;color:#5f655e}
-</style></head><body><header><h1>LA LADERA · FURNITURE LIBRARY</h1><p>Actual Blender GLBs · Shared in-game materials · Neutral studio light · Views individually fitted</p><div id="range"></div></header><div id="labels"></div><footer>Dimensions: width × height × depth in metres. Front faces +Z; models stand on Y = 0. Ceiling and wall items are shown unmounted for inspection.</footer>
+</style></head><body><header><h1>LA LADERA · ${source === 'library' ? 'BASE FURNITURE LIBRARY' : 'EFFECTIVE FURNITURE MODELS'}</h1><p>Model inspection${source === 'runtime' ? ' including hero overrides' : ' without hero overrides'} · Shared in-game materials · Neutral studio light · Views individually fitted</p><div id="range"></div></header><div id="labels"></div><footer>Dimensions: width × height × depth in metres. Model files only: the world's opening carcasses, add-ons and animated parts are checked separately.</footer>
 <script type="module">window.__furnitureReady = (${browserMain.toString()})(${JSON.stringify(config)});</script></body></html>`;
 const fixture = join(fixtureDir, 'contact.html'); await writeFile(fixture, html);
-const report = { fixture: relative(REPO, fixture), output: relative(REPO, out), sheets: [] };
+const report = { source, fixture: relative(REPO, fixture), output: relative(REPO, out), sheets: [] };
 let browser;
 try {
   browser = await launch({ width: config.width, height: config.height, gpu: 'swiftshader' });
@@ -141,7 +178,7 @@ try {
   p.b.listeners.set(p.sid, (message) => {
     if (message.method === 'Network.responseReceived') {
       const response = message.params.response, path = new URL(response.url).pathname;
-      if (path.includes('/assets/models/furniture/')) responses.set(path, response.status);
+      if (expectedFiles.includes(path)) responses.set(path, response.status);
     }
     listener(message);
   });
@@ -158,6 +195,8 @@ try {
   }
   report.render = await p.eval('window.__furniture.report'); report.page = p.summary();
   report.glbResponses = Object.fromEntries(responses);
+  assert.deepEqual(report.library.files.slice().sort(), expectedFiles.map((file) => file.replace('/la-ladera/assets/models/', '')).sort(), 'inspected source differs from the declared model files');
+  for (const item of report.render.items) assert.equal(item.file, effectiveFiles.get(item.key), `${item.key}: inspected the wrong source model`);
   assert.equal(report.render.glb, report.library.selected); assert.equal(report.render.standin, 0); assert.equal(report.render.failed, 0);
   if (!selected.length) assert.equal(report.render.glb, report.library.totalCatalogue, 'whole catalogue must appear');
   for (const file of expectedFiles) assert.equal(responses.get(file), 200, `missing or unsuccessful GLB request: ${file}`);
@@ -166,4 +205,4 @@ try {
 finally { if (browser) await browser.close(); }
 await writeFile(join(out, 'report.json'), JSON.stringify(report, null, 2) + '\n');
 if (report.fatal) { console.error(report.fatal); process.exitCode = 1; }
-else console.log(`PASS: ${report.render.glb} GLB models; ${report.sheets.length} contact sheets; no stand-ins, failed records, browser errors, warnings or failed model requests.`);
+else console.log(`PASS (${source}): ${report.render.glb} GLB models; ${report.sheets.length} contact sheets; no stand-ins, failed records, browser errors, warnings or failed model requests.`);

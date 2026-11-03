@@ -1,12 +1,14 @@
 # Furniture library
 
-The shipped library covers all **222 current catalogue entries**. Four actual
+The shipped library covers all **224 current catalogue entries**. Four actual
 Blender-exported GLBs live in `assets/models/furniture/`; their named roots and
 layout metadata are recorded in `assets/models/manifest.furniture.json`.
 The manifest is already included by `assets/models/manifest.json`.
 
-Measured results and the current software-WebGL warning limitation are recorded
-in [the verification report](../../dev/progress/furniture-integration-20261030.md).
+Current measurements and verification results are recorded in
+[the 3 November report](../../dev/progress/furniture-verification-20261103.md).
+The [original integration report](../../dev/progress/furniture-integration-20261030.md)
+records the first delivery and its environment limitations.
 
 The project is served as native ES modules. There is no bundler or application
 build step. Furniture generation is an offline development step; visitors need
@@ -15,7 +17,7 @@ only the checked-in GLBs, manifests and existing material textures.
 ## Regenerate
 
 Run from the repository root with Node and Blender 4.5 LTS or newer on PATH.
-The checked-in assets were generated with Blender 4.5.3 LTS. The repository's
+The current checked-in assets were generated with Blender 5.2.1 LTS. The repository's
 quiet wrapper and memory gate also support the original Windows workstation.
 
 ```sh
@@ -88,6 +90,7 @@ these failures as well as tint isolation and record/building transforms.
 ```sh
 node la-ladera/tools/blender/furn_validate.mjs --complete
 node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-catalog.test.mjs la-ladera/tests/furniture-runtime.test.mjs
+node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/furniture-pipeline.test.mjs la-ladera/tests/furniture-legs.test.mjs la-ladera/tests/furniture-visual.test.mjs
 node la-ladera/tests/payload.mjs
 ```
 
@@ -107,13 +110,15 @@ With headless Chrome installed (`CHROME_PATH` may point at its executable):
 ```sh
 node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/furniture-world.test.mjs
 node la-ladera/tests/furniture-visual.mjs
+node la-ladera/tests/furniture-visual.mjs --source runtime --out .scratch/furniture/runtime-models
 node la-ladera/tests/interiors-shots.mjs auto .scratch/furniture/rooms
 ```
 
 The full-page regression boots the complete neighbourhood once and compares
-every building's rendered counts with its furnishing records: every non-decal
-placement must use GLB geometry, only decals may use the procedural path, and
-no record may fail. It also requires every catalogue key to load, successful
+every building's rendered counts with its furnishing records: placements without
+an opening-carcass layout must use GLB geometry; decals and hollow opening
+furniture use their intentional procedural paths. No record may fail.
+It also requires every catalogue key to load, successful
 furniture-model requests, and no browser or application errors. It renders
 spawn and representative furnished houses, apartments, shops, school, clinic
 and workshop interiors, requiring their furniture groups to be visible and
@@ -122,11 +127,21 @@ not measure FPS, so software WebGL can run the check. The assertions describe
 the test's acceptance criteria; its current result comes from the test run.
 
 The visual check writes labelled, dimensioned contact sheets and `report.json`
-under `.scratch/furniture/visual/`. It loads the actual GLBs with the in-game
-material and batching code, requires every catalogue model to draw, checks
-model-only visible pixels, and verifies successful GLB requests and a clean
-browser console. Inspect the images: pixel counts alone do not establish visual
-quality. The room tour checks placement in the actual neighbourhood.
+under `.scratch/furniture/visual/`. By default it loads **only the base furniture
+manifest**, so hero overrides cannot conceal a broken base model. `--source
+runtime` inspects the effective models, including the 47 hero overrides, and
+writes to `.scratch/furniture/runtime-models/` unless `--out` is supplied. Each
+report identifies the source manifest mode and the GLB file behind each model.
+
+Both modes draw actual GLBs through the production `drawGlb` material, tint,
+variant and batching path. They inspect all catalogue models, including the
+38 keys whose world placements deliberately use opening carcasses. This is
+model inspection: the room tour and full-world test separately check carcasses,
+animated parts, add-ons and placement in the neighbourhood. Every inspected
+model must draw visible pixels with the studio floor hidden; the requested GLBs
+must return HTTP 200 and the browser console must be clean. Inspect the images:
+pixel counts alone do not establish visual quality. The Node visual tests also
+prove that a missing model root cannot pass by drawing a procedural carcass.
 
 Keep screenshots, tool downloads and logs in `.scratch/`. Commit the builders,
 validators, regression tests, generated GLBs and their matching manifest
