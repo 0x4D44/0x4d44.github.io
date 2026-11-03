@@ -19,6 +19,7 @@ import { makeSignAtlas, buildSigns, planMurals, claimMurals } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
 import { fitNav } from './navfit.js';
+import { initVegetation, dressVegetation } from './vegetation.js';
 import { buildClutterDress } from './clutter-dress.js';
 import { buildBackYards } from './backyards.js';
 
@@ -63,6 +64,7 @@ export async function buildProps(ctx) {
   });
   await step('murals', () => claimMurals(K));        // the ground in front of the three murals, before anything is parked, planted or stood on it
   await step('arrival', () => { ctx.world.arrivalClaims = claimSpawnView(K); });   // the fan ahead of the spawn: no vehicle, bin or planter stands in the first frame
+  await step('vegetation-assets', () => initVegetation(K));   // the instanced Blender plant library (a missing or incomplete species falls back to the procedural builders)
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('vistakit', () => buildVistaKit(ctx));  // the modelled hillside kit (Codex GLBs, instanced, LOD): terraces on the far land. First, so the far houses below leave its ground alone; an absent or failed kit changes nothing
   await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
@@ -76,6 +78,7 @@ export async function buildProps(ctx) {
   await step('flora', () => buildFlora(K));
   await step('pockets', () => buildPockets(K));      // the wedges of bare slope between houses at the street edge: flowers, grass, bushes, agaves, boulders and a small tree (R1-D23)
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
+  await step('vegetation-dressing', () => { dressVegetation(K); K.vegetation?.finalize(); });
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
   await step('clutter', () => buildClutterDress(K));  // after the old features claim their spots; leave every door and nav route clear
   await step('yards', () => { if (ctx.opts?.yards !== false && !ctx.opts?.skip?.has('yards')) return buildBackYards(K); });   // the ground behind the upper rows (R1-102): a worn path, a tank, the washing, tyres with flowers; last, so it only fills what is left
