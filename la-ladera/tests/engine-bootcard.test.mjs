@@ -46,7 +46,7 @@ before(async () => {
   b = await launch({ width: 1280, height: 720 });
   page = b.page;
   await page.send('Page.addScriptToEvaluateOnNewDocument', { source: HOOK });
-  await page.send('Page.navigate', { url: `${b.baseUrl}/la-ladera/index.html?autostart` });
+  await page.send('Page.navigate', { url: `${b.baseUrl}/la-ladera/index.html?autostart&eager=1` });                   // the full boot this card test was written for: a bare URL is the lazy default (its people come in behind the card)
   await page.waitFor(`!!window.__card && window.__card.label.some((l) => /^Despertando/.test(l[1]))`, 120000, 100);        // the people stage has begun: it waits for the models
   await new Promise((r) => setTimeout(r, HOLD_MS));
   await page.eval('window.__holdPeople.release()');
