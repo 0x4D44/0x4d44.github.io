@@ -7,7 +7,7 @@ import { browserStorage } from "./core/storage.mjs";
 import { createInput } from "./core/input.mjs";
 import { createRun, RULES } from "./core/rules.mjs";
 import {
-  createCareer, DIFFICULTY, STAGE_ORDER, recommendedTyre, vehicleOptionsFor, partDamage, fallbackRivals, DEFAULT_SETUP,
+  createCareer, DIFFICULTY, STAGE_ORDER, recommendedTyre, vehicleOptionsFor, HANDLING, partDamage, fallbackRivals, DEFAULT_SETUP,
 } from "./core/career.mjs";
 import { clamp, yawOfDir } from "./core/mathx.mjs";
 import { createFrameClock } from "./core/frameclock.mjs";
@@ -307,7 +307,7 @@ function ensureVehicle(carId, { fresh }) {
   const spec = cars()[carId];
   if (!M.physics || !spec) throw new Error("physics/cars module missing");
   const champ = career.championship;
-  const vopts = vehicleOptionsFor(spec, champ && G.mode === "championship" ? champ.setup : { ...DEFAULT_SETUP, tyre: recommendedTyre(G.stageDef), ...(G.singleSetup || {}) }, { ...opts, difficulty: curDifficulty() });
+  const vopts = vehicleOptionsFor(spec, champ && G.mode === "championship" ? champ.setup : { ...DEFAULT_SETUP, tyre: recommendedTyre(G.stageDef), ...(G.singleSetup || {}) }, { ...opts, handling: career.handling, difficulty: curDifficulty() });
   if (!G.vehicle || G.vehicle.spec.id !== carId || fresh) {
     G.vehicle = M.physics.createVehicle(spec, vopts);
     G.vehicleFresh = true;
@@ -351,6 +351,7 @@ async function prepareRun({ stageId, carId, livery = 0, weather = null, countdow
     const trial = mode === "trial";
     const par = parFor(stageId, carId);
     G.run = createRun({ stage, vehicle: v, difficulty: curDifficulty(), par, countdown: trial ? 1 : 3 });
+    G.run.easy = career.handling === "easy";
     G.recorder.reset();
     const champ = career.championship;
     const bestSplits = career.bestSplits(stageId, carId);
@@ -474,6 +475,7 @@ window.addEventListener("keydown", unlock);
 
 // ---------------------------------------------------------------- simulation
 function pollInput(dt) {
+  input.keyLock = career.handling === "easy" ? HANDLING.easy.keyLockAtSpeed : undefined;
   const i = input.poll(dt, G.vehicle && G.vehicle.state ? G.vehicle.state.speed : 0);
   stepInput.steer = i.steer; stepInput.throttle = i.throttle; stepInput.brake = i.brake; stepInput.handbrake = i.handbrake;
   stepInput.gearUp = i.gearUp; stepInput.gearDown = i.gearDown;
@@ -577,7 +579,7 @@ function showResults() {
   const dnf = result.status === "dnf";
   let isBest = false, previousBest = null;
   const bestSplitsBefore = career.bestSplits(G.stageId, G.carId);
-  if (!dnf && !result.assisted) {
+  if (!dnf && !result.assisted && !result.easy) {
     const splitTimes = [0, ...result.splits.map((s) => s.time)];
     const r = career.recordBest(G.stageId, G.carId, result.total, splitTimes);
     isBest = r.isBest; previousBest = r.previous;
@@ -709,6 +711,8 @@ function pauseGame() {
     mode: G.mode, recoverPenalty: RULES.respawnPenalty[curDifficulty()] ?? 10,
     onRetire: () => retireStage(),
     onResume: resumeGame,
+    handling: career.handling,
+    onHandling: (v) => { career.setHandling(v); applyHandling(); },
     onRestart: () => { resumeGame(); restartStage(); },
     onOptions: () => screens.options({ onChange: optionChanged, onBack: () => pauseGame2() }),
     onQuit: () => { G.paused = false; backToMenu(); },
@@ -745,6 +749,13 @@ async function restartStage() {
   try { await prepareRun({ stageId: G.stageId, carId: G.carId, livery: G.livery, weather: G.weather, countdown: true, mode: G.mode }); }
   finally { G.restarting = false; }
 }
+/** Handling preset changed (settings or pause menu): save, retune the live car, and tag the run so it cannot set a record. */
+function applyHandling() {
+  career.save();
+  const sp = G.vehicle && G.vehicle.spec;
+  if (sp) G.vehicle.configure(vehicleOptionsFor(sp, null, { ...career.options, handling: career.handling, difficulty: curDifficulty() }));
+  if (G.run && career.handling === "easy") G.run.easy = true;
+}
 function optionChanged(k, v) {
   opts = career.options;
   career.save();
@@ -752,7 +763,8 @@ function optionChanged(k, v) {
   if (k === "quality" && G.world) G.world.setQuality(v === "auto" ? "auto" : v);
   if (["units", "colourSafe", "fps", "hudScale"].includes(k)) hud.setOptions(opts);
   if (k === "reducedMotion") document.body.classList.toggle("reduced-motion", !!v);
-  if (k === "gearbox" || k === "steerAssist") { const sp = G.vehicle && G.vehicle.spec; if (sp) G.vehicle.configure(vehicleOptionsFor(sp, null, opts)); }
+  if (k === "gearbox" || k === "steerAssist") { const sp = G.vehicle && G.vehicle.spec; if (sp) G.vehicle.configure(vehicleOptionsFor(sp, null, { ...opts, handling: career.handling, difficulty: curDifficulty() })); }
+  if (k === "handling") applyHandling();
   if (k === "touch" || k === "tilt") applyTouchVisibility();
   if (k === "camera" && G.rig && G.playing) setCamera(v);
 }

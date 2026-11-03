@@ -91,7 +91,7 @@ const DYN_SCALARS = [
   "px", "py", "pz", "qw", "qx", "qy", "qz", "vx", "vy", "vz", "wx", "wy", "wz",
   "rpm", "gear", "boost", "thr", "brk", "hb", "steerIn", "steerAng", "analogT", "shiftT", "shiftLock", "cutT", "prevThr",
   "prevUp", "prevDown", "airT", "airMinVy", "flipT", "collided", "distance", "wgCool", "limCool", "impCool", "boCool", "splashCool",
-  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir", "axLP", "holdT", "kick", "kickCool", "pinT", "cnx", "cnz", "cnAge",
+  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir", "axLP", "holdT", "kick", "kickCool", "pinT", "cnx", "cnz", "cnAge", "backT",
 ];
 
 // Longitudinal load transfer, exaggerated on purpose (see the wheel loop): fast filter, a slow reference that turns a
@@ -99,6 +99,7 @@ const DYN_SCALARS = [
 const LAND_SOAK = 3.5;
 // walls (banks, verges): a little bounce and a slippery face so a hit leaves the car free to steer out; a pinned car is helped out
 const WALL_E = 0.22, WALL_MUT = 0.08;
+const PIN_WEDGE = 1.0, PIN_BACK = 1.6, PIN_BACK_V = 4;
 const PIN_SPEED = 1.5, PIN_AFTER = 1.0, PIN_THR = 0.25, PIN_PUSH = 8, PIN_SEP = 4;
 const FRONT_LOOSE = 1.15;
 const REAR_LOOSE = 1.25; // round 6: rear axle grip on loose ground, so the stronger front end does not make lift-off snappy
@@ -566,6 +567,7 @@ export function createVehicle(spec, options = {}) {
     if (tThr === 0 && D.thr < 0.003) D.thr = 0;
     thrEff = D.thr; brkEff = D.brk; hbEff = D.hb;
     if (D.pinT > PIN_AFTER && thrEff > PIN_THR) thrEff = PIN_THR;
+    if (D.backT > 0) thrEff = 0; // backing out of a wedge
     // traction / stability assist: feather the throttle when driven wheels spin or the tail steps out
     if (opts.assist > 0 && thrEff > 0.05 && D.gear !== 0) {
       // mean slip of the driven wheels (not the worst one): a single unloaded or damaged wheel stuck spinning after
@@ -635,7 +637,7 @@ export function createVehicle(spec, options = {}) {
     }
     D.thr = 0; D.brk = 0; D.hb = 0; D.steerIn = 0; D.steerAng = 0; D.analogT = 0; D.shiftT = 0; D.shiftLock = 0; D.cutT = 0;
     D.boost = 0; D.prevThr = 0; D.airT = 0; D.airMinVy = 0; D.flipT = 0; D.wgCool = 0; D.limCool = 0; D.impCool = 0; D.boCool = 0;
-    D.pinT = 0; D.cnx = 0; D.cnz = 0; D.cnAge = 9; D.axLP = 0; D.holdT = 0; D.kick = 0; D.kickCool = 0; D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
+    D.pinT = 0; D.backT = 0; D.cnx = 0; D.cnz = 0; D.cnAge = 9; D.axLP = 0; D.holdT = 0; D.kick = 0; D.kickCool = 0; D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
     D.gear = 1;
     if (opts.auto) {
       let g = 1;
@@ -1223,6 +1225,14 @@ export function createVehicle(spec, options = {}) {
       D.cnAge += dt;
       if (D.thr > 0.5 && Math.abs(s.speed) < PIN_SPEED && D.cnAge < 1.0) D.pinT += dt; else D.pinT = Math.max(0, D.pinT - 0.5 * dt);
       if (D.pinT > PIN_AFTER && D.vx * D.cnx + D.vz * D.cnz < PIN_SEP) { D.vx += D.cnx * PIN_PUSH * dt; D.vz += D.cnz * PIN_PUSH * dt; } // ease off the wall to ~2 m/s, no more
+      // round 9: wedged (the wall push alone did not free the car in PIN_WEDGE s, e.g. between a tree and a boulder): back straight out along the car's own axis for PIN_BACK s
+      // with the drive off, so a driver still holding the throttle does not drive straight back in; the pin timer restarts clear of the obstacles
+      if (D.backT <= 0 && D.pinT > PIN_AFTER + PIN_WEDGE) { D.backT = PIN_BACK; D.pinT = 0; }
+      if (D.backT > 0) {
+        D.backT -= dt;
+        const bfx = Math.sin(s.yaw), bfz = Math.cos(s.yaw); // backwards (the car faces -Z at yaw 0)
+        if (D.vx * bfx + D.vz * bfz < PIN_BACK_V) { D.vx += bfx * PIN_PUSH * dt; D.vz += bfz * PIN_PUSH * dt; }
+      }
     }
     // road width test
     {

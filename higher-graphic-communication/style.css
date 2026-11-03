@@ -18,7 +18,6 @@
   --navy-2: #52308a;
   --sky: #b79be0;
   --lode: #a3236b;
-  --grid: rgba(82,48,138,.10);
   --redstone: #b3261e;
   --redstone-glow: #ff4b3a;
   --grass: #3f7426;
@@ -46,7 +45,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #14161c; --paper-2: #1b1e26; --card: #1f232c; --ink: #ece6d6; --ink-2: #cfc6b2;
-    --muted: #a59c88; --line: #3a3f4c; --navy: #1a0e2b; --navy-2: #43286f; --sky: #c9b2f0; --lode: #ff7ab8; --grid: rgba(183,155,224,.08);
+    --muted: #a59c88; --line: #3a3f4c; --navy: #1a0e2b; --navy-2: #43286f; --sky: #c9b2f0; --lode: #ff7ab8;
     --redstone: #ff6a5c; --grass: #8cc96a; --dirt: #c79a6c; --gold: #e6bf55; --sea: #5fb6cc;
     --code-bg: #0f1116; --focus: #7fb2ff; --shadow: 0 2px 0 rgba(0,0,0,.5);
     color-scheme: dark;
@@ -54,7 +53,7 @@
 }
 :root[data-theme="dark"] {
   --paper: #14161c; --paper-2: #1b1e26; --card: #1f232c; --ink: #ece6d6; --ink-2: #cfc6b2;
-  --muted: #a59c88; --line: #3a3f4c; --navy: #1a0e2b; --navy-2: #43286f; --sky: #c9b2f0; --lode: #ff7ab8; --grid: rgba(183,155,224,.08);
+  --muted: #a59c88; --line: #3a3f4c; --navy: #1a0e2b; --navy-2: #43286f; --sky: #c9b2f0; --lode: #ff7ab8;
   --redstone: #ff6a5c; --grass: #8cc96a; --dirt: #c79a6c; --gold: #e6bf55; --sea: #5fb6cc;
   --code-bg: #0f1116; --focus: #7fb2ff; --shadow: 0 2px 0 rgba(0,0,0,.5);
   color-scheme: dark;
@@ -65,11 +64,7 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0; color: var(--ink);
-  /* isometric drawing paper: this deck's page, two sets of 30-degree lines */
-  background:
-    repeating-linear-gradient(60deg, var(--grid) 0 1px, transparent 1px 28px),
-    repeating-linear-gradient(120deg, var(--grid) 0 1px, transparent 1px 28px),
-    var(--paper);
+  background: var(--paper);
   font: 17px/1.62 var(--font-body);
   overflow-wrap: break-word;
 }
@@ -346,6 +341,7 @@ svg .paper2 { fill: var(--paper-2); }
 .q { border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 10px; }
 .q:first-of-type { border-top: 0; }
 .q-stem { font-weight: 700; margin: 0 0 6px; }
+.q-fig { margin: 4px 0 8px; max-width: 220px; }
 .q-marks { font-weight: 400; color: var(--muted); font-size: .85rem; }
 .q-opts { display: grid; gap: 6px; margin: 6px 0; }
 .q-opt {
