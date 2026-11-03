@@ -18,6 +18,9 @@ QUESTIONS = {q["id"]: q for q in json.load(open(os.path.join(HERE, "questions.js
 BUDGET = float(os.environ.get("ZOO_BUDGET", "23.0"))   # hard cap on estimated spend, USD
 WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
 EXCLUDE = os.environ.get("ZOO_EXCLUDE", "")  # regex of models to leave out of this run
+ONLY = os.environ.get("ZOO_ONLY", "")  # regex: only these models; the budget then counts only them
+# Current Claude family: also run each with extended thinking on, as "<model>@thinking".
+THINKING = {"claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"}
 LOCK = threading.Lock()
 QUOTA_GONE = threading.Event()  # set when OpenAI reports the credit is used up
 # gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.
@@ -37,13 +40,29 @@ def connect():
 
 
 BASE, TOKEN = connect()
+_ANTHROPIC = []
 
 
-def http(method, path, body=None, timeout=900):
-    req = urllib.request.Request(BASE + path, method=method,
+def anthropic():
+    """The Anthropic pool proxy (base_url, token), connected on first use."""
+    if not _ANTHROPIC:
+        out = subprocess.run(["deltic", "api", "anthropic", "connect", "--app", "model-zoo"],
+                             capture_output=True, text=True, check=True).stdout
+        d = json.loads(out)
+        _ANTHROPIC.append((d["base_url"].rstrip("/"), d["token"]))
+    return _ANTHROPIC[0]
+
+
+def http(method, path, body=None, timeout=900, provider="openai"):
+    if provider == "anthropic":
+        base, tok = anthropic()
+        headers = {"x-api-key": tok, "anthropic-version": "2023-06-01",
+                   "Content-Type": "application/json"}
+    else:
+        base, headers = BASE, {"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json"}
+    req = urllib.request.Request(base + path, method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Authorization": "Bearer " + TOKEN,
-                                          "Content-Type": "application/json"})
+                                 headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, json.loads(r.read())
@@ -58,10 +77,10 @@ def http(method, path, body=None, timeout=900):
 
 
 def price(model):
-    if model.endswith("@pro"):  # assumption: pro mode bills at the base model's token rates
-        model = model[:-4]
-    m = SNAPSHOT.sub("", model)
-    for table in ("published", "memory"):
+    # assumption: pro mode bills at the base model's token rates; thinking is billed as output
+    model = model.split("@")[0]
+    m = SNAPSHOT.sub("", model) if not model.startswith("claude-") else re.sub(r"-\d{8}$", "", model)
+    for table in ("published", "memory", "anthropic"):
         if m in PRICES[table]:
             return PRICES[table][m], table
     return PRICES["default_unknown"], "unknown"
@@ -79,7 +98,30 @@ def cost(model, usage):
 def call(model, endpoint, prompt, max_tokens):
     """One request. Returns dict(ok, text, usage, status, error, secs)."""
     t0 = time.time()
-    if endpoint == "responses":
+    if endpoint == "anthropic":
+        real, _, variant = model.partition("@")
+        body = {"model": real, "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": prompt}]}
+        if variant == "thinking":  # extended thinking, half the allowance, like the GPT reasoners
+            body["thinking"] = {"type": "enabled", "budget_tokens": max(1024, max_tokens // 2)}
+        code, d = http("POST", "/v1/messages", body, provider="anthropic")
+        if code == 400 and variant == "thinking" and "adaptive" in json.dumps(d):
+            # The newest models refuse a budget: adaptive thinking, steered by an effort level.
+            body["thinking"] = {"type": "adaptive"}
+            body["output_config"] = {"effort": "high"}
+            code, d = http("POST", "/v1/messages", body, provider="anthropic")
+        if code == 200:
+            text = "".join(b.get("text", "") for b in d.get("content", []) if b.get("type") == "text")
+            think = sum(len(b.get("thinking", "")) for b in d.get("content", []) if b.get("type") == "thinking")
+            u = d.get("usage") or {}
+            usage = {"in": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+                     + u.get("cache_creation_input_tokens", 0),
+                     "out": u.get("output_tokens", 0), "thinking_chars": think}
+            return {"ok": True, "text": text, "usage": usage, "status": d.get("stop_reason"),
+                    "incomplete": "max_tokens" if d.get("stop_reason") == "max_tokens" else None,
+                    "resolved_model": d.get("model"), "thinking_type": (body.get("thinking") or {}).get("type"),
+                    "secs": round(time.time() - t0, 2)}
+    elif endpoint == "responses":
         body = {"model": model, "input": prompt, "max_output_tokens": max_tokens}
         if model.endswith("@pro"):  # a virtual model: pro reasoning mode on a current model
             body["model"] = model[:-4]
@@ -162,7 +204,9 @@ def spent():
         if fn.endswith(".jsonl"):
             for l in open(os.path.join(DATA, fn)):
                 if l.strip():
-                    total += json.loads(l).get("cost", 0.0)
+                    r = json.loads(l)
+                    if not ONLY or re.search(ONLY, r.get("model", "")):
+                        total += r.get("cost", 0.0)
     return total
 
 
@@ -194,13 +238,19 @@ def probe():
     assert code == 200, d
     ids = sorted(m["id"] for m in d["data"])
     cands = [m for m in ids if not SKIP.search(m) and not SNAPSHOT.search(m)] + VIRTUAL
+    code, d = http("GET", "/v1/models?limit=100", provider="anthropic")
+    assert code == 200, d
+    claude = [m["id"] for m in d["data"]]
+    cands += claude + [f"{m}@thinking" for m in claude if m in THINKING]
+    if ONLY:
+        cands = [m for m in cands if re.search(ONLY, m)]
     print(f"{len(ids)} listed, {len(cands)} candidates", flush=True)
     prev = {r["model"]: r for r in records("_probe") if r.get("endpoint")}
     todo = [m for m in cands if m not in prev]
 
     def one(m):
         errs = []
-        for ep in ("responses", "chat", "completions"):
+        for ep in (("anthropic",) if m.startswith("claude-") else ("responses", "chat", "completions")):
             worst = try_reserve(m, 2000)
             if worst is None:
                 return {"model": m, "endpoint": None, "errors": ["budget"]}
@@ -240,6 +290,8 @@ def ask(qids):
         jobs = []
         for m, ep in sorted(models.items()):
             if EXCLUDE and re.search(EXCLUDE, m):
+                continue
+            if ONLY and not re.search(ONLY, m):
                 continue
             if "models" in q and m not in q["models"]:
                 continue
