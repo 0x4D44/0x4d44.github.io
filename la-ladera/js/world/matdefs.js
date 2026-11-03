@@ -80,4 +80,8 @@ export default {
   rock_sea: { color: 0xffffff, rough: 0.92, tile: 2, env: 0.4 },
   seawall_concrete: { color: 0xffffff, rough: 0.9, tile: 2, env: 0.4 },
   promenade_pavers: { color: 0xffffff, rough: 0.88, tile: 2.4, env: 0.4 },
+  // the beach's props library (beachprops.js; Codex beach_props: one 2048 px atlas of 8 x 8 cells, ORM in `rough`, 0..1 UVs, no vertex colours in its GLBs). The second is the cut-out of the net,
+  // the palm fronds and the ropes (the library's alphaMode MASK, cutoff 0.5). Both double-sided, as the library says.
+  beach_props: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'beach_props', env: 0.45, vertexColors: false },
+  beach_props_alpha: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'beach_props', alphaTest: 0.5, env: 0.45, vertexColors: false },
 };

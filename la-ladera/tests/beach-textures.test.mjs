@@ -21,7 +21,7 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'ladera-beach-test-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const m = manifest();
-  const paths = [MANIFEST, 'assets/textures/beach', 'assets/textures/manifest.json', 'assets/models/manifest.json',
+  const paths = [MANIFEST, 'assets/textures/beach', 'assets/textures/manifest.json', 'assets/models/manifest.json', 'assets/models/manifest.beach_props.json',
     ...m.inputs.map((input) => input.path), m.review.signs.proof];
   for (const path of new Set(paths)) {
     mkdirSync(dirname(resolve(root, path)), { recursive: true });
@@ -223,6 +223,26 @@ caseTest('offline', 'new pack stays out of the active model manifest, and out of
   rejected(stray, /"sand_dry\.map" \(beach\/not_in_the_pack\.png\) is not a PNG of the library/);
   const lost = fixture(t), tex3 = read(lost); delete tex3.textures; writeFileSync(textures(lost), JSON.stringify(tex3));
   rejected(lost, /no `textures` table to check/);
+});
+
+caseTest('props_atlas', 'the beach props atlas is registered as `beach_props` and may point only at the PNGs the props library\'s own manifest names', (t, sabotage) => {
+  const textures = (x) => resolve(x.root, 'assets/textures/manifest.json'), read = (x) => JSON.parse(readFileSync(textures(x)));
+  const ok = fixture(t);
+  assert.deepEqual(['map', 'normal', 'rough'].map((k) => read(ok).textures.beach_props?.[k]), ['beach_props/albedo.png', 'beach_props/normal.png', 'beach_props/orm.png'], 'the atlas is registered in the active texture manifest');
+  assert.equal(validateBeach({ root: ok.root, complete: true }).ok, true, errors(validateBeach({ root: ok.root, complete: true })));
+  const stray = fixture(t), tex = read(stray); tex.textures.beach_props.map = sabotage ? tex.textures.beach_props.map : 'beach_props/not_in_the_library.png'; writeFileSync(textures(stray), JSON.stringify(tex));
+  rejected(stray, /"beach_props\.map" \(beach_props\/not_in_the_library\.png\) is not a PNG of the props library/);
+});
+
+caseTest('props_atlas_id', 'no other texture id may name the beach props atlas', (t, sabotage) => {
+  const textures = (x) => resolve(x.root, 'assets/textures/manifest.json'), other = fixture(t), tex = JSON.parse(readFileSync(textures(other)));
+  tex.textures.stray_atlas = { map: sabotage ? 'sand_dry.png' : 'beach_props/albedo.png', size: 2048 }; writeFileSync(textures(other), JSON.stringify(tex));
+  rejected(other, /"stray_atlas" is not a registered coast material/);
+});
+
+caseTest('props_atlas_lib', 'the atlas registration is checked against the props library\'s manifest: without it nothing is a PNG of the library', (t, sabotage) => {
+  const gone = fixture(t); if (!sabotage) rmSync(resolve(gone.root, 'assets/models/manifest.beach_props.json'));
+  rejected(gone, /"beach_props\.map" \(beach_props\/albedo\.png\) is not a PNG of the props library/);
 });
 
 caseTest('normal_data', 'normal PNGs contain unit forward-facing tangent vectors after re-pinning', (t, sabotage) => {

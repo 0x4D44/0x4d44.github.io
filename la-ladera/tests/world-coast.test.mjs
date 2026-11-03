@@ -4,6 +4,7 @@
 //   seam    the beach's ground sits 0.3 m off the plot's edge     notch  a 0.6 m step in the seabed at z = 150     island  a bar above the sea at (20, 170)
 //   gap     the axis stair loses its link down to the sand        ramp   the ramp climbs at 1:6                    leak    no rails and a gentle sea wall: a walker can step off the deck
 //   fewpois the beach keeps 12 of its points of interest          random a build that is not a function of the seed     gate    the south gate is built open
+//   norails the stairs lose their cheeks and the ramp its side rails (a walker steps into a cheek and off the ramp's edge)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import './nice.mjs';
@@ -12,7 +13,7 @@ import { Physics } from '../js/core/physics.js';
 import { walkable } from '../js/world/nav.js';
 import { generatePlan } from '../js/world/plan.js';
 import { buildPerimeter } from '../js/world/terrain.js';
-import { createCoast, setGate, SEA, Z0, XW, DECK, DECK_Z, WALL_Z, BUOY_Z, STOP_Z, KERNEL_Z, SOFT_Z, STAIR_FLIGHT, RAMP_END_Z } from '../js/world/coast.js';
+import { createCoast, coastColliders, setGate, SEA, Z0, XW, DECK, DECK_Z, WALL_Z, BUOY_Z, STOP_Z, KERNEL_Z, SOFT_Z, STAIR_FLIGHT, RAMP_END_Z } from '../js/world/coast.js';
 import { pointInPoly } from '../js/world/geom.js';
 
 const SAB = process.env.C_SABOTAGE ?? '';
@@ -33,6 +34,7 @@ function broken(c) {
   if (on('leak')) { const h = o.heightAt; o.heightAt = (x, z) => (z >= DECK_Z && z < WALL_Z ? h(x, WALL_Z + 0.001) + (DECK - h(x, WALL_Z + 0.001)) * (1 - (z - DECK_Z) / 1.6) * 0.4 : h(x, z)); o.rails = []; }
   if (on('gap')) { const a = c.stairs[2], ids = c.nav.nodes.filter((n) => n.kind === 'stair' && Math.abs(n.x - a.x) < 0.01), mid = ids.find((n) => n.z === 108.7), foot = ids.find((n) => n.z > 110); o.nav = { nodes: c.nav.nodes, edges: c.nav.edges.filter(([p, q]) => !((p === mid.id && q === foot.id) || (q === mid.id && p === foot.id))) }; }
   if (on('fewpois')) o.pois = c.pois.slice(0, 12);
+  if (on('norails')) { o.cheeks = []; o.rampRails = []; }
   return o;
 }
 const C = broken(real);
@@ -100,7 +102,7 @@ test('the nav graph the beach adds: land or shallow water only, one component, s
 
 function kernel() {
   const phys = new Physics(); phys.setTerrain(plan.heightAt);
-  for (const r of C.rails) phys.addWall({ x1: r.x1, z1: r.z, x2: r.x2, z2: r.z, t: 0.06, y0: DECK, y1: DECK + 0.9, id: 'rail' });
+  coastColliders(phys, C);                                                         // the walls the page builds: the rail, the cheeks and the ramp's rails
   return phys;
 }
 const at = (x, z) => ({ x, z, y: plan.heightAt(x, z) });
@@ -112,6 +114,28 @@ test('walk: the kernel takes a walker down every stair and the ramp, over the sa
     for (let i = 1; i < legs.length; i++) assert.ok(walkable(phys, legs[i - 1], legs[i]), `${a.id}: the kernel could not walk (${a.x}, ${legs[i - 1].z}) -> (${a.x}, ${legs[i].z.toFixed(1)})`);
   }
   for (const x of [-75, -30, 14, 50, 88]) assert.ok(!walkable(kernel(), at(x, 103), at(x, 114)), `a walker went off the promenade's edge at x ${x} between accesses`);
+});
+
+test('the cheeks and the ramp\'s rails are solid: a walker cannot walk into a cheek from the sand or off the ramp\'s edge, while the flights and the ramp stay open', () => {
+  assert.equal(real.cheeks.length, 2 * real.stairs.length, 'two cheeks to a flight');
+  assert.equal(real.rampRails.length, 2, 'a rail along each edge of the ramp');
+  for (const c of real.cheeks) assert.ok(!walkable(kernel(), at(c.x, c.z2 + 2.5), at(c.x, (c.z1 + c.z2) / 2)), `a walker went into the cheek ${c.id} (x ${c.x}) from the sand`);
+  const r = real.ramp;
+  for (const s of [-1, 1]) for (const z of [110, 114, 117]) assert.ok(!walkable(kernel(), at(r.x, z), at(r.x + s * 2, z)), `a walker stepped off the ${s < 0 ? 'west' : 'east'} edge of the ramp at z ${z}`);
+  for (const a of real.accesses) assert.ok(walkable(kernel(), at(a.x, 103), at(a.x, a.kind === 'ramp' ? RAMP_END_Z + 1 : STAIR_FLIGHT[1] + 1)), `${a.id} is shut by its own cheeks or rails`);
+  for (const s of [-1, 1]) {
+    const side = s < 0 ? 'west' : 'east';
+    { const x = r.x + s * (r.w / 2 - 0.45); assert.ok(walkable(kernel(), at(x, 103), at(x, RAMP_END_Z + 1)), `the ramp is shut within 0.45 m of its ${side} edge`); }
+    for (const a of real.stairs) {
+      const x = a.x + s * (a.w / 2 - 0.45);
+      assert.ok(walkable(kernel(), at(x, 103), at(x, STAIR_FLIGHT[1] + 1)), `${a.id}: the flight is shut within 0.45 m of its ${side} edge`);
+      for (const z of [108.2, 108.9, 109.5]) {                                    // pushed into the cheek from the first tread, the middle and the foot (a walker on the first tread stands level with the deck, so the cheek must reach well over 0.4 m)
+        const phys = kernel(), x0 = a.x + s * (a.w / 2 - 0.6), st = { x: x0, y: plan.heightAt(x0, z), z, vy: 0, onGround: true };
+        for (let i = 0; i < 60; i++) phys.move(st, s * 0.03, 0, 1 / 60);
+        assert.ok(s * (st.x - a.x) <= a.w / 2 - 0.3 + 0.05, `${a.id}: a walker pushed into the ${side} cheek at z ${z} got ${(s * (st.x - a.x)).toFixed(2)} m from the flight's axis (the cheek's face is at ${a.w / 2})`);
+      }
+    }
+  }
 });
 
 test('the perimeter: the south gate is shut until the beach is built, the east and west walls run on to the sea\'s end and the kernel wall closes it', () => {

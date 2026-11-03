@@ -4,7 +4,7 @@
 // cells up to z 160 and 4 m beyond, with a skirt on every edge, so the strip meets the far terrain (periphery.js) without a seam.
 import { vnoise, ss, lerp } from './geom.js';
 import { beam } from './mk.js';
-import { SEA, Z0, DECK, DECK_Z, TOE, STAIR_FLIGHT, RAMP_END_Z } from './coast.js';
+import { SEA, Z0, DECK, DECK_Z, TOE, STAIR_FLIGHT, RAMP_END_Z, CHEEK, rampY } from './coast.js';
 
 const X0 = -100, X1 = 100, DX = 2, Z_NEAR = 160, Z_END = 300;
 export const COAST_TERRAIN = 'world.coast.terrain', COAST_DECK = 'world.coast.deck';
@@ -76,12 +76,21 @@ export function buildCoastMesh(ctx) {
       const zc = STAIR_FLIGHT[0] + (k + 0.5) * tread, top = lerp(DECK, foot, (k + 0.5) / steps), bot = top - (DECK - foot) / steps - 0.26;
       D.box({ py: 'stair_tread', all: 'concrete_bare' }, a.x, (top + bot) / 2, zc, a.w, top - bot, tread, { skip: ['ny'] });
     }
-    for (const s of [-1, 1]) D.box('concrete_bare', a.x + s * (a.w / 2 + 0.125), (DECK + yb) / 2, STAIR_FLIGHT[0] + 0.85, 0.25, DECK - yb, 1.7, { skip: ['ny'] });     // the cheeks, flush with the deck
   }
-  { // the ramp: a concrete wedge, 1:12, from the deck's edge to where it meets the sand
+  const runRail = (x, y0, y1, z0, z1) => {                                                                     // a rail along x = const from (y0, z0) to (y1, z1): posts every 2 m, a top bar and a mid bar (the deck rail's make)
+    const n = Math.max(1, Math.round((z1 - z0) / 2));
+    for (let i = 0; i <= n; i++) { const z = lerp(z0, z1, i / n), y = lerp(y0, y1, i / n); beam(D, 'iron_black', [x, y, z], [x, y + 0.95, z], 0.06, 0.06); }
+    beam(D, 'iron_black', [x, y0 + 0.95, z0], [x, y1 + 0.95, z1], 0.05, 0.05); beam(D, 'iron_black', [x, y0 + 0.5, z0], [x, y1 + 0.5, z1], 0.03, 0.03);
+  };
+  for (const c of C.cheeks) {                                                                                  // the cheeks, flush with the deck: the sea wall's concrete, its coping on top, a rail along the top
+    D.box({ all: 'seawall_concrete', py: 'concrete_bare' }, c.x, (DECK + yb) / 2, (c.z1 + c.z2) / 2, CHEEK.w, DECK - yb, c.z2 - c.z1, { skip: ['ny', 'nz'] });       // (no north face: it would lie back to back with the sea wall's)
+    runRail(c.x, DECK, DECK, c.z1 + 0.1, c.z2 - 0.1);
+  }
+  { // the ramp: a concrete wedge, 1:12, from the deck's edge to where it meets the sand: the promenade's pavers on top (continuing the deck's), the sea wall's concrete on the sides, a rail along each edge
     const a = C.ramp, x0 = a.x - a.w / 2, x1 = a.x + a.w / 2, yEnd = C.meshHeight(a.x, RAMP_END_Z), yTop = DECK, z0 = DECK_Z, z1 = RAMP_END_Z, ya = TOE - 0.2;
-    D.quad('street_concrete', [x1, yTop, z0], [x0, yTop, z0], [x0, yEnd, z1], [x1, yEnd, z1], { uv: [0, z0, a.w, z0, a.w, z1, 0, z1] });
-    D.tri('concrete_bare', [x0, yTop, z0], [x0, ya, z0], [x0, yEnd, z1]); D.tri('concrete_bare', [x1, yTop, z0], [x1, yEnd, z1], [x1, ya, z0]);
+    D.quad('promenade_pavers', [x1, yTop, z0], [x0, yTop, z0], [x0, yEnd, z1], [x1, yEnd, z1], { uv: [x1, z0, x0, z0, x0, z1, x1, z1] });
+    D.tri('seawall_concrete', [x0, yTop, z0], [x0, ya, z0], [x0, yEnd, z1]); D.tri('seawall_concrete', [x1, yTop, z0], [x1, yEnd, z1], [x1, ya, z0]);
+    for (const r of C.rampRails) runRail(r.x, rampY(r.z1), rampY(r.z2), r.z1, r.z2);
   }
   const stats = { tris: terrainTris, deckTris: D.tris };
   ctx.batch.flush(COAST_DECK);

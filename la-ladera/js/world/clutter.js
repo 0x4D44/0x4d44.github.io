@@ -30,12 +30,14 @@ export function clutterMatrix(x, y, z, yaw = 0, scale = [1, 1, 1], pitch = 0) {
 }
 
 export class Clutter {
-  constructor(ctx) {
-    this.ctx = ctx; this.types = new Map(); this.records = []; this.batches = []; this.finalized = false;
-    this.group = new THREE.Group(); this.group.name = 'props.clutter'; this.group.userData.noMerge = true;
+  /** o = { tag: the manifest tag that names the library's near assets ('clutter'), id: the group, system and ctx.world names ('clutter'; the beach is another instance: tag 'beach-prop', id 'beachprops') } */
+  constructor(ctx, o = {}) {
+    this.ctx = ctx; this.tag = o.tag ?? 'clutter'; this.id = o.id ?? 'clutter';
+    this.types = new Map(); this.records = []; this.batches = []; this.finalized = false;
+    this.group = new THREE.Group(); this.group.name = `props.${this.id}`; this.group.userData.noMerge = true;
     this.last = new THREE.Vector3(Infinity, Infinity, Infinity);
     this.stats = { placed: 0, near: 0, far: 0, culled: 0, triangles: 0, batches: 0, byKey: {}, replacements: 0, additions: 0 };
-    for (const key of ctx.assets.names('clutter')) {
+    for (const key of ctx.assets.names(this.tag)) {
       const meta = ctx.assets.meta(key), near = readyParts(ctx, key), low = typeof meta?.lod1 === 'string' && readyParts(ctx, meta.lod1);
       if (!near || !low || !meta.size?.every((n) => Number.isFinite(n) && n > 0)) continue;
       const lowMeta = ctx.assets.meta(meta.lod1);
@@ -84,7 +86,7 @@ export class Clutter {
       if (!type.records.length) continue;
       for (let lod = 0; lod < 2; lod++) for (const part of type.parts[lod]) {
         const mesh = new THREE.InstancedMesh(part.geometry, this.ctx.mat(part.matKey), type.records.length);
-        mesh.name = `clutter:${type.key}:${lod}:${part.matKey}`;
+        mesh.name = `${this.id}:${type.key}:${lod}:${part.matKey}`;
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         // Small clutter receives the existing world shadow; omitting its own shadow pass makes the LOD budget meaningful.
         mesh.castShadow = false; mesh.receiveShadow = true; mesh.matrixAutoUpdate = false; mesh.matrix.copy(IDENTITY);
@@ -98,9 +100,9 @@ export class Clutter {
     }
     this.ctx.scene.add(this.group);
     this.stats.batches = this.batches.length;
-    this.ctx.world ??= {}; this.ctx.world.clutter = this.stats;
-    this.ctx.world.clutterLoad = { ...this.loadStatus, assets: this.types.size, keys: [...this.types.keys()] };
-    this.ctx.addSystem('clutter', () => this.update(), 8);
+    this.ctx.world ??= {}; this.ctx.world[this.id] = this.stats;
+    this.ctx.world[this.id + 'Load'] = { ...this.loadStatus, assets: this.types.size, keys: [...this.types.keys()] };
+    this.ctx.addSystem(this.id, () => this.update(), 8);
     this.ctx.events.on('player:teleport', () => this.update(true));
     this.update(true);
   }

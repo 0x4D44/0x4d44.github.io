@@ -26,6 +26,15 @@ export const REQUIRED = Object.freeze({
 // What the consuming beach work has registered in the active texture manifest, one material at a time (round 7, A5: js/world/coastmesh.js and periphery.js draw the coast's
 // ground with them). Everything else of the pack stays offline: a later consumer adds its ids here, which is the review.
 export const REGISTERED = Object.freeze(['sand_dry', 'sand_wet', 'seabed_sand', 'seabed_rock', 'rock_sea', 'seawall_concrete', 'promenade_pavers']);
+/** The beach PROPS library's atlas, registered for js/world/beachprops.js: its id in the active texture manifest -> the props library's manifest, whose `textures.maps` name the three PNGs it may point at. */
+export const REGISTERED_ATLAS = Object.freeze({ beach_props: 'assets/models/manifest.beach_props.json' });
+/** The PNGs a props library manifest names, as the active texture manifest writes them (relative to assets/textures/); empty when the manifest is missing or unreadable. */
+function atlasPngs(root, manifestPath) {
+  try {
+    const lib = JSON.parse(readFileSync(resolve(root, manifestPath), 'utf8'));
+    return new Set(Object.values(lib.textures?.maps ?? {}).map((x) => String(x?.path ?? '').replace(/^\.\.\/textures\//, '')));
+  } catch { return new Set(); }
+}
 const CELL_COUNTS = Object.freeze({ sails_kites: 12, board_decks: 8, towels_bags: 16, signs_menus: 10,
   boat_names: 4, gull_sprites: 8, fish_sprites: 6, crab_shells: 3, seagrass_coral: 3 });
 const ALPHA = new Set(['foam_noise', 'boat_names', 'gull_sprites', 'fish_sprites', 'crab_shells', 'seagrass_coral']);
@@ -287,6 +296,11 @@ export function validateBeach({ root = ROOT, complete = false } = {}) {
       if (!entry || typeof entry !== 'object') continue;
       const refs = Object.entries(entry).filter(([key, value]) => key !== 'source' && typeof value === 'string' && /beach/.test(value));
       if (!refs.length) continue;
+      if (id in REGISTERED_ATLAS) {                    // the props library's atlas: registered under its own name, and only ever as the PNGs that library's manifest names
+        const own = atlasPngs(root, REGISTERED_ATLAS[id]);
+        for (const [key, value] of refs) demand(own.has(value), `beach library must not enter active model or texture manifests: "${id}.${key}" (${value}) is not a PNG of the props library`);
+        continue;
+      }
       demand(REGISTERED.includes(id), `beach library must not enter active model or texture manifests: "${id}" is not a registered coast material`);
       for (const [key, value] of refs) demand(library.has(value), `beach library must not enter active model or texture manifests: "${id}.${key}" (${value}) is not a PNG of the library`);
     }

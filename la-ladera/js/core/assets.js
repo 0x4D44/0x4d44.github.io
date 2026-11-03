@@ -30,21 +30,35 @@ export class Assets {
    * Node tests pass a reader that loads the same files from disk, so furnishing logic (which only needs the
    * manifest metadata - size, footprint, tags - never the GLB bytes) can be tested without a browser.
    */
-  async init(read = (p) => Promise.resolve(takePrefetched(this.root + p)).catch(() => null)   // the early request failed or was never made: ask again, once, from here (review R2b-001)
-    .then((hit) => hit ?? fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null))) {
+  async init(read = (p) => this._fetchJson(p)) {
     const root = await read('manifest.json');
-    // The listed manifests are read together, not one after another: at 120 ms of latency twelve sequential reads were ~2 s of the boot with the connection idle (review R2e-001).
-    // They are merged in the listed order afterwards, so a name that two manifests declare still resolves to the later one, exactly as before.
-    const files = root?.files ?? [];
+    await this.extend(root?.files ?? [], read);
+  }
+
+  /** The default reader: a manifest index.html already asked for, else a fetch. */
+  _fetchJson(p) {
+    return Promise.resolve(takePrefetched(this.root + p)).catch(() => null)   // the early request failed or was never made: ask again, once, from here (review R2b-001)
+      .then((hit) => hit ?? fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  }
+
+  /**
+   * Read the listed manifests and merge their assets into the registry. init() does it for manifest.json's list; a LATER SECTOR does it for a library that is not part of the boot
+   * (the beach, round 7: the beach props' and the watersports libraries' manifests stay out of manifest.json, so the boot neither fetches nor parses them) once the page is playable.
+   * The listed manifests are read together, not one after another: at 120 ms of latency twelve sequential reads were ~2 s of the boot with the connection idle (review R2e-001).
+   * They are merged in the listed order afterwards, so a name that two manifests declare still resolves to the later one, exactly as before. Returns the number of assets merged.
+   */
+  async extend(files, read = (p) => this._fetchJson(p)) {
     const read1 = async (f) => { try { return await read(f); } catch (e) { console.warn('[assets] manifest', f, e); return null; } };
     const manifests = await Promise.all(files.map(read1));
+    let n = 0;
     files.forEach((f, i) => {
       try {
         for (const set of manifests[i]?.files ?? []) {
-          for (const [name, meta] of Object.entries(set.assets ?? {})) this.entries.set(name, { name, glb: set.glb, node: meta.node ?? name, ...meta });
+          for (const [name, meta] of Object.entries(set.assets ?? {})) { this.entries.set(name, { name, glb: set.glb, node: meta.node ?? name, ...meta }); n++; }
         }
       } catch (e) { console.warn('[assets] manifest', f, e); }
     });
+    return n;
   }
 
   has(name) { return this.entries.has(name); }

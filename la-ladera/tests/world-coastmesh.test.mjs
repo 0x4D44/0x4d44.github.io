@@ -10,7 +10,7 @@ import { buildWorld } from '../js/world/terrain.js';
 import { buildProps } from '../js/world/props.js';
 import { buildFarTerrain } from '../js/world/periphery.js';
 import { COAST_TERRAIN, COAST_DECK } from '../js/world/coastmesh.js';
-import { SEA, DECK, DECK_Z, TOE, RAMP_END_Z, GATE } from '../js/world/coast.js';
+import { SEA, DECK, DECK_Z, TOE, RAMP_END_Z, GATE, CHEEK, rampY } from '../js/world/coast.js';
 import { SEED } from './world-lib.mjs';
 
 const ctx = createContext({ seed: SEED, headless: true, coast: true });
@@ -32,6 +32,7 @@ function triangles(mesh) {
   return out;
 }
 const up = (t) => t.n[1] > 0.5;                                              // a face that looks up (the ground), as against a skirt or a wall
+const onWall = (t) => Math.abs(Math.abs(t.n[2]) - 1) < 1e-6 && t.v.every((p) => Math.abs(p[2] - DECK_Z) < 1e-9);       // a triangle in the plane of the sea wall's face
 const planArea = (t) => Math.abs((t.v[1][0] - t.v[0][0]) * (t.v[2][2] - t.v[0][2]) - (t.v[2][0] - t.v[0][0]) * (t.v[1][2] - t.v[0][2])) / 2;
 const inTri = (t, x, z) => {
   const [a, b, c] = t.v, d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
@@ -107,11 +108,12 @@ test('the materials follow the ground: the promenade is the deck, sand is dry, t
 });
 
 test('the sea wall stands where the physics has it: its face covers the deck edge except the stairs and the ramp (200 - 24.2 m), and nothing of it stands in an access', () => {
-  const face = triangles(byMat(deck, 'seawall_concrete')), height = DECK - (TOE - 0.25);
+  const face = triangles(byMat(deck, 'seawall_concrete')).filter(onWall), height = DECK - (TOE - 0.25);       // (the cheeks and the ramp's sides are in the same concrete: they are the next test's)
+  assert.ok(face.length >= 40, `${face.length} triangles of wall face`);
   const area = face.reduce((s, t) => s + t.area, 0), gaps = C.accesses.map((a) => [a.x - a.w / 2, a.x + a.w / 2]), open = gaps.reduce((s, g) => s + g[1] - g[0], 0);
   assert.equal(C.accesses.length, 6, 'five stairs and a ramp');
   assert.ok(Math.abs(open - 24.2) < 1e-9, `the accesses are ${open.toFixed(3)} m wide`);
-  assert.ok(face.every((t) => Math.abs(Math.abs(t.n[2]) - 1) < 1e-6 && t.v.every((p) => Math.abs(p[2] - DECK_Z) < 1e-9)), 'a plane of its own along the deck edge');
+  assert.ok(face.every((t) => t.n[2] > 1 - 1e-6), 'a plane of its own along the deck edge, looking at the sea (no face of a cheek lies back to back with it)');
   assert.ok(Math.abs(area / height - (200 - open)) < 1e-3, `${(area / height).toFixed(3)} m of wall face, ${(200 - open).toFixed(1)} wanted`);
   for (const t of face) for (const [g0, g1] of gaps) assert.ok(t.c[0] < g0 + 1e-6 || t.c[0] > g1 - 1e-6, `wall at x ${t.c[0].toFixed(2)} stands in the access ${g0}..${g1}`);
   const top = Math.max(...face.flatMap((t) => t.v.map((p) => p[1]))), low = Math.min(...face.flatMap((t) => t.v.map((p) => p[1])));
@@ -131,11 +133,39 @@ test('the stairs go down five treads to the sand and the ramp is a wedge no stee
     assert.ok(tops[0] < DECK && tops[0] > C.stairFoot && tops.at(-1) >= C.stairFoot - 1e-6, `flight at x ${a.x}: treads between the deck and the foot (${tops})`);
     assert.ok(tops.every((h, k) => k === 0 || tops[k - 1] - h > 0.05), `flight at x ${a.x}: every tread lower than the last`);
   }
-  const ramp = triangles(byMat(deck, 'street_concrete')).filter(up), r = C.ramp, hs = ramp.flatMap((t) => t.v.map((p) => p[1])), zs = ramp.flatMap((t) => t.v.map((p) => p[2]));
+  const ramp = triangles(byMat(deck, 'promenade_pavers')).filter(up), r = C.ramp, hs = ramp.flatMap((t) => t.v.map((p) => p[1])), zs = ramp.flatMap((t) => t.v.map((p) => p[2]));
   assert.ok(ramp.length >= 2 && Math.abs(Math.max(...hs) - DECK) < 1e-3 && Math.abs(Math.min(...zs) - DECK_Z) < 1e-3 && Math.abs(Math.max(...zs) - RAMP_END_Z) < 1e-3, 'a wedge from the deck edge to the end of the ramp');
   assert.ok(ramp.every((t) => t.c[0] > r.x - r.w / 2 - 1e-6 && t.c[0] < r.x + r.w / 2 + 1e-6), 'in its own access');
   const slope = (DECK - Math.min(...hs)) / (RAMP_END_Z - DECK_Z);
   assert.ok(slope <= 1 / 12 + 1e-6 && slope > 1 / 16, `the ramp falls ${slope.toFixed(4)} per metre (1:12 is the limit)`);
+});
+
+test('the cheeks and the ramp wear the sea wall\'s concrete and a rail, where the physics has them: two cheeks to a flight, flush with the deck, and a rail along each edge of the ramp', () => {
+  const rest = triangles(byMat(deck, 'seawall_concrete')).filter((t) => !onWall(t)), rails = triangles(byMat(deck, 'iron_black')), coping = triangles(byMat(deck, 'concrete_bare')).filter(up);
+  assert.equal(C.cheeks.length, 10, 'two cheeks to each of five flights');
+  const inX = (t, x, h) => t.c[0] >= x - h - 1e-6 && t.c[0] <= x + h + 1e-6;
+  for (const c of C.cheeks) {
+    const mine = rest.filter((t) => inX(t, c.x, CHEEK.w / 2) && t.c[2] >= c.z1 - 1e-6 && t.c[2] <= c.z2 + 1e-6);
+    assert.equal(mine.length, 6, `cheek ${c.id}: its two sides and its south end, in the sea wall's concrete (${mine.length} triangles)`);
+    const top = Math.max(...mine.flatMap((t) => t.v.map((p) => p[1]))), low = Math.min(...mine.flatMap((t) => t.v.map((p) => p[1])));
+    assert.ok(Math.abs(top - DECK) < 1e-6 && low < TOE - 0.2, `cheek ${c.id}: flush with the deck (${top.toFixed(2)}) and down under the sand (${low.toFixed(2)})`);
+    const zs = mine.flatMap((t) => t.v.map((p) => p[2])), xs = mine.flatMap((t) => t.v.map((p) => p[0]));
+    assert.ok(Math.abs(Math.min(...zs) - c.z1) < 1e-3 && Math.abs(Math.max(...zs) - c.z2) < 1e-3, `cheek ${c.id}: runs from z ${c.z1} to ${c.z2} (${Math.min(...zs).toFixed(2)} to ${Math.max(...zs).toFixed(2)})`);       // (positions are float32: a millimetre is the tolerance)
+    assert.ok(Math.abs(Math.min(...xs) - (c.x - CHEEK.w / 2)) < 1e-3 && Math.abs(Math.max(...xs) - (c.x + CHEEK.w / 2)) < 1e-3, `cheek ${c.id}: ${CHEEK.w} m wide, centred on x ${c.x}`);
+    assert.ok(coping.some((t) => inX(t, c.x, CHEEK.w / 2) && t.c[2] >= c.z1 && t.c[2] <= c.z2 && Math.abs(t.c[1] - DECK) < 1e-6), `cheek ${c.id}: a coping on its top`);
+    assert.ok(rails.some((t) => t.v.every((p) => Math.abs(p[0] - c.x) < 0.1 && p[2] >= c.z1 && p[2] <= c.z2) && Math.max(...t.v.map((p) => p[1])) > DECK + 0.9), `cheek ${c.id}: a rail post at its full height`);
+  }
+  const r = C.ramp, sides = rest.filter((t) => Math.abs(Math.abs(t.n[0]) - 1) < 1e-6 && t.v.every((p) => Math.abs(Math.abs(p[0] - r.x) - r.w / 2) < 1e-6));
+  assert.equal(sides.length, 2, 'the ramp\'s two side wedges, in the sea wall\'s concrete');
+  assert.equal(rest.length, 6 * C.cheeks.length + 2, 'nothing else wears the sea wall\'s concrete but the wall, the cheeks and the ramp\'s sides');
+  assert.equal(C.rampRails.length, 2, 'a rail along each edge of the ramp');
+  const span = (t, k) => Math.max(...t.v.map((p) => p[k])) - Math.min(...t.v.map((p) => p[k]));
+  for (const rr of C.rampRails) {
+    const posts = rails.filter((t) => t.v.every((p) => Math.abs(p[0] - rr.x) < 0.1) && span(t, 2) < 0.1 && span(t, 1) > 0.5);                    // the sides of the posts along this edge
+    assert.ok(new Set(posts.map((t) => Math.round(t.c[2]))).size >= 5,`the rail at x ${rr.x} has a post about every 2 m (${posts.length} post faces)`);
+    for (const t of posts) assert.ok(Math.abs(Math.min(...t.v.map((p) => p[1])) - rampY(t.c[2])) < 0.06 && Math.abs(span(t, 1) - 0.95) < 0.01, `a post at z ${t.c[2].toFixed(2)} stands on the ramp's surface (${rampY(t.c[2]).toFixed(2)}) and is 0.95 m high`);
+    assert.ok(rails.some((t) => t.v.every((p) => Math.abs(p[0] - rr.x) < 0.1) && span(t, 2) > rr.z2 - rr.z1 - 0.5), `the rail at x ${rr.x} has a bar along the whole edge`);
+  }
 });
 
 // ---- the far land meets the strip

@@ -49,6 +49,13 @@
    "size": 512,
    "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
   },
+  "beach_props": {
+   "map": "beach_props/albedo.png",
+   "normal": "beach_props/normal.png",
+   "rough": "beach_props/orm.png",
+   "size": 2048,
+   "source": "the Codex beach props library (one 8 x 8 atlas, ORM in the rough slot; assets/models/manifest.beach_props.json), registered for the beach's props"
+  },
   "vehicle_paint": {
    "map": "vehicles/paint.png",
    "size": [1024, 1024],
