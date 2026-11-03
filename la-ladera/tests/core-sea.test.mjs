@@ -11,6 +11,7 @@
 //   winding    one triangle of the far mesh faces down                                                   drift  the mid mesh's vertices along the join are 1 mm out      cells  a near cell (5 m) that does not divide the mid mesh's 12 m
 //   mslope  makeSea's slope is the swell's own, without the near mesh's weight                           mdepth  makeSea's depth has the swell upside down                 mclock  makeSea answers at time 0, not at the clock
 //   mrefresh  makeSea never calls the refresh hook (the stand-in would not follow the hour)             mfresh  makeSea's slope hands out one shared array
+//   munder  makeSea's under has its sign wrong (a point above the surface is under it)                  msub  the eye is submerged from 20 cm under the surface, not 2 cm      swash  the swash's run-up ignores the sea's amplitude (a flat sea runs up as far)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import './nice.mjs';
@@ -45,7 +46,8 @@ function broken(m) {
   }
   if (on('taper')) o.nearWeight = (x, z) => m.nearWeight(x * 1.3, z);
   if (on('wgrad')) o.nearWeightGrad = (x, z, out) => { const g = m.nearWeightGrad(x, z, out); g[0] = -g[0]; return g; };
-  if (on('mslope', 'mdepth', 'mclock', 'mrefresh', 'mfresh')) {
+  if (on('swash')) o.swashRunup = (phase) => m.swashRunup(phase, 1);
+  if (on('mslope', 'mdepth', 'mclock', 'mrefresh', 'mfresh', 'munder', 'msub')) {
     o.makeSea = (opts) => {
       const s = m.makeSea(on('mrefresh') ? { ...opts, refresh: null } : opts), shared = [0, 0], now = () => (on('mclock') ? 0 : undefined);
       return {
@@ -53,6 +55,8 @@ function broken(m) {
         level: (x, z, t) => s.level(x, z, t ?? now()),
         slope: on('mslope') ? (x, z, t, out = [0, 0]) => m.slope(x, z, t ?? opts.clock(), s.state, out) : on('mfresh') ? (x, z, t, out = shared) => s.slope(x, z, t ?? now(), out) : (x, z, t, out) => s.slope(x, z, t ?? now(), out),
         depth: on('mdepth') ? (x, z, t) => opts.still - s.level(x, z, t ?? now()) - opts.ground(x, z) : (x, z, t) => s.depth(x, z, t ?? now()),
+        under: on('munder') ? (x, y, z, t) => y - opts.still - s.level(x, z, t ?? now()) : (x, y, z, t) => s.under(x, y, z, t ?? now()),
+        get submerged() { if (!on('msub')) return s.submerged; const e = opts.eye?.(); return !!e && s.under(e.x, e.y, e.z) > 0.2; },
       };
     };
   }
@@ -199,6 +203,32 @@ test('makeSea: the refresh hook runs before every level, slope and depth answer,
   const night = top(); hour = 15; const day = top();
   assert.ok(night > 0.1 && day > 1.4 * night, `the swell at night ${night.toFixed(3)} m, in the afternoon ${day.toFixed(3)} m: the hook's state is what the answers use`);
   assert.equal(S.makeSea({ state, ground: () => 0, still: 0 }).time, 0, 'the default clock stands still');
+});
+
+test('makeSea: under is how far a point is below the surface at its own place (the still sea plus the swell, minus the height: negative above it), and submerged is the eye more than 2 cm under it', () => {
+  const eye = { x: 0, y: 5, z: 190 }, m = make({ eye: () => eye }), { sea } = m, r = rng(23);
+  for (let i = 0; i < 1500; i++) {
+    const x = -160 + 320 * r(), z = 100 + 170 * r(), y = -6 + 8 * r(), t = 400 * r();
+    close(sea.under(x, y, z, t), -1.2 + sea.level(x, z, t) - y, 1e-12, 'under at a given time'); close(sea.under(x, y, z), -1.2 + sea.level(x, z, 12.5) - y, 1e-12, 'under at the clock');
+  }
+  close(sea.under(0, -1.2, 200, 0), sea.level(0, 200, 0), 1e-12, 'at the height of the still sea, the swell is how far under it is');
+  assert.ok(sea.under(0, 2, 150) < -3, 'a person on the beach is above the sea'); assert.ok(sea.under(0, -4, 200) > 2.7, 'and a diver 4 m below the datum is under it');
+  m.set(77); close(sea.under(10, -3, 150), -1.2 + real.level(10, 150, 77, m.state) * real.nearWeight(10, 150) + 3, 1e-12, 'the clock moved: the answer moved with it');
+  const depthAt = (d) => { eye.y = -1.2 + sea.level(eye.x, eye.z) - d; return sea.submerged; };
+  assert.equal(depthAt(-1), false, 'a metre above the surface'); assert.equal(depthAt(0), false, 'on it'); assert.equal(depthAt(0.0199), false, 'a hair short of 2 cm: a ripple'); assert.equal(depthAt(0.0201), true, 'a hair past it');
+  assert.equal(depthAt(3), true, 'at 3 m'); assert.equal(real.SUBMERGED, 0.02, 'the number the sea and the camera\'s look share');
+  assert.equal(S.makeSea({ state: m.state, ground: m.ground, still: -1.2 }).submerged, false, 'with no eye nobody is submerged'); assert.equal(S.makeSea({ state: m.state, ground: m.ground, still: -1.2, eye: () => null }).submerged, false, 'nor with an eye that is nowhere yet (no camera)');
+});
+
+test('swashRunup: 10 cm at the crest of the long swell and none at its trough, the full run-up from the calm morning\'s amplitudes (0.27 m) up, 40 % of it in a flat sea, never outside 0 to 10 cm', () => {
+  const top = Math.PI / 2 - 0.9, bottom = -Math.PI / 2 - 0.9;
+  close(S.swashRunup(top, 0.5), 0.10, 1e-12, 'the crest, in the breeze'); close(S.swashRunup(bottom, 0.5), 0, 1e-12, 'the trough'); close(S.swashRunup(-0.9, 0.5), 0.05, 1e-12, 'half way');
+  close(S.swashRunup(top, 0.27), 0.10, 1e-12, 'the calm morning (0.27 m): all of it'); close(S.swashRunup(top, 9), 0.10, 1e-12, 'a storm: no more'); close(S.swashRunup(top, 0.135), 0.05, 1e-12, 'a sea of 0.135 m: half of it');
+  close(S.swashRunup(top, 0.05), 0.04, 1e-12, 'a flat sea: 40 %'); close(S.swashRunup(top, 0), 0.04, 1e-12, 'dead flat: still 40 %, the sea is not a lake');
+  const calm = real.waveAmps(real.CALM).reduce((a, b) => a + b, 0), breeze = real.waveAmps(real.seaState(15)).reduce((a, b) => a + b, 0);
+  close(calm, 0.27, 1e-12, 'the calm morning\'s amplitudes sum to 0.27 m'); close(breeze, 0.549, 5e-3, 'the afternoon\'s to 0.55 m'); close(S.swashRunup(top, breeze), 0.10, 1e-12, 'the afternoon crest');
+  let lo = 1, hi = 0; for (let p = 0; p < TAU; p += 0.05) for (const a of [0, 0.1, 0.27, 0.55, 2]) { const v = S.swashRunup(p, a); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  assert.ok(lo >= -1e-12 && hi <= 0.10 + 1e-12 && hi > 0.099, `the run-up stays within 0 and 10 cm (${lo.toFixed(4)} .. ${hi.toFixed(4)})`);
 });
 
 test('seaState: wind 0.35 at dawn and at night, 1.0 from 13:00 to 17:30, smooth between; amp is 1 at calm and the breeze factors at full wind', () => {

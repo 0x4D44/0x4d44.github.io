@@ -5,7 +5,7 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/engine-seaview.test.mjs
 // Every check has a deliberately broken input selected by C_SABOTAGE=<id>|all, and each must then FAIL (the pattern of core-sea.test.mjs):
 //   noreal  a sea built late is not picked up        keep  a sea taken away is still handed out        shared  one stand-in for every context        hour  the stand-in ignores the hour
-//   ground  the stand-in has no ground (dry nowhere)         scan  a new engine file reads ctx.sea directly
+//   ground  the stand-in has no ground (dry nowhere)         scan  a new engine file reads ctx.sea directly         nocam  the stand-in is made without the context's camera (it is never submerged)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -22,7 +22,7 @@ const on = (...ids) => ids.some((id) => SAB === 'all' || SAB === id);
 const memo = (f) => { const m = new WeakMap(); return (ctx) => { let s = m.get(ctx); if (!s) m.set(ctx, s = f(ctx)); return s; }; };
 let theOne = null;
 /** seaOf: the real one, or one with a deliberate fault when C_SABOTAGE asks. */
-const seaOf = on('noreal') ? memo((ctx) => view.seaOf({ plan: ctx.plan, hour: ctx.hour }))
+const seaOf = on('noreal', 'nocam') ? memo((ctx) => view.seaOf({ plan: ctx.plan, hour: ctx.hour }))
   : on('keep') ? (ctx) => { ctx.__seen = ctx.sea ?? ctx.__seen; return ctx.__seen ?? view.seaOf(ctx); }
     : on('shared') ? (ctx) => (theOne ??= view.seaOf(ctx))
       : on('hour') ? memo((ctx) => view.seaOf({ plan: ctx.plan }))
@@ -36,7 +36,7 @@ const points = (n, seed = 5) => { const r = R(seed); return Array.from({ length:
 
 test('with no water built the stand-in has the real sea\'s members and answers from the first frame, one per context, never null', () => {
   const ctx = { plan: { coast }, hour: 15 }, s = seaOf(ctx);
-  assert.deepEqual(Object.keys(s).sort(), ['depth', 'level', 'slope', 'state', 'time'], 'the members of ctx.sea (the test of engine/water.js holds the same list)');
+  assert.deepEqual(Object.keys(s).sort(), ['depth', 'level', 'slope', 'state', 'submerged', 'time', 'under'], 'the members of ctx.sea (the test of engine/water.js holds the same list)');
   assert.equal(view.seaBuilt(ctx), false); assert.equal(seaOf(ctx), s, 'the same one on every call: nobody allocates a sea per frame');
   assert.notEqual(seaOf({ plan: { coast }, hour: 15 }), s, 'another context, another stand-in'); assert.equal(s.time, 0, 'the swell stands still until the water exists');
   for (const odd of [{}, null, undefined, 7, 'x']) { const o = seaOf(odd); assert.ok(o && typeof o.level === 'function' && Number.isFinite(o.depth(0, 150)) && Number.isFinite(o.level(0, 150)), `a context of ${JSON.stringify(odd)} still gets a sea`); }
@@ -66,6 +66,16 @@ test('the stand-in follows the hour of its context (calm at night, the full bree
   assert.equal(s.state.wind, 1, 'its state is the afternoon\'s'); ctx.hour = 3; s.level(0, 150); assert.equal(s.state.wind, 0.35, 'and the night\'s again: it is read at every call');
   const bare = seaOf({ hour: 15 });
   for (const [x, z] of points(100, 3)) assert.ok(bare.depth(x, z) < 0, `no plan: (${x}, ${z}) is not under water`);
+});
+
+test('the stand-in knows how deep things are: under is the still sea and the frozen swell over the height, and submerged is the context\'s camera more than 2 cm under it (never with no camera)', () => {
+  const camera = { position: { x: 0, y: 5, z: 190 } }, ctx = { plan: { coast }, hour: 15, camera }, s = seaOf(ctx);
+  for (const [x, z] of points(300, 11)) for (const y of [-4, -1.2, 0, 3]) close(s.under(x, y, z), SEA + s.level(x, z) - y, 1e-12, `under at (${x}, ${y}, ${z})`);
+  assert.equal(s.submerged, false, 'a camera 6 m up is in the air');
+  const top = SEA + s.level(0, 190); camera.position.y = top - 0.05; assert.equal(s.submerged, true, '5 cm under the surface where it is'); camera.position.y = top - 0.01; assert.equal(s.submerged, false, '1 cm under is a ripple');
+  camera.position.y = top + 0.5; assert.equal(s.submerged, false, 'half a metre over it');
+  delete ctx.camera; assert.equal(s.submerged, false, 'no camera: not submerged'); assert.equal(seaOf({ plan: { coast }, hour: 15 }).submerged, false, 'a new context has none yet');
+  const lazy = { plan: { coast }, hour: 3 }, l = seaOf(lazy); lazy.camera = { position: { x: 10, y: SEA - 0.5, z: 200 } }; assert.equal(l.submerged, true, 'a camera that arrives after the stand-in was made is the one asked (the camera is read at every call)');
 });
 
 test('the real water, once built, is what is handed out; when it is disposed the stand-in is back (the same one)', () => {

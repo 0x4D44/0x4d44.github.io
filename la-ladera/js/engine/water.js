@@ -6,12 +6,15 @@
 //   water.ready                        resolves when the three textures are in (until then the water draws flat and without foam or caustics)
 //   water.dispose()
 //
-//   ctx.sea = { state, time, level(x, z, t?), depth(x, z, t?), slope(x, z, t?) }
+//   ctx.sea = { state, time, level(x, z, t?), depth(x, z, t?), slope(x, z, t?), under(x, y, z, t?), submerged }
 //     state      { wind, amp[4] } the live sea state (core/sea.js seaState(ctx.hour)), updated every frame
 //     time       seconds the swell has run (a getter). It keeps counting while the group is hidden, so a sea that comes back is where it should be
 //     level      the swell's height above the still sea at (x, z) now (or at t): core/sea.js `level` times nearWeight, i.e. exactly the surface the near mesh draws (the mid and far meshes are flat)
 //     depth      still sea level + level - the ground: the water over the ground at (x, z), negative on land. The ground is plan.coast.heightAt for |x| <= 100 and plan._far beyond
 //     slope      [dh/dx, dh/dz] of that surface: the product rule, w dh + h dw (the weight is flat nearly everywhere, but not on the last 24 m before the near mesh's seams)
+//     under      still sea level + level - y: how far (x, y, z) is under the surface at its own place, negative above it
+//     submerged  is the camera (ctx.camera) more than 2 cm under the surface where it is? Then the three meshes are drawn back side out and paint the underside (Snell's window; `uUnder`), engine/look.js
+//                fogs the view with the water's colour and engine/post.js grades it; the program is the same, only the cull state changes
 //
 // The meshes: NEAR x +-132, z 118..262 (2.4 m cells), MID x +-480, z 118..598 (12 m cells), FAR x +-960, z 118..982 (96 m cells, flat). Each carries a per-vertex
 // `aBed` = the ground height under the vertex, so the shader knows the depth without a depth pass: depth = surface - bed. A fragment more than 2 cm over dry ground is discarded.
@@ -31,8 +34,8 @@
 import * as THREE from 'three';
 import { SEA, BAY_X } from '../world/coast.js';
 import { makeFarHeight } from '../world/periphery.js';
-import { lookUniforms } from './shaderpatch.js';
-import { SHADER, NEAR, PEAK, CALM, MESH, seaMeshes, seaState, makeSea, waveAmps, waveTime } from '../core/sea.js';
+import { lookUniforms, BLANK_CAUSTIC } from './shaderpatch.js';
+import { SHADER, NEAR, PEAK, CALM, MESH, seaMeshes, seaState, makeSea, waveAmps, waveTime, swashRunup, SUBMERGED } from '../core/sea.js';
 
 // ---- the geometry -----------------------------------------------------------------------------------------------------------------------
 const QUALITY_LEVEL = { low: 0, medium: 1, high: 2 };
@@ -84,7 +87,7 @@ void main() {
 const FRAG = /* glsl */`
 ${WAVE_GLSL}
 uniform vec3 uZenith, uHorizon, uSunDir, uSunCol, uMoonDir, uGlowCol, uFogColor, ladGlowCol;
-uniform float uGlowAmt, uSunVis, uMoonVis, uFogDensity, ladGlowAmt, uWindF, uAmpSum, uRip, uPix;
+uniform float uGlowAmt, uSunVis, uMoonVis, uFogDensity, ladGlowAmt, uWindF, uAmpSum, uRip, uPix, uUnder;
 uniform vec4 uFlow, uFlow2;
 uniform vec2 uFlow3;
 uniform sampler2D tNormal, tFoam, tCaustic;
@@ -129,6 +132,22 @@ void main() {
     g += ( q1 + q2 ) * ( 0.5 * uRip * ( 1.0 - smoothstep( 0.4, 5.0, fp ) ) ) + q3 * ( 0.17 * ( 1.0 - smoothstep( 3.0, 40.0, fp ) ) );
   #endif
   vec3 N = normalize( vec3( - g.x, 1.0, - g.y ) );
+
+  // ---- from under the sea (uUnder: the camera is more than 2 cm below the surface where it is; the meshes are drawn back side out then): Snell's window, the sky bent into a circle of 97 degrees straight up
+  // (the view ray leaves the water at less than the critical angle), over the water's own colour (the mirror of the sea below it); the fog is the water's, so the far underside melts into it
+  if ( uUnder > 0.5 ) {
+    float cw = clamp( dot( - V, N ), 0.0, 1.0 );                       // the view ray's angle from the vertical, in the water
+    float s = 1.3333 * sqrt( 1.0 - cw * cw );                           // Snell: the sine of its angle in the air; from 1 up there is total reflection
+    float win = 1.0 - smoothstep( 0.82, 1.0, s );
+    vec3 T = normalize( refract( - V, - N, 1.3333 ) + vec3( 0.0, 0.0001, 0.0 ) );
+    vec3 sky = skyColor( T ) * 0.85 + uSunCol * pow( max( dot( T, uSunDir ), 0.0 ), 220.0 ) * 1.2 * uSunVis;
+    gl_FragColor = vec4( mix( uFogColor * 1.35, sky, win ), 1.0 );
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+    float ffu = 1.0 - exp( - uFogDensity * uFogDensity * vFogDepth * vFogDepth );
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, uFogColor, ffu );
+    return;
+  }
 
   // ---- light: the sky's own uniforms, so the sea follows the hour. E is the irradiance the water body is lit with.
   float up = max( uSunDir.y, 0.0 );
@@ -226,7 +245,7 @@ export function buildWater(ctx) {
     uWa: { value: new THREE.Vector4() }, uWt: { value: new THREE.Vector4() },
     uBox: { value: new THREE.Vector4(NEAR.x, NEAR.z1, NEAR.fade, 0) },
     uFlow: { value: new THREE.Vector4() }, uFlow2: { value: new THREE.Vector4() }, uFlow3: { value: new THREE.Vector2() },
-    uWindF: { value: 0 }, uAmpSum: { value: 0.3 }, uRip: { value: 0.75 }, uPix: { value: 0.00094 },
+    uWindF: { value: 0 }, uAmpSum: { value: 0.3 }, uRip: { value: 0.75 }, uPix: { value: 0.00094 }, uUnder: { value: 0 },
     uFogColor: { value: new THREE.Color() }, uFogDensity: { value: 0 },
     uZenith: sky.uZenith, uHorizon: sky.uHorizon, uSunDir: sky.uSunDir, uSunCol: sky.uSunCol, uMoonDir: sky.uMoonDir, uGlowCol: sky.uGlowCol, uGlowAmt: sky.uGlowAmt,
     uSunVis: sky.uSunVis, uMoonVis: sky.uMoonVis,
@@ -251,12 +270,16 @@ export function buildWater(ctx) {
   const grids = seaMeshes(cell);
   // what depends on the frame being drawn, read just before each draw (the fog and the sky are set in ctx.render(), after the systems ran): the fog, and the angle a pixel covers
   const size = new THREE.Vector2();
-  const beforeDraw = (renderer, sc, camera) => {
+  const beforeDraw = (renderer, sc, camera, geometry, material) => {
     const fog = sc.fog;
     u.uFogDensity.value = fog?.isFogExp2 ? fog.density : 0;
     if (fog) u.uFogColor.value.copy(fog.color);
     const target = renderer.getRenderTarget(), h = target ? target.height : (renderer.getDrawingBufferSize(size), size.y);
     if (camera?.fov > 0 && h > 0) u.uPix.value = (2 * Math.tan(camera.fov * Math.PI / 360)) / h;
+    // from under the surface (more than 2 cm below it where the camera is) the meshes are drawn back side out, and the shader paints the underside (Snell's window). Only the cull state changes: the program does not
+    const p = camera?.position, under = !!p && sea ? sea.under(p.x, p.y, p.z) > SUBMERGED : false;
+    u.uUnder.value = under ? 1 : 0;
+    if (material) material.side = under ? THREE.BackSide : THREE.FrontSide;
   };
   const mk = (name, geo, mat) => {
     const m = new THREE.Mesh(geo, mat);
@@ -288,7 +311,8 @@ export function buildWater(ctx) {
     loader.load(new URL(file, base).href, (t) => {
       if (disposed) { t.dispose(); res(); return; }
       t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = aniso; own.push(t);
-      loaded[key].value = t; res();
+      loaded[key].value = t; if (key === 'tCaustic') lookUniforms.ladCaustic.value = t;   // (the seabeds under a camera that is under the sea use the same tile: engine/shaderpatch.js)
+      res();
     }, undefined, () => rej(new Error('water: cannot load ' + file)));
   }))).then((rs) => { for (const r of rs) if (r.status === 'rejected') { (ctx.errors ??= []).push({ stage: 'water', message: String(r.reason?.message ?? r.reason) }); console.warn(String(r.reason?.message ?? r.reason)); } });
 
@@ -307,6 +331,8 @@ export function buildWater(ctx) {
     u.uFlow.value.set(wrap1(-0.12 * r / 6), wrap1(r / 6), wrap1(0.55 * r / 4.3), wrap1(0.8 * r / 4.3));
     u.uFlow2.value.set(wrap1(-0.2 * flowClock * FLOW.lace * 0.37), wrap1(flowClock * FLOW.lace * 0.37), wrap1(flowClock * FLOW.caustic * 0.25), wrap1(-0.6 * flowClock * FLOW.caustic * 0.25));
     u.uFlow3.value.set(wrap1(-0.08 * r / 53), wrap1(0.8 * r / 53));
+    lookUniforms.uSwash.value = swashRunup(phases[0], u.uAmpSum.value);          // the sand's wet line breathes with the swell, and the seabeds' caustics scroll with the sea's own (engine/shaderpatch.js)
+    lookUniforms.ladFlow.value.copy(u.uFlow2.value);
   }
   function update(dt) {
     if (disposed) return;
@@ -335,12 +361,13 @@ export function buildWater(ctx) {
   ctx.addSystem('water', update, 5);
 
   // ---- ctx.sea (core/sea.js makeSea: the same functions engine/seaview.js hands out before this exists)
-  const sea = makeSea({ state, clock: () => time, ground, still: SEA });
+  const sea = makeSea({ state, clock: () => time, ground, still: SEA, eye: () => ctx.camera?.position });
   ctx.sea = sea;
 
   function dispose() {
     if (disposed) return;
     disposed = true; offQuality?.();
+    lookUniforms.ladCaustic.value = BLANK_CAUSTIC; lookUniforms.uSwash.value = 0; lookUniforms.ladFlow.value.set(0, 0, 0, 0);
     const i = ctx.systems.findIndex((s) => s.fn === update); if (i >= 0) ctx.systems.splice(i, 1);
     scene.remove(group);
     for (const m of meshes) m.geometry.dispose();
