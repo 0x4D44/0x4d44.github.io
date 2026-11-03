@@ -1,0 +1,108 @@
+/* Chapters: haggis, jokes, moonlight, stories. Every selector is scoped to its chapter. */
+#haggis, #jokes, #moonlight, #stories { --human-wp: #b9b7b0; --human-gb: #6f6e69; --roll-grid: #e4e2dc; --roll-note: #256abf; --roll-ref: #52514e; }
+@media (prefers-color-scheme: dark) {
+  #haggis, #jokes, #moonlight, #stories { --human-wp: #5a5954; --human-gb: #a3a29a; --roll-grid: #2f2e2b; --roll-note: #5598e7; --roll-ref: #c3c2b7; }
+}
+
+/* Shared bits, per chapter */
+#haggis h3.part, #stories h3.part { font: 700 22px/1.2 var(--serif); margin: 40px 0 8px; }
+#haggis .card .badge, #stories .card .badge { margin-left: 0; }
+
+/* ---- Haggis ---- */
+#haggis .frame { aspect-ratio: 4 / 3; background: var(--surface-2); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+#haggis .frame img { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+#haggis .frame.photo { aspect-ratio: 3 / 2; }
+#haggis .frame.photo img { object-fit: cover; }
+#haggis .frame.empty { border: 1px dashed var(--rule); background: transparent; flex-direction: column; padding: 16px; text-align: center; }
+#haggis .frame.empty p { margin: 0 0 6px; font: 15px/1.45 var(--serif); color: var(--text-secondary); max-width: 26em; }
+#haggis .frame.empty a { font-size: 13px; color: var(--text-muted); }
+#haggis .tags { margin-top: 8px; display: flex; gap: 6px; }
+#haggis .take { font: 12px var(--mono); color: var(--text-muted); margin-left: 6px; }
+#haggis details.fixes { margin-top: 6px; font-size: 13px; color: var(--text-secondary); }
+#haggis details.fixes summary { cursor: pointer; color: var(--text-muted); }
+#haggis details.fixes ul { margin: 6px 0; padding-left: 18px; }
+#haggis details.fixes p { margin: 0; overflow-wrap: anywhere; }
+
+/* ---- Jokes ---- */
+#jokes .stage { min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+#jokes .stage.on { display: block; }
+#jokes .stage.on .size { display: none; }
+#jokes .stage iframe { display: block; margin-top: 10px; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
+#jokes .stage.empty { border: 1px dashed var(--rule); border-radius: 8px; padding: 12px; }
+#jokes .stage.empty p { margin: 0; font: 15px/1.45 var(--serif); color: var(--text-secondary); }
+#jokes .run { font: 600 14px/1 var(--sans); padding: 9px 16px; border-radius: 999px; border: 1px solid var(--text-primary); background: var(--text-primary); color: var(--surface-1); cursor: pointer; }
+#jokes .stage.on .run { background: var(--surface-1); color: var(--text-primary); border-color: var(--rule); }
+#jokes .size { font: 12px var(--mono); color: var(--text-muted); }
+#jokes details.source { margin-top: 10px; }
+#jokes details.source summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+#jokes details.source pre { max-height: 320px; overflow: auto; margin-top: 6px; padding: 10px; background: var(--surface-2); border-radius: 6px; font-size: 11.5px; }
+
+/* ---- Moonlight ---- */
+#moonlight .card.ref { border-color: var(--text-muted); }
+#moonlight .roll { height: 120px; background: var(--surface-0); border-radius: 6px; overflow: hidden; }
+#moonlight .roll canvas { display: block; }
+#moonlight .roll.empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--rule); background: transparent; padding: 12px; text-align: center; }
+#moonlight .roll.empty p { margin: 0; font: 14.5px/1.4 var(--serif); color: var(--text-secondary); }
+#moonlight .facts { font: 12.5px/1.4 var(--mono); color: var(--text-secondary); margin-top: 8px; }
+#moonlight .warn { font-size: 12.5px; color: var(--badge); margin-top: 4px; }
+#moonlight .actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 13.5px; }
+#moonlight .play { font: 600 13.5px/1 var(--sans); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface-1); color: var(--text-primary); cursor: pointer; min-width: 64px; }
+#moonlight .play[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+#moonlight details.source { margin-top: 8px; font-size: 13px; }
+#moonlight details.source pre { max-height: 200px; overflow: auto; background: var(--surface-2); padding: 8px; border-radius: 6px; }
+
+/* ---- Stories ---- */
+#stories .dot.wp { background: var(--human-wp); }
+#stories .dot.gb { background: var(--human-gb); }
+#stories .mapwrap { background: var(--surface-1); border: 1px solid var(--rule); border-radius: 12px; padding: 8px; max-width: 900px; }
+#stories svg.map { display: block; width: 100%; height: auto; }
+#stories svg.map .frame { fill: none; stroke: none; }
+#stories svg.map .pt { stroke: var(--surface-1); stroke-width: 1; }
+#stories svg.map .pt.wp { fill: var(--human-wp); }
+#stories svg.map .pt.gb { fill: var(--human-gb); }
+#stories svg.map .pt.openai { fill: var(--openai); }
+#stories svg.map .pt.anthropic { fill: var(--anthropic); }
+#stories svg.map .pt:hover { stroke: var(--text-primary); stroke-width: 1.5; }
+
+#stories .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+#stories .chart h4 { font: 600 15px/1.3 var(--sans); margin: 0 0 2px; }
+#stories .chart .help { font-size: 13px; color: var(--text-muted); margin: 0 0 10px; }
+#stories .strip { display: grid; gap: 3px; }
+#stories .strip .row { display: grid; grid-template-columns: minmax(96px, 40%) minmax(0, 1fr); align-items: center; gap: 10px; font-size: 13px; min-height: 20px; }
+#stories .strip .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+#stories .strip .row.human { margin-top: 4px; }
+#stories .strip .track { position: relative; height: 18px; margin: 0 6px; }
+#stories .strip .track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--rule); }
+#stories .strip .band { position: absolute; top: 0; bottom: 0; margin-left: -1px; border-radius: 2px; }
+#stories .strip .band.wp { background: color-mix(in srgb, var(--human-wp) 35%, transparent); }
+#stories .strip .band.gb { background: color-mix(in srgb, var(--human-gb) 30%, transparent); }
+#stories .strip .pt { position: absolute; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; border: 1px solid var(--surface-1); }
+#stories .strip .pt.openai { background: var(--openai); }
+#stories .strip .pt.anthropic { background: var(--anthropic); }
+#stories .strip .pt.wp { background: var(--human-wp); width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; }
+#stories .strip .pt.gb { background: var(--human-gb); }
+#stories .strip .row.axis { min-height: 16px; }
+#stories .strip .ticks { position: relative; height: 16px; margin: 0 6px; font: 11px var(--mono); color: var(--text-muted); }
+#stories .strip .ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+#stories .strip .ticks span:first-child { transform: none; }
+#stories .strip .ticks span:last-child { transform: translateX(-100%); }
+
+#stories .habits .fact { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; font-size: 13.5px; padding: 5px 0; border-top: 1px solid var(--rule); }
+#stories .habits .fact b { font-weight: 600; color: var(--text-secondary); font-size: 12.5px; }
+#stories .habits .fact .q { display: block; font-family: var(--serif); }
+#stories .habits .chip { display: inline-block; cursor: default; padding: 3px 7px; margin: 0 4px 4px 0; font-size: 12px; }
+#stories details.method { margin-top: 24px; }
+#stories details.method summary { cursor: pointer; font-size: 14px; color: var(--text-secondary); }
+#stories dl.gloss { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: 13.5px; max-width: 60em; margin: 10px 0 0; }
+#stories dl.gloss dt { font-weight: 600; }
+#stories dl.gloss dd { margin: 0; color: var(--text-secondary); }
+
+@media (max-width: 640px) {
+  #stories .strip .row { grid-template-columns: minmax(84px, 42%) minmax(0, 1fr); font-size: 12.5px; }
+  #stories dl.gloss { grid-template-columns: 1fr; }
+  #stories dl.gloss dd { margin-bottom: 6px; }
+  #stories .habits .fact { grid-template-columns: 78px minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  #stories svg.map .pt { r: 6px; stroke-width: 1.5; }
+}
