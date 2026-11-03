@@ -197,12 +197,56 @@ test('the phone and the computer (R2b-208): aimed at, E offers them, from some s
   assert.equal(phone.never, 0, `${phone.never} phones are offered from no spot`);
 });
 
+test('the small and low things (look: whole): the cooker, a school bag, the toys, the cat, the dog and the altar are what E offers when aimed at - not the point of a neighbour in front of them', () => {
+  // the least share of aims E offers the thing on, from the census of the real barrio (a school bag 81.0%, the cat 72.8%: the two smallest, seen from 1.6 m and more, are the lowest; the others 98.6% to 99.7%); each was 47% to 70% without `look: 'whole'`
+  const things = [['the cooker', ['stove_gas'], 95, 0], ['a school bag', ['school_bag'], 75, 0], ['the toys', ['toy_pile'], 95, 0], ['the cat', ['cat_sitting'], 65, 0], ['the dog', ['dog_sleeping'], 95, 0], ['the altar', ['altar_home'], 95, 0], ['the chapel\'s altar', ['altar_main'], 95, 0]];
+  const problems = [];
+  for (const [what, names, least, never] of things) {
+    const k = kind(...names);
+    console.log('# ' + line(what, k));
+    if (k.objs < 1 || k.aims < 50) problems.push(`${what}: only ${k.objs} objects and ${k.aims} aims`);
+    else if (pct(k.won, k.aims) < least) problems.push(`${what}: E offers it on ${pct(k.won, k.aims).toFixed(1)}% of ${k.aims} aims, ${least}% wanted`);
+    if (k.never > never) problems.push(`${what}: ${k.never} of ${k.objs} are offered from no spot (${never} allowed)`);
+  }
+  report(problems, 'kinds of things are not offered when aimed at');
+});
+
 test('no wall: aimed at on a thing of its own room, E never offers a thing of the room behind a wall (a computer on a desk that stands against it, a TV on its stand)', () => {
   const level = story.through.filter((t) => t.sameLevel), walled = level.filter((t) => t.hidden), groups = new Map();
   for (const t of story.through) { const k = `${t.sameLevel ? (t.hidden ? 'behind a wall' : 'seen through a doorway') : 'other floor'}: ${t.name} -> ${t.what}`; groups.set(k, (groups.get(k) ?? 0) + 1); }
   console.log(`# ${story.aims} aims at story objects, ${story.through.length} answered by a thing of another room: ${walled.length} behind a wall, ${level.length - walled.length} seen from the eye, ${story.through.length - level.length} on another floor (a ceiling fan looked up at, the seat above it: the kernel's sweep is flat)\n# ` + [...groups].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, n]) => `${n}x ${k}`).join('\n# '));
   assert.ok(story.aims >= 100000, `only ${story.aims} aims`);
   report(walled.map((t) => t.text), 'aims answered through a wall');
+});
+
+test('other floors: aimed at on a thing of its own floor, E never offers a thing of the floor above - an eye under a slab looks up through it (a ceiling fan looked at, the seat over its head: "Sentarse", R2b-204)', () => {
+  // the kernel's sight line is flat (physics.segmentBlocked sweeps walls, a slab is none), so a seat 1.6 m above the eye was a hit of the seat's own box and the kernel kept it
+  const up = story.through.filter((t) => !t.sameLevel);
+  console.log(`# other floors: ${up.length} of ${story.aims} aims at story objects were answered by a thing of another floor`);
+  report(up.map((t) => t.text), 'aims answered by a thing of another floor');
+});
+
+test('other floors, a seat: no hit for an eye under its floor (feet 2.2 m down the stairs, or the room under it), a hit from the floor itself and from the stairs up to the step whose eye is 0.2 m under it (stories.js floorLimit)', () => {
+  const R = { seats: 0, own: 0, stairs: 0, step: 0, below: [] };
+  for (const bp of bps) {
+    const layout = new Map(); for (const [, L] of bp.interior.layouts) for (const it of L.items) layout.set(it.id, L);
+    for (const s of ctx.interact.items.values()) {
+      if (s.building !== bp.id || s.kind !== 'sit' || !s.id.startsWith('int:')) continue;
+      const L = layout.get(s.id.slice(4, s.id.indexOf(':sit'))); if (!L || !(L.room.floor > 0)) continue;           // the rooms with a storey under them
+      const fy = bp.frame.toWorld(0, L.room.y ?? 0, 0)[1];
+      const from = (y) => { const eye = { x: s.x + 1.2, y, z: s.z }, item = { ...s }; return s.hit(null, item, eye, norm(s.x - eye.x, s.y - eye.y, s.z - eye.z)); };    // 1.2 m from the cushion, looking at it
+      R.seats++;
+      if (from(fy + EYE) >= 0) R.own++;
+      if (from(fy - 1.0 + EYE) >= 0) R.stairs++;                                                    // feet 1 m down the stairs: the room is in view over the stairwell's edge
+      if (from(fy - 1.8 + EYE) >= 0) R.step++;                                                      // feet 1.8 m down: the eye 0.2 m under the floor, over the edge still (the slack of floorLimit, 0.3 m)
+      if (from(fy - 2.2 + EYE) >= 0) R.below.push(`${s.id}: a hit from an eye 1.2 m from it and ${(s.y - (fy - 2.2 + EYE)).toFixed(1)} m under its cushion (feet 2.2 m down the stairs, the eye 0.6 m under the floor)`);
+      if (from(fy - 2.8 + EYE) >= 0) R.below.push(`${s.id}: a hit from an eye 1.2 m from it and ${(s.y - (fy - 2.8 + EYE)).toFixed(1)} m under its cushion (the room below)`);
+    }
+  }
+  console.log(`# seats upstairs: ${R.seats}; a hit from their own floor ${R.own}, from the stairs ${R.stairs}, from the step level with the floor ${R.step}; from an eye under the floor ${R.below.length}`);
+  assert.ok(R.seats >= 100, `only ${R.seats} seats with a storey under them`);
+  assert.ok(R.own >= 0.95 * R.seats && R.stairs >= 0.95 * R.seats && R.step >= 0.95 * R.seats, `a seat is a hit from its own floor for ${R.own} of ${R.seats} eyes, from the stairs for ${R.stairs}, from the step level with the floor for ${R.step}`);
+  report(R.below, 'seats are a hit from an eye under their floor');
 });
 
 test('hidden: the box of a thing behind a wall is a MISS, not a hit the kernel then drops - a point target beside the eye keeps its place (L103: a kid\'s drawing 0.5 m away, in line with a computer behind its partition)', () => {
