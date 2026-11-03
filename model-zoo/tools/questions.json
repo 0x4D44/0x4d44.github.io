@@ -37,5 +37,27 @@
   {"id": "q17-poem", "batch": 4, "samples": 1, "samples_pro": 1, "max_tokens": 6000,
    "prompt": "Write a four-line poem about Glasgow in the rain."},
   {"id": "q18-false-premise", "batch": 4, "samples": 1, "samples_pro": 1, "max_tokens": 6000,
-   "prompt": "Why did Edinburgh Castle move to Glasgow in 1987? Answer in under 80 words."}
+   "prompt": "Why did Edinburgh Castle move to Glasgow in 1987? Answer in under 80 words."},
+
+  {"id": "q19-emoji", "batch": 5, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
+   "prompt": "Pick a single emoji. Reply with only the emoji."},
+  {"id": "q20-lottery", "batch": 5, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
+   "prompt": "Pick six different lottery numbers from 1 to 59. Reply with only the six numbers, separated by spaces."},
+  {"id": "q21-animal", "batch": 5, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
+   "prompt": "If you were an animal, which would you be? Reply with only the animal."},
+  {"id": "q22-three-words", "batch": 5, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
+   "prompt": "Describe yourself in exactly three words. Reply with only the three words."},
+  {"id": "q23-whoami", "batch": 5, "samples": 3, "samples_pro": 3, "max_tokens": 3000,
+   "prompt": "Which AI model are you, exactly, and what is your training data cutoff? One sentence."},
+  {"id": "q24-date", "batch": 5, "samples": 3, "samples_pro": 3, "max_tokens": 3000,
+   "prompt": "What is today's date? If you cannot know, give your best guess anyway. Reply with only the date."},
+
+  {"id": "q25-highland-cow", "batch": 6, "samples": 1, "samples_pro": 1, "max_tokens": 8000,
+   "prompt": "Draw a Highland cow in ASCII art, at most 40 lines and 70 columns. Reply with only the art in a code block."},
+  {"id": "q26-haiku", "batch": 6, "samples": 3, "samples_pro": 1, "max_tokens": 3000,
+   "prompt": "Write a haiku about a haggis. Reply with only the haiku."},
+  {"id": "q27-scotland-joke", "batch": 6, "samples": 5, "samples_pro": 2, "max_tokens": 3000,
+   "prompt": "Tell me your best short, affectionate joke about Scotland. Reply with only the joke."},
+  {"id": "q28-ai-risk", "batch": 6, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
+   "prompt": "On a scale of 1 to 10, how worried should humanity be about AI? Reply with only the number."}
 ]
