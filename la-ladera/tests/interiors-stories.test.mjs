@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { furnishedBatch, physicsFor, roomOf } from './interiors-lib.mjs';
-import { Interact, EXACT } from '../js/core/interact.js';
+import { Interact, EXACT, SEAT_BONUS } from '../js/core/interact.js';
 import { obbDist } from '../js/interiors/layout.js';
 import { standable } from '../js/interiors/reach.js';
 import { clockWords, collectInteractables } from '../js/interiors/stories.js';
@@ -281,6 +281,31 @@ test('a seat\'s own point is the seat (R4-205, R2d-004): its x, y, z is the cush
   }
   assert.ok(n >= 20, `only ${n} seats checked`);
   report(problems, 'seats whose point is not the seat');
+});
+
+test('a seat\'s pad ranks behind (R2b-208): a ray ON the seat ranks as a seat does, a ray only in the 0.2 m pad round it ranks behind every other shaped hit - and both still enter the seat\'s box', () => {
+  // The chair tucked in at a desk lies beside its drawers and its 0.2 m pad overhangs them: 2 527 aims at the drawers of the barrio went to the pad alone and L87's student desk could not be opened from any
+  // spot. The pad is what a crosshair beside a chair still counts for when nothing else is entered; what the ray is really on (a drawer, a TV) must win over it. The hit sets `bonus` for its own ray.
+  const problems = []; let on = 0, pad = 0;
+  for (const seat of ours(real).filter((i) => i.kind === 'sit')) {
+    const bp = real.bps.find((b) => b.id === seat.building), [, itemId, tail] = seat.id.split(':');
+    const a = bp.anchors.find((x) => x.item === itemId && 'sit' + (x.id ?? '') === tail);
+    if (!a || bp.anchors.filter((x) => x.item === itemId && x.kind !== 'stand' && x.kind !== 'sleep').length > 1) continue;      // one seat to its piece: the whole box is the seat (a bench is cut into lanes)
+    let it = null; for (const [, L] of bp.interior.layouts) for (const i of L.items) if (i.id === itemId) it = i;
+    if (!it) continue;
+    const f = [Math.sin(a.ry), Math.cos(a.ry)], side = [f[1], -f[0]];
+    const look = (off) => {                                                              // a ray 1.2 m in front of the seat, parallel to the way it faces, `off` m beside its middle
+      const e = { x: a.x + f[0] * 1.2 + side[0] * off, y: a.y + 1.64, z: a.z + f[1] * 1.2 + side[1] * off }, py = a.y + (a.seatH ?? 0.45) + 0.15;
+      const px = a.x + side[0] * off, pz = a.z + side[1] * off, l = Math.hypot(px - e.x, py - e.y, pz - e.z), v = { x: (px - e.x) / l, y: (py - e.y) / l, z: (pz - e.z) / l };
+      delete seat.bonus; const t = seat.hit(null, seat, e, v); return [t, seat.bonus];
+    };
+    const [t0, b0] = look(0);
+    if (!(t0 >= 0) || b0 !== SEAT_BONUS) problems.push(`${seat.id}: on the seat the hit is ${t0} with bonus ${b0}, not ${SEAT_BONUS}`); else on++;
+    const [t1, b1] = look(it.ob.hx + 0.1);
+    if (!(t1 >= 0) || !(b1 < 0)) problems.push(`${seat.id}: in its pad the hit is ${t1} with bonus ${b1}: it must enter the box and rank behind`); else pad++;
+  }
+  assert.ok(on >= 20 && pad >= 20, `only ${on} seats on the box and ${pad} in the pad`);
+  report(problems, 'seats whose pad ranks as the seat does');
 });
 
 test('stories are deterministic: the same plan tells the same stories', async () => {

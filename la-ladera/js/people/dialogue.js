@@ -207,7 +207,8 @@ const oneOf = (arr, rng) => arr[Math.floor((rng?.next() ?? 0) * arr.length) % ar
 
 /**
  * Spanish + English walking directions from (px,pz) facing `yaw` (camera convention: yaw 0 looks toward -z) to a landmark { name, en, kind?, x, y?, z }.
- * `o.short` drops the name ("Queda cuesta arriba, ...") for a sentence that follows one that already named the place.
+ * `o.short` drops the name ("Queda cuesta arriba, ...") for a sentence that follows one that already named the place. The verb agrees with what the sentence is about (R3-202): `o.plural`
+ * ("Quedan ...", English "They're ..."), and `o.estar` for an animal, which is somewhere rather than located ("Está ...", "Están ...").
  */
 export function directionsTo(lm, p, rng, o = {}) {
   const dx = lm.x - p.x, dz = lm.z - p.z, d = Math.hypot(dx, dz);
@@ -226,13 +227,19 @@ export function directionsTo(lm, p, rng, o = {}) {
   const where = order.map((i) => parts[i]).join(', '), whereEn = `${hill[1]}, ${dist[1]}, ${DIR_EN[dir]}`;
   const name = withArticle(lm.name), nameEn = theEn(lm.en ?? lm.name, lm.kind);
   let es, en;
-  if (o.short) { es = dir === 'back' ? `Queda ${where}. ${oneOf(BACK_TAIL, rng)}` : `Queda ${where}.`; en = `It's ${whereEn}.`; }
-  else {
-    es = dir === 'back' ? `${cap(name)} queda ${where}. ${oneOf(BACK_TAIL, rng)}` : `Mire, ${name} queda ${where}.`;
-    en = `${cap(nameEn)} is ${whereEn}.`;
+  if (o.short) {
+    const verb = o.estar ? (o.plural ? 'Están' : 'Está') : (o.plural ? 'Quedan' : 'Queda');
+    es = dir === 'back' ? `${verb} ${where}. ${oneOf(BACK_TAIL, rng)}` : `${verb} ${where}.`; en = `${o.plural ? "They're" : "It's"} ${whereEn}.`;
+  } else {
+    const verb = o.estar ? (o.plural ? 'están' : 'está') : (o.plural ? 'quedan' : 'queda');
+    es = dir === 'back' ? `${cap(name)} ${verb} ${where}. ${oneOf(BACK_TAIL, rng)}` : `Mire, ${name} ${verb} ${where}.`;
+    en = `${cap(nameEn)} ${o.plural ? 'are' : 'is'} ${whereEn}.`;
   }
   return { es: polish(es), en, dir, dist: d };
 }
+
+/** A Spanish opening that ends in a preposition ("Fíjese en", "Pase por", "asomarse a") has its own; any other ("mire", "Vale la pena mirar", "no se pierda") takes what it names straight, and an animal then needs the personal "a". */
+const ENDS_IN_PREPOSITION = /\b(en|a|de|por|con|hacia|para|sobre|ante)$/i;
 
 export class Dialogue {
   /**
@@ -333,7 +340,7 @@ export class Dialogue {
     if (!topics.includes('time')) topics.push('time');
     return topics.filter((t) => {
       if (t === 'where') return (this.world.landmarks?.length ?? 0) > 0;
-      if (t === 'buy') return (this.persona.items?.length ?? 0) > 0;
+      if (t === 'buy') return this.onSale().length > 0;
       if (t === 'tip' || t === 'time') return true;
       if (!this._size(t)) return false;
       return this._fresh(t) > 0 || !this.topicsDone.has(t);
@@ -368,8 +375,11 @@ export class Dialogue {
     return out.slice(0, 4);
   }
 
+  /** What the shop has on sale at this hour: an item may carry `{ from, to }` like a line (R3-207: the set lunch was offered at half past seven, right after "Todavía estamos con el desayuno"). */
+  onSale() { return (this.persona.items ?? []).filter((it) => inWindow(it, this.hour)); }
+
   buyMenu() {
-    const items = (this.persona.items ?? []).slice(0, 3);
+    const items = this.onSale().slice(0, 3);
     const out = items.map((it) => ({ id: 'item:' + it.id, es: it.es, en: it.en }));
     out.push({ id: 'back', es: 'Mejor otra cosa.', en: 'Something else, actually.' });
     return out;
@@ -427,9 +437,11 @@ export class Dialogue {
     const d = pool[Math.floor(this.rng.next() * pool.length)];
     told.add(d.id);
     if (this.memory) this.memory.set(TOLD, [...recent.filter((id) => id !== d.id), d.id].slice(-RECENT_TIPS));
-    const dr = directionsTo({ x: d.x, y: d.y, z: d.z, name: d.name, en: d.en, kind: d.kind }, p, this.rng, { short: true });
-    const h = hintPhrase(d), intro = pickFrom(HINT_INTRO[h.group], this.rng);
-    return { es: polish(`${intro[0]} ${h.es ?? withArticle(d.name)}. ${dr.es}`), en: `${intro[1]} ${h.en}. ${dr.en}` };
+    // (R3-202) the verb agrees with the thing told ("Quedan" after a plural, "Está" for an animal), and an animal that is the object of "mire" or "mirar" has its personal "a" ("mire al perro")
+    const h = hintPhrase(d), es = h.es ?? withArticle(d.name), plural = h.plural ?? /^(los|las)\s/i.test(es), animal = h.group === 'animal';
+    const dr = directionsTo({ x: d.x, y: d.y, z: d.z, name: d.name, en: d.en, kind: d.kind }, p, this.rng, { short: true, plural, estar: animal });
+    const intro = pickFrom(HINT_INTRO[h.group], this.rng);
+    return { es: polish(`${intro[0]} ${animal && !ENDS_IN_PREPOSITION.test(intro[0]) ? 'a ' : ''}${es}. ${dr.es}`), en: `${intro[1]} ${h.en}. ${dr.en}` };
   }
 
   /** The player picked a choice id. Returns the next step. */

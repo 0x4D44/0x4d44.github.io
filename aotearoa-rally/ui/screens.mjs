@@ -223,13 +223,14 @@ export function createScreens(root, ctx) {
      * Back (Esc / Backspace / pad B) always means Resume. Leaving the stage needs a confirmation.
      * championship: no free restart; "Retire" is a DNF.  recoverPenalty: seconds a checkpoint return costs.
      */
-    pause({ mode = "single", recoverPenalty = 10, onResume, onRestart, onOptions, onQuit, onRetire, onRecover }) {
+    pause({ mode = "single", recoverPenalty = 10, handling = "standard", onHandling, onResume, onRestart, onOptions, onQuit, onRetire, onRecover }) {
       const champ = mode === "championship";
       const items = [
         btn("Resume", onResume, "primary", { "data-focus": "1", "data-back": "1" }),
         btn(h("span", null, "Respawn on road ", h("span", { class: "hint" }, `(+${recoverPenalty} s)`)), onRecover),
       ];
       if (!champ && onRestart) items.push(btn(mode === "trial" ? "Restart trial" : "Restart stage", onRestart));
+      if (onHandling) items.push(btn(h("span", null, `Handling: ${handling === "easy" ? "Easy" : "Standard"} `, h("span", { class: "hint" }, handling === "easy" ? "(switch to Standard)" : "(switch to Easy: no records)")), () => onHandling(handling === "easy" ? "standard" : "easy")));
       items.push(btn("Options", onOptions));
       if (champ) items.push(btn(h("span", null, "Retire stage ", h("span", { class: "hint" }, "(DNF, 0 points)")), () => api.confirm({
         title: "Retire from this stage?", body: "You score no points and the stage counts as a DNF. There is no restart in a championship.", confirmLabel: "Retire (DNF)", cancelLabel: "Keep driving", danger: true, onConfirm: onRetire,
@@ -246,8 +247,8 @@ export function createScreens(root, ctx) {
       const me = sheet && sheet.find((r) => r.player);
       const splitEls = (result.splits || []).filter((s) => s.index < (result.splits.length)).map((s, i) => {
         const b = bestSplits && bestSplits[s.index];
-        const delta = b != null && !result.assisted ? s.time - b : null;
-        if (result.assisted) return h("div", null, h("span", { class: "muted" }, s.name || `Split ${i + 1}`), h("span", { class: "num muted" }, "-"));
+        const delta = b != null && !result.assisted && !result.easy ? s.time - b : null;
+        if (result.assisted || result.easy) return h("div", null, h("span", { class: "muted" }, s.name || `Split ${i + 1}`), h("span", { class: "num muted" }, "-"));
         return h("div", null, h("span", { class: "muted" }, s.name || `Split ${i + 1}`), h("span", { class: "num" }, fmtTime(s.time, true), delta != null ? h("span", { class: delta <= 0 ? " gain" : " loss" }, " " + fmtDelta(delta)) : null));
       });
       const trial = mode === "trial";
@@ -264,8 +265,8 @@ export function createScreens(root, ctx) {
         h("div", { class: "res-hero" },
           h("div", null, h("div", { class: "kicker" }, dnf ? "Result" : "Stage time"), h("div", { class: "big-time" }, dnf ? "DNF" : fmtTime(result.total)),
             h("div", { class: "chips", style: { marginTop: "8px" } },
-              isBest && !result.assisted ? h("span", { class: "badge" }, "New personal best") : null,
-              result.assisted ? h("span", { class: "chip" }, "Assisted run: no record") : null,
+              isBest && !result.assisted && !result.easy ? h("span", { class: "badge" }, "New personal best") : null,
+              result.assisted ? h("span", { class: "chip" }, "Assisted run: no record") : result.easy ? h("span", { class: "chip" }, "Easy handling: no record") : null,
               vsBest != null && !isBest ? h("span", { class: "chip" }, `${fmtDelta(vsBest)} to your best`) : null,
               result.penaltyTotal ? h("span", { class: "chip" }, `Includes +${result.penaltyTotal.toFixed(0)} s penalties`) : null,
               me && !trial ? h("span", { class: "chip hot" }, `Position ${me.position} of ${sheet.length}`) : null,
@@ -418,9 +419,16 @@ export function createScreens(root, ctx) {
         out.push(row("Tilt steering", sw("tilt"), "Phones and tablets with motion sensors"));
         return out;
       }
+      const handlingSel = () => {
+        const el = h("select", { "aria-label": "Handling", onchange: (e) => { career.setHandling(e.target.value); onChange && onChange("handling", career.handling); } },
+          ...[["standard", "Standard"], ["easy", "Easy"]].map(([v, t]) => h("option", { value: v }, t)));
+        el.value = career.handling;
+        return el;
+      };
       const drivingTab = () => [
         row("Gearbox", sel("gearbox", [["auto", "Automatic"], ["manual", "Manual (Shift/Ctrl, Q/E)"]])),
         row("Steering assist", range("steerAssist", 0, 1, 0.05, (v) => Math.round(v * 100) + "%"), "Scales the stability, traction and anti-lock aids that trim your steering and throttle. Full strength by about a third of the way up."),
+        row("Handling", handlingSel(), "Easy: steering and stability aids at full strength, half the damage, and a smaller keyboard steering lock at speed. Easy runs are quicker than Standard, so they never set a personal best or ghost."),
         row("Default camera", sel("camera", [["chase", "Chase"], ["far", "Far chase"], ["bumper", "Bumper"], ["bonnet", "Bonnet"]])),
       ];
       const displayTab = () => [

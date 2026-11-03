@@ -3,7 +3,7 @@
 export default {
   obrero: {
     topics: ['mood', 'job', 'family', 'barrio', 'news', 'tip', 'where'],
-    menu: { job: ['¿En qué obra trabaja?', 'What building site do you work on?'] },
+    menu: { job: ['¿Cómo es su trabajo en la obra?', 'What is your work on the building site like?'] },       // (his job lines tell what he does and how he learned it, none names a site: R3-208 asked "¿En qué obra trabaja?")
     greet_m: [['Buenos días. Perdone el polvo, estamos fundiendo una placa.', "Good morning. Sorry about the dust, we're pouring a slab."], ['¡Buenos días! Aquí, madrugando a pegar ladrillo.', 'Good morning! Up early to lay bricks.']],
     greet_a: [['Buenas tardes. Con permiso, que voy a recoger una carga.', "Good afternoon. Excuse me, I'm going to pick up a load."], ['¡Buenas! Aquí, sudando la camiseta.', 'Hey! Here, working up a sweat.']],
     greet_e: [['Buenas noches. Ya salí del turno, voy rendido.', "Good evening. I've just finished my shift, I'm worn out."], ['Buenas noches. Por fin, a descansar.', 'Good evening. At last, time to rest.']],

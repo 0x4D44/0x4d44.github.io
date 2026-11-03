@@ -1,0 +1,689 @@
+03:30:09 | INFO: Data are loaded, start creating Blender stuff
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-0
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-1
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-10
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-11
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-12
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-13
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-28
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-29
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-30
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_fan_0-6
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_fan_0-7
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_fan_1-8
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_fan_1-9
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_hv_bushing_0-14
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_hv_bushing_0-15
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_hv_bushing_1-19
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_hv_bushing_2-23
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_mv_bushing_0-16
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_mv_bushing_0-17
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_mv_bushing_1-20
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_mv_bushing_1-21
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_neutral-26
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_neutral-27
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_radiator_0_0-2
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33-instance_radiator_1_0-4
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-0
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-1
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-17
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-6
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-7
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-8
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_fan_small-4
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_fan_small-5
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_hv33_bushing_0-10
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_hv33_bushing_0-9
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_hv33_bushing_1-12
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_hv33_bushing_2-14
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_neutral_small-15
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_neutral_small-16
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11-instance_radiator_small_0-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-14
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-15
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-16
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-17
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_0_-1-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_0_-1-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_0_1-4
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_0_1-5
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_1_-1-7
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132-instance_breaker_bushing_1_1-9
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-14
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-15
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-16
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-17
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_0_-1-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_0_-1-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_0_1-4
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_0_1-5
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_1_-1-7
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_1_1-8
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_1_1-9
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_2_-1-11
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_2_1-12
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33-instance_ocb33_bushing_2_1-13
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-9
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-instance_truck_bushing_-0.24-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-instance_truck_bushing_-0.24-4
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-instance_truck_bushing_0-5
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-instance_truck_bushing_0-6
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11-instance_truck_bushing_0.24-8
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-10
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-8
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-9
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_leg_0-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_leg_0-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_leg_1-5
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_post_0-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_post_0-3
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132-instance_isolator_post_1-7
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-8
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-9
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-instance_isolator_leg_0-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-instance_isolator_leg_0-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-instance_isolator_post_0-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-instance_isolator_post_0-3
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33-instance_isolator_post_1-7
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-4
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-5
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-instance_pantograph_post-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132-instance_pantograph_post-3
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-0
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-1
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-4
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-5
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-6
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-instance_ct_post-2
+03:30:09 | INFO: Blender create Mesh node substation_ct_132-instance_ct_post-3
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-0
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-1
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-4
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-6
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-instance_ct_post-2
+03:30:09 | INFO: Blender create Mesh node substation_ct_33-instance_ct_post-3
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-0
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-1
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-2
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-3
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-6
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-instance_cvt_stack-4
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132-instance_cvt_stack-5
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-0
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-1
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-2
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-3
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-instance_cvt_stack-4
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33-instance_cvt_stack-5
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132-0
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132-1
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132-4
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132-instance_arrester_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132-instance_arrester_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33-1
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33-instance_arrester_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33-instance_arrester_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_132-instance_post-0
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_132-instance_post-1
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_33-instance_post-0
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_33-instance_post-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-0
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-4
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-5
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-instance_earth_post-2
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132-instance_earth_post-3
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33-instance_earth_post-2
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33-instance_earth_post-3
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-0
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-1
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-2
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-3
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-4
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11-5
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-0
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-1
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-2
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-3
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-4
+03:30:09 | INFO: Blender create Mesh node substation_control_panel-5
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-0
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-4
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-62
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_0-1
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_0-2
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_0-3
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_2-10
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_4-16
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_8-28
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_0_9-31
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_1_0-34
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank-instance_battery_1_4-46
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger-0
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger-1
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger-2
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger-3
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger-4
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-0
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-1
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-2
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-instance_station_bushing_0-3
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-instance_station_bushing_0-4
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-instance_station_bushing_1-6
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer-instance_station_bushing_2-8
+03:30:09 | INFO: Blender create Mesh node substation_radiator_bank-instance_radiator-0
+03:30:09 | INFO: Blender create Mesh node substation_cooling_fan-instance_fan-0
+03:30:09 | INFO: Blender create Mesh node substation_cooling_fan-instance_fan-1
+03:30:09 | INFO: Blender create Mesh node substation_insulator_disc-0
+03:30:09 | INFO: Blender create Mesh node substation_insulator_disc-1
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_132-22
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_33-8
+03:30:09 | INFO: Blender create Mesh node substation_conductor_segment-0
+03:30:09 | INFO: Blender create Mesh node substation_conductor_spacer-0
+03:30:09 | INFO: Blender create Mesh node substation_conductor_spacer-1
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132-0
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132-1
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132-2
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132-3
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132-0
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132-1
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132-2
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33-0
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33-1
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33-2
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33-3
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11-0
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11-1
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11-2
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11-3
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132-0
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132-1
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132-2
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33-0
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33-1
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33-2
+03:30:09 | INFO: Blender create Mesh node substation_busbar_tube-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_large-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_large-1
+03:30:09 | INFO: Blender create Mesh node substation_bund_large-2
+03:30:09 | INFO: Blender create Mesh node substation_bund_large-3
+03:30:09 | INFO: Blender create Mesh node substation_bund_large-4
+03:30:09 | INFO: Blender create Mesh node substation_bund_small-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_small-1
+03:30:09 | INFO: Blender create Mesh node substation_bund_small-4
+03:30:09 | INFO: Blender create Mesh node substation_firewall-0
+03:30:09 | INFO: Blender create Mesh node substation_firewall-1
+03:30:09 | INFO: Blender create Mesh node substation_wall_brick-0
+03:30:09 | INFO: Blender create Mesh node substation_wall_brick-1
+03:30:09 | INFO: Blender create Mesh node substation_wall_brick-2
+03:30:09 | INFO: Blender create Mesh node substation_wall_door-0
+03:30:09 | INFO: Blender create Mesh node substation_wall_door-2
+03:30:09 | INFO: Blender create Mesh node substation_wall_window-0
+03:30:09 | INFO: Blender create Mesh node substation_roof_flat-0
+03:30:09 | INFO: Blender create Mesh node substation_roof_flat-1
+03:30:09 | INFO: Blender create Mesh node substation_door_steel-0
+03:30:09 | INFO: Blender create Mesh node substation_door_steel-1
+03:30:09 | INFO: Blender create Mesh node substation_louvre-0
+03:30:09 | INFO: Blender create Mesh node substation_louvre-1
+03:30:09 | INFO: Blender create Mesh node substation_louvre-2
+03:30:09 | INFO: Blender create Mesh node substation_window-0
+03:30:09 | INFO: Blender create Mesh node substation_window-1
+03:30:09 | INFO: Blender create Mesh node substation_window-2
+03:30:09 | INFO: Blender create Mesh node substation_oil_store-0
+03:30:09 | INFO: Blender create Mesh node substation_oil_store-1
+03:30:09 | INFO: Blender create Mesh node substation_oil_store-2
+03:30:09 | INFO: Blender create Mesh node substation_oil_store-3
+03:30:09 | INFO: Blender create Mesh node substation_oil_store-4
+03:30:09 | INFO: Blender create Mesh node substation_fence_panel-0
+03:30:09 | INFO: Blender create Mesh node substation_fence_post-0
+03:30:09 | INFO: Blender create Mesh node substation_fence_post-1
+03:30:09 | INFO: Blender create Mesh node substation_gate-0
+03:30:09 | INFO: Blender create Mesh node substation_gate-1
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast-0
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast-1
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast-2
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast-3
+03:30:09 | INFO: Blender create Mesh node substation_lightning_mast-1
+03:30:09 | INFO: Blender create Mesh node substation_lightning_mast-2
+03:30:09 | INFO: Blender create Mesh node substation_gravel_tile-0
+03:30:09 | INFO: Blender create Mesh node substation_concrete_tile-0
+03:30:09 | INFO: Blender create Mesh node substation_concrete_tile-1
+03:30:09 | INFO: Blender create Mesh node substation_trench_cover-0
+03:30:09 | INFO: Blender create Mesh node substation_trench_cover-1
+03:30:09 | INFO: Blender create Mesh node substation_trench_cover-2
+03:30:09 | INFO: Blender create Mesh node substation_sign_danger-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_danger-1
+03:30:09 | INFO: Blender create Mesh node substation_sign_access-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_touch-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_touch-1
+03:30:09 | INFO: glTF import finished in 0.28s
+03:30:09 | INFO: Data are loaded, start creating Blender stuff
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-10
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_fan_0-6
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_fan_0-7
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_hv_bushing_0-11
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_hv_bushing_0-12
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_mv_bushing_0-13
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_mv_bushing_0-14
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_neutral-23
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_neutral-24
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_radiator_0_0-2
+03:30:09 | INFO: Blender create Mesh node substation_transformer_132_33_lod1-instance_radiator_1_0-4
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_hv33_bushing_0-3
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_hv33_bushing_0-4
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_hv33_bushing_1-5
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_hv33_bushing_1-6
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_neutral_small-10
+03:30:09 | INFO: Blender create Mesh node substation_transformer_33_11_lod1-instance_neutral_small-9
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-14
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_0_-1-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_0_-1-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_0_1-4
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_0_1-5
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_1_-1-6
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_1_-1-7
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_1_1-8
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_1_1-9
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_132_lod1-instance_breaker_bushing_2_-1-11
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-14
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_0_-1-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_0_-1-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_0_1-4
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_0_1-5
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_1_-1-6
+03:30:09 | INFO: Blender create Mesh node substation_breaker_oil_33_lod1-instance_ocb33_bushing_2_-1-10
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11_lod1-instance_truck_bushing_-0.24-3
+03:30:09 | INFO: Blender create Mesh node substation_breaker_truck_11_lod1-instance_truck_bushing_-0.24-4
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132_lod1-8
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132_lod1-instance_isolator_leg_0-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132_lod1-instance_isolator_leg_0-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132_lod1-instance_isolator_post_0-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_132_lod1-instance_isolator_post_0-3
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33_lod1-8
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33_lod1-instance_isolator_leg_0-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33_lod1-instance_isolator_leg_0-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33_lod1-instance_isolator_post_0-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_centre_33_lod1-instance_isolator_post_0-3
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132_lod1-instance_pantograph_post-2
+03:30:09 | INFO: Blender create Mesh node substation_disconnector_pantograph_132_lod1-instance_pantograph_post-3
+03:30:09 | INFO: Blender create Mesh node substation_ct_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_ct_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_ct_132_lod1-4
+03:30:09 | INFO: Blender create Mesh node substation_ct_132_lod1-instance_ct_post-2
+03:30:09 | INFO: Blender create Mesh node substation_ct_132_lod1-instance_ct_post-3
+03:30:09 | INFO: Blender create Mesh node substation_ct_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_ct_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_ct_33_lod1-4
+03:30:09 | INFO: Blender create Mesh node substation_ct_33_lod1-instance_ct_post-2
+03:30:09 | INFO: Blender create Mesh node substation_ct_33_lod1-instance_ct_post-3
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132_lod1-instance_cvt_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_cvt_132_lod1-instance_cvt_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33_lod1-instance_cvt_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_cvt_33_lod1-instance_cvt_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132_lod1-instance_arrester_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_arrester_132_lod1-instance_arrester_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33_lod1-instance_arrester_stack-2
+03:30:09 | INFO: Blender create Mesh node substation_arrester_33_lod1-instance_arrester_stack-3
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_132_lod1-instance_post-0
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_132_lod1-instance_post-1
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_33_lod1-instance_post-0
+03:30:09 | INFO: Blender create Mesh node substation_post_insulator_33_lod1-instance_post-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132_lod1-instance_earth_post-2
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_132_lod1-instance_earth_post-3
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33_lod1-instance_earth_post-2
+03:30:09 | INFO: Blender create Mesh node substation_earth_switch_33_lod1-instance_earth_post-3
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_switchboard_panel_11_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_control_panel_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_control_panel_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_battery_bank_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_battery_charger_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer_lod1-instance_station_bushing_0-2
+03:30:09 | INFO: Blender create Mesh node substation_station_transformer_lod1-instance_station_bushing_0-3
+03:30:09 | INFO: Blender create Mesh node substation_insulator_disc_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_insulator_string_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_conductor_segment_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_conductor_spacer_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_tower_suspension_132_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_tower_terminal_132_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_pole_hframe_33_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_pole_concrete_11_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_gantry_132_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_gantry_33_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_busbar_tube_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_large_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_large_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_bund_small_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_bund_small_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_firewall_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_wall_brick_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_wall_door_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_wall_window_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_roof_flat_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_door_steel_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_louvre_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_louvre_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_window_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_window_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_oil_store_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_oil_store_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_oil_store_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_oil_store_lod1-3
+03:30:09 | INFO: Blender create Mesh node substation_fence_panel_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_fence_post_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_gate_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast_lod1-2
+03:30:09 | INFO: Blender create Mesh node substation_floodlight_mast_lod1-3
+03:30:09 | INFO: Blender create Mesh node substation_lightning_mast_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_gravel_tile_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_concrete_tile_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_trench_cover_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_danger_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_danger_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_sign_access_lod1-0
+03:30:09 | INFO: Blender create Mesh node substation_sign_access_lod1-1
+03:30:09 | INFO: Blender create Mesh node substation_sign_touch_lod1-0
+03:30:10 | INFO: Blender create Mesh node substation_sign_touch_lod1-1
+03:30:10 | INFO: glTF import finished in 0.18s
+/workspace/scratch/500ad0edcf36/repo/la-ladera/tools/blender/substation2_contact.py:41: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes=True; nodes=mat.node_tree.nodes; nodes.clear(); links=mat.node_tree.links
+/workspace/scratch/500ad0edcf36/repo/la-ladera/tools/blender/substation2_contact.py:94: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.render.image_settings.file_format='PNG'; scene.world=bpy.data.worlds.new('substation_studio'); scene.world.use_nodes=True
+/workspace/scratch/500ad0edcf36/repo/la-ladera/tools/blender/substation2_contact.py:29: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat=bpy.data.materials.new(name); mat.diffuse_color=(*colour,1); mat.use_nodes=True
+00:06.124  render           | Saved: '/tmp/substation-500ad-renders-final/substation_transformer_132_33.png'
+RENDERED substation_transformer_132_33
+00:11.339  render           | Saved: '/tmp/substation-500ad-renders-final/substation_transformer_132_33_lod1.png'
+RENDERED substation_transformer_132_33_lod1
+00:15.883  render           | Saved: '/tmp/substation-500ad-renders-final/substation_transformer_33_11.png'
+RENDERED substation_transformer_33_11
+00:20.846  render           | Saved: '/tmp/substation-500ad-renders-final/substation_transformer_33_11_lod1.png'
+RENDERED substation_transformer_33_11_lod1
+00:25.126  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_oil_132.png'
+RENDERED substation_breaker_oil_132
+00:29.557  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_oil_132_lod1.png'
+RENDERED substation_breaker_oil_132_lod1
+00:34.899  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_oil_33.png'
+RENDERED substation_breaker_oil_33
+00:39.791  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_oil_33_lod1.png'
+RENDERED substation_breaker_oil_33_lod1
+00:45.104  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_truck_11.png'
+RENDERED substation_breaker_truck_11
+00:50.615  render           | Saved: '/tmp/substation-500ad-renders-final/substation_breaker_truck_11_lod1.png'
+RENDERED substation_breaker_truck_11_lod1
+00:55.350  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_centre_132.png'
+RENDERED substation_disconnector_centre_132
+00:59.852  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_centre_132_lod1.png'
+RENDERED substation_disconnector_centre_132_lod1
+01:06.219  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_centre_33.png'
+RENDERED substation_disconnector_centre_33
+01:11.315  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_centre_33_lod1.png'
+RENDERED substation_disconnector_centre_33_lod1
+01:15.230  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_pantograph_132.png'
+RENDERED substation_disconnector_pantograph_132
+01:19.021  render           | Saved: '/tmp/substation-500ad-renders-final/substation_disconnector_pantograph_132_lod1.png'
+RENDERED substation_disconnector_pantograph_132_lod1
+01:22.828  render           | Saved: '/tmp/substation-500ad-renders-final/substation_ct_132.png'
+RENDERED substation_ct_132
+01:26.548  render           | Saved: '/tmp/substation-500ad-renders-final/substation_ct_132_lod1.png'
+RENDERED substation_ct_132_lod1
+01:31.790  render           | Saved: '/tmp/substation-500ad-renders-final/substation_ct_33.png'
+RENDERED substation_ct_33
+01:36.161  render           | Saved: '/tmp/substation-500ad-renders-final/substation_ct_33_lod1.png'
+RENDERED substation_ct_33_lod1
+01:40.284  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cvt_132.png'
+RENDERED substation_cvt_132
+01:44.354  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cvt_132_lod1.png'
+RENDERED substation_cvt_132_lod1
+01:48.734  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cvt_33.png'
+RENDERED substation_cvt_33
+01:53.319  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cvt_33_lod1.png'
+RENDERED substation_cvt_33_lod1
+01:57.212  render           | Saved: '/tmp/substation-500ad-renders-final/substation_arrester_132.png'
+RENDERED substation_arrester_132
+02:01.205  render           | Saved: '/tmp/substation-500ad-renders-final/substation_arrester_132_lod1.png'
+RENDERED substation_arrester_132_lod1
+02:05.706  render           | Saved: '/tmp/substation-500ad-renders-final/substation_arrester_33.png'
+RENDERED substation_arrester_33
+02:10.512  render           | Saved: '/tmp/substation-500ad-renders-final/substation_arrester_33_lod1.png'
+RENDERED substation_arrester_33_lod1
+02:15.667  render           | Saved: '/tmp/substation-500ad-renders-final/substation_post_insulator_132.png'
+RENDERED substation_post_insulator_132
+02:20.457  render           | Saved: '/tmp/substation-500ad-renders-final/substation_post_insulator_132_lod1.png'
+RENDERED substation_post_insulator_132_lod1
+02:25.878  render           | Saved: '/tmp/substation-500ad-renders-final/substation_post_insulator_33.png'
+RENDERED substation_post_insulator_33
+02:30.842  render           | Saved: '/tmp/substation-500ad-renders-final/substation_post_insulator_33_lod1.png'
+RENDERED substation_post_insulator_33_lod1
+02:35.135  render           | Saved: '/tmp/substation-500ad-renders-final/substation_earth_switch_132.png'
+RENDERED substation_earth_switch_132
+02:39.591  render           | Saved: '/tmp/substation-500ad-renders-final/substation_earth_switch_132_lod1.png'
+RENDERED substation_earth_switch_132_lod1
+02:44.766  render           | Saved: '/tmp/substation-500ad-renders-final/substation_earth_switch_33.png'
+RENDERED substation_earth_switch_33
+02:49.878  render           | Saved: '/tmp/substation-500ad-renders-final/substation_earth_switch_33_lod1.png'
+RENDERED substation_earth_switch_33_lod1
+02:55.160  render           | Saved: '/tmp/substation-500ad-renders-final/substation_switchboard_panel_11.png'
+RENDERED substation_switchboard_panel_11
+03:00.063  render           | Saved: '/tmp/substation-500ad-renders-final/substation_switchboard_panel_11_lod1.png'
+RENDERED substation_switchboard_panel_11_lod1
+03:05.345  render           | Saved: '/tmp/substation-500ad-renders-final/substation_control_panel.png'
+RENDERED substation_control_panel
+03:10.040  render           | Saved: '/tmp/substation-500ad-renders-final/substation_control_panel_lod1.png'
+RENDERED substation_control_panel_lod1
+03:15.081  render           | Saved: '/tmp/substation-500ad-renders-final/substation_battery_bank.png'
+RENDERED substation_battery_bank
+03:20.781  render           | Saved: '/tmp/substation-500ad-renders-final/substation_battery_bank_lod1.png'
+RENDERED substation_battery_bank_lod1
+03:25.418  render           | Saved: '/tmp/substation-500ad-renders-final/substation_battery_charger.png'
+RENDERED substation_battery_charger
+03:30.630  render           | Saved: '/tmp/substation-500ad-renders-final/substation_battery_charger_lod1.png'
+RENDERED substation_battery_charger_lod1
+03:36.259  render           | Saved: '/tmp/substation-500ad-renders-final/substation_station_transformer.png'
+RENDERED substation_station_transformer
+03:41.421  render           | Saved: '/tmp/substation-500ad-renders-final/substation_station_transformer_lod1.png'
+RENDERED substation_station_transformer_lod1
+03:46.467  render           | Saved: '/tmp/substation-500ad-renders-final/substation_radiator_bank.png'
+RENDERED substation_radiator_bank
+03:51.545  render           | Saved: '/tmp/substation-500ad-renders-final/substation_radiator_bank_lod1.png'
+RENDERED substation_radiator_bank_lod1
+03:57.266  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cooling_fan.png'
+RENDERED substation_cooling_fan
+04:02.608  render           | Saved: '/tmp/substation-500ad-renders-final/substation_cooling_fan_lod1.png'
+RENDERED substation_cooling_fan_lod1
+04:07.620  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_disc.png'
+RENDERED substation_insulator_disc
+04:12.806  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_disc_lod1.png'
+RENDERED substation_insulator_disc_lod1
+04:17.906  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_string_132.png'
+RENDERED substation_insulator_string_132
+04:24.052  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_string_132_lod1.png'
+RENDERED substation_insulator_string_132_lod1
+04:30.043  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_string_33.png'
+RENDERED substation_insulator_string_33
+04:35.295  render           | Saved: '/tmp/substation-500ad-renders-final/substation_insulator_string_33_lod1.png'
+RENDERED substation_insulator_string_33_lod1
+04:40.401  render           | Saved: '/tmp/substation-500ad-renders-final/substation_conductor_segment.png'
+RENDERED substation_conductor_segment
+04:45.216  render           | Saved: '/tmp/substation-500ad-renders-final/substation_conductor_segment_lod1.png'
+RENDERED substation_conductor_segment_lod1
+04:50.024  render           | Saved: '/tmp/substation-500ad-renders-final/substation_conductor_spacer.png'
+RENDERED substation_conductor_spacer
+04:54.931  render           | Saved: '/tmp/substation-500ad-renders-final/substation_conductor_spacer_lod1.png'
+RENDERED substation_conductor_spacer_lod1
+04:59.273  render           | Saved: '/tmp/substation-500ad-renders-final/substation_tower_suspension_132.png'
+RENDERED substation_tower_suspension_132
+05:03.504  render           | Saved: '/tmp/substation-500ad-renders-final/substation_tower_suspension_132_lod1.png'
+RENDERED substation_tower_suspension_132_lod1
+05:08.230  render           | Saved: '/tmp/substation-500ad-renders-final/substation_tower_terminal_132.png'
+RENDERED substation_tower_terminal_132
+05:12.086  render           | Saved: '/tmp/substation-500ad-renders-final/substation_tower_terminal_132_lod1.png'
+RENDERED substation_tower_terminal_132_lod1
+05:16.151  render           | Saved: '/tmp/substation-500ad-renders-final/substation_pole_hframe_33.png'
+RENDERED substation_pole_hframe_33
+05:19.795  render           | Saved: '/tmp/substation-500ad-renders-final/substation_pole_hframe_33_lod1.png'
+RENDERED substation_pole_hframe_33_lod1
+05:23.496  render           | Saved: '/tmp/substation-500ad-renders-final/substation_pole_concrete_11.png'
+RENDERED substation_pole_concrete_11
+05:27.295  render           | Saved: '/tmp/substation-500ad-renders-final/substation_pole_concrete_11_lod1.png'
+RENDERED substation_pole_concrete_11_lod1
+05:31.865  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gantry_132.png'
+RENDERED substation_gantry_132
+05:36.025  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gantry_132_lod1.png'
+RENDERED substation_gantry_132_lod1
+05:40.106  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gantry_33.png'
+RENDERED substation_gantry_33
+05:43.988  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gantry_33_lod1.png'
+RENDERED substation_gantry_33_lod1
+05:48.407  render           | Saved: '/tmp/substation-500ad-renders-final/substation_busbar_tube.png'
+RENDERED substation_busbar_tube
+05:53.059  render           | Saved: '/tmp/substation-500ad-renders-final/substation_busbar_tube_lod1.png'
+RENDERED substation_busbar_tube_lod1
+05:57.234  render           | Saved: '/tmp/substation-500ad-renders-final/substation_bund_large.png'
+RENDERED substation_bund_large
+06:01.891  render           | Saved: '/tmp/substation-500ad-renders-final/substation_bund_large_lod1.png'
+RENDERED substation_bund_large_lod1
+06:06.116  render           | Saved: '/tmp/substation-500ad-renders-final/substation_bund_small.png'
+RENDERED substation_bund_small
+06:10.704  render           | Saved: '/tmp/substation-500ad-renders-final/substation_bund_small_lod1.png'
+RENDERED substation_bund_small_lod1
+06:15.388  render           | Saved: '/tmp/substation-500ad-renders-final/substation_firewall.png'
+RENDERED substation_firewall
+06:20.024  render           | Saved: '/tmp/substation-500ad-renders-final/substation_firewall_lod1.png'
+RENDERED substation_firewall_lod1
+06:25.283  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_brick.png'
+RENDERED substation_wall_brick
+06:29.982  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_brick_lod1.png'
+RENDERED substation_wall_brick_lod1
+06:34.652  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_door.png'
+RENDERED substation_wall_door
+06:39.236  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_door_lod1.png'
+RENDERED substation_wall_door_lod1
+06:43.832  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_window.png'
+RENDERED substation_wall_window
+06:48.411  render           | Saved: '/tmp/substation-500ad-renders-final/substation_wall_window_lod1.png'
+RENDERED substation_wall_window_lod1
+06:52.734  render           | Saved: '/tmp/substation-500ad-renders-final/substation_roof_flat.png'
+RENDERED substation_roof_flat
+06:56.921  render           | Saved: '/tmp/substation-500ad-renders-final/substation_roof_flat_lod1.png'
+RENDERED substation_roof_flat_lod1
+07:01.969  render           | Saved: '/tmp/substation-500ad-renders-final/substation_door_steel.png'
+RENDERED substation_door_steel
+07:06.553  render           | Saved: '/tmp/substation-500ad-renders-final/substation_door_steel_lod1.png'
+RENDERED substation_door_steel_lod1
+07:11.424  render           | Saved: '/tmp/substation-500ad-renders-final/substation_louvre.png'
+RENDERED substation_louvre
+07:16.059  render           | Saved: '/tmp/substation-500ad-renders-final/substation_louvre_lod1.png'
+RENDERED substation_louvre_lod1
+07:21.026  render           | Saved: '/tmp/substation-500ad-renders-final/substation_window.png'
+RENDERED substation_window
+07:26.460  render           | Saved: '/tmp/substation-500ad-renders-final/substation_window_lod1.png'
+RENDERED substation_window_lod1
+07:32.673  render           | Saved: '/tmp/substation-500ad-renders-final/substation_oil_store.png'
+RENDERED substation_oil_store
+07:38.733  render           | Saved: '/tmp/substation-500ad-renders-final/substation_oil_store_lod1.png'
+RENDERED substation_oil_store_lod1
+07:44.091  render           | Saved: '/tmp/substation-500ad-renders-final/substation_fence_panel.png'
+RENDERED substation_fence_panel
+07:48.994  render           | Saved: '/tmp/substation-500ad-renders-final/substation_fence_panel_lod1.png'
+RENDERED substation_fence_panel_lod1
+07:53.657  render           | Saved: '/tmp/substation-500ad-renders-final/substation_fence_post.png'
+RENDERED substation_fence_post
+07:57.918  render           | Saved: '/tmp/substation-500ad-renders-final/substation_fence_post_lod1.png'
+RENDERED substation_fence_post_lod1
+08:02.600  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gate.png'
+RENDERED substation_gate
+08:06.923  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gate_lod1.png'
+RENDERED substation_gate_lod1
+08:11.010  render           | Saved: '/tmp/substation-500ad-renders-final/substation_floodlight_mast.png'
+RENDERED substation_floodlight_mast
+08:14.683  render           | Saved: '/tmp/substation-500ad-renders-final/substation_floodlight_mast_lod1.png'
+RENDERED substation_floodlight_mast_lod1
+08:18.074  render           | Saved: '/tmp/substation-500ad-renders-final/substation_lightning_mast.png'
+RENDERED substation_lightning_mast
+08:21.596  render           | Saved: '/tmp/substation-500ad-renders-final/substation_lightning_mast_lod1.png'
+RENDERED substation_lightning_mast_lod1
+08:25.571  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gravel_tile.png'
+RENDERED substation_gravel_tile
+08:29.726  render           | Saved: '/tmp/substation-500ad-renders-final/substation_gravel_tile_lod1.png'
+RENDERED substation_gravel_tile_lod1
+08:33.880  render           | Saved: '/tmp/substation-500ad-renders-final/substation_concrete_tile.png'
+RENDERED substation_concrete_tile
+08:38.379  render           | Saved: '/tmp/substation-500ad-renders-final/substation_concrete_tile_lod1.png'
+RENDERED substation_concrete_tile_lod1
+08:43.043  render           | Saved: '/tmp/substation-500ad-renders-final/substation_trench_cover.png'
+RENDERED substation_trench_cover
+08:47.580  render           | Saved: '/tmp/substation-500ad-renders-final/substation_trench_cover_lod1.png'
+RENDERED substation_trench_cover_lod1
+08:52.304  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_danger.png'
+RENDERED substation_sign_danger
+08:56.982  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_danger_lod1.png'
+RENDERED substation_sign_danger_lod1
+09:01.989  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_access.png'
+RENDERED substation_sign_access
+09:07.444  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_access_lod1.png'
+RENDERED substation_sign_access_lod1
+09:12.639  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_touch.png'
+RENDERED substation_sign_touch
+09:17.535  render           | Saved: '/tmp/substation-500ad-renders-final/substation_sign_touch_lod1.png'
+RENDERED substation_sign_touch_lod1
+CATENARY OK: 36 spans; transforms only, no conductor meshes
+10:36.638  render           | Saved: '/tmp/substation-500ad-renders-final/yard-overview.png'
+12:15.552  render           | Saved: '/tmp/substation-500ad-renders-final/yard-eye-1_6m.png'
+Blender 5.0.1 (hash a3db93c5b259 built 2025-12-16 01:30:59)
+
+Blender quit

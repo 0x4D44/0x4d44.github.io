@@ -55,6 +55,7 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
     lastCheckpointS: 0,
     respawns: 0,
     assisted: false, // set by the test API (teleport, finishRun): the run is not a real drive, so no record, ghost or deltas
+    easy: false, // Easy handling at any point in the run: not a record (set by the game)
     falseStart: false,
     dnfReason: null,
     finishTime: null,
@@ -249,6 +250,7 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
         penalties: run.penalties.map((p) => ({ ...p })),
         respawns: run.respawns,
         assisted: run.assisted,
+        easy: !!run.easy,
         falseStart: run.falseStart,
         dnfReason: run.dnfReason,
       };

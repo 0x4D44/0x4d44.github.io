@@ -9,6 +9,7 @@
   "use strict";
 
   const HG = (window.HG = window.HG || {});
+  HG.figures = HG.figures || {}; // name -> () => element, for quiz questions that refer to a page figure (q.fig)
   const motionMQ = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
   HG.reduced = !!(motionMQ && motionMQ.matches);
   if (motionMQ && motionMQ.addEventListener) motionMQ.addEventListener("change", (e) => { HG.reduced = e.matches; });
@@ -282,6 +283,8 @@
       const stem = HG.el("p", { class: "q-stem", html: `${qi + 1}. ${q.q}` + (q.marks ? ` <span class="q-marks">(${q.marks} mark${q.marks > 1 ? "s" : ""})</span>` : "") });
       wrap.append(stem);
       if (q.code) wrap.append(HG.el("pre", { text: q.code }));
+      // q.fig names a figure a page script drew into HG.figures (e.g. dtp.js: the recruitment poster), shown with the question
+      if (q.fig && HG.figures[q.fig]) wrap.append(HG.el("figure", { class: "q-fig" }, HG.figures[q.fig]()));
       const fb = HG.el("div", { class: "q-feedback", "aria-live": "polite" });
       if (q.type === "open") {
         const ta = HG.el("textarea", { "aria-label": "Your answer to question " + (qi + 1), placeholder: "Write your answer here, then reveal the marking guidance…" });

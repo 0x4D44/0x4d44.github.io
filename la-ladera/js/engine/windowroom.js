@@ -8,7 +8,8 @@
 //   What a pane carries (arch/shellwin.js `pane`, arch/shellfacade.js `mirador`; any `window_lit` quad without it, such as the rose window and the door lights, is drawn as it always was):
 //     colour  = ( 2 + K + seed, +/- width, height )   seed 0..1 picks the room; K = 8 x on + off (arch/mb.js `roomSeed`) is the room's evening: its lights come on at ROOM_ON[on] and go off at
 //                                                     ROOM_OFF[off] (clock hours, 24+ past midnight), and outside those hours the pane is dark glass, near or far (arch/mb.js `roomLitAt` is the same rule);
-//                                                     |width| and height are the glass's size in metres; the sign says which face of the quad is the street side
+//                                                     |width| and height are the glass's size in metres; the sign says which face of the quad is the street side; the third channel is
+//                                                     height + 8 x slot, the room's entry in the room-look table (ROOM_LOOKS below: the real room's paint, lamp and kind, R1-211)
 //     uv      = ( 0..1 across the whole window as the viewer outside sees it, left to right ;  0..1 up the window )   (so two sashes of one window show one room)
 //   The shader reads both through the vertex stage (the colour attribute is not used by the material otherwise: `vertexColors` is off for it).
 //
@@ -37,7 +38,8 @@ const vec3 LR_CLOTH[7] = vec3[7]( vec3( 0.95, 0.50, 0.42 ), vec3( 0.55, 0.70, 0.
 float lrH( float s, float k ) { return fract( sin( s * 127.1 + k * 311.7 ) * 43758.5453 ); }
 float lrBox( vec2 p, vec2 a, vec2 b, float e ) { vec2 m = smoothstep( a - e, a + e, p ) * ( 1.0 - smoothstep( b - e, b + e, p ) ); return m.x * m.y; }
 /** The room seen through the pane: s the seed, q the point on the pane in metres from its lower left corner (as seen from outside), rd the ray into the room (z into it), W x H the glass, e the pixel's footprint on the pane. */
-vec3 lrRoom( float s, vec2 q, vec3 rd, float W, float H, float e, out vec3 lampLight ) {
+vec3 lrRoom( float s, vec2 q, vec3 rd, float W, float H, float e, vec4 lk0, vec4 lk1, out vec3 lampLight ) {
+	bool known = lk1.a > 0.5;                                                                                   // the real room is furnished: its wall paint (lk0.rgb), its kind (lk0.a), its lamp (lk1.rgb, black = none)
 	float ml = 0.2 + 1.4 * lrH( s, 2.0 ), mr = 0.2 + 1.4 * lrH( s, 3.0 ), fl = 0.60 + 0.45 * lrH( s, 4.0 ), cl = 0.25 + 0.45 * lrH( s, 5.0 ), D = 2.8 + 2.4 * lrH( s, 6.0 );
 	vec3 ro = vec3( q, 0.0 ), lo = vec3( -ml, -fl, 0.0 ), hi = vec3( W + mr, H + cl, D );
 	vec3 inv = 1.0 / ( rd + 1.0e-5 * step( abs( rd ), vec3( 1.0e-5 ) ) );
@@ -50,9 +52,11 @@ vec3 lrRoom( float s, vec2 q, vec3 rd, float W, float H, float e, out vec3 lampL
 	int li = hl < 0.34 ? 0 : hl < 0.54 ? 1 : hl < 0.70 ? 2 : hl < 0.83 ? 3 : hl < 0.90 ? 4 : hl < 0.95 ? 5 : 6;
 	float inten = mix( 0.55, 1.25, pow( lrH( s, 7.0 ), 1.4 ) ) * ( li == 4 ? 0.50 : li == 5 ? 0.60 : 1.0 );
 	lampLight = LR_LAMP[ li ] * inten;
+	vec3 lkLamp = pow( lk1.rgb, vec3( 2.2 ) );
+	if ( known && max( lkLamp.r, max( lkLamp.g, lkLamp.b ) ) > 0.02 ) lampLight = lkLamp / max( lkLamp.r, max( lkLamp.g, lkLamp.b ) ) * mix( 0.75, 1.15, lrH( s, 7.0 ) );   // the room's own ceiling light
 	bool high = lrH( s, 9.0 ) < 0.7;
 	vec3 Lp = vec3( 0.5 * ( W + mr - ml ) + ( lrH( s, 8.0 ) - 0.5 ) * 0.4 * ew, high ? H + cl - 0.16 : -fl + 1.35 + 0.3 * lrH( s, 9.5 ), D * ( 0.3 + 0.4 * lrH( s, 10.0 ) ) );
-	vec3 wc = LR_WALL[ int( lrH( s, 11.0 ) * 7.999 ) ], n, alb;
+	vec3 wc = known ? pow( lk0.rgb, vec3( 2.2 ) ) : LR_WALL[ int( lrH( s, 11.0 ) * 7.999 ) ], n, alb;
 	float dado = step( lrH( s, 24.0 ), 0.4 );
 	wc *= 1.0 - dado * 0.38 * ( 1.0 - smoothstep( 0.98, 1.02, yy ) );                                          // a darker dado under a chair rail at a metre
 	wc = mix( wc, vec3( 0.9 ), dado * 0.7 * ( 1.0 - smoothstep( 0.0, 0.012 + ee, abs( yy - 1.0 ) ) ) );
@@ -75,6 +79,8 @@ vec3 lrRoom( float s, vec2 q, vec3 rd, float W, float H, float e, out vec3 lampL
 		alb = wc;
 		alb = mix( alb, vec3( 0.80 ), 1.0 - smoothstep( 0.08, 0.08 + ee + 0.01, yy ) );                    // skirting
 		float lay = lrH( s, 12.0 ), a = 0.05 + 0.6 * lrH( s, 13.0 );
+		int kind = known ? int( lk0.a * 255.0 + 0.5 ) : 0;                                                         // the back wall the room's kind would have: 1 kitchen, 2 bedroom, 3 living room, 4 bathroom, 5 shop or workroom
+		if ( kind == 1 ) lay = 0.95; else if ( kind == 2 ) lay = lay < 0.5 ? 0.15 : 0.85; else if ( kind == 3 ) lay = lay < 0.5 ? 0.75 : 0.6; else if ( kind == 4 ) lay = 0.4; else if ( kind == 5 ) lay = 0.6;
 		vec2 c = vec2( fx, yy );
 		if ( lay < 0.30 ) {                                                                                      // a cupboard, a picture over it
 			float cb = lrBox( c, vec2( a, 0.0 ), vec2( a + 0.30, 0.9 + 0.5 * lrH( s, 20.0 ) ), ee * 0.4 );
@@ -137,23 +143,33 @@ vec3 lrCover( float s, vec2 q, float W, float H, float e, vec3 room, vec3 lampLi
 
 /** Inserted after <emissivemap_fragment>: the pane's colour and alpha at night, from the street, beyond a few metres. */
 export const ROOM_APPLY = `
-	float lrFw = max( fwidth( vLrUv.x ) * abs( vLrA.y ), fwidth( vLrUv.y ) * vLrA.z );
+	float lrSlot = floor( vLrA.z * 0.125 ), lrH2 = vLrA.z - 8.0 * lrSlot;                                    // the height carries the room-look slot (arch/mb.js roomSize)
+	float lrFw = max( fwidth( vLrUv.x ) * abs( vLrA.y ), fwidth( vLrUv.y ) * lrH2 );
 	if ( vLrA.x > 1.99 ) {
 		float lrK = floor( vLrA.x - 1.9995 ), lrS = clamp( vLrA.x - 2.0 - lrK, 0.0, 1.0 ), lrE = lrHour < 12.0 ? lrHour + 24.0 : lrHour;
 		int lrKi = int( lrK + 0.5 );
 		float lrOn = step( LR_ON[ lrKi / 8 ], lrE ) * ( 1.0 - step( LR_OFF[ lrKi - 8 * ( lrKi / 8 ) ], lrE ) );
-		totalEmissiveRadiance *= lrOn;                                                                           // nobody home yet, or gone to bed: dark glass, near and far
-		float lrNight = lrOn * clamp( emissive.r * LR_INV_GLOW, 0.0, 1.0 );
+		// The quad's own front normal. three draws a double-sided TRANSPARENT mesh in two passes, back faces first with FLIP_SIDED, and that pass hands the fragment a negated vNormal:
+		// read raw, the far side looked like the street side and the room was drawn (backwards) into the glass seen from inside (R1-202).
 		vec3 lrNo = normalize( vNormal ) * ( vLrA.y > 0.0 ? 1.0 : - 1.0 ), lrEye = normalize( vViewPosition );
+		#ifdef FLIP_SIDED
+			lrNo = - lrNo;
+		#endif
+		// The glow is the room's light as the STREET sees it. From inside the room (R1-202: a stairwell window at 22:00 was a flat cream panel) the pane is plain
+		// glass over the night outside, so it gives no light of its own; nobody home yet, or gone to bed: dark glass from the street too, near and far.
+		totalEmissiveRadiance *= lrOn * step( 0.0, dot( lrNo, lrEye ) );
+		float lrNight = lrOn * clamp( emissive.r * LR_INV_GLOW, 0.0, 1.0 );
 		float lrF = lrNight * step( 0.05, dot( lrNo, lrEye ) ) * smoothstep( lrTune.x, lrTune.y, length( vViewPosition ) );
 		if ( lrF > 0.002 ) {
 			vec3 lrUp = normalize( ( viewMatrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz ), lrT = normalize( cross( lrUp, lrNo ) ), lrB = cross( lrNo, lrT ), lrRay = - lrEye;
 			vec3 lrRd = vec3( dot( lrRay, lrT ), dot( lrRay, lrB ), dot( lrRay, - lrNo ) );
 			lrRd.z = max( lrRd.z, 0.02 );
 			vec3 lrLamp;
-			float lrW = abs( vLrA.y ), lrH2 = vLrA.z;
+			float lrW = abs( vLrA.y );
+			vec4 lrL0 = vec4( 0.0 ), lrL1 = vec4( 0.0 );
+			if ( lrSlot > 0.5 ) { int si = int( lrSlot + 0.5 ); ivec2 tc = ivec2( 2 * ( si % 64 ), si / 64 ); lrL0 = texelFetch( lrLooks, tc, 0 ); lrL1 = texelFetch( lrLooks, tc + ivec2( 1, 0 ), 0 ); }
 			vec2 lrQ = vLrUv * vec2( lrW, lrH2 );
-			vec3 lrRoomC = lrRoom( lrS, lrQ, normalize( lrRd ), lrW, lrH2, lrFw, lrLamp );
+			vec3 lrRoomC = lrRoom( lrS, lrQ, normalize( lrRd ), lrW, lrH2, lrFw, lrL0, lrL1, lrLamp );
 			vec3 lrOut = lrCover( lrS, lrQ, lrW, lrH2, lrFw, lrRoomC, lrLamp );
 			lrOut = lrOut / ( 1.0 + 0.4 * lrOut ) * LR_GAIN;                                                    // highlights roll off: a ceiling under a bulb is hot, not white
 			totalEmissiveRadiance = mix( totalEmissiveRadiance * 0.7, lrOut, lrF );
@@ -174,7 +190,7 @@ export const ROOM_TABLE = `${glslArr('LR_ON', ROOM_ON)}\n${glslArr('LR_OFF', ROO
  *  lrGain (the room's brightness), lrTune (fade-in start and end in metres, 1 = no covering, -), lrHour (the clock: engine/look.js `setHour` keeps it). */
 export function windowRoom(m) {
   m.userData.room = true;
-  const U = m.userData.lrU = { lrGain: { value: 0.7 }, lrTune: { value: new THREE.Vector4(0.8, 2.0, 0, 0) }, lrHour: { value: 20 } };
+  const U = m.userData.lrU = { lrGain: { value: 0.7 }, lrTune: { value: new THREE.Vector4(0.8, 2.0, 0, 0) }, lrHour: { value: 20 }, lrLooks: { value: ROOM_LOOKS } };
   const glow = () => m.userData.glow ?? 2.4;
   m.onBeforeCompile = function ladWindowRoom(shader) {
     THREE.Material.prototype.onBeforeCompile.call(this, shader);                  // the shared look uniforms (fog glow) first
@@ -182,7 +198,7 @@ export function windowRoom(m) {
       .replace('#include <common>', `#include <common>\n${PARS}\n${VERTEX_ATTR}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>${VERTEX_SET}`);
     Object.assign(shader.uniforms, U);                                              // the same objects: a change to m.userData.lrU reaches the program
-    const consts = `#define LR_INV_GLOW ${(1 / glow()).toFixed(5)}\nuniform float lrGain;\nuniform vec4 lrTune;\nuniform float lrHour;\n#define LR_GAIN lrGain\n${ROOM_TABLE}`;
+    const consts = `#define LR_INV_GLOW ${(1 / glow()).toFixed(5)}\nuniform float lrGain;\nuniform vec4 lrTune;\nuniform float lrHour;\nuniform sampler2D lrLooks;\n#define LR_GAIN lrGain\n${ROOM_TABLE}`;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${PARS}\n${consts}\n${ROOM_FUNCS}`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>${ROOM_APPLY}`);
@@ -193,3 +209,35 @@ export function windowRoom(m) {
 
 /** The clock reaches every room-window material (engine/look.js `setHour`). */
 export function setRoomHour(m, h) { if (m.userData.lrU) m.userData.lrU.lrHour.value = h; }
+
+// ---- the real rooms behind the glass (R1-211) ----------------------------------------------------------------------------------------------------------------------------------------------------
+// At dusk the player sees the REAL room through a window that is not lit yet (a purple room with a picture and a door); an hour later the same window showed a made-up card (a grey room with
+// curtains). The card now borrows what the interiors chose for that room: its wall paint (room.finish.wallTint), its ceiling light's colour (bp.lights, kind 'ceiling') and its kind (which back
+// wall: a kitchen's worktop, a bedroom's wardrobe, a living room's television or shelf). A pane carries its room's slot (arch/mb.js `roomSlot`, `roomSize`); the table is one 128 x 32 RGBA texture,
+// two texels a slot: ( wall rgb, kind / 255 ), ( lamp rgb (black = none), 255 = known ). A slot stays unknown (alpha 0: the seeded look) until the room is furnished: `syncRoomLooks` fills what it
+// can, and engine/look.js calls it about once a second while any slot is still empty (the lazy boot furnishes as the player walks).
+export const ROOM_LOOKS = (() => {
+  const t = new THREE.DataTexture(new Uint8Array(128 * 32 * 4), 128, 32, THREE.RGBAFormat);
+  t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; t.name = 'roomLooks';
+  return t;
+})();
+const KIND = { kitchen: 1, dining: 1, bedroom: 2, living: 3, bathroom: 4, shop: 5, backroom: 5, office: 5, workshop: 5, garage: 5 };   // (arch room types; the rest keep the seeded back wall)
+const RAW_WALL = { wall_cement_raw: 0x9b968c, wall_brick_raw: 0xa0624a };
+const hexRgb = (h) => [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+/** Fill the table for every slot whose room is furnished by now. Returns how many slots are still unknown. `tex` defaults to the page's table. */
+export function syncRoomLooks(ctx, tex = ROOM_LOOKS) {
+  const T = ctx?.roomSlots; if (!T) return 0;
+  const d = tex.image.data; let left = 0, wrote = 0;
+  for (let i = 0; i < T.list.length; i++) {
+    const e = T.list[i]; if (e.ok) continue;
+    const bp = ctx.buildings?.get?.(e.bp), room = bp?.rooms?.find((r) => r.id === e.room), f = room?.finish;
+    if (!f) { left++; continue; }
+    const wall = typeof f.wallTint === 'number' ? f.wallTint : RAW_WALL[f.wall] ?? 0xe6e0d2;
+    const lamp = (bp.lights ?? []).find((l) => l.room === e.room && l.kind === 'ceiling');
+    const s = i + 1, o = ((s >> 6) * 128 + 2 * (s & 63)) * 4;
+    d.set([...hexRgb(wall), KIND[room.type] ?? 0, ...(typeof lamp?.color === 'number' ? hexRgb(lamp.color) : [0, 0, 0]), 255], o);
+    e.ok = true; wrote++;
+  }
+  if (wrote) tex.needsUpdate = true;
+  return left;
+}

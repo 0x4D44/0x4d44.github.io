@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BANK } from '../js/people/lines/index.js';
 import { Dialogue, newLineMemory } from '../js/people/dialogue.js';
-import { hintPhrase, HINT_INTRO } from '../js/people/hints.js';
+import { hintPhrase, HINT_INTRO, PHRASE } from '../js/people/hints.js';
 import { makeRng } from '../js/core/rng.js';
 
 const D = (id, name, en, kind, x, z) => ({ id, name, en, kind, x, y: 2, z, found: false });
@@ -76,4 +76,45 @@ test('a sleeping dog (or hens, pigeons) is noticed, not introduced as "nature"; 
   const dog = [PLACES[2]], said = seeds(80).map((seed) => ask({ mem: freshMem(), memory: null, seed, discoveries: dog }));
   for (const l of said) { assert.doesNotMatch(l.es, /naturaleza/i, l.es); assert.doesNotMatch(l.en, /nature/i, l.en); assert.match(l.es, /perro dormido/); }
   assert.ok(said.some((l) => /animales/.test(l.es)), 'one of the openings speaks of animals');
+});
+
+// ---- R3-202: the verb after the place agrees with it. The tip always said "Queda" ("las placas de las calles. Queda ...", "los Almendros. Queda ...": 5 of the 31 places are plural), an animal is
+// somewhere rather than located ("Está"), and "mire el perro" lacks the personal a ("mire al perro"). The English said "It's" after a plural.
+const PHRASE_IDS = Object.keys(PHRASE), plural = (id) => /^(los|las)\s/i.test(PHRASE[id][0]), animal = (id) => PHRASE[id][2] === 'animal';
+const told = (id, x, z, seed, kind = 'object') => ask({ mem: freshMem(), memory: null, seed, discoveries: [D(id, 'Un nombre', 'A name', kind, x, z)] });          // (the table names the place, not the discovery's own name)
+const KINDS = ['object', 'vista', 'shrine', 'mural', 'story', 'nature'];                                       // every group of openings (an animal's group is the table's, whatever its kind)
+
+test('hints.js: every place declares its number, and the declaration is what its article says', () => {
+  assert.ok(PHRASE_IDS.length >= 31 && PHRASE_IDS.some(plural) && PHRASE_IDS.some(animal) && PHRASE_IDS.some((id) => plural(id) && animal(id)) && PHRASE_IDS.some((id) => !plural(id) && animal(id)), 'the table has plural places, animals, and both');
+  for (const id of PHRASE_IDS) assert.equal(hintPhrase({ id }).plural, plural(id), `${id}: ${PHRASE[id][0]}`);
+  assert.equal(hintPhrase({ id: 'w.zzz', kind: 'object', name: 'La Ceiba', en: 'The ceiba' }).plural, null, 'a place the table does not know: the caller reads the number off the article it puts on the name');
+});
+
+test('every place a neighbour can name: Queda / Quedan, and Está / Están for an animal, in the Spanish, It\'s / They\'re in the English, and the personal a after "mire" and "mirar"', () => {
+  for (const id of PHRASE_IDS) {
+    const pl = plural(id), an = animal(id), verb = an ? (pl ? 'Están' : 'Está') : (pl ? 'Quedan' : 'Queda'), other = an ? (pl ? 'Está' : 'Están') : (pl ? 'Queda' : 'Quedan'), wrong = an ? /Queda/ : /Está/;
+    for (const [x, z, kind] of KINDS.flatMap((k) => [[2, -30, k], [3, 31, k]])) {                          // ahead, and behind the visitor ("Se devuelve y sigue"), whatever the kind
+      for (let seed = 1; seed <= 8; seed++) {
+        const l = told(id, x, z, seed, kind), es = l.es;
+        assert.match(es, new RegExp(`\\. ${verb} `), `${id}: ${es}`); assert.doesNotMatch(es, new RegExp(`\\. ${other} `), `${id}: ${es}`); assert.doesNotMatch(es.split('. ').slice(1).join('. '), wrong, `${id}: ${es}`);
+        assert.match(l.en, pl ? /\. They're / : /\. It's /, `${id}: ${l.en}`); assert.doesNotMatch(l.en, pl ? /\. It's / : /\. They're /, `${id}: ${l.en}`);
+        const asObject = /\b(mire|mirar|miraría|ver|pierda) (a |al |el |la |los |las )/.exec(es.split('. ')[0])?.[2];       // what stands after "mire" and its kind
+        if (an && asObject) assert.match(asObject, /^(a |al )/, `${id}: an animal after "mire" takes the personal a: ${es}`);
+        if (!an && asObject) assert.doesNotMatch(asObject, /^(a |al )/, `${id}: a thing does not: ${es}`);
+        if (an) assert.doesNotMatch(es, /(mire|mirar|miraría) (el|la|los|las) /, `${id}: ${es}`);
+        assert.doesNotMatch(es, / a el /, es);
+      }
+    }
+  }
+  const dogs = seeds(60).map((seed) => told('w.perro', 2, -30, seed).es); assert.ok(dogs.some((s) => /mir(e|ar) al perro dormido\. Está /.test(s)), 'one of the openings is "mire al perro dormido. Está ..."');
+  const hens = seeds(60).map((seed) => told('w.gallinas', 2, -30, seed).es); assert.ok(hens.some((s) => /mir(e|ar) a las gallinas de doña Rosa\. Están /.test(s)), 'and "mire a las gallinas de doña Rosa. Están ..."');
+  assert.ok(seeds(60).map((seed) => told('w.perro', 2, -30, seed).es).some((s) => /^Fíjese en el perro dormido\. Está /.test(s)), '"fíjese en" keeps no a');
+});
+
+test('a place the table does not know takes its verb from the article its name gets: Los Mangos quedan, La Ceiba queda', () => {
+  const say = (name, seed) => ask({ mem: freshMem(), memory: null, seed, discoveries: [D('w.zzz', name, 'The ' + name.replace(/^(Los|Las|La|El) /, ''), 'object', 2, -30)] });
+  for (const seed of seeds(12)) {
+    assert.match(say('Los Mangos', seed).es, /\. Quedan /); assert.match(say('Las Brisas', seed).es, /\. Quedan /); assert.match(say('La Ceiba', seed).es, /\. Queda /); assert.match(say('El Puente', seed).es, /\. Queda /);
+    assert.match(say('Los Mangos', seed).en, /\. They're /); assert.match(say('La Ceiba', seed).en, /\. It's /);
+  }
 });

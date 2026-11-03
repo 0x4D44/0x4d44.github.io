@@ -1,0 +1,2345 @@
+{
+  "version": 1,
+  "units": "m",
+  "axes": "+Y up, +Z front",
+  "origin": "base, centred X/Z footprint",
+  "license": "CC0-1.0",
+  "design": "Original vintage132/33/11 kV visual equipment; not engineering-certified.",
+  "assets": [
+    {
+      "id": "substation_transformer_132_33",
+      "size": [
+        7.04,
+        6.33,
+        5.2
+      ],
+      "family": "power_transformer",
+      "features": [
+        "40 MVA 132/33 kV",
+        "oil tank",
+        "four radiator banks",
+        "conservator",
+        "Buchholz relay",
+        "OLTC",
+        "three HV bushings",
+        "three MV bushings",
+        "neutral bushing",
+        "cooling fans",
+        "marshalling kiosk",
+        "rating plate"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "marshalling_door",
+            "position": [
+              -3.51,
+              0.12,
+              1.902
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "hum": {
+          "position": [
+            0,
+            1.9,
+            0
+          ],
+          "frequencyHz": 100
+        }
+      },
+      "keepOut": [
+        [
+          -3.52,
+          -2.6
+        ],
+        [
+          3.52,
+          -2.6
+        ],
+        [
+          3.52,
+          2.6
+        ],
+        [
+          -3.52,
+          2.6
+        ]
+      ]
+    },
+    {
+      "id": "substation_transformer_33_11",
+      "size": [
+        5.0,
+        4.47,
+        4.12
+      ],
+      "family": "power_transformer",
+      "features": [
+        "15 MVA 33/11 kV",
+        "oil tank",
+        "radiator banks",
+        "conservator",
+        "Buchholz relay",
+        "OLTC housing",
+        "33 kV bushings",
+        "neutral bushing",
+        "11 kV cable box",
+        "cooling fan",
+        "marshalling kiosk",
+        "rating plate"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "marshalling_door",
+            "position": [
+              -2.44,
+              0.1,
+              1.377
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "hum": {
+          "position": [
+            0,
+            1.4,
+            0
+          ],
+          "frequencyHz": 100
+        }
+      },
+      "keepOut": [
+        [
+          -2.5,
+          -2.06
+        ],
+        [
+          2.5,
+          -2.06
+        ],
+        [
+          2.5,
+          2.06
+        ],
+        [
+          -2.5,
+          2.06
+        ]
+      ]
+    },
+    {
+      "id": "substation_breaker_oil_132",
+      "size": [
+        5.8,
+        4.4,
+        4.24
+      ],
+      "family": "breaker",
+      "features": [
+        "132 kV dead-tank bulk-oil",
+        "three horizontal tanks",
+        "six porcelain bushings",
+        "operating cubicle",
+        "linkage"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "mechanism_door",
+            "position": [
+              -0.45,
+              0,
+              2.057
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -2.9,
+          -2.12
+        ],
+        [
+          2.9,
+          -2.12
+        ],
+        [
+          2.9,
+          2.12
+        ],
+        [
+          -2.9,
+          2.12
+        ]
+      ]
+    },
+    {
+      "id": "substation_breaker_oil_33",
+      "size": [
+        3.1,
+        3.0,
+        2.5
+      ],
+      "family": "breaker",
+      "features": [
+        "33 kV three oil pots",
+        "six porcelain bushings",
+        "operating cubicle"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "mechanism_door",
+            "position": [
+              -0.3,
+              0,
+              1.177
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -1.55,
+          -1.25
+        ],
+        [
+          1.55,
+          -1.25
+        ],
+        [
+          1.55,
+          1.25
+        ],
+        [
+          -1.55,
+          1.25
+        ]
+      ]
+    },
+    {
+      "id": "substation_breaker_truck_11",
+      "size": [
+        0.86,
+        1.23,
+        1.1
+      ],
+      "family": "breaker",
+      "features": [
+        "11 kV withdrawable truck",
+        "wheels",
+        "three oil poles",
+        "rear isolating contacts"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.43,
+          -0.55
+        ],
+        [
+          0.43,
+          -0.55
+        ],
+        [
+          0.43,
+          0.55
+        ],
+        [
+          -0.43,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "substation_disconnector_centre_132",
+      "size": [
+        4.0,
+        3.35,
+        1.3
+      ],
+      "family": "disconnector",
+      "features": [
+        "132 kV single-phase centre-break",
+        "two porcelain columns",
+        "contact jaws",
+        "drive shaft"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -2.0,
+          -0.65
+        ],
+        [
+          2.0,
+          -0.65
+        ],
+        [
+          2.0,
+          0.65
+        ],
+        [
+          -2.0,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "substation_disconnector_centre_33",
+      "size": [
+        2.9,
+        1.93,
+        1.28
+      ],
+      "family": "disconnector",
+      "features": [
+        "33 kV single-phase centre-break",
+        "two porcelain columns",
+        "contact jaws",
+        "drive shaft"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.45,
+          -0.64
+        ],
+        [
+          1.45,
+          -0.64
+        ],
+        [
+          1.45,
+          0.64
+        ],
+        [
+          -1.45,
+          0.64
+        ]
+      ]
+    },
+    {
+      "id": "substation_disconnector_pantograph_132",
+      "size": [
+        2.3,
+        6.23,
+        1.56
+      ],
+      "family": "disconnector",
+      "features": [
+        "132 kV single-phase pantograph",
+        "diamond linkage",
+        "contact shoe",
+        "motor cabinet"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.15,
+          -0.78
+        ],
+        [
+          1.15,
+          -0.78
+        ],
+        [
+          1.15,
+          0.78
+        ],
+        [
+          -1.15,
+          0.78
+        ]
+      ]
+    },
+    {
+      "id": "substation_ct_132",
+      "size": [
+        1.12,
+        4.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "132 kV",
+        "current transformer"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          0.7
+        ],
+        [
+          -0.56,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_ct_33",
+      "size": [
+        0.92,
+        2.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "33 kV",
+        "current transformer"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          0.7
+        ],
+        [
+          -0.46,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_cvt_132",
+      "size": [
+        1.12,
+        4.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "132 kV",
+        "capacitor voltage transformer"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          0.7
+        ],
+        [
+          -0.56,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_cvt_33",
+      "size": [
+        0.92,
+        2.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "33 kV",
+        "capacitor voltage transformer"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          0.7
+        ],
+        [
+          -0.46,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_arrester_132",
+      "size": [
+        1.12,
+        4.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "132 kV",
+        "surge arrester"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          -0.7
+        ],
+        [
+          0.56,
+          0.7
+        ],
+        [
+          -0.56,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_arrester_33",
+      "size": [
+        0.92,
+        2.56,
+        1.4
+      ],
+      "family": "instrument",
+      "features": [
+        "33 kV",
+        "surge arrester"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          -0.7
+        ],
+        [
+          0.46,
+          0.7
+        ],
+        [
+          -0.46,
+          0.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_post_insulator_132",
+      "size": [
+        0.55,
+        2.1,
+        0.55
+      ],
+      "family": "insulator",
+      "features": [
+        "132 kV brown porcelain post",
+        "metal flanges"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.275,
+          -0.275
+        ],
+        [
+          0.275,
+          -0.275
+        ],
+        [
+          0.275,
+          0.275
+        ],
+        [
+          -0.275,
+          0.275
+        ]
+      ]
+    },
+    {
+      "id": "substation_post_insulator_33",
+      "size": [
+        0.375,
+        1.05,
+        0.375
+      ],
+      "family": "insulator",
+      "features": [
+        "33 kV brown porcelain post",
+        "metal flanges"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.1875,
+          -0.1875
+        ],
+        [
+          0.1875,
+          -0.1875
+        ],
+        [
+          0.1875,
+          0.1875
+        ],
+        [
+          -0.1875,
+          0.1875
+        ]
+      ]
+    },
+    {
+      "id": "substation_earth_switch_132",
+      "size": [
+        2.4,
+        3.0,
+        1.15
+      ],
+      "family": "earth-switch",
+      "features": [
+        "132 kV earth switch",
+        "open blade",
+        "earthing bond",
+        "drive cubicle"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.2,
+          -0.575
+        ],
+        [
+          1.2,
+          -0.575
+        ],
+        [
+          1.2,
+          0.575
+        ],
+        [
+          -1.2,
+          0.575
+        ]
+      ]
+    },
+    {
+      "id": "substation_earth_switch_33",
+      "size": [
+        1.5,
+        1.73,
+        1.15
+      ],
+      "family": "earth-switch",
+      "features": [
+        "33 kV earth switch",
+        "open blade",
+        "earthing bond",
+        "drive cubicle"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.75,
+          -0.575
+        ],
+        [
+          0.75,
+          -0.575
+        ],
+        [
+          0.75,
+          0.575
+        ],
+        [
+          -0.75,
+          0.575
+        ]
+      ]
+    },
+    {
+      "id": "substation_switchboard_panel_11",
+      "size": [
+        0.8,
+        2.4,
+        1.6
+      ],
+      "family": "indoor",
+      "features": [
+        "11 kV metal-clad panel",
+        "three doors",
+        "meters",
+        "relays",
+        "mimic strip",
+        "truck rails"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "panel_door",
+            "position": [
+              -0.37,
+              0.08,
+              0.748
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -0.4,
+          -0.8
+        ],
+        [
+          0.4,
+          -0.8
+        ],
+        [
+          0.4,
+          0.8
+        ],
+        [
+          -0.4,
+          0.8
+        ]
+      ]
+    },
+    {
+      "id": "substation_control_panel",
+      "size": [
+        0.85,
+        2.25,
+        0.82
+      ],
+      "family": "indoor",
+      "features": [
+        "control panel",
+        "meters",
+        "relays",
+        "mimic strip",
+        "door handles"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "panel_door",
+            "position": [
+              -0.39,
+              0.08,
+              0.348
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -0.425,
+          -0.41
+        ],
+        [
+          0.425,
+          -0.41
+        ],
+        [
+          0.425,
+          0.41
+        ],
+        [
+          -0.425,
+          0.41
+        ]
+      ]
+    },
+    {
+      "id": "substation_battery_bank",
+      "size": [
+        2.9,
+        1.55,
+        0.69
+      ],
+      "family": "indoor",
+      "features": [
+        "two-tier steel rack",
+        "twenty flooded cells",
+        "bus links",
+        "rating plate"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.45,
+          -0.345
+        ],
+        [
+          1.45,
+          -0.345
+        ],
+        [
+          1.45,
+          0.345
+        ],
+        [
+          -1.45,
+          0.345
+        ]
+      ]
+    },
+    {
+      "id": "substation_battery_charger",
+      "size": [
+        0.75,
+        1.55,
+        0.72
+      ],
+      "family": "indoor",
+      "features": [
+        "battery charger",
+        "analog meters",
+        "service door"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "charger_door",
+            "position": [
+              -0.34,
+              0,
+              0.33
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -0.375,
+          -0.36
+        ],
+        [
+          0.375,
+          -0.36
+        ],
+        [
+          0.375,
+          0.36
+        ],
+        [
+          -0.375,
+          0.36
+        ]
+      ]
+    },
+    {
+      "id": "substation_station_transformer",
+      "size": [
+        1.72,
+        1.9,
+        1.52
+      ],
+      "family": "transformer",
+      "features": [
+        "station service transformer",
+        "radiator fins",
+        "three bushings",
+        "LV cable box"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [],
+        "hum": {
+          "position": [
+            0,
+            0.75,
+            0
+          ],
+          "frequencyHz": 100
+        }
+      },
+      "keepOut": [
+        [
+          -0.86,
+          -0.76
+        ],
+        [
+          0.86,
+          -0.76
+        ],
+        [
+          0.86,
+          0.76
+        ],
+        [
+          -0.86,
+          0.76
+        ]
+      ]
+    },
+    {
+      "id": "substation_radiator_bank",
+      "size": [
+        2.04,
+        2.1,
+        1.7
+      ],
+      "family": "component",
+      "features": [
+        "ten oil-cooling fins",
+        "top and bottom headers",
+        "connection stubs"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.02,
+          -0.85
+        ],
+        [
+          1.02,
+          -0.85
+        ],
+        [
+          1.02,
+          0.85
+        ],
+        [
+          -1.02,
+          0.85
+        ]
+      ]
+    },
+    {
+      "id": "substation_cooling_fan",
+      "size": [
+        0.74,
+        0.77,
+        0.32
+      ],
+      "family": "component",
+      "features": [
+        "cooling fan",
+        "three blades",
+        "guard cage",
+        "feet"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.37,
+          -0.16
+        ],
+        [
+          0.37,
+          -0.16
+        ],
+        [
+          0.37,
+          0.16
+        ],
+        [
+          -0.37,
+          0.16
+        ]
+      ]
+    },
+    {
+      "id": "substation_insulator_disc",
+      "size": [
+        0.3,
+        0.145,
+        0.3
+      ],
+      "family": "component",
+      "features": [
+        "porcelain suspension disc",
+        "steel cap and pin"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          0.15
+        ],
+        [
+          -0.15,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_insulator_string_132",
+      "size": [
+        0.3,
+        1.72,
+        0.3
+      ],
+      "family": "component",
+      "features": [
+        "eleven-disc 132 kV tension/suspension string",
+        "end fittings"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          0.15
+        ],
+        [
+          -0.15,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_insulator_string_33",
+      "size": [
+        0.3,
+        0.7,
+        0.3
+      ],
+      "family": "component",
+      "features": [
+        "four-disc 33 kV tension/suspension string",
+        "end fittings"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          -0.15
+        ],
+        [
+          0.15,
+          0.15
+        ],
+        [
+          -0.15,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_conductor_segment",
+      "size": [
+        0.03,
+        1.0,
+        0.03
+      ],
+      "family": "component",
+      "features": [
+        "one-metre +Y conductor segment for instancing",
+        "no long conductor mesh"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.015,
+          -0.015
+        ],
+        [
+          0.015,
+          -0.015
+        ],
+        [
+          0.015,
+          0.015
+        ],
+        [
+          -0.015,
+          0.015
+        ]
+      ]
+    },
+    {
+      "id": "substation_conductor_spacer",
+      "size": [
+        0.61,
+        0.52,
+        0.04
+      ],
+      "family": "component",
+      "features": [
+        "bundled-conductor spacer",
+        "four rubber clamps"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.305,
+          -0.02
+        ],
+        [
+          0.305,
+          -0.02
+        ],
+        [
+          0.305,
+          0.02
+        ],
+        [
+          -0.305,
+          0.02
+        ]
+      ]
+    },
+    {
+      "id": "substation_tower_suspension_132",
+      "size": [
+        12,
+        32,
+        6.4
+      ],
+      "family": "tower",
+      "features": [
+        "double-circuit",
+        "six crossarms",
+        "suspension strings",
+        "open lattice",
+        "ladder",
+        "concrete feet"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -3.5,
+          -3.5
+        ],
+        [
+          3.5,
+          -3.5
+        ],
+        [
+          3.5,
+          3.5
+        ],
+        [
+          -3.5,
+          3.5
+        ]
+      ]
+    },
+    {
+      "id": "substation_tower_terminal_132",
+      "size": [
+        13,
+        30,
+        8
+      ],
+      "family": "tower",
+      "features": [
+        "double-circuit",
+        "tension strings",
+        "heavier lattice",
+        "terminal silhouette"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -4.5,
+          -4.5
+        ],
+        [
+          4.5,
+          -4.5
+        ],
+        [
+          4.5,
+          4.5
+        ],
+        [
+          -4.5,
+          4.5
+        ]
+      ]
+    },
+    {
+      "id": "substation_pole_hframe_33",
+      "size": [
+        6.4,
+        13,
+        1.2
+      ],
+      "family": "pole",
+      "features": [
+        "wood twin poles",
+        "crossarm",
+        "three pin insulators",
+        "diagonal bracing"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -3.2,
+          -0.6
+        ],
+        [
+          3.2,
+          -0.6
+        ],
+        [
+          3.2,
+          0.6
+        ],
+        [
+          -3.2,
+          0.6
+        ]
+      ]
+    },
+    {
+      "id": "substation_pole_concrete_11",
+      "size": [
+        2.8,
+        10.5,
+        0.65
+      ],
+      "family": "pole",
+      "features": [
+        "tapered concrete",
+        "two crossarms",
+        "pin insulators",
+        "step bolts"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.4,
+          -0.325
+        ],
+        [
+          1.4,
+          -0.325
+        ],
+        [
+          1.4,
+          0.325
+        ],
+        [
+          -1.4,
+          0.325
+        ]
+      ]
+    },
+    {
+      "id": "substation_gantry_132",
+      "size": [
+        12,
+        10,
+        2.0
+      ],
+      "family": "gantry",
+      "features": [
+        "lattice portal",
+        "three horizontal tension strings",
+        "foundations"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -6.0,
+          -1.0
+        ],
+        [
+          6.0,
+          -1.0
+        ],
+        [
+          6.0,
+          1.0
+        ],
+        [
+          -6.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "id": "substation_gantry_33",
+      "size": [
+        7,
+        5.5,
+        1.3
+      ],
+      "family": "gantry",
+      "features": [
+        "lattice portal",
+        "three horizontal tension strings",
+        "foundations"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -3.5,
+          -0.65
+        ],
+        [
+          3.5,
+          -0.65
+        ],
+        [
+          3.5,
+          0.65
+        ],
+        [
+          -3.5,
+          0.65
+        ]
+      ]
+    },
+    {
+      "id": "substation_busbar_tube",
+      "size": [
+        3,
+        0.15,
+        0.15
+      ],
+      "family": "busbar",
+      "features": [
+        "three-metre tube segment",
+        "bolted end collars"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.5,
+          -0.075
+        ],
+        [
+          1.5,
+          -0.075
+        ],
+        [
+          1.5,
+          0.075
+        ],
+        [
+          -1.5,
+          0.075
+        ]
+      ]
+    },
+    {
+      "id": "substation_bund_large",
+      "size": [
+        10,
+        0.65,
+        7.4
+      ],
+      "family": "containment",
+      "features": [
+        "open oil bund",
+        "gravel",
+        "sump",
+        "grating",
+        "two plinths",
+        "oil stains"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -5.0,
+          -3.7
+        ],
+        [
+          5.0,
+          -3.7
+        ],
+        [
+          5.0,
+          3.7
+        ],
+        [
+          -5.0,
+          3.7
+        ]
+      ]
+    },
+    {
+      "id": "substation_bund_small",
+      "size": [
+        7.2,
+        0.55,
+        5.6
+      ],
+      "family": "containment",
+      "features": [
+        "open oil bund",
+        "gravel",
+        "sump",
+        "grating",
+        "two plinths",
+        "oil stains"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -3.6,
+          -2.8
+        ],
+        [
+          3.6,
+          -2.8
+        ],
+        [
+          3.6,
+          2.8
+        ],
+        [
+          -3.6,
+          2.8
+        ]
+      ]
+    },
+    {
+      "id": "substation_firewall",
+      "size": [
+        0.69,
+        6.5,
+        8
+      ],
+      "family": "containment",
+      "features": [
+        "reinforced concrete",
+        "buttresses",
+        "coping",
+        "construction joints"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.345,
+          -4.0
+        ],
+        [
+          0.345,
+          -4.0
+        ],
+        [
+          0.345,
+          4.0
+        ],
+        [
+          -0.345,
+          4.0
+        ]
+      ]
+    },
+    {
+      "id": "substation_wall_brick",
+      "size": [
+        3,
+        3.2,
+        0.3
+      ],
+      "family": "building",
+      "features": [
+        "brick infill",
+        "concrete piers",
+        "damp plinth"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          0.15
+        ],
+        [
+          -1.5,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_wall_door",
+      "size": [
+        3,
+        3.2,
+        0.3
+      ],
+      "family": "building",
+      "features": [
+        "clear doorway 1.16x2.28m",
+        "brick infill",
+        "concrete lintel"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          0.15
+        ],
+        [
+          -1.5,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_wall_window",
+      "size": [
+        3,
+        3.2,
+        0.3
+      ],
+      "family": "building",
+      "features": [
+        "clear window opening 1.4x1.2m",
+        "brick infill",
+        "concrete frame"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          -0.15
+        ],
+        [
+          1.5,
+          0.15
+        ],
+        [
+          -1.5,
+          0.15
+        ]
+      ]
+    },
+    {
+      "id": "substation_roof_flat",
+      "size": [
+        3.2,
+        0.32,
+        3.2
+      ],
+      "family": "building",
+      "features": [
+        "flat concrete roof module",
+        "edge parapets",
+        "weathering patch"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.6,
+          -1.6
+        ],
+        [
+          1.6,
+          -1.6
+        ],
+        [
+          1.6,
+          1.6
+        ],
+        [
+          -1.6,
+          1.6
+        ]
+      ]
+    },
+    {
+      "id": "substation_door_steel",
+      "size": [
+        1.1,
+        2.2,
+        0.18
+      ],
+      "family": "building",
+      "features": [
+        "separate opening leaf",
+        "hinges",
+        "handle",
+        "folded edges"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "door_hinge",
+            "position": [
+              -0.55,
+              0,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -0.55,
+          -0.09
+        ],
+        [
+          0.55,
+          -0.09
+        ],
+        [
+          0.55,
+          0.09
+        ],
+        [
+          -0.55,
+          0.09
+        ]
+      ]
+    },
+    {
+      "id": "substation_louvre",
+      "size": [
+        1,
+        0.75,
+        0.12
+      ],
+      "family": "building",
+      "features": [
+        "open ventilation blades",
+        "sheet frame"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.5,
+          -0.06
+        ],
+        [
+          0.5,
+          -0.06
+        ],
+        [
+          0.5,
+          0.06
+        ],
+        [
+          -0.5,
+          0.06
+        ]
+      ]
+    },
+    {
+      "id": "substation_window",
+      "size": [
+        1.36,
+        1.1,
+        0.18
+      ],
+      "family": "building",
+      "features": [
+        "double frame",
+        "dark glazing",
+        "security bars",
+        "sill"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.68,
+          -0.09
+        ],
+        [
+          0.68,
+          -0.09
+        ],
+        [
+          0.68,
+          0.09
+        ],
+        [
+          -0.68,
+          0.09
+        ]
+      ]
+    },
+    {
+      "id": "substation_oil_store",
+      "size": [
+        4.5,
+        3.2,
+        3.5
+      ],
+      "family": "building",
+      "features": [
+        "open caged front",
+        "four original oil drums",
+        "bund floor",
+        "flat roof"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -2.25,
+          -1.75
+        ],
+        [
+          2.25,
+          -1.75
+        ],
+        [
+          2.25,
+          1.75
+        ],
+        [
+          -2.25,
+          1.75
+        ]
+      ]
+    },
+    {
+      "id": "substation_fence_panel",
+      "size": [
+        2.5,
+        2.4,
+        0.09
+      ],
+      "family": "security",
+      "features": [
+        "open chain-link diamonds",
+        "tension rails"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -1.25,
+          -0.045
+        ],
+        [
+          1.25,
+          -0.045
+        ],
+        [
+          1.25,
+          0.045
+        ],
+        [
+          -1.25,
+          0.045
+        ]
+      ]
+    },
+    {
+      "id": "substation_fence_post",
+      "size": [
+        0.16,
+        2.94,
+        1.0
+      ],
+      "family": "security",
+      "features": [
+        "galvanised post",
+        "barbed-wire outrigger",
+        "three wire brackets"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.1,
+          -0.1
+        ],
+        [
+          0.1,
+          -0.1
+        ],
+        [
+          0.1,
+          0.1
+        ],
+        [
+          -0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "substation_gate",
+      "size": [
+        5,
+        2.9,
+        0.24
+      ],
+      "family": "security",
+      "features": [
+        "double chain-link leaves",
+        "latch",
+        "barbed top",
+        "access sign"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": [
+          {
+            "name": "left_leaf",
+            "position": [
+              -2.5,
+              0,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "right_leaf",
+            "position": [
+              2.5,
+              0,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ]
+      },
+      "keepOut": [
+        [
+          -2.5,
+          -0.12
+        ],
+        [
+          2.5,
+          -0.12
+        ],
+        [
+          2.5,
+          0.12
+        ],
+        [
+          -2.5,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "substation_floodlight_mast",
+      "size": [
+        1.6,
+        8,
+        1.0
+      ],
+      "family": "lighting",
+      "features": [
+        "two floodlights",
+        "steel mast",
+        "access door",
+        "footing"
+      ],
+      "anchors": {
+        "lamps": [
+          {
+            "name": "lamp_left",
+            "position": [
+              -0.55,
+              7.7,
+              0.18
+            ]
+          },
+          {
+            "name": "lamp_right",
+            "position": [
+              0.55,
+              7.7,
+              0.18
+            ]
+          }
+        ],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.8,
+          -0.5
+        ],
+        [
+          0.8,
+          -0.5
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          -0.8,
+          0.5
+        ]
+      ]
+    },
+    {
+      "id": "substation_lightning_mast",
+      "size": [
+        0.8,
+        18,
+        0.8
+      ],
+      "family": "lighting",
+      "features": [
+        "tapered steel mast",
+        "air terminal",
+        "footing"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.4,
+          -0.4
+        ],
+        [
+          0.4,
+          -0.4
+        ],
+        [
+          0.4,
+          0.4
+        ],
+        [
+          -0.4,
+          0.4
+        ]
+      ]
+    },
+    {
+      "id": "substation_gravel_tile",
+      "size": [
+        4,
+        0.12,
+        4
+      ],
+      "family": "ground",
+      "features": [
+        "crushed stone",
+        "discrete stones at near LOD"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -2.0,
+          -2.0
+        ],
+        [
+          2.0,
+          -2.0
+        ],
+        [
+          2.0,
+          2.0
+        ],
+        [
+          -2.0,
+          2.0
+        ]
+      ]
+    },
+    {
+      "id": "substation_concrete_tile",
+      "size": [
+        4,
+        0.15,
+        4
+      ],
+      "family": "ground",
+      "features": [
+        "expansion joints",
+        "broomed shared texture"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -2.0,
+          -2.0
+        ],
+        [
+          2.0,
+          -2.0
+        ],
+        [
+          2.0,
+          2.0
+        ],
+        [
+          -2.0,
+          2.0
+        ]
+      ]
+    },
+    {
+      "id": "substation_trench_cover",
+      "size": [
+        1,
+        0.13,
+        0.6
+      ],
+      "family": "ground",
+      "features": [
+        "concrete cover",
+        "two lifting handles",
+        "steel edge strips"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.5,
+          -0.3
+        ],
+        [
+          0.5,
+          -0.3
+        ],
+        [
+          0.5,
+          0.3
+        ],
+        [
+          -0.5,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "substation_sign_danger",
+      "size": [
+        0.75,
+        0.55,
+        0.07
+      ],
+      "family": "sign",
+      "features": [
+        "PELIGRO \u2013 ALTA TENSI\u00d3N 132 000 V",
+        "four fixings"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.375,
+          -0.035
+        ],
+        [
+          0.375,
+          -0.035
+        ],
+        [
+          0.375,
+          0.035
+        ],
+        [
+          -0.375,
+          0.035
+        ]
+      ]
+    },
+    {
+      "id": "substation_sign_access",
+      "size": [
+        0.65,
+        0.45,
+        0.07
+      ],
+      "family": "sign",
+      "features": [
+        "PROHIBIDO EL PASO",
+        "four fixings"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.325,
+          -0.035
+        ],
+        [
+          0.325,
+          -0.035
+        ],
+        [
+          0.325,
+          0.035
+        ],
+        [
+          -0.325,
+          0.035
+        ]
+      ]
+    },
+    {
+      "id": "substation_sign_touch",
+      "size": [
+        0.45,
+        0.3,
+        0.07
+      ],
+      "family": "sign",
+      "features": [
+        "NO TOCAR",
+        "four fixings"
+      ],
+      "anchors": {
+        "lamps": [],
+        "hinges": []
+      },
+      "keepOut": [
+        [
+          -0.225,
+          -0.035
+        ],
+        [
+          0.225,
+          -0.035
+        ],
+        [
+          0.225,
+          0.035
+        ],
+        [
+          -0.225,
+          0.035
+        ]
+      ]
+    }
+  ]
+}

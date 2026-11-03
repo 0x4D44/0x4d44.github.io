@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { PROPS, CLIP_PROP, propFor, phoneClip, sellClip, holdProp } from '../js/people/props.js';
+import { PROPS, CLIP_PROP, PHONE_GLOW, PHONE_UP, propFor, phoneClip, sellClip, holdProp, showPhone } from '../js/people/props.js';
 
 const META = JSON.parse(readFileSync(new URL('../assets/models/people/people_meta.json', import.meta.url), 'utf8'));
 const CLIPS = new Set(Object.keys(META.clipFrames));
@@ -125,4 +125,36 @@ test('phone: one mesh (one draw call), and only the +Y face is lit, with a bezel
   assert.equal(glow(0.75, 0.99), 0, 'a bezel at the bottom');
   assert.ok(glow(0.55, 0.5) > 0 && glow(0.75, 0.05) > 0, 'and the screen starts right inside it');
   assert.ok(mesh.material.emissiveIntensity > 0 && mesh.material.map, 'a lit, textured material');
+});
+
+test('phone: the screen glows without blazing (R3-205 saw a large bright white phone in a walker\'s hand at night; it glowed at 0.85)', () => {
+  assert.equal(PROPS.phone.make().children[0].material.emissiveIntensity, PHONE_GLOW);
+  assert.ok(PHONE_GLOW >= 0.3 && PHONE_GLOW <= 0.6, 'lit, but well under the old 0.85: ' + PHONE_GLOW);
+});
+
+test('phone_ear (R3-205): the phone is held in the fist, not on top of it, and leans in to the head', () => {
+  // The call clip folds the forearm up to the shoulder, so the hand bone (the wrist) is a few cm below and in front of the ear and the fist closes a hand's breadth beyond it. The grip was 10.5 cm above
+  // the wrist and 9.4 cm behind it: the phone stood on top of the fist, 4 cm off the head, "floating beside the ear". The numbers are read off renders of four bodies at the clip's first frame (front, side, three-quarter).
+  const [x, y, z] = PROPS.phone_ear.pos, top = new THREE.Vector3(0, 0, -1).applyQuaternion(PROPS.phone_ear.quat());
+  assert.ok(y <= 0.09 && z <= 0.075, `the middle of the phone is ${(y * 100).toFixed(1)} cm above and ${(z * 100).toFixed(1)} cm behind the wrist: in the fist`);
+  assert.ok(x <= -0.07, `and ${(-x * 100).toFixed(1)} cm in toward the head`);
+  assert.ok(top.x < 0 && top.y > 0.9, `the top edge leans in to the head and stays upright: ${top.toArray().map((v) => v.toFixed(2))}`);
+});
+
+test('showPhone: the phone of a phone clip shows once that clip is half in; a bundle, a broom, nothing, or another clip is left alone', () => {
+  const action = (w, running = true) => ({ isRunning: () => running, getEffectiveWeight: () => w });
+  const held = (propName, clip, w, running = true) => ({ propName, props: new Map([['main', { visible: true }]]), actions: new Map([[clip, action(w, running)]]) });
+  assert.equal(PHONE_UP, 0.5);
+  for (const [clip, prop] of [['phone_call', 'phone_ear'], ['phone_stand', 'phone'], ['sit_phone', 'phone']]) {
+    assert.equal(CLIP_PROP[clip], prop);
+    const p = held(prop, clip, 0.3);
+    assert.equal(showPhone(p, clip), false, clip + ': a third of the way in, the hand is still down'); assert.equal(p.props.get('main').visible, false);
+    p.actions.set(clip, action(PHONE_UP)); assert.equal(showPhone(p, clip), true, clip + ': half way'); assert.equal(p.props.get('main').visible, true);
+    p.actions.set(clip, action(1)); assert.equal(showPhone(p, clip), true);
+    p.actions.set(clip, action(0.4)); assert.equal(showPhone(p, clip), false, 'and it hides again if the clip fades out under it'); assert.equal(p.props.get('main').visible, false);
+    assert.equal(showPhone(held(prop, clip, 1, false), clip), false, clip + ': a clip that is not running shows nothing');
+  }
+  const bundle = held('bundle', 'phone_stand', 0.1); assert.equal(showPhone(bundle, 'phone_stand'), true); assert.equal(bundle.props.get('main').visible, true, 'what the brain hands out is never hidden');
+  const walk = held('phone', 'walk', 0.1); assert.equal(showPhone(walk, 'walk'), true); assert.equal(walk.props.get('main').visible, true, 'only a phone clip gates its phone');
+  assert.equal(showPhone({ propName: null, props: new Map(), actions: new Map() }, 'phone_call'), true, 'no prop, nothing to gate');
 });

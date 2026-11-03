@@ -1,0 +1,4 @@
+substation: 59 near + 59 LOD1 (complete)
+models: 3,115,422 / 4,500,000 bytes; textures: 3,884,196 / 8,000,000 bytes
+texture GPU RGBA+mips: 33,554,432 / 40,000,000 bytes; max near: 5644; max LOD ratio: 34.88%
+PASS: binary geometry, metre bounds, catalogue, LODs, atlas, payload and offline isolation.

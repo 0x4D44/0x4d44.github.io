@@ -91,6 +91,17 @@ test('directionsTo: side, distance, uphill and the article of the place', () => 
   assert.ok(directionsTo({ name: 'Cancha', x: 3, y: 2, z: -4 }, here, rng).es.includes('ahí no más'));
 });
 
+test('directionsTo: the verb agrees with what is told (R3-202): Queda / Quedan, Está / Están for an animal, English It\'s / They\'re; the full answer too', () => {
+  const rng = makeRng(5), almendros = { name: 'Los Almendros', en: 'the almond trees', kind: 'nature', x: 0, y: 2, z: -30 }, behind = { ...almendros, z: 30 };
+  const say = (o, lm = almendros) => directionsTo(lm, here, rng, { short: true, ...o });
+  for (const [o, es, en] of [[{}, /^Queda /, /^It's /], [{ plural: true }, /^Quedan /, /^They're /], [{ estar: true }, /^Está /, /^It's /], [{ estar: true, plural: true }, /^Están /, /^They're /]]) {
+    assert.match(say(o).es, es, JSON.stringify(o)); assert.match(say(o).en, en, JSON.stringify(o)); assert.match(say(o, behind).es, new RegExp(es.source + '.*Se devuelve'), 'behind the visitor: ' + JSON.stringify(o));
+  }
+  assert.match(directionsTo(almendros, here, rng, { plural: true }).es, /^Mire, los Almendros quedan /); assert.match(directionsTo(almendros, here, rng, { plural: true }).en, /^The almond trees are /);
+  assert.match(directionsTo(almendros, here, rng, { plural: true, estar: true }).es, /^Mire, los Almendros están /); assert.match(directionsTo(almendros, here, rng).es, /^Mire, los Almendros queda /, 'a caller who says nothing gets the old singular answer');
+  assert.match(directionsTo(behind, here, rng, { plural: true }).es, /^Los Almendros quedan .*Se devuelve/);
+});
+
 test('a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it', () => {
   for (const [hour, key] of [[8, 'greet_m'], [15, 'greet_a'], [20, 'greet_e'], [2, 'greet_n']]) {
     assert.equal(period(hour), key.slice(-1));
@@ -135,6 +146,21 @@ test('buying: a shop sells, the reply carries the price and the step reports the
   const it = d.pick(b.choices.find((c) => c.id.startsWith('item:')).id);
   assert.ok(it.buy && it.buy.price > 0 && it.buy.name?.length === 2, JSON.stringify(it.buy)); assert.match(it.line.es, /pesos/);
   assert.ok(!it.choices.some((c) => c.id.startsWith('item:')), 'back at the main menu after a purchase');
+});
+
+test('buying (R3-207): the menu offers what is on sale at the hour (breakfast at half past seven, the set lunch from noon, never the lunch at breakfast), three things at every hour; nothing on sale, no "buy" topic', () => {
+  const buy = (hour) => { const d = dlg('restaurante', { gender: 'f', shopName: 'Restaurante Doña Rosa', hour, seed: 4 }); d.open(); return d.pick('buy').choices.map((c) => c.id); };
+  assert.deepEqual(buy(7.6), ['item:desayuno', 'item:jugo', 'item:sopa', 'back'], 'at 7:36 the kitchen is on breakfast ("todavía estamos con el desayuno")');
+  assert.deepEqual(buy(11.99), ['item:desayuno', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(12), ['item:almuerzo', 'item:jugo', 'item:sopa', 'back'], 'the set lunch from noon');
+  assert.deepEqual(buy(16.4), ['item:almuerzo', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(17.5), ['item:corrientazo', 'item:jugo', 'item:sopa', 'back'], 'in the evening only the set meal is left');
+  assert.deepEqual(buy(21.9), ['item:corrientazo', 'item:jugo', 'item:sopa', 'back']); assert.deepEqual(buy(23.5), ['item:jugo', 'item:sopa', 'item:tinto', 'back'], 'and at night what a pot can warm');
+  for (let h = 0; h < 24; h += 0.25) assert.equal(buy(h).length, 4, `three things and the way back at ${h}`);
+  for (let h = 5; h < 12; h += 0.25) assert.ok(!buy(h).includes('item:almuerzo'), `no set lunch at ${h}`);
+  // a shop whose only dish is on sale from twelve to two has no "buy" topic before it, and the purchase is the first entry of the menu after it
+  const only = { ...BANK.personas.tienda, items: [{ ...BANK.personas.tienda.items[0], from: 12, to: 14 }] }, bank = { ...BANK, personas: { ...BANK.personas, tienda: only } };
+  const at = (hour) => new Dialogue({ npc: { id: 'n1', persona: 'tienda', name: 'Rosa', gender: 'f', mem: null, shopName: 'Tienda La Esperanza' }, bank, rng: makeRng(3), hour, world: { landmarks: LM, player: here, discoveries: [] }, address: 'm' });
+  assert.ok(!at(9).availableTopics().includes('buy')); assert.ok(!at(9).open().choices.some((c) => c.id === 'buy'), 'no purchase on the menu while nothing is on sale');
+  assert.ok(at(13).availableTopics().includes('buy')); assert.equal(at(13).open().choices[0].id, 'buy'); assert.ok(!at(14).availableTopics().includes('buy'), 'the window closes at two (to is exclusive)');
 });
 
 test('the hint no longer says "a el" and starts every sentence with a capital', () => {

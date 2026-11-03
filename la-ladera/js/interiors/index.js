@@ -2,9 +2,9 @@
 //   loadInteriorAssets(ctx)   preload the furniture GLBs, the clothes' and the close-inspection things' (stand-in boxes, cloth patches and flat shapes are used for anything not loaded)
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
-import { Layout, resetUid } from './layout.js';
+import { Layout, resetUid, SLEEP_REACH } from './layout.js';
 import { freePoint, snapStand, customerFloor } from './reach.js';
-import { CATALOG, seatOffsets } from './catalog.js';
+import { CATALOG, seatOffsets, seatZoff } from './catalog.js';
 import { finishRoom, householdForRoom, householdKey, furnishRng, roomsInOrder } from './household.js';
 import * as R from './rooms.js';
 import { shopRoom } from './shops.js';
@@ -82,32 +82,10 @@ function makeEnv(ctx, bp, rng) {
 }
 
 // ------------------------------------------------------------------ anchors
-/** How far from a sleeper's anchor the nearest floor a body can stand on may be (m): the stuck probe wants a standing node within 1.4 m of every anchor and its nodes are 0.3 m apart. */
-export const SLEEP_REACH = 1.0;
-/** Where on a bed the sleeper lies, in the bed's frame: the middle, unless the nearest floor a body can stand on is farther than `SLEEP_REACH` from it (a bed reached from its foot only is
- *  1.26 m and more from its middle: 75 of the barrio's 282 beds were over 1.05 m, and the probe's 0.3 m lattice found no node within 1.4 m of two of them). Then the least slide toward that floor
- *  that brings it in range, as far as the mattress holds a body: across it up to the width less 0.28 m, along it up to 0.3 m (the feet over the end), 0.5 m in all (the anchor stays within
- *  0.6 m of the bed's middle: interiors-data 'anchors'). Else the slide that gets nearest. */
-export function sleepSpot(L, it, conn) {
-  const r = L.r, cw = L.W / conn.nx, ch = L.D / conn.nz, R = 1.7, spots = [];
-  const i0 = Math.max(0, Math.floor((it.x - R - r.x0) / cw)), i1 = Math.min(conn.nx - 1, Math.floor((it.x + R - r.x0) / cw));
-  const j0 = Math.max(0, Math.floor((it.z - R - r.z0) / ch)), j1 = Math.min(conn.nz - 1, Math.floor((it.z + R - r.z0) / ch));
-  for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) if (conn.comp[iz * conn.nx + ix] === conn.main) spots.push([r.x0 + (ix + 0.5) * cw, r.z0 + (iz + 0.5) * ch]);
-  if (!spots.length || conn.main < 0) return [0, 0];
-  const reach = (lx, lz) => { const [x, z] = L.rel(it, lx, lz); let m = Infinity; for (const [sx, sz] of spots) m = Math.min(m, Math.hypot(sx - x, sz - z)); return m; };
-  const d0 = reach(0, 0);
-  if (d0 <= SLEEP_REACH) return [0, 0];
-  const lat = Math.max(0, it.w / 2 - 0.28);
-  let ok = null, near = { d: d0, lx: 0, lz: 0 };
-  for (let lx = -lat; lx <= lat + 1e-9; lx += 0.05) for (let lz = -0.3; lz <= 0.3 + 1e-9; lz += 0.05) {
-    const cost = Math.hypot(lx, lz); if (cost > 0.5) continue;
-    const d = reach(lx, lz);
-    if (d <= SLEEP_REACH && (!ok || cost < ok.cost)) ok = { cost, lx, lz };
-    if (d < near.d - 1e-9) near = { d, lx, lz };
-  }
-  const pick = ok ?? near;
-  return [+pick.lx.toFixed(3), +pick.lz.toFixed(3)];
-}
+export { SLEEP_REACH };
+/** Where on a bed the sleeper lies, in the bed's frame (layout.js `sleeperSpot`, which the layout's own judgement of a bed's reach asks too): the middle, unless the nearest floor a body can stand on is
+ *  farther than `SLEEP_REACH` from it; then the least slide on the mattress toward that floor that brings it in range. */
+export const sleepSpot = (L, it, conn) => { const s = L.sleeperSpot(it, conn); return [s.lx, s.lz]; };
 
 function emitAnchors(E, room, L, hh) {
   const { bp, ctx } = E, fr = bp.frame, rotY = bp.lot.rotY ?? 0;
@@ -131,7 +109,7 @@ function emitAnchors(E, room, L, hh) {
   for (const it of L.items) {
     const c = it.c;
     if (c.seat && it.floor) {
-      const zoff = c.arch === 'sofa' || c.arch === 'armchair' ? -0.12 : c.arch === 'pupitre' ? -0.1 : 0;
+      const zoff = seatZoff(c);
       for (const ox of seatOffsets(c)) {
         const [sx, sz] = L.rel(it, ox, zoff);
         let kind = 'sit'; const tags = ['seat', it.name];
@@ -146,9 +124,11 @@ function emitAnchors(E, room, L, hh) {
       }
     }
     if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk' || c.arch === 'crib') {
-      const [sx, sz] = L.rel(it, ...sleepSpot(L, it, conn)), chk = [it.x, it.z];
-      A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
-      if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+      if (room.type === 'bedroom') {                       // a sleeper lies in a BEDROOM (people/homelife.js: the sleep scene); a child's bunk or single in the living room (R4-705) is there for the eye, with no sleeper to lie in it
+        const [sx, sz] = L.rel(it, ...sleepSpot(L, it, conn)), chk = [it.x, it.z];
+        A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+        if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+      }
       const [bx, bz] = L.rel(it, it.w / 2 + 0.4, it.d / 4);
       if (c.arch !== 'crib') A('stand', bx, bz, it.ry - PI / 2, { tags: ['bedside'] });
     }
@@ -260,12 +240,15 @@ export function* furnishSteps(ctx, bp, o = {}) {
     try { removed = removed.concat(R.ensureSeats(L)); }                                                        // a table whose chairs healing took out (a seat later furniture walled in) gets them back, or goes (rooms.js)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'seats ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
-    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those)
+    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, use: L.use ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those); use: what a raw room of an unfinished house is for ('camp', 'store', 'obra': special.js `construction`), null for every other room (its plan type says what it is)
     built.push({ room, hh, L });
     yield 'pockets';
   }
   // a home whose kitchens are all too small for a fridge keeps it in the dining or living room (every room is furnished by now, so the lanes it must keep are known)
   if (bp.lot?.kind && !['chapel', 'school', 'clinic', 'hall'].includes(bp.lot.kind) && !(E.shopType ?? lot.shop)) R.ensureHomeFridge(built);
+  // a home with children whose bedrooms took only the parents' double: the children's bed, in a bedroom or the living room (rooms.js)
+  try { yield* R.ensureKidsBedsSteps(built, E); }
+  catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'kids beds ' + String(e?.message ?? e), stack: e?.stack }); console.error('[kids beds]', bp.id, e); }
   // every room is furnished: which of them are untidy, and the clothes that lie about (garments.js: the beds are made or unmade to match, nothing else moves)
   try { interior.garments = dressRooms(E, built); }
   catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'garments ' + String(e?.message ?? e), stack: e?.stack }); console.error('[garments]', bp.id, e); }

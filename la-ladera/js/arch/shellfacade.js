@@ -256,14 +256,15 @@ function balconies(G, kit) {
       }
     }
     made.push({ w, u, len, yk, dep, top });
-    G.rec('balcony', 'front', u - len / 2, u + len / 2, yk - 0.15, top + 0.05, dep + 0.05, { window: w.id });
-    if (kit.planters && hv(2) < 0.7) {                                                                                           // flower box hung outside the rail, with its plants
+    const planter = kit.planters && hv(2) < 0.7, laundry = kit.laundry && hv(13) < 0.55;
+    G.rec('balcony', 'front', u - len / 2, u + len / 2, yk - 0.15, top + 0.05, dep + 0.05, { window: w.id, planter, laundry });
+    if (planter) {                                                                                           // flower box hung outside the rail, with its plants
       const pw = Math.min(len - 0.2, 0.7 + 0.5 * hv(3)), pc = hx([0xa8553a, 0x6f8f4f, 0xd9d2c0, 0x8a5a34][Math.floor(hv(4) * 4) % 4]);
       fbox(G, 'front', u + (hv(5) - 0.5) * (len - pw - 0.1), top - 0.09, dep + 0.1, pw, 0.17, 0.2, 'plaster_rough', pc);
       const p0 = G.FR.front.at(u + (hv(5) - 0.5) * (len - pw - 0.1), top, dep + 0.1);
       for (let i = 0; i < 3; i++) bush(G, p0[0] + (i - 1) * pw * 0.3, top - 0.0, p0[2], 0.13 + 0.05 * hv(6 + i), 0.26 + 0.14 * hv(9 + i), mulc(hx([0x3f8a3f, 0x4f9a48, 0x2f7a4a][i]), 0.9 + 0.2 * hv(12 + i)));
     }
-    if (kit.laundry && hv(13) < 0.55) {                                                                                          // clothes over the rail
+    if (laundry) {                                                                                          // clothes over the rail
       const n = 2 + Math.floor(hv(14) * 3);
       for (let i = 0; i < n; i++) cloth(G, G.FR.front.at(u - len / 2 + 0.25 + ((len - 0.5) * (i + 0.5)) / n, top - 0.2, dep + 0.025), [0, 0, 1], 0.28 + 0.2 * hv(15 + i), 0.42 + 0.3 * hv(18 + i), hx(CLOTH[Math.floor(hv(21 + i) * CLOTH.length) % CLOTH.length]));
     }
