@@ -10,6 +10,7 @@ import { buildVehicles } from './vehicles.js';
 import { buildDress, buildPlanters } from './dress.js';
 import { buildDiscoveries } from './discover.js';
 import { buildBoundary } from './periphery.js';
+import { buildBeach } from './beach.js';
 import { buildVista } from './vista.js';
 import { buildVistaKit } from './vista-kit.js';
 import { buildOutskirts } from './outskirts.js';
@@ -66,6 +67,7 @@ export async function buildProps(ctx) {
   await step('arrival', () => { ctx.world.arrivalClaims = claimSpawnView(K); });   // the fan ahead of the spawn: no vehicle, bin or planter stands in the first frame
   await step('vegetation-assets', () => initVegetation(K));   // the instanced Blender plant library (a missing or incomplete species falls back to the procedural builders)
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
+  await step('beach', () => buildBeach(K));          // the promenade, the sand and the sea south of the plot's edge, and the gate opened onto them (beach.js, coast.js)
   await step('vistakit', () => buildVistaKit(ctx));  // the modelled hillside kit (Codex GLBs, instanced, LOD): terraces on the far land. First, so the far houses below leave its ground alone; an absent or failed kit changes nothing
   await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
   await step('outskirts', () => buildOutskirts(K));  // the streets, alleys, trees and landmarks the kit's terraces and the far rows stand among, and the belt of tall trees beyond the plot's wall (R1-D20, D21)

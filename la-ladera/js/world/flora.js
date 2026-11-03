@@ -348,7 +348,7 @@ export function buildFlora(K) {
 
   // ---- plaza trees (inside planters)
   for (const pl of plan.plazas) {
-    if (pl.kind !== 'plaza') continue;
+    if (pl.kind !== 'plaza' || pl.id === 'P6') continue;                          // (the Plaza del Mar at the spawn is the beach's: palms and furniture of its own, and an almond here would also pull the tyre swing (life.js) in reach of the spawn)
     const want = pl.id === 'P2' ? 5 : pl.id === 'P1' ? 2 : 3, spec = pl.id === 'P1' ? 'palm' : pl.id === 'P4' ? 'cypress' : 'almendro';
     const xs = pl.poly.map((p) => p[0]), zs = pl.poly.map((p) => p[1]), tries = 600, got = [];
     const r = R.fork('plaza:' + pl.id);

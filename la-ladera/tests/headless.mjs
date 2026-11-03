@@ -5,6 +5,7 @@
 //   import { buildData } from './headless.mjs';
 //   const { ctx, plan, buildings } = await buildData({ lots: ['L00'] });   // lots optional
 //   const full = await buildData({ world: true });                         // + the page's world: guard walls, perimeter, every prop collider
+//   const sea = await buildData({ world: true, coast: true });             // + the beach's south gate open and the deck's rail standing (the page does both when it builds the beach: world/beach.js): sweeps can walk down to the sea
 import './nice.mjs';   // low priority for every data test and probe built on buildData()
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
@@ -63,7 +64,7 @@ export async function loadVehiclesFromDisk(ctx) {
  * `clutter: false` (or LADERA_CLUTTER=0 in the environment) builds the world without the Blender street clutter, as the page does with ?clutter=0.
  */
 export async function buildData(o = {}) {
-  const ctx = createContext({ seed: o.seed, headless: true });
+  const ctx = createContext({ seed: o.seed, headless: true, coast: o.coast === true });
   await ctx.assets.init(readAssetJson);
   ctx.plan = generatePlan(ctx);
   ctx.physics.setTerrain(ctx.plan.heightAt);

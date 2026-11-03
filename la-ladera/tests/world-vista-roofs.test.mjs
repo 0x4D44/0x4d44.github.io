@@ -12,8 +12,8 @@ import { HALF } from '../js/world/field.js';
 import { farHouses, houseParts, roofHat, hatFaces, ROOFS, HAT_SHARE, DETAIL } from '../js/world/vista.js';
 import { SEED } from './world-lib.mjs';
 
-/** What the far city cost at HEAD 7254a04 on this seed, in triangles of the world.vista meshes: it is not to cost more now. */
-const BEFORE = 51982;
+/** What the far city costs on this seed, in triangles of the world.vista meshes: it is not to cost more now. Round 7 (the bay): the valley city's 1,453 houses are gone (51,982 triangles at HEAD 7254a04), the far village and the flanks cost this (433 houses). */
+const BEFORE = 22288;
 
 const ctx = createContext({ seed: SEED, headless: true });
 ctx.plan = generatePlan(ctx); ctx.physics.setTerrain(ctx.plan.heightAt);
@@ -44,7 +44,7 @@ function vertices(mesh) {
 }
 
 test('pitched roofs are dealt by the house alone: a share of the tile and zinc ones, none on concrete, on a tall block or beyond reach; all three forms; none by chance of another seed', () => {
-  assert.ok(houses.length > 1500, `${houses.length} far houses`);
+  assert.ok(houses.length > 300, `${houses.length} far houses`);                      // the valley city is gone (round 7, the bay): 433 stand on the headland and the flanks, not 1,855
   const tally = { roof_tile_clay: [0, 0], corrugated_zinc: [0, 0] }, forms = {};
   for (const h of houses) {
     const mat = ROOFS[h.roof][0], hat = roofHat(plan, h);
@@ -56,9 +56,9 @@ test('pitched roofs are dealt by the house alone: a share of the tile and zinc o
     assert.ok(['gable', 'hip', 'shed'].includes(hat.form) && Number.isFinite(hat.rise) && hat.rise >= 0.8 && hat.rise <= 2.2, `${JSON.stringify(hat)}: a roof 0.8 to 2.2 m high`);
     assert.equal(hat.lift, gap(h) > DETAIL ? 0 : 0.25, 'the lid is the slab within DETAIL and the top face beyond it');
   }
-  for (const [mat, [n, of]] of Object.entries(tally)) assert.ok(of > 150 && Math.abs(n / of - HAT_SHARE[mat]) < 0.07, `${mat}: ${n} of ${of} wear a pitched roof (the share is ${HAT_SHARE[mat]})`);
-  for (const f of ['gable', 'hip', 'shed']) assert.ok(forms[f] >= 60, `${f}: ${forms[f]} roofs`);
-  assert.ok(hats.length >= 500 && hats.length <= 0.45 * houses.length, `${hats.length} of ${houses.length} houses have a pitched roof`);
+  for (const [mat, [n, of]] of Object.entries(tally)) assert.ok(of > 90 && Math.abs(n / of - HAT_SHARE[mat]) < 0.1, `${mat}: ${n} of ${of} wear a pitched roof (the share is ${HAT_SHARE[mat]})`);       // 0.07 of 400 houses a material, 0.1 of 130: the same two sigma
+  for (const f of ['gable', 'hip', 'shed']) assert.ok(forms[f] >= 30, `${f}: ${forms[f]} roofs`);
+  assert.ok(hats.length >= 120 && hats.length <= 0.6 * houses.length, `${hats.length} of ${houses.length} houses have a pitched roof`);
   const moved = houses.filter((h) => JSON.stringify(roofHat({ ...plan, seed: plan.seed + 1 }, h)) !== JSON.stringify(roofHat(plan, h))).length;       // TEETH: the roof is the seed's
   assert.ok(moved > 0.3 * hats.length, `another seed deals ${moved} of them differently`);
   for (const f of ['gable', 'hip', 'shed']) assert.ok(hats.some(([h, t]) => gap(h) <= 80 && t.form === f), `the first streets of the far hillside show a ${f}`);
@@ -81,7 +81,7 @@ test('a pitched roof stands on its lid, within the house and its eaves, rises by
     if (hat.form === 'gable') assert.equal(F.wall.length, 2, `${tag}: a gable has its two ends in the house's paint`);
     if (hat.form !== 'gable') assert.ok(F.roof.some((q) => q.length === 3), `${tag}: a hip or a shed has its ends closed in the roof's own sheet`);
   }
-  assert.ok(faces > 2500, `${faces} faces walked`);
+  assert.ok(faces > 500, `${faces} faces walked`);
   // TEETH: each fault is seen by the same checks
   const [h0, t0] = hats.find(([h, t]) => t.form === 'gable' && h.party.left && h.party.right), reach = (F) => Math.max(...F.roof.flat().map((p) => Math.abs(local(h0, p)[0])));
   assert.ok(reach(hatFaces(h0, t0)) <= h0.w / 2 + 1e-6, 'a house between two others keeps its roof within its walls');
@@ -107,8 +107,8 @@ test('a pitched roof carries nothing: no tank, hut, parapet or rebar in the air 
     }
   }
   assert.equal(onHats, 0, 'a pitched roof carries nothing');
-  assert.ok(rooms >= 40, `${rooms} rooms on flat roofs`);
-  assert.ok(flatItems > 600, `${flatItems} items on the flat roofs`);
+  assert.ok(rooms >= 30, `${rooms} rooms on flat roofs`);
+  assert.ok(flatItems > 400, `${flatItems} items on the flat roofs`);
 });
 
 test('the world draws what the pure functions say: each pitched roof is in the mesh of its own material, the walls and the lid reach it, and a corner that is not there is not found', () => {

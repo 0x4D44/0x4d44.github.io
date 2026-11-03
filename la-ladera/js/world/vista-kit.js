@@ -152,14 +152,14 @@ export function instanceVista(ctx, planned, partsByName) {
 }
 
 /**
- * vista.js's church and four towers stand on 30-34 m of ground of their own (vistaSites): drop every kit terrace that has a piece inside one of those discs.
+ * vista.js's church, lighthouse and four towers stand on 22-34 m of ground of their own (vistaSites): drop every kit terrace that has a piece inside one of those discs.
  * Done after planVista rather than inside it, so the planner stays exactly the one Codex verified (its layout and its piece ids do not move).
  */
 export function clearLandmarks(planned, landmarks) {
   const drop = new Set(planned.pieces.filter((p) => landmarks.some((s) => Math.hypot(s.x - p.x, s.z - p.z) < s.r)).map((p) => p.cluster));
   if (!drop.size) return { ...planned, dropped: [] };
   const pieces = planned.pieces.filter((p) => !drop.has(p.cluster)), houses = planned.houses.filter((h) => !drop.has(h.cluster)), clusters = planned.clusters.filter((c) => !drop.has(c.id));
-  const region = new Map(clusters.map((c) => [c.id, c.region])), regionCost = { south: 0, east: 0, west: 0, north: 0 };
+  const region = new Map(clusters.map((c) => [c.id, c.region])), regionCost = Object.fromEntries(Object.keys(planned.regionCost).map((k) => [k, 0]));
   let farTriangles = 0;
   for (const p of pieces) if (!p.detail) { farTriangles += p.farTriangles; regionCost[region.get(p.cluster)] += p.farTriangles; }
   return { ...planned, houses, pieces, clusters, farTriangles, regionCost, dropped: [...drop] };
@@ -221,7 +221,7 @@ export async function buildVistaKit(ctx, options = {}) {
     // A strict load (rather than preload's warning-and-continue) keeps the swap atomic.
     await Promise.all(files.map((file) => options.load ? options.load(file) : ctx.assets.load(file)));
     const parts = kitParts(ctx, data), sites = vistaSites(ctx.plan);
-    const planned = clearLandmarks(planVista(ctx.plan, data, options.limits ?? VISTA_LIMITS), [sites.church, ...sites.towers]);
+    const planned = clearLandmarks(planVista(ctx.plan, data, options.limits ?? VISTA_LIMITS), [sites.church, sites.lighthouse, ...sites.towers]);
     if (!planned.houses.length) throw new Error('empty vista plan');
     controller = instanceVista(ctx, planned, parts);
     ctx.scene.add(controller.root);

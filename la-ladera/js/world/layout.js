@@ -62,6 +62,10 @@ export const ITEMS = [
 
   // the court on the bottom shelf and its pocket links
   { type: 'plaza', id: 'P3', name: 'Cancha El Cerro', en: 'El Cerro Court', kind: 'court', rect: [-58, 77.25, 28, 14.5, 0], yFrom: 'S2' },
+
+  // the Plaza del Mar: the paved floor of the gap in the south row, at the spawn, from Calle del Comercio's south kerb (z 90.5) to the plot's edge, level with the beach promenade
+  // (coast.js DECK). Last in the list so every earlier street and plaza keeps its place; x -31..4 stays clear of L50 (-32.55) and L15 (6).
+  { type: 'plaza', id: 'P6', name: 'Plaza del Mar', en: 'Sea Square', kind: 'plaza', rect: [-13.5, 95.25, 35, 9.5, 0], y: 0.2 },
 ];
 
 const I = (w, d, fl, kind, shop = null, o = {}) => [w, d, fl, kind, shop, o];

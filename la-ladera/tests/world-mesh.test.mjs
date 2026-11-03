@@ -16,6 +16,7 @@ import { settle } from '../js/world/discover.js';
 import { FACE_DROP, cornerShape, guardTop } from '../js/world/walls.js';
 import { towerPlan, TOWER } from '../js/world/tower.js';
 import { vistaSites, farHouses, houseParts, houseFaces, windowCorners, LANE } from '../js/world/vista.js';
+import { SEA } from '../js/world/coast.js';
 import { makeKit, SPAWN_FAN, inSpawnFan } from '../js/world/kit.js';
 import { MeshBuilder } from '../js/core/mesh.js';
 import { tube, card, V } from '../js/world/mk.js';
@@ -111,6 +112,23 @@ test('TEETH: a point on a lot wall counts as "pushed by a collider"', () => {
   assert.ok(pushedBy(physicsOf(A), x, z, plan.heightAt(x, z) + 0.3) > 0.2);
 });
 
+/** The discoveries a walker standing at `at` finds on the spot: registries.js's test (inside the radius on the ground plane, within `dy` (3 m) in height). */
+const foundAt = (items, at) => items.filter((d) => (d.x - at.x) ** 2 + (d.z - at.z) ** 2 < d.radius ** 2 && Math.abs(at.y - d.y) < (d.dy ?? 3)).map((d) => `${d.id} ${Math.hypot(d.x - at.x, d.z - at.z).toFixed(2)} m from the spawn (radius ${d.radius})`);
+
+test('the spawn finds nothing: no discovery is inside its own radius where the player starts (the sea square once grew almond trees, the tyre swing hung from the nearest one, and the first discovery was found at the milestone)', () => {
+  const at = { x: plan.spawn.x, z: plan.spawn.z, y: plan.spawn.y ?? plan.heightAt(plan.spawn.x, plan.spawn.z) };
+  assert.deepEqual(foundAt([...A.discover.items.values()], at), []);
+  const swing = A.discover.items.get('w.columpio');                    // and the swing is still in the world, from a plaza tree farther away
+  assert.ok(swing && Math.hypot(swing.x - at.x, swing.z - at.z) > swing.radius, 'the tyre swing hangs from a plaza tree out of reach of the spawn');
+});
+
+test('TEETH: a discovery on the spawn is found there', () => {
+  const at = { x: -6.5, z: 92.5, y: 0.2 };
+  assert.deepEqual(foundAt([{ id: 'w.x', x: at.x + 2, z: at.z + 2, y: 0.2, radius: 4.2, dy: 3 }], at), ['w.x 2.83 m from the spawn (radius 4.2)']);
+  assert.deepEqual(foundAt([{ id: 'w.x', x: at.x + 2, z: at.z + 2, y: 5, radius: 4.2 }], at), [], 'too high above the walker (dy)');
+  assert.deepEqual(foundAt([{ id: 'w.x', x: at.x + 5, z: at.z, y: 0.2, radius: 4.2 }], at), [], 'beyond the radius');
+});
+
 test('the signage and the living props all got a place (counts, not just "no error")', () => {
   assert.equal(W.signs.murals, 3, 'three murals on straight tall walls');
   assert.equal(W.signs.boards, 2, 'both faces of the gate arch');
@@ -199,12 +217,12 @@ test('street detail: trench patches, manhole covers and gratings along the stree
 });
 
 const rimGap = (h) => Math.max(Math.abs(h.x) - HALF, Math.abs(h.z) - HALF);
-const onRoad = (h) => h.z > HALF - 3 && project(plan._far.road.pts, plan._far.road.cum, h.x, h.z).d < 16;
+const onRoad = (h) => project(plan._far.road.pts, plan._far.road.cum, h.x, h.z).d < 16;       // the road runs along the promenade and up the east flank (round 7, the bay): its clearance holds everywhere
 
-test('vista: the far land has its houses (clear of the rim and of the road that leaves), a church, four towers, a TV mast, and one glow per lit window and beacon', () => {
+test('vista: the far land has its houses (clear of the rim and of the road that leaves), a church, four towers, a lighthouse, a TV mast, and one glow per lit window and beacon', () => {
   const V = W.vista, sites = vistaSites(plan), houses = farHouses(plan);
-  assert.ok(V.houses === houses.length && V.houses >= 900 && V.houses <= 2600, `${V.houses} far houses`);
-  assert.deepEqual([V.towers, V.church], [4, 1]);
+  assert.ok(V.houses === houses.length && V.houses >= 250 && V.houses <= 2600, `${V.houses} far houses`);                     // the valley city is gone (round 7, the bay): the flanks and the headland village stand, 400 or so, not 1,855
+  assert.deepEqual([V.towers, V.church, V.lighthouse], [4, 1, 1]);
   const bad = [];
   for (const h of houses) {
     if (rimGap(h) < 12) bad.push(`house ${h.x.toFixed(0)},${h.z.toFixed(0)} is ${rimGap(h).toFixed(1)} m from the rim`);
@@ -212,22 +230,29 @@ test('vista: the far land has its houses (clear of the rim and of the road that 
     if (!([h.x, h.y, h.z, h.w, h.d, h.h, h.ry].every(Number.isFinite) && h.h >= 3 && h.w >= 5 && h.d >= 5)) bad.push(`bad house ${JSON.stringify(h)}`);
   }
   assert.deepEqual(bad.slice(0, 5), []);
-  for (const s of [sites.church, ...sites.towers]) assert.equal(houses.filter((h) => Math.hypot(h.x - s.x, h.z - s.z) < s.r).length, 0, `the landmark at ${s.x.toFixed(0)},${s.z.toFixed(0)} keeps its ground`);
-  const lights = glowLog.list.filter((g) => g.src !== 'edgewall'), beacons = lights.filter((g) => g.blink > 0);      // the lit windows of the rim's houses (edgewall.js) are not the vista's
+  for (const s of [sites.church, sites.lighthouse, ...sites.towers]) assert.equal(houses.filter((h) => Math.hypot(h.x - s.x, h.z - s.z) < s.r).length, 0, `the landmark at ${s.x.toFixed(0)},${s.z.toFixed(0)} keeps its ground`);
+  const lights = glowLog.list.filter((g) => g.src !== 'edgewall'), flashes = lights.filter((g) => g.blink > 0), beacons = flashes.filter((g) => g.color === 0xff2418);      // the lit windows of the rim's houses (edgewall.js) are not the vista's
   assert.equal(lights.length, V.lights, 'every light of the vista reached ctx.glow');
   assert.equal(beacons.length, 3);
   assert.ok(beacons.every((g) => g.color === 0xff2418 && g.size >= 8 && g.x === V.mast.x && g.z === V.mast.z) && new Set(beacons.map((g) => g.y)).size === 3, 'three red beacons up the mast');
-  assert.ok(lights.every((g) => [g.x, g.y, g.z, g.size, g.intensity].every(Number.isFinite) && (g.blink > 0 || (g.on >= 0 && g.on <= 1))), 'every light is a finite point with a dusk order');
-  assert.ok(lights.length - beacons.length >= 800, `${lights.length - beacons.length} lit windows`);
+  const flare = flashes.filter((g) => g.color !== 0xff2418), lh = sites.lighthouse;
+  assert.equal(flare.length, 1, 'the lighthouse flashes: one flashing light that is not a red beacon');
+  assert.ok(Math.hypot(flare[0].x - lh.x, flare[0].z - lh.z) < 1 && flare[0].y > lh.y + 0.9 * lh.h && flare[0].blink > 0 && flare[0].blink <= 0.2 && flare[0].size >= 8, 'on the lantern of the lighthouse, a flash every ten seconds or so');
+  assert.ok(lights.every((g) => [g.x, g.y, g.z, g.size, g.intensity].every(Number.isFinite) && (g.blink > 0 || (g.on >= 0 && g.on <= 1) || g.on === undefined)), 'every light is a finite point with a dusk order');
+  assert.ok(lights.length - flashes.length >= 250, `${lights.length - flashes.length} lit windows`);
   let meshes = 0; A.scene.traverse((o) => { if (o.isMesh && o.name.startsWith('world.vista:')) { meshes++; assert.equal(o.castShadow, false, `${o.name} casts no shadow`); } });
   assert.ok(meshes >= 5 && meshes <= 14, `${meshes} vista meshes: one per material`);
 });
 
-test('vista: wherever the built-up map says "build", the rim margin and the road clearance still hold (TEETH: without them houses reach the wall and the road)', () => {
-  const flat = { density: () => 1, max: 1e6 }, every = farHouses(plan, flat), loose = farHouses(plan, { ...flat, margin: 0, roadClear: 0 });
+test('vista: wherever the built-up map says "build", the rim margin, the road clearance and the dry ground still hold (TEETH: without them houses reach the wall, the road and the bay)', () => {
+  const flat = { density: () => 1, max: 1e6 }, every = farHouses(plan, flat), loose = farHouses(plan, { ...flat, margin: 0, roadClear: 0 }), wet = farHouses(plan, { ...flat, dry: -99 });
+  const inBay = (h) => h.z > HALF - 3 && plan._far(h.x, h.z) < SEA + 1.5;                 // a house's own ground under the sea, or within 1.5 m of it (the rule keeps 1.8 m): the beach, the bay, the foot of the headlands
   assert.ok(every.length > 2600, `${every.length} houses on a map that is built up everywhere`);
   assert.equal(every.filter((h) => rimGap(h) < 12 || onRoad(h)).length, 0);
   assert.ok(loose.some((h) => rimGap(h) < 12) && loose.some(onRoad), 'the checks above can fail');
+  assert.equal(every.filter(inBay).length, 0, 'no far house stands in the bay, however built-up the map says it is');
+  assert.ok(wet.filter(inBay).length > 20, `TEETH: without the dry-ground rule ${wet.filter(inBay).length} houses stand in the bay`);
+  assert.equal(farHouses(plan).filter(inBay).length, 0, 'and none of the real ones does');
 });
 
 /** Everything wrong with the windows, doors and roof items of one far house; [] when it is all on its walls and its roof. */
@@ -277,7 +302,7 @@ test('vista: the near far-houses are dressed: windows and doors on their walls, 
   }
   assert.deepEqual(bad.slice(0, 6), [], `${bad.length} problems`);
   assert.ok(near > 100 && nearDressed >= 0.9 * near, `${nearDressed} of ${near} houses within 120 m of the rim wear 3 windows or more`);
-  assert.ok(windows > 5000 && doors > 250 && items > 800 && lit > 350, `${windows} windows, ${doors} doors, ${items} roof items on ${lit} houses`);
+  assert.ok(windows > 2500 && doors > 200 && items > 500 && lit > 300, `${windows} windows, ${doors} doors, ${items} roof items on ${lit} houses`);
   assert.deepEqual([V.windows, V.doors, V.roofItems], [windows, doors, items], 'the build drew what the pure function says');
   assert.deepEqual([B.world.vista.windows, B.world.vista.doors, B.world.vista.roofItems], [V.windows, V.doors, V.roofItems], 'a second build of the seed dresses the houses the same');
   let glass = null; A.scene.traverse((o) => { if (o.isMesh && o.name === 'world.vista:glass_dark') glass = o; });
@@ -331,7 +356,7 @@ test('vista: the far houses stand in rows that follow the contours, wall to wall
   const houses = farHouses(plan), far = plan._far, byRow = new Map();
   for (const h of houses) (byRow.get(h.row) ?? byRow.set(h.row, []).get(h.row)).push(h);
   const rows = [...byRow.values()].map((r) => r.sort((a, b) => a.k - b.k));
-  assert.ok(rows.length >= 150 && Math.min(...rows.map((r) => r.length)) >= 3, `${rows.length} rows, the shortest of ${Math.min(...rows.map((r) => r.length))} houses`);
+  assert.ok(rows.length >= 70 && Math.min(...rows.map((r) => r.length)) >= 3, `${rows.length} rows, the shortest of ${Math.min(...rows.map((r) => r.length))} houses`);
   assert.ok(houses.filter((h) => h.party.left || h.party.right).length === houses.length, 'every house shares a wall with a neighbour');
   const bad = rowProblems(rows, far);
   assert.deepEqual(bad.slice(0, 6), [], `${bad.length} problems`);
@@ -430,7 +455,7 @@ test('vista: every far house is roofed: a face looks up over its middle at the t
   });
   const bad = lidProblems(houses, ups);
   assert.deepEqual(bad.slice(0, 5), [], `${bad.length} houses without a roof`);
-  const near = houses.find((h) => rimGap(h) < 150), far = houses.find((h) => rimGap(h) > 300);
+  const near = houses.find((h) => rimGap(h) < 150), far = houses.find((h) => rimGap(h) > 200);
   for (const h of [near, far]) {
     assert.equal(lidProblems([h], ups).length, 0, 'the house has its roof');
     assert.equal(lidProblems([{ ...h, h: h.h + 1 }], ups).length, 1, 'TEETH: a roof a metre higher than drawn is found');
@@ -1227,7 +1252,7 @@ function perimeterVines(ctx, tris) {
 
 test('the perimeter wall is not a blank screen (R1-D02): its face into the plot is toned (a damp foot, blotches), posters and tags are pasted on it, and bougainvillea hangs over its crest (TEETH: a flat face, a face turned away, papers behind or at a corner, a missing face and no vines are each found)', () => {
   const tris = perimeterFace(A), panels = W.boundary.panels;
-  assert.ok(panels > 350 && tris.length >= panels * 12, `${tris.length} triangles on the faces of ${panels} panels`);
+  assert.ok(panels > 280 && tris.length >= panels * 12, `${tris.length} triangles on the faces of ${panels} panels`);
   assert.deepEqual(insideProblems(tris, panels), []);
   assert.equal(insideProblems(tris.map((t) => ({ ...t, L: t.L.map(() => 0.9) })), panels).length, 2, 'TEETH: a flat colour has neither a damp foot nor any grain');
   assert.equal(insideProblems(tris.map((t) => ({ ...t, L: t.L.map((l, k) => (t.h[k] < 0.5 ? l / 0.7 : l)) })), panels).length, 1, 'TEETH: a foot as bright as the wall fails on the damp alone');
@@ -1241,7 +1266,8 @@ test('the perimeter wall is not a blank screen (R1-D02): its face into the plot 
   assert.equal(dressProblems(quads.map((q, k) => (k ? q : { ...q, along: Math.sign(q.along) * (PERIM.plane - 0.1) })), W.boundary).length, 1, 'TEETH: one paper at a corner is found');
   assert.equal(dressProblems(quads.map((q) => ({ ...q, y0: q.y0 - 0.7, y1: q.y1 - 0.7 })), W.boundary).length, 1, 'TEETH: papers on the ground are found');
   const vines = perimeterVines(A, tris);
-  for (const k of ['s', 'n', 'e', 'w']) assert.ok(vines[k] >= 20, `${vines[k]} vine card triangles hang over the ${k} wall: ${JSON.stringify(vines)}`);
+  for (const k of ['n', 'e', 'w']) assert.ok(vines[k] >= 20, `${vines[k]} vine card triangles hang over the ${k} wall: ${JSON.stringify(vines)}`);
+  assert.ok(vines.s >= 1 && vines.s <= 12, `${vines.s} vine card triangles on the south side: the promenade is open (round 7, the bay), only the two 4.5 m returns of the walls carry vines: ${JSON.stringify(vines)}`);
 });
 
 /** one prop alone in a MeshBuilder (the kit stub: flat ground, the real THREE for the pose matrix) */
@@ -1306,16 +1332,20 @@ test('the sleeping dog is brown, not cream, and shaded round its girth (TEETH: t
   assert.ok(back.length >= 1 && flank.length >= 2 && mean(flank) - mean(back) > 0.12, `back ${mean(back).toFixed(2)} (${back.length} vertices), flank ${mean(flank).toFixed(2)} (${flank.length}): a dark saddle over paler sides`);
 });
 
-test('the far land is ONE mesh (116 tiles of 100-150 m were 54 draw calls in the spawn view: each is wider than the merge span, so nothing fused them)', () => {
+test('the far land is a handful of meshes, one per ground material, never one per tile (116 tiles of 100-150 m were 54 draw calls in the spawn view: each is wider than the merge span, so nothing fused them)', () => {
   const ids = [...A.batch.groups.keys()].filter((id) => id.startsWith('world.terrain.far'));
   assert.deepEqual(ids, ['world.terrain.far']);
   const ms = A.batch.groups.get('world.terrain.far').meshes;
-  assert.equal(ms.length, 1);
-  const g = ms[0].geometry; g.computeBoundingBox();
-  const bb = g.boundingBox;
-  assert.ok(bb.min.x <= -745 && bb.max.x >= 745 && bb.min.z <= -745 && bb.max.z >= 745, `covers +-750 m: ${bb.min.x}..${bb.max.x}, ${bb.min.z}..${bb.max.z}`);
-  assert.ok(g.index.count / 3 > 35000 && g.attributes.position.count < 200000, `${g.index.count / 3} triangles, ${g.attributes.position.count} vertices`);
-  assert.equal(ms[0].castShadow, false);
+  assert.ok(ms.length >= 1 && ms.length <= 6, `${ms.length} far-land meshes: the grass, the sand, the seabed and the rock of the headlands (round 7, the bay), not 54`);
+  const bb = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity }; let tris = 0, verts = 0;
+  for (const m of ms) {
+    const g = m.geometry; g.computeBoundingBox();
+    bb.x0 = Math.min(bb.x0, g.boundingBox.min.x); bb.x1 = Math.max(bb.x1, g.boundingBox.max.x); bb.z0 = Math.min(bb.z0, g.boundingBox.min.z); bb.z1 = Math.max(bb.z1, g.boundingBox.max.z);
+    tris += g.index.count / 3; verts += g.attributes.position.count;
+    assert.equal(m.castShadow, false);
+  }
+  assert.ok(bb.x0 <= -745 && bb.x1 >= 745 && bb.z0 <= -745 && bb.z1 >= 745, `covers +-750 m: ${bb.x0}..${bb.x1}, ${bb.z0}..${bb.z1}`);
+  assert.ok(tris > 35000 && verts < 200000, `${tris} triangles, ${verts} vertices`);
 });
 
 test('budget: the batched world stays inside the draw and triangle allowance', () => {

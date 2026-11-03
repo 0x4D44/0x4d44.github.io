@@ -10,6 +10,7 @@ import { makeNamer } from './names.js';
 import { buildNav } from './nav.js';
 import { buildPlaces } from './places.js';
 import { linkCourtSide } from './courtside.js';
+import { createCoast, Z0 as COAST_Z0, BAY_X } from './coast.js';
 
 const round05 = (v) => Math.round(v * 20) / 20;
 const GMAX = { road: 0.10, street: 0.09, alley: 0.17, path: 0.19 };
@@ -413,8 +414,8 @@ export function generatePlan(ctx) {
   }
   for (const st of streets.filter((s) => s.kind === 'stair')) stampCorridor(st);
 
-  // ---- heightAt: grid + exact plinth inside lot footprints (+0.3 m)
-  const heightAt = (x, z) => {
+  // ---- heightAt: grid + exact plinth inside lot footprints (+0.3 m); south of the plot's edge the beach (coast.js) takes over
+  const inner = (x, z) => {
     const arr = lotCells.get(ckey(Math.floor(x / CELLM), Math.floor(z / CELLM)));
     if (arr) {
       let best = null, bd = 1e9;
@@ -428,12 +429,17 @@ export function generatePlan(ctx) {
     }
     return field.sample(x, z);
   };
+  // the beach: south of z = COAST_Z0 and between the walls the ground is coast.heightAt (deck, sea wall, sand, seabed); everything else is the plot as before.
+  // `inner` is what heightAt was; the coast's deck rises from the plot's own height at its edge, so the two meet without a step (tests/world-coast.test.mjs).
+  const coast = createCoast({ seed, edge: (x) => inner(x, COAST_Z0) });
+  const heightAt = (x, z) => (z > COAST_Z0 && x >= -BAY_X && x <= BAY_X ? coast.heightAt(x, z) : inner(x, z));
 
   const plan = {
     seed, bounds: { min: -HALF, max: HALF }, heightAt, lots, streets, plazas,
-    nav: { nodes: [], edges: [] }, pois: [], landmarks: [], areas: [], spawn: { x: 0, z: 0, yaw: 0 }, warnings,
+    nav: { nodes: [], edges: [] }, pois: [], landmarks: [], areas: [], spawn: { x: 0, z: 0, yaw: 0 }, warnings, coast,
   };
   Object.defineProperty(plan, '_field', { value: field, enumerable: false });
+  Object.defineProperty(plan, '_inner', { value: inner, enumerable: false });      // the plot's own ground (what heightAt was before the beach): the far land (periphery.js) is built on it
   Object.defineProperty(plan, '_byId', { value: byId, enumerable: false });
   Object.defineProperty(plan, '_T', { value: T, enumerable: false });
   Object.defineProperty(plan, '_joiners', { value: joiners, enumerable: false });

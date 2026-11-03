@@ -150,7 +150,7 @@ test('the lantern: four panes of glass round a lit bulb, a tiny roof of its own 
     assert.ok(r >= g && g > bl && r > 200 && L.intensity >= 8 && L.distance >= 6 && L.distance <= 14, `a warm light (0x${L.color.toString(16)}) that reaches the deck under the roof: ${L.intensity} cd over ${L.distance} m`);
   }
   assert.equal(glowLog.list.filter(near).length, 0, 'the tower adds nothing to ctx.glow: the vista test counts every entry of that registry as a lit window of the far city');
-  assert.ok(B.glow === undefined && glowLog.list.length > 800, 'TEETH: the recorder holds the far city\'s windows, so an entry of the tower would have shown above');
+  assert.ok(B.glow === undefined && glowLog.list.length > 300, `TEETH: the recorder holds the far village's windows (${glowLog.list.length}: the valley city is gone, the headland village is the far city now), so an entry of the tower would have shown above`);
   const finalize = (list) => { const gl = new Glow({ lights: { list }, scene: { add() {}, remove() {} }, plan: A.plan }); gl.finalize({}); return gl; };
   const halo = finalize(A.lights.list), pos = halo.points.geometry.attributes.position;
   assert.equal(halo.street.filter(near).length, 1, 'the engine\'s glow takes the lantern for a street lamp: one sprite for it');

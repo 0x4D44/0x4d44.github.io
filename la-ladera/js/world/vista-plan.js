@@ -4,6 +4,8 @@ import { makeRng } from '../core/rng.js';
 import { makeFarHeight, makeFarTerrainSampler, urbanDensity } from './periphery.js';
 import { project } from './geom.js';
 import { HALF } from './field.js';
+import { DRY, vistaSites } from './vista.js';
+import { SEA, Z0 as COAST_Z0 } from './coast.js';
 
 export const VISTA_LIMITS = Object.freeze({
   tileSize: 160, farTriangles: 42000, triangles: 60000,
@@ -85,13 +87,14 @@ export function planVista(plan, data, limits = VISTA_LIMITS) {
     if (!style.roof.length) style.roof = take(byCategory.roof, 3);
     styles.set(key, style); return style;
   };
-  const houses = [], pieces = [], clusters = [], regionCost = { south: 0, east: 0, west: 0, north: 0 };
-  const quota = { south: 0.62, east: 0.145, west: 0.145, north: 0.09 };
+  const houses = [], pieces = [], clusters = [], regionCost = { village: 0, east: 0, west: 0, north: 0 };
+  // the valley city of the south is gone (the bay, coast.js): the kit's terraces climb the west headland (the village, its fronts to the bay), then the two flanks and the north
+  const quota = { village: 0.3, east: 0.28, west: 0.26, north: 0.16 };
   const candidates = [];
   const allowed = (p) => {
     if (!outsideVistaPlot(p)) return false;
     const b = vistaBounds(p);
-    if (b.z0 < 282 && b.z1 > 204) return false; // leave the river corridor open, including the entire footprint
+    if (b.z1 > COAST_Z0 - 3 && [[b.x0, b.z0], [b.x1, b.z0], [b.x0, b.z1], [b.x1, b.z1]].some(([x, z]) => far(x, z) < SEA + DRY)) return false;   // dry ground only: the whole footprint stays out of the bay
     if (far.road && project(far.road.pts, far.road.cum, p.x, p.z).d < Math.hypot(p.size[0], p.size[2]) / 2 + 9) return false;
     return true;
   };
@@ -101,11 +104,11 @@ export function planVista(plan, data, limits = VISTA_LIMITS) {
     const r = rng.fork(`${region}:${x}:${z}`);
     candidates.push({ region, x: x + r.range(-1.5, 1.5), z: z + r.range(-0.7, 0.7), ry, score: score + density * 1.7 + r.range(0, 0.15), r });
   };
-  // Shared contour-like rows; side districts turn their fronts downhill toward the playable barrio.
-  for (let z = 332; z <= 640; z += 12) for (let x = -300; x <= 300; x += 38) {
-    const centers = [[-155, 465], [35, 425], [180, 525]];
-    const d = Math.min(...centers.map(([cx, cz]) => Math.hypot((x - cx) / 135, (z - cz) / 140)));
-    addCandidate('south', x, z, Math.PI, -d);
+  // Shared contour-like rows; side districts turn their fronts downhill toward the playable barrio. The headland village faces the bay.
+  const wh = plan.coast.headlands.find((k) => k.x < 0), church = vistaSites(plan).church;
+  for (let z = wh.z - 90; z <= wh.z + 90; z += 12) for (let x = wh.x - 90; x <= wh.x + 90; x += 22) {     // the village wraps the church's pad (its ground is the church's: vista-kit.js clearLandmarks would drop a terrace on it): a ring of terraces, the first 14 m out
+    const dc = Math.hypot(x - church.x, z - church.z);
+    if (dc >= church.r + 14) addCandidate('village', x, z, Math.atan2(20 - x, 140 - z), -Math.abs(dc - (church.r + 26)) / 60);
   }
   for (const sign of [-1, 1]) for (let x = 128; x <= 260; x += 12) for (let z = -165; z <= 148; z += 38) {
     const d = Math.hypot((x - 170) / 95, (z + 15) / 180);

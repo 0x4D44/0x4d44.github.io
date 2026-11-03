@@ -9,7 +9,7 @@ import { resolve, join, dirname } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { pngCrc } from '../tools/textures/beach_png.mjs';
 import { validateBeach, decodePng, edgeDifferences, gpuBytes, sha256, lfBytes, ROOT, MANIFEST,
-  REQUIRED, MAX_BYTES, MAX_GPU_BYTES } from '../tools/textures/beach_validate.mjs';
+  REQUIRED, REGISTERED, MAX_BYTES, MAX_GPU_BYTES } from '../tools/textures/beach_validate.mjs';
 
 function caseTest(id, title, run) {
   test(`[${id}] ${title}`, (t) => run(t, ['all', id].includes(process.env.BEACH_SABOTAGE)));
@@ -206,13 +206,23 @@ caseTest('sign_proof', 'visual text proof must be a complete decoded rendered PN
   rejected(f, /sign proof: .*trailing/);
 });
 
-caseTest('offline', 'new pack stays out of the active model and texture manifests', (t, sabotage) => {
+caseTest('offline', 'new pack stays out of the active model manifest, and out of the texture manifest but for the registered coast materials', (t, sabotage) => {
   const f = fixture(t);
   if (!sabotage) {
     const path = resolve(f.root, 'assets/models/manifest.json'), active = JSON.parse(readFileSync(path));
     active.files.push('manifest.beach.json'); writeFileSync(path, JSON.stringify(active));
   }
   rejected(f, /must not enter active model or texture manifests/);
+  // the registered materials are in the active texture manifest and pass; an unregistered one, or a registered id pointing at a file the pack does not have, does not
+  const ok = fixture(t), textures = (x) => resolve(x.root, 'assets/textures/manifest.json'), read = (x) => JSON.parse(readFileSync(textures(x)));
+  assert.deepEqual(REGISTERED.filter((id) => !(id in read(ok).textures)), [], 'the coast materials are registered in the active texture manifest');
+  assert.equal(validateBeach({ root: ok.root, complete: true }).ok, true, errors(validateBeach({ root: ok.root, complete: true })));
+  const extra = fixture(t), tex = read(extra); tex.textures.gull_sprites = { map: 'beach/gull_sprites.png', size: 1024 }; writeFileSync(textures(extra), JSON.stringify(tex));
+  rejected(extra, /"gull_sprites" is not a registered coast material/);
+  const stray = fixture(t), tex2 = read(stray); tex2.textures.sand_dry.map = 'beach/not_in_the_pack.png'; writeFileSync(textures(stray), JSON.stringify(tex2));
+  rejected(stray, /"sand_dry\.map" \(beach\/not_in_the_pack\.png\) is not a PNG of the library/);
+  const lost = fixture(t), tex3 = read(lost); delete tex3.textures; writeFileSync(textures(lost), JSON.stringify(tex3));
+  rejected(lost, /no `textures` table to check/);
 });
 
 caseTest('normal_data', 'normal PNGs contain unit forward-facing tangent vectors after re-pinning', (t, sabotage) => {
