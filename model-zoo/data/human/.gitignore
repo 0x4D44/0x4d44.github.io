@@ -1,0 +1,3 @@
+# Human baseline texts stay local: WritingPrompts stories belong to their Reddit authors.
+# The site publishes only metrics derived from them.
+*.jsonl

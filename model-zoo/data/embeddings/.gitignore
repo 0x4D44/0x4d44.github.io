@@ -1,0 +1,2 @@
+# Raw 1536-d vectors are large; the site ships only the 2-D projection made from them.
+*.json
