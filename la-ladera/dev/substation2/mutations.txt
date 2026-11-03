@@ -1,0 +1,38 @@
+KILLED complete: complete library decodes every catalogue item and LOD within all byte budgets
+KILLED metric: metre dimensions come from transformed binary vertices rather than manifest promises
+KILLED binary_header: binary parser rejects truncated containers and accessor overruns
+KILLED nonfinite: binary parser rejects non-finite vertex data
+KILLED indices: binary parser rejects triangle indices outside the real vertex array
+KILLED bounds: accessor min and max cannot conceal changed binary positions
+KILLED winding: inward winding and degenerate faces are rejected independently of triangle totals
+KILLED normals: exported normal vectors must be finite and unit length
+KILLED uv: atlas coordinates must remain inside their assigned tile
+KILLED tile_binding: unit UV coordinates selecting a different atlas cell are rejected
+KILLED sign_orientation: warning lettering retains upright texture orientation after Blender export
+KILLED dependencies: unknown materials and embedded image dependencies are rejected
+KILLED node_graph: cyclic, duplicate and orphan nodes cannot masquerade as a complete asset
+KILLED shared_mesh: mesh instancing is accepted while every instance contributes triangles and metre bounds
+KILLED metadata: a forged triangle count and checksum fail against the generated file bytes
+KILLED lod: full-detail geometry relabelled as LOD cannot evade the forty-percent cap
+KILLED triangle_cap: duplicated real mesh instances exceed the per-piece triangle cap even with honest metadata
+KILLED paths: manifest paths cannot escape the substation payload directory
+KILLED stale_budget: undeclared and stale files still count against the strict model budget
+KILLED atlas: the PBR atlas channels contain complete independently decoded PNG rasters
+KILLED anchors: equipment exposes named lamp, hinge, hum and noncollapsed navigation data
+KILLED isolation: the offline library and atlas cannot enter the production boot manifests
+KILLED plan_units: yard layout remains explicit metre data with a visual-clearance qualification
+KILLED plan_refs: yard placements resolve every equipment type to an actual catalogue asset
+KILLED plan_clearance: live conductor fence crossings respect the declared visual clearance height
+KILLED plan_phases: three-phase equipment positions retain their declared spacing
+KILLED plan_required: the yard data includes the full twelve-panel indoor switchboard
+KILLED plan_boundary: ordinary equipment centres stay within the compound while line towers are external
+KILLED cli: complete validator CLI returns success under the executing Node runtime
+KILLED cat_equal_end: catenary equal-height endpoints and midpoint sag are exact
+KILLED cat_unequal_sag: catenary unequal-height endpoints use midpoint sag below the chord
+KILLED cat_radius: catenary instance transforms align the unit Y segment and preserve radius
+KILLED cat_seg_bound: catenary adaptive segments obey the physical length cap
+KILLED cat_straight: catenary zero and tiny sag remain finite and approach a straight span
+KILLED cat_invalid: catenary rejects invalid numeric domains and unsupported vertical spans
+KILLED cat_alloc: catenary rejects allocations beyond its explicit bounded instance budget
+KILLED cat_browser: catenary module body executes without process or Node-only imports in a browser realm
+MUTATIONS: 37/37 killed under v22.16.0

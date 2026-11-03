@@ -1,0 +1,233 @@
+TAP version 13
+# substation: 59 near + 59 LOD1; models 3115422; textures 3884196; GPU 33554432 bytes
+# Subtest: complete library decodes every catalogue item and LOD within all byte budgets
+ok 1 - complete library decodes every catalogue item and LOD within all byte budgets
+  ---
+  duration_ms: 409.798312
+  type: 'test'
+  ...
+# Subtest: metre dimensions come from transformed binary vertices rather than manifest promises
+ok 2 - metre dimensions come from transformed binary vertices rather than manifest promises
+  ---
+  duration_ms: 627.332005
+  type: 'test'
+  ...
+# Subtest: binary parser rejects truncated containers and accessor overruns
+ok 3 - binary parser rejects truncated containers and accessor overruns
+  ---
+  duration_ms: 1.635312
+  type: 'test'
+  ...
+# Subtest: binary parser rejects non-finite vertex data
+ok 4 - binary parser rejects non-finite vertex data
+  ---
+  duration_ms: 1.18269
+  type: 'test'
+  ...
+# Subtest: binary parser rejects triangle indices outside the real vertex array
+ok 5 - binary parser rejects triangle indices outside the real vertex array
+  ---
+  duration_ms: 1.182801
+  type: 'test'
+  ...
+# Subtest: accessor min and max cannot conceal changed binary positions
+ok 6 - accessor min and max cannot conceal changed binary positions
+  ---
+  duration_ms: 1.270923
+  type: 'test'
+  ...
+# Subtest: inward winding and degenerate faces are rejected independently of triangle totals
+ok 7 - inward winding and degenerate faces are rejected independently of triangle totals
+  ---
+  duration_ms: 1.763464
+  type: 'test'
+  ...
+# Subtest: exported normal vectors must be finite and unit length
+ok 8 - exported normal vectors must be finite and unit length
+  ---
+  duration_ms: 1.011062
+  type: 'test'
+  ...
+# Subtest: atlas coordinates must remain inside their assigned tile
+ok 9 - atlas coordinates must remain inside their assigned tile
+  ---
+  duration_ms: 1.147838
+  type: 'test'
+  ...
+# Subtest: unit UV coordinates selecting a different atlas cell are rejected
+ok 10 - unit UV coordinates selecting a different atlas cell are rejected
+  ---
+  duration_ms: 1.062128
+  type: 'test'
+  ...
+# Subtest: warning lettering retains upright texture orientation after Blender export
+ok 11 - warning lettering retains upright texture orientation after Blender export
+  ---
+  duration_ms: 0.965273
+  type: 'test'
+  ...
+# Subtest: unknown materials and embedded image dependencies are rejected
+ok 12 - unknown materials and embedded image dependencies are rejected
+  ---
+  duration_ms: 1.393207
+  type: 'test'
+  ...
+# Subtest: cyclic, duplicate and orphan nodes cannot masquerade as a complete asset
+ok 13 - cyclic, duplicate and orphan nodes cannot masquerade as a complete asset
+  ---
+  duration_ms: 2.206732
+  type: 'test'
+  ...
+# Subtest: mesh instancing is accepted while every instance contributes triangles and metre bounds
+ok 14 - mesh instancing is accepted while every instance contributes triangles and metre bounds
+  ---
+  duration_ms: 1.682623
+  type: 'test'
+  ...
+# Subtest: a forged triangle count and checksum fail against the generated file bytes
+ok 15 - a forged triangle count and checksum fail against the generated file bytes
+  ---
+  duration_ms: 540.14248
+  type: 'test'
+  ...
+# Subtest: full-detail geometry relabelled as LOD cannot evade the forty-percent cap
+ok 16 - full-detail geometry relabelled as LOD cannot evade the forty-percent cap
+  ---
+  duration_ms: 553.944089
+  type: 'test'
+  ...
+# Subtest: duplicated real mesh instances exceed the per-piece triangle cap even with honest metadata
+ok 17 - duplicated real mesh instances exceed the per-piece triangle cap even with honest metadata
+  ---
+  duration_ms: 431.249701
+  type: 'test'
+  ...
+# Subtest: manifest paths cannot escape the substation payload directory
+ok 18 - manifest paths cannot escape the substation payload directory
+  ---
+  duration_ms: 166.088134
+  type: 'test'
+  ...
+# Subtest: undeclared and stale files still count against the strict model budget
+ok 19 - undeclared and stale files still count against the strict model budget
+  ---
+  duration_ms: 445.746062
+  type: 'test'
+  ...
+# Subtest: the PBR atlas channels contain complete independently decoded PNG rasters
+ok 20 - the PBR atlas channels contain complete independently decoded PNG rasters
+  ---
+  duration_ms: 71.089343
+  type: 'test'
+  ...
+# Subtest: equipment exposes named lamp, hinge, hum and noncollapsed navigation data
+ok 21 - equipment exposes named lamp, hinge, hum and noncollapsed navigation data
+  ---
+  duration_ms: 303.072342
+  type: 'test'
+  ...
+# Subtest: the offline library and atlas cannot enter the production boot manifests
+ok 22 - the offline library and atlas cannot enter the production boot manifests
+  ---
+  duration_ms: 289.168012
+  type: 'test'
+  ...
+# Subtest: yard layout remains explicit metre data with a visual-clearance qualification
+ok 23 - yard layout remains explicit metre data with a visual-clearance qualification
+  ---
+  duration_ms: 198.453831
+  type: 'test'
+  ...
+# Subtest: yard placements resolve every equipment type to an actual catalogue asset
+ok 24 - yard placements resolve every equipment type to an actual catalogue asset
+  ---
+  duration_ms: 1.101148
+  type: 'test'
+  ...
+# Subtest: live conductor fence crossings respect the declared visual clearance height
+ok 25 - live conductor fence crossings respect the declared visual clearance height
+  ---
+  duration_ms: 1.493127
+  type: 'test'
+  ...
+# Subtest: three-phase equipment positions retain their declared spacing
+ok 26 - three-phase equipment positions retain their declared spacing
+  ---
+  duration_ms: 1.566958
+  type: 'test'
+  ...
+# Subtest: the yard data includes the full twelve-panel indoor switchboard
+ok 27 - the yard data includes the full twelve-panel indoor switchboard
+  ---
+  duration_ms: 1.124312
+  type: 'test'
+  ...
+# Subtest: ordinary equipment centres stay within the compound while line towers are external
+ok 28 - ordinary equipment centres stay within the compound while line towers are external
+  ---
+  duration_ms: 0.944993
+  type: 'test'
+  ...
+# Subtest: complete validator CLI returns success under the executing Node runtime
+ok 29 - complete validator CLI returns success under the executing Node runtime
+  ---
+  duration_ms: 618.190274
+  type: 'test'
+  ...
+# Subtest: catenary equal-height endpoints and midpoint sag are exact
+ok 30 - catenary equal-height endpoints and midpoint sag are exact
+  ---
+  duration_ms: 0.370818
+  type: 'test'
+  ...
+# Subtest: catenary unequal-height endpoints use midpoint sag below the chord
+ok 31 - catenary unequal-height endpoints use midpoint sag below the chord
+  ---
+  duration_ms: 0.324248
+  type: 'test'
+  ...
+# Subtest: catenary instance transforms align the unit Y segment and preserve radius
+ok 32 - catenary instance transforms align the unit Y segment and preserve radius
+  ---
+  duration_ms: 0.456256
+  type: 'test'
+  ...
+# Subtest: catenary adaptive segments obey the physical length cap
+ok 33 - catenary adaptive segments obey the physical length cap
+  ---
+  duration_ms: 0.35936
+  type: 'test'
+  ...
+# Subtest: catenary zero and tiny sag remain finite and approach a straight span
+ok 34 - catenary zero and tiny sag remain finite and approach a straight span
+  ---
+  duration_ms: 0.184498
+  type: 'test'
+  ...
+# Subtest: catenary rejects invalid numeric domains and unsupported vertical spans
+ok 35 - catenary rejects invalid numeric domains and unsupported vertical spans
+  ---
+  duration_ms: 0.209535
+  type: 'test'
+  ...
+# Subtest: catenary rejects allocations beyond its explicit bounded instance budget
+ok 36 - catenary rejects allocations beyond its explicit bounded instance budget
+  ---
+  duration_ms: 3.30224
+  type: 'test'
+  ...
+# Subtest: catenary module body executes without process or Node-only imports in a browser realm
+ok 37 - catenary module body executes without process or Node-only imports in a browser realm
+  ---
+  duration_ms: 5.422762
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4732.929116
