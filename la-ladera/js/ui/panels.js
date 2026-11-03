@@ -84,6 +84,7 @@ export function settingsPanel(ctx) {
         slider('sens', 'Sensibilidad del ratón', 'Mouse sensitivity', 0.2, 3, 0.05, (v) => `${v.toFixed(2)}×`),
         check('invertY', 'Invertir el eje vertical', 'Invert the vertical axis'),
         check('headBob', 'Balanceo de la cámara al caminar', 'Camera bob while walking'),
+        slider('seaMotion', 'Movimiento del mar', 'Sea motion', 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`, both('Cuánto sube y baja la cabeza con el oleaje al nadar. 0 la deja quieta.', 'How far your head rides the swell while swimming. 0 keeps it steady.')),
         h('h3', {}, 'Sonido y voz · Sound and voice'),
         slider('volume', 'Volumen general', 'Master volume', 0, 1, 0.05, (v) => `${Math.round(v * 100)}%`),
         check('ttsOn', 'Los vecinos hablan en voz alta', 'Neighbours speak aloud', both('Si lo desactivas solo verás los subtítulos.', 'Turn it off to read the subtitles only.')),
@@ -108,11 +109,13 @@ const TIPS = [
   ['Las escaleras y los pasajes llevan a patios escondidos, murales y miradores. Todo lo que encuentres se anota en el diario.', 'Stairs and passages lead to hidden courtyards, murals and viewpoints. Whatever you find is written in the journal.'],
   ['Cambia la hora en Ajustes para ver el barrio de mañana, de tarde o con las ventanas encendidas.', 'Change the time in Settings to see the barrio at dawn, in the afternoon or with the windows lit.'],
   ['Si te atascas, abre el menú con Esc y elige «Volver al punto de partida».', 'If you get stuck, open the menu with Esc and pick “Volver al punto de partida” (back to the start).'],
+  ['En el mar, C te hace bucear, Espacio te sube y Shift nada más rápido. Mirar hacia abajo mientras avanzas también bucea. Las escaleras del muelle y de la balsa te sacan del agua.', 'In the sea, C dives, Space comes up and Shift swims faster. Looking down while you swim forward dives too. The pier’s and the raft’s ladders get you out.'],
 ];
 export function helpPanel() {
   const K = (...k) => h('span', {}, k.map((x) => h('kbd', {}, x)));
   const rows = [
     ['Caminar', K('W', 'A', 'S', 'D'), 'Walk'], ['Mirar', 'Ratón', 'Look'], ['Correr', K('Shift'), 'Run'], ['Agacharse', K('C'), 'Crouch'], ['Saltar', K('Espacio'), 'Jump'],
+    ['Nadar: bucear, subir', K('C', 'Espacio'), 'Swim: dive, come up'],
     ['Abrir, hablar, usar', K('E'), 'Open, talk, use (or click)'], ['Elegir respuesta', K('1', '2', '3', '4'), 'Pick a reply'], ['Salir de una conversación', K('Q'), 'Leave a conversation (Esc too)'],
     ['Mapa', K('M'), 'Map'], ['Diario', K('J'), 'Journal'], ['Ayuda', K('H'), 'Help'], ['Pausa y menú', K('Esc'), 'Pause and menu'],
   ];

@@ -9,6 +9,7 @@ export const DEFAULTS = {
   sens: 1.0,            // multiplier of the base mouse sensitivity
   invertY: false,
   headBob: true,
+  seaMotion: 1,         // 0..1: how far a swimmer's head rides the swell and leans with the surface (0 = a steady head; engine/swim.js). It never lets the head under at the surface.
   volume: 0.8,          // master 0..1
   quality: 'auto',      // 'auto' | 'low' | 'medium' | 'high'
   subs: true,           // subtitles on
@@ -21,7 +22,7 @@ export const DEFAULTS = {
   address: 'm',         // how the neighbours address you in dialogue: 'm' = vecino, mijo, señor; 'f' = vecina, mija, señora (people/ reads ctx.settings.v.address)
 };
 
-const RANGE = { fov: [55, 100], sens: [0.2, 3], volume: [0, 1], ttsRate: [0.6, 1.4] };
+const RANGE = { fov: [55, 100], sens: [0.2, 3], seaMotion: [0, 1], volume: [0, 1], ttsRate: [0.6, 1.4] };
 const ENUM = { quality: ['auto', 'low', 'medium', 'high'], subLang: ['both', 'es', 'en'], address: ['m', 'f'] };
 
 export function createSettings(ctx) {

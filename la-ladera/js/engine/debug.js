@@ -2,6 +2,7 @@
 // Everything is deterministic: use ?manual=1 so nothing advances unless you call step()/walk().
 // Keep this API stable - the review harness depends on it. Add, don't rename.
 import { installOverlay } from './overlay.js';
+import { tpPlace } from './swim.js';
 
 export function installDebug(ctx) {
   const api = window.__ladera = window.__ladera ?? {};
@@ -14,7 +15,8 @@ export function installDebug(ctx) {
       const p = P(), s = p?.s, st = ctx.stats ?? {}, info = ctx.renderer?.info;
       return {
         pos: s ? [r2(s.x), r2(s.y), r2(s.z)] : null, yaw: p ? +p.yaw.toFixed(3) : null, pitch: p ? +p.pitch.toFixed(3) : null,
-        onGround: s?.onGround, blocked: s?.blocked, hour: ctx.hour, building: p?.building ?? null,
+        onGround: s?.onGround, blocked: s?.blocked, hour: ctx.hour, building: p?.building ?? null, eyeY: p ? r2(p.eyeY) : null,
+        water: p?.water ? { mode: p.water.mode, depth: r2(p.water.depth), diving: p.water.diving, under: p.water.under, breath: r2(p.water.breath.t), breathSoft: r2(p.water.breathSoft), vy: r2(p.water.vy), climb: p.water.climb?.id ?? null } : null,
         indoors: p?.indoors ?? null, floor: p?.floor ?? null, room: p?.room?.id ?? null, surface: p?.surface ?? null,
         fps: st.fps, frameMs: st.frameMs, drawCalls: st.drawCalls ?? info?.render.calls, triangles: st.triangles ?? info?.render.triangles,
         geometries: info?.memory.geometries, textures: info?.memory.textures, programs: info?.programs?.length, warm: ctx.warm ?? null,
@@ -29,11 +31,19 @@ export function installDebug(ctx) {
     },
     /** Put the player at (x,z). o: { floor: index into ascending surface list at that point (0 = lowest), y, yaw, pitch } (angles in radians). */
     teleport(x, z, o = {}) { P().teleport(x, z, o); return api.state(); },
+    /** The beach's four places: 'beach' (the sand, the water ahead), 'pier' (its head), 'swim' (at the surface, looking back), 'under' (on the seabed by the sunken anchor). o: { x, z, y, yaw, pitch, swim } overrides. */
+    tp(where = 'beach', o = {}) {
+      const C = ctx.plan?.coast;
+      if (!C) throw new Error('tp: this world has no beach (?skip=coast)');
+      const t = tpPlace(C, where, o);
+      P().teleport(t.x, t.z, { y: t.y, yaw: t.yaw, pitch: t.pitch, swim: !!t.swim });
+      return api.state();
+    },
     /** Look in a direction (radians; yaw 0 = north/-z, pitch + = up). */
     look(yaw, pitch = 0) { P().setLook(yaw, pitch); },
     /** Look at a world point. */
     lookAt(x, y, z) {
-      const p = P(), dx = x - p.s.x, dz = z - p.s.z, dy = y - (p.s.y + 1.64);
+      const p = P(), dx = x - p.s.x, dz = z - p.s.z, dy = y - (p.water?.mode === 'swim' ? p.eyeY : p.s.y + 1.64);          // (a swimmer's eye is 0.44 over his feet, not 1.64)
       p.setLook(Math.atan2(-dx, -dz), Math.atan2(dy, Math.hypot(dx, dz)));
     },
     /** Advance the simulation n frames of dt seconds (no rendering). */
