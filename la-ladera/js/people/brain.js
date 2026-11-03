@@ -6,12 +6,16 @@
 // Activities (`do_<name>(npc, o)` returns true when it started something): wander errand sweep lean bench chat court greet stand phone pray.
 // Places come from `spots.js` (outdoor POIs of the plan + indoor anchors of the interiors); doors from `doors.js`; every walk goes over the nav graph and
 // ends on the exact spot. Away = hidden inside a building (asleep, at school, on duty); they come out through the same door the next block.
-import { blockAt, freeChoices, nearPrayer } from './schedule.js';
+import { blockAt, freeChoices, nearPrayer, curfewH } from './schedule.js';
 import { twinWeight, spreadNodes, isTwin, slotAt, refOf, SLOT_R, TWIN_SLOT_R } from './twins.js';
 import { ahead, ARRIVAL_BANDS } from './arrival.js';
 
 const pickW = (rng, list) => { let t = 0; for (const [, w] of list) t += w; let r = rng.next() * t; for (const [v, w] of list) { r -= w; if (r <= 0) return v; } return list[list.length - 1][0]; };
 const span = (rng, a, b) => a + rng.next() * (b - a);
+/** A keeper at the counter looks at the phone with this chance per stand, and at most POST_PHONES of them do at once, at the counter or out on a break (R3-211: 9 of 28 were on the phone at 07:36). */
+export const POST_PHONE = 0.08, POST_PHONES = 3;
+/** Seconds between two people stepping out of the same door (a person's own share of it: x 0.8 to 1.6), so a class that comes out together comes out in a line and not in one square metre (R3-206). */
+export const EXIT_GAP = 1.5;
 const yawTo = (ax, az, bx, bz) => Math.atan2(bx - ax, bz - az);
 const dist2d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 /** A node of the street graph somebody may stop on (stand about, dwell at a site, wait at the stand): not a door, and not a stair. A stair is one body wide between its rails and every walker keeps its middle (`waypoints`): whoever stops there leaves the next walker no way round, and the separation steering pushes that walker into the rails, where it stays. */
@@ -20,7 +24,7 @@ const RADIUS = { shopkeeper: 18, elder: 55, kid: 90, teen: 110, homemaker: 90, n
 const HIDDEN_WORK = new Set(['enfermera']);
 
 export class Brain {
-  constructor(world) { this.w = world; }
+  constructor(world) { this.w = world; this.exitFree = new Map(); }       // exitFree: door id -> the world time the next person may step out of it
 
   awakeAt(npc, hour) { const h = hour; return h >= npc.riseH && h < npc.bedH; }
 
@@ -224,17 +228,26 @@ export class Brain {
     return pts;
   }
 
-  /** Out through an entrance from inside (the NPC is hidden or inside): reveal behind the door, walk out and a step beyond, then `arrive`. */
+  /**
+   * Out through an entrance from inside (the NPC is hidden or inside): reveal behind the door, walk out and a step beyond, then `arrive`. Everybody who leaves by one entrance leaves one after
+   * another, `EXIT_GAP` apart: a school that the clock empties in one tick (the hour moved from the lessons to the evening) used to put its class on one spot, 19 within 3 m and 22 pairs closer
+   * than half a metre (R3-206). Somebody who is put elsewhere while they wait (`hideAway`, `revealAt`) is not let out afterwards.
+   */
   exit(npc, ent, arrive) {
-    const W = this.w; W.doors.know(ent.doorId, ent);
-    W.doors.hold(ent.doorId, npc.id); npc.emerging = true;
-    const out = () => {
-      W.revealAt(npc, ent.inside.x, ent.inside.z, ent.inside.y, yawTo(ent.inside.x, ent.inside.z, ent.outside.x, ent.outside.z));
-      const dx = ent.outside.x - ent.inside.x, dz = ent.outside.z - ent.inside.z, l = Math.hypot(dx, dz) || 1;
-      const beyond = { x: ent.outside.x + (dx / l) * 1.4, z: ent.outside.z + (dz / l) * 1.4, y: ent.outside.y };
-      npc.walk(W, [ent.outside, beyond], (n) => { W.doors.release(ent.doorId, n.id); arrive(n, W); }, this.speedFor(npc));
+    const W = this.w; W.doors.know(ent.doorId, ent); npc.emerging = true;
+    const go = () => {
+      W.doors.hold(ent.doorId, npc.id);
+      const out = () => {
+        W.revealAt(npc, ent.inside.x, ent.inside.z, ent.inside.y, yawTo(ent.inside.x, ent.inside.z, ent.outside.x, ent.outside.z));
+        const dx = ent.outside.x - ent.inside.x, dz = ent.outside.z - ent.inside.z, l = Math.hypot(dx, dz) || 1;
+        const beyond = { x: ent.outside.x + (dx / l) * 1.4, z: ent.outside.z + (dz / l) * 1.4, y: ent.outside.y };
+        npc.walk(W, [ent.outside, beyond], (n) => { W.doors.release(ent.doorId, n.id); arrive(n, W); }, this.speedFor(npc));
+      };
+      if (W.doors.isOpen(ent.doorId)) out(); else W.later(0.5, out);
     };
-    if (W.doors.isOpen(ent.doorId)) out(); else W.later(0.5, out);
+    const at = Math.max(W.t, this.exitFree.get(ent.doorId) ?? 0), tok = npc.exitTok = (npc.exitTok ?? 0) + 1;
+    this.exitFree.set(ent.doorId, at + EXIT_GAP * (0.8 + 0.8 * (npc.jit?.[2] ?? 0.5)));
+    if (at <= W.t) go(); else W.later(at - W.t, () => { if (npc.away && npc.emerging && npc.exitTok === tok) go(); });
   }
 
   // ---- hiding inside and coming out -----------------------------------------------------------------------------------------------------------
@@ -302,6 +315,7 @@ export class Brain {
    */
   stayOver(npc, blk, why = npc.awayWhy) {
     if (npc.routine === 'shopkeeper' && (why === 'home' || why === 'sleep')) return blk === 'work';             // a keeper is upstairs (up or in bed: `tick` keeps the label) until the shop opens
+    if (why === 'home' && this.w.hour >= curfewH(npc)) return blk === 'school' || blk === 'work';       // a child in by dusk, a teenager in by nine: home until bed time (`tick` turns the stay into the night)
     if (why === 'home' || why === 'visit') return this.w.t >= npc.stayUntil || blk === 'school' || blk === 'work' || (why === 'visit' && blk === 'sleep');
     return blk !== why;
   }
@@ -419,7 +433,7 @@ export class Brain {
     }
     spot.waiting = npc.id;
     npc.st.x = spot.x + px * 0.4; npc.st.z = spot.z + pz * 0.4; npc.lastX = npc.st.x; npc.lastZ = npc.st.z;
-    npc.stand(W, r.chance(0.35) ? 'phone' : 'wait', span(r, 30, 60), spot.ry + Math.PI / 2);
+    npc.stand(W, r.chance(0.35) && this.phoneFree(npc) ? 'phone' : 'wait', span(r, 30, 60), spot.ry + Math.PI / 2);        // (a keeper on a break counts against the cap too: R3-211)
     return true;
   }
 
@@ -538,13 +552,26 @@ export class Brain {
     return this.goIn(npc, npc.homeLotId, why);
   }
 
-  /** At the counter: sell, idle, look at the phone; now and then step out for a minute. */
+  /** How many keepers other than `npc` are on the phone right now: behind their counters, or out on a break at a corner. */
+  keepersOnPhone(npc) {
+    const W = this.w; let c = 0;
+    for (const n of W.npcs ?? []) if (n !== npc && n.act === 'phone' && n.shopLotId && !n.away && W.shops.get(n.shopLotId)?.keeper === n.id) c++;
+    return c;
+  }
+  /** May `npc` take out the phone? Anybody who keeps no shop; a keeper while fewer than POST_PHONES of the others are on theirs. */
+  phoneFree(npc) { return !npc.shopLotId || this.keepersOnPhone(npc) < POST_PHONES; }
+
+  /**
+   * At the counter: sell, idle, wait, look at the phone; now and then step out for a minute (sweep the doorstep, lean on the wall, chat at the corner). R3-211: with one chance in eight per stand,
+   * 9 of the 28 keepers were on their phones at 07:36 and 6 at 10:30, so that half of the openers were "estaba mirando el celular": the phone is a chance in twelve (the rest of it is
+   * waiting) and never more than POST_PHONES keepers at once; an excursion, which is what a keeper does in the open, is a chance in six.
+   */
   atPost(npc, first = false) {
     const W = this.w, shop = W.shops.get(npc.shopLotId), r = npc.rng; if (!shop) return this.leisure(npc);
     const p = shop.post;
     if (dist2d(npc, p) > 1.3 || Math.abs(npc.y - p.y) > 1.0) return this.backToPost(npc);
-    if (!first && r.next() < 0.12 && this.excursion(npc, shop)) return true;
-    const x = r.next(), act = x < 0.5 ? 'sell' : x < 0.78 ? 'idle' : x < 0.9 ? 'phone' : 'wait';
+    if (!first && r.next() < 0.17 && this.excursion(npc, shop)) return true;
+    const x = r.next(), act = x < 0.5 ? 'sell' : x < 0.78 ? 'idle' : x < 0.78 + POST_PHONE && this.phoneFree(npc) ? 'phone' : 'wait';
     npc.stand(W, act, span(r, 20, 50), p.ry);
     return true;
   }
