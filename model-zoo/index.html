@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Model Zoo: 48 AI models, one afternoon, the same questions</title>
+<meta name="description" content="Every GPT and Claude model we could reach, asked the same questions on 3 November 2026: pick a number, draw a haggis, write a joke machine, play the Moonlight Sonata, write a story, and pass a sentence along.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="zoo.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="kicker">The Almanac · 3 November 2026</div>
+  <h1>The Model Zoo</h1>
+  <p class="dek">One afternoon, every OpenAI and Anthropic model we could still reach, and the same questions for all of them. Pick a number. Name your favourite colour. Draw a haggis chasing a gamekeeper. Write a joke machine. Play the Moonlight Sonata from memory. Then all of them write one story, a sentence each.</p>
+  <div class="stats" id="stats"></div>
+</header>
+<nav class="chapters" aria-label="Chapters"><ol id="toc"></ol></nav>
+<main id="main">
+  <section class="chapter" id="numbers" data-title="Pick a number"></section>
+  <section class="chapter" id="favourites" data-title="Favourites"></section>
+  <section class="chapter" id="relay" data-title="The relay"></section>
+  <section class="chapter" id="haggis" data-title="The haggis chase"></section>
+  <section class="chapter" id="jokes" data-title="Joke machines"></section>
+  <section class="chapter" id="moonlight" data-title="Moonlight"></section>
+  <section class="chapter" id="stories" data-title="Stories"></section>
+  <section class="chapter" id="ask" data-title="Ask them anything"></section>
+  <section class="chapter" id="bill" data-title="The bill"></section>
+</main>
+<footer id="footer">
+  <p>Collected on 3 November 2026 through the OpenAI and Anthropic APIs at each model's default settings, except where a model is marked <em>thinking</em> or <em>pro mode</em>. Times include our proxy and the provider's load that afternoon: compare orders of magnitude, not close calls. Costs are tokens × published price. Built by Claude Opus 5.5, so the Claude-versus-GPT comparisons are measured mechanically and every answer is shown unedited.</p>
+</footer>
+<div id="tip" role="tooltip"></div>
+<script src="js/sandbox.js"></script>
+<script src="js/moonlight.js"></script>
+<script src="zoo.js"></script>
+<script src="js/ch-numbers.js"></script>
+<script src="js/ch-favourites.js"></script>
+<script src="js/ch-relay.js"></script>
+<script src="js/ch-haggis.js"></script>
+<script src="js/ch-jokes.js"></script>
+<script src="js/ch-moonlight.js"></script>
+<script src="js/ch-stories.js"></script>
+<script src="js/ch-ask.js"></script>
+<script src="js/ch-bill.js"></script>
+<script>Zoo.start();</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
