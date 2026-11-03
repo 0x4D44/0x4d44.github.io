@@ -24,6 +24,9 @@ const OLD = {
   asphalt: [-22.04, -21.23], concrete: [-21.98, -21.70], cobble: [-20.88, -20.53], dirt: [-21.78, -20.64], grass: [-23.37, -22.65],
   stairs: [-22.98, -21.17], tile: [-24.16, -23.93], wood: [-20.03, -19.47], carpet: [-25.29, -24.10],
 };
+// The beach's five (round 7: sand, wet sand, the shallows, knee-deep water, the pier's planks) were never too loud, so there is no old recipe to measure a drop against: they are judged against the nine instead.
+const OLD_SURFACES = F.SURFACES.filter((s) => OLD[s]), BEACH = F.SURFACES.filter((s) => !OLD[s]);
+const level = (s, fn, vs, k = 1) => db(mean(vs.map((v) => rms(fn(s, v)))) * FOOT_GAIN * k);       // dBFS of a surface's sample as the engine plays it (mean RMS of its variants times the gain)
 
 test('the engine exports its footstep gain and plays a step and a landing at it (walk, sprint, crouch; the speed and the hardness scale it)', () => {
   assert.equal(typeof E.FOOT_GAIN, 'number', 'FOOT_GAIN is exported, so this file cannot drift from the engine');
@@ -36,18 +39,30 @@ test('the engine exports its footstep gain and plays a step and a landing at it 
   assert.ok(calls[0][0].startsWith('step:concrete:') && calls[4][0].startsWith('land:concrete:'), 'the right samples: ' + calls.map((c) => c[0]));
 });
 
-test('a walking step is 8 to 14 dB quieter than the one that was too loud: every surface, RMS of the whole sample times the engine gain', () => {
-  for (const s of F.SURFACES) {
+test('a walking step is 8 to 14 dB quieter than the one that was too loud: every surface that had an old recipe, RMS of the whole sample times the engine gain', () => {
+  assert.equal(OLD_SURFACES.length, Object.keys(OLD).length, 'every surface of the old table still exists: none dropped out of this check');
+  for (const s of OLD_SURFACES) {
     const now = db(mean(STEPS.map((v) => rms(step(s, v)))) * FOOT_GAIN * STANCE.walk), was = OLD[s][0] + db(OLD_GAIN), drop = was - now;
     assert.ok(drop >= 8 && drop <= 14, `${s}: ${drop.toFixed(1)} dB under the old step (${now.toFixed(1)} dBFS now, ${was.toFixed(1)} then); 8 to 14 is the aim, not silence`);
   }
 });
 
-test('landings came down with the steps: 7 to 14 dB under the old ones, so a landing is still heavier than a step', () => {
-  for (const s of F.SURFACES) {
+test('landings came down with the steps: 7 to 14 dB under the old ones, so a landing is still heavier than a step (and on every surface, the beach included, never lighter)', () => {
+  for (const s of OLD_SURFACES) {
     const now = db(mean(LANDS.map((v) => rms(land(s, v)))) * FOOT_GAIN), drop = OLD[s][1] + db(OLD_GAIN) - now;
     assert.ok(drop >= 7 && drop <= 14, `${s}: a landing is ${drop.toFixed(1)} dB under the old one`);
-    assert.ok(mean(LANDS.map((v) => rms(land(s, v)))) > mean(STEPS.map((v) => rms(step(s, v)))) * 0.9, `${s}: a landing is not lighter than a step`);
+  }
+  for (const s of F.SURFACES) assert.ok(mean(LANDS.map((v) => rms(land(s, v)))) > mean(STEPS.map((v) => rms(step(s, v)))) * 0.9, `${s}: a landing is not lighter than a step`);
+});
+
+test('the beach walks at the level of the town: sand, wet sand, the shallows, wading and the pier, step and landing, sit within 1 dB of the quietest and the loudest of the nine old surfaces', () => {
+  assert.deepEqual(BEACH, ['sand', 'wetsand', 'shallow', 'wade', 'jetty'], 'the beach surfaces, in the order foley.js lists them');
+  const steps = OLD_SURFACES.map((s) => level(s, step, STEPS, STANCE.walk)), lands = OLD_SURFACES.map((s) => level(s, land, LANDS));
+  const [s0, s1, l0, l1] = [Math.min(...steps) - 1, Math.max(...steps) + 1, Math.min(...lands) - 1, Math.max(...lands) + 1];
+  for (const s of BEACH) {
+    const a = level(s, step, STEPS, STANCE.walk), b = level(s, land, LANDS);
+    assert.ok(a >= s0 && a <= s1, `${s}: a walking step is ${a.toFixed(1)} dBFS as played; the old surfaces' run ${s0.toFixed(1)} to ${s1.toFixed(1)} (so the sand is neither a whisper nor louder than the street)`);
+    assert.ok(b >= l0 && b <= l1, `${s}: a landing is ${b.toFixed(1)} dBFS as played; the old surfaces' run ${l0.toFixed(1)} to ${l1.toFixed(1)}`);
   }
 });
 

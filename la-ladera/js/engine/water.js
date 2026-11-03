@@ -32,7 +32,7 @@ import * as THREE from 'three';
 import { SEA, BAY_X } from '../world/coast.js';
 import { makeFarHeight } from '../world/periphery.js';
 import { lookUniforms } from './shaderpatch.js';
-import { SHADER, NEAR, PEAK, CALM, MESH, seaMeshes, seaState, level as swellLevel, slope as swellSlope, nearWeight, nearWeightGrad, waveAmps, waveTime } from '../core/sea.js';
+import { SHADER, NEAR, PEAK, CALM, MESH, seaMeshes, seaState, makeSea, waveAmps, waveTime } from '../core/sea.js';
 
 // ---- the geometry -----------------------------------------------------------------------------------------------------------------------
 const QUALITY_LEVEL = { low: 0, medium: 1, high: 2 };
@@ -334,25 +334,8 @@ export function buildWater(ctx) {
   const offQuality = ctx.events?.on?.('quality:change', (e) => setQuality(e?.level));
   ctx.addSystem('water', update, 5);
 
-  // ---- ctx.sea
-  const gw = [0, 0];
-  const sea = {
-    state,
-    get time() { return time; },
-    level: (x, z, t = time) => swellLevel(x, z, t, state) * nearWeight(x, z),
-    /** [d/dx, d/dz] of `level`: the product rule, w dh + h dw (the weight is flat nearly everywhere, but not on the last 24 m before the near mesh's seams) */
-    slope: (x, z, t = time, out = [0, 0]) => {
-      swellSlope(x, z, t, state, out);
-      const w = nearWeight(x, z);
-      if (w === 0) { out[0] = out[1] = 0; return out; }
-      if (w === 1) return out;
-      nearWeightGrad(x, z, gw);
-      const h = swellLevel(x, z, t, state);
-      out[0] = out[0] * w + h * gw[0]; out[1] = out[1] * w + h * gw[1];
-      return out;
-    },
-    depth: (x, z, t = time) => SEA + sea.level(x, z, t) - ground(x, z),
-  };
+  // ---- ctx.sea (core/sea.js makeSea: the same functions engine/seaview.js hands out before this exists)
+  const sea = makeSea({ state, clock: () => time, ground, still: SEA });
   ctx.sea = sea;
 
   function dispose() {

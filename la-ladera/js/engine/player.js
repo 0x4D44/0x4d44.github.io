@@ -193,10 +193,10 @@ export class Player {
 
   _place() {
     const s = this.s, ctx = this.ctx;
-    if (!this.surfaces.streets && ctx.plan) this.surfaces.setPlan(ctx.plan);
-    if (ctx.plan && this.surfaces.streets.length === 0 && ctx.plan.streets?.length) this.surfaces.setPlan(ctx.plan);
+    if (ctx.plan && (!this.surfaces.streets || this.surfaces.plan !== ctx.plan || (this.surfaces.streets.length === 0 && ctx.plan.streets?.length))) this.surfaces.setPlan(ctx.plan);
     const sa = ctx.physics.surfaceAt(s.x, s.z, s.y, 0.35);
-    this.surface = this.surfaces.kind(s.x, s.z, { indoors: this.indoors, room: this.room, onFloorPatch: sa.id != null && !sa.terrain });
+    // (y: the coast says 'jetty' only for feet up on the pier's or the raft's planks, and 'sand' or the shallows for the ground under them)
+    this.surface = this.surfaces.kind(s.x, s.z, { indoors: this.indoors, room: this.room, onFloorPatch: sa.id != null && !sa.terrain, y: s.y });
   }
 
   /**

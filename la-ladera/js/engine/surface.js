@@ -1,7 +1,9 @@
 // Ground classification (owner: A1): what the player is walking on, for footsteps, audio and effects.
 // Pure data in, string out: no DOM, no three.js (runs under Node in tests).
-//   kinds: asphalt concrete cobble dirt grass stairs tile wood carpet
-//   indoors the room's `finish.floor` material name decides; outdoors the nearest street (its `surface`), a plaza, or bare terrain
+//   kinds: asphalt concrete cobble dirt grass stairs tile wood carpet, and on the beach sand wetsand shallow wade jetty (the audio's footstep surfaces: audio/foley.js SURFACES)
+//   indoors the room's `finish.floor` material name decides; south of the plot's edge the coast does (plan.coast.surfaceAt, with the feet's height: the pier's planks are 'jetty' only up on the deck);
+//   outdoors elsewhere the nearest street (its `surface`), a plaza, or bare terrain
+import { Z0, BAY_X } from '../world/coast.js';
 const IN_TILE = /tile|ceramic|vinyl|marble|terrazzo|checker/i, IN_WOOD = /wood|pine|plank|parquet|laminate|timber/i, IN_CARPET = /rug|carpet|mat\b|fabric/i;
 
 function segDist2(px, pz, ax, az, bx, bz) {
@@ -42,11 +44,18 @@ export function indoorKind(material) {
   return 'concrete';
 }
 
+/**
+ * plan.coast.surfaceAt's words -> the audio's footstep surfaces. The promenade is paved (cobble, what normalizeSurface makes of 'pavers'); a ramp is poured; the pier's and the raft's planks are
+ * 'jetty'; 'swim' is the deepest answer a walker's feet can get (below it the player swims and there are no footsteps), so it sounds as the knee-deep water does. 'rock' is never produced.
+ */
+export const COAST_KIND = Object.freeze({ deck: 'cobble', stairs: 'stairs', ramp: 'concrete', jetty: 'jetty', sand: 'sand', wetsand: 'wetsand', shallow: 'shallow', wade: 'wade', swim: 'wade' });
+
 export class SurfaceMap {
-  /** @param plan the world plan ({ streets:[{pts,width,surface}], plazas:[{poly,kind}] }) - optional, may be filled later */
+  /** @param plan the world plan ({ streets:[{pts,width,surface}], plazas:[{poly,kind}], coast }) - optional, may be filled later */
   constructor(plan = null) { this.setPlan(plan); }
 
   setPlan(plan) {
+    this.plan = plan ?? null;
     this.streets = (plan?.streets ?? []).filter((s) => s.pts?.length >= 2).map((s) => {
       const pts = s.pts, xs = pts.map((p) => p[0]), zs = pts.map((p) => p[1]), m = s.width / 2 + 0.35;
       return { pts, r2: m * m, m, surface: normalizeSurface(s.surface ?? (s.kind === 'stair' ? 'stairs' : 'concrete')), bb: [Math.min(...xs) - m, Math.min(...zs) - m, Math.max(...xs) + m, Math.max(...zs) + m] };
@@ -71,10 +80,22 @@ export class SurfaceMap {
   }
 
   /**
-   * @param o { indoors, room (Room with finish.floor), onFloorPatch (true when a collider floor, not terrain, is underfoot) }
+   * The beach's surface at (x, z) as an audio footstep surface, for feet at height `y` (optional): inside the bay's walls and south of the plot's edge the coast answers (promenade, stairs, ramp, sand,
+   * wet sand, the shallows, the pier and the raft). null elsewhere, and where there is no coast (a plan without one, or `?skip=coast`, where nobody gets there).
+   */
+  coast(x, z, y) {
+    const C = this.plan?.coast;
+    if (!C || !(z > Z0) || !(Math.abs(x) <= BAY_X)) return null;
+    return COAST_KIND[C.surfaceAt(x, z, y)] ?? null;
+  }
+
+  /**
+   * @param o { indoors, room (Room with finish.floor), onFloorPatch (true when a collider floor, not terrain, is underfoot), y (the feet's height: only the pier's and the raft's planks need it) }
    */
   kind(x, z, o = {}) {
     if (o.indoors) return indoorKind(o.room?.finish?.floor);
+    const c = this.coast(x, z, o.y);
+    if (c) return c;                                            // the promenade, the sand, the shallows, the planks (the pier's deck is a floor patch too: the coast knows it better)
     if (o.onFloorPatch) return 'concrete';                      // terraces, roofs, balconies: poured slabs
     return this.outdoor(x, z);
   }

@@ -6,7 +6,8 @@ import { SR, rng, hashSeed, buf, clamp, lerp, whiteNoise, pinkNoise, bandpass, l
 const TAU = Math.PI * 2;
 
 // ---- footsteps ------------------------------------------------------------------------------------------------------------------------
-export const SURFACES = ['asphalt', 'concrete', 'cobble', 'dirt', 'grass', 'stairs', 'tile', 'wood', 'carpet'];
+// (the last five are the beach's, engine/surface.js COAST_KIND: dry sand, wet sand, an ankle of water, a knee of water, the hollow planks of the pier and the raft)
+export const SURFACES = ['asphalt', 'concrete', 'cobble', 'dirt', 'grass', 'stairs', 'tile', 'wood', 'carpet', 'sand', 'wetsand', 'shallow', 'wade', 'jetty'];
 // A step is two contacts of a shoe: the HEEL lands (a dull thump and a scuff of broadband noise that swells over a few ms and is gone in tens), then the BALL of the foot settles
 // 60-90 ms later, softer and a little higher. Nothing in it rings above 1.5 kHz: a shoe on concrete has no resonance, and a narrow ring, a bright tick or a 1 ms attack is what a
 // tin sounds like (R2c: "my footsteps sound like someone hitting a tin"). So there is no click and no ring, the scuff swells over 3-6 ms instead of snapping, and the whole step
@@ -27,6 +28,13 @@ const STEP = {
   tile:     { len: 0.30, level: 0.52, body: { f: 165, tau: 0.032, a: 0.35 }, noise: { bp: 2000, q: 0.6, atk: 0.004, tau: 0.026, a: 1.8 } },
   wood:     { len: 0.34, level: 0.55, body: { f: 150, tau: 0.050, a: 0.60 }, noise: { bp: 750, q: 0.7, atk: 0.005, tau: 0.040, a: 1.6 }, knock: { f: 230, tau: 0.045, a: 0.8 } },
   carpet:   { len: 0.30, level: 0.27, body: { f: 100, tau: 0.055, a: 0.50 }, noise: { lp: 700, atk: 0.010, tau: 0.060, a: 1.4 } },
+  // the beach (A1, round 7): sand gives under the shoe (a soft low scuff and a spray of grains), wet sand is heavier and damper (a squelch, few grains), an ankle of water is a splash with droplets,
+  // a knee of water a slower, lower slosh, and the pier's planks are a board with a hollow under it (a long low knock and a slap-back from the water below)
+  sand:     { len: 0.34, level: 0.33, body: { f: 75, tau: 0.050, a: 0.30 }, noise: { lp: 1700, atk: 0.012, tau: 0.095, a: 1.5 }, grains: { rate: 230, dur: 0.16, f: 2100, a: 0.45 } },
+  wetsand:  { len: 0.34, level: 0.42, body: { f: 90, tau: 0.065, a: 0.50 }, noise: { bp: 800, q: 0.6, atk: 0.010, tau: 0.075, a: 1.7 }, grains: { rate: 70, dur: 0.12, f: 1300, a: 0.28 } },
+  shallow:  { len: 0.36, level: 0.46, body: { f: 110, tau: 0.040, a: 0.20 }, noise: { bp: 1500, q: 0.45, atk: 0.008, tau: 0.090, a: 1.4 }, grains: { rate: 200, dur: 0.18, f: 2200, a: 0.35 }, bubbles: { n: 5, f: 720, tau: 0.012, a: 0.9, chirp: 9, spread: 0.16 } },
+  wade:     { len: 0.38, level: 0.35, body: { f: 80, tau: 0.090, a: 0.35 }, noise: { bp: 850, q: 0.5, atk: 0.025, tau: 0.150, a: 1.7 }, grains: { rate: 130, dur: 0.20, f: 1300, a: 0.30 }, bubbles: { n: 8, f: 480, tau: 0.020, a: 1.0, chirp: 7, spread: 0.26 } },
+  jetty:    { len: 0.38, level: 0.44, body: { f: 120, tau: 0.070, a: 0.70 }, noise: { bp: 650, q: 0.7, atk: 0.005, tau: 0.040, a: 1.3 }, knock: { f: 185, tau: 0.095, a: 1.1 }, echo: { ms: 38, a: 0.28 } },
 };
 const STEP_LOWPASS = 3600;                                                  // Hz, two stages (24 dB per octave): what a footstep has above this is what sounded like tin
 
@@ -54,6 +62,13 @@ function contact(out, at, p, r, { amp = 1, size = 1, tone = 1 } = {}) {
     for (let i = 0; i < m; i++) out[at + i] += tmp[i] * g.a * 6 * amp;
   }
   if (p.knock) { const k = p.knock, kf = k.f * jit() * tone; for (let i = 0; i < m; i++) { const t = i / sr; out[at + i] += Math.sin(TAU * kf * t) * Math.exp(-t / k.tau) * k.a * amp * smooth(Math.min(1, t / 0.003)); } }
+  if (p.bubbles) {                       // water: `n` small bubbles over the first `spread` s, each a short tone that rises as it pinches off (Minnaert: f ~ 3 / radius), under 1.3 kHz so that none rings
+    const b = p.bubbles, span = Math.max(1, Math.min(m, Math.round(b.spread * size * sr)));
+    for (let k = 0; k < b.n; k++) {
+      const at0 = Math.floor(r() * span), bf = b.f * (0.65 + 0.7 * r()), bt = b.tau * (0.6 + 0.8 * r()), ba = b.a * (0.35 + 0.65 * r()), cnt = Math.min(m - at0, Math.round(6 * bt * sr));
+      for (let i = 0; i < cnt; i++) { const t = i / sr; out[at + at0 + i] += Math.sin(TAU * bf * (t + 0.5 * b.chirp * t * t)) * Math.exp(-t / bt) * ba * amp * smooth(Math.min(1, t / 0.003)); }
+    }
+  }
 }
 
 /** The end of every step and landing: slap-back if the place has one, no DC, a soft edge at both ends, nothing above STEP_LOWPASS, then the surface's level. */

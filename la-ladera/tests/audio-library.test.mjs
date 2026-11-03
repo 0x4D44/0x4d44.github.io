@@ -21,7 +21,8 @@ const code = (f) => readFileSync(join(AUDIO_DIR, f), 'utf8').replace(/\/\*[\s\S]
 
 test('the key list: unique, complete, and every bed, surface and event has its samples', () => {
   assert.equal(new Set(KEYS).size, KEYS.length, 'unique');
-  assert.ok(KEYS.length >= 90 && KEYS.length <= 140, 'count ' + KEYS.length);
+  assert.ok(KEYS.length >= 90 && KEYS.length <= 170, 'count ' + KEYS.length);          // (140 until the beach: its five surfaces are 30 more samples, 4 steps and 2 landings each)
+  for (const s of ['sand', 'wetsand', 'shallow', 'wade', 'jetty']) assert.ok(F.SURFACES.includes(s), `the beach's ${s} is a footstep surface`);
   for (const b of BEDS) assert.ok(KEYS.includes('bed:' + b), 'bed ' + b);
   for (const s of F.SURFACES) for (const v of [0, 1, 2, 3]) assert.ok(KEYS.includes(`step:${s}:${v}`) && (v > 1 || KEYS.includes(`land:${s}:${v}`)), `${s} ${v}`);
   for (const k of ['tick', 'chime', 'bell', 'shutter:open', 'shutter:close', 'door:open:0', 'door:close:1', 'rustle:0', 'paper:1', 'dog:0', 'horn:1', 'bird:5:1', 'sheet:1', 'furn:wardrobe:close:1', 'furn:till:open:0', 'find:coins', 'find:oddities']) assert.ok(KEYS.includes(k), k);
@@ -39,7 +40,7 @@ test('every sample is finite, not silent, not clipping, and has no DC offset', (
     const p = peak(x); assert.ok(p >= 0.12 && p <= 0.96, `${k}: peak ${p.toFixed(3)} outside 0.12..0.96`);
     assert.ok(Math.abs(mean(x)) < 0.01, `${k}: DC ${mean(x).toFixed(4)}`);
   }
-  assert.ok(total < 5.5e6, `the whole library is ${(total * 4 / 1048576).toFixed(1)} MB as float32: keep it small`);
+  assert.ok(total < 6.0e6, `the whole library is ${(total * 4 / 1048576).toFixed(1)} MB as float32: keep it small`);   // (5.5e6 until the beach: its 30 steps and landings are 280 000 of the 5.59 million)
 });
 
 test('loudness: the loops sit at one level so a gain of 1 means the same everywhere; one-shots are not whispers', () => {

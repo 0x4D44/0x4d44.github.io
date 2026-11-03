@@ -173,7 +173,7 @@ blocks (retaining walls, low stair soffits = head bump); surfaces above the head
 **Stairs**: floor ramps for the flights, a slab with a matching hole, >= 2.0 m headroom along the whole flight (A2 tests by walking it).
 
 ### 5.4 Anchors (A3, A5, A2 -> A4)
-`ctx.addAnchor({ kind, x,y,z (feet), ry, building?, room?, tags?:[], capacity?:1, seatH? })`. kinds (core/registries.js `ANCHOR_KINDS`): stand sit sleep cook counter customer tv sweep laundry chat lean bench read phone work pray play wash carry vend greet.
+`ctx.addAnchor({ kind, x,y,z (feet), ry, building?, room?, tags?:[], capacity?:1, seatH? })`. kinds (core/registries.js `ANCHOR_KINDS`): stand sit sleep cook counter customer tv sweep laundry chat lean bench read phone work pray play wash carry vend greet, and the beach's (round 7; `plan.coast.pois` uses them, the people phase merges them: dev/FEATURE-BEACH.md 4.2): lie swim wade raft fish volley watch launch moor.
 `sit` anchors give feet position where an NPC's hips sit on the seat (`seatH` = seat height). `counter` = shopkeeper stand behind a counter facing out. Every furnished room gets anchors that match its furniture.
 
 ### 5.5 Interactables, lights, discoveries, events
