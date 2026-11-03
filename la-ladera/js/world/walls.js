@@ -261,10 +261,93 @@ export function splitAtLots(w, fps) {
 /** The pieces of the wall `w` that lie outside every building footprint in `fps` (see splitAtLots). */
 export const outsideLots = (w, fps) => splitAtLots(w, fps).out;
 
+/**
+ * The parts of the convex polygon `poly` (3D corners [x, y, z]) outside the convex footprint `fp` ([x, z] corners, as `footprint()` makes them): convex polygons that tile them, cut at the outline, a corner a cut makes
+ * interpolated along its edge (height and all). The polygon itself, as the one piece, when the footprint does not touch it; none when the footprint covers it. A piece lying along the outline counts as inside it.
+ */
+export function clipOutside(poly, fp) {
+  if (apart(poly, fp)) return [poly];
+  let area = 0;
+  for (let i = 0; i < fp.length; i++) { const a = fp[i], c = fp[(i + 1) % fp.length]; area += a[0] * c[1] - c[0] * a[1]; }
+  const sg = area >= 0 ? 1 : -1, pieces = [];
+  let rest = poly;
+  for (let i = 0; i < fp.length && rest.length >= 3; i++) {
+    const a = fp[i], c = fp[(i + 1) % fp.length], ex = c[0] - a[0], ez = c[1] - a[1];
+    const inside = (v) => sg * (ex * (v[2] - a[1]) - ez * (v[0] - a[0]));              // >= 0: on the footprint's side of this edge
+    const away = cutHalf(rest, (v) => -inside(v) - 1e-9);                              // strictly beyond it: outside the footprint whatever the other edges say
+    if (away.length >= 3) pieces.push(away);
+    rest = cutHalf(rest, inside);
+  }
+  return pieces;
+}
+
+function cutHalf(poly, d) {                                                            // Sutherland-Hodgman: what is left of the polygon where d(v) >= 0
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], c = poly[(i + 1) % poly.length], da = d(a), dc = d(c);
+    if (da >= 0) out.push(a);
+    if ((da >= 0) !== (dc >= 0)) { const t = da / (da - dc); out.push([a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t, a[2] + (c[2] - a[2]) * t]); }
+  }
+  return out;
+}
+
+function apart(poly, fp) {                                                             // a separating axis among the plan edge normals of the two convex shapes (a wall face is a segment in plan)
+  const A = poly.map((v) => [v[0], v[2]]);
+  for (const [P, Q] of [[A, fp], [fp, A]]) {
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], c = P[(i + 1) % P.length], nx = -(c[1] - a[1]), nz = c[0] - a[0];
+      if (Math.abs(nx) + Math.abs(nz) < 1e-9) continue;
+      let p0 = Infinity, p1 = -Infinity, q0 = Infinity, q1 = -Infinity;
+      for (const v of A) { const s = nx * v[0] + nz * v[1]; p0 = Math.min(p0, s); p1 = Math.max(p1, s); }
+      for (const v of fp) { const s = nx * v[0] + nz * v[1]; q0 = Math.min(q0, s); q1 = Math.max(q1, s); }
+      if (p1 < q0 || q1 < p0) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * quadOut for the retaining boxes, minus whatever lies inside a building: `quadOutside(fps)` returns (b, mat, p0, p1, p2, p3, centre, o) like quadOut, which draws the part of the quad outside every footprint in `fps`.
+ * The face, coping, cap and strip of a box were drawn whole, and where the ramp reaches into a neighbouring lot a stretch of them ran through the building: a rough-stone face through bathroom L23.f0.r5 (R1-203; 37
+ * triangles in 19 rooms of 10 buildings), seen from inside, with no collider. The building's own walls take over at the outline, as its guard lines do (splitAtLots). A quad no footprint touches is drawn exactly as before.
+ * `o.uv` (the strip's and the earth's own mapping, the plan position) is rebuilt per corner for the pieces. `.cut` counts the quads that were cut or dropped.
+ */
+export function quadOutside(fps) {
+  const boxes = fps.map((f) => f.reduce((m, [x, z]) => [Math.min(m[0], x), Math.min(m[1], z), Math.max(m[2], x), Math.max(m[3], z)], [Infinity, Infinity, -Infinity, -Infinity]));
+  const draw = (b, mat, p0, p1, p2, p3, centre, o = {}) => {
+    const q = [p0, p1, p2, p3];
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, pieces = [q];
+    for (const p of q) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); }
+    for (let k = 0; k < fps.length; k++) {
+      const bx = boxes[k];
+      if (x1 < bx[0] || x0 > bx[2] || z1 < bx[1] || z0 > bx[3]) continue;
+      pieces = pieces.flatMap((pc) => clipOutside(pc, fps[k]));
+    }
+    if (pieces.length === 1 && pieces[0] === q) return quadOut(b, mat, p0, p1, p2, p3, centre, o);
+    draw.cut++;
+    for (let pc of pieces) {
+      let nx = 0, ny = 0, nz = 0, mx = 0, my = 0, mz = 0;                              // Newell's normal (twice the area, as the polygon winds) and the centre
+      for (let i = 0; i < pc.length; i++) {
+        const a = pc[i], c = pc[(i + 1) % pc.length];
+        nx += (a[1] - c[1]) * (a[2] + c[2]); ny += (a[2] - c[2]) * (a[0] + c[0]); nz += (a[0] - c[0]) * (a[1] + c[1]);
+        mx += a[0] / pc.length; my += a[1] / pc.length; mz += a[2] / pc.length;
+      }
+      if (Math.hypot(nx, ny, nz) < 2e-4) continue;                                     // a sliver under 1e-4 m2
+      if (nx * (mx - centre[0]) + ny * (my - centre[1]) + nz * (mz - centre[2]) < 0) pc = pc.slice().reverse();
+      for (let i = 1; i + 1 < pc.length; i++) {
+        const t = [pc[0], pc[i], pc[i + 1]];
+        b.tri(mat, t[0], t[1], t[2], o.uv ? { ...o, uv: t.flatMap((v) => [v[0], v[2]]) } : o);
+      }
+    }
+  };
+  draw.cut = 0;
+  return draw;
+}
+
 export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = findCorners(runs)) {
   const H = plan.heightAt, b = ctx.batch.builder('world.walls'), phys = ctx.physics, rnd = ctx.rng.fork('world:walls');
   const stats = { runs: 0, metres: 0, guards: 0, faces: 0, fills: 0, lips: 0, corners: corners.length }, look = new Map();
-  const lotFps = plan.lots.map((l) => footprint(l, 0));
+  const lotFps = plan.lots.map((l) => footprint(l, 0)), quad = quadOutside(lotFps);
   const addGuard = (w) => {                                           // a guard line is a lip over a building's floor inside its outline (FLOOR_LIP), full height outside
     const { out, inn } = splitAtLots(w, lotFps);
     for (const [p, q] of out) phys.addWall({ ...w, x1: p[0], z1: p[1], x2: q[0], z2: q[1] });
@@ -290,16 +373,16 @@ export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = f
       const at = (s, d, y) => [s.x + s.nx * d, y, s.z + s.nz * d];
       const F = (s, y) => at(s, f(s), y), E = (s, y) => at(s, 0, y), G = (s, y) => at(s, s.W, y);
       const ctr = [(p.x + q.x) / 2 + (p.nx * p.W + q.nx * q.W) / 4, (top(p) + top(q) + bot(p) + bot(q)) / 4, (p.z + q.z) / 2 + (p.nz * p.W + q.nz * q.W) / 4];
-      quadOut(b, mat, F(p, bot(p)), F(q, bot(q)), F(q, top(q)), F(p, top(p)), ctr, { col });
+      quad(b, mat, F(p, bot(p)), F(q, bot(q)), F(q, top(q)), F(p, top(p)), ctr, { col });
       // the cap is the ground on top of the box (the pad's, or the hill's above a cut): earth, running on into the terrain; the concrete is a narrow coping on the face line
-      quadOut(b, 'ground_dirt', E(p, top(p)), E(q, top(q)), G(q, top(q)), G(p, top(p)), [ctr[0], ctr[1] - 5, ctr[2]], { col: EARTH });
+      quad(b, 'ground_dirt', E(p, top(p)), E(q, top(q)), G(q, top(q)), G(p, top(p)), [ctr[0], ctr[1] - 5, ctr[2]], { col: EARTH });
       const onto = (s) => (sign > 0 ? [s.nx, s.nz] : [-s.nx, -s.nz]);                    // from the face line onto the cap
-      coping(b, F(p, top(p)), F(q, top(q)), onto(p), onto(q), col);
+      coping(b, F(p, top(p)), F(q, top(q)), onto(p), onto(q), col, quad);
       // one cell of earth beside the cap, where the lowered lattice climbs back to the ground (cut: behind the wall; fill beside a lot: on the pad side)
       const strip = (d0, d1) => {
         const y1 = (s) => H(s.x + s.nx * d1(s), s.z + s.nz * d1(s)) + 0.015;
         const P = [at(p, d0(p), top(p)), at(q, d0(q), top(q)), at(q, d1(q), y1(q)), at(p, d1(p), y1(p))];
-        quadOut(b, 'ground_dirt', P[0], P[1], P[2], P[3], [ctr[0], ctr[1] - 5, ctr[2]], { col: EARTH, uv: P.flatMap((v) => [v[0], v[2]]) });
+        quad(b, 'ground_dirt', P[0], P[1], P[2], P[3], [ctr[0], ctr[1] - 5, ctr[2]], { col: EARTH, uv: P.flatMap((v) => [v[0], v[2]]) });
       };
       if (sign > 0) strip((s) => s.W, (s) => s.W + CELL);
       else if (src === 'pad') strip(() => 0, () => -CELL);
@@ -327,7 +410,7 @@ export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = f
   for (const c of corners) {
     const { C, P1, P2, P3, top, bot } = cornerShape(c), la = look.get(c.runA), lb = look.get(c.runB);
     const V = (p, y) => [p[0], y, p[1]], mid = [(C[0] + P2[0]) / 2, (top + bot) / 2, (C[1] + P2[1]) / 2], under = [mid[0], mid[1] - 5, mid[2]];
-    quadOut(b, 'ground_dirt', V(C, top), V(P1, top), V(P2, top), V(P3, top), under, { col: EARTH });
+    quad(b, 'ground_dirt', V(C, top), V(P1, top), V(P2, top), V(P3, top), under, { col: EARTH });
     if (Math.abs(c.A.outer - c.A.inner) >= FACE_DROP && Math.abs(c.B.outer - c.B.inner) >= FACE_DROP) {   // the two outer sides of the square, as for a run: the same closed box
       const y0 = Math.min(c.A.inner, c.A.outer, c.B.inner, c.B.outer) - 1, y1 = Math.max(guardTop(H, [C, P1, P2, P3], nodeH), Math.max(c.A.inner, c.A.outer, c.B.inner, c.B.outer) + GUARD_UP);
       const side = (P, Q, n) => addGuard({ x1: P[0] - n[0] * 0.1, z1: P[1] - n[1] * 0.1, x2: Q[0] - n[0] * 0.1, z2: Q[1] - n[1] * 0.1, t: 0.1, y0, y1, id: 'guard' });
@@ -335,18 +418,19 @@ export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = f
       stats.faces += 2;
     }
     if (c.sign < 0) {
-      quadOut(b, la.mat, V(P1, bot), V(P2, bot), V(P2, top), V(P1, top), mid, { col: la.col });
-      quadOut(b, lb.mat, V(P3, bot), V(P2, bot), V(P2, top), V(P3, top), mid, { col: lb.col });
-      coping(b, V(P1, top), V(P2, top), [-c.A.nx, -c.A.nz], [-c.A.nx, -c.A.nz], la.col);    // the two faces carry the lip on, back toward the corner
-      coping(b, V(P3, top), V(P2, top), [-c.B.nx, -c.B.nz], [-c.B.nx, -c.B.nz], lb.col);
+      quad(b, la.mat, V(P1, bot), V(P2, bot), V(P2, top), V(P1, top), mid, { col: la.col });
+      quad(b, lb.mat, V(P3, bot), V(P2, bot), V(P2, top), V(P3, top), mid, { col: lb.col });
+      coping(b, V(P1, top), V(P2, top), [-c.A.nx, -c.A.nz], [-c.A.nx, -c.A.nz], la.col, quad);    // the two faces carry the lip on, back toward the corner
+      coping(b, V(P3, top), V(P2, top), [-c.B.nx, -c.B.nz], [-c.B.nx, -c.B.nz], lb.col, quad);
     } else {
       const out = (p, n) => [p[0] + n[0] * CELL, p[1] + n[1] * CELL], nA = [c.A.nx, c.A.nz], nB = [c.B.nx, c.B.nz], ground = (p) => V(p, H(p[0], p[1]) + 0.015);
-      const earth = (...P) => quadOut(b, 'ground_dirt', P[0], P[1], P[2], P[3], under, { col: EARTH, uv: P.flatMap((v) => [v[0], v[2]]) });
+      const earth = (...P) => quad(b, 'ground_dirt', P[0], P[1], P[2], P[3], under, { col: EARTH, uv: P.flatMap((v) => [v[0], v[2]]) });
       earth(V(P1, top), V(P2, top), ground(out(P2, nA)), ground(out(P1, nA)));
       earth(V(P3, top), V(P2, top), ground(out(P2, nB)), ground(out(P3, nB)));
       earth(V(P2, top), ground(out(P2, nA)), ground(out(out(P2, nA), nB)), ground(out(P2, nB)));
     }
   }
+  stats.clipped = quad.cut;
   ctx.batch.flush('world.walls');
   if (ctx.world) { ctx.world.walls = stats; ctx.world.wallRuns = runs; ctx.world.wallCorners = corners; }
 }
@@ -356,11 +440,11 @@ export function buildRetaining(ctx, plan, runs = findWallRuns(plan), corners = f
  * pointing from the line onto the cap at each end. Two faces: the top and the face side (the cap side is a step of COPING_H that no one looks at, and each face costs a pair of
  * triangles per 0.7 m of wall, about 2 800 m of it); the ends stay open, since the next lip starts where this one stops.
  */
-function coping(b, a, c, da, dc, col) {
+function coping(b, a, c, da, dc, col, quad = quadOut) {
   const a1 = [a[0] + da[0] * COPING, a[1], a[2] + da[1] * COPING], c1 = [c[0] + dc[0] * COPING, c[1], c[2] + dc[1] * COPING];
   const up = (p) => [p[0], p[1] + COPING_H, p[2]], mid = [(a[0] + c[0] + a1[0] + c1[0]) / 4, (a[1] + c[1]) / 2 + COPING_H / 2, (a[2] + c[2] + a1[2] + c1[2]) / 4];
-  quadOut(b, 'concrete_bare', up(a), up(c), up(c1), up(a1), mid, { col });
-  quadOut(b, 'concrete_bare', a, c, up(c), up(a), mid, { col });
+  quad(b, 'concrete_bare', up(a), up(c), up(c1), up(a1), mid, { col });
+  quad(b, 'concrete_bare', a, c, up(c), up(a), mid, { col });
 }
 
 function distToStreet(o, p) {
