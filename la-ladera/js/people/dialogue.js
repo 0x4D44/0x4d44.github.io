@@ -340,7 +340,7 @@ export class Dialogue {
     if (!topics.includes('time')) topics.push('time');
     return topics.filter((t) => {
       if (t === 'where') return (this.world.landmarks?.length ?? 0) > 0;
-      if (t === 'buy') return (this.persona.items?.length ?? 0) > 0;
+      if (t === 'buy') return this.onSale().length > 0;
       if (t === 'tip' || t === 'time') return true;
       if (!this._size(t)) return false;
       return this._fresh(t) > 0 || !this.topicsDone.has(t);
@@ -375,8 +375,11 @@ export class Dialogue {
     return out.slice(0, 4);
   }
 
+  /** What the shop has on sale at this hour: an item may carry `{ from, to }` like a line (R3-207: the set lunch was offered at half past seven, right after "Todavía estamos con el desayuno"). */
+  onSale() { return (this.persona.items ?? []).filter((it) => inWindow(it, this.hour)); }
+
   buyMenu() {
-    const items = (this.persona.items ?? []).slice(0, 3);
+    const items = this.onSale().slice(0, 3);
     const out = items.map((it) => ({ id: 'item:' + it.id, es: it.es, en: it.en }));
     out.push({ id: 'back', es: 'Mejor otra cosa.', en: 'Something else, actually.' });
     return out;
