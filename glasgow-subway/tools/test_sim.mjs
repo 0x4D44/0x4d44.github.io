@@ -33,6 +33,14 @@ async function open(browser, query, opts = {}) {
 }
 const shot = async (p, name) => { await p.evaluate(() => window.__sim.render()); await p.waitForTimeout(100); await p.screenshot({ path: path.join(SHOTS, name + '.png'), timeout: 180000 }); };
 const ev = (p, fn, a) => p.evaluate(fn, a);
+// Records every door sound the sim asks of its audio, tagged with the service whose event caused it ('player' / 'bg' - the other circle's train; '?' = anything else).
+// The tags are listeners wrapped around each service's own, so call it again after anything that rebuilds the services (boarding the other train).
+// `tag = false` only installs the recorder and defines window.__tagDoors(), for a test that must count the services' own listeners first.
+const doorLog = (p, tag = true) => ev(p, (tagNow) => {
+  const s = __sim.sim, A = s.audio; if (!window.__dl) { const D = window.__dl = { log: [], src: '?', orig: A.doors.bind(A) }; A.doors = (open, o) => { const r = D.orig(open, o); D.log.push({ src: D.src, open, played: r, gain: o && o.gain, pan: o && o.pan, lp: o && o.lp }); return r; }; }
+  window.__tagDoors = () => { const D = window.__dl; for (const [name, svc] of [['player', s.svc], ['bg', s.bg && s.bg.svc]]) if (svc && !(svc.__tag && svc.listeners.includes(svc.__tag))) { svc.__tag = () => { D.src = name; }; svc.__untag = () => { D.src = '?'; }; svc.listeners.unshift(svc.__tag); svc.listeners.push(svc.__untag); } };
+  if (tagNow) window.__tagDoors();
+}, tag);
 
 const browser = await chromium.launch(launch);
 try {
@@ -41,6 +49,7 @@ try {
   ok('sim starts in drive mode at Buchanan Street', (await ev(p, () => __sim.state())).mode === 'drive' && (await ev(p, () => __sim.info())).nextName === 'Buchanan Street');
   await shot(p, '01_cab_platform');
   // manual: refuse doors when wrong side / moving; vigilance etc covered in unit tests. Open correct side at start.
+  await doorLog(p);
   await ev(p, () => { __sim.svc().dwellT = 3; });
   await p.keyboard.press('o');
   await p.waitForTimeout(100);
@@ -51,6 +60,8 @@ try {
   // real key presses: close doors, power up
   await p.keyboard.press('p'); await ev(p, () => __sim.ff(4, 0.1));
   ok('doors close (key P)', await ev(p, () => __sim.svc().doorsClosed));
+  const dl = await ev(p, () => window.__dl.log.filter((e) => e.src === 'player'));
+  ok('sound: keys O and P give exactly one door-opening sound and one door-closing sound (the closing chime no longer doubles it), at cab level', dl.length === 2 && dl[0].open === true && dl[1].open === false && dl.every((e) => e.played && e.gain === 0.7 && e.pan === 0 && e.lp === 0), JSON.stringify(dl));
   await ev(p, () => { __sim.svc().dwellT = 100; }); await ev(p, () => __sim.ff(1, 0.1));
   await p.keyboard.press('w'); await p.keyboard.press('w'); await p.keyboard.press('w');
   await ev(p, () => __sim.ff(12, 0.1));
@@ -190,6 +201,77 @@ try {
     return { a0, a1, a1b, a2, a3, a4, a5 }; });
   ok('audio: silent immediately when the tab is hidden (gain 0, context suspended, no speech, announcements dropped)', au.a1.hidden && au.a1.gain === 0 && au.a1b.ctx !== 'running' && !au.a1b.speaking && au.a2.blocked >= 2, JSON.stringify(au.a1b) + JSON.stringify(au.a2));
   ok('audio: resumes on return; manual mute is kept across hide/show', !au.a3.hidden && au.a3.gain > 0.5 && (au.a3.ctx === 'running' || au.a0.ctx !== 'running') && au.a4.muted && au.a4.gain === 0 && au.a5.gain > 0.5, JSON.stringify([au.a3, au.a4, au.a5]));
+  // door sounds: the synthesised sounds (rendered offline and measured), then the engine's routing and gating
+  const syn = await ev(p, async () => {
+    const m = await import('/glasgow-subway/js/sim/audio.js'), SR = 22050, out = {}, envs = {};
+    const track = (x, f) => { const N = 512, w = 2 * Math.cos(2 * Math.PI * f / SR), env = []; for (let s = 0; s + N <= x.length; s += 110) { let a = 0, b = 0; for (let i = 0; i < N; i++) { const c = x[s + i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1))) + w * a - b; b = a; a = c; } env.push((a * a + b * b - w * a * b) / (N * N)); } return env; };   // Goertzel power of one tone, every 5 ms
+    const runs = (env, thr) => { const r = []; let st = -1; env.forEach((v, i) => { if (v > thr && st < 0) st = i; if ((v <= thr || i === env.length - 1) && st >= 0) { r.push([st * 0.005, (i - st) * 0.005]); st = -1; } }); return r; };
+    for (const k of ['doorOpen', 'doorClose', 'bong']) {
+      const x = await m.renderSynth(k, k === 'bong' ? 2.4 : 3.4, SR); let pk = 0, bad = 0, tail = 0;
+      for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (!isFinite(a)) bad++; pk = Math.max(pk, a); if (i > (k === 'bong' ? 2.3 : 2.9) * SR) tail = Math.max(tail, a); }
+      envs[k] = track(x, m.BEEP_HZ); out[k] = { peak: +pk.toFixed(3), bad, tail: +tail.toFixed(5) };
+      if (k === 'bong') { const e1 = track(x, 659.3), e2 = track(x, 523.3), at = (e, t) => Math.max(...e.slice(Math.floor(t / 0.005), Math.floor((t + 0.2) / 0.005))); out.bongTones = { hi0: at(e1, 0.05), lo0: at(e2, 0.05), hi1: at(e1, 0.5), lo1: at(e2, 0.5) }; }
+    }
+    const thr = 0.25 * Math.max(...envs.doorClose);   // a beep = a 2.1 kHz burst within 6 dB (power) of the closing sound's strongest
+    for (const k of ['doorOpen', 'doorClose']) out[k].runs = runs(envs[k], thr).map((r) => r.map((v) => +v.toFixed(3)));
+    return out;
+  });
+  const bst = syn.doorClose.runs.map((r) => r[0]), bgap = bst.slice(1).map((v, i) => v - bst[i]);
+  ok('sound: the closing sound carries the warning beeps - 9 of them, 2.1 kHz, every 250 ms, across the 2.6 s the leaves take', syn.doorClose.runs.length === 9 && bgap.every((g) => Math.abs(g - 0.25) < 0.012) && bst[0] < 0.1 && bst[8] < 2.3, JSON.stringify(syn.doorClose.runs));
+  ok('sound: the opening sound has no beeps', syn.doorOpen.runs.length === 0, JSON.stringify(syn.doorOpen.runs));
+  ok('sound: every synthesised sound is finite, not clipped (peak 0.1 .. 0.95) and has died away before its buffer ends', ['doorOpen', 'doorClose', 'bong'].every((k) => syn[k].bad === 0 && syn[k].peak > 0.1 && syn[k].peak < 0.95 && syn[k].tail < 0.001), JSON.stringify(['doorOpen', 'doorClose', 'bong'].map((k) => [syn[k].peak, syn[k].tail])));
+  ok('sound: the PA bell is a falling two-tone (E5 then C5)', syn.bongTones.hi0 > 20 * syn.bongTones.lo0 && syn.bongTones.lo1 > 20 * syn.bongTones.hi1, JSON.stringify(syn.bongTones));
+  const eng = await ev(p, async () => {
+    const W = (ms) => new Promise((r) => setTimeout(r, ms)), hide = (h) => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); document.dispatchEvent(new Event('visibilitychange')); };
+    const m = await import('/glasgow-subway/js/sim/audio.js'), o = {};
+    const cold = new m.SimAudio(); o.cold = cold.doors(true); o.coldPlays = JSON.stringify(cold.plays); cold.dispose();
+    const A = __sim.sim.audio; await __sim.audioStart(); await W(150); o.running = __sim.audioState().ctx;
+    const base = Object.assign({}, A.plays), d = () => { const r = {}; for (const k of ['doorOpen', 'doorClose', 'bong']) r[k] = (A.plays[k] || 0) - (base[k] || 0); return r; };
+    o.open = __sim.audioDoors(true); o.d1 = d(); o.last1 = A.last;
+    o.close = __sim.audioDoors(false, { gain: 0.5, pan: -0.6, lp: 3000 }); o.d2 = d(); o.last2 = A.last;
+    o.far = __sim.audioDoors(true, { gain: 0.01 }); o.d3 = d();
+    A.chime('close'); A.chime('door'); o.d4 = d(); A.chime('vigil'); A.chime('trip'); o.d5 = d();
+    __sim.audioBong(); o.d6 = d(); const b0 = A.blocked;
+    hide(true); o.hOpen = __sim.audioDoors(true); o.hBong = __sim.audioBong(); o.d7 = d(); o.hBlocked = A.blocked - b0; hide(false); await W(250);
+    __sim.audioMute(true); await W(100); o.mOpen = __sim.audioDoors(true); o.mBong = __sim.audioBong(); o.d8 = d(); __sim.audioMute(false); await W(150);
+    o.back = __sim.audioDoors(false); o.d9 = d();
+    __sim.audioSpeak('Next stop test'); o.t1 = A._speakT !== 0; o.d10 = d(); hide(true); o.t2 = A._speakT === 0; hide(false); await W(150);   // the bell is immediate, the voice follows after a pause - unless the tab is hidden in between
+    const K = {}, c0 = A.cut; A.doors(true, { key: K }); const c1 = A.cut; A.doors(false, { key: K }); const c2 = A.cut; A.doors(true, { key: {} }); o.cut = [c1 - c0, c2 - c1, A.cut - c2];   // a train's doors reverse mid-sound: the running sound is cut, once; another train's is not
+    o.samples = A.state().samples; o.loadErr = A.state().loadErr;
+    return o;
+  });
+  ok('sound: before the first gesture the doors make no sound (and cost nothing)', eng.cold === false && eng.coldPlays === '{}');
+  ok('sound: opening and closing play their own sounds, counted separately (synthesised unless a recording is listed in SAMPLES)', eng.running === 'running' && eng.open && eng.d1.doorOpen === 1 && eng.last1.name === 'doorOpen' && eng.close && eng.d2.doorClose === 1 && eng.last2.name === 'doorClose' && ['synth', 'sample'].includes(eng.last1.via) && Object.keys(eng.loadErr).length === 0, JSON.stringify([eng.d2, eng.last1, eng.samples, eng.loadErr]));
+  ok('sound: the distance chain is passed through (level, pan, muffling), and a train too far away to hear is not even started', eng.last2.gain === 0.5 && eng.last2.pan === -0.6 && eng.last2.lp === 3000 && eng.far === false && eng.d3.doorOpen === 1, JSON.stringify([eng.last2, eng.far, eng.d3]));
+  ok('sound: the old chime names still work - "close" and "door" give the closing and opening sounds; "vigil" and "trip" are left alone', eng.d4.doorClose === eng.d3.doorClose + 1 && eng.d4.doorOpen === eng.d3.doorOpen + 1 && eng.d5.doorClose === eng.d4.doorClose && eng.d5.doorOpen === eng.d4.doorOpen, JSON.stringify([eng.d3, eng.d4, eng.d5]));
+  ok('sound: hidden tab - doors and PA bell are silenced (not queued) and counted as blocked; they work again on return', eng.d6.bong === 1 && eng.hOpen === false && eng.hBong === false && eng.hBlocked >= 2 && eng.d7.doorOpen === eng.d6.doorOpen && eng.d7.bong === eng.d6.bong && eng.back === true, JSON.stringify([eng.hBlocked, eng.d6, eng.d7]));
+  ok('sound: manual mute silences the doors and the bell; unmuting restores them', eng.mOpen === false && eng.mBong === false && eng.d8.doorOpen === eng.d7.doorOpen && eng.d8.bong === eng.d7.bong && eng.d9.doorClose === eng.d8.doorClose + 1, JSON.stringify([eng.d7, eng.d8, eng.d9]));
+  ok('sound: an announcement is the PA bell now and the voice after a pause; hiding the tab in between cancels the voice', eng.t1 && eng.d10.bong === eng.d9.bong + 1 && eng.t2);
+  ok('sound: when a train\'s doors reverse while its sound is still running, that sound is cut short (once) - and another train\'s sound is left alone', JSON.stringify(eng.cut) === '[0,1,0]', JSON.stringify(eng.cut));
+  // the recordings: they load, fit the door travel, sit level with the synthesised sounds they replace; a door event then plays the recording; a missing file leaves the synthesised sound in its place
+  const rec = await ev(p, async () => {
+    const W = (ms) => new Promise((r) => setTimeout(r, ms)), m = await import('/glasgow-subway/js/sim/audio.js'), A = __sim.sim.audio, o = {};
+    for (let n = 0; n < 200 && !(A.buf.doorOpen && A.buf.doorClose) && !Object.keys(A.loadErr).length; n++) await W(50);
+    const loud = (d, w) => { let best = 0; for (let i = 0; i + w <= d.length; i += w / 10) { let e = 0; for (let j = 0; j < w; j++) e += d[i + j] * d[i + j]; best = Math.max(best, Math.sqrt(e / w)); } return best; };   // the loudest second's RMS
+    for (const [k, name] of [['open', 'doorOpen'], ['close', 'doorClose']]) {
+      const b = A.buf[name]; if (!b) { o[k] = null; continue; }
+      const d = b.getChannelData(0), g = m.SAMPLES[name].gain, syn = await m.renderSynth(name); let peak = 0; for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+      o[k] = { dur: +b.duration.toFixed(3), ch: b.numberOfChannels, peak: +(peak * g).toFixed(3), dB: +(20 * Math.log10(loud(d, Math.round(b.sampleRate)) * g / loud(syn, 22050))).toFixed(1) };   // as played: its peak, and how much louder than the synthesised sound it replaces
+    }
+    A.doors(true, { gain: 1 }); o.lastOpen = A.last; A.doors(false, { gain: 1 }); o.lastClose = A.last; o.loadErr = A.state().loadErr;
+    const keep = m.SAMPLES.doorOpen.file; m.SAMPLES.doorOpen.file = 'no-such-file.mp3';
+    try { const B = new m.SimAudio(); await B.start(); for (let n = 0; n < 100 && !B.loadErr.doorOpen; n++) await W(50); o.missing = { err: !!B.loadErr.doorOpen, closeOk: !!B.buf.doorClose, played: B.doors(true, { gain: 1 }), via: B.last && B.last.via }; B.dispose(); }
+    finally { m.SAMPLES.doorOpen.file = keep; }
+    return o;
+  });
+  ok('sound: the recorded door sounds load and decode (one channel, as long as the 2.6 s the leaves take), and as played they sit level with the synthesised ones they replace (within 6 dB) with headroom to spare', !!rec.open && !!rec.close && Object.keys(rec.loadErr).length === 0 && [rec.open, rec.close].every((r) => r.ch === 1 && Math.abs(r.dur - 2.6) < 0.15 && r.peak > 0.15 && r.peak < 0.7 && Math.abs(r.dB) < 6), JSON.stringify([rec.open, rec.close, rec.loadErr]));
+  ok('sound: with the recordings loaded, the door events play them', rec.lastOpen.via === 'sample' && rec.lastOpen.name === 'doorOpen' && rec.lastClose.via === 'sample' && rec.lastClose.name === 'doorClose', JSON.stringify([rec.lastOpen, rec.lastClose]));
+  ok('sound: a recording that cannot be fetched leaves the synthesised sound in its place (and the other recording still loads)', rec.missing.err && rec.missing.closeOk && rec.missing.played && rec.missing.via === 'synth', JSON.stringify(rec.missing));
+  // ?sfx=synth: the recordings are not even fetched, and the doors are the synthesised ones
+  { const q = await open(browser, 'sfx=synth');
+    const sy = await ev(q, async () => { const A = __sim.sim.audio, W = (ms) => new Promise((r) => setTimeout(r, ms)); await __sim.audioStart(); await W(600); const o = { st: A.state() }; A.doors(true, { gain: 1 }); o.last = A.last; return o; });
+    ok('sound: ?sfx=synth keeps to the synthesised door sounds (no recording is fetched or decoded)', sy.st.ctx === 'running' && !sy.st.samples.doorOpen && !sy.st.samples.doorClose && Object.keys(sy.st.loadErr).length === 0 && sy.last.via === 'synth', JSON.stringify(sy));
+    await q.close(); }
   // camera sway: low-frequency only (< 2 Hz), small amplitude; no high-frequency head jitter
   const sw = await ev(p, () => { const s = __sim.sim, T = s.THREE, f = new T.Vector3(), q = new T.Quaternion(), ys = [], ls = []; const v0 = s.svc.train.v;
     for (let i = 0; i < 240; i++) { __sim.tick(1 / 30); __sim.sync(); s.trainView.eyeWorld(f, q); ys.push(s.camera.position.y - f.y); ls.push(Math.hypot(s.camera.position.x - f.x, s.camera.position.z - f.z)); }
@@ -324,17 +406,59 @@ try {
   await p.close();
   // ---------------------------------------------------------------- both circles' trains carry passengers (island platform: the other circle's train stands across the platform)
   p = await open(browser, 'mode=explore&station=kinning-park&line=outer');
-  const sal = await ev(p, async () => {
+  await doorLog(p, false);
+  // the riders first, while both trains stand in the station together as they do when the page opens
+  const salA = await ev(p, () => {
     const s = __sim.sim; let n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 20000) { s.tick(0.1); s.sync(0.05); }
     for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }   // (the other train is seated a car a frame)
-    const before = __sim.saloons(), audit = __sim.peopleAudit(), bgDwell = s.bg.sh.state === 'dwell', line0 = s.line;
-    await __sim.boardOther(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
-    return { bgDwell, line0, before, audit: { bad: audit.bad, trains: audit.trains }, after: __sim.saloons(), line1: s.line, mode: s.mode };
+    const before = __sim.saloons(), audit = __sim.peopleAudit();
+    return { bgDwell: s.bg.sh.state === 'dwell', line0: s.line, before, audit: { bad: audit.bad, trains: audit.trains } };
   });
-  const trains = Object.values(sal.before);
-  ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', sal.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.perCar[i] === 0))), JSON.stringify(sal.before));
-  ok('riders of both circles pass the people audit (feet, seats, ceiling, walls, overlaps)', sal.audit.bad.length === 0 && Object.keys(sal.audit.trains).length === 2, JSON.stringify(sal.audit));
-  ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== sal.line0 && ['outer', 'inner'].every((l) => sal.after[l].total === sal.before[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify(sal.after));
+  const trains = Object.values(salA.before);
+  ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', salA.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.perCar[i] === 0))), JSON.stringify(salA.before));
+  ok('riders of both circles pass the people audit (feet, seats, ceiling, walls, overlaps)', salA.audit.bad.length === 0 && Object.keys(salA.audit.trains).length === 2, JSON.stringify(salA.audit));
+  // sound at the island platform: the other circle's train opens and closes its doors across the platform, and you hear it - from its doorways, to the left or right, fainter with distance
+  const kps = await ev(p, async () => {
+    const s = __sim.sim, T = s.THREE, o = {}, m = await import('/glasgow-subway/js/sim/audio.js');
+    await __sim.audioStart(); await new Promise((r) => setTimeout(r, 100));
+    let n = 0; while (s.bg.sh && s.bg.sh.state === 'dwell' && n++ < 20000) { s.tick(0.1); s.sync(0.05); }          // let the dwell it is in run out ...
+    n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 40000) { s.tick(0.1); s.sync(0.05); }          // ... and catch the next one from its start
+    o.dwell = s.bg.sh.state === 'dwell'; o.listeners = s.bg.svc.listeners.length;   // (counted before the test tags it)
+    const D = window.__dl; window.__tagDoors(); const i0 = D.log.length;
+    n = 0; while (!D.log.some((e, i) => i >= i0 && e.src === 'bg' && !e.open) && n++ < 3000) { s.tick(0.1); s.sync(0.05); }   // its dwell: the doors open by themselves, then close
+    o.bg = D.log.slice(i0).filter((e) => e.src === 'bg');
+    // where you stand decides how it arrives. First straight above the first doorway of the platform side, 2 m .. 150 m up
+    const tv = s.bg.view, side = s.bg.svc.platSide, list = side > 0 ? tv.doorsR : tv.doorsL, cam = s.camera, P = new T.Vector3(); list[0].leaves[0].n.getWorldPosition(P); o.nDoors = list.length;
+    const at = (pos) => { cam.position.copy(pos); cam.updateMatrixWorld(true); const i = D.log.length, r = __sim.doorSound(tv, false, true, side); return { r, n: D.log.length - i, e: D.log[D.log.length - 1] }; };
+    o.rise = [2, 20, 60, 150].map((h) => { const x = at(P.clone().add(new T.Vector3(0, h, 0))); return { h, played: x.r, n: x.n, gain: x.e.gain, lp: x.e.lp, want: m.reach(h), ear: __sim.trainEar(tv, side).dist }; });
+    // ... then 5 m out from that doorway on the platform side, turned so that it is on the right / on the left / straight ahead
+    const car = tv.cars[Math.floor(tv.cars.length / 2)].matrix.elements, u = new T.Vector3(car[0], 0, car[2]).normalize().multiplyScalar(side), out = P.clone().add(u.clone().multiplyScalar(5));
+    const turn = (rx, rz) => { cam.quaternion.setFromAxisAngle(new T.Vector3(0, 1, 0), Math.atan2(-rz, rx)); };
+    turn(-u.x, -u.z); o.onRight = at(out).e; turn(u.x, u.z); o.onLeft = at(out).e; turn(-u.z, u.x); o.ahead = at(out).e;
+    return o;
+  });
+  const kOpen = kps.bg.filter((e) => e.open), kClose = kps.bg.filter((e) => !e.open);
+  ok('sound: the other circle\'s train opens and closes its doors once each while it stands at the island platform, and both are heard (one listener wires its doors to the speakers)', kps.dwell && kps.listeners === 1 && kOpen.length === 1 && kClose.length === 1 && kps.bg.every((e) => e.played && e.gain > 0 && e.gain <= 1 && Math.abs(e.pan) <= 1 && isFinite(e.lp)), JSON.stringify(kps.bg));
+  ok('sound: the level falls with distance from the doorway (full within 4 m, then inverse-ish), the highs go first, and nothing is started when it is out of earshot', kps.nDoors >= 4 && kps.rise.every((x) => x.n === 1 && Math.abs(x.ear - x.h) < 1e-6 && Math.abs(x.gain - x.want.gain) < 1e-9 && Math.abs(x.lp - x.want.lp) < 1e-6) && kps.rise[0].gain === 1 && kps.rise[0].lp === 0 && kps.rise[1].gain < 0.2 && kps.rise[2].gain < kps.rise[1].gain && kps.rise[2].lp < kps.rise[1].lp && kps.rise[3].played === false && kps.rise.slice(0, 3).every((x) => x.played), JSON.stringify(kps.rise));
+  ok('sound: stereo position follows the doorway - on your right when it is on your right, on your left when on your left, centred straight ahead', kps.onRight.pan > 0.5 && kps.onLeft.pan < -0.5 && Math.abs(kps.ahead.pan) < 0.15, JSON.stringify([kps.onRight.pan, kps.onLeft.pan, kps.ahead.pan]));
+  const sal = await ev(p, async () => {
+    const s = __sim.sim; let n = 0; while (s.bg.sh && s.bg.sh.state === 'dwell' && n++ < 20000) { s.tick(0.1); s.sync(0.05); }
+    n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 40000) { s.tick(0.1); s.sync(0.05); }   // the next time it stands in the station, doors open
+    for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
+    await __sim.boardOther(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
+    return { after: __sim.saloons(), line1: s.line, mode: s.mode, listeners: [s.svc.listeners.length, s.bg.svc.listeners.length] };
+  });
+  ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== salA.line0 && ['outer', 'inner'].every((l) => sal.after[l].total === salA.before[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify(sal.after));
+  // ... and the sounds follow the swap: each service has exactly one door listener again; aboard, your own doors are full level and centred; the train you left is heard through the walls
+  await doorLog(p);
+  const post = await ev(p, () => {
+    const s = __sim.sim, T = s.THREE, D = window.__dl, cam = s.camera, o = {};
+    const l0 = D.log.length; __sim.doorSound(s.trainView, true, true, 1); o.own = D.log[D.log.length - 1]; o.ownN = D.log.length - l0;
+    const tv = s.bg.view, side = s.bg.svc.platSide, P = new T.Vector3(); (side > 0 ? tv.doorsR : tv.doorsL)[0].leaves[0].n.getWorldPosition(P);
+    cam.position.copy(P).add(new T.Vector3(0, 2, 0)); cam.updateMatrixWorld(true); __sim.doorSound(tv, false, true, side); o.through = D.log[D.log.length - 1];
+    return o;
+  });
+  ok('sound: after boarding the other circle\'s train each service has exactly one door listener; aboard, your own doors play at full level and centred, and the train you left is muffled and halved', sal.listeners[0] === 1 && sal.listeners[1] === 1 && sal.mode === 'ride' && post.ownN === 1 && post.own.played && post.own.gain === 1 && post.own.pan === 0 && post.own.lp === 0 && post.through.played && post.through.gain === 0.5 && post.through.lp === 2500, JSON.stringify([sal.listeners, post]));
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');

@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 import { makeFixture } from './fixture.mjs';
 import { Track } from './track.js';
 import { Train, stockFrom, notchToCmd } from './dynamics.js';
-import { Service, baselineRunTimes } from './service.js';
+import { Service, baselineRunTimes, DOOR_TIME } from './service.js';
 import { doorPermission, berthingScore, punctualityScore, buildSchedule, platformInterval, platformSide, DIFFICULTY, paxExchange } from './rules.js';
 import { KMH } from './util.js';
 import { Walker } from './walker.js';
+import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES } from './audio.js';
+import { readFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -167,4 +170,40 @@ test('walker: glides round a standing passenger in the aisle, still stops dead a
   for (let i = 0; i < 1000; i++) shut.update(1 / 60, 1, 0);
   const x0 = shut.x, z0 = shut.z; for (let i = 0; i < 300; i++) shut.update(1 / 60, 1, 0);
   assert.ok(shut.z > 10, 'cannot walk through two people'); assert.ok(Math.abs(shut.x - x0) < 1e-6 && Math.abs(shut.z - z0) < 1e-6, 'settled, not dithering');
+});
+
+test('audio: a sound fades and is muffled with distance, and pans towards the side it comes from', () => {
+  assert.deepEqual(reach(0), { gain: 1, lp: 0 }); assert.equal(reach(4).gain, 1); assert.equal(reach(4).lp, 0);
+  let g = 1, lp = 99999;
+  for (const d of [6, 10, 20, 40, 80, 160]) { const r = reach(d); assert.ok(r.gain < g, `quieter at ${d} m`); assert.ok(r.lp < lp && r.lp >= 900, `more muffled at ${d} m (${r.lp})`); g = r.gain; lp = r.lp; }
+  assert.ok(Math.abs(reach(10).gain - 0.304) < 0.01, 'about -10 dB at 10 m: ' + reach(10).gain);
+  assert.ok(reach(120).gain < 0.015, 'a train 120 m away is not heard (the engine drops anything under 0.015)');
+  assert.ok(reach(Infinity).gain === 0 && reach(NaN).gain === 1 && reach(-3).gain === 1, 'unknown / negative distances do not blow up');
+  assert.equal(panOf(0, 0, 1, 0), 0);
+  assert.ok(panOf(10, 0, 1, 0) > 0.8 && panOf(-10, 0, 1, 0) < -0.8 && panOf(10, 0, 1, 0) <= 0.85, 'right is positive, left negative, never hard-panned');
+  assert.ok(Math.abs(panOf(0, 10, 1, 0)) < 1e-9, 'straight ahead is centred');
+  assert.ok(Math.abs(panOf(1, 0, 1, 0)) < 0.4, 'right beside you the position eases off towards the middle');
+  assert.ok(panOf(-10, 0, -1, 0) > 0.8, 'turning round swaps the sides (the right-hand vector flips)');
+});
+
+test('audio: the door sounds last exactly as long as the leaves take, and the closing warning beeps all the way through', () => {
+  assert.equal(DOOR_SECS, DOOR_TIME, 'sound and leaves stay in step');
+  const n = Math.floor((DOOR_SECS - 0.2) / BEEP_EVERY);
+  assert.ok(n >= 6 && n * BEEP_EVERY + BEEP_LEN <= DOOR_SECS, `${n} beeps fit inside the ${DOOR_SECS} s travel`);
+  assert.ok(BEEP_LEN < BEEP_EVERY * 0.6, 'a beep is shorter than the gap that follows it');
+});
+
+test('audio: every recorded sound has its file, a sane level trim, and a CC0 / CC-BY credit with an author and a source link', () => {
+  const dir = fileURLToPath(new URL('../../audio/', import.meta.url)), credits = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/credits.json', import.meta.url)), 'utf8'));
+  assert.deepEqual(Object.keys(SAMPLES).sort(), ['doorClose', 'doorOpen']);
+  for (const [name, s] of Object.entries(SAMPLES)) {
+    const bytes = readFileSync(dir + s.file), size = statSync(dir + s.file).size;
+    assert.ok(size > 5000 && size < 200000, `${name}: ${s.file} is ${size} bytes`);
+    assert.ok(bytes.toString('latin1', 0, 3) === 'ID3' || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0), `${name}: ${s.file} is an MP3`);
+    assert.ok(s.gain > 0.05 && s.gain <= 1, `${name}: level trim ${s.gain}`);
+    const c = credits.find((x) => x.name === s.credit);
+    assert.ok(c, `${name} is not credited in models/credits.json as "${s.credit}"`);
+    assert.match(c.licence, /^(CC0|CC-BY)/, `${name}: licence ${c.licence}`);
+    assert.ok(c.author && /^https:\/\//.test(c.url), `${name} needs an author and a source link`);
+  }
 });

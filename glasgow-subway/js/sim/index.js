@@ -10,7 +10,7 @@ import { loadTunnelTemplate, TunnelView } from './tunnelview.js';
 import { buildStation, placeStation, stationHalfLength, PY } from './stationview.js';
 import { Walker } from './walker.js';
 import { Crowd, AnimCrowd } from './people.js';
-import { SimAudio } from './audio.js';
+import { SimAudio, reach, panOf } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
@@ -300,7 +300,7 @@ class Sim {
   _bgReset(mode) {
     const rec = this.bg; if (!rec || !this.svc) return;
     const stId = this.svc.stop.station; let idx = rec.track.stops.findIndex((x) => x.station === stId); if (idx < 0) idx = 0;
-    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null;
+    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null; this._wireBg(rec);
     if (mode === 'explore') { rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 6 + Math.random() * 30, t: 0 }; rec.view.root.visible = false; }
     else { rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 }; rec.svc.dwellT = Math.random() * 10; rec.view.root.visible = true; }
   }
@@ -308,7 +308,7 @@ class Sim {
   /** the player stepped off at a station: the other circle's train now comes and goes there */
   _bgToShuttle() {
     const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId);
-    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null;
+    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null; this._wireBg(rec);
     rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 5 + Math.random() * 20, t: 0 }; rec.view.root.visible = false;
   }
   /** the player boarded: the other circle's train (wherever it is) resumes its timetable */
@@ -366,11 +366,43 @@ class Sim {
     if (tv.root.visible && ((this._bgCullT = (this._bgCullT || 0) - dt) <= 0)) { this._bgCullT = 0.4; tv.cull(c, 'explore', this.quality === 'low'); }
   }
 
+  /** where a train's doors are relative to the listener (the camera): { dist: metres to the nearest doorway on the given side (side > 0 right-hand doors, < 0 left-hand, 0 either), pan: -1..1 }.
+   *  null while the train is not in the scene. */
+  _trainEar(tv, side = 0) {
+    if (!tv || !tv.root || !tv.root.visible || !tv.cars || !tv.cars.length) return null;
+    const cam = this.camera, c = cam.position, v = this._earV || (this._earV = new this.THREE.Vector3()); cam.updateMatrixWorld(); const e = cam.matrixWorld.elements;
+    let bd = Infinity, bx = 0, bz = 0;
+    for (const list of side > 0 ? [tv.doorsR] : side < 0 ? [tv.doorsL] : [tv.doorsL, tv.doorsR]) for (const dr of list) {
+      dr.leaves[0].n.getWorldPosition(v); const dx = v.x - c.x, dy = v.y - c.y, dz = v.z - c.z, d = Math.hypot(dx, dy, dz); if (d < bd) { bd = d; bx = dx; bz = dz; }
+    }
+    if (!isFinite(bd)) for (const car of tv.cars) { const m = car.matrix.elements, dx = m[12] - c.x, dy = m[13] - c.y, dz = m[14] - c.z, d = Math.hypot(dx, dy, dz) - 6; if (d < bd) { bd = Math.max(0, d); bx = dx; bz = dz; } }   // (a model with no door nodes: the cars will do)
+    return { dist: bd, pan: panOf(bx, bz, e[0], e[2]) };
+  }
+  /** the sound of a train's doors opening (open = true) or closing (with its warning beeps), as heard from where the player is. own = it is the train the player is on;
+   *  side = which doors (> 0 right-hand) - from the event when it opens, from how far each side is open when it closes. */
+  _doorSound(tv, own, open, side = 0) {
+    let o;
+    if (own && this.ctxKind === 'train') o = { gain: this.mode === 'drive' ? 0.7 : 1, pan: 0, lp: 0, key: tv };   // aboard it: the doors are beside you (a little muffled in the cab)
+    else {
+      const ear = this._trainEar(tv, side); if (!ear) return false; const r = reach(ear.dist);
+      o = { gain: r.gain, pan: ear.pan, lp: r.lp, key: tv };
+      if (this.ctxKind === 'train') { o.gain *= 0.5; o.lp = o.lp ? Math.min(o.lp, 2500) : 2500; }   // the other circle's train, heard through your own train's walls
+    }
+    return this.audio.doors(open, o);
+  }
+  /** a service's doors event -> its sound: the side comes with the opening; a closing is on whichever side is open */
+  _svcDoors(svc, tv, own, d) {
+    const open = !(d && d.open === false), side = d && d.side ? d.side : (svc.doors.R >= svc.doors.L ? 1 : -1);
+    return this._doorSound(tv, own, open, side);
+  }
+  /** the other circle's train (not the player's): its doors are heard from where you stand */
+  _wireBg(rec) { const svc = rec.svc; svc.on((t, d) => { if (t === 'doors' && svc !== this.svc) this._svcDoors(svc, rec.view, false, d); }); }
+
   _onSvc(type, d) {
     if (type === 'toast') this.hud.toast(d.text, d.kind, 3);
-    else if (type === 'chime') this.audio.chime(d.kind);
+    else if (type === 'chime') { if (d.kind !== 'close') this.audio.chime(d.kind); }   // (the closing warning is part of the doors-closing sound below)
     else if (type === 'log') { if (d.delta < 0 && d.kind !== 'time') this.hud.toast(d.text + ' (' + d.delta + ')', 'warn', 3); }
-    else if (type === 'doors') { this.audio.chime(d && d.open === false ? 'close' : 'door'); }
+    else if (type === 'doors') this._svcDoors(this.svc, this.trainView, true, d);
     else if (type === 'target') {
       const n = this.svc.station.name;
       if (this.mode === 'ride' || this.mode === 'drive') this._announce(`The next station is ${n}.`);
@@ -620,7 +652,7 @@ class Sim {
       old.svc.listeners = []; nw.svc.listeners = [];
       this.line = nw.line; this.track = nw.track; this.schedule = nw.schedule; this.svc = nw.svc; this.trainView = nw.view; this.layouts = nw.layouts; this.sel.line = nw.line;
       nw.mode = 'player'; nw.sh = { state: 'none', timer: 0, t: 0 }; nw.dock = null; nw.svc.on((t, d) => this._onSvc(t, d));
-      this.bg = old; old.mode = 'free'; old.sh = { state: 'free', timer: 0, t: 0 }; old.dock = null; old.view.root.visible = true;
+      this.bg = old; old.mode = 'free'; old.sh = { state: 'free', timer: 0, t: 0 }; old.dock = null; old.view.root.visible = true; this._wireBg(old);
       old.svc.ato = true; old.svc.autoDoors = true; old.svc.schedule = old.schedule; old.svc.t0 = old.svc.t - old.schedule.arr[old.svc.idx] + (old.svc.phase === 'station' ? old.svc.dwellT : 0);
       nw.svc.schedule = nw.schedule; nw.svc.t0 = nw.svc.t - nw.schedule.arr[nw.svc.idx] + nw.svc.dwellT; nw.view.root.visible = true;
       this._applyTrack(); this.crowd.clear(); this.crowdFor = null;   // (each train keeps its own riders: nothing to clear in the saloons)
@@ -1310,7 +1342,7 @@ class Sim {
           if (o0) for (const probe of probes) for (let k = 0; k < ns; k++) { probe.pose(o0, (k / ns) * o0.duration); const d = probe.depth(); base = Math.max(base, d.l, d.r); }
           rows.push({ id: ch.id, baked: c.armFit[ch.id], clips: n, names, worst: +(worst * 100).toFixed(1), worstClip, same, base: +(base * 100).toFixed(1) }); }
         return rows; },
-      doorLeaves: () => { const tv = this.trainView, sv = this.svc, side = sv.doors.L > sv.doors.R ? 'L' : 'R', list = side === 'L' ? tv.doorsL : tv.doorsR; return { double: tv.doubleDoors, side, n: list.length, leaves: list.map((d) => d.leaves.map((l) => l.n.position.z)) }; }, mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
+      doorLeaves: () => { const tv = this.trainView, sv = this.svc, side = sv.doors.L > sv.doors.R ? 'L' : 'R', list = side === 'L' ? tv.doorsL : tv.doorsR; return { double: tv.doubleDoors, side, n: list.length, leaves: list.map((d) => d.leaves.map((l) => l.n.position.z)) }; }, mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'), audioDoors: (open, o) => this.audio.doors(open, o), audioBong: () => this.audio.bong(), doorSound: (tv, own, open, side) => this._doorSound(tv, own, open, side), trainEar: (tv, side) => this._trainEar(tv, side),
       railExt: async (i) => { const v = await this._prepare(i); if (!v) return null; v.group.updateMatrixWorld(true); const T = this.THREE, b = new T.Box3(), a = new T.Box3(), p = new T.Vector3(); let z0 = 1e9, z1 = -1e9;
         v.group.traverse((m) => { if (m.isMesh && m.material && /^rail_steel/.test(m.material.name || '')) { m.geometry.computeBoundingBox(); a.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); for (const zz of [a.min.z, a.max.z]) for (const xx of [a.min.x, a.max.x]) for (const yy of [a.min.y, a.max.y]) { p.set(xx, yy, zz); v.group.worldToLocal(p); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); } } });
         return { z0, z1, skipHalf: HALL_FULL }; }, render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },

@@ -502,5 +502,17 @@
   "author": "MakeHuman Community",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/about/license.html"
+ },
+ {
+  "name": "London Underground 1995 Stock train doors opening",
+  "author": "Philt3r",
+  "licence": "CC-BY 4.0 (cut, mixed to mono, high-pass filtered, slowed to fit the door travel, converted to MP3)",
+  "url": "https://commons.wikimedia.org/wiki/File:London_Underground_1995_Stock_train_doors_opening.ogg"
+ },
+ {
+  "name": "London Underground 1995 Stock train doors closing",
+  "author": "Philt3r",
+  "licence": "CC-BY 4.0 (cut, mixed to mono, high-pass filtered, slowed to fit the door travel, converted to MP3)",
+  "url": "https://commons.wikimedia.org/wiki/File:London_Underground_1995_Stock_train_doors_closing.ogg"
  }
 ]

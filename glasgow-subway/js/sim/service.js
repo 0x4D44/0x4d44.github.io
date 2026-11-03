@@ -5,7 +5,7 @@ import { atoControl } from './ato.js';
 import { DIFFICULTY, platformInterval, platformSide, doorPermission, berthingScore, berthingLabel, punctualityScore, paxExchange, buildSchedule } from './rules.js';
 import { KMH, clamp, mulberry32, wrapL } from './util.js';
 
-const DOOR_TIME = 2.6;
+export const DOOR_TIME = 2.6;
 
 export class Service {
   /**
