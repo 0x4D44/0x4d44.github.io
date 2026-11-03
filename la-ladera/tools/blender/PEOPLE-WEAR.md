@@ -5,6 +5,11 @@ elder residents. The seven child/teen IDs are excluded. It does not replace the
 default cast or automatically select an outfit. Swimwear is available only to an
 explicit beach selection; this change does not add beach behaviour to the game.
 
+This regeneration starts at requested base
+`38542092094aaf0101cc9920fd8628fcdaf0ac35`. Its results must be recomputed; PR #85's
+old assets and certificate are not inputs. See `dev/wear/REGENERATION.md` for the
+current acceptance status and complete eligible/excluded resident lists.
+
 The source catalogue is `people_wear.catalog.json`. Its garment rows specify
 slots, permitted archetypes, contexts, and colour/print sets. The generated
 `js/people/wear_data.js` is the small runtime selection table;
@@ -89,9 +94,13 @@ remain usable.
 
 ## Geometry, atlas, and provenance
 
-All garment and body patterns are original generated geometry in
-`people_wear_shapes.py`. The builder reads the existing resident proportions and
-skin-weight recipes without executing the original builder's output side effects.
+Garment patterns are original generated geometry in `people_wear_shapes.py`.
+`people_wear_body.py` now calls the current native hand, leg and sandal-skin
+recipes and follows the current torso and arm contours. It closes hidden open
+boundaries and explicitly records the inferred anatomy in covered regions: the
+protected cast has clothes instead of a complete unclothed body. The builder
+reads the existing resident proportions and skin-weight recipes without
+executing the original builder's output side effects.
 It uses the exact original source skeleton for every exported fit. Boolean sewing
 removes buried torso/sleeve and crotch panels; face provenance opens the neck,
 waist and hems while retaining exposed shoulder and crotch cap fragments.
@@ -123,13 +132,25 @@ influences, and weights summing to 255. Near and far meshes share attributes whe
 possible. The independent validator measures actual uploaded buffer storage and
 RGBA8 atlas storage including mipmaps, with a strict **12,000,000-byte** ceiling.
 Each near garment is limited to **1,800 triangles**.
+Every far garment is limited to **600 triangles** and **40% of its near mesh**;
+the far body also satisfies the 40% ratio. `people_wear_lod.py` reduces source
+edges to existing endpoints, preserves component/opening topology, and leaves
+positions, skin weights and UVs unchanged. It does not certify posed clearance.
+Compressed wardrobe models are limited to **6,000,000 bytes**.
+
+Metadata and the independent validator pin both current people LODs, metadata,
+three texture pages, six protected Python sources and the two unchanged
+manifests. The explicit source-input map uses LF hashes for text and exact hashes
+for binary files. Narrow `.gitattributes` rules keep new wear text in LF form;
+the pre-existing release fingerprints continue to bind protected checkout bytes
+with `core.autocrlf=true`.
 
 ## Rebuild
 
 Run from the repository root. This is a headless Python authoring pipeline; it
 does not open Blender or require a runtime Python dependency. The tested authoring
 environment uses Python 3.12, NumPy 2.3.5, SciPy 1.17.0, Pillow 12.3.0, and
-Manifold3D 3.5.4. Install these in an authoring environment; if Manifold is installed
+Manifold3D 3.5.4 and Zopfli 0.4.3. Install these in an authoring environment; if Manifold is installed
 in a separate directory, set `PEOPLE_WEAR_PYSITE` to it.
 
 ```sh
@@ -158,16 +179,12 @@ deltas from the actual shipped base positions, then re-decodes and checks the
 combined target and push-out against the 180 mm bind/posed limit. Independent
 solid-angle checks verify the contact-pose vertex and face probes.
 
-Some detailed cuts did not pass the contact-pose face checks. The explicit
-`WEAR_TOPOLOGY_CHOICES` table selects the complete, proven lower-detail cut for
-those near meshes: fuller hip cuts on `w_vecina` and `w_peluquera`, and specified
-shirt/jumper sleeves on several adults. The near node remains distinct, with a
-private position stream where the long-bottom targets require it. All garment
-coverage and all triangle probes are retained. Choices are recorded in source,
-node extras, fit metadata and authoring reports; structural validation checks
-that the actual exported triangles match the declared complete cut. This does
-not force the renderer to a different LOD or hide body regions. Other narrow
-source adjustments include additional leggings ease on `m_don`.
+PR #85's `WEAR_TOPOLOGY_CHOICES` and exact cook's-hip repair remain supported for
+legacy fixtures, with their original guards. The current-body route uses
+independent near cuts and far reduction, so it never makes near and far equal.
+The new cook's-hip guard binds all six current source files and the complete raw
+mesh instead of applying old triangle 185 to unrelated new topology. Any further
+pattern adjustment requires a fresh guard, build and clearance run.
 
 For a target that approaches the displacement limit, the authoring helper may
 propose moving the actual base positions five percent toward that target, capped
@@ -189,7 +206,8 @@ must pass before any fitted files are published.
 
 `--fit-rest` remains available for rest-only authoring diagnostics. The full
 animation bank is checked separately with the bounded runtime correction. The
-lossless `.glb.gz` transport preserves every decoded GLB byte and reduces the
+lossless `.glb.gz` transport uses deterministic Zopfli with 15 iterations,
+preserves every decoded GLB byte and reduces the
 actual model payload counted by the unchanged payload gate. The loader accepts
 both compressed bytes and a server response that is already HTTP-decoded, and
 uses the explicit model resource directory for external references. GPU budgets
@@ -278,5 +296,5 @@ an inverse bind matrix, remove a body triangle, reverse a face, exceed budgets,
 misalign packed attributes, introduce a child fit, and corrupt palette/context
 inputs. These mutations must fail the same predicates used by the release gate.
 
-See `dev/wear/VERIFICATION.md` for the reviewed revision's measured results and
+See `dev/wear/REGENERATION.md` for this revision's measured results and
 contact sheets.

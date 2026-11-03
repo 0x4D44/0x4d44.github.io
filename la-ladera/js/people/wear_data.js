@@ -36,6 +36,9 @@ export const WEAR_POLICY = freeze({
   },
   "limits": {
     "nearTrianglesPerGarment": 1800,
+    "farTrianglesPerGarment": 600,
+    "farLodRatio": 0.4,
+    "compressedModelBytes": 6000000,
     "gpuGrowthBytes": 12000000,
     "maxInfluences": 4
   },

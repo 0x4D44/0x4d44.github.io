@@ -1,0 +1,66 @@
+[
+  {
+    "id": "rebase-01",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source inventory pins both bodies all texture pages six recipes and both protected manifests",
+    "description": "Omit the current source head recipe from the required provenance inventory.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/people_wear_data.mjs", "from": "'tools/blender/people_tex.py', 'tools/blender/people_head.py',", "to": "'tools/blender/people_tex.py',"}]
+  },
+  {
+    "id": "rebase-02",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source text pins use identical canonical LF bytes for LF and CRLF checkouts",
+    "description": "Fingerprint CRLF text without canonical LF normalization.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/people_wear_data.mjs", "from": "raw.toString('utf8').replace(/\\r\\n/g, '\\n')", "to": "raw.toString('utf8')"}]
+  },
+  {
+    "id": "rebase-03",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source binary pins preserve every byte including CRLF and non-UTF8 bytes",
+    "description": "Decode and normalize binary files as UTF8 text before hashing them.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/people_wear_data.mjs", "from": "const bytes = text ? Buffer.from(raw.toString('utf8').replace(/\\r\\n/g, '\\n')) : raw;", "to": "const bytes = Buffer.from(raw.toString('utf8').replace(/\\r\\n/g, '\\n'));"}]
+  },
+  {
+    "id": "rebase-04",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source certificate rejects omitted reordered stale or extended rows and changed live sources",
+    "description": "Bypass comparison of supplied provenance with all current source files.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/people_wear_data.mjs", "from": "if (!Array.isArray(actual) || JSON.stringify(actual) !== JSON.stringify(expected))", "to": "if (false)"}]
+  },
+  {
+    "id": "rebase-05",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear far LOD accepts exactly forty percent and rejects one triangle above the boundary",
+    "description": "Allow far meshes up to sixty percent of their decoded near mesh.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/blender/people_wear_validate.mjs", "from": "far * 5 <= near * 2", "to": "far * 5 <= near * 3"}]
+  },
+  {
+    "id": "rebase-06",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD budgets reject zero fractional nonfinite unsafe and nonnumeric triangle counts",
+    "description": "Accept finite zero, fractional and unsafe triangle counts.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/blender/people_wear_validate.mjs", "from": "Number.isSafeInteger(near) && near > 0 && Number.isSafeInteger(far) && far > 0", "to": "Number.isFinite(near) && Number.isFinite(far)"}]
+  },
+  {
+    "id": "rebase-07",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear compressed model budget accepts six million bytes and rejects one byte more",
+    "description": "Let one compressed model byte above the explicit budget pass.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/blender/people_wear_validate.mjs", "from": "bytes <= COMPRESSED_MODEL_BYTES,", "to": "bytes <= COMPRESSED_MODEL_BYTES + 1,"}]
+  },
+  {
+    "id": "rebase-08",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear model budget rejects zero negative fractional nonfinite and nonnumeric byte counts",
+    "description": "Omit the positive safe-integer byte-count guard.",
+    "requiresAssets": false,
+    "changes": [{"path": "la-ladera/tools/blender/people_wear_validate.mjs", "from": "Number.isSafeInteger(bytes) && bytes > 0 && bytes <= COMPRESSED_MODEL_BYTES", "to": "bytes <= COMPRESSED_MODEL_BYTES"}]
+  }
+]

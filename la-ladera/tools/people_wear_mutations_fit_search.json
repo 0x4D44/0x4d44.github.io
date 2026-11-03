@@ -1,0 +1,128 @@
+[
+  {
+    "id": "fit-search-01",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search finds a Float32 union exit through the inverse skin map within eighty millimetres",
+    "description": "Use a posed-space exit delta as a bind-space delta without inverting the skin map.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "const delta = inverseVector(matrix, exit.point.map((value, k) => value - origin[k]));",
+        "to": "const delta = exit.point.map((value, k) => value - origin[k]);"
+      }
+    ]
+  },
+  {
+    "id": "fit-search-02",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search cannot reset the eighty millimetre origin to a previous correction",
+    "description": "Reset the immutable authoring origin to a previous correction.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "const origin = transform(matrix, original), contains",
+        "to": "original = Array.from(current); const origin = transform(matrix, original), contains"
+      }
+    ]
+  },
+  {
+    "id": "fit-search-03-membership",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search rechecks actual Float32 union membership before returning an outside shortcut",
+    "description": "Omit the final union-membership check after Float32 conversion.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": " || contains(posed)",
+        "to": ""
+      }
+    ]
+  },
+  {
+    "id": "fit-search-03-rounding",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search rechecks actual Float32 union membership before returning an outside shortcut",
+    "description": "Approve a raw double-precision candidate without testing the Float32 upload.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "target = target.map(Math.fround);",
+        "to": "target = Array.from(target);"
+      }
+    ]
+  },
+  {
+    "id": "fit-search-04",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search measures its displacement after Float32 quantization against the immutable origin",
+    "description": "Omit the cumulative post-quantization displacement bound.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "displacement > maxMove || ",
+        "to": ""
+      }
+    ]
+  },
+  {
+    "id": "fit-search-05",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search returns no candidate when every direction exceeds the permitted bind ball",
+    "description": "Return the still-penetrating current point when no bounded exit exists.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "  return best;\n",
+        "to": "  return best ?? { target: [...current], point: transform(matrix, current), displacement: 0, deltaBind: [0, 0, 0] };\n"
+      }
+    ]
+  },
+  {
+    "id": "fit-search-06",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search rejects malformed surfaces and nonfinite or malformed bind inputs",
+    "description": "Treat NaN and infinite vector components as finite.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "Array.from(value).every(Number.isFinite)",
+        "to": "Array.from(value).every(() => true)"
+      }
+    ]
+  },
+  {
+    "id": "fit-search-07",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search rejects a singular skin map even when the origin is already outside",
+    "description": "Skip the singular skin-map check on the outside-origin shortcut.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "  inverseVector(matrix, [0, 0, 0]); // Reject singular skinning before any shortcut.\n",
+        "to": ""
+      }
+    ]
+  },
+  {
+    "id": "fit-search-08",
+    "suite": "la-ladera/tests/people-wear-fit-search.test.mjs",
+    "test": "bounded author search rejects invalid padding and movement limits without relaxing the hard ceiling",
+    "description": "Bypass the positive padding and hard movement-ceiling guards.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_search.mjs",
+        "from": "Number.isFinite(padding) && padding > 0 && Number.isFinite(maxMove) && maxMove > 0 && maxMove <= .18 && padding < maxMove",
+        "to": "true"
+      }
+    ]
+  }
+]

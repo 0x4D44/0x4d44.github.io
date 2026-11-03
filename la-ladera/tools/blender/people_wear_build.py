@@ -21,6 +21,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 from PIL import Image, ImageDraw
 from people_wear_shapes import Mesh, Patterns
+from people_wear_lod import reduce_garment_far
 
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parent.parent
@@ -30,6 +31,48 @@ SOURCE=ROOT/'assets/models/people/people.glb'
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def canon(name):return name.rsplit('_',1)[0] if name.rsplit('_',1)[-1].isdigit() else name
+
+
+def source_inputs():
+    paths = [
+        'assets/models/people/people.glb', 'assets/models/people/people_lod.glb',
+        'assets/models/people/people_meta.json', 'assets/models/people/people_albedo.jpg',
+        'assets/models/people/people_normal.jpg', 'assets/models/people/people_orm.jpg',
+        'tools/blender/people_body.py', 'tools/blender/people_body_limbs.py',
+        'tools/blender/people_tex.py', 'tools/blender/people_head.py',
+        'tools/blender/people_build.py', 'tools/blender/people_cast.py',
+        'assets/models/manifest.people.json', 'assets/models/manifest.json',
+    ]
+    result = []
+    for path in sorted(paths):
+        data = (ROOT/path).read_bytes(); text = Path(path).suffix in ('.py', '.json')
+        if text:data = data.replace(b'\r\n', b'\n')
+        result.append({'path':path, 'form':'LF' if text else 'bytes',
+                       'bytes':len(data), 'sha256':hashlib.sha256(data).hexdigest()})
+    return result
+
+
+def compressed_glb(data):
+    # Deterministic lossless compression changes transport only. Independent
+    # validators still decode and measure the original geometry and GPU bytes.
+    import zopfli.gzip
+    return zopfli.gzip.compress(data, numiterations=15)
+
+
+def body_provenance_reference(ident, provenance):
+    """Keep the full native-component audit in dev, with an exact LF byte pin.
+
+    Components are authoring evidence, not runtime input. The shipped metadata
+    retains the adapter, source hashes and coverage description; its full report
+    is also bound into the independent clearance certificate input snapshot.
+    """
+    if 'components' not in provenance:return provenance
+    relative='dev/wear/body-provenance/'+ident+'.json'
+    path=ROOT/relative;path.parent.mkdir(parents=True,exist_ok=True)
+    data=(json.dumps(provenance,indent=2)+'\n').encode('utf-8');path.write_bytes(data)
+    summary={key:value for key,value in provenance.items() if key!='components'}
+    summary['componentsReport']={'path':relative,'form':'LF','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+    return summary
 
 
 def read_glb(path):
@@ -48,9 +91,11 @@ def refresh_metadata(compress=False):
     """
     path=OUT/'metadata.json';result=json.loads(path.read_text())
     for ident,fit in result['fits'].items():
+        if fit.get('bodySourceProvenance'):
+            fit['bodySourceProvenance']=body_provenance_reference(ident,fit['bodySourceProvenance'])
         file=ROOT/'assets/models'/fit['file']
         if compress and file.suffix=='.glb':
-            dest=Path(str(file)+'.gz');dest.write_bytes(gzip.compress(file.read_bytes(),compresslevel=9,mtime=0))
+            dest=Path(str(file)+'.gz');dest.write_bytes(compressed_glb(file.read_bytes()))
             file.unlink();file=dest;fit['file']+='.gz'
         if compress and file.name.endswith('.glb.gz'):
             # A resumed fit can already reference its compressed output while a
@@ -80,8 +125,10 @@ def refresh_metadata(compress=False):
     result['gpuGeometryBytes']=sum(f['gpuGeometryBytes'] for f in result['fits'].values())
     result['gpuGrowthBytes']=result['gpuGeometryBytes']+result['atlas']['gpuBytes']
     model_files=[ROOT/'assets/models'/f['file'] for f in result['fits'].values()]
+    if compress and sum(p.stat().st_size for p in model_files)>6000000:
+        raise RuntimeError('Wear compressed model payload exceeds 6,000,000 bytes')
     result['files']=[{'file':'wear/'+p.name,'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(model_files)]+[{'file':'wear/wear_atlas.png','bytes':(OUT/'wear_atlas.png').stat().st_size,'sha256':sha(OUT/'wear_atlas.png')}]
-    path.write_text(json.dumps(result,indent=2)+'\n')
+    path.write_text(json.dumps(result,separators=(',',':'))+'\n')
     print(f"wear inventory: {len(result['fits'])} adults, {result['gpuGrowthBytes']} measured GPU bytes",flush=True)
     if result['gpuGrowthBytes']>=12000000:raise RuntimeError('Wear GPU growth is not below 12 MB')
 
@@ -113,7 +160,8 @@ if(faces)for(const[id,fit]of Object.entries(meta.fits)){
  if(fit.restFit||fit.faceFit||fit.poseFit)throw Error(id+': --fit-faces requires a fresh generated raw asset; the static 80 mm origin cannot reset');
 }
 mkdirSync(stage,{recursive:true});
-const dependencyPaths=['tools/blender/people_validate.mjs','tools/blender/people_wear_validate.mjs','tools/blender/people_wear_fit_faces.mjs','tools/blender/people_wear_fit_targets.mjs','tools/blender/people_wear_math.mjs','js/people/wear_geometry.js','js/people/wear_pose.js','tools/blender/people_clips.json.gz','tools/blender/people_contract.json'];
+const dependencyPaths=['tools/blender/people_validate.mjs','tools/blender/people_wear_validate.mjs','tools/blender/people_wear_fit_faces.mjs','tools/blender/people_wear_fit_targets.mjs','tools/blender/people_wear_fit_search.mjs','tools/blender/people_wear_math.mjs','js/people/wear_geometry.js','js/people/wear_pose.js','tools/blender/people_clips.json.gz','tools/blender/people_contract.json'];
+dependencyPaths.push('tools/blender/people_wear_build.py','tools/blender/people_wear_shapes.py','tools/blender/people_wear_body.py','tools/blender/people_wear_body_guard.py','tools/blender/people_wear_lod.py','tools/blender/people_body.py','tools/blender/people_body_limbs.py','tools/blender/people_build.py','tools/blender/people_cast.py','tools/blender/people_head.py','tools/blender/people_tex.py');
 const dependencies=Object.fromEntries(dependencyPaths.map(path=>[path,sha(readFileSync('./la-ladera/'+path))]));
 let currentId=null;
 
@@ -141,7 +189,7 @@ for(const[id,fit]of Object.entries(meta.fits)){
  const result=await pushOutFit(parseGlb(rawBytes),fit,{id,samples:[{clip:null,clipName:'rest',time:0}],passes:8,padding:.0015,maxMove:.08});
  if(!result.report.converged)throw Error(id+': rest fit did not converge');
  let output=result.bytes;writeFileSync(join(stage,id+'.rest.glb'),output);
- fit.restFit={samples:1,passes:result.report.passes.length,movedVertices:result.report.movedVertices,maxDisplacementM:result.report.maxDisplacement,unresolved:0};
+ fit.restFit={samples:1,passes:result.report.passes.length,movedVertices:result.report.movedVertices,maxDisplacementM:result.report.maxDisplacement,boundedSearches:result.report.boundedSearches,unresolved:0};
  fit.gpuGeometryBytes=result.report.gpuGeometryBytes;
  const targetFiles=[];
  if(faces){
@@ -179,7 +227,8 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
     import tempfile
     from concurrent.futures import ThreadPoolExecutor, as_completed
     if author_jobs<1 or author_jobs>8:raise ValueError('Author jobs must be between one and eight')
-    stage = Path(resume_author).resolve() if resume_author else Path(tempfile.mkdtemp(prefix='la-ladera-wear-author-'))
+    (ROOT/'.scratch').mkdir(exist_ok=True)
+    stage = Path(resume_author).resolve() if resume_author else Path(tempfile.mkdtemp(prefix='wear-author-',dir=ROOT/'.scratch'))
     stage.mkdir(parents=True,exist_ok=True)
     meta_path = OUT/'metadata.json';input_metadata_sha = sha(meta_path)
     meta = json.loads(meta_path.read_text());ids = list(meta['fits']) if only is None else list(only)
@@ -235,7 +284,7 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
             (directory/'packing.json').write_text(json.dumps(report,indent=2)+'\n')
         else:output = base
         data = output.read_bytes()
-        if entry['compressed']:data = gzip.compress(data,compresslevel=9,mtime=0)
+        if entry['compressed']:data = compressed_glb(data)
         destination = Path(entry['inputPath']);pending.append((destination,data,entry['inputSha256']))
         fit['bytes'] = len(data);fit['sha256'] = hashlib.sha256(data).hexdigest();meta['fits'][ident] = fit
     meta['gpuGeometryBytes'] = sum(f['gpuGeometryBytes'] for f in meta['fits'].values())
@@ -245,7 +294,7 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
     for destination,data,expected in pending:
         if sha(destination)!=expected:raise RuntimeError(str(destination)+': raw input changed during authoring')
     for destination,data,_ in pending:destination.write_bytes(data)
-    meta_path.write_text(json.dumps(meta,indent=2)+'\n')
+    meta_path.write_text(json.dumps(meta,separators=(',',':'))+'\n')
     refresh_metadata()
 
 
@@ -526,7 +575,10 @@ def repack_wear_lods(source, destination, fit, pose_targets=None, base_overrides
     targets = pose_targets or {}
     overrides = base_overrides or {}
     fit_id = fit['bodyNode'].removeprefix('wear_body_')
-    choices = copy.deepcopy(WEAR_TOPOLOGY_CHOICES.get(fit_id, {}))
+    # Original complete-cut recipes remain supported and fingerprint-checked
+    # for legacy fixtures. New native-body exports retain independent near cuts
+    # and reduce every far garment to at most 40 percent.
+    choices = {} if fit.get('bodySourceProvenance', {}).get('adapter') == 'current-native-body' else copy.deepcopy(WEAR_TOPOLOGY_CHOICES.get(fit_id, {}))
     if fit.get('topologyChoices', choices) != choices:
         raise ValueError(fit_id + ': topology choices disagree with the source recipe')
     writer = GLB()
@@ -717,6 +769,7 @@ def build_fit(pd,recipes,source,catalog):
             return [('hips',1-t),('thigh_l',t*(1-right)),('thigh_r',t*right)]
         return recipes['weights_for'](co,part,bd)
     pat=Patterns(pd,P,skin,recipes['torso_ctrl'](pd,P))
+    pat.body_skin=lambda co,part:recipes['weights_for'](co,part,bd)
     body=pat.body();identity,proxy,bounds=identity_and_proxy(src,P,joints,skin)
     body.p=[(x,y,z-bottom) for x,y,z in body.p]
     bounds=tuple(np.asarray(v)+np.asarray([0,0,bottom]) for v in bounds)
@@ -725,7 +778,7 @@ def build_fit(pd,recipes,source,catalog):
     # It carries no new atlas image references or hidden duplicate GPU textures.
     g.g['materials']=[{'name':'wear_skin','pbrMetallicRoughness':{'baseColorFactor':linear+[1],'metallicFactor':0,'roughnessFactor':.82}}, {'name':'wear_identity_people_pbr','pbrMetallicRoughness':{'baseColorFactor':[1,1,1,1],'metallicFactor':0,'roughnessFactor':.85}}, {'name':'wear_fabric','doubleSided':True,'pbrMetallicRoughness':{'baseColorFactor':[1,1,1,1],'metallicFactor':0,'roughnessFactor':.94}}, {'name':'wear_collision_proxy','pbrMetallicRoughness':{'baseColorFactor':[0,0,0,0]},'alphaMode':'BLEND'}]
     bodyname='wear_body_'+ident;identityname='wear_identity_'+ident;proxyname='wear_proxy_'+ident
-    ba=g.mesh(bodyname,body,joints,0,extras={'components':body.components});g.mesh(bodyname+'_lod',body,joints,0,far=True,attrs=ba,visible=False)
+    ba=g.mesh(bodyname,body,joints,0,extras={'components':body.components});g.mesh(bodyname+'_lod',body,joints,0,far=True,attrs=ba,visible=False,extras={'components':body.far_components})
     # The original source attributes are already resident in CharacterLibrary.
     # A valid plain glTF node records only the retained original triangle indices;
     # runtime borrows those existing BufferAttributes rather than uploading a
@@ -736,17 +789,19 @@ def build_fit(pd,recipes,source,catalog):
     g.g['nodes'][0]['children'].append(identity_index)
     g.mesh(proxyname,proxy,joints,3,visible=False,extras={'components':proxy.components,'encloses':identityname})
     fit={'file':'wear/'+ident+'.glb','bodyNode':bodyname,'bodyLodNode':bodyname+'_lod','identityNode':identityname,'identitySource':'people/people.glb','proxyNode':proxyname,'bodyComponents':body.components,'proxyComponents':proxy.components,'bodyTriangles':len(body.tri),'bodyFarTriangles':len(body.far),'identityTriangles':len(identity.tri),'garments':{},'jointNames':joints,'sourceSkin':src['skin']}
-    if ident in WEAR_TOPOLOGY_CHOICES:fit['topologyChoices']=copy.deepcopy(WEAR_TOPOLOGY_CHOICES[ident])
+    fit['bodyFarComponents']=body.far_components
+    fit['bodySourceProvenance']=body_provenance_reference(ident,body.sourceProvenance)
     for entry in catalog['garments']:
         gid=entry['id'];m=pat.garment(gid,bounds)
-        choice=WEAR_TOPOLOGY_CHOICES.get(ident,{}).get(gid)
-        if choice and choice.get('application')=='raw-build':m.tri=list(m.far)
+        lod_report=reduce_garment_far(m,ident+'/'+gid)
+        choice=None
         m.p=[(x,y,z-bottom) for x,y,z in m.p]
         if len(m.tri)>1800:raise RuntimeError(f'{ident}/{gid}: {len(m.tri)} triangles >1800')
         if len(m.far)>600:raise RuntimeError(f'{ident}/{gid}: {len(m.far)} far triangles >600')
         name=f'wear_{gid}_{ident}';attrs=g.mesh(name,m,joints,2,visible=False,extras={'garment':gid,'fit':ident,'lod':0,**({'topologyChoice':choice} if choice and choice.get('application')=='raw-build' else {})})
         g.mesh(name+'_lod',m,joints,2,far=True,attrs=attrs,visible=False,extras={'garment':gid,'fit':ident,'lod':1})
         fit['garments'][gid]={'node':name,'lodNode':name+'_lod','tris':len(m.tri),'farTris':len(m.far),'vertices':g.g['accessors'][attrs['POSITION']]['count'],'skin':0}
+        fit['garments'][gid]['lodReduction']=lod_report
     file=OUT/(ident+'.glb');g.save(file)
     # Rebuilding an already shipped fit replaces its owned compressed artifact,
     # so a normal author/build/fit cycle cannot leave two payload copies behind.
@@ -782,13 +837,15 @@ def main():
     atlas_size=catalog['atlas']['size'];atlas(atlas_size);source=decode_source([p['id'] for p in adults])
     old=json.loads((OUT/'metadata.json').read_text()) if args.only and (OUT/'metadata.json').exists() else {}
     result={'schema':1,'adultOnly':True,'defaultEnabled':False,'sourcePeopleSha256':sha(SOURCE),'sourceClipBankSha256':sha(HERE/'people_clips.json.gz'),'sourceCatalogSha256':sha(HERE/'people_wear.catalog.json'),'atlas':{'file':'wear/wear_atlas.png','size':atlas_size,'grid':[4,4],'gpuBytes':math.ceil(atlas_size[0]*atlas_size[1]*4*4/3)},'fits':old.get('fits',{})}
+    result['sourceInputs']=source_inputs()
     for pd in adults:
         fit=build_fit(pd,recipes,source,catalog);result['fits'][pd['id']]=fit
         print(f"wear {pd['id']}: {len(fit['garments'])} garments, {fit['bytes']} bytes, {fit['gpuGeometryBytes']} GPU geometry bytes",flush=True)
     result['fitIds']=sorted(result['fits']);result['gpuGeometryBytes']=sum(f['gpuGeometryBytes'] for f in result['fits'].values());result['gpuGrowthBytes']=result['gpuGeometryBytes']+result['atlas']['gpuBytes']
+    if source_inputs()!=result['sourceInputs']:raise RuntimeError('Current people inputs changed during wardrobe generation')
     model_files=[ROOT/'assets/models'/f['file'] for f in result['fits'].values()]
     result['files']=[{'file':'wear/'+p.name,'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(model_files)]+[{'file':'wear/wear_atlas.png','bytes':(OUT/'wear_atlas.png').stat().st_size,'sha256':sha(OUT/'wear_atlas.png')}]
-    (OUT/'metadata.json').write_text(json.dumps(result,indent=2)+'\n')
+    (OUT/'metadata.json').write_text(json.dumps(result,separators=(',',':'))+'\n')
     print(f"wear total: {len(result['fits'])} adults, {result['gpuGrowthBytes']} GPU bytes including shared atlas",flush=True)
     if result['gpuGrowthBytes']>=12000000:raise RuntimeError('Wear GPU growth is not below 12 MB')
     if args.gzip:refresh_metadata(compress=True)

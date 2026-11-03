@@ -12,6 +12,35 @@ const read = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
 const own = (o, k) => Object.hasOwn(o, k);
 
+// These are the current body inputs, including both rendered LODs, every PBR
+// page, all six replaced recipes, and the two manifests this optional set must
+// leave alone. Text provenance is canonical LF; binary provenance is exact.
+export const PEOPLE_WEAR_SOURCE_PATHS = Object.freeze([
+  'assets/models/people/people.glb', 'assets/models/people/people_lod.glb',
+  'assets/models/people/people_meta.json', 'assets/models/people/people_albedo.jpg',
+  'assets/models/people/people_normal.jpg', 'assets/models/people/people_orm.jpg',
+  'tools/blender/people_body.py', 'tools/blender/people_body_limbs.py',
+  'tools/blender/people_tex.py', 'tools/blender/people_head.py',
+  'tools/blender/people_build.py', 'tools/blender/people_cast.py',
+  'assets/models/manifest.people.json', 'assets/models/manifest.json',
+].sort());
+
+export function peopleWearSourceInputs(root = ROOT) {
+  return PEOPLE_WEAR_SOURCE_PATHS.map(path => {
+    const raw = readFileSync(join(root, path)), text = /\.(?:py|json)$/.test(path);
+    const bytes = text ? Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')) : raw;
+    return { path, form: text ? 'LF' : 'bytes', bytes: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex') };
+  });
+}
+
+export function checkPeopleWearSourceInputs(actual, root = ROOT) {
+  const expected = peopleWearSourceInputs(root);
+  if (!Array.isArray(actual) || JSON.stringify(actual) !== JSON.stringify(expected))
+    throw new Error('wear current-body source fingerprints changed or are incomplete; regenerate from all current inputs');
+  return expected;
+}
+
 export function wearSources(root = ROOT) {
   const catalogue = read(join(root, 'tools/blender/people_wear.catalog.json'));
   const palette = read(join(root, 'assets/models', catalogue.palette));
@@ -65,11 +94,21 @@ export function buildWearManifest(root = ROOT) {
   const { catalogue: c, contract } = wearSources(root), models = join(root, 'assets/models');
   const m = read(join(models, 'wear/metadata.json'));
   if (m.sourcePeopleSha256 !== sha(join(models, 'people/people.glb')) || m.sourceClipBankSha256 !== sha(join(root, 'tools/blender/people_clips.json.gz')) || m.sourceCatalogSha256 !== sha(join(root, 'tools/blender/people_wear.catalog.json'))) throw new Error('wear metadata was built from different source geometry, clips or catalogue');
+  checkPeopleWearSourceInputs(m.sourceInputs, root);
   const have = Object.keys(m.fits ?? {}).sort(), want = Object.keys(c.fits).sort();
   if (JSON.stringify(have) !== JSON.stringify(want)) throw new Error('wear metadata must contain every adult fit and no child/teen fit');
   const fits = {};
   for (const id of want) {
     const f = m.fits[id];
+    const provenance = f.bodySourceProvenance, report = provenance?.componentsReport;
+    if (provenance?.adapter !== 'current-native-body' || report?.path !== `dev/wear/body-provenance/${id}.json` || report.form !== 'LF')
+      throw new Error(`${id}: missing current-body component provenance`);
+    const reportBytes = Buffer.from(readFileSync(join(root, report.path), 'utf8').replace(/\r\n/g, '\n'));
+    if (report.bytes !== reportBytes.length || report.sha256 !== createHash('sha256').update(reportBytes).digest('hex'))
+      throw new Error(`${id}: current-body component provenance bytes changed`);
+    const { componentsReport, ...summary } = provenance, { components, ...reportedSummary } = JSON.parse(reportBytes);
+    if (!Array.isArray(components) || components.length === 0 || JSON.stringify(summary) !== JSON.stringify(reportedSummary))
+      throw new Error(`${id}: current-body component provenance summary changed`);
     if (JSON.stringify(Object.keys(f.garments ?? {}).sort()) !== JSON.stringify(c.garments.map((g) => g.id).sort())) throw new Error(`${id}: wearable metadata is missing a garment`);
     const path = f.file.startsWith('wear/') ? f.file : `wear/${f.file}`;
     if (!/^wear\/[a-z0-9_]+\.glb(?:\.gz)?$/.test(path)) throw new Error(`${id}: wearable file path is outside the library`);
@@ -92,6 +131,7 @@ export function buildWearManifest(root = ROOT) {
     schemaVersion: 1, set: 'people-wear', adultOnly: true, defaultEnabled: false,
     source: c.source, limits: c.limits, atlas: { ...c.atlas, ...(m.atlas?.gpuBytes != null ? { gpuBytes: m.atlas.gpuBytes } : {}) }, palette: c.palette,
     sourcePeopleSha256: m.sourcePeopleSha256, sourceClipBankSha256: m.sourceClipBankSha256,
+    sourceInputs: m.sourceInputs,
     sourceContractSha256: sha(join(root, 'tools/blender/people_contract.json')),
     sourceCatalogueSha256: sha(join(root, 'tools/blender/people_wear.catalog.json')),
     sourcePaletteSha256: sha(join(models, c.palette)),
@@ -111,6 +151,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const root = rootAt >= 0 ? resolve(args[rootAt + 1]) : ROOT;
   if (args.includes('--write') || args.includes('--write-data')) {
     writeFileSync(join(root, 'js/people/wear_data.js'), wearDataModule(root));
-    if (args.includes('--write')) writeFileSync(join(root, 'assets/models/manifest.people-wear.json'), JSON.stringify(buildWearManifest(root), null, 2) + '\n');
+    if (args.includes('--write')) writeFileSync(join(root, 'assets/models/manifest.people-wear.json'), JSON.stringify(buildWearManifest(root)) + '\n');
   } else process.stdout.write(wearDataModule(root));
 }

@@ -265,8 +265,23 @@ class Mesh:
         p=np.asarray(self.p,dtype=np.float64);nn=np.zeros_like(p)
         t=np.asarray(self.tri+self.far,dtype=np.int64)
         n=np.cross(p[t[:,1]]-p[t[:,0]],p[t[:,2]]-p[t[:,0]])
+        if not np.all(np.isfinite(n)):
+            raise RuntimeError('Non-finite garment facet normal')
         for j in range(3):np.add.at(nn,t[:,j],n)
-        lengths=np.linalg.norm(nn,axis=1);nn/=np.maximum(lengths[:,None],1e-12)
+        lengths=np.linalg.norm(nn,axis=1)
+        nonzero=lengths>0
+        nn[nonzero]/=lengths[nonzero,None]
+        # A valid small facet still needs a unit normal. If incident oriented
+        # areas cancel exactly, use an actual strongest incident facet; never
+        # invent a direction for a vertex whose complete support is degenerate.
+        for vertex in set(t.reshape(-1)):
+            if nonzero[vertex]:continue
+            incident=n[np.any(t==vertex,axis=1)]
+            sizes=np.linalg.norm(incident,axis=1)
+            strongest=int(np.argmax(sizes))
+            if sizes[strongest]==0:
+                raise RuntimeError('Used garment vertex has only degenerate incident facets')
+            nn[vertex]=incident[strongest]/sizes[strongest]
         return nn
 
 
@@ -276,19 +291,62 @@ def ring(cx,cy,z,rx,ry,n=16):
 
 class Patterns:
     def __init__(self,pd,P,skin,torso_rows):
+        from people_wear_body import _source_functions, arm_profile, leg_profile
+        from people_wear_body_guard import CURRENT_BODY_VERSION
         self.pd,self.P,self.skin=pd,P,skin
+        self.body_version=CURRENT_BODY_VERSION
         self.H,self.k,self.b=P['H'],P['k'],pd['build']
         self.fem=P['fem']; self.lean=lambda z:pd.get('stoop',0)*max(0,z-P['hip'])*.55
         # The source builder's bottom torso ring was itself a trouser surface.
         # A complete body needs a rounded pelvic termination, otherwise a broad
         # horizontal skin ledge shows between the two separate thigh surfaces.
+        self.native_rows=_source_functions()[0](torso_rows,19)
         self.rows=[(self.H*.429,.025*self.k,.040*self.k,0),
-                   (self.H*.466,.135*self.k*self.b,.088*self.k*self.b,0)]+[r for r in torso_rows if r[0]>self.H*.47]
+                   (self.H*.449,.100*self.k*self.b,.070*self.k*self.b,0)]+self.native_rows
         self.sh=P['sh'];self.ua=.186*self.H;self.fa=.146*self.H
         self.elbow=self.sh-self.ua;self.wrist=self.elbow-self.fa
-        self.hx=P['hipw']*.52;self.sx=P['shw']-.004
+        self.hx=P['hipw']*.52;self.sx=P['shw']-.012
         self.ru=(.052 if not self.fem else .046)*self.k*self.b**.5
         self.rf=(.040 if not self.fem else .036)*self.k
+        self.native_arm_profile=arm_profile(P,pd)
+        self.native_leg_profile=leg_profile(P,pd)
+        self._hand_section_cache={}
+
+    def arm_section(self,z):
+        """Current arm ellipse, or a conservative native-hand section envelope."""
+        from people_wear_body import profile_at, _capture
+        import people_body_limbs as native_limbs
+        if z>=self.native_arm_profile[-1][0]:
+            rx,ry,cy=profile_at(self.native_arm_profile,z)
+            return self.sx,cy,rx,ry
+        if z in self._hand_section_cache:return self._hand_section_cache[z]
+        if not hasattr(self,'_hand_section_edges'):
+            native=_capture(native_limbs._hand,self.P,self.pd,self.sx,self.wrist,1,False)
+            edges={tuple(sorted((a,b))) for f in native.faces for a,b in zip(f,f[1:]+f[:1])}
+            self._hand_section_edges=np.asarray([[native.points[a],native.points[b]] for a,b in edges])
+        edges=self._hand_section_edges
+        spans=(np.minimum(edges[:,0,2],edges[:,1,2])<=z)&(np.maximum(edges[:,0,2],edges[:,1,2])>=z)
+        edges=edges[spans];points=[]
+        for a,b in edges:
+            if abs(b[2]-a[2])<1e-12:points.extend((a,b))
+            else:points.append(a+(b-a)*((z-a[2])/(b[2]-a[2])))
+        if not points:section=None
+        else:
+            low=np.min(points,axis=0);high=np.max(points,axis=0)
+            # sqrt(2) times each half extent contains the entire native section
+            # rectangle, including the opposed thumb and curled finger sides.
+            section=((low[0]+high[0])/2,(low[1]+high[1])/2,
+                     max(.001*self.k,(high[0]-low[0])/math.sqrt(2)),
+                     max(.001*self.k,(high[1]-low[1])/math.sqrt(2)))
+        self._hand_section_cache[z]=section
+        return section
+
+    def body_ring(self,z,n=20):
+        from people_body import torso_point
+        if z<self.native_rows[0][0]:
+            rx,ry,cy=self.torso(z)
+            return [self.clear_arm(p) for p in ring(0,cy,z,rx,ry,n)]
+        return [self.clear_arm(torso_point(self.P,self.pd,self.native_rows,1.0,self.lean,z,2*math.pi*i/n)) for i in range(n)]
 
     def torso(self,z):
         rows=self.rows
@@ -301,11 +359,7 @@ class Patterns:
     def tor_rings(self,zs,offset=0,n=16,flare=0,folds=False):
         rr=[];refs=[]
         for ri,z in enumerate(zs):
-            rx,ry,cy=self.torso(z);r=ring(0,cy,z,rx,ry,n)
-            # The legacy torso's width grew faster than its fixed arm centres.
-            # Shape a real axilla/side groove in both visible body and cloth so
-            # the relaxed arm is beside the torso, rather than inside a barrel.
-            r=[self.clear_arm(p,0) for p in r];refs.append(r)
+            r=self.body_ring(z,n);refs.append(r)
             ext=offset+flare*max(0,1-(z-zs[0])/max(.01,zs[-1]-zs[0]))
             row=[]
             for j,p in enumerate(r):
@@ -316,11 +370,14 @@ class Patterns:
 
     def clear_arm(self,p,layer=0):
         z=p[2]
-        if not self.wrist-.145*self.k<z<self.sh+.005:return p
-        ar=self.arm_radius(z) if z>=self.wrist else .043*self.k
-        rad=ar+.009*self.k-min(.006*self.k,layer*.20)
-        if abs(p[1])>=rad:return p
-        boundary=self.sx-math.sqrt(max(0,rad*rad-p[1]*p[1]))
+        if not self.wrist-.21*self.k<z<self.sh+.005:return p
+        section=self.arm_section(z)
+        if section is None:return p
+        sx,cy,rx,ry=section
+        gap=.009*self.k-min(.006*self.k,layer*.20)
+        rx+=gap;ry+=gap;dy=p[1]-cy
+        if abs(dy)>=ry:return p
+        boundary=sx-rx*math.sqrt(max(0,1-(dy/ry)**2))
         if abs(p[0])>boundary:return (math.copysign(max(.035*self.k,boundary),p[0]),p[1],p[2])
         return p
 
@@ -339,26 +396,23 @@ class Patterns:
         return (math.copysign(self.sx+math.sqrt(max(0,radius*radius-y*y)),x),y,z)
 
     def arm_radius(self,z):
-        if z>self.elbow:
-            t=(self.sh-z)/self.ua
-            return self.ru*(.74+.26*math.sin(min(1,t)*math.pi))
-        t=(self.elbow-z)/self.fa
-        return self.rf*(1.13-.43*max(0,min(1,t)))
+        from people_wear_body import profile_at
+        rx,ry,_=profile_at(self.native_arm_profile,z)
+        return max(rx,ry)
 
     def leg_radius(self,z):
-        k=self.k
-        if z>=self.P['knee']:
-            t=(self.P['hip']-z)/(self.P['hip']-self.P['knee'])
-            return (.090*self.b**.5*(1-t)+.061*t)*k
-        t=(self.P['knee']-z)/(self.P['knee']-self.P['ankle'])
-        return (.050*(1-t)+.032*t+.012*math.sin(math.pi*t))*k
+        from people_wear_body import profile_at
+        rx,ry,_=profile_at(self.native_leg_profile,z)
+        return max(rx,ry)
 
     def sleeve(self,m,sg,length,offset,n=12,tight=False):
         sd='_l' if sg<0 else '_r';z0=self.sh+.010*self.k;z1=self.sh-length
         if length>self.ua:n=10
-        zs=sorted({z0,z1,*[z for z in np.linspace(self.sh+.003,self.wrist-.007,11) if z1<z<z0]},reverse=True) if tight or length>self.ua else np.linspace(z0,z1,6 if length<self.ua else 9)
+        zs=sorted({z0,z1,*[r[0] for r in self.native_arm_profile if z1<r[0]<z0]},reverse=True) if tight or length>self.ua else np.linspace(z0,z1,6 if length<self.ua else 9)
         rr=[];ref=[]
         def cloth_ring(z,r,amount):
+            from people_wear_body import profile_at
+            rx,ry,cy=profile_at(self.native_arm_profile,z)
             out=[]
             for a in np.linspace(0,2*math.pi,n,endpoint=False):
                 # Cloth is compressed between the upper arm and torso. A large
@@ -366,10 +420,12 @@ class Patterns:
                 # the shirt waist in the standing pose.
                 gain=(.42+.58*(1+sg*math.cos(a))/2) if tight else (.12+.88*(1+sg*math.cos(a))/2)
                 off=amount*gain
-                out.append((sg*self.sx+(r+off)*math.cos(a),(r+off)*math.sin(a),z))
+                out.append((sg*self.sx+(rx+off)*math.cos(a),cy+(ry+off)*math.sin(a),z))
             return out
         for i,z in enumerate(zs):
-            r=self.arm_radius(z);ref.append(ring(sg*self.sx,0,z,r,r,n))
+            from people_wear_body import profile_at
+            rx,ry,cy=profile_at(self.native_arm_profile,z)
+            r=max(rx,ry);ref.append(ring(sg*self.sx,cy,z,rx,ry,n))
             fl=.001*math.sin(i*2.5)*self.k;rr.append(cloth_ring(z,r,offset+fl))
         # Only the armscye is sewn into the torso. The free lower sleeve remains
         # an independently deforming panel even if its rest silhouette touches
@@ -400,14 +456,16 @@ class Patterns:
         sd='_l' if sg<0 else '_r';rr=[];ref=[]
         long=z1<self.H*.3
         if long:n=10
-        zs=sorted({z0,z1,*[z for z in np.linspace(self.P['hip']+.015,self.P['ankle']-.013,11) if z1<z<z0]},reverse=True) if long else np.linspace(z0,z1,rows)
+        zs=sorted({z0,z1,*[r[0] for r in self.native_leg_profile if z1<r[0]<z0]},reverse=True) if long else np.linspace(z0,z1,rows)
         for i,z in enumerate(zs):
-            r=self.leg_radius(z);ref.append(ring(sg*self.hx,0,z,r,r*.96,n))
+            from people_wear_body import profile_at
+            rx,ry,cy=profile_at(self.native_leg_profile,z)
+            r=rx;ref.append(ring(sg*self.hx,cy,z,rx,ry,n))
             fold=.002*self.k*math.sin(i*2.1);outer=offset+fold
             # Leave an actual inseam gap below the groin. Uniform inward
             # inflation fuses the two tubes down the thigh and mixes both legs.
             inner=min(outer,max(.0015*self.k,(self.hx-r)*.45))
-            rr.append([(sg*self.hx+(r+inner+(outer-inner)*(1+sg*math.cos(a))/2)*math.cos(a),(r*.96+outer)*math.sin(a),z) for a in np.linspace(0,2*math.pi,n,endpoint=False)])
+            rr.append([(sg*self.hx+(rx+inner+(outer-inner)*(1+sg*math.cos(a))/2)*math.cos(a),cy+(ry+outer)*math.sin(a),z) for a in np.linspace(0,2*math.pi,n,endpoint=False)])
         # Exterior hip-cap fragments form the sewn crotch/upper thigh. Only the
         # ankle or short hem is an opening after the pelvis/leg union.
         # Keep the cross-section around a close-fitting leg and simplify along
@@ -425,35 +483,11 @@ class Patterns:
         r=self.leg_radius(z1);m.loft([ring(sg*self.hx,0,z1+.012,r+offset+.002,r*.96+offset+.002,n),ring(sg*self.hx,0,z1,r+offset+.002,r*.96+offset+.002,n)],'thigh'+sd,lod=False,shade=.85)
 
     def body_levels(self):
-        return sorted(set([self.H*x for x in (.429,.449,.466,.49,.51,.565,.612,.68,.738,.784)]+[self.P['sh']+.01,self.P['trap'],self.P['nbase']]))
+        return sorted(set([self.H*x for x in (.429,.449)]+[r[0] for r in self.native_rows]+[self.P['sh']+.01,self.P['trap'],self.P['nbase']]))
 
     def body(self):
-        m=Mesh(self.skin);H=self.H;k=self.k
-        zs=self.body_levels()
-        rr,_=self.tor_rings(zs,n=16);m.loft(rr,'torso',caps=True,name='torso')
-        # A coarse chord across the arm-side recess adds body volume and can
-        # force a sleeve through the arm. Keep this actual rendered torso shape
-        # at both LODs; its positions remain shared and the limbs still simplify.
-        m.far=list(m.tri)
-        m.loft([ring(0,self.lean(z),z,.050*k,.046*k,12) for z in np.linspace(self.P['nbase']-.01,self.P['chin']+.035,4)],'neck',caps=True,name='neck')
-        for sg in (-1,1):
-            sd='_l' if sg<0 else '_r'
-            # One continuous arm surface, closed at shoulder and wrist.
-            zs=np.linspace(self.sh+.003,self.wrist-.007,11)
-            m.loft([ring(sg*self.sx,0,z,self.arm_radius(z),self.arm_radius(z)*.96,10) for z in zs],'arm'+sd,caps=True,name='arm'+sd)
-            zs=np.linspace(self.P['hip']+.015,self.P['ankle']-.013,11)
-            first=len(m.tri);far_first=len(m.far)
-            m.loft([ring(sg*self.hx,0,z,self.leg_radius(z),self.leg_radius(z)*.96,10) for z in zs],'thigh'+sd,caps=True,name='leg'+sd)
-            m.far[far_first:]=m.tri[first:]
-            # Closed palm with five separate rounded digits (no anatomical detail).
-            m.ellipsoid((sg*self.sx,.002,self.wrist-.045*k),(.032*k,.019*k,.055*k),'hand'+sd,name='palm'+sd,n=10,rows=6)
-            for j,scale in enumerate((.86,1.,.94,.76)):
-                xx=sg*self.sx+(j-1.5)*.014*k
-                m.ellipsoid((xx,.002,self.wrist-(.084+.023*scale)*k),(.008*k,.009*k,.034*scale*k),'fingers'+sd,name='finger'+sd+str(j),n=6,rows=4)
-            m.ellipsoid((sg*self.sx-sg*.037*k,.008,self.wrist-.051*k),(.013*k,.012*k,.030*k),'hand'+sd,name='thumb'+sd,n=8,rows=4)
-            # Foot proportions follow the existing heel/toe reference and floor.
-            m.ellipsoid((sg*self.hx,.075*k,.042*k),(.046*k,.133*k,.041*k),'foot'+sd,name='foot'+sd,n=10,rows=6)
-        return m
+        from people_wear_body import current_body
+        return current_body(self)
 
     def top(self,kind):
         m=Mesh(self.skin);H=self.H;k=self.k
@@ -566,30 +600,8 @@ class Patterns:
         m=m.sew()
         if kind in ('trousers','jeans','leggings'):m.refine_skin_transitions(self.P['hip'],k)
         if self.pd['id']=='w_cocinera' and kind in ('trousers','jeans'):
-            # One complete-cut hip panel needs a central skin sample when seated.
-            # Keep the actual bind surface, contour and original vertices; the
-            # new source row is the exact barycentre of this guarded triangle.
-            triangle=m.far[185]
-            if len(m.far)!=512 or tuple(triangle)!=(210,692,686):
-                raise RuntimeError('The authored w_cocinera hip panel changed')
-            actual=np.asarray([m.p[v] for v in triangle],dtype=float)
-            relative=np.asarray([(0.,0.,0.),
-                (.024227425456047058,-.023338481783866882,-.0032612085342407227),
-                (-.002062961459159851,-.005647338926792145,-.00874018669128418)])
-            if not np.allclose(actual-actual[0],relative,rtol=0,atol=2e-7):
-                raise RuntimeError('The authored w_cocinera hip geometry changed')
-            weights={}
-            for v in triangle:
-                for bone,value in m.w[v]:weights[bone]=weights.get(bone,0.)+value/3
-            weights={bone:value for bone,value in weights.items() if value>1e-10}
-            if len(weights)>4:raise RuntimeError('The hip barycentre exceeds four skin influences')
-            total=sum(weights.values())
-            weights=sorted(((bone,value/total) for bone,value in weights.items()),key=lambda row:(-row[1],row[0]))
-            point=tuple(sum(m.p[v][axis] for v in triangle)/3 for axis in range(3))
-            uv=tuple(sum(m.uv[v][axis] for v in triangle)/3 for axis in range(2))
-            center=m.vertex(point,'torso',uv,weights=weights)
-            m.c[center]=tuple(sum(m.c[v][axis] for v in triangle)/3 for axis in range(4))
-            a,b,c=triangle;m.far[185:186]=[(a,b,center),(b,c,center),(c,a,center)]
+            from people_wear_body_guard import guard_cocinera
+            m=guard_cocinera(m,self.body_version)
         return m
 
     def brief_into(self,m,z0,z1,offset):
@@ -725,6 +737,11 @@ class Patterns:
         m.loft(rr,'head',caps=False,lod_rows=range(7) if fitted_crown else None,lod_angles=range(20) if fitted_crown else None)
         top=m.vertex((cx,cy,z+crown+.003*k),'head')
         for j in range(20):m.face(top,6*20+j,6*20+(j+1)%20)
+        # The far crown has the same closed top, using its actual retained
+        # angular stations. An open far crown is not a valid simplification.
+        cap_angles=list(range(20)) if fitted_crown else list(range(0,20,2))
+        for j,next_j in zip(cap_angles,cap_angles[1:]+cap_angles[:1]):
+            m.face(top,6*20+j,6*20+next_j,True)
         if kind=='cap':
             rows=[]
             for t in (0,.5,1):

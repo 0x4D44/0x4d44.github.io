@@ -8,13 +8,15 @@ import { gunzipSync } from 'node:zlib';
 import { dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readGlb, parseGlb, readAccessor, decodePrimitive, CONTRACT } from './people_validate.mjs';
-import { buildWearManifest, wearDataModule } from '../people_wear_data.mjs';
+import { buildWearManifest, wearDataModule, checkPeopleWearSourceInputs } from '../people_wear_data.mjs';
 import { skinInfo, compareSkin, readPoseBank, poseSamples, sampleRotations, poseMatrices, skinPositions, usedVertices, ClosedSurface, checkPenetrations, blendedMatrix, inverseVector, transform, closestUnionExit, pushOutPose } from './people_wear_math.mjs';
 import { preparePoseTarget } from '../../js/people/wear_pose.js';
+import { boundedAuthorExit } from './people_wear_fit_search.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const ROOT = resolve(HERE, '../../assets/models');
 export const LIMITS = Object.freeze({ nearTriangles: 1800, farTriangles: 600, gpuBytes: 12000000, fileBytes: 8 * 1048576 });
+export const COMPRESSED_MODEL_BYTES = 6000000;
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const hash = b => createHash('sha256').update(b).digest('hex');
 const same = (a, b) => a.length === b.length && new Set(a).size === a.length && a.every(x => b.includes(x));
@@ -37,6 +39,19 @@ export function safePath(root, path) {
 function node(glb, name) {
   const found = glb.g.nodes.map((n, i) => n.name === name ? i : -1).filter(i => i >= 0);
   need(found.length === 1 && glb.g.nodes[found[0]].mesh != null, `missing/duplicate wearable node ${name}`); return found[0];
+}
+
+export function checkWearLodBudget(near, far, label = 'wearable') {
+  need(Number.isSafeInteger(near) && near > 0 && Number.isSafeInteger(far) && far > 0,
+    `${label}: LOD triangle counts must be positive integers`);
+  need(far * 5 <= near * 2, `${label}: far LOD exceeds 40% of its near mesh`);
+  return far / near;
+}
+
+export function checkWearModelBudget(bytes) {
+  need(Number.isSafeInteger(bytes) && bytes > 0 && bytes <= COMPRESSED_MODEL_BYTES,
+    'wear compressed model payload exceeds 6,000,000 bytes or is invalid');
+  return bytes;
 }
 const decodeCache = new WeakMap();
 const poseDeltaCache = new WeakMap();
@@ -255,6 +270,7 @@ export async function inspectFit(glb, fit, { id, sourceGlb = null, garmentIds = 
   const body = await geometry(glb, fit.bodyNode); checkGeometry(body.decoded, Infinity, body.name);
   need(fit.bodyLodNode, `${id}: missing far body`);
   const farBody = await geometry(glb, fit.bodyLodNode); checkGeometry(farBody.decoded, Infinity, farBody.name); compareSkin(farBody.rig, body.rig, farBody.name);
+  checkWearLodBudget(body.decoded.indices.length / 3, farBody.decoded.indices.length / 3, `${id}/body`);
   need(!body.decoded.poseTarget && !farBody.decoded.poseTarget, `${id}: collision body may not have a garment pose target`);
   if (sourceGlb) compareSkin(body.rig, skinInfo(sourceGlb, `person_${id}_mesh`), `${id}/body`);
   const entries = [], actualIds = Object.keys(fit.garments);
@@ -269,6 +285,7 @@ export async function inspectFit(glb, fit, { id, sourceGlb = null, garmentIds = 
       if ((fit.poseTargetCpuBytes ?? 0) > 0 && ['trousers', 'jeans', 'leggings'].includes(gid)) need(e.decoded.poseTarget, `${name}: missing required seated pose target`);
       entries.push({ ...e, gid, lod, stats });
     }
+    checkWearLodBudget(entries.at(-2).stats.triangles, entries.at(-1).stats.triangles, `${id}/${gid}`);
   }
   checkTopologyChoices(fit, entries, id);
   const bodySurface = new ClosedSurface(body.decoded, ranges(body, fit, 'bodyComponents'), body.name), farBodySurface = new ClosedSurface(farBody.decoded, ranges(farBody, fit, 'bodyFarComponents'), farBody.name), surfaces = [bodySurface, farBodySurface];
@@ -375,7 +392,7 @@ export async function pushOutFit(glb, fit, { id, samples = null, passes = 8, pad
     const pool = pools.get(key); pool.entries.push({ ...e, gid, lod }); for (const v of usedVertices(e.decoded)) pool.vertices.add(v);
   }
   for (const pool of pools.values()) pool.used = Uint32Array.from(pool.vertices);
-  const report = { id, authoringOnly: true, samples: samples.length, passes: [], movedVertices: 0, maxDisplacement: 0, converged: false };
+  const report = { id, authoringOnly: true, samples: samples.length, passes: [], movedVertices: 0, maxDisplacement: 0, boundedSearches: 0, converged: false };
   const moved = new Set();
   for (let pass = 0; pass < passes; pass++) {
     let corrections = 0, unresolved = 0;
@@ -393,13 +410,20 @@ export async function pushOutFit(glb, fit, { id, samples = null, passes = 8, pad
             const surface = surfaces.find(s => s.insideXYZ(...point)); if (!surface) break;
             const correction = closestUnionExit(surfaces, point, { padding }); if (!correction) break;
             matrix ??= blendedMatrix(a, vertex, matrices);
-            const delta = inverseVector(matrix, correction.deltaWorld);
-            for (let k = 0; k < 3; k++) a.POSITION[at + k] += delta[k];
-            const displacement = Math.hypot(...[0, 1, 2].map(k => a.POSITION[at + k] - pool.original[at + k]));
+            let delta = inverseVector(matrix, correction.deltaWorld);
+            const current = Array.from(a.POSITION.subarray(at, at + 3)), original = Array.from(pool.original.subarray(at, at + 3));
+            let candidate = current.map((value, k) => value + delta[k]);
+            let displacement = Math.hypot(...candidate.map((value, k) => value - original[k]));
+            if (displacement > maxMove && maxMove > padding && maxMove <= .18) {
+              report.boundedSearches++;
+              const alternative = boundedAuthorExit(surfaces, original, current, matrix, { padding, maxMove });
+              if (alternative) { candidate = alternative.target; delta = alternative.deltaBind; displacement = alternative.displacement; }
+            }
             need(displacement <= maxMove, `${id}/${pool.entries[0].gid}: push-out would exceed ${maxMove} m at vertex ${vertex}, ${sample.clipName}/${sample.time}; ` + JSON.stringify({
-              displacement, original: Array.from(pool.original.subarray(at, at + 3)), candidate: Array.from(a.POSITION.subarray(at, at + 3)), deltaBind: delta,
+              displacement, original, candidate, deltaBind: delta,
               components: correction.components, joints: Array.from(a.JOINTS_0.subarray(vertex * 4, vertex * 4 + 4)).map(j => pool.rig.jointNames[j]), weights: Array.from(a.WEIGHTS_0.subarray(vertex * 4, vertex * 4 + 4)),
             }));
+            a.POSITION.set(candidate, at);
             report.maxDisplacement = Math.max(report.maxDisplacement, displacement); moved.add(`${poolKey}/${vertex}`); corrections++;
             point = transform(matrix, Array.from(a.POSITION.subarray(at, at + 3)));
           }
@@ -546,15 +570,25 @@ function correctionSummary(fits) {
 /** Bind split reports to all inputs and to the checker implementation. Re-read
  * at the end of a sweep so concurrent rebuilds cannot produce a mixed report. */
 function inputSnapshot(root, metadata, manifest, samples, mode) {
-  const project = resolve(root, '../..'), paths = new Set(['wear/metadata.json', 'people/people.glb', 'people/people_meta.json', 'manifest.garments.json', 'garments/prints.png']);
+  const project = resolve(root, '../..'), paths = new Set(['wear/metadata.json', 'people/people.glb', 'people/people_lod.glb', 'people/people_meta.json', 'people/people_albedo.jpg', 'people/people_normal.jpg', 'people/people_orm.jpg', 'manifest.people.json', 'manifest.json', 'manifest.garments.json', 'garments/prints.png']);
   if (manifest) { paths.add('manifest.people-wear.json'); paths.add(manifest.palette); for (const f of manifest.files ?? []) paths.add(f.path); }
   const atlas = manifest?.atlas ?? metadata.atlas;
   if (atlas?.file) paths.add(atlas.file.startsWith('wear/') ? atlas.file : `wear/${atlas.file}`);
   for (const fit of Object.values(metadata.fits)) paths.add(fit.file.startsWith('wear/') ? fit.file : `wear/${fit.file}`);
   const files = [...paths].sort().map(path => { const b = readFileSync(safePath(root, path)); return { path: `assets/models/${path}`, bytes: b.length, sha256: hash(b) }; });
+  for (const [id, fit] of Object.entries(metadata.fits)) {
+    const report = fit.bodySourceProvenance?.componentsReport;
+    if (!report) continue; // A diagnostic pre-inventory build can retain inline provenance.
+    need(report.path === `dev/wear/body-provenance/${id}.json` && report.form === 'LF', `${id}: invalid body provenance path or form`);
+    const b = Buffer.from(readFileSync(resolve(project, report.path), 'utf8').replace(/\r\n/g, '\n'));
+    need(b.length === report.bytes && hash(b) === report.sha256, `${id}: body provenance report changed`);
+    files.push({ path: report.path, form: 'LF', bytes: b.length, sha256: hash(b) });
+  }
   for (const path of ['tools/blender/people_clips.json.gz', 'tools/blender/people_contract.json', 'tools/blender/people_wear.catalog.json',
     'tools/blender/people_wear_build.py', 'tools/blender/people_wear_shapes.py', 'tools/blender/people_wear_fit_faces.mjs', 'tools/blender/people_wear_fit_targets.mjs',
+    'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py', 'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_fit_search.mjs',
     'tools/blender/people_build.py', 'tools/blender/people_cast.py',
+    'tools/blender/people_body.py', 'tools/blender/people_body_limbs.py', 'tools/blender/people_tex.py', 'tools/blender/people_head.py',
     'tools/blender/people_validate.mjs', 'tools/blender/people_wear_math.mjs', 'tools/blender/people_wear_validate.mjs', 'tools/people_wear_data.mjs',
     'js/people/wear_data.js', 'js/people/wear_geometry.js', 'js/people/wear_pose.js', 'js/people/wear_correction.js', 'js/people/wear.js', 'js/people/rig.js',
     'vendor/three/build/three.core.min.js', 'vendor/three/examples/jsm/loaders/GLTFLoader.js']) {
@@ -609,6 +643,7 @@ export async function validateWear({ root = ROOT, mode = 'all', fitIds = null, p
   const peopleBytes = readFileSync(resolve(root, 'people/people.glb')), clipBytes = readFileSync(resolve(HERE, 'people_clips.json.gz'));
   need(metadata.sourcePeopleSha256 === hash(peopleBytes), 'wearable source people bytes changed; rebuild required');
   need(metadata.sourceClipBankSha256 === hash(clipBytes), 'wearable source clip bank changed; rebuild required');
+  checkPeopleWearSourceInputs(metadata.sourceInputs, resolve(root, '../..'));
   const manifestPath = resolve(root, 'manifest.people-wear.json'), manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : null;
   if (inventory) {
     need(manifest, 'wearable manifest missing'); checkInventory(root, manifest.files);
@@ -620,7 +655,7 @@ export async function validateWear({ root = ROOT, mode = 'all', fitIds = null, p
   const selected = fitIds ?? available; need(selected.length > 0 && new Set(selected).size === selected.length && selected.every(id => available.includes(id)), 'unsupported/duplicate/nonadult wearable fit');
   const sourceGlb = readGlb(resolve(root, 'people/people.glb')), samples = poseSamples(readPoseBank(), mode), fits = [];
   const inputs = inputSnapshot(root, metadata, manifest, samples, mode);
-  let geometryBytes = 0; const images = new Map(), fileRefs = new Set();
+  let geometryBytes = 0, modelBytes = 0; const images = new Map(), fileRefs = new Set();
   const atlas = manifest?.atlas ?? metadata.atlas;
   need(atlas?.file, 'wearable shared atlas is missing');
   const atlasFile = atlas.file.startsWith('wear/') ? atlas.file : `wear/${atlas.file}`, atlasPath = safePath(root, atlasFile);
@@ -629,6 +664,7 @@ export async function validateWear({ root = ROOT, mode = 'all', fitIds = null, p
     const fit = metadata.fits[id], file = fit.file.startsWith('wear/') ? fit.file : `wear/${fit.file}`;
     need(!fileRefs.has(file), `${id}: each exact fit needs its own recorded file`); fileRefs.add(file);
     const path = safePath(root, file), glb = readWearGlb(path); geometryBytes += geometryGpuBytes(glb);
+    modelBytes += glb.shippedBytes;
     for (const image of glb.g.images ?? []) {
       need(image.uri && !image.bufferView && !/^[a-z]+:/i.test(image.uri), `${file}: embedded/remote images are forbidden`);
       const path = resolve(dirname(safePath(root, file)), image.uri), rel = relative(root, path).split(sep).join('/');
@@ -646,12 +682,13 @@ export async function validateWear({ root = ROOT, mode = 'all', fitIds = null, p
   }
   need(images.size <= 3, 'wearable atlas uses more than one PBR page set');
   const gpu = checkGpuBudget(geometryBytes, [...images.values()]);
+  if (inventory) checkWearModelBudget(modelBytes);
   need(inputSnapshot(root, metadata, manifest, samples, mode).sha256 === inputs.sha256, 'wearable input bytes changed during the sweep; rerun against a stable build');
   const issues = fits.flatMap(f => f.issues.map(i => ({ fit: f.id, ...i })));
   const selectedComplete = collision && fits.every(f => f.poses === samples.length);
   return { ok: issues.length === 0, schema: 2, mode, requiredClipCount: CONTRACT.clips.length, samplesPerFit: samples.length,
     inventoryVerified: inventory, collisionChecked: collision, selectedComplete, complete: inventory && selected.length === adults.length && selectedComplete, inputs,
-    fits, correction: correctionSummary(fits), ...gpu, files: [...fileRefs], imageFiles: [...images.values()].map(i => i.path), issues, sourcePeopleSha256: hash(peopleBytes), sourceClipBankSha256: hash(clipBytes) };
+    fits, correction: correctionSummary(fits), ...gpu, modelBytes, modelLimitBytes: COMPRESSED_MODEL_BYTES, files: [...fileRefs], imageFiles: [...images.values()].map(i => i.path), issues, sourcePeopleSha256: hash(peopleBytes), sourceClipBankSha256: hash(clipBytes) };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

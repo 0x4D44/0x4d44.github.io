@@ -11,7 +11,8 @@ import { skinInfo, compareSkin, readPoseBank, sampleRotations, poseMatrices, use
 
 export const FACE_GARMENTS = Object.freeze(['rash_vest', 'leggings', 'skirt', 'briefs', 'boxers', 'bikini_bottom', 'swimsuit_onepiece']);
 export const IDLE_FACE_GARMENTS = Object.freeze(['tshirt', 'shirt', 'blouse', 'jumper', 'trousers', 'jeans', 'skirt', 'dress', 'shorts', 'leggings',
-  'socks_pair', 'briefs', 'boxers', 'bra', 'bikini_top', 'bikini_bottom', 'swimsuit_onepiece', 'swim_trunks', 'rash_vest']);
+  'socks_pair', 'briefs', 'boxers', 'bra', 'bikini_top', 'bikini_bottom', 'swimsuit_onepiece', 'swim_trunks', 'rash_vest',
+  'shoes', 'cap', 'sun_hat', 'straw_hat']);
 const MAX_MOVE = 0.08, PAD = 0.002, RELAXATION = 0.25, ROUNDING_RESERVE = 0.000001;
 const BARYCENTRIC = Object.freeze([[1 / 3, 1 / 3, 1 / 3], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5]]);
 const need = (ok, message) => { if (!ok) throw new Error(message); };
@@ -100,6 +101,120 @@ function inspectPool(pool, sample, { faces = true, correct = true, full = false 
     faceChecks++; if (inside(sample.surfaces, trianglePoint(positions, triangle, weights))) faceFailures++;
   }
   return { vertexChecks: pool.used.length, vertexFailures, faceChecks, faceFailures };
+}
+
+// A shortest exit can choose opposite sides of the arm/torso corridor for two
+// neighbouring cloth vertices. Repeating that direction then fights protectRest
+// indefinitely. This authoring-only search changes the proposal, not any gate:
+// every candidate is an actual float32 bind position inside the ORIGINAL 80 mm
+// ball, and every accepted move strictly removes existing failed face probes.
+const BRANCH_OFFSETS = Object.freeze((() => {
+  const result = [], steps = 16, step = MAX_MOVE / steps;
+  for (let x = -steps; x <= steps; x++) for (let y = -steps; y <= steps; y++) for (let z = -steps; z <= steps; z++) {
+    const radius2 = x * x + y * y + z * z;
+    if (radius2 < steps * steps) result.push({ delta: [x * step, y * step, z * step], radius2 });
+  }
+  result.sort((a, b) => a.radius2 - b.radius2 || a.delta[0] - b.delta[0] || a.delta[1] - b.delta[1] || a.delta[2] - b.delta[2]);
+  return result.map(({ delta }) => Object.freeze(delta));
+})());
+
+function outsidePadded(surfaces, point) {
+  if (inside(surfaces, point)) return false;
+  for (const surface of surfaces) for (const part of surface.components) {
+    const b = part.root.b, distance2 = point.reduce((sum, value, k) => sum + Math.max(b[k] - value, 0, value - b[k + 3]) ** 2, 0);
+    if (distance2 < PAD * PAD && surface.nearest(point, part).distance < PAD) return false;
+  }
+  return true;
+}
+
+function faceNormal(points) {
+  const u = points[1].map((value, k) => value - points[0][k]), v = points[2].map((value, k) => value - points[0][k]);
+  return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+}
+
+function keepsOrientation(before, after) {
+  const norm = Math.hypot(...after);
+  return norm > 1e-12 && before.reduce((sum, value, k) => sum + value * after[k], 0) > 0;
+}
+
+/** Deterministic alternate bind directions for a stalled cloth seam.
+ * This runs inside an existing face-authoring pass. It never changes indices,
+ * weights, original baselines, iteration limits, body surfaces or runtime code.
+ * The same welded group moves together. New failing probes, inverted faces and
+ * candidates without the original 2 mm clearance padding are rejected. */
+export function repairFaceBranches(pool, rest, contact) {
+  const a = pool.decoded.attrs, triangles = pool.triangles, groups = new Map();
+  for (const v of pool.used) {
+    const members = pool.membersFor.get(v), representative = Math.min(...members);
+    if (!groups.has(representative)) groups.set(representative, members);
+  }
+  let positions = pushOutPose(pool.decoded, contact.matrices, contact.surfaces, { used: pool.used, padding: PAD, maxDistance: 0.18 }).posedPositions;
+  const failuresFor = (triangle, data = positions) => BARYCENTRIC.map(weights => inside(contact.surfaces, trianglePoint(data, triangle, weights)));
+  let flags = triangles.map(triangle => failuresFor(triangle));
+  const count = rows => rows.reduce((sum, row) => sum + row.filter(Boolean).length, 0);
+  const report = { candidates: 0, attemptedGroups: 0, acceptedGroups: 0, before: count(flags), after: 0, maximumDisplacementM: 0 };
+  const order = [...groups.entries()].map(([representative, members]) => {
+    const selected = new Set(members), incident = [];
+    for (let i = 0; i < triangles.length; i++) if (triangles[i].some(v => selected.has(v))) incident.push(i);
+    return { representative, members, selected, incident };
+  }).filter(group => group.incident.some(i => flags[i].some(Boolean)))
+    .sort((x, y) => count(y.incident.map(i => flags[i])) - count(x.incident.map(i => flags[i])) || x.representative - y.representative);
+  for (const group of order) {
+    const { representative, members, selected, incident } = group;
+    const oldCount = count(incident.map(i => flags[i])); if (!oldCount) continue;
+    report.attemptedGroups++;
+    const origin = pointAt(pool.original, representative), matrices = new Map(members.map(v => [v, blendedMatrix(a, v, contact.matrices)]));
+    const restMatrices = new Map(members.map(v => [v, blendedMatrix(a, v, rest.matrices)]));
+    const bindNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(a.POSITION, v)))]));
+    const posedNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(positions, v)))]));
+    let best = null;
+    for (const delta of BRANCH_OFFSETS) {
+      const candidate = origin.map((value, k) => Math.fround(value + delta[k])); report.candidates++;
+      // Check the rounded upload against every alias's immutable raw origin.
+      const movement = Math.max(...members.map(v => Math.hypot(...candidate.map((value, k) => value - pool.original[v * 3 + k]))));
+      if (movement > MAX_MOVE - ROUNDING_RESERVE) continue;
+      const posed = new Map(); let valid = true;
+      for (const v of members) {
+        const atRest = transform(restMatrices.get(v), candidate), atContact = transform(matrices.get(v), candidate);
+        // These vertices need no runtime push. Unchanged vertices still use
+        // the original bounded pushOutPose; the full pass is rechecked below.
+        if (!outsidePadded(rest.surfaces, atRest) || !outsidePadded(contact.surfaces, atContact)) { valid = false; break; }
+        posed.set(v, atContact);
+      }
+      if (!valid) continue;
+      let remaining = 0;
+      for (const i of incident) {
+        const triangle = triangles[i], bindPoints = triangle.map(v => selected.has(v) ? candidate : pointAt(a.POSITION, v));
+        const posedPoints = triangle.map(v => posed.get(v) ?? pointAt(positions, v));
+        if (!keepsOrientation(bindNormals.get(i), faceNormal(bindPoints)) || !keepsOrientation(posedNormals.get(i), faceNormal(posedPoints))) { valid = false; break; }
+        for (let b = 0; b < BARYCENTRIC.length; b++) {
+          const point = [0, 1, 2].map(k => posedPoints.reduce((sum, p, j) => sum + BARYCENTRIC[b][j] * p[k], 0));
+          const blocked = inside(contact.surfaces, point);
+          if (blocked && !flags[i][b] || !blocked && flags[i][b] && !outsidePadded(contact.surfaces, point)) { valid = false; break; }
+          if (blocked) remaining++;
+        }
+        if (!valid) break;
+      }
+      if (!valid || remaining >= oldCount) continue;
+      if (!best || remaining < best.remaining || remaining === best.remaining && movement < best.movement) best = { candidate, movement, remaining };
+      // Offsets are sorted by distance from the immutable raw point. A full
+      // repair at this radius needs no farther, more distorted alternative.
+      if (!remaining) break;
+    }
+    if (!best) continue;
+    for (const v of members) a.POSITION.set(best.candidate, v * 3);
+    pool.maximum = Math.max(pool.maximum, best.movement);
+    need(pool.maximum <= MAX_MOVE, `${pool.label}: alternate face direction exceeds cumulative 80 mm`);
+    // Re-skin the actual float32 positions and rerun the unchanged bounded
+    // runtime correction. Incremental proposal coordinates cannot certify it.
+    positions = pushOutPose(pool.decoded, contact.matrices, contact.surfaces, { used: pool.used, padding: PAD, maxDistance: 0.18 }).posedPositions;
+    const next = triangles.map(triangle => failuresFor(triangle));
+    need(next.every((row, i) => row.every((blocked, b) => !blocked || flags[i][b])), `${pool.label}: alternate face direction added a failed probe`);
+    need(count(next) < count(flags), `${pool.label}: alternate face direction did not improve face clearance`);
+    flags = next; report.acceptedGroups++; report.maximumDisplacementM = Math.max(report.maximumDisplacementM, best.movement);
+  }
+  report.after = count(flags);
+  return report;
 }
 
 function appendCorrectedPools(doc, pools) {
@@ -200,7 +315,7 @@ export async function fitWearFaces(rawGlb, restFittedGlb, fit, { id, maxPasses =
     pool.triangles = [...unique.values()];
     const row = { garments: [...new Set(pool.entries.map(entry => entry.gid))], vertices: pool.used.length, weldGroups: pool.weldGroups.size,
       faceChecks: pool.allTriangles.length * 4, initialFaceFailures: inspectPool(pool, contact, { full: true }).faceFailures, passes: [], maximumDisplacementM: pool.maximum };
-    let final = inspectPool(pool, contact, { full: true });
+    let final = inspectPool(pool, contact, { full: true }), bestFailures = final.faceFailures, stalledPasses = 0;
     for (let pass = 0; final.faceFailures && pass < maxPasses; pass++) {
       const positions = pushOutPose(pool.decoded, contact.matrices, contact.surfaces, { used: pool.used, padding: PAD, maxDistance: 0.18 }).posedPositions;
       const matrices = new Map(Array.from(pool.used, v => [v, blendedMatrix(pool.decoded.attrs, v, contact.matrices)]));
@@ -217,6 +332,14 @@ export async function fitWearFaces(rawGlb, restFittedGlb, fit, { id, maxPasses =
         corrections++;
       }
       protectRest(pool, rest); final = inspectPool(pool, contact, { full: true });
+      stalledPasses = final.faceFailures < bestFailures ? 0 : stalledPasses + 1;
+      bestFailures = Math.min(bestFailures, final.faceFailures);
+      if (final.faceFailures && (stalledPasses >= 8 || pass + 1 === maxPasses)) {
+        const alternative = repairFaceBranches(pool, rest, contact);
+        (row.alternativeDirections ??= []).push({ pass: pass + 1, ...alternative });
+        final = inspectPool(pool, contact, { full: true });
+        bestFailures = Math.min(bestFailures, final.faceFailures); stalledPasses = 0;
+      }
       row.passes.push({ pass: pass + 1, corrections, clamped, faceFailures: final.faceFailures, maximumDisplacementM: pool.maximum });
     }
     need(final.faceFailures === 0 && final.vertexFailures === 0, `${pool.label}: unresolved face constraints after ${maxPasses} passes (${final.faceFailures} faces)`);

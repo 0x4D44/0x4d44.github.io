@@ -1,0 +1,590 @@
+[
+  {
+    "id": "geometry-01",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "closed-surface predicate distinguishes outside, inside and the boundary",
+    "description": "Invert closed-surface occupancy.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "containsPart(part, x, y, z, tolerance = 1e-7) { return this.windingAt(part, x, y, z, tolerance) !== 0; }",
+        "to": "containsPart(part, x, y, z, tolerance = 1e-7) { return this.windingAt(part, x, y, z, tolerance) === 0; }"
+      }
+    ]
+  },
+  {
+    "id": "geometry-02",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "numeric nearest-surface BVH agrees with Three.js triangle closest points",
+    "description": "Bias nearest-surface distance by one millimetre.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "distance: Math.sqrt(distanceSq), normal:",
+        "to": "distance: Math.sqrt(distanceSq) + 0.001, normal:"
+      }
+    ]
+  },
+  {
+    "id": "geometry-03",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "overlapping body solids use union semantics, including the doubly enclosed region",
+    "description": "Use parity across separate body parts rather than union.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "for (const part of this.components) if (this.containsPart(part, x, y, z, tolerance)) return part;",
+        "to": "const parts = this.components.filter(part => this.containsPart(part, x, y, z, tolerance)); if (parts.length % 2) return parts[0];"
+      }
+    ]
+  },
+  {
+    "id": "geometry-04",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "self-overlap within one posed body part keeps signed occupancy and internal sheets occupied",
+    "description": "Treat winding multiplicity two as empty parity.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "containsPart(part, x, y, z, tolerance = 1e-7) { return this.windingAt(part, x, y, z, tolerance) !== 0; }",
+        "to": "containsPart(part, x, y, z, tolerance = 1e-7) { return Math.abs(this.windingAt(part, x, y, z, tolerance)) % 2 !== 0; }"
+      }
+    ]
+  },
+  {
+    "id": "geometry-01-fallback",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "closed-surface predicate distinguishes outside, inside and the boundary",
+    "description": "Skip solid-angle fallback for grazing ray crossings.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return ambiguous ? this.solidWindingNumber(part, x, y, z, tolerance) : winding;",
+        "to": "return winding;"
+      }
+    ]
+  },
+  {
+    "id": "geometry-06",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "authoring push-out exits the whole body union instead of oscillating between adjacent parts",
+    "description": "Fit against the first body solid only.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "export function closestUnionExit(surfaces, point, { padding = 0.002, maxDistance = 0.3 } = {}) {",
+        "to": "export function closestUnionExit(surfaces, point, { padding = 0.002, maxDistance = 0.3 } = {}) {\n  surfaces = surfaces.slice(0, 1);"
+      }
+    ]
+  },
+  {
+    "id": "geometry-07",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "ray exits include initially outside components, overlapping solids, short gaps and tangencies",
+    "description": "Omit initially outside solids from ray events.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "export function rayUnionExit(surfaces, point, direction, { padding = 0.002, maxDistance = 0.3, insideParts = null } = {}) {",
+        "to": "export function rayUnionExit(surfaces, point, direction, { padding = 0.002, maxDistance = 0.3, insideParts = null } = {}) {\n  surfaces = surfaces.filter(surface => surface.inside(point));"
+      }
+    ]
+  },
+  {
+    "id": "geometry-08",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "pose correction rechecks the actual float32 upload, stays bounded and never accumulates between frames",
+    "description": "Retain corrected positions from the previous frame.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "  bindPositions.set(source);",
+        "to": "  if (!out) bindPositions.set(source);"
+      }
+    ]
+  },
+  {
+    "id": "geometry-09",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "seated pose targets follow bilateral articulation across all saved clips, independent of scene transforms",
+    "description": "Use the final thigh alone instead of bilateral activation.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_pose.js",
+        "from": "    weight *= t * t * (3 - 2 * t);",
+        "to": "    weight = t * t * (3 - 2 * t);"
+      }
+    ]
+  },
+  {
+    "id": "geometry-10",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "pose-target-only outside vertices consume the unchanged total bounds and update normals without accumulating",
+    "description": "Do not mark target-only changes for normal updates.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "if (targetChanged) { changed.add(vertex); targetCount++; }",
+        "to": "if (targetChanged) { targetCount++; }"
+      }
+    ]
+  },
+  {
+    "id": "geometry-11",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "pose target plus final push-out share one immutable displacement origin",
+    "description": "Allow 300 mm combined target and push-out movement.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "export function pushOutPose(garment, matrices, surfaces, { used = null, padding = 0.002, maxDistance = 0.18, out = null } = {}) {",
+        "to": "export function pushOutPose(garment, matrices, surfaces, { used = null, padding = 0.002, maxDistance = 0.30, out = null } = {}) {"
+      }
+    ]
+  },
+  {
+    "id": "geometry-12",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "an actual exported outside garment vertex cannot bypass a corrupt seated target budget",
+    "description": "Allow an exported target to exceed 180 mm total movement.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "export function pushOutPose(garment, matrices, surfaces, { used = null, padding = 0.002, maxDistance = 0.18, out = null } = {}) {",
+        "to": "export function pushOutPose(garment, matrices, surfaces, { used = null, padding = 0.002, maxDistance = 0.30, out = null } = {}) {"
+      }
+    ]
+  },
+  {
+    "id": "geometry-13",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "removing a body triangle or reversing one face fails instead of treating holes as clear",
+    "description": "Skip oriented-edge closed-manifold validation.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "fail([...edges.values()].every(([count, balance]) => count === 2 && balance === 0), `${label}/${part.name}: collision surface is open, nonmanifold or inconsistently wound`);",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-14",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "every original clip contributes saved keys, intermediate samples and its endpoints",
+    "description": "Omit interval midpoint samples from the pose plan.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_math.mjs",
+        "from": "for (let i = 0; i < sorted.length - 1; i++) times.add((sorted[i] + sorted[i + 1]) / 2);",
+        "to": "/* mutation: omit intermediate samples */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-15",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "STEP jumps and their left-hand poses remain in the extreme-pose plan",
+    "description": "Omit left-hand STEP samples.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_math.mjs",
+        "from": "keys.add(times[i]); keys.add(Math.max(times[i - 1], times[i] - 1e-7));",
+        "to": "keys.add(times[i]);"
+      }
+    ]
+  },
+  {
+    "id": "geometry-16",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "CPU quaternion interpolation agrees with the actual vendored Three.js path",
+    "description": "Use the previous saved quaternion instead of interpolation.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_math.mjs",
+        "from": "out.set(t.name, slerp(t.values, lo * 4, t.values, hi * 4, f));",
+        "to": "out.set(t.name, slerp(t.values, lo * 4, t.values, hi * 4, 0));"
+      }
+    ]
+  },
+  {
+    "id": "geometry-17",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "missing clips, unsupported interpolation and malformed joint tracks fail",
+    "description": "Allow a bank missing a required clip.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_math.mjs",
+        "from": "fail(names.length === CONTRACT.clips.length && new Set(names).size === names.length && CONTRACT.clips.every(n => names.includes(n)), 'pose bank must contain all 32 clips');",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-18",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "geometry mutations reject over-budget triangles, foreign joints and invalid weights",
+    "description": "Permit one triangle above the decoded limit.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "need(indices.length / 3 <= triangleLimit,",
+        "to": "need(indices.length / 3 <= triangleLimit + 1,"
+      }
+    ]
+  },
+  {
+    "id": "geometry-19",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "a declared complete-cut choice must be actual complete near geometry, not metadata alone",
+    "description": "Trust topology metadata without comparing corner attributes.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "need(a[near.indices[corner] * width + k] === b[far.indices[corner] * width + k], `${label}/${gid}/${name}: declared complete-cut geometry differs at triangle ${Math.floor(corner / 3)}`);",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-20",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "GPU accounting shares actual accessors, and packed attribute alignment is enforced",
+    "description": "Double-count shared attribute/index references as separate GPU allocations.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "unique.set(key, size);",
+        "to": "unique.set(`${key}:${unique.size}`, size);"
+      }
+    ]
+  },
+  {
+    "id": "geometry-21",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "GPU limit uses actual image dimensions, not a declared compressed file size",
+    "description": "Omit mip storage from atlas GPU accounting.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "textureBytes += Math.ceil(w * h * 4 * 4 / 3);",
+        "to": "textureBytes += w * h * 4;"
+      }
+    ]
+  },
+  {
+    "id": "geometry-22",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "compacting corrected buffers preserves referenced identity/skin/mesh data only",
+    "description": "Retain unused accessors in corrected-buffer compaction.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "const accessorOrder = [...used].sort((a, b) => a - b),",
+        "to": "const accessorOrder = g.accessors.map((_, i) => i),"
+      }
+    ]
+  },
+  {
+    "id": "geometry-23",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "CPU pose-target references survive compaction and corrupt base/delta references fail",
+    "description": "Do not remap the CPU target delta accessor.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "n.extras.poseTarget.deltaAccessor = accessorMap.get(n.extras.poseTarget.deltaAccessor);",
+        "to": "n.extras.poseTarget.deltaAccessor = n.extras.poseTarget.deltaAccessor;"
+      }
+    ]
+  },
+  {
+    "id": "geometry-24",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "inventory mutations catch stale bytes and cannot escape the model directory",
+    "description": "Accept changed inventory bytes and SHA-256.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "need(b.length === f.bytes && hash(b) === f.sha256, `stale bytes/SHA-256 for ${f.path}`);",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-25",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "gzip transport is decoded before geometry checks and GPU accounting",
+    "description": "Report uncompressed model bytes as transport bytes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "shippedBytes: bytes.length, shippedSha256: hash(bytes), gzip",
+        "to": "shippedBytes: glb.bytes, shippedSha256: hash(bytes), gzip"
+      }
+    ]
+  },
+  {
+    "id": "geometry-26",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "split reports cannot hide changed input, a missing fit, pose, clip, vertex or head check",
+    "description": "Accept split reports with a stale source/checker fingerprint.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "need(report.inputs?.sha256 === expected.inputs.sha256 && JSON.stringify(report.inputs) === JSON.stringify(expected.inputs), 'split report inputs changed; rerun the affected sweep');",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-27",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "all shipped adult fits preserve skin ABI, budgets, catalogue and exact generated data",
+    "description": "Label a structure-only inspection as complete clearance.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "complete: inventory && selected.length === adults.length && selectedComplete, inputs,",
+        "to": "complete: inventory && selected.length === adults.length, inputs,"
+      }
+    ]
+  },
+  {
+    "id": "geometry-28",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "the complete clearance certificate matches every current asset, recipe and checker byte",
+    "description": "Omit the geometry checker from the certificate input snapshot.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "'js/people/wear_data.js', 'js/people/wear_geometry.js',",
+        "to": "'js/people/wear_data.js',"
+      }
+    ]
+  },
+  {
+    "id": "geometry-29",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "face authoring preserves shared cuts and rejects an extra 81 mm above its exact raw baseline",
+    "description": "Mislabel an authoring-only face fit as complete.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_faces.mjs",
+        "from": "schema: 1, id, authoringOnly: true, complete: false,",
+        "to": "schema: 1, id, authoringOnly: true, complete: true,"
+      }
+    ]
+  },
+  {
+    "id": "geometry-30",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "seated authoring rejects an existing target as a new origin and preserves the pristine 80 mm base bound",
+    "description": "Accept an existing seated target as a pristine authoring baseline.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_fit_targets.mjs",
+        "from": "need(!rawGlb.g.nodes.some(n => n.extras?.poseTarget) && !idleBaseGlb.g.nodes.some(n => n.extras?.poseTarget), 'pose targets must be authored before CPU target export; an existing target is not a new baseline');",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-31",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "a declared complete target set cannot omit one real long-garment LOD",
+    "description": "Accept a declared complete target set missing a long-bottom LOD.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "if ((fit.poseTargetCpuBytes ?? 0) > 0 && ['trousers', 'jeans', 'leggings'].includes(gid)) need(e.decoded.poseTarget, `${name}: missing required seated pose target`);",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-32",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "adult policy, eligibility, beach separation and colour sets reject corrupt input",
+    "description": "Allow a child fit in the adult wardrobe inventory.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "need(same(Object.keys(manifest.fits ?? {}), adults), 'wearable policy includes nonadult fit or omits an adult');",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-33",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "mutating an exported inverse bind matrix is rejected by the real skin check",
+    "description": "Accept a corrupted inverse bind matrix.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_math.mjs",
+        "from": "fail(near([...multiply(w, bind.subarray(k * 16, k * 16 + 16))], [...identity()], 0.0003), `${node.name}/${n}: inverse bind does not cancel rest transform`);",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-34",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "a real exported garment vertex moved inside its body fails geometry, independent of hashes",
+    "description": "Discard independent exported-vertex penetration findings.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "issues.push(problem); break;",
+        "to": "break;"
+      }
+    ]
+  },
+  {
+    "id": "geometry-35",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "exact grazing poses found by the full release sweep remain clear within the original correction bound",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-36",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "actual folded-arm poses leave every corrected garment vertex outside signed solid-angle occupancy",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-37",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "bust, crotch and hip garment faces clear the rendered body at both contact-sheet LODs",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-38",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "seated trousers, jeans and leggings clear both actual body LODs across their complete faces",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-39",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "far everyday tops clear both actual body LODs across their complete idle faces",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-40",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "every garment has clear complete near and far faces on the three idle contact-sheet bodies",
+    "description": "Corrupt the actual final posed upload before independent clearance probes.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };",
+        "to": "for (const vertex of used) { posedPositions[vertex * 3] *= 0.5; posedPositions[vertex * 3 + 2] *= 0.5; }\n  return { bindPositions, posedPositions, count: changed.size, targetWeight, targetCount, pushCount, maxPush, maxBindPush };"
+      }
+    ]
+  },
+  {
+    "id": "geometry-41",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "push-out inversion rejects a singular skin transform",
+    "description": "Accept a singular blended skin matrix.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "fail(Number.isFinite(det) && Math.abs(det) > 1e-10, 'singular blended skin matrix');",
+        "to": "void 0; /* mutation: omitted validation */"
+      }
+    ]
+  },
+  {
+    "id": "geometry-05",
+    "suite": "la-ladera/tests/people-wear.test.mjs",
+    "test": "grazing rays cannot turn an outside point inside or clear a point inside a concave body",
+    "description": "Count merged grazing crossings with parity instead of signed occupied winding.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_geometry.js",
+        "from": "return ambiguous ? this.solidWindingNumber(part, x, y, z, tolerance) : winding;",
+        "to": "return hits.filter((hit, index) => index === 0 || hit - hits[index - 1] > tolerance).length % 2;"
+      }
+    ]
+  }
+]

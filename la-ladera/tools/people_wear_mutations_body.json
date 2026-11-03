@@ -1,0 +1,102 @@
+[
+  {
+    "id": "native-body-01",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "native body provenance pins all six current source files in LF form",
+    "description": "Invent stale source hashes while retaining source filenames.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "name: source_sha(HERE/name)",
+        "to": "name: \"0\"*64"
+      }
+    ]
+  },
+  {
+    "id": "native-body-02",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "native hands legs and sandal skin retain every current source surface triangle",
+    "description": "Move copied native skin vertices three millimetres.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "result.vertex(point, part)",
+        "to": "result.vertex((point[0]+.003, point[1], point[2]), part)"
+      }
+    ]
+  },
+  {
+    "id": "native-body-03",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "every new body component is closed and consistently oriented after Float32 export",
+    "description": "Reverse one exported body triangle.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "    return result\n",
+        "to": "    result.tri[0] = (result.tri[0][0], result.tri[0][2], result.tri[0][1])\n    return result\n"
+      }
+    ]
+  },
+  {
+    "id": "native-body-04",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "every regenerated far body is at most forty percent of its near triangles",
+    "description": "Copy every near triangle into the far body.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "    return result\n",
+        "to": "    result.far = list(result.tri)\n    return result\n"
+      }
+    ]
+  },
+  {
+    "id": "native-body-05",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "native source fingerprints are identical for LF and CRLF checkout bytes",
+    "description": "Hash CRLF checkout bytes without canonical LF normalization.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "Path(path).read_bytes().replace(b'\\r\\n', b'\\n')",
+        "to": "Path(path).read_bytes()"
+      }
+    ]
+  },
+  {
+    "id": "native-body-06",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "native body weights use the current source recipe instead of the garment callback at every vertex",
+    "description": "Skin the native body with the garment callback rather than current source weights.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_body.py",
+        "from": "Mesh(getattr(pat, 'body_skin', pat.skin))",
+        "to": "Mesh(pat.skin)"
+      }
+    ]
+  },
+  {
+    "id": "native-body-07",
+    "suite": "la-ladera/tests/people-wear-body.test.mjs",
+    "test": "all shipped native body triangle corners retain current source positions and quantized skin weights in both LODs",
+    "description": "Move one referenced exported body vertex 3 mm in an isolated BIN fixture; keep shipped files and the source-body oracle untouched.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/assets/models/wear/metadata.json",
+        "kind": "body-position-fixture",
+        "fit": "m_don",
+        "axis": 0,
+        "delta": 0.003
+      }
+    ]
+  }
+]
