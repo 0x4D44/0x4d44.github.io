@@ -405,19 +405,23 @@ export function seatTable(L, first, names, n, poses, need = 2) {
   return null;
 }
 
-const EATING_TABLE = /^table_(formica_4|formica_6|wood_6|round_small)$/, SITS = new Set(['chair', 'stool', 'bench']);
+const EATING_TABLE = /^table_(formica_4|formica_6|wood_6|round_small)$/, SITS = new Set(['chair', 'stool', 'bench']), TV_SET = /^tv_(flat|crt)$/;
 /** The chairs, stools and benches drawn up to a table: those within a hand's breadth beyond its edge, in its own frame. */
 export function seatsAt(L, t) {
   const c = Math.cos(t.ry), s = Math.sin(t.ry), hw = t.c.size[0] / 2 + 0.55, hd = t.c.size[2] / 2 + 0.55;
   return L.items.filter((x) => x !== t && x.floor && !x.parent && SITS.has(x.c.arch) && Math.abs((x.x - t.x) * c - (x.z - t.z) * s) <= hw && Math.abs((x.x - t.x) * s + (x.z - t.z) * c) <= hd);
 }
 /** After healing: a table whose chairs were taken out (healing drops a seat that later furniture walled in) gets seats somewhere they fit, or goes itself, since a table nobody can sit at is a prop
- *  (R4-304: tenement rooms with a table and no chair). Returns the tables taken out. */
+ *  (R4-304: tenement rooms with a table and no chair); and a living room's TV with nothing left to sit on gets a seat, or goes (its stand stays), for the same reason (R4-702). Returns what was taken out. */
 export function ensureSeats(L) {
   const gone = [];
   for (const t of L.items.filter((i) => i.floor && !i.parent && EATING_TABLE.test(i.name))) {
     if (seatsAt(L, t).length) continue;
     if (!seatTable(L, t, ['chair_plastic', 'stool_wood'], t.c.size[0] > 1.2 ? 4 : 2, () => tablePoses(L, t.name, [t.x, t.z], [0, PI / 2], true))) gone.push(t);
+  }
+  if (L.room.type === 'living') for (const tv of L.items.filter((i) => i.parent && TV_SET.test(i.name))) {
+    if (L.items.some((i) => i.floor && i.c.seat) || tvSeat(L, L.hh ?? {}, tv, tv.parent)) continue;
+    L.remove(tv); gone.push(tv);
   }
   return gone;
 }
@@ -490,6 +494,18 @@ export function fillMin(L, E, hh, min = 4) {
 }
 
 // ---------------------------------------------------------------- LIVING
+/** A set is watched from somewhere (R4-702: 31 of the barrio's 195 living rooms had a TV and nowhere to sit, every living room of the flats of L06, L16 and L71 among them: three doors in 3 m leave no wall for a
+ *  sofa). The sofa did not fit, so what does, seen from the set (a seat of index.js `emitAnchors`' 'tv' kind: an armchair, chair or stool facing it, a metre or more off): an armchair against a wall, a chair
+ *  or a stool drawn up in front of it, the bench along a wall; failing those, the armchair or the bench facing wherever the wall allows. Returns the seat, or null. */
+export function tvSeat(L, hh, tv, stand) {
+  const set = stand ?? tv, front = stand ? L.rel(stand, 0, stand.d / 2 + 1.7) : [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2];
+  const arm = hh.vinyl ? 'armchair_vinyl' : 'armchair_fabric', chair = hh.plastic ? 'chair_plastic' : hh.income ? 'chair_wood_padded' : 'chair_wood';
+  const sees = (it) => { const dx = tv.x - it.x, dz = tv.z - it.z, d = Math.hypot(dx, dz), f = L.face(it); return d >= 1 && (f[0] * dx + f[1] * dz) / d > 0.5; };
+  const wallSeat = (name, facing) => { for (const it of L.wallPoses(name, 'any', { far: set, prio: 0 })) if (!facing || sees(it)) return L._commit(it, {}); return null; };
+  return any(() => wallSeat(arm, true),
+    () => L.free(chair, { near: front, rad: 1.5, face: set, prio: 0 }), () => L.free('stool_wood', { near: front, rad: 1.8, face: set, prio: 0 }),
+    () => wallSeat('bench_wood', true), () => wallSeat(arm, false), () => wallSeat('bench_wood', false));
+}
 export function living(L, E, hh) {
   const rng = L.rng, area = floorArea(L), small = area < 9.5;
   const walls = L.wallsByFree();
@@ -500,6 +516,7 @@ export function living(L, E, hh) {
   const sofaNames = (small ? ['sofa_2_', 'sofa_3_'] : ['sofa_3_', 'sofa_2_']).flatMap((p) => [p + (hh.vinyl ? 'vinyl' : 'fabric')]);
   const sofaWall = stand ? opposite(stand.wallSide) : 'any';
   const sofa = any(...sofaNames.map((n) => () => L.wall(n, sofaWall, { at: 'center', prio: 0 })), ...sofaNames.map((n) => () => L.wall(n, 'any', { far: stand ?? [L.r.x0, L.r.z0], prio: 0 })));
+  const seat = sofa ?? (tv ? tvSeat(L, hh, tv, stand) : null);                                    // (no sofa: the set still has a seat in front of it, or goes: R4-702)
   let coffee = null;
   if (sofa && area >= 8) coffee = L.at('coffee_table', ...L.rel(sofa, 0, sofa.d / 2 + 0.45 + 0.275), sofa.ry, { prio: 2 }) ?? L.at('side_table', ...L.rel(sofa, sofa.w / 2 + 0.3, 0.1), sofa.ry, { prio: 2 });
   if (sofa && area >= 12) {
@@ -560,7 +577,7 @@ export function living(L, E, hh) {
   if (rng.chance(0.5)) mirror(L, E, 'any', {});
   ceilingFixture(L, E, hh, 'bulb');
   if (area > 17) diningSet(L, E, hh, true);
-  E.living = { sofa, tv, stand, altar, coffee };
+  E.living = { sofa, seat, tv, stand, altar, coffee };
   dressWalls(L, E, hh, { type: 'living' });
   clutter(L, E, hh);
   fillMin(L, E, hh, 7);
