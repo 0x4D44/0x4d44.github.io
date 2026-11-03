@@ -180,6 +180,8 @@ function interactables(ctx, bp, E, rng) {
         spec = { key: 'decal', prompt: d[0], who: d[1], say: d[2], pri: DECAL_STORY_FIRST.has(decalId) ? 6 : 3, radius: 1.8, aim: 0.85, decal: true };
       } else if (it.flags?.counter && shopType && SAY['shop_' + shopType]) {
         spec = { key: 'counter', prompt: 'Mirar el mostrador', who: 'El mostrador', say: 'shop_' + shopType, pri: 9 };
+      } else if (it.name === 'cabin_pc' && shopType === 'minutos' && SAY.shop_minutos && !L.items.some((i) => i.flags?.counter)) {
+        spec = { key: 'counter', prompt: 'Mirar las cabinas', who: 'Las cabinas', say: 'shop_minutos', pri: 9 };         // (a minutes shop too narrow for a counter, L15 and L76: the cabins say what the counter said)
       } else spec = BY_NAME.get(it.name);
       if (!spec) continue;
       const once = `${rid}|${spec.key}${spec.key === 'decal' ? '|' + decalId : ''}`;                // one of each thing per room (fans and lamps: each one)
@@ -391,7 +393,7 @@ function discoveries(ctx, bp, E, rng) {
   if (shopType && SHOP_STORY[shopType]) {
     const s = SHOP_STORY[shopType];
     const hit = [...hooks.values()].flat().find((h) => h.it.flags?.counter) ?? null;
-    if (hit) { if (!take(hit.it.name, s)) take('motorbike', s); } else if (!take('motorbike', s)) take('stove_gas', s);
+    if (hit) { if (!take(hit.it.name, s)) take('motorbike', s); } else if (!take('cabin_pc', s) && !take('motorbike', s)) take('stove_gas', s);          // (no counter: a minutes shop's cabin, else the mechanic's motorbike, else the stove)
   }
   // homes: what the objects of the household tell, a few per building
   const home = !['chapel', 'school', 'clinic', 'hall'].includes(kind);
