@@ -14,6 +14,12 @@ const cases = [
   ['source-text', 'current hip guard accepts LF and CRLF but rejects each changed body source'],
   ['versions', 'body version dispatch preserves legacy refinement and unchanged current mesh'],
   ['normals', 'small far facets and cancelling incident areas produce valid unit normals'],
+  ['hip-source', 'native far hip rows retain the lower blend station and both hip brackets for all adults'],
+  ['hip-drift', 'native far hip rows follow changed body heights without fixed row or legacy height matches'],
+  ['hip-endpoints', 'native far hip rows preserve both endpoint openings and reject invalid anatomical ranges'],
+  ['body-selection', 'far body sampling retains the source rows with largest transverse shape departures'],
+  ['body-budget', 'far body sampling preserves source endpoints and the unchanged body LOD budget for all adults'],
+  ['body-invariance', 'far torso refinement preserves every near body and exposed far limb stream'],
 ];
 
 for (const [key, name] of cases) test(name, () => {

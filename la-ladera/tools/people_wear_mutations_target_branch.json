@@ -1,0 +1,157 @@
+[
+  {
+    "id": "target-branch-01",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair moves every seam alias together while preserving the immutable base and all nonposition streams",
+    "description": "Move only the representative vertex and leave its welded UV copies behind.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "for (const v of members) current.set(best.target, v * 3);",
+        "to": "current.set(best.target, lead * 3);"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-02",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair cannot reset a previous 170 mm target as its immutable bind origin",
+    "description": "Treat the previous corrected target and its pose as a fresh displacement origin.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "const { decoded, base, current, used, triangles, welds, matrices, baseWorld } = pool;",
+        "to": "const { decoded, current, used, triangles, welds, matrices } = pool;\n  const base = new Float32Array(current), baseWorld = skinPositions({ ...decoded, attrs: { ...decoded.attrs, POSITION: current } }, sample.matrices);"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-03",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair enforces the posed 180 mm bound independently of a smaller bind movement",
+    "description": "Remove both candidate and committed posed-space movement bounds while keeping bind-space checks.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "movement > LIMIT - RESERVE || ",
+        "to": ""
+      },
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "Math.hypot(...point(positions, v).map((value, k) => value - baseWorld[v * 3 + k])) <= LIMIT",
+        "to": "true"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-04",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair preserves positive bind-space normals on neighboring triangles",
+    "description": "Permit a candidate that inverts a bind-space neighbor while preserving its posed normal.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "!preservesOrientation(bindNormals.get(i), normal(bindPoints)) || ",
+        "to": ""
+      }
+    ]
+  },
+  {
+    "id": "target-branch-05",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair preserves positive posed normals independently of bind-space orientation",
+    "description": "Permit a candidate that inverts a posed neighbor while preserving its bind-space normal.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": " || !preservesOrientation(posedNormals.get(i), normal(worldPoints))",
+        "to": ""
+      }
+    ]
+  },
+  {
+    "id": "target-branch-06",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair cannot exchange an old blocked probe for a newly blocked neighboring probe",
+    "description": "Permit exchanging cleared old failures for new blocked neighboring probes.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "blocked && !flags[i][b] || ",
+        "to": ""
+      },
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "next.every((row, i) => row.every((blocked, b) => !blocked || flags[i][b]))",
+        "to": "true"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-07",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair rejects candidates that do not strictly improve the original failed-probe count",
+    "description": "Accept equal failure counts as an improvement.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "remaining >= oldCount",
+        "to": "remaining > oldCount"
+      },
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "count(next) < count(flags)",
+        "to": "count(next) <= count(flags)"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-08",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair accepts only matching Float32 base and private target streams",
+    "description": "Bypass the actual Float32 target and immutable-base stream contract.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "current instanceof Float32Array && base instanceof Float32Array && current.length === base.length && current.length === decoded.attrs.POSITION.length",
+        "to": "true"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-09-float32",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair checks two millimetre padding on the actual Float32 target rather than its unrounded proposal",
+    "description": "Check padding on unrounded doubles instead of the uploaded Float32 candidate.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "Math.fround(value + delta[k])",
+        "to": "value + delta[k]"
+      }
+    ]
+  },
+  {
+    "id": "target-branch-09-padding",
+    "suite": "la-ladera/tests/people-wear-target-branch.test.mjs",
+    "test": "seated branch repair checks two millimetre padding on the actual Float32 target rather than its unrounded proposal",
+    "description": "Weaken the original two millimetre padding in the new branch proposals.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_target_search.mjs",
+        "from": "PAD = .002",
+        "to": "PAD = .0001"
+      }
+    ]
+  }
+]

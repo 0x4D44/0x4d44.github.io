@@ -18,6 +18,18 @@ const mutations = [
   ['normal-floor', 'small far facets and cancelling incident areas produce valid unit normals'],
   ['normal-cancellation', 'small far facets and cancelling incident areas produce valid unit normals'],
   ['normal-degenerate', 'small far facets and cancelling incident areas produce valid unit normals'],
+  ['hip-lower-blend', 'native far hip rows retain the lower blend station and both hip brackets for all adults'],
+  ['hip-below', 'native far hip rows retain the lower blend station and both hip brackets for all adults'],
+  ['hip-above', 'native far hip rows retain the lower blend station and both hip brackets for all adults'],
+  ['hip-fixed-rows', 'native far hip rows follow changed body heights without fixed row or legacy height matches'],
+  ['hip-old-heights', 'native far hip rows follow changed body heights without fixed row or legacy height matches'],
+  ['hip-endpoints', 'native far hip rows preserve both endpoint openings and reject invalid anatomical ranges'],
+  ['body-uniform-rows', 'far body sampling retains the source rows with largest transverse shape departures'],
+  ['body-small-errors', 'far body sampling retains the source rows with largest transverse shape departures'],
+  ['body-extra-row', 'far body sampling preserves source endpoints and the unchanged body LOD budget for all adults'],
+  ['body-endpoints', 'far body sampling preserves source endpoints and the unchanged body LOD budget for all adults'],
+  ['body-near-sampling', 'far torso refinement preserves every near body and exposed far limb stream'],
+  ['body-native-limb', 'far torso refinement preserves every near body and exposed far limb stream'],
 ];
 const run = (args, env = {}) => spawnSync(process.execPath, args, {
   cwd: root, windowsHide: true, encoding: 'utf8', timeout: 120_000,
@@ -27,9 +39,9 @@ const run = (args, env = {}) => spawnSync(process.execPath, args, {
 // emitted only a file-level aggregate for these synchronous Python controls.
 const positive = run([file]);
 writeFileSync(resolve(out, 'positive.tap'), positive.stdout + positive.stderr);
-if (positive.status !== 0 || !positive.stdout.includes('# pass 7') ||
+if (positive.status !== 0 || !positive.stdout.includes('# pass 13') ||
     !mutations.every(([, name]) => positive.stdout.includes(` - ${name}`)))
-  throw Error('Authoring positive control lacks seven named passes; see positive.tap');
+  throw Error('Authoring positive control lacks thirteen named passes; see positive.tap');
 const rows = [];
 for (const [mutant, name] of mutations) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

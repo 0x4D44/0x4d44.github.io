@@ -22,6 +22,7 @@ from scipy.spatial import ConvexHull
 from PIL import Image, ImageDraw
 from people_wear_shapes import Mesh, Patterns
 from people_wear_lod import reduce_garment_far
+from people_wear_pack import compact_body_streams
 
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parent.parent
@@ -161,6 +162,7 @@ if(faces)for(const[id,fit]of Object.entries(meta.fits)){
 }
 mkdirSync(stage,{recursive:true});
 const dependencyPaths=['tools/blender/people_validate.mjs','tools/blender/people_wear_validate.mjs','tools/blender/people_wear_fit_faces.mjs','tools/blender/people_wear_fit_targets.mjs','tools/blender/people_wear_fit_search.mjs','tools/blender/people_wear_math.mjs','js/people/wear_geometry.js','js/people/wear_pose.js','tools/blender/people_clips.json.gz','tools/blender/people_contract.json'];
+dependencyPaths.push('tools/blender/people_wear_target_search.mjs','tools/blender/people_wear_pack.py');
 dependencyPaths.push('tools/blender/people_wear_build.py','tools/blender/people_wear_shapes.py','tools/blender/people_wear_body.py','tools/blender/people_wear_body_guard.py','tools/blender/people_wear_lod.py','tools/blender/people_body.py','tools/blender/people_body_limbs.py','tools/blender/people_build.py','tools/blender/people_cast.py','tools/blender/people_head.py','tools/blender/people_tex.py');
 const dependencies=Object.fromEntries(dependencyPaths.map(path=>[path,sha(readFileSync('./la-ladera/'+path))]));
 let currentId=null;
@@ -185,21 +187,29 @@ for(const[id,fit]of Object.entries(meta.fits)){
   }
  }
  writeFileSync(join(stage,'input.json'),JSON.stringify({id,path,inputSha256:sha(input),rawSha256:sha(rawBytes),fit,dependencies,authorKey},null,2)+'\n');
-
+ const reportFiles=[];
+ const recordReport=(phase,report)=>{
+  const file=id+'.'+phase+'.json',destination='dev/wear/authoring/'+id+'/'+phase+'.json';
+  const bytes=Buffer.from(JSON.stringify(report,null,2)+'\n');writeFileSync(join(stage,file),bytes);
+  const reference={path:destination,form:'LF',bytes:bytes.length,sha256:sha(bytes)};
+  reportFiles.push({phase,file,destination,...reference});return reference;
+ };
  const result=await pushOutFit(parseGlb(rawBytes),fit,{id,samples:[{clip:null,clipName:'rest',time:0}],passes:8,padding:.0015,maxMove:.08});
  if(!result.report.converged)throw Error(id+': rest fit did not converge');
  let output=result.bytes;writeFileSync(join(stage,id+'.rest.glb'),output);
- fit.restFit={samples:1,passes:result.report.passes.length,movedVertices:result.report.movedVertices,maxDisplacementM:result.report.maxDisplacement,boundedSearches:result.report.boundedSearches,unresolved:0};
+ fit.restFit={samples:1,passes:result.report.passes.length,movedVertices:result.report.movedVertices,maxDisplacementM:result.report.maxDisplacement,boundedSearches:result.report.boundedSearches,unresolved:0,report:recordReport('rest',result.report)};
  fit.gpuGeometryBytes=result.report.gpuGeometryBytes;
  const targetFiles=[];
  if(faces){
   const fitted=await fitWearFaces(parseGlb(rawBytes),parseGlb(result.bytes),fit,{id,garmentIds:IDLE_FACE_GARMENTS});
   if(!fitted.report.converged||!fitted.report.rawRestClear||fitted.report.faceFailures)throw Error(id+': expanded idle face fit did not converge');
-  output=fitted.bytes;fit.faceFit=compact(fitted.report);fit.gpuGeometryBytes=fitted.report.gpuGeometryBytes;
+  const {pools,...faceSummary}=compact(fitted.report);
+  output=fitted.bytes;fit.faceFit={...faceSummary,poolCount:pools.length,report:recordReport('faces',fitted.report)};fit.gpuGeometryBytes=fitted.report.gpuGeometryBytes;
   writeFileSync(join(stage,id+'.idle.glb'),output);
   const posed=await fitWearPoseTargets(parseGlb(rawBytes),parseGlb(output),fit,{id});
   if(!posed.report.converged)throw Error(id+': seated target authoring did not converge');
-  fit.poseFit=compact(posed.report);
+  const {staticRows,targets,...poseSummary}=compact(posed.report);
+  fit.poseFit={...poseSummary,staticRowCount:staticRows.length,targetCount:targets.length,report:recordReport('seated',posed.report)};
   for(const row of posed.targets){
    if(!['trousers','leggings'].includes(row.garment)||![0,1].includes(row.lod))throw Error(id+': unsupported target cut or LOD');
    const stem=id+'.'+row.garment+'.lod'+row.lod;
@@ -211,9 +221,9 @@ for(const[id,fit]of Object.entries(meta.fits)){
   if(!fit.topologyChoices?.trousers&&!keys.has('trousers/0'))throw Error(id+': missing required detailed near target');
  }
  const stagedBase=id+'.idle.glb';writeFileSync(join(stage,stagedBase),output);
- const files=[stagedBase,...targetFiles.flatMap(row=>[row.positions,...(row.baseOverride?[row.baseOverride]:[])])];
+ const files=[stagedBase,...targetFiles.flatMap(row=>[row.positions,...(row.baseOverride?[row.baseOverride]:[])]),...reportFiles.map(row=>row.file)];
  const outputHashes=Object.fromEntries(files.map(file=>[file,sha(readFileSync(join(stage,file)))]));
- pending.push({id,inputPath:path,inputSha256:sha(input),compressed,stagedBase,targets:targetFiles,authorKey,outputHashes});
+ pending.push({id,inputPath:path,inputSha256:sha(input),compressed,stagedBase,targets:targetFiles,reports:reportFiles,authorKey,outputHashes});
 
 }
 if(dependencyPaths.some(path=>sha(readFileSync('./la-ladera/'+path))!==dependencies[path]))throw Error('Numerical authoring source changed during this fit; checkpoint not published');
@@ -258,9 +268,21 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
             (stage/'run-summary.json').write_text(json.dumps({'requested':ids,'completed':[row[0] for row in completed],'failures':failures},indent=2)+'\n')
     if failures:
         raise RuntimeError(f'{len(failures)} adult fits failed; no fitted assets published. Fix the listed inputs, then retry --resume-author {stage}')
-    pending = []
+    pending = [];pending_reports=[]
     for ident,directory,fit,entry in completed:
         base = directory/entry['stagedBase']
+        reports=entry.get('reports',[])
+        expected_reports={'rest','faces','seated'} if faces else {'rest'}
+        if {row['phase'] for row in reports}!=expected_reports or len(reports)!=len(expected_reports):
+            raise RuntimeError(ident+': missing or duplicated authoring proof report')
+        for row in reports:
+            expected='dev/wear/authoring/'+ident+'/'+row['phase']+'.json'
+            if row['destination']!=expected or row['path']!=expected or row['file']!=ident+'.'+row['phase']+'.json' or row['form']!='LF':
+                raise RuntimeError(ident+': invalid authoring report path or form')
+            data=(directory/row['file']).read_bytes()
+            if len(data)!=row['bytes'] or hashlib.sha256(data).hexdigest()!=row['sha256'] or row['sha256']!=entry['outputHashes'][row['file']]:
+                raise RuntimeError(ident+': authoring proof report changed before publication')
+            pending_reports.append((ROOT/expected,data))
         if faces:
             targets = {};overrides = {}
             for row in entry['targets']:
@@ -272,6 +294,7 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
             output = directory/(ident+'.packed.glb')
             report = repack_wear_lods(base,output,fit,targets,overrides)
             fit['gpuGeometryBytes'] = report['gpuGeometryBytes'];fit['poseTargetCpuBytes'] = report['poseTargetCpuBytes']
+            if report.get('bodyPacking'):fit['bodyPacking']=report['bodyPacking']
             if report['topologyChoices']:fit['topologyChoices'] = report['topologyChoices']
             for row in report['mappings'].values():
                 garment = fit['garments'][row['garment']]
@@ -293,6 +316,8 @@ writeFileSync(join(stage,'author.json'),JSON.stringify({metadata:meta,metadataSh
     if sha(meta_path)!=input_metadata_sha:raise RuntimeError('Wear metadata changed during authoring; checkpoints are retained for a content-verified retry')
     for destination,data,expected in pending:
         if sha(destination)!=expected:raise RuntimeError(str(destination)+': raw input changed during authoring')
+    for destination,data in pending_reports:
+        destination.parent.mkdir(parents=True,exist_ok=True);destination.write_bytes(data)
     for destination,data,_ in pending:destination.write_bytes(data)
     meta_path.write_text(json.dumps(meta,separators=(',',':'))+'\n')
     refresh_metadata()
@@ -585,6 +610,15 @@ def repack_wear_lods(source, destination, fit, pose_targets=None, base_overrides
     writer.g = copy.deepcopy(old)
     writer.g['accessors'], writer.g['bufferViews'], writer.g['buffers'] = [], [], []
     node_indices = {n.get('name'): i for i, n in enumerate(old['nodes'])}
+    body_meshes = [old['nodes'][node_indices[fit[key]]]['mesh'] for key in ('bodyNode','bodyLodNode')]
+    body_primitives = [old['meshes'][index]['primitives'][0] for index in body_meshes]
+    if body_primitives[0]['attributes'] != body_primitives[1]['attributes']:
+        raise ValueError(fit_id+': body LODs must share the original encoded pool before packing')
+    body_attributes = body_primitives[0]['attributes']
+    body_packed = compact_body_streams(
+        {name:accessor_raw(old,binary,index) for name,index in body_attributes.items()},
+        *(accessor_raw(old,binary,p['indices']) for p in body_primitives))
+    body_output_attributes = None
     selected = {}
     for garment in ('trousers', 'jeans', 'leggings'):
         for lod, field in ((0, 'node'), (1, 'lodNode')):
@@ -613,6 +647,18 @@ def repack_wear_lods(source, destination, fit, pose_targets=None, base_overrides
             raise ValueError('Generated wear meshes require one primitive')
         op = old_mesh['primitives'][0]
         p = writer.g['meshes'][mi]['primitives'][0]
+        if mi in body_meshes:
+            if body_output_attributes is None:
+                body_output_attributes = {}
+                for attribute,ai in body_attributes.items():
+                    a=old['accessors'][ai]
+                    body_output_attributes[attribute]=writer.accessor(
+                        body_packed['encoded'][attribute],a['componentType'],a['type'],
+                        a.get('normalized',False),target=34962,bounds='min' in a and 'max' in a)
+            p['attributes']=body_output_attributes.copy()
+            indices=body_packed['near_indices' if mi==body_meshes[0] else 'far_indices']
+            p['indices']=writer.accessor(indices,5123,'SCALAR',target=34963)
+            continue
         if mi not in selected:
             p['attributes'] = {name: copy_accessor(ai, 34962)
                                for name, ai in op['attributes'].items()}
@@ -717,6 +763,7 @@ def repack_wear_lods(source, destination, fit, pose_targets=None, base_overrides
     cpu_bytes = sum(writer.g['accessors'][ai]['count'] * 12 for ai in target_accessors)
     return {'sourceBaseSha256': sha(source), 'outputSha256': sha(destination),
             'gpuGeometryBytes': writer.gpu, 'poseTargetCpuBytes': cpu_bytes,
+            'bodyPacking': body_packed['metrics'],
             'poseTargetAccessors': len(target_accessors), 'bytes': destination.stat().st_size,
             'topologyChoices': choices, 'mappings': mappings, 'targets': target_metrics}
 

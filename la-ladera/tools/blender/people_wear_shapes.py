@@ -289,6 +289,25 @@ def ring(cx,cy,z,rx,ry,n=16):
     return [(cx+rx*math.cos(2*math.pi*i/n),cy+ry*math.sin(2*math.pi*i/n),z) for i in range(n)]
 
 
+def native_hip_lod_rows(zs,hip,k):
+    """Keep current source knots through the lower hip skin-weight transition.
+
+    Current cubic body rows do not contain the old .466H/.51H constants. Using
+    those exact comparisons left only crotch and waist and produced a single
+    long far panel across both moving thighs and the upper torso. Retain the
+    native ring below the lower blend boundary and both rings around the hip;
+    the existing far reducer still enforces the unchanged 40-percent budget.
+    """
+    if len(zs)<2 or not all(math.isfinite(float(z)) for z in zs) or any(a>=b for a,b in zip(zs,zs[1:])):
+        raise ValueError('Native far hip rows require increasing finite heights')
+    if not math.isfinite(hip) or not math.isfinite(k) or k<=0 or not zs[0]<=hip-.055*k<hip<zs[-1]:
+        raise ValueError('Native far hip rows require crotch and waist around the hip blend')
+    lower=max(i for i,z in enumerate(zs) if z<=hip-.055*k)
+    below=max(i for i,z in enumerate(zs) if z<=hip)
+    above=min(i for i,z in enumerate(zs) if z>=hip)
+    return sorted({0,len(zs)-1,lower,below,above})
+
+
 class Patterns:
     def __init__(self,pd,P,skin,torso_rows):
         from people_wear_body import _source_functions, arm_profile, leg_profile
@@ -585,7 +604,13 @@ class Patterns:
         z0=H*.60;zhip=H*.429-.004*k
         zs=sorted({zhip,z0,*[z for z in self.body_levels() if max(zhip,H*.449)<=z<z0]})
         rr,refs=self.tor_rings(zs,offset,n=16,folds=kind!='leggings')
-        far_rows=[i for i,z in enumerate(zs) if i in (0,len(zs)-1) or abs(z-H*.466)<1e-7 or abs(z-H*.51)<1e-7] if kind in ('trousers','jeans','leggings') else range(len(rr))
+        far_rows=range(len(rr))
+        if kind in ('trousers','jeans','leggings'):
+            from people_wear_body_guard import CURRENT_BODY_VERSION
+            if self.body_version==CURRENT_BODY_VERSION:
+                far_rows=native_hip_lod_rows(zs,self.P['hip'],k)
+            else:
+                far_rows=[i for i,z in enumerate(zs) if i in (0,len(zs)-1) or abs(z-H*.466)<1e-7 or abs(z-H*.51)<1e-7]
         if kind in ('shorts','swim_trunks'):far_rows=[i for i,z in enumerate(zs) if abs(z-H*0.449)>1e-7]
         m.loft(rr,'torso',references=refs,solid=True,open_caps=(1,),lod_rows=far_rows,lod_angles=range(16))
         m.loft([rr[-1],[(x*1.008,y*1.008,z-.024*k) for x,y,z in rr[-1]]],'torso',lod=False,shade=.78)

@@ -25,7 +25,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 SUITES = ["la-ladera/tests/people-wear.test.mjs", "la-ladera/tests/people-wear-runtime.test.mjs",
           "la-ladera/tests/people-wear-body.test.mjs", "la-ladera/tests/people-wear-rebase.test.mjs",
-          "la-ladera/tests/people-wear-fit-search.test.mjs"]
+          "la-ladera/tests/people-wear-fit-search.test.mjs", "la-ladera/tests/people-wear-target-branch.test.mjs"]
 DEPENDENCIES = [
     'tests/nice.mjs', 'tests/register.mjs', 'tests/hooks.mjs',
     'assets/models/manifest.people.json', 'assets/models/manifest.json',
@@ -35,7 +35,8 @@ DEPENDENCIES = [
     'tools/blender/people_wear_build.py', 'tools/blender/people_wear_shapes.py',
     'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py',
     'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_fit_faces.mjs',
-    'tools/blender/people_wear_fit_targets.mjs', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_math.mjs',
+    'tools/blender/people_wear_fit_targets.mjs', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_target_search.mjs',
+    'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_math.mjs',
     'tools/blender/people_wear_validate.mjs', 'tools/blender/people_validate.mjs',
     'tools/people_wear_data.mjs', 'js/people/rig.js', 'js/people/wear.js',
     'js/people/wear_data.js', 'js/people/wear_geometry.js', 'js/people/wear_pose.js',
@@ -128,8 +129,9 @@ def main():
 
     def snapshot():
         paths = set(tracked)
-        for directory in ['la-ladera/assets/models/wear', 'la-ladera/assets/models/people']:
+        for directory in ['la-ladera/assets/models/wear', 'la-ladera/assets/models/people', 'la-ladera/dev/wear/body-provenance']:
             paths.update(str(path.relative_to(ROOT)) for path in (ROOT/directory).glob('*') if path.is_file())
+        paths.update(str(path.relative_to(ROOT)) for path in (ROOT/'la-ladera/dev/wear/authoring').rglob('*.json') if path.is_file())
         for path in ['la-ladera/assets/models/manifest.people-wear.json', 'la-ladera/dev/wear/clearance.json']:
             if (ROOT/path).is_file():
                 paths.add(path)

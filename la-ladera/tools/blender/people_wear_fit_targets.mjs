@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 import { readWearGlb, readWearGeometry, checkGeometry } from './people_wear_validate.mjs';
 import { compareSkin, readPoseBank, sampleRotations, poseMatrices, skinPositions, usedVertices, blendedMatrix,
   inverseVector, transform, ClosedSurface, closestUnionExit, pushOutPose, preparePoseTarget } from './people_wear_math.mjs';
+import { repairTargetBranches } from './people_wear_target_search.mjs';
 
 const STATIC_LIMIT = 0.08, RUNTIME_LIMIT = 0.18, PAD = 0.002, RELAXATION = 0.25, RESERVE = 0.000001;
 const BARYCENTRIC = [[1 / 3, 1 / 3, 1 / 3], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5]];
@@ -124,7 +125,7 @@ function solveTarget(entry, sample, { maxPasses, onProgress }) {
     return scale < 1;
   }
   const report = { label: entry.label, vertices: used.length, triangles: decoded.indices.length / 3, initial: checkPoints(data, posed, sample), passes: [] };
-  let final = report.initial;
+  let final = report.initial, bestFailures = final.faceFailures, stalledPasses = 0;
   for (let pass = 0; (final.vertexFailures || final.faceFailures) && pass < maxPasses; pass++) {
     let constraints = 0, vertexConstraints = 0, clamped = 0;
     for (const triangle of triangles) for (const weights of BARYCENTRIC) {
@@ -151,6 +152,14 @@ function solveTarget(entry, sample, { maxPasses, onProgress }) {
     // The private target is the real working stream. Re-skin it; no frozen
     // projection offset is carried across authoring transactions or frames.
     posed = skinPositions(data, sample.matrices); final = checkPoints(data, posed, sample);
+    stalledPasses = final.faceFailures < bestFailures ? 0 : stalledPasses + 1;
+    bestFailures = Math.min(bestFailures, final.faceFailures);
+    if (final.faceFailures && (stalledPasses >= 8 || pass + 1 === maxPasses)) {
+      const alternative = repairTargetBranches({ decoded, base, current, used, triangles, welds, matrices, baseWorld, label: entry.label }, sample);
+      (report.alternativeDirections ??= []).push({ pass: pass + 1, ...alternative });
+      posed = skinPositions(data, sample.matrices); final = checkPoints(data, posed, sample);
+      bestFailures = Math.min(bestFailures, final.faceFailures); stalledPasses = 0;
+    }
     const row = { pass: pass + 1, constraints, vertexConstraints, clamped, ...final, ...bounds() }; report.passes.push(row);
     if (onProgress && (pass === 0 || (pass + 1) % 20 === 0 || (!final.vertexFailures && !final.faceFailures))) onProgress({ target: entry.label, ...row });
   }

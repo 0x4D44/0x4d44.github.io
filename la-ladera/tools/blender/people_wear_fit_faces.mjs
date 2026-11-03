@@ -168,7 +168,13 @@ export function repairFaceBranches(pool, rest, contact) {
     const bindNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(a.POSITION, v)))]));
     const posedNormals = new Map(incident.map(i => [i, faceNormal(triangles[i].map(v => pointAt(positions, v)))]));
     let best = null;
-    for (const delta of BRANCH_OFFSETS) {
+    // The native arm/torso corridor can be narrower than the original 5 mm
+    // grid after reserving 2 mm padding on both sides. Also sample a 20 mm
+    // neighbourhood of the already fitted point at 1.25 mm spacing. These
+    // are proposals only: the immutable raw sphere and every guard below
+    // still decide whether any rounded, welded endpoint may be accepted.
+    const localOffsets = BRANCH_OFFSETS.map(delta => delta.map((value, k) => value / 4 + a.POSITION[representative * 3 + k] - origin[k]));
+    for (const delta of [...BRANCH_OFFSETS, ...localOffsets]) {
       const candidate = origin.map((value, k) => Math.fround(value + delta[k])); report.candidates++;
       // Check the rounded upload against every alias's immutable raw origin.
       const movement = Math.max(...members.map(v => Math.hypot(...candidate.map((value, k) => value - pool.original[v * 3 + k]))));
@@ -197,8 +203,8 @@ export function repairFaceBranches(pool, rest, contact) {
       }
       if (!valid || remaining >= oldCount) continue;
       if (!best || remaining < best.remaining || remaining === best.remaining && movement < best.movement) best = { candidate, movement, remaining };
-      // Offsets are sorted by distance from the immutable raw point. A full
-      // repair at this radius needs no farther, more distorted alternative.
+      // Try the original grid from raw first, then the finer grid around the
+      // fitted point. A complete guarded repair needs no further proposal.
       if (!remaining) break;
     }
     if (!best) continue;

@@ -8,7 +8,7 @@ import { gunzipSync } from 'node:zlib';
 import { dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readGlb, parseGlb, readAccessor, decodePrimitive, CONTRACT } from './people_validate.mjs';
-import { buildWearManifest, wearDataModule, checkPeopleWearSourceInputs } from '../people_wear_data.mjs';
+import { buildWearManifest, wearDataModule, checkPeopleWearSourceInputs, checkWearAuthoringReports } from '../people_wear_data.mjs';
 import { skinInfo, compareSkin, readPoseBank, poseSamples, sampleRotations, poseMatrices, skinPositions, usedVertices, ClosedSurface, checkPenetrations, blendedMatrix, inverseVector, transform, closestUnionExit, pushOutPose } from './people_wear_math.mjs';
 import { preparePoseTarget } from '../../js/people/wear_pose.js';
 import { boundedAuthorExit } from './people_wear_fit_search.mjs';
@@ -577,6 +577,7 @@ function inputSnapshot(root, metadata, manifest, samples, mode) {
   for (const fit of Object.values(metadata.fits)) paths.add(fit.file.startsWith('wear/') ? fit.file : `wear/${fit.file}`);
   const files = [...paths].sort().map(path => { const b = readFileSync(safePath(root, path)); return { path: `assets/models/${path}`, bytes: b.length, sha256: hash(b) }; });
   for (const [id, fit] of Object.entries(metadata.fits)) {
+    files.push(...checkWearAuthoringReports(fit, id, project));
     const report = fit.bodySourceProvenance?.componentsReport;
     if (!report) continue; // A diagnostic pre-inventory build can retain inline provenance.
     need(report.path === `dev/wear/body-provenance/${id}.json` && report.form === 'LF', `${id}: invalid body provenance path or form`);
@@ -586,7 +587,7 @@ function inputSnapshot(root, metadata, manifest, samples, mode) {
   }
   for (const path of ['tools/blender/people_clips.json.gz', 'tools/blender/people_contract.json', 'tools/blender/people_wear.catalog.json',
     'tools/blender/people_wear_build.py', 'tools/blender/people_wear_shapes.py', 'tools/blender/people_wear_fit_faces.mjs', 'tools/blender/people_wear_fit_targets.mjs',
-    'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py', 'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_fit_search.mjs',
+    'tools/blender/people_wear_body.py', 'tools/blender/people_wear_body_guard.py', 'tools/blender/people_wear_lod.py', 'tools/blender/people_wear_pack.py', 'tools/blender/people_wear_fit_search.mjs', 'tools/blender/people_wear_target_search.mjs',
     'tools/blender/people_build.py', 'tools/blender/people_cast.py',
     'tools/blender/people_body.py', 'tools/blender/people_body_limbs.py', 'tools/blender/people_tex.py', 'tools/blender/people_head.py',
     'tools/blender/people_validate.mjs', 'tools/blender/people_wear_math.mjs', 'tools/blender/people_wear_validate.mjs', 'tools/people_wear_data.mjs',

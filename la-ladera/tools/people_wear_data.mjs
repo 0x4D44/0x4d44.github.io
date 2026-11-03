@@ -41,6 +41,53 @@ export function checkPeopleWearSourceInputs(actual, root = ROOT) {
   return expected;
 }
 
+const compactAuthoring = (value, key = '') => Array.isArray(value)
+  ? (['passes', 'history', 'iterations'].includes(key) ? value.length : value.map(v => compactAuthoring(v)))
+  : value && typeof value === 'object'
+    ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, compactAuthoring(v, k)])) : value;
+const ordered = value => Array.isArray(value) ? value.map(ordered) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, ordered(value[key])])) : value;
+
+/** Full authoring proof stays outside shipped model metadata, but remains an
+ * exact certificate input. The small runtime inventory summary must still
+ * describe that same proof; moving it to dev does not remove a fingerprint. */
+export function checkWearAuthoringReports(fit, id, root = ROOT) {
+  const pins = [];
+  for (const [field, phase] of [['restFit', 'rest'], ['faceFit', 'faces'], ['poseFit', 'seated']]) {
+    if (!fit[field]) continue; // Raw, pre-authoring diagnostics have no claim.
+    const { report: proof, ...actual } = fit[field];
+    if (proof?.path !== `dev/wear/authoring/${id}/${phase}.json` || proof.form !== 'LF')
+      throw new Error(`${id}: missing ${phase} authoring report pin`);
+    const bytes = Buffer.from(readFileSync(join(root, proof.path), 'utf8').replace(/\r\n/g, '\n'));
+    if (bytes.length !== proof.bytes || createHash('sha256').update(bytes).digest('hex') !== proof.sha256)
+      throw new Error(`${id}: ${phase} authoring report bytes changed`);
+    const authored = JSON.parse(bytes);
+    if (authored.id !== id || authored.authoringOnly !== true || authored.converged !== true)
+      throw new Error(`${id}: ${phase} authoring report is incomplete or belongs to another fit`);
+    let expected;
+    if (phase === 'rest') {
+      if (!Array.isArray(authored.passes)) throw new Error(`${id}: malformed rest authoring proof`);
+      expected = { samples: 1, passes: authored.passes.length, movedVertices: authored.movedVertices,
+        maxDisplacementM: authored.maxDisplacement, boundedSearches: authored.boundedSearches, unresolved: 0 };
+    } else if (phase === 'faces') {
+      if (!Array.isArray(authored.pools)) throw new Error(`${id}: malformed faces authoring proof`);
+      const { pools, ...summary } = compactAuthoring(authored);
+      expected = { ...summary, poolCount: pools.length };
+    } else {
+      if (!Array.isArray(authored.staticRows) || !Array.isArray(authored.targets)) throw new Error(`${id}: malformed seated authoring proof`);
+      const { staticRows, targets, ...summary } = compactAuthoring(authored);
+      expected = { ...summary, staticRowCount: staticRows.length, targetCount: targets.length };
+      // The emitted-byte pose-target checks independently validate this packing
+      // descriptor, which is created after the numerical authoring report.
+      delete actual.encoding;
+    }
+    if (JSON.stringify(ordered(actual)) !== JSON.stringify(ordered(expected)))
+      throw new Error(`${id}: ${phase} authoring summary differs from its full proof`);
+    pins.push({ path: proof.path, form: 'LF', bytes: bytes.length, sha256: proof.sha256 });
+  }
+  return pins;
+}
+
 export function wearSources(root = ROOT) {
   const catalogue = read(join(root, 'tools/blender/people_wear.catalog.json'));
   const palette = read(join(root, 'assets/models', catalogue.palette));
@@ -109,6 +156,7 @@ export function buildWearManifest(root = ROOT) {
     const { componentsReport, ...summary } = provenance, { components, ...reportedSummary } = JSON.parse(reportBytes);
     if (!Array.isArray(components) || components.length === 0 || JSON.stringify(summary) !== JSON.stringify(reportedSummary))
       throw new Error(`${id}: current-body component provenance summary changed`);
+    checkWearAuthoringReports(f, id, root);
     if (JSON.stringify(Object.keys(f.garments ?? {}).sort()) !== JSON.stringify(c.garments.map((g) => g.id).sort())) throw new Error(`${id}: wearable metadata is missing a garment`);
     const path = f.file.startsWith('wear/') ? f.file : `wear/${f.file}`;
     if (!/^wear\/[a-z0-9_]+\.glb(?:\.gz)?$/.test(path)) throw new Error(`${id}: wearable file path is outside the library`);

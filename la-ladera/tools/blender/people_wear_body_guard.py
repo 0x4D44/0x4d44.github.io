@@ -22,9 +22,12 @@ SOURCE_TEXT_LF_SHA256 = {
     'people_build.py': 'a292b2b36fc21a4d94145c57ae2cc0061c6037857f82bc92348f9232ebdb605a',
     'people_cast.py': '325bcaf571ab5eeb470c90e72e395ae1c79b3a404418b37bbea299645278d4e7',
 }
-# Regenerated after the 9 mm current-native arm/hand axilla recess replaced the
-# overlapping clothed torso contour. Both trouser designs independently matched.
-CURRENT_COCINERA_MESH_SHA256 = '97278cf17b44884754a57da9fd358129c850e7daef32c86462ec732138875bd8'
+# Regenerated with the 9 mm native axilla recess and the current cubic hip rows:
+# retain the lower blend station and both knots bracketing P.hip, rather than
+# old exact .466H/.51H rows absent from this body set. The old whole-mesh pin
+# rejected each fresh trousers/jeans build; both independently gave this digest.
+# The legacy triangle/coordinate/influence guards below remain unchanged.
+CURRENT_COCINERA_MESH_SHA256 = '25e578440b182713baffec31b0b74d7f846330413def107d28ef042ffc74bb53'
 
 
 def mesh_fingerprint(mesh):
