@@ -16,6 +16,7 @@ import { createSettings } from './settings.js';
 import { Player } from './player.js';
 import { installDebug } from './debug.js';
 import { installUI } from '../ui/index.js';
+import { streamAdapt } from '../core/budget.js';
 
 const LEVELS = ['low', 'medium', 'high'];
 const QUALITY_NAME = { low: 'baja', medium: 'media', high: 'alta' };
@@ -195,11 +196,13 @@ export function startEngine(ctx, { hold = false } = {}) {
 
   let last = performance.now(), acc = 0, frames = 0, streamedBefore = 0;
   const frame = (t) => {
+    const w0 = performance.now();
     const dt = Math.min(Math.max((t - last) / 1000, 0), 1 / 20); last = t;
     if (ctx.running) ctx.step(dt);
     ctx.render();
     frames++; acc += dt;
     if (acc >= 0.5) { ctx.stats.fps = Math.round(frames / acc); ctx.stats.frameMs = +(1000 * acc / frames).toFixed(1); frames = 0; acc = 0; }
+    if (ctx.running) streamAdapt(ctx, performance.now() - w0 - (ctx.streamMs ?? 0), dt * 1000);   // (what this machine has to spare for streaming: core/budget.js)
     adapt(dt, streamedBefore); streamedBefore = ctx.streamMs ?? 0; ctx.streamMs = 0;      // (a frame's streaming account starts again at zero: core/budget.js)
     if (!ctx.opts.manual) requestAnimationFrame(frame);
   };

@@ -3,6 +3,8 @@
 //   node la-ladera/tests/metrics.mjs [--w 1920] [--h 1080] [--soak 60] [--views 40] [--json out.json] [--shots dir] [--query "hour=17.2"]
 //        [--cost-gate 16] [--max-calls 2500] [--max-tris 6e6] [--max-boot 40] [--frame-slack 1] [--trap] [--root <checkout>] [--capture canvas|page] [--progress] [--geometry-views 0] [--eval-timeout-ms 600000]
 //   --root serves another checkout through this same harness for comparable before/after measurements.
+//   --eager boots the full road (`eager=1`, every interior furnished and drawn behind the card, as every release before the lazy default did). Without it the page boots as shipped: lazy, `boot.seconds`
+//   is the playable milestone (the visitor's wait, gated by --max-boot) and `boot.settledSeconds` is the end of the stream; the views and the soak run once the barrio has settled.
 //   --capture canvas is the existing 1280 px, HUD-free render capture (default). --capture page captures the compositor
 //   at --w/--h, including the HUD, without resizing the game's render targets; useful with software WebGL.
 //   --progress prints optional boot/view/capture milestones. These options do not change sampling, render loops or gates.
@@ -29,7 +31,7 @@ import { launch } from './chrome.mjs';
 const argv = process.argv.slice(2);
 const opt = (n, d) => { const i = argv.indexOf('--' + n); return i < 0 ? d : argv[i + 1]; };
 const W = +opt('w', 1920), H = +opt('h', 1080), SOAK = +opt('soak', 60), MAXV = +opt('views', 40), SHOTS = opt('shots', null);
-const QUERY = opt('query', '');
+const QUERY = opt('query', ''), EAGER = argv.includes('--eager');
 const ROOT = opt('root', null), CAPTURE = opt('capture', 'canvas');
 const GEOMETRY_VIEWS = +opt('geometry-views', 0);
 const EVAL_TIMEOUT = argv.includes('--eval-timeout-ms') ? +opt('eval-timeout-ms') : null;
@@ -142,7 +144,7 @@ const SOAK_JS = (secs) => `(() => {
 })()`;
 
 progress('launching headless Chrome');
-const b = await launch({ width: W, height: H, ...(ROOT ? { root: resolve(ROOT) } : {}) });
+const b = await launch({ width: W, height: H, boot: 'shipped', ...(ROOT ? { root: resolve(ROOT) } : {}) });          // (the page boots as it is: this tool measures the boot, so the harness adds nothing to the URL)
 const report = { size: [W, H], renderer: null, boot: {}, views: [], soak: {}, counts: {}, failures: [] };
 if (ROOT) report.sourceRoot = resolve(ROOT);
 if (SHOTS) report.capture = CAPTURE;
@@ -158,12 +160,15 @@ try {
   // ---- 1. boot + benchmark views with the real loop --------------------------------------------------------
   progress('booting game');
   const t0 = Date.now();
-  const p = await b.open(`la-ladera/index.html?autostart${QUERY ? '&' + QUERY : ''}`);
+  const p = await b.open(`la-ladera/index.html?autostart${EAGER ? '&eager=1' : ''}${QUERY ? '&' + QUERY : ''}`);
   const bootMs = Date.now() - t0;
-  // `--query lazy=1`: the boot ends at the playable milestone and the rest of the barrio streams in behind it; the views are of the barrio once it is built (a no-op for the default, eager boot)
+  // The shipped boot is lazy: it ends at the playable milestone (`boot.seconds`: what a visitor waits for) and the rest of the barrio streams in behind it; the views are of the barrio once it is built
+  // (a no-op for an eager boot, which is whole at `ready`)
   await p.eval('(window.__ladera.settled || Promise.resolve()).then(() => true)', 900000);
+  const settledMs = Date.now() - t0;
   let s = await p.eval('__ladera.state()');
-  report.boot = { seconds: fmt(bootMs / 1000), stages: s.timings, errors: s.errors };
+  const road = (await p.eval('!!__ladera.ctx.opts.lazy')) ? 'lazy' : 'eager';
+  report.boot = { road, seconds: fmt(bootMs / 1000), ...(road === 'lazy' ? { settledSeconds: fmt(settledMs / 1000) } : {}), stages: s.timings, errors: s.errors };
   progress(`boot complete: ${report.boot.seconds} s`);
   if (bootMs > MAX_BOOT_S * 1000) fail(`boot ${fmt(bootMs / 1000)} s > ${MAX_BOOT_S} s`);
 

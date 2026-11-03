@@ -132,6 +132,7 @@ export class PeopleSim {
     this.simVisible = true;          // Node tests: "visible" = within 35 m of the player (the world replaces this with the camera frustum)
     this.faults = [];                // exceptions caught in the frame loop (one bad person must not stop the barrio); tests assert it stays empty
     this.ready = false;
+    this.progressive = false; this.pending = []; this._shopQueue = []; this._lotDone = new Set(); this._arrivals = null; this._sp = null; this._inWait = [];   // the progressive build (below)
   }
 
   get hour() { return this.ctx.hour ?? 12; }
@@ -176,8 +177,12 @@ export class PeopleSim {
   setPlayer(x, y, z, yaw = 0) { const P = this.player; P.x = x; P.y = y; P.z = z; P.yaw = yaw; }
 
   // ---- building the cast ---------------------------------------------------------------------------------------------------------
-  /** charMetas: Map(charId -> meta of people_meta.json). Returns false when there is no walkable graph. */
-  build(charMetas, count = null) {
+  /**
+   * charMetas: Map(charId -> meta of people_meta.json). Returns false when there is no walkable graph.
+   * `o.progressive` (the lazy boot, js/main.js): the cast is made but nobody is put into the barrio yet and no shop is made; `pumpCast` does both as the buildings are furnished (see `_beginProgressive`).
+   * Without it, everything is done here, at once, as it always was.
+   */
+  build(charMetas, count = null, o = {}) {
     const ctx = this.ctx, plan = ctx.plan; if (!plan || !charMetas?.size) return false;
     const nav = this.nav = NavGraph.fromPlan(plan);
     if (nav.size < 4) return false;
@@ -187,7 +192,7 @@ export class PeopleSim {
     this.spotsMoved = this.spots.fit((x, z, s, r) => standClear(this.physics, x, z, s.y, r), undefined, (x, z, s) => this._solidAt(x, z, s.y));        // the corners the props landed on (the page builds the people after the props)
     this.spotsCut = this.spots.screen((s) => this.wayTo(s));                                           // the places the fence of the court shuts off from the street graph
     this.doors = new Doors(this); this.indoor = new Indoor(this); this.reactions = new Reactions(this);
-    this._indexLots(plan); this._makeShops(plan); this.classroom = new Classroom(this); this.homelife = new Homelife(this);
+    this._indexLots(plan); if (!o.progressive) this._makeShops(plan); this.classroom = new Classroom(this); this.homelife = new Homelife(this);
     const cast = this.cast = planCast({ plan, charMetas, rng: this.rng.fork('cast'), count, households: this._households(plan) });
     const mainNodes = nav.nodes.filter((nd) => this.inMain(nd.i)), sp = plan.spawn ?? { x: 0, z: 0 };
     const sites = plan.lots.filter((l) => l.kind === 'unfinished'); let obreros = 0;
@@ -195,8 +200,10 @@ export class PeopleSim {
     for (let i = 0; i < cast.length; i++) {
       const npc = this._makeNpc(cast[i], charMetas.get(cast[i].charId), mainNodes);
       if (npc.persona === 'obrero' && sites.length) npc.siteLotId = sites[obreros++ % sites.length].id;
+      if (o.progressive) { this.pending.push(npc); continue; }                                       // (waits for `pumpCast`)
       this.npcs.push(npc); this.byId.set(npc.id, npc);
     }
+    if (o.progressive) return this._beginProgressive(sp);
     // the first frame of the day: everybody where they would be at this hour; four of them in the fan the player looks along (one walking away, one standing, two talking) and a fifth within
     // sight of the arrival point, so the middle distance of the first frame is alive at once (arrival.js: A5's hero-shot order)
     this._rebuildGrid();
@@ -215,13 +222,14 @@ export class PeopleSim {
   /**
    * Map<lotId, hh[]>: the interiors' households of every lot (bp.interior.hh once the building is furnished, else replayed from the seed without furnishing it: the same households
    * either way), so a resident carries the name of the member of the household they live in and a diary that says "Camila" is about the girl who lives there.
+   * (A building that is being furnished has `interior.hh = []` until its last step, so an empty list is not taken for an answer: 109 replays are 8 ms, and the lazy boot's cast is made before the buildings are.)
    */
   _households(plan) {
     const out = new Map(), B = this.ctx.buildings;
     if (!B?.get) return out;
     for (const lot of plan.lots ?? []) {
       const bp = B.get(lot.id); if (!bp) continue;
-      try { const hhs = bp.interior?.hh ?? householdsOf(this.ctx, bp); if (hhs?.length) out.set(lot.id, hhs); } catch (e) { this._fault(null, e); }
+      try { const hhs = bp.interior?.hh?.length ? bp.interior.hh : householdsOf(this.ctx, bp); if (hhs?.length) out.set(lot.id, hhs); } catch (e) { this._fault(null, e); }
     }
     return out;
   }
@@ -255,11 +263,11 @@ export class PeopleSim {
     this.lots = { byId: by, school: first('school'), clinic: first('clinic'), hall: first('hall'), chapel: first('chapel'), workshop: first('workshop') };
   }
 
-  /** One entry per shop: its door, the keeper's post (behind the counter), the customers' spots. */
-  _makeShops(plan) {
+  /** One entry per shop: its door, the keeper's post (behind the counter), the customers' spots. `only`: just that lot (the progressive build makes each shop as its building is furnished). */
+  _makeShops(plan, only = null) {
     const S = this.spots, ph = this.physics;
     const free = (x, z, y) => { try { return !ph._overlaps?.(x, z, y, 0.22, 1.5); } catch { return true; } };
-    for (const lot of plan.lots) {
+    for (const lot of only ? [only] : plan.lots) {
       if (!lot.shop) continue;
       const ent = S.entrance(lot.id, ['shop', 'main']);
       const counters = S.inside(lot.id, 'counter'); let custs = S.inside(lot.id, 'customer');
@@ -313,6 +321,79 @@ export class PeopleSim {
       this.shops.set(lot.id, { lot: lot.id, type: lot.shop, name: lot.name, open: false, keeper: null, post, cust: custs, cpoint: cpoint ?? post, ent, sealed });
     }
   }
+
+  // ---- the progressive build (the lazy boot: js/main.js, js/interiors/lazy.js) ---------------------------------------------------------------------------
+  /**
+   * The end of `build(..., { progressive: true })`: the cast exists, nobody is in the barrio. The people come in as `pumpCast` finds them ready, those the first view is made of (arrival.js) first and then the
+   * nearest the arrival point. Who is ready: a shopkeeper waits for his shop, which is made once its building is furnished (`onLotData`: the lazy boot furnishes the buildings after the page is playable,
+   * nearest first and the shops before the houses); everybody else has nothing to wait for, since a street, a bench or a door that hides them needs no furniture.
+   */
+  _beginProgressive(sp) {
+    this.progressive = true; this._sp = sp;
+    this._rebuildGrid();
+    this._arrivals = pickArrivals(this.pending, this.hour, blockAt, sp);
+    const rank = new Map([...this._arrivals.keys()].map((n, i) => [n, i])), far = (n) => dist2d(n.homePos, sp);
+    this.pending.sort((a, b) => (rank.get(a) ?? 1e6) - (rank.get(b) ?? 1e6) || far(a) - far(b));
+    this.ready = true;
+    return true;
+  }
+
+  /** How many are still to come: people who wait, shops that are to be made. */
+  get castLeft() { return this.pending.length + this._shopQueue.length; }
+
+  /**
+   * The data of building `lotId` is made (interiors/lazy.js, event `interiors:data`): its anchors join the places, whatever read the building's places before they existed forgets what it saw, and a shop's lot
+   * gets its shop (made by `pumpCast`, a slice at a time).
+   */
+  onLotData(lotId) {
+    if (!this.progressive || this._lotDone.has(lotId)) return;
+    this._lotDone.add(lotId);
+    this.spots.addAnchors(this.ctx.buildings?.get?.(lotId)?.anchors);
+    this.homelife?.forget(lotId);
+    if (lotId === this.lots?.school) this.classroom?.forget();
+    const lot = this.lots?.byId.get(lotId);
+    if (lot?.shop) this._shopQueue.push(lot);
+  }
+
+  /** A person may come in when the shop he keeps exists (its building furnished); anybody else at once. */
+  _admissible(n) { return !n.shopLotId || this._lotDone.has(n.shopLotId); }
+
+  /** Put one person of the waiting cast into the barrio: placed, started as `build` starts everybody, and handed to the world (view, prompt). */
+  _admit(npc) {
+    this.npcs.push(npc); this.byId.set(npc.id, npc);
+    this.placeNpc(npc, npc.homePos.x, npc.homePos.z, npc.homePos.y, 0);
+    npc.dist = dist2d(npc.st, this._sp);
+    this.brain.start(npc, this._arrivals.get(npc) ?? null);
+    this.homelife?.forget(npc.homeLotId);                              // (the beds of a flat are its residents': who lives there is known now)
+    this.onNpcCreated?.(npc);
+  }
+
+  /**
+   * One slice of the progressive build: the shops that are due are made, then the cast that is ready comes in, until `ms` have gone (a shop or a person is never cut: the first is the least that is done).
+   * Returns the number of shops made and people admitted. `pending` and `_shopQueue` say what is left; when both are empty `whenAllIn()` resolves.
+   */
+  pumpCast(ms = Infinity) {
+    if (!this.progressive || !this.castLeft) return 0;
+    const t0 = performance.now(); let n = 0;
+    this._rebuildGrid();
+    for (;;) {
+      if (this._shopQueue.length) { const lot = this._shopQueue.shift(); try { this._makeShops(null, lot); } catch (e) { this._fault(null, e); } n++; }
+      else {
+        const i = this.pending.findIndex((p) => this._admissible(p)); if (i < 0) break;
+        try { this._admit(this.pending.splice(i, 1)[0]); } catch (e) { this._fault(null, e); }
+        n++;
+      }
+      if (performance.now() - t0 >= ms) break;
+    }
+    if (!this.castLeft) { const w = this._inWait; this._inWait = []; for (const f of w) f(); }
+    return n;
+  }
+
+  /** Everything that is ready, now (a probe, a test, `__ladera.settle`). */
+  drainCast() { let n = 0; for (let k; (k = this.pumpCast(Infinity)); ) n += k; return n; }
+
+  /** Resolves when the whole cast is in the barrio and every shop is made (at once when it is). */
+  whenAllIn() { return !this.progressive || !this.castLeft ? Promise.resolve() : new Promise((r) => this._inWait.push(r)); }
 
   /** The region of a building a person coming in at entrance `ent` can walk to (cached): see indoor.js. */
   reach(ent) {

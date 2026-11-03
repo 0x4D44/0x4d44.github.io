@@ -1,4 +1,4 @@
-// STREAMING MUST NOT COST THE PLAYER FRAMES (A1; `?lazy=1`, dev/FEATURE-LAZY.md). The boot ends at the playable milestone; the interiors, the people and the packs stream in behind it while the game is
+// STREAMING MUST NOT COST THE PLAYER FRAMES (A1; the default boot, dev/FEATURE-LAZY.md). The boot ends at the playable milestone; the interiors, the people and the packs stream in behind it while the game is
 // played. This measures that window in the REAL animation loop (no ?manual): a recorder installed before the first script logs every animation frame's start time and, per frame, the milliseconds of
 // streaming work it spent (ctx.streamMs, read at the end of ctx.render, before the engine resets it for the next frame: core/budget.js). The streaming window (the milestone to `settled`) is compared with a
 // STEADY window of the same page afterwards, so the machine's own frame cost cancels out: what streaming adds is the difference.
@@ -31,7 +31,7 @@ let b, W = null;
 before(async () => {
   b = await launch({ width: 960, height: 540 });
   await b.page.send('Page.addScriptToEvaluateOnNewDocument', { source: RECORDER });
-  const p = await b.open('la-ladera/index.html?autostart&lazy=1&quality=medium');
+  const p = await b.open('la-ladera/index.html?autostart&quality=medium', { boot: 'shipped' });          // (as shipped: the lazy boot is the default, so this says nothing of it and the harness adds nothing)
   await p.eval('(() => { window.__fm.on = true; window.__fm.tReady = performance.now(); window.__ladera.settled.then(() => { window.__fm.tSettled = performance.now(); }); return true; })()');
   await p.eval('window.__ladera.settled.then(() => true)', 600000);
   await new Promise((r) => setTimeout(r, GRACE_MS + STEADY_MS + 500));
@@ -55,7 +55,7 @@ test('the window is long enough to mean something and the barrio did settle with
 
 test('the streaming work of a frame is a slice, never a whole interior: the frame\'s own account (core/budget.js)', () => {
   const s = W.spend;
-  assert.ok(s.p50 <= 8, `median streaming spend of a frame ${s.p50.toFixed(1)} ms (the budget is 4)`);
+  assert.ok(s.p50 <= 8, `median streaming spend of a frame ${s.p50.toFixed(1)} ms (the budget is 4, and up to 6 while the frames have time to spare: core/budget.js)`);
   assert.ok(s.p95 <= 20, `95th percentile ${s.p95.toFixed(1)} ms`);
   assert.ok(s.over60 <= 3, `${s.over60} frames spent more than 60 ms on streaming (a room's furnisher is 25-80 ms: the one step a slice cannot cut)`);
   assert.ok(s.max <= 200, `the worst frame spent ${s.max.toFixed(0)} ms on streaming (a whole interior in one call is 150-400 ms and more)`);

@@ -12,6 +12,9 @@ const CLASS_ACT = 'class';           // the act of somebody in class: the dialog
 export class Classroom {
   constructor(world) { this.w = world; this.seated = new Set(); this.floorY = null; this.next = 0; this._rooms = null; }
 
+  /** The school's furniture was made after this was asked (the lazy boot, sim.js `onLotData`): the classrooms are looked for again. */
+  forget() { this._rooms = null; }
+
   /** The classrooms of the school, by room id: [{ room, y, desks: [spot], chair: spot | null }]. A pupitre is a 'work' anchor tagged 'school'; the teacher's chair is the room's 'chair_wood'. */
   rooms() {
     if (this._rooms) return this._rooms;

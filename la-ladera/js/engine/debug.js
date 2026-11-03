@@ -89,13 +89,14 @@ export function installDebug(ctx) {
      */
     async settle({ timeout = 180000 } = {}) {
       const t0 = performance.now();
+      const all = () => { ctx.interiors?.drain(); ctx.people?._world?.drainCast?.(); };                // (the cast comes in as the buildings are furnished: people/sim.js pumpCast)
       for (;;) {
-        ctx.interiors?.drain();
+        all();
         if (!ctx.staged || ctx.staged.done) break;
         if (performance.now() - t0 > timeout) throw new Error('settle timed out, waiting for: ' + ctx.staged.pending.map((u) => u.id).join(', '));
         await new Promise((r) => setTimeout(r, 40));
       }
-      ctx.interiors?.drain();
+      all();
       return api.state();
     },
     /** Spawn-independent list of NPCs (people module publishes ctx.people). */

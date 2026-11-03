@@ -10,9 +10,12 @@ import { plantFeet } from './legs.js';
 import { poseIdle, poseCall, clearCarriage } from './carriage.js';
 import { countLines } from './lines/index.js';
 import { PERSON } from '../core/interact.js';
+import { streamLeft, streamSpend } from '../core/budget.js';
 
 export { collectLandmarks };
 
+const CAST_MS = 3;            // the progressive build (sim.js): the most of a frame of play that bringing the cast in takes from the streaming budget (core/budget.js) ...
+const CAST_IDLE_MS = 8;       // ... and while nobody plays (the title card, a pause)
 const VIEW_MAX = 95;          // beyond this nobody is drawn
 const SHADOW_MAX = 42;        // beyond this nobody casts a shadow
 const LOD_NEAR = 32, LOD_FAR = 38;   // full-detail mesh inside 32 m, the 1.6k-triangle one beyond 38 m (hysteresis)
@@ -48,7 +51,8 @@ export class PeopleWorld extends PeopleSim {
   }
 
   // ---- casting -------------------------------------------------------------------------------------------------------------------
-  spawn(count = null) {
+  /** `o.progressive` (the lazy boot): the cast is made now and comes into the barrio as the buildings are furnished (sim.js `build`, `pumpCast`; `_followData` below). */
+  spawn(count = null, o = {}) {
     const ctx = this.ctx, lib = this.lib; if (!lib?.chars.size || !ctx.plan) return;
     const t0 = performance.now(), THREE = ctx.THREE;
     this.group = new THREE.Group(); this.group.name = 'people'; ctx.scene.add(this.group);
@@ -56,9 +60,49 @@ export class PeopleWorld extends PeopleSim {
     const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
     const n = count ?? (q?.has('npcs') ? Math.max(0, +q.get('npcs') | 0) : null);      // null = the whole barrio (every shop + the community quotas)
     const metas = new Map(lib.ids().map((id) => [id, lib.info(id)]));
-    if (!this.build(metas, n)) { console.warn('[people] no walkable graph: nobody to spawn'); return; }
+    if (!this.build(metas, n, { progressive: !!o.progressive })) { console.warn('[people] no walkable graph: nobody to spawn'); return; }
     ctx.addSystem('people', (dt) => this.update(dt), 20);
+    if (this.progressive) this._followData();
     ctx.timings.peopleSpawn = Math.round(performance.now() - t0);
+  }
+
+  /**
+   * The progressive build's feed: every building whose data is made already is told to the sim, and so is each one that is made from now on (the manager's `interiors:data`); a slice of every frame, taken
+   * from the streaming budget BEFORE the late warm and the interiors (orders 7.2, 7.5, 8), brings in whoever is ready, and a driver does the same while nobody plays (no system runs then).
+   */
+  _followData() {
+    const ctx = this.ctx, mgr = ctx.interiors;
+    for (const id of ctx.buildings.keys()) if (!mgr || mgr.dataDone(id)) this.onLotData(id);
+    ctx.events?.on('interiors:data', (e) => this.onLotData(e?.id));
+    ctx.addSystem('people-cast', () => this._castFrame(), 7.2);
+    if (!ctx.opts.manual) this._driveCast();
+  }
+  _castFrame() {
+    if (!this.castLeft) return;
+    const ctx = this.ctx, ms = streamLeft(ctx, ctx.running ? CAST_MS : CAST_IDLE_MS);
+    if (ms < 0.25) return;
+    const t0 = performance.now(); this.pumpCast(ms); streamSpend(ctx, performance.now() - t0);
+  }
+  _driveCast() {
+    const tick = () => {
+      if (!this.castLeft) return;
+      if (!this.ctx.running) { try { this._castFrame(); } catch (e) { this._fault(null, e); } }
+      let fired = false;
+      const go = () => { if (fired) return; fired = true; tick(); };
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(go);
+      setTimeout(go, 40);
+    };
+    tick();
+  }
+  /** The views of the cast that has not come in yet, hidden in the group (so the crowd can be warmed whole before it is shown): a slice of at most `ms`, true while some are left. */
+  prepareViews(ms = Infinity) {
+    const t0 = performance.now();
+    for (const n of this.pending) {
+      if (n.view) continue;
+      this._makeView(n);
+      if (performance.now() - t0 >= ms) break;
+    }
+    return this.pending.some((n) => !n.view);
   }
 
   // hooks of the simulation ------------------------------------------------------------------------------------------------------
@@ -81,6 +125,7 @@ export class PeopleWorld extends PeopleSim {
 
   // ---- views ---------------------------------------------------------------------------------------------------------------------
   _makeView(n) {
+    if (n.view) return;                                                              // (made ahead by prepareViews)
     const v = this.lib.instantiate(n.charId, n.variant); n.view = v;
     v.root.visible = false; v.root.userData.npc = n.id; this.group.add(v.root);
     this.lib.play(v, n.idleVariant, { time: n.rng.next(), fade: 0 }); n.clipName = n.idleVariant;
