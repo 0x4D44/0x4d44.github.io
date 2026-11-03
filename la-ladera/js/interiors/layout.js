@@ -190,6 +190,11 @@ const DROPPABLE = new Set(['plant', 'cylinder', 'sacks', 'cans', 'tires', 'wheel
 /** The dead-end pockets (`Layout.pockets`) the layout must not leave: deeper than 0.9 m, or deeper than 0.3 m behind a mouth under ~0.62 m (the measured `gap` runs a few cm high, so 0.66). */
 export const POCKET = { deep: 0.9, shallow: 0.3, squeeze: 0.66 };
 export const seriousPocket = (p) => p.depth >= POCKET.deep || (p.depth >= POCKET.shallow && p.gap <= POCKET.squeeze);
+/** A niche a body walks into with next to no play: 0.3 m deep or more behind a mouth under 0.75 m (the player's capsule is 0.6 m; `gap` is measured a couple of cm over the true width, so a 0.65 m
+ *  diagonal between a shower tray's corner and a toilet's reads 0.67). Not a trap (`seriousPocket` is: a body wedges at 0.62 m), but no mouth to leave in a bathroom: `rooms.js` (`seatFixtures`)
+ *  sets the basin, the toilet and basin, or the tray (for a corner stall) again so that they leave none. */
+export const TIGHT = { depth: 0.3, mouth: 0.75 };
+export const tightPocket = (p) => p.depth >= TIGHT.depth && p.gap < TIGHT.mouth;
 
 let _uid = 0;
 export const resetUid = () => { _uid = 0; };
@@ -805,7 +810,8 @@ export class Layout {
     if (wi.hi - cur >= minLen) out.push({ lo: cur, hi: wi.hi });
     return out.sort((a, b) => (b.hi - b.lo) - (a.hi - a.lo));
   }
-  /** Place named units shoulder to shoulder along one wall, starting from the corner. Returns the placed items. */
+  /** Place named units shoulder to shoulder along one wall, starting from the corner. Returns the placed items. `slide` (metres, 0 = off): a unit the pose refuses is tried again that far along the wall
+   *  (a door on the next wall keeps the first 0.8 m of the corner free: the row would otherwise stop before its first unit, and the minutes shops of L15 and L76 stood without a cabin). */
   run(wall, names, o = {}) {
     const placed = [];
     const wi = wallInfo(this.r, wall);
@@ -817,14 +823,17 @@ export class Layout {
     for (const name of names) {
       const c = CATALOG[name]; if (!c) continue;
       const w = c.size[0], d = c.size[2];
-      const cu = u + dir * w / 2;
-      if (cu - w / 2 < st.lo - 1e-6 || cu + w / 2 > st.hi + 1e-6) {
-        if (o.skipMissing) continue; else break;
+      let done = false;
+      for (;;) {
+        const cu = u + dir * w / 2;
+        if (cu - w / 2 < st.lo - 1e-6 || cu + w / 2 > st.hi + 1e-6) break;
+        const [cx, cz] = wallPoint(this.r, wall, cu, d / 2 + 0.005);
+        const it = this._make(name, cx, cz, wi.ry, o);
+        if (this.valid(it, { ...o })) { it.wallSide = wall; it.u = cu; this._commit(it, o); placed.push(it); u += dir * w; done = true; break; }
+        if (!(o.slide > 0)) break;
+        u += dir * o.slide;
       }
-      const [cx, cz] = wallPoint(this.r, wall, cu, d / 2 + 0.005);
-      const it = this._make(name, cx, cz, wi.ry, o);
-      if (this.valid(it, { ...o })) { it.wallSide = wall; it.u = cu; this._commit(it, o); placed.push(it); u += dir * w; }
-      else if (o.skipMissing) continue; else break;
+      if (!done && !o.skipMissing) break;
     }
     return placed;
   }
@@ -1169,6 +1178,8 @@ export class Layout {
   }
   /** The pockets worth curing (`seriousPocket`): `pockets()` filtered. */
   seriousPockets() { return this.pockets().filter(seriousPocket); }
+  /** The niches with next to no play at the mouth (`tightPocket`), serious or not. */
+  tightPockets() { return this.pockets().filter(tightPocket); }
   /** What goes with a piece when it moves: what stands on it, what is tucked to it or set beside it (a bed's nightstands), what hangs over it. */
   _group(it) {
     const g = [it];

@@ -4,7 +4,7 @@
 import { CATALOG, seatOffsets, seatZoff } from './catalog.js';
 import { KNEEHOLE, layoutOf } from './carcass.js';
 import { spotsAt } from './reach.js';
-import { opposite, wallInfo, wallPoint, WALLS, getUid, setUid } from './layout.js';
+import { opposite, wallInfo, wallPoint, WALLS, getUid, setUid, tightPocket } from './layout.js';
 import { decalDef } from './decals.js';
 import { art, clock, mirror, notice } from './decor.js';
 
@@ -235,7 +235,8 @@ function* repackBathroomSteps(L, E, hh) {
   L.clear();
   const got = yield* solveFixturesSteps(L, bathSlots(hh));
   if (!got) { L.restore(snap); return false; }
-  bathroomDress(L, E, hh, got[0], got[2]);
+  const { shower, basin } = seatFixtures(L, 'any', got[0], got[1], got[2]);
+  bathroomDress(L, E, hh, shower, basin);
   return true;
 }
 /** Bathroom: a toilet, a basin and a shower (tray + the electric head on the wall), whatever the plan gave. */
@@ -1165,12 +1166,65 @@ function bedroomDress(L, E, hh, role, bed) {
 
 // ---------------------------------------------------------------- BATHROOM
 export function bathroom(L, E, hh) {
-  const rng = L.rng;
+  const first = firstFixtures(L, hh);
+  const { shower, basin } = seatFixtures(L, first.walls, first.shower, first.toilet, first.basin);
+  bathroomDress(L, E, hh, shower, basin);
+}
+/** The three fixtures of a bathroom as the room's stream first sets them: the tray in a corner away from the doors, the toilet on the wall across from it, the basin beside the toilet (null: none found). { shower, toilet, basin, walls }, `walls` the order of walls the toilet was tried on. */
+export function firstFixtures(L, hh) {
   const shower = any(() => L.wall('shower_tray', 'any', { at: 'corner', awayDoors: true, prio: 0 }), () => L.wall('shower_small', 'any', { at: 'corner', awayDoors: true, prio: 0 }),
     () => L.wall('shower_tray', 'any', { prio: 0 }), () => L.wall('shower_small', 'any', { prio: 0 }));
-  const toilet = any(() => L.wall('toilet', shower ? [opposite(shower.wallSide), ...['-z', '+z', '-x', '+x'].filter((w) => w !== shower.wallSide && w !== opposite(shower.wallSide))] : 'any', { at: 'center', prio: 0, awayDoors: true }), () => L.wall('toilet', 'any', { prio: 0 }));
+  const walls = shower ? [opposite(shower.wallSide), ...['-z', '+z', '-x', '+x'].filter((w) => w !== shower.wallSide && w !== opposite(shower.wallSide))] : 'any';
+  const toilet = any(() => L.wall('toilet', walls, { at: 'center', prio: 0, awayDoors: true }), () => L.wall('toilet', 'any', { prio: 0 }));
   const basin = any(() => L.wall(hh.income ? 'basin_vanity' : 'basin_pedestal', 'any', { prio: 0, near: toilet ?? undefined, nearW: 0.6 }), () => L.wall('basin_pedestal', 'any', { prio: 0 }));
-  bathroomDress(L, E, hh, shower, basin);
+  return { shower, toilet, basin, walls };
+}
+/**
+ * The three fixtures of a bathroom leave no tight niche (layout.js `tightPocket`: 0.3 m deep or more behind a mouth under 0.75 m). The shower tray in one corner and the toilet and the basin in the two
+ * corners of the opposite wall of a 2.0 x 1.8 m bathroom left 0.9 m of wall between the last two, open only by a 0.65 m diagonal across the tray's corner and the toilet's (L95.f1.r4, L75.f1.r4 and
+ * 36 more rooms: 5 cm of play for the player's 0.6 m capsule, 0.6 m deep). A bathroom with one gets, in this order and each only if the one before found no pose that leaves none: the basin set again
+ * (nearest the toilet first), the toilet and the basin set again, the corner stall (`shower_small`, the library's stall for a 1.9 x 1.7 m bathroom) in place of the tray. The poses are the wall poses
+ * `wall()` takes, so every rule of the room holds; at most 40 poses of the basin, 12 of the toilet and 12 of the stall are tried, and nothing is drawn from the room's stream. Where no pose leaves
+ * none the fixtures stay as they were put. Returns { shower, toilet, basin } as they stand.
+ */
+export function seatFixtures(L, walls, shower, toilet, basin) {
+  const out = { shower, toilet, basin };
+  if (!shower || !toilet || !basin) return out;
+  const tight = (...mine) => L.pockets().some((p) => tightPocket(p) && p.by.some((x) => mine.includes(x)));
+  if (!tight(shower, toilet, basin)) return out;
+  const was = L.items.slice(), restore = () => { L.items.length = 0; L.items.push(...was); return out; };
+  /** The first pose of `poses` (at most `n`, each tried standing in the room) that `ok` accepts, taken out of the room again for the caller to commit. */
+  const take = (poses, n, ok) => { let k = 0; for (const it of poses) { if (k++ >= n) break; L.items.push(it); const good = ok(it); L.items.pop(); if (good) return it; } return null; };
+  L.remove(basin);
+  const b1 = take(L.wallPoses(basin.name, 'any', { prio: 0, near: toilet, nearW: 0.6 }), 40, (b) => !tight(shower, toilet, b));
+  if (b1) return { ...out, basin: L._commit(b1) };
+  L.remove(toilet);
+  let k = 0;
+  for (const t of L.wallPoses('toilet', walls, { at: 'center', prio: 0, awayDoors: true })) {
+    if (k++ >= 12) break;
+    L.items.push(t);
+    const b = take(L.wallPoses(basin.name, 'any', { prio: 0, near: t, nearW: 0.6 }), 40, (x) => !tight(shower, t, x));
+    L.items.pop();
+    if (b) return { ...out, toilet: L._commit(t), basin: L._commit(b) };
+  }
+  restore();
+  if (shower.name === 'shower_small') return out;
+  L.remove(shower);
+  const s = take(L.wallPoses('shower_small', 'any', { at: 'corner', awayDoors: true, prio: 0 }), 12, (x) => !tight(x, toilet, basin));
+  return s ? { ...out, shower: L._commit(s) } : restore();
+}
+/** `place()` (the usual call that sets a piece of clutter) kept only where the piece forms no tight niche that the room did not have; else it goes, and the first pose of `name` that forms none stands in its place (none: no piece). */
+function cleanly(L, place, name, o) {
+  const before = L.tightPockets().length, it = place();
+  if (!it || L.tightPockets().length <= before) return it;
+  L.remove(it);
+  let k = 0;
+  for (const alt of L.wallPoses(name, 'any', o)) {
+    if (k++ >= 30) break;
+    L.items.push(alt); const ok = L.tightPockets().length <= before; L.items.pop();
+    if (ok) return L._commit(alt);
+  }
+  return null;
 }
 /** What a bathroom has besides its three fixtures: the shower head, mirror and towel rail, bin, bucket, shelf and bulb. */
 function bathroomDress(L, E, hh, shower, basin) {
@@ -1178,7 +1232,7 @@ function bathroomDress(L, E, hh, shower, basin) {
   if (basin) L.hang('mirror_bath', basin.wallSide, { over: basin, y: 1.25 });
   if (basin) L.hang('towel_rail', 'any', { near: [basin.x, basin.z], nearW: 1, y: 1.15 });
   L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
-  if (!hh.income) any(() => L.wall('bucket_big', 'any', { at: 'corner', prio: 2 }));
+  if (!hh.income) cleanly(L, () => any(() => L.wall('bucket_big', 'any', { at: 'corner', prio: 2 })), 'bucket_big', { at: 'corner', prio: 2 });
   L.hang('shelf_wall', 'any', { y: 1.5, w: 0.5 });
   ceilingFixture(L, E, hh, 'bulb');
   fillMin(L, E, hh, 5);

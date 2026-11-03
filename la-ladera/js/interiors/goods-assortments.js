@@ -83,6 +83,7 @@ export const GOODS_ASSORTMENTS = {
   ferreteria: {
     shelf_ferre: ['goods_paint_tin', 'goods_rope_coil', 'goods_hammer', 'goods_pliers', 'goods_paint_tin'],
     shop_counter_wood: ['goods_hammer', 'goods_pliers', 'goods_rope_coil', 'goods_paint_tin'],
+    shop_counter_short: ['goods_hammer', 'goods_pliers', 'goods_rope_coil', 'goods_paint_tin'],                    // (the short counter of a hardware store too narrow for the long one: L41)
   },
   drogueria: {
     shelf_pharma: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle', 'goods_remedy_box'],             // medicine boxes (four label designs), bandages, a syrup: a pharmacy sold 51 jars of AZÚCAR and 33 bottles of milk (R4-308)
@@ -106,6 +107,8 @@ export const GOODS_ASSORTMENTS = {
   },
   minutos: {
     shop_counter_short: ['goods_chips_bag', 'goods_soda_bottle', 'goods_pencil_bundle'],
+    chips_rack: ['goods_chips_bag'],
+    fridge_drinks: ['goods_soda_bottle', 'goods_juice_bottle'],
   },
   modista: {
     shelf_fabric: ['goods_fabric_stack', 'goods_thread_spool', 'goods_fabric_stack'],

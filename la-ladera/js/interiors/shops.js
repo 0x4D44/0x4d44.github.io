@@ -7,6 +7,7 @@ import { art, clock, own } from './decor.js';
 import { DECALS } from './decals.js';
 
 const PI = Math.PI;
+const NARROW_SHOP = 3;                                 // a minutes shop narrower than this (m) is fitted cabins first, and keeps no counter where the cabins left no wall for it (`FIT.minutos`)
 const any = (...fns) => { for (const f of fns) { const r = f(); if (r) return r; } return null; };
 
 /** The wall that holds the shelves: longest free wall that has no door, preferring the one opposite the shop entrance. */
@@ -176,7 +177,13 @@ const FIT = {
     const c = counterAt(L, E, 'fridge_meat', sw, { shelfDepth: 0.3 });
     L.hang('meat_hooks', sw, { y: 1.65, jitter: 0.1 });
     any(() => L.wall('butcher_block', 'any', { prio: 1 }));
-    if (c) { L.top(c, 'phone_landline', { at: 'right' }); }                                  // (no drinks cooler: the butchers carried 112 bottles between them, R4-308)
+    if (c) { L.top(c, 'phone_landline', { at: 'right' }); L.top(c, 'radio_old', { at: 'left' }); }          // (no drinks cooler: the butchers carried 112 bottles between them, R4-308)
+    any(() => L.wall('sink_small', 'any', { prio: 1 }));                                      // a butcher washes: the basin is where the knife and the hands go (R4-706: the two butchers' had four pieces)
+    any(() => L.wall('fridge', 'any', { prio: 1 }));                                          // the upright cold store behind the case
+    any(() => L.wall('butcher_block', 'any', { prio: 2 }));                                   // a second block where the room has the wall
+    any(() => L.wall('stool_wood', 'any', { prio: 2 }));
+    any(() => L.wall('trash_bin', 'any', { prio: 2, at: 'corner' }));
+    any(() => L.wall('fan_stand', 'any', { prio: 2, at: 'corner' }));
     L.wall('bucket_big', 'any', { at: 'corner', prio: 2 });
     sign(L, 'sign_carne', sw); D(L, 'price_meat', 'any'); own(L, E, 'calendar_carne', 'any'); clock(L, E, 'any', {});
     E.shop = { counter: c };
@@ -205,7 +212,10 @@ const FIT = {
     if (roomy) any(() => L.wall('shampoo_chair', 'any', { prio: 2 }));
     L.wall('bench_wood', 'any', { prio: 2, awayDoors: true });
     if (!roomy) any(() => L.hang('shelf_barber', sw, { y: 1.0, at: 'start' }), () => L.hang('shelf_barber', 'any', { y: 1.0 }));       // (after the bench: the shelf goes where nobody who waits on it meets it with their head, R4-710; on another wall when the service wall is full)
-    const c = any(() => L.wall('shop_counter_short', 'any', { prio: 1, awayDoors: true })); if (c) { L.top(c, 'phone_landline', { at: 'right' }); c.flags = { counter: true }; }
+    const c = any(() => L.wall('shop_counter_short', 'any', { prio: 1, awayDoors: true })); if (c) { L.top(c, 'phone_landline', { at: 'right' }); L.top(c, 'radio_old', { at: 'left' }); c.flags = { counter: true }; }
+    any(() => L.hang('towel_rail', 'any', { y: 1.1, prio: 2 }));                              // the towels (R4-706: the barbers' had four to six pieces)
+    any(() => L.wall('trash_bin', 'any', { prio: 2, at: 'corner' }));
+    any(() => L.wall('plant_pot_clay', 'any', { prio: 2, at: 'corner' }));
     sign(L, 'sign_barber', sw); D(L, 'barber_pole', sw, { near: streetPoint(L) ?? undefined, nearW: 3 }); D(L, 'price_hair', 'any'); art(L, E, 'sport', 'any'); clock(L, E, 'any', {});
     L.wall('cat_sitting', 'any', { at: 'corner', prio: 2 });
     E.shop = { counter: c, cat: true, barber: chairs[0] };
@@ -213,9 +223,11 @@ const FIT = {
   ferreteria(L, E, hh, sw) {
     const rng = L.rng, nsh = Math.max(1, Math.min(4, Math.floor((wallInfo(L.r, sw).hi - wallInfo(L.r, sw).lo) / 1.2)));
     shelves(L, sw, 'shelf_ferre', nsh);
-    const c = counterAt(L, E, 'shop_counter_wood', sw, { shelfDepth: 0.4 });
+    const c = counterAt(L, E, 'shop_counter_wood', sw, { shelfDepth: 0.4 }) ?? counterAt(L, E, 'shop_counter_short', sw, { shelfDepth: 0.4 });          // (the 2 m counter found no wall in L41: four shelf units, a street lane and three doors; the 1.2 m one does)
     if (c) { L.top(c, 'pc_set', { at: 'left' }); L.top(c, 'phone_landline', { at: 'right' }); }
     L.hang('tool_pegboard', 'any', { y: 1.0 });
+    for (let k = 0; k < 2; k++) any(() => L.wall('gas_cylinder', 'any', { prio: 2, at: 'corner' }));          // the hardware store sells the bottles too
+    any(() => L.wall('box_cardboard_m', 'any', { prio: 2, at: 'corner' }));
     any(() => L.wall('cement_sacks', 'any', { prio: 1, at: 'corner' }));
     any(() => L.wall('paint_cans_stack', 'any', { prio: 1 }));
     any(() => L.wall('pipes_bundle', 'any', { prio: 2 }));
@@ -279,16 +291,32 @@ const FIT = {
   },
   minutos(L, E, hh, sw) {
     const n = Math.max(3, Math.min(6, Math.floor((L.W + L.D) / 1.4)));
-    const cab = { prio: 1, skipMissing: true, winOk: true };                           // a row of cabins may stand in front of a window: that is where the light is
-    L.run(sw, Array(n).fill('cabin_pc'), cab);
-    for (const w of ['-x', '+x', '-z', '+z']) if (w !== sw && L.items.filter((i) => i.name === 'cabin_pc').length < n) L.run(w, ['cabin_pc', 'cabin_pc'], cab);
-    for (const b of L.items.filter((i) => i.name === 'cabin_pc')) {
-      const ch = L.at('stool_bar', ...L.rel(b, 0, b.d / 2 + 0.3), b.ry + PI, { prio: 2 });
-      if (ch) ch.flags = { cabinSeat: true };
+    const cab = { prio: 1, skipMissing: true, winOk: true, slide: 0.25 };              // a row of cabins may stand in front of a window: that is where the light is; one a door's keep-out refuses at the corner slides on past it (L15, L76 had none)
+    const cabins = () => {
+      L.run(sw, Array(n).fill('cabin_pc'), cab);
+      for (const w of ['-x', '+x', '-z', '+z']) if (w !== sw && L.items.filter((i) => i.name === 'cabin_pc').length < n) L.run(w, ['cabin_pc', 'cabin_pc'], cab);
+      for (const b of L.items.filter((i) => i.name === 'cabin_pc')) {
+        const ch = L.at('stool_bar', ...L.rel(b, 0, b.d / 2 + 0.3), b.ry + PI, { prio: 2, tuck: b });          // (`tuck`: the stool stands in its cabin's own front zone: without it no cabin of the barrio had a seat)
+        if (ch) ch.flags = { cabinSeat: true };
+      }
+    };
+    const counter = () => {
+      const k = any(() => L.wall('shop_counter_short', 'any', { prio: 0, awayDoors: true }));
+      if (k) { L.top(k, 'phone_landline', { at: 'left' }); L.top(k, 'pc_set', { at: 'right' }); k.flags = { counter: true }; }
+      return k;
+    };
+    const before = new Set(L.items);
+    // A room under 3 m across (L15: 2.43 m, L76: 1.93 m) has no keeper's side: a cabin (0.75 m), its stool and the way to the counter leave a lane of 1 m, and a keeper there stands 0.3 m from the customers' way
+    // (people-spots.test.mjs holds the post 0.8 m off it). The cabins are what such a shop sells: they go first and the counter takes what is left (none, in the two of the barrio).
+    const narrow = Math.min(L.W, L.D) < NARROW_SHOP;
+    let c = narrow ? null : counter(); cabins();                                       // else the keeper's counter first: a row of six cabins left it no wall in seven of the barrio's shop rooms
+    if (narrow) c = counter();
+    else if (L.items.filter((i) => i.name === 'cabin_pc').length < 2) {                // a room too narrow for both: the cabins are what the shop sells, the counter takes what is left
+      for (const it of L.items.filter((i) => !before.has(i))) L.remove(it);
+      cabins(); c = counter();
     }
-    const c = any(() => L.wall('shop_counter_short', 'any', { prio: 0, awayDoors: true }));
-    if (c) { L.top(c, 'phone_landline', { at: 'left' }); L.top(c, 'pc_set', { at: 'right' }); c.flags = { counter: true }; }
     any(() => L.wall('phone_booth', 'any', { prio: 2, winOk: true }));
+    any(() => L.wall('chips_rack', 'any', { prio: 2 })); any(() => L.wall('fridge_drinks', 'any', { prio: 2, awayDoors: true }));          // what a minutes shop sells besides the calls: the sweets and a cold drink
     sign(L, 'sign_minutos', sw); D(L, 'price_minutos', 'any'); own(L, E, 'calendar_loteria', 'any'); clock(L, E, 'any', {});
     E.shop = { counter: c };
   },
@@ -340,12 +368,17 @@ function soldadura(L, E, hh, sw) {
   if (L.W * L.D > 18) any(() => L.wall('workbench_metal', 'any', { prio: 1, awayDoors: true }));
   const first = any(() => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner', ...(bench ? { near: bench, nearW: 1 } : {}) }), () => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner' }));
   any(() => (first ? L.wall('gas_cylinder', first.wallSide, { prio: 1, near: first, nearW: 8 }) : null), () => L.wall('gas_cylinder', 'any', { prio: 1, at: 'corner' }));
-  any(() => L.wall('pipes_bundle', 'any', { prio: 1 }));
+  for (let k = 0; k < 2; k++) any(() => L.wall('pipes_bundle', 'any', { prio: 1 }));                       // bar stock, tube and angle: the steel the gates are cut from (the library has no steel rack, R4-707)
   const cab = any(() => L.wall('tool_cabinet_roll', 'any', { prio: 1 }));
   if (cab) L.top(cab, 'radio_boombox', { at: 'center' });
   any(() => L.wall('parts_shelf', 'any', { prio: 1 }));
+  any(() => L.wall('shoe_grinder', 'any', { prio: 1 }));                                                    // the pedestal grinder: a motor and a stone on a stand (the cobbler's wheel stands in for it)
+  if (L.W * L.D > 18) any(() => L.free('workbench_metal', { rad: Math.max(L.W, L.D) / 2, prio: 1, rys: L.W >= L.D ? [0, PI] : [PI / 2, -PI / 2] }));          // the assembly table in the room's middle, where a gate is laid out and tacked
   any(() => L.wall('oil_drum', 'any', { prio: 2, at: 'corner' }));
   any(() => L.wall('paint_cans_stack', 'any', { prio: 2, at: 'corner' }));
+  any(() => L.wall('locker_pair', 'any', { prio: 2 }));                                                     // the workers' lockers
+  any(() => L.wall('fan_stand', 'any', { prio: 2, at: 'corner' }));
+  any(() => L.wall('box_cardboard_m', 'any', { prio: 2, at: 'corner' }));                                   // electrodes come in boxes
   L.wall('bucket_big', 'any', { prio: 2, at: 'corner' });
   if (bench) L.hang('tool_pegboard', 'any', { y: 1.15, over: bench });
   sign(L, 'sign_soldadura', sw); own(L, E, 'calendar_ferre', 'any'); art(L, E, 'sport', 'any'); D(L, 'price_solda', 'any'); clock(L, E, 'any', {});
