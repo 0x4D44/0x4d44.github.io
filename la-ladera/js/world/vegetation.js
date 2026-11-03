@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { hashStr } from '../core/rng.js';
 import { makeFarHeight, urbanDensity } from './periphery.js';
 import { vnoise, project } from './geom.js';
+import { SEA, Z0 as COAST_Z0, BAY_X } from './coast.js';
 
 export const TREE_SPECIES = new Set(['eucalyptus', 'cypress', 'palm', 'banana', 'almendro']);
 /**
@@ -346,7 +347,9 @@ export function dressVegetation(K) {
     if (r.next() > 0.15 + patch * 0.68 - urban * 0.55) continue;
     if (pz > 100 && project(far.road.pts, far.road.cum, px, pz).d < 14) continue;
     const species = pz < -110 ? (r.chance(0.72) ? 'eucalyptus' : 'cypress') : r.chance(0.58) ? 'almendro' : r.chance(0.6) ? 'eucalyptus' : 'palm';
-    if (v.place(species, px, far(px, pz) - 0.06, pz, { height: r.range(8, 16), far: true })) stats.farTrees++;
+    const height = r.range(8, 16), ground = far(px, pz);
+    if (K.plan.coast && pz > COAST_Z0 && (Math.abs(px) < BAY_X + 8 || ground < SEA + 0.6)) continue;   // south of the plot the ground is the coast's (coast.js): the bay (promenade, sand), the sea and the strip of sand at its edge take no grove. Every draw above is made either way, so no other grove moves
+    if (v.place(species, px, ground - 0.06, pz, { height, far: true })) stats.farTrees++;
   }
   K.ctx.world.vegetationDressing = stats;
 }
