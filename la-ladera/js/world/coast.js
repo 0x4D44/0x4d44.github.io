@@ -6,7 +6,8 @@
 //     coast.meshHeight(x, z)     the same without the wall ramp and the accesses (the mesh draws those as parts of their own)
 //     coast.ground(x, z, land)   the far ground: the beach profile sheared along the curving shore, `land` (the old far land) inland of it, headlands on top
 //     coast.depthAt(x, z)        metres of water over the ground (negative on land), still water
-//     coast.surfaceAt(x, z)      'deck' | 'stairs' | 'ramp' | 'sand' | 'wetsand' | 'shallow' | 'wade' | 'swim'  (kinds the SurfaceMap and the audio know)
+//     coast.surfaceAt(x, z, y)   'deck' | 'stairs' | 'ramp' | 'jetty' | 'sand' | 'wetsand' | 'shallow' | 'wade' | 'swim'  (kinds the SurfaceMap and the audio know; `y`, the feet's height, is optional:
+//                                with it a walker up on the pier's deck or the raft's is 'jetty', without it, or wading under the pier, the ground answers)
 //     coast.limit(x, z)          { x, z, soft, hard } where the player may go (soft = 0..1 resistance, hard = true when clamped at the sea's end)
 //     coast.rails / .accesses / .nav / .lanes / .climbs / .pois / .areas / .landmarks   data for the walls, the mesh, the people and the map
 // The profile is a straight shore (z = SHORE0) between the walls (|x| <= BAY_X) and then curves south, so the plot sits at the middle of a bay whose horns point
@@ -52,6 +53,15 @@ const CHEEKS = Object.freeze(STAIRS.flatMap((a) => [-1, 1].map((s) => Object.fre
 const RAMP_RAILS = Object.freeze([-1, 1].map((s) => Object.freeze({ id: `${RAMP.id}${s < 0 ? 'w' : 'e'}`, x: +(RAMP.x + s * (RAMP.w / 2 - 0.04)).toFixed(3), z1: DECK_Z, z2: RAMP_END })));
 /** The ramp's surface under a rail (1:12 from the deck's edge). */
 export const rampY = (z) => DECK - RAMP.slope * (Math.min(Math.max(z, DECK_Z), RAMP_END) - DECK_Z);
+
+/**
+ * The sea's set pieces stand where this data says (beachsea.js lays them out; the colliders and the people's points of interest are made from the same numbers, and tests/world-beachsea.test.mjs
+ * holds them together): the Muelle de los Pescadores on the axis stair's centre line (its deck `top` over the datum, 1.42 m over the sea; its head is 4 x 3 m and ends at z1), La Balsa
+ * (a 3 x 3 m deck, `top` over the datum, its ladder on the shore side) and the five boats hauled up on the sand (bows to the sea).
+ */
+export const PIER = Object.freeze({ x: -6.5, w: 3, z0: DECK_Z, z1: 191, top: 0.22 });
+export const RAFT = Object.freeze({ x: 34, z: 185, yaw: Math.PI, size: 3, top: +(SEA + 0.35).toFixed(2) });
+export const SAND_BOATS = Object.freeze([[-88, 132.2], [-83.4, 131.6], [-78.8, 132.5], [-74.2, 131.8], [-69.6, 132.3]].map(([x, z]) => Object.freeze({ x, z })));
 
 // the headlands that cap the bay's horns: x, z, radius of the foot, height they add
 const HEADLANDS = Object.freeze([{ id: 'oeste', x: -300, z: 330, r: 110, h: 34 }, { id: 'este', x: 330, z: 370, r: 100, h: 42 }]);
@@ -116,8 +126,12 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
   };
 
   const depthAt = (x, z) => SEA - heightAt(x, z);
-  const surfaceAt = (x, z) => {
+  /** Up on the pier's deck (the stem, then the head that is 4 m wide over its last 3 m) or on the raft's, feet at `y` within 0.45 m of the deck: the planks. Under them the ground answers. */
+  const onJetty = (x, z, y) => (y >= PIER.top - 0.45 && z >= PIER.z0 && z <= PIER.z1 && Math.abs(x - PIER.x) <= (z > PIER.z1 - 3 ? 2 : PIER.w / 2))
+    || (y >= RAFT.top - 0.45 && Math.abs(x - RAFT.x) <= RAFT.size / 2 && Math.abs(z - RAFT.z) <= RAFT.size / 2);
+  const surfaceAt = (x, z, y) => {
     if (z < Z0) return null;
+    if (Number.isFinite(y) && onJetty(x, z, y)) return 'jetty';
     if (z < DECK_Z) return 'deck';
     if (z < WALL_Z) { const a = accessAt(x); return a ? (a.kind === 'ramp' ? 'ramp' : 'stairs') : 'deck'; }
     const a = accessAt(x);
@@ -155,14 +169,15 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
   for (const z of [119, 125]) for (const x of [...Array.from({ length: 6 }, (_, i) => -34 + i * 6), ...Array.from({ length: 6 }, (_, i) => 48 + i * 6)]) addPoi('lie', jit(x, 0.4), jit(z, 0.5), { ry: Math.PI });   // 24 loungers and towels, facing the sea (the east block leaves the line of the stair at x 70 clear: a pair is 1.3 m wide, the gap 4.7 m)
   for (let i = 0; i < 8; i++) { const x = -84 + i * 24, z = SHORE0 + 1.2 + (i % 3) * 2.6; addPoi('wade', x, z); }
   for (let i = 0; i < 6; i++) addPoi('swim', -70 + i * 28, SHORE0 + 2.5);
-  for (let i = 0; i < 6; i++) addPoi('fish', -6.5 + (i % 2 ? 1.2 : -1.2), 130 + i * 10);     // the pier (phase 2) is at x = -6.5
+  for (let i = 0; i < 6; i++) addPoi('fish', PIER.x + (i % 2 ? 1.2 : -1.2), 130 + i * 10, { y: PIER.top, ry: i % 2 ? -Math.PI / 2 : Math.PI / 2 });   // on the pier's deck, 0.23 m inside the rail, facing out over it (the east side looks east, the west side west)
   for (let i = 0; i < 4; i++) addPoi('volley', -66 + (i % 2) * 8, 124 + Math.floor(i / 2) * 4, { ry: i % 2 ? -Math.PI / 2 : Math.PI / 2 });   // the four anchors of the court the beach front lays at (-62, 126) (the library's `volley` anchors, +-4 and +-2 m), each facing the net
   for (const x of [-80, -50, -22, 14, 40, 76]) addPoi('vend', x, 113.5, { ry: Math.PI });
   addPoi('vend', -60, 140); addPoi('vend', 60, 140);                                               // two walking vendors' beats
   addPoi('watch', 6, 128.12, { y: +(heightAt(6, 128.12) + 1.73).toFixed(2) }); addPoi('watch', 6, 118);       // the first is the lifeguard tower's own `watch` anchor (the tower is at (6, 128): 1.73 m up, 0.12 m forward); the second stands on the sand behind it
-  for (let i = 0; i < 6; i++) addPoi('moor', -88 + i * 3, 131.5);
+  for (const b of SAND_BOATS) addPoi('moor', b.x + 1.55, b.z + 0.3, { ry: Math.PI / 2 });          // a fisherman beside each hull (0.65 m off it), facing it: the sixth stands west of the first boat, facing east
+  addPoi('moor', SAND_BOATS[0].x - 1.7, SAND_BOATS[0].z, { ry: -Math.PI / 2 });
   for (let i = 0; i < 6; i++) addPoi('launch', -88 + i * 3, SHORE0 - 4);
-  addPoi('raft', 34, 185);
+  addPoi('raft', RAFT.x, RAFT.z, { y: RAFT.top });                                                // a place on the raft's deck
 
   const areas = [
     { id: 'playa', name: 'La Playa', en: 'The Beach', poly: [[-XW, DECK_Z], [XW, DECK_Z], [XW, SHORE0 + 6], [-XW, SHORE0 + 6]] },
@@ -170,16 +185,16 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
   ];
   const landmarks = [
     { id: 'malecon', name: 'Malecón de El Plan', en: 'El Plan Promenade', kind: 'promenade', x: 20, z: 104, radius: 12 },
-    { id: 'muelle', name: 'Muelle de los Pescadores', en: 'Fishermen\'s Pier', kind: 'pier', x: -6.5, z: 160, radius: 12 },
+    { id: 'muelle', name: 'Muelle de los Pescadores', en: 'Fishermen\'s Pier', kind: 'pier', x: PIER.x, z: 160, radius: 12 },
     { id: 'playa', name: 'La Playa', en: 'The Beach', kind: 'beach', x: 40, z: 126, radius: 18 },
     { id: 'salvavidas', name: 'Torre del Salvavidas', en: 'Lifeguard Tower', kind: 'tower', x: 6, z: 128, radius: 6 },
-    { id: 'balsa', name: 'La Balsa', en: 'The Raft', kind: 'raft', x: 34, z: 185, radius: 8 },
+    { id: 'balsa', name: 'La Balsa', en: 'The Raft', kind: 'raft', x: RAFT.x, z: RAFT.z, radius: 8 },
   ].map((l) => ({ ...l, y: +Math.max(heightAt(l.x, l.z), SEA).toFixed(2) }));
 
   // ---- the walking graph the beach adds (NOT in plan.nav yet): a deck chain, the accesses, a 7 m grid of sand, three wade lines at depth <= 0.5 m
   const nav = (() => {
     const nodes = [], edges = [], at = new Map(), key = (x, z) => `${x}|${z}`;
-    const add = (x, z, kind) => { const k = key(x, z); if (at.has(k)) return at.get(k); const n = { id: 'c' + nodes.length, x: +x.toFixed(2), y: +heightAt(x, z).toFixed(2), z: +z.toFixed(2), kind }; nodes.push(n); at.set(k, n); return n; };
+    const add = (x, z, kind, y = heightAt(x, z)) => { const k = key(x, z); if (at.has(k)) return at.get(k); const n = { id: 'c' + nodes.length, x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), kind }; nodes.push(n); at.set(k, n); return n; };
     const link = (a, b) => { if (a && b && a !== b) edges.push([a.id, b.id]); };
     const deckX = Array.from({ length: 49 }, (_, i) => -96 + i * 4);
     const deck = deckX.map((x) => add(x, 104, 'deck'));
@@ -194,11 +209,23 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
     for (let c = 0; c < sandX.length; c++) { link(grid[rows.length - 1][c], wadeRows[0][c]); for (let r = 0; r + 1 < wadeRows.length; r++) link(wadeRows[r][c], wadeRows[r + 1][c]); if (c > 0) for (const wr of wadeRows) link(wr[c - 1], wr[c]); }
     const nearest = (list, x) => list.reduce((b, n) => (Math.abs(n.x - x) < Math.abs(b.x - x) ? n : b));
     for (const a of ACCESSES) {
-      const top = add(a.x, 107, 'stair'), mid = add(a.x, a.kind === 'ramp' ? 111 : 108.7, 'stair'), foot = add(a.x, a.kind === 'ramp' ? RAMP_END + 1.2 : STAIR_FLIGHT[1] + 1.1, 'stair');
-      link(nearest(deck, a.x), top); link(top, mid); link(mid, foot);
-      link(foot, nearest(grid[0], a.x));
-      if (a.kind === 'stair' && a.w > 5) { const lo = add(a.x - 3, 107, 'stair'), hi = add(a.x + 3, 107, 'stair'); link(lo, top); link(top, hi); link(lo, nearest(deck, a.x - 3)); link(hi, nearest(deck, a.x + 3)); }
+      const top = add(a.x, 107, 'stair');
+      link(nearest(deck, a.x), top);
+      if (a.kind === 'stair' && a.w > 5) {
+        // the grand stair's axis is the pier's (its deck covers the middle 3 m of the flight): people go down by the two sides of it, 3 m off the axis, and the pier has a chain of its own from the axis
+        for (const s of [-1, 1]) {
+          const x = a.x + s * 3, side = add(x, 107, 'stair'), mid = add(x, 108.7, 'stair'), foot = add(x, STAIR_FLIGHT[1] + 1.1, 'stair');
+          link(side, top); link(nearest(deck, x), side); link(side, mid); link(mid, foot); link(foot, nearest(grid[0], x));
+        }
+      } else {
+        const mid = add(a.x, a.kind === 'ramp' ? 111 : 108.7, 'stair'), foot = add(a.x, a.kind === 'ramp' ? RAMP_END + 1.2 : STAIR_FLIGHT[1] + 1.1, 'stair');
+        link(top, mid); link(mid, foot); link(foot, nearest(grid[0], a.x));
+      }
     }
+    // the pier's chain (kind 'pier', on the deck: PIER.top, not the ground under it): from the axis stair's head to the pier's head, every 4 m
+    { let prev = add(PIER.x, 107, 'stair');
+      for (let z = PIER.z0 + 1; z < PIER.z1 - 3; z += 4) { const n = add(PIER.x, z, 'pier', PIER.top); link(prev, n); prev = n; }
+      link(prev, add(PIER.x, PIER.z1 - 1.5, 'pier', PIER.top)); }
     return { nodes, edges };
   })();
 
@@ -207,7 +234,12 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
     { id: 'swim.0', kind: 'swim', pts: [[-70, SHORE0 + 3], [-70, 200], [-20, 205], [30, 200], [30, SHORE0 + 3]] },
     { id: 'swim.raft', kind: 'swim', pts: [[10, SHORE0 + 3], [34, 176], [34, 183]] },
   ];
-  const climbs = [{ id: 'raft.ladder', x: 34, z: 182.8, y: DECK - 1.1, top: -0.9, r: 0.8 }];
+  // the ladders: a swimmer within `r` of (x, z) may climb (Space or W): his feet go from `y` (the lowest rung) to `top` (the deck) and he comes out at `exit`. The raft's ladder hangs on its shore side
+  // (1.45 m from the centre) and the pier head's at the middle of its front edge; the library's ladders (watersports_pier_ladder, the raft's own) are drawn there by waterprops.js.
+  const climbs = [
+    { id: 'raft.ladder', x: RAFT.x, z: +(RAFT.z - 1.8).toFixed(2), y: +(SEA - 0.85).toFixed(2), top: RAFT.top, r: 0.8, exit: [RAFT.x, +(RAFT.z - 0.9).toFixed(2)] },
+    { id: 'pier.ladder', x: PIER.x, z: +(PIER.z1 + 0.5).toFixed(2), y: -2.08, top: PIER.top, r: 0.8, exit: [PIER.x, +(PIER.z1 - 1).toFixed(2)] },
+  ];
 
   return Object.freeze({
     seed: sd, sea: SEA, z0: Z0, shoreZ, shift, heightAt, meshHeight, ground, headland, depthAt, surfaceAt, softAt, limit, bed, sandy, deckAt,

@@ -7,14 +7,16 @@
 //   few      half the loungers are gone                       overlap  a bench is stacked on another                     ground   a prop floats a metre above the sand
 //   dup      two props share an id                            budget   nine hundred props                                poi      the court's anchors a metre off the court
 //   tower    the lifeguard stands on the sand under the tower  inside   a vendor's post inside a kiosk
+//   groyne   a groyne's rock stands on the beach itself        boat     a towel is laid on a boat's hull                  nonet    the nets are gone from between the boats
 import './nice.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createContext } from '../js/core/ctx.js';
 import { generatePlan } from '../js/world/plan.js';
-import { DECK_Z, STAIR_FLIGHT, XW, SEA } from '../js/world/coast.js';
+import { DECK_Z, STAIR_FLIGHT, XW, SEA, SAND_BOATS } from '../js/world/coast.js';
 import { planFront, PIER } from '../js/world/beachfront.js';
 import { SIZE } from '../js/world/beachlib.js';
+import { shapeOf, overlaps, box } from './geom2d.mjs';
 
 const SAB = process.env.BF_SABOTAGE ?? '';
 const on = (...ids) => ids.some((id) => SAB === 'all' || SAB === id);
@@ -38,37 +40,15 @@ function front(seed) {
   if (on('few')) { const ls = f.items.filter((i) => i.group === 'lounger'); const drop = new Set(ls.slice(0, Math.ceil(ls.length / 2)).map((i) => i.id)); f.items = f.items.filter((i) => !drop.has(i.id)); }
   if (on('overlap')) { const b = f.solids.find((s) => s.id.startsWith('solid.bench')); f.solids.push({ ...b, id: 'solid.bench.dup', x: b.x + 0.3 }); }
   if (on('ground')) { const t = f.items.find((i) => i.group === 'towel'); t.y += 1; }
+  if (on('groyne')) f.groynes[0].x = XW - 5;
+  if (on('boat')) f.items.push(it('towel_01_flat', SAND_BOATS[2].x, SAND_BOATS[2].z));
+  if (on('nonet')) f.items = f.items.filter((i) => i.group !== 'net');
   if (on('dup')) f.items.push({ ...f.items[3] });
   if (on('budget')) for (let i = 0; i < 900; i++) f.items.push(it('seaweed', -90 + (i % 180), 135, SEA));
   return f;
 }
 const F = front();
 
-// ---- geometry for the overlap checks: oriented rectangles and circles, in the world's XZ plane
-function shapeOf(s) {
-  if (s.kind === 'post') return { c: [s.x, s.z], r: s.r };
-  if (s.kind === 'rect') return { c: [s.x, s.z], hw: s.w / 2, hd: s.d / 2, ry: s.ry };
-  const dx = s.x2 - s.x1, dz = s.z2 - s.z1, len = Math.hypot(dx, dz);        // a segment is a thin rectangle along its length
-  return { c: [(s.x1 + s.x2) / 2, (s.z1 + s.z2) / 2], hw: len / 2 + s.t, hd: s.t, ry: -Math.atan2(dz, dx) };
-}
-const toLocal = (sh, p) => { const c = Math.cos(sh.ry), s = Math.sin(sh.ry), dx = p[0] - sh.c[0], dz = p[1] - sh.c[1]; return [dx * c - dz * s, dx * s + dz * c]; };   // (kit.js rect: x' = x c + z s ... inverse of the world rotation)
-const corners = (sh) => { const c = Math.cos(sh.ry), s = Math.sin(sh.ry); return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [sh.c[0] + a * sh.hw * c + b * sh.hd * s, sh.c[1] - a * sh.hw * s + b * sh.hd * c]); };
-function overlaps(a, b) {
-  if (a.r !== undefined && b.r !== undefined) return Math.hypot(a.c[0] - b.c[0], a.c[1] - b.c[1]) < a.r + b.r;
-  if (a.r !== undefined || b.r !== undefined) {
-    const [circle, box] = a.r !== undefined ? [a, b] : [b, a], p = toLocal(box, circle.c);
-    const q = [Math.max(-box.hw, Math.min(box.hw, p[0])), Math.max(-box.hd, Math.min(box.hd, p[1]))];
-    return Math.hypot(p[0] - q[0], p[1] - q[1]) < circle.r;
-  }
-  const axes = [[Math.cos(a.ry), -Math.sin(a.ry)], [Math.sin(a.ry), Math.cos(a.ry)], [Math.cos(b.ry), -Math.sin(b.ry)], [Math.sin(b.ry), Math.cos(b.ry)]];
-  const ca = corners(a), cb = corners(b);
-  for (const [ax, az] of axes) {
-    const pa = ca.map((p) => p[0] * ax + p[1] * az), pb = cb.map((p) => p[0] * ax + p[1] * az);
-    if (Math.max(...pa) <= Math.min(...pb) + 1e-6 || Math.max(...pb) <= Math.min(...pa) + 1e-6) return false;
-  }
-  return true;
-}
-const box = (x0, z0, x1, z1) => ({ c: [(x0 + x1) / 2, (z0 + z1) / 2], hw: (x1 - x0) / 2, hd: (z1 - z0) / 2, ry: 0 });
 const accessZones = () => coast.accesses.map((a) => box(a.x - a.w / 2 - 0.35, DECK_Z - 1, a.x + a.w / 2 + 0.35, (a.kind === 'ramp' ? coast.rampEnd : STAIR_FLIGHT[1]) + 0.5));
 const pierZone = () => box(PIER.x - PIER.w / 2, PIER.z0, PIER.x + PIER.w / 2, PIER.z1);
 const NOT_A_BLOCK = /^(riprap|seaweed|shell|driftwood)/;          // (the stones at the wall's foot, the wrack and the shells lie on the ground and stop nobody: no collider)
@@ -119,6 +99,40 @@ test('everything stands on the ground: on land, above the water, and on the heig
     const h = coast.heightAt(it.x, it.z);
     assert.ok(Math.abs(it.y - h) < 0.011, `${it.id} (${it.name}) at y ${it.y}, the ground ${h.toFixed(3)}`);
     if (!/^(seaweed|shell)/.test(it.name)) assert.ok(h > SEA + 0.05, `${it.id} (${it.name}) is not in the water: ground ${h.toFixed(2)}`);
+  }
+});
+
+test('the groynes: forty rocks in two lines outside the east and west walls, from the promenade out into the sea, sunk into the ground a quarter of their height, and not part of the beach\'s own list', () => {
+  assert.equal(F.groynes.length, 40);
+  assert.ok(F.items.every((i) => i.group !== 'groyne'), 'the groynes are not on the beach');
+  for (const side of [-1, 1]) {
+    const g = F.groynes.filter((r) => Math.sign(r.x) === side), zs = g.map((r) => r.z);
+    assert.equal(g.length, 20, `twenty rocks on the ${side < 0 ? 'west' : 'east'} side`);
+    assert.ok(Math.min(...zs) < 106 && Math.max(...zs) > 180, `the line runs from the promenade (z ${Math.min(...zs).toFixed(0)}) out into the sea (z ${Math.max(...zs).toFixed(0)})`);
+    for (const r of g) {
+      assert.ok(Math.abs(r.x) > XW + 0.5 && Math.abs(r.x) < XW + 6, `${r.id} stands ${(Math.abs(r.x) - XW).toFixed(1)} m outside the wall`);
+      assert.ok(SIZE[r.name] && r.key === 'beach_' + r.name && /^groyne_rock_[123]$/.test(r.name), `${r.id}: a groyne rock of the library`);
+      assert.ok(r.scale && r.scale.every((v) => v >= 1.2 && v <= 2 && v === r.scale[0]), `${r.id}: a boulder, 1.2 to 2 times the library's rock`);
+      const h = coast.heightAt(r.x, r.z), sink = h - r.y;
+      assert.ok(sink > 0.25 * 1.2 - 0.01 && sink < 0.25 * 2 + 0.01, `${r.id}: sunk ${sink.toFixed(2)} m into the ground`);
+      assert.ok(r.lod[1] >= 250, `${r.id}: a groyne is seen from the whole beach`);
+    }
+  }
+});
+
+test('the five boats on the sand have their ground: nothing is laid on a hull, and a net dries in the gap between the first two and the third and fourth', () => {
+  assert.equal(SAND_BOATS.length, 5);
+  const hull = (b) => box(b.x - 0.95 - 0.3, b.z - 2.75 - 0.3, b.x + 0.95 + 0.3, b.z + 2.75 + 0.3);
+  for (const it of F.items) {
+    if (it.group === 'net') continue;
+    for (const b of SAND_BOATS) assert.ok(!overlaps({ c: [it.x, it.z], r: 0.2 }, hull(b)), `${it.id} (${it.name}) lies on the boat at ${b.x}`);
+  }
+  for (const s of F.solids) for (const b of SAND_BOATS) assert.ok(!overlaps(shapeOf(s), hull(b)), `${s.id} stands on the boat at ${b.x}`);
+  const nets = F.items.filter((i) => i.group === 'net');
+  assert.equal(nets.length, 2, 'two nets');
+  for (const [k, n] of nets.entries()) {
+    const a = SAND_BOATS[2 * k], c = SAND_BOATS[2 * k + 1];
+    assert.ok(n.x > a.x + 1.2 && n.x < c.x - 1.2 && Math.abs(n.z - (a.z + c.z) / 2) < 2.2 && n.name === 'fishing_net', `${n.id}: in the gap between the boats at ${a.x} and ${c.x}`);
   }
 });
 

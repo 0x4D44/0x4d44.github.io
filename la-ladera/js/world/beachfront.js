@@ -2,37 +2,42 @@
 // out, so a Node test and the page read the same layout and the colliders exist from the first frame, whatever the render loads when. beach.js turns the records into colliders and
 // procedural meshes; beachprops.js instances the library ones (the Codex props, assets/models/manifest.beach_props.json) once that library is loaded.
 //
-//   planFront(coast) -> { items, solids, lamps, huts, palapas, posts, runs, stats }
+//   planFront(coast) -> { items, groynes, solids, lamps, huts, palapas, posts, runs, stats }
 //   items   { id, group, name, key, x, y, z, yaw, lod: [near, far] }   a library prop (key = the name in ctx.assets); yaw 0 faces +Z = south = the sea
+//   groynes { id, group, name, key, x, y, z, yaw, scale, lod }         the rock lines outside the east and west walls (items of the same library, kept apart: they are not on the beach)
 //   solids  { id, kind: 'rect' | 'post' | 'seg', ... }                 what stops a walker (kit.js rect / post / seg: a wall blocks only when its top is over 0.4 m above the feet)
 //   lamps   { id, x, y, z }                                            promenade lamp posts (poles.js globePost: a real light each)
 //   huts    { id, x, y, z, yaw, w, d, h }                              changing huts (procedural)
 //   palapas { id, x, y, z, w, d, h }                                   thatched shelters with tables (procedural)
 //   posts   { id, x, y, z, h }                                         the wooden posts of the sign plaques
-// The pier (phase 2b) keeps its corridor free from now on (PIER).
+// The pier (coast.js PIER, laid out by beachsea.js) keeps its corridor free, and so do the five boats hauled up on the sand (SAND_BOATS); the rock groynes at the two ends (outside the walls) are
+// this library's too (the beach's `groyne_rock`s), so they are here.
 import { makeRng } from '../core/rng.js';
-import { DECK, DECK_Z, WALL_Z, XW, STAIR_FLIGHT } from './coast.js';
+import { DECK, DECK_Z, WALL_Z, XW, STAIR_FLIGHT, PIER, SAND_BOATS } from './coast.js';
 import { assetKey, SIZE } from './beachlib.js';
 
-export const PIER = Object.freeze({ x: -6.5, w: 3, z0: DECK_Z, z1: 190 });
+export { PIER };
 export const PLAQUE_Y = 1.36;                // a sign plaque (0.48 m tall) hangs this far above the ground on its 1.9 m post: its top is 0.06 m under the post's
 const LOD = Object.freeze({ big: [70, 260], mid: [36, 130], small: [22, 80], tiny: [14, 46] });
-const LOD_OF = (name) => (/^(kiosk|lifeguard_tower|palm_|volleyball_court)/.test(name) ? 'big'
+const LOD_OF = (name) => (/^(kiosk|lifeguard_tower|palm_|volleyball_court|groyne_rock)/.test(name) ? 'big'
   : /^(towel|bag|cool_box|thermos|flipflop|bucket|sandcastle|ball|pool_ring|volleyball_ball|first_aid|rescue_buoy|shell|seaweed|sign_)/.test(name) ? (/^(shell|seaweed|flipflop|thermos|ball|bucket)/.test(name) ? 'tiny' : 'small') : 'mid');
 
 export function planFront(coast, o = {}) {
   const rng = makeRng(((o.seed ?? coast.seed ?? 1) * 2654435761 + 4711) >>> 0), H = coast.heightAt;
-  const items = [], solids = [], lamps = [], huts = [], palapas = [], posts = [], discs = [], n = {};
+  const items = [], groynes = [], solids = [], lamps = [], huts = [], palapas = [], posts = [], discs = [], n = {};
   const nid = (g) => `${g}.${(n[g] = (n[g] ?? -1) + 1)}`;
   const free = (x, z, r) => discs.every((d) => Math.hypot(d.x - x, d.z - z) >= d.r + r);
   const take = (x, z, r) => discs.push({ x, z, r });
   const inAccess = (x, z, m = 0) => coast.accesses.some((a) => Math.abs(x - a.x) <= a.w / 2 + 0.35 + m && z >= DECK_Z - 2.6 - m && z <= (a.kind === 'ramp' ? coast.rampEnd : STAIR_FLIGHT[1]) + 1.2 + m);
   const inPier = (x, z, m = 0) => Math.abs(x - PIER.x) <= PIER.w / 2 + m && z >= PIER.z0 - 1.5;
   const dry = (x, z) => z < coast.shoreZ(x) - 3;
-  const put = (name, x, z, yaw, g = name, extra = {}) => {
+  const onBoat = (x, z) => SAND_BOATS.some((b) => Math.abs(x - b.x) < 1.25 && Math.abs(z - b.z) < 3.05);       // (a hull is 1.8 x 5.5 m: the small things that need no free ground keep off it too)
+  const make = (name, x, z, yaw, g, extra) => {
     const it = { id: nid(g), group: g, name, key: assetKey(name), x: +x.toFixed(3), y: +(extra.y ?? H(x, z)).toFixed(3), z: +z.toFixed(3), yaw: +yaw.toFixed(4), lod: LOD[LOD_OF(name)] };
-    items.push(it); return it;
+    if (extra.scale) it.scale = extra.scale;
+    return it;
   };
+  const put = (name, x, z, yaw, g = name, extra = {}) => { const it = make(name, x, z, yaw, g, extra); items.push(it); return it; };
   const rect = (g, x, z, w, d, ry, h) => solids.push({ id: nid('solid.' + g), kind: 'rect', x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry: +ry.toFixed(4), h });
   const post = (g, x, z, r, h) => solids.push({ id: nid('solid.' + g), kind: 'post', x: +x.toFixed(3), z: +z.toFixed(3), r, h });
   const seg = (g, x1, z1, x2, z2, h, t = 0.04) => solids.push({ id: nid('solid.' + g), kind: 'seg', x1: +x1.toFixed(3), z1: +z1.toFixed(3), x2: +x2.toFixed(3), z2: +z2.toFixed(3), h, t });
@@ -44,6 +49,9 @@ export function planFront(coast, o = {}) {
   const runs = []; { let x = -XW + 1; for (const [g0, g1] of merged) { if (g0 > x + 0.5) runs.push([x, g0]); x = Math.max(x, g1); } if (x < XW - 1) runs.push([x, XW - 1]); }
 
   // ---- the big things first, so the small ones keep out of their way
+  // the boats hauled up on the sand (beachsea.js draws them): their ground is theirs, and a net lies drying in the gap between the first two and the third and fourth
+  for (const b of SAND_BOATS) take(b.x, b.z, 3.4);
+  for (const i of [0, 2]) { const a = SAND_BOATS[i], c = SAND_BOATS[i + 1]; put('fishing_net', (a.x + c.x) / 2, (a.z + c.z) / 2 - 1.4, rng.range(-0.5, 0.5), 'net'); }
   // kiosks: one at every `vend` post that stands at the wall's foot (the two walking vendors' beats are out on the sand)
   const KIOSK_SIGNS = ['cocadas', 'ceviche', 'jugos', 'helados', 'alquiler_tablas', 'cooperativa'];
   const kiosks = coast.pois.filter((p) => p.kind === 'vend' && p.z < 120);
@@ -166,9 +174,15 @@ export function planFront(coast, o = {}) {
     if (inPier(x, z, 2) || !free(x, z, 0.9)) continue;
     put(`driftwood_${1 + (dw % 3)}`, x, z, rng.range(0, 6.2832), 'driftwood'); take(x, z, 0.9); dw++;
   }
-  for (let i = 0; i < 28; i++) { const x = rng.range(-96, 96), z = coast.shoreZ(x) + rng.range(-1.6, 0.4); if (!inPier(x, z, 1.5)) put('seaweed', x, z, rng.range(0, 6.2832), 'seaweed'); }
-  for (let i = 0; i < 36; i++) { const x = rng.range(-96, 96), z = coast.shoreZ(x) - rng.range(0.3, 12); if (!inPier(x, z, 1.5)) put(i % 3 ? 'shell_scallop' : 'shell_conch', x, z, rng.range(0, 6.2832), 'shell'); }
+  for (let i = 0; i < 28; i++) { const x = rng.range(-96, 96), z = coast.shoreZ(x) + rng.range(-1.6, 0.4); if (!inPier(x, z, 1.5) && !onBoat(x, z)) put('seaweed', x, z, rng.range(0, 6.2832), 'seaweed'); }
+  for (let i = 0; i < 36; i++) { const x = rng.range(-96, 96), z = coast.shoreZ(x) - rng.range(0.3, 12); if (!inPier(x, z, 1.5) && !onBoat(x, z)) put(i % 3 ? 'shell_scallop' : 'shell_conch', x, z, rng.range(0, 6.2832), 'shell'); }
+
+  // ---- the groynes: two lines of boulders along the outside of the east and west walls, from the promenade out into the sea (outside the physics walls: no collider; the rock sinks a quarter of its height)
+  for (const s of [-1, 1]) for (let i = 0; i < 20; i++) {
+    const z = 103 + i * 4.3 + rng.range(-0.6, 0.6), x = s * (100.9 + (i % 2) * 2.6 + rng.range(0, 1.2)), k = rng.range(1.25, 1.9);
+    groynes.push(make(`groyne_rock_${1 + ((i * 7 + (s > 0 ? 1 : 0)) % 3)}`, x, z, rng.range(0, 6.2832), 'groyne', { y: H(x, z) - 0.25 * k, scale: [k, k, k] }));
+  }
 
   const by = {}; for (const it of items) by[it.group] = (by[it.group] ?? 0) + 1;
-  return { items, solids, lamps, huts, palapas, posts, runs, by, stats: { items: items.length, solids: solids.length, lamps: lamps.length, huts: huts.length, palapas: palapas.length, posts: posts.length } };
+  return { items, groynes, solids, lamps, huts, palapas, posts, runs, by, stats: { items: items.length, groynes: groynes.length, solids: solids.length, lamps: lamps.length, huts: huts.length, palapas: palapas.length, posts: posts.length } };
 }

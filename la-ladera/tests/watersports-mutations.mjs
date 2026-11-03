@@ -25,6 +25,7 @@ export const CASES = Object.freeze([
   ['W17', 'colourways', 'remove one requested sail colourway'],
   ['W18', 'textpin', 'change catalogue content after its LF hash was pinned'],
   ['W19', 'hull-exterior', 'reverse actual hull winding and normals together, preserving their agreement'],
+  ['W20', 'sector', 'name the library from a module of the game that is not the sector\'s loader'],
   ['L01', 'line-end', 'mutate the catenary endpoint assignment'],
   ['L02', 'line-sag', 'discard 90 percent of requested slack'],
   ['L03', 'line-degenerate', 'divide the degenerate span branch by distance'],

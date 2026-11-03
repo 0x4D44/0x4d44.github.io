@@ -56,6 +56,13 @@
    "size": 2048,
    "source": "the Codex beach props library (one 8 x 8 atlas, ORM in the rough slot; assets/models/manifest.beach_props.json), registered for the beach's props"
   },
+  "watersports": {
+   "map": "watersports/watersports_base.png",
+   "normal": "watersports/watersports_normal.png",
+   "rough": "watersports/watersports_orm.png",
+   "size": 2048,
+   "source": "the Codex watersports library (one atlas, ORM in the rough slot; assets/models/manifest.watersports.json), registered for the sea's set pieces"
+  },
   "vehicle_paint": {
    "map": "vehicles/paint.png",
    "size": [1024, 1024],

@@ -2,7 +2,7 @@
 import './nice.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -286,6 +286,16 @@ test('W19 nearest exterior hull surfaces face outwards even when normals and win
   t.diagnostic('Coplanar stern-cap negative control: generic binary checks passed; exterior overlap assertion rejected it.');
 });
 
+test('W20 the library is named by the sector\'s loader only: no other module of the game\'s code may, and the real js tree is clean', (t) => {
+  const f = fixture(t), js = resolve(f.root, 'js');
+  mkdirSync(resolve(js, 'world'), { recursive: true });
+  writeFileSync(resolve(js, 'world/waterlib.js'), `export const WATER_MANIFESTS = ['${MANIFEST}'];\n`);
+  writeFileSync(resolve(js, 'main.js'), 'export {};\n');
+  mutated('sector', () => writeFileSync(resolve(js, 'main.js'), `fetch('assets/models/${MANIFEST}');\n`));
+  allGood({ ...f, js });
+  allGood({ ...f, js: resolve(ROOT, 'js') });
+});
+
 test('L01 catenary points and line segments preserve both unequal-height endpoints', async (t) => {
   const { sampleCatenary, catenarySegments } = await lineModule(t, 'line-end', 'points.set(end, segments * 3);', 'points.set([end[0], end[1] + 1, end[2]], segments * 3);');
   const start = [2, 1.2, -3], end = [12, 24, 5], options = { segments: 16, slack: 0.02 }, points = sampleCatenary(start, end, options), lines = catenarySegments(start, end, options);
@@ -354,4 +364,4 @@ test('V01 atlas variants clone affected geometry and preserve unrelated UVs and 
 });
 
 // The runner's one-to-one table must remain synchronized with actual tests.
-assert.equal(CASES.length, 25);
+assert.equal(CASES.length, 26);

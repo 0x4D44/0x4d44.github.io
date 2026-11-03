@@ -70,8 +70,8 @@ test('every prop the plan places is drawn: the three files load, no item is skip
   assert.deepEqual([...new Set(loads)].sort(), FILES, 'the library\'s three files, each once');
   assert.equal(C.loadStatus.failed.length, 0, 'no file failed');
   assert.equal(ctx.world[BEACH_ID].skipped, 0, 'no item of the plan was left out');
-  assert.equal(C.stats.placed, front.items.length, 'every item is an instance');
-  for (const key of new Set(front.items.map((i) => i.key))) assert.ok(C.has(key), `${key} has a near and a low model in the library`);
+  assert.equal(C.stats.placed, front.items.length + front.groynes.length, 'every item, and every rock of the groynes, is an instance');
+  for (const key of new Set([...front.items, ...front.groynes].map((i) => i.key))) assert.ok(C.has(key), `${key} has a near and a low model in the library`);
 });
 
 test('every part of every prop has a material the town has (the atlas, or its cut-out twin), and the groups are named for the beach', async () => {

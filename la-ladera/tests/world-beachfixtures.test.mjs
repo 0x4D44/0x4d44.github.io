@@ -13,7 +13,7 @@ import { buildOccupancy } from '../js/world/occupancy.js';
 import { makeKit } from '../js/world/kit.js';
 import { walkable } from '../js/world/nav.js';
 import { buildBeach } from '../js/world/beach.js';
-import { planFront } from '../js/world/beachfront.js';
+import { planFront, PIER } from '../js/world/beachfront.js';
 import { DECK_Z, STAIR_FLIGHT } from '../js/world/coast.js';
 
 const SAB = process.env.BX_SABOTAGE ?? '';
@@ -86,8 +86,11 @@ test('walk: the kernel stops a walker at a kiosk, a hut, the lifeguard tower, th
   blocked(at(plan, pal.x - 3.4, pal.z - 2.4), at(plan, pal.x + 3.4, pal.z - 2.4), 'a palapa\'s posts');
   assert.ok(walkable(P, at(plan, -95, 104), at(plan, 95, 104)), 'the deck\'s lane is clear from end to end');
   for (const a of plan.coast.accesses) {
-    const wl = plan.coast.shoreZ(a.x);
-    for (const [z0, z1] of [[DECK_Z - 5, 114], [114, 130], [130, wl + 0.3]]) assert.ok(walkable(P, at(plan, a.x, z0), at(plan, a.x, z1)), `${a.id}: the kernel could not walk (${a.x}, ${z0}) -> (${a.x}, ${z1.toFixed(1)})`);
+    const wl = plan.coast.shoreZ(a.x), axis = Math.abs(a.x - PIER.x) < 0.01, bx = a.x - 3.2, lx = a.x - 6;
+    // (the axis stair is the pier's way on: its middle is the pier's deck, a floor over the stair's head, so that stair is walked down beside the pier and then out along the sand to a lane the
+    //  loungers leave open; every other access is walked straight down its middle)
+    const legs = axis ? [[bx, DECK_Z - 5, bx, 114], [bx, 114, lx, 114], [lx, 114, lx, 130], [lx, 130, lx, wl + 0.3]] : [[a.x, DECK_Z - 5, a.x, 114], [a.x, 114, a.x, 130], [a.x, 130, a.x, wl + 0.3]];
+    for (const [x0, z0, x1, z1] of legs) assert.ok(walkable(P, at(plan, x0, z0), at(plan, x1, z1)), `${a.id}: the kernel could not walk (${x0}, ${z0}) -> (${x1}, ${z1.toFixed(1)})`);
   }
 });
 
