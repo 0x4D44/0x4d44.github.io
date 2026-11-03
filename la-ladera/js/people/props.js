@@ -2,6 +2,7 @@
 // Props are tiny shared meshes; their orientation is authored in the glTF character frame (up +Y, forward -Z, the character's right +X) at the REST pose
 // and parented to a bone, so every clip carries them (rig.js attachOriented).
 import * as THREE from 'three';
+import { idleWeight } from './carriage.js';
 
 const mats = {}, geos = {};
 const mat = (k, color, rough = 0.85) => (mats[k] ??= new THREE.MeshStandardMaterial({ color, roughness: rough }));
@@ -39,6 +40,8 @@ function makeBasket() {
  * samples one black texel (the left half). Local frame: the screen faces +Y, the top edge points to -Z.
  */
 const PHONE_ATLAS = 32;
+/** How hard the screen glows (R3-205 reported a large bright white phone in a walker's hand at night; it was 0.85). */
+export const PHONE_GLOW = 0.55;
 function phoneBox() {
   const b = new THREE.BoxGeometry(0.072, 0.009, 0.150), uv = b.attributes.uv;           // faces in the order +x -x +y -y +z -z, four vertices each
   for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; if (f === 2) uv.setXY(i, 0.5 + 0.5 * uv.getX(i), uv.getY(i)); else uv.setXY(i, 0.25, 0.5); }
@@ -53,7 +56,7 @@ function phoneMat() {
       base.set(screen ? dim : body, i); base[i + 3] = 255; glow.set(screen ? lit : [0, 0, 0], i); glow[i + 3] = 255;
     }
     const tex = (d) => { const t = new THREE.DataTexture(d, W, W); t.colorSpace = THREE.SRGBColorSpace; t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; };
-    return new THREE.MeshStandardMaterial({ map: tex(base), emissiveMap: tex(glow), emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.35 });
+    return new THREE.MeshStandardMaterial({ map: tex(base), emissiveMap: tex(glow), emissive: 0xffffff, emissiveIntensity: PHONE_GLOW, roughness: 0.35 });
   })());
 }
 function makePhone() {
@@ -62,7 +65,7 @@ function makePhone() {
   return g;
 }
 
-/** Orientation of a prop whose screen faces `n` and whose top edge points along `t` (both in the character frame, any length, about at right angles). */
+/** Orientation of a prop whose screen faces `n` and whose top edge points along `t` (both in the character frame, any length, about at right angles). `n` wins: the top edge is the part of `t` at right angles to it. */
 const facing = (n, t) => {
   const y = new THREE.Vector3(...n).normalize(), z = new THREE.Vector3(...t).normalize().negate(), x = new THREE.Vector3().crossVectors(y, z).normalize();
   z.crossVectors(x, y);
@@ -79,13 +82,25 @@ export const PROPS = {
   basket: { bone: 'chest', make: makeBasket, pos: [0, -0.25, -0.30], quat: () => new THREE.Quaternion() },
   // R3-004: nobody carried a phone, so the `phone` act read as "hands up". Two grips (authored at the clip phase t = 0 of the clip they belong to; sit_phone uses the same arms as phone_stand, so `phone` fits both):
   phone:     { bone: 'hand_r', make: makePhone, pos: [-0.095, 0.045, -0.068], quat: () => facing([0, 0.74, 0.67], [0, 0.67, -0.74]), pose: { clip: 'phone_stand', t: 0 }, fit: true },   // texting: cradled between both hands, screen up and back to the face
-  phone_ear: { bone: 'hand_r', make: makePhone, pos: [-0.065, 0.105, 0.094], quat: () => facing([-0.99, 0.14, 0], [0.14, 0.97, 0.2]), pose: { clip: 'phone_call', t: 0 }, fit: true },        // a call: held to the right ear (the head is tilted towards it)
+  phone_ear: { bone: 'hand_r', make: makePhone, pos: [-0.075, 0.080, 0.064], quat: () => facing([-0.99, -0.14, 0], [-0.14, 0.99, 0.2]), pose: { clip: 'phone_call', t: 0 }, fit: true },     // a call: held to the right ear; R3-205: the fist closes on its lower half and the top edge leans in to the head (the screen then faces a little down), which leans to meet it (carriage.js poseCall)
 };
 
 /** The clip that shows a phone in the hand, and which phone prop goes with it. */
 export const CLIP_PROP = { phone_stand: 'phone', phone_call: 'phone_ear', sit_phone: 'phone' };
 /** What a person holds while `clip` plays: what the brain gave them (broom, bundle, basket) or the phone their clip needs. */
 export const propFor = (npc, clip) => npc.prop ?? CLIP_PROP[clip] ?? null;
+/** How far a phone clip's crossfade must have come before its phone shows. */
+export const PHONE_UP = 0.5;
+/**
+ * R3-205: `holdProp` puts the phone in the hand the moment the clip is chosen, but for the first part of the 0.25 s crossfade the hand is still down in the walk, and a lit slab hung at the hip of
+ * someone walking read as a large bright phone. The phone of a phone clip shows once that clip is half in; anything else a person holds (a bundle, a broom) is left alone. Call right after the
+ * mixer update. Returns whether the held phone shows (true when there is none to gate).
+ */
+export function showPhone(inst, clip) {
+  const p = inst.props?.get('main');
+  if (!p || CLIP_PROP[clip] !== inst.propName) return true;
+  return (p.visible = idleWeight(inst, clip) >= PHONE_UP);
+}
 /** The clip for the `phone` act: seated people text; two in five of the standing ones hold the phone to the ear, the rest text (the same person always does the same: npc.jit is fixed at birth). */
 export const phoneClip = (npc, seated, hasCall = true) => seated ? 'sit_phone' : hasCall && (npc.jit?.[1] ?? 0.5) < 0.4 ? 'phone_call' : 'phone_stand';
 /** The clip for the `sell` act: a seller with a basket on the arm stands holding it; the others show their open hand to the customer. */

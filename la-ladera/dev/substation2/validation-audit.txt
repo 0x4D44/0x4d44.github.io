@@ -1,0 +1,73 @@
+Substation validation audit, 2026-11-03
+
+Fresh acceptance runtime: Node v22.16.0. All commands imported the existing
+tests/nice.mjs priority wrapper with LADERA_PRIO=idle. No window, mouse or
+speaker interaction was used.
+
+Saved exact command output:
+  validation.txt  --complete independent binary validator
+  tests.txt       37 named Node test cases; 37 passed, zero failures/skips
+  mutations.txt   37 deliberate input mutations; 37 named test failures
+  payload.txt     unchanged repository payload.mjs; PAYLOAD OK
+  runtime-audit.txt Node version, observed idle priority, current file hashes
+  commands.txt    exact acceptance commands and successful exit codes
+
+The mutation runner verifies that the exact named test ran and failed, with
+status 1 and an assertion/descriptive input error. Crashes, timeouts, spawn
+errors and absent test output cannot count as killed mutations. Node 22 uses
+--experimental-test-isolation=none so the TAP output contains actual cases.
+
+Measured release gates:
+  59 near roots plus 59 LOD1 roots, independently decoded from GLB binary data
+  Models, materials, yard plan and manifest: 3,115,422 / 4,500,000 bytes
+  Three shared atlas channels on disk:      3,884,196 / 8,000,000 bytes
+  Conservative RGBA8 plus mip GPU estimate:33,554,432 /40,000,000 bytes
+  Largest near piece: 5,644 triangles; only the 132/33 kV transformer may
+    exceed 3,000 triangles, with a 6,000-triangle limit
+  Largest LOD/near ratio: 34.88%, below the unchanged 40% limit
+
+The validator checks GLB container/accessor ranges, finite values, actual
+indices, nondegenerate outward winding relative to normals, unit normals,
+material and UV-tile assignments, upright sign UVs, transformed vertex bounds,
+scene-root coverage, actual per-instance triangle counts, LOD ratios, sharing,
+file checksums, stale payloads, PNG CRCs and raster sizes, dimensions, byte/GPU
+budgets, catalogue anchor structure and yard-data references/visual clearances.
+The fixed required-item list is independent of the mutable catalogue.
+
+Read-only audit outside the automatic validator:
+  All 118 manifest anchors/keepOut records exactly match their catalogue data.
+  All three texture byte lengths and SHA-256 records in materials.json match
+    the actual PNG files.
+  Git diff against base 017eab90a749d317f181872aa620b5facaea06f8 shows no
+    changes in la-ladera/js or the production model/texture manifest files.
+
+Scope and limitations to preserve in the PR:
+  - This is an offline asset/data release. No game integration, first-person
+    walk-through, hardware frame-time/draw-call measurement, live audio,
+    door animation, collision navigation or runtime LOD transition was tested.
+  - The yard checks selected phase spacing, bund size, perimeter heights,
+    placement bounds and catenary crossings. They do not certify electrical,
+    fire, structural or environmental engineering; the plan explicitly says
+    the clearances are plausible and not engineering-certified.
+  - Bounds are measured from binary geometry and checked against manifest
+    bounds and authored metre envelopes. These checks cannot establish that
+    every named equipment feature is visually convincing or mechanically
+    connected. Contact-sheet/overview inspection is a separate review.
+  - PNG validation checks format, integrity, dimensions and allocation size.
+    It does not perform OCR, assess lettering legibility or certify material
+    appearance. Sign orientation checks detect vertical inversion, not every
+    possible visual error.
+  - Anchor validation checks the required data shape and 100 Hz hum value;
+    it does not simulate hinges, prove lamp placement or validate navigation
+    around every polygon. The automatic gate does not compare the duplicate
+    manifest anchor records with the catalogue or enforce materials.json's
+    optional texture checksum records; the read-only audit above verified
+    their consistency for this release.
+  - The local GLB checker is an independent release validator for this static
+    core-glTF pipeline, not the Khronos conformance suite or a browser renderer.
+
+No tests, limits or implementation files were changed during this fresh
+acceptance run. Tests, mutations and payload checks used working execution
+permissions because the sandbox had previously returned false-empty output.
+Every saved acceptance log contains real non-empty output. The runtime audit
+observed Unix priority 19 with LADERA_PRIO=idle and Node v22.16.0.

@@ -58,10 +58,16 @@ span.dp-cause, span.dp-effect { font-weight: 600; }
 /* explain builder */
 .dp-xq { font-weight: 700; margin: .4em 0; }
 .dp-xrow { border: 2px solid var(--line); background: var(--paper); padding: 8px 10px; margin: 8px 0; border-radius: 2px; }
-.dp-xrow label { display: grid; gap: 2px; margin: 4px 0; font-size: .85rem; }
-.dp-xrow select { width: 100%; font: .88rem var(--font-body); }
+.dp-xin { display: block; width: 100%; margin: 4px 0 2px; font: .95rem/1.45 var(--font-body); padding: 6px 8px; resize: vertical; }
+/* the poster sits beside the answer boxes on a wide screen, and above them on a phone */
+.dp-xgrid { display: grid; grid-template-columns: minmax(150px, 240px) minmax(0, 1fr); gap: 14px; align-items: start; margin-top: 8px; }
+.dp-xposter { margin: 0; position: sticky; top: 12px; }
+@media (max-width: 620px) { .dp-xgrid { grid-template-columns: minmax(0, 1fr); } .dp-xposter { position: static; max-width: 260px; margin: 0 auto; } }
+.dp-xsample-box { margin: 8px 0; }
+.dp-xsample-box summary { cursor: pointer; font-weight: 700; }
+.dp-xsamples { margin: 6px 0 0; padding-left: 1.2em; }
+.dp-xsamples li { margin: 4px 0; }
 .dp-xlab { font: 700 .85rem var(--font-mono); color: var(--gold); margin: 0; }
-.dp-xsent { margin: 6px 0 2px; font-size: .95rem; }
 .dp-xres { margin: 2px 0 0; font-size: .9rem; }
 
 /* grid builder */

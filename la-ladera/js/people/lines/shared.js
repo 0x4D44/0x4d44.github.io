@@ -220,7 +220,7 @@ export default {
     ['Viendo la novela, pero dígame. ¿Qué se le ofrece?', 'Watching my soap opera, but tell me. What can I do for you?'],
     ['Estaba mirando el noticiero. Siéntese si quiere.', 'I was watching the news. Sit down if you like.'],
     ['Le bajo al televisor. Dígame.', "Let me turn the TV down. Tell me."],
-    ['Aquí, viendo el partido. ¿Usted es del Nacional o del Millonarios?', "Here, watching the match. Are you for Nacional or for Millonarios?"],
+    ['Aquí, viendo el partido. ¿Usted es del Nacional o de Millonarios?', "Here, watching the match. Are you for Nacional or for Millonarios?"],
   ],
   act_homework: [
     ["Estoy haciendo la tarea. ¡No me distraiga, que me falta mucho!", "I'm doing my homework. Don't distract me, I've got loads left!", { age: ['kid', 'teen'] }],

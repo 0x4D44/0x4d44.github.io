@@ -3,7 +3,8 @@
 // Vanilla JS. No framework. Handles search / filter / group / sort /
 // layout state and renders the listing into #listing. State persists to
 // localStorage (the live search query and the open-shelf drill-in are
-// deliberately transient — reload lands on the shelf tiles).
+// deliberately transient — reload lands on the shelf tiles). Coming back
+// from a document puts the last view (shelf, search, scroll) back.
 // ============================================================
 
 (function () {
@@ -515,6 +516,40 @@
     });
   }
 
+  // ---------- return view ----------
+  // Leaving the page saves the view to sessionStorage. Coming back by the
+  // "← Almanac" pill (almanac-back.js sets RETURN_FLAG on click) or by a Back
+  // that reloads the page restores it. A reload or a fresh visit does not.
+  const VIEW_KEY = "0x4d44.listing.view";
+  const RETURN_FLAG = "0x4d44.listing.return";
+  function saveView() {
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ y: window.scrollY, openShelf, query })); } catch (_) {}
+  }
+  function takeReturnView() {
+    let view = null;
+    try {
+      const flagged = sessionStorage.getItem(RETURN_FLAG) === "1";
+      sessionStorage.removeItem(RETURN_FLAG);
+      const nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+      if (flagged || (nav && nav.type === "back_forward")) view = JSON.parse(sessionStorage.getItem(VIEW_KEY) || "null");
+    } catch (_) { view = null; }
+    return view && typeof view === "object" ? view : null;
+  }
+  function restoreScroll(y) {
+    try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (_) {}
+    const go = () => { try { window.scrollTo({ top: y, behavior: "instant" }); } catch (_) { window.scrollTo(0, y); } };
+    go();
+    // Fonts and images can still grow the page after this first pass: re-apply
+    // once they settle, unless the reader has started scrolling.
+    let moved = false;
+    ["wheel", "touchstart", "keydown", "mousedown"].forEach(t =>
+      window.addEventListener(t, () => { moved = true; }, { once: true, passive: true }));
+    const again = () => { if (!moved) go(); };
+    if (document.readyState === "complete") requestAnimationFrame(again);
+    else window.addEventListener("load", again, { once: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(again);
+  }
+
   // ---------- init ----------
   document.addEventListener("DOMContentLoaded", function () {
     if (collections.length) {
@@ -526,6 +561,14 @@
     buildControls();
     wireStats();
     wireRecent();
+    const view = takeReturnView();
+    if (view) {
+      if (typeof view.openShelf === "string" && collections.some(c => c.id === view.openShelf)) openShelf = view.openShelf;
+      const box = document.getElementById("search-input");
+      if (typeof view.query === "string" && view.query && box) { query = view.query; box.value = query; }
+    }
     render();
+    if (view && Number.isFinite(view.y) && view.y > 0) restoreScroll(view.y);
+    window.addEventListener("pagehide", saveView);
   });
 })();

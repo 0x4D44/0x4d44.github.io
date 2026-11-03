@@ -18,7 +18,6 @@
   --navy-2: #8a4210;
   --sky: #d9a04f;
   --lode: #b04a12;
-  --grid: rgba(138,66,16,.16);
   --redstone: #b3261e;
   --redstone-glow: #ff4b3a;
   --grass: #3f7426;
@@ -46,7 +45,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #14161c; --paper-2: #1b1e26; --card: #1f232c; --ink: #ece6d6; --ink-2: #cfc6b2;
-    --muted: #a59c88; --line: #3a3f4c; --navy: #26110a; --navy-2: #6e3612; --sky: #f0b878; --lode: #ffa062; --grid: rgba(240,184,120,.12);
+    --muted: #a59c88; --line: #3a3f4c; --navy: #26110a; --navy-2: #6e3612; --sky: #f0b878; --lode: #ffa062;
     --redstone: #ff6a5c; --grass: #8cc96a; --dirt: #c79a6c; --gold: #e6bf55; --sea: #5fb6cc;
     --code-bg: #0f1116; --focus: #7fb2ff; --shadow: 0 2px 0 rgba(0,0,0,.5);
     color-scheme: dark;
@@ -54,7 +53,7 @@
 }
 :root[data-theme="dark"] {
   --paper: #14161c; --paper-2: #1b1e26; --card: #1f232c; --ink: #ece6d6; --ink-2: #cfc6b2;
-  --muted: #a59c88; --line: #3a3f4c; --navy: #26110a; --navy-2: #6e3612; --sky: #f0b878; --lode: #ffa062; --grid: rgba(240,184,120,.12);
+  --muted: #a59c88; --line: #3a3f4c; --navy: #26110a; --navy-2: #6e3612; --sky: #f0b878; --lode: #ffa062;
   --redstone: #ff6a5c; --grass: #8cc96a; --dirt: #c79a6c; --gold: #e6bf55; --sea: #5fb6cc;
   --code-bg: #0f1116; --focus: #7fb2ff; --shadow: 0 2px 0 rgba(0,0,0,.5);
   color-scheme: dark;
@@ -65,10 +64,7 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0; color: var(--ink);
-  /* drawing-office dot paper: the engineering deck's page, a rivet-dot every 24px */
-  background:
-    radial-gradient(circle at center, var(--grid) 0 1.3px, transparent 1.6px) 0 0 / 24px 24px,
-    var(--paper);
+  background: var(--paper);
   font: 17px/1.62 var(--font-body);
   overflow-wrap: break-word;
 }

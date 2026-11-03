@@ -51,6 +51,15 @@
       '<a href="/" aria-label="Back to the 0x4D44 almanac" title="Back to the almanac">' +
       '<span class="x" aria-hidden="true">←</span>Almanac</a>';
 
+    // Flag the return so the almanac restores the view it saved on the way
+    // out (open shelf, search, scroll) instead of landing at the top. app.js
+    // reads and clears this key; a modified click opens a new tab and skips it.
+    var link = root.querySelector("a");
+    link.addEventListener("click", function (ev) {
+      if (ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      try { sessionStorage.setItem("0x4d44.listing.return", "1"); } catch (_) {}
+    });
+
     (document.body || document.documentElement).appendChild(host);
   }
 

@@ -326,3 +326,5 @@ export function seatOffsets(c) {
   for (let i = 0; i < n; i++) out.push(n === 1 ? 0 : -span / 2 + span * (i + 0.5) / n);
   return out;
 }
+/** How far behind the middle of a seat (item-local z) its sitter's anchor is: a sofa's and an armchair's sit back in the cushion, a school desk's seat is 0.1 m behind. */
+export const seatZoff = (c) => (c.arch === 'sofa' || c.arch === 'armchair' ? -0.12 : c.arch === 'pupitre' ? -0.1 : 0);

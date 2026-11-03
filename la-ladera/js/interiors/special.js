@@ -5,6 +5,7 @@ import { opposite, wallInfo, wallPoint, mkObb } from './layout.js';
 import { decalDef } from './decals.js';
 import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM, fillBeds, householdPlaces, seatTable, tablePoses } from './rooms.js';
 import { art, clock, own } from './decor.js';
+import { householdKey } from './household.js';
 import { SHOP_FITOUTS } from './shops.js';
 import { chapelFurnish } from '../arch/chapel_interior.js';
 
@@ -208,16 +209,64 @@ export function studio(L, E, hh) {
   fillMin(L, E, hh, 8);
 }
 
-/** Rooms of an unfinished building ("obra negra") without a finished interior: stacks of materials and a camp bed. */
+/**
+ * Does `room` (a raw room of an unfinished house) take its household's camp beds? The households of such a house sleep in its raw rooms: the plan has no bedroom on the street floor, and the
+ * second family's one room is a raw bedroom upstairs (R4-709: ten houses of the barrio had no bed in them, and the mattress a store room drew by chance was nobody's). So a household that owns no
+ * finished bedroom (`E.bedroomCount`) camps in its raw bedrooms, in each of them as many as it still lacks; a household with no raw bedroom camps in its living room, else its hall.
+ */
+export function takesCamp(E, hh, room) {
+  if (E.bedroomCount(hh) > 0) return false;
+  const mine = (E.bp.rooms ?? []).filter((r) => !r.outdoor && r.floor > 0 && householdKey(E.bp, r) === hh.id);          // (the raw rooms indoors that are the household's: a room on the street floor or open to the sky is none of them)
+  for (const type of ['bedroom', 'living', 'hall']) { const rooms = mine.filter((r) => r.type === type); if (rooms.length) return rooms.some((r) => r.id === room.id) && (type === 'bedroom' || rooms[0].id === room.id); }
+  return false;
+}
+/**
+ * The camp beds of a household in this room: a mattress on the floor for each sleeping place it still lacks (`householdPlaces`), as many as the room has floor for. The count camped so far is the
+ * household's own (`E.state`). Corner first, head to the wall: a room 2 m across then takes two side by side (corner first gave 57 of the 93 places the 24 households of the barrio's raw houses
+ * are owed, a mattress where the wall's middle happened to be 52).
+ */
+function campBeds(L, E, hh) {
+  const st = E.state(hh), owed = householdPlaces(hh) - (st.camped ?? 0);
+  let placed = 0;
+  for (let k = 0; k < owed; k++) {
+    const mat = (o) => any(() => L.wall('mattress_floor', 'any', { prio: 0, at: 'corner', ...o, along: false }), () => L.wall('mattress_floor', 'any', { prio: 0, at: 'corner', ...o, along: true }),
+      () => L.wall('mattress_floor', 'any', { prio: 0, ...o, along: false }), () => L.wall('mattress_floor', 'any', { prio: 0, ...o, along: true }));
+    const b = any(() => mat({ awayDoors: true, connAll: true }), () => mat({ awayDoors: true }), () => mat({}));
+    if (!b) break;
+    b.flags = { unmade: true };                                                          // (a camp bed is not made up)
+    placed++;
+  }
+  st.camped = (st.camped ?? 0) + placed;
+  return placed;
+}
+
+const SITE_MATERIALS = ['cement_sacks', 'cement_sacks', 'paint_cans_stack', 'wheelbarrow', 'bucket_big', 'box_cardboard_l', 'pipes_bundle', 'tire_stack'];
+/**
+ * Rooms of an unfinished building ("obra negra") without a finished interior (a floor above the street, the open deck): what each room is USED for, `L.use` (index.js puts it in the interior
+ * record; the plan's own type, bedroom or bathroom, stays what A2 drew): 'camp' where a household sleeps (its camp beds first, `takesCamp`), 'store' for the rest of the rooms indoors (cement,
+ * paint and tools: a bathroom of bare concrete holds no toilet), 'obra' for the open deck. A raw living room, hall or camp has a seat; a raw bathroom none.
+ */
 export function construction(L, E, hh) {
-  const rng = L.rng;
-  for (const n of ['cement_sacks', 'cement_sacks', 'paint_cans_stack', 'wheelbarrow', 'bucket_big', 'box_cardboard_l', 'pipes_bundle', 'tire_stack']) {
+  const rng = L.rng, indoor = !L.room.outdoor, type = L.room.type;
+  L.use = indoor ? 'store' : 'obra';
+  if (indoor && takesCamp(E, hh, L.room) && campBeds(L, E, hh)) L.use = 'camp';
+  for (const n of SITE_MATERIALS) {
     if (rng.chance(0.75)) L.wall(n, 'any', { prio: 2, at: rng.chance(0.5) ? 'corner' : 'any', jitter: 1 });
   }
-  if (!L.room.outdoor && rng.chance(0.6)) { const b = L.wall('mattress_floor', 'any', { prio: 2 }); if (b) b.flags = { unmade: true }; L.wall('chair_plastic', 'any', { prio: 2 }); }
-  if (!L.room.outdoor) { L.ceil('bulb_bare', (L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2); L.fixture = { x: (L.r.x0 + L.r.x1) / 2, z: (L.r.z0 + L.r.z1) / 2, kind: 'bulb', color: 0xffd9a0, i: 5, d: 6 }; }
-  L.wall('radio_boombox', 'any', { prio: 2 }); L.free('shoes_pair', { rad: 3, prio: 2 });
+  if (indoor) rng.chance(0.6);                                                           // (the draw the store rooms made for a mattress and a chair: the rest of their stream stays as it was)
+  if (indoor) { L.ceil('bulb_bare', (L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2); L.fixture = { x: (L.r.x0 + L.r.x1) / 2, z: (L.r.z0 + L.r.z1) / 2, kind: 'bulb', color: 0xffd9a0, i: 5, d: 6 }; }
+  if (type !== 'bathroom') { L.wall('radio_boombox', 'any', { prio: 2 }); L.free('shoes_pair', { rad: 3, prio: 2 }); }
   fillMin(L, E, hh, 4);
+  if (indoor && (L.use === 'camp' || type === 'living' || type === 'hall')) siteSeat(L);
+}
+/**
+ * The seat of a raw room that people sit or sleep in: a plastic chair or a stool, put in LAST, where a person can walk up to it. Put in first it was walled in by the sacks and cans that came after it, and
+ * `heal()` drops a seat that is walled in (R4-709: the raw living rooms of L22, L37, L59, L67, L79 and L105 had none). Where the materials left it no wall, they give way, the last put down first.
+ */
+function siteSeat(L) {
+  const seat = () => { for (const o of [{ awayDoors: true, connAll: true }, { awayDoors: true }, {}]) { const s = any(() => L.wall('chair_plastic', 'any', { prio: 1, ...o }), () => L.wall('stool_wood', 'any', { prio: 1, ...o })); if (s) return s; } return null; };
+  if (seat()) return;
+  for (const m of L.items.filter((i) => i.floor && SITE_MATERIALS.includes(i.name)).reverse()) { L.remove(m); if (seat()) return; }
 }
 
 // ---------------------------------------------------------------- the rest of a school (the lead's round-4 list: 'furnishing follows the replans')

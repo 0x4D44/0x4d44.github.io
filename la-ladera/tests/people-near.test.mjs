@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { readAssetJson } from './headless.mjs';
 import { CharacterLibrary, SKIN_ALPHA, SKIN_FILL, SKIN_MOOD, skinFillChunk, skinMood, patchSkinFill } from '../js/people/rig.js';
-import { CARRIAGES, STRAIGHT_ARMED, STRAIGHT_FLEX, carriageOf, poolFor, applyArm, poseIdle, clearCarriage } from '../js/people/carriage.js';
+import { CARRIAGES, STRAIGHT_ARMED, STRAIGHT_FLEX, CALL_TILT, carriageOf, poolFor, applyArm, poseIdle, poseCall, clearCarriage } from '../js/people/carriage.js';
 
 const META = await readAssetJson('people/people_meta.json');
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
@@ -129,8 +129,9 @@ function rig(seed = 1) {
     hips: [0, 1, 0], spine: [0, 1.2, 0], chest: [0, 1.35, 0],
     clavicle_l: [-0.05, 1.45, 0], upperarm_l: [-0.2, 1.42, 0], forearm_l: [-0.22, 1.13, 0], hand_l: [-0.23, 0.87, 0],
     clavicle_r: [0.05, 1.45, 0], upperarm_r: [0.2, 1.42, 0], forearm_r: [0.22, 1.13, 0], hand_r: [0.23, 0.87, 0],
+    head: [0, 1.6, 0],                                                                  // (last, so the bones above keep their draws of the generator)
   };
-  const parent = { spine: 'hips', chest: 'spine', clavicle_l: 'chest', upperarm_l: 'clavicle_l', forearm_l: 'upperarm_l', hand_l: 'forearm_l', clavicle_r: 'chest', upperarm_r: 'clavicle_r', forearm_r: 'upperarm_r', hand_r: 'forearm_r' };
+  const parent = { spine: 'hips', chest: 'spine', clavicle_l: 'chest', upperarm_l: 'clavicle_l', forearm_l: 'upperarm_l', hand_l: 'forearm_l', clavicle_r: 'chest', upperarm_r: 'clavicle_r', forearm_r: 'upperarm_r', hand_r: 'forearm_r', head: 'chest' };
   for (const name of Object.keys(want)) {
     const b = new THREE.Bone(); b.name = name; const p = parent[name];
     const pq = p ? cum[p] : new THREE.Quaternion(), pp = p ? new THREE.Vector3(...want[p]) : new THREE.Vector3();
@@ -223,6 +224,58 @@ test('the crossfade eases the carriage in and out with the idle clip\'s weight (
   assert.ok(seen.at(-1).d < 0.02, 'and is gone when the walk has taken over: ' + seen.at(-1).d);
 });
 
+// ---- R3-205: the head on a call ------------------------------------------------------------------------------------------------------------------------------
+/** `standing`, plus the two phone clips. They lift the forearms and, like the built clips, leave the head to the rest pose (no track: the mixer never writes it). */
+function calling(seed = 3) {
+  const { inst, lib } = standing(seed), up = (name) => new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, [0, 1], [...rot(X, 80).toArray(), ...rot(X, 80).toArray()]);
+  lib.clips.set('phone_call', new THREE.AnimationClip('phone_call', 1, [up('forearm_r')]));
+  lib.clips.set('phone_stand', new THREE.AnimationClip('phone_stand', 1, [up('forearm_r'), up('forearm_l')]));
+  return { inst, lib };
+}
+const headQ = (inst) => inst.bones.head.quaternion.clone(), headWorld = (inst) => (inst.obj.updateMatrixWorld(true), inst.bones.head.getWorldQuaternion(new THREE.Quaternion()));
+/** The turn between two orientations as { angle (rad), up: where the top of the head went (the character's frame) }; world orientations, `inst.obj` standing at the origin. */
+const lean = (from, to) => { const d = to.clone().multiply(from.clone().invert()); return { angle: 2 * Math.atan2(Math.hypot(d.x, d.y, d.z), Math.abs(d.w)), up: new THREE.Vector3(0, 1, 0).applyQuaternion(d) }; };
+
+test('poseCall: the head of someone on a call leans toward the phone (the right shoulder) by the call clip\'s weight, and only then; clearCarriage puts it back exactly', () => {
+  const { inst, lib } = calling(); lib.play(inst, 'idle_a', { fade: 0 }); inst.mixer.update(1 / 60);
+  const rest = headWorld(inst), h0 = headQ(inst);
+  assert.equal(poseCall(inst), false, 'standing idle: no call, no lean'); assert.ok(drift([headQ(inst)], [h0]) < 1e-12);
+  lib.play(inst, 'phone_call', { fade: 0 }); inst.mixer.update(1 / 60);
+  assert.equal(poseCall(inst), true);
+  const full = lean(rest, headWorld(inst));
+  assert.ok(Math.abs(full.angle - CALL_TILT * RAD) < 1e-9, `the whole weight leans the head ${CALL_TILT} degrees: ${(full.angle / RAD).toFixed(3)}`);
+  assert.ok(full.up.x > 0.15 && Math.abs(full.up.z) < 1e-9, 'the top of the head goes toward +X (the right shoulder, the phone\'s side) and neither forward nor back: ' + full.up.toArray().map((v) => v.toFixed(3)));
+  clearCarriage(inst); assert.ok(drift([headQ(inst)], [h0]) < 1e-9, 'put back exactly as the mixer left it');
+  // the crossfade from the idle to the call eases the lean in with the call's own weight, and the one to the walk eases it out
+  const seen = [], frame = () => { clearCarriage(inst); inst.mixer.update(1 / 60); const w = inst.actions.get('phone_call').getEffectiveWeight(); poseCall(inst); seen.push({ w, a: lean(rest, headWorld(inst)).angle / RAD }); };
+  lib.play(inst, 'idle_a', { fade: 0 }); clearCarriage(inst); inst.mixer.update(1 / 60); lib.play(inst, 'phone_call', { fade: 0.25 });
+  for (let i = 0; i < 20; i++) frame();
+  for (const s of seen) assert.ok(Math.abs(s.a - CALL_TILT * s.w) < 1e-6, `the lean is the call's weight (${s.w.toFixed(3)}) of ${CALL_TILT} degrees: ${s.a.toFixed(3)}`);
+  assert.ok(seen[0].a < 0.3 * CALL_TILT && seen.at(-1).a > 0.99 * CALL_TILT, `it eases in: ${seen[0].a.toFixed(2)} to ${seen.at(-1).a.toFixed(2)} degrees`);
+  seen.length = 0; lib.play(inst, 'walk', { fade: 0.25 }); for (let i = 0; i < 20; i++) frame();
+  for (let i = 1; i < seen.length; i++) assert.ok(seen[i].a <= seen[i - 1].a + 1e-9, 'it only fades');
+  assert.ok(seen.at(-1).a < 1e-6, 'and is gone when the walk has taken over: ' + seen.at(-1).a); assert.equal(poseCall(inst), false, 'a walker is not on a call');
+  const none = { bones: {}, obj: new THREE.Group(), actions: new Map() }; assert.equal(poseCall(none), false, 'no head bone, no clip: not an error');
+});
+
+test('poseCall: the frame loop leaves the head where the first frame put it; without the clear a head the clip never writes piles the lean up; and with poseIdle in the same frame the clear gives back the arms too', () => {
+  const { inst, lib } = calling(4); lib.play(inst, 'phone_call', { fade: 0 });
+  const frame = () => { clearCarriage(inst); inst.mixer.update(1 / 60); return poseCall(inst); };
+  assert.equal(frame(), true); const first = headWorld(inst);
+  for (let i = 0; i < 60; i++) frame();
+  assert.ok(lean(first, headWorld(inst)).angle < 1e-9, 'sixty frames later: ' + lean(first, headWorld(inst)).angle);
+  const { inst: bad, lib: lib2 } = calling(4); lib2.play(bad, 'phone_call', { fade: 0 });
+  bad.mixer.update(1 / 60); poseCall(bad); const b1 = headWorld(bad); for (let i = 0; i < 10; i++) { bad.mixer.update(1 / 60); poseCall(bad); }
+  assert.ok(lean(b1, headWorld(bad)).angle > 0.5, 'without clearCarriage the lean is put on again every frame: ' + (lean(b1, headWorld(bad)).angle / RAD).toFixed(0) + ' degrees');
+  // the crossfade from the idle to a call has both layers on: poseIdle remembers the bones, poseCall must not remember them a second time (they are turned by then)
+  const { inst: both, lib: lib3 } = calling(5), all = () => [...qs(both), headQ(both)], id = Array.from({ length: 85 }, (_, i) => 'n' + (i + 1)).find((x) => carriageOf(x, 'm_don').name === 'hands together');
+  lib3.play(both, 'idle_a', { fade: 0 }); both.mixer.update(1 / 60); lib3.play(both, 'phone_call', { fade: 0.25 });
+  for (let i = 0; i < 6; i++) { clearCarriage(both); both.mixer.update(1 / 60); }
+  const mixed = all(); assert.equal(poseIdle(both, id), true); assert.equal(poseCall(both), true);
+  assert.ok(drift(mixed.slice(0, 4), qs(both)) > 0.01, 'the arms are carried'); assert.ok(drift([mixed[4]], [headQ(both)]) > 0.01, 'and the head leans');
+  clearCarriage(both); const back = all(); assert.ok(drift(mixed, back) < 1e-12, 'back exactly, the arms and the head: ' + drift(mixed, back));
+});
+
 // ---- the world's frame loop ------------------------------------------------------------------------------------------------------------------------------
 test('the world: somebody who stands idle with empty hands keeps their own arms; seated, lying down, carrying something: the clip\'s (the old loop gave everybody the same pose)', async () => {
   const { PeopleWorld } = await import('../js/people/world.js');
@@ -243,4 +296,34 @@ test('the world: somebody who stands idle with empty hands keeps their own arms;
     const p = person(over); if (over.prop) p.inst.propName = 'basket';
     assert.ok(drift(run(p), plain) < 1e-9, `${what}: the arms are the clip's`);
   }
+});
+
+test('the world: a call leans the head and shows the phone once the arm is up, texting leans nothing, a carried bundle is left alone, a person who walks off drops the phone at once (R3-205)', async () => {
+  const { PeopleWorld } = await import('../js/people/world.js');
+  const person = (over = {}) => {
+    const { inst, lib } = calling(6); Object.assign(inst, { lod: 0, meta: { heightM: 1.7, walkSpeedMps: 1.2, walkFastSpeedMps: 2, runSpeedMps: 3 }, mesh: { castShadow: true }, propName: null, props: new Map() });
+    lib.attachOriented = (i, bone, prop, pos, quat, scale, tag) => { i.bones[bone].add(prop); i.props.set(tag, prop); return prop; };       // (the real one reads the built rig's rest pose)
+    inst.root = new THREE.Group(); inst.root.add(inst.obj);
+    lib.play(inst, 'idle_a', { fade: 0 });
+    const n = { id: 'n40', view: inst, dist: 6, st: { x: 0, y: 0, z: 0 }, ry: 0, sitH: null, lieH: null, item: null, mode: 'idle', act: 'idle', moving: false, carry: null, prop: null, idleVariant: 'idle_a', clipName: 'idle_a', talkVariant: false, mixAcc: 0, scene: false, visible: false, speed: 0, curSpeed: 0, jit: [0.5, 0.1, 0.5], rng: { next: () => 0.3 }, ...over };
+    return { inst, n, rest: headWorld(inst), world: { lib, _sph: new THREE.Sphere(), _frustum: new THREE.Frustum(), _clipFor: PeopleWorld.prototype._clipFor } };
+  };
+  const run = ({ n, world }, frames) => { for (let i = 0; i < frames; i++) PeopleWorld.prototype._syncView.call(world, n, 1 / 60); };
+  const tilt = (p) => lean(p.rest, headWorld(p.inst)).angle / RAD, phone = (p) => p.inst.props.get('main');
+  const call = person(); run(call, 10); assert.ok(tilt(call) < 1e-6 && !phone(call), 'idle: no phone in the hand, the head upright');
+  call.n.act = 'phone'; run(call, 1);
+  assert.equal(call.inst.propName, 'phone_ear', 'a call (jit 0.1) holds the phone at the ear'); assert.equal(phone(call).visible, false, 'but the phone is not there yet: the hand is still down in the idle');
+  assert.ok(tilt(call) < 0.2 * CALL_TILT, 'and the head has barely moved: ' + tilt(call).toFixed(2));
+  run(call, 5); assert.equal(phone(call).visible, false, 'a tenth of a second in (weight ' + call.inst.actions.get('phone_call').getEffectiveWeight().toFixed(2) + '): still not');
+  run(call, 5); assert.equal(phone(call).visible, true, 'past half way: the phone shows'); run(call, 20);
+  assert.ok(Math.abs(tilt(call) - CALL_TILT) < 1e-6, `the head leans the whole ${CALL_TILT} degrees: ${tilt(call).toFixed(3)}`);
+  run(call, 30); assert.ok(Math.abs(tilt(call) - CALL_TILT) < 1e-6, 'and stays there: ' + tilt(call).toFixed(3));
+  call.n.mode = 'walk'; call.n.moving = true; call.n.speed = call.n.curSpeed = 1.2; run(call, 1);
+  assert.equal(call.inst.propName, null, 'walking off: the phone goes at once'); assert.equal(phone(call), undefined);
+  run(call, 20); assert.ok(tilt(call) < 1e-6, 'and the head is upright again once the walk has taken over: ' + tilt(call).toFixed(3));
+  const text = person({ act: 'phone', jit: [0.5, 0.9, 0.5] }); run(text, 1);
+  assert.equal(text.inst.propName, 'phone'); assert.equal(phone(text).visible, false, 'texting: the phone waits for the hands too'); run(text, 20);
+  assert.equal(phone(text).visible, true); assert.ok(tilt(text) < 1e-6, 'and the head stays upright: ' + tilt(text).toFixed(3));
+  const bundle = person({ act: 'phone', prop: 'bundle' }); run(bundle, 1);
+  assert.equal(bundle.inst.propName, 'bundle'); assert.equal(phone(bundle).visible, true, 'what the brain hands out is never hidden');
 });

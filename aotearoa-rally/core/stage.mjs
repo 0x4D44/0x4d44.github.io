@@ -219,11 +219,14 @@ export function buildStage(id, opts = {}) {
     }
     return true;
   }
+  const ROCK_MESH_R = { boulder: [1.18, 1.43, 1.31, 1.06], limestone: [2.70, 2.62, 2.62], schist: [2.80, 2.88, 2.51] };
   function add(kind, x, z, o) {
     o = o || {};
     const info = PK[kind];
     const sc = o.scale ?? 1;
-    if (!placeOk(kind, x, z, info.r * sc, o.collide ?? !!info.c)) return null;
+    const variant0 = o.variant ?? Math.floor(hash2(Math.round(x * 7), Math.round(z * 7), seed + 9) * 4);
+    const mr = ROCK_MESH_R[kind] ? ROCK_MESH_R[kind][variant0 % ROCK_MESH_R[kind].length] * sc : info.r * sc; // rock colliders follow the visible mesh
+    if (!placeOk(kind, x, z, mr, o.collide ?? !!info.c)) return null;
     const y = o.y ?? heightAt(x, z);
     const collide = o.collide ?? !!info.c;
     const p = {
@@ -231,7 +234,7 @@ export function buildStage(id, opts = {}) {
       rot: o.rot ?? hash2(Math.round(x * 10), Math.round(z * 10), seed + 5) * TAU,
       scale: sc,
       variant: o.variant ?? Math.floor(hash2(Math.round(x * 7), Math.round(z * 7), seed + 9) * 4),
-      collide, r: info.r * sc,
+      collide, r: collide ? mr : info.r * sc,
     };
     if (o.w !== undefined) p.w = o.w;
     if (o.len !== undefined) p.len = o.len;
@@ -681,7 +684,7 @@ export function buildStage(id, opts = {}) {
   const obstaclesNear = (x, z, r, out) => {
     out = out || [];
     out.length = 0;
-    const maxR = 12; // largest obstacle radius we ever store (rock-wall schist at scale 4.8)
+    const maxR = 16; // largest obstacle radius we ever store (rock-wall schist at scale 4.8, mesh-sized collider)
     const x0 = Math.floor((x - r - maxR - oX0) / OBS_CELL), x1 = Math.floor((x + r + maxR - oX0) / OBS_CELL);
     const z0 = Math.floor((z - r - maxR - oZ0) / OBS_CELL), z1 = Math.floor((z + r + maxR - oZ0) / OBS_CELL);
     for (let cz = z0 < 0 ? 0 : z0; cz <= z1 && cz < oH; cz++) {

@@ -112,9 +112,12 @@ export function makeName(rng, gender, age, persona, fixed = null, taken = null, 
   return { first, sur, honor, display, full: `${first} ${sur}` };
 }
 
-/** Voice parameters (stable per NPC). `age` travels with them: speech.js pitchFor() lowers a man (not a boy) when the browser's voice is not a man's. */
+/**
+ * Voice parameters (stable per NPC). `age` travels with them: speech.js pitchFor() lowers a man (not a boy) when the browser's voice is not a man's. `tone` (0 to 1) is the person's place in the
+ * spread of their kind (the jitter below, scaled): pitchFor walks a grown-up through its band by it, so the people of one kind do not all land on the band's edge (R3-201).
+ */
 export function voiceFor(id, gender, age) {
   const a = AGE[age], h = hash(id);
   const j = ((h % 21) - 10) / 100;                              // +-0.10
-  return { pitch: Math.max(0.6, a.pitch * (gender === 'm' ? 0.93 : 1.0) * (1 + j)), rate: Math.max(0.7, a.rate * (1 + ((h >> 8) % 11 - 5) / 100)), gender, age, seed: h % 997 };
+  return { pitch: Math.max(0.6, a.pitch * (gender === 'm' ? 0.93 : 1.0) * (1 + j)), rate: Math.max(0.7, a.rate * (1 + ((h >> 8) % 11 - 5) / 100)), gender, age, seed: h % 997, tone: (h % 21) / 20 };
 }

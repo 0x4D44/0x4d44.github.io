@@ -26,6 +26,9 @@ export default {
   bark_palm: { color: 0xffffff, rough: 0.9, tex: 'bark_dark' },
   trunk_banana: { color: 0xffffff, rough: 0.8, tex: 'trunk_banana' },
   pot_clay: { color: 0xffffff, rough: 0.9, tex: false },
+  // Generated GLBs (world/vegetation.js): baked linear RGB albedo, alpha decoded separately into windWeight.
+  flora_vertex: { color: 0xffffff, rough: 0.92, side: 'double', tex: false, env: 0.35 },
+  flora_billboard: { color: 0xffffff, rough: 1, alphaTest: 0.35, side: 'double', tex: false, uv: 'unit', env: 0.35 },
   // the vista kit (world/vista-kit.js): its GLBs carry every colour in their vertices and still name their one material `bark_trunk` (the neutral white that name was when they were built).
   // The trunks have gone to a bark swatch since, so the kit draws with this twin; sharing `bark_trunk` multiplied the whole hillside into dark brown.
   vista_matte: { color: 0xffffff, rough: 0.95, tex: false },

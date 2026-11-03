@@ -321,6 +321,29 @@ function boxHit(S, x0, x1, y0, y1, z0, z1) {
     return rayBox(ox, oy, oz, dir.x * ax + dir.z * az, dir.y, dir.x * vx + dir.z * vz, hx, hy, hz, RADIUS + 1);
   };
 }
+/**
+ * The view test of a CLOSED door or drawer front: where the ray crosses the front's own plane (the face a person sees) - on the front, or within PAD of it - and, as the slab's does, how far along the ray
+ * the target begins (SLAB_OUT in front of the face). A box is no test for a STACK of fronts: a ray down at the top of one drawer crosses the 4 cm the slab of the drawer ABOVE reaches out in front of its face,
+ * enters that box first and the nearest entry wins, so the upper quarter of every drawer of a four-drawer dresser opened the one above it (R2b-203: 75% of the aims at the top row, 4.8% of all). The slab stays for
+ * a chest's lid (nothing stands above it, and the lid is aimed at from over its top) and for an open front (the path of a drawer, the mouth of a cupboard).
+ * `it.pri` is set per ray (the kernel reads it after the hit, as a content target's `lead`): 2 when the ray is ON the front, 1 when it is only in the pad round it, so the pad of a neighbour 4 mm away
+ * never takes what lies on the front itself.
+ */
+function faceHit(S, r, zf) {
+  const fr = S.bp.frame, { loc } = S, cx = (r.x0 + r.x1) / 2, cy = (r.y0 + r.y1) / 2, hx = (r.x1 - r.x0) / 2, hy = (r.y1 - r.y0) / 2, [bx, bz] = loc.bl(cx, zf);
+  const c = fr.toWorld(bx, loc.y0 + cy, bz), p = fr.toWorld(bx, 0, bz), a = fr.toWorld(bx + loc.u[0], 0, bz + loc.u[1]), b = fr.toWorld(bx + loc.v[0], 0, bz + loc.v[1]);
+  const ax = a[0] - p[0], az = a[2] - p[2], vx = b[0] - p[0], vz = b[2] - p[2];
+  return (ctx, it, eye, dir) => {
+    const dx = eye.x - c[0], dz = eye.z - c[2], ox = dx * ax + dz * az, oy = eye.y - c[1], oz = dx * vx + dz * vz;        // the eye in the face's frame: x along it, y up, z out of it
+    const kx = dir.x * ax + dir.z * az, kz = dir.x * vx + dir.z * vz;
+    if (oz <= SLAB_OUT || kz >= -1e-9) return -1;                                                                        // inside the slab's reach, or looking away from the face
+    const s = -oz / kz, ex = Math.abs(ox + kx * s) - hx, ey = Math.abs(oy + dir.y * s) - hy;                            // where the ray crosses the face, and how far outside its rectangle that is
+    if (ex > PAD || ey > PAD) return -1;
+    it.pri = ex <= ON_FRONT && ey <= ON_FRONT ? 2 : 1;
+    return (oz - SLAB_OUT) / -kz;
+  };
+}
+const ON_FRONT = 0.003;                                                                                                   // (a ray this near the rectangle is ON the front: the gap between two fronts is 4 mm)
 const readerBusy = (ctx) => !!ctx.reader?.isOpen;
 /** The kernel's `lead` for a thing inside a piece, `d` metres ON THE FLOOR (the carcass depth): the sweep stops `lead` short of the thing along the RAY, which covers only cos(pitch) of that
  *  on the floor, so the look down at a paper on a cupboard's floor needs `d / cos(pitch)` (`dir` is the unit view ray; past about 70 degrees down the divisor stops shrinking). */
@@ -331,10 +354,11 @@ function registerSlotTarget(C, S, list) {
   const { ctx } = C, r = S.slot.rect, zf = S.slot.zf, travel = S.slot.kind === 'drawer' ? S.slot.travel : 0;
   if (!ctx.interact?.register) return;
   const [x, y, z] = S.pos;
-  // what the view ray is tested against: the front's own slab while it is closed (a drawer's slide path is NOT part of it: a ray aimed at the drawer below
-  // would cross the path of the one above), the slab plus the path once it is out (aim at the open drawer's tray to close it)
+  // what the view ray is tested against: the front's own face while it is closed (a drawer's slide path is NOT part of it: a ray aimed at the drawer below
+  // would cross the path of the one above; a chest's lid keeps its slab), the slab plus the path once it is out (aim at the open drawer's tray to close it)
   const slab = (z1) => boxHit(S, r.x0 - PAD, r.x1 + PAD, r.y0 - PAD, r.y1 + PAD, zf - 0.16, z1);
-  const closedHit = slab(zf + SLAB_OUT), openHit = travel ? slab(zf + SLAB_OUT + travel) : closedHit;
+  const slabHit = slab(zf + SLAB_OUT), openHit = travel ? slab(zf + SLAB_OUT + travel) : slabHit;
+  const closedHit = S.slot.kind === 'lid' ? slabHit : faceHit(S, r, zf);                              // (a closed door or drawer is entered at its FACE: faceHit)
   S.target = ctx.interact.register({
     // a wall cupboard hangs over a counter: the kernel's sight line is a body sweep that stops `lead` short of the box, and the counter (inflated by the body's width) would block it.
     // `firm` (R2b-007): while the crosshair is ON a front, no point target takes the aim from it, however centred and near it is. A story object (stories.js) stands in FRONT of its piece, near the sight
@@ -343,9 +367,9 @@ function registerSlotTarget(C, S, list) {
     id: `cont:${S.id}`, kind: 'container', x, y, z, radius: RADIUS, reach: 1.3, static: true, group: `cont:${S.bid}`, building: S.bid, lead: S.rec.kind === 'wall' ? 0.75 : 0.35, pri: 1, firm: true,
     enabled: (c) => list.group.obj?.visible !== false && !readerBusy(c),
     hit: (c, it, eye, dir) => {
-      const t = (S.state === 'closed' ? closedHit : openHit)(c, it, eye, dir);
+      const closed = S.state === 'closed', t = (closed ? closedHit : openHit)(c, it, eye, dir);
       if (t < 0) return -1;
-      if (S.state !== 'closed' && S.objHits) for (const h of S.objHits) if (h(c, it, eye, dir) >= 0) return -1;      // the thing inside wins over its frame
+      if (!closed) { it.pri = 1; if (S.objHits) for (const h of S.objHits) if (h(c, it, eye, dir) >= 0) return -1; }      // the thing inside wins over its frame
       return t;
     },
     prompt: () => (S.state === 'open' || S.state === 'opening' ? S.slot.prompt[1] : S.slot.prompt[0]),

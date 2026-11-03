@@ -11,7 +11,7 @@ import { BANK, countLines } from '../js/people/lines/index.js';
 import { BANK_GENDER } from '../js/people/lines/genders.js';
 import { PERSONAS, SHOP_PERSONAS, COMMUNITY_PERSONAS, bankOf, bankGender, bankFits, genderOf, roleLabel } from '../js/people/personas.js';
 import { planCast, unusedBanks } from '../js/people/cast.js';
-import { fillTokens, Dialogue, TOPIC_MENU, TOPIC_MENU_TU, FORMS } from '../js/people/dialogue.js';
+import { fillTokens, Dialogue, TOPIC_MENU, TOPIC_MENU_TU, FORMS, inWindow } from '../js/people/dialogue.js';
 import { makeRng } from '../js/core/rng.js';
 import { buildData } from './headless.mjs';
 
@@ -255,6 +255,12 @@ test('Colombian words, not Spanish ones', () => {
   assert.deepEqual(bad, []);
 });
 
+test('R3-209: the callers of the phone-minutes shop call people who ARE far away ("que están lejos", not "desde lejos"), and the team is "de Millonarios", which has no article', () => {
+  const es = LINES.map((l) => l.es);
+  assert.ok(!es.some((s) => /llama a los suyos desde lejos/.test(s)), 'it is the relatives who are far away, not the callers'); assert.ok(es.some((s) => /llama a los suyos que están lejos/.test(s)), 'the corrected line is there');
+  assert.ok(!es.some((s) => /\bdel Millonarios\b/.test(s))); assert.ok(es.some((s) => /del Nacional o de Millonarios/.test(s)), 'the corrected line is there');
+});
+
 // ---- tú for children, usted for adults, in EVERY menu entry --------------------------------------------------------------------------------------------------
 const USTED = /\b(usted|ustedes|su familia|se dedica|me indica|cuénteme|dígame|siga|quisiera|me recomienda|su barrio|tiene usted|puede decirme|perdone|disculpe)\b/i;
 test('kids and teens are addressed with tú in every menu entry of a full conversation', () => {
@@ -275,10 +281,11 @@ test('kids and teens are addressed with tú in every menu entry of a full conver
   assert.ok(Object.keys(TOPIC_MENU).length >= Object.keys(TOPIC_MENU_TU).length - 1);
 });
 
-test('buying: the player asks the Colombian way ("¿Me regala ...?") and every shop sells three things with the price in words', () => {
+test('buying: the player asks the Colombian way ("¿Me regala ...?"), every shop sells at least three things with the price in words, and has three on offer at every hour of the day (R3-207: items have hours)', () => {
   for (const id of SHOP_PERSONAS) {
     const p = BANK.personas[bankOf(id)];
-    assert.equal(p.items?.length, 3, `${id} sells ${p.items?.length} things`);
+    assert.ok(p.items?.length >= 3, `${id} sells ${p.items?.length} things`);          // (was: exactly three. A shop with a dish of the hour has more, and offers the first three that are on sale)
+    for (let h = 0; h < 24; h += 0.25) assert.ok(p.items.filter((it) => inWindow(it, h)).length >= 3, `${id} has ${p.items.filter((it) => inWindow(it, h)).length} things on offer at ${h}`);
     for (const it of p.items) {
       assert.ok(/^¿(Me |Podría |Me regala|Me vende|Me saca|Me hace|Me arregla|Me sube|Me cambia|Me corta|Me despincha|Me revisa|Me lustra|Me cose|Me da)/.test(it.es), `${id}.${it.id}: '${it.es}'`);
       assert.ok(Number.isFinite(it.price) && it.price > 0, `${id}.${it.id}: no price`);

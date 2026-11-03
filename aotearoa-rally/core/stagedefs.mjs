@@ -92,7 +92,7 @@ export const STAGE_DEFS = {
   fiordland: {
     id: "fiordland", number: 6, name: "Fiordland Rain", region: "Milford", island: "South",
     blurb: "Beech rainforest closes over a narrow, greasy road at dusk, with waterfalls pouring off the valley walls and fords crossing the track. Headlights cut the rain as you thread a one-lane bridge in the dark.",
-    lengthTarget: 5328, difficulty: 5, biome: "rainforest",
+    lengthTarget: 5336, difficulty: 5, biome: "rainforest",
     environment: {
       timeOfDay: 20.75, sunAzimuth: 4.89, sunElevation: -0.07, sunColor: hex(0x6a7aa8), sunIntensity: 0.35,
       skyTop: hex(0x0b1220), skyHorizon: hex(0x2a3646), fogColor: hex(0x1a2430),
@@ -377,21 +377,21 @@ STAGE_DESIGNS.fiordland = {
   items: [
     H(210), mark("start"), S(100), camber(80, 2.2),
     ...TWF([
-      [75, 90, 40], [115, 70, 30], [85, 55, 30], [120, 80, 50],
+      [75, 349, 6], [115, 207, 6], [85, 450, 6], [120, 164, 8],
       waterfall(-1, 34, 5), S(10),
-      [70, 100, 60], [100, 60, 30], [60, 56, 40],
+      [70, 294, 10], [100, 140, 30], [60, 388, 6],
     ]),
     SURF(SF.GRAVEL), H(232),
     ...TWF([
-      [105, 120, 80], [80, 140, 60],
+      [105, 243, 13], [80, 349, 10],
       S(40), ford(18, 0.7), S(50),
-      [120, 70, 40], [75, 60, 30], [110, 62, 40],
+      [120, 207, 6], [75, 450, 6], [110, 164, 6],
     ]),
     mark("bridge0"), SURF(SF.GRAVEL), S(60), bridge(18), S(80),
     ...TWF([
-      [70, 80, 30], [115, 70, 30], [65, 60, 40], [100, 100, 80],
+      [70, 294, 6], [115, 140, 6], [65, 388, 6], [100, 100, 10],
       crest(0.9, 14), S(40),
-      [130, 90, 50], [85, 60, 30], [120, 55, 30], [70, 52, 25], [105, 55, 45],
+      [140, 90, 8], [85, 60, 30], [120, 55, 30], [70, 52, 25], [105, 55, 45],
     ]),
     SURF(SF.MUD), H(205), mark("mud"),
     ...TWF([

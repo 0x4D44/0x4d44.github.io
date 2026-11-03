@@ -86,11 +86,12 @@ export function classOf(bp, room, L) {
   return HOME_CLASS[room.type] ?? null;
 }
 /**
- * A child's room: a role of the household (kids, child, teen), or a bedroom that holds a child's bed (a bunk, a baby's crib). This pass uses adult assortments, so such a room is
+ * A child's room: a role of the household (kids, child, teen), or a bedroom or a living room that holds a child's bed (a bunk, a baby's crib: the kids of a home with no bedroom of its own sleep in the sala, rooms.js
+ * `ensureKidsBeds`). This pass uses adult assortments, so such a room is
  * left alone: no loose clothes, and its beds keep whatever the room furnisher drew. Child assets are registered separately for explicit size-aware placements. (A toy pile or a school bag alone does not make a parents' room a child's: the family's things lie
  * about the whole house.)
  */
-export const isChildRoom = (L, cls = 'bedroom') => CHILD_ROLES.has(L.role) || (cls === 'bedroom' && L.items.some((i) => CHILD_ITEM.test(i.name)));
+export const isChildRoom = (L, cls = 'bedroom') => CHILD_ROLES.has(L.role) || ((cls === 'bedroom' || cls === 'living') && L.items.some((i) => CHILD_ITEM.test(i.name)));
 
 /** The state of one room. `m` is the messiness score in [0, 1]: half the household's tendency, half the room's own draw. An elder's own room is never worse than lived-in. */
 export function tidinessOf(bp, room, hh, cls, role = null) {
@@ -389,9 +390,9 @@ function onFloor(S, hosts, all) {
 }
 
 /** Hung on a wall hook (a shirt on a nail): on the same wall as the wardrobe when there is room, else any free stretch of wall. */
-function onWall(S, wardrobe, mix) {
-  const L = S.L, pick = pickGarment(S, mix), key = garmentKey(pick.id, 'hung'), keep = L.rng;
-  if (S.tris + pick.g.hung[3] > S.allow) return null;
+export function onWall(S, wardrobe, mix) {
+  const L = S.L, pick = pickGarment(S, mix), key = garmentKey(pick.id, 'hung'), keep = L.rng, cost = pick.g.hung[3] + HANGER_TRIS;       // (the cloth's model, and the hanger and the peg it hangs from)
+  if (S.tris + cost > S.allow) return null;
   L.rng = S.rng;                                                                         // hang() draws jitter from the room's stream: use ours
   try {
     const o = { y: r3(1.78 - pick.g.hung[1]), jitter: 0.3, lap: -0.02, tint: pick.tint, ...(wardrobe ? { near: [wardrobe.x, wardrobe.z], nearW: 6 } : {}) };       // (lap: the hem clears a dresser by two fingers)
@@ -399,7 +400,7 @@ function onWall(S, wardrobe, mix) {
     const it = (wardrobe?.wallSide && hang(wardrobe.wallSide)) || hang('any');
     if (!it) return null;
     it.block = false; it.flags = { variant: pick.variant };
-    S.n++; S.tris += pick.g.hung[3];
+    S.n++; S.tris += cost;
     return it;
   } finally { L.rng = keep; }
 }
@@ -441,6 +442,9 @@ export function estimateTris(E, built) {
   return n;
 }
 export const LIMITS = { building: 72, tris: 11000, interior: 90000 };
+/** The triangles of the hanger and the peg a hung garment hangs from (standins.js `hangsFromPeg`, drawn after the cloth's model by build.js's add-on: R2b-206). The pass counts them into the garment's cost;
+ *  tests/interiors-hangs.test.mjs holds the two numbers together. */
+export const HANGER_TRIS = 22;
 
 // ------------------------------------------------------------------ the pass
 /**

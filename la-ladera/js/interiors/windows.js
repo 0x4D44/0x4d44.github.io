@@ -35,13 +35,26 @@ function panel(b, P, u0, u1, y0, y1, d0, col, nf, hem) {
   }
 }
 
+/** (R4-708) Where a model stands taller than its catalogue height: the catalogue keeps the usable surface (a bed's mattress, a sink's rim, a counter's top) and what stands above it (a headboard, a tap, a counter's
+ *  lip) is not in it (interiors-catalog.test.mjs lets a model rise 0.25 m over it). A curtain hung to the catalogue's height ran through the headboard of 86 of the barrio's double beds. Measured off the shipped
+ *  models (the hero set over the library: the runtime's choice); interiors-curtains.test.mjs holds every entry to its GLB, and every model that stands 3 cm over its catalogue height to an entry. */
+export const MODEL_TOP = {
+  bed_double: 1.0, bed_double_wood: 1.06, bed_single: 0.78, bed_single_metal: 0.99, sink_kitchen: 1.11, sink_small: 1.11, lavadero: 1.09, basin_pedestal: 0.96, basin_vanity: 0.96,
+  butcher_block: 1.04, dough_table: 0.96, workbench: 1.03, workbench_metal: 1.09, cobbler_bench: 1.13, table_pingpong: 0.91, barber_station: 1.08,
+  shop_counter_glass: 1.21, shop_counter_short: 1.21, shop_counter_wood: 1.21,
+};
+/** How high the piece stands: its model's top where `MODEL_TOP` has it, else the catalogue's height. */
+export const standsTo = (name, c = CATALOG[name]) => MODEL_TOP[name] ?? c.size[1];
+
 /** (R4-207) The floor pieces of each room a curtain could hang through: footprint and top. Low clutter (a box, a pair of shoes) does not count: the hem passes over it. */
 function blockersOf(bp) {
   const by = new Map();
   for (const f of bp.furniture ?? []) {
     const c = CATALOG[f.name];
-    if (!c || f.decal || f.parent || f.kind === 'wall' || f.kind === 'ceil' || c.size[1] < 0.3) continue;
-    (by.get(f.room) ?? by.set(f.room, []).get(f.room)).push({ ob: mkObb(f.x, f.z, f.w ?? c.size[0], f.d ?? c.size[2], f.ry ?? 0), top: f.y + c.size[1] });
+    if (!c || f.decal || f.parent || f.kind === 'wall' || f.kind === 'ceil') continue;
+    const h = standsTo(f.name, c);
+    if (h < 0.3) continue;
+    (by.get(f.room) ?? by.set(f.room, []).get(f.room)).push({ ob: mkObb(f.x, f.z, f.w ?? c.size[0], f.d ?? c.size[2], f.ry ?? 0), top: f.y + h });
   }
   return by;
 }

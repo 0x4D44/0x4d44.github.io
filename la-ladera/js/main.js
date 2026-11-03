@@ -42,6 +42,7 @@ const opts = {
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'), lazy: q.get('lazy') === '1', warmTrace: q.has('warmtrace'),
   shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0', vehicles: q.get('vehicles') !== '0',
+  vegetation: ['procedural', 'full'].includes(q.get('vegetation')) ? q.get('vegetation') : 'mixed',   // procedural: no library; full: library for every species; mixed: see PROCEDURAL_KEEP in world/vegetation.js,
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
