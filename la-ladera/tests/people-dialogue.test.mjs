@@ -91,6 +91,17 @@ test('directionsTo: side, distance, uphill and the article of the place', () => 
   assert.ok(directionsTo({ name: 'Cancha', x: 3, y: 2, z: -4 }, here, rng).es.includes('ahí no más'));
 });
 
+test('directionsTo: the verb agrees with what is told (R3-202): Queda / Quedan, Está / Están for an animal, English It\'s / They\'re; the full answer too', () => {
+  const rng = makeRng(5), almendros = { name: 'Los Almendros', en: 'the almond trees', kind: 'nature', x: 0, y: 2, z: -30 }, behind = { ...almendros, z: 30 };
+  const say = (o, lm = almendros) => directionsTo(lm, here, rng, { short: true, ...o });
+  for (const [o, es, en] of [[{}, /^Queda /, /^It's /], [{ plural: true }, /^Quedan /, /^They're /], [{ estar: true }, /^Está /, /^It's /], [{ estar: true, plural: true }, /^Están /, /^They're /]]) {
+    assert.match(say(o).es, es, JSON.stringify(o)); assert.match(say(o).en, en, JSON.stringify(o)); assert.match(say(o, behind).es, new RegExp(es.source + '.*Se devuelve'), 'behind the visitor: ' + JSON.stringify(o));
+  }
+  assert.match(directionsTo(almendros, here, rng, { plural: true }).es, /^Mire, los Almendros quedan /); assert.match(directionsTo(almendros, here, rng, { plural: true }).en, /^The almond trees are /);
+  assert.match(directionsTo(almendros, here, rng, { plural: true, estar: true }).es, /^Mire, los Almendros están /); assert.match(directionsTo(almendros, here, rng).es, /^Mire, los Almendros queda /, 'a caller who says nothing gets the old singular answer');
+  assert.match(directionsTo(behind, here, rng, { plural: true }).es, /^Los Almendros quedan .*Se devuelve/);
+});
+
 test('a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it', () => {
   for (const [hour, key] of [[8, 'greet_m'], [15, 'greet_a'], [20, 'greet_e'], [2, 'greet_n']]) {
     assert.equal(period(hour), key.slice(-1));
