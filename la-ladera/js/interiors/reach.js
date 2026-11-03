@@ -24,7 +24,11 @@ export const standable = (L, x, z, conn, clear) => L.standable(x, z, conn, clear
  *  Seeing is the kernel's own sight line (core/interact.js `_tryShaped`): a body sweep from the eye (1.6 m) toward the middle of the front that stops `lead` short of it, which no other piece may cross
  *  (a privacy screen, a table, a chair stood between the spot and a desk's drawers: a spot behind it is a place to stand, not a place to open the drawers from). */
 export function standSpots(bp, rec, slot, conn) {
-  const L = bp.interior?.layouts?.get(rec.room); if (!L) return [];
+  const L = bp.interior?.layouts?.get(rec.room);
+  return L ? spotsAt(L, rec, slot, conn) : [];
+}
+/** `standSpots` for the layout `L` itself (a room still being furnished has none registered in `bp.interior` yet: rooms.js asks it of a bed it is about to keep). `rec`: { id, kind, x, y, z, ry, h } of the piece. */
+export function spotsAt(L, rec, slot, conn) {
   conn ??= L.connectivity();
   const cs = Math.cos(rec.ry ?? 0), sn = Math.sin(rec.ry ?? 0), r = slot.rect, cx = (r.x0 + r.x1) / 2, out = [];
   const bl = (lx, lz) => [rec.x + lx * cs + lz * sn, rec.z - lx * sn + lz * cs];

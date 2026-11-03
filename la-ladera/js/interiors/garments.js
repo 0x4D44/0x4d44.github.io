@@ -86,11 +86,12 @@ export function classOf(bp, room, L) {
   return HOME_CLASS[room.type] ?? null;
 }
 /**
- * A child's room: a role of the household (kids, child, teen), or a bedroom that holds a child's bed (a bunk, a baby's crib). This pass uses adult assortments, so such a room is
+ * A child's room: a role of the household (kids, child, teen), or a bedroom or a living room that holds a child's bed (a bunk, a baby's crib: the kids of a home with no bedroom of its own sleep in the sala, rooms.js
+ * `ensureKidsBeds`). This pass uses adult assortments, so such a room is
  * left alone: no loose clothes, and its beds keep whatever the room furnisher drew. Child assets are registered separately for explicit size-aware placements. (A toy pile or a school bag alone does not make a parents' room a child's: the family's things lie
  * about the whole house.)
  */
-export const isChildRoom = (L, cls = 'bedroom') => CHILD_ROLES.has(L.role) || (cls === 'bedroom' && L.items.some((i) => CHILD_ITEM.test(i.name)));
+export const isChildRoom = (L, cls = 'bedroom') => CHILD_ROLES.has(L.role) || ((cls === 'bedroom' || cls === 'living') && L.items.some((i) => CHILD_ITEM.test(i.name)));
 
 /** The state of one room. `m` is the messiness score in [0, 1]: half the household's tendency, half the room's own draw. An elder's own room is never worse than lived-in. */
 export function tidinessOf(bp, room, hh, cls, role = null) {
