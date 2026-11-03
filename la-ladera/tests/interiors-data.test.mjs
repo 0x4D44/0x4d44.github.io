@@ -159,7 +159,12 @@ test('anchors: every seat, bed, stove and shop counter has one; anchors stand in
       const here = bp.anchors.filter((a) => a.room === f.room);
       const near = (kinds, rad) => here.some((a) => { if (!kinds.has(a.kind)) return false; const [lx, , lz] = bp.frame.toLocal(a.x, a.y, a.z); return Math.hypot(lx - f.x, lz - f.z) <= rad; });
       if (c.seat) { if (!near(SEAT_KINDS, Math.max(f.w, f.d) / 2 + 0.3)) problems.push(`${bp.id}: no sit anchor for ${f.name} in ${f.room}`); }
-      if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk') { if (!near(new Set(['sleep']), 0.6)) problems.push(`${bp.id}: no sleep anchor for ${f.name}`); }
+      if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk') {
+        // a sleeper lies in a BEDROOM (people/homelife.js, the sleep scene): its beds have a sleep anchor, a bed anywhere else (a child's bunk in the living room, R4-705) has none (the people tests: 'the night')
+        const anchored = near(new Set(['sleep']), 0.6), bedroom = roomOf(bp, f.room)?.type === 'bedroom';
+        if (bedroom && !anchored) problems.push(`${bp.id}: no sleep anchor for ${f.name}`);
+        if (!bedroom && anchored) problems.push(`${bp.id}: a sleep anchor for ${f.name} in ${f.room}, a ${roomOf(bp, f.room)?.type}`);
+      }
       if (c.arch === 'stove') { if (!near(new Set(['cook']), 1.2)) problems.push(`${bp.id}: no cook anchor for ${f.name}`); }
     }
     // anchors well-formed, in their room, on the right floor level, and not inside furniture (except seats and beds)
