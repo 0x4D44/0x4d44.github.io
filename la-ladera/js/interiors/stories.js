@@ -14,9 +14,11 @@ import { setFan, fanOn } from './anim.js';
 import { decalIds } from './decals.js';
 import { sitDown, isSitting } from './sit.js';
 import { rayHitsBox } from './aim.js';
-import { rayBox } from '../core/interact.js';
+import { rayBox, SEAT_BONUS } from '../core/interact.js';
 
 const CAP_INTERACT = 44, CAP_SEATS = 7, CAP_DECALS = 6, DISC_RADIUS = 1.7, DISC_DY = 1.3;
+const PAD_SEAT = 0.2, PAD_CORE = 0.04, BEHIND = 4;          // a seat's aim pad, how near a ray must be to the seat itself to count as ON it, and how many metres BEHIND every other shaped hit a ray in the pad alone ranks
+const PAD_THING = 0.04, PAD_TAP = 0.07, REACH_SHAPED = 2.8;  // the pad round a shaped thing (a tap is 3 cm wide), and how far it is offered from (a point's radius was measured to the point in front of it, not to the thing)
 
 // ------------------------------------------------------------------ what each object offers
 const BY_NAME = new Map();
@@ -24,7 +26,8 @@ const add = (names, o) => { for (const n of [].concat(names)) BY_NAME.set(n, { .
 // the home fridge, the small one, the drinks fridge and the pharmacy's cold cabinet are real containers now (containers.js: freezer door + main door open, the shelves hold things)
 add('fridge_meat', { key: 'fridge', prompt: 'Mirar la carne', who: 'La cámara de carnes', say: 'meat', pri: 7 });
 add('stove_gas', { key: 'stove', prompt: 'Destapar la olla', who: 'La estufa', say: 'stove', pri: 8 });
-add(['tv_flat', 'tv_crt', 'tv_wall'], { key: 'tv', prompt: 'Ver la tele', who: 'Televisor', say: 'tv', pri: 9, aim: 0.75 });
+// `look`: the thing is SHAPED as well as a point (see `shapeOf`): the TV, the tap, the phone and the computer are what the view ray is ON, not a point in front of them. 'whole' = its own box, 'tap' = the tap of a sink or a basin
+add(['tv_flat', 'tv_crt', 'tv_wall'], { key: 'tv', prompt: 'Ver la tele', who: 'Televisor', say: 'tv', pri: 9, aim: 0.75, look: 'whole' });
 add(['radio_old', 'radio_boombox'], { key: 'radio', prompt: 'Prender la radio', who: 'Radio', say: 'radio', pri: 6 });
 add('cage_canary', { key: 'canary', prompt: 'Silbarle al canario', who: 'El canario', say: 'canary', pri: 7 });
 add('cat_sitting', { key: 'cat', prompt: 'Acariciar al gato', who: 'El gato', say: 'cat', pri: 7 });
@@ -36,13 +39,13 @@ add('altar_main', { key: 'altar', prompt: 'Rezar', who: 'La capilla', say: 'chap
 add(['candle_rack', 'candles_set'], { key: 'candle', prompt: 'Encender una vela', who: 'Las velas', say: 'candle', pri: 6 });
 add('pigeon_loft', { key: 'pigeons', prompt: 'Mirar las palomas', who: 'El palomar', say: 'pigeons', pri: 6 });
 // wardrobes, trunks and dressers are real containers now (containers.js: they open, and what is inside is a target): no one-line stand-in here
-add(['basin_pedestal', 'basin_vanity', 'sink_kitchen', 'sink_small', 'lavadero'], { key: 'tap', prompt: 'Abrir la llave', who: 'La llave', say: 'tap', pri: 4 });
+add(['basin_pedestal', 'basin_vanity', 'sink_kitchen', 'sink_small', 'lavadero'], { key: 'tap', prompt: 'Abrir la llave', who: 'La llave', say: 'tap', pri: 4, look: 'tap' });
 add('toilet', { key: 'toilet', prompt: 'Jalar la cadena', who: 'El baño', say: 'toilet', pri: 3 });
 add(['mirror_wall', 'mirror_bath', 'mirror_barber'], { key: 'mirror', prompt: 'Mirarse en el espejo', who: 'El espejo', say: 'mirror', pri: 3 });
 add(['bookshelf', 'bookshelf_low', 'books_stack'], { key: 'books', prompt: 'Hojear los libros', who: 'Los libros', say: 'books', pri: 4 });
 add(['desk_student', 'desk_wood', 'desk_office'], { key: 'desk', prompt: 'Mirar el escritorio', who: 'El escritorio', say: 'desk', pri: 4 });
-add('pc_set', { key: 'pc', prompt: 'Mirar el computador', who: 'El computador', say: 'pc', pri: 4 });
-add('phone_landline', { key: 'phone', prompt: 'Descolgar el teléfono', who: 'El teléfono', say: 'phone', pri: 4 });
+add('pc_set', { key: 'pc', prompt: 'Mirar el computador', who: 'El computador', say: 'pc', pri: 4, look: 'whole' });
+add('phone_landline', { key: 'phone', prompt: 'Descolgar el teléfono', who: 'El teléfono', say: 'phone', pri: 4, look: 'whole' });
 add('school_bag', { key: 'bag', prompt: 'Mirar la maleta', who: 'La maleta del colegio', say: 'bag', pri: 5 });
 add('toy_pile', { key: 'toys', prompt: 'Mirar los juguetes', who: 'Los juguetes', say: 'toys', pri: 5 });
 add('thermos_set', { key: 'thermos', prompt: 'Servirse un tinto', who: 'El termo', say: 'thermos', pri: 6 });
@@ -220,9 +223,13 @@ function interactables(ctx, bp, E, rng) {
     const a = s.a;
     // x, y, z is the CUSHION, the centre of the thing like any shaped item's (core/interact.js): whoever aims at the item's point aims at the seat. It used to be the standing point in front of it at chest height
     // (`stand` below still is): a probe that looked at that point looked at the air beside the chair, and one that stood 0.3 m under it for a seat's height started 0.95 m in the air, its head in the fan's box (R4-205, R2d-004)
+    const lane = seatLane(bp, s.it, a), wide = aimBox(bp, s.it, PAD_SEAT, lane), tight = aimBox(bp, s.it, PAD_CORE, lane);
     ctx.interact?.register({                                                  // a SHAPED target (core/interact.js): the seat is offered while the view ray enters ITS box, and the nearest thing entered wins (R4-009)
       id: `int:${s.it.id}:sit${a.id ?? ''}`, kind: 'sit', x: a.x, y: a.y + (a.seatH ?? 0.45), z: a.z, radius: 2.4, reach: 2.0, static: true, pri: s.pri, lead: 0.5, building: bp.id,   // lead: the walls are tested up to 0.5 m short of the box (the body's own width and the pad)
-      hit: aimBox(bp, s.it, 0.2, seatLane(bp, s.it, a)), prompt: 'Sentarse', enabled: () => !isSitting(ctx),
+      // A ray ON the seat ranks as a seat does (SEAT_BONUS nearer: the stool under a price list, R2a-004/-005). A ray only in the 0.2 m pad round it ranks BEHIND every other shaped hit: it still offers the seat when nothing
+      // else is entered, but it no longer takes the aim from what the ray is really on. A chair tucked in at a desk lies beside the drawers and its pad overhangs them: 2 487 of the 2 613 aims a chair took from a front were
+      // in the pad alone, and L87's student desk could not be opened from any spot (R2b-208). The hit sets `bonus` for its own ray, as a content target's sets its `lead` (containers.js).
+      hit: (c, item, e, v) => { const t = wide(c, item, e, v); if (t >= 0) item.bonus = tight(c, item, e, v) >= 0 ? SEAT_BONUS : -BEHIND; return t; }, prompt: 'Sentarse', enabled: () => !isSitting(ctx),
       use: (c) => sitDown(c, { building: bp.id, seat: [a.x, a.y, a.z], seatH: a.seatH ?? 0.45, ry: a.ry, stand: [s.t.x, s.t.z] }),
     });
     n++;
@@ -250,6 +257,68 @@ function aimBox(bp, it, pad, lane = null) {
   };
 }
 
+/** The view test of a box in an item's own frame (centre cx, cz in the room frame, the item's axes `o.ux`, `o.uz`, y0..y1, half extents hx, hz): (eye, dir) -> metres along the ray to where it enters, or -1. */
+function partBox(bp, o, cx, cz, y0, y1, hx, hz) {
+  const fr = bp.frame, c = fr.toWorld(cx, (y0 + y1) / 2, cz), p = fr.toWorld(cx, 0, cz), a = fr.toWorld(cx + o.ux[0], 0, cz + o.ux[1]), b = fr.toWorld(cx + o.uz[0], 0, cz + o.uz[1]);
+  const ax = a[0] - p[0], az = a[2] - p[2], bx = b[0] - p[0], bz = b[2] - p[2], hy = (y1 - y0) / 2;
+  return (e, v) => {
+    const dx = e.x - c[0], dz = e.z - c[2];
+    return rayBox(dx * ax + dz * az, e.y - c[1], dx * bx + dz * bz, v.x * ax + v.z * az, v.y, v.x * bx + v.z * bz, hx, hy, hz, 12);
+  };
+}
+/** Where the ray's flat shadow enters the footprint `o` (metres along the ray, 0 when the eye is over it), or -1: what the sight line must stop short of when the thing stands IN a piece whose body is a wall. */
+function footprintEntry(bp, o) {
+  const fr = bp.frame, c = fr.toWorld(o.cx, 0, o.cz), a = fr.toWorld(o.cx + o.ux[0], 0, o.cz + o.ux[1]), b = fr.toWorld(o.cx + o.uz[0], 0, o.cz + o.uz[1]);
+  const ax = a[0] - c[0], az = a[2] - c[2], bx = b[0] - c[0], bz = b[2] - c[2];
+  return (e, v) => {
+    const dx = e.x - c[0], dz = e.z - c[2];
+    return rayBox(dx * ax + dz * az, 0, dx * bx + dz * bz, v.x * ax + v.z * az, 0, v.x * bx + v.z * bz, o.hx, 1, o.hz, 12);
+  };
+}
+/** The tap of each sink, basin and wash trough in the item's own frame (standins.js draws a chrome stem on the back edge of the top, and a spout over it): [x, z, y from its base, y top, half x, half z]. */
+const TAP = {
+  sink_kitchen: (W, H, D) => [-W * 0.15, -D / 2 + 0.125, H, H + 0.2, 0.015, 0.06], sink_small: (W, H, D) => [-W * 0.15, -D / 2 + 0.125, H, H + 0.2, 0.015, 0.06],
+  basin_pedestal: (W, H, D) => [0, -D / 2 + 0.12, H, H + 0.12, 0.015, 0.05], basin_vanity: (W, H, D) => [0, -D / 2 + 0.12, H, H + 0.12, 0.015, 0.05],
+  lavadero: (W, H, D) => [-W * 0.2, -D / 2 + 0.08, H, H + 0.18, 0.0125, 0.0125],
+};
+/**
+ * The SHAPE of a thing a person uses by looking at it ('whole': its own box; 'tap': the tap of a sink or a basin), padded so a crosshair beside it still counts: `hit(ctx, item, eye, dir)` of a shaped target, or null.
+ * A story object is a POINT in front of its piece (target() above), scored by its distance to the eye and the angle to the view ray, and that loses what stands where the point does not: the TV from 2 m (the radius is
+ * measured to the point, not to the TV), the tap from closer than 1 m (the cone), a phone and a computer on one counter (two points in one place), a sink's tap at every spot of 9 (R2b-201, -202, -208). Offered as a
+ * shaped target too, the view ray that is ON the thing decides, from wherever the sight line is clear; a miss falls back to the point as before (`soft`), and no neighbour's point takes the aim from the thing
+ * itself (`firm`). The sight line stops short of the footprint of the piece the thing stands on (its walls are the piece's collider), set per ray as a content target's `lead` is, and passes over low furniture (`tall`).
+ * A thing that line cannot reach, behind a wall, is a miss and not a hit the kernel then drops (HIDDEN, below).
+ */
+function shapeOf(bp, L, it, look, point) {
+  const o = it.ob, H = it.h;
+  let cx = o.cx, cz = o.cz, y0 = it.ceil ? it.y - H : it.y, y1 = y0 + H, hx = o.hx, hz = o.hz, pad = PAD_THING;
+  if (look === 'tap') {
+    const p = TAP[it.name]?.(it.w, H, it.d); if (!p) return null;
+    [cx, cz] = L.rel(it, p[0], p[1]); y0 = it.y + p[2]; y1 = it.y + p[3]; hx = p[4]; hz = p[5]; pad = PAD_TAP;
+  }
+  const box = partBox(bp, o, cx, cz, y0 - pad, y1 + pad, hx + pad, hz + pad), foot = footprintEntry(bp, (it.parent && !it.floor ? it.parent : it).ob);
+  return (ctx, item, e, v) => {
+    item.radius = point;                                                                                      // a miss falls back to the POINT test, with the reach it always had (the kernel reads `radius` after the hit, as it reads `lead`)
+    const t = box(e, v); if (t < 0) return -1;
+    const tp = foot(e, v), lead = (tp >= 0 && t > tp ? t - tp : 0) + FOOT_CLEAR, end = t > lead ? t - lead : 0; item.lead = lead;   // the kernel's sight line stops this far short of the box (see FOOT_CLEAR)
+    if (ctx?.physics?.segmentBlocked(e.x, e.z, e.x + v.x * end, e.z + v.z * end, e.y - 1.4, 1.2, item.ignoreDoor ?? null, item.tall ?? 0)) return -1;      // behind a wall: a miss (see HIDDEN)
+    item.radius = REACH_SHAPED;                                                                               // the ray is ON the thing: it reaches the 2.4 m a person stands from a TV, however far its point lies
+    return t;
+  };
+}
+// HIDDEN: a thing the sight line cannot reach is a MISS here, although the kernel would drop it with the very same sweep a moment later: the kernel marks the crosshair as ON a shaped item before it sweeps, and while it
+// is, a point target within 0.7 m of the eye but outside its cone is no longer offered (core/interact.js update: `st.hit ? st.pn : st.p`). A kid's drawing 0.5 m away, aimed at in line with the computer on the far
+// side of its partition, was offered nothing (L103: 8 of 25 aims); as a miss the computer falls back to its own point, which the wall drops, and the drawing is offered as before.
+
+// How far short of the thing's box, or of the footprint of the piece it stands on when the ray enters that first, the sight line stops: as little as the piece's own wall (0.01 thick) allows. A partition is a LINE in
+// physics.segmentBlocked, its middle, and a desk set flush against the far side of a 0.11 m partition has its footprint a half wall (0.055) past that line, its computer's padded box starting at the desk's edge: the
+// kernel's default stop 0.08 short of the box reached the line and no further, and a kid's drawing on the near side of the wall was answered "Mirar el computador" through it (L103, 22 aims of 25).
+const FOOT_CLEAR = 0.02;
+// The sight line of a shaped thing is stopped by what stands 1.2 m above the floor or more (a wall, a shut door, a wardrobe, a fridge) and not by the sofa, the coffee table or the counter between it and the person, which an
+// eye at 1.6 m looks over: core/interact.js `tall`, as a person's is. The colliders of the furniture are never under 1.1 m (physics.js), so every low piece cut the line: 7% of the aims at a TV from 1.6 m to 2.4 m,
+// 11% at a kitchen sink's tap, 28% at a small sink's, 9% at a computer, with the line over the piece clear in the probe's 3D sight test (which keeps the pieces at their real height).
+const TALL_THING = 1.0;
+
 /** An object is offered only while the player is LOOKING at it: the view ray must hit the object's own box (padded by `pad`). The targeting scores by
  *  distance to a stand point on the floor, so a clock, a fan, a picture or a canary behind the player's shoulder used to beat the sofa in front of them (R4-009).
  *  Called every frame for every registered object of the world: no allocation, and anything beyond 7 m is left to the radius test. */
@@ -266,7 +335,10 @@ function lookAt(bp, it, pad) {
 }
 function register(ctx, bp, f) {
   const { it, L, spec, t } = f, id = `int:${it.id}`;
-  const base = { id, kind: 'object', x: t.x, y: t.y, z: t.z, radius: spec.radius ?? 1.9, aim: spec.aim ?? 0.8, building: bp.id, enabled: lookAt(bp, it, spec.decal || it.h < 0.5 ? 0.25 : 0.15) };
+  const look = lookAt(bp, it, spec.decal || it.h < 0.5 ? 0.25 : 0.15);
+  const base = { id, kind: 'object', x: t.x, y: t.y, z: t.z, radius: spec.radius ?? 1.9, aim: spec.aim ?? 0.8, building: bp.id, enabled: look };
+  const shape = spec.look ? shapeOf(bp, L, it, spec.look, base.radius) : null;
+  if (shape) Object.assign(base, { hit: shape, soft: true, firm: true, tall: TALL_THING, radius: Math.max(base.radius, REACH_SHAPED), enabled: (c, item) => look(c, item) !== false || shape(c, item, c.player.eye, c.player._dir) >= 0 });   // (a tap rises above the box `look` tests; `radius` is the reach the grid is laid for, the hit sets the one of each ray)
   if (spec.toggle === 'fan') {
     ctx.interact.register({ ...base, prompt: (c) => (fanOn(c, it.id) ? 'Apagar el ventilador' : 'Prender el ventilador'),
       use: (c) => { const on = setFan(c, it.id); c.ui?.toast?.(on === null ? 'El ventilador está trabado.' : on ? 'Prendes el ventilador: las aspas empiezan a girar.' : 'Apagas el ventilador: las aspas se frenan poco a poco.', 2400); } });
