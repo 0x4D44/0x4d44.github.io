@@ -218,11 +218,20 @@ def bill():
     return {"models": models, "extra": extra}
 
 
+def relay():
+    out = {}
+    for fn in sorted(os.listdir(DATA)):
+        if fn.startswith("relay-") and fn.endswith(".jsonl"):
+            out[fn[6:-6]] = [{k: r.get(k) for k in ("turn", "model", "ok", "sentence", "cost", "secs")}
+                             for r in map(json.loads, open(os.path.join(DATA, fn)))]
+    return out
+
+
 def main():
     os.makedirs(SITE, exist_ok=True)
     parts = {"models": models_index(), "numbers": numbers(), "picks": picks(), "texts": texts(),
              "haggis": haggis(), "jokes": raw("q08-joke-program"), "moonlight": raw("q30-moonlight"),
-             "bill": bill()}
+             "bill": bill(), "relay": relay()}
     for name, obj in parts.items():
         with open(os.path.join(SITE, f"{name}.json"), "w") as f:
             json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
