@@ -1,12 +1,13 @@
 // THE BEACH IN THE BOOT (A5, js/world/beach.js, dev/FEATURE-BEACH.md section 6): in the real page the ground of the coast and every collider of the front and of the pier are part of the world, and the
-// SEA, the library's PROPS and the watersports library's PIECES (the pier's kit, the boats, the buoys, the raft) are the later sectors, the ones that load after the playable milestone so they do not add
-// to the boot. Four boots, each with its own question:
-//   ?lazy=1            the gate is open, the rail, the fixtures' and the pier's colliders stand; neither the sea nor the props nor the pieces are built by the boot: each is one unit of the staged
-//                      queue (ids `sea`, `beachprops` and `waterprops`), each finishes without failing, each is warmed through LateWarm (its programs are made off the frame, not inside one), the sea is the only
-//                      sea in the scene, every prop of the plan is an instance, and so is every piece of the sea's plan
-//   ?lazy=1, furnished the props' files start after the packs the interiors are waiting for (the furniture, the clothes, the goods) have ended; the sea does not wait for anything, and the pieces wait for the sea
-//   ?lazy=0 (eager)    all three are built by the boot itself (they are in the scene at the milestone, there is no queue)
-//   ?skip=coast        the beach is left as it was: the gate is shut, there is no rail, no fixture, no pier, no sea, no props and no pieces, and neither library is ever asked for
+// SEA, the library's PROPS, the watersports library's PIECES (the pier's kit, the boats, the buoys, the raft) and the SHORE'S LIFE (js/world/shorelife.js: twelve gulls, eighteen ghost crabs, three shoals of
+// fish, three meshes of 72 cards) are the later sectors, the ones that load after the playable milestone so they do not add to the boot. Four boots, each with its own question:
+//   ?lazy=1            the gate is open, the rail, the fixtures' and the pier's colliders stand; neither the sea nor the props nor the pieces nor the shore's life are built by the boot: each is one unit of the
+//                      staged queue (ids `sea`, `beachprops`, `waterprops` and `shorelife`), each finishes without failing, each is warmed through LateWarm (its programs are made off the frame, not inside one),
+//                      the sea is the only sea in the scene, every prop of the plan is an instance, and so is every piece of the sea's plan; the shore's life is ONE group `props.shorelife` of three meshes (one draw
+//                      call each, 288 triangles), shown, with ONE system `world.shorelife` at order 41, and nothing added to `ctx.world.life`
+//   ?lazy=1, furnished the props' files start after the packs the interiors are waiting for (the furniture, the clothes, the goods) have ended; the sea does not wait for anything, and the pieces and the gulls wait for the sea
+//   ?lazy=0 (eager)    all four are built by the boot itself (they are in the scene at the milestone, there is no queue)
+//   ?skip=coast        the beach is left as it was: the gate is shut, there is no rail, no fixture, no pier, no sea, no props, no pieces and no shore life, and neither library is ever asked for
 // Quiet box: the browser comes only from tests/chrome.mjs (headless, simulated pointer lock). ?manual: no animation loop. The pages skip the people and the furnishing (the beach does not care).
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/world-beach-boot.test.mjs
 import test, { before, after } from 'node:test';
@@ -24,8 +25,13 @@ const PROBE = `(() => {
   const pg = c.scene.children.find((o) => o.name === 'props.beachprops'), ps = c.world?.beachprops, pl = c.world?.beachpropsLoad;
   const WG = ['props.watersports', 'props.seafloat', 'props.searopes'], wg = WG.map((n) => c.scene.children.find((o) => o.name === n)), wp = c.world?.waterprops, wl = c.world?.watersportsLoad, sp = c.world?.beachSea;
   const near = (k, l) => Math.abs(k.x - l.x) < 0.01 && Math.abs(k.y - l.y) < 0.01 && Math.abs(k.z - l.z) < 0.01;
+  const SL = c.scene.children.filter((o) => o.name === 'props.shorelife'), sls = c.world?.shorelife;
   return JSON.stringify({
-    beach: c.world?.beach ? { live: c.world.beach.live, sea: c.world.beach.sea, props: c.world.beach.props, waterprops: c.world.beach.waterprops } : null,
+    beach: c.world?.beach ? { live: c.world.beach.live, sea: c.world.beach.sea, props: c.world.beach.props, waterprops: c.world.beach.waterprops, shorelife: c.world.beach.shorelife } : null,
+    shore: sls || SL.length ? { groups: SL.length, shown: SL.every((o) => o.visible), meshes: SL.reduce((n, g) => n + g.children.filter((m) => m.isMesh).length, 0), names: SL.flatMap((g) => g.children.map((m) => m.name)).sort(), stats: sls ?? null,
+      systems: c.systems.filter((s) => s.name === 'world.shorelife').map((s) => s.order), lifeKeys: Object.keys(c.world?.life ?? {}).filter((k) => /shore|gull|crab|fish/i.test(k)) } : null,
+    warmedShore: trace ? trace.filter((t) => t.root === 'props.shorelife').length : null,
+    shoreSystems: c.systems.filter((s) => s.name === 'world.shorelife').length,
     pier: sp ? { walls: walls.filter((w) => /^(pier|raft|boat)[.]/.test(w.id)).length, wallsPlanned: sp.walls.length, floors: c.physics.floors.filter((f) => /^(pier|raft)[.]/.test(f.id)).length, floorsPlanned: sp.floors.length, reported: c.world.beach.pier?.colliders ?? null } : null,
     pieces: wp ? { shown: wg.map((g) => !!g?.visible), batches: wg.map((g) => g ? g.children.length : 0), placed: wp.placed, skipped: wp.skipped, planned: sp.items.length, files: wl?.files, failed: wl?.failed, floaters: wp.floaters,
       ropes: wp.ropes, ropesPlanned: sp.ropes.length, lamps: sp.lamps.length, lit: sp.lamps.filter((l) => c.lights.list.some((k) => k.kind === 'street' && near(k, l.light))).length, systems: c.systems.filter((s) => s.name === 'seafloat-pose').length } : null,
@@ -45,18 +51,31 @@ const PROBE = `(() => {
 })()`;
 const read = async (page) => JSON.parse(await page.eval(PROBE));
 
-test('?lazy=1: the gate is open and the front and the pier are solid; the sea, the props and the pieces join the staged queue, are warmed off the frame, and the sea is the only one', async () => {
+/** What the shore's life must be wherever it is built (js/world/shorelife.js): ONE group of three meshes (one draw call per sheet), 72 cards, 288 triangles, ONE system at order 41, nothing added to ctx.world.life. */
+function assertShore(r, where) {
+  assert.ok(r.shore, `${where}: the shore's life is in the scene`);
+  assert.equal(r.shore.groups, 1, `${where}: ONE group named props.shorelife`);
+  assert.ok(r.shore.shown, `${where}: the group is shown`);
+  assert.equal(r.shore.meshes, 3, `${where}: three meshes, one draw call per sheet`);
+  assert.deepEqual(r.shore.names, ['shore.crabs', 'shore.fish', 'shore.gulls'], `${where}: a mesh for the crabs, one for the fish, one for the gulls`);
+  assert.deepEqual(r.shore.stats, { gulls: 12, crabs: 18, fish: 42, tris: 288, calls: 3 }, `${where}: ctx.world.shorelife says what was built: 12 + 18 + 42 cards of 4 triangles, 3 draw calls`);
+  assert.ok(r.shore.stats.tris <= 5000 && r.shore.stats.calls === 3, `${where}: inside the budget (5,000 triangles, 3 calls)`);
+  assert.deepEqual(r.shore.systems, [41], `${where}: ONE system, world.shorelife, at order 41`);
+  assert.deepEqual(r.shore.lifeKeys, [], `${where}: nothing of the shore was added to ctx.world.life`);
+}
+
+test('?lazy=1: the gate is open and the front and the pier are solid; the sea, the props, the pieces and the shore\'s life join the staged queue, are warmed off the frame, and the sea is the only one', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=1&warmtrace&skip=people,furnish');
   await page.eval('__ladera.settle({ timeout: 300000 }).then(() => true)', 320000);
   const r = await read(page);
-  assert.deepEqual(r.beach, { live: true, sea: 'staged', props: 'staged', waterprops: 'staged' }, 'the boot leaves the sea, the props and the pieces to the queue');
+  assert.deepEqual(r.beach, { live: true, sea: 'staged', props: 'staged', waterprops: 'staged', shorelife: 'staged' }, 'the boot leaves the sea, the props, the pieces and the shore\'s life to the queue');
   assert.deepEqual(r.gate, ['open'], 'the plot\'s south gate is open');
   assert.ok(r.railsPlanned > 0 && r.rails === r.railsPlanned, `the deck's rail stands (${r.rails} of ${r.railsPlanned} runs)`);
   assert.ok(r.fixturesPlanned > 150 && r.fixtures === r.fixturesPlanned, `every collider of the front stands from the first frame (${r.fixtures} of ${r.fixturesPlanned} walls)`);
   assert.ok(r.pier.wallsPlanned > 60 && r.pier.walls === r.pier.wallsPlanned && r.pier.floorsPlanned === 2 && r.pier.floors === 2, `the pier's, the raft's and the boats' colliders stand (${r.pier.walls} of ${r.pier.wallsPlanned} walls, ${r.pier.floors} floors)`);
   assert.equal(r.pier.reported, r.pier.walls + r.pier.floors, 'and ctx.world.beach.pier says how many');
-  assert.ok(['sea', 'beachprops', 'waterprops'].every((id) => r.units.includes(id)), `the sea, the props and the pieces are units of the queue (${r.units})`);
-  assert.deepEqual(r.queue.filter((u) => ['sea', 'beachprops', 'waterprops'].includes(u.id)).sort((p, q) => p.id.localeCompare(q.id)), [{ id: 'beachprops', failed: false }, { id: 'sea', failed: false }, { id: 'waterprops', failed: false }], 'all three finished, and none failed');
+  assert.ok(['sea', 'beachprops', 'waterprops', 'shorelife'].every((id) => r.units.includes(id)), `the sea, the props, the pieces and the shore's life are units of the queue (${r.units})`);
+  assert.deepEqual(r.queue.filter((u) => ['sea', 'beachprops', 'waterprops', 'shorelife'].includes(u.id)).sort((p, q) => p.id.localeCompare(q.id)), [{ id: 'beachprops', failed: false }, { id: 'sea', failed: false }, { id: 'shorelife', failed: false }, { id: 'waterprops', failed: false }], 'all four finished, and none failed');
   assert.equal(r.waters, 1, 'one sea in the scene');
   assert.equal(r.meshes, 3, 'near, mid and far mesh');
   assert.ok(r.shown && r.worldSea, 'the sea is shown and ctx.world.sea is it');
@@ -76,25 +95,30 @@ test('?lazy=1: the gate is open and the front and the pier are solid; the sea, t
   assert.equal(r.pieces.lamps, 10); assert.equal(r.pieces.lit, r.pieces.lamps, 'every lamp of the pier has its light');
   assert.equal(r.libraryWater, 82, 'the watersports library\'s 41 designs and their low twins are in the registry only because the sector asked for them');
   assert.ok(r.warmedWater >= 3, `LateWarm made the pieces' programs off the frame (${r.warmedWater} of their meshes were warmed)`);
+  assertShore(r, '?lazy=1');
+  assert.ok(r.warmedShore >= 3, `LateWarm made the shore's three programs off the frame (${r.warmedShore} of its meshes were warmed)`);
   assert.deepEqual(r.errors, [], 'no error');
+  const sum = page.summary();
+  assert.deepEqual([...sum.errors, ...sum.consoleErrors, ...sum.netErrors], [], 'no page error, no console error and no failed request (a sheet that 404s would be one)');
 });
 
-test('?lazy=1 with the furnishing on: the props\' files wait for the packs the interiors are waiting for, the sea does not, and the pieces wait for the sea', async () => {
+test('?lazy=1 with the furnishing on: the props\' files wait for the packs the interiors are waiting for, the sea does not, and the pieces and the gulls wait for the sea', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=1&skip=people');
   await page.eval('__ladera.settle({ timeout: 600000 }).then(() => true)', 620000);
   const log = JSON.parse(await page.eval('JSON.stringify(__ladera.ctx.staged.log.map((u) => [u.id, u.start, u.end, u.failed]))'));
   const at = (id) => log.find((u) => u[0] === id);
-  assert.ok(at('interior-packs') && at('beachprops') && at('sea') && at('waterprops'), `the queue holds the packs, the props, the sea and the pieces (${log.map((u) => u[0])})`);
-  assert.equal(at('beachprops')[3], false, 'the props did not fail'); assert.equal(at('waterprops')[3], false, 'nor did the pieces');
+  assert.ok(at('interior-packs') && at('beachprops') && at('sea') && at('waterprops') && at('shorelife'), `the queue holds the packs, the props, the sea, the pieces and the shore's life (${log.map((u) => u[0])})`);
+  assert.equal(at('beachprops')[3], false, 'the props did not fail'); assert.equal(at('waterprops')[3], false, 'nor did the pieces'); assert.equal(at('shorelife')[3], false, 'nor did the shore\'s life');
+  assert.ok(at('shorelife')[1] >= at('sea')[2], `the shore's life starts (${at('shorelife')[1]} ms) after the sea has risen (${at('sea')[2]} ms), so a fish keeps clear of the surface the swell draws`);
   assert.ok(at('beachprops')[1] >= at('interior-packs')[2], `the props' files start (${at('beachprops')[1]} ms) after the packs have ended (${at('interior-packs')[2]} ms)`);
   assert.ok(at('sea')[1] < at('interior-packs')[2], `the sea does not wait for them: it started at ${at('sea')[1]} ms, the packs ended at ${at('interior-packs')[2]} ms`);
   assert.ok(at('waterprops')[1] >= at('sea')[2], `the pieces' files start (${at('waterprops')[1]} ms) after the sea has risen (${at('sea')[2]} ms), so a boat's first pose is read from the real surface`);
 });
 
-test('eager (?lazy=0): the boot builds the sea, the props and the pieces itself, and there is no queue to wait for', async () => {
+test('eager (?lazy=0): the boot builds the sea, the props, the pieces and the shore\'s life itself, and there is no queue to wait for', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=0&skip=people,furnish,warm');
   const r = await read(page);
-  assert.deepEqual(r.beach, { live: true, sea: 'inline', props: 'inline', waterprops: 'inline' });
+  assert.deepEqual(r.beach, { live: true, sea: 'inline', props: 'inline', waterprops: 'inline', shorelife: 'inline' });
   assert.deepEqual(r.gate, ['open']);
   assert.ok(r.railsPlanned > 0 && r.rails === r.railsPlanned, 'the rail stands');
   assert.ok(r.fixturesPlanned > 150 && r.fixtures === r.fixturesPlanned, `the front's colliders stand (${r.fixtures} of ${r.fixturesPlanned})`);
@@ -104,23 +128,28 @@ test('eager (?lazy=0): the boot builds the sea, the props and the pieces itself,
   assert.ok(r.shown && r.worldSea);
   assert.ok(r.props && r.props.shown && r.props.placed === r.props.planned && r.props.skipped === 0, 'every prop of the plan is in the scene at the milestone, shown');
   assert.ok(r.pieces && r.pieces.shown.every(Boolean) && r.pieces.placed === r.pieces.planned && r.pieces.skipped === 0 && r.pieces.lit === r.pieces.lamps, 'every piece of the sea\'s plan is in the scene at the milestone, shown and lit');
+  assertShore(r, 'eager');
   assert.equal(r.queue, null, 'no staged queue in an eager boot');
   assert.deepEqual(r.errors, [], 'no error');
+  const sum = page.summary();
+  assert.deepEqual([...sum.errors, ...sum.consoleErrors, ...sum.netErrors], [], 'no page error, no console error and no failed request');
 });
 
-test('?skip=coast: the beach is left as it was (a shut gate, no rail, no fixture, no pier, no sea, no props, no pieces, neither library asked for), lazy or not', async () => {
+test('?skip=coast: the beach is left as it was (a shut gate, no rail, no fixture, no pier, no sea, no props, no pieces, no gulls, crabs or fish, neither library asked for), lazy or not', async () => {
   for (const q of ['lazy=1', 'lazy=0']) {
     const page = await b.open(`la-ladera/index.html?autostart&manual&${q}&skip=people,furnish,warm,coast`);
     await page.eval('__ladera.settle({ timeout: 300000 }).then(() => true)', 320000);
     const r = await read(page);
-    assert.deepEqual(r.beach, { live: false, sea: 'none', props: 'none', waterprops: 'none' }, q);
+    assert.deepEqual(r.beach, { live: false, sea: 'none', props: 'none', waterprops: 'none', shorelife: 'none' }, q);
+    assert.equal(r.shore, null, `${q}: no shore life (no group, no ctx.world.shorelife)`);
+    assert.equal(r.shoreSystems, 0, `${q}: no world.shorelife system`);
     assert.deepEqual(r.gate, ['shut'], `${q}: the plot's south wall stands`);
     assert.equal(r.rails, 0, `${q}: no rail`); assert.equal(r.fixtures, 0, `${q}: no fixture collider`);
     assert.equal(r.pier, null, `${q}: no pier (no plan, no collider)`);
     assert.equal(r.waters, 0, `${q}: no sea`);
     assert.equal(r.props, null, `${q}: no props`); assert.equal(r.library, 0, `${q}: the library was never asked for`);
     assert.equal(r.pieces, null, `${q}: no pieces`); assert.equal(r.libraryWater, 0, `${q}: nor the watersports library`);
-    assert.ok(!r.units?.includes('sea') && !r.units?.includes('beachprops') && !r.units?.includes('waterprops'), `${q}: no unit`);
+    assert.ok(!r.units?.includes('sea') && !r.units?.includes('beachprops') && !r.units?.includes('waterprops') && !r.units?.includes('shorelife'), `${q}: no unit`);
     assert.deepEqual(r.errors, [], `${q}: no error`);
   }
 });

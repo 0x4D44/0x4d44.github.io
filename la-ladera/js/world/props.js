@@ -11,6 +11,8 @@ import { buildDress, buildPlanters } from './dress.js';
 import { buildDiscoveries } from './discover.js';
 import { buildBoundary } from './periphery.js';
 import { buildBeach } from './beach.js';
+import { buildBeachFinds } from './beachfinds.js';
+import { buildDunes } from './dunegrass.js';
 import { buildVista } from './vista.js';
 import { buildVistaKit } from './vista-kit.js';
 import { buildOutskirts } from './outskirts.js';
@@ -68,6 +70,7 @@ export async function buildProps(ctx) {
   await step('vegetation-assets', () => initVegetation(K));   // the instanced Blender plant library (a missing or incomplete species falls back to the procedural builders)
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('beach', () => buildBeach(K));          // the promenade, the sand and the sea south of the plot's edge, and the gate opened onto them (beach.js, coast.js)
+  await step('beachfinds', () => buildBeachFinds(K));   // its eight discoveries (beachfinds.js): they join ctx.world.extra, which discover.js registers last
   await step('vistakit', () => buildVistaKit(ctx));  // the modelled hillside kit (Codex GLBs, instanced, LOD): terraces on the far land. First, so the far houses below leave its ground alone; an absent or failed kit changes nothing
   await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
   await step('outskirts', () => buildOutskirts(K));  // the streets, alleys, trees and landmarks the kit's terraces and the far rows stand among, and the belt of tall trees beyond the plot's wall (R1-D20, D21)
@@ -79,6 +82,7 @@ export async function buildProps(ctx) {
   await step('rimwalk', () => buildRimWalk(K));      // the footpath along the foot of the wall, its treads, weeds and vines, the rebar and chain-link on the crest (R1-D21): it takes its ground before the flora does
   await step('flora', () => buildFlora(K));
   await step('pockets', () => buildPockets(K));      // the wedges of bare slope between houses at the street edge: flowers, grass, bushes, agaves, boulders and a small tree (R1-D23)
+  await step('dunes', () => buildDunes(K));          // after the flora, in its `tufts` batch: the dune grass at the two ends of the beach, in front of the sea wall's stones (dunegrass.js; only a live beach has any)
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
   await step('vegetation-dressing', () => { dressVegetation(K); K.vegetation?.finalize(); });
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks

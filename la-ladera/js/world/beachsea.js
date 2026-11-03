@@ -2,7 +2,7 @@
 // in, plain records out, so a Node test and the page read the same layout and every collider exists from the first frame, whatever the render loads when. beachfixtures.js turns the walls and floors
 // into colliders; waterprops.js draws the items from the Codex watersports library (waterlib.js names it) once that library is loaded, and moves the floating ones with the swell.
 //
-//   planSea(coast) -> { items, walls, floors, lamps, ropes, sunken, stats }
+//   planSea(coast) -> { items, walls, floors, lamps, ropes, sunken, reef, stats }
 //   items   { id, group, name, key, x, y, z, yaw, scale?, pitch?, lod: [near, far], float? }   a library piece (key = the name in ctx.assets); yaw 0 faces +Z = south = the sea. A floater has its
 //           waterline at `y` (the sea's height, the draft is the library's) and `float: { draft, bob, rock, rig: 'free' | 'rigid', phase }`: 'rigid' pieces (the raft, whose floor does not move) bob a few centimetres at most
 //   walls   { id, x1, z1, x2, z2, t, y0, y1 }                              what stops a walker or a swimmer (physics.addWall: a wall blocks when its top is over 0.4 m above the feet)
@@ -10,18 +10,21 @@
 //   lamps   { id, x, y, z, light: { x, y, z } }                            the pier's lamps (a real light each: waterprops.js)
 //   ropes   { id, a: [x, y, z], item, anchor: [x, y, z] }                  a mooring line from a cleat to the anchor of a floater (the floater moves: waterprops.js redraws it)
 //   sunken  { id, x, y, z, depth }                                         what lies on the seabed (the discoveries of phase 2c are made from these)
+//   reef    { id, x, y, z, depth, r }                                      the coral patch of phase 2c (a discovery is made from it, like the sunken things), a key of its own so `sunken` stays the two things it was: the centre of a
+//                                                                          disc of radius `r` on the seabed where the water is REEF.depth (3.0 m) deep, `z` solved from the coast, and the dressing (seabed.js) stands its coral inside it
 //
 // The pier is the library's kit assembled on the axis stair's centre line (coast.js PIER): 40 deck modules of 3 x 2 m (z 108 to 188), piles every 4 m on both sides (scaled in Y to reach the seabed),
 // crossbraces where the water is deep, a rail of posts and handrails on both sides with a gap at the head for the ladder, a lamp every 10 m, cleats, rod holders and bait crates at the fishermen's
 // posts, and the 4 x 3 m head. The deck is a floor at PIER.top: nobody walks under it on the sand (a floor over the head is a head bump, physics.js) and a swimmer passes under it in the water; where the
 // seabed is too near the deck for a walker's eyes (ROOM), a skirt and a cap (`pier.skirt`) close the underside, so the camera is never inside the slab.
 import { makeRng } from '../core/rng.js';
-import { SEA, BUOY_Z, PIER, RAFT, SAND_BOATS } from './coast.js';
+import { SEA, BUOY_Z, STOP_Z, PIER, RAFT, SAND_BOATS } from './coast.js';
 import { assetKey, SIZE, ANCHOR, FLOAT } from './waterlib.js';
 
 export const RAIL = Object.freeze({ h: 0.98, t: 0.05, inset: 0.07 });          // the library's handrail is 0.98 m tall; the colliders are 10 cm thick, 7 cm in from the deck's edge
 export const ROOM = 1.78;                                                       // m between the seabed and the deck's underside that a walker's eyes need under the pier: the player's eye 1.64, the camera's near plane 0.1, a margin
 export const SWIM = Object.freeze({ z: BUOY_Z, x0: -95, x1: 95, step: 10 });   // twenty buoys across the bay, a rope of floats between them and the bell buoy in the middle
+export const REEF = Object.freeze({ x: 58, depth: 3.0, r: 2.6 });              // the coral patch: its x, the water over it (m) and its radius (m); its z is where the coast says the water is that deep
 const LOD = Object.freeze({ pier: [60, 300], boat: [60, 240], float: [50, 280], small: [24, 90], sunk: [30, 90] });
 const WOODEN = Object.freeze(['wooden_boat_maria_del_mar', 'wooden_boat_la_esperanza', 'wooden_boat_san_pedro', 'wooden_boat_brisa']);
 
@@ -149,8 +152,14 @@ export function planSea(coast, o = {}) {
     const bed = H(x, z); mk(name, x, bed - 0.03, z, yaw, 'sunken', { lod: LOD.sunk }); sunken.push({ id, x, y: f3(bed), z, depth: f3(SEA - bed) });
   }
 
+  // ---- the coral patch: east of the raft, in the swimmers' water, where the seabed lies REEF.depth under the sea. Its z is solved from the coast (the profile only falls south of the shore, so the water over it
+  // only deepens and a bisection finds the one z) and not written down, so a coast that moves its seabed moves the patch with it and the discovery stays at the depth the design names.
+  let zlo = 150, zhi = STOP_Z;
+  for (let i = 0; i < 48; i++) { const zm = (zlo + zhi) / 2; if (coast.depthAt(REEF.x, zm) < REEF.depth) zlo = zm; else zhi = zm; }
+  const rz = f3((zlo + zhi) / 2), reef = { id: 'reef', x: REEF.x, y: f3(H(REEF.x, rz)), z: rz, depth: f3(SEA - H(REEF.x, rz)), r: REEF.r };
+
   const by = {}; for (const it of items) by[it.group] = (by[it.group] ?? 0) + 1;
-  return { items, walls, floors, lamps, ropes, sunken, by, stats: { items: items.length, floaters: items.filter((i) => i.float).length, walls: walls.length, floors: floors.length, lamps: lamps.length, ropes: ropes.length } };
+  return { items, walls, floors, lamps, ropes, sunken, reef, by, stats: { items: items.length, floaters: items.filter((i) => i.float).length, walls: walls.length, floors: floors.length, lamps: lamps.length, ropes: ropes.length } };
 }
 
 /** The sea's colliders (the pier's deck and rails and piles and lamps and crates, the raft's deck and skirt, every hull): part of the world from the first frame, drawn or not. Returns how many were made. */

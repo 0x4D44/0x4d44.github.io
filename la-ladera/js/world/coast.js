@@ -73,6 +73,12 @@ export const GATE = 'coast.gate';
 export function setGate(physics, open) { let n = 0; for (const w of physics.walls) if (w.id === GATE) { w.on = !open; n++; } return n; }
 
 /**
+ * Is the beach live in this build? The page builds it unless `?skip=coast`; a Node (`headless`) build only when it asks (`opts.coast`, tests/headless.mjs buildData({ coast: true })): its sweeps are the plot's own, with the
+ * gate shut. One answer for whoever opens the gate (world/beach.js buildBeach) and for the south row's back doors (arch/layouthelp.js beachSide), so a door never opens onto a gate that is shut.
+ */
+export function coastLive(opts) { return opts?.skip?.has?.('coast') !== true && (!opts?.headless || opts?.coast === true); }
+
+/**
  * The sea wall's rail as physics walls (a wall blocks when its top is over 0.4 m above the walker's feet): the deck's edge is closed except at the accesses. The cheeks beside each flight are solid
  * (a wall from under the sand to the rail's height), and the ramp's two side rails stand 0.9 m over its surface in 2 m runs, so nobody steps off its edge or into a cheek. Called by the page and by the headless build.
  */
