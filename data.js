@@ -429,7 +429,7 @@ window.ESSAYS = [
   {
     slug: "model-zoo",
     title: "The Model Zoo",
-    tagline: "One afternoon, 48 GPT and Claude models, the same questions. Nearly all of them pick 42, 47 or 73 and call their favourite colour blue; they draw a haggis chasing a gamekeeper, write joke machines that run in a sandbox, play the Moonlight Sonata from memory, and pass one story along a sentence at a time. Vanilla JS; no build step.",
+    tagline: "One afternoon, 48 GPT and Claude models, the same questions. Nine picks in ten land on 37, 42, 47 or 73, and the favourite colour is blue 94% of the time; they draw a haggis chasing a gamekeeper, write joke machines that run in a sandbox, play the Moonlight Sonata from memory, and pass one story along a sentence at a time. Vanilla JS; no build step.",
     url: "https://0x4d44.github.io/model-zoo/",
     illustration: "ill-model-zoo",
     date: "2026-11-03T17:00:00",
