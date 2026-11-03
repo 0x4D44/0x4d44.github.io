@@ -189,6 +189,7 @@ export function finishRoom(room, hh, rng, bp) {
   f.baseboard = 'trim_paint'; f.baseboardTint = hh.trimTint; f.trim = 'trim_paint'; f.trimTint = hh.trimTint;
   if (unfinished || bp.lot?.kind === 'unfinished' && room.outdoor) {
     f.floor = 'floor_concrete_raw'; f.wall = 'wall_cement_raw'; f.ceiling = 'ceiling_concrete'; delete f.ceilingTint; f.baseboard = null; f.trim = null;
+    f.wainscot = null;                                                       // (a raw room has no dado: left unsaid, arch/finish.js gave a bathroom of bare concrete a tiled one 1.6 m high, a living room or a hall a painted one)
     return (room.finish = f);
   }
   const wet = t === 'bathroom';
