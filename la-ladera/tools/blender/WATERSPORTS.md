@@ -6,10 +6,13 @@ three GLBs. Every design is present in the [catalogue](watersports.catalog.json)
 the [manifest](../../assets/models/manifest.watersports.json), and the
 [local anchor data](../../assets/models/watersports/anchors.json).
 
-The game does not request these files: `manifest.watersports.json` is deliberately
-absent from `assets/models/manifest.json`. No existing JavaScript, boot manifest,
-texture registry or test limit is changed. Placement and motion belong to the
-later beach integration.
+The boot does not request these files: `manifest.watersports.json` is deliberately
+absent from `assets/models/manifest.json`. The beach's sea sector (round 7:
+`js/world/waterlib.js`, the one module of the game that names the library, and
+`waterprops.js`) reads the manifest through `Assets.extend` and loads the pieces once
+the page is playable; the validator's `SECTOR` list says so, and W20 holds every
+other module to it. The atlas is registered in the texture registry under its own
+name (`watersports`), as the beach props' is.
 
 The current user brief takes precedence over the earlier nominal sizes in
 `dev/FEATURE-BEACH.md`: the windsurf board is 2.30 m, the lancha including its

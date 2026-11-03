@@ -84,4 +84,12 @@ export default {
   // the palm fronds and the ropes (the library's alphaMode MASK, cutoff 0.5). Both double-sided, as the library says.
   beach_props: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'beach_props', env: 0.45, vertexColors: false },
   beach_props_alpha: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'beach_props', alphaTest: 0.5, env: 0.45, vertexColors: false },
+  // the watersports library (waterprops.js; Codex watersports: one 2048 px atlas, ORM in `rough`, 0..1 UVs, COLOR_0 on every primitive, so vertexColors stay on). Four materials, as tools/blender/watersports.materials.json
+  // has them: the kit and most of a boat (atlas); the thin cloth of a sail or a kite, double-sided (fabric); the four painted transom names, cut out at the library's 0.45 (alpha); the lancha's screen and the sail window,
+  // blended at the GLB's 0.24 with no depth write (window).
+  watersports_atlas: { color: 0xffffff, rough: 1, uv: 'unit', tex: 'watersports', env: 0.45 },
+  watersports_fabric: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'watersports', env: 0.45 },
+  watersports_alpha: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'watersports', alphaTest: 0.45, env: 0.45 },
+  watersports_window: { color: 0xffffff, rough: 1, side: 'double', uv: 'unit', tex: 'watersports', alpha: 0.24, depthWrite: false, env: 0.6 },
+  sea_rope: { color: 0x9a8760, rough: 1, tex: false, vertexColors: false },      // the mooring lines from the pier's cleats to the boats' rings (waterprops.js): a plain cylinder, no UVs worth a texture
 };

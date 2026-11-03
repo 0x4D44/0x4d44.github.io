@@ -5,6 +5,8 @@
 //   gap     the axis stair loses its link down to the sand        ramp   the ramp climbs at 1:6                    leak    no rails and a gentle sea wall: a walker can step off the deck
 //   fewpois the beach keeps 12 of its points of interest          random a build that is not a function of the seed     gate    the south gate is built open
 //   norails the stairs lose their cheeks and the ramp its side rails (a walker steps into a cheek and off the ramp's edge)
+//   pier    the pier's chain is cut from the promenade           fish   the fishermen's posts stand on the seabed under the pier           moor   the moorings stand across the hulls
+//   nojetty surfaceAt ignores the feet's height (the planks are the sand and the sea under them)      jetty3  the deck's planks stretch over the whole bay (no footprint, only the height)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import './nice.mjs';
@@ -13,7 +15,7 @@ import { Physics } from '../js/core/physics.js';
 import { walkable } from '../js/world/nav.js';
 import { generatePlan } from '../js/world/plan.js';
 import { buildPerimeter } from '../js/world/terrain.js';
-import { createCoast, coastColliders, setGate, SEA, Z0, XW, DECK, DECK_Z, WALL_Z, BUOY_Z, STOP_Z, KERNEL_Z, SOFT_Z, STAIR_FLIGHT, RAMP_END_Z } from '../js/world/coast.js';
+import { createCoast, coastColliders, setGate, SEA, Z0, XW, DECK, DECK_Z, WALL_Z, BUOY_Z, STOP_Z, KERNEL_Z, SOFT_Z, STAIR_FLIGHT, RAMP_END_Z, PIER, RAFT, SAND_BOATS } from '../js/world/coast.js';
 import { pointInPoly } from '../js/world/geom.js';
 
 const SAB = process.env.C_SABOTAGE ?? '';
@@ -32,9 +34,14 @@ function broken(c) {
   if (on('island')) { const h = o.heightAt; o.heightAt = (x, z) => h(x, z) + 4.2 * Math.max(0, 1 - Math.hypot(x - 20, z - 170) / 4); }
   if (on('ramp')) { const h = o.heightAt, r = c.ramp; o.heightAt = (x, z) => (Math.abs(x - r.x) < r.w / 2 && z > DECK_Z && z < 118 ? Math.max(c.sandy(x, z), DECK - (z - DECK_Z) / 6) : h(x, z)); }
   if (on('leak')) { const h = o.heightAt; o.heightAt = (x, z) => (z >= DECK_Z && z < WALL_Z ? h(x, WALL_Z + 0.001) + (DECK - h(x, WALL_Z + 0.001)) * (1 - (z - DECK_Z) / 1.6) * 0.4 : h(x, z)); o.rails = []; }
-  if (on('gap')) { const a = c.stairs[2], ids = c.nav.nodes.filter((n) => n.kind === 'stair' && Math.abs(n.x - a.x) < 0.01), mid = ids.find((n) => n.z === 108.7), foot = ids.find((n) => n.z > 110); o.nav = { nodes: c.nav.nodes, edges: c.nav.edges.filter(([p, q]) => !((p === mid.id && q === foot.id) || (q === mid.id && p === foot.id))) }; }
+  if (on('gap')) { const a = c.stairs[2], ids = c.nav.nodes.filter((n) => n.kind === 'stair' && Math.abs(n.x - (a.x - 3)) < 0.01), mid = ids.find((n) => n.z === 108.7), foot = ids.find((n) => n.z > 110); o.nav = { nodes: c.nav.nodes, edges: c.nav.edges.filter(([p, q]) => !((p === mid.id && q === foot.id) || (q === mid.id && p === foot.id))) }; }   // (the grand stair comes down on two lanes, 3 m off its axis: the pier is on the axis)
+  if (on('pier')) { const pn = c.nav.nodes.filter((n) => n.kind === 'pier').sort((p, q) => p.z - q.z)[0]; o.nav = { nodes: c.nav.nodes, edges: c.nav.edges.filter(([p, q]) => ![p, q].includes(pn.id) || c.nav.nodes.find((n) => n.id === (p === pn.id ? q : p)).kind === 'pier') }; }       // (the pier's chain is cut from the promenade)
+  if (on('fish')) o.pois = c.pois.map((p) => (p.kind === 'fish' ? { ...p, y: c.heightAt(p.x, p.z) } : p));                                 // (the fishermen stand on the seabed under the pier)
+  if (on('moor')) o.pois = (o.pois ?? c.pois).map((p, i) => (p.kind === 'moor' ? { ...p, x: -88 + (i % 6) * 3, z: 131.5 } : p));        // (the old line of posts across the hulls)
   if (on('fewpois')) o.pois = c.pois.slice(0, 12);
   if (on('norails')) { o.cheeks = []; o.rampRails = []; }
+  if (on('nojetty')) o.surfaceAt = (x, z) => c.surfaceAt(x, z);                                                                              // (the planks are the sand and the sea under them)
+  if (on('jetty3')) o.surfaceAt = (x, z, y) => (Number.isFinite(y) && y > -0.3 && z >= DECK_Z ? 'jetty' : c.surfaceAt(x, z, y));              // (any walker at deck height anywhere south of the wall is on the planks)
   return o;
 }
 const C = broken(real);
@@ -77,8 +84,11 @@ test('profile: the waterline lies at z 140-150, the buoy line is 2.4-3.6 m deep,
 
 test('the nav graph the beach adds: land or shallow water only, one component, short slopes, and every access joins the promenade to the sand on its own', () => {
   const { nodes, edges } = C.nav, byId = new Map(nodes.map((n) => [n.id, n]));
-  for (const n of nodes) assert.ok(SEA - C.heightAt(n.x, n.z) <= 0.5 + 1e-6, `${n.id} (${n.kind} ${n.x},${n.z}) is ${(SEA - C.heightAt(n.x, n.z)).toFixed(2)} m under water`);
-  for (const n of nodes) assert.ok(Math.abs(n.y - real.heightAt(n.x, n.z)) <= 0.45, `${n.id} stands ${n.y} but the ground is ${real.heightAt(n.x, n.z).toFixed(2)}`);
+  const ground = nodes.filter((n) => n.kind !== 'pier'), deckNodes = nodes.filter((n) => n.kind === 'pier');          // (the pier's chain stands on its deck, over the water: the rest on the ground)
+  for (const n of ground) assert.ok(SEA - C.heightAt(n.x, n.z) <= 0.5 + 1e-6, `${n.id} (${n.kind} ${n.x},${n.z}) is ${(SEA - C.heightAt(n.x, n.z)).toFixed(2)} m under water`);
+  for (const n of ground) assert.ok(Math.abs(n.y - real.heightAt(n.x, n.z)) <= 0.45, `${n.id} stands ${n.y} but the ground is ${real.heightAt(n.x, n.z).toFixed(2)}`);
+  assert.ok(deckNodes.length >= 20 && deckNodes.every((n) => n.y === PIER.top && Math.abs(n.x - PIER.x) < 0.01 && n.z > PIER.z0 && n.z < PIER.z1), `the pier's chain: ${deckNodes.length} nodes on the deck's axis`);
+  assert.ok(Math.max(...deckNodes.map((n) => n.z)) >= PIER.z1 - 2 && Math.min(...deckNodes.map((n) => n.z)) <= PIER.z0 + 2, 'the chain runs from the stair\'s head to the pier\'s head');
   const comp = (ns, es) => {
     const adj = new Map(ns.map((n) => [n.id, []])); for (const [a, b] of es) { adj.get(a)?.push(b); adj.get(b)?.push(a); }
     const seen = new Set(), out = []; for (const n of ns) { if (seen.has(n.id)) continue; const q = [n.id]; seen.add(n.id); let k = 0; while (q.length) { const v = q.pop(); k++; for (const w of adj.get(v)) if (!seen.has(w)) { seen.add(w); q.push(w); } } out.push(k); }
@@ -86,15 +96,15 @@ test('the nav graph the beach adds: land or shallow water only, one component, s
   };
   assert.equal(comp(nodes, edges).out.length, 1, `the beach graph is ${comp(nodes, edges).out.length} pieces`);
   for (const [a, b] of edges) { const p = byId.get(a), q = byId.get(b), d = Math.hypot(p.x - q.x, p.z - q.z); assert.ok(d <= 10, `edge ${a}-${b} is ${d.toFixed(1)} m long`); }
-  for (const a of C.accesses) {
-    const keep = nodes.filter((n) => n.kind !== 'stair' || Math.abs(n.x - a.x) <= a.w / 2 + 3.1), ids = new Set(keep.map((n) => n.id));
+  for (const a of C.accesses) for (const lane of a.kind === 'stair' && a.w > 5 ? [a.x - 3, a.x + 3] : [a.x]) {          // (the grand stair's axis is the pier's: its people go down on the two sides, each lane on its own)
+    const wide = lane !== a.x, keep = nodes.filter((n) => n.kind !== 'stair' || Math.abs(n.x - lane) <= (wide ? 1 : a.w / 2 + 3.1)), ids = new Set(keep.map((n) => n.id));
     const { adj } = comp(keep, edges.filter(([p, q]) => ids.has(p) && ids.has(q)));
     const near = (x, z, ok) => keep.filter(ok).reduce((b, n) => (Math.hypot(n.x - x, n.z - z) < Math.hypot(b.x - x, b.z - z) ? n : b));
-    const top = near(a.x, DECK_Z, (n) => n.y > 0.1), foot = near(a.x, a.kind === 'ramp' ? RAMP_END_Z : STAIR_FLIGHT[1], (n) => n.y < -0.5);
-    assert.ok(Math.hypot(top.x - a.x, top.z - DECK_Z) <= 1.5 && top.y > 0.1, `${a.id}: no deck node within 1.5 m of the head of the ${a.kind} (${top.id} ${top.x},${top.z})`);
-    assert.ok(Math.hypot(foot.x - a.x, foot.z - (a.kind === 'ramp' ? RAMP_END_Z : STAIR_FLIGHT[1])) <= 1.5 && foot.y < 0, `${a.id}: no sand node within 1.5 m of the foot of the ${a.kind} (${foot.id} ${foot.x},${foot.z})`);
+    const top = near(lane, DECK_Z, (n) => n.y > 0.1 && n.kind !== 'pier'), foot = near(lane, a.kind === 'ramp' ? RAMP_END_Z : STAIR_FLIGHT[1], (n) => n.y < -0.5);
+    assert.ok(Math.hypot(top.x - lane, top.z - DECK_Z) <= 1.5 && top.y > 0.1, `${a.id} (x ${lane}): no deck node within 1.5 m of the head of the ${a.kind} (${top.id} ${top.x},${top.z})`);
+    assert.ok(Math.hypot(foot.x - lane, foot.z - (a.kind === 'ramp' ? RAMP_END_Z : STAIR_FLIGHT[1])) <= 1.5 && foot.y < 0, `${a.id} (x ${lane}): no sand node within 1.5 m of the foot of the ${a.kind} (${foot.id} ${foot.x},${foot.z})`);
     const seen = new Set([top.id]), q = [top.id]; while (q.length) { const v = q.pop(); for (const w of adj.get(v)) if (!seen.has(w)) { seen.add(w); q.push(w); } }
-    assert.ok(seen.has(foot.id), `${a.id}: on its own the ${a.kind} does not join the promenade to the sand`);
+    assert.ok(seen.has(foot.id), `${a.id} (x ${lane}): on its own the ${a.kind} does not join the promenade to the sand`);
   }
   let steep = 0; for (let z = DECK_Z; z <= RAMP_END_Z; z += 0.25) steep = Math.max(steep, Math.abs(C.heightAt(real.ramp.x, z + 0.25) - C.heightAt(real.ramp.x, z)) / 0.25);
   assert.ok(steep <= 0.09, `the ramp climbs at ${steep.toFixed(3)} (1:12 is 0.083, limit 0.09)`);
@@ -164,6 +174,20 @@ test('the Plaza del Mar: the spawn stands on it, it is level with the deck, and 
   assert.equal(real.surfaceAt(real.stairs[2].x, 108.5), 'stairs'); assert.equal(real.surfaceAt(real.ramp.x, 112), 'ramp');
 });
 
+test('the planks: up on the pier\'s deck (stem and head) or the raft\'s the walker is on \'jetty\'; under the pier, round the raft, on the sand beside them or without a height the ground answers', () => {
+  const s = (x, z, y) => C.surfaceAt(x, z, y), h = (x, z) => real.heightAt(x, z);
+  for (const z of [109, 125, 143, 150, 165, 180, PIER.z1 - 4]) assert.equal(s(PIER.x, z, PIER.top), 'jetty', `the pier's stem at z ${z}`);
+  for (const [x, z] of [[PIER.x + 1.4, 160], [PIER.x - 1.4, 140], [PIER.x + 1.9, PIER.z1 - 1], [PIER.x - 1.9, PIER.z1 - 2.5], [PIER.x, PIER.z1 - 0.1]]) assert.equal(s(x, z, PIER.top), 'jetty', `the pier at (${x}, ${z})`);
+  for (const [dx, dz] of [[0, 0], [1.3, 1.3], [-1.3, 1.3], [1.3, -1.3], [-1.3, -1.3]]) assert.equal(s(RAFT.x + dx, RAFT.z + dz, RAFT.top), 'jetty', `the raft at (${dx}, ${dz})`);
+  assert.equal(s(PIER.x, 130), 'sand', 'without a height the ground answers'); assert.equal(s(RAFT.x, RAFT.z), 'swim', 'without a height the raft is open water');
+  assert.equal(s(PIER.x, 160, h(PIER.x, 160)), 'wade', 'wading under the pier'); assert.equal(s(PIER.x, 180, h(PIER.x, 180)), 'swim', 'swimming under the pier');
+  assert.equal(s(RAFT.x, RAFT.z, h(RAFT.x, RAFT.z)), 'swim', 'swimming under the raft');
+  assert.equal(s(PIER.x + 3, 130, h(PIER.x + 3, 130)), 'sand', 'on the sand beside the pier');
+  assert.equal(s(PIER.x + 2.4, PIER.z1 - 1, PIER.top), 'swim', 'a point beside the head is not on it'); assert.equal(s(PIER.x, PIER.z1 + 1.2, PIER.top), 'swim', 'a point beyond the head is not on it');
+  assert.equal(s(RAFT.x + 1.7, RAFT.z, RAFT.top), 'swim', 'a point beside the raft is not on it'); assert.equal(s(PIER.x, 104, DECK), 'deck', 'the promenade is not the planks');
+  assert.equal(s(PIER.x + 2.5, 108.5, 0.1), 'stairs', 'the flight beside the pier is still stairs');
+});
+
 test('data: the areas Playa and Mar, five landmarks and the points of interest for the people phase', () => {
   assert.deepEqual(C.areas.map((a) => a.id).sort(), ['mar', 'playa']);
   assert.deepEqual(C.landmarks.map((l) => l.id).sort(), ['balsa', 'malecon', 'muelle', 'playa', 'salvavidas']);
@@ -171,6 +195,27 @@ test('data: the areas Playa and Mar, five landmarks and the points of interest f
   assert.ok(C.pois.length >= 40, `${C.pois.length} beach points of interest (need 40)`);
   for (const [k, min] of Object.entries({ lie: 24, wade: 8, swim: 6, fish: 6, volley: 4, vend: 8, watch: 2, moor: 6, launch: 6 })) assert.ok((n[k] ?? 0) >= min, `${k}: ${n[k] ?? 0} < ${min}`);
   for (const p of C.pois) { assert.ok(Number.isFinite(p.x + p.y + p.z), `${p.id} has a position`); if (p.kind === 'lie' || p.kind === 'vend') assert.ok(real.heightAt(p.x, p.z) > SEA, `${p.id} lies on dry sand`); }
+});
+
+test('the sea\'s set pieces: the fishermen stand on the pier\'s deck facing out over its rail, a fisherman stands beside each boat on the sand, the raft has a place on its deck, and both ladders are climbs', () => {
+  const fish = C.pois.filter((p) => p.kind === 'fish'), moor = C.pois.filter((p) => p.kind === 'moor'), raft = C.pois.find((p) => p.kind === 'raft');
+  for (const p of fish) {
+    assert.equal(p.y, PIER.top, `${p.id} stands on the pier's deck`);
+    assert.ok(Math.abs(Math.abs(p.x - PIER.x) - 1.2) < 0.01 && p.z > PIER.z0 + 10 && p.z < PIER.z1 - 3, `${p.id} (${p.x}, ${p.z}) is at the rail, along the stem`);
+    assert.ok(Math.abs(-Math.sin(p.ry) - Math.sign(p.x - PIER.x)) < 1e-9, `${p.id} looks out over the rail on its own side (ry ${p.ry.toFixed(2)})`);        // (the player's forward is (-sin ry, -cos ry))
+  }
+  assert.equal(new Set(fish.map((p) => Math.sign(p.x - PIER.x))).size, 2, 'both rails have fishermen');
+  assert.equal(moor.length, 6);
+  for (const b of SAND_BOATS) assert.ok(moor.some((p) => Math.hypot(p.x - b.x, p.z - b.z) > 1.2 && Math.hypot(p.x - b.x, p.z - b.z) < 2.2), `a fisherman beside the boat at ${b.x}`);
+  for (const p of moor) assert.ok(SAND_BOATS.every((b) => Math.abs(p.x - b.x) > 1.2 || Math.abs(p.z - b.z) > 3), `${p.id} (${p.x}, ${p.z}) is on a hull`);
+  assert.ok(raft && raft.y === RAFT.top && raft.x === RAFT.x && raft.z === RAFT.z, 'a place on the raft\'s deck');
+  const climb = (id) => real.climbs.find((c) => c.id === id);
+  for (const [id, deck, x, z, lo, hi] of [['raft.ladder', RAFT.top, RAFT.x, RAFT.z, 1.2, 2.4], ['pier.ladder', PIER.top, PIER.x, PIER.z1, 0.2, 1.2]]) {       // (the raft's from its centre, the pier's from the middle of its front edge)
+    const c = climb(id); assert.ok(c, `${id} is a climb`);
+    assert.equal(c.top, deck, `${id} comes out on the deck`); assert.ok(c.y < SEA - 0.5 && c.top - c.y > 1, `${id}: its lowest rung is under the water (${c.y})`);
+    assert.ok(Math.hypot(c.x - x, c.z - z) >= lo && Math.hypot(c.x - x, c.z - z) <= hi, `${id}: the swimmer's place is at the edge of the deck (${Math.hypot(c.x - x, c.z - z).toFixed(2)} m from ${x}, ${z})`);
+    assert.ok(c.exit.length === 2 && Math.abs(c.exit[0] - x) < 2 && Math.abs(c.exit[1] - z) < 2 && real.depthAt(c.x, c.z) > 1, `${id}: it comes out on the deck, from deep water`);
+  }
 });
 
 test('determinism: one seed gives one coast, and the dunes follow the seed', () => {

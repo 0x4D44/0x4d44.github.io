@@ -1,4 +1,4 @@
-// Independent acceptance gate for the unloaded watersports library.
+// Independent acceptance gate for the watersports library: unloaded by the boot, loaded by one sector (SECTOR) once the page is playable.
 // node la-ladera/tools/blender/watersports_validate.mjs --complete [--models DIR] [--json]
 import '../../tests/nice.mjs';
 import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'node:fs';
@@ -15,6 +15,9 @@ export const MAX_GLB_BYTES = 2_500_000;
 export const MAX_TEXTURE_BYTES = 4_000_000;
 export const MAX_NEAR_TRIANGLES = 1500;
 export const MAX_LOD_RATIO = 0.40;
+// The one module of the game that names the library (round 7, the beach's sea): it reads the manifest through Assets.extend once the page is playable, and every other module reaches the library
+// through it. The boot manifest still must not list the library, and no other file under js/ may name it (checked by the 'unloaded runtime' step of validateWatersports, relative to dirname(js)).
+export const SECTOR = Object.freeze(['js/world/waterlib.js']);
 // Kept independent of the editable catalogue: removing a design in both JSON
 // files cannot turn a partial library into a successful --complete build.
 export const REQUIRED_KEYS = Object.freeze([
@@ -370,7 +373,7 @@ function checkAnchorData(key, anchors, cat, measured) {
 
 export function validateWatersports({ models = MODELS, catalogue = resolve(ROOT, 'tools/blender/watersports.catalog.json'),
   anchors, materials = resolve(ROOT, 'tools/blender/watersports.materials.json'), complete = false,
-  runtime = true } = {}) {
+  runtime = true, js = resolve(ROOT, 'js') } = {}) {
   models = resolve(models); catalogue = resolve(catalogue); materials = resolve(materials);
   anchors = anchors ? resolve(anchors) : resolve(models, 'watersports/anchors.json');
   const report = { ok: false, complete, assetCount: 0, lodCount: 0, glbBytes: 0, textureBytes: 0, totalBytes: 0,
@@ -538,8 +541,10 @@ export function validateWatersports({ models = MODELS, catalogue = resolve(ROOT,
     const rootManifest = resolve(models, 'manifest.json');
     if (existsSync(rootManifest)) check(!json(rootManifest).files?.includes('manifest.watersports.json'), 'watersports must not be registered for game boot');
     else if (models === MODELS) throw new Error('missing root model manifest');
-    for (const path of filesUnder(resolve(ROOT, 'js'))) if (/\.(?:m?js|json)$/.test(path)) {
-      check(!/manifest\.watersports\.json|assets\/models\/watersports\//.test(readFileSync(path, 'utf8')), 'game code must not load the watersports library');
+    for (const path of filesUnder(resolve(js))) if (/\.(?:m?js|json)$/.test(path)) {
+      const rel = relative(dirname(resolve(js)), path).split(sep).join('/');
+      if (SECTOR.includes(rel)) continue;
+      check(!/manifest\.watersports\.json|assets\/models\/watersports\//.test(readFileSync(path, 'utf8')), `game code must not load the watersports library (${rel} names it; only ${SECTOR.join(', ')} may)`);
     }
   });
   report.ok = report.failures.length === 0;

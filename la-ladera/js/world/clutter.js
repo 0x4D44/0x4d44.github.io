@@ -30,14 +30,17 @@ export function clutterMatrix(x, y, z, yaw = 0, scale = [1, 1, 1], pitch = 0) {
 }
 
 export class Clutter {
-  /** o = { tag: the manifest tag that names the library's near assets ('clutter'), id: the group, system and ctx.world names ('clutter'; the beach is another instance: tag 'beach-prop', id 'beachprops') } */
+  /** o = { tag: the manifest tag that names the library's near assets ('clutter'), id: the group, system and ctx.world names ('clutter'; the beach is another instance: tag 'beach-prop', id 'beachprops'),
+   *         only: the keys this instance may place (the sea's two instances share one library and each builds only its own designs) } */
   constructor(ctx, o = {}) {
     this.ctx = ctx; this.tag = o.tag ?? 'clutter'; this.id = o.id ?? 'clutter';
     this.types = new Map(); this.records = []; this.batches = []; this.finalized = false;
     this.group = new THREE.Group(); this.group.name = `props.${this.id}`; this.group.userData.noMerge = true;
     this.last = new THREE.Vector3(Infinity, Infinity, Infinity);
     this.stats = { placed: 0, near: 0, far: 0, culled: 0, triangles: 0, batches: 0, byKey: {}, replacements: 0, additions: 0 };
+    const only = o.only ? new Set(o.only) : null;
     for (const key of ctx.assets.names(this.tag)) {
+      if (only && !only.has(key)) continue;
       const meta = ctx.assets.meta(key), near = readyParts(ctx, key), low = typeof meta?.lod1 === 'string' && readyParts(ctx, meta.lod1);
       if (!near || !low || !meta.size?.every((n) => Number.isFinite(n) && n > 0)) continue;
       const lowMeta = ctx.assets.meta(meta.lod1);

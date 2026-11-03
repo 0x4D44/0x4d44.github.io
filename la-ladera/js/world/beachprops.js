@@ -24,13 +24,14 @@ export async function loadBeachProps(ctx, front, io = {}) {
   const clutter = new Clutter(ctx, { tag: BEACH_TAG, id: BEACH_ID });
   clutter.loadStatus = { files: paths.length, paths, failed };
   let placed = 0, skipped = 0;
-  for (const it of front.items) {
-    if (clutter.place(it.key, it.x, it.y, it.z, it.yaw, { near: it.lod[0], far: it.lod[1], scene: 'beach', source: 'addition' })) placed++; else skipped++;
+  const all = [...front.items, ...(front.groynes ?? [])];
+  for (const it of all) {
+    if (clutter.place(it.key, it.x, it.y, it.z, it.yaw, { near: it.lod[0], far: it.lod[1], scale: it.scale, scene: 'beach', source: 'addition' })) placed++; else skipped++;
   }
   if (!placed) return null;
   clutter.group.visible = io.hidden !== true;
   clutter.finalize();
-  Object.assign(ctx.world[BEACH_ID], { items: front.items.length, skipped });          // (finalize made ctx.world.beachprops: the Clutter's stats)
+  Object.assign(ctx.world[BEACH_ID], { items: all.length, skipped });          // (finalize made ctx.world.beachprops: the Clutter's stats)
   ctx.beachProps = clutter;
   return clutter;
 }

@@ -119,6 +119,7 @@ an ineffective structural check.
 | W11-W15 | Stale a file hash; corrupt PNG compressed data/CRC; alter draft metadata; invert ladder endpoints; add the library to the boot manifest |
 | W16-W18 | Replace shared mesh references with unique copies; remove a colourway; change pinned text content after testing equivalent LF/CRLF forms |
 | W19 | Reverse both hull winding and normals together, so generic winding checks still pass but the nearest exterior surface faces inward |
+| W20 | Name the library from a module of the game's code other than the sector's loader (`SECTOR`, js/world/waterlib.js) |
 | L01-L05 | Corrupt a catenary endpoint; discard 90% of slack; break degenerate-span handling; remove the segment-count guard; stop reusing the supplied buffer |
 | V01 | Mutate shared source UVs instead of cloning affected geometry |
 
