@@ -217,3 +217,22 @@ test('the Feria del Barrio poster says SÁBADO: the acute accent is inked over t
   assert.equal(inked(629, 155, 634, 160), 0);
   assert.ok(inked(611, 161, 616, 182) >= 30, 'the letter itself is below it (its apex and its bar: 36 pixels in these columns)');
 });
+
+// R3-209: the shop poster read "TIENDA DONA ANA". Same atlas, same pixel font (clutter_atlas.py, scale 4, "DOÑA ANA" at x 38, y 117 of the poster's cell at x 768, y 256): the N is the third letter, at x 854..873, and its tilde is two rows of
+// 4 x 4 blocks above it, y 365..368 over y 369..372: columns 1, 2 and 4 on the upper row, 0, 2 and 3 on the lower row. The letters are pale (244, 219, 160) on dark green (42, 98, 84).
+test('the Tienda poster says DOÑA: the tilde is inked over the N (R3-209)', () => {
+  const b = readFileSync(resolve(ROOT, 'assets/textures/clutter/decals.png')), idat = []; let o = 8, w = 0;
+  while (o < b.length) { const n = b.readUInt32BE(o), tag = b.toString('latin1', o + 4, o + 8); if (tag === 'IHDR') w = b.readUInt32BE(o + 8); if (tag === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + n)); o += 12 + n; }
+  const raw = inflateSync(Buffer.concat(idat)), pale = (x, y) => { const k = y * (w * 4 + 1) + 1 + x * 4; return raw[k] + raw[k + 1] + raw[k + 2] > 450; };
+  const lit = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (pale(x, y)) n++; return n; };
+  const block = (col, row) => lit(854 + col * 4, 365 + row * 4, 857 + col * 4, 368 + row * 4);        // one 4 x 4 block of the tilde: row 0 is the upper one
+  assert.equal(w, 1024);
+  for (const col of [1, 2, 4]) assert.equal(block(col, 0), 16, `the upper row of the tilde is inked at column ${col}`);
+  for (const col of [0, 2, 3]) assert.equal(block(col, 1), 16, `the lower row of the tilde is inked at column ${col}`);
+  for (const col of [0, 3]) assert.equal(block(col, 0), 0, `and not at column ${col} of the upper row`);
+  for (const col of [1, 4]) assert.equal(block(col, 1), 0, `nor at column ${col} of the lower row`);
+  assert.equal(lit(854, 357, 873, 364), 0, 'nothing is inked in the two rows above the tilde');
+  assert.ok(lit(854, 373, 873, 400) >= 150, 'the letter itself is below it: an N of 5 x 7 blocks');
+  assert.equal(lit(830, 365, 849, 372), 0, 'and no tilde over the O before it');
+  assert.equal(lit(878, 365, 897, 372), 0, 'nor over the A after it');
+});

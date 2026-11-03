@@ -52,7 +52,9 @@ FONT = {
     '-': ('000','000','000','111','000','000','000'),
     ' ': ('000','000','000','000','000','000','000'),
     'Á': ('01110','10001','10001','11111','10001','10001','10001'),   # an A; text() draws the acute accent over it (two blocks, in the two rows above the letter)
+    'Ñ': ('10001','11001','10101','10011','10001','10001','10001'),   # an N; text() draws the tilde over it (two rows above the letter: .XX.X over X.XX.)
 }
+TILDE = ((1, 2), (2, 2), (4, 2), (0, 1), (2, 1), (3, 1))               # (column, rows above the letter) of the blocks of the tilde over an N
 
 
 def atlas_tiles():
@@ -105,6 +107,8 @@ def write_atlas(path):
             if ch == 'Á':
                 rect(x + 2 * scale + 7 * slant, y - scale, scale, scale, c)
                 rect(x + 3 * scale + 8 * slant, y - 2 * scale, scale, scale, c)
+            if ch == 'Ñ':
+                for col, up in TILDE: rect(x + col * scale + (6 + up) * slant, y - up * scale, scale, scale, c)
             x += (len(glyph[0]) + 1) * scale
     def paper(c, seed):
         rng = random.Random(seed)
@@ -176,7 +180,7 @@ def write_atlas(path):
             rect(20,36,216,184,(232,202,125))
             rect(26,42,204,172,(42,98,84))
             text('TIENDA',61,5,(244,219,160))
-            text('DONA ANA',117,4,(244,219,160))
+            text('DOÑA ANA',117,4,(244,219,160))
             text('PAN - LECHE',180,2,(244,219,160))
     rows = b''.join(b'\x00' + data[y*WIDTH*4:(y+1)*WIDTH*4] for y in range(HEIGHT))
     def chunk(tag, payload):
