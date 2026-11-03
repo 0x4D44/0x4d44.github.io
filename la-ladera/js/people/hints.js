@@ -8,8 +8,12 @@
 /** A place or thing in the open (not inside a home or shop, not something found in a drawer). */
 export const publicDiscovery = (d) => !!d && !d.building && !/^(int|cont):/.test(String(d.id ?? '')) && d.kind !== 'hallazgo' && d.kind !== 'find';
 
-/** [Spanish noun phrase with its article, English noun phrase with its article, group?] by discovery id. */
-const PHRASE = {
+/**
+ * [Spanish noun phrase with its article, English noun phrase with its article, group?, plural?] by discovery id. A plural phrase is made with PL: the verb after it agrees ("Quedan ...", "Están ...",
+ * English "They're ..."; R3-202: it was always "Queda"). The agreement needs the number only: "queda" and "está" do not change with the gender of what they say.
+ */
+const PL = (es, en, group) => [es, en, group, true];
+export const PHRASE = {
   'w.cruz': ['la Cruz de la Cumbre', 'the summit cross'],
   'w.mirador': ['el Mirador del Cielo', 'the Sky Viewpoint'],
   'w.telescopio': ['el telescopio de monedas', 'the coin telescope'],
@@ -19,24 +23,24 @@ const PHRASE = {
   'w.cancha': ['la Cancha El Cerro', 'the futsal court'],
   'w.parada': ['la parada del bus', 'the bus shelter'],
   'w.faroles': ['el Callejón de los Faroles', 'Lantern Alley'],
-  'w.almendros': ['los Almendros', 'the almond trees'],
+  'w.almendros': PL('los Almendros', 'the almond trees'),
   'w.capilla': ['la Plazoleta de la Capilla', 'the chapel square'],
-  'w.eucaliptos': ['los eucaliptos del filo', 'the eucalyptus trees on the ridge'],
+  'w.eucaliptos': PL('los eucaliptos del filo', 'the eucalyptus trees on the ridge'),
   'w.cables': ['el enredo de cables', 'the tangle of wires'],
   'w.carrito': ['el carrito de fruta', 'the fruit cart'],
   'w.condor': ['el mural del Cóndor del Cerro', 'the condor mural'],
   'w.fiesta': ['el mural de la Fiesta de la Ladera', 'the festival mural'],
   'w.cerro': ['el mural del Cerro Verde', 'the green hill mural'],
   'w.arco': ['el Arco de Bienvenida', 'the welcome arch'],
-  'w.placas': ['las placas de las calles', 'the street-name plaques'],
+  'w.placas': PL('las placas de las calles', 'the street-name plaques'),
   'w.rayuela': ['la rayuela', 'the hopscotch'],
   'w.huerta': ['la huerta de Don Anselmo', "Don Anselmo's vegetable garden"],
   'w.espantapajaros': ['el espantapájaros', 'the scarecrow'],
   'w.cruzcamino': ['la cruz del camino', 'the roadside cross'],
-  'w.palomas': ['las palomas del cable', 'the pigeons on the wire', 'animal'],               // (animals are registered as 'nature', but nobody says "if you like nature, look at the sleeping dog": R3-022)
+  'w.palomas': PL('las palomas del cable', 'the pigeons on the wire', 'animal'),               // (animals are registered as 'nature', but nobody says "if you like nature, look at the sleeping dog": R3-022)
   'w.perro': ['el perro dormido', 'the sleeping street dog', 'animal'],
   'w.guardian': ['el perro Canelo, guardián de la huerta', 'Canelo, the garden dog', 'animal'],
-  'w.gallinas': ['las gallinas de doña Rosa', "Doña Rosa's hens", 'animal'],
+  'w.gallinas': PL('las gallinas de doña Rosa', "Doña Rosa's hens", 'animal'),
   'w.columpio': ['el columpio de llanta', 'the tyre swing'],
   'w.cometa': ['la cometa del mirador', 'the kite at the viewpoint', 'thing'],             // (its kind is 'vista', but a kite is not a view)
   'w.balon': ['el balón de la cancha', 'the football on the court'],
@@ -61,10 +65,10 @@ export const HINT_INTRO = {
 const shortEn = (d) => { const e = String(d.en ?? '').trim(); return e && e.split(/\s+/).length <= 5 && !/[.:;,!?]/.test(e) ? (/^(the|a|an)\s/i.test(e) ? e : 'the ' + e) : String(d.name ?? '').trim(); };
 
 /**
- * How to say a public discovery in a sentence: { es, en, group }. `es` is the Spanish noun phrase with its article, or null when the table has no entry:
- * the caller then puts the article on the discovery's own name (dialogue.js withArticle). `en` carries its article ("the summit cross").
+ * How to say a public discovery in a sentence: { es, en, group, plural }. `es` is the Spanish noun phrase with its article, or null when the table has no entry:
+ * the caller then puts the article on the discovery's own name (dialogue.js withArticle) and `plural` is null (the caller reads it off that article). `en` carries its article ("the summit cross").
  */
 export function hintPhrase(d) {
   const t = PHRASE[d.id];
-  return { es: t ? t[0] : null, en: t ? t[1] : shortEn(d), group: t?.[2] ?? GROUP[d.kind] ?? 'thing' };
+  return { es: t ? t[0] : null, en: t ? t[1] : shortEn(d), group: t?.[2] ?? GROUP[d.kind] ?? 'thing', plural: t ? t[3] === true : null };
 }
