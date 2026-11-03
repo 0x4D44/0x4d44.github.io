@@ -53,10 +53,8 @@ select{background:var(--bg2);color:var(--ink);border:1px solid var(--line);borde
 
 main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
 .block{padding:56px 0}
-/* Full-bleed band without 100vw: a box-shadow spread paints past the box but adds no scrollable overflow (100vw counts the scrollbar gutter). */
-.block.alt{position:relative;background:var(--bg2);box-shadow:0 0 0 100vmax var(--bg2);clip-path:inset(0 -100vmax)}
-.block.alt::before,.block.alt::after{content:"";position:absolute;left:0;right:0;height:1px;background:var(--line);box-shadow:0 0 0 100vmax var(--line);clip-path:inset(0 -100vmax)}
-.block.alt::before{top:0}.block.alt::after{bottom:0}
+/* Full-bleed band without 100vw (it counts the scrollbar gutter): a border-image outset paints past the box but adds no scrollable overflow. Its top and bottom slices are the edge lines and sit on the border, so they snap to whole pixels (a clip-path or a 1px pseudo-element left them blurred across two rows); the padding gives back the border's 2px. */
+.block.alt{position:relative;padding-block:55px;background:var(--bg2);border-block:1px solid var(--line);border-image:linear-gradient(var(--line) 0 1px,var(--bg2) 1px calc(100% - 1px),var(--line) calc(100% - 1px)) 1 0 fill / 1px 0 / 0 100vmax}
 .sub{color:var(--dim);max-width:780px;margin:0 0 24px}
 
 .explorer{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
