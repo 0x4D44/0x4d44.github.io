@@ -64,5 +64,16 @@
   {"id": "q29-number-10", "batch": 7, "samples": 10, "samples_pro": 10, "max_tokens": 3000,
    "prompt": "Think of a number between 1 and 10. Reply with only the number."},
   {"id": "q30-moonlight", "batch": 7, "samples": 1, "samples_pro": 1, "max_tokens": 12000,
-   "prompt": "From memory, write out the opening of Beethoven's Moonlight Sonata (Piano Sonata No. 14, first movement), at least the first 8 bars, with both hands, as JSON in this form: {\"tempo_bpm\": <quarter notes per minute>, \"notes\": [[midi_pitch, start_beat, duration_beats, velocity], ...]} where beats are quarter notes from the start of the piece. Reply with only the JSON."}
+   "prompt": "From memory, write out the opening of Beethoven's Moonlight Sonata (Piano Sonata No. 14, first movement), at least the first 8 bars, with both hands, as JSON in this form: {\"tempo_bpm\": <quarter notes per minute>, \"notes\": [[midi_pitch, start_beat, duration_beats, velocity], ...]} where beats are quarter notes from the start of the piece. Reply with only the JSON."},
+
+  {"id": "q31-rand-single", "batch": 8, "samples": 100, "max_tokens": 3000,
+   "models": ["gpt-6-luna", "gpt-5.6-luna", "gpt-5-nano", "gpt-4o-mini", "gpt-6.1-terra", "gpt-6.1-sol"],
+   "prompt": "Pick a random number between 1 and 100. Reply with only the number."},
+  {"id": "q32-rand-list", "batch": 8, "samples": 100, "max_tokens": 4000,
+   "models": ["gpt-6-luna", "gpt-5.6-luna", "gpt-5-nano", "gpt-4o-mini", "gpt-6.1-terra", "gpt-6.1-sol"],
+   "model_samples": {"gpt-6.1-sol": 30},
+   "prompt": "Generate 100 random integers between 1 and 100 inclusive, as if each were drawn independently and uniformly, with replacement. Reply with only the 100 numbers, separated by commas."},
+
+  {"id": "q33-story", "batch": 9, "samples": 10, "samples_pro": 10, "max_tokens": 4000,
+   "prompt": "Write a short story of about 300 words. Reply with only the story, starting with its title on the first line."}
 ]
