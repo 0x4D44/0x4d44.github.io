@@ -5,9 +5,9 @@ import { Talk } from './talk.js';
 import { DialogueUI } from './ui.js';
 import { CharacterLibrary, SKIN_MOOD, skinMood } from './rig.js';
 import { Speech } from './speech.js';
-import { holdProp, propFor, phoneClip, sellClip } from './props.js';
+import { holdProp, propFor, phoneClip, sellClip, showPhone } from './props.js';
 import { plantFeet } from './legs.js';
-import { poseIdle, clearCarriage } from './carriage.js';
+import { poseIdle, poseCall, clearCarriage } from './carriage.js';
 import { countLines } from './lines/index.js';
 import { PERSON } from '../core/interact.js';
 
@@ -147,6 +147,8 @@ export class PeopleWorld extends PeopleSim {
       clearCarriage(v); v.mixer.update(n.mixAcc); n.mixAcc = 0;
       n.floatM = n.sitH != null ? plantFeet(this.lib, v, n.st.y) : null;       // R1-D13: a seated person's soles on the floor (thighs tilt down, shins stay upright); null when standing
       if (n.sitH == null && n.lieH == null && !prop) poseIdle(v, n.id);        // R3-102: whoever stands idle with empty hands keeps their own arms (carriage.js), not the one pose of the clip
+      poseCall(v);                                                             // R3-205: the head of whoever is on a call leans to the phone at the ear (it fades out with the clip's weight)
+      if (prop) showPhone(v, clip);                                            // R3-205: a phone shows once its clip is half in, not while the hand is still down in the walk
     }
     const cs = n.dist < SHADOW_MAX && !n.scene; if (v.mesh && v.mesh.castShadow !== cs) v.mesh.castShadow = cs;       // (nobody indoors casts into the sun's shadow map: the interiors do not either)
   }
