@@ -1,8 +1,9 @@
 // Per-room-type furnishers for homes. Each takes (L: Layout, E: env, hh: household) and places items through the Layout API.
 // Real-world logic: bed head to the wall with access on a side, sofa facing the TV, counter run on the longest free wall,
 // stove beside a gas cylinder, toilet/shower/basin with front clearance, chairs tucked around tables, decor hung clear of doors/windows.
-import { CATALOG } from './catalog.js';
-import { KNEEHOLE } from './carcass.js';
+import { CATALOG, seatOffsets, seatZoff } from './catalog.js';
+import { KNEEHOLE, layoutOf } from './carcass.js';
+import { spotsAt } from './reach.js';
 import { opposite, wallInfo, wallPoint, WALLS, getUid, setUid } from './layout.js';
 import { decalDef } from './decals.js';
 import { art, clock, mirror, notice } from './decor.js';
@@ -330,7 +331,10 @@ export function ensureHomeFridge(built) {
   return null;
 }
 
-/** Chairs tucked around a table (n of them, as many as fit). `o.dense`: a chair to every 0.55 m of a side and no hand's breadth to spare (a 1 m table seats two on a side, not one). */
+/** Chairs tucked around a table (n of them, as many as fit). `o.dense`: a chair to every 0.55 m of a side and no hand's breadth to spare (a 1 m table seats two on a side, not one). `o.small`: the catalogue
+ *  name of a stool to try where the chair does not fit (it stands a hand's breadth shallower: R4-704, a 1 m table in the 1.9 m passage of a rowhouse dining room seats two stools, not two chairs).
+ *  With either, a seat that a later one walled in is taken out again (a plastic table on a 2 m terrace: the stool west of it, and the one south of it that shut it in). `o.calm()`: false while the
+ *  seats set so far take a front from a piece that opens (`reachKept`): the last of them go until it is true. */
 export function chairsAround(L, table, n, names, o = {}) {
   if (!table) return [];
   const rng = L.rng, out = [];
@@ -341,7 +345,7 @@ export function chairsAround(L, table, n, names, o = {}) {
   const mk = (lx0, lz0, dx, dz, k, dry, gapAxis) => {
     for (let i = 0; i < k; i++) {
       const t = k === 1 ? 0 : (i / (k - 1) - 0.5) * (k - 1) * 0.55;
-      sides.push({ lx: lx0 + dx * t, lz: lz0 + dz * t, dry, axis: gapAxis });
+      sides.push({ lx: lx0 + dx * t, lz: lz0 + dz * t, dry, axis: gapAxis, sgn: Math.sign(gapAxis === 'z' ? lz0 : lx0) });
     }
   };
   const c0 = CATALOG[names[0]], cd = c0.size[2] / 2 + (o.gap ?? 0.03);
@@ -353,9 +357,16 @@ export function chairsAround(L, table, n, names, o = {}) {
   const order = sides.map((s, i) => ({ s, k: (longX ? (s.axis === 'z' ? 0 : 1) : (s.axis === 'x' ? 0 : 1)) * 10 + (i % 3) + rng.next() * 0.3 })).sort((a, b) => a.k - b.k).map((x) => x.s);
   for (const s of order) {
     if (out.length >= n) break;
-    const it = L.atRel(nm(names, rng), table, s.lx, s.lz, s.dry, { prio: 2 });
+    const pick = nm(names, rng);
+    let it = L.atRel(pick, table, s.lx, s.lz, s.dry, { prio: 2 });
+    if (!it && o.small && pick !== o.small && CATALOG[o.small]) {
+      const back = cd - (CATALOG[o.small].size[2] / 2 + (o.gap ?? 0.03));                                        // (the stool's own edge distance: it is drawn in to the table by what it is shallower)
+      it = L.atRel(o.small, table, s.axis === 'x' ? s.lx - s.sgn * back : s.lx, s.axis === 'z' ? s.lz - s.sgn * back : s.lz, s.dry, { prio: 2 });
+    }
     if (it) out.push(it);
   }
+  if (o.dense || o.small) for (let bad = shutAmong(L, out); bad.length; bad = shutAmong(L, out)) { L.remove(bad[0]); out.splice(out.indexOf(bad[0]), 1); }       // (a seat that one set later walled in is no seat: no sit anchor could stand at it)
+  if (o.calm) while (out.length && !o.calm()) L.remove(out.pop());
   return out;
 }
 /** The poses to try a table at, best first: free in the room round `near`, then against a wall (the long side along it, the chairs on the open side); `wallFirst` the other way round (a small kitchen). */
@@ -368,9 +379,9 @@ export function* tablePoses(L, name, near, rys, wallFirst = false) {
 /**
  * A table where no chair can be pulled up seats nobody (R4-304: 41 of the barrio's 119 tables had no chair or stool: in the passage of a 1.93 m dining room, between a door and a wall, beside a toy pile).
  * With fewer than `need` chairs, the table and what stands round it come out and its other poses (`poses()`, started once the table is out) are tried, the chairs a little denser; the first that
- * seats `need` stays, else the one that seats most (the first, when none seats more). Returns { table, chairs }.
+ * seats `need` stays, else the one that seats most (the first, when none seats more). `calm()`: a pose that takes a front from a piece that opens (a table across the pantry) is not one (R4-118). Returns { table, chairs }.
  */
-function reseat(L, table, chairs, names, n, poses, need = 2) {
+function reseat(L, table, chairs, names, n, poses, need = 2, calm = () => true) {
   if (chairs.length >= need) return { table, chairs };
   const drop = (t, cs) => { for (const c of cs) L.remove(c); L.remove(t); };
   const put = (t, cs) => { L._commit(t, {}); for (const c of cs) L._commit(c, {}); };
@@ -379,7 +390,7 @@ function reseat(L, table, chairs, names, n, poses, need = 2) {
   for (const it of poses()) {
     tried++;
     L._commit(it, {});
-    const cs = chairsAround(L, it, n, names, { dense: true });
+    const cs = calm() ? chairsAround(L, it, n, names, { dense: true, small: STOOL, calm }) : [];
     if (cs.length >= need) return { table: it, chairs: cs };
     if (cs.length > best.chairs.length) best = { table: it, chairs: cs };
     drop(it, cs);
@@ -387,25 +398,53 @@ function reseat(L, table, chairs, names, n, poses, need = 2) {
   put(best.table, best.chairs);
   return best;
 }
+/** `fn()` with the room's decoration out of it (what has priority 2 or less and stands on the floor: plants, toys, shoes, a side table; and what `also` names; never what `keep` lists), then put back, each
+ *  piece where it still fits: whatever the new arrangement stands on goes, and so does what would shut in a seat or a bed (a stool drawn up to a table must stay a place to walk up to: the 'anchors'
+ *  census holds every seat to a sit anchor). Returns what `fn` returns. */
+function softened(L, keep, fn, also = null) {
+  const soft = L.items.filter((i) => i.floor && !i.parent && (i.prio >= 2 || also?.test(i.name)) && i.c.size[1] >= 0.05 && !keep.includes(i));
+  const kids = soft.map((s) => L.items.filter((x) => x.parent === s));
+  for (const s of soft) L.remove(s);
+  try { return fn(); } finally {
+    const shut = shutIn(L);
+    soft.forEach((s, k) => {
+      if (!L.valid(s, {})) return;
+      L._commit(s, {});
+      if (shutIn(L) > shut) { L.remove(s); return; }
+      for (const c of kids[k]) L._commit(c, {});
+    });
+  }
+}
 /**
  * A table with its chairs, or no table: `reseat`, and where that still leaves fewer than `need` chairs the room's decoration (plants, toys, shoes, a side table, a pantry: whatever has priority 2
  * or less) comes out for a second try and goes back where it still fits; a table nobody can sit at (a 1.6 m passage between two doors, a galley) is taken out rather than left bare. Returns the table (null: taken out).
  */
-export function seatTable(L, first, names, n, poses, need = 2) {
-  let r = reseat(L, first, chairsAround(L, first, n, names), names, n, poses, need);
-  if (r.chairs.length < need) {
-    const soft = L.items.filter((i) => i.floor && !i.parent && i.prio >= 2 && i.c.size[1] >= 0.05 && i !== r.table && !r.chairs.includes(i));
-    const kids = soft.map((s) => L.items.filter((x) => x.parent === s));
-    for (const s of soft) L.remove(s);
-    r = reseat(L, r.table, r.chairs, names, n, poses, need);
-    soft.forEach((s, k) => { if (!L.valid(s, {})) return; L._commit(s, {}); for (const c of kids[k]) L._commit(c, {}); });
+export function seatTable(L, first, names, n, poses, need = 2, have = []) {
+  const was = reachOf(L), calm = () => reachKept(L, was), opens = L.items.filter((i) => was.has(i));            // (what opens stays, and keeps every front a person could stand at: a stool before the fridge makes it decoration, R4-118)
+  let r = reseat(L, first, [...have, ...chairsAround(L, first, n - have.length, names, { small: STOOL, dense: have.length > 0, calm })], names, n, poses, need, calm);       // (round the seats it has: they were set as close as the table allows)
+  const soften = (fn) => softened(L, [r.table, ...r.chairs, ...opens], fn);
+  if (r.chairs.length < need) soften(() => { r = reseat(L, r.table, r.chairs, names, n, poses, need, calm); });
+  for (let name = SMALLER[r.table.name]; name && r.chairs.length < need; name = SMALLER[name]) {            // a smaller table, where the one there is too big for two chairs (R4-704: the 1 m table of a 1.9 m passage)
+    const old = r, at = old.table;
+    for (const c of old.chairs) L.remove(c);
+    L.remove(at);
+    const small = L._make(name, at.x, at.z, at.ry, { prio: 0 });                                                 // (inside the old one's footprint, so valid where it stood)
+    r = reseat(L, small, [], names, n, () => tablePoses(L, name, [at.x, at.z], [0, PI / 2], true), need, calm);
+    if (r.chairs.length < need) soften(() => { r = reseat(L, r.table, r.chairs, names, n, () => tablePoses(L, name, [at.x, at.z], [0, PI / 2], true), need, calm); });
+    if (r.chairs.length < old.chairs.length) {                                                                     // (fewer seats: the first table and its chairs stay; as many, and the smaller table is the one that fits the nook)
+      for (const c of r.chairs) L.remove(c);
+      L.remove(r.table);
+      L._commit(old.table, {}); for (const c of old.chairs) L._commit(c, {});
+      r = old;
+    }
   }
   if (r.chairs.length) return r.table;
   L.remove(r.table);
   return null;
 }
 
-const EATING_TABLE = /^table_(formica_4|formica_6|wood_6|round_small)$/, SITS = new Set(['chair', 'stool', 'bench']), TV_SET = /^tv_(flat|crt)$/;
+const EATING_TABLE = /^table_(formica_4|formica_6|wood_6|round_small|plastic)$/, SITS = new Set(['chair', 'stool', 'bench']), TV_SET = /^tv_(flat|crt)$/;
+const STOOL = 'stool_wood', SMALLER = { table_wood_6: 'table_formica_4', table_formica_6: 'table_formica_4', table_formica_4: 'table_round_small', table_plastic: 'table_round_small' };     // (the next table down: each stands inside the footprint of the one before)
 /** The chairs, stools and benches drawn up to a table: those within a hand's breadth beyond its edge, in its own frame. */
 export function seatsAt(L, t) {
   const c = Math.cos(t.ry), s = Math.sin(t.ry), hw = t.c.size[0] / 2 + 0.55, hd = t.c.size[2] / 2 + 0.55;
@@ -416,8 +455,9 @@ export function seatsAt(L, t) {
 export function ensureSeats(L) {
   const gone = [];
   for (const t of L.items.filter((i) => i.floor && !i.parent && EATING_TABLE.test(i.name))) {
-    if (seatsAt(L, t).length) continue;
-    if (!seatTable(L, t, ['chair_plastic', 'stool_wood'], t.c.size[0] > 1.2 ? 4 : 2, () => tablePoses(L, t.name, [t.x, t.z], [0, PI / 2], true))) gone.push(t);
+    const have = seatsAt(L, t);
+    if (have.length >= 2) continue;                                                                          // (a table with the one chair healing left it has half a set: R4-704)
+    if (!seatTable(L, t, ['chair_plastic', 'stool_wood'], t.c.size[0] > 1.2 ? 4 : 2, () => tablePoses(L, t.name, [t.x, t.z], [0, PI / 2], true), 2, have)) gone.push(t);
   }
   if (L.room.type === 'living') for (const tv of L.items.filter((i) => i.parent && TV_SET.test(i.name))) {
     if (L.items.some((i) => i.floor && i.c.seat) || tvSeat(L, L.hh ?? {}, tv, tv.parent)) continue;
@@ -754,12 +794,13 @@ export function bedsOwed(E, hh, i) {
   const at = { little: Math.min(1, last), teen: Math.min(2, last), grand: n >= 4 ? 3 : n === 3 ? (teen ? 1 : 2) : last };
   return (i === 0 ? 2 : 0) + (at.little === i ? little : 0) + (at.teen === i ? teen : 0) + (at.grand === i ? grand : 0);
 }
-/** One more bed for a room that owes more sleeping places than its first bed gave: a bunk when two are owed (the compact way), else a single; the room's lanes stay (never the rungs that cut them), and a mattress on the floor is the last resort. Null: the room cannot hold more. */
-function extraBed(L, E, hh, left) {
-  const names = left >= 2 ? ['bed_bunk', 'bed_single', 'bed_single_metal'] : ['bed_single', 'bed_single_metal'], accept = awayFromWindows(L);
+/** One more bed for a room that owes more sleeping places than its first bed gave: a bunk when two are owed (the compact way), else a single; the room's lanes stay (never the rungs that cut them), and a mattress on the floor is the last resort. Null: the room cannot hold more.
+ *  `o.accept`: one more thing a pose must satisfy; `o.rng`: the stream the bed's made-or-not is drawn from (the room's own by default). */
+function extraBed(L, E, hh, left, o2 = {}) {
+  const names = left >= 2 ? ['bed_bunk', 'bed_single', 'bed_single_metal'] : ['bed_single', 'bed_single_metal'], windows = awayFromWindows(L), accept = o2.accept ? (it) => windows(it) && o2.accept(it) : windows;
   for (const ns of [names, ['mattress_floor']]) for (const o of [{ sideNeed: 0.3, awayDoors: true }, { awayDoors: true }, {}, { noClear: true }]) for (const along of [false, true]) for (const n of ns) {
     const b = wallWhere(L, n, { prio: 0, connAll: true, ...o, along }, accept);
-    if (b) { if (o.noClear) b.zones = []; b.flags = { unmade: L.rng.chance(1 - hh.tidy) }; return b; }
+    if (b) { if (o.noClear) b.zones = []; b.flags = { unmade: (o2.rng ?? L.rng).chance(1 - hh.tidy) }; return b; }
   }
   return null;
 }
@@ -862,6 +903,17 @@ function grab(L) {
 }
 /** The room put back as `grab` saw it (a copy of the copy, so the same state can be put back again). */
 function put(L, s) { L.restore({ ...s, items: [...s.items], decor: Object.fromEntries(WALLS.map((w) => [w, [...s.decor[w]]])) }); }
+/** The beds and seats of `list` that nobody can walk up to (layout.js `_accessOk`, asked with the one flood of the room that every piece but a stove reads) and the seats that would get no sit anchor:
+ *  index.js `emitAnchors` looks for floor of the doors' region within the piece's radius of each seat point (`seatOffsets`, `seatZoff` back from the middle), with the 0.34 m body's flood, which
+ *  `_accessOk`'s look from the middle of the piece misses by the width of a cushion (the sofa of L39.f1.r5 had a bed at one end of its front strip, a toy pile at the other, and no sitter). */
+function shutAmong(L, list) {
+  const c = L.connectivity();
+  let c34 = null;
+  const f34 = () => (c34 ??= L.connectivity(0.34)), fl = { f40: () => c, f34 };
+  const noAnchor = (i) => { const cells = Math.ceil((Math.hypot(i.w, i.d) / 2 + 0.8) / 0.1), zoff = seatZoff(i.c); return !seatOffsets(i.c).some((ox) => { const [sx, sz] = L.rel(i, ox, zoff); return L.inMainRegion(sx, sz, f34(), cells); }); };
+  return list.filter((i) => i.floor && L._needsAccess(i) && (!L._accessOk(i, true, c, fl) || (i.c.seat && noAnchor(i))));
+}
+const shutIn = (L) => shutAmong(L, L.items).length;
 /** What healing would take out of the room as it stands (the room is put back exactly as it was). */
 function healTrial(L) {
   const saved = grab(L), removed = L.heal();
@@ -897,6 +949,115 @@ function* fillBedsSteps(L, E, hh, beds, owed, parents) {
   }
   L.sleeps = places; L.owed = owed;
   return places;
+}
+
+// ---------------------------------------------------------------- A CHILD'S PLACE IN EVERY HOME WITH CHILDREN (R4-705)
+/** What a child sleeps on: a bunk, a single, a mattress laid down or stood on its edge (a cot is a camp bed of adult length, a guest's: garments.js; a crib is the baby's, so it is enough for a home whose one child is the baby). */
+const CHILD_BED = /^(bed_(bunk|single|single_metal)|mattress_)/;
+const NOT_HOMES = new Set(['chapel', 'school', 'clinic', 'hall', 'unfinished']);                  // (a house still in concrete is its own story: R4-709)
+/** A pose that leaves no dead-end lane behind it that the room did not have (layout.js `seriousPockets`: the pockets were cured when the room was done, and a bed set down since must not make a new one). */
+function noNewPocket(L) {
+  const before = L.seriousPockets().length;
+  return (it) => { L.items.push(it); try { return L.seriousPockets().length <= before; } finally { L.items.pop(); } };
+}
+const hasChildBed = (rooms, hh) => rooms.some((b) => b.L.items.some((i) => i.floor && (CHILD_BED.test(i.name) || (i.name === 'bed_crib' && hh.kids === 1))));
+/** For each piece of the room that opens (carcass.js `layoutOf`), how many of its fronts a person can stand in front of: the rule containers.js `registerFronts` holds every front to (R4-118: a front
+ *  nobody can stand at is decoration, with no prompt and no contents), asked of the room as it stands (reach.js `spotsAt`). */
+function reachOf(L) {
+  const out = new Map();
+  if (!L.items.some((it) => layoutOf(it.c))) return out;
+  const conn = L.connectivity();
+  for (const it of L.items) {
+    const lay = layoutOf(it.c); if (!lay) continue;
+    const rec = { id: it.id, kind: it.ceil ? 'ceil' : it.top ? 'top' : it.wall ? 'wall' : 'floor', x: it.x, y: it.y ?? 0, z: it.z, ry: it.ry, h: it.h };
+    out.set(it, lay.slots.filter((s) => spotsAt(L, rec, s, conn).length).length);
+  }
+  return out;
+}
+/** Does every piece in `before` (`reachOf`) keep as many reachable fronts as it had? A piece that is gone has not, unless `gone` names its kind (a show cabinet given up for a bed on purpose): one of
+ *  those that is still there with a front nobody can stand at (the bed stands before it) is taken out too, not left as decoration. */
+function reachKept(L, before, gone = null) {
+  const now = reachOf(L);
+  for (const [it, n] of before) {
+    if (!n) continue;
+    const m = now.get(it);
+    if (m !== undefined && m >= n) continue;
+    if (!gone?.test(it.name)) return false;
+    if (m !== undefined) L.remove(it);
+  }
+  return true;
+}
+/** What the room seats as it stands: each table people eat at, with the seats it has up to two (R4-704). A bed set down late takes none away: a chair that comes back into the lane the bed left it
+ *  no longer fits there (`softened` drops it), and a table with one chair is half a set. (A TV's seat is not asked after: `living` and `tvSeat` set it at priority 0, and `softened` takes only 2 or more.) */
+const seatingOf = (L) => L.items.filter((i) => i.floor && !i.parent && EATING_TABLE.test(i.name)).map((t) => [t, Math.min(2, seatsAt(L, t).length)]);
+const seatingKept = (L, was) => was.every(([t, n]) => L.items.includes(t) && seatsAt(L, t).length >= n);
+const LIVING_UNIT = /^(display_cabinet|bookshelf_low|dresser_low|wall_unit_(big|small))$/;       // (what a living room keeps against a wall for show: a child's bed is worth more)
+/**
+ * `place(accept, rng)` sets one bed down late: on the floor the room has, else with its decoration out of the way (`softened`: what stood where the bed does is gone, the rest goes back; what opens
+ * stays: a wardrobe, a dresser, a nightstand is somewhere to keep things), and in a living room (`unit`) else with its cabinet or shelf out too. It stays only if the room is as walkable as it was
+ * (no new dead-end lane, no bed or seat shut in, not cut in two), every piece that opens can be opened from as many fronts as before (a bed across a dresser's front makes its drawers decoration), and
+ * every table keeps its two seats (`seatingOf`). Null, and the room exactly as it was, when no way gives such a pose.
+ */
+function settle(L, place, unit = false) {
+  const was = { pockets: L.seriousPockets().length, shut: shutIn(L), whole: L.connectivity().ok, reach: reachOf(L), seats: seatingOf(L) }, snap = grab(L);
+  const opens = L.items.filter((i) => was.reach.has(i));
+  for (const level of unit ? [0, 1, 2] : [0, 1]) {
+    const run = () => place(noNewPocket(L), L.rng.fork('kidsbed'));
+    const it = level === 0 ? run() : softened(L, level === 2 ? opens.filter((i) => !LIVING_UNIT.test(i.name)) : opens, run, level === 2 ? LIVING_UNIT : null);
+    if (it && reachKept(L, was.reach, level === 2 ? LIVING_UNIT : null) && seatingKept(L, was.seats) && L.seriousPockets().length <= was.pockets && shutIn(L) <= was.shut && (!was.whole || L.connectivity().ok)) return it;
+    put(L, snap);
+  }
+  return null;
+}
+/**
+ * Every home with children has a place for them to sleep. A bedroom of 5 m2 holds the parents' double and nothing else once its chest or wardrobe is in (round 6 kept the clothes before a second bed:
+ * `bedroomSteps`), so 123 of the barrio's 193 households with children had no child's bed: 89 owned a bedroom with only the parents' double in it, 34 owned none (R4-705: the toy piles and school bags
+ * stood beside a double bed; 41 of the 173 buildings with beds or such signs had two of them and no child's bed). After every room is furnished (the lanes it must keep are known) such a household gets a
+ * bunk when two children are owed, else a single, one more of each while a child is still without: in a bedroom of its own if one has the room, else in its living room (one bed there: the kids of a
+ * one-bedroom home sleep in the sala). The beds take only floor that `valid` gives: the door lanes, the beds-reach rule (73aa137: a bed somebody can walk up to, nothing shutting one in), the window rule
+ * and no new dead-end lane. Where no bed fits, a mattress stood on its edge is the child's (the same one `ensureSleep` leans in a bedroom the plan left no bed for: it is put away by day), and a baby
+ * who is the home's one child gets its crib first. 132 of the 193 now have a child's place: 82 a bunk, a single or a crib, 50 a mattress on its edge (the 2.0 m bedroom of a rowhouse's tenant holds
+ * nothing else beside the double). 61 are still without: 19 live in a chapel, school, clinic, hall or a house still in concrete (`NOT_HOMES`, R4-709), 13 own a shop, kiosk or landing and no room to
+ * sleep in, and 29 are homes where no pose passes the rules (a bed that takes a front from a piece that opens, a seat from a table or a lane from a sofa is no pose): 16 with the 2.0 m bedroom of a
+ * rowhouse's tenant, 13 with another single room of 2.0 to 4.2 m or a living room of 2.3 to 3.3 m. `built`: [{ room, hh, L }] of the whole building. Returns the beds set down.
+ */
+export function ensureKidsBeds(built, E) { return drain(ensureKidsBedsSteps(built, E)); }
+/** `ensureKidsBeds` as a resumable job: it yields after each bed it tries to set (a `settle` is three searches of a room: 12 758 poses for the household of L40 in one step, over the 12 000 that
+ *  interiors-stepcost.test.mjs holds a step to), index.js `furnishSteps`. */
+export function* ensureKidsBedsSteps(built, E) {
+  const out = [];
+  if (NOT_HOMES.has(E.bp?.lot?.kind ?? E.lot?.kind)) return out;
+  const homes = new Map();
+  for (const b of built) if (!b.L.room.outdoor) { const l = homes.get(b.hh); if (l) l.push(b); else homes.set(b.hh, [b]); }
+  for (const [hh, rooms] of homes) {
+    if (!(hh.kids >= 1) || hasChildBed(rooms, hh)) continue;
+    const roomy = (type) => rooms.filter((b) => b.room.type === type && b.L.W >= 0.9 && b.L.D >= 0.9);
+    const bedrooms = roomy('bedroom'), livings = roomy('living').sort((a, b) => b.L.W * b.L.D - a.L.W * a.L.D);
+    if (!bedrooms.length && !livings.length) continue;                                        // not a home: the shop of an occupant who lives elsewhere
+    const has = () => out.some((o) => o.hh === hh.id), rest = [...bedrooms, ...livings];
+    /** One small piece (the baby's crib, a mattress stood away by day) in the first room that takes it. */
+    const little = function* (name) {
+      for (const b of rest) {
+        const m = settle(b.L, (accept) => wallWhere(b.L, name, { prio: 1, awayDoors: name === 'bed_crib' }, accept) ?? wallWhere(b.L, name, { prio: 1, noClear: true }, accept), livings.includes(b));
+        yield 'kidsbed';
+        if (m) { m.flags = { unmade: false }; out.push({ hh: hh.id, room: b.room.id, bed: m }); return; }
+      }
+    };
+    if (hh.kids === 1 && hh.babies) yield* little('bed_crib');                                // (a home whose one child is the baby: its crib needs the least floor)
+    let need = Math.min(hh.kids, 3);
+    if (!has()) for (const pool of [bedrooms, livings]) for (const b of pool) {
+      for (let k = 0; need > 0 && k < (pool === bedrooms ? 3 : 1); k++) {
+        const bed = settle(b.L, (accept, rng) => extraBed(b.L, E, hh, need, { accept, rng }), pool === livings);
+        yield 'kidsbed';
+        if (!bed) break;
+        out.push({ hh: hh.id, room: b.room.id, bed });
+        if (b.room.type === 'bedroom') b.L.sleeps = (b.L.sleeps ?? 0) + placesOf(bed);
+        need -= placesOf(bed);
+      }
+    }
+    if (!has()) yield* little('mattress_leaning');                                            // (nothing larger fits anywhere)
+  }
+  return out;
 }
 /** A dresser's drawers are used standing 0.55 m from the front with a body's 0.3 m of free floor round the feet: 0.85 m, not the 0.6 m the catalogue keeps clear. The zone also stops other pieces
  *  from taking that floor afterwards. The bedroom of a flat (3.16 x 2.87 m) with a double bed along its long wall left 0.69 m to a dresser whose four drawers then had no place to stand

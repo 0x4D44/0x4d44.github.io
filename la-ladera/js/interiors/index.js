@@ -4,7 +4,7 @@
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
 import { Layout, resetUid, SLEEP_REACH } from './layout.js';
 import { freePoint, snapStand, customerFloor } from './reach.js';
-import { CATALOG, seatOffsets } from './catalog.js';
+import { CATALOG, seatOffsets, seatZoff } from './catalog.js';
 import { finishRoom, householdForRoom, householdKey, furnishRng, roomsInOrder } from './household.js';
 import * as R from './rooms.js';
 import { shopRoom } from './shops.js';
@@ -109,7 +109,7 @@ function emitAnchors(E, room, L, hh) {
   for (const it of L.items) {
     const c = it.c;
     if (c.seat && it.floor) {
-      const zoff = c.arch === 'sofa' || c.arch === 'armchair' ? -0.12 : c.arch === 'pupitre' ? -0.1 : 0;
+      const zoff = seatZoff(c);
       for (const ox of seatOffsets(c)) {
         const [sx, sz] = L.rel(it, ox, zoff);
         let kind = 'sit'; const tags = ['seat', it.name];
@@ -244,6 +244,9 @@ export function* furnishSteps(ctx, bp, o = {}) {
   }
   // a home whose kitchens are all too small for a fridge keeps it in the dining or living room (every room is furnished by now, so the lanes it must keep are known)
   if (bp.lot?.kind && !['chapel', 'school', 'clinic', 'hall'].includes(bp.lot.kind) && !(E.shopType ?? lot.shop)) R.ensureHomeFridge(built);
+  // a home with children whose bedrooms took only the parents' double: the children's bed, in a bedroom or the living room (rooms.js)
+  try { yield* R.ensureKidsBedsSteps(built, E); }
+  catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'kids beds ' + String(e?.message ?? e), stack: e?.stack }); console.error('[kids beds]', bp.id, e); }
   // every room is furnished: which of them are untidy, and the clothes that lie about (garments.js: the beds are made or unmade to match, nothing else moves)
   try { interior.garments = dressRooms(E, built); }
   catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'garments ' + String(e?.message ?? e), stack: e?.stack }); console.error('[garments]', bp.id, e); }
