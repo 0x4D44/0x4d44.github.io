@@ -402,13 +402,13 @@
   /* =====================================================================
      3. Hotspot analyser (and the shared recruitment poster)
      ===================================================================== */
-  function recruitPoster(svg) {
+  function recruitPoster(svg, pfx = "dp-hs") {
     const a = (el) => { svg.append(el); return el; };
     const defs = a(S("defs"));
-    const sky = S("linearGradient", { id: "dp-hs-sky", x1: 0, y1: 0, x2: 0, y2: 1 });
+    const sky = S("linearGradient", { id: `${pfx}-sky`, x1: 0, y1: 0, x2: 0, y2: 1 });
     sky.append(S("stop", { offset: 0, "stop-color": "#1f6fb8" }), S("stop", { offset: 1, "stop-color": "#9fd0f0" })); defs.append(sky);
-    const fl = S("filter", { id: "dp-hs-sh", x: "-20%", y: "-20%", width: "150%", height: "150%" }); fl.append(S("feDropShadow", { dx: 4, dy: 5, stdDeviation: 3.5, "flood-color": "#000", "flood-opacity": 0.45 })); defs.append(fl);
-    const pat = S("pattern", { id: "dp-hs-grass", width: 24, height: 24, patternUnits: "userSpaceOnUse" });
+    const fl = S("filter", { id: `${pfx}-sh`, x: "-20%", y: "-20%", width: "150%", height: "150%" }); fl.append(S("feDropShadow", { dx: 4, dy: 5, stdDeviation: 3.5, "flood-color": "#000", "flood-opacity": 0.45 })); defs.append(fl);
+    const pat = S("pattern", { id: `${pfx}-grass`, width: 24, height: 24, patternUnits: "userSpaceOnUse" });
     [[0, 0, 24, 24, P.dirt], [0, 0, 24, 7, P.green], [4, 7, 4, 4, P.green], [14, 7, 6, 3, P.green], [3, 14, 3, 3, "#5e3f22"], [15, 17, 4, 3, "#9a7048"], [9, 12, 3, 3, "#9a7048"]].forEach(([x, y, w, h, f]) => pat.append(S("rect", { x, y, width: w, height: h, fill: f })));
     defs.append(pat);
     a(S("rect", { width: 300, height: 424, fill: P.paper }));
@@ -423,7 +423,7 @@
     a(S("text", { x: 150, y: 70, "font-size": 16, "font-weight": 700, fill: "#fff", "text-anchor": "middle", "letter-spacing": 3, text: "JOIN" }));
     a(S("text", { x: 150, y: 104, "font-size": 30, "font-weight": 700, fill: "#fff", "text-anchor": "middle", text: "1805 SQUADRON" }));
     // 3 main photo (dominance)
-    a(S("rect", { x: 16, y: 126, width: 268, height: 140, fill: "url(#dp-hs-sky)" }));
+    a(S("rect", { x: 16, y: 126, width: 268, height: 140, fill: `url(#${pfx}-sky)` }));
     a(S("path", { d: "M16 240 Q150 228 284 242 V266 H16 Z", fill: "#e9f3fa" }));
     a(S("path", { d: "M16 250 Q150 242 284 254 V266 H16 Z", fill: "#1d5d8f" }));
     const ac = a(S("g", { transform: "translate(70 168) rotate(-8)" })); aircraft(ac, 0, 0, 2.3);
@@ -431,7 +431,7 @@
     a(S("path", { d: "M232 162 C 294 160, 296 220, 294 260 L 294 300 S 282 352, 214 372", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-dasharray": "2 5", "stroke-linecap": "round" }));
     a(S("path", { d: "M220 365 L210 374 L223 377", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-linecap": "round" }));
     // 4 inset photo with drop shadow (depth)
-    const ig = a(S("g", { filter: "url(#dp-hs-sh)" }));
+    const ig = a(S("g", { filter: `url(#${pfx}-sh)` }));
     ig.append(S("rect", { x: 202, y: 222, width: 82, height: 62, fill: "#ec4a24" }));
     ig.append(S("rect", { x: 206, y: 226, width: 74, height: 54, fill: "#bfe1f5" }));
     const sg = a(S("g")); sg.append(S("rect", { x: 206, y: 266, width: 74, height: 14, fill: "#1d5d8f" })); ship(sg, 213, 228, 1);
@@ -450,7 +450,7 @@
     // logo
     a(S("circle", { cx: 256, cy: 378, r: 17, fill: P.navy })); a(S("circle", { cx: 256, cy: 378, r: 9, fill: P.yellow })); a(S("circle", { cx: 256, cy: 378, r: 4, fill: P.red }));
     // 9 grass-block strip (texture)
-    a(S("rect", { x: 0, y: 400, width: 300, height: 24, fill: "url(#dp-hs-grass)" }));
+    a(S("rect", { x: 0, y: 400, width: 300, height: 24, fill: `url(#${pfx}-grass)` }));
   }
   const HOTS = [
     { n: 1, px: 150, py: 34, r: [0, 0, 300, 40], ans: "Rhythm", opts: ["Rhythm", "Dominance", "Texture", "Alignment"], d: "Nine pennants are repeated at equal spacing in a red, yellow, blue sequence along the top edge.", why: "Repetition at regular intervals is rhythm: it sets up a pattern that leads the eye across the top of the poster." },
@@ -526,71 +526,49 @@
   /* =====================================================================
      4. Explain builder (cause + effect)
      ===================================================================== */
-  const CAUSES = [
-    ["none", "(no cause: write the effect only)"],
-    ["date", "The date is in navy bold text on a yellow accent panel"],
-    ["title", "The title is large white reverse text on a navy band"],
-    ["photo", "The aircraft photo is far larger than any other item"],
-    ["path", "A dotted red line runs from the aircraft to the date panel"],
-    ["inset", "The ship photo overlaps the main photo and has a drop shadow"],
-    ["frame", "The ship photo has a warm red-orange frame against the cool blue sky"],
-    ["pennants", "The pennants are repeated at equal spacing along the top"],
-    ["colours", "The same red, yellow and blue are repeated in the pennants, headings, date panel and badge"],
-    ["caption", "The caption sits directly beneath the ship photo"],
-  ];
-  const EFFECTS = [
-    ["stand", "so it stands out and is one of the first things the viewer notices"],
-    ["order", "so the viewer reads the most important information first"],
-    ["forward", "so it seems to come forward, nearer to the viewer than the background"],
-    ["layers", "giving a layered, three-dimensional look to a flat page"],
-    ["belong", "so the viewer sees the items as belonging together in one planned design"],
-    ["group", "so the viewer reads the related items as a group"],
-    ["creates", "which creates emphasis"], // text updated to name the question's principle
-    ["lopsided", "so the layout looks lopsided"],
-  ];
-  const XQ = {
-    emphasis: { q: "Explain how emphasis has been achieved in the recruitment poster.", causes: ["date", "title", "path"], effects: ["stand", "order"] },
-    depth: { q: "Explain how depth has been created in the recruitment poster.", causes: ["inset", "frame"], effects: ["forward", "layers"] },
-    unity: { q: "Explain how unity has been achieved in the recruitment poster.", causes: ["colours", "caption"], effects: ["belong", "group"] },
-  };
-  const MISFIT = {
-    emphasis: { photo: "✘ 0: making one item far larger than everything else is dominance (the main focal point of the whole poster). Emphasis questions want how particular items, such as the date or title, are made to stand out." },
-    unity: { pennants: "✘ 0: repeating the pennants at equal spacing is rhythm. For unity, point to what ties the whole design together: a consistent colour scheme, or related items grouped together." },
+  // The questions, samples and marking live in dtp-explain.js (window.HGX), marked by papers-engine.js.
+  // the pre-flight check's depth question shows the poster too (quiz-dtp.js, fig: "recruit-poster")
+  let posterCopies = 0;
+  HG.figures["recruit-poster"] = () => {
+    const svg = S("svg", { viewBox: "0 0 300 424", class: "dp-hs-poster", role: "img", "aria-label": "The recruitment poster from the hotspot analyser, repeated here to refer to while you answer." });
+    recruitPoster(svg, `dp-qp${++posterCopies}`);
+    return svg;
   };
   mount("w-explain", (box) => {
+    const X = window.HGX;
     let qk = "emphasis";
-    const qline = E("p", { class: "dp-xq" });
     HG.choice(box, "Question", [["emphasis", "Emphasis [2]"], ["depth", "Depth [2]"], ["unity", "Unity [2]"]], qk, (v) => { qk = v; reset(); });
-    box.append(qline);
+    // a copy of the poster beside the answer boxes, so nobody has to scroll back up to the hotspot analyser
+    const poster = S("svg", { viewBox: "0 0 300 424", class: "dp-hs-poster", role: "img", "aria-label": "The recruitment poster from the hotspot analyser, repeated here to refer to while you write." });
+    recruitPoster(poster, "dp-xp");
+    const work = E("div", { class: "dp-xwork" });
+    box.append(E("div", { class: "dp-xgrid" }, E("figure", { class: "dp-xposter" }, poster), work));
+    const qline = E("p", { class: "dp-xq" });
+    work.append(qline);
     const rows = [0, 1].map((k) => {
-      const c = E("select", { "aria-label": `Mark ${k + 1}: cause` }); CAUSES.forEach(([v, t]) => c.append(E("option", { value: v }, t)));
-      const e = E("select", { "aria-label": `Mark ${k + 1}: effect` }); EFFECTS.forEach(([v, t]) => e.append(E("option", { value: v }, t)));
-      const out = E("p", { class: "dp-xsent" });
+      const t = E("textarea", { rows: 3, class: "dp-xin", spellcheck: "true", "aria-label": `Mark ${k + 1}: a cause and its effect`, placeholder: k ? "A different feature, and its effect on the viewer…" : "The [feature on the poster] …, so the viewer …" });
       const res = E("p", { class: "dp-xres", "aria-live": "polite" });
-      const wrap = E("div", { class: "dp-xrow" }, E("p", { class: "dp-xlab" }, `Mark •${k + 1}`), E("label", null, E("span", { class: "dp-cause" }, "Cause"), c), E("label", null, E("span", { class: "dp-effect" }, "Effect"), e), out, res);
-      box.append(wrap);
-      const upd = () => { const ct = CAUSES.find((x) => x[0] === c.value)[1], et = e.value === "creates" ? `which creates ${qk}` : EFFECTS.find((x) => x[0] === e.value)[1]; out.innerHTML = c.value === "none" ? `<span class="dp-effect">${HG.esc(et.replace(/^so |^which |^giving /, (m) => m[0].toUpperCase() + m.slice(1)))}.</span>` : `<span class="dp-cause">${HG.esc(ct)}</span>, <span class="dp-effect">${HG.esc(et)}.</span>`; res.textContent = ""; };
-      c.addEventListener("change", upd); e.addEventListener("change", upd);
-      return { c, e, res, upd };
+      work.append(E("div", { class: "dp-xrow" }, E("p", { class: "dp-xlab" }, `Mark •${k + 1}`), t, res));
+      t.addEventListener("input", () => { res.textContent = ""; res.className = "dp-xres"; total.textContent = ""; });
+      return { t, res };
     });
+    const samples = E("ul", { class: "dp-xsamples" });
+    work.append(E("details", { class: "dp-xsample-box" }, E("summary", null, "Show sample answers (cause + effect)"), samples));
     const markBtn = E("button", { class: "btn primary small", type: "button" }, "✔ Mark my answer");
     const total = E("p", { class: "readout", "aria-live": "polite" });
-    box.append(E("div", { class: "btn-row" }, markBtn), total);
-    function reset() { rows.forEach((r) => { const o = [...r.e.options].find((x) => x.value === "creates"); if (o) o.textContent = `which creates ${qk}`; }); qline.textContent = XQ[qk].q; rows.forEach((r) => { r.c.value = "none"; r.e.value = "creates"; r.upd(); }); total.textContent = ""; }
+    work.append(E("div", { class: "btn-row" }, markBtn), total);
+    function reset() {
+      const Q = X.Q[qk];
+      qline.textContent = Q.q;
+      samples.innerHTML = "";
+      Q.points.forEach((p) => samples.append(E("li", null, E("span", { class: "dp-cause" }, p.sample[0]), " ", E("span", { class: "dp-effect" }, p.sample[1]))));
+      rows.forEach((r) => { r.t.value = ""; r.res.textContent = ""; r.res.className = "dp-xres"; });
+      total.textContent = "";
+    }
     markBtn.addEventListener("click", () => {
-      const Q = XQ[qk]; let sum = 0; const used = new Set();
-      rows.forEach((r, k) => {
-        const c = r.c.value, e = r.e.value; let ok = false, why;
-        if (c === "none") why = "✘ 0: an effect with no cause. The marker cannot tell which feature you mean.";
-        else if (!Q.causes.includes(c)) why = (MISFIT[qk] && MISFIT[qk][c]) || `✘ 0: that feature does not create ${qk}. Re-read the question.`;
-        else if (e === "creates") why = `✘ 0: "creates ${qk}" names the design principle, not an effect on the viewer. Say what happens to the viewer.`;
-        else if (!Q.effects.includes(e)) why = `✘ 0: the effect does not fit ${qk}. Say what ${qk} does to the viewer.`;
-        else if (used.has(c)) why = "✘ 0: the same cause as the first mark. A second mark needs a different feature.";
-        else { ok = true; why = "✔ 1 mark: a relevant cause linked to its effect."; }
-        if (ok) { sum++; used.add(c); }
-        r.res.textContent = why; r.res.className = "dp-xres " + (ok ? "ok" : "bad");
-      });
-      total.textContent = `${sum} / 2 marks` + (sum === 2 ? ": two different causes, each with its effect." : "");
+      const m = X.mark(qk, rows.map((r) => r.t.value));
+      m.rows.forEach((x, k) => { rows[k].res.textContent = x.why; rows[k].res.className = "dp-xres " + (x.ok ? "ok" : "bad"); });
+      total.textContent = `${m.got} / ${m.of} marks` + (m.got === m.of ? ": two different causes, each with its effect." : "");
     });
     reset();
   });
