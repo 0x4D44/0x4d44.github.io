@@ -1,7 +1,7 @@
 // Payload budget check (CONTRACT 8 / RUBRIC M10). Plain Node, no dependencies.
 //   node la-ladera/tests/payload.mjs [--json]      exit 1 when a budget is broken
 //
-// Budgets: textures <= 40 MB (was 24 until Arthur raised it, 2026-11-01, for the dormant beach and substation texture libraries), models <= 40 MB (was 32 until Arthur said yes to 40, 2026-11-03, for the dormant substation2 library; people <= 14, furniture <= 10, world <= 6, arch <= 2), no file > 8 MB,
+// Budgets: textures <= 40 MB (was 24 until Arthur raised it, 2026-11-01, for the dormant beach and substation texture libraries), models <= 40 MB (was 32 until Arthur said yes to 40, 2026-11-03, for the dormant substation2 library; people <= 40 (was 14 until Arthur raised it, 2026-11-03, for the MakeHuman resident prototype), furniture <= 10, world <= 6, arch <= 2), no file > 8 MB,
 // shipped total (everything except vendor/, dev/, labs/, tests/, tools/) <= 150 MB, estimated GPU texture memory <= 800 MB
 // (were 60 / 220 until Arthur's kit proved able to carry more: an RTX 5070 Ti and an 18-core / 40-GPU MacBook Pro; tests/slownet.mjs still gates the load time).
 import './nice.mjs';
@@ -56,7 +56,7 @@ let gpu = 0; const unknown = [];
 for (const f of imgs) { const d = dims(f.path); if (d) gpu += d[0] * d[1] * 4 * (4 / 3); else unknown.push(f.rel); }
 
 const rows = [
-  ['textures', sum(tex) / MB, 40], ['models', sum(models) / MB, 40], ['models/people', sum(sub('people')) / MB, 14],
+  ['textures', sum(tex) / MB, 40], ['models', sum(models) / MB, 40], ['models/people', sum(sub('people')) / MB, 40],
   ['models/furniture', sum(sub('furniture')) / MB, 10], ['models/world', sum(sub('world')) / MB, 6], ['models/arch', sum(sub('arch')) / MB, 2],
   ['shipped total (excl. vendor,dev,labs,tests,tools)', sum(shipped) / MB, 150], ['estimated GPU texture memory', gpu / MB, 800],
 ];
