@@ -385,6 +385,21 @@ test('a household with children and a bedroom or a living room to put them in ha
   assert.ok(homes >= 100, `${homes} households to look at`);
   assert.ok(lacking.length <= 30, `${lacking.length} households with children and no child's bed: ${lacking.join(', ')}`);
 });
+test('a sleeper lies in a bedroom (people-homelife "the night"): every sleep anchor of the barrio is in a bedroom, and the child\'s bunk, single or crib of a living room (R4-705) is still there for the eye', () => {
+  // the people sim lies a sleeper on an anchor of kind 'sleep' (people/homelife.js WANT.sleep) and its test holds that anchor's room to be a bedroom: round 7's child's beds in living rooms had one each (a bunk two),
+  // and n03 of the night lay in the living room of her home
+  const outside = [];
+  let inBedrooms = 0, livingBeds = 0;
+  for (const bp of bps) {
+    const type = new Map(bp.rooms.map((r) => [r.id, r.type]));
+    for (const a of bp.anchors) if (a.kind === 'sleep') { if (type.get(a.room) === 'bedroom') inBedrooms++; else outside.push(`${bp.id} ${a.room} (${type.get(a.room)}): ${a.tags.join('/')}`); }
+    for (const f of bp.furniture) if (f.kind === 'floor' && !f.parent && /^bed_(bunk|single|single_metal|crib)$/.test(f.name) && type.get(f.room) === 'living') livingBeds++;
+  }
+  console.log(`# sleep anchors: ${inBedrooms} in bedrooms, ${outside.length} elsewhere; bunks, singles and cribs standing in living rooms: ${livingBeds}`);
+  assert.ok(inBedrooms >= 300, `${inBedrooms} sleep anchors in bedrooms: the census looks at nothing`);
+  assert.ok(livingBeds >= 8, `${livingBeds} bunks, singles and cribs in living rooms: R4-705's beds were taken out instead of their sleep anchors (11 stand there)`);
+  assert.equal(outside.length, 0, `${outside.length} sleep anchors outside a bedroom:\n  ${outside.slice(0, 10).join('\n  ')}`);
+});
 
 /** Homes as round 6 leaves them, by hand: the parents' double with a wardrobe and a trunk and nothing for the children. */
 const ROOMY = { type: 'bedroom', rect: { x0: 0, z0: 0, x1: 3.6, z1: 3.4 }, doors: [[1.0, -0.05, 0.9, 'interior']], windows: [[2.4, 3.45, 1.2, 1.0, 1.1]],

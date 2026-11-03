@@ -124,9 +124,11 @@ function emitAnchors(E, room, L, hh) {
       }
     }
     if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk' || c.arch === 'crib') {
-      const [sx, sz] = L.rel(it, ...sleepSpot(L, it, conn)), chk = [it.x, it.z];
-      A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
-      if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+      if (room.type === 'bedroom') {                       // a sleeper lies in a BEDROOM (people/homelife.js: the sleep scene); a child's bunk or single in the living room (R4-705) is there for the eye, with no sleeper to lie in it
+        const [sx, sz] = L.rel(it, ...sleepSpot(L, it, conn)), chk = [it.x, it.z];
+        A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+        if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+      }
       const [bx, bz] = L.rel(it, it.w / 2 + 0.4, it.d / 4);
       if (c.arch !== 'crib') A('stand', bx, bz, it.ry - PI / 2, { tags: ['bedside'] });
     }
