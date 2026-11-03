@@ -27,6 +27,54 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
   }
   function pct(x) { return x == null ? "–" : Math.round(x * 100) + "%"; }
 
+  // ---- 0. How the comparison works ----------------------------------------------
+  var nModelStories = models.reduce(function (s, k) { return s + (G[k].n || 0); }, 0);
+  var nWp = wp.reduce(function (s, k) { return s + (G[k].n || 0); }, 0);
+  // para(title, text) or para(title, [[lead, text], ...]) for several short paragraphs.
+  function para(title, text) {
+    var ps = typeof text === "string" ? [h("p", { text: text })] : text.map(function (t) {
+      return h("p", null, [h("b", { text: t[0] + " " }), t[1]]);
+    });
+    return h("div", { class: "how-item" }, [h("h4", { text: title })].concat(ps));
+  }
+  el.appendChild(h("h3", { class: "part", text: "How the comparison works" }));
+  el.appendChild(h("div", { class: "how" }, [
+    para("Three sources, all about 300 words", [
+      ["The models.", models.length + " models, " + nModelStories + " stories. Every model got the same one-line prompt, " +
+        "“Write a short story of about 300 words”, ten times. Each request was a separate call with no memory of the others, " +
+        "at the model’s default settings. We cut off the title before measuring, so only the prose counts."],
+      ["The Reddit writers.", nWp + " stories from r/WritingPrompts, posted in 2018, four years before ChatGPT. " +
+        "We kept stories of 200 to 450 words, drew " + nWp + " at random with a fixed seed, and dealt them into groups of ten. " +
+        "Within a group, nearly every story has a different author and answers a different prompt."],
+      ["The classic authors.", "O. Henry, Anton Chekhov (in Constance Garnett’s translation), Saki and Katherine Mansfield, " +
+        "all public domain from Project Gutenberg. From each author’s collection we took ten 300-word passages at random, " +
+        "skipping the front matter and the end of the book."]]),
+    para("Always ten against ten",
+      "Every “how alike are they?” number is worked out inside a group of ten texts of similar length. " +
+      "Those groups are one model’s ten stories, one group of ten Reddit stories, or one author’s ten passages. " +
+      "This matters because sameness measures move with how much text you feed them: " +
+      "a single 300-word story, or a whole novel, would not be comparable. " +
+      "The human results are shown as ranges, so a model sitting inside the band is writing within normal human variation."),
+    para("Two lenses: the words, and the meaning",
+      "The word measures read only the surface. Text is lower-cased and reduced to words, so punctuation and layout count for nothing. " +
+      "Vocabulary richness is scored story by story (MATTR, MTLD, Yule’s K), then averaged over the ten. " +
+      "Repetition across stories is scored on the ten pooled together. Distinct-2 asks what share of all word pairs are new. " +
+      "Self-overlap asks how many three-word phrases each pair of stories shares. " +
+      "The meaning measure sends every text through the same embedding model (OpenAI’s text-embedding-3-small). " +
+      "That turns a text into 1,536 numbers, so two stories about a lonely lighthouse keeper land close together even if they share no phrases. " +
+      "“Spread” is how far a group’s ten texts sit from their own centre. The map squashes those 1,536 numbers down to two, for the eye."),
+    para("What makes it unfair, and which way",
+      "The Reddit groups are a generous yardstick for the humans. Ten different people answering ten different prompts will " +
+      "naturally vary more than one model answering one prompt ten times, so treat them as the ceiling of variety. " +
+      "The classic authors are the fairer test, one writer ten times. But their passages are slices from the middle of longer works, " +
+      "edited for print, and one is a translation. That is why openings, titles and names are compared only between models. " +
+      "Ten texts per group is a small sample: read differences of a point or two as noise, and big gaps as the finding. " +
+      "The “AI words” list is our own choice of words that feel like machine prose, so it is a pointer, not a proof. " +
+      "Each model was run once, on one afternoon. And no human text appears on this page: the Reddit stories belong to their authors, " +
+      "so we publish only the numbers measured from them."),
+  ]));
+  el.appendChild(h("p", { class: "note", text: "The exact formula for each measure is under “How we measured” at the end of this chapter." }));
+
   // ---- 1. The map ----------------------------------------------------------------
   el.appendChild(h("h3", { class: "part", text: "The map" }));
   var pts = S.points || [];
