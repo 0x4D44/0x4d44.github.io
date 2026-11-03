@@ -16,6 +16,11 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch } from './chrome.mjs';
 
+// The harness gives a page 60 s to load (tests/chrome.mjs Page.goto: LADERA_LOAD_MS). On a box with every core busy a renderer is held for longer than that, and the wait fails whatever the test holds: this file once lost its
+// fourth test to `timeout waiting for: document.readyState === "complete"` in a whole-set run (354 s against 140 to 170 s), and dev/FEATURE-LAZY.md section 10 counts six other page runs lost the same way.
+// Six pages boot here, so each is given four minutes to load; a caller's own LADERA_LOAD_MS wins.
+process.env.LADERA_LOAD_MS ||= '240000';
+
 const SABS = new Set((process.env.SDP_SABOTAGE ?? '').split(',').filter(Boolean));
 const on = (...ids) => SABS.has('all') || ids.some((id) => SABS.has(id));
 
