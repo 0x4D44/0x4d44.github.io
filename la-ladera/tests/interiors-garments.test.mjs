@@ -17,7 +17,7 @@ import { inspectAsset, parseGLB, validateGarments } from '../tools/blender/garme
 import { furnishedBatch, obbOf, corners, penetration, rectOb, roomOf, catalogOf, landing } from './interiors-lib.mjs';
 import { CATALOG } from '../js/interiors/catalog.js';
 import { GARMENTS, VARIANTS, STATES, ASSORTMENTS, GARMENT_FILES } from '../js/interiors/garments_data.js';
-import { GARMENT_KEYS, ALL_GARMENT_KEYS, PAGE_GARMENT_SIZES, garmentKey, lodFile, registerGarmentAssets, tidinessOf, classOf, isChildRoom, walkLanes, uOf, CLASS, NEAT_LOTS, CHILD_ROLES, LIMITS, STOCK_HOSTS, KIND_SHIFT, garmentsOff } from '../js/interiors/garments.js';
+import { GARMENT_KEYS, ALL_GARMENT_KEYS, PAGE_GARMENT_SIZES, garmentKey, lodFile, registerGarmentAssets, tidinessOf, classOf, isChildRoom, walkLanes, uOf, CLASS, NEAT_LOTS, CHILD_ROLES, LIMITS, HANGER_TRIS, STOCK_HOSTS, KIND_SHIFT, garmentsOff } from '../js/interiors/garments.js';
 import { mkObb } from '../js/interiors/layout.js';
 import { garmentsDataModule } from '../tools/garments_data.mjs';
 import { drawStandin } from '../js/interiors/standins.js';
@@ -425,7 +425,7 @@ test('budgets: at most 72 garments and 11000 triangles a building, 12 a bedroom;
   let total = 0, tris = 0;
   for (const bp of bps) {
     const g = bp.interior.garments, recs = garmentsOf(bp);
-    const t = recs.reduce((n, f) => n + GARMENTS[catalogOf(f).garment][catalogOf(f).state][3], 0);
+    const t = recs.reduce((n, f) => n + GARMENTS[catalogOf(f).garment][catalogOf(f).state][3] + (catalogOf(f).hang ? HANGER_TRIS : 0), 0);      // (a hung garment: its model, and the hanger and the peg it hangs from, R2b-206)
     total += recs.length; tris += t;
     if (recs.length !== g.garments || t !== g.tris) problems.push(`${bp.id}: the pass counted ${g.garments} garments / ${g.tris} triangles, the records hold ${recs.length} / ${t}`);
     if (recs.length > LIMITS.building) problems.push(`${bp.id}: ${recs.length} garments (limit ${LIMITS.building})`);

@@ -159,6 +159,7 @@ const FIXTURE_RANK = [[/^(stove_|sink_|lavadero$|toilet$|bed_|mattress_(leaning|
 export const fixtureRank = (it) => { for (const [re, k] of FIXTURE_RANK) if (re.test(it.name)) return k; return 0; };
 
 const COOK_REACH = 1.2;                    // the farthest from a stove's middle a cook is placed (a stove is 0.6 m deep and the cook stands 0.5 m off its face)
+const SITTING = 0.9;                       // how far over the seat the head of whoever sits on it reaches (`_wallFree`: nothing deep hangs there)
 
 /** How far from a sleeper's anchor the nearest floor a body can stand on may be (m): the stuck probe wants a standing node within 1.4 m of every anchor and its nodes are 0.3 m apart (`sleeperSpot` slides the sleeper on the mattress to be within this of it). */
 export const SLEEP_REACH = 1.0;
@@ -770,7 +771,9 @@ export class Layout {
     const slab = this._slab(wall, u0, u1, depth);
     for (const b of this.items) {
       if (!b.floor || !b.block || b === o.inside) continue;                // (`inside`: the piece this thing belongs in - the shower head in the shower's own cubicle)
-      if (b.h <= y0 + (o.lap ?? 0.04)) continue;         // the decor hangs above this piece of furniture (`lap`: how far its top may reach up into the decor; a garment's hem must clear it)
+      // the decor hangs above this piece of furniture (`lap`: how far its top may reach up into the decor; a garment's hem must clear it). A SEAT reaches as high as the head of whoever sits on it: a shelf or
+      // a cabinet (0.15 m deep or more) hung over a bench at 1.0 m meets that head (R4-710: the barber's shelf over the waiting bench), where a picture on the wall behind the seat does not
+      if ((depth >= 0.15 && b.c?.seat ? Math.max(b.h, b.c.seat[0] + SITTING) : b.h) <= y0 + (o.lap ?? 0.04)) continue;
       if (obbOverlap(slab, b.ob, 0.01)) return false;    // furniture flush against the wall would swallow the decor
     }
     // a piece hung on the next wall reaches out over this corner (a kitchen cabinet is 0.34 m deep): a shelf hung beside it would pass through its side (13 of the barrio's 444 wall shelves did)
