@@ -1,6 +1,7 @@
 // Touch controls (owner: A1), shown only on coarse-pointer devices while playing:
 //   left thumb  = floating stick (walk; pushed to the rim = run)       right thumb = drag to look; a short tap on it = E (use what the crosshair is on)
 //   buttons     = E (open / talk)  jump  crouch  run (a toggle)        the round menu button (top right) opens the pause menu, the map button beside it the map
+//                 (swimming, jump and crouch read Subir and Bucear: player:swim)
 // It drives the same inputs as the keyboard: player.input.{f,s,sprint,jump,crouch} and the look accumulators player.mdx / mdy.
 // flow.js installs it on a coarse pointer at boot, or when the first finger lands on a page that did not know it was on a phone (review R2d-001).
 const R = 58;                                   // stick radius in CSS px
@@ -14,7 +15,7 @@ export function installTouch(ctx) {
   const zl = mk('div', 'zone l', root), zr = mk('div', 'zone r', root);
   const base = mk('div', 'stick idle', root, { 'data-label': 'caminar' }), thumb = mk('i', '', base);
   const lookHint = mk('div', 'lookhint', root); lookHint.textContent = 'arrastra para mirar';
-  const bUse = mk('button', 'tbtn use', root, { type: 'button', tabindex: '-1' }), bJump = mk('button', 'tbtn jump', root, { type: 'button', tabindex: '-1' }), bCrouch = mk('button', 'tbtn crouch', root, { type: 'button', tabindex: '-1' });
+  const bUse = mk('button', 'tbtn use', root, { type: 'button', tabindex: '-1' }), bJump = mk('button', 'tbtn jump', root, { type: 'button', tabindex: '-1', 'aria-label': 'saltar' }), bCrouch = mk('button', 'tbtn crouch', root, { type: 'button', tabindex: '-1', 'aria-label': 'agacharse' });
   const bRun = mk('button', 'tbtn run', root, { type: 'button', tabindex: '-1', 'aria-label': 'correr' }), bMap = mk('button', 'tbtn map', root, { type: 'button', tabindex: '-1', 'aria-label': 'mapa' });
   bUse.textContent = 'E'; bJump.textContent = '⤒'; bCrouch.textContent = '⤓'; bRun.textContent = 'correr'; bMap.textContent = 'mapa';
   const inp = () => ctx.player?.input;
@@ -75,6 +76,15 @@ export function installTouch(ctx) {
   // thumbs' room (css/ladera.css); the stick lets go of whatever it held
   ctx.events.on('player:lock', ({ reason }) => { if (reason === 'dialogue') { document.body.classList.add('talking'); endStick(); lid = null; dropHint(); } });
   ctx.events.on('player:unlock', ({ reason }) => { if (reason === 'dialogue') document.body.classList.remove('talking'); });
+
+  // in the water (player:swim) the jump and crouch buttons are Subir (hold) and Bucear (a toggle): the same inputs, new names; out of it the toggle is let go (else he would land crouched)
+  const swimLabels = (on) => {
+    root.classList.toggle('swim', on);
+    bJump.textContent = on ? 'subir' : '⤒'; bCrouch.textContent = on ? 'bucear' : '⤓';
+    bJump.setAttribute('aria-label', on ? 'subir' : 'saltar'); bCrouch.setAttribute('aria-label', on ? 'bucear' : 'agacharse');
+    if (!on) { const p = inp(); if (p) p.crouch = false; bCrouch.classList.remove('on'); }
+  };
+  ctx.events.on('player:swim', ({ on }) => swimLabels(!!on));
 
   // only while playing
   ctx.events.on('mode', ({ mode }) => {

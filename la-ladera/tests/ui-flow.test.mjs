@@ -592,6 +592,20 @@ for (const [w, h] of [[390, 844], [768, 1024], [1280, 720]]) {
   });
 }
 
+test('Settings has a Sea motion slider (round 8): named in both languages, from 0 to 100 % and at 100 to begin with, it drives the setting the swimmer reads, Restablecer puts it back', async (t) => {
+  t.after(backToPlay);
+  const SL = 'document.querySelector(\'#panelbody input[aria-label="Movimiento del mar · Sea motion"]\')';
+  await page.key('Escape'); await tick();
+  await page.eval('document.querySelector("#pause [data-open=settings]").click()'); await tick();
+  const r = JSON.parse(await page.eval(`(() => { const i = ${SL}, row = i?.closest('.row'); return JSON.stringify({ found: !!i, type: i?.type, min: i?.min, max: i?.max, value: i?.value, val: row?.querySelector('.val')?.textContent, label: row?.querySelector('label')?.innerText.replace(/\\s+/g, ' ').trim() }); })()`));
+  assert.deepEqual([r.found, r.type, r.min, r.max, r.value, r.val], [true, 'range', '0', '1', '1', '100%'], JSON.stringify(r)); assert.match(r.label, /^Movimiento del mar\s+Sea motion\b.*head.*swell/i, r.label);
+  await page.eval(`(() => { const i = ${SL}; i.value = '0.25'; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  assert.equal(await page.eval('__ladera.ctx.settings.v.seaMotion'), 0.25, 'the slider moves the setting'); assert.equal(await page.eval(`${SL}.closest('.row').querySelector('.val').textContent`), '25%');
+  await page.eval(`[...document.querySelectorAll('#panelbody .actions button')].find((b) => /Restablecer/.test(b.textContent)).click()`); await tick();
+  assert.equal(await page.eval('__ladera.ctx.settings.v.seaMotion'), 1, 'reset puts it back'); assert.equal(await page.eval(`${SL}.value`), '1');
+  await page.key('Escape'); await tick(); await page.eval('document.getElementById("resume").click()'); await tick(); assert.equal((await S()).mode, 'play');
+});
+
 test('no console errors, warnings or failed requests during all of the above', async () => {
   const sum = page.summary();
   // Chrome warns when an AudioContext is created from a script-made (untrusted) key event: that is this test's page.key(), a person's key is fine

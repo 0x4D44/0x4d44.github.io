@@ -9,6 +9,11 @@ export const CONFIG = {
     stepUp: 0.5, maxSlope: 0.9,
     walk: 2.3, sprint: 5.0, crouch: 1.2,
     gravity: 9.8, jump: 3.6,
+    // the water (dev/FEATURE-BEACH.md 3.1, engine/swim.js). Depths are metres of water over the ground, speeds m/s, breath seconds.
+    swim: 1.4, swimFast: 2.2, dive: 1.1, rise: 1.4,      // surface swimming, with Shift, down (C), up (Space)
+    swimEye: 0.14,                                        // the swimmer's eye over the still surface
+    wadeMin: 0.10, deep: 0.90, swimOn: 1.55, swimOff: 1.30,   // wading starts over 0.10, no sprint or jump from 0.90, the feet leave the ground at 1.55 and find it again under 1.30
+    breath: 25,                                           // seconds under the surface before the heartbeat (a lift to the surface follows at 40)
   },
   // Architecture defaults
   FLOOR_H: 2.8,              // floor-to-floor height (informal housing 2.6-2.8, shops 3.2)

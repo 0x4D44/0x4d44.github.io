@@ -88,6 +88,19 @@ test('a conversation on a phone: the stick and buttons step aside, the answers c
   assert.notEqual((await rect('#touch .stick')).disp, 'none');
 });
 
+test('in the water (player:swim) the jump and crouch buttons read subir and bucear, small enough to fit; Bucear is a toggle that is let go on the way out; the labels come back', async () => {
+  const B = (c) => `document.querySelector('#touch .tbtn.${c}')`;
+  const look = async () => JSON.parse(await page.eval(`JSON.stringify({ swim: document.getElementById('touch').classList.contains('swim'), jump: ${B('jump')}.textContent, crouch: ${B('crouch')}.textContent, jl: ${B('jump')}.getAttribute('aria-label'), cl: ${B('crouch')}.getAttribute('aria-label'), crouchOn: ${B('crouch')}.classList.contains('on'), input: __ladera.ctx.player.input.crouch,
+    fit: [${B('jump')}, ${B('crouch')}].map((e) => e.scrollWidth <= e.clientWidth + 1) })`));
+  assert.deepEqual(await look(), { swim: false, jump: '⤒', crouch: '⤓', jl: 'saltar', cl: 'agacharse', crouchOn: false, input: false, fit: [true, true] }, 'on land: the arrows');
+  await page.eval(`__ladera.ctx.events.emit('player:swim', { on: true, how: 'teleport' })`); await tick(150);
+  assert.deepEqual(await look(), { swim: true, jump: 'subir', crouch: 'bucear', jl: 'subir', cl: 'bucear', crouchOn: false, input: false, fit: [true, true] }, 'in the water: Subir and Bucear');
+  await page.eval(`${B('crouch')}.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 41 }))`);
+  let m = await look(); assert.deepEqual([m.crouchOn, m.input], [true, true], 'Bucear is a toggle: down');
+  await page.eval(`__ladera.ctx.events.emit('player:swim', { on: false, how: 'walk' })`); await tick(150);
+  assert.deepEqual(await look(), { swim: false, jump: '⤒', crouch: '⤓', jl: 'saltar', cl: 'agacharse', crouchOn: false, input: false, fit: [true, true] }, 'out of the water: the arrows, the toggle let go (else he would land crouched)');
+});
+
 test('the discovery toast on a phone is small and clear of the pill and the menu button', async () => {
   await page.eval(`__ladera.ctx.ui.toast({ tag: 'Descubrimiento 3 de 40', title: 'El perro dormido', sub: 'The sleeping dog' }, 20000)`); await tick(500);
   const t = await rect('#toast'), title = await rect('#toast.rich b'), menu = await rect('#menubtn');
