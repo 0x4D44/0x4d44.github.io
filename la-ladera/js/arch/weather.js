@@ -571,7 +571,7 @@ export function planWeather(G, kit) {
       const d = kit.shopDoor;
       if (d && ['steel', 'painted', 'ajar'].includes(bp.shopfront?.style) && rnd() < 0.6 + 0.3 * age) {
         const sg = rnd() < 0.5 ? -1 : 1, u = d.x + sg * (d.w / 2 + 0.17), L = 0.7 + 0.5 * rnd();
-        const aw = G.recs.find((r) => r.kind === 'awning' && r.u1 + 0.04 > u - 0.08 && r.u0 - 0.04 < u + 0.08), yt = aw ? aw.y0 - 0.06 : d.h + 0.28;     // under an awning it drips from the bracket, below the valance
+        const aw = G.recs.find((r) => r.kind === 'awning' && r.side === 'front' && r.u1 + 0.04 > u - 0.08 && r.u0 - 0.04 < u + 0.08), yt = aw ? aw.y0 - 0.06 : d.h + 0.28;     // under an awning it drips from the bracket, below the valance
         if (Math.abs(u) < S.W / 2 - 0.1 && yt - L > 0.3 && yt < top('front', u - 0.08, u + 0.08) && free('front', u - 0.08, u + 0.08, yt - L, yt, 'door')) put('rust', 'front', u - 0.07, u + 0.07, yt - L, yt);
       }
     }
