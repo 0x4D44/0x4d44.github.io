@@ -19,6 +19,7 @@ BUDGET = float(os.environ.get("ZOO_BUDGET", "23.0"))   # hard cap on estimated s
 WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
 EXCLUDE = os.environ.get("ZOO_EXCLUDE", "")  # regex of models to leave out of this run
 LOCK = threading.Lock()
+QUOTA_GONE = threading.Event()  # set when OpenAI reports the credit is used up
 # gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.
 SAMPLE_CAP = {"gpt-5-pro": 3, "gpt-5.6-sol@pro": 3}
 # The deprecations page names gpt-5.6-sol with reasoning.mode "pro" as o1-pro's replacement.
@@ -126,7 +127,14 @@ def call(model, endpoint, prompt, max_tokens):
 def call_retry(model, endpoint, prompt, max_tokens, tries=6):
     """Retry transient failures: the proxy's connection cap (503), rate limits, resets."""
     for i in range(tries):
+        if QUOTA_GONE.is_set():
+            return {"ok": False, "code": 429, "error": "insufficient_quota (credit exhausted)", "secs": 0}
         r = call(model, endpoint, prompt, max_tokens)
+        if not r["ok"] and re.search(r"insufficient_quota|exceeded your current quota|billing",
+                                     r.get("error", ""), re.I):
+            QUOTA_GONE.set()
+            print(f"CREDIT EXHAUSTED at {model}: {r['error'][:160]}", flush=True)
+            return r
         if r["ok"] or r.get("code") not in (0, 429, 500, 502, 503):
             return r
         time.sleep(3 * (i + 1))
@@ -233,8 +241,11 @@ def ask(qids):
         for m, ep in sorted(models.items()):
             if EXCLUDE and re.search(EXCLUDE, m):
                 continue
+            if "models" in q and m not in q["models"]:
+                continue
             n = q.get("samples_pro", 1) if is_pro(m) else q.get("samples", 1)
             n = min(n, SAMPLE_CAP.get(m, n))
+            n = q.get("model_samples", {}).get(m, n)
             jobs += [(m, ep, s) for s in range(n) if (m, s) not in have]
         print(f"[{qid}] {len(jobs)} calls over {len(models)} models; spent so far ${SPENT[0]:.2f}", flush=True)
         skipped = []
@@ -248,6 +259,8 @@ def ask(qids):
             r = call_retry(m, ep, q["prompt"], q["max_tokens"])
             c = cost(m, r.get("usage", {})) if r["ok"] else 0.0
             settle(worst, c)
+            if not r["ok"] and QUOTA_GONE.is_set():
+                return None  # not an answer: leave it for a resume if credit returns
             rec = {"q": qid, "model": m, "sample": s, "endpoint": ep, "cost": c, "ts": time.time(), **r}
             append(qid, rec)
             return rec
@@ -265,6 +278,9 @@ def ask(qids):
         print(f"[{qid}] done; spent ${SPENT[0]:.2f}; budget-skipped {len(skipped)}", flush=True)
         if skipped:
             print("BUDGET REACHED - stopping", flush=True)
+            return
+        if QUOTA_GONE.is_set():
+            print("CREDIT EXHAUSTED - stopping", flush=True)
             return
 
 
