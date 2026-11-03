@@ -19,7 +19,9 @@ BUDGET = float(os.environ.get("ZOO_BUDGET", "23.0"))   # hard cap on estimated s
 WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
 LOCK = threading.Lock()
 # gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.
-SAMPLE_CAP = {"gpt-5-pro": 3}
+SAMPLE_CAP = {"gpt-5-pro": 3, "gpt-5.6-sol@pro": 3}
+# The deprecations page names gpt-5.6-sol with reasoning.mode "pro" as o1-pro's replacement.
+VIRTUAL = ["gpt-5.6-sol@pro"]
 
 SKIP = re.compile(r"embedding|moderation|tts|whisper|transcribe|image|sora|realtime|live|dall-e")
 SNAPSHOT = re.compile(r"-(\d{4}-\d{2}-\d{2}|\d{4})$")
@@ -54,6 +56,8 @@ def http(method, path, body=None, timeout=900):
 
 
 def price(model):
+    if model.endswith("@pro"):  # assumption: pro mode bills at the base model's token rates
+        model = model[:-4]
     m = SNAPSHOT.sub("", model)
     for table in ("published", "memory"):
         if m in PRICES[table]:
@@ -62,7 +66,7 @@ def price(model):
 
 
 def is_pro(model):
-    return price(model)[0][1] >= 100
+    return model.endswith("@pro") or price(model)[0][1] >= 100
 
 
 def cost(model, usage):
@@ -74,8 +78,11 @@ def call(model, endpoint, prompt, max_tokens):
     """One request. Returns dict(ok, text, usage, status, error, secs)."""
     t0 = time.time()
     if endpoint == "responses":
-        code, d = http("POST", "/responses", {"model": model, "input": prompt,
-                                              "max_output_tokens": max_tokens})
+        body = {"model": model, "input": prompt, "max_output_tokens": max_tokens}
+        if model.endswith("@pro"):  # a virtual model: pro reasoning mode on a current model
+            body["model"] = model[:-4]
+            body["reasoning"] = {"mode": "pro"}
+        code, d = http("POST", "/responses", body)
         if code == 200:
             text = "".join(c.get("text", "") for o in d.get("output", []) if o.get("type") == "message"
                            for c in o.get("content", []) or [] if c.get("type") == "output_text")
@@ -177,7 +184,7 @@ def probe():
     code, d = http("GET", "/models")
     assert code == 200, d
     ids = sorted(m["id"] for m in d["data"])
-    cands = [m for m in ids if not SKIP.search(m) and not SNAPSHOT.search(m)]
+    cands = [m for m in ids if not SKIP.search(m) and not SNAPSHOT.search(m)] + VIRTUAL
     print(f"{len(ids)} listed, {len(cands)} candidates", flush=True)
     prev = {r["model"]: r for r in records("_probe") if r.get("endpoint")}
     todo = [m for m in cands if m not in prev]
