@@ -9,14 +9,15 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildData, readAssetJson } from './headless.mjs';
 import { PeopleSim, keeperFacing } from '../js/people/sim.js';
+import { Brain, EXIT_GAP, POST_PHONE, POST_PHONES } from '../js/people/brain.js';
 import { Spots } from '../js/people/spots.js';
 import { Indoor } from '../js/people/indoor.js';
 import { NavGraph } from '../js/people/nav.js';
 import { BODY, Npc } from '../js/people/npc.js';
-import { awake, blockAt, keeperBedH, SCHOOL, SHOP_HOURS, shopOpen, shopWindow } from '../js/people/schedule.js';
+import { awake, blockAt, curfewH, freeChoices, keeperBedH, SCHOOL, SHOP_HOURS, shopOpen, shopWindow } from '../js/people/schedule.js';
 import { makeVariant, slotRatio, skinShade } from '../js/people/look.js';
 import { makeRng } from '../js/core/rng.js';
-import { Physics } from '../js/core/physics.js';
+import { Physics, wallsRect } from '../js/core/physics.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = (f) => readFileSync(resolve(ROOT, 'js/people', f), 'utf8');
@@ -147,6 +148,48 @@ test('shopkeepers: at noon every shop is open and its keeper stands at the post 
   assert.ok(sealed <= Math.ceil(sim.shops.size * 0.4), `${sealed} of ${sim.shops.size} posts are sealed in by furniture (the keeper never leaves them); more means the interiors changed`);
 });
 
+// R3-204: the cook of L14 (Corrientazo Doña Lucía) stood in the middle of her counter with only her head above the top. Tables stand up to that counter, so its customer spot is 1.35 m from it and
+// "1.7 m beyond the customer" is inside it; the colliders are the OUTLINES of the footprints, the middle of a 0.65 m counter is 0.33 m from both long edges, so the physics called it free and the
+// sealed-post rule took it for "a slot behind the counter".
+test('shopkeepers (R3-204): no keeper stands inside a piece of furniture: the post and the keeper are outside every footprint on their storey, measured from the colliders', () => {
+  const sim = fresh(12); run(sim, 6);
+  const inBox = (bp, p) => {                                                           // the footprints as the colliders have them: 4 walls with one id, in the keeper's storey
+    const boxes = new Map();
+    for (const w of bp.colliders?.walls ?? []) if (w.furniture && w.y0 <= p.y + 0.12 && w.y1 > p.y + 0.1) (boxes.get(w.id) ?? boxes.set(w.id, []).get(w.id)).push([w.x1, w.z1]);
+    return [...boxes].filter(([, pts]) => Physics.inside(pts, p.x, p.z)).map(([id]) => id);
+  };
+  let boxes = 0;
+  for (const shop of sim.shops.values()) {
+    const bp = ctx.buildings.get(shop.lot), k = sim.byId.get(shop.keeper); boxes += (bp.colliders?.walls ?? []).filter((w) => w.furniture).length;
+    assert.deepEqual(inBox(bp, shop.post), [], `${shop.name} (${shop.lot}): the post (${shop.post.x.toFixed(2)}, ${shop.post.z.toFixed(2)}) is inside a piece of furniture`);
+    assert.deepEqual(inBox(bp, k), [], `${shop.name} (${shop.lot}): the keeper stands inside a piece of furniture`);
+  }
+  assert.ok(boxes > 100, `${boxes} furniture colliders seen: the measure has something to measure`);
+  const l14 = sim.shops.get('L14');
+  if (l14) assert.ok(!l14.sealed && Math.hypot(l14.post.x - 11.53, l14.post.z - 94.97) > 1, `L14: the cook is not sealed in her counter (post ${l14.post.x.toFixed(2)}, ${l14.post.z.toFixed(2)})`);
+});
+
+test('PeopleSim._inFurniture (R3-204): a footprint is laid as its collider outline is, at any turn: 5 cm inside each corner is in it, 5 cm outside is not; another room\'s footprint, a thing on a table and a thing that does not block do not count', () => {
+  const rotY = 0.3, ry = 0.6, w = 2, d = 0.65, at = [1, 0.5], O = [10, 20];                 // the building turned 0.3 rad, the counter 0.6 more
+  const rec = (id, room, o = {}) => ({ id, room, kind: 'floor', block: true, x: at[0], z: at[1], ry, w, d, ...o });
+  const bp = {
+    id: 'X', lot: { y: 0, rotY }, frame: { toWorld: (x, y, z) => [x + O[0], y, z + O[1]], toLocal: (x, y, z) => [x - O[0], y, z - O[1]] }, floors: [{ index: 0, y: 0 }],
+    rooms: [{ id: 'X.f0.r1', floor: 0, rect: { x0: -5, x1: 5, z0: -5, z1: 5 } }],
+    furniture: [rec('a', 'X.f0.r1'), rec('b', 'X.f0.r2', { x: -3, z: -3 }), rec('c', 'X.f0.r1', { x: -2, z: 2, kind: 'top' }), rec('e', 'X.f0.r1', { x: -2, z: -2, block: false })],
+  };
+  const sim = { ctx: { buildings: new Map([['X', bp]]) }, _roomAt: PeopleSim.prototype._roomAt }, inside = (x, z) => PeopleSim.prototype._inFurniture.call(sim, 'X', x, z, 0);
+  const cx = at[0] + O[0], cz = at[1] + O[1], corners = wallsRect(cx, cz, w, d, rotY + ry, 0, 1).map((q) => [q.x1, q.z1]);
+  const probe = (px, pz, what) => {                                                  // 5 cm in and 5 cm out along the line from the middle through the point
+    const l = Math.hypot(px - cx, pz - cz), ux = (px - cx) / l, uz = (pz - cz) / l;
+    assert.equal(inside(px - ux * 0.05, pz - uz * 0.05), true, `5 cm inside ${what} (${px.toFixed(2)}, ${pz.toFixed(2)})`);
+    assert.equal(inside(px + ux * 0.05, pz + uz * 0.05), false, `5 cm outside ${what} (${px.toFixed(2)}, ${pz.toFixed(2)})`);
+  };
+  corners.forEach(([px, pz], i) => { const [qx, qz] = corners[(i + 1) % 4]; probe(px, pz, 'the corner'); probe((px + qx) / 2, (pz + qz) / 2, 'the face (an end of the length, a side)'); });      // (the faces alone tell a wrong turn on the length from one on the depth)
+  assert.equal(inside(cx, cz), true, 'the middle');
+  for (const [x, z] of [[-3 + O[0], -3 + O[1]], [-2 + O[0], 2 + O[1]], [-2 + O[0], -2 + O[1]]]) assert.equal(inside(x, z), false, `(${x}, ${z}): the other room's piece, the thing on a table and the thing that does not block are not footprints`);
+  assert.equal(PeopleSim.prototype._inFurniture.call({ ctx: { buildings: new Map() }, _roomAt: PeopleSim.prototype._roomAt }, 'X', cx, cz, 0), false, 'no plan: no judgement');
+});
+
 test('keeperFacing (R3-103): a keeper with his back to the door, or side-on to it, is turned toward it, only as far as it takes; one who faces it is left as he stands; one whose customers lie behind him faces the door', () => {
   const post = { x: 0, z: 0 }, door = { x: 0, z: 4 };                                         // the door straight ahead: yaw 0
   const off = (ry, d = door) => Math.abs(angDiff(ry, Math.atan2(d.x - post.x, d.z - post.z)));
@@ -177,6 +220,38 @@ test('shopkeepers: they open on the hour, go out to sweep or lean and come back,
   const night = fresh(23); run(night, 5);
   assert.equal([...night.shops.values()].filter((s) => s.open).length, 0, 'no shop is open at 23:00');
   assert.ok(night.npcs.filter((n) => n.routine === 'shopkeeper').every((n) => ['sleep', 'home'].includes(indoors(n))), 'the keepers are indoors (in bed, or just not yet)');
+});
+
+// R3-211: 9 of the 28 keepers were on their phones in open shops at 07:36 and 6 at 10:30 (a chance in eight per stand, the rest of the day's mix as ever), so half of the openers were "estaba mirando el celular".
+test('shopkeepers (R3-211): never more than three are on the phone behind their counters at once, whatever the roll says; with room for another the roll still gives the phone', () => {
+  const shops = new Map(), keepers = [];
+  const add = (id, act) => { const k = { id, act, shopLotId: 'L' + id, away: false, x: 0, y: 0, z: 0, rng: { next: () => 0.78 + POST_PHONE / 2 }, stand(_w, a) { this.act = a; } }; keepers.push(k); shops.set(k.shopLotId, { keeper: id, post: { x: 0, y: 0, z: 0, ry: 0 } }); return k; };
+  for (let i = 0; i < POST_PHONES; i++) add('k' + i, 'phone');
+  const brain = new Brain({ shops, npcs: keepers }), me = add('me', 'sell');
+  brain.atPost(me, true); assert.equal(me.act, 'wait', `${POST_PHONES} keepers are on the phone already: not a fourth (the roll ${me.rng.next().toFixed(2)} is a phone)`);
+  keepers[0].act = 'sell'; brain.atPost(me, true); assert.equal(me.act, 'phone', 'with one of them off it there is room, and the roll is a phone');
+  me.act = 'phone'; brain.atPost(me, true); assert.equal(me.act, 'phone', 'a keeper who is on the phone is not counted against himself');
+  keepers[1].away = true; keepers[0].act = 'phone'; me.act = 'sell'; brain.atPost(me, true); assert.equal(me.act, 'phone', 'one who is out of sight upstairs is not counted');
+  keepers[1].away = false; shops.get('Lk1').keeper = null; me.act = 'sell'; brain.atPost(me, true); assert.equal(me.act, 'phone', 'nor is one whose shop has no keeper at the post (on the phone at home)');
+  me.rng = { next: () => 0.6 }; me.act = 'phone'; brain.atPost(me, true); assert.equal(me.act, 'idle', 'a roll that is not a phone is not changed');
+});
+
+test('shopkeepers (R3-211): a keeper out on a break at a chat corner counts against the cap too: with three others on the phone he waits, whatever the roll says; anybody who keeps no shop is not held to it', () => {
+  const shops = new Map(), npcs = [];
+  const add = (id, act, shop = true) => { const k = { id, act, shopLotId: shop ? 'L' + id : null, away: false, st: { x: 0, z: 0 }, rng: { next: () => 0.5, chance: () => true }, stand(_w, a) { this.act = a; } }; npcs.push(k); if (shop) shops.set(k.shopLotId, { keeper: id }); return k; };
+  for (let i = 0; i < POST_PHONES; i++) add('k' + i, 'phone');
+  const brain = new Brain({ shops, npcs, byId: new Map(npcs.map((k) => [k.id, k])), t: 0 }), spot = { x: 0, z: 0, ry: 0, waiting: null }, me = add('me', 'sell'), walker = add('w', 'idle', false);
+  brain.chatHere(me, spot); assert.equal(me.act, 'wait', `${POST_PHONES} keepers are on the phone already: the keeper waiting at the corner does not make a fourth (the chance is a phone)`);
+  spot.waiting = null; brain.chatHere(walker, spot); assert.equal(walker.act, 'phone', 'a walker who keeps no shop is not held to it');
+  npcs[0].act = 'sell'; spot.waiting = null; brain.chatHere(me, spot); assert.equal(me.act, 'phone', 'with one of them off it there is room, and the chance is a phone');
+});
+
+test('shopkeepers (R3-211): over ten minutes of a morning and of an afternoon no more than three are on the phone at any moment, at the counter or out on a break, and the phone is still used', () => {
+  for (const [hour, secs] of [[10.5, 240], [15.5, 600]]) {
+    const sim = fresh(hour); let max = 0, used = 0;
+    run(sim, secs, 0.1, () => { const c = sim.npcs.filter((n) => n.routine === 'shopkeeper' && n.act === 'phone' && !n.away && sim.shops.get(n.shopLotId)?.keeper === n.id).length; max = Math.max(max, c); if (c) used++; });
+    assert.ok(max <= POST_PHONES, `${hour} h: ${max} keepers on the phone at once`); assert.ok(used > 0, `${hour} h: somebody still looks at the phone`);
+  }
 });
 
 /** Why somebody is indoors ('sleep' | 'home' | ...): hidden in the building, or (the player is near) drawn in a room of it; null when out of doors. */
@@ -241,6 +316,74 @@ test('children: in school at 10:00, on the street and the court in the afternoon
   assert.ok(most >= 3, `at most ${most} children on the court during five minutes at 16:00`);
   assert.ok(total / samples >= 1.2, `on average ${(total / samples).toFixed(1)} children on the court`);
   assert.ok(acts.size >= 2, `the children on the court do ${acts.size} different things: ${[...acts].join(' ')}`);
+});
+
+// ---- the school door and the evening (R3-206) ---------------------------------------------------------------------------------------------------------
+test('R3-206: a school the clock empties in one tick lets its class out of the door one after another, and not onto one spot', () => {
+  const sim = fresh(7.6); run(sim, 15);
+  const pupils = sim.npcs.filter((n) => n.away && n.awayWhy === 'school');
+  assert.ok(pupils.length >= 12, `${pupils.length} people are in the school at 7:36`);
+  ctx.hour = 17.2;                                                       // the lessons are long over: all of them are due out in the same second
+  const out = new Map(); let crowd = 0, closest = Infinity;
+  run(sim, 90, 0.05, (s) => {
+    for (const n of pupils) if (!n.away && !out.has(n.id)) out.set(n.id, s.t);
+    if (Math.round(s.t * 20) % 5) return;                                  // every quarter of a second
+    const vis = pupils.filter((n) => !n.away);
+    for (const a of vis) { let near = 0; for (const b of vis) { const d = dist2(a, b); if (d <= 3) near++; if (a !== b) closest = Math.min(closest, d); } crowd = Math.max(crowd, near); }
+  });
+  const times = [...out.values()].sort((a, b) => a - b), gaps = times.slice(1).map((t, i) => t - times[i]);
+  assert.equal(out.size, pupils.length, `all ${pupils.length} are let out (${out.size} were)`);
+  assert.ok(Math.min(...gaps) >= 0.5, `two of them come out ${Math.min(...gaps).toFixed(2)} s apart`);
+  assert.ok(times.at(-1) - times[0] <= pupils.length * EXIT_GAP * 1.6 + 1, `the last of ${pupils.length} waits ${(times.at(-1) - times[0]).toFixed(0)} s at the door: a queue, not a stall`);
+  assert.ok(crowd <= 8, `${crowd} of them within 3 m of one another at the most (a line, not a huddle)`);
+  assert.ok(closest >= 0.3, `two of them ${closest.toFixed(2)} m apart (walking through each other)`);
+});
+
+test('R3-206: the children are in by dusk and the teenagers by nine: after it they have no choice out of doors, only home; everybody else keeps the street', () => {
+  for (const u of [0, 0.5, 0.999]) {
+    const kid = { routine: 'kid', age: 'kid', homeLotId: 'L1', gender: 'm', jit: [0.5, 0.5, u] }, teen = { routine: 'teen', age: 'teen', homeLotId: 'L1', gender: 'f', jit: [0.5, 0.5, u] };
+    assert.ok(curfewH(kid) >= 17.7 && curfewH(kid) < 18.4, `a child is in by dusk (the sun is down at 17:55, it is dark by 18:20): ${curfewH(kid)}`);
+    assert.ok(curfewH(teen) >= 20.4 && curfewH(teen) < 21.3, `a teenager is in by about nine: ${curfewH(teen)}`);
+    assert.deepEqual(freeChoices(kid, 18.4).map(([a]) => a), ['home'], 'a child at leisure after dusk: home');
+    assert.deepEqual(freeChoices(teen, 21.3).map(([a]) => a), ['home'], 'a teenager at leisure after nine: home');
+    assert.ok(freeChoices(kid, 17.0).some(([a]) => a === 'court'), 'before dusk a child plays on the court');
+    assert.ok(freeChoices(teen, 20.0).some(([a]) => a === 'lean' || a === 'chat' || a === 'phone'), 'at eight a teenager is out on the corner');
+  }
+  for (const [routine, age] of [['homemaker', 'adult'], ['neighbour', 'adult'], ['worker', 'adult'], ['elder', 'elder'], ['beata', 'elder']]) {
+    const p = { routine, age, homeLotId: 'L1', gender: 'f', jit: [0.5, 0.5, 0.5] };
+    assert.equal(curfewH(p), Infinity, `${routine} has no curfew`);
+    assert.ok(freeChoices(p, 21.5).length > 1, `${routine} still has the street at half past nine`);
+  }
+});
+
+test('R3-206: a child or a teenager at home after the curfew stays in until bed time; before it, and for a grown-up, the stay ends with its time', () => {
+  const sim = fresh(12); run(sim, 3); const brain = sim.brain;
+  const of = (routine) => sim.npcs.find((n) => n.routine === routine && n.homeLotId);
+  for (const [routine, early, late] of [['kid', 15, 19], ['teen', 19.5, 21.6]]) {
+    const n = of(routine); n.jit[2] = 0.5; n.stayUntil = sim.t - 1;           // (the stay is over by the clock)
+    ctx.hour = early; assert.equal(brain.stayOver(n, 'free', 'home'), true, `${routine} at ${early}: the stay is over`);
+    ctx.hour = late; assert.equal(brain.stayOver(n, 'free', 'home'), false, `${routine} at ${late}: in for the evening`);
+    assert.equal(brain.stayOver(n, 'school', 'home'), true, `${routine}: the school bell still calls`);
+  }
+  const grown = of('homemaker'); grown.stayUntil = sim.t - 1; ctx.hour = 21.6;
+  assert.equal(brain.stayOver(grown, 'free', 'home'), true, 'a grown-up at half past nine: out when the stay is over');
+});
+
+test('R3-206: after dusk no child is out of doors, after nine no teenager; those out walk home, and once in nobody comes out again before bed time', () => {
+  for (const [routine, from, to] of [['kid', 17.0, 18.6], ['teen', 20.0, 21.6]]) {
+    const sim = fresh(from); run(sim, 20);
+    const ours = sim.npcs.filter((n) => n.routine === routine), before = ours.filter((n) => !n.away).length;
+    assert.ok(before >= 3, `${before} of ${ours.length} ${routine}s are out at ${from}`);
+    ctx.hour = to;
+    const inAt = new Map(), again = [];
+    run(sim, 420, 0.1, (s) => {
+      for (const n of ours) { if (n.away && n.awayWhy === 'home') inAt.set(n.id, inAt.get(n.id) ?? s.t); else if (!n.away && inAt.has(n.id) && !again.includes(n.id)) again.push(n.id); }
+    });
+    assert.deepEqual(again, [], `${routine}s who were in at ${to} came out again`);
+    assert.deepEqual(ours.filter((n) => !n.away).map((n) => n.id), [], `${routine}s still out of doors ${420} s after the clock reached ${to}`);
+  }
+  const night = fresh(19.5); run(night, 3);
+  assert.equal(night.npcs.filter((n) => n.routine === 'kid' && !n.away).length, 0, 'at 19:30 on the first frame there is no child on the street');
 });
 
 // ---- doors and walking inside -------------------------------------------------------------------------------------------------------------------

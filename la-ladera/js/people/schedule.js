@@ -137,8 +137,19 @@ export function freeChoices(npc, h) {
   return list;
 }
 
+/**
+ * The hour after which this child or teenager has no choice left out of doors, only home (everybody else: never). The children are in by dusk (the sun is down at 17:55 near 6 deg N in late
+ * October and it is dark by 18:20), the teenagers by about nine in the evening. Each has an hour of their own (`jit[2]`), so the street empties of them over half an hour, not in one minute
+ * (R3-206: ten children and teenagers were still walking about at 21:30). The brain keeps them in, once they are home, until bed time (`Brain.stayOver`).
+ */
+export function curfewH(npc) {
+  const u = npc.jit?.[2] ?? 0.5;
+  return npc.routine === 'kid' ? 17.7 + u * 0.6 : npc.routine === 'teen' ? 20.4 + u * 0.8 : Infinity;
+}
+
 /** What a person at leisure does out of doors (see freeChoices for the whole bag). */
 function freeOutdoors(npc, h) {
+  if (h >= curfewH(npc)) return [];
   const morning = h < 10, midday = h >= 10 && h < 14, afternoon = h >= 14 && h < 18, evening = h >= 18;
   switch (npc.routine) {
     case 'homemaker': return morning ? [['sweep', 4], ['errand', 3], ['chat', 2], ['wander', 1], ['bench', 1]]

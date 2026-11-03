@@ -70,16 +70,18 @@ export function keeperFacing(ry, post, doors, toward = null) {
   return wrap(mid + (Math.abs(wrap(f - lo)) < Math.abs(wrap(f - hi)) ? lo : hi));
 }
 
-/** How far (x, z) is from the nearest leg of any of the walks `routes` (each a list of points {x, z}); Infinity without one. */
-function aisleOf(routes, p) {
-  let best = Infinity;
+/** The nearest point (x, z) of any leg of the walks `routes` (each a list of points {x, z}) to `p`, and how far it is (d: Infinity without a walk). */
+function nearOnRoutes(routes, p) {
+  let best = { d: Infinity, x: p.x, z: p.z };
   for (const pts of routes) for (let i = 0; i < pts.length; i++) {
     const a = pts[i], b = pts[Math.min(i + 1, pts.length - 1)], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz;
-    const t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)) : 0;
-    best = Math.min(best, Math.hypot(p.x - (a.x + dx * t), p.z - (a.z + dz * t)));
+    const t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)) : 0, x = a.x + dx * t, z = a.z + dz * t, d = Math.hypot(p.x - x, p.z - z);
+    if (d < best.d) best = { d, x, z };
   }
   return best;
 }
+/** How far (x, z) is from the nearest leg of any of the walks `routes`; Infinity without one. */
+const aisleOf = (routes, p) => nearOnRoutes(routes, p).d;
 
 /**
  * Does a body `r` wide walking from a to b touch a wall or a prop on the way? physics.segmentBlocked tests the line alone (r = 0 is that rule: nothing is swept). The ends that are no lane point (a graph
@@ -268,11 +270,11 @@ export class PeopleSim {
         const a = custs[0], fx = Math.sin(a.ry), fz = Math.cos(a.ry), sameRoom = this._sameRoom(lot.id, a);
         for (const d of [1.7, 1.6, 1.8, 1.5, 1.9]) {
           const x = a.x + fx * d, z = a.z + fz * d;
-          if (!sameRoom(x, z)) { beyond ??= { x, y: a.y, z, ry: a.ry + Math.PI }; continue; }        // a counter against a wall has no far side: the point is in the stairwell, the entry hall next door or the street (L52, L31, L19, L41, L20)
+          if (!sameRoom(x, z) || this._inFurniture(lot.id, x, z, a.y)) { beyond ??= { x, y: a.y, z, ry: a.ry + Math.PI }; continue; }        // a counter against a wall has no far side: the point is in the stairwell, the entry hall next door or the street (L52, L31, L19, L41, L20), or in the counter itself, which tables stand up to (L14: R3-204)
           if (!free(x, z, a.y)) continue;
           post = { x, y: a.y, z, ry: a.ry + Math.PI }; break;
         }
-        if (!post) post = beyond;           // the far side is in another room: the keeper stands in the customers' room, nearest to it (found below)
+        if (!post) post = beyond;           // the far side is in another room or in the counter: the keeper stands in the customers' room, nearest to it (found below)
       }
       if (!post) { const v = S.inside(lot.id, 'vend')[0] ?? S.inside(lot.id, 'work')[0]; if (v) post = { x: v.x, y: v.y, z: v.z, ry: v.ry }; }          // a stall or a workbench inside; never a street spot outside (the keeper would be out of the shop)
       if (!post && ent?.inside) {           // last resort: just inside the door, facing the street
@@ -288,9 +290,9 @@ export class PeopleSim {
         const y = ent.inside.y, flat = (p) => Indoor.flat(ph, p.x, p.z, y) && this.lotAt(p.x, p.z) === lot.id;      // on flat floor INSIDE the building
         custs = custs.filter((a) => flat(a) && this.indoor.canReach(reach, a));
         const routes = custs.map((a) => [ent.inside, ...this.indoor.route(lot.id, ent.inside, a, y)]);          // the way each customer walks in: a post found below is off it (a customer pushed off a 1 m aisle by the keeper stood against the counter for ever, L61)
-        const flatPost = flat(post), inFurniture = !!ph._overlaps?.(post.x, post.z, post.y, 0.25, 1.5);      // (a post on the seamstress's chair: the walker is pushed off the chair's outline for ever, L31)
+        const flatPost = flat(post), inBox = this._inFurniture(lot.id, post.x, post.z, post.y), inFurniture = inBox || !!ph._overlaps?.(post.x, post.z, post.y, 0.25, 1.5);      // (a post on the seamstress's chair: the walker is pushed off the chair's outline for ever, L31)
         if (post === beyond || !flatPost || inFurniture || !this.indoor.canReach(reach, post)) {
-          const own = flatPost && post !== beyond ? this.indoor.reachable(lot.id, post, y) : null;                    // the pocket the post sits in
+          const own = flatPost && post !== beyond && !inBox ? this.indoor.reachable(lot.id, post, y) : null;         // the pocket the post sits in (the inside of a counter is no slot behind it: R3-204)
           if (own && own.count <= POCKET_CELLS) sealed = true;                                      // a slot behind the counter, closed on all sides: the keeper is placed there and stays
           else {
             const alt = this._reachablePost(lot.id, reach, post, custs, y, routes);
@@ -339,21 +341,47 @@ export class PeopleSim {
   }
 
   /**
+   * Is (x, z) at floor height y inside the footprint of a piece of furniture that blocks (a counter, a table, a bed)? The colliders of the furniture are the OUTLINES of those footprints
+   * (interiors/index.js: wallsRect), so physics._overlaps feels a point only within a body's width of an edge: the middle of the 0.65 m counter of L14 is 0.33 m from both, and a keeper
+   * "1.7 m beyond the customer" stood in it, sealed in for ever, with only her head above the top (R3-204). The footprints are the records of bp.furniture, laid as the colliders are.
+   */
+  _inFurniture(lotId, x, z, y) {
+    const bp = this.ctx.buildings?.get?.(lotId), room = this._roomAt(lotId, x, z, y);
+    if (!room || !bp?.furniture?.length || !bp.frame?.toWorld) return false;                  // in no room (a wall, a doorway), or no plan: no judgement
+    const rotY = bp.lot?.rotY ?? 0;
+    for (const r of bp.furniture) {
+      if (r.room !== room || !r.block || r.kind !== 'floor') continue;
+      const [cx, , cz] = bp.frame.toWorld(r.x, 0, r.z), a = rotY + r.ry, c = Math.cos(a), s = Math.sin(a), dx = x - cx, dz = z - cz;
+      if (Math.abs(dx * c - dz * s) <= Math.max(r.w, 0.1) / 2 && Math.abs(dx * s + dz * c) <= Math.max(r.d, 0.1) / 2) return true;
+    }
+    return false;
+  }
+
+  /**
    * The nearest spot to `ideal` (a ring search, 0.5 to 3.5 m) on flat floor that the door can reach and that is 1.1 m clear of every customer spot, facing the first.
-   * The room of the customers (no door in between) comes first, then, given the walks the customers make in (`routes`), a spot AISLE m off them; null when the building offers none.
+   * The room of the customers (no door in between) comes first, then, given the walks the customers make in (`routes`), a spot AISLE m off them; when the ring has none (the 1.5 m wide dining room of
+   * L14: the strip that is both AISLE m off the walk and 0.26 m off the wall is a few centimetres wide, and the ring's points miss it, R3-204) the nearest spot is slid away from the walk, as far as
+   * it takes and the floor lets it. Null when the building offers none.
    */
   _reachablePost(lotId, reach, ideal, custs, y, routes = null) {
     const ph = this.physics, face = custs[0] ?? null, room = face ? this.indoor.reachable(lotId, face, y, false) : null, sameRoom = face ? this._sameRoom(lotId, face) : () => true;
+    const post = (x, z) => ({ x, y, z, ry: face ? Math.atan2(face.x - x, face.z - z) : ideal.ry });
     for (const within of room ? [room, null] : [null]) for (const aisle of routes?.length ? [AISLE, 0] : [0]) {
+      const ok = (x, z) => !ph._overlaps?.(x, z, y, 0.26, 1.5) && Indoor.flat(ph, x, z, y) && this.lotAt(x, z) === lotId && this.indoor.canReach(reach, { x, z })
+        && (!within || (this.indoor.canReach(within, { x, z }) && sameRoom(x, z))) && !custs.some((c) => Math.hypot(x - c.x, z - c.z) < 1.1);
       let best = null, bs = 1e9;
       for (let r = 0.5; r <= 3.5; r += 0.3) for (let a = 0; a < 24; a++) {
         const th = (a / 24) * Math.PI * 2, x = ideal.x + Math.cos(th) * r, z = ideal.z + Math.sin(th) * r;
-        if (ph._overlaps?.(x, z, y, 0.26, 1.5) || !Indoor.flat(ph, x, z, y) || this.lotAt(x, z) !== lotId || !this.indoor.canReach(reach, { x, z })) continue;
-        if (within && (!this.indoor.canReach(within, { x, z }) || !sameRoom(x, z))) continue;
-        if (custs.some((c) => Math.hypot(x - c.x, z - c.z) < 1.1)) continue;
-        if (aisle && aisleOf(routes, { x, z }) < aisle) continue;
+        if (!ok(x, z) || (aisle && aisleOf(routes, { x, z }) < aisle)) continue;
         const dc = face ? Math.hypot(x - face.x, z - face.z) : 1.7, score = r + Math.abs(dc - 1.7) * 0.5;
-        if (score < bs) { bs = score; best = { x, y, z, ry: face ? Math.atan2(face.x - x, face.z - z) : ideal.ry }; }
+        if (score < bs) { bs = score; best = post(x, z); }
+      }
+      if (best && !aisle && routes?.length && aisleOf(routes, best) < AISLE) {       // (no spot AISLE m off the walks on the ring: slide the best one off them)
+        const q = nearOnRoutes(routes, best), ux = (best.x - q.x) / (q.d || 1), uz = (best.z - q.z) / (q.d || 1);
+        for (let s = AISLE - q.d + 0.005; s <= AISLE - q.d + 0.3 && q.d > 1e-6; s += 0.01) {
+          const x = best.x + ux * s, z = best.z + uz * s;
+          if (ok(x, z) && aisleOf(routes, { x, z }) >= AISLE) { best = post(x, z); break; }
+        }
       }
       if (best) return best;
     }
