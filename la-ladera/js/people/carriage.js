@@ -6,6 +6,7 @@
 // (a track that holds still, like the idle forearm's, is left alone), so an offset put on a bone would be put on again every frame: the frame loop calls `clearCarriage` right
 // BEFORE `mixer.update` (it puts the bones back as the mixer left them) and `poseIdle` right after it (it remembers them, then turns the arms). The offsets fade with the idle clip's
 // own weight, so the arms ease in and out as the crossfade does and never pop. Nothing here draws from the sim's random streams: the carriage is a pure function of the person's id.
+// The same layer leans the head of someone holding a phone to the ear toward it (R3-205, `poseCall`), on the call clip's weight.
 import * as THREE from 'three';
 
 const arm = (add, swing, flex, inward = 0) => ({ add, swing, flex, inward });
@@ -48,7 +49,7 @@ export function carriageOf(id, charId = null) {
 // ---- the live skeleton -----------------------------------------------------------------------------------------------------------------------------
 const AX = new THREE.Vector3(1, 0, 0), AY = new THREE.Vector3(0, 1, 0), AZ = new THREE.Vector3(0, 0, 1), RAD = Math.PI / 180;
 const _a = new THREE.Quaternion(), _d = new THREE.Quaternion(), _s = new THREE.Quaternion(), _t = new THREE.Quaternion();
-const ARM_BONES = ['upperarm_l', 'forearm_l', 'upperarm_r', 'forearm_r'];
+const ARM_BONES = ['upperarm_l', 'forearm_l', 'upperarm_r', 'forearm_r', 'head'];        // (the head is the call's, poseCall below: saved and put back with the arms)
 
 /** Turn `bone` by `q`, a rotation given in the frame of `root` (the character's), whatever the bone's own axes and its parents' turns. */
 function turn(root, bone, q) {
@@ -91,9 +92,28 @@ export function poseIdle(inst, id) {
   const wa = idleWeight(inst, 'idle_a'), wb = idleWeight(inst, 'idle_b'); if (wa + wb < 0.005) return false;
   const c = (inst.carriage ??= carriageOf(id, inst.id));
   const wl = Math.min(1, wa + wb), wr = Math.min(1, wa + 0.25 * wb);
+  remember(inst);
+  const l = applyArm(inst, 'l', c.l, wl), r = applyArm(inst, 'r', c.r, wr);
+  return l || r;
+}
+
+/** Remember the bones as the mixer left them, for `clearCarriage`. */
+function remember(inst) {
   const q = (inst.carriageQ ??= ARM_BONES.map(() => new THREE.Quaternion()));
   for (let i = 0; i < ARM_BONES.length; i++) { const b = inst.bones?.[ARM_BONES[i]]; if (b) q[i].copy(b.quaternion); }
   inst.carriageOn = true;
-  const l = applyArm(inst, 'l', c.l, wl), r = applyArm(inst, 'r', c.r, wr);
-  return l || r;
+}
+
+/** R3-205: how far the head of someone on a call leans to the phone at their ear, degrees, at the call clip's whole weight (the clip holds the head upright, and the phone stood a hand's breadth off the ear). */
+export const CALL_TILT = 12;
+/**
+ * The head of whoever holds a phone to the ear leans to meet it: about the character's forward axis, toward the right shoulder (the phone's side), by the call clip's weight (so it eases in and out
+ * with the crossfade). Call right after `mixer.update`, and after `poseIdle` when that runs (it has already remembered the bones); `clearCarriage` puts the head back before the next update.
+ * Returns true when something was applied.
+ */
+export function poseCall(inst) {
+  const w = idleWeight(inst, 'phone_call'), head = inst.bones?.head, root = inst.obj; if (!(w > 0.005) || !head || !root) return false;
+  if (!inst.carriageOn) remember(inst);
+  turn(root, head, _t.setFromAxisAngle(AZ, -CALL_TILT * w * RAD));                                         // (a turn about +Z by a negative angle takes the top of the head toward +X, the character's right)
+  return true;
 }
