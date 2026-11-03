@@ -240,7 +240,7 @@ export function* furnishSteps(ctx, bp, o = {}) {
     try { removed = removed.concat(R.ensureSeats(L)); }                                                        // a table whose chairs healing took out (a seat later furniture walled in) gets them back, or goes (rooms.js)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'seats ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
-    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those)
+    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, use: L.use ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those); use: what a raw room of an unfinished house is for ('camp', 'store', 'obra': special.js `construction`), null for every other room (its plan type says what it is)
     built.push({ room, hh, L });
     yield 'pockets';
   }
