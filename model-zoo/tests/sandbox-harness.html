@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>sandbox harness</title></head>
+<body>
+<div id="benign"></div><div id="evil"></div>
+<script src="../js/sandbox.js"></script>
+<script>
+window.__results = {};
+window.__done = false;
+addEventListener("message", function (e) {
+  var d = e.data;
+  if (d && d.who && d.key) window.__results[d.who + "." + d.key] = d.value;
+  if (d && d.who === "evil" && d.key === "finished") window.__done = true;
+});
+var port = new URLSearchParams(location.search).get("port");
+var beacon = "http://127.0.0.1:" + port + "/beacon";
+
+var benign = '<!DOCTYPE html><html><head><title>b</title></head><body>' +
+  '<button id="b" style="position:fixed;left:10px;top:10px;width:200px;height:60px">Tell me another</button>' +
+  '<script>var n=0;document.getElementById("b").onclick=function(){n++;this.textContent="Clicked "+n;' +
+  'parent.postMessage({who:"benign",key:"text",value:this.textContent},"*");};parent.postMessage({who:"benign",key:"loaded",value:1},"*");<\/script></body></html>';
+
+var evil = '<!DOCTYPE html><html><head><title>e</title></head><body><script>' +
+  'var B=' + JSON.stringify(beacon) + ';' +
+  'function r(k,v){parent.postMessage({who:"evil",key:k,value:v},"*");}' +
+  'function t(k,fn){try{var v=fn();r(k,"ok:"+String(v));}catch(e){r(k,"threw:"+(e&&e.name));}}' +
+  't("parent",function(){return parent.document.body.innerHTML.length;});' +
+  't("top",function(){top.location="http://127.0.0.1:1/pwned";return "assigned";});' +
+  't("open",function(){var w=window.open(B+"?open");return w?"opened":"null";});' +
+  't("cookie",function(){return document.cookie;});' +
+  't("localStorage",function(){return localStorage.getItem("x");});' +
+  'var img=new Image();img.onload=function(){r("img","loaded")};img.onerror=function(){r("img","error")};img.src=B+"?img";' +
+  'fetch(B+"?fetch").then(function(){r("fetch","ok")},function(e){r("fetch","threw:"+e.name)}).then(function(){' +
+  'var x=new XMLHttpRequest();try{x.open("GET",B+"?xhr");x.send();r("xhr","sent");}catch(e){r("xhr","threw:"+e.name);}' +
+  'setTimeout(function(){r("finished",1)},500);});' +
+  '<\/script></body></html>';
+
+Sandbox.mountProgram(document.getElementById("benign"), benign, {height: 120});
+Sandbox.mountProgram(document.getElementById("evil"), evil, {height: 120});
+</script>
+</body></html>
