@@ -1,0 +1,334 @@
+[
+  {
+    "id": "vegetation_eucalyptus_stands_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 3.7336311218060647,
+    "opacityRmse": 3.345567156004631,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 111364
+  },
+  {
+    "id": "vegetation_eucalyptus_stands_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 7.549575884886488,
+    "opacityRmse": 5.5346183219335385,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 23
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 6
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 23
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter eucalyptus_stands_01 has alpha 23 >8",
+      "Decoded vegetation gutter eucalyptus_stands_04 has alpha 23 >8"
+    ],
+    "zlibBytes": 52936
+  },
+  {
+    "id": "vegetation_kikuyu_slopes_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 7.144861006369464,
+    "opacityRmse": 3.4225895105197077,
+    "gutters": [
+      {
+        "id": "kikuyu_slopes_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_02",
+        "maxAlpha": 8
+      },
+      {
+        "id": "kikuyu_slopes_03",
+        "maxAlpha": 13
+      },
+      {
+        "id": "kikuyu_slopes_04",
+        "maxAlpha": 17
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter kikuyu_slopes_03 has alpha 13 >8",
+      "Decoded vegetation gutter kikuyu_slopes_04 has alpha 17 >8"
+    ],
+    "zlibBytes": 77021
+  },
+  {
+    "id": "vegetation_kikuyu_slopes_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 10.211061882460498,
+    "opacityRmse": 4.514362726365186,
+    "gutters": [
+      {
+        "id": "kikuyu_slopes_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_02",
+        "maxAlpha": 6
+      },
+      {
+        "id": "kikuyu_slopes_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_04",
+        "maxAlpha": 6
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 24302
+  },
+  {
+    "id": "vegetation_banana_groves_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 2.4635341001917324,
+    "opacityRmse": 2.4815333207041843,
+    "gutters": [
+      {
+        "id": "banana_groves_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 71504
+  },
+  {
+    "id": "vegetation_banana_groves_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 5.381170486923125,
+    "opacityRmse": 4.204149539687044,
+    "gutters": [
+      {
+        "id": "banana_groves_01",
+        "maxAlpha": 11
+      },
+      {
+        "id": "banana_groves_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_03",
+        "maxAlpha": 13
+      },
+      {
+        "id": "banana_groves_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter banana_groves_01 has alpha 11 >8",
+      "Decoded vegetation gutter banana_groves_03 has alpha 13 >8"
+    ],
+    "zlibBytes": 40256
+  },
+  {
+    "id": "vegetation_cypress_hedges_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 1.8605057315465505,
+    "opacityRmse": 1.6261577883240161,
+    "gutters": [
+      {
+        "id": "cypress_hedges_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 81539
+  },
+  {
+    "id": "vegetation_cypress_hedges_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 3.229692915065839,
+    "opacityRmse": 2.835634830181192,
+    "gutters": [
+      {
+        "id": "cypress_hedges_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 41424
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 2.942717418188916,
+    "opacityRmse": 2.5717335399042716,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 28
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter cloud_forest_edge_04 has alpha 28 >8"
+    ],
+    "zlibBytes": 134623
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 5.131148174658382,
+    "opacityRmse": 4.3343588764795635,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 36
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 17
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 12
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 17
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter cloud_forest_edge_01 has alpha 36 >8",
+      "Decoded vegetation gutter cloud_forest_edge_02 has alpha 17 >8",
+      "Decoded vegetation gutter cloud_forest_edge_03 has alpha 12 >8",
+      "Decoded vegetation gutter cloud_forest_edge_04 has alpha 17 >8"
+    ],
+    "zlibBytes": 58435
+  },
+  {
+    "id": "vegetation_rooftop_container_gardens_lod0",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 4.877144881485909,
+    "opacityRmse": 2.822405685592513,
+    "gutters": [
+      {
+        "id": "rooftop_container_gardens_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 71333
+  },
+  {
+    "id": "vegetation_rooftop_container_gardens_lod1",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 7.941193424200798,
+    "opacityRmse": 4.554939590204261,
+    "gutters": [
+      {
+        "id": "rooftop_container_gardens_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_02",
+        "maxAlpha": 28
+      },
+      {
+        "id": "rooftop_container_gardens_03",
+        "maxAlpha": 28
+      },
+      {
+        "id": "rooftop_container_gardens_04",
+        "maxAlpha": 28
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter rooftop_container_gardens_02 has alpha 28 >8",
+      "Decoded vegetation gutter rooftop_container_gardens_03 has alpha 28 >8",
+      "Decoded vegetation gutter rooftop_container_gardens_04 has alpha 28 >8"
+    ],
+    "zlibBytes": 30913
+  }
+]

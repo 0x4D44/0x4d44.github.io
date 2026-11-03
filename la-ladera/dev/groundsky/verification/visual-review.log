@@ -1,0 +1,18 @@
+Final visual QA; UTC 2026-11-03T05:30:11.963407+00:00
+All nine final review images inspected with view_image after final render/contact generation.
+Contact sheets: all 24 PBR triplets, 16 organic decals, eight mask channels, nine city layers, five haze ramps, 18 vegetation atlases and source/decoded comparisons are present.
+Vegetation labels: initial overlap corrected; final 1700px sheet inspected; titles and LOD labels are separate.
+Ground render: irregular feathered path on grass, PBR concrete and scale figure visible.
+Mirador render: layered dusk valley city visible beyond railing, with rooftop garden cards and measured figure.
+Both renders are illustrative offline scenes, not gameplay screenshots.
+No further texture edits followed this review.
+
+dev/groundsky/contact-ground.png	810782 bytes	SHA-256 5855deb3574a2b1232760bf3dd2d0a88730ad6d72ba123b4b79926dd82efad10
+dev/groundsky/contact-decals.png	364646 bytes	SHA-256 b4e0afae05d1f057b200db9ca45983762c909fb0500f257d4eb4f6b07a91c428
+dev/groundsky/contact-masks.png	338049 bytes	SHA-256 70f7c8049acb90b59572d7c655dec3e59cc50a620560bf4795331111804b48b1
+dev/groundsky/contact-city.png	1204897 bytes	SHA-256 a428e38501116c85e7c0995c686965827253fbc807b8c9bb6977494309ac3e33
+dev/groundsky/contact-vegetation.png	1308111 bytes	SHA-256 b2f02258e20d9d1a694a35c265c4650b2d5d6eadb26729091358faed3390613e
+dev/groundsky/contact-haze.png	29209 bytes	SHA-256 8fc36cf4cba6e02b6332fd63031faf82fbeee80ea732a949aeb76c692fc84d8e
+dev/groundsky/contact-delivery.png	109759 bytes	SHA-256 528f119080d0a9480c01833a8132aeceb627b478838586d133d127e06bab45d1
+dev/groundsky/eye-height-ground.png	1539781 bytes	SHA-256 4d12ea62f4b3120a79aa74965eaa44cfbf90b90d8564ef16045ec8a56ee2bbc3
+dev/groundsky/eye-height-mirador.png	1433113 bytes	SHA-256 3d7246004212f44272f9ac00badc91bda2e363bfccc359f29f888c7a02eb54e9

@@ -1,0 +1,27 @@
+PASS far:4096x512,shared three-phase silhouette,transparent top,29684 soft-alpha pixels
+PASS middle:4096x512,shared three-phase silhouette,transparent top,18421 soft-alpha pixels
+PASS near:4096x512,shared three-phase silhouette,transparent top,21239 soft-alpha pixels
+PASS haze_07:256x4 repeated rows and monotone opacity 0..255
+PASS haze_12:256x4 repeated rows and monotone opacity 0..255
+PASS haze_17p2:256x4 repeated rows and monotone opacity 0..255
+PASS haze_19p5:256x4 repeated rows and monotone opacity 0..255
+PASS haze_22:256x4 repeated rows and monotone opacity 0..255
+PASS vegetation_eucalyptus_stands_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_eucalyptus_stands_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_eucalyptus_stands_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_kikuyu_slopes_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_kikuyu_slopes_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_kikuyu_slopes_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_banana_groves_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_banana_groves_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_banana_groves_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cypress_hedges_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cypress_hedges_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cypress_hedges_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cloud_forest_edge_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cloud_forest_edge_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_cloud_forest_edge_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_rooftop_container_gardens_lod0:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_rooftop_container_gardens_lod1:four registered cells,transparent gutters,255 alpha maximum
+PASS vegetation_rooftop_container_gardens_lod2:four registered cells,transparent gutters,255 alpha maximum
+PASS 32 source files;1,279,760 bytes;all SHA-256 and byte counts current

@@ -1,0 +1,71 @@
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.481 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.173 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.361 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.039 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.426 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.306 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.202 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.075 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.717 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.154 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.214 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.044 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.266 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.104 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.234 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.087 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.569 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.117 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.265 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.103 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod0-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.470 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod0-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod0-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.151 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod1-untrim6-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.299 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod1-untrim6-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod1-untrim6-alpha4.png -j 2 -silent
+[exit 0; 0.082 s]

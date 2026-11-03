@@ -1,0 +1,3149 @@
+{
+  "version": 1,
+  "originalWork": true,
+  "generator": "tools/groundsky_sky.py",
+  "files": [
+    {
+      "id": "city_far_day",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_far_day.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        17453.2925,
+        2181.6616
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 81091,
+      "sha256": "63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "far",
+      "timeOfDay": "day",
+      "arcDegrees": 200,
+      "radiusM": 5000,
+      "seed": 1793,
+      "features": [
+        {
+          "kind": "far_ridge_silhouettes",
+          "boundsPx": [
+            0,
+            85,
+            4096,
+            427
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            985,
+            93,
+            11,
+            44
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            3315,
+            105,
+            11,
+            44
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 0
+    },
+    {
+      "id": "city_far_dusk",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_far_dusk.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        17453.2925,
+        2181.6616
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 81514,
+      "sha256": "6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "far",
+      "timeOfDay": "dusk",
+      "arcDegrees": 200,
+      "radiusM": 5000,
+      "seed": 1793,
+      "features": [
+        {
+          "kind": "far_ridge_silhouettes",
+          "boundsPx": [
+            0,
+            85,
+            4096,
+            427
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            985,
+            93,
+            11,
+            44
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            3315,
+            105,
+            11,
+            44
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 576
+    },
+    {
+      "id": "city_far_night",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_far_night.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        17453.2925,
+        2181.6616
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 81698,
+      "sha256": "d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "far",
+      "timeOfDay": "night",
+      "arcDegrees": 200,
+      "radiusM": 5000,
+      "seed": 1793,
+      "features": [
+        {
+          "kind": "far_ridge_silhouettes",
+          "boundsPx": [
+            0,
+            85,
+            4096,
+            427
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            985,
+            93,
+            11,
+            44
+          ]
+        },
+        {
+          "kind": "radio_mast",
+          "boundsPx": [
+            3315,
+            105,
+            11,
+            44
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 1300
+    },
+    {
+      "id": "city_middle_day",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_middle_day.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        8377.5804,
+        1047.1976
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 57993,
+      "sha256": "7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "middle",
+      "timeOfDay": "day",
+      "arcDegrees": 200,
+      "radiusM": 2400,
+      "seed": 7829,
+      "features": [
+        {
+          "kind": "church_spire",
+          "boundsPx": [
+            1410,
+            233,
+            71,
+            80
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 0
+    },
+    {
+      "id": "city_middle_dusk",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_middle_dusk.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        8377.5804,
+        1047.1976
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 60340,
+      "sha256": "729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "middle",
+      "timeOfDay": "dusk",
+      "arcDegrees": 200,
+      "radiusM": 2400,
+      "seed": 7829,
+      "features": [
+        {
+          "kind": "church_spire",
+          "boundsPx": [
+            1410,
+            233,
+            71,
+            80
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 1531
+    },
+    {
+      "id": "city_middle_night",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_middle_night.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        8377.5804,
+        1047.1976
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 60608,
+      "sha256": "83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "middle",
+      "timeOfDay": "night",
+      "arcDegrees": 200,
+      "radiusM": 2400,
+      "seed": 7829,
+      "features": [
+        {
+          "kind": "church_spire",
+          "boundsPx": [
+            1410,
+            233,
+            71,
+            80
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 3455
+    },
+    {
+      "id": "city_near_day",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_near_day.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        4188.7902,
+        523.5988
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 44805,
+      "sha256": "be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "near",
+      "timeOfDay": "day",
+      "arcDegrees": 200,
+      "radiusM": 1200,
+      "seed": 12407,
+      "features": [
+        {
+          "kind": "stadium",
+          "boundsPx": [
+            2526,
+            411,
+            149,
+            59
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 0
+    },
+    {
+      "id": "city_near_dusk",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_near_dusk.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        4188.7902,
+        523.5988
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 48509,
+      "sha256": "765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "near",
+      "timeOfDay": "dusk",
+      "arcDegrees": 200,
+      "radiusM": 1200,
+      "seed": 12407,
+      "features": [
+        {
+          "kind": "stadium",
+          "boundsPx": [
+            2526,
+            411,
+            149,
+            59
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 2027
+    },
+    {
+      "id": "city_near_night",
+      "kind": "city",
+      "role": "panorama",
+      "width": 4096,
+      "height": 512,
+      "path": "dev/groundsky/masters/city/city_near_night.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        4188.7902,
+        523.5988
+      ],
+      "intendedUse": "Dormant valley city cutout; composite far, middle, near over a separately supplied sky; choose one lighting phase.",
+      "colourSpace": "srgb",
+      "bytes": 48749,
+      "sha256": "9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "layer": "near",
+      "timeOfDay": "night",
+      "arcDegrees": 200,
+      "radiusM": 1200,
+      "seed": 12407,
+      "features": [
+        {
+          "kind": "stadium",
+          "boundsPx": [
+            2526,
+            411,
+            149,
+            59
+          ]
+        }
+      ],
+      "alphaMode": "straight",
+      "softTopEdge": true,
+      "projection": "cylindrical arc: u maps -100 to +100 degrees; v maps authored vertical span",
+      "litWindowCount": 4449
+    },
+    {
+      "id": "haze_07",
+      "kind": "haze",
+      "role": "ramp",
+      "width": 256,
+      "height": 4,
+      "path": "dev/groundsky/masters/haze/haze_07.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1,
+        1
+      ],
+      "intendedUse": "Dormant time-of-day haze lookup. Sample horizontally by normalized distance and interpolate between adjacent time ramps.",
+      "colourSpace": "srgb",
+      "bytes": 262,
+      "sha256": "ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "hour": 7,
+      "timeOfDay": 7,
+      "alphaMode": "straight",
+      "sampleDirection": "left: clear air; right: full distance haze; all four rows equal"
+    },
+    {
+      "id": "haze_12",
+      "kind": "haze",
+      "role": "ramp",
+      "width": 256,
+      "height": 4,
+      "path": "dev/groundsky/masters/haze/haze_12.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1,
+        1
+      ],
+      "intendedUse": "Dormant time-of-day haze lookup. Sample horizontally by normalized distance and interpolate between adjacent time ramps.",
+      "colourSpace": "srgb",
+      "bytes": 269,
+      "sha256": "974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "hour": 12,
+      "timeOfDay": 12,
+      "alphaMode": "straight",
+      "sampleDirection": "left: clear air; right: full distance haze; all four rows equal"
+    },
+    {
+      "id": "haze_17p2",
+      "kind": "haze",
+      "role": "ramp",
+      "width": 256,
+      "height": 4,
+      "path": "dev/groundsky/masters/haze/haze_17p2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1,
+        1
+      ],
+      "intendedUse": "Dormant time-of-day haze lookup. Sample horizontally by normalized distance and interpolate between adjacent time ramps.",
+      "colourSpace": "srgb",
+      "bytes": 250,
+      "sha256": "567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "hour": 17.2,
+      "timeOfDay": 17.2,
+      "alphaMode": "straight",
+      "sampleDirection": "left: clear air; right: full distance haze; all four rows equal"
+    },
+    {
+      "id": "haze_19p5",
+      "kind": "haze",
+      "role": "ramp",
+      "width": 256,
+      "height": 4,
+      "path": "dev/groundsky/masters/haze/haze_19p5.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1,
+        1
+      ],
+      "intendedUse": "Dormant time-of-day haze lookup. Sample horizontally by normalized distance and interpolate between adjacent time ramps.",
+      "colourSpace": "srgb",
+      "bytes": 263,
+      "sha256": "3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "hour": 19.5,
+      "timeOfDay": 19.5,
+      "alphaMode": "straight",
+      "sampleDirection": "left: clear air; right: full distance haze; all four rows equal"
+    },
+    {
+      "id": "haze_22",
+      "kind": "haze",
+      "role": "ramp",
+      "width": 256,
+      "height": 4,
+      "path": "dev/groundsky/masters/haze/haze_22.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1,
+        1
+      ],
+      "intendedUse": "Dormant time-of-day haze lookup. Sample horizontally by normalized distance and interpolate between adjacent time ramps.",
+      "colourSpace": "srgb",
+      "bytes": 254,
+      "sha256": "ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "hour": 22,
+      "timeOfDay": 22,
+      "alphaMode": "straight",
+      "sampleDirection": "left: clear air; right: full distance haze; all four rows equal"
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        36,
+        50
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 74789,
+      "sha256": "e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "eucalyptus_stands",
+      "vegetationKind": "eucalyptus_stands",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "eucalyptus_stands_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "eucalyptus_stands_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "eucalyptus_stands_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "eucalyptus_stands_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        36,
+        50
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 46267,
+      "sha256": "c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "eucalyptus_stands",
+      "vegetationKind": "eucalyptus_stands",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "eucalyptus_stands_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "eucalyptus_stands_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "eucalyptus_stands_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "eucalyptus_stands_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        36,
+        50
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 20034,
+      "sha256": "bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "eucalyptus_stands",
+      "vegetationKind": "eucalyptus_stands",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "eucalyptus_stands_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "eucalyptus_stands_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "eucalyptus_stands_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "eucalyptus_stands_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            18,
+            25
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        10
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 74535,
+      "sha256": "5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "kikuyu_slopes",
+      "vegetationKind": "kikuyu_slopes",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "kikuyu_slopes_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "kikuyu_slopes_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "kikuyu_slopes_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "kikuyu_slopes_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        10
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 30339,
+      "sha256": "cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "kikuyu_slopes",
+      "vegetationKind": "kikuyu_slopes",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "kikuyu_slopes_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "kikuyu_slopes_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "kikuyu_slopes_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "kikuyu_slopes_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        10
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 9915,
+      "sha256": "5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "kikuyu_slopes",
+      "vegetationKind": "kikuyu_slopes",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "kikuyu_slopes_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "kikuyu_slopes_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "kikuyu_slopes_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "kikuyu_slopes_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            5
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_banana_groves_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        16
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 48112,
+      "sha256": "b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "banana_groves",
+      "vegetationKind": "banana_groves",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "banana_groves_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "banana_groves_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "banana_groves_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "banana_groves_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_banana_groves_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        16
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 28819,
+      "sha256": "f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "banana_groves",
+      "vegetationKind": "banana_groves",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "banana_groves_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "banana_groves_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "banana_groves_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "banana_groves_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_banana_groves_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        28,
+        16
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 14041,
+      "sha256": "b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "banana_groves",
+      "vegetationKind": "banana_groves",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "banana_groves_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "banana_groves_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "banana_groves_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "banana_groves_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            14,
+            8
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        32,
+        34
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 62969,
+      "sha256": "b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cypress_hedges",
+      "vegetationKind": "cypress_hedges",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cypress_hedges_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cypress_hedges_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cypress_hedges_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cypress_hedges_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        32,
+        34
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 34998,
+      "sha256": "42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cypress_hedges",
+      "vegetationKind": "cypress_hedges",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cypress_hedges_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cypress_hedges_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cypress_hedges_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cypress_hedges_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        32,
+        34
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 15242,
+      "sha256": "4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cypress_hedges",
+      "vegetationKind": "cypress_hedges",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cypress_hedges_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cypress_hedges_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cypress_hedges_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cypress_hedges_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            16,
+            17
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        42,
+        38
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 89831,
+      "sha256": "4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cloud_forest_edge",
+      "vegetationKind": "cloud_forest_edge",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cloud_forest_edge_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cloud_forest_edge_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cloud_forest_edge_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "cloud_forest_edge_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        42,
+        38
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 48510,
+      "sha256": "16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cloud_forest_edge",
+      "vegetationKind": "cloud_forest_edge",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cloud_forest_edge_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cloud_forest_edge_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cloud_forest_edge_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "cloud_forest_edge_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        42,
+        38
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 20964,
+      "sha256": "eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "cloud_forest_edge",
+      "vegetationKind": "cloud_forest_edge",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "cloud_forest_edge_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cloud_forest_edge_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cloud_forest_edge_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "cloud_forest_edge_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            21,
+            19
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod0",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 1024,
+      "height": 1024,
+      "path": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        16,
+        12
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 52836,
+      "sha256": "ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "rooftop_container_gardens",
+      "vegetationKind": "rooftop_container_gardens",
+      "lod": 0,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "rooftop_container_gardens_01",
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "rooftop_container_gardens_02",
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "rooftop_container_gardens_03",
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 18
+        },
+        {
+          "id": "rooftop_container_gardens_04",
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 16,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 18
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod1",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 512,
+      "height": 512,
+      "path": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod1.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        16,
+        12
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 28287,
+      "sha256": "6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "rooftop_container_gardens",
+      "vegetationKind": "rooftop_container_gardens",
+      "lod": 1,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "rooftop_container_gardens_01",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "rooftop_container_gardens_02",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "rooftop_container_gardens_03",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 9
+        },
+        {
+          "id": "rooftop_container_gardens_04",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 8,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 9
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod2",
+      "kind": "vegetation",
+      "role": "billboard",
+      "width": 256,
+      "height": 256,
+      "path": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod2.png",
+      "format": "png",
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        16,
+        12
+      ],
+      "intendedUse": "Dormant far-field vegetation cutouts; select one cell and one LOD per stand. Metre dimensions describe each cell in cells[].",
+      "colourSpace": "srgb",
+      "bytes": 12667,
+      "sha256": "4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "family": "rooftop_container_gardens",
+      "vegetationKind": "rooftop_container_gardens",
+      "lod": 2,
+      "atlasLayout": [
+        2,
+        2
+      ],
+      "cells": [
+        {
+          "id": "rooftop_container_gardens_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 0,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "rooftop_container_gardens_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 1,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "rooftop_container_gardens_03",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 2,
+          "authoredClearancePx": 4
+        },
+        {
+          "id": "rooftop_container_gardens_04",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "worldSizeM": [
+            8,
+            6
+          ],
+          "gutterPx": 4,
+          "pivot": [
+            0.5,
+            0.91015625
+          ],
+          "variant": 3,
+          "authoredClearancePx": 4
+        }
+      ],
+      "alphaMode": "straight",
+      "lodSource": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "downsample": "Lanczos from original unquantised LOD0; shared 32-colour / 8-alpha-level palette"
+    }
+  ]
+}
