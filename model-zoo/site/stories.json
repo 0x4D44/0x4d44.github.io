@@ -1,0 +1,10246 @@
+{
+ "generated": "2026-11-03T17:34:01Z",
+ "method": {
+  "words": "Word count of the prose (model titles are dropped first).",
+  "mattr": "Moving-average type-token ratio over 50-word windows: how much of the vocabulary is fresh, averaged over every window so length does not skew it. Higher means more varied words.",
+  "mtld": "Measure of textual lexical diversity (McCarthy and Jarvis 2010): how many words it takes, on average, before the running type-token ratio falls to 0.72, read forwards and backwards. Higher means richer vocabulary.",
+  "yule_k": "Yule's K: 10,000 x (sum of squared word frequencies minus length) / length squared. Higher means more repetition of the same words.",
+  "distinct_1": "Unique single words divided by all words, pooled over the group's ten stories.",
+  "distinct_2": "Unique word pairs divided by all word pairs, pooled over the group. Low means the ten stories reuse the same phrases.",
+  "distinct_3": "Unique word triples divided by all triples, pooled over the group.",
+  "self_overlap": "Average Jaccard similarity (shared / total) between the word-trigram sets of every pair of stories in the group. Higher means the stories echo each other.",
+  "title_repeat": "Share of a model's stories whose title (ignoring case) matches another of its titles.",
+  "openers": "The first four words of each story and how many of the ten share them.",
+  "names": "Capitalised words that are not at the start of a sentence (mostly character and place names). Models: top ten with counts. Humans: only the number of distinct names.",
+  "ai_vocab_rate": "Occurrences per 1,000 words of a fixed list of words typical of AI prose (whisper, tapestry, echo, flicker, ...).",
+  "ai_vocab_list": [
+   "ancient",
+   "beacon",
+   "cascade",
+   "cascaded",
+   "delve",
+   "delved",
+   "echo",
+   "echoed",
+   "echoes",
+   "echoing",
+   "embrace",
+   "embraced",
+   "ethereal",
+   "flicker",
+   "flickered",
+   "flickering",
+   "gossamer",
+   "hum",
+   "hummed",
+   "humming",
+   "intricate",
+   "journey",
+   "luminous",
+   "mosaic",
+   "realm",
+   "resonate",
+   "resonated",
+   "resonates",
+   "shimmer",
+   "shimmered",
+   "shimmering",
+   "silence",
+   "symphony",
+   "tapestry",
+   "testament",
+   "vibrant",
+   "whisper",
+   "whispered",
+   "whispering",
+   "whispers"
+  ],
+  "map": "All stories embedded as 1536-number vectors, mean-centred, squashed to two axes by PCA (singular value decomposition). Nearby points read alike.",
+  "spread": "Mean cosine distance from each story to its group's centroid, in the full 1536 dimensions. Small means the group's stories are alike.",
+  "closest_pair": "The two stories of a model that are most similar by cosine similarity.",
+  "pca_explained": [
+   0.1445,
+   0.0552
+  ]
+ },
+ "groups": {
+  "chat-latest": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 327.9,
+    "sd": 7.7237
+   },
+   "mattr": {
+    "mean": 0.8553,
+    "sd": 0.0091
+   },
+   "mtld": {
+    "mean": 149.2198,
+    "sd": 24.4402
+   },
+   "yule_k": {
+    "mean": 130.2676,
+    "sd": 23.1462
+   },
+   "distinct_1": 0.2583,
+   "distinct_2": 0.7051,
+   "distinct_3": 0.8616,
+   "self_overlap": 0.0271,
+   "ai_vocab_rate": 5.1845,
+   "title_repeat": 0.9,
+   "openers": [
+    {
+     "text": "every evening as the",
+     "count": 1
+    },
+    {
+     "text": "every evening just before",
+     "count": 3
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "every evening just before",
+     "count": 3
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "for forty years elias",
+     "count": 6
+    },
+    {
+     "text": "every evening just before",
+     "count": 3
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Elias",
+     "count": 35
+    },
+    {
+     "name": "Thomas",
+     "count": 11
+    },
+    {
+     "name": "Blackthorn",
+     "count": 8
+    },
+    {
+     "name": "Bay",
+     "count": 6
+    },
+    {
+     "name": "Clara",
+     "count": 5
+    },
+    {
+     "name": "Cliff",
+     "count": 4
+    },
+    {
+     "name": "Lily",
+     "count": 3
+    },
+    {
+     "name": "Whispering",
+     "count": 2
+    },
+    {
+     "name": "Morning",
+     "count": 2
+    },
+    {
+     "name": "Star",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0759,
+   "closest_pair": {
+    "a": "chat-latest-s4",
+    "b": "chat-latest-s8",
+    "title_a": "The Last Lightkeeper",
+    "title_b": "The Last Lightkeeper",
+    "similarity": 0.9448
+   }
+  },
+  "claude-fable-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 304.2,
+    "sd": 3.5528
+   },
+   "mattr": {
+    "mean": 0.8492,
+    "sd": 0.0161
+   },
+   "mtld": {
+    "mean": 147.5001,
+    "sd": 32.438
+   },
+   "yule_k": {
+    "mean": 108.7805,
+    "sd": 29.692
+   },
+   "distinct_1": 0.3018,
+   "distinct_2": 0.7767,
+   "distinct_3": 0.9123,
+   "self_overlap": 0.0175,
+   "ai_vocab_rate": 0.6575,
+   "title_repeat": 0.8,
+   "openers": [
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta had kept the",
+     "count": 1
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "marta found the letter",
+     "count": 8
+    },
+    {
+     "text": "mara counted the seconds",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Marta",
+     "count": 6
+    },
+    {
+     "name": "Atlantic",
+     "count": 3
+    },
+    {
+     "name": "Coast",
+     "count": 2
+    },
+    {
+     "name": "Guard",
+     "count": 2
+    },
+    {
+     "name": "Hale",
+     "count": 2
+    },
+    {
+     "name": "Coastal",
+     "count": 2
+    },
+    {
+     "name": "Authority",
+     "count": 2
+    },
+    {
+     "name": "Edmund",
+     "count": 2
+    },
+    {
+     "name": "Elena",
+     "count": 1
+    },
+    {
+     "name": "Edwin",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0671,
+   "closest_pair": {
+    "a": "claude-fable-5-s3",
+    "b": "claude-fable-5-s8",
+    "title_a": "The Lighthouse Keeper's Last Letter",
+    "title_b": "The Lighthouse Keeper's Last Letter",
+    "similarity": 0.931
+   }
+  },
+  "claude-fable-5-1": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 305.4,
+    "sd": 6.3631
+   },
+   "mattr": {
+    "mean": 0.8137,
+    "sd": 0.0218
+   },
+   "mtld": {
+    "mean": 112.8129,
+    "sd": 23.9638
+   },
+   "yule_k": {
+    "mean": 153.1721,
+    "sd": 27.219
+   },
+   "distinct_1": 0.2783,
+   "distinct_2": 0.7668,
+   "distinct_3": 0.9341,
+   "self_overlap": 0.0102,
+   "ai_vocab_rate": 1.3098,
+   "title_repeat": 0.7,
+   "openers": [
+    {
+     "text": "the lamp had not",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "marin had counted the",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every evening for forty",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every evening at six",
+     "count": 1
+    },
+    {
+     "text": "marit had kept the",
+     "count": 1
+    },
+    {
+     "text": "mara counted the ships",
+     "count": 1
+    },
+    {
+     "text": "every morning maren climbed",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 5
+    },
+    {
+     "name": "Maren",
+     "count": 3
+    },
+    {
+     "name": "Atlantic",
+     "count": 2
+    },
+    {
+     "name": "Oren",
+     "count": 2
+    },
+    {
+     "name": "Marta",
+     "count": 2
+    },
+    {
+     "name": "Elias",
+     "count": 1
+    },
+    {
+     "name": "Thursdays",
+     "count": 1
+    },
+    {
+     "name": "Tomas",
+     "count": 1
+    },
+    {
+     "name": "Teeth",
+     "count": 1
+    },
+    {
+     "name": "Maritime",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0691,
+   "closest_pair": {
+    "a": "claude-fable-5-1-s3",
+    "b": "claude-fable-5-1-s5",
+    "title_a": "The Lighthouse Keeper's Daughter",
+    "title_b": "The Lighthouse Keeper's Daughter",
+    "similarity": 0.9464
+   }
+  },
+  "claude-fable-5-1@thinking": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 305.0,
+    "sd": 7.4386
+   },
+   "mattr": {
+    "mean": 0.8061,
+    "sd": 0.0147
+   },
+   "mtld": {
+    "mean": 110.7206,
+    "sd": 11.5549
+   },
+   "yule_k": {
+    "mean": 171.2574,
+    "sd": 31.0337
+   },
+   "distinct_1": 0.2636,
+   "distinct_2": 0.7388,
+   "distinct_3": 0.9248,
+   "self_overlap": 0.0102,
+   "ai_vocab_rate": 1.6393,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "every morning mara climbed",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "mara had counted the",
+     "count": 2
+    },
+    {
+     "text": "mara climbed the spiral",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "mara had counted the",
+     "count": 2
+    },
+    {
+     "text": "every evening at dusk",
+     "count": 1
+    },
+    {
+     "text": "marta climbed the spiral",
+     "count": 2
+    },
+    {
+     "text": "marta climbed the spiral",
+     "count": 2
+    },
+    {
+     "text": "mara counted the seconds",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 9
+    },
+    {
+     "name": "Coast",
+     "count": 3
+    },
+    {
+     "name": "Guard",
+     "count": 3
+    },
+    {
+     "name": "Authority",
+     "count": 2
+    },
+    {
+     "name": "Marta",
+     "count": 2
+    },
+    {
+     "name": "Tom",
+     "count": 2
+    },
+    {
+     "name": "Gull",
+     "count": 1
+    },
+    {
+     "name": "Island",
+     "count": 1
+    },
+    {
+     "name": "Corvette",
+     "count": 1
+    },
+    {
+     "name": "Elsie",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0691,
+   "closest_pair": {
+    "a": "claude-fable-5-1@thinking-s1",
+    "b": "claude-fable-5-1@thinking-s6",
+    "title_a": "The Lighthouse Keeper's Daughter",
+    "title_b": "The Lighthouse Keeper's Daughter",
+    "similarity": 0.938
+   }
+  },
+  "claude-haiku-4-5-20251001": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 307.3,
+    "sd": 11.156
+   },
+   "mattr": {
+    "mean": 0.8312,
+    "sd": 0.0193
+   },
+   "mtld": {
+    "mean": 127.9827,
+    "sd": 27.0121
+   },
+   "yule_k": {
+    "mean": 84.2802,
+    "sd": 12.9666
+   },
+   "distinct_1": 0.2603,
+   "distinct_2": 0.7636,
+   "distinct_3": 0.9089,
+   "self_overlap": 0.0164,
+   "ai_vocab_rate": 0.9762,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    },
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    },
+    {
+     "text": "marcus found the envelope",
+     "count": 1
+    },
+    {
+     "text": "sarah found the envelope",
+     "count": 1
+    },
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    },
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    },
+    {
+     "text": "margaret found it tucked",
+     "count": 1
+    },
+    {
+     "text": "maya found the envelope",
+     "count": 1
+    },
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    },
+    {
+     "text": "the envelope sat on",
+     "count": 6
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Margaret",
+     "count": 16
+    },
+    {
+     "name": "Sarah",
+     "count": 7
+    },
+    {
+     "name": "Mom",
+     "count": 5
+    },
+    {
+     "name": "Martha",
+     "count": 4
+    },
+    {
+     "name": "Marcus",
+     "count": 4
+    },
+    {
+     "name": "Maya",
+     "count": 3
+    },
+    {
+     "name": "Gran",
+     "count": 2
+    },
+    {
+     "name": "Eleanor",
+     "count": 2
+    },
+    {
+     "name": "Dad",
+     "count": 1
+    },
+    {
+     "name": "Grandma",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0944,
+   "closest_pair": {
+    "a": "claude-haiku-4-5-20251001-s8",
+    "b": "claude-haiku-4-5-20251001-s9",
+    "title_a": "The Last Letter",
+    "title_b": "The Last Letter",
+    "similarity": 0.9215
+   }
+  },
+  "claude-haiku-5-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 270.9,
+    "sd": 24.6326
+   },
+   "mattr": {
+    "mean": 0.819,
+    "sd": 0.0124
+   },
+   "mtld": {
+    "mean": 116.3267,
+    "sd": 21.6997
+   },
+   "yule_k": {
+    "mean": 147.8631,
+    "sd": 20.2638
+   },
+   "distinct_1": 0.2735,
+   "distinct_2": 0.7425,
+   "distinct_3": 0.9067,
+   "self_overlap": 0.0161,
+   "ai_vocab_rate": 3.6914,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "every evening for forty",
+     "count": 4
+    },
+    {
+     "text": "every autumn for forty",
+     "count": 1
+    },
+    {
+     "text": "margaret had kept the",
+     "count": 1
+    },
+    {
+     "text": "every evening for forty",
+     "count": 4
+    },
+    {
+     "text": "every evening for forty",
+     "count": 4
+    },
+    {
+     "text": "for forty years elsie",
+     "count": 1
+    },
+    {
+     "text": "every evening for forty",
+     "count": 4
+    },
+    {
+     "text": "every autumn elias climbed",
+     "count": 1
+    },
+    {
+     "text": "every winter for forty",
+     "count": 1
+    },
+    {
+     "text": "every morning for forty",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Point",
+     "count": 10
+    },
+    {
+     "name": "Elias",
+     "count": 9
+    },
+    {
+     "name": "Margaret",
+     "count": 5
+    },
+    {
+     "name": "Thomas",
+     "count": 3
+    },
+    {
+     "name": "Gull",
+     "count": 3
+    },
+    {
+     "name": "Greer",
+     "count": 2
+    },
+    {
+     "name": "Mara",
+     "count": 2
+    },
+    {
+     "name": "Cold",
+     "count": 2
+    },
+    {
+     "name": "Blackrock",
+     "count": 2
+    },
+    {
+     "name": "Light",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0708,
+   "closest_pair": {
+    "a": "claude-haiku-5-5-s3",
+    "b": "claude-haiku-5-5-s4",
+    "title_a": "The Last Lighthouse Keeper",
+    "title_b": "The Last Lighthouse Keeper",
+    "similarity": 0.9108
+   }
+  },
+  "claude-haiku-5-5@thinking": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 276.4,
+    "sd": 33.5235
+   },
+   "mattr": {
+    "mean": 0.8318,
+    "sd": 0.0267
+   },
+   "mtld": {
+    "mean": 124.1856,
+    "sd": 22.0354
+   },
+   "yule_k": {
+    "mean": 129.3392,
+    "sd": 27.7859
+   },
+   "distinct_1": 0.3166,
+   "distinct_2": 0.8391,
+   "distinct_3": 0.977,
+   "self_overlap": 0.0025,
+   "ai_vocab_rate": 1.0854,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "for thirty one years",
+     "count": 1
+    },
+    {
+     "text": "for forty one years",
+     "count": 1
+    },
+    {
+     "text": "marta had kept the",
+     "count": 1
+    },
+    {
+     "text": "every sunday for forty",
+     "count": 1
+    },
+    {
+     "text": "every tuesday for thirty",
+     "count": 1
+    },
+    {
+     "text": "every morning for forty",
+     "count": 2
+    },
+    {
+     "text": "for eleven years marta",
+     "count": 1
+    },
+    {
+     "text": "nora had counted the",
+     "count": 1
+    },
+    {
+     "text": "the envelope arrived on",
+     "count": 1
+    },
+    {
+     "text": "every morning for forty",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Marta",
+     "count": 4
+    },
+    {
+     "name": "Walter",
+     "count": 3
+    },
+    {
+     "name": "Nell",
+     "count": 3
+    },
+    {
+     "name": "Harrow",
+     "count": 3
+    },
+    {
+     "name": "Marguerite",
+     "count": 2
+    },
+    {
+     "name": "Rock",
+     "count": 2
+    },
+    {
+     "name": "Tom",
+     "count": 2
+    },
+    {
+     "name": "Edith",
+     "count": 2
+    },
+    {
+     "name": "Tobias",
+     "count": 2
+    },
+    {
+     "name": "Eli",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1615,
+   "closest_pair": {
+    "a": "claude-haiku-5-5@thinking-s2",
+    "b": "claude-haiku-5-5@thinking-s6",
+    "title_a": "The Keeper's Light",
+    "title_b": "The Light at Pell Point",
+    "similarity": 0.833
+   }
+  },
+  "claude-opus-4-5-20251101": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 299.4,
+    "sd": 6.1137
+   },
+   "mattr": {
+    "mean": 0.8326,
+    "sd": 0.0183
+   },
+   "mtld": {
+    "mean": 144.8953,
+    "sd": 27.2934
+   },
+   "yule_k": {
+    "mean": 132.997,
+    "sd": 27.0599
+   },
+   "distinct_1": 0.2976,
+   "distinct_2": 0.7423,
+   "distinct_3": 0.8958,
+   "self_overlap": 0.0176,
+   "ai_vocab_rate": 4.008,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "margaret had kept the",
+     "count": 4
+    },
+    {
+     "text": "the morning fog rolled",
+     "count": 1
+    },
+    {
+     "text": "margaret had counted the",
+     "count": 1
+    },
+    {
+     "text": "margaret had kept the",
+     "count": 4
+    },
+    {
+     "text": "margaret had tended the",
+     "count": 1
+    },
+    {
+     "text": "margaret had been alone",
+     "count": 1
+    },
+    {
+     "text": "margaret had kept the",
+     "count": 4
+    },
+    {
+     "text": "margaret had kept the",
+     "count": 4
+    },
+    {
+     "text": "margaret wiped the salt",
+     "count": 2
+    },
+    {
+     "text": "margaret wiped the salt",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Margaret",
+     "count": 6
+    },
+    {
+     "name": "Atlantic",
+     "count": 3
+    },
+    {
+     "name": "Northern",
+     "count": 2
+    },
+    {
+     "name": "Mary",
+     "count": 2
+    },
+    {
+     "name": "Ellen",
+     "count": 2
+    },
+    {
+     "name": "Captain",
+     "count": 1
+    },
+    {
+     "name": "Morrison",
+     "count": 1
+    },
+    {
+     "name": "Christmases",
+     "count": 1
+    },
+    {
+     "name": "Tuesdays",
+     "count": 1
+    },
+    {
+     "name": "Promise",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.04,
+   "closest_pair": {
+    "a": "claude-opus-4-5-20251101-s4",
+    "b": "claude-opus-4-5-20251101-s9",
+    "title_a": "The Last Lighthouse Keeper",
+    "title_b": "The Last Lighthouse Keeper",
+    "similarity": 0.9532
+   }
+  },
+  "claude-opus-4-6": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 306.5,
+    "sd": 4.6963
+   },
+   "mattr": {
+    "mean": 0.815,
+    "sd": 0.0203
+   },
+   "mtld": {
+    "mean": 108.0586,
+    "sd": 19.5952
+   },
+   "yule_k": {
+    "mean": 135.6684,
+    "sd": 30.95
+   },
+   "distinct_1": 0.3331,
+   "distinct_2": 0.8118,
+   "distinct_3": 0.9504,
+   "self_overlap": 0.0056,
+   "ai_vocab_rate": 2.9364,
+   "title_repeat": 0.8,
+   "openers": [
+    {
+     "text": "the morning margaret found",
+     "count": 1
+    },
+    {
+     "text": "elena pressed her pen",
+     "count": 1
+    },
+    {
+     "text": "elena's hands trembled as",
+     "count": 1
+    },
+    {
+     "text": "the storm had been",
+     "count": 1
+    },
+    {
+     "text": "the fog rolled in",
+     "count": 2
+    },
+    {
+     "text": "margaret had been collecting",
+     "count": 1
+    },
+    {
+     "text": "the morning elara found",
+     "count": 1
+    },
+    {
+     "text": "the fog rolled in",
+     "count": 2
+    },
+    {
+     "text": "elena spread the blank",
+     "count": 1
+    },
+    {
+     "text": "elena had spent forty",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Margaret",
+     "count": 6
+    },
+    {
+     "name": "Elena",
+     "count": 5
+    },
+    {
+     "name": "Ashford",
+     "count": 2
+    },
+    {
+     "name": "Light",
+     "count": 2
+    },
+    {
+     "name": "David",
+     "count": 2
+    },
+    {
+     "name": "Maritime",
+     "count": 2
+    },
+    {
+     "name": "Arthur",
+     "count": 2
+    },
+    {
+     "name": "Elara",
+     "count": 2
+    },
+    {
+     "name": "Commission",
+     "count": 2
+    },
+    {
+     "name": "Coast",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1462,
+   "closest_pair": {
+    "a": "claude-opus-4-6-s0",
+    "b": "claude-opus-4-6-s6",
+    "title_a": "The Last Lighthouse Keeper",
+    "title_b": "The Last Lighthouse Keeper",
+    "similarity": 0.9357
+   }
+  },
+  "claude-opus-4-7": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 301.5,
+    "sd": 4.4783
+   },
+   "mattr": {
+    "mean": 0.8288,
+    "sd": 0.0159
+   },
+   "mtld": {
+    "mean": 122.7724,
+    "sd": 21.5166
+   },
+   "yule_k": {
+    "mean": 106.4387,
+    "sd": 22.2573
+   },
+   "distinct_1": 0.2799,
+   "distinct_2": 0.784,
+   "distinct_3": 0.9199,
+   "self_overlap": 0.0159,
+   "ai_vocab_rate": 1.99,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "mira found the bottle",
+     "count": 4
+    },
+    {
+     "text": "mira found the bottle",
+     "count": 4
+    },
+    {
+     "text": "mara found the bottle",
+     "count": 3
+    },
+    {
+     "text": "mira found the bottle",
+     "count": 4
+    },
+    {
+     "text": "elena found the bottle",
+     "count": 1
+    },
+    {
+     "text": "every evening mira climbed",
+     "count": 2
+    },
+    {
+     "text": "mara found the bottle",
+     "count": 3
+    },
+    {
+     "text": "mara found the bottle",
+     "count": 3
+    },
+    {
+     "text": "every evening mira climbed",
+     "count": 2
+    },
+    {
+     "text": "mira found the bottle",
+     "count": 4
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mira",
+     "count": 9
+    },
+    {
+     "name": "Point",
+     "count": 8
+    },
+    {
+     "name": "Edwin",
+     "count": 6
+    },
+    {
+     "name": "Alice",
+     "count": 6
+    },
+    {
+     "name": "Hale",
+     "count": 5
+    },
+    {
+     "name": "Mara",
+     "count": 3
+    },
+    {
+     "name": "Odden",
+     "count": 3
+    },
+    {
+     "name": "Street",
+     "count": 3
+    },
+    {
+     "name": "Edmund",
+     "count": 2
+    },
+    {
+     "name": "Vance",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0931,
+   "closest_pair": {
+    "a": "claude-opus-4-7-s1",
+    "b": "claude-opus-4-7-s9",
+    "title_a": "The Lighthouse Keeper's Last Letter",
+    "title_b": "The Lighthouse Keeper's Last Letter",
+    "similarity": 0.9339
+   }
+  },
+  "claude-opus-4-8": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 305.6,
+    "sd": 4.4522
+   },
+   "mattr": {
+    "mean": 0.8351,
+    "sd": 0.0157
+   },
+   "mtld": {
+    "mean": 131.2487,
+    "sd": 15.6662
+   },
+   "yule_k": {
+    "mean": 145.3571,
+    "sd": 26.6302
+   },
+   "distinct_1": 0.2765,
+   "distinct_2": 0.7745,
+   "distinct_3": 0.9269,
+   "self_overlap": 0.0115,
+   "ai_vocab_rate": 4.2539,
+   "title_repeat": 0.6,
+   "openers": [
+    {
+     "text": "mara had tended the",
+     "count": 3
+    },
+    {
+     "text": "mara had tended the",
+     "count": 3
+    },
+    {
+     "text": "mara climbed the spiral",
+     "count": 1
+    },
+    {
+     "text": "martha had tended the",
+     "count": 2
+    },
+    {
+     "text": "every evening elias climbed",
+     "count": 1
+    },
+    {
+     "text": "for forty years elias",
+     "count": 1
+    },
+    {
+     "text": "elias had repaired ten",
+     "count": 1
+    },
+    {
+     "text": "mara had tended the",
+     "count": 3
+    },
+    {
+     "text": "the lamp had burned",
+     "count": 1
+    },
+    {
+     "text": "martha had tended the",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Elias",
+     "count": 8
+    },
+    {
+     "name": "Mara",
+     "count": 6
+    },
+    {
+     "name": "Tom",
+     "count": 2
+    },
+    {
+     "name": "Marigold",
+     "count": 2
+    },
+    {
+     "name": "Bellamy",
+     "count": 1
+    },
+    {
+     "name": "Vanishing",
+     "count": 1
+    },
+    {
+     "name": "Street",
+     "count": 1
+    },
+    {
+     "name": "Clara",
+     "count": 1
+    },
+    {
+     "name": "Warren",
+     "count": 1
+    },
+    {
+     "name": "Christmas",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0882,
+   "closest_pair": {
+    "a": "claude-opus-4-8-s3",
+    "b": "claude-opus-4-8-s9",
+    "title_a": "The Lighthouse Keeper's Last Night",
+    "title_b": "The Lighthouse Keeper's Last Night",
+    "similarity": 0.9561
+   }
+  },
+  "claude-opus-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 309.9,
+    "sd": 5.9526
+   },
+   "mattr": {
+    "mean": 0.8143,
+    "sd": 0.019
+   },
+   "mtld": {
+    "mean": 107.748,
+    "sd": 19.0631
+   },
+   "yule_k": {
+    "mean": 124.0359,
+    "sd": 17.5799
+   },
+   "distinct_1": 0.3043,
+   "distinct_2": 0.8394,
+   "distinct_3": 0.9831,
+   "self_overlap": 0.0018,
+   "ai_vocab_rate": 0.9681,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "mrs ardito's piano had",
+     "count": 1
+    },
+    {
+     "text": "every april oyelaran drove",
+     "count": 1
+    },
+    {
+     "text": "for eleven years oona",
+     "count": 1
+    },
+    {
+     "text": "for eleven years dessa",
+     "count": 1
+    },
+    {
+     "text": "ilse fixed things kettles",
+     "count": 1
+    },
+    {
+     "text": "it had not rained",
+     "count": 1
+    },
+    {
+     "text": "harlan pays eleven dollars",
+     "count": 1
+    },
+    {
+     "text": "she brought it in",
+     "count": 1
+    },
+    {
+     "text": "for eleven years mira",
+     "count": 1
+    },
+    {
+     "text": "every thursday at mr",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Abel",
+     "count": 4
+    },
+    {
+     "name": "Harlan",
+     "count": 4
+    },
+    {
+     "name": "Oona",
+     "count": 3
+    },
+    {
+     "name": "Mira",
+     "count": 3
+    },
+    {
+     "name": "Ruth",
+     "count": 3
+    },
+    {
+     "name": "Oyelaran",
+     "count": 2
+    },
+    {
+     "name": "Narrows",
+     "count": 2
+    },
+    {
+     "name": "Dessa",
+     "count": 2
+    },
+    {
+     "name": "Bridge",
+     "count": 2
+    },
+    {
+     "name": "Corolla",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.2064,
+   "closest_pair": {
+    "a": "claude-opus-5-s3",
+    "b": "claude-opus-5-s8",
+    "title_a": "The Last Booth",
+    "title_b": "Exact Change",
+    "similarity": 0.7735
+   }
+  },
+  "claude-opus-5-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 316.0,
+    "sd": 10.9036
+   },
+   "mattr": {
+    "mean": 0.8281,
+    "sd": 0.0192
+   },
+   "mtld": {
+    "mean": 117.4137,
+    "sd": 23.3958
+   },
+   "yule_k": {
+    "mean": 116.2388,
+    "sd": 14.6665
+   },
+   "distinct_1": 0.3063,
+   "distinct_2": 0.8171,
+   "distinct_3": 0.9653,
+   "self_overlap": 0.0034,
+   "ai_vocab_rate": 0.3165,
+   "title_repeat": 0.3,
+   "openers": [
+    {
+     "text": "every morning for forty",
+     "count": 1
+    },
+    {
+     "text": "the book was due",
+     "count": 1
+    },
+    {
+     "text": "my grandmother was eighty",
+     "count": 1
+    },
+    {
+     "text": "the hardware store had",
+     "count": 1
+    },
+    {
+     "text": "every tuesday at p",
+     "count": 1
+    },
+    {
+     "text": "the book arrived at",
+     "count": 1
+    },
+    {
+     "text": "the book arrived on",
+     "count": 1
+    },
+    {
+     "text": "every night for thirty",
+     "count": 1
+    },
+    {
+     "text": "the book was a",
+     "count": 1
+    },
+    {
+     "text": "the phone company gave",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Walter",
+     "count": 8
+    },
+    {
+     "name": "Teodor",
+     "count": 2
+    },
+    {
+     "name": "Walt",
+     "count": 2
+    },
+    {
+     "name": "Public",
+     "count": 2
+    },
+    {
+     "name": "Library",
+     "count": 2
+    },
+    {
+     "name": "Mole",
+     "count": 2
+    },
+    {
+     "name": "Field",
+     "count": 2
+    },
+    {
+     "name": "Guide",
+     "count": 2
+    },
+    {
+     "name": "North",
+     "count": 2
+    },
+    {
+     "name": "American",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.2202,
+   "closest_pair": {
+    "a": "claude-opus-5-5-s6",
+    "b": "claude-opus-5-5-s8",
+    "title_a": "Overdue",
+    "title_b": "The Late Fee",
+    "similarity": 0.8238
+   }
+  },
+  "claude-opus-5-5@thinking": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 310.1,
+    "sd": 9.9939
+   },
+   "mattr": {
+    "mean": 0.8301,
+    "sd": 0.0171
+   },
+   "mtld": {
+    "mean": 122.6023,
+    "sd": 23.382
+   },
+   "yule_k": {
+    "mean": 108.3875,
+    "sd": 15.2525
+   },
+   "distinct_1": 0.3076,
+   "distinct_2": 0.8434,
+   "distinct_3": 0.974,
+   "self_overlap": 0.0025,
+   "ai_vocab_rate": 0.0,
+   "title_repeat": 0.2,
+   "openers": [
+    {
+     "text": "the book arrived at",
+     "count": 1
+    },
+    {
+     "text": "every winter arthur penhallow",
+     "count": 1
+    },
+    {
+     "text": "my grandmother never measured",
+     "count": 1
+    },
+    {
+     "text": "for most of his",
+     "count": 1
+    },
+    {
+     "text": "my grandmother left me",
+     "count": 1
+    },
+    {
+     "text": "every spring mrs okafor",
+     "count": 1
+    },
+    {
+     "text": "the book had been",
+     "count": 1
+    },
+    {
+     "text": "every january when the",
+     "count": 1
+    },
+    {
+     "text": "every winter mrs okafor",
+     "count": 1
+    },
+    {
+     "text": "every winter the lost",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Walter",
+     "count": 6
+    },
+    {
+     "name": "Purple",
+     "count": 4
+    },
+    {
+     "name": "Arthur",
+     "count": 3
+    },
+    {
+     "name": "North",
+     "count": 2
+    },
+    {
+     "name": "American",
+     "count": 2
+    },
+    {
+     "name": "Street",
+     "count": 2
+    },
+    {
+     "name": "Year",
+     "count": 2
+    },
+    {
+     "name": "Millbrook",
+     "count": 1
+    },
+    {
+     "name": "Public",
+     "count": 1
+    },
+    {
+     "name": "Library",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.2078,
+   "closest_pair": {
+    "a": "claude-opus-5-5@thinking-s0",
+    "b": "claude-opus-5-5@thinking-s6",
+    "title_a": "Overdue",
+    "title_b": "Overdue",
+    "similarity": 0.8848
+   }
+  },
+  "claude-sonnet-4-5-20250929": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 295.4,
+    "sd": 9.0823
+   },
+   "mattr": {
+    "mean": 0.8572,
+    "sd": 0.0135
+   },
+   "mtld": {
+    "mean": 149.5814,
+    "sd": 20.0966
+   },
+   "yule_k": {
+    "mean": 106.3359,
+    "sd": 22.9022
+   },
+   "distinct_1": 0.3202,
+   "distinct_2": 0.8224,
+   "distinct_3": 0.9465,
+   "self_overlap": 0.0081,
+   "ai_vocab_rate": 2.0311,
+   "title_repeat": 0.9,
+   "openers": [
+    {
+     "text": "the sign still read",
+     "count": 1
+    },
+    {
+     "text": "margaret dusted the spine",
+     "count": 1
+    },
+    {
+     "text": "margaret climbed the spiral",
+     "count": 2
+    },
+    {
+     "text": "margaret swept the worn",
+     "count": 1
+    },
+    {
+     "text": "margaret climbed the spiral",
+     "count": 2
+    },
+    {
+     "text": "maria's fingers trembled as",
+     "count": 1
+    },
+    {
+     "text": "the old man had",
+     "count": 1
+    },
+    {
+     "text": "the old man swept",
+     "count": 1
+    },
+    {
+     "text": "the old man turned",
+     "count": 1
+    },
+    {
+     "text": "the sign above the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Margaret",
+     "count": 13
+    },
+    {
+     "name": "Marcus",
+     "count": 5
+    },
+    {
+     "name": "Morrison",
+     "count": 4
+    },
+    {
+     "name": "Whitman",
+     "count": 3
+    },
+    {
+     "name": "Dickens",
+     "count": 2
+    },
+    {
+     "name": "Neruda",
+     "count": 2
+    },
+    {
+     "name": "Atlantic",
+     "count": 2
+    },
+    {
+     "name": "Coast",
+     "count": 2
+    },
+    {
+     "name": "Guard",
+     "count": 2
+    },
+    {
+     "name": "Rose",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1307,
+   "closest_pair": {
+    "a": "claude-sonnet-4-5-20250929-s2",
+    "b": "claude-sonnet-4-5-20250929-s4",
+    "title_a": "The Last Lighthouse Keeper",
+    "title_b": "The Last Lighthouse Keeper",
+    "similarity": 0.9409
+   }
+  },
+  "claude-sonnet-4-6": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 292.0,
+    "sd": 5.9442
+   },
+   "mattr": {
+    "mean": 0.8377,
+    "sd": 0.025
+   },
+   "mtld": {
+    "mean": 137.1883,
+    "sd": 22.2847
+   },
+   "yule_k": {
+    "mean": 111.371,
+    "sd": 18.5481
+   },
+   "distinct_1": 0.3158,
+   "distinct_2": 0.8192,
+   "distinct_3": 0.961,
+   "self_overlap": 0.0044,
+   "ai_vocab_rate": 1.7123,
+   "title_repeat": 0.8,
+   "openers": [
+    {
+     "text": "margaret pressed her forehead",
+     "count": 1
+    },
+    {
+     "text": "margaret almost missed it",
+     "count": 2
+    },
+    {
+     "text": "margaret had not meant",
+     "count": 1
+    },
+    {
+     "text": "the platform was empty",
+     "count": 2
+    },
+    {
+     "text": "margaret noticed the old",
+     "count": 2
+    },
+    {
+     "text": "margaret had lived in",
+     "count": 1
+    },
+    {
+     "text": "clara had lived in",
+     "count": 1
+    },
+    {
+     "text": "the platform was empty",
+     "count": 2
+    },
+    {
+     "text": "margaret noticed the old",
+     "count": 2
+    },
+    {
+     "text": "margaret almost missed it",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Margaret",
+     "count": 7
+    },
+    {
+     "name": "Gerald",
+     "count": 4
+    },
+    {
+     "name": "Millfield",
+     "count": 3
+    },
+    {
+     "name": "Thomas",
+     "count": 2
+    },
+    {
+     "name": "Ohio",
+     "count": 1
+    },
+    {
+     "name": "Paddington",
+     "count": 1
+    },
+    {
+     "name": "Station",
+     "count": 1
+    },
+    {
+     "name": "Bristol",
+     "count": 1
+    },
+    {
+     "name": "Frank",
+     "count": 1
+    },
+    {
+     "name": "Clara",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1337,
+   "closest_pair": {
+    "a": "claude-sonnet-4-6-s4",
+    "b": "claude-sonnet-4-6-s8",
+    "title_a": "The Last Bus Home",
+    "title_b": "The Last Bus Home",
+    "similarity": 0.9168
+   }
+  },
+  "claude-sonnet-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 297.7,
+    "sd": 7.8747
+   },
+   "mattr": {
+    "mean": 0.826,
+    "sd": 0.0231
+   },
+   "mtld": {
+    "mean": 128.5452,
+    "sd": 27.9936
+   },
+   "yule_k": {
+    "mean": 141.1151,
+    "sd": 24.089
+   },
+   "distinct_1": 0.263,
+   "distinct_2": 0.7155,
+   "distinct_3": 0.8843,
+   "self_overlap": 0.0216,
+   "ai_vocab_rate": 2.3514,
+   "title_repeat": 0.8,
+   "openers": [
+    {
+     "text": "marta had tended the",
+     "count": 2
+    },
+    {
+     "text": "marta had kept the",
+     "count": 1
+    },
+    {
+     "text": "mara had counted the",
+     "count": 2
+    },
+    {
+     "text": "mara had counted the",
+     "count": 2
+    },
+    {
+     "text": "mara had tended the",
+     "count": 1
+    },
+    {
+     "text": "mira had tended the",
+     "count": 1
+    },
+    {
+     "text": "mara had counted seventeen",
+     "count": 1
+    },
+    {
+     "text": "mara had kept the",
+     "count": 1
+    },
+    {
+     "text": "maren had kept the",
+     "count": 1
+    },
+    {
+     "text": "marta had tended the",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Seal",
+     "count": 1
+    },
+    {
+     "name": "Point",
+     "count": 1
+    },
+    {
+     "name": "Atlantic",
+     "count": 1
+    },
+    {
+     "name": "Marguerite",
+     "count": 1
+    },
+    {
+     "name": "Marta",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.063,
+   "closest_pair": {
+    "a": "claude-sonnet-5-s1",
+    "b": "claude-sonnet-5-s9",
+    "title_a": "The Lighthouse Keeper's Last Night",
+    "title_b": "The Lighthouse Keeper's Last Night",
+    "similarity": 0.9635
+   }
+  },
+  "claude-sonnet-5-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 319.9,
+    "sd": 10.4398
+   },
+   "mattr": {
+    "mean": 0.837,
+    "sd": 0.0111
+   },
+   "mtld": {
+    "mean": 134.877,
+    "sd": 25.899
+   },
+   "yule_k": {
+    "mean": 134.2211,
+    "sd": 30.2074
+   },
+   "distinct_1": 0.2842,
+   "distinct_2": 0.7548,
+   "distinct_3": 0.9081,
+   "self_overlap": 0.0177,
+   "ai_vocab_rate": 4.3764,
+   "title_repeat": 0.8,
+   "openers": [
+    {
+     "text": "every night at nine",
+     "count": 1
+    },
+    {
+     "text": "marta had tended the",
+     "count": 3
+    },
+    {
+     "text": "marta had tended the",
+     "count": 3
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 3
+    },
+    {
+     "text": "marin had tended the",
+     "count": 1
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 3
+    },
+    {
+     "text": "marit had tended the",
+     "count": 1
+    },
+    {
+     "text": "every evening for forty",
+     "count": 1
+    },
+    {
+     "text": "marta had tended the",
+     "count": 3
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 3
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Point",
+     "count": 7
+    },
+    {
+     "name": "Marta",
+     "count": 6
+    },
+    {
+     "name": "Tomas",
+     "count": 5
+    },
+    {
+     "name": "Light",
+     "count": 4
+    },
+    {
+     "name": "Gull",
+     "count": 3
+    },
+    {
+     "name": "Ardmore",
+     "count": 2
+    },
+    {
+     "name": "Keeper",
+     "count": 2
+    },
+    {
+     "name": "Dov",
+     "count": 2
+    },
+    {
+     "name": "Marguerite",
+     "count": 2
+    },
+    {
+     "name": "Odessa",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.073,
+   "closest_pair": {
+    "a": "claude-sonnet-5-5-s3",
+    "b": "claude-sonnet-5-5-s9",
+    "title_a": "The Lighthouse Keeper's Last Lamp",
+    "title_b": "The Lighthouse Keeper's Last Bulb",
+    "similarity": 0.92
+   }
+  },
+  "claude-sonnet-5-5@thinking": {
+   "kind": "model",
+   "n": 10,
+   "provider": "anthropic",
+   "words": {
+    "mean": 313.6,
+    "sd": 7.3515
+   },
+   "mattr": {
+    "mean": 0.8256,
+    "sd": 0.0192
+   },
+   "mtld": {
+    "mean": 127.0285,
+    "sd": 24.0091
+   },
+   "yule_k": {
+    "mean": 132.8158,
+    "sd": 18.1205
+   },
+   "distinct_1": 0.2812,
+   "distinct_2": 0.7425,
+   "distinct_3": 0.8954,
+   "self_overlap": 0.0208,
+   "ai_vocab_rate": 2.2321,
+   "title_repeat": 1.0,
+   "openers": [
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "marta had tended the",
+     "count": 1
+    },
+    {
+     "text": "every night at nine",
+     "count": 1
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "marguerite had tended the",
+     "count": 6
+    },
+    {
+     "text": "every evening for forty",
+     "count": 1
+    },
+    {
+     "text": "every evening at seven",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Point",
+     "count": 9
+    },
+    {
+     "name": "Harrow",
+     "count": 7
+    },
+    {
+     "name": "Marta",
+     "count": 4
+    },
+    {
+     "name": "Aldo",
+     "count": 3
+    },
+    {
+     "name": "Verrin",
+     "count": 3
+    },
+    {
+     "name": "Gannet",
+     "count": 2
+    },
+    {
+     "name": "Pip",
+     "count": 2
+    },
+    {
+     "name": "Marguerite",
+     "count": 2
+    },
+    {
+     "name": "Coast",
+     "count": 2
+    },
+    {
+     "name": "Authority",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0708,
+   "closest_pair": {
+    "a": "claude-sonnet-5-5@thinking-s2",
+    "b": "claude-sonnet-5-5@thinking-s3",
+    "title_a": "The Lighthouse Keeper's Last Letter",
+    "title_b": "The Lighthouse Keeper's Last Letter",
+    "similarity": 0.9606
+   }
+  },
+  "gpt-4.1": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 288.8,
+    "sd": 11.1634
+   },
+   "mattr": {
+    "mean": 0.8544,
+    "sd": 0.017
+   },
+   "mtld": {
+    "mean": 148.067,
+    "sd": 22.1941
+   },
+   "yule_k": {
+    "mean": 103.882,
+    "sd": 25.2532
+   },
+   "distinct_1": 0.367,
+   "distinct_2": 0.8749,
+   "distinct_3": 0.9878,
+   "self_overlap": 0.0012,
+   "ai_vocab_rate": 11.4266,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "the clock in maya's",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 2
+    },
+    {
+     "text": "every evening as dusk",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 2
+    },
+    {
+     "text": "elena's fingers danced over",
+     "count": 1
+    },
+    {
+     "text": "the little town of",
+     "count": 1
+    },
+    {
+     "text": "the village of erinswell",
+     "count": 1
+    },
+    {
+     "text": "elliot stood on the",
+     "count": 1
+    },
+    {
+     "text": "on a quiet evening",
+     "count": 1
+    },
+    {
+     "text": "rain tapped softly against",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Emory",
+     "count": 6
+    },
+    {
+     "name": "Mirah",
+     "count": 5
+    },
+    {
+     "name": "Mia",
+     "count": 5
+    },
+    {
+     "name": "Elena",
+     "count": 4
+    },
+    {
+     "name": "Emily",
+     "count": 4
+    },
+    {
+     "name": "Maya",
+     "count": 3
+    },
+    {
+     "name": "Auntie",
+     "count": 3
+    },
+    {
+     "name": "Alderbrook",
+     "count": 3
+    },
+    {
+     "name": "Erinswell",
+     "count": 3
+    },
+    {
+     "name": "Milo",
+     "count": 3
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1868,
+   "closest_pair": {
+    "a": "gpt-4.1-s1",
+    "b": "gpt-4.1-s3",
+    "title_a": "The Clockmaker's Secret",
+    "title_b": "The Clockmaker’s Gift",
+    "similarity": 0.8773
+   }
+  },
+  "gpt-4.1-mini": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 273.2,
+    "sd": 12.6912
+   },
+   "mattr": {
+    "mean": 0.8431,
+    "sd": 0.0178
+   },
+   "mtld": {
+    "mean": 127.458,
+    "sd": 17.9789
+   },
+   "yule_k": {
+    "mean": 131.6715,
+    "sd": 36.8532
+   },
+   "distinct_1": 0.3441,
+   "distinct_2": 0.8417,
+   "distinct_3": 0.9771,
+   "self_overlap": 0.0024,
+   "ai_vocab_rate": 10.981,
+   "title_repeat": 0.3,
+   "openers": [
+    {
+     "text": "in a world where",
+     "count": 1
+    },
+    {
+     "text": "in a forgotten village",
+     "count": 1
+    },
+    {
+     "text": "in a small village",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 3
+    },
+    {
+     "text": "in the heart of",
+     "count": 3
+    },
+    {
+     "text": "in the small village",
+     "count": 1
+    },
+    {
+     "text": "in a world swallowed",
+     "count": 1
+    },
+    {
+     "text": "in a small forgotten",
+     "count": 1
+    },
+    {
+     "text": "in a small quiet",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 3
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Clara",
+     "count": 10
+    },
+    {
+     "name": "Elias",
+     "count": 6
+    },
+    {
+     "name": "Lily",
+     "count": 6
+    },
+    {
+     "name": "Lila",
+     "count": 4
+    },
+    {
+     "name": "Elara",
+     "count": 4
+    },
+    {
+     "name": "Samuel",
+     "count": 4
+    },
+    {
+     "name": "Emma",
+     "count": 4
+    },
+    {
+     "name": "Liora",
+     "count": 3
+    },
+    {
+     "name": "Thomas",
+     "count": 3
+    },
+    {
+     "name": "Evelyn",
+     "count": 3
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1666,
+   "closest_pair": {
+    "a": "gpt-4.1-mini-s2",
+    "b": "gpt-4.1-mini-s7",
+    "title_a": "The Last Letter",
+    "title_b": "The Last Letter",
+    "similarity": 0.8679
+   }
+  },
+  "gpt-4o": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 301.6,
+    "sd": 9.9017
+   },
+   "mattr": {
+    "mean": 0.836,
+    "sd": 0.0121
+   },
+   "mtld": {
+    "mean": 115.5066,
+    "sd": 12.9881
+   },
+   "yule_k": {
+    "mean": 133.0688,
+    "sd": 18.8242
+   },
+   "distinct_1": 0.3147,
+   "distinct_2": 0.7941,
+   "distinct_3": 0.9623,
+   "self_overlap": 0.0046,
+   "ai_vocab_rate": 30.504,
+   "title_repeat": 0.4,
+   "openers": [
+    {
+     "text": "in a quaint village",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 4
+    },
+    {
+     "text": "in the heart of",
+     "count": 4
+    },
+    {
+     "text": "in the quiet town",
+     "count": 2
+    },
+    {
+     "text": "in the remote village",
+     "count": 1
+    },
+    {
+     "text": "in the heart of",
+     "count": 4
+    },
+    {
+     "text": "in the heart of",
+     "count": 4
+    },
+    {
+     "text": "in the quiet town",
+     "count": 2
+    },
+    {
+     "text": "in a small village",
+     "count": 1
+    },
+    {
+     "text": "in the quaint village",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Elara",
+     "count": 20
+    },
+    {
+     "name": "Theo",
+     "count": 6
+    },
+    {
+     "name": "Eldergrove",
+     "count": 5
+    },
+    {
+     "name": "Fae",
+     "count": 5
+    },
+    {
+     "name": "Whispering",
+     "count": 4
+    },
+    {
+     "name": "Amelia",
+     "count": 4
+    },
+    {
+     "name": "Lila",
+     "count": 4
+    },
+    {
+     "name": "Meadowbrook",
+     "count": 3
+    },
+    {
+     "name": "Alder",
+     "count": 2
+    },
+    {
+     "name": "House",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1188,
+   "closest_pair": {
+    "a": "gpt-4o-s4",
+    "b": "gpt-4o-s8",
+    "title_a": "The Enchanted Violin",
+    "title_b": "The Enchanted Violin",
+    "similarity": 0.9457
+   }
+  },
+  "gpt-4o-mini": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 284.6,
+    "sd": 7.1988
+   },
+   "mattr": {
+    "mean": 0.8508,
+    "sd": 0.0254
+   },
+   "mtld": {
+    "mean": 128.7608,
+    "sd": 25.3937
+   },
+   "yule_k": {
+    "mean": 106.2379,
+    "sd": 27.8461
+   },
+   "distinct_1": 0.3398,
+   "distinct_2": 0.8403,
+   "distinct_3": 0.9781,
+   "self_overlap": 0.0024,
+   "ai_vocab_rate": 13.7034,
+   "title_repeat": 0.2,
+   "openers": [
+    {
+     "text": "in the small village",
+     "count": 1
+    },
+    {
+     "text": "in a quaint village",
+     "count": 1
+    },
+    {
+     "text": "in a forgotten village",
+     "count": 1
+    },
+    {
+     "text": "in a sleepy village",
+     "count": 1
+    },
+    {
+     "text": "in a small ivy",
+     "count": 1
+    },
+    {
+     "text": "as autumn wrapped its",
+     "count": 1
+    },
+    {
+     "text": "beneath the sprawling oak",
+     "count": 1
+    },
+    {
+     "text": "evelyn discovered the tattered",
+     "count": 1
+    },
+    {
+     "text": "in the quaint village",
+     "count": 1
+    },
+    {
+     "text": "in a quiet village",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Eve",
+     "count": 6
+    },
+    {
+     "name": "Lila",
+     "count": 5
+    },
+    {
+     "name": "Elias",
+     "count": 5
+    },
+    {
+     "name": "Alaric",
+     "count": 4
+    },
+    {
+     "name": "Clara",
+     "count": 4
+    },
+    {
+     "name": "Elara",
+     "count": 3
+    },
+    {
+     "name": "Whispering",
+     "count": 2
+    },
+    {
+     "name": "Willow",
+     "count": 2
+    },
+    {
+     "name": "Mira",
+     "count": 2
+    },
+    {
+     "name": "Sophie",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1571,
+   "closest_pair": {
+    "a": "gpt-4o-mini-s5",
+    "b": "gpt-4o-mini-s8",
+    "title_a": "The Last Leaf of Autumn",
+    "title_b": "The Last Leaf of Autumn",
+    "similarity": 0.8776
+   }
+  },
+  "gpt-5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 366.4,
+    "sd": 36.7248
+   },
+   "mattr": {
+    "mean": 0.8367,
+    "sd": 0.0151
+   },
+   "mtld": {
+    "mean": 140.0421,
+    "sd": 28.5909
+   },
+   "yule_k": {
+    "mean": 116.7673,
+    "sd": 12.011
+   },
+   "distinct_1": 0.3387,
+   "distinct_2": 0.8656,
+   "distinct_3": 0.9871,
+   "self_overlap": 0.0013,
+   "ai_vocab_rate": 3.2751,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "the sign was the",
+     "count": 1
+    },
+    {
+     "text": "in the town where",
+     "count": 1
+    },
+    {
+     "text": "in our village the",
+     "count": 1
+    },
+    {
+     "text": "when my grandmother died",
+     "count": 1
+    },
+    {
+     "text": "mara mapped the city",
+     "count": 1
+    },
+    {
+     "text": "mara began her map",
+     "count": 1
+    },
+    {
+     "text": "on nights when the",
+     "count": 1
+    },
+    {
+     "text": "in a narrow building",
+     "count": 1
+    },
+    {
+     "text": "in the harbor city",
+     "count": 1
+    },
+    {
+     "text": "mara kept the night",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 4
+    },
+    {
+     "name": "Maris",
+     "count": 2
+    },
+    {
+     "name": "Apology",
+     "count": 2
+    },
+    {
+     "name": "Window",
+     "count": 2
+    },
+    {
+     "name": "Winter",
+     "count": 2
+    },
+    {
+     "name": "Meant",
+     "count": 2
+    },
+    {
+     "name": "Miro",
+     "count": 2
+    },
+    {
+     "name": "Maybe",
+     "count": 1
+    },
+    {
+     "name": "Almost",
+     "count": 1
+    },
+    {
+     "name": "Owen",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1675,
+   "closest_pair": {
+    "a": "gpt-5-s1",
+    "b": "gpt-5-s2",
+    "title_a": "Where the Tide Forgets",
+    "title_b": "The Tide That Remembered Our Names",
+    "similarity": 0.8283
+   }
+  },
+  "gpt-5-mini": {
+   "kind": "model",
+   "n": 9,
+   "provider": "openai",
+   "words": {
+    "mean": 343.4444,
+    "sd": 23.1036
+   },
+   "mattr": {
+    "mean": 0.8285,
+    "sd": 0.0126
+   },
+   "mtld": {
+    "mean": 123.571,
+    "sd": 18.0169
+   },
+   "yule_k": {
+    "mean": 130.1926,
+    "sd": 17.6716
+   },
+   "distinct_1": 0.3238,
+   "distinct_2": 0.8446,
+   "distinct_3": 0.985,
+   "self_overlap": 0.0015,
+   "ai_vocab_rate": 3.8822,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "arlo cut his days",
+     "count": 1
+    },
+    {
+     "text": "on the hill above",
+     "count": 1
+    },
+    {
+     "text": "elias kept a drawer",
+     "count": 1
+    },
+    {
+     "text": "in a town where",
+     "count": 1
+    },
+    {
+     "text": "when the ferry stopped",
+     "count": 1
+    },
+    {
+     "text": "when elias closed his",
+     "count": 1
+    },
+    {
+     "text": "when mara found the",
+     "count": 1
+    },
+    {
+     "text": "he had been a",
+     "count": 1
+    },
+    {
+     "text": "when the town's lamps",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 9
+    },
+    {
+     "name": "Elias",
+     "count": 3
+    },
+    {
+     "name": "Draw",
+     "count": 2
+    },
+    {
+     "name": "Mark",
+     "count": 1
+    },
+    {
+     "name": "Arlo",
+     "count": 1
+    },
+    {
+     "name": "Mira",
+     "count": 1
+    },
+    {
+     "name": "Place",
+     "count": 1
+    },
+    {
+     "name": "Forgot",
+     "count": 1
+    },
+    {
+     "name": "Mother",
+     "count": 1
+    },
+    {
+     "name": "Laugh",
+     "count": 1
+    }
+   ],
+   "n_embedded": 9,
+   "spread": 0.144,
+   "closest_pair": {
+    "a": "gpt-5-mini-s3",
+    "b": "gpt-5-mini-s9",
+    "title_a": "The Last Lampmaker",
+    "title_b": "The Last Lanternmaker",
+    "similarity": 0.9207
+   }
+  },
+  "gpt-5-nano": {
+   "kind": "model",
+   "n": 9,
+   "provider": "openai",
+   "words": {
+    "mean": 286.3333,
+    "sd": 86.8202
+   },
+   "mattr": {
+    "mean": 0.8008,
+    "sd": 0.0185
+   },
+   "mtld": {
+    "mean": 95.5506,
+    "sd": 12.8527
+   },
+   "yule_k": {
+    "mean": 170.13,
+    "sd": 39.2429
+   },
+   "distinct_1": 0.3306,
+   "distinct_2": 0.8228,
+   "distinct_3": 0.9816,
+   "self_overlap": 0.0019,
+   "ai_vocab_rate": 3.8805,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "the clock shop sat",
+     "count": 1
+    },
+    {
+     "text": "the lantern hung at",
+     "count": 1
+    },
+    {
+     "text": "the lantern hung in",
+     "count": 1
+    },
+    {
+     "text": "the attic smelled of",
+     "count": 1
+    },
+    {
+     "text": "rain pressed against the",
+     "count": 1
+    },
+    {
+     "text": "the lighthouse on brine",
+     "count": 1
+    },
+    {
+     "text": "the sun had gone",
+     "count": 1
+    },
+    {
+     "text": "in the harbor town",
+     "count": 1
+    },
+    {
+     "text": "in a coast town",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mina",
+     "count": 5
+    },
+    {
+     "name": "Mara",
+     "count": 3
+    },
+    {
+     "name": "Lio",
+     "count": 2
+    },
+    {
+     "name": "Street",
+     "count": 2
+    },
+    {
+     "name": "North",
+     "count": 2
+    },
+    {
+     "name": "Mira",
+     "count": 2
+    },
+    {
+     "name": "Maple",
+     "count": 1
+    },
+    {
+     "name": "Marlowe",
+     "count": 1
+    },
+    {
+     "name": "Curios",
+     "count": 1
+    },
+    {
+     "name": "Elias",
+     "count": 1
+    }
+   ],
+   "n_embedded": 9,
+   "spread": 0.1472,
+   "closest_pair": {
+    "a": "gpt-5-nano-s1",
+    "b": "gpt-5-nano-s2",
+    "title_a": "The Lantern That Remembered",
+    "title_b": "The Lantern That Remembers",
+    "similarity": 0.892
+   }
+  },
+  "gpt-5-search-api": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 291.3,
+    "sd": 9.6269
+   },
+   "mattr": {
+    "mean": 0.8508,
+    "sd": 0.0159
+   },
+   "mtld": {
+    "mean": 154.6832,
+    "sd": 29.5306
+   },
+   "yule_k": {
+    "mean": 106.0984,
+    "sd": 23.6648
+   },
+   "distinct_1": 0.3529,
+   "distinct_2": 0.8691,
+   "distinct_3": 0.9848,
+   "self_overlap": 0.0014,
+   "ai_vocab_rate": 16.4779,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "marigold hadley lived in",
+     "count": 1
+    },
+    {
+     "text": "in the little town",
+     "count": 1
+    },
+    {
+     "text": "mara stood on the",
+     "count": 1
+    },
+    {
+     "text": "marisol had always felt",
+     "count": 1
+    },
+    {
+     "text": "talia had long heard",
+     "count": 1
+    },
+    {
+     "text": "mara stood at the",
+     "count": 1
+    },
+    {
+     "text": "cora lived alone atop",
+     "count": 1
+    },
+    {
+     "text": "marisol had always believed",
+     "count": 1
+    },
+    {
+     "text": "marisol had lived in",
+     "count": 1
+    },
+    {
+     "text": "eliza wandered into the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Lantern",
+     "count": 6
+    },
+    {
+     "name": "Marigold",
+     "count": 3
+    },
+    {
+     "name": "Eliza",
+     "count": 3
+    },
+    {
+     "name": "Wexley",
+     "count": 2
+    },
+    {
+     "name": "Keeper",
+     "count": 2
+    },
+    {
+     "name": "Cora",
+     "count": 2
+    },
+    {
+     "name": "Marisol",
+     "count": 2
+    },
+    {
+     "name": "Hadley",
+     "count": 1
+    },
+    {
+     "name": "Old",
+     "count": 1
+    },
+    {
+     "name": "Watchmaker",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1545,
+   "closest_pair": {
+    "a": "gpt-5-search-api-s0",
+    "b": "gpt-5-search-api-s8",
+    "title_a": "The Last Light of Marigold",
+    "title_b": "The Light Beyond the Window",
+    "similarity": 0.8082
+   }
+  },
+  "gpt-5.1": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 351.6,
+    "sd": 55.2916
+   },
+   "mattr": {
+    "mean": 0.8556,
+    "sd": 0.0209
+   },
+   "mtld": {
+    "mean": 170.549,
+    "sd": 21.6131
+   },
+   "yule_k": {
+    "mean": 112.8561,
+    "sd": 36.8583
+   },
+   "distinct_1": 0.3652,
+   "distinct_2": 0.8808,
+   "distinct_3": 0.9883,
+   "self_overlap": 0.0011,
+   "ai_vocab_rate": 6.5415,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "every evening when the",
+     "count": 1
+    },
+    {
+     "text": "when the tourists stopped",
+     "count": 1
+    },
+    {
+     "text": "on hollow street where",
+     "count": 1
+    },
+    {
+     "text": "the door to the",
+     "count": 1
+    },
+    {
+     "text": "the foghorn had been",
+     "count": 1
+    },
+    {
+     "text": "the city's power failed",
+     "count": 1
+    },
+    {
+     "text": "the sea had been",
+     "count": 1
+    },
+    {
+     "text": "the old conservatory at",
+     "count": 1
+    },
+    {
+     "text": "on the dark side",
+     "count": 1
+    },
+    {
+     "text": "no one believed the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 5
+    },
+    {
+     "name": "Street",
+     "count": 3
+    },
+    {
+     "name": "Elsie",
+     "count": 3
+    },
+    {
+     "name": "Hollow",
+     "count": 2
+    },
+    {
+     "name": "Bram",
+     "count": 2
+    },
+    {
+     "name": "Archive",
+     "count": 2
+    },
+    {
+     "name": "Mira",
+     "count": 2
+    },
+    {
+     "name": "Grandma",
+     "count": 2
+    },
+    {
+     "name": "Mina",
+     "count": 1
+    },
+    {
+     "name": "Polaroids",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.18,
+   "closest_pair": {
+    "a": "gpt-5.1-s1",
+    "b": "gpt-5.1-s4",
+    "title_a": "The Last Lightkeeper",
+    "title_b": "The Last Lighthouse",
+    "similarity": 0.8517
+   }
+  },
+  "gpt-5.2": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 398.3,
+    "sd": 21.0979
+   },
+   "mattr": {
+    "mean": 0.8496,
+    "sd": 0.0172
+   },
+   "mtld": {
+    "mean": 155.0764,
+    "sd": 25.1836
+   },
+   "yule_k": {
+    "mean": 110.606,
+    "sd": 14.7303
+   },
+   "distinct_1": 0.3068,
+   "distinct_2": 0.8278,
+   "distinct_3": 0.9773,
+   "self_overlap": 0.0026,
+   "ai_vocab_rate": 3.0128,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "mina found the card",
+     "count": 1
+    },
+    {
+     "text": "on the morning the",
+     "count": 1
+    },
+    {
+     "text": "on the fifth floor",
+     "count": 1
+    },
+    {
+     "text": "when the city started",
+     "count": 1
+    },
+    {
+     "text": "the map was supposed",
+     "count": 1
+    },
+    {
+     "text": "when mara arrived in",
+     "count": 1
+    },
+    {
+     "text": "when mira began mapping",
+     "count": 1
+    },
+    {
+     "text": "mara made maps for",
+     "count": 1
+    },
+    {
+     "text": "when mara found the",
+     "count": 1
+    },
+    {
+     "text": "mina found the map",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 14
+    },
+    {
+     "name": "Lina",
+     "count": 3
+    },
+    {
+     "name": "Ninth",
+     "count": 3
+    },
+    {
+     "name": "Mira",
+     "count": 3
+    },
+    {
+     "name": "Alder",
+     "count": 2
+    },
+    {
+     "name": "Archive",
+     "count": 2
+    },
+    {
+     "name": "Apartment",
+     "count": 2
+    },
+    {
+     "name": "Ridge",
+     "count": 1
+    },
+    {
+     "name": "Take",
+     "count": 1
+    },
+    {
+     "name": "Museum",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1387,
+   "closest_pair": {
+    "a": "gpt-5.2-s4",
+    "b": "gpt-5.2-s5",
+    "title_a": "The Map That Remembered",
+    "title_b": "The Cartographer of Echoes",
+    "similarity": 0.8515
+   }
+  },
+  "gpt-5.3-codex": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 321.2,
+    "sd": 17.7376
+   },
+   "mattr": {
+    "mean": 0.8737,
+    "sd": 0.0203
+   },
+   "mtld": {
+    "mean": 168.308,
+    "sd": 31.2044
+   },
+   "yule_k": {
+    "mean": 84.3219,
+    "sd": 15.7082
+   },
+   "distinct_1": 0.3244,
+   "distinct_2": 0.8645,
+   "distinct_3": 0.9834,
+   "self_overlap": 0.0016,
+   "ai_vocab_rate": 5.2927,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "on the morning the",
+     "count": 1
+    },
+    {
+     "text": "at the edge of",
+     "count": 2
+    },
+    {
+     "text": "on the night the",
+     "count": 1
+    },
+    {
+     "text": "on the narrowest street",
+     "count": 1
+    },
+    {
+     "text": "when the fog rolled",
+     "count": 1
+    },
+    {
+     "text": "by the time mara",
+     "count": 1
+    },
+    {
+     "text": "at dusk when the",
+     "count": 1
+    },
+    {
+     "text": "at p m the",
+     "count": 1
+    },
+    {
+     "text": "every evening mira crossed",
+     "count": 1
+    },
+    {
+     "text": "at the edge of",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 10
+    },
+    {
+     "name": "Mira",
+     "count": 5
+    },
+    {
+     "name": "Eli",
+     "count": 4
+    },
+    {
+     "name": "Brindle",
+     "count": 3
+    },
+    {
+     "name": "Three",
+     "count": 3
+    },
+    {
+     "name": "Briar",
+     "count": 3
+    },
+    {
+     "name": "Elias",
+     "count": 3
+    },
+    {
+     "name": "Old",
+     "count": 2
+    },
+    {
+     "name": "Saye",
+     "count": 2
+    },
+    {
+     "name": "Tomas",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.162,
+   "closest_pair": {
+    "a": "gpt-5.3-codex-s5",
+    "b": "gpt-5.3-codex-s7",
+    "title_a": "The Last Train to Briar Hollow",
+    "title_b": "The Last Train to Maple Hollow",
+    "similarity": 0.8551
+   }
+  },
+  "gpt-5.4": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 333.0,
+    "sd": 10.9443
+   },
+   "mattr": {
+    "mean": 0.8398,
+    "sd": 0.0169
+   },
+   "mtld": {
+    "mean": 142.5511,
+    "sd": 22.9418
+   },
+   "yule_k": {
+    "mean": 128.6999,
+    "sd": 22.8306
+   },
+   "distinct_1": 0.306,
+   "distinct_2": 0.8325,
+   "distinct_3": 0.9807,
+   "self_overlap": 0.0022,
+   "ai_vocab_rate": 3.9039,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "at the corner of",
+     "count": 1
+    },
+    {
+     "text": "every evening at six",
+     "count": 1
+    },
+    {
+     "text": "at p m the",
+     "count": 1
+    },
+    {
+     "text": "on the far edge",
+     "count": 1
+    },
+    {
+     "text": "every morning mara climbed",
+     "count": 1
+    },
+    {
+     "text": "every night at the",
+     "count": 2
+    },
+    {
+     "text": "every night at the",
+     "count": 2
+    },
+    {
+     "text": "every morning at six",
+     "count": 1
+    },
+    {
+     "text": "on the farthest edge",
+     "count": 1
+    },
+    {
+     "text": "every evening when the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 12
+    },
+    {
+     "name": "Street",
+     "count": 3
+    },
+    {
+     "name": "Mira",
+     "count": 3
+    },
+    {
+     "name": "Bay",
+     "count": 3
+    },
+    {
+     "name": "Nora",
+     "count": 2
+    },
+    {
+     "name": "Point",
+     "count": 2
+    },
+    {
+     "name": "Eli",
+     "count": 2
+    },
+    {
+     "name": "Bracken",
+     "count": 2
+    },
+    {
+     "name": "Tomas",
+     "count": 2
+    },
+    {
+     "name": "Marrow",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1559,
+   "closest_pair": {
+    "a": "gpt-5.4-s5",
+    "b": "gpt-5.4-s6",
+    "title_a": "The Last Bus to Marrow Lane",
+    "title_b": "The Last Bus to Marrow Bay",
+    "similarity": 0.8547
+   }
+  },
+  "gpt-5.4-mini": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 350.7,
+    "sd": 21.5306
+   },
+   "mattr": {
+    "mean": 0.828,
+    "sd": 0.0213
+   },
+   "mtld": {
+    "mean": 117.874,
+    "sd": 28.7018
+   },
+   "yule_k": {
+    "mean": 149.0723,
+    "sd": 28.7839
+   },
+   "distinct_1": 0.2763,
+   "distinct_2": 0.7838,
+   "distinct_3": 0.9644,
+   "self_overlap": 0.0049,
+   "ai_vocab_rate": 1.996,
+   "title_repeat": 0.4,
+   "openers": [
+    {
+     "text": "on the first night",
+     "count": 1
+    },
+    {
+     "text": "every evening when the",
+     "count": 2
+    },
+    {
+     "text": "on the night the",
+     "count": 2
+    },
+    {
+     "text": "by the time mara",
+     "count": 1
+    },
+    {
+     "text": "on the night the",
+     "count": 2
+    },
+    {
+     "text": "by the time the",
+     "count": 2
+    },
+    {
+     "text": "by the time the",
+     "count": 2
+    },
+    {
+     "text": "every october when the",
+     "count": 1
+    },
+    {
+     "text": "at on a tuesday",
+     "count": 1
+    },
+    {
+     "text": "every evening when the",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 16
+    },
+    {
+     "name": "Street",
+     "count": 3
+    },
+    {
+     "name": "Daniel",
+     "count": 3
+    },
+    {
+     "name": "Marrow",
+     "count": 2
+    },
+    {
+     "name": "Milo",
+     "count": 2
+    },
+    {
+     "name": "Tomas",
+     "count": 1
+    },
+    {
+     "name": "Take",
+     "count": 1
+    },
+    {
+     "name": "Bracken",
+     "count": 1
+    },
+    {
+     "name": "Moor",
+     "count": 1
+    },
+    {
+     "name": "Elin",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1074,
+   "closest_pair": {
+    "a": "gpt-5.4-mini-s1",
+    "b": "gpt-5.4-mini-s3",
+    "title_a": "The Lantern in the Rain",
+    "title_b": "The Lantern in the Rain",
+    "similarity": 0.9067
+   }
+  },
+  "gpt-5.4-nano": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 356.5,
+    "sd": 11.8251
+   },
+   "mattr": {
+    "mean": 0.8311,
+    "sd": 0.0166
+   },
+   "mtld": {
+    "mean": 126.1647,
+    "sd": 26.0027
+   },
+   "yule_k": {
+    "mean": 128.7155,
+    "sd": 22.3839
+   },
+   "distinct_1": 0.2926,
+   "distinct_2": 0.7986,
+   "distinct_3": 0.9695,
+   "self_overlap": 0.0035,
+   "ai_vocab_rate": 2.5245,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "mara found the shop",
+     "count": 1
+    },
+    {
+     "text": "on the morning lina",
+     "count": 1
+    },
+    {
+     "text": "mara found the lantern",
+     "count": 1
+    },
+    {
+     "text": "on the morning mara",
+     "count": 1
+    },
+    {
+     "text": "at dusk the station",
+     "count": 1
+    },
+    {
+     "text": "when mara climbed the",
+     "count": 1
+    },
+    {
+     "text": "on tuesday mornings mara",
+     "count": 1
+    },
+    {
+     "text": "when mara finally found",
+     "count": 1
+    },
+    {
+     "text": "on the first cold",
+     "count": 1
+    },
+    {
+     "text": "on the morning the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 12
+    },
+    {
+     "name": "Lina",
+     "count": 3
+    },
+    {
+     "name": "Marrowgate",
+     "count": 3
+    },
+    {
+     "name": "Mira",
+     "count": 3
+    },
+    {
+     "name": "Row",
+     "count": 2
+    },
+    {
+     "name": "Mina",
+     "count": 2
+    },
+    {
+     "name": "Cranewell",
+     "count": 2
+    },
+    {
+     "name": "Lane",
+     "count": 2
+    },
+    {
+     "name": "Eliot",
+     "count": 1
+    },
+    {
+     "name": "Son",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1506,
+   "closest_pair": {
+    "a": "gpt-5.4-nano-s2",
+    "b": "gpt-5.4-nano-s5",
+    "title_a": "The Lantern Keeper",
+    "title_b": "The Last Lantern",
+    "similarity": 0.8324
+   }
+  },
+  "gpt-5.5": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 321.3,
+    "sd": 6.2191
+   },
+   "mattr": {
+    "mean": 0.8495,
+    "sd": 0.0221
+   },
+   "mtld": {
+    "mean": 144.6518,
+    "sd": 27.6123
+   },
+   "yule_k": {
+    "mean": 120.1918,
+    "sd": 33.5307
+   },
+   "distinct_1": 0.3059,
+   "distinct_2": 0.8355,
+   "distinct_3": 0.9796,
+   "self_overlap": 0.0018,
+   "ai_vocab_rate": 2.8011,
+   "title_repeat": 0.3,
+   "openers": [
+    {
+     "text": "mara drew maps of",
+     "count": 1
+    },
+    {
+     "text": "every morning at six",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "every evening at six",
+     "count": 2
+    },
+    {
+     "text": "every morning at exactly",
+     "count": 1
+    },
+    {
+     "text": "every evening at six",
+     "count": 2
+    },
+    {
+     "text": "mara mapped storms for",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "every thursday mara climbed",
+     "count": 1
+    },
+    {
+     "text": "every morning mara unlocked",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 24
+    },
+    {
+     "name": "Elias",
+     "count": 5
+    },
+    {
+     "name": "Briar",
+     "count": 1
+    },
+    {
+     "name": "Lane",
+     "count": 1
+    },
+    {
+     "name": "Elsie",
+     "count": 1
+    },
+    {
+     "name": "Bell",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1607,
+   "closest_pair": {
+    "a": "gpt-5.5-s6",
+    "b": "gpt-5.5-s8",
+    "title_a": "The Cartographer of Rain",
+    "title_b": "The Cartographer of Rain",
+    "similarity": 0.9083
+   }
+  },
+  "gpt-5.6-luna": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 322.0,
+    "sd": 13.4907
+   },
+   "mattr": {
+    "mean": 0.8463,
+    "sd": 0.0128
+   },
+   "mtld": {
+    "mean": 143.992,
+    "sd": 18.2232
+   },
+   "yule_k": {
+    "mean": 138.8138,
+    "sd": 23.3824
+   },
+   "distinct_1": 0.2612,
+   "distinct_2": 0.7717,
+   "distinct_3": 0.9487,
+   "self_overlap": 0.0083,
+   "ai_vocab_rate": 4.0373,
+   "title_repeat": 0.6,
+   "openers": [
+    {
+     "text": "every evening mara climbed",
+     "count": 4
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 4
+    },
+    {
+     "text": "every evening mara lit",
+     "count": 1
+    },
+    {
+     "text": "every evening at precisely",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 4
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 4
+    },
+    {
+     "text": "every evening at seven",
+     "count": 1
+    },
+    {
+     "text": "every evening at six",
+     "count": 2
+    },
+    {
+     "text": "every evening mara walked",
+     "count": 1
+    },
+    {
+     "text": "every evening at six",
+     "count": 2
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 39
+    },
+    {
+     "name": "Eli",
+     "count": 11
+    },
+    {
+     "name": "Bellweather",
+     "count": 2
+    },
+    {
+     "name": "Bay",
+     "count": 2
+    },
+    {
+     "name": "Elias",
+     "count": 1
+    },
+    {
+     "name": "Inside",
+     "count": 1
+    },
+    {
+     "name": "Can",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0834,
+   "closest_pair": {
+    "a": "gpt-5.6-luna-s4",
+    "b": "gpt-5.6-luna-s7",
+    "title_a": "The Last Lightkeeper",
+    "title_b": "The Last Lightkeeper",
+    "similarity": 0.909
+   }
+  },
+  "gpt-5.6-sol": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 312.4,
+    "sd": 10.5641
+   },
+   "mattr": {
+    "mean": 0.841,
+    "sd": 0.0117
+   },
+   "mtld": {
+    "mean": 146.0871,
+    "sd": 14.2105
+   },
+   "yule_k": {
+    "mean": 143.6928,
+    "sd": 20.9897
+   },
+   "distinct_1": 0.249,
+   "distinct_2": 0.7274,
+   "distinct_3": 0.9091,
+   "self_overlap": 0.0162,
+   "ai_vocab_rate": 5.1216,
+   "title_repeat": 0.7,
+   "openers": [
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every winter the sea",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 6
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 42
+    },
+    {
+     "name": "Bellweather",
+     "count": 6
+    },
+    {
+     "name": "Bay",
+     "count": 6
+    },
+    {
+     "name": "Lighthouse",
+     "count": 3
+    },
+    {
+     "name": "Greyhook",
+     "count": 2
+    },
+    {
+     "name": "Ashen",
+     "count": 1
+    },
+    {
+     "name": "Sea",
+     "count": 1
+    },
+    {
+     "name": "Keep",
+     "count": 1
+    },
+    {
+     "name": "Late",
+     "count": 1
+    },
+    {
+     "name": "Greyfin",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0483,
+   "closest_pair": {
+    "a": "gpt-5.6-sol-s6",
+    "b": "gpt-5.6-sol-s7",
+    "title_a": "The Lighthouse That Remembered",
+    "title_b": "The Lighthouse That Remembered",
+    "similarity": 0.9486
+   }
+  },
+  "gpt-5.6-terra": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 337.8,
+    "sd": 18.6357
+   },
+   "mattr": {
+    "mean": 0.8433,
+    "sd": 0.0195
+   },
+   "mtld": {
+    "mean": 135.7876,
+    "sd": 28.4151
+   },
+   "yule_k": {
+    "mean": 130.6589,
+    "sd": 29.8141
+   },
+   "distinct_1": 0.2744,
+   "distinct_2": 0.7708,
+   "distinct_3": 0.9461,
+   "self_overlap": 0.0074,
+   "ai_vocab_rate": 1.4802,
+   "title_repeat": 0.4,
+   "openers": [
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "every morning mara climbed",
+     "count": 3
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "every evening mara lit",
+     "count": 1
+    },
+    {
+     "text": "when the sea began",
+     "count": 1
+    },
+    {
+     "text": "every morning mara climbed",
+     "count": 3
+    },
+    {
+     "text": "at midnight every clock",
+     "count": 1
+    },
+    {
+     "text": "every morning mara opened",
+     "count": 1
+    },
+    {
+     "text": "every morning mara climbed",
+     "count": 3
+    },
+    {
+     "text": "on the morning the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 28
+    },
+    {
+     "name": "Elias",
+     "count": 6
+    },
+    {
+     "name": "Blackwater",
+     "count": 3
+    },
+    {
+     "name": "Point",
+     "count": 2
+    },
+    {
+     "name": "Vale",
+     "count": 2
+    },
+    {
+     "name": "Bellweather",
+     "count": 2
+    },
+    {
+     "name": "Keeper",
+     "count": 1
+    },
+    {
+     "name": "Tomas",
+     "count": 1
+    },
+    {
+     "name": "Sundays",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0852,
+   "closest_pair": {
+    "a": "gpt-5.6-terra-s0",
+    "b": "gpt-5.6-terra-s1",
+    "title_a": "The Lighthouse Keeper’s Last Map",
+    "title_b": "The Lighthouse Keeper’s Last Map",
+    "similarity": 0.932
+   }
+  },
+  "gpt-6-astra": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 304.7,
+    "sd": 5.5187
+   },
+   "mattr": {
+    "mean": 0.8507,
+    "sd": 0.0218
+   },
+   "mtld": {
+    "mean": 151.064,
+    "sd": 21.8492
+   },
+   "yule_k": {
+    "mean": 98.3491,
+    "sd": 14.2029
+   },
+   "distinct_1": 0.3377,
+   "distinct_2": 0.863,
+   "distinct_3": 0.9861,
+   "self_overlap": 0.0014,
+   "ai_vocab_rate": 0.6564,
+   "title_repeat": 0.2,
+   "openers": [
+    {
+     "text": "every morning a minute",
+     "count": 1
+    },
+    {
+     "text": "every night at the",
+     "count": 1
+    },
+    {
+     "text": "after her father's funeral",
+     "count": 1
+    },
+    {
+     "text": "every tuesday mara unlocked",
+     "count": 1
+    },
+    {
+     "text": "every morning at six",
+     "count": 1
+    },
+    {
+     "text": "on monday clara received",
+     "count": 1
+    },
+    {
+     "text": "every evening at six",
+     "count": 1
+    },
+    {
+     "text": "the woman at the",
+     "count": 1
+    },
+    {
+     "text": "on her first morning",
+     "count": 1
+    },
+    {
+     "text": "at the municipal archive",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 25
+    },
+    {
+     "name": "Elsie",
+     "count": 6
+    },
+    {
+     "name": "Ada",
+     "count": 4
+    },
+    {
+     "name": "Mondays",
+     "count": 1
+    },
+    {
+     "name": "Unit",
+     "count": 1
+    },
+    {
+     "name": "Outside",
+     "count": 1
+    },
+    {
+     "name": "Platform",
+     "count": 1
+    },
+    {
+     "name": "Four",
+     "count": 1
+    },
+    {
+     "name": "Clara",
+     "count": 1
+    },
+    {
+     "name": "Mercer",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1564,
+   "closest_pair": {
+    "a": "gpt-6-astra-s1",
+    "b": "gpt-6-astra-s4",
+    "title_a": "The Minute Between Days",
+    "title_b": "The Minute Keeper",
+    "similarity": 0.8534
+   }
+  },
+  "gpt-6-luna": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 312.5,
+    "sd": 15.465
+   },
+   "mattr": {
+    "mean": 0.8346,
+    "sd": 0.0163
+   },
+   "mtld": {
+    "mean": 118.9374,
+    "sd": 15.4844
+   },
+   "yule_k": {
+    "mean": 160.9757,
+    "sd": 16.1822
+   },
+   "distinct_1": 0.2586,
+   "distinct_2": 0.7512,
+   "distinct_3": 0.9372,
+   "self_overlap": 0.009,
+   "ai_vocab_rate": 0.64,
+   "title_repeat": 0.4,
+   "openers": [
+    {
+     "text": "every morning mara searched",
+     "count": 1
+    },
+    {
+     "text": "every map in the",
+     "count": 1
+    },
+    {
+     "text": "every night mara climbed",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 6
+    },
+    {
+     "text": "every morning mara unrolled",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 28
+    },
+    {
+     "name": "Tomas",
+     "count": 3
+    },
+    {
+     "name": "Bellwether",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.0894,
+   "closest_pair": {
+    "a": "gpt-6-luna-s3",
+    "b": "gpt-6-luna-s4",
+    "title_a": "The Last Light",
+    "title_b": "The Last Light",
+    "similarity": 0.9419
+   }
+  },
+  "gpt-6-sol": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 299.0,
+    "sd": 12.9872
+   },
+   "mattr": {
+    "mean": 0.8381,
+    "sd": 0.0088
+   },
+   "mtld": {
+    "mean": 119.0294,
+    "sd": 8.9104
+   },
+   "yule_k": {
+    "mean": 131.8441,
+    "sd": 16.0555
+   },
+   "distinct_1": 0.288,
+   "distinct_2": 0.8279,
+   "distinct_3": 0.9788,
+   "self_overlap": 0.0018,
+   "ai_vocab_rate": 1.0033,
+   "title_repeat": 0.0,
+   "openers": [
+    {
+     "text": "every shelf in grandmother's",
+     "count": 1
+    },
+    {
+     "text": "mara kept the town's",
+     "count": 1
+    },
+    {
+     "text": "mara repaired shadows in",
+     "count": 1
+    },
+    {
+     "text": "every midnight the clock",
+     "count": 1
+    },
+    {
+     "text": "my grandfather built a",
+     "count": 1
+    },
+    {
+     "text": "on the morning after",
+     "count": 1
+    },
+    {
+     "text": "in the seventh year",
+     "count": 1
+    },
+    {
+     "text": "mara kept spare minutes",
+     "count": 1
+    },
+    {
+     "text": "every monday a building",
+     "count": 1
+    },
+    {
+     "text": "mara repaired umbrellas in",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 21
+    },
+    {
+     "name": "Grandmother",
+     "count": 4
+    },
+    {
+     "name": "Bellwether",
+     "count": 3
+    },
+    {
+     "name": "Eli",
+     "count": 2
+    },
+    {
+     "name": "Milo",
+     "count": 1
+    },
+    {
+     "name": "Square",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1756,
+   "closest_pair": {
+    "a": "gpt-6-sol-s3",
+    "b": "gpt-6-sol-s7",
+    "title_a": "The Minute Keeper",
+    "title_b": "The Keeper of Small Hours",
+    "similarity": 0.8459
+   }
+  },
+  "gpt-6.1-sol": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 302.0,
+    "sd": 3.5277
+   },
+   "mattr": {
+    "mean": 0.8449,
+    "sd": 0.0123
+   },
+   "mtld": {
+    "mean": 135.2422,
+    "sd": 20.1823
+   },
+   "yule_k": {
+    "mean": 118.8039,
+    "sd": 15.5057
+   },
+   "distinct_1": 0.3255,
+   "distinct_2": 0.8359,
+   "distinct_3": 0.9743,
+   "self_overlap": 0.0026,
+   "ai_vocab_rate": 0.6623,
+   "title_repeat": 0.4,
+   "openers": [
+    {
+     "text": "after his mother's funeral",
+     "count": 1
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "every morning mara unlocked",
+     "count": 2
+    },
+    {
+     "text": "when mara inherited her",
+     "count": 1
+    },
+    {
+     "text": "every thursday a brass",
+     "count": 1
+    },
+    {
+     "text": "every thursday the sea",
+     "count": 1
+    },
+    {
+     "text": "after her father died",
+     "count": 1
+    },
+    {
+     "text": "every morning mara unlocked",
+     "count": 2
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 2
+    },
+    {
+     "text": "on the morning the",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 27
+    },
+    {
+     "name": "Mercy",
+     "count": 2
+    },
+    {
+     "name": "Ellis",
+     "count": 2
+    },
+    {
+     "name": "Daniel",
+     "count": 1
+    },
+    {
+     "name": "Bellweather",
+     "count": 1
+    },
+    {
+     "name": "Thomas",
+     "count": 1
+    },
+    {
+     "name": "Vale",
+     "count": 1
+    },
+    {
+     "name": "Do",
+     "count": 1
+    },
+    {
+     "name": "Mum",
+     "count": 1
+    },
+    {
+     "name": "Reverend",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1651,
+   "closest_pair": {
+    "a": "gpt-6.1-sol-s2",
+    "b": "gpt-6.1-sol-s7",
+    "title_a": "The Lost and Found Department",
+    "title_b": "The Lost and Found Department",
+    "similarity": 0.8789
+   }
+  },
+  "gpt-6.1-terra": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 320.9,
+    "sd": 14.5178
+   },
+   "mattr": {
+    "mean": 0.8331,
+    "sd": 0.0226
+   },
+   "mtld": {
+    "mean": 111.9595,
+    "sd": 24.4648
+   },
+   "yule_k": {
+    "mean": 130.7158,
+    "sd": 21.4099
+   },
+   "distinct_1": 0.2873,
+   "distinct_2": 0.8056,
+   "distinct_3": 0.9749,
+   "self_overlap": 0.0026,
+   "ai_vocab_rate": 0.9349,
+   "title_repeat": 0.2,
+   "openers": [
+    {
+     "text": "when the museum opened",
+     "count": 2
+    },
+    {
+     "text": "on the last afternoon",
+     "count": 1
+    },
+    {
+     "text": "on the last tuesday",
+     "count": 1
+    },
+    {
+     "text": "when the lighthouse went",
+     "count": 1
+    },
+    {
+     "text": "every spring the town",
+     "count": 1
+    },
+    {
+     "text": "on the morning the",
+     "count": 2
+    },
+    {
+     "text": "on the morning the",
+     "count": 2
+    },
+    {
+     "text": "every evening mara walked",
+     "count": 1
+    },
+    {
+     "text": "when the museum opened",
+     "count": 2
+    },
+    {
+     "text": "every evening mara climbed",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Mara",
+     "count": 29
+    },
+    {
+     "name": "Eli",
+     "count": 3
+    },
+    {
+     "name": "Ruth",
+     "count": 2
+    },
+    {
+     "name": "Bellwether",
+     "count": 2
+    },
+    {
+     "name": "Road",
+     "count": 2
+    },
+    {
+     "name": "Dear",
+     "count": 1
+    },
+    {
+     "name": "Tom",
+     "count": 1
+    },
+    {
+     "name": "Elias",
+     "count": 1
+    },
+    {
+     "name": "Can",
+     "count": 1
+    },
+    {
+     "name": "Mother",
+     "count": 1
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1645,
+   "closest_pair": {
+    "a": "gpt-6.1-terra-s0",
+    "b": "gpt-6.1-terra-s8",
+    "title_a": "The Museum of Unfinished Things",
+    "title_b": "The Museum of Unfinished Things",
+    "similarity": 0.863
+   }
+  },
+  "o3": {
+   "kind": "model",
+   "n": 10,
+   "provider": "openai",
+   "words": {
+    "mean": 301.0,
+    "sd": 5.4975
+   },
+   "mattr": {
+    "mean": 0.8801,
+    "sd": 0.0187
+   },
+   "mtld": {
+    "mean": 212.2112,
+    "sd": 40.1592
+   },
+   "yule_k": {
+    "mean": 98.7469,
+    "sd": 17.4548
+   },
+   "distinct_1": 0.3794,
+   "distinct_2": 0.8903,
+   "distinct_3": 0.9906,
+   "self_overlap": 0.001,
+   "ai_vocab_rate": 7.9734,
+   "title_repeat": 0.9,
+   "openers": [
+    {
+     "text": "milo thatch lived in",
+     "count": 1
+    },
+    {
+     "text": "heinrich vogel lived in",
+     "count": 1
+    },
+    {
+     "text": "elior had spent sixty",
+     "count": 1
+    },
+    {
+     "text": "emory pike locked his",
+     "count": 1
+    },
+    {
+     "text": "every evening when the",
+     "count": 1
+    },
+    {
+     "text": "old matthias vogel lived",
+     "count": 1
+    },
+    {
+     "text": "liora finch kept time",
+     "count": 1
+    },
+    {
+     "text": "old benedikt the village",
+     "count": 1
+    },
+    {
+     "text": "rain slicked the cobblestones",
+     "count": 1
+    },
+    {
+     "text": "the last train sighed",
+     "count": 1
+    }
+   ],
+   "names_top": [
+    {
+     "name": "Milo",
+     "count": 4
+    },
+    {
+     "name": "Bram",
+     "count": 4
+    },
+    {
+     "name": "Clara",
+     "count": 4
+    },
+    {
+     "name": "Street",
+     "count": 3
+    },
+    {
+     "name": "Lena",
+     "count": 3
+    },
+    {
+     "name": "Heinrich",
+     "count": 3
+    },
+    {
+     "name": "Benedikt",
+     "count": 3
+    },
+    {
+     "name": "Mystery",
+     "count": 3
+    },
+    {
+     "name": "Greendale",
+     "count": 3
+    },
+    {
+     "name": "Larch",
+     "count": 2
+    }
+   ],
+   "n_embedded": 10,
+   "spread": 0.1076,
+   "closest_pair": {
+    "a": "o3-s3",
+    "b": "o3-s4",
+    "title_a": "The Clockmaker's Sparrow",
+    "title_b": "The Clockmaker's Sparrow",
+    "similarity": 0.8705
+   }
+  },
+  "wp-00": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 333.2,
+    "sd": 58.0762
+   },
+   "mattr": {
+    "mean": 0.8056,
+    "sd": 0.0156
+   },
+   "mtld": {
+    "mean": 82.489,
+    "sd": 13.0028
+   },
+   "yule_k": {
+    "mean": 117.8778,
+    "sd": 35.4344
+   },
+   "distinct_1": 0.3337,
+   "distinct_2": 0.8609,
+   "distinct_3": 0.9822,
+   "self_overlap": 0.0006,
+   "ai_vocab_rate": 1.5006,
+   "names_distinct": 54,
+   "n_embedded": 10,
+   "spread": 0.2936
+  },
+  "wp-01": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 307.0,
+    "sd": 78.898
+   },
+   "mattr": {
+    "mean": 0.8079,
+    "sd": 0.0387
+   },
+   "mtld": {
+    "mean": 102.2784,
+    "sd": 54.8707
+   },
+   "yule_k": {
+    "mean": 113.1828,
+    "sd": 29.4053
+   },
+   "distinct_1": 0.3469,
+   "distinct_2": 0.8725,
+   "distinct_3": 0.9839,
+   "self_overlap": 0.0002,
+   "ai_vocab_rate": 0.6515,
+   "names_distinct": 50,
+   "n_embedded": 10,
+   "spread": 0.3253
+  },
+  "wp-02": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 289.4,
+    "sd": 66.0323
+   },
+   "mattr": {
+    "mean": 0.8238,
+    "sd": 0.0277
+   },
+   "mtld": {
+    "mean": 106.9184,
+    "sd": 20.4648
+   },
+   "yule_k": {
+    "mean": 108.3958,
+    "sd": 23.7201
+   },
+   "distinct_1": 0.3829,
+   "distinct_2": 0.8776,
+   "distinct_3": 0.9843,
+   "self_overlap": 0.0003,
+   "ai_vocab_rate": 2.0733,
+   "names_distinct": 20,
+   "n_embedded": 10,
+   "spread": 0.3532
+  },
+  "wp-03": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 320.9,
+    "sd": 89.5091
+   },
+   "mattr": {
+    "mean": 0.808,
+    "sd": 0.025
+   },
+   "mtld": {
+    "mean": 90.9622,
+    "sd": 25.8895
+   },
+   "yule_k": {
+    "mean": 111.0195,
+    "sd": 24.945
+   },
+   "distinct_1": 0.3244,
+   "distinct_2": 0.8378,
+   "distinct_3": 0.9746,
+   "self_overlap": 0.0011,
+   "ai_vocab_rate": 1.5581,
+   "names_distinct": 31,
+   "n_embedded": 10,
+   "spread": 0.3047
+  },
+  "wp-04": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 311.1,
+    "sd": 76.4176
+   },
+   "mattr": {
+    "mean": 0.8275,
+    "sd": 0.0372
+   },
+   "mtld": {
+    "mean": 116.9799,
+    "sd": 41.8873
+   },
+   "yule_k": {
+    "mean": 106.3085,
+    "sd": 31.504
+   },
+   "distinct_1": 0.3735,
+   "distinct_2": 0.8881,
+   "distinct_3": 0.9848,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 0.6429,
+   "names_distinct": 39,
+   "n_embedded": 10,
+   "spread": 0.3181
+  },
+  "wp-05": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 351.4,
+    "sd": 74.7042
+   },
+   "mattr": {
+    "mean": 0.8312,
+    "sd": 0.0339
+   },
+   "mtld": {
+    "mean": 115.0279,
+    "sd": 30.3033
+   },
+   "yule_k": {
+    "mean": 90.055,
+    "sd": 16.2914
+   },
+   "distinct_1": 0.3677,
+   "distinct_2": 0.8873,
+   "distinct_3": 0.9871,
+   "self_overlap": 0.0003,
+   "ai_vocab_rate": 0.5692,
+   "names_distinct": 105,
+   "n_embedded": 10,
+   "spread": 0.3151
+  },
+  "wp-06": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 316.0,
+    "sd": 49.0555
+   },
+   "mattr": {
+    "mean": 0.8042,
+    "sd": 0.0419
+   },
+   "mtld": {
+    "mean": 88.2338,
+    "sd": 21.6058
+   },
+   "yule_k": {
+    "mean": 112.2408,
+    "sd": 22.827
+   },
+   "distinct_1": 0.3614,
+   "distinct_2": 0.8673,
+   "distinct_3": 0.9777,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 1.2658,
+   "names_distinct": 56,
+   "n_embedded": 10,
+   "spread": 0.3556
+  },
+  "wp-07": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 332.3,
+    "sd": 78.6554
+   },
+   "mattr": {
+    "mean": 0.8063,
+    "sd": 0.0321
+   },
+   "mtld": {
+    "mean": 89.1818,
+    "sd": 22.3556
+   },
+   "yule_k": {
+    "mean": 105.8089,
+    "sd": 24.8973
+   },
+   "distinct_1": 0.3437,
+   "distinct_2": 0.8642,
+   "distinct_3": 0.9806,
+   "self_overlap": 0.0003,
+   "ai_vocab_rate": 0.9028,
+   "names_distinct": 60,
+   "n_embedded": 10,
+   "spread": 0.3338
+  },
+  "wp-08": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 349.8,
+    "sd": 84.8355
+   },
+   "mattr": {
+    "mean": 0.8309,
+    "sd": 0.0309
+   },
+   "mtld": {
+    "mean": 116.6409,
+    "sd": 36.1149
+   },
+   "yule_k": {
+    "mean": 90.61,
+    "sd": 16.0893
+   },
+   "distinct_1": 0.3562,
+   "distinct_2": 0.8925,
+   "distinct_3": 0.9917,
+   "self_overlap": 0.0002,
+   "ai_vocab_rate": 0.8576,
+   "names_distinct": 56,
+   "n_embedded": 10,
+   "spread": 0.3252
+  },
+  "wp-09": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 307.5,
+    "sd": 87.0022
+   },
+   "mattr": {
+    "mean": 0.8089,
+    "sd": 0.0384
+   },
+   "mtld": {
+    "mean": 97.0119,
+    "sd": 32.2448
+   },
+   "yule_k": {
+    "mean": 126.5576,
+    "sd": 39.6158
+   },
+   "distinct_1": 0.3688,
+   "distinct_2": 0.8499,
+   "distinct_3": 0.964,
+   "self_overlap": 0.0004,
+   "ai_vocab_rate": 0.3252,
+   "names_distinct": 33,
+   "n_embedded": 10,
+   "spread": 0.3241
+  },
+  "wp-10": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 345.1,
+    "sd": 58.7659
+   },
+   "mattr": {
+    "mean": 0.7884,
+    "sd": 0.0325
+   },
+   "mtld": {
+    "mean": 83.2081,
+    "sd": 27.0185
+   },
+   "yule_k": {
+    "mean": 130.1522,
+    "sd": 30.6522
+   },
+   "distinct_1": 0.3454,
+   "distinct_2": 0.862,
+   "distinct_3": 0.9825,
+   "self_overlap": 0.0009,
+   "ai_vocab_rate": 1.7386,
+   "names_distinct": 68,
+   "n_embedded": 10,
+   "spread": 0.3269
+  },
+  "wp-11": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 286.9,
+    "sd": 60.6125
+   },
+   "mattr": {
+    "mean": 0.8113,
+    "sd": 0.0397
+   },
+   "mtld": {
+    "mean": 90.8171,
+    "sd": 32.2616
+   },
+   "yule_k": {
+    "mean": 96.9669,
+    "sd": 28.3655
+   },
+   "distinct_1": 0.3461,
+   "distinct_2": 0.8702,
+   "distinct_3": 0.986,
+   "self_overlap": 0.0006,
+   "ai_vocab_rate": 0.6971,
+   "names_distinct": 46,
+   "n_embedded": 10,
+   "spread": 0.3162
+  },
+  "wp-12": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 366.1,
+    "sd": 55.8658
+   },
+   "mattr": {
+    "mean": 0.8181,
+    "sd": 0.0298
+   },
+   "mtld": {
+    "mean": 99.0713,
+    "sd": 28.0158
+   },
+   "yule_k": {
+    "mean": 104.1985,
+    "sd": 23.3094
+   },
+   "distinct_1": 0.3226,
+   "distinct_2": 0.8521,
+   "distinct_3": 0.9824,
+   "self_overlap": 0.0009,
+   "ai_vocab_rate": 0.2731,
+   "names_distinct": 45,
+   "n_embedded": 10,
+   "spread": 0.312
+  },
+  "wp-13": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 347.7,
+    "sd": 81.1885
+   },
+   "mattr": {
+    "mean": 0.8156,
+    "sd": 0.0271
+   },
+   "mtld": {
+    "mean": 107.747,
+    "sd": 25.6784
+   },
+   "yule_k": {
+    "mean": 97.9452,
+    "sd": 17.1288
+   },
+   "distinct_1": 0.3333,
+   "distinct_2": 0.8662,
+   "distinct_3": 0.9855,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 0.8628,
+   "names_distinct": 50,
+   "n_embedded": 10,
+   "spread": 0.3008
+  },
+  "wp-14": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 321.7,
+    "sd": 78.6611
+   },
+   "mattr": {
+    "mean": 0.8007,
+    "sd": 0.0387
+   },
+   "mtld": {
+    "mean": 98.7771,
+    "sd": 38.9052
+   },
+   "yule_k": {
+    "mean": 120.4651,
+    "sd": 34.437
+   },
+   "distinct_1": 0.3444,
+   "distinct_2": 0.8672,
+   "distinct_3": 0.9825,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 2.1759,
+   "names_distinct": 62,
+   "n_embedded": 10,
+   "spread": 0.3326
+  },
+  "wp-15": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 355.8,
+    "sd": 86.4867
+   },
+   "mattr": {
+    "mean": 0.8096,
+    "sd": 0.0311
+   },
+   "mtld": {
+    "mean": 95.5079,
+    "sd": 26.093
+   },
+   "yule_k": {
+    "mean": 107.8351,
+    "sd": 23.3945
+   },
+   "distinct_1": 0.3314,
+   "distinct_2": 0.8633,
+   "distinct_3": 0.9816,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 0.2811,
+   "names_distinct": 40,
+   "n_embedded": 10,
+   "spread": 0.3063
+  },
+  "wp-16": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 285.2,
+    "sd": 71.2021
+   },
+   "mattr": {
+    "mean": 0.8235,
+    "sd": 0.0254
+   },
+   "mtld": {
+    "mean": 107.6174,
+    "sd": 29.1385
+   },
+   "yule_k": {
+    "mean": 95.2608,
+    "sd": 19.0442
+   },
+   "distinct_1": 0.3734,
+   "distinct_2": 0.8906,
+   "distinct_3": 0.9891,
+   "self_overlap": 0.0003,
+   "ai_vocab_rate": 0.7013,
+   "names_distinct": 82,
+   "n_embedded": 10,
+   "spread": 0.3304
+  },
+  "wp-17": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 317.7,
+    "sd": 77.5758
+   },
+   "mattr": {
+    "mean": 0.8111,
+    "sd": 0.0386
+   },
+   "mtld": {
+    "mean": 83.9061,
+    "sd": 19.9754
+   },
+   "yule_k": {
+    "mean": 106.849,
+    "sd": 23.4489
+   },
+   "distinct_1": 0.3494,
+   "distinct_2": 0.8608,
+   "distinct_3": 0.9791,
+   "self_overlap": 0.0002,
+   "ai_vocab_rate": 1.5738,
+   "names_distinct": 59,
+   "n_embedded": 10,
+   "spread": 0.3026
+  },
+  "wp-18": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 305.6,
+    "sd": 78.4123
+   },
+   "mattr": {
+    "mean": 0.8029,
+    "sd": 0.0388
+   },
+   "mtld": {
+    "mean": 92.1209,
+    "sd": 34.7472
+   },
+   "yule_k": {
+    "mean": 108.9118,
+    "sd": 22.9811
+   },
+   "distinct_1": 0.3629,
+   "distinct_2": 0.8792,
+   "distinct_3": 0.9885,
+   "self_overlap": 0.0002,
+   "ai_vocab_rate": 0.3272,
+   "names_distinct": 74,
+   "n_embedded": 10,
+   "spread": 0.3177
+  },
+  "wp-19": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 338.3,
+    "sd": 72.8561
+   },
+   "mattr": {
+    "mean": 0.7999,
+    "sd": 0.0251
+   },
+   "mtld": {
+    "mean": 83.0316,
+    "sd": 24.0378
+   },
+   "yule_k": {
+    "mean": 116.6215,
+    "sd": 36.0916
+   },
+   "distinct_1": 0.3296,
+   "distinct_2": 0.858,
+   "distinct_3": 0.9851,
+   "self_overlap": 0.0004,
+   "ai_vocab_rate": 0.5912,
+   "names_distinct": 43,
+   "n_embedded": 10,
+   "spread": 0.3293
+  },
+  "wp-20": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 354.1,
+    "sd": 60.4069
+   },
+   "mattr": {
+    "mean": 0.815,
+    "sd": 0.0337
+   },
+   "mtld": {
+    "mean": 104.6457,
+    "sd": 28.6009
+   },
+   "yule_k": {
+    "mean": 108.3041,
+    "sd": 33.1069
+   },
+   "distinct_1": 0.3858,
+   "distinct_2": 0.8828,
+   "distinct_3": 0.9861,
+   "self_overlap": 0.0002,
+   "ai_vocab_rate": 0.8472,
+   "names_distinct": 91,
+   "n_embedded": 10,
+   "spread": 0.354
+  },
+  "wp-21": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 380.1,
+    "sd": 57.5663
+   },
+   "mattr": {
+    "mean": 0.8304,
+    "sd": 0.0252
+   },
+   "mtld": {
+    "mean": 112.091,
+    "sd": 25.1073
+   },
+   "yule_k": {
+    "mean": 102.6766,
+    "sd": 21.3038
+   },
+   "distinct_1": 0.3462,
+   "distinct_2": 0.8729,
+   "distinct_3": 0.986,
+   "self_overlap": 0.0007,
+   "ai_vocab_rate": 0.7893,
+   "names_distinct": 48,
+   "n_embedded": 10,
+   "spread": 0.2772
+  },
+  "wp-22": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 357.6,
+    "sd": 63.3442
+   },
+   "mattr": {
+    "mean": 0.8033,
+    "sd": 0.0292
+   },
+   "mtld": {
+    "mean": 85.7643,
+    "sd": 14.4927
+   },
+   "yule_k": {
+    "mean": 115.9577,
+    "sd": 21.2868
+   },
+   "distinct_1": 0.3507,
+   "distinct_2": 0.8716,
+   "distinct_3": 0.9837,
+   "self_overlap": 0.0005,
+   "ai_vocab_rate": 0.8389,
+   "names_distinct": 66,
+   "n_embedded": 10,
+   "spread": 0.3061
+  },
+  "wp-23": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 339.6,
+    "sd": 59.1968
+   },
+   "mattr": {
+    "mean": 0.8118,
+    "sd": 0.0426
+   },
+   "mtld": {
+    "mean": 94.9909,
+    "sd": 33.1899
+   },
+   "yule_k": {
+    "mean": 111.2366,
+    "sd": 52.7256
+   },
+   "distinct_1": 0.3448,
+   "distinct_2": 0.8411,
+   "distinct_3": 0.9499,
+   "self_overlap": 0.0006,
+   "ai_vocab_rate": 1.7668,
+   "names_distinct": 57,
+   "n_embedded": 10,
+   "spread": 0.3288
+  },
+  "wp-24": {
+   "kind": "writingprompts",
+   "n": 10,
+   "words": {
+    "mean": 314.2,
+    "sd": 68.1808
+   },
+   "mattr": {
+    "mean": 0.805,
+    "sd": 0.0427
+   },
+   "mtld": {
+    "mean": 86.9547,
+    "sd": 27.1857
+   },
+   "yule_k": {
+    "mean": 131.5986,
+    "sd": 59.3734
+   },
+   "distinct_1": 0.3472,
+   "distinct_2": 0.8566,
+   "distinct_3": 0.9798,
+   "self_overlap": 0.0006,
+   "ai_vocab_rate": 0.3183,
+   "names_distinct": 62,
+   "n_embedded": 10,
+   "spread": 0.3335
+  },
+  "Anton Chekhov": {
+   "kind": "gutenberg",
+   "n": 10,
+   "words": {
+    "mean": 302.3,
+    "sd": 2.4518
+   },
+   "mattr": {
+    "mean": 0.7949,
+    "sd": 0.0289
+   },
+   "mtld": {
+    "mean": 81.6222,
+    "sd": 15.0466
+   },
+   "yule_k": {
+    "mean": 114.5878,
+    "sd": 26.0055
+   },
+   "distinct_1": 0.3063,
+   "distinct_2": 0.8161,
+   "distinct_3": 0.9737,
+   "self_overlap": 0.0016,
+   "ai_vocab_rate": 1.3232,
+   "names_distinct": 36,
+   "n_embedded": 10,
+   "spread": 0.1898
+  },
+  "Katherine Mansfield": {
+   "kind": "gutenberg",
+   "n": 10,
+   "words": {
+    "mean": 306.4,
+    "sd": 2.7968
+   },
+   "mattr": {
+    "mean": 0.8273,
+    "sd": 0.0174
+   },
+   "mtld": {
+    "mean": 101.3779,
+    "sd": 15.0498
+   },
+   "yule_k": {
+    "mean": 86.6917,
+    "sd": 12.3344
+   },
+   "distinct_1": 0.3101,
+   "distinct_2": 0.8507,
+   "distinct_3": 0.9813,
+   "self_overlap": 0.0009,
+   "ai_vocab_rate": 0.6527,
+   "names_distinct": 37,
+   "n_embedded": 10,
+   "spread": 0.2252
+  },
+  "O. Henry": {
+   "kind": "gutenberg",
+   "n": 10,
+   "words": {
+    "mean": 305.7,
+    "sd": 4.4734
+   },
+   "mattr": {
+    "mean": 0.8265,
+    "sd": 0.016
+   },
+   "mtld": {
+    "mean": 104.485,
+    "sd": 21.1015
+   },
+   "yule_k": {
+    "mean": 103.393,
+    "sd": 19.7965
+   },
+   "distinct_1": 0.3955,
+   "distinct_2": 0.8864,
+   "distinct_3": 0.9901,
+   "self_overlap": 0.0004,
+   "ai_vocab_rate": 0.3271,
+   "names_distinct": 81,
+   "n_embedded": 10,
+   "spread": 0.263
+  },
+  "Saki": {
+   "kind": "gutenberg",
+   "n": 10,
+   "words": {
+    "mean": 303.3,
+    "sd": 2.8694
+   },
+   "mattr": {
+    "mean": 0.824,
+    "sd": 0.0146
+   },
+   "mtld": {
+    "mean": 105.9021,
+    "sd": 18.4237
+   },
+   "yule_k": {
+    "mean": 106.5169,
+    "sd": 33.627
+   },
+   "distinct_1": 0.3762,
+   "distinct_2": 0.8621,
+   "distinct_3": 0.9817,
+   "self_overlap": 0.0015,
+   "ai_vocab_rate": 2.3079,
+   "names_distinct": 94,
+   "n_embedded": 10,
+   "spread": 0.2969
+  }
+ },
+ "points": [
+  {
+   "id": "chat-latest-s0",
+   "group": "chat-latest",
+   "x": -0.3317,
+   "y": -0.2855
+  },
+  {
+   "id": "chat-latest-s1",
+   "group": "chat-latest",
+   "x": -0.2853,
+   "y": -0.2546
+  },
+  {
+   "id": "chat-latest-s2",
+   "group": "chat-latest",
+   "x": -0.3098,
+   "y": -0.0911
+  },
+  {
+   "id": "chat-latest-s3",
+   "group": "chat-latest",
+   "x": -0.3041,
+   "y": -0.2851
+  },
+  {
+   "id": "chat-latest-s4",
+   "group": "chat-latest",
+   "x": -0.3057,
+   "y": -0.2702
+  },
+  {
+   "id": "chat-latest-s5",
+   "group": "chat-latest",
+   "x": -0.3102,
+   "y": -0.0469
+  },
+  {
+   "id": "chat-latest-s6",
+   "group": "chat-latest",
+   "x": -0.271,
+   "y": -0.1832
+  },
+  {
+   "id": "chat-latest-s7",
+   "group": "chat-latest",
+   "x": -0.2877,
+   "y": -0.1264
+  },
+  {
+   "id": "chat-latest-s8",
+   "group": "chat-latest",
+   "x": -0.2868,
+   "y": -0.2654
+  },
+  {
+   "id": "chat-latest-s9",
+   "group": "chat-latest",
+   "x": -0.2778,
+   "y": -0.18
+  },
+  {
+   "id": "claude-fable-5-s0",
+   "group": "claude-fable-5",
+   "x": -0.3413,
+   "y": -0.1911
+  },
+  {
+   "id": "claude-fable-5-s1",
+   "group": "claude-fable-5",
+   "x": -0.3271,
+   "y": -0.1913
+  },
+  {
+   "id": "claude-fable-5-s2",
+   "group": "claude-fable-5",
+   "x": -0.319,
+   "y": -0.2569
+  },
+  {
+   "id": "claude-fable-5-s3",
+   "group": "claude-fable-5",
+   "x": -0.283,
+   "y": -0.2879
+  },
+  {
+   "id": "claude-fable-5-s4",
+   "group": "claude-fable-5",
+   "x": -0.311,
+   "y": -0.2481
+  },
+  {
+   "id": "claude-fable-5-s5",
+   "group": "claude-fable-5",
+   "x": -0.3183,
+   "y": -0.226
+  },
+  {
+   "id": "claude-fable-5-s6",
+   "group": "claude-fable-5",
+   "x": -0.2881,
+   "y": -0.1236
+  },
+  {
+   "id": "claude-fable-5-s7",
+   "group": "claude-fable-5",
+   "x": -0.2755,
+   "y": -0.2001
+  },
+  {
+   "id": "claude-fable-5-s8",
+   "group": "claude-fable-5",
+   "x": -0.3185,
+   "y": -0.3026
+  },
+  {
+   "id": "claude-fable-5-s9",
+   "group": "claude-fable-5",
+   "x": -0.3215,
+   "y": -0.2496
+  },
+  {
+   "id": "claude-fable-5-1-s0",
+   "group": "claude-fable-5-1",
+   "x": -0.3467,
+   "y": -0.1902
+  },
+  {
+   "id": "claude-fable-5-1-s1",
+   "group": "claude-fable-5-1",
+   "x": -0.3503,
+   "y": -0.1211
+  },
+  {
+   "id": "claude-fable-5-1-s2",
+   "group": "claude-fable-5-1",
+   "x": -0.3027,
+   "y": -0.2434
+  },
+  {
+   "id": "claude-fable-5-1-s3",
+   "group": "claude-fable-5-1",
+   "x": -0.3608,
+   "y": -0.2252
+  },
+  {
+   "id": "claude-fable-5-1-s4",
+   "group": "claude-fable-5-1",
+   "x": -0.2347,
+   "y": -0.194
+  },
+  {
+   "id": "claude-fable-5-1-s5",
+   "group": "claude-fable-5-1",
+   "x": -0.3694,
+   "y": -0.2086
+  },
+  {
+   "id": "claude-fable-5-1-s6",
+   "group": "claude-fable-5-1",
+   "x": -0.3363,
+   "y": -0.2341
+  },
+  {
+   "id": "claude-fable-5-1-s7",
+   "group": "claude-fable-5-1",
+   "x": -0.3037,
+   "y": -0.3171
+  },
+  {
+   "id": "claude-fable-5-1-s8",
+   "group": "claude-fable-5-1",
+   "x": -0.3425,
+   "y": -0.2525
+  },
+  {
+   "id": "claude-fable-5-1-s9",
+   "group": "claude-fable-5-1",
+   "x": -0.3155,
+   "y": -0.2496
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s0",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3371,
+   "y": -0.1975
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s1",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3544,
+   "y": -0.2186
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s2",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.2816,
+   "y": -0.1377
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s3",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3387,
+   "y": -0.2134
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s4",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3084,
+   "y": -0.2158
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s5",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3314,
+   "y": -0.1628
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s6",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.317,
+   "y": -0.207
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s7",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3283,
+   "y": -0.3063
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s8",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.3377,
+   "y": -0.2844
+  },
+  {
+   "id": "claude-fable-5-1@thinking-s9",
+   "group": "claude-fable-5-1@thinking",
+   "x": -0.2953,
+   "y": -0.1422
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s0",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.084,
+   "y": 0.106
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s1",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.0138,
+   "y": 0.0542
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s2",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.018,
+   "y": 0.0809
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s3",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.0698,
+   "y": 0.1752
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s4",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.0851,
+   "y": 0.1349
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s5",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.009,
+   "y": 0.119
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s6",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.0357,
+   "y": 0.0693
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s7",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.0336,
+   "y": 0.1541
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s8",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.1079,
+   "y": 0.1313
+  },
+  {
+   "id": "claude-haiku-4-5-20251001-s9",
+   "group": "claude-haiku-4-5-20251001",
+   "x": -0.113,
+   "y": 0.0938
+  },
+  {
+   "id": "claude-haiku-5-5-s0",
+   "group": "claude-haiku-5-5",
+   "x": -0.3129,
+   "y": -0.2742
+  },
+  {
+   "id": "claude-haiku-5-5-s1",
+   "group": "claude-haiku-5-5",
+   "x": -0.3315,
+   "y": -0.1748
+  },
+  {
+   "id": "claude-haiku-5-5-s2",
+   "group": "claude-haiku-5-5",
+   "x": -0.3263,
+   "y": -0.2694
+  },
+  {
+   "id": "claude-haiku-5-5-s3",
+   "group": "claude-haiku-5-5",
+   "x": -0.311,
+   "y": -0.3432
+  },
+  {
+   "id": "claude-haiku-5-5-s4",
+   "group": "claude-haiku-5-5",
+   "x": -0.2922,
+   "y": -0.3494
+  },
+  {
+   "id": "claude-haiku-5-5-s5",
+   "group": "claude-haiku-5-5",
+   "x": -0.3093,
+   "y": -0.273
+  },
+  {
+   "id": "claude-haiku-5-5-s6",
+   "group": "claude-haiku-5-5",
+   "x": -0.2941,
+   "y": -0.3212
+  },
+  {
+   "id": "claude-haiku-5-5-s7",
+   "group": "claude-haiku-5-5",
+   "x": -0.3038,
+   "y": -0.1648
+  },
+  {
+   "id": "claude-haiku-5-5-s8",
+   "group": "claude-haiku-5-5",
+   "x": -0.3046,
+   "y": -0.2732
+  },
+  {
+   "id": "claude-haiku-5-5-s9",
+   "group": "claude-haiku-5-5",
+   "x": -0.2829,
+   "y": -0.2425
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s0",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.0275,
+   "y": 0.2212
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s1",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.2732,
+   "y": -0.1947
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s2",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.2876,
+   "y": -0.1808
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s3",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.0488,
+   "y": 0.1867
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s4",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.1944,
+   "y": -0.0594
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s5",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.1936,
+   "y": 0.0139
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s6",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.2829,
+   "y": -0.115
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s7",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.2505,
+   "y": -0.0427
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s8",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.1388,
+   "y": 0.0935
+  },
+  {
+   "id": "claude-haiku-5-5@thinking-s9",
+   "group": "claude-haiku-5-5@thinking",
+   "x": -0.0654,
+   "y": 0.2037
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s0",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.2765,
+   "y": -0.3493
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s1",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.2767,
+   "y": -0.3486
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s2",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3344,
+   "y": -0.2557
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s3",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3192,
+   "y": -0.291
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s4",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3434,
+   "y": -0.325
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s5",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3391,
+   "y": -0.285
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s6",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.336,
+   "y": -0.2744
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s7",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.336,
+   "y": -0.284
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s8",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3166,
+   "y": -0.2922
+  },
+  {
+   "id": "claude-opus-4-5-20251101-s9",
+   "group": "claude-opus-4-5-20251101",
+   "x": -0.3108,
+   "y": -0.3106
+  },
+  {
+   "id": "claude-opus-4-6-s0",
+   "group": "claude-opus-4-6",
+   "x": -0.3064,
+   "y": -0.2434
+  },
+  {
+   "id": "claude-opus-4-6-s1",
+   "group": "claude-opus-4-6",
+   "x": -0.1322,
+   "y": 0.0938
+  },
+  {
+   "id": "claude-opus-4-6-s2",
+   "group": "claude-opus-4-6",
+   "x": -0.1184,
+   "y": 0.1395
+  },
+  {
+   "id": "claude-opus-4-6-s3",
+   "group": "claude-opus-4-6",
+   "x": -0.2924,
+   "y": -0.2824
+  },
+  {
+   "id": "claude-opus-4-6-s4",
+   "group": "claude-opus-4-6",
+   "x": -0.3034,
+   "y": -0.3386
+  },
+  {
+   "id": "claude-opus-4-6-s5",
+   "group": "claude-opus-4-6",
+   "x": -0.0724,
+   "y": 0.0635
+  },
+  {
+   "id": "claude-opus-4-6-s6",
+   "group": "claude-opus-4-6",
+   "x": -0.2816,
+   "y": -0.2443
+  },
+  {
+   "id": "claude-opus-4-6-s7",
+   "group": "claude-opus-4-6",
+   "x": -0.3148,
+   "y": -0.2801
+  },
+  {
+   "id": "claude-opus-4-6-s8",
+   "group": "claude-opus-4-6",
+   "x": -0.115,
+   "y": 0.1336
+  },
+  {
+   "id": "claude-opus-4-6-s9",
+   "group": "claude-opus-4-6",
+   "x": -0.0797,
+   "y": 0.1087
+  },
+  {
+   "id": "claude-opus-4-7-s0",
+   "group": "claude-opus-4-7",
+   "x": -0.289,
+   "y": -0.131
+  },
+  {
+   "id": "claude-opus-4-7-s1",
+   "group": "claude-opus-4-7",
+   "x": -0.3002,
+   "y": -0.2278
+  },
+  {
+   "id": "claude-opus-4-7-s2",
+   "group": "claude-opus-4-7",
+   "x": -0.315,
+   "y": -0.1351
+  },
+  {
+   "id": "claude-opus-4-7-s3",
+   "group": "claude-opus-4-7",
+   "x": -0.2933,
+   "y": -0.1254
+  },
+  {
+   "id": "claude-opus-4-7-s4",
+   "group": "claude-opus-4-7",
+   "x": -0.2709,
+   "y": -0.1588
+  },
+  {
+   "id": "claude-opus-4-7-s5",
+   "group": "claude-opus-4-7",
+   "x": -0.2834,
+   "y": -0.0967
+  },
+  {
+   "id": "claude-opus-4-7-s6",
+   "group": "claude-opus-4-7",
+   "x": -0.2782,
+   "y": -0.0002
+  },
+  {
+   "id": "claude-opus-4-7-s7",
+   "group": "claude-opus-4-7",
+   "x": -0.3269,
+   "y": -0.1744
+  },
+  {
+   "id": "claude-opus-4-7-s8",
+   "group": "claude-opus-4-7",
+   "x": -0.2009,
+   "y": -0.0579
+  },
+  {
+   "id": "claude-opus-4-7-s9",
+   "group": "claude-opus-4-7",
+   "x": -0.337,
+   "y": -0.2207
+  },
+  {
+   "id": "claude-opus-4-8-s0",
+   "group": "claude-opus-4-8",
+   "x": -0.3785,
+   "y": -0.2638
+  },
+  {
+   "id": "claude-opus-4-8-s1",
+   "group": "claude-opus-4-8",
+   "x": -0.3355,
+   "y": -0.2011
+  },
+  {
+   "id": "claude-opus-4-8-s2",
+   "group": "claude-opus-4-8",
+   "x": -0.3326,
+   "y": -0.2531
+  },
+  {
+   "id": "claude-opus-4-8-s3",
+   "group": "claude-opus-4-8",
+   "x": -0.3384,
+   "y": -0.314
+  },
+  {
+   "id": "claude-opus-4-8-s4",
+   "group": "claude-opus-4-8",
+   "x": -0.3066,
+   "y": -0.1745
+  },
+  {
+   "id": "claude-opus-4-8-s5",
+   "group": "claude-opus-4-8",
+   "x": -0.3298,
+   "y": -0.27
+  },
+  {
+   "id": "claude-opus-4-8-s6",
+   "group": "claude-opus-4-8",
+   "x": -0.1303,
+   "y": 0.1875
+  },
+  {
+   "id": "claude-opus-4-8-s7",
+   "group": "claude-opus-4-8",
+   "x": -0.3552,
+   "y": -0.2869
+  },
+  {
+   "id": "claude-opus-4-8-s8",
+   "group": "claude-opus-4-8",
+   "x": -0.2616,
+   "y": -0.3428
+  },
+  {
+   "id": "claude-opus-4-8-s9",
+   "group": "claude-opus-4-8",
+   "x": -0.3288,
+   "y": -0.3251
+  },
+  {
+   "id": "claude-opus-5-s0",
+   "group": "claude-opus-5",
+   "x": 0.0741,
+   "y": 0.2003
+  },
+  {
+   "id": "claude-opus-5-s1",
+   "group": "claude-opus-5",
+   "x": -0.0068,
+   "y": 0.1733
+  },
+  {
+   "id": "claude-opus-5-s2",
+   "group": "claude-opus-5",
+   "x": -0.2435,
+   "y": -0.004
+  },
+  {
+   "id": "claude-opus-5-s3",
+   "group": "claude-opus-5",
+   "x": -0.0865,
+   "y": 0.0813
+  },
+  {
+   "id": "claude-opus-5-s4",
+   "group": "claude-opus-5",
+   "x": -0.017,
+   "y": 0.2551
+  },
+  {
+   "id": "claude-opus-5-s5",
+   "group": "claude-opus-5",
+   "x": -0.0446,
+   "y": 0.1777
+  },
+  {
+   "id": "claude-opus-5-s6",
+   "group": "claude-opus-5",
+   "x": 0.0311,
+   "y": 0.1385
+  },
+  {
+   "id": "claude-opus-5-s7",
+   "group": "claude-opus-5",
+   "x": -0.0376,
+   "y": 0.1941
+  },
+  {
+   "id": "claude-opus-5-s8",
+   "group": "claude-opus-5",
+   "x": -0.0588,
+   "y": 0.141
+  },
+  {
+   "id": "claude-opus-5-s9",
+   "group": "claude-opus-5",
+   "x": -0.0091,
+   "y": 0.2388
+  },
+  {
+   "id": "claude-opus-5-5-s0",
+   "group": "claude-opus-5-5",
+   "x": -0.0371,
+   "y": 0.1723
+  },
+  {
+   "id": "claude-opus-5-5-s1",
+   "group": "claude-opus-5-5",
+   "x": 0.0472,
+   "y": 0.1027
+  },
+  {
+   "id": "claude-opus-5-5-s2",
+   "group": "claude-opus-5-5",
+   "x": 0.0038,
+   "y": 0.1498
+  },
+  {
+   "id": "claude-opus-5-5-s3",
+   "group": "claude-opus-5-5",
+   "x": -0.0364,
+   "y": 0.162
+  },
+  {
+   "id": "claude-opus-5-5-s4",
+   "group": "claude-opus-5-5",
+   "x": 0.0168,
+   "y": 0.1426
+  },
+  {
+   "id": "claude-opus-5-5-s5",
+   "group": "claude-opus-5-5",
+   "x": 0.0063,
+   "y": 0.1987
+  },
+  {
+   "id": "claude-opus-5-5-s6",
+   "group": "claude-opus-5-5",
+   "x": -0.0417,
+   "y": 0.2048
+  },
+  {
+   "id": "claude-opus-5-5-s7",
+   "group": "claude-opus-5-5",
+   "x": -0.0468,
+   "y": 0.0543
+  },
+  {
+   "id": "claude-opus-5-5-s8",
+   "group": "claude-opus-5-5",
+   "x": 0.0037,
+   "y": 0.1202
+  },
+  {
+   "id": "claude-opus-5-5-s9",
+   "group": "claude-opus-5-5",
+   "x": 0.0229,
+   "y": 0.1622
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s0",
+   "group": "claude-opus-5-5@thinking",
+   "x": 0.0147,
+   "y": 0.2255
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s1",
+   "group": "claude-opus-5-5@thinking",
+   "x": 0.0337,
+   "y": 0.1632
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s2",
+   "group": "claude-opus-5-5@thinking",
+   "x": -0.0282,
+   "y": 0.1957
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s3",
+   "group": "claude-opus-5-5@thinking",
+   "x": -0.0568,
+   "y": 0.1887
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s4",
+   "group": "claude-opus-5-5@thinking",
+   "x": 0.0454,
+   "y": 0.0848
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s5",
+   "group": "claude-opus-5-5@thinking",
+   "x": 0.0165,
+   "y": 0.2494
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s6",
+   "group": "claude-opus-5-5@thinking",
+   "x": 0.0232,
+   "y": 0.1981
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s7",
+   "group": "claude-opus-5-5@thinking",
+   "x": -0.1236,
+   "y": 0.1072
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s8",
+   "group": "claude-opus-5-5@thinking",
+   "x": -0.0656,
+   "y": 0.2573
+  },
+  {
+   "id": "claude-opus-5-5@thinking-s9",
+   "group": "claude-opus-5-5@thinking",
+   "x": -0.0004,
+   "y": 0.2093
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s0",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": 0.0377,
+   "y": -0.0108
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s1",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.1296,
+   "y": 0.0844
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s2",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.299,
+   "y": -0.2743
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s3",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.1404,
+   "y": 0.1084
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s4",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.3251,
+   "y": -0.3208
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s5",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.0487,
+   "y": 0.138
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s6",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.0872,
+   "y": 0.0711
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s7",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.0945,
+   "y": 0.111
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s8",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.0553,
+   "y": 0.1084
+  },
+  {
+   "id": "claude-sonnet-4-5-20250929-s9",
+   "group": "claude-sonnet-4-5-20250929",
+   "x": -0.1112,
+   "y": 0.1286
+  },
+  {
+   "id": "claude-sonnet-4-6-s0",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0971,
+   "y": 0.1136
+  },
+  {
+   "id": "claude-sonnet-4-6-s1",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0685,
+   "y": 0.1594
+  },
+  {
+   "id": "claude-sonnet-4-6-s2",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0344,
+   "y": 0.0868
+  },
+  {
+   "id": "claude-sonnet-4-6-s3",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0702,
+   "y": 0.0916
+  },
+  {
+   "id": "claude-sonnet-4-6-s4",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0665,
+   "y": 0.1317
+  },
+  {
+   "id": "claude-sonnet-4-6-s5",
+   "group": "claude-sonnet-4-6",
+   "x": -0.131,
+   "y": 0.0033
+  },
+  {
+   "id": "claude-sonnet-4-6-s6",
+   "group": "claude-sonnet-4-6",
+   "x": -0.2303,
+   "y": 0.0381
+  },
+  {
+   "id": "claude-sonnet-4-6-s7",
+   "group": "claude-sonnet-4-6",
+   "x": -0.011,
+   "y": 0.0949
+  },
+  {
+   "id": "claude-sonnet-4-6-s8",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0775,
+   "y": 0.1364
+  },
+  {
+   "id": "claude-sonnet-4-6-s9",
+   "group": "claude-sonnet-4-6",
+   "x": -0.0884,
+   "y": 0.1457
+  },
+  {
+   "id": "claude-sonnet-5-s0",
+   "group": "claude-sonnet-5",
+   "x": -0.3518,
+   "y": -0.3013
+  },
+  {
+   "id": "claude-sonnet-5-s1",
+   "group": "claude-sonnet-5",
+   "x": -0.3367,
+   "y": -0.2902
+  },
+  {
+   "id": "claude-sonnet-5-s2",
+   "group": "claude-sonnet-5",
+   "x": -0.3448,
+   "y": -0.2042
+  },
+  {
+   "id": "claude-sonnet-5-s3",
+   "group": "claude-sonnet-5",
+   "x": -0.3409,
+   "y": -0.1584
+  },
+  {
+   "id": "claude-sonnet-5-s4",
+   "group": "claude-sonnet-5",
+   "x": -0.393,
+   "y": -0.1573
+  },
+  {
+   "id": "claude-sonnet-5-s5",
+   "group": "claude-sonnet-5",
+   "x": -0.336,
+   "y": -0.263
+  },
+  {
+   "id": "claude-sonnet-5-s6",
+   "group": "claude-sonnet-5",
+   "x": -0.3351,
+   "y": -0.1969
+  },
+  {
+   "id": "claude-sonnet-5-s7",
+   "group": "claude-sonnet-5",
+   "x": -0.3767,
+   "y": -0.2941
+  },
+  {
+   "id": "claude-sonnet-5-s8",
+   "group": "claude-sonnet-5",
+   "x": -0.3351,
+   "y": -0.2612
+  },
+  {
+   "id": "claude-sonnet-5-s9",
+   "group": "claude-sonnet-5",
+   "x": -0.348,
+   "y": -0.2905
+  },
+  {
+   "id": "claude-sonnet-5-5-s0",
+   "group": "claude-sonnet-5-5",
+   "x": -0.2212,
+   "y": -0.1637
+  },
+  {
+   "id": "claude-sonnet-5-5-s1",
+   "group": "claude-sonnet-5-5",
+   "x": -0.318,
+   "y": -0.1922
+  },
+  {
+   "id": "claude-sonnet-5-5-s2",
+   "group": "claude-sonnet-5-5",
+   "x": -0.3206,
+   "y": -0.252
+  },
+  {
+   "id": "claude-sonnet-5-5-s3",
+   "group": "claude-sonnet-5-5",
+   "x": -0.3061,
+   "y": -0.2925
+  },
+  {
+   "id": "claude-sonnet-5-5-s4",
+   "group": "claude-sonnet-5-5",
+   "x": -0.3031,
+   "y": -0.3166
+  },
+  {
+   "id": "claude-sonnet-5-5-s5",
+   "group": "claude-sonnet-5-5",
+   "x": -0.2909,
+   "y": -0.2298
+  },
+  {
+   "id": "claude-sonnet-5-5-s6",
+   "group": "claude-sonnet-5-5",
+   "x": -0.3177,
+   "y": -0.3277
+  },
+  {
+   "id": "claude-sonnet-5-5-s7",
+   "group": "claude-sonnet-5-5",
+   "x": -0.2893,
+   "y": -0.3224
+  },
+  {
+   "id": "claude-sonnet-5-5-s8",
+   "group": "claude-sonnet-5-5",
+   "x": -0.3002,
+   "y": -0.2968
+  },
+  {
+   "id": "claude-sonnet-5-5-s9",
+   "group": "claude-sonnet-5-5",
+   "x": -0.2629,
+   "y": -0.305
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s0",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.2474,
+   "y": -0.2284
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s1",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.328,
+   "y": -0.2921
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s2",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.3119,
+   "y": -0.2817
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s3",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.32,
+   "y": -0.28
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s4",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.3001,
+   "y": -0.1823
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s5",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.1798,
+   "y": -0.2586
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s6",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.347,
+   "y": -0.2345
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s7",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.2815,
+   "y": -0.3308
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s8",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.3247,
+   "y": -0.3115
+  },
+  {
+   "id": "claude-sonnet-5-5@thinking-s9",
+   "group": "claude-sonnet-5-5@thinking",
+   "x": -0.2181,
+   "y": -0.1777
+  },
+  {
+   "id": "gpt-4.1-s0",
+   "group": "gpt-4.1",
+   "x": -0.0795,
+   "y": 0.1797
+  },
+  {
+   "id": "gpt-4.1-s1",
+   "group": "gpt-4.1",
+   "x": -0.1211,
+   "y": 0.27
+  },
+  {
+   "id": "gpt-4.1-s2",
+   "group": "gpt-4.1",
+   "x": -0.237,
+   "y": 0.115
+  },
+  {
+   "id": "gpt-4.1-s3",
+   "group": "gpt-4.1",
+   "x": -0.0936,
+   "y": 0.3122
+  },
+  {
+   "id": "gpt-4.1-s4",
+   "group": "gpt-4.1",
+   "x": -0.1154,
+   "y": 0.2409
+  },
+  {
+   "id": "gpt-4.1-s5",
+   "group": "gpt-4.1",
+   "x": -0.1332,
+   "y": 0.1347
+  },
+  {
+   "id": "gpt-4.1-s6",
+   "group": "gpt-4.1",
+   "x": -0.2967,
+   "y": -0.1939
+  },
+  {
+   "id": "gpt-4.1-s7",
+   "group": "gpt-4.1",
+   "x": -0.1089,
+   "y": 0.1264
+  },
+  {
+   "id": "gpt-4.1-s8",
+   "group": "gpt-4.1",
+   "x": -0.1537,
+   "y": -0.0503
+  },
+  {
+   "id": "gpt-4.1-s9",
+   "group": "gpt-4.1",
+   "x": -0.1081,
+   "y": 0.2947
+  },
+  {
+   "id": "gpt-4.1-mini-s0",
+   "group": "gpt-4.1-mini",
+   "x": -0.113,
+   "y": 0.1429
+  },
+  {
+   "id": "gpt-4.1-mini-s1",
+   "group": "gpt-4.1-mini",
+   "x": -0.1203,
+   "y": 0.1573
+  },
+  {
+   "id": "gpt-4.1-mini-s2",
+   "group": "gpt-4.1-mini",
+   "x": -0.1364,
+   "y": 0.1774
+  },
+  {
+   "id": "gpt-4.1-mini-s3",
+   "group": "gpt-4.1-mini",
+   "x": -0.1976,
+   "y": -0.0142
+  },
+  {
+   "id": "gpt-4.1-mini-s4",
+   "group": "gpt-4.1-mini",
+   "x": -0.084,
+   "y": 0.2771
+  },
+  {
+   "id": "gpt-4.1-mini-s5",
+   "group": "gpt-4.1-mini",
+   "x": -0.1752,
+   "y": 0.209
+  },
+  {
+   "id": "gpt-4.1-mini-s6",
+   "group": "gpt-4.1-mini",
+   "x": -0.1188,
+   "y": 0.1447
+  },
+  {
+   "id": "gpt-4.1-mini-s7",
+   "group": "gpt-4.1-mini",
+   "x": -0.1642,
+   "y": 0.1301
+  },
+  {
+   "id": "gpt-4.1-mini-s8",
+   "group": "gpt-4.1-mini",
+   "x": -0.1529,
+   "y": 0.1746
+  },
+  {
+   "id": "gpt-4.1-mini-s9",
+   "group": "gpt-4.1-mini",
+   "x": -0.1721,
+   "y": 0.0496
+  },
+  {
+   "id": "gpt-4o-s0",
+   "group": "gpt-4o",
+   "x": -0.033,
+   "y": 0.2734
+  },
+  {
+   "id": "gpt-4o-s1",
+   "group": "gpt-4o",
+   "x": 0.0369,
+   "y": 0.176
+  },
+  {
+   "id": "gpt-4o-s2",
+   "group": "gpt-4o",
+   "x": -0.0022,
+   "y": 0.1411
+  },
+  {
+   "id": "gpt-4o-s3",
+   "group": "gpt-4o",
+   "x": 0.0076,
+   "y": 0.192
+  },
+  {
+   "id": "gpt-4o-s4",
+   "group": "gpt-4o",
+   "x": -0.0102,
+   "y": 0.2376
+  },
+  {
+   "id": "gpt-4o-s5",
+   "group": "gpt-4o",
+   "x": -0.084,
+   "y": 0.2911
+  },
+  {
+   "id": "gpt-4o-s6",
+   "group": "gpt-4o",
+   "x": -0.0665,
+   "y": 0.169
+  },
+  {
+   "id": "gpt-4o-s7",
+   "group": "gpt-4o",
+   "x": -0.0199,
+   "y": 0.2004
+  },
+  {
+   "id": "gpt-4o-s8",
+   "group": "gpt-4o",
+   "x": -0.0069,
+   "y": 0.268
+  },
+  {
+   "id": "gpt-4o-s9",
+   "group": "gpt-4o",
+   "x": -0.0724,
+   "y": 0.2319
+  },
+  {
+   "id": "gpt-4o-mini-s0",
+   "group": "gpt-4o-mini",
+   "x": -0.074,
+   "y": 0.1919
+  },
+  {
+   "id": "gpt-4o-mini-s1",
+   "group": "gpt-4o-mini",
+   "x": -0.0851,
+   "y": 0.2761
+  },
+  {
+   "id": "gpt-4o-mini-s2",
+   "group": "gpt-4o-mini",
+   "x": -0.1946,
+   "y": -0.0541
+  },
+  {
+   "id": "gpt-4o-mini-s3",
+   "group": "gpt-4o-mini",
+   "x": -0.0998,
+   "y": 0.2255
+  },
+  {
+   "id": "gpt-4o-mini-s4",
+   "group": "gpt-4o-mini",
+   "x": -0.068,
+   "y": 0.1339
+  },
+  {
+   "id": "gpt-4o-mini-s5",
+   "group": "gpt-4o-mini",
+   "x": -0.0684,
+   "y": 0.2244
+  },
+  {
+   "id": "gpt-4o-mini-s6",
+   "group": "gpt-4o-mini",
+   "x": -0.0724,
+   "y": 0.2626
+  },
+  {
+   "id": "gpt-4o-mini-s7",
+   "group": "gpt-4o-mini",
+   "x": -0.1135,
+   "y": 0.1356
+  },
+  {
+   "id": "gpt-4o-mini-s8",
+   "group": "gpt-4o-mini",
+   "x": -0.1061,
+   "y": 0.187
+  },
+  {
+   "id": "gpt-4o-mini-s9",
+   "group": "gpt-4o-mini",
+   "x": -0.0588,
+   "y": 0.2142
+  },
+  {
+   "id": "gpt-5-s0",
+   "group": "gpt-5",
+   "x": -0.0915,
+   "y": 0.2741
+  },
+  {
+   "id": "gpt-5-s1",
+   "group": "gpt-5",
+   "x": -0.2378,
+   "y": 0.1652
+  },
+  {
+   "id": "gpt-5-s2",
+   "group": "gpt-5",
+   "x": -0.1978,
+   "y": 0.1253
+  },
+  {
+   "id": "gpt-5-s3",
+   "group": "gpt-5",
+   "x": -0.1371,
+   "y": 0.2668
+  },
+  {
+   "id": "gpt-5-s4",
+   "group": "gpt-5",
+   "x": -0.1148,
+   "y": 0.2876
+  },
+  {
+   "id": "gpt-5-s5",
+   "group": "gpt-5",
+   "x": -0.2183,
+   "y": 0.2938
+  },
+  {
+   "id": "gpt-5-s6",
+   "group": "gpt-5",
+   "x": -0.1466,
+   "y": 0.2373
+  },
+  {
+   "id": "gpt-5-s7",
+   "group": "gpt-5",
+   "x": -0.1106,
+   "y": 0.2768
+  },
+  {
+   "id": "gpt-5-s8",
+   "group": "gpt-5",
+   "x": -0.2249,
+   "y": 0.1923
+  },
+  {
+   "id": "gpt-5-s9",
+   "group": "gpt-5",
+   "x": -0.2693,
+   "y": 0.1434
+  },
+  {
+   "id": "gpt-5-mini-s0",
+   "group": "gpt-5-mini",
+   "x": -0.078,
+   "y": 0.2809
+  },
+  {
+   "id": "gpt-5-mini-s1",
+   "group": "gpt-5-mini",
+   "x": -0.3085,
+   "y": -0.0064
+  },
+  {
+   "id": "gpt-5-mini-s2",
+   "group": "gpt-5-mini",
+   "x": -0.1025,
+   "y": 0.3315
+  },
+  {
+   "id": "gpt-5-mini-s3",
+   "group": "gpt-5-mini",
+   "x": -0.3424,
+   "y": 0.0108
+  },
+  {
+   "id": "gpt-5-mini-s4",
+   "group": "gpt-5-mini",
+   "x": -0.3831,
+   "y": -0.1771
+  },
+  {
+   "id": "gpt-5-mini-s5",
+   "group": "gpt-5-mini",
+   "x": -0.1633,
+   "y": 0.2649
+  },
+  {
+   "id": "gpt-5-mini-s6",
+   "group": "gpt-5-mini",
+   "x": -0.3025,
+   "y": 0.0875
+  },
+  {
+   "id": "gpt-5-mini-s8",
+   "group": "gpt-5-mini",
+   "x": -0.2945,
+   "y": -0.2851
+  },
+  {
+   "id": "gpt-5-mini-s9",
+   "group": "gpt-5-mini",
+   "x": -0.3581,
+   "y": 0.0997
+  },
+  {
+   "id": "gpt-5-nano-s0",
+   "group": "gpt-5-nano",
+   "x": -0.0918,
+   "y": 0.2439
+  },
+  {
+   "id": "gpt-5-nano-s1",
+   "group": "gpt-5-nano",
+   "x": -0.2962,
+   "y": 0.0777
+  },
+  {
+   "id": "gpt-5-nano-s2",
+   "group": "gpt-5-nano",
+   "x": -0.2445,
+   "y": 0.0736
+  },
+  {
+   "id": "gpt-5-nano-s3",
+   "group": "gpt-5-nano",
+   "x": -0.0414,
+   "y": 0.1887
+  },
+  {
+   "id": "gpt-5-nano-s4",
+   "group": "gpt-5-nano",
+   "x": -0.1658,
+   "y": 0.1157
+  },
+  {
+   "id": "gpt-5-nano-s5",
+   "group": "gpt-5-nano",
+   "x": -0.2656,
+   "y": -0.1204
+  },
+  {
+   "id": "gpt-5-nano-s6",
+   "group": "gpt-5-nano",
+   "x": -0.1207,
+   "y": 0.2544
+  },
+  {
+   "id": "gpt-5-nano-s7",
+   "group": "gpt-5-nano",
+   "x": -0.3108,
+   "y": 0.0219
+  },
+  {
+   "id": "gpt-5-nano-s9",
+   "group": "gpt-5-nano",
+   "x": -0.3043,
+   "y": -0.0845
+  },
+  {
+   "id": "gpt-5-search-api-s0",
+   "group": "gpt-5-search-api",
+   "x": -0.2785,
+   "y": 0.0153
+  },
+  {
+   "id": "gpt-5-search-api-s1",
+   "group": "gpt-5-search-api",
+   "x": -0.0834,
+   "y": 0.1729
+  },
+  {
+   "id": "gpt-5-search-api-s2",
+   "group": "gpt-5-search-api",
+   "x": -0.2464,
+   "y": 0.0149
+  },
+  {
+   "id": "gpt-5-search-api-s3",
+   "group": "gpt-5-search-api",
+   "x": -0.1428,
+   "y": 0.2273
+  },
+  {
+   "id": "gpt-5-search-api-s4",
+   "group": "gpt-5-search-api",
+   "x": -0.2315,
+   "y": -0.0149
+  },
+  {
+   "id": "gpt-5-search-api-s5",
+   "group": "gpt-5-search-api",
+   "x": -0.3362,
+   "y": -0.0503
+  },
+  {
+   "id": "gpt-5-search-api-s6",
+   "group": "gpt-5-search-api",
+   "x": -0.3197,
+   "y": -0.206
+  },
+  {
+   "id": "gpt-5-search-api-s7",
+   "group": "gpt-5-search-api",
+   "x": -0.1155,
+   "y": 0.1494
+  },
+  {
+   "id": "gpt-5-search-api-s8",
+   "group": "gpt-5-search-api",
+   "x": -0.205,
+   "y": 0.0926
+  },
+  {
+   "id": "gpt-5-search-api-s9",
+   "group": "gpt-5-search-api",
+   "x": -0.0924,
+   "y": 0.1809
+  },
+  {
+   "id": "gpt-5.1-s0",
+   "group": "gpt-5.1",
+   "x": -0.2164,
+   "y": -0.0188
+  },
+  {
+   "id": "gpt-5.1-s1",
+   "group": "gpt-5.1",
+   "x": -0.3326,
+   "y": -0.244
+  },
+  {
+   "id": "gpt-5.1-s2",
+   "group": "gpt-5.1",
+   "x": -0.1443,
+   "y": 0.2408
+  },
+  {
+   "id": "gpt-5.1-s3",
+   "group": "gpt-5.1",
+   "x": -0.0751,
+   "y": 0.2949
+  },
+  {
+   "id": "gpt-5.1-s4",
+   "group": "gpt-5.1",
+   "x": -0.3819,
+   "y": -0.1986
+  },
+  {
+   "id": "gpt-5.1-s5",
+   "group": "gpt-5.1",
+   "x": -0.1683,
+   "y": 0.0345
+  },
+  {
+   "id": "gpt-5.1-s6",
+   "group": "gpt-5.1",
+   "x": -0.324,
+   "y": -0.117
+  },
+  {
+   "id": "gpt-5.1-s7",
+   "group": "gpt-5.1",
+   "x": -0.1041,
+   "y": 0.26
+  },
+  {
+   "id": "gpt-5.1-s8",
+   "group": "gpt-5.1",
+   "x": -0.0372,
+   "y": 0.0846
+  },
+  {
+   "id": "gpt-5.1-s9",
+   "group": "gpt-5.1",
+   "x": -0.0038,
+   "y": 0.2963
+  },
+  {
+   "id": "gpt-5.2-s0",
+   "group": "gpt-5.2",
+   "x": -0.1683,
+   "y": 0.2283
+  },
+  {
+   "id": "gpt-5.2-s1",
+   "group": "gpt-5.2",
+   "x": -0.133,
+   "y": 0.3248
+  },
+  {
+   "id": "gpt-5.2-s2",
+   "group": "gpt-5.2",
+   "x": -0.1949,
+   "y": 0.2847
+  },
+  {
+   "id": "gpt-5.2-s3",
+   "group": "gpt-5.2",
+   "x": -0.2014,
+   "y": 0.172
+  },
+  {
+   "id": "gpt-5.2-s4",
+   "group": "gpt-5.2",
+   "x": -0.169,
+   "y": 0.3381
+  },
+  {
+   "id": "gpt-5.2-s5",
+   "group": "gpt-5.2",
+   "x": -0.2082,
+   "y": 0.3045
+  },
+  {
+   "id": "gpt-5.2-s6",
+   "group": "gpt-5.2",
+   "x": -0.0889,
+   "y": 0.3327
+  },
+  {
+   "id": "gpt-5.2-s7",
+   "group": "gpt-5.2",
+   "x": -0.1505,
+   "y": 0.313
+  },
+  {
+   "id": "gpt-5.2-s8",
+   "group": "gpt-5.2",
+   "x": -0.1604,
+   "y": 0.2316
+  },
+  {
+   "id": "gpt-5.2-s9",
+   "group": "gpt-5.2",
+   "x": -0.1341,
+   "y": 0.2521
+  },
+  {
+   "id": "gpt-5.3-codex-s0",
+   "group": "gpt-5.3-codex",
+   "x": -0.2212,
+   "y": 0.3012
+  },
+  {
+   "id": "gpt-5.3-codex-s1",
+   "group": "gpt-5.3-codex",
+   "x": -0.3759,
+   "y": 0.0814
+  },
+  {
+   "id": "gpt-5.3-codex-s2",
+   "group": "gpt-5.3-codex",
+   "x": -0.2242,
+   "y": 0.1928
+  },
+  {
+   "id": "gpt-5.3-codex-s3",
+   "group": "gpt-5.3-codex",
+   "x": -0.1439,
+   "y": 0.2364
+  },
+  {
+   "id": "gpt-5.3-codex-s4",
+   "group": "gpt-5.3-codex",
+   "x": -0.2536,
+   "y": 0.0914
+  },
+  {
+   "id": "gpt-5.3-codex-s5",
+   "group": "gpt-5.3-codex",
+   "x": -0.1766,
+   "y": 0.2491
+  },
+  {
+   "id": "gpt-5.3-codex-s6",
+   "group": "gpt-5.3-codex",
+   "x": -0.2188,
+   "y": 0.2344
+  },
+  {
+   "id": "gpt-5.3-codex-s7",
+   "group": "gpt-5.3-codex",
+   "x": -0.0954,
+   "y": 0.2317
+  },
+  {
+   "id": "gpt-5.3-codex-s8",
+   "group": "gpt-5.3-codex",
+   "x": -0.2102,
+   "y": 0.1492
+  },
+  {
+   "id": "gpt-5.3-codex-s9",
+   "group": "gpt-5.3-codex",
+   "x": -0.1516,
+   "y": 0.3317
+  },
+  {
+   "id": "gpt-5.4-s0",
+   "group": "gpt-5.4",
+   "x": -0.1583,
+   "y": 0.2589
+  },
+  {
+   "id": "gpt-5.4-s1",
+   "group": "gpt-5.4",
+   "x": -0.3223,
+   "y": 0.0211
+  },
+  {
+   "id": "gpt-5.4-s2",
+   "group": "gpt-5.4",
+   "x": -0.1595,
+   "y": 0.1583
+  },
+  {
+   "id": "gpt-5.4-s3",
+   "group": "gpt-5.4",
+   "x": -0.3497,
+   "y": -0.0343
+  },
+  {
+   "id": "gpt-5.4-s4",
+   "group": "gpt-5.4",
+   "x": -0.2233,
+   "y": 0.1982
+  },
+  {
+   "id": "gpt-5.4-s5",
+   "group": "gpt-5.4",
+   "x": -0.2226,
+   "y": 0.2528
+  },
+  {
+   "id": "gpt-5.4-s6",
+   "group": "gpt-5.4",
+   "x": -0.1856,
+   "y": 0.0821
+  },
+  {
+   "id": "gpt-5.4-s7",
+   "group": "gpt-5.4",
+   "x": -0.0868,
+   "y": 0.3217
+  },
+  {
+   "id": "gpt-5.4-s8",
+   "group": "gpt-5.4",
+   "x": -0.382,
+   "y": 0.0208
+  },
+  {
+   "id": "gpt-5.4-s9",
+   "group": "gpt-5.4",
+   "x": -0.3428,
+   "y": -0.1163
+  },
+  {
+   "id": "gpt-5.4-mini-s0",
+   "group": "gpt-5.4-mini",
+   "x": -0.2836,
+   "y": 0.1161
+  },
+  {
+   "id": "gpt-5.4-mini-s1",
+   "group": "gpt-5.4-mini",
+   "x": -0.3463,
+   "y": -0.0366
+  },
+  {
+   "id": "gpt-5.4-mini-s2",
+   "group": "gpt-5.4-mini",
+   "x": -0.3612,
+   "y": -0.0816
+  },
+  {
+   "id": "gpt-5.4-mini-s3",
+   "group": "gpt-5.4-mini",
+   "x": -0.364,
+   "y": 0.0405
+  },
+  {
+   "id": "gpt-5.4-mini-s4",
+   "group": "gpt-5.4-mini",
+   "x": -0.3146,
+   "y": 0.0598
+  },
+  {
+   "id": "gpt-5.4-mini-s5",
+   "group": "gpt-5.4-mini",
+   "x": -0.2247,
+   "y": 0.0308
+  },
+  {
+   "id": "gpt-5.4-mini-s6",
+   "group": "gpt-5.4-mini",
+   "x": -0.2531,
+   "y": 0.0454
+  },
+  {
+   "id": "gpt-5.4-mini-s7",
+   "group": "gpt-5.4-mini",
+   "x": -0.2827,
+   "y": 0.1755
+  },
+  {
+   "id": "gpt-5.4-mini-s8",
+   "group": "gpt-5.4-mini",
+   "x": -0.1828,
+   "y": 0.2215
+  },
+  {
+   "id": "gpt-5.4-mini-s9",
+   "group": "gpt-5.4-mini",
+   "x": -0.2625,
+   "y": 0.0681
+  },
+  {
+   "id": "gpt-5.4-nano-s0",
+   "group": "gpt-5.4-nano",
+   "x": -0.1323,
+   "y": 0.2839
+  },
+  {
+   "id": "gpt-5.4-nano-s1",
+   "group": "gpt-5.4-nano",
+   "x": -0.0947,
+   "y": 0.2955
+  },
+  {
+   "id": "gpt-5.4-nano-s2",
+   "group": "gpt-5.4-nano",
+   "x": -0.287,
+   "y": 0.061
+  },
+  {
+   "id": "gpt-5.4-nano-s3",
+   "group": "gpt-5.4-nano",
+   "x": -0.1093,
+   "y": 0.3178
+  },
+  {
+   "id": "gpt-5.4-nano-s4",
+   "group": "gpt-5.4-nano",
+   "x": -0.1361,
+   "y": 0.168
+  },
+  {
+   "id": "gpt-5.4-nano-s5",
+   "group": "gpt-5.4-nano",
+   "x": -0.3761,
+   "y": -0.1003
+  },
+  {
+   "id": "gpt-5.4-nano-s6",
+   "group": "gpt-5.4-nano",
+   "x": -0.1478,
+   "y": 0.3328
+  },
+  {
+   "id": "gpt-5.4-nano-s7",
+   "group": "gpt-5.4-nano",
+   "x": -0.1446,
+   "y": 0.2472
+  },
+  {
+   "id": "gpt-5.4-nano-s8",
+   "group": "gpt-5.4-nano",
+   "x": -0.2491,
+   "y": 0.1099
+  },
+  {
+   "id": "gpt-5.4-nano-s9",
+   "group": "gpt-5.4-nano",
+   "x": -0.2316,
+   "y": 0.2645
+  },
+  {
+   "id": "gpt-5.5-s0",
+   "group": "gpt-5.5",
+   "x": -0.2074,
+   "y": 0.3436
+  },
+  {
+   "id": "gpt-5.5-s1",
+   "group": "gpt-5.5",
+   "x": -0.0595,
+   "y": 0.2933
+  },
+  {
+   "id": "gpt-5.5-s2",
+   "group": "gpt-5.5",
+   "x": -0.3837,
+   "y": -0.0846
+  },
+  {
+   "id": "gpt-5.5-s3",
+   "group": "gpt-5.5",
+   "x": -0.2375,
+   "y": 0.2044
+  },
+  {
+   "id": "gpt-5.5-s4",
+   "group": "gpt-5.5",
+   "x": -0.1779,
+   "y": 0.2561
+  },
+  {
+   "id": "gpt-5.5-s5",
+   "group": "gpt-5.5",
+   "x": -0.1859,
+   "y": 0.3096
+  },
+  {
+   "id": "gpt-5.5-s6",
+   "group": "gpt-5.5",
+   "x": -0.1733,
+   "y": 0.2935
+  },
+  {
+   "id": "gpt-5.5-s7",
+   "group": "gpt-5.5",
+   "x": -0.3803,
+   "y": -0.1422
+  },
+  {
+   "id": "gpt-5.5-s8",
+   "group": "gpt-5.5",
+   "x": -0.1916,
+   "y": 0.3372
+  },
+  {
+   "id": "gpt-5.5-s9",
+   "group": "gpt-5.5",
+   "x": -0.2618,
+   "y": 0.325
+  },
+  {
+   "id": "gpt-5.6-luna-s0",
+   "group": "gpt-5.6-luna",
+   "x": -0.3858,
+   "y": -0.0545
+  },
+  {
+   "id": "gpt-5.6-luna-s1",
+   "group": "gpt-5.6-luna",
+   "x": -0.3822,
+   "y": -0.1766
+  },
+  {
+   "id": "gpt-5.6-luna-s2",
+   "group": "gpt-5.6-luna",
+   "x": -0.3631,
+   "y": -0.0368
+  },
+  {
+   "id": "gpt-5.6-luna-s3",
+   "group": "gpt-5.6-luna",
+   "x": -0.3144,
+   "y": 0.0096
+  },
+  {
+   "id": "gpt-5.6-luna-s4",
+   "group": "gpt-5.6-luna",
+   "x": -0.4063,
+   "y": -0.1672
+  },
+  {
+   "id": "gpt-5.6-luna-s5",
+   "group": "gpt-5.6-luna",
+   "x": -0.3963,
+   "y": -0.0527
+  },
+  {
+   "id": "gpt-5.6-luna-s6",
+   "group": "gpt-5.6-luna",
+   "x": -0.3698,
+   "y": -0.0222
+  },
+  {
+   "id": "gpt-5.6-luna-s7",
+   "group": "gpt-5.6-luna",
+   "x": -0.3957,
+   "y": -0.1245
+  },
+  {
+   "id": "gpt-5.6-luna-s8",
+   "group": "gpt-5.6-luna",
+   "x": -0.3379,
+   "y": 0.0848
+  },
+  {
+   "id": "gpt-5.6-luna-s9",
+   "group": "gpt-5.6-luna",
+   "x": -0.2445,
+   "y": 0.262
+  },
+  {
+   "id": "gpt-5.6-sol-s0",
+   "group": "gpt-5.6-sol",
+   "x": -0.4104,
+   "y": -0.1526
+  },
+  {
+   "id": "gpt-5.6-sol-s1",
+   "group": "gpt-5.6-sol",
+   "x": -0.3684,
+   "y": -0.1029
+  },
+  {
+   "id": "gpt-5.6-sol-s2",
+   "group": "gpt-5.6-sol",
+   "x": -0.3663,
+   "y": -0.0502
+  },
+  {
+   "id": "gpt-5.6-sol-s3",
+   "group": "gpt-5.6-sol",
+   "x": -0.42,
+   "y": -0.1384
+  },
+  {
+   "id": "gpt-5.6-sol-s4",
+   "group": "gpt-5.6-sol",
+   "x": -0.3879,
+   "y": -0.0512
+  },
+  {
+   "id": "gpt-5.6-sol-s5",
+   "group": "gpt-5.6-sol",
+   "x": -0.3853,
+   "y": -0.1467
+  },
+  {
+   "id": "gpt-5.6-sol-s6",
+   "group": "gpt-5.6-sol",
+   "x": -0.3683,
+   "y": -0.0912
+  },
+  {
+   "id": "gpt-5.6-sol-s7",
+   "group": "gpt-5.6-sol",
+   "x": -0.3852,
+   "y": -0.0909
+  },
+  {
+   "id": "gpt-5.6-sol-s8",
+   "group": "gpt-5.6-sol",
+   "x": -0.3687,
+   "y": -0.091
+  },
+  {
+   "id": "gpt-5.6-sol-s9",
+   "group": "gpt-5.6-sol",
+   "x": -0.3771,
+   "y": -0.0798
+  },
+  {
+   "id": "gpt-5.6-terra-s0",
+   "group": "gpt-5.6-terra",
+   "x": -0.3822,
+   "y": -0.0938
+  },
+  {
+   "id": "gpt-5.6-terra-s1",
+   "group": "gpt-5.6-terra",
+   "x": -0.3763,
+   "y": -0.0361
+  },
+  {
+   "id": "gpt-5.6-terra-s2",
+   "group": "gpt-5.6-terra",
+   "x": -0.386,
+   "y": -0.1677
+  },
+  {
+   "id": "gpt-5.6-terra-s3",
+   "group": "gpt-5.6-terra",
+   "x": -0.3615,
+   "y": -0.0744
+  },
+  {
+   "id": "gpt-5.6-terra-s4",
+   "group": "gpt-5.6-terra",
+   "x": -0.3194,
+   "y": 0.1251
+  },
+  {
+   "id": "gpt-5.6-terra-s5",
+   "group": "gpt-5.6-terra",
+   "x": -0.3915,
+   "y": -0.0769
+  },
+  {
+   "id": "gpt-5.6-terra-s6",
+   "group": "gpt-5.6-terra",
+   "x": -0.2178,
+   "y": 0.25
+  },
+  {
+   "id": "gpt-5.6-terra-s7",
+   "group": "gpt-5.6-terra",
+   "x": -0.2431,
+   "y": 0.3081
+  },
+  {
+   "id": "gpt-5.6-terra-s8",
+   "group": "gpt-5.6-terra",
+   "x": -0.3774,
+   "y": -0.0494
+  },
+  {
+   "id": "gpt-5.6-terra-s9",
+   "group": "gpt-5.6-terra",
+   "x": -0.3136,
+   "y": 0.0933
+  },
+  {
+   "id": "gpt-6-astra-s0",
+   "group": "gpt-6-astra",
+   "x": -0.2084,
+   "y": 0.2183
+  },
+  {
+   "id": "gpt-6-astra-s1",
+   "group": "gpt-6-astra",
+   "x": -0.1168,
+   "y": 0.2483
+  },
+  {
+   "id": "gpt-6-astra-s2",
+   "group": "gpt-6-astra",
+   "x": -0.1361,
+   "y": 0.2286
+  },
+  {
+   "id": "gpt-6-astra-s3",
+   "group": "gpt-6-astra",
+   "x": -0.1751,
+   "y": 0.2655
+  },
+  {
+   "id": "gpt-6-astra-s4",
+   "group": "gpt-6-astra",
+   "x": -0.1822,
+   "y": 0.2679
+  },
+  {
+   "id": "gpt-6-astra-s5",
+   "group": "gpt-6-astra",
+   "x": 0.0143,
+   "y": 0.1732
+  },
+  {
+   "id": "gpt-6-astra-s6",
+   "group": "gpt-6-astra",
+   "x": -0.3214,
+   "y": -0.0705
+  },
+  {
+   "id": "gpt-6-astra-s7",
+   "group": "gpt-6-astra",
+   "x": -0.1248,
+   "y": 0.2065
+  },
+  {
+   "id": "gpt-6-astra-s8",
+   "group": "gpt-6-astra",
+   "x": -0.17,
+   "y": 0.2779
+  },
+  {
+   "id": "gpt-6-astra-s9",
+   "group": "gpt-6-astra",
+   "x": -0.1134,
+   "y": 0.2703
+  },
+  {
+   "id": "gpt-6-luna-s0",
+   "group": "gpt-6-luna",
+   "x": -0.3294,
+   "y": 0.0783
+  },
+  {
+   "id": "gpt-6-luna-s1",
+   "group": "gpt-6-luna",
+   "x": -0.2332,
+   "y": 0.208
+  },
+  {
+   "id": "gpt-6-luna-s2",
+   "group": "gpt-6-luna",
+   "x": -0.3608,
+   "y": -0.0139
+  },
+  {
+   "id": "gpt-6-luna-s3",
+   "group": "gpt-6-luna",
+   "x": -0.41,
+   "y": -0.079
+  },
+  {
+   "id": "gpt-6-luna-s4",
+   "group": "gpt-6-luna",
+   "x": -0.4157,
+   "y": -0.0733
+  },
+  {
+   "id": "gpt-6-luna-s5",
+   "group": "gpt-6-luna",
+   "x": -0.372,
+   "y": -0.1243
+  },
+  {
+   "id": "gpt-6-luna-s6",
+   "group": "gpt-6-luna",
+   "x": -0.3575,
+   "y": -0.0561
+  },
+  {
+   "id": "gpt-6-luna-s7",
+   "group": "gpt-6-luna",
+   "x": -0.3806,
+   "y": -0.1156
+  },
+  {
+   "id": "gpt-6-luna-s8",
+   "group": "gpt-6-luna",
+   "x": -0.4005,
+   "y": -0.1176
+  },
+  {
+   "id": "gpt-6-luna-s9",
+   "group": "gpt-6-luna",
+   "x": -0.2519,
+   "y": 0.1749
+  },
+  {
+   "id": "gpt-6-sol-s0",
+   "group": "gpt-6-sol",
+   "x": -0.1162,
+   "y": 0.2638
+  },
+  {
+   "id": "gpt-6-sol-s1",
+   "group": "gpt-6-sol",
+   "x": -0.2501,
+   "y": 0.1627
+  },
+  {
+   "id": "gpt-6-sol-s2",
+   "group": "gpt-6-sol",
+   "x": -0.1642,
+   "y": 0.2853
+  },
+  {
+   "id": "gpt-6-sol-s3",
+   "group": "gpt-6-sol",
+   "x": -0.1972,
+   "y": 0.2593
+  },
+  {
+   "id": "gpt-6-sol-s4",
+   "group": "gpt-6-sol",
+   "x": -0.2497,
+   "y": -0.0604
+  },
+  {
+   "id": "gpt-6-sol-s5",
+   "group": "gpt-6-sol",
+   "x": -0.1049,
+   "y": 0.2399
+  },
+  {
+   "id": "gpt-6-sol-s6",
+   "group": "gpt-6-sol",
+   "x": -0.2073,
+   "y": 0.25
+  },
+  {
+   "id": "gpt-6-sol-s7",
+   "group": "gpt-6-sol",
+   "x": -0.2642,
+   "y": 0.1623
+  },
+  {
+   "id": "gpt-6-sol-s8",
+   "group": "gpt-6-sol",
+   "x": -0.123,
+   "y": 0.3574
+  },
+  {
+   "id": "gpt-6-sol-s9",
+   "group": "gpt-6-sol",
+   "x": -0.111,
+   "y": 0.2877
+  },
+  {
+   "id": "gpt-6.1-sol-s0",
+   "group": "gpt-6.1-sol",
+   "x": -0.0112,
+   "y": 0.231
+  },
+  {
+   "id": "gpt-6.1-sol-s1",
+   "group": "gpt-6.1-sol",
+   "x": -0.3246,
+   "y": -0.0306
+  },
+  {
+   "id": "gpt-6.1-sol-s2",
+   "group": "gpt-6.1-sol",
+   "x": -0.1558,
+   "y": 0.2991
+  },
+  {
+   "id": "gpt-6.1-sol-s3",
+   "group": "gpt-6.1-sol",
+   "x": -0.1855,
+   "y": 0.2911
+  },
+  {
+   "id": "gpt-6.1-sol-s4",
+   "group": "gpt-6.1-sol",
+   "x": -0.0431,
+   "y": 0.2066
+  },
+  {
+   "id": "gpt-6.1-sol-s5",
+   "group": "gpt-6.1-sol",
+   "x": -0.2379,
+   "y": 0.1314
+  },
+  {
+   "id": "gpt-6.1-sol-s6",
+   "group": "gpt-6.1-sol",
+   "x": -0.1293,
+   "y": 0.2607
+  },
+  {
+   "id": "gpt-6.1-sol-s7",
+   "group": "gpt-6.1-sol",
+   "x": -0.1215,
+   "y": 0.3459
+  },
+  {
+   "id": "gpt-6.1-sol-s8",
+   "group": "gpt-6.1-sol",
+   "x": -0.3656,
+   "y": -0.0786
+  },
+  {
+   "id": "gpt-6.1-sol-s9",
+   "group": "gpt-6.1-sol",
+   "x": -0.1373,
+   "y": 0.1528
+  },
+  {
+   "id": "gpt-6.1-terra-s0",
+   "group": "gpt-6.1-terra",
+   "x": -0.1524,
+   "y": 0.2383
+  },
+  {
+   "id": "gpt-6.1-terra-s1",
+   "group": "gpt-6.1-terra",
+   "x": -0.0177,
+   "y": 0.2731
+  },
+  {
+   "id": "gpt-6.1-terra-s2",
+   "group": "gpt-6.1-terra",
+   "x": -0.1516,
+   "y": 0.2216
+  },
+  {
+   "id": "gpt-6.1-terra-s3",
+   "group": "gpt-6.1-terra",
+   "x": -0.3667,
+   "y": -0.1618
+  },
+  {
+   "id": "gpt-6.1-terra-s4",
+   "group": "gpt-6.1-terra",
+   "x": -0.1589,
+   "y": 0.3242
+  },
+  {
+   "id": "gpt-6.1-terra-s5",
+   "group": "gpt-6.1-terra",
+   "x": -0.1676,
+   "y": 0.2202
+  },
+  {
+   "id": "gpt-6.1-terra-s6",
+   "group": "gpt-6.1-terra",
+   "x": -0.2286,
+   "y": 0.254
+  },
+  {
+   "id": "gpt-6.1-terra-s7",
+   "group": "gpt-6.1-terra",
+   "x": -0.3559,
+   "y": -0.0149
+  },
+  {
+   "id": "gpt-6.1-terra-s8",
+   "group": "gpt-6.1-terra",
+   "x": -0.0885,
+   "y": 0.3108
+  },
+  {
+   "id": "gpt-6.1-terra-s9",
+   "group": "gpt-6.1-terra",
+   "x": -0.3234,
+   "y": 0.0951
+  },
+  {
+   "id": "o3-s0",
+   "group": "o3",
+   "x": -0.1122,
+   "y": 0.1829
+  },
+  {
+   "id": "o3-s1",
+   "group": "o3",
+   "x": -0.087,
+   "y": 0.2242
+  },
+  {
+   "id": "o3-s2",
+   "group": "o3",
+   "x": -0.1378,
+   "y": 0.2508
+  },
+  {
+   "id": "o3-s3",
+   "group": "o3",
+   "x": -0.0109,
+   "y": 0.2671
+  },
+  {
+   "id": "o3-s4",
+   "group": "o3",
+   "x": -0.0514,
+   "y": 0.232
+  },
+  {
+   "id": "o3-s5",
+   "group": "o3",
+   "x": -0.0984,
+   "y": 0.2034
+  },
+  {
+   "id": "o3-s6",
+   "group": "o3",
+   "x": -0.1616,
+   "y": 0.2206
+  },
+  {
+   "id": "o3-s7",
+   "group": "o3",
+   "x": -0.0817,
+   "y": 0.2368
+  },
+  {
+   "id": "o3-s8",
+   "group": "o3",
+   "x": -0.1149,
+   "y": 0.2064
+  },
+  {
+   "id": "o3-s9",
+   "group": "o3",
+   "x": -0.0776,
+   "y": 0.1738
+  },
+  {
+   "id": "wp-000",
+   "group": "wp-00",
+   "x": 0.3446,
+   "y": -0.0727
+  },
+  {
+   "id": "wp-001",
+   "group": "wp-00",
+   "x": 0.3564,
+   "y": -0.0725
+  },
+  {
+   "id": "wp-002",
+   "group": "wp-00",
+   "x": 0.501,
+   "y": -0.169
+  },
+  {
+   "id": "wp-003",
+   "group": "wp-00",
+   "x": 0.3183,
+   "y": -0.011
+  },
+  {
+   "id": "wp-004",
+   "group": "wp-00",
+   "x": 0.2713,
+   "y": -0.1188
+  },
+  {
+   "id": "wp-005",
+   "group": "wp-00",
+   "x": 0.2194,
+   "y": 0.1015
+  },
+  {
+   "id": "wp-006",
+   "group": "wp-00",
+   "x": 0.3936,
+   "y": -0.0527
+  },
+  {
+   "id": "wp-007",
+   "group": "wp-00",
+   "x": 0.2011,
+   "y": 0.1181
+  },
+  {
+   "id": "wp-008",
+   "group": "wp-00",
+   "x": 0.3726,
+   "y": -0.0932
+  },
+  {
+   "id": "wp-009",
+   "group": "wp-00",
+   "x": 0.2643,
+   "y": -0.1616
+  },
+  {
+   "id": "wp-010",
+   "group": "wp-01",
+   "x": 0.1411,
+   "y": 0.0521
+  },
+  {
+   "id": "wp-011",
+   "group": "wp-01",
+   "x": 0.2702,
+   "y": -0.0138
+  },
+  {
+   "id": "wp-012",
+   "group": "wp-01",
+   "x": 0.3941,
+   "y": -0.1515
+  },
+  {
+   "id": "wp-013",
+   "group": "wp-01",
+   "x": 0.3161,
+   "y": -0.1338
+  },
+  {
+   "id": "wp-014",
+   "group": "wp-01",
+   "x": 0.1915,
+   "y": 0.0588
+  },
+  {
+   "id": "wp-015",
+   "group": "wp-01",
+   "x": 0.2978,
+   "y": -0.1297
+  },
+  {
+   "id": "wp-016",
+   "group": "wp-01",
+   "x": 0.3508,
+   "y": -0.0664
+  },
+  {
+   "id": "wp-017",
+   "group": "wp-01",
+   "x": 0.3424,
+   "y": -0.0018
+  },
+  {
+   "id": "wp-018",
+   "group": "wp-01",
+   "x": 0.1769,
+   "y": -0.0186
+  },
+  {
+   "id": "wp-019",
+   "group": "wp-01",
+   "x": 0.3205,
+   "y": -0.2365
+  },
+  {
+   "id": "wp-020",
+   "group": "wp-02",
+   "x": 0.3445,
+   "y": -0.1447
+  },
+  {
+   "id": "wp-021",
+   "group": "wp-02",
+   "x": 0.3604,
+   "y": -0.1892
+  },
+  {
+   "id": "wp-022",
+   "group": "wp-02",
+   "x": 0.4225,
+   "y": -0.0806
+  },
+  {
+   "id": "wp-023",
+   "group": "wp-02",
+   "x": 0.3685,
+   "y": 0.0038
+  },
+  {
+   "id": "wp-024",
+   "group": "wp-02",
+   "x": 0.3397,
+   "y": 0.0019
+  },
+  {
+   "id": "wp-025",
+   "group": "wp-02",
+   "x": 0.3049,
+   "y": -0.0363
+  },
+  {
+   "id": "wp-026",
+   "group": "wp-02",
+   "x": 0.1763,
+   "y": 0.1225
+  },
+  {
+   "id": "wp-027",
+   "group": "wp-02",
+   "x": 0.3795,
+   "y": -0.2886
+  },
+  {
+   "id": "wp-028",
+   "group": "wp-02",
+   "x": 0.3774,
+   "y": -0.0728
+  },
+  {
+   "id": "wp-029",
+   "group": "wp-02",
+   "x": 0.4258,
+   "y": -0.06
+  },
+  {
+   "id": "wp-030",
+   "group": "wp-03",
+   "x": 0.2971,
+   "y": 0.0686
+  },
+  {
+   "id": "wp-031",
+   "group": "wp-03",
+   "x": 0.3858,
+   "y": -0.0964
+  },
+  {
+   "id": "wp-032",
+   "group": "wp-03",
+   "x": 0.3114,
+   "y": -0.0436
+  },
+  {
+   "id": "wp-033",
+   "group": "wp-03",
+   "x": 0.378,
+   "y": -0.1419
+  },
+  {
+   "id": "wp-034",
+   "group": "wp-03",
+   "x": 0.3089,
+   "y": -0.0631
+  },
+  {
+   "id": "wp-035",
+   "group": "wp-03",
+   "x": 0.3093,
+   "y": -0.0871
+  },
+  {
+   "id": "wp-036",
+   "group": "wp-03",
+   "x": 0.4146,
+   "y": -0.1102
+  },
+  {
+   "id": "wp-037",
+   "group": "wp-03",
+   "x": 0.3319,
+   "y": 0.0409
+  },
+  {
+   "id": "wp-038",
+   "group": "wp-03",
+   "x": 0.2921,
+   "y": 0.0069
+  },
+  {
+   "id": "wp-039",
+   "group": "wp-03",
+   "x": 0.3666,
+   "y": -0.1295
+  },
+  {
+   "id": "wp-040",
+   "group": "wp-04",
+   "x": 0.3786,
+   "y": -0.0628
+  },
+  {
+   "id": "wp-041",
+   "group": "wp-04",
+   "x": 0.2669,
+   "y": 0.0378
+  },
+  {
+   "id": "wp-042",
+   "group": "wp-04",
+   "x": 0.203,
+   "y": -0.2041
+  },
+  {
+   "id": "wp-043",
+   "group": "wp-04",
+   "x": 0.2988,
+   "y": -0.1002
+  },
+  {
+   "id": "wp-044",
+   "group": "wp-04",
+   "x": 0.2308,
+   "y": -0.0166
+  },
+  {
+   "id": "wp-045",
+   "group": "wp-04",
+   "x": 0.2967,
+   "y": -0.025
+  },
+  {
+   "id": "wp-046",
+   "group": "wp-04",
+   "x": 0.3998,
+   "y": -0.1971
+  },
+  {
+   "id": "wp-047",
+   "group": "wp-04",
+   "x": 0.2219,
+   "y": -0.043
+  },
+  {
+   "id": "wp-048",
+   "group": "wp-04",
+   "x": 0.4507,
+   "y": -0.1047
+  },
+  {
+   "id": "wp-049",
+   "group": "wp-04",
+   "x": 0.3756,
+   "y": -0.036
+  },
+  {
+   "id": "wp-050",
+   "group": "wp-05",
+   "x": 0.438,
+   "y": -0.0355
+  },
+  {
+   "id": "wp-051",
+   "group": "wp-05",
+   "x": 0.3187,
+   "y": -0.1157
+  },
+  {
+   "id": "wp-052",
+   "group": "wp-05",
+   "x": 0.3903,
+   "y": -0.0747
+  },
+  {
+   "id": "wp-053",
+   "group": "wp-05",
+   "x": 0.3103,
+   "y": -0.0649
+  },
+  {
+   "id": "wp-054",
+   "group": "wp-05",
+   "x": 0.1328,
+   "y": 0.0008
+  },
+  {
+   "id": "wp-055",
+   "group": "wp-05",
+   "x": 0.358,
+   "y": -0.1203
+  },
+  {
+   "id": "wp-056",
+   "group": "wp-05",
+   "x": 0.313,
+   "y": -0.0531
+  },
+  {
+   "id": "wp-057",
+   "group": "wp-05",
+   "x": 0.3011,
+   "y": -0.0988
+  },
+  {
+   "id": "wp-058",
+   "group": "wp-05",
+   "x": 0.2553,
+   "y": -0.1203
+  },
+  {
+   "id": "wp-059",
+   "group": "wp-05",
+   "x": 0.3906,
+   "y": -0.1246
+  },
+  {
+   "id": "wp-060",
+   "group": "wp-06",
+   "x": 0.3781,
+   "y": -0.0075
+  },
+  {
+   "id": "wp-061",
+   "group": "wp-06",
+   "x": 0.4357,
+   "y": -0.0485
+  },
+  {
+   "id": "wp-062",
+   "group": "wp-06",
+   "x": 0.2558,
+   "y": -0.1923
+  },
+  {
+   "id": "wp-063",
+   "group": "wp-06",
+   "x": 0.3801,
+   "y": -0.0801
+  },
+  {
+   "id": "wp-064",
+   "group": "wp-06",
+   "x": 0.526,
+   "y": -0.0337
+  },
+  {
+   "id": "wp-065",
+   "group": "wp-06",
+   "x": 0.4429,
+   "y": -0.1315
+  },
+  {
+   "id": "wp-066",
+   "group": "wp-06",
+   "x": 0.3958,
+   "y": 0.0018
+  },
+  {
+   "id": "wp-067",
+   "group": "wp-06",
+   "x": 0.2397,
+   "y": 0.0095
+  },
+  {
+   "id": "wp-068",
+   "group": "wp-06",
+   "x": 0.4539,
+   "y": -0.1747
+  },
+  {
+   "id": "wp-069",
+   "group": "wp-06",
+   "x": 0.2417,
+   "y": -0.052
+  },
+  {
+   "id": "wp-070",
+   "group": "wp-07",
+   "x": 0.4515,
+   "y": -0.0439
+  },
+  {
+   "id": "wp-071",
+   "group": "wp-07",
+   "x": 0.2586,
+   "y": 0.0162
+  },
+  {
+   "id": "wp-072",
+   "group": "wp-07",
+   "x": 0.4278,
+   "y": -0.058
+  },
+  {
+   "id": "wp-073",
+   "group": "wp-07",
+   "x": 0.4293,
+   "y": -0.1763
+  },
+  {
+   "id": "wp-074",
+   "group": "wp-07",
+   "x": 0.1766,
+   "y": -0.0416
+  },
+  {
+   "id": "wp-075",
+   "group": "wp-07",
+   "x": 0.3918,
+   "y": -0.0502
+  },
+  {
+   "id": "wp-076",
+   "group": "wp-07",
+   "x": 0.3464,
+   "y": -0.0397
+  },
+  {
+   "id": "wp-077",
+   "group": "wp-07",
+   "x": 0.3275,
+   "y": -0.1228
+  },
+  {
+   "id": "wp-078",
+   "group": "wp-07",
+   "x": 0.2862,
+   "y": 0.0165
+  },
+  {
+   "id": "wp-079",
+   "group": "wp-07",
+   "x": 0.293,
+   "y": -0.0391
+  },
+  {
+   "id": "wp-080",
+   "group": "wp-08",
+   "x": 0.3501,
+   "y": -0.1958
+  },
+  {
+   "id": "wp-081",
+   "group": "wp-08",
+   "x": 0.3541,
+   "y": -0.1481
+  },
+  {
+   "id": "wp-082",
+   "group": "wp-08",
+   "x": 0.1967,
+   "y": 0.0917
+  },
+  {
+   "id": "wp-083",
+   "group": "wp-08",
+   "x": 0.3189,
+   "y": -0.0393
+  },
+  {
+   "id": "wp-084",
+   "group": "wp-08",
+   "x": 0.2282,
+   "y": -0.0416
+  },
+  {
+   "id": "wp-085",
+   "group": "wp-08",
+   "x": 0.2481,
+   "y": 0.0407
+  },
+  {
+   "id": "wp-086",
+   "group": "wp-08",
+   "x": 0.3197,
+   "y": -0.0306
+  },
+  {
+   "id": "wp-087",
+   "group": "wp-08",
+   "x": 0.4022,
+   "y": -0.0669
+  },
+  {
+   "id": "wp-088",
+   "group": "wp-08",
+   "x": 0.4836,
+   "y": -0.0024
+  },
+  {
+   "id": "wp-089",
+   "group": "wp-08",
+   "x": 0.3279,
+   "y": -0.0479
+  },
+  {
+   "id": "wp-090",
+   "group": "wp-09",
+   "x": 0.3396,
+   "y": -0.1217
+  },
+  {
+   "id": "wp-091",
+   "group": "wp-09",
+   "x": 0.4625,
+   "y": -0.2577
+  },
+  {
+   "id": "wp-092",
+   "group": "wp-09",
+   "x": 0.3543,
+   "y": -0.1768
+  },
+  {
+   "id": "wp-093",
+   "group": "wp-09",
+   "x": 0.1632,
+   "y": 0.0729
+  },
+  {
+   "id": "wp-094",
+   "group": "wp-09",
+   "x": 0.1898,
+   "y": 0.0654
+  },
+  {
+   "id": "wp-095",
+   "group": "wp-09",
+   "x": 0.1627,
+   "y": 0.035
+  },
+  {
+   "id": "wp-096",
+   "group": "wp-09",
+   "x": 0.4017,
+   "y": -0.0641
+  },
+  {
+   "id": "wp-097",
+   "group": "wp-09",
+   "x": 0.2896,
+   "y": -0.0554
+  },
+  {
+   "id": "wp-098",
+   "group": "wp-09",
+   "x": 0.1247,
+   "y": 0.1285
+  },
+  {
+   "id": "wp-099",
+   "group": "wp-09",
+   "x": 0.3763,
+   "y": -0.0072
+  },
+  {
+   "id": "wp-100",
+   "group": "wp-10",
+   "x": 0.3626,
+   "y": -0.1054
+  },
+  {
+   "id": "wp-101",
+   "group": "wp-10",
+   "x": 0.3249,
+   "y": -0.1553
+  },
+  {
+   "id": "wp-102",
+   "group": "wp-10",
+   "x": 0.4213,
+   "y": -0.0253
+  },
+  {
+   "id": "wp-103",
+   "group": "wp-10",
+   "x": 0.2211,
+   "y": 0.1113
+  },
+  {
+   "id": "wp-104",
+   "group": "wp-10",
+   "x": 0.4058,
+   "y": -0.1007
+  },
+  {
+   "id": "wp-105",
+   "group": "wp-10",
+   "x": 0.4015,
+   "y": -0.143
+  },
+  {
+   "id": "wp-106",
+   "group": "wp-10",
+   "x": 0.2359,
+   "y": -0.018
+  },
+  {
+   "id": "wp-107",
+   "group": "wp-10",
+   "x": 0.2601,
+   "y": 0.0451
+  },
+  {
+   "id": "wp-108",
+   "group": "wp-10",
+   "x": 0.2739,
+   "y": -0.0446
+  },
+  {
+   "id": "wp-109",
+   "group": "wp-10",
+   "x": 0.1627,
+   "y": -0.0098
+  },
+  {
+   "id": "wp-110",
+   "group": "wp-11",
+   "x": 0.4177,
+   "y": -0.1465
+  },
+  {
+   "id": "wp-111",
+   "group": "wp-11",
+   "x": 0.2003,
+   "y": -0.0127
+  },
+  {
+   "id": "wp-112",
+   "group": "wp-11",
+   "x": 0.2857,
+   "y": 0.019
+  },
+  {
+   "id": "wp-113",
+   "group": "wp-11",
+   "x": 0.341,
+   "y": -0.0032
+  },
+  {
+   "id": "wp-114",
+   "group": "wp-11",
+   "x": 0.2496,
+   "y": -0.0343
+  },
+  {
+   "id": "wp-115",
+   "group": "wp-11",
+   "x": 0.3488,
+   "y": -0.0489
+  },
+  {
+   "id": "wp-116",
+   "group": "wp-11",
+   "x": 0.3836,
+   "y": 0.0164
+  },
+  {
+   "id": "wp-117",
+   "group": "wp-11",
+   "x": 0.4643,
+   "y": -0.0514
+  },
+  {
+   "id": "wp-118",
+   "group": "wp-11",
+   "x": 0.2089,
+   "y": 0.017
+  },
+  {
+   "id": "wp-119",
+   "group": "wp-11",
+   "x": 0.3881,
+   "y": -0.0732
+  },
+  {
+   "id": "wp-120",
+   "group": "wp-12",
+   "x": 0.2323,
+   "y": -0.0368
+  },
+  {
+   "id": "wp-121",
+   "group": "wp-12",
+   "x": 0.4572,
+   "y": -0.1002
+  },
+  {
+   "id": "wp-122",
+   "group": "wp-12",
+   "x": 0.365,
+   "y": -0.1762
+  },
+  {
+   "id": "wp-123",
+   "group": "wp-12",
+   "x": 0.4498,
+   "y": -0.0783
+  },
+  {
+   "id": "wp-124",
+   "group": "wp-12",
+   "x": 0.091,
+   "y": -0.0433
+  },
+  {
+   "id": "wp-125",
+   "group": "wp-12",
+   "x": 0.3217,
+   "y": -0.0495
+  },
+  {
+   "id": "wp-126",
+   "group": "wp-12",
+   "x": 0.4472,
+   "y": -0.239
+  },
+  {
+   "id": "wp-127",
+   "group": "wp-12",
+   "x": 0.3759,
+   "y": -0.095
+  },
+  {
+   "id": "wp-128",
+   "group": "wp-12",
+   "x": 0.4108,
+   "y": -0.1009
+  },
+  {
+   "id": "wp-129",
+   "group": "wp-12",
+   "x": 0.4055,
+   "y": -0.0271
+  },
+  {
+   "id": "wp-130",
+   "group": "wp-13",
+   "x": 0.4547,
+   "y": -0.0153
+  },
+  {
+   "id": "wp-131",
+   "group": "wp-13",
+   "x": 0.3773,
+   "y": -0.0383
+  },
+  {
+   "id": "wp-132",
+   "group": "wp-13",
+   "x": 0.2719,
+   "y": -0.0366
+  },
+  {
+   "id": "wp-133",
+   "group": "wp-13",
+   "x": 0.4208,
+   "y": -0.1128
+  },
+  {
+   "id": "wp-134",
+   "group": "wp-13",
+   "x": 0.3776,
+   "y": -0.0234
+  },
+  {
+   "id": "wp-135",
+   "group": "wp-13",
+   "x": 0.2826,
+   "y": -0.1236
+  },
+  {
+   "id": "wp-136",
+   "group": "wp-13",
+   "x": 0.3326,
+   "y": 0.0041
+  },
+  {
+   "id": "wp-137",
+   "group": "wp-13",
+   "x": 0.3336,
+   "y": -0.1172
+  },
+  {
+   "id": "wp-138",
+   "group": "wp-13",
+   "x": 0.3346,
+   "y": -0.0671
+  },
+  {
+   "id": "wp-139",
+   "group": "wp-13",
+   "x": 0.4182,
+   "y": -0.3305
+  },
+  {
+   "id": "wp-140",
+   "group": "wp-14",
+   "x": 0.2721,
+   "y": -0.1108
+  },
+  {
+   "id": "wp-141",
+   "group": "wp-14",
+   "x": 0.4231,
+   "y": -0.0743
+  },
+  {
+   "id": "wp-142",
+   "group": "wp-14",
+   "x": 0.2771,
+   "y": -0.0867
+  },
+  {
+   "id": "wp-143",
+   "group": "wp-14",
+   "x": 0.2056,
+   "y": 0.0346
+  },
+  {
+   "id": "wp-144",
+   "group": "wp-14",
+   "x": 0.4062,
+   "y": -0.0182
+  },
+  {
+   "id": "wp-145",
+   "group": "wp-14",
+   "x": 0.2198,
+   "y": -0.1656
+  },
+  {
+   "id": "wp-146",
+   "group": "wp-14",
+   "x": 0.1302,
+   "y": -0.0116
+  },
+  {
+   "id": "wp-147",
+   "group": "wp-14",
+   "x": 0.2083,
+   "y": 0.0416
+  },
+  {
+   "id": "wp-148",
+   "group": "wp-14",
+   "x": 0.3321,
+   "y": -0.0509
+  },
+  {
+   "id": "wp-149",
+   "group": "wp-14",
+   "x": 0.3109,
+   "y": -0.0268
+  },
+  {
+   "id": "wp-150",
+   "group": "wp-15",
+   "x": 0.2381,
+   "y": 0.0384
+  },
+  {
+   "id": "wp-151",
+   "group": "wp-15",
+   "x": 0.3825,
+   "y": -0.12
+  },
+  {
+   "id": "wp-152",
+   "group": "wp-15",
+   "x": 0.4433,
+   "y": -0.107
+  },
+  {
+   "id": "wp-153",
+   "group": "wp-15",
+   "x": 0.3338,
+   "y": -0.0583
+  },
+  {
+   "id": "wp-154",
+   "group": "wp-15",
+   "x": 0.3606,
+   "y": -0.1092
+  },
+  {
+   "id": "wp-155",
+   "group": "wp-15",
+   "x": 0.3522,
+   "y": -0.068
+  },
+  {
+   "id": "wp-156",
+   "group": "wp-15",
+   "x": 0.3239,
+   "y": -0.0512
+  },
+  {
+   "id": "wp-157",
+   "group": "wp-15",
+   "x": 0.3992,
+   "y": -0.0664
+  },
+  {
+   "id": "wp-158",
+   "group": "wp-15",
+   "x": 0.3451,
+   "y": -0.0536
+  },
+  {
+   "id": "wp-159",
+   "group": "wp-15",
+   "x": 0.2724,
+   "y": 0.0345
+  },
+  {
+   "id": "wp-160",
+   "group": "wp-16",
+   "x": 0.425,
+   "y": -0.1547
+  },
+  {
+   "id": "wp-161",
+   "group": "wp-16",
+   "x": 0.1761,
+   "y": 0.0993
+  },
+  {
+   "id": "wp-162",
+   "group": "wp-16",
+   "x": 0.3479,
+   "y": -0.0381
+  },
+  {
+   "id": "wp-163",
+   "group": "wp-16",
+   "x": 0.284,
+   "y": -0.0655
+  },
+  {
+   "id": "wp-164",
+   "group": "wp-16",
+   "x": 0.3977,
+   "y": -0.0395
+  },
+  {
+   "id": "wp-165",
+   "group": "wp-16",
+   "x": 0.2488,
+   "y": -0.1088
+  },
+  {
+   "id": "wp-166",
+   "group": "wp-16",
+   "x": 0.3881,
+   "y": -0.1932
+  },
+  {
+   "id": "wp-167",
+   "group": "wp-16",
+   "x": 0.4021,
+   "y": -0.2332
+  },
+  {
+   "id": "wp-168",
+   "group": "wp-16",
+   "x": 0.3589,
+   "y": -0.1167
+  },
+  {
+   "id": "wp-169",
+   "group": "wp-16",
+   "x": 0.3,
+   "y": -0.0267
+  },
+  {
+   "id": "wp-170",
+   "group": "wp-17",
+   "x": 0.2356,
+   "y": -0.0522
+  },
+  {
+   "id": "wp-171",
+   "group": "wp-17",
+   "x": 0.3918,
+   "y": -0.1102
+  },
+  {
+   "id": "wp-172",
+   "group": "wp-17",
+   "x": 0.2471,
+   "y": -0.0747
+  },
+  {
+   "id": "wp-173",
+   "group": "wp-17",
+   "x": 0.2702,
+   "y": 0.0209
+  },
+  {
+   "id": "wp-174",
+   "group": "wp-17",
+   "x": 0.3809,
+   "y": -0.1894
+  },
+  {
+   "id": "wp-175",
+   "group": "wp-17",
+   "x": 0.4217,
+   "y": -0.0117
+  },
+  {
+   "id": "wp-176",
+   "group": "wp-17",
+   "x": 0.4362,
+   "y": -0.0794
+  },
+  {
+   "id": "wp-177",
+   "group": "wp-17",
+   "x": 0.4416,
+   "y": -0.0888
+  },
+  {
+   "id": "wp-178",
+   "group": "wp-17",
+   "x": 0.2432,
+   "y": -0.0349
+  },
+  {
+   "id": "wp-179",
+   "group": "wp-17",
+   "x": 0.3678,
+   "y": -0.003
+  },
+  {
+   "id": "wp-180",
+   "group": "wp-18",
+   "x": 0.2653,
+   "y": -0.1357
+  },
+  {
+   "id": "wp-181",
+   "group": "wp-18",
+   "x": 0.2481,
+   "y": -0.0836
+  },
+  {
+   "id": "wp-182",
+   "group": "wp-18",
+   "x": 0.3724,
+   "y": -0.0714
+  },
+  {
+   "id": "wp-183",
+   "group": "wp-18",
+   "x": 0.3444,
+   "y": -0.1214
+  },
+  {
+   "id": "wp-184",
+   "group": "wp-18",
+   "x": 0.2892,
+   "y": -0.0458
+  },
+  {
+   "id": "wp-185",
+   "group": "wp-18",
+   "x": 0.2608,
+   "y": -0.0839
+  },
+  {
+   "id": "wp-186",
+   "group": "wp-18",
+   "x": 0.0298,
+   "y": -0.1535
+  },
+  {
+   "id": "wp-187",
+   "group": "wp-18",
+   "x": 0.2047,
+   "y": 0.1219
+  },
+  {
+   "id": "wp-188",
+   "group": "wp-18",
+   "x": 0.4145,
+   "y": -0.056
+  },
+  {
+   "id": "wp-189",
+   "group": "wp-18",
+   "x": 0.1988,
+   "y": -0.0345
+  },
+  {
+   "id": "wp-190",
+   "group": "wp-19",
+   "x": 0.1038,
+   "y": -0.0211
+  },
+  {
+   "id": "wp-191",
+   "group": "wp-19",
+   "x": 0.3506,
+   "y": -0.0589
+  },
+  {
+   "id": "wp-192",
+   "group": "wp-19",
+   "x": 0.341,
+   "y": -0.1038
+  },
+  {
+   "id": "wp-193",
+   "group": "wp-19",
+   "x": 0.3285,
+   "y": 0.029
+  },
+  {
+   "id": "wp-194",
+   "group": "wp-19",
+   "x": 0.131,
+   "y": 0.0063
+  },
+  {
+   "id": "wp-195",
+   "group": "wp-19",
+   "x": 0.2496,
+   "y": 0.0211
+  },
+  {
+   "id": "wp-196",
+   "group": "wp-19",
+   "x": 0.4038,
+   "y": -0.028
+  },
+  {
+   "id": "wp-197",
+   "group": "wp-19",
+   "x": 0.256,
+   "y": -0.0175
+  },
+  {
+   "id": "wp-198",
+   "group": "wp-19",
+   "x": 0.2813,
+   "y": 0.0192
+  },
+  {
+   "id": "wp-199",
+   "group": "wp-19",
+   "x": 0.1245,
+   "y": 0.0778
+  },
+  {
+   "id": "wp-200",
+   "group": "wp-20",
+   "x": 0.3603,
+   "y": -0.0748
+  },
+  {
+   "id": "wp-201",
+   "group": "wp-20",
+   "x": 0.4051,
+   "y": -0.2769
+  },
+  {
+   "id": "wp-202",
+   "group": "wp-20",
+   "x": 0.4473,
+   "y": -0.0958
+  },
+  {
+   "id": "wp-203",
+   "group": "wp-20",
+   "x": 0.4079,
+   "y": -0.0984
+  },
+  {
+   "id": "wp-204",
+   "group": "wp-20",
+   "x": 0.2189,
+   "y": -0.253
+  },
+  {
+   "id": "wp-205",
+   "group": "wp-20",
+   "x": 0.1247,
+   "y": 0.0429
+  },
+  {
+   "id": "wp-206",
+   "group": "wp-20",
+   "x": 0.3135,
+   "y": -0.1252
+  },
+  {
+   "id": "wp-207",
+   "group": "wp-20",
+   "x": 0.3423,
+   "y": -0.0659
+  },
+  {
+   "id": "wp-208",
+   "group": "wp-20",
+   "x": 0.3996,
+   "y": -0.0886
+  },
+  {
+   "id": "wp-209",
+   "group": "wp-20",
+   "x": 0.3365,
+   "y": -0.0991
+  },
+  {
+   "id": "wp-210",
+   "group": "wp-21",
+   "x": 0.325,
+   "y": -0.0713
+  },
+  {
+   "id": "wp-211",
+   "group": "wp-21",
+   "x": 0.3219,
+   "y": -0.0816
+  },
+  {
+   "id": "wp-212",
+   "group": "wp-21",
+   "x": 0.4856,
+   "y": -0.1971
+  },
+  {
+   "id": "wp-213",
+   "group": "wp-21",
+   "x": 0.3564,
+   "y": -0.0081
+  },
+  {
+   "id": "wp-214",
+   "group": "wp-21",
+   "x": 0.3884,
+   "y": -0.1147
+  },
+  {
+   "id": "wp-215",
+   "group": "wp-21",
+   "x": 0.4077,
+   "y": -0.0582
+  },
+  {
+   "id": "wp-216",
+   "group": "wp-21",
+   "x": 0.2438,
+   "y": 0.023
+  },
+  {
+   "id": "wp-217",
+   "group": "wp-21",
+   "x": 0.2801,
+   "y": -0.0783
+  },
+  {
+   "id": "wp-218",
+   "group": "wp-21",
+   "x": 0.3822,
+   "y": -0.1691
+  },
+  {
+   "id": "wp-219",
+   "group": "wp-21",
+   "x": 0.2658,
+   "y": -0.0452
+  },
+  {
+   "id": "wp-220",
+   "group": "wp-22",
+   "x": 0.3538,
+   "y": -0.2105
+  },
+  {
+   "id": "wp-221",
+   "group": "wp-22",
+   "x": 0.2155,
+   "y": 0.0564
+  },
+  {
+   "id": "wp-222",
+   "group": "wp-22",
+   "x": 0.2427,
+   "y": 0.0276
+  },
+  {
+   "id": "wp-223",
+   "group": "wp-22",
+   "x": 0.3513,
+   "y": -0.1037
+  },
+  {
+   "id": "wp-224",
+   "group": "wp-22",
+   "x": 0.3144,
+   "y": -0.0321
+  },
+  {
+   "id": "wp-225",
+   "group": "wp-22",
+   "x": 0.3726,
+   "y": -0.0384
+  },
+  {
+   "id": "wp-226",
+   "group": "wp-22",
+   "x": 0.4097,
+   "y": -0.1825
+  },
+  {
+   "id": "wp-227",
+   "group": "wp-22",
+   "x": 0.4431,
+   "y": -0.0718
+  },
+  {
+   "id": "wp-228",
+   "group": "wp-22",
+   "x": 0.2667,
+   "y": -0.1552
+  },
+  {
+   "id": "wp-229",
+   "group": "wp-22",
+   "x": 0.241,
+   "y": -0.0671
+  },
+  {
+   "id": "wp-230",
+   "group": "wp-23",
+   "x": 0.4194,
+   "y": -0.2242
+  },
+  {
+   "id": "wp-231",
+   "group": "wp-23",
+   "x": 0.2264,
+   "y": -0.0077
+  },
+  {
+   "id": "wp-232",
+   "group": "wp-23",
+   "x": 0.403,
+   "y": -0.0368
+  },
+  {
+   "id": "wp-233",
+   "group": "wp-23",
+   "x": 0.3178,
+   "y": 0.0474
+  },
+  {
+   "id": "wp-234",
+   "group": "wp-23",
+   "x": 0.2054,
+   "y": 0.1192
+  },
+  {
+   "id": "wp-235",
+   "group": "wp-23",
+   "x": 0.4374,
+   "y": -0.1775
+  },
+  {
+   "id": "wp-236",
+   "group": "wp-23",
+   "x": 0.3855,
+   "y": -0.1436
+  },
+  {
+   "id": "wp-237",
+   "group": "wp-23",
+   "x": 0.2151,
+   "y": 0.0988
+  },
+  {
+   "id": "wp-238",
+   "group": "wp-23",
+   "x": 0.3155,
+   "y": -0.0283
+  },
+  {
+   "id": "wp-239",
+   "group": "wp-23",
+   "x": 0.1246,
+   "y": -0.0013
+  },
+  {
+   "id": "wp-240",
+   "group": "wp-24",
+   "x": 0.2943,
+   "y": -0.0695
+  },
+  {
+   "id": "wp-241",
+   "group": "wp-24",
+   "x": 0.4263,
+   "y": -0.0189
+  },
+  {
+   "id": "wp-242",
+   "group": "wp-24",
+   "x": 0.1729,
+   "y": -0.0039
+  },
+  {
+   "id": "wp-243",
+   "group": "wp-24",
+   "x": 0.4414,
+   "y": -0.167
+  },
+  {
+   "id": "wp-244",
+   "group": "wp-24",
+   "x": 0.2224,
+   "y": 0.0154
+  },
+  {
+   "id": "wp-245",
+   "group": "wp-24",
+   "x": 0.1958,
+   "y": 0.0757
+  },
+  {
+   "id": "wp-246",
+   "group": "wp-24",
+   "x": 0.3376,
+   "y": -0.0896
+  },
+  {
+   "id": "wp-247",
+   "group": "wp-24",
+   "x": 0.4821,
+   "y": -0.0722
+  },
+  {
+   "id": "wp-248",
+   "group": "wp-24",
+   "x": 0.3767,
+   "y": -0.0951
+  },
+  {
+   "id": "wp-249",
+   "group": "wp-24",
+   "x": 0.4888,
+   "y": -0.1136
+  },
+  {
+   "id": "pg13415-0",
+   "group": "Anton Chekhov",
+   "x": 0.2234,
+   "y": 0.1193
+  },
+  {
+   "id": "pg13415-1",
+   "group": "Anton Chekhov",
+   "x": 0.2997,
+   "y": 0.1619
+  },
+  {
+   "id": "pg13415-2",
+   "group": "Anton Chekhov",
+   "x": 0.3231,
+   "y": 0.0938
+  },
+  {
+   "id": "pg13415-3",
+   "group": "Anton Chekhov",
+   "x": 0.2762,
+   "y": 0.125
+  },
+  {
+   "id": "pg13415-4",
+   "group": "Anton Chekhov",
+   "x": 0.306,
+   "y": 0.0531
+  },
+  {
+   "id": "pg13415-5",
+   "group": "Anton Chekhov",
+   "x": 0.3653,
+   "y": 0.0327
+  },
+  {
+   "id": "pg13415-6",
+   "group": "Anton Chekhov",
+   "x": 0.3135,
+   "y": 0.0558
+  },
+  {
+   "id": "pg13415-7",
+   "group": "Anton Chekhov",
+   "x": 0.2565,
+   "y": 0.0609
+  },
+  {
+   "id": "pg13415-8",
+   "group": "Anton Chekhov",
+   "x": 0.3068,
+   "y": 0.0882
+  },
+  {
+   "id": "pg13415-9",
+   "group": "Anton Chekhov",
+   "x": 0.2094,
+   "y": 0.0556
+  },
+  {
+   "id": "pg1429-0",
+   "group": "Katherine Mansfield",
+   "x": 0.1276,
+   "y": -0.002
+  },
+  {
+   "id": "pg1429-1",
+   "group": "Katherine Mansfield",
+   "x": 0.2492,
+   "y": 0.0945
+  },
+  {
+   "id": "pg1429-2",
+   "group": "Katherine Mansfield",
+   "x": 0.1846,
+   "y": 0.0428
+  },
+  {
+   "id": "pg1429-3",
+   "group": "Katherine Mansfield",
+   "x": 0.1505,
+   "y": 0.0451
+  },
+  {
+   "id": "pg1429-4",
+   "group": "Katherine Mansfield",
+   "x": 0.2269,
+   "y": 0.1723
+  },
+  {
+   "id": "pg1429-5",
+   "group": "Katherine Mansfield",
+   "x": 0.2082,
+   "y": 0.1406
+  },
+  {
+   "id": "pg1429-6",
+   "group": "Katherine Mansfield",
+   "x": 0.1469,
+   "y": 0.0665
+  },
+  {
+   "id": "pg1429-7",
+   "group": "Katherine Mansfield",
+   "x": 0.0945,
+   "y": -0.047
+  },
+  {
+   "id": "pg1429-8",
+   "group": "Katherine Mansfield",
+   "x": 0.2251,
+   "y": 0.0697
+  },
+  {
+   "id": "pg1429-9",
+   "group": "Katherine Mansfield",
+   "x": 0.2533,
+   "y": 0.1555
+  },
+  {
+   "id": "pg2776-0",
+   "group": "O. Henry",
+   "x": 0.2025,
+   "y": 0.06
+  },
+  {
+   "id": "pg2776-1",
+   "group": "O. Henry",
+   "x": 0.1883,
+   "y": 0.1183
+  },
+  {
+   "id": "pg2776-2",
+   "group": "O. Henry",
+   "x": 0.2818,
+   "y": 0.0134
+  },
+  {
+   "id": "pg2776-3",
+   "group": "O. Henry",
+   "x": 0.3105,
+   "y": 0.077
+  },
+  {
+   "id": "pg2776-4",
+   "group": "O. Henry",
+   "x": 0.3138,
+   "y": 0.0915
+  },
+  {
+   "id": "pg2776-5",
+   "group": "O. Henry",
+   "x": 0.2427,
+   "y": 0.1059
+  },
+  {
+   "id": "pg2776-6",
+   "group": "O. Henry",
+   "x": 0.2242,
+   "y": 0.022
+  },
+  {
+   "id": "pg2776-7",
+   "group": "O. Henry",
+   "x": 0.0618,
+   "y": 0.2364
+  },
+  {
+   "id": "pg2776-8",
+   "group": "O. Henry",
+   "x": 0.2201,
+   "y": 0.097
+  },
+  {
+   "id": "pg2776-9",
+   "group": "O. Henry",
+   "x": 0.2282,
+   "y": 0.0976
+  },
+  {
+   "id": "pg269-0",
+   "group": "Saki",
+   "x": 0.1935,
+   "y": 0.037
+  },
+  {
+   "id": "pg269-1",
+   "group": "Saki",
+   "x": 0.2396,
+   "y": -0.0312
+  },
+  {
+   "id": "pg269-2",
+   "group": "Saki",
+   "x": 0.2454,
+   "y": 0.0527
+  },
+  {
+   "id": "pg269-3",
+   "group": "Saki",
+   "x": 0.266,
+   "y": 0.0063
+  },
+  {
+   "id": "pg269-4",
+   "group": "Saki",
+   "x": 0.3753,
+   "y": 0.04
+  },
+  {
+   "id": "pg269-5",
+   "group": "Saki",
+   "x": 0.3253,
+   "y": 0.0226
+  },
+  {
+   "id": "pg269-6",
+   "group": "Saki",
+   "x": 0.3096,
+   "y": 0.0756
+  },
+  {
+   "id": "pg269-7",
+   "group": "Saki",
+   "x": 0.2556,
+   "y": 0.1469
+  },
+  {
+   "id": "pg269-8",
+   "group": "Saki",
+   "x": 0.2168,
+   "y": 0.1331
+  },
+  {
+   "id": "pg269-9",
+   "group": "Saki",
+   "x": 0.2831,
+   "y": 0.1669
+  }
+ ]
+}

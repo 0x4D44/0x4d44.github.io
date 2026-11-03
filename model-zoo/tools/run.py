@@ -172,8 +172,9 @@ def call_retry(model, endpoint, prompt, max_tokens, tries=6):
         if QUOTA_GONE.is_set():
             return {"ok": False, "code": 429, "error": "insufficient_quota (credit exhausted)", "secs": 0}
         r = call(model, endpoint, prompt, max_tokens)
-        if not r["ok"] and re.search(r"insufficient_quota|exceeded your current quota|billing",
-                                     r.get("error", ""), re.I):
+        # OpenAI says insufficient_quota; the deltic proxy answers 402 "every ... key is spent".
+        if not r["ok"] and (r.get("code") == 402 or re.search(
+                r"insufficient_quota|exceeded your current quota|billing|key is spent", r.get("error", ""), re.I)):
             QUOTA_GONE.set()
             print(f"CREDIT EXHAUSTED at {model}: {r['error'][:160]}", flush=True)
             return r
