@@ -1,0 +1,309 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#5f98d2"/><stop offset="0.55" stop-color="#b5d0e8"/><stop offset="1" stop-color="#ecdfcc"/>
+</linearGradient>
+<linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#7d6a92"/><stop offset="1" stop-color="#4e3c5e"/>
+</linearGradient>
+<linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#8ea2b8"/><stop offset="1" stop-color="#6f7f95"/>
+</linearGradient>
+<linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#7b8d6c"/><stop offset="1" stop-color="#5c6e52"/>
+</linearGradient>
+<pattern id="heather" width="26" height="22" patternUnits="userSpaceOnUse">
+<circle cx="6" cy="6" r="4" fill="#a86bbf"/>
+<circle cx="18" cy="14" r="4.5" fill="#8f4fa8"/>
+<circle cx="12" cy="18" r="2.5" fill="#6f9c55"/>
+<circle cx="22" cy="3" r="2.5" fill="#c08fd0"/>
+</pattern>
+<pattern id="tweed" width="8" height="8" patternUnits="userSpaceOnUse">
+<rect width="8" height="8" fill="#7f6e4d"/>
+<path d="M0 4h8M4 0v8" stroke="#5f5036" stroke-width="1.2"/>
+<path d="M0 0l8 8" stroke="#a0905f" stroke-width="0.8"/>
+</pattern>
+<pattern id="tartan" width="14" height="14" patternUnits="userSpaceOnUse">
+<rect width="14" height="14" fill="#2f5e3a"/>
+<rect width="14" height="4" y="5" fill="#1f3f6b" opacity="0.8"/>
+<rect width="4" height="14" x="5" fill="#1f3f6b" opacity="0.8"/>
+<path d="M0 7h14M7 0v14" stroke="#c9302c" stroke-width="1.2"/>
+<path d="M0 1h14M1 0v14" stroke="#e8d35a" stroke-width="0.6"/>
+</pattern>
+<radialGradient id="haggisBody" cx="0.4" cy="0.35" r="0.7">
+<stop offset="0" stop-color="#9a6a3e"/><stop offset="1" stop-color="#5a3719"/>
+</radialGradient>
+<g id="bush">
+<circle cx="0" cy="-6" r="10" fill="#6f9c55"/>
+<circle cx="-9" cy="-10" r="7" fill="#8f4fa8"/>
+<circle cx="8" cy="-12" r="8" fill="#a86bbf"/>
+<circle cx="0" cy="-17" r="7" fill="#b983cc"/>
+<circle cx="-4" cy="-22" r="4" fill="#d3a9e0"/>
+<circle cx="7" cy="-21" r="3.5" fill="#c08fd0"/>
+</g>
+<g id="cloud">
+<ellipse cx="0" cy="0" rx="40" ry="14" fill="#fff" opacity="0.9"/>
+<ellipse cx="-18" cy="-8" rx="22" ry="14" fill="#fff" opacity="0.9"/>
+<ellipse cx="14" cy="-10" rx="26" ry="16" fill="#fff" opacity="0.9"/>
+</g>
+<g id="sheep">
+<ellipse cx="0" cy="0" rx="12" ry="8" fill="#f2efe6"/>
+<circle cx="11" cy="-3" r="5" fill="#2b2b2b"/>
+<path d="M-6 7v6M0 7v6M6 7v6" stroke="#2b2b2b" stroke-width="2"/>
+</g>
+</defs>
+
+<!-- sky -->
+<rect width="800" height="600" fill="url(#sky)"/>
+<circle cx="660" cy="105" r="42" fill="#fff3bf" opacity="0.95"/>
+<circle cx="660" cy="105" r="60" fill="#fff3bf" opacity="0.25"/>
+
+<!-- clouds -->
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;-70 0;0 0" dur="40s" repeatCount="indefinite"/>
+<use href="#cloud" x="140" y="110"/>
+<use href="#cloud" x="420" y="70" transform="scale(1.2)"/>
+<use href="#cloud" x="760" y="160" transform="scale(0.8)"/>
+</g>
+
+<!-- distant hills -->
+<path d="M0 330 Q80 250 170 280 Q240 300 320 240 Q400 190 480 250 Q560 300 640 230 Q720 180 800 260 L800 420 L0 420Z" fill="url(#hill1)"/>
+<path d="M0 370 Q100 300 200 340 Q290 370 380 310 Q470 260 560 320 Q650 370 740 300 L800 330 L800 440 L0 440Z" fill="url(#hill2)"/>
+<use href="#sheep" x="300" y="345" transform="scale(0.6) translate(200 230)"/>
+<use href="#sheep" x="0" y="0" transform="translate(520 352) scale(0.55)"/>
+
+<!-- moor -->
+<path d="M0 395 Q200 375 400 390 Q600 405 800 385 L800 600 L0 600Z" fill="url(#moor)"/>
+<path d="M0 395 Q200 375 400 390 Q600 405 800 385 L800 600 L0 600Z" fill="url(#heather)" opacity="0.75"/>
+<!-- worn trail -->
+<path d="M-10 540 Q200 515 400 530 Q600 545 810 520 L810 548 Q600 570 400 555 Q200 540 -10 565Z" fill="#8a7a6a" opacity="0.45"/>
+
+<!-- back bushes -->
+<g>
+<animateTransform attributeName="transform" type="rotate" values="-2 400 600;2 400 600;-2 400 600" dur="3.2s" repeatCount="indefinite"/>
+<use href="#bush" x="60" y="470"/>
+<use href="#bush" x="250" y="455" transform="scale(1.1)"/>
+<use href="#bush" x="470" y="478"/>
+<use href="#bush" x="690" y="462" transform="scale(1.2)"/>
+</g>
+
+<!-- signpost -->
+<g transform="translate(690 500)">
+<rect x="-3" y="-70" width="6" height="70" fill="#5b3d22"/>
+<rect x="-42" y="-90" width="84" height="28" rx="3" fill="#8a5a30" stroke="#4a2e14" stroke-width="2"/>
+<text x="0" y="-71" text-anchor="middle" font-family="serif" font-size="11" font-weight="bold" fill="#f3e6c8">HAGGIS CROSSING</text>
+</g>
+
+<!-- THE CHASE -->
+<g>
+<animateTransform attributeName="transform" type="translate" from="-360 0" to="1160 0" dur="8s" repeatCount="indefinite"/>
+
+<!-- dust -->
+<g transform="translate(130 525)">
+<ellipse cx="0" cy="0" rx="10" ry="5" fill="#d9cbb5" opacity="0.6">
+<animate attributeName="rx" values="4;18;4" dur="0.5s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.7;0;0.7" dur="0.5s" repeatCount="indefinite"/>
+</ellipse>
+</g>
+<g transform="translate(-20 525)">
+<ellipse cx="0" cy="0" rx="10" ry="4" fill="#d9cbb5" opacity="0.6">
+<animate attributeName="rx" values="4;16;4" dur="0.3s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.7;0;0.7" dur="0.3s" repeatCount="indefinite"/>
+</ellipse>
+</g>
+
+<!-- ===== GAMEKEEPER ===== -->
+<g transform="translate(200 525)">
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0" dur="0.25s" repeatCount="indefinite"/>
+<g transform="rotate(14)">
+
+<!-- back leg -->
+<g transform="translate(-3 -62)">
+<animateTransform attributeName="transform" type="rotate" values="-40;40;-40" dur="0.5s" begin="-0.25s" repeatCount="indefinite" additive="sum"/>
+<rect x="-6" y="0" width="12" height="30" rx="4" fill="#dcb38a"/>
+<g transform="translate(0 27)">
+<animateTransform attributeName="transform" type="rotate" values="50;0;50" dur="0.5s" begin="-0.25s" repeatCount="indefinite" additive="sum"/>
+<rect x="-6" y="0" width="12" height="8" fill="#c9302c"/>
+<rect x="-6" y="6" width="12" height="24" rx="3" fill="#2f5e3a"/>
+<path d="M-7 28h14v7h9v4h-23z" fill="#3a2a1a"/>
+</g>
+</g>
+
+<!-- back arm -->
+<g transform="translate(-6 -108)">
+<animateTransform attributeName="transform" type="rotate" values="-60;50;-60" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+<rect x="-5" y="0" width="10" height="30" rx="4" fill="url(#tweed)"/>
+<circle cx="0" cy="32" r="5" fill="#f0c9a3"/>
+</g>
+
+<!-- torso -->
+<rect x="-19" y="-120" width="38" height="60" rx="7" fill="url(#tweed)"/>
+<path d="M-6 -120 L0 -104 L6 -120Z" fill="#f4efdc"/>
+<path d="M-19 -116 L-8 -108 L-4 -122Z M19 -116 L8 -108 L4 -122Z" fill="#5f5036"/>
+<path d="M0 -104v44" stroke="#5f5036" stroke-width="1.5"/>
+<circle cx="2" cy="-92" r="1.8" fill="#3a2f1f"/><circle cx="2" cy="-80" r="1.8" fill="#3a2f1f"/>
+<!-- kilt -->
+<path d="M-19 -62 L-28 -22 L28 -22 L19 -62Z" fill="url(#tartan)" stroke="#1f3f2a" stroke-width="1.5">
+<animateTransform attributeName="transform" type="skewX" values="-6;6;-6" dur="0.5s" repeatCount="indefinite"/>
+</path>
+<path d="M-10 -62 L-14 -22 M0 -62 L0 -22 M10 -62 L14 -22" stroke="#1a2e22" stroke-width="1" opacity="0.6"/>
+<!-- belt & sporran -->
+<rect x="-20" y="-66" width="40" height="7" fill="#3a2a1a"/>
+<rect x="-5" y="-67" width="10" height="9" fill="#b8a040"/>
+<ellipse cx="0" cy="-42" rx="9" ry="11" fill="#4a3524"/>
+<path d="M-9 -44 Q0 -36 9 -44" stroke="#e8d7a0" stroke-width="2" fill="none"/>
+<path d="M-5 -34v5M0 -33v6M5 -34v5" stroke="#e8d7a0" stroke-width="2"/>
+
+<!-- front leg -->
+<g transform="translate(3 -62)">
+<animateTransform attributeName="transform" type="rotate" values="-40;40;-40" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+<rect x="-6" y="0" width="12" height="30" rx="4" fill="#f0c9a3"/>
+<g transform="translate(0 27)">
+<animateTransform attributeName="transform" type="rotate" values="50;0;50" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+<rect x="-6" y="0" width="12" height="8" fill="#c9302c"/>
+<rect x="-6" y="6" width="12" height="24" rx="3" fill="#3f7a4c"/>
+<path d="M-7 28h14v7h9v4h-23z" fill="#4a3522"/>
+</g>
+</g>
+
+<!-- head -->
+<g transform="translate(2 -136)">
+<rect x="-5" y="10" width="10" height="10" fill="#f0c9a3"/>
+<circle cx="0" cy="0" r="17" fill="#f0c9a3"/>
+<!-- beard -->
+<path d="M-13 5 Q-10 25 4 25 Q17 23 16 5 Q10 16 2 16 Q-8 16 -13 5Z" fill="#c84e1a"/>
+<path d="M-8 12 Q0 22 10 12" stroke="#a23a10" stroke-width="1.2" fill="none"/>
+<!-- face -->
+<circle cx="9" cy="-3" r="5.5" fill="#fff"/>
+<circle cx="10" cy="-3" r="2.2" fill="#2b2b2b"/>
+<path d="M2 -13 q7 -5 14 -2" stroke="#c84e1a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+<path d="M15 0 l6 4 l-5 3" stroke="#cf9f7a" stroke-width="2" fill="none" stroke-linecap="round"/>
+<ellipse cx="9" cy="10" rx="4" ry="5.5" fill="#5a1a1a"/>
+<ellipse cx="9" cy="7.5" rx="3" ry="1.5" fill="#fff"/>
+<circle cx="13" cy="4" r="2" fill="#e8a890" opacity="0.6"/>
+<!-- hair -->
+<g>
+<animateTransform attributeName="transform" type="rotate" values="-5;5;-5" dur="0.25s" repeatCount="indefinite"/>
+<path d="M13 -12 Q8 -21 0 -20 Q-8 -21 -14 -14 L-30 -22 L-19 -11 L-36 -10 L-19 -5 L-32 3 L-17 -1 L-20 8 Q-12 0 -4 -5 Q4 -9 13 -12Z" fill="#c84e1a"/>
+<path d="M-14 -14 L-26 -17 M-18 -8 L-30 -7 M-17 -1 L-27 2" stroke="#e5702e" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<path d="M-16 2 Q-17 8 -13 12" stroke="#c84e1a" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>
+<!-- sweat drops -->
+<path d="M20 -14 q2 4 0 6 q-2 -2 0 -6z" fill="#8fd0ff">
+<animate attributeName="opacity" values="1;0;1" dur="0.8s" repeatCount="indefinite"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;8 -10;0 0" dur="0.8s" repeatCount="indefinite"/>
+</path>
+</g>
+
+<!-- front arm -->
+<g transform="translate(6 -108)">
+<animateTransform attributeName="transform" type="rotate" values="50;-60;50" dur="0.5s" repeatCount="indefinite" additive="sum"/>
+<rect x="-5" y="0" width="10" height="30" rx="4" fill="url(#tweed)"/>
+<circle cx="0" cy="32" r="5" fill="#f0c9a3"/>
+<!-- crook -->
+<path d="M0 30 L0 -20 q0 -10 -8 -8" stroke="#6b4a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+</g>
+
+</g>
+</g>
+<!-- flying cap -->
+<g transform="translate(-42 -178)">
+<animateTransform attributeName="transform" type="translate" values="-42 -178;-46 -186;-42 -178" dur="0.6s" repeatCount="indefinite"/>
+<g>
+<animateTransform attributeName="transform" type="rotate" values="-25;-5;-25" dur="0.6s" repeatCount="indefinite"/>
+<path d="M-16 0 q16 -16 32 0 l6 2 h-42z" fill="url(#tweed)" stroke="#4a3f2a" stroke-width="1"/>
+</g>
+</g>
+</g>
+
+<!-- ===== HAGGIS ===== -->
+<g transform="translate(40 525)">
+<!-- motion lines -->
+<g stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+<animate attributeName="opacity" values="0.8;0.2;0.8" dur="0.3s" repeatCount="indefinite"/>
+<path d="M-58 -44h-18M-66 -30h-24M-60 -16h-16"/>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="0.25s" repeatCount="indefinite"/>
+<!-- legs (longer on the left, as tradition demands) -->
+<g transform="translate(-26 -14)">
+<animateTransform attributeName="transform" type="rotate" values="35;-35;35" dur="0.25s" repeatCount="indefinite" additive="sum"/>
+<path d="M0 0v18" stroke="#4a2f17" stroke-width="6" stroke-linecap="round"/>
+<ellipse cx="3" cy="18" rx="6" ry="3" fill="#2d1a0a"/>
+</g>
+<g transform="translate(-10 -12)">
+<animateTransform attributeName="transform" type="rotate" values="-35;35;-35" dur="0.25s" repeatCount="indefinite" additive="sum"/>
+<path d="M0 0v16" stroke="#4a2f17" stroke-width="6" stroke-linecap="round"/>
+<ellipse cx="3" cy="16" rx="6" ry="3" fill="#2d1a0a"/>
+</g>
+<g transform="translate(10 -12)">
+<animateTransform attributeName="transform" type="rotate" values="35;-35;35" dur="0.25s" repeatCount="indefinite" additive="sum"/>
+<path d="M0 0v12" stroke="#4a2f17" stroke-width="6" stroke-linecap="round"/>
+<ellipse cx="3" cy="12" rx="5" ry="3" fill="#2d1a0a"/>
+</g>
+<g transform="translate(26 -14)">
+<animateTransform attributeName="transform" type="rotate" values="-35;35;-35" dur="0.25s" repeatCount="indefinite" additive="sum"/>
+<path d="M0 0v12" stroke="#4a2f17" stroke-width="6" stroke-linecap="round"/>
+<ellipse cx="3" cy="12" rx="5" ry="3" fill="#2d1a0a"/>
+</g>
+<!-- body -->
+<g transform="rotate(-8)">
+<ellipse cx="0" cy="-30" rx="44" ry="30" fill="url(#haggisBody)" stroke="#3a2410" stroke-width="2"/>
+<!-- knotted ends -->
+<path d="M-44 -30 l-10 -8 l2 8 l-2 8z" fill="#5a3719" stroke="#3a2410" stroke-width="1.5"/>
+<path d="M44 -30 l10 -6 l-2 6 l2 6z" fill="#5a3719" stroke="#3a2410" stroke-width="1.5"/>
+<!-- stitches -->
+<path d="M-40 -42 Q0 -70 40 -42" stroke="#3a2410" stroke-width="2" fill="none" stroke-dasharray="5 4"/>
+<path d="M-30 -50 l4 -6 M-15 -57 l3 -7 M0 -60 l0 -7 M15 -57 l-3 -7 M30 -50 l-4 -6" stroke="#3a2410" stroke-width="2"/>
+<!-- speckles -->
+<circle cx="-18" cy="-22" r="2" fill="#3a2410" opacity="0.5"/>
+<circle cx="-6" cy="-12" r="1.5" fill="#3a2410" opacity="0.5"/>
+<circle cx="8" cy="-20" r="2" fill="#3a2410" opacity="0.5"/>
+<circle cx="-26" cy="-36" r="1.5" fill="#3a2410" opacity="0.5"/>
+<!-- eyes -->
+<circle cx="18" cy="-40" r="7" fill="#fff" stroke="#3a2410" stroke-width="1.5"/>
+<circle cx="32" cy="-36" r="6" fill="#fff" stroke="#3a2410" stroke-width="1.5"/>
+<circle cx="20" cy="-39" r="3" fill="#1a0a00"/>
+<circle cx="34" cy="-35" r="2.5" fill="#1a0a00"/>
+<circle cx="21" cy="-40.5" r="1" fill="#fff"/>
+<circle cx="35" cy="-36.5" r="0.8" fill="#fff"/>
+<!-- angry brows -->
+<path d="M10 -50 l14 5" stroke="#2a1608" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M38 -46 l-10 4" stroke="#2a1608" stroke-width="3.5" stroke-linecap="round"/>
+<!-- mouth -->
+<path d="M14 -24 Q28 -18 42 -26 Q34 -8 20 -14Z" fill="#3b0d0d" stroke="#3a2410" stroke-width="1.5">
+<animate attributeName="d" values="M14 -24 Q28 -18 42 -26 Q34 -8 20 -14Z;M14 -24 Q28 -20 42 -26 Q34 -14 20 -18Z;M14 -24 Q28 -18 42 -26 Q34 -8 20 -14Z" dur="0.3s" repeatCount="indefinite"/>
+</path>
+<path d="M18 -22 l3 5 l3 -4 M28 -21 l2 5 l3 -4" fill="#fff" stroke="#fff" stroke-width="0.8"/>
+<path d="M22 -14 l3 -4 l3 4" fill="#fff"/>
+<!-- tongue -->
+<path d="M30 -14 q4 2 6 -2" stroke="#e05a6a" stroke-width="3" fill="none" stroke-linecap="round"/>
+</g>
+<!-- steam (it's piping hot) -->
+<g fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.6">
+<path d="M-10 -66 q-6 -8 0 -16 q6 -8 0 -16">
+<animate attributeName="opacity" values="0.7;0;0.7" dur="1.2s" repeatCount="indefinite"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;-6 -14;0 0" dur="1.2s" repeatCount="indefinite"/>
+</path>
+<path d="M8 -70 q-6 -8 0 -16 q6 -8 0 -16">
+<animate attributeName="opacity" values="0;0.7;0" dur="1.2s" repeatCount="indefinite"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;-6 -14;0 0" dur="1.2s" begin="-0.6s" repeatCount="indefinite"/>
+</path>
+</g>
+</g>
+</g>
+
+</g>
+
+<!-- front bushes -->
+<g>
+<animateTransform attributeName="transform" type="rotate" values="2 400 650;-2 400 650;2 400 650" dur="2.8s" repeatCount="indefinite"/>
+<use href="#bush" x="30" y="585" transform="scale(1.4) translate(-10 -170)"/>
+<use href="#bush" x="140" y="598" transform="scale(1.6) translate(-55 -225)"/>
+<use href="#bush" x="330" y="590" transform="scale(1.3) translate(-80 -140)"/>
+<use href="#bush" x="520" y="600" transform="scale(1.5) translate(-170 -205)"/>
+<use href="#bush" x="700" y="592" transform="scale(1.4) translate(-200 -170)"/>
+<use href="#bush" x="790" y="600" transform="scale(1.2) translate(-130 -100)"/>
+</g>
+</svg>

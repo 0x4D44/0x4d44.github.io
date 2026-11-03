@@ -185,7 +185,7 @@
   "model": "gpt-5.5-pro",
   "sample": 0,
   "status": "no-svg",
-  "note": "ran out of output budget (max_output_tokens)"
+  "note": "cut off while still defining its shapes: nothing reached the canvas"
  },
  "gpt-5-pro": {
   "model": "gpt-5-pro",
@@ -196,7 +196,120 @@
  "gpt-5.4-pro": {
   "model": "gpt-5.4-pro",
   "sample": 0,
+  "status": "repaired",
+  "truncated": true,
+  "fixes": [
+   "the reply was cut off mid-drawing; closed 3 open element(s)"
+  ],
+  "error": "no closing </svg>: the reply ran out of tokens",
+  "unsafe": false
+ },
+ "claude-haiku-4-5-20251001": {
+  "model": "claude-haiku-4-5-20251001",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-haiku-5-5": {
+  "model": "claude-haiku-5-5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-4-5-20251101": {
+  "model": "claude-opus-4-5-20251101",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-haiku-5-5@thinking": {
+  "model": "claude-haiku-5-5@thinking",
+  "sample": 0,
   "status": "no-svg",
-  "note": "ran out of output budget (max_output_tokens)"
+  "note": "ran out of output budget (max_tokens)"
+ },
+ "claude-opus-4-7": {
+  "model": "claude-opus-4-7",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-4-8": {
+  "model": "claude-opus-4-8",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-4-6": {
+  "model": "claude-opus-4-6",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-fable-5-1": {
+  "model": "claude-fable-5-1",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-fable-5": {
+  "model": "claude-fable-5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-sonnet-4-5-20250929": {
+  "model": "claude-sonnet-4-5-20250929",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-fable-5-1@thinking": {
+  "model": "claude-fable-5-1@thinking",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-sonnet-5": {
+  "model": "claude-sonnet-5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-sonnet-4-6": {
+  "model": "claude-sonnet-4-6",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-5-5": {
+  "model": "claude-opus-5-5",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-5-5@thinking": {
+  "model": "claude-opus-5-5@thinking",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_tokens)"
+ },
+ "claude-sonnet-5-5@thinking": {
+  "model": "claude-sonnet-5-5@thinking",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "claude-opus-5": {
+  "model": "claude-opus-5",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_tokens)"
+ },
+ "claude-sonnet-5-5": {
+  "model": "claude-sonnet-5-5",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "cut off while still defining its shapes: nothing reached the canvas"
  }
 }

@@ -22,6 +22,34 @@ def extract(text):
     return m.group(0) if m else None
 
 
+def visible(svg):
+    """True if anything is drawn outside <defs> (a cut-off file may be all setup)."""
+    outside = re.sub(r"<defs\b.*?</defs>", "", svg, flags=re.S)
+    return bool(re.search(r"<(rect|circle|ellipse|path|polygon|polyline|line|use|text|image)\b", outside))
+
+
+def close_truncated(text):
+    """An SVG cut off mid-stream: drop the half-written tail, then close every open element.
+
+    Returns (svg, fix description) or (None, None) if there is no <svg to rescue."""
+    start = (text or "").find("<svg")
+    if start < 0:
+        return None, None
+    body = text[start:]
+    body = body[:body.rfind(">") + 1]  # drop a half-written tag or text after the last complete tag
+    stack = []
+    for m in re.finditer(r"<(/?)([A-Za-z][\w:-]*)[^>]*?(/?)>|<!--.*?-->|<!\[CDATA\[.*?\]\]>", body, re.S):
+        if not m.group(2):
+            continue
+        if m.group(1):
+            if stack and stack[-1] == m.group(2):
+                stack.pop()
+        elif not m.group(3):
+            stack.append(m.group(2))
+    closing = "".join(f"</{t}>" for t in reversed(stack))
+    return body + closing, f"the reply was cut off mid-drawing; closed {len(stack)} open element(s)"
+
+
 def parse_error(svg):
     try:
         ET.fromstring(svg)
@@ -72,7 +100,20 @@ def main(qid):
         name = f"{r['model']}-s{r['sample']}" if r["sample"] else r["model"]
         svg = extract(r.get("text"))
         entry = {"model": r["model"], "sample": r["sample"]}
-        if svg is None:
+        partial, why = (None, None) if svg is not None else close_truncated(r.get("text"))
+        if partial and not visible(partial):
+            entry["status"] = "no-svg"
+            entry["note"] = "cut off while still defining its shapes: nothing reached the canvas"
+            index[name] = entry
+            print(f"{name:22} no-svg    (cut off before drawing anything visible)")
+            continue
+        if svg is None and partial and parse_error(partial) is None:
+            open(os.path.join(out, f"{name}.svg"), "w").write(r["text"][r["text"].find("<svg"):])
+            open(os.path.join(out, f"{name}.repaired.svg"), "w").write(partial)
+            entry.update(status="repaired", truncated=True, fixes=[why],
+                         error="no closing </svg>: the reply ran out of tokens")
+            entry["unsafe"] = bool(re.search(r"<script|\bon\w+\s*=|href=[\"']https?:", partial))
+        elif svg is None:
             entry["status"] = "no-svg"
             entry["note"] = (f"ran out of output budget ({r.get('incomplete')})"
                              if r.get("incomplete") else "reply contained no <svg> element")

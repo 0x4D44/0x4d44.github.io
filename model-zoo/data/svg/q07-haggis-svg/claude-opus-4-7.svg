@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+<defs>
+<radialGradient id="sky" cx="50%" cy="0%" r="100%">
+<stop offset="0%" stop-color="#b8d0e0"/>
+<stop offset="100%" stop-color="#e8d5e0"/>
+</radialGradient>
+<linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#7a5a7a"/>
+<stop offset="50%" stop-color="#8a4f7d"/>
+<stop offset="100%" stop-color="#4a3550"/>
+</linearGradient>
+<radialGradient id="haggisBody" cx="50%" cy="40%" r="60%">
+<stop offset="0%" stop-color="#8b5a2b"/>
+<stop offset="100%" stop-color="#3d2410"/>
+</radialGradient>
+<g id="heather">
+<circle cx="0" cy="0" r="3" fill="#a060a0"/>
+<circle cx="4" cy="-2" r="2.5" fill="#c070c0"/>
+<circle cx="-4" cy="-2" r="2.5" fill="#9050a0"/>
+<circle cx="0" cy="-5" r="2.5" fill="#b060b0"/>
+<line x1="0" y1="0" x2="0" y2="8" stroke="#4a3028" stroke-width="1"/>
+</g>
+</defs>
+
+<!-- sky -->
+<rect width="800" height="400" fill="url(#sky)"/>
+
+<!-- distant hills -->
+<path d="M0,380 Q150,300 300,340 T600,330 T800,350 L800,400 L0,400 Z" fill="#6a5a7a" opacity="0.7"/>
+<path d="M0,400 Q200,340 400,370 T800,380 L800,420 L0,420 Z" fill="#5a4a6a" opacity="0.8"/>
+
+<!-- moor ground -->
+<rect y="400" width="800" height="200" fill="url(#moor)"/>
+
+<!-- scattered heather -->
+<use href="#heather" x="50" y="450"/>
+<use href="#heather" x="120" y="480"/>
+<use href="#heather" x="200" y="460"/>
+<use href="#heather" x="280" y="500"/>
+<use href="#heather" x="360" y="470"/>
+<use href="#heather" x="440" y="510"/>
+<use href="#heather" x="520" y="465"/>
+<use href="#heather" x="600" y="495"/>
+<use href="#heather" x="680" y="475"/>
+<use href="#heather" x="750" y="505"/>
+<use href="#heather" x="90" y="530"/>
+<use href="#heather" x="250" y="550"/>
+<use href="#heather" x="410" y="540"/>
+<use href="#heather" x="570" y="555"/>
+<use href="#heather" x="720" y="545"/>
+<use href="#heather" x="30" y="570"/>
+<use href="#heather" x="180" y="580"/>
+<use href="#heather" x="340" y="585"/>
+<use href="#heather" x="500" y="575"/>
+<use href="#heather" x="650" y="580"/>
+
+<!-- sun -->
+<circle cx="650" cy="100" r="40" fill="#f5e5c0" opacity="0.8"/>
+
+<!-- Gamekeeper group (runs across) -->
+<g>
+<animateTransform attributeName="transform" attributeType="XML" type="translate"
+values="-200,0; 900,0" dur="8s" repeatCount="indefinite"/>
+<g>
+<!-- bobbing -->
+<animateTransform attributeName="transform" attributeType="XML" type="translate"
+values="0,0;0,-6;0,0;0,-6;0,0" dur="0.6s" repeatCount="indefinite"/>
+<!-- legs -->
+<g stroke="#4a3020" stroke-width="6" stroke-linecap="round">
+<line x1="385" y1="500" x2="375" y2="540">
+<animate attributeName="x2" values="375;395;375" dur="0.4s" repeatCount="indefinite"/>
+</line>
+<line x1="395" y1="500" x2="405" y2="540">
+<animate attributeName="x2" values="405;385;405" dur="0.4s" repeatCount="indefinite"/>
+</line>
+</g>
+<!-- boots -->
+<ellipse cx="375" cy="542" rx="8" ry="4" fill="#2a1a10">
+<animate attributeName="cx" values="375;395;375" dur="0.4s" repeatCount="indefinite"/>
+</ellipse>
+<ellipse cx="405" cy="542" rx="8" ry="4" fill="#2a1a10">
+<animate attributeName="cx" values="405;385;405" dur="0.4s" repeatCount="indefinite"/>
+</ellipse>
+<!-- kilt -->
+<path d="M370,470 L410,470 L415,505 L365,505 Z" fill="#2a5030"/>
+<path d="M375,470 L375,505 M385,470 L385,505 M395,470 L395,505 M405,470 L405,505" stroke="#1a3020" stroke-width="1"/>
+<path d="M365,480 L415,480 M365,495 L415,495" stroke="#1a3020" stroke-width="1"/>
+<!-- torso -->
+<path d="M372,420 L408,420 L410,475 L370,475 Z" fill="#5a7050"/>
+<!-- arms swinging -->
+<g stroke="#5a7050" stroke-width="8" stroke-linecap="round">
+<line x1="375" y1="430" x2="365" y2="465">
+<animate attributeName="x2" values="365;380;365" dur="0.4s" repeatCount="indefinite"/>
+</line>
+<line x1="405" y1="430" x2="415" y2="465">
+<animate attributeName="x2" values="415;400;415" dur="0.4s" repeatCount="indefinite"/>
+</line>
+</g>
+<!-- hands -->
+<circle cx="365" cy="465" r="4" fill="#f0c090">
+<animate attributeName="cx" values="365;380;365" dur="0.4s" repeatCount="indefinite"/>
+</circle>
+<circle cx="415" cy="465" r="4" fill="#f0c090">
+<animate attributeName="cx" values="415;400;415" dur="0.4s" repeatCount="indefinite"/>
+</circle>
+<!-- head -->
+<circle cx="390" cy="405" r="18" fill="#f0c090"/>
+<!-- red hair -->
+<path d="M372,398 Q375,380 390,378 Q405,380 408,398 Q406,392 400,390 Q395,388 390,390 Q385,388 380,390 Q374,392 372,398 Z" fill="#c04020"/>
+<path d="M374,400 Q372,395 374,390 M406,400 Q408,395 406,390" stroke="#c04020" stroke-width="3" fill="none"/>
+<!-- beard -->
+<path d="M378,415 Q390,425 402,415 Q400,420 390,422 Q380,420 378,415 Z" fill="#c04020"/>
+<!-- eyes wide (scared) -->
+<circle cx="384" cy="406" r="2.5" fill="#fff"/>
+<circle cx="396" cy="406" r="2.5" fill="#fff"/>
+<circle cx="384" cy="406" r="1.3" fill="#000"/>
+<circle cx="396" cy="406" r="1.3" fill="#000"/>
+<!-- mouth (shouting) -->
+<ellipse cx="390" cy="416" rx="2" ry="2.5" fill="#4a1010"/>
+<!-- tam o' shanter hat -->
+<ellipse cx="390" cy="382" rx="20" ry="5" fill="#1a3060"/>
+<ellipse cx="390" cy="380" rx="15" ry="7" fill="#2a4080"/>
+<circle cx="390" cy="373" r="3" fill="#c04020"/>
+</g>
+</g>
+
+<!-- Haggis chasing -->
+<g>
+<animateTransform attributeName="transform" attributeType="XML" type="translate"
+values="-320,0; 780,0" dur="8s" repeatCount="indefinite"/>
+<g>
+<animateTransform attributeName="transform" attributeType="XML" type="translate"
+values="0,0;0,-8;0,0;0,-8;0,0" dur="0.5s" repeatCount="indefinite"/>
+<!-- tiny legs -->
+<g stroke="#3d2410" stroke-width="4" stroke-linecap="round">
+<line x1="375" y1="515" x2="372" y2="535">
+<animate attributeName="x2" values="372;380;372" dur="0.3s" repeatCount="indefinite"/>
+</line>
+<line x1="395" y1="515" x2="398" y2="535">
+<animate attributeName="x2" values="398;390;398" dur="0.3s" repeatCount="indefinite"/>
+</line>
+</g>
+<!-- body -->
+<ellipse cx="385" cy="500" rx="35" ry="28" fill="url(#haggisBody)"/>
+<!-- stitching -->
+<path d="M355,495 Q385,485 415,495" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+<path d="M358,505 Q385,515 412,505" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+<!-- texture -->
+<circle cx="370" cy="490" r="2" fill="#2a1808" opacity="0.5"/>
+<circle cx="400" cy="495" r="2" fill="#2a1808" opacity="0.5"/>
+<circle cx="380" cy="510" r="2" fill="#2a1808" opacity="0.5"/>
+<!-- angry eyes -->
+<circle cx="402" cy="492" r="4" fill="#fff"/>
+<circle cx="415" cy="492" r="4" fill="#fff"/>
+<circle cx="403" cy="493" r="2" fill="#000"/>
+<circle cx="416" cy="493" r="2" fill="#000"/>
+<!-- angry brows -->
+<line x1="397" y1="486" x2="407" y2="490" stroke="#2a1808" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="420" y1="490" x2="410" y2="486" stroke="#2a1808" stroke-width="2.5" stroke-linecap="round"/>
+<!-- mouth with teeth -->
+<path d="M400,505 Q410,512 420,505 L418,508 L415,505 L412,508 L409,505 L406,508 L403,505 Z" fill="#4a1010"/>
+<!-- tiny arms reaching -->
+<g stroke="#3d2410" stroke-width="3" stroke-linecap="round">
+<line x1="418" y1="498" x2="432" y2="495">
+<animate attributeName="x2" values="432;438;432" dur="0.3s" repeatCount="indefinite"/>
+</line>
+</g>
+</g>
+</g>
+
+<!-- foreground heather -->
+<use href="#heather" x="100" y="590" transform="scale(1.5) translate(0,-40)"/>
+<use href="#heather" x="400" y="590" transform="scale(1.5) translate(0,-40)"/>
+<use href="#heather" x="700" y="590" transform="scale(1.5) translate(0,-40)"/>
+
+</svg>

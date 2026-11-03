@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="sans-serif">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bcd9e8"/>
+      <stop offset="70%" stop-color="#e6eef0"/>
+    </linearGradient>
+    <linearGradient id="hillGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7d8f6b"/>
+      <stop offset="100%" stop-color="#5f7350"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b7a4f"/>
+      <stop offset="100%" stop-color="#4a5a37"/>
+    </linearGradient>
+    <radialGradient id="heatherDot" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c58fd1"/>
+      <stop offset="100%" stop-color="#8a5a9e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect x="0" y="0" width="800" height="420" fill="url(#sky)"/>
+
+  <!-- Clouds, slow drifting loop -->
+  <g fill="#ffffff" opacity="0.85">
+    <g transform="translate(0,0)">
+      <ellipse cx="100" cy="80" rx="40" ry="18"/>
+      <ellipse cx="135" cy="70" rx="30" ry="14"/>
+      <ellipse cx="70" cy="70" rx="25" ry="12"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="-100,0; 900,0" dur="40s" repeatCount="indefinite"/>
+    </g>
+    <g transform="translate(0,0)">
+      <ellipse cx="400" cy="50" rx="50" ry="20"/>
+      <ellipse cx="440" cy="40" rx="35" ry="15"/>
+      <ellipse cx="360" cy="40" rx="30" ry="13"/>
+      <animateTransform attributeName="transform" type="translate"
+        values="-200,0; 1000,0" dur="55s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- Distant hills -->
+  <path d="M0,340 Q150,280 300,330 T600,320 T800,340 L800,420 L0,420 Z" fill="url(#hillGrad)"/>
+
+  <!-- Moor ground -->
+  <rect x="0" y="380" width="800" height="220" fill="url(#ground)"/>
+
+  <!-- Heather clumps scattered across the moor -->
+  <g>
+    <g transform="translate(60,400)">
+      <circle cx="0" cy="0" r="14" fill="url(#heatherDot)"/>
+      <circle cx="12" cy="4" r="10" fill="url(#heatherDot)"/>
+      <circle cx="-10" cy="6" r="9" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(180,420)">
+      <circle cx="0" cy="0" r="12" fill="url(#heatherDot)"/>
+      <circle cx="10" cy="5" r="9" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(300,405)">
+      <circle cx="0" cy="0" r="16" fill="url(#heatherDot)"/>
+      <circle cx="-14" cy="6" r="10" fill="url(#heatherDot)"/>
+      <circle cx="14" cy="8" r="11" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(460,430)">
+      <circle cx="0" cy="0" r="13" fill="url(#heatherDot)"/>
+      <circle cx="12" cy="4" r="9" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(600,410)">
+      <circle cx="0" cy="0" r="15" fill="url(#heatherDot)"/>
+      <circle cx="-12" cy="6" r="10" fill="url(#heatherDot)"/>
+      <circle cx="12" cy="8" r="9" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(730,425)">
+      <circle cx="0" cy="0" r="12" fill="url(#heatherDot)"/>
+      <circle cx="10" cy="5" r="8" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(20,460)">
+      <circle cx="0" cy="0" r="10" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(250,470)">
+      <circle cx="0" cy="0" r="11" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(500,480)">
+      <circle cx="0" cy="0" r="12" fill="url(#heatherDot)"/>
+    </g>
+    <g transform="translate(680,470)">
+      <circle cx="0" cy="0" r="10" fill="url(#heatherDot)"/>
+    </g>
+  </g>
+
+  <!-- Grass tufts -->
+  <g stroke="#3d4a2a" stroke-width="2">
+    <path d="M40,480 q3,-15 0,-25"/>
+    <path d="M48,480 q-3,-18 -2,-28"/>
+    <path d="M200,500 q3,-15 0,-25"/>
+    <path d="M400,520 q3,-15 0,-25"/>
+    <path d="M600,500 q3,-15 0,-25"/>
+    <path d="M700,510 q3,-15 0,-25"/>
+  </g>
+
+  <!-- ===================== GAMEKEEPER ===================== -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-120,0; 920,0" dur="6s" repeatCount="indefinite"/>
+
+    <g transform="translate(0,420) scale(1.1)">
+      <!-- bobbing while running -->
+      <animateTransform attributeName="transform" type="translate"
+        additive="sum" values="0,0; 0,-6; 0,0" dur="0.3s" repeatCount="indefinite"/>
+
+      <!-- back leg -->
+      <g transform="translate(-4,40)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="30;-30;30" dur="0.3s" repeatCount="indefinite"/>
+        <rect x="-3" y="0" width="7" height="30" fill="#3b2a1a" rx="2"/>
+        <rect x="-5" y="28" width="12" height="6" fill="#111" rx="2"/>
+      </g>
+
+      <!-- front leg -->
+      <g transform="translate(6,40)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="-30;30;-30" dur="0.3s" repeatCount="indefinite"/>
+        <rect x="-3" y="0" width="7" height="30" fill="#2e4d2e" rx="2"/>
+        <rect x="-5" y="28" width="12" height="6" fill="#111" rx="2"/>
+      </g>
+
+      <!-- kilt/body -->
+      <path d="M-14,10 L14,10 L18,42 L-18,42 Z" fill="#7a2222"/>
+      <path d="M-14,10 L14,10 L18,42 L-18,42 Z" fill="none" stroke="#5a1818" stroke-width="2"/>
+      <line x1="-10" y1="12" x2="-6" y2="40" stroke="#5a1818" stroke-width="2"/>
+      <line x1="0" y1="12" x2="2" y2="40" stroke="#5a1818" stroke-width="2"/>
+      <line x1="10" y1="12" x2="14" y2="40" stroke="#5a1818" stroke-width="2"/>
+
+      <!-- torso -->
+      <rect x="-12" y="-20" width="24" height="32" rx="6" fill="#3d5a3d"/>
+
+      <!-- back arm -->
+      <g transform="translate(-10,-14)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="-40;40;-40" dur="0.3s" repeatCount="indefinite"/>
+        <rect x="-3" y="0" width="6" height="24" fill="#3d5a3d" rx="3"/>
+        <circle cx="0" cy="24" r="4" fill="#e8b48c"/>
+      </g>
+
+      <!-- front arm -->
+      <g transform="translate(10,-14)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="40;-40;40" dur="0.3s" repeatCount="indefinite"/>
+        <rect x="-3" y="0" width="6" height="24" fill="#3d5a3d" rx="3"/>
+        <circle cx="0" cy="24" r="4" fill="#e8b48c"/>
+      </g>
+
+      <!-- head -->
+      <g transform="translate(0,-32)">
+        <circle cx="0" cy="0" r="11" fill="#e8b48c"/>
+        <!-- red hair -->
+        <path d="M-11,-3 Q-12,-16 0,-15 Q12,-16 11,-3 Q10,-10 0,-9 Q-10,-10 -11,-3 Z" fill="#c1440e"/>
+        <path d="M-10,-6 Q-13,2 -10,6" fill="none" stroke="#c1440e" stroke-width="3"/>
+        <!-- flat cap -->
+        <path d="M-12,-6 Q0,-18 13,-5 L13,-4 Q0,-10 -12,-4 Z" fill="#555"/>
+        <ellipse cx="2" cy="-5" rx="13" ry="3" fill="#444"/>
+        <!-- face -->
+        <circle cx="4" cy="1" r="1.3" fill="#222"/>
+        <path d="M3,6 q3,2 5,0" stroke="#7a3b1a" stroke-width="1.5" fill="none"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== HAGGIS ===================== -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-220,0; 760,0" dur="6s" begin="0.15s" repeatCount="indefinite"/>
+
+    <g transform="translate(0,470) scale(1.0)">
+      <!-- bobbing/scurry -->
+      <animateTransform attributeName="transform" type="translate"
+        additive="sum" values="0,0; 0,-4; 0,0" dur="0.18s" repeatCount="indefinite"/>
+
+      <!-- legs -->
+      <g transform="translate(-14,14)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="25;-25;25" dur="0.18s" repeatCount="indefinite"/>
+        <rect x="-2" y="0" width="5" height="12" fill="#5c3a21" rx="2"/>
+      </g>
+      <g transform="translate(-4,16)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="-25;25;-25" dur="0.18s" repeatCount="indefinite"/>
+        <rect x="-2" y="0" width="5" height="12" fill="#5c3a21" rx="2"/>
+      </g>
+      <g transform="translate(8,16)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="25;-25;25" dur="0.18s" repeatCount="indefinite"/>
+        <rect x="-2" y="0" width="5" height="12" fill="#5c3a21" rx="2"/>
+      </g>
+      <g transform="translate(18,14)">
+        <animateTransform attributeName="transform" type="rotate"
+          additive="sum" values="-25;25;-25" dur="0.18s" repeatCount="indefinite"/>
+        <rect x="-2" y="0" width="5" height="12" fill="#5c3a21" rx="2"/>
+      </g>
+
+      <!-- furry round body -->
+      <ellipse cx="0" cy="0" rx="26" ry="18" fill="#8a6a4a"/>
+      <ellipse cx="0" cy="0" rx="26" ry="18" fill="none" stroke="#6b4e34" stroke-width="2"/>
+      <!-- fur texture -->
+      <g stroke="#6b4e34" stroke-width="1.5" opacity="0.7">
+        <path d="M-20,-8 q2,-4 4,0"/>
+        <path d="M-10,-14 q2,-4 4,0"/>
+        <path d="M0,-16 q2,-4 4,0"/>
+        <path d="M10,-14 q2,-4 4,0"/>
+        <path d="M18,-8 q2,-4 4,0"/>
+        <path d="M-16,10 q2,4 4,0"/>
+        <path d="M0,14 q2,4 4,0"/>
+        <path d="M14,10 q2,4 4,0"/>
+      </g>
+
+      <!-- head -->
+      <g transform="translate(26,-4)">
+        <ellipse cx="0" cy="0" rx="10" ry="8" fill="#8a6a4a"/>
+        <!-- snout -->
+        <ellipse cx="9" cy="2" rx="4" ry="3" fill="#6b4e34"/>
+        <circle cx="11" cy="1" r="0.8" fill="#222"/>
+        <circle cx="11" cy="3" r="0.8" fill="#222"/>
+        <!-- eye -->
+        <circle cx="2" cy="-3" r="1.6" fill="#1a1a1a"/>
+        <!-- eyebrow tuft -->
+        <path d="M-2,-8 q4,-3 6,0" stroke="#6b4e34" stroke-width="2" fill="none"/>
+        <!-- ear -->
+        <ellipse cx="-6" cy="-7" rx="3" ry="4" fill="#6b4e34"/>
+        <!-- little horn-like tufts -->
+        <path d="M-3,-9 q1,-5 3,-6" stroke="#5c4530" stroke-width="2" fill="none"/>
+      </g>
+
+      <!-- stubby legs already drawn, tail tuft -->
+      <path d="M-26,-2 q-8,-2 -10,2 q2,4 10,2 Z" fill="#6b4e34"/>
+    </g>
+  </g>
+</svg>

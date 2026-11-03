@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9d4e6"/>
+      <stop offset="1" stop-color="#eef2ee"/>
+    </linearGradient>
+    <linearGradient id="hwash" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8e5aa8" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#6d4a86" stop-opacity=".15"/>
+    </linearGradient>
+    <g id="hclump">
+      <path d="M0 0 Q-3 -10 -7 -16 M0 0 Q0 -12 1 -20 M0 0 Q4 -10 8 -15" stroke="#4a7245" stroke-width="2" fill="none"/>
+      <circle cx="-7" cy="-17" r="3.5" fill="#9b59b6"/>
+      <circle cx="-5" cy="-11" r="3" fill="#8e44ad"/>
+      <circle cx="1" cy="-21" r="3.5" fill="#a569bd"/>
+      <circle cx="1" cy="-14" r="3" fill="#8e44ad"/>
+      <circle cx="8" cy="-16" r="3.5" fill="#9b59b6"/>
+      <circle cx="6" cy="-10" r="3" fill="#a569bd"/>
+    </g>
+    <g id="cloud">
+      <ellipse cx="0" cy="0" rx="48" ry="16" fill="#fff" opacity=".9"/>
+      <ellipse cx="30" cy="-10" rx="30" ry="14" fill="#fff" opacity=".9"/>
+      <ellipse cx="-28" cy="-8" rx="26" ry="12" fill="#fff" opacity=".9"/>
+    </g>
+  </defs>
+
+  <!-- sky & sun -->
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="660" cy="90" r="38" fill="#f6e7b2" opacity=".9"/>
+
+  <!-- drifting clouds (seamless loop) -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" from="0 0" to="-900 0" dur="30s" repeatCount="indefinite"/>
+    <use href="#cloud" x="150" y="100"/>
+    <use href="#cloud" x="520" y="60"/>
+    <use href="#cloud" x="820" y="130"/>
+    <use href="#cloud" x="1050" y="100"/>
+    <use href="#cloud" x="1420" y="60"/>
+    <use href="#cloud" x="1720" y="130"/>
+  </g>
+
+  <!-- hills -->
+  <path d="M0 330 Q180 220 380 310 Q560 190 800 300 L800 600 L0 600 Z" fill="#7e6f94"/>
+  <path d="M0 400 Q220 320 450 390 Q640 330 800 385 L800 600 L0 600 Z" fill="#6b7a52"/>
+
+  <!-- moor -->
+  <path d="M0 480 Q200 464 400 478 Q600 490 800 470 L800 600 L0 600 Z" fill="#5f7040"/>
+  <path d="M0 480 Q200 464 400 478 Q600 490 800 470 L800 600 L0 600 Z" fill="url(#hwash)"/>
+
+  <!-- heather clumps -->
+  <use href="#hclump" x="40" y="500"/><use href="#hclump" x="120" y="540"/>
+  <use href="#hclump" x="200" y="495"/><use href="#hclump" x="280" y="560"/>
+  <use href="#hclump" x="350" y="505"/><use href="#hclump" x="430" y="545"/>
+  <use href="#hclump" x="500" y="498"/><use href="#hclump" x="575" y="565"/>
+  <use href="#hclump" x="650" y="510"/><use href="#hclump" x="730" y="545"/>
+  <use href="#hclump" x="90" y="585" transform="scale(1)"/><use href="#hclump" x="770" y="590"/>
+  <use href="#hclump" x="300" y="590"/><use href="#hclump" x="470" y="588"/>
+  <use href="#hclump" x="170" y="470" transform="scale(.8)"/><use href="#hclump" x="620" y="472" transform="scale(.8)"/>
+
+  <!-- THE CHASE -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" from="-380 486" to="1180 486" dur="7s" repeatCount="indefinite"/>
+
+    <!-- dust puffs -->
+    <circle cx="-70" cy="-6" fill="#cbbf9d">
+      <animate attributeName="r" values="3;11" dur=".5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".6;0" dur=".5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="110" cy="-6" fill="#cbbf9d">
+      <animate attributeName="r" values="3;11" dur=".5s" begin=".25s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".6;0" dur=".5s" begin=".25s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- GAMEKEEPER -->
+    <g transform="translate(180,0)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -8;0 0" dur=".225s" repeatCount="indefinite"/>
+
+        <!-- back leg -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="45 0 -78;-35 0 -78;45 0 -78" dur=".45s" repeatCount="indefinite"/>
+          <path d="M0 -78 L2 -14" stroke="#dca77c" stroke-width="9"/>
+          <path d="M1 -34 L2 -14" stroke="#e8e4d8" stroke-width="10"/>
+          <path d="M-4 -16 L12 -16 Q15 -12 14 -6 L-6 -6 Z" fill="#46301c"/>
+        </g>
+        <!-- back arm -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-50 0 -122;55 0 -122;-50 0 -122" dur=".45s" repeatCount="indefinite"/>
+          <path d="M0 -122 L16 -92" stroke="#5c503a" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="16" cy="-92" r="4.5" fill="#e9b48e"/>
+        </g>
+
+        <!-- front leg -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-35 0 -78;45 0 -78;-35 0 -78" dur=".45s" repeatCount="indefinite"/>
+          <path d="M0 -78 L2 -14" stroke="#e9b48e" stroke-width="9"/>
+          <path d="M1 -34 L2 -14" stroke="#f3efe3" stroke-width="10"/>
+          <path d="M-4 -16 L12 -16 Q15 -12 14 -6 L-6 -6 Z" fill="#5b3f26"/>
+        </g>
+
+        <!-- kilt -->
+        <path d="M-17 -84 L17 -84 L23 -50 L-23 -50 Z" fill="#b02a2a"/>
+        <path d="M-12 -84 L-16 -50 M0 -84 L0 -50 M12 -84 L16 -50 M-19 -66 L19 -66" stroke="#1f5c2e" stroke-width="2.5" opacity=".75"/>
+        <ellipse cx="7" cy="-55" rx="7" ry="9" fill="#cfc6b8"/>
+        <path d="M0 -62 Q7 -66 14 -62" stroke="#5c503a" stroke-width="3" fill="none"/>
+
+        <!-- torso (tweed jacket) -->
+        <rect x="-15" y="-138" width="30" height="60" rx="6" fill="#6f6046"/>
+        <path d="M-15 -124 H15 M-15 -108 H15 M-15 -92 H15" stroke="#5c503a" stroke-width="1.5" opacity=".6"/>
+
+        <!-- front arm -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="55 0 -122;-45 0 -122;55 0 -122" dur=".45s" repeatCount="indefinite"/>
+          <path d="M0 -122 L18 -90" stroke="#6f6046" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="18" cy="-90" r="4.5" fill="#e9b48e"/>
+        </g>
+
+        <!-- head -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-4 6 -150;4 6 -150;-4 6 -150" dur=".45s" repeatCount="indefinite"/>
+          <path d="M-9 -158 q-12 1 -15 11 q9 -3 11 4 q3 -9 4 -15 z" fill="#d84f1f"/>
+          <circle cx="6" cy="-156" r="15" fill="#e9b48e"/>
+          <path d="M-7 -150 Q6 -134 19 -150 Q15 -131 6 -130 Q-3 -131 -7 -150 Z" fill="#d84f1f"/>
+          <ellipse cx="9" cy="-141" rx="3.5" ry="5" fill="#6e1b1b"/>
+          <circle cx="12" cy="-159" r="3.2" fill="#fff"/>
+          <circle cx="10.6" cy="-159" r="1.6" fill="#222"/>
+          <path d="M-10 -165 Q6 -181 23 -163 L27 -160 Q6 -170 -11 -162 Z" fill="#5c503a"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- HAGGIS -->
+    <g transform="translate(-10,0)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -20;0 0" dur=".35s" repeatCount="indefinite"/>
+
+        <!-- scurrying legs -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="35 -28 -18;-35 -28 -18;35 -28 -18" dur=".18s" repeatCount="indefinite"/>
+          <path d="M-28 -18 L-30 0" stroke="#5c3a18" stroke-width="6" stroke-linecap="round"/>
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-35 -8 -16;35 -8 -16;-35 -8 -16" dur=".18s" repeatCount="indefinite"/>
+          <path d="M-8 -16 L-10 0" stroke="#5c3a18" stroke-width="6" stroke-linecap="round"/>
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="35 12 -16;-35 12 -16;35 12 -16" dur=".18s" begin=".05s" repeatCount="indefinite"/>
+          <path d="M12 -16 L10 0" stroke="#5c3a18" stroke-width="6" stroke-linecap="round"/>
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-35 32 -18;35 32 -18;-35 32 -18" dur=".18s" begin=".05s" repeatCount="indefinite"/>
+          <path d="M32 -18 L34 0" stroke="#5c3a18" stroke-width="6" stroke-linecap="round"/>
+        </g>
+
+        <!-- body -->
+        <ellipse cx="0" cy="-44" rx="52" ry="36" fill="#8a5a2b" stroke="#5c3a18" stroke-width="3"/>
+        <circle cx="-52" cy="-44" r="7" fill="#6e4420" stroke="#5c3a18" stroke-width="2"/>
+        <path d="M-57 -52 L-64 -58 M-57 -36 L-64 -32" stroke="#5c3a18" stroke-width="2"/>
+        <!-- netting -->
+        <path d="M-45 -62 Q0 -50 45 -62 M-48 -44 Q0 -32 48 -44 M-43 -26 Q0 -16 43 -26 M-30 -75 Q-24 -44 -30 -14 M0 -80 Q6 -44 0 -9 M30 -75 Q26 -44 30 -15" stroke="#5c3a18" stroke-width="1.5" fill="none" opacity=".8"/>
+
+        <!-- fierce wee face -->
+        <circle cx="27" cy="-63" r="7" fill="#fff"/>
+        <circle cx="41" cy="-59" r="6" fill="#fff"/>
+        <circle cx="30" cy="-62" r="3" fill="#1b1b1b"/>
+        <circle cx="44" cy="-58" r="2.6" fill="#1b1b1b"/>
+        <path d="M20 -72 L33 -68 M37 -67 L48 -62" stroke="#3a2410" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M20 -46 Q38 -52 52 -41 Q47 -24 24 -29 Q17 -38 20 -46 Z" fill="#5e1212"/>
+        <path d="M25 -45 l5 7 l5 -8 z M38 -44 l4 6 l5 -7 z" fill="#fff"/>
+
+        <!-- tam-o'-shanter -->
+        <g transform="rotate(-8 20 -80)">
+          <ellipse cx="20" cy="-80" rx="18" ry="7" fill="#27446e"/>
+          <circle cx="20" cy="-85" r="4" fill="#c0392b"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- foreground heather -->
+  <use href="#hclump" x="60" y="598" transform="scale(1)"/>
+  <use href="#hclump" x="250" y="596"/>
+  <use href="#hclump" x="540" y="598"/>
+  <use href="#hclump" x="700" y="595"/>
+</svg>

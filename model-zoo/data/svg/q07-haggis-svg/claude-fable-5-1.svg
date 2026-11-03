@@ -1,0 +1,283 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fa8dc"/>
+      <stop offset="0.6" stop-color="#b9d7ef"/>
+      <stop offset="1" stop-color="#e8d9ea"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b7f3a"/>
+      <stop offset="1" stop-color="#3f4f22"/>
+    </linearGradient>
+    <linearGradient id="farhill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a74a8"/>
+      <stop offset="1" stop-color="#5f5680"/>
+    </linearGradient>
+    <linearGradient id="midhill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d6b9a"/>
+      <stop offset="1" stop-color="#5c6a3a"/>
+    </linearGradient>
+    <pattern id="tartan" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect width="12" height="12" fill="#2a6b3a"/>
+      <rect width="12" height="4" fill="#1d3f7a" opacity="0.75"/>
+      <rect width="4" height="12" fill="#1d3f7a" opacity="0.75"/>
+      <rect y="7" width="12" height="1.5" fill="#d33"/>
+      <rect x="7" width="1.5" height="12" fill="#d33"/>
+    </pattern>
+    <pattern id="tweed" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#7a6a4a"/>
+      <rect width="3" height="3" fill="#8c7a56"/>
+      <rect x="3" y="3" width="3" height="3" fill="#8c7a56"/>
+      <circle cx="1.5" cy="4.5" r="0.7" fill="#5a4a30"/>
+    </pattern>
+    <radialGradient id="hagfur" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#9c6a3c"/>
+      <stop offset="1" stop-color="#5a3a1c"/>
+    </radialGradient>
+    <g id="heatherClump">
+      <ellipse cx="0" cy="0" rx="22" ry="12" fill="#6d3b7a"/>
+      <ellipse cx="-10" cy="-6" rx="14" ry="10" fill="#8e4b9e"/>
+      <ellipse cx="9" cy="-7" rx="15" ry="10" fill="#a85cb8"/>
+      <ellipse cx="0" cy="-12" rx="10" ry="8" fill="#c27ad1"/>
+      <circle cx="-14" cy="-10" r="2" fill="#e3b1ee"/>
+      <circle cx="6" cy="-15" r="2" fill="#e3b1ee"/>
+      <circle cx="15" cy="-8" r="1.6" fill="#e3b1ee"/>
+    </g>
+    <g id="cloud">
+      <ellipse cx="0" cy="0" rx="40" ry="14" fill="#fff" opacity="0.9"/>
+      <ellipse cx="-18" cy="-8" rx="22" ry="14" fill="#fff" opacity="0.9"/>
+      <ellipse cx="16" cy="-9" rx="26" ry="16" fill="#fff" opacity="0.9"/>
+    </g>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="660" cy="90" r="38" fill="#fff3c0" opacity="0.9"/>
+
+  <!-- Clouds -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-120,0;0,0" dur="40s" repeatCount="indefinite"/>
+    <use href="#cloud" x="150" y="100"/>
+    <use href="#cloud" x="420" y="70" transform="scale(1.2)"/>
+    <use href="#cloud" x="760" y="140"/>
+  </g>
+
+  <!-- Distant hills -->
+  <path d="M0,330 C80,260 160,250 240,290 C320,330 380,230 470,260 C560,290 620,220 700,250 C760,270 790,300 800,310 L800,420 L0,420 Z" fill="url(#farhill)"/>
+  <path d="M0,380 C100,340 180,330 260,360 C340,390 420,320 520,340 C600,355 680,330 800,370 L800,460 L0,460 Z" fill="url(#midhill)"/>
+
+  <!-- Moor ground -->
+  <rect x="0" y="440" width="800" height="160" fill="url(#ground)"/>
+  <path d="M0,440 C120,430 220,450 340,438 C460,428 560,450 680,440 C740,436 780,440 800,442 L800,460 L0,460 Z" fill="#7d8a44"/>
+
+  <!-- Mid-ground heather -->
+  <g>
+    <use href="#heatherClump" x="30" y="455" transform="scale(0.9)"/>
+    <use href="#heatherClump" x="140" y="450"/>
+    <use href="#heatherClump" x="260" y="458" transform="scale(0.8)"/>
+    <use href="#heatherClump" x="380" y="452"/>
+    <use href="#heatherClump" x="500" y="456" transform="scale(0.9)"/>
+    <use href="#heatherClump" x="620" y="450"/>
+    <use href="#heatherClump" x="740" y="457" transform="scale(0.85)"/>
+    <use href="#heatherClump" x="200" y="470" transform="scale(1.1)"/>
+    <use href="#heatherClump" x="440" y="472" transform="scale(1.05)"/>
+    <use href="#heatherClump" x="680" y="474" transform="scale(1.1)"/>
+  </g>
+
+  <!-- The chase -->
+  <g transform="translate(0,478)">
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="-420,0;1180,0" dur="9s" repeatCount="indefinite"/>
+
+      <!-- Gamekeeper -->
+      <g transform="translate(300,0)">
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-8;0,0" dur="0.36s" repeatCount="indefinite"/>
+          <!-- shadow -->
+          <ellipse cx="0" cy="2" rx="28" ry="6" fill="#000" opacity="0.2"/>
+          <!-- back arm -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-40 0 -115;45 0 -115;-40 0 -115" dur="0.36s" repeatCount="indefinite"/>
+            <rect x="-5" y="-115" width="10" height="44" rx="5" fill="#6b5a3c"/>
+            <circle cx="0" cy="-70" r="5.5" fill="#f1c9a5"/>
+          </g>
+          <!-- back leg -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="38 0 -62;-38 0 -62;38 0 -62" dur="0.36s" repeatCount="indefinite"/>
+            <rect x="-5.5" y="-62" width="11" height="52" rx="5" fill="#e6bc93"/>
+            <rect x="-6.5" y="-26" width="13" height="18" rx="4" fill="#efe6c8"/>
+            <rect x="-6.5" y="-18" width="13" height="3" fill="#b33"/>
+            <path d="M-8,-8 L10,-8 L12,0 L-8,0 Z" fill="#2b1d10"/>
+          </g>
+          <!-- front leg -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-38 0 -62;38 0 -62;-38 0 -62" dur="0.36s" repeatCount="indefinite"/>
+            <rect x="-5.5" y="-62" width="11" height="52" rx="5" fill="#f1c9a5"/>
+            <rect x="-6.5" y="-26" width="13" height="18" rx="4" fill="#f7efd6"/>
+            <rect x="-6.5" y="-18" width="13" height="3" fill="#c33"/>
+            <path d="M-8,-8 L10,-8 L12,0 L-8,0 Z" fill="#3a2714"/>
+          </g>
+          <!-- kilt -->
+          <g>
+            <animateTransform attributeName="transform" type="skewX" values="-6;6;-6" dur="0.36s" repeatCount="indefinite"/>
+            <path d="M-16,-78 L16,-78 L21,-38 L-21,-38 Z" fill="url(#tartan)"/>
+            <path d="M-21,-38 L21,-38" stroke="#1a2d55" stroke-width="2"/>
+            <ellipse cx="2" cy="-48" rx="7" ry="9" fill="#5a3a1e"/>
+            <ellipse cx="2" cy="-52" rx="7" ry="3" fill="#8a6a3e"/>
+          </g>
+          <!-- jacket -->
+          <rect x="-17" y="-126" width="34" height="52" rx="7" fill="url(#tweed)"/>
+          <path d="M-6,-126 L0,-110 L6,-126 Z" fill="#e9d9b8"/>
+          <path d="M-17,-120 L-8,-126 L0,-110 L8,-126 L17,-120" fill="none" stroke="#4a3b24" stroke-width="2"/>
+          <!-- front arm with stick -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="45 0 -115;-40 0 -115;45 0 -115" dur="0.36s" repeatCount="indefinite"/>
+            <rect x="-5" y="-115" width="10" height="44" rx="5" fill="url(#tweed)"/>
+            <circle cx="0" cy="-70" r="6" fill="#f1c9a5"/>
+            <path d="M0,-70 L0,-20 M0,-70 C6,-78 12,-74 10,-66" fill="none" stroke="#5a3a1e" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          <!-- neck -->
+          <rect x="-5" y="-134" width="10" height="12" fill="#e6bc93"/>
+          <!-- flying red hair (back) -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-5 0 -148;6 0 -148;-5 0 -148" dur="0.3s" repeatCount="indefinite"/>
+            <path d="M-12,-158 C-30,-160 -40,-150 -46,-140 C-36,-144 -32,-138 -40,-130 C-28,-134 -22,-130 -24,-124 C-18,-130 -14,-134 -12,-136 Z" fill="#c8441c"/>
+            <path d="M-14,-150 C-26,-150 -34,-142 -36,-136 C-28,-138 -24,-134 -26,-128 C-20,-132 -16,-134 -14,-138 Z" fill="#e0582a"/>
+          </g>
+          <!-- head -->
+          <circle cx="0" cy="-148" r="17" fill="#f1c9a5"/>
+          <!-- beard -->
+          <path d="M-14,-142 C-14,-128 -6,-120 2,-122 C10,-124 15,-132 14,-142 C10,-134 4,-132 0,-133 C-5,-132 -10,-134 -14,-142 Z" fill="#c8441c"/>
+          <!-- side hair / sideburns -->
+          <path d="M-17,-152 C-19,-144 -17,-138 -14,-136 L-12,-150 Z" fill="#c8441c"/>
+          <!-- face -->
+          <circle cx="7" cy="-151" r="3" fill="#fff"/>
+          <circle cx="8" cy="-151" r="1.6" fill="#222"/>
+          <path d="M3,-160 C6,-163 10,-162 12,-159" fill="none" stroke="#c8441c" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="6" cy="-138" rx="3.5" ry="4.5" fill="#6b2a1a"/>
+          <path d="M14,-150 C18,-148 17,-144 14,-144" fill="none" stroke="#d9a07c" stroke-width="1.5"/>
+          <!-- flat cap -->
+          <path d="M-19,-158 C-16,-174 16,-176 20,-160 L28,-156 L-10,-155 Z" fill="url(#tweed)"/>
+          <path d="M-19,-158 C-14,-162 14,-164 20,-160" fill="none" stroke="#4a3b24" stroke-width="1.5"/>
+          <!-- hair tufts under cap -->
+          <path d="M-20,-157 C-24,-154 -24,-148 -20,-146 C-18,-150 -17,-154 -20,-157 Z" fill="#e0582a"/>
+          <!-- sweat drops -->
+          <g fill="#9fd3ff">
+            <circle cx="22" cy="-160" r="2">
+              <animate attributeName="cy" values="-160;-170" dur="0.6s" repeatCount="indefinite"/>
+              <animate attributeName="cx" values="22;30" dur="0.6s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0" dur="0.6s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="20" cy="-150" r="1.6">
+              <animate attributeName="cy" values="-150;-154" dur="0.5s" begin="0.25s" repeatCount="indefinite"/>
+              <animate attributeName="cx" values="20;30" dur="0.5s" begin="0.25s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0" dur="0.5s" begin="0.25s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+        </g>
+      </g>
+
+      <!-- Haggis -->
+      <g transform="translate(70,0)">
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-5;0,0" dur="0.22s" repeatCount="indefinite"/>
+          <!-- shadow -->
+          <ellipse cx="0" cy="2" rx="40" ry="6" fill="#000" opacity="0.2"/>
+          <!-- dust puffs -->
+          <g fill="#cbb89a">
+            <circle cx="-40" cy="-6" r="6">
+              <animate attributeName="cx" values="-40;-80" dur="0.7s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="-6;-24" dur="0.7s" repeatCount="indefinite"/>
+              <animate attributeName="r" values="4;12" dur="0.7s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.8;0" dur="0.7s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="-44" cy="-4" r="5">
+              <animate attributeName="cx" values="-44;-90" dur="0.7s" begin="0.35s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="-4;-14" dur="0.7s" begin="0.35s" repeatCount="indefinite"/>
+              <animate attributeName="r" values="3;10" dur="0.7s" begin="0.35s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.8;0" dur="0.7s" begin="0.35s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+          <!-- back legs (wild haggis: shorter on one side) -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="40 -18 -22;-40 -18 -22;40 -18 -22" dur="0.22s" repeatCount="indefinite"/>
+            <rect x="-22" y="-22" width="8" height="22" rx="4" fill="#4a2e14"/>
+            <ellipse cx="-17" cy="-1" rx="6" ry="3" fill="#2b1a0a"/>
+          </g>
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-40 16 -22;40 16 -22;-40 16 -22" dur="0.22s" repeatCount="indefinite"/>
+            <rect x="12" y="-22" width="8" height="22" rx="4" fill="#4a2e14"/>
+            <ellipse cx="17" cy="-1" rx="6" ry="3" fill="#2b1a0a"/>
+          </g>
+          <!-- body -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-5 0 -30;5 0 -30;-5 0 -30" dur="0.22s" repeatCount="indefinite"/>
+            <ellipse cx="0" cy="-32" rx="40" ry="28" fill="url(#hagfur)"/>
+            <!-- fur spikes -->
+            <g fill="#6a4320">
+              <path d="M-38,-40 L-48,-46 L-36,-32 Z"/>
+              <path d="M-34,-50 L-46,-58 L-30,-44 Z"/>
+              <path d="M-24,-56 L-32,-68 L-16,-56 Z"/>
+              <path d="M-8,-60 L-10,-72 L2,-58 Z"/>
+              <path d="M10,-58 L16,-70 L20,-54 Z"/>
+              <path d="M26,-52 L36,-60 L32,-44 Z"/>
+              <path d="M-30,-18 L-44,-14 L-30,-10 Z"/>
+            </g>
+            <!-- fur texture lines -->
+            <g stroke="#7a5230" stroke-width="1.5" fill="none" stroke-linecap="round">
+              <path d="M-20,-30 l5,-6 M-10,-40 l5,-6 M0,-22 l5,-6 M12,-36 l5,-6 M-26,-18 l5,-6 M20,-24 l5,-6 M6,-48 l5,-6"/>
+            </g>
+            <!-- tam o' shanter -->
+            <g transform="translate(16,-56)">
+              <ellipse cx="0" cy="0" rx="20" ry="7" fill="#1d3f7a"/>
+              <path d="M-18,-2 C-14,-12 14,-12 18,-2 Z" fill="#2a56a0"/>
+              <circle cx="0" cy="-10" r="4" fill="#d33"/>
+            </g>
+            <!-- eyes (fierce, looking right) -->
+            <ellipse cx="18" cy="-38" rx="8" ry="7" fill="#fff"/>
+            <ellipse cx="32" cy="-40" rx="7" ry="6" fill="#fff"/>
+            <circle cx="21" cy="-37" r="3.5" fill="#1a0f05"/>
+            <circle cx="34" cy="-39" r="3" fill="#1a0f05"/>
+            <circle cx="22.5" cy="-38.5" r="1" fill="#fff"/>
+            <circle cx="35.5" cy="-40.5" r="1" fill="#fff"/>
+            <path d="M10,-46 L26,-42 M28,-46 L40,-44" stroke="#2b1a0a" stroke-width="3" stroke-linecap="round"/>
+            <!-- mouth with teeth -->
+            <path d="M22,-24 C28,-16 38,-18 42,-26 C36,-22 28,-22 22,-24 Z" fill="#5a1010"/>
+            <path d="M25,-24 L27,-20 L29,-24 Z M36,-24 L38,-20 L40,-25 Z" fill="#fff"/>
+            <!-- wee tartan sash -->
+            <path d="M-36,-44 C-20,-30 -10,-12 -6,-6 L-14,-4 C-18,-14 -28,-30 -40,-38 Z" fill="url(#tartan)" opacity="0.9"/>
+          </g>
+          <!-- front legs -->
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="-40 -10 -20;40 -10 -20;-40 -10 -20" dur="0.22s" repeatCount="indefinite"/>
+            <rect x="-14" y="-20" width="8" height="20" rx="4" fill="#5a3a1c"/>
+            <ellipse cx="-9" cy="-1" rx="6" ry="3" fill="#2b1a0a"/>
+          </g>
+          <g>
+            <animateTransform attributeName="transform" type="rotate" values="40 24 -20;-40 24 -20;40 24 -20" dur="0.22s" repeatCount="indefinite"/>
+            <rect x="20" y="-20" width="8" height="20" rx="4" fill="#5a3a1c"/>
+            <ellipse cx="25" cy="-1" rx="6" ry="3" fill="#2b1a0a"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Foreground heather -->
+  <g>
+    <animateTransform attributeName="transform" type="skewX" values="-2;2;-2" dur="3s" repeatCount="indefinite"/>
+    <use href="#heatherClump" x="-10" y="520" transform="scale(1.4)"/>
+    <use href="#heatherClump" x="90" y="500" transform="scale(1.3)"/>
+    <use href="#heatherClump" x="170" y="540" transform="scale(1.5)"/>
+    <use href="#heatherClump" x="260" y="505" transform="scale(1.3)"/>
+    <use href="#heatherClump" x="350" y="548" transform="scale(1.6)"/>
+    <use href="#heatherClump" x="440" y="500" transform="scale(1.25)"/>
+    <use href="#heatherClump" x="520" y="540" transform="scale(1.5)"/>
+    <use href="#heatherClump" x="610" y="505" transform="scale(1.35)"/>
+    <use href="#heatherClump" x="700" y="545" transform="scale(1.6)"/>
+    <use href="#heatherClump" x="790" y="505" transform="scale(1.3)"/>
+    <use href="#heatherClump" x="60" y="580" transform="scale(1.8)"/>
+    <use href="#heatherClump" x="300" y="590" transform="scale(1.9)"/>
+    <use href="#heatherClump" x="600" y="585" transform="scale(1.8)"/>
+  </g>
+</svg>
