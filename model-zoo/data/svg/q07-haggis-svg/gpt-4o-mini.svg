@@ -1,0 +1,36 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @keyframes moveHaggis {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(600px); }
+      }
+      @keyframes moveGamekeeper {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-600px); }
+      }
+      .haggis { animation: moveHaggis 5s linear infinite; }
+      .gamekeeper { animation: moveGamekeeper 5s linear infinite; }
+      .heather { fill: #DDA0DD; }
+    </style>
+  </defs>
+  <rect width="800" height="600" fill="lightblue" />
+  <g class="heather">
+    <ellipse cx="100" cy="550" rx="30" ry="10" />
+    <ellipse cx="200" cy="560" rx="25" ry="12" />
+    <ellipse cx="300" cy="540" rx="35" ry="15" />
+    <ellipse cx="400" cy="570" rx="30" ry="8" />
+    <ellipse cx="500" cy="550" rx="28" ry="12" />
+    <ellipse cx="600" cy="560" rx="32" ry="10" />
+    <ellipse cx="700" cy="540" rx="27" ry="15" />
+  </g>
+  <g class="haggis">
+    <ellipse cx="50" cy="500" rx="20" ry="10" fill="saddlebrown" />
+    <ellipse cx="50" cy="505" rx="10" ry="6" fill="#994c00" />
+  </g>
+  <g class="gamekeeper">
+    <rect x="740" y="480" width="20" height="40" fill="brown" />
+    <polygon points="740,480 730,470 750,470" fill="darkgreen" />
+    <circle cx="750" cy="460" r="10" fill="red" />
+  </g>
+</svg>

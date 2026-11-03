@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">A haggis chasing a Scottish gamekeeper across a heather moor</title>
+  <desc id="desc">Animated looping scene of a round haggis running after a red-haired gamekeeper in a kilt.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc7df"/>
+      <stop offset="0.62" stop-color="#d7d6cf"/>
+      <stop offset="1" stop-color="#f1cfa8"/>
+    </linearGradient>
+    <linearGradient id="moor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6c8156"/>
+      <stop offset="1" stop-color="#33452f"/>
+    </linearGradient>
+    <radialGradient id="haggisFur" cx="35%" cy="28%" r="75%">
+      <stop offset="0" stop-color="#b77a4c"/>
+      <stop offset="0.55" stop-color="#815137"/>
+      <stop offset="1" stop-color="#442b26"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-40%" width="140%" height="190%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+
+    <style>
+      .cloud { animation: drift 18s linear infinite; }
+      .cloud2 { animation: drift 25s linear infinite reverse; }
+      .keeper { animation: keeperRun 2.1s ease-in-out infinite; }
+      .haggis { animation: haggisRun 2.1s ease-in-out infinite; }
+      .keeper-bob { animation: bob .34s ease-in-out infinite alternate; transform-origin: 570px 390px; }
+      .haggis-bob { animation: bob .28s ease-in-out infinite alternate; transform-origin: 300px 440px; }
+      .leg-a { animation: legA .34s ease-in-out infinite alternate; transform-origin: center top; }
+      .leg-b { animation: legB .34s ease-in-out infinite alternate; transform-origin: center top; }
+      .arm-a { animation: armA .34s ease-in-out infinite alternate; transform-origin: 580px 330px; }
+      .arm-b { animation: armB .34s ease-in-out infinite alternate; transform-origin: 610px 330px; }
+      .tail { animation: tail .28s ease-in-out infinite alternate; transform-origin: 245px 420px; }
+      .ear { animation: ear .4s ease-in-out infinite alternate; transform-origin: 315px 386px; }
+      .heather { animation: sway 2.5s ease-in-out infinite alternate; transform-origin: bottom center; }
+      .heather:nth-child(3n) { animation-duration: 3.3s; }
+      .heather:nth-child(4n) { animation-direction: alternate-reverse; }
+
+      @keyframes drift {
+        from { transform: translateX(-90px); }
+        to { transform: translateX(150px); }
+      }
+      @keyframes keeperRun {
+        0%, 100% { transform: translateX(-8px); }
+        50% { transform: translateX(28px); }
+      }
+      @keyframes haggisRun {
+        0%, 100% { transform: translateX(-18px); }
+        50% { transform: translateX(42px); }
+      }
+      @keyframes bob {
+        from { transform: translateY(0px); }
+        to { transform: translateY(-7px); }
+      }
+      @keyframes legA {
+        from { transform: rotate(-28deg); }
+        to { transform: rotate(28deg); }
+      }
+      @keyframes legB {
+        from { transform: rotate(28deg); }
+        to { transform: rotate(-28deg); }
+      }
+      @keyframes armA {
+        from { transform: rotate(28deg); }
+        to { transform: rotate(-30deg); }
+      }
+      @keyframes armB {
+        from { transform: rotate(-28deg); }
+        to { transform: rotate(30deg); }
+      }
+      @keyframes tail {
+        from { transform: rotate(-22deg); }
+        to { transform: rotate(18deg); }
+      }
+      @keyframes ear {
+        from { transform: rotate(-10deg); }
+        to { transform: rotate(12deg); }
+      }
+      @keyframes sway {
+        from { transform: rotate(-3deg); }
+        to { transform: rotate(4deg); }
+      }
+    </style>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+
+  <g opacity=".78">
+    <g class="cloud">
+      <path d="M80 106c18-28 52-28 67-3 22-17 57-3 58 24H57c1-11 9-19 23-21z" fill="#fff"/>
+      <path d="M458 82c12-20 39-20 50-2 17-13 42-1 45 18H429c2-10 12-16 29-16z" fill="#f8fcfb"/>
+    </g>
+    <g class="cloud2" opacity=".7">
+      <path d="M525 153c18-28 50-25 63-2 23-16 55 0 56 24H499c2-12 10-20 26-22z" fill="#fff"/>
+    </g>
+  </g>
+
+  <path d="M0 276 Q115 199 225 268 T440 253 T650 226 T800 262V410H0Z" fill="#81906c"/>
+  <path d="M0 310 Q115 247 236 309 T484 289 T800 306V417H0Z" fill="#596d51"/>
+  <path d="M0 363 Q133 309 281 358 T540 335 T800 349V600H0Z" fill="url(#moor)"/>
+  <path d="M0 414 Q138 367 279 412 T529 386 T800 406V600H0Z" fill="#45573d"/>
+
+  <g opacity=".42" fill="none" stroke="#d7b15f" stroke-width="3">
+    <path d="M0 479 Q190 440 382 468 T800 444"/>
+    <path d="M0 524 Q180 486 368 517 T800 490"/>
+  </g>
+
+  <g stroke-linecap="round">
+    <g class="heather">
+      <path d="M55 513q-5-39 7-77M61 477l-19-23M61 464l19-22" stroke="#64714b" stroke-width="4"/>
+      <g fill="#a7538e"><circle cx="42" cy="450" r="6"/><circle cx="50" cy="442" r="6"/><circle cx="61" cy="433" r="7"/><circle cx="71" cy="442" r="6"/><circle cx="80" cy="452" r="6"/></g>
+    </g>
+    <g class="heather">
+      <path d="M150 545q1-55-13-101m6 72-23-23m25-20 21-25" stroke="#65764d" stroke-width="4"/>
+      <g fill="#a95594"><circle cx="120" cy="487" r="6"/><circle cx="129" cy="478" r="6"/><circle cx="139" cy="464" r="7"/><circle cx="151" cy="469" r="6"/><circle cx="163" cy="452" r="6"/></g>
+    </g>
+    <g class="heather">
+      <path d="M695 540q2-58-14-106m10 72-22-22m20-26 25-25" stroke="#65764d" stroke-width="4"/>
+      <g fill="#a95594"><circle cx="662" cy="480" r="6"/><circle cx="672" cy="470" r="6"/><circle cx="682" cy="452" r="7"/><circle cx="696" cy="459" r="6"/><circle cx="712" cy="440" r="6"/></g>
+    </g>
+    <g class="heather">
+      <path d="M755 506q-2-39 11-80m-7 52-19-18m24-14 18-21" stroke="#637149" stroke-width="4"/>
+      <g fill="#bd649e"><circle cx="739" cy="459" r="5"/><circle cx="750" cy="450" r="6"/><circle cx="764" cy="435" r="6"/><circle cx="777" cy="443" r="5"/></g>
+    </g>
+    <g class="heather">
+      <path d="M405 550q-2-40 9-81m-5 49-21-19m24-14 19-22" stroke="#64754c" stroke-width="4"/>
+      <g fill="#a8548d"><circle cx="389" cy="496" r="6"/><circle cx="402" cy="485" r="6"/><circle cx="414" cy="469" r="7"/><circle cx="427" cy="477" r="6"/></g>
+    </g>
+  </g>
+
+  <ellipse cx="432" cy="487" rx="266" ry="26" fill="#28392e" opacity=".42" filter="url(#softShadow)"/>
+
+  <g class="haggis">
+    <g class="haggis-bob">
+      <ellipse cx="306" cy="464" rx="83" ry="15" fill="#243027" opacity=".55"/>
+
+      <g class="tail">
+        <path d="M245 418q-38-24-45 3 10 17 31 7-15 17 3 27 16-15 19-34z" fill="#6d432f" stroke="#35231f" stroke-width="4"/>
+      </g>
+
+      <g class="leg-a">
+        <path d="M270 451q-15 29-4 49" fill="none" stroke="#392822" stroke-width="11"/>
+        <path d="M263 499q13 8 26 0" fill="none" stroke="#241b18" stroke-width="7"/>
+      </g>
+      <g class="leg-b">
+        <path d="M326 452q17 29 7 48" fill="none" stroke="#392822" stroke-width="11"/>
+        <path d="M327 500q14 8 27 0" fill="none" stroke="#241b18" stroke-width="7"/>
+      </g>
+      <g class="leg-b">
+        <path d="M349 447q20 23 14 42" fill="none" stroke="#392822" stroke-width="10"/>
+        <path d="M357 489q13 7 25-1" fill="none" stroke="#241b18" stroke-width="7"/>
+      </g>
+
+      <ellipse cx="303" cy="419" rx="76" ry="52" fill="url(#haggisFur)" stroke="#35231f" stroke-width="4"/>
+      <path d="M243 415q25-42 60-35t64 35" fill="none" stroke="#d09a62" stroke-width="5" opacity=".48"/>
+      <path d="M251 438q21 17 48 12m13-53q25-5 47 16m-23 35q15-2 29-14" fill="none" stroke="#3d2822" stroke-width="3" opacity=".65"/>
+
+      <g class="ear">
+        <path d="M318 383q4-25 25-16-3 18-19 25z" fill="#7b4b32" stroke="#35231f" stroke-width="3"/>
+      </g>
+      <path d="M339 395q34-2 43 21-9 32-43 27-18-14-13-31z" fill="#8b5839" stroke="#35231f" stroke-width="4"/>
+      <circle cx="361" cy="407" r="5" fill="#fff4d8"/>
+      <circle cx="363" cy="408" r="2.5" fill="#201916"/>
+      <ellipse cx="382" cy="423" rx="7" ry="6" fill="#241b18"/>
+      <path d="M347 431q10 8 20 1" fill="none" stroke="#2c1d19" stroke-width="3" stroke-linecap="round"/>
+      <path d="M344 401q9-8 18-2" fill="none" stroke="#35231f" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <g class="keeper">
+    <g class="keeper-bob">
+      <ellipse cx="593" cy="484" rx="47" ry="12" fill="#243027" opacity=".48"/>
+
+      <g class="arm-a">
+        <path d="M580 332q-19 23-36 3" fill="none" stroke="#d7a27d" stroke-width="12" stroke-linecap="round"/>
+        <path d="M545 335l-9 8" stroke="#d7a27d" stroke-width="8" stroke-linecap="round"/>
+      </g>
+      <g class="arm-b">
+        <path d="M610 333q19 23 37 5" fill="none" stroke="#d7a27d" stroke-width="12" stroke-linecap="round"/>
+        <path d="M647 338l10 8" stroke="#d7a27d" stroke-width="8" stroke-linecap="round"/>
+      </g>
+
+      <path d="M580 364l-19 106h59l-9-106z" fill="#315d47" stroke="#253d32" stroke-width="4"/>
+      <path d="M566 395h52v74h-59z" fill="#315d47" stroke="#253d32" stroke-width="4"/>
+      <path d="M565 405h53M562 421h56M560 438h59M579 396v72M598 396v73" stroke="#d7c252" stroke-width="5"/>
+      <path d="M566 413l50 42M615 412l-47 43" stroke="#962e37" stroke-width="4"/>
+
+      <g class="leg-a">
+        <path d="M577 466q-20 23-29 42" fill="none" stroke="#e0ae87" stroke-width="15" stroke-linecap="round"/>
+        <path d="M548 508q-7 17 12 20h20" fill="none" stroke="#2a2927" stroke-width="12" stroke-linecap="round"/>
+      </g>
+      <g class="leg-b">
+        <path d="M606 466q19 25 37 36" fill="none" stroke="#e0ae87" stroke-width="15" stroke-linecap="round"/>
+        <path d="M643 502q14 13 29 4" fill="none" stroke="#2a2927" stroke-width="12" stroke-linecap="round"/>
+      </g>
+
+      <path d="M576 319q-7-31 20-42 31 4 29 41v21h-49z" fill="#e0ae87" stroke="#663a2d" stroke-width="3"/>
+      <path d="M572 305q4-37 32-37 28 5 26 40-13-13-22-20-8 18-36 17z" fill="#b9412d" stroke="#723126" stroke-width="4"/>
+      <path d="M579 287q12-20 24-14m4 3q13 2 18 19" fill="none" stroke="#e86135" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="607" cy="309" r="3" fill="#30211e"/>
+      <path d="M613 322q7 5 13-1" fill="none" stroke="#873b32" stroke-width="3" stroke-linecap="round"/>
+      <path d="M599 300q7-5 13 0" fill="none" stroke="#6c3028" stroke-width="3" stroke-linecap="round"/>
+
+      <path d="M569 291q-4-19 12-30 18-11 38 0 13 9 11 26l-11-6q-19-10-39 4z" fill="#385747" stroke="#263c34" stroke-width="4"/>
+      <path d="M567 282q31-15 63 1" fill="none" stroke="#d0ba65" stroke-width="4"/>
+      <circle cx="623" cy="280" r="3" fill="#d0ba65"/>
+    </g>
+  </g>
+
+  <g fill="#d3b95d" opacity=".9">
+    <circle cx="489" cy="453" r="2"/><circle cx="508" cy="472" r="2"/>
+    <circle cx="451" cy="480" r="2"/><circle cx="677" cy="476" r="2"/>
+    <circle cx="731" cy="505" r="2"/><circle cx="199" cy="497" r="2"/>
+  </g>
+
+  <text x="28" y="48" fill="#ffffff" font-family="serif" font-size="25" font-style="italic" opacity=".86">The Great Moor Chase</text>
+</svg>

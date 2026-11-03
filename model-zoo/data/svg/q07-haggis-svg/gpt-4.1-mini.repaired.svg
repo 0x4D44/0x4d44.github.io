@@ -1,0 +1,159 @@
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Heather bush -->
+    <g id="heather">
+      <ellipse cx="0" cy="0" rx="15" ry="8" fill="#a0522d" />
+      <circle cx="-5" cy="-6" r="4" fill="#b3578a" />
+      <circle cx="5" cy="-4" r="4" fill="#bb6da9" />
+      <circle cx="0" cy="-10" r="3" fill="#d07cbc" />
+    </g>
+
+    <!-- Heather ground strip -->
+    <pattern id="heather-pattern" x="0" y="0" width="40" height="30" patternUnits="userSpaceOnUse">
+      <rect width="40" height="30" fill="#7f6b4b" />
+      <use href="#heather" x="5" y="18" />
+      <use href="#heather" x="20" y="10" />
+      <use href="#heather" x="30" y="22" />
+    </pattern>
+
+    <!-- Gamekeeper -->
+    <g id="gamekeeper" transform="scale(1)">
+      <!-- Body -->
+      <ellipse cx="0" cy="0" rx="17" ry="30" fill="#556b2f" />
+      <!-- Chest details -->
+      <rect x="-12" y="0" width="24" height="20" fill="#3c5520" rx="6" ry="8" />
+      <!-- Legs -->
+      <rect x="-10" y="25" width="8" height="30" fill="#3c5520" rx="4" ry="10" />
+      <rect x="2" y="25" width="8" height="30" fill="#3c5520" rx="4" ry="10" />
+      <!-- Shoes -->
+      <ellipse cx="-6" cy="58" rx="7" ry="4" fill="#362f2d" />
+      <ellipse cx="6" cy="58" rx="7" ry="4" fill="#362f2d" />
+      <!-- Head -->
+      <circle cx="0" cy="-40" r="18" fill="#f2c6a0" />
+      <!-- Hair (red) -->
+      <path fill="#c34021" d="M-17,-58 q17 -18 34 0 q-4 10 -30 12z" />
+      <!-- Eyes -->
+      <circle cx="-6" cy="-43" r="3" fill="#000" />
+      <circle cx="6" cy="-43" r="3" fill="#000" />
+      <!-- Nose -->
+      <path d="M0,-40 l1,4" stroke="#a9745c" stroke-width="1" />
+      <!-- Mouth (simple line) -->
+      <path d="M-5,-28 q5 5 10 0" stroke="#a75c4a" stroke-width="2" fill="none" />
+      <!-- Arms -->
+      <rect x="-28" y="-10" width="12" height="6" rx="3" ry="3" fill="#556b2f" />
+      <rect x="16" y="-10" width="12" height="6" rx="3" ry="3" fill="#556b2f" />
+      <!-- Gun (simplified) -->
+      <rect x="14" y="-12" width="25" height="5" fill="#555" rx="2" ry="2" />
+      <rect x="35" y="-10" width="5" height="12" fill="#444" rx="1" ry="1" />
+    </g>
+
+    <!-- Haggis -->
+    <g id="haggis" transform="scale(1)">
+      <!-- Body oval -->
+      <ellipse cx="0" cy="10" rx="40" ry="30" fill="#5c3a19" stroke="#3a2b10" stroke-width="3" />
+      <!-- Texture lines -->
+      <path d="M-30,5 q10 15 20 0 q10 15 20 0" stroke="#6f4c26" stroke-width="3" fill="none" />
+      <!-- Head (front) -->
+      <ellipse cx="42" cy="0" rx="18" ry="15" fill="#442f10" />
+      <!-- Eyes -->
+      <circle cx="35" cy="-3" r="5" fill="#ead3a2" />
+      <circle cx="45" cy="-3" r="5" fill="#ead3a2" />
+      <circle cx="35" cy="-3" r="2" fill="#2b1a02" />
+      <circle cx="45" cy="-3" r="2" fill="#2b1a02" />
+      <!-- Nose -->
+      <ellipse cx="42" cy="5" rx="7" ry="4" fill="#3b270a" />
+      <!-- Little ear -->
+      <ellipse cx="-40" cy="5" rx="10" ry="15" fill="#5c3a19" stroke="#3a2b10" stroke-width="2" />
+      <!-- Legs (4 short legs) -->
+      <rect x="-35" y="30" width="15" height="20" rx="8" ry="12" fill="#4a2e0a" />
+      <rect x="0" y="30" width="15" height="20" rx="8" ry="12" fill="#4a2e0a" />
+      <rect x="10" y="30" width="15" height="20" rx="8" ry="12" fill="#4a2e0a" />
+      <rect x="-10" y="30" width="15" height="20" rx="8" ry="12" fill="#4a2e0a" />
+      <!-- Tail (small) -->
+      <ellipse cx="-45" cy="20" rx="10" ry="6" fill="#3a2b10" />
+    </g>
+
+    <!-- Moor hill -->
+    <radialGradient id="moorGradient" cx="50%" cy="50%" r="90%">
+      <stop offset="0%" stop-color="#575230" />
+      <stop offset="100%" stop-color="#3a3220" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background sky -->
+  <rect width="800" height="600" fill="#87ceeb" />
+
+  <!-- Distant hills -->
+  <ellipse cx="250" cy="580" rx="350" ry="150" fill="#556b2f" opacity="0.6" />
+  <ellipse cx="600" cy="600" rx="400" ry="120" fill="#4b6330" opacity="0.5" />
+  
+  <!-- Heather ground strip -->
+  <rect y="530" width="800" height="70" fill="url(#heather-pattern)" />
+
+  <!-- Heather bushes scattered -->
+  <use href="#heather" x="100" y="560" />
+  <use href="#heather" x="140" y="580" />
+  <use href="#heather" x="280" y="570" />
+  <use href="#heather" x="350" y="550" />
+  <use href="#heather" x="410" y="590" />
+  <use href="#heather" x="470" y="565" />
+  <use href="#heather" x="520" y="580" />
+  <use href="#heather" x="580" y="575" />
+  <use href="#heather" x="630" y="555" />
+  <use href="#heather" x="700" y="570" />
+
+  <!-- Animation group, contains haggis and gamekeeper -->
+  <g>
+    <!-- Haggis group, initial position off left bottom -->
+    <g id="haggisAnim" transform="translate(-80, 480)">
+      <use href="#haggis" />
+    </g>
+    <!-- Gamekeeper group, initial position left bottom -->
+    <g id="gamekeeperAnim" transform="translate(-150, 480)">
+      <use href="#gamekeeper" />
+    </g>
+  </g>
+
+  <!-- Animation definitions -->
+  <animateTransform xlink:href="#haggisAnim" attributeName="transform" type="translate"
+    values="
+      -80,480;
+      300,470;
+      520,460;
+      700,480;
+      820,480;
+      -80,480"
+    keyTimes="0;0.3;0.5;0.75;0.95;1"
+    dur="10s"
+    repeatCount="indefinite" />
+
+  <animateTransform xlink:href="#gamekeeperAnim" attributeName="transform" type="translate"
+    values="
+      -150,480;
+      280,470;
+      500,455;
+      680,480;
+      800,480;
+      -150,480"
+    keyTimes="0;0.3;0.55;0.8;1;1"
+    dur="10s"
+    repeatCount="indefinite" />
+
+  <!-- Gamekeeper head bobbing (slight up/down) -->
+  <animateTransform xlink:href="#gamekeeper" attributeName="transform" type="translate"
+    values="0 0; 0 -4; 0 0" dur="1.5s" repeatCount="indefinite" additive="sum" />
+
+  <!-- Haggis leg movement (simulate running) -->
+
+  <!-- Animate legs for haggis - simple up/down translation -->
+  <animateTransform xlink:href="#haggis > rect:nth-child(10)" attributeName="transform" type="translate"
+    values="0 0;0 3;0 0" dur="0.6s" repeatCount="indefinite" begin="0s" additive="sum" />
+  <animateTransform xlink:href="#haggis > rect:nth-child(11)" attributeName="transform" type="translate"
+    values="0 3;0 0;0 3" dur="0.6s" repeatCount="indefinite" begin="0.3s" additive="sum" />
+
+  <animateTransform xlink:href="#haggis > rect:nth-child(12)" attributeName="transform" type="translate"
+    values="0 3;0 0;0 3" dur="0.6s" repeatCount="indefinite" begin="0.3s" additive="sum" />
+  <animateTransform xlink:href="#haggis > rect:nth-child(13)" attributeName="transform" type="translate"
+    values="0 0;0 3;0 0" dur="0.6s" repeatCount="indefinite" begin="0s" additive="sum" />
+
+</svg>

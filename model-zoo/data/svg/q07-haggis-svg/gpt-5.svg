@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a8d4ff"/>
+      <stop offset="70%" stop-color="#e8f7ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="moorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7ea35f"/>
+      <stop offset="100%" stop-color="#5b7342"/>
+    </linearGradient>
+    <linearGradient id="heatherGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b06bd1"/>
+      <stop offset="100%" stop-color="#7e3e9c"/>
+    </linearGradient>
+
+    <!-- Motion path across the moor -->
+    <path id="runPath" d="M -220 430 C 60 410, 280 450, 600 430 S 980 450, 1120 430" fill="none"/>
+
+    <!-- Heather tuft symbol -->
+    <g id="heather">
+      <!-- stems -->
+      <path d="M0,0 c2,-8 4,-16 5,-22" stroke="#567144" stroke-width="2" fill="none"/>
+      <path d="M3,0 c1,-7 2,-13 3,-19" stroke="#567144" stroke-width="2" fill="none"/>
+      <path d="M-3,0 c0,-8 -1,-16 -2,-22" stroke="#567144" stroke-width="2" fill="none"/>
+      <!-- flowers -->
+      <ellipse cx="4" cy="-22" rx="4" ry="3" fill="url(#heatherGrad)"/>
+      <ellipse cx="-2" cy="-22" rx="4" ry="3" fill="url(#heatherGrad)"/>
+      <ellipse cx="6" cy="-19" rx="3" ry="2.5" fill="url(#heatherGrad)"/>
+      <ellipse cx="-3" cy="-19" rx="3" ry="2.5" fill="url(#heatherGrad)"/>
+      <animateTransform attributeName="transform" type="rotate" values="-4 0 0; 4 0 0; -4 0 0" dur="3.5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- Simple shadow ellipse -->
+    <ellipse id="shadow" cx="0" cy="0" rx="28" ry="8" fill="#000" opacity="0.18"/>
+
+  </defs>
+
+  <!-- Background sky -->
+  <rect x="0" y="0" width="800" height="350" fill="url(#skyGrad)"/>
+
+  <!-- Distant hills -->
+  <path d="M0,300 C120,250 200,260 300,300 S520,340 640,300 800,260 800,260 L800,350 L0,350 Z" fill="#8fb07a" opacity="0.7"/>
+  <path d="M0,320 C130,280 250,300 370,320 S600,360 800,330 L800,370 L0,370 Z" fill="#7a9c66" opacity="0.9"/>
+
+  <!-- Moorland foreground -->
+  <rect x="0" y="350" width="800" height="250" fill="url(#moorGrad)"/>
+
+  <!-- Heather fields -->
+  <g opacity="0.9">
+    <g transform="translate(40,520) scale(1.2)">
+      <use xlink:href="#heather" transform="translate(0,0) scale(1.2)"/>
+      <use xlink:href="#heather" transform="translate(40,6) scale(1.1)"/>
+      <use xlink:href="#heather" transform="translate(80,-2)"/>
+      <use xlink:href="#heather" transform="translate(120,8) scale(1.05)"/>
+      <use xlink:href="#heather" transform="translate(160,0)"/>
+      <use xlink:href="#heather" transform="translate(200,5) scale(1.1)"/>
+      <use xlink:href="#heather" transform="translate(240,-4)"/>
+      <use xlink:href="#heather" transform="translate(280,10)"/>
+      <use xlink:href="#heather" transform="translate(320,2) scale(1.1)"/>
+      <use xlink:href="#heather" transform="translate(360,-3)"/>
+      <use xlink:href="#heather" transform="translate(400,8)"/>
+      <use xlink:href="#heather" transform="translate(440,0)"/>
+      <use xlink:href="#heather" transform="translate(480,6)"/>
+      <use xlink:href="#heather" transform="translate(520,-2)"/>
+      <use xlink:href="#heather" transform="translate(560,8)"/>
+    </g>
+    <g transform="translate(0,560) scale(0.9)" opacity="0.85">
+      <use xlink:href="#heather" transform="translate(20,0)"/>
+      <use xlink:href="#heather" transform="translate(70,-4) scale(1.05)"/>
+      <use xlink:href="#heather" transform="translate(120,6)"/>
+      <use xlink:href="#heather" transform="translate(170,0)"/>
+      <use xlink:href="#heather" transform="translate(220,8)"/>
+      <use xlink:href="#heather" transform="translate(270,-2)"/>
+      <use xlink:href="#heather" transform="translate(320,6)"/>
+      <use xlink:href="#heather" transform="translate(370,0)"/>
+      <use xlink:href="#heather" transform="translate(420,10)"/>
+      <use xlink:href="#heather" transform="translate(470,2)"/>
+      <use xlink:href="#heather" transform="translate(520,6)"/>
+      <use xlink:href="#heather" transform="translate(570,-2)"/>
+      <use xlink:href="#heather" transform="translate(620,8)"/>
+      <use xlink:href="#heather" transform="translate(670,0)"/>
+      <use xlink:href="#heather" transform="translate(720,5)"/>
+    </g>
+  </g>
+
+  <!-- Moving characters -->
+  <!-- Scottish gamekeeper -->
+  <g id="keeperMove">
+    <g id="keeper" transform="translate(0,0)">
+      <!-- shadow underfoot -->
+      <use xlink:href="#shadow" transform="translate(0,2)"/>
+      <!-- body -->
+      <g id="keeperBody">
+        <!-- legs -->
+        <g id="leftLeg" transform="translate(-7,-20)">
+          <rect x="-2.5" y="0" width="5" height="26" rx="2" ry="2" fill="#6b5b4b"/>
+          <rect x="-5.5" y="24" width="11" height="6" rx="1" fill="#3b2f29"/>
+          <animateTransform attributeName="transform" type="rotate" values="-35 -7 -20; 30 -7 -20; -35 -7 -20" dur="0.55s" repeatCount="indefinite"/>
+        </g>
+        <g id="rightLeg" transform="translate(7,-20)">
+          <rect x="-2.5" y="0" width="5" height="26" rx="2" ry="2" fill="#6b5b4b"/>
+          <rect x="-5.5" y="24" width="11" height="6" rx="1" fill="#3b2f29"/>
+          <animateTransform attributeName="transform" type="rotate" values="30 7 -20; -35 7 -20; 30 7 -20" dur="0.55s" repeatCount="indefinite"/>
+        </g>
+
+        <!-- torso jacket -->
+        <rect x="-16" y="-55" width="32" height="36" rx="6" fill="#2f5d3a" stroke="#244a2e" stroke-width="1"/>
+        <!-- lapel / strap -->
+        <path d="M-10,-55 L-2,-20" stroke="#cbb089" stroke-width="2"/>
+        <circle cx="0" cy="-36" r="4" fill="#4a372b"/><!-- sporran-ish pouch -->
+
+        <!-- arms -->
+        <g id="leftArm" transform="translate(-16,-48)">
+          <rect x="-2.5" y="0" width="5" height="22" rx="2" fill="#2f5d3a"/>
+          <circle cx="0" cy="22" r="3" fill="#f2c9a3"/>
+          <animateTransform attributeName="transform" type="rotate" values="-20 -16 -48; 20 -16 -48; -20 -16 -48" dur="0.55s" repeatCount="indefinite"/>
+        </g>
+        <g id="rightArm" transform="translate(16,-48)">
+          <rect x="-2.5" y="0" width="5" height="22" rx="2" fill="#2f5d3a"/>
+          <circle cx="0" cy="22" r="3" fill="#f2c9a3"/>
+          <animateTransform attributeName="transform" type="rotate" values="20 16 -48; -20 16 -48; 20 16 -48" dur="0.55s" repeatCount="indefinite"/>
+        </g>
+
+        <!-- head -->
+        <circle cx="0" cy="-78" r="11.5" fill="#f2c9a3" stroke="#e8b894" stroke-width="1"/>
+        <!-- red hair -->
+        <path d="M-11,-83 q11,-10 22,0 v4 q-11,-6 -22,0 z" fill="#d64d2d"/>
+        <path d="M-8,-72 q4,4 8,0" stroke="#d64d2d" stroke-width="3" stroke-linecap="round"/>
+        <!-- cap -->
+        <path d="M-12,-85 q12,-6 24,0 l-1,4 q-11,-4 -22,0 z" fill="#356647"/>
+        <rect x="-8" y="-90" width="16" height="3" rx="2" fill="#356647"/>
+
+      </g>
+
+      <!-- running bounce -->
+      <animateTransform attributeName="transform" type="translate" values="0,0; 0,-3; 0,0; 0,2; 0,0" dur="0.55s" repeatCount="indefinite"/>
+
+      <!-- dust puffs -->
+      <g transform="translate(-18,6)" opacity="0.5">
+        <circle r="0" cx="0" cy="0" fill="#c9c1ae">
+          <animate attributeName="r" values="0;7;10" dur="0.6s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.3;0" dur="0.6s" repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="0,0; -8,0; -15,0" dur="0.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="0" cx="6" cy="-2" fill="#c9c1ae">
+          <animate attributeName="r" values="0;6;9" dur="0.6s" begin="0.2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.3;0" dur="0.6s" begin="0.2s" repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="0,0; -7,0; -14,0" dur="0.6s" begin="0.2s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </g>
+    <animateMotion dur="12s" repeatCount="indefinite" rotate="0">
+      <mpath xlink:href="#runPath"/>
+    </animateMotion>
+  </g>
+
+  <!-- Haggis (hairy wee beastie) -->
+  <g id="haggisMove">
+    <g id="haggis" transform="translate(0,0)">
+      <!-- shadow -->
+      <use xlink:href="#shadow" transform="translate(0,6) scale(0.9,0.9)" opacity="0.2"/>
+
+      <!-- body -->
+      <ellipse cx="0" cy="-28" rx="28" ry="20" fill="#7b4f2b" stroke="#5e3a22" stroke-width="2"/>
+      <!-- shaggy fur spikes -->
+      <path d="M-26,-28 l-6,-6 M-18,-38 l-4,-7 M-8,-40 l-3,-7 M4,-40 l3,-7 M14,-38 l4,-7 M24,-34 l6,-6 M-26,-18 l-6,6 M-14,-12 l-4,7 M-2,-10 l-3,7 M10,-10 l3,7 M22,-14 l5,6"
+            stroke="#5e3a22" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- face -->
+      <circle cx="-6" cy="-32" r="2.5" fill="#ffffff"/>
+      <circle cx="6" cy="-32" r="2.5" fill="#ffffff"/>
+      <circle cx="-6" cy="-32" r="1.2" fill="#2b1a12"/>
+      <circle cx="6" cy="-32" r="1.2" fill="#2b1a12"/>
+      <path d="M-6,-22 q6,4 12,0" stroke="#2b1a12" stroke-width="2" fill="none"/>
+
+      <!-- wee horns/ears -->
+      <path d="M-16,-38 q-6,-4 -8,0" stroke="#5e3a22" stroke-width="3" stroke-linecap="round"/>
+      <path d="M16,-38 q6,-4 8,0" stroke="#5e3a22" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- legs: shorter on right to suit hillside myth -->
+      <g id="legL1" transform="translate(-14,-12)">
+        <rect x="-2" y="0" width="4" height="12" rx="1.5" fill="#5e3a22"/>
+        <rect x="-4" y="10" width="8" height="5" rx="1" fill="#3b2a1a"/>
+        <animateTransform attributeName="transform" type="rotate" values="-25 -14 -12; 25 -14 -12; -25 -14 -12" dur="0.45s" repeatCount="indefinite"/>
+      </g>
+      <g id="legL2" transform="translate(-4,-12)">
+        <rect x="-2" y="0" width="4" height="12" rx="1.5" fill="#5e3a22"/>
+        <rect x="-4" y="10" width="8" height="5" rx="1" fill="#3b2a1a"/>
+        <animateTransform attributeName="transform" type="rotate" values="25 -4 -12; -25 -4 -12; 25 -4 -12" dur="0.45s" repeatCount="indefinite"/>
+      </g>
+      <g id="legR1" transform="translate(8,-8)">
+        <rect x="-1.8" y="0" width="3.6" height="9" rx="1.5" fill="#5e3a22"/>
+        <rect x="-3.8" y="8" width="7.6" height="4.5" rx="1" fill="#3b2a1a"/>
+        <animateTransform attributeName="transform" type="rotate" values="-25 8 -8; 25 8 -8; -25 8 -8" dur="0.45s" repeatCount="indefinite"/>
+      </g>
+      <g id="legR2" transform="translate(16,-8)">
+        <rect x="-1.8" y="0" width="3.6" height="9" rx="1.5" fill="#5e3a22"/>
+        <rect x="-3.8" y="8" width="7.6" height="4.5" rx="1" fill="#3b2a1a"/>
+        <animateTransform attributeName="transform" type="rotate" values="25 16 -8; -25 16 -8; 25 16 -8" dur="0.45s" repeatCount="indefinite"/>
+      </g>
+
+      <!-- bounce -->
+      <animateTransform attributeName="transform" type="translate" values="0,0; 0,-2.5; 0,0; 0,1.5; 0,0" dur="0.45s" repeatCount="indefinite"/>
+
+      <!-- determined blush -->
+      <circle cx="16" cy="-26" r="2.3" fill="#d36a6a" opacity="0.7"/>
+
+      <!-- dust puffs -->
+      <g transform="translate(-24,10)" opacity="0.45">
+        <circle r="0" cx="0" cy="0" fill="#c9c1ae">
+          <animate attributeName="r" values="0;6;9" dur="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.3;0" dur="0.5s" repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="0,0; -8,0; -14,0" dur="0.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="0" cx="5" cy="-2" fill="#c9c1ae">
+          <animate attributeName="r" values="0;5;8" dur="0.5s" begin="0.15s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0.3;0" dur="0.5s" begin="0.15s" repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="0,0; -7,0; -13,0" dur="0.5s" begin="0.15s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </g>
+    <!-- Slightly faster and starts behind -->
+    <animateMotion dur="11s" begin="0.9s" repeatCount="indefinite" rotate="0">
+      <mpath xlink:href="#runPath"/>
+    </animateMotion>
+  </g>
+</svg>

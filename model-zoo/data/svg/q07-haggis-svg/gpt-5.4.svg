@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" aria-labelledby="title desc" role="img">
+  <title id="title">Animated haggis chasing a Scottish gamekeeper across a moor</title>
+  <desc id="desc">A looping animated scene of a red-haired Scottish gamekeeper running across a heather-covered moor while a stylized haggis chases after him under a breezy sky.</desc>
+
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#88c6ff"/>
+      <stop offset="0.65" stop-color="#cfe8ff"/>
+      <stop offset="1" stop-color="#ead8b7"/>
+    </linearGradient>
+
+    <linearGradient id="moorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d557f"/>
+      <stop offset="0.45" stop-color="#6b4d73"/>
+      <stop offset="1" stop-color="#4d6a45"/>
+    </linearGradient>
+
+    <filter id="softBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+
+    <g id="cloud">
+      <ellipse cx="0" cy="0" rx="34" ry="18" fill="#ffffff" opacity="0.85"/>
+      <ellipse cx="24" cy="-8" rx="28" ry="16" fill="#ffffff" opacity="0.9"/>
+      <ellipse cx="52" cy="0" rx="26" ry="15" fill="#ffffff" opacity="0.84"/>
+      <ellipse cx="24" cy="8" rx="42" ry="16" fill="#ffffff" opacity="0.82"/>
+    </g>
+
+    <g id="heatherClump">
+      <path d="M0 0 C-6 -16 -8 -33 -4 -48 C-1 -31 2 -14 0 0 Z" fill="#56704d"/>
+      <path d="M8 0 C3 -14 1 -28 5 -44 C8 -28 11 -15 8 0 Z" fill="#4f6847"/>
+      <path d="M-10 0 C-13 -10 -15 -22 -12 -34 C-10 -24 -8 -10 -10 0 Z" fill="#4d6545"/>
+      <circle cx="-4" cy="-42" r="4" fill="#c273c9"/>
+      <circle cx="4" cy="-39" r="4" fill="#bb68c2"/>
+      <circle cx="10" cy="-35" r="4" fill="#cf80d7"/>
+      <circle cx="-12" cy="-31" r="3.5" fill="#b562bc"/>
+      <circle cx="0" cy="-28" r="4" fill="#d08ad5"/>
+      <circle cx="8" cy="-24" r="3.5" fill="#bc71c5"/>
+    </g>
+
+    <g id="bird">
+      <path d="M0 0 q10 -10 20 0 q-10 -4 -20 0 M20 0 q10 -10 20 0 q-10 -4 -20 0" fill="none" stroke="#4f5966" stroke-width="2.2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Stylized haggis -->
+    <g id="haggis">
+      <ellipse cx="0" cy="0" rx="45" ry="28" fill="#7b4c2f"/>
+      <ellipse cx="-8" cy="-6" rx="30" ry="18" fill="#8e5a38" opacity="0.45"/>
+      <path d="M-38 3 q-8 -5 -14 1 q7 5 14 2" fill="#7b4c2f"/>
+      <circle cx="28" cy="-9" r="3.5" fill="#111"/>
+      <circle cx="29" cy="-10" r="1.1" fill="#fff"/>
+      <path d="M42 -3 q8 2 10 7 q-7 1 -13 -2" fill="#5f3923"/>
+      <path d="M35 6 q8 4 7 10 q-8 0 -12 -5" fill="none" stroke="#5f3923" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M-22 24 q-2 18 -10 26" fill="none" stroke="#3f2718" stroke-width="5" stroke-linecap="round">
+        <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+          values="M-22 24 q-2 18 -10 26; M-22 24 q6 10 3 26; M-22 24 q-2 18 -10 26"/>
+      </path>
+      <path d="M-2 24 q2 16 -4 26" fill="none" stroke="#3f2718" stroke-width="5" stroke-linecap="round">
+        <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+          values="M-2 24 q2 16 -4 26; M-2 24 q8 10 9 24; M-2 24 q2 16 -4 26"/>
+      </path>
+      <path d="M16 23 q1 18 -6 28" fill="none" stroke="#3f2718" stroke-width="5" stroke-linecap="round">
+        <animate attributeName="d" dur="0.45s" begin="0.225s" repeatCount="indefinite"
+          values="M16 23 q1 18 -6 28; M16 23 q8 9 9 24; M16 23 q1 18 -6 28"/>
+      </path>
+      <path d="M34 18 q3 17 -1 28" fill="none" stroke="#3f2718" stroke-width="5" stroke-linecap="round">
+        <animate attributeName="d" dur="0.45s" begin="0.225s" repeatCount="indefinite"
+          values="M34 18 q3 17 -1 28; M34 18 q10 8 10 22; M34 18 q3 17 -1 28"/>
+      </path>
+      <animateTransform attributeName="transform" type="translate" dur="8s" repeatCount="indefinite"
+        values="-120,0; 760,0"/>
+      <animateTransform attributeName="transform" type="rotate" additive="sum" dur="0.45s" repeatCount="indefinite"
+        values="2 0 0; -2 0 0; 2 0 0"/>
+      <animateTransform attributeName="transform" type="translate" additive="sum" dur="0.6s" repeatCount="indefinite"
+        values="0,0; 0,-3; 0,0"/>
+    </g>
+
+    <!-- Gamekeeper -->
+    <g id="keeper">
+      <!-- shadow -->
+      <ellipse cx="0" cy="55" rx="28" ry="8" fill="#2a2430" opacity="0.18"/>
+      <!-- body -->
+      <g>
+        <path d="M0 10 C10 12 20 20 23 35 L18 74 L-16 74 L-18 34 C-15 19 -7 12 0 10 Z" fill="#3d5b36"/>
+        <path d="M-7 15 C0 16 8 20 11 31 L8 45 L-10 45 L-12 31 C-10 22 -8 18 -7 15 Z" fill="#55734b"/>
+        <rect x="-7" y="72" width="14" height="18" rx="2" fill="#7f5a37"/>
+        <!-- arms -->
+        <path d="M18 28 C32 22 41 12 50 2" fill="none" stroke="#3d5b36" stroke-width="10" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+            values="M18 28 C32 22 41 12 50 2; M18 28 C30 34 43 37 54 39; M18 28 C32 22 41 12 50 2"/>
+        </path>
+        <path d="M-18 28 C-30 39 -39 50 -46 62" fill="none" stroke="#3d5b36" stroke-width="10" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+            values="M-18 28 C-30 39 -39 50 -46 62; M-18 28 C-30 20 -39 12 -49 5; M-18 28 C-30 39 -39 50 -46 62"/>
+        </path>
+        <!-- legs -->
+        <path d="M-7 90 C-2 115 2 136 10 160" fill="none" stroke="#4f3d2c" stroke-width="10" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+            values="M-7 90 C-2 115 2 136 10 160; M-7 90 C-12 108 -26 126 -42 151; M-7 90 C-2 115 2 136 10 160"/>
+        </path>
+        <path d="M7 90 C-3 111 -15 131 -28 154" fill="none" stroke="#4f3d2c" stroke-width="10" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" begin="0.225s" repeatCount="indefinite"
+            values="M7 90 C-3 111 -15 131 -28 154; M7 90 C17 116 28 136 42 158; M7 90 C-3 111 -15 131 -28 154"/>
+        </path>
+        <!-- boots -->
+        <path d="M6 156 h18" stroke="#2c241d" stroke-width="7" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" repeatCount="indefinite"
+            values="M6 156 h18; M-46 149 h18; M6 156 h18"/>
+        </path>
+        <path d="M-32 152 h18" stroke="#2c241d" stroke-width="7" stroke-linecap="round">
+          <animate attributeName="d" dur="0.45s" begin="0.225s" repeatCount="indefinite"
+            values="M-32 152 h18; M42 156 h18; M-32 152 h18"/>
+        </path>
+
+        <!-- head -->
+        <circle cx="0" cy="0" r="18" fill="#f0c7a4"/>
+        <path d="M-15 -10 C-16 -30 15 -31 18 -8 C10 -18 -6 -18 -15 -10 Z" fill="#d35a29"/>
+        <path d="M-17 -7 C-10 -20 10 -20 18 -8 C15 -4 11 -1 0 -2 C-8 -2 -14 -3 -17 -7 Z" fill="#d35a29"/>
+        <circle cx="-6" cy="-1" r="1.6" fill="#2b2b2b"/>
+        <circle cx="6" cy="-1" r="1.6" fill="#2b2b2b"/>
+        <path d="M-4 8 q4 4 8 0" fill="none" stroke="#9e6b4b" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+      <animateTransform attributeName="transform" type="translate" dur="8s" repeatCount="indefinite"
+        values="-20,0; 860,0"/>
+      <animateTransform attributeName="transform" type="translate" additive="sum" dur="0.45s" repeatCount="indefinite"
+        values="0,0; 0,-4; 0,0"/>
+    </g>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="800" height="600" fill="url(#skyGrad)"/>
+
+  <!-- Distant clouds -->
+  <g opacity="0.9" filter="url(#softBlur)">
+    <use href="#cloud" transform="translate(120 105) scale(1.1)">
+      <animateTransform attributeName="transform" type="translate" dur="30s" repeatCount="indefinite"
+        values="-120 105; 920 105"/>
+    </use>
+    <use href="#cloud" transform="translate(460 80) scale(0.9)">
+      <animateTransform attributeName="transform" type="translate" dur="40s" repeatCount="indefinite"
+        values="-180 80; 960 80"/>
+    </use>
+    <use href="#cloud" transform="translate(690 135) scale(1.2)">
+      <animateTransform attributeName="transform" type="translate" dur="35s" repeatCount="indefinite"
+        values="-220 135; 980 135"/>
+    </use>
+  </g>
+
+  <!-- Distant hills -->
+  <path d="M0 320 C110 270 215 275 320 315 C410 350 530 280 640 295 C720 305 770 290 800 280 L800 600 L0 600 Z" fill="#78838b"/>
+  <path d="M0 360 C95 330 180 340 275 365 C386 394 527 328 640 344 C716 355 769 345 800 338 L800 600 L0 600 Z" fill="#68706c"/>
+
+  <!-- Birds -->
+  <g opacity="0.75">
+    <use href="#bird" transform="translate(200 130) scale(0.8)">
+      <animateTransform attributeName="transform" type="translate" dur="14s" repeatCount="indefinite"
+        values="200 130; 860 95"/>
+    </use>
+    <use href="#bird" transform="translate(245 118) scale(0.55)">
+      <animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite"
+        values="245 118; 905 82"/>
+    </use>
+  </g>
+
+  <!-- Moor -->
+  <path d="M0 390 C105 360 210 382 307 398 C423 417 533 399 633 379 C716 363 764 366 800 375 L800 600 L0 600 Z" fill="url(#moorGrad)"/>
+
+  <!-- Heather clusters -->
+  <g opacity="0.95">
+    <use href="#heatherClump" transform="translate(55 447) scale(1.1)"/>
+    <use href="#heatherClump" transform="translate(118 470) scale(0.95)"/>
+    <use href="#heatherClump" transform="translate(180 440) scale(1.25)"/>
+    <use href="#heatherClump" transform="translate(240 490) scale(1.05)"/>
+    <use href="#heatherClump" transform="translate(300 452) scale(1.15)"/>
+    <use href="#heatherClump" transform="translate(360 482) scale(0.95)"/>
+    <use href="#heatherClump" transform="translate(430 445) scale(1.2)"/>
+    <use href="#heatherClump" transform="translate(490 500) scale(1.08)"/>
+    <use href="#heatherClump" transform="translate(560 458) scale(1.18)"/>
+    <use href="#heatherClump" transform="translate(625 486) scale(1.02)"/>
+    <use href="#heatherClump" transform="translate(695 450) scale(1.24)"/>
+    <use href="#heatherClump" transform="translate(754 478) scale(1)"/>
+  </g>
+
+  <!-- Wind ripple through foreground grasses -->
+  <g stroke="#6d8758" stroke-width="2" stroke-linecap="round" opacity="0.5">
+    <path d="M20 540 q15 -14 30 0 q15 14 30 0 q15 -14 30 0">
+      <animate attributeName="d" dur="3s" repeatCount="indefinite"
+        values="M20 540 q15 -14 30 0 q15 14 30 0 q15 -14 30 0;
+                M20 540 q15 -4 30 0 q15 4 30 0 q15 -4 30 0;
+                M20 540 q15 -14 30 0 q15 14 30 0 q15 -14 30 0"/>
+    </path>
+    <path d="M260 555 q20 -12 40 0 q20 12 40 0 q20 -12 40 0">
+      <animate attributeName="d" dur="2.5s" repeatCount="indefinite"
+        values="M260 555 q20 -12 40 0 q20 12 40 0 q20 -12 40 0;
+                M260 555 q20 -2 40 0 q20 2 40 0 q20 -2 40 0;
+                M260 555 q20 -12 40 0 q20 12 40 0 q20 -12 40 0"/>
+    </path>
+    <path d="M560 535 q18 -10 36 0 q18 10 36 0 q18 -10 36 0">
+      <animate attributeName="d" dur="2.8s" repeatCount="indefinite"
+        values="M560 535 q18 -10 36 0 q18 10 36 0 q18 -10 36 0;
+                M560 535 q18 -1 36 0 q18 1 36 0 q18 -1 36 0;
+                M560 535 q18 -10 36 0 q18 10 36 0 q18 -10 36 0"/>
+    </path>
+  </g>
+
+  <!-- Chase -->
+  <g transform="translate(0 350)">
+    <use href="#keeper"/>
+    <use href="#haggis" transform="translate(-110 100)"/>
+  </g>
+
+  <!-- Foreground rise -->
+  <path d="M0 520 C121 500 205 518 313 534 C452 555 625 538 800 505 L800 600 L0 600 Z" fill="#516348" opacity="0.95"/>
+</svg>

@@ -1,0 +1,42 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="lightblue" />
+  <rect y="500" width="800" height="100" fill="purple" />
+
+  <!-- Haggis -->
+  <g id="haggis" transform="translate(50,530)">
+    <ellipse cx="0" cy="0" rx="20" ry="15" fill="brown" />
+    <circle cx="-10" cy="-5" r="3" fill="black" />
+    <circle cx="10" cy="-5" r="3" fill="black" />
+    <line x1="-12" y1="10" x2="-18" y2="20" stroke="black" />
+    <line x1="12" y1="10" x2="18" y2="20" stroke="black" />
+  </g>
+
+  <!-- Gamekeeper -->
+  <g id="gamekeeper" transform="translate(200,510)">
+    <rect width="20" height="40" fill="green" />
+    <circle cx="10" cy="-10" r="10" fill="tomato" />
+    <rect x="4" y="40" width="4" height="10" fill="black" />
+    <rect x="12" y="40" width="4" height="10" fill="black" />
+  </g>
+
+  <!-- Animation -->
+  <animateTransform 
+    xlink:href="#haggis" 
+    attributeName="transform" 
+    type="translate" 
+    from="50,530" 
+    to="750,530" 
+    dur="3s" 
+    repeatCount="indefinite"
+  />
+  <animateTransform 
+    xlink:href="#gamekeeper" 
+    attributeName="transform" 
+    type="translate" 
+    from="200,510" 
+    to="900,510" 
+    dur="3s" 
+    repeatCount="indefinite"
+  />
+
+</svg>
