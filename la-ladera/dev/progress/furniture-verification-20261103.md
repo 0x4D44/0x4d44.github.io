@@ -151,9 +151,19 @@ Those views are not presented as unobstructed visual coverage.
 - Complete byte-level validation passes **224/224** assets on the updated base.
   The application payload check, JS/Python syntax checks and `git diff --check`
   also pass.
-- The broader **167-file non-browser sweep** runs on the original base with
-  these furniture changes. Its final aggregate is recorded after completion;
-  it is not included in the 111/111 result above.
+- The broader **167-file non-browser sweep** completed on the original base
+  with these furniture changes: **1,969 tests, 1,967 passed, one failed, one
+  skipped, zero cancelled and zero todo**; exit code 1. The only skip is the
+  Windows `.cmd` wrapper test on Linux. Node reported 3,262,373.547 ms
+  (54 minutes 22 seconds). This run is separate from the 111/111 updated-base
+  result above.
+
+The broad run exposed an existing failure in `people-assets.test.mjs`:
+`manifest.people.json: stale bytes/SHA-256 for people/people_meta.json`.
+The manifest records 45,255 bytes, while the actual metadata is 42,675 bytes;
+their SHA-256 digests also differ. Both files are byte-for-byte unchanged from
+the starting revision, and independent validation of that revision reproduces
+the mismatch. This furniture change does not modify either people file.
 
 The browser environment is Linux, Node 24.22.1 and Chrome Headless Shell
 136.0.7103.25 with software WebGL. The dedicated headless binary uses the
