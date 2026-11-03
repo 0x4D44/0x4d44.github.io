@@ -1,0 +1,146 @@
+{
+  "textures": {
+    "atlas.png": {
+      "bytes": 2933440,
+      "sha256": "a196dce140a5a28acdbe59aab6c50a8f461fe6345c3a467fa31f36cbd05f428e"
+    },
+    "atlas_normal.png": {
+      "bytes": 572509,
+      "sha256": "16505ecde88dd92bf74c2bd2058f57307b2a1993d0f744e69cc9ac21042b7494"
+    },
+    "atlas_orm.png": {
+      "bytes": 378247,
+      "sha256": "54a54db18e7a9eb49f0ca2956da92ec5a759203274c40c3b676710f6b9a9d353"
+    }
+  },
+  "gpuRGBAWithMipsBytes": 33554432,
+  "materials": 21
+}
+substation_transformer_132_33: 5644 tris, 31 parts
+substation_transformer_33_11: 2992 tris, 18 parts
+substation_breaker_oil_132: 3000 tris, 18 parts
+substation_breaker_oil_33: 2592 tris, 18 parts
+substation_breaker_truck_11: 1066 tris, 10 parts
+substation_disconnector_centre_132: 1442 tris, 11 parts
+substation_disconnector_centre_33: 1154 tris, 11 parts
+substation_disconnector_pantograph_132: 1128 tris, 6 parts
+substation_ct_132: 962 tris, 7 parts
+substation_ct_33: 770 tris, 7 parts
+substation_cvt_132: 824 tris, 7 parts
+substation_cvt_33: 632 tris, 7 parts
+substation_arrester_132: 858 tris, 5 parts
+substation_arrester_33: 558 tris, 5 parts
+substation_post_insulator_132: 524 tris, 2 parts
+substation_post_insulator_33: 332 tris, 2 parts
+substation_earth_switch_132: 844 tris, 6 parts
+substation_earth_switch_33: 700 tris, 6 parts
+substation_switchboard_panel_11: 600 tris, 7 parts
+substation_control_panel: 576 tris, 7 parts
+substation_battery_bank: 1634 tris, 63 parts
+substation_battery_charger: 274 tris, 5 parts
+substation_station_transformer: 1078 tris, 9 parts
+substation_radiator_bank: 260 tris, 1 parts
+substation_cooling_fan: 206 tris, 2 parts
+substation_insulator_disc: 104 tris, 2 parts
+substation_insulator_string_132: 1186 tris, 23 parts
+substation_insulator_string_33: 458 tris, 9 parts
+substation_conductor_segment: 20 tris, 1 parts
+substation_conductor_spacer: 238 tris, 2 parts
+substation_tower_suspension_132: 2826 tris, 4 parts
+substation_tower_terminal_132: 2826 tris, 4 parts
+substation_pole_hframe_33: 738 tris, 4 parts
+substation_pole_concrete_11: 1356 tris, 5 parts
+substation_gantry_132: 1828 tris, 3 parts
+substation_gantry_33: 1252 tris, 3 parts
+substation_busbar_tube: 160 tris, 1 parts
+substation_bund_large: 468 tris, 5 parts
+substation_bund_small: 468 tris, 5 parts
+substation_firewall: 160 tris, 2 parts
+substation_wall_brick: 126 tris, 3 parts
+substation_wall_door: 148 tris, 3 parts
+substation_wall_window: 158 tris, 3 parts
+substation_roof_flat: 70 tris, 2 parts
+substation_door_steel: 94 tris, 2 parts
+substation_louvre: 152 tris, 3 parts
+substation_window: 96 tris, 3 parts
+substation_oil_store: 630 tris, 5 parts
+substation_fence_panel: 244 tris, 1 parts
+substation_fence_post: 66 tris, 2 parts
+substation_gate: 618 tris, 2 parts
+substation_floodlight_mast: 194 tris, 4 parts
+substation_lightning_mast: 86 tris, 3 parts
+substation_gravel_tile: 490 tris, 1 parts
+substation_concrete_tile: 82 tris, 2 parts
+substation_trench_cover: 74 tris, 3 parts
+substation_sign_danger: 160 tris, 2 parts
+substation_sign_access: 160 tris, 2 parts
+substation_sign_touch: 160 tris, 2 parts
+INFO Draco mesh compression is available, use library at /tmp/substation-500ad-tooling/blender-5.0.1-linux-x64/5.0/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+
+substation2_near.glb: 2,288,968 bytes; 267 unique component meshes, 125 mesh aliases
+substation_transformer_132_33_lod1: 624 tris, 25 parts
+substation_transformer_33_11_lod1: 372 tris, 11 parts
+substation_breaker_oil_132_lod1: 478 tris, 15 parts
+substation_breaker_oil_33_lod1: 526 tris, 15 parts
+substation_breaker_truck_11_lod1: 340 tris, 9 parts
+substation_disconnector_centre_132_lod1: 180 tris, 9 parts
+substation_disconnector_centre_33_lod1: 180 tris, 9 parts
+substation_disconnector_pantograph_132_lod1: 218 tris, 4 parts
+substation_ct_132_lod1: 114 tris, 5 parts
+substation_ct_33_lod1: 114 tris, 5 parts
+substation_cvt_132_lod1: 74 tris, 4 parts
+substation_cvt_33_lod1: 74 tris, 4 parts
+substation_arrester_132_lod1: 74 tris, 4 parts
+substation_arrester_33_lod1: 74 tris, 4 parts
+substation_post_insulator_132_lod1: 52 tris, 2 parts
+substation_post_insulator_33_lod1: 52 tris, 2 parts
+substation_earth_switch_132_lod1: 118 tris, 4 parts
+substation_earth_switch_33_lod1: 118 tris, 4 parts
+substation_switchboard_panel_11_lod1: 22 tris, 2 parts
+substation_control_panel_lod1: 22 tris, 2 parts
+substation_battery_bank_lod1: 108 tris, 2 parts
+substation_battery_charger_lod1: 10 tris, 1 parts
+substation_station_transformer_lod1: 236 tris, 8 parts
+substation_radiator_bank_lod1: 10 tris, 1 parts
+substation_cooling_fan_lod1: 44 tris, 2 parts
+substation_insulator_disc_lod1: 16 tris, 1 parts
+substation_insulator_string_132_lod1: 44 tris, 2 parts
+substation_insulator_string_33_lod1: 44 tris, 2 parts
+substation_conductor_segment_lod1: 6 tris, 1 parts
+substation_conductor_spacer_lod1: 46 tris, 1 parts
+substation_tower_suspension_132_lod1: 814 tris, 3 parts
+substation_tower_terminal_132_lod1: 814 tris, 3 parts
+substation_pole_hframe_33_lod1: 240 tris, 3 parts
+substation_pole_concrete_11_lod1: 375 tris, 3 parts
+substation_gantry_132_lod1: 338 tris, 3 parts
+substation_gantry_33_lod1: 338 tris, 3 parts
+substation_busbar_tube_lod1: 16 tris, 1 parts
+substation_bund_large_lod1: 70 tris, 2 parts
+substation_bund_small_lod1: 70 tris, 2 parts
+substation_firewall_lod1: 10 tris, 1 parts
+substation_wall_brick_lod1: 10 tris, 1 parts
+substation_wall_door_lod1: 32 tris, 1 parts
+substation_wall_window_lod1: 42 tris, 1 parts
+substation_roof_flat_lod1: 22 tris, 1 parts
+substation_door_steel_lod1: 10 tris, 1 parts
+substation_louvre_lod1: 16 tris, 2 parts
+substation_window_lod1: 14 tris, 2 parts
+substation_oil_store_lod1: 112 tris, 4 parts
+substation_fence_panel_lod1: 84 tris, 1 parts
+substation_fence_post_lod1: 18 tris, 1 parts
+substation_gate_lod1: 192 tris, 1 parts
+substation_floodlight_mast_lod1: 64 tris, 4 parts
+substation_lightning_mast_lod1: 30 tris, 2 parts
+substation_gravel_tile_lod1: 10 tris, 1 parts
+substation_concrete_tile_lod1: 10 tris, 1 parts
+substation_trench_cover_lod1: 10 tris, 1 parts
+substation_sign_danger_lod1: 12 tris, 2 parts
+substation_sign_access_lod1: 12 tris, 2 parts
+substation_sign_touch_lod1: 12 tris, 2 parts
+
+substation2_lod.glb: 559,920 bytes; 170 unique component meshes, 45 mesh aliases
+STAGED VALIDATION PASS: {"baseAssets": 59, "lodAssets": 59, "modelBytes": 3115422, "textureBytes": 3884196, "gpuBytes": 33554431.999999996, "sharedMeshAliases": 170}
+INSTALLED: 59 near/LOD pairs into /workspace/scratch/500ad0edcf36/repo/la-ladera/assets/models; game registries unchanged.
+Blender 5.0.1 (hash a3db93c5b259 built 2025-12-16 01:30:59)
+
+Blender quit

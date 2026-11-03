@@ -1,0 +1,12 @@
+Date: 2026-11-03T02:29:43.102Z
+Runtime: v22.16.0
+Executable: /tmp/substation-500ad-tooling/node-v22.16.0-linux-x64/bin/node
+Platform: linux x64
+LADERA_PRIO: idle
+Observed process priority: 19
+substation/substation2_near.glb: 2288968 bytes; SHA-256 3294c4e43d4d13b8d568cf0d78620b2b1f2dfbff2a6cf8099324f844402456ed
+substation/substation2_lod.glb: 559920 bytes; SHA-256 e688773c46d74df06926188185c576c1eb4de0b314b54fa6ab1b28425d603091
+atlas.png: 2933440 bytes; SHA-256 a196dce140a5a28acdbe59aab6c50a8f461fe6345c3a467fa31f36cbd05f428e
+atlas_normal.png: 572509 bytes; SHA-256 16505ecde88dd92bf74c2bd2058f57307b2a1993d0f744e69cc9ac21042b7494
+atlas_orm.png: 378247 bytes; SHA-256 54a54db18e7a9eb49f0ca2956da92ec5a759203274c40c3b676710f6b9a9d353
+AUDIT PASS: 118 manifest anchor/keepOut records match the catalogue; all 3 texture SHA-256 and byte records match the files.
