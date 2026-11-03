@@ -9,7 +9,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const SOURCES = ['js/arch/signs.js', 'js/world/signs.js', 'js/world/names.js', 'js/world/places.js', 'js/world/layout.js', 'js/interiors/atlas.js', 'js/arch/weather.js', 'tools/blender/clutter_atlas.py'];
+export const SOURCES = ['js/arch/signs.js', 'js/world/signs.js', 'js/world/names.js', 'js/world/places.js', 'js/world/layout.js', 'js/interiors/atlas.js', 'js/arch/weather.js', 'js/world/coast.js', 'js/world/beachfinds.js', 'tools/blender/clutter_atlas.py'];
 
 /** The small list: a word that is never right without its mark, by its bare form (lower case, no accent), and the way it is written. A word that is right both ways ("si", "como") does not belong here. */
 export const WORDS = {

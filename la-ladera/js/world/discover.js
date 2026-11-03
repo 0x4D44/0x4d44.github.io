@@ -2,7 +2,7 @@
 // something that really exists in the world (a built feature, a landmark of the plan, or a tree zone). Registered through ctx.discover.
 import { OCC } from './occupancy.js';
 
-const KINDS = ['vista', 'mirador', 'shrine', 'object', 'story', 'nature', 'mural', 'hidden'];
+export const KINDS = ['vista', 'mirador', 'shrine', 'object', 'story', 'nature', 'mural', 'hidden'];   // the closed set (a test of a module that adds finds reads it from here)
 
 const wallDist = (w, x, z) => {                                       // from a point to a collider's surface
   const dx = w.x2 - w.x1, dz = w.z2 - w.z1, l2 = dx * dx + dz * dz, t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.z1) * dz) / l2)) : 0;

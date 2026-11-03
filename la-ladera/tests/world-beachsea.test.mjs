@@ -11,6 +11,8 @@
 //   many     nine hundred more pieces                     random   a layout that is not a function of the seed
 //   nocap    nothing closes the underside's south end     capnear  the cap is a bent too soon                                              capfar   the cap is a bent too late
 //   noside   nothing closes the underside's edges
+//   reef     the coral patch is in the shallows              reefx    it is outside the beach's walls                                reefmoped it lies on the moped
+//   reefwall a wall stands 3 m from it                       reefrand a coral patch that is not a function of the coast
 import './nice.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -58,6 +60,11 @@ function sea(seed) {
   if (on('nocap')) s.walls = s.walls.filter((w) => !(w.id === 'pier.skirt' && w.z1 === w.z2));
   if (on('capnear', 'capfar')) { const d = on('capnear') ? -4 : 4; for (const w of s.walls.filter((q) => q.id === 'pier.skirt')) { if (w.z1 > PIER.z0 + 10) w.z1 += d; if (w.z2 > PIER.z0 + 10) w.z2 += d; } }
   if (on('noside')) s.walls = s.walls.filter((w) => !(w.id === 'pier.skirt' && w.x1 === w.x2));
+  if (on('reef')) s.reef = { ...s.reef, z: 150 };
+  if (on('reefx')) s.reef = { ...s.reef, x: 100 };
+  if (on('reefmoped')) s.reef = { ...s.reef, x: -48 };
+  if (on('reefwall')) wall('sea.test', 61, 209, 61, 211, 0.5, SEA - 1, SEA + 1);
+  if (on('reefrand')) s.reef = { ...s.reef, x: s.reef.x + 0.001 * (++tick) };
   if (on('many')) for (let i = 0; i < 900; i++) s.items.push({ id: 'x.' + i, group: 'gear', name: 'rope_coil', key: assetKey('rope_coil'), x: -90 + (i % 180), y: -4, z: 200, yaw: 0, lod: [10, 30] });
   return s;
 }
@@ -100,7 +107,7 @@ test('the layout is a function of the coast and the seed: the same twice; anothe
   const c = sea(SEED + 1), kit = (s) => s.items.filter((i) => !i.float && ['deck', 'head', 'pile', 'brace', 'post', 'rail', 'lamp', 'rod', 'crate', 'cleat', 'ladder'].includes(i.group));
   assert.deepEqual(kit(c), kit(sea(SEED)), 'the pier does not depend on the seed');
   assert.notDeepEqual(c.items, sea(SEED).items, 'but the buoys\' turns, the boats\' lie and the swell\'s phases do');
-  assert.deepEqual(Object.keys(a).sort(), ['by', 'floors', 'items', 'lamps', 'ropes', 'stats', 'sunken', 'walls']);
+  assert.deepEqual(Object.keys(a).sort(), ['by', 'floors', 'items', 'lamps', 'reef', 'ropes', 'stats', 'sunken', 'walls']);
   const ids = new Set(a.items.map((i) => i.id)); assert.equal(ids.size, a.items.length, 'every piece has its own id');
   for (const i of a.items) assert.ok(SIZE[i.name] && i.key === assetKey(i.name), `${i.id}: ${i.name} is a design of the library the world holds the size of`);
 });
@@ -304,6 +311,27 @@ test('on the seabed: the moped about 3 m down and the anchor about 2 m, in the s
     assert.ok(it && Math.abs(it.y - H(s.x, s.z)) < 0.05, `${s.id} stands on the bottom`);
   }
   assert.deepEqual(group('sunken').map((i) => i.name).sort(), ['sunken_anchor_tyre', 'sunken_moped']);
+});
+
+test('the coral patch: a key of its own (the sunken things stay two), 3 m down where a swimmer can dive, inside the swim zone, 8 m from the pier, the raft, every boat and every wall, 6 m from both sunken things, and the same twice', () => {
+  const R = S.reef, polyDist = (pts, x, z) => (inside(pts, x, z) ? 0 : edgeDist(pts, x, z));
+  assert.equal(S.sunken.length, 2, 'the coral patch is not a third sunken thing');
+  assert.ok(R && R.id === 'reef', 'the sea plan holds the coral patch');
+  assert.deepEqual(Object.keys(R).sort(), ['depth', 'id', 'r', 'x', 'y', 'z'], 'its record: id, x, y, z, depth, r');
+  assert.ok([R.x, R.y, R.z, R.depth, R.r].every(Number.isFinite), 'finite numbers');
+  const depth = SEA - H(R.x, R.z);
+  assert.ok(depth >= 2.95 && depth <= 3.05, `the water over the coral patch is ${depth.toFixed(3)} m deep (2.95 to 3.05 wanted)`);
+  assert.ok(Math.abs(R.depth - depth) < 0.01, `the record's depth (${R.depth}) is the coast's (${depth.toFixed(3)})`);
+  assert.ok(Math.abs(R.y - H(R.x, R.z)) < 0.005, `its y (${R.y}) is the seabed's (${H(R.x, R.z).toFixed(3)})`);
+  assert.equal(R.r, 2.6, 'a patch 2.6 m in radius');
+  const lim = coast.limit(R.x, R.z);
+  assert.ok(!lim.hard && lim.x === R.x && lim.z === R.z, `it is inside the swim zone: the player can reach it and the limit does not move it (${JSON.stringify(lim)})`);
+  for (const f of S.floors) assert.ok(polyDist(f.pts, R.x, R.z) >= 8, `${f.id} (the pier's deck, the raft's) is ${polyDist(f.pts, R.x, R.z).toFixed(1)} m from the coral patch`);
+  for (const w of S.walls) assert.ok(segDist(R.x, R.z, w) - w.t >= 8, `${w.id} (${w.x1}, ${w.z1}) is ${(segDist(R.x, R.z, w) - w.t).toFixed(1)} m from the coral patch`);
+  for (const b of S.items.filter((i) => ['moored', 'boat'].includes(i.group))) assert.ok(Math.hypot(b.x - R.x, b.z - R.z) >= 8, `${b.id} (${b.name}) is ${Math.hypot(b.x - R.x, b.z - R.z).toFixed(1)} m from the coral patch`);
+  for (const s of S.sunken) assert.ok(Math.hypot(s.x - R.x, s.z - R.z) >= 6, `${s.id} is ${Math.hypot(s.x - R.x, s.z - R.z).toFixed(1)} m from the coral patch (6 wanted)`);
+  assert.deepEqual(sea().reef, sea().reef, 'the same coast gives the same patch to the last digit');
+  assert.deepEqual(sea(SEED + 5).reef, sea(SEED).reef, 'and it is the coast\'s depth that puts it there, not the seed');
 });
 
 test('colliders are well-formed and the budget holds: every wall and floor has finite numbers, nothing is outside the beach, and the whole sea is under 450 pieces and the near triangles under a bound', async () => {

@@ -9,6 +9,7 @@ import { CASETA_H } from './roof.js';
 import { buildingClutter } from '../world/clutter.js';
 import { signText, signColours, hexToLin, GHOST_COUNT, posterSetOf, handPainted, HAND_BG } from './signs.js';
 import { weatherFacade } from './weather.js';
+import { beachSide } from './layouthelp.js';
 
 const UP = [0, 1, 0];
 const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -588,6 +589,82 @@ function elevations(G, kit) {
   }
 }
 
+// ---- the promenade side of the south row (round 7, the beach; layouthelp.js `beachSide`) -------------------------------------------------------------------------------------------------
+/** A canvas cover on a wall: stripes of the pair `pair` from the top edge `ya`, `proj` out and `drop` down, a valance on its lip and two thin arms under it (the shop awning of cloth, on any side). */
+function canvasCover(G, side, ua, ub, ya, proj, drop, pair) {
+  const { b } = G, fr = G.FR[side], w = ub - ua, n = Math.max(4, Math.round(w / 0.2) & ~1), [c0, c1] = pair.map(hx), up = [fr.n[0] * drop, proj, fr.n[2] * drop], under = [-up[0], -up[1], -up[2]];
+  for (let i = 0; i < n; i++) {
+    const u0 = ua + (w * i) / n, u1 = ua + (w * (i + 1)) / n, col = i % 2 ? c1 : c0;
+    const A = fr.at(u0, ya, 0.01), B = fr.at(u1, ya, 0.01), C = fr.at(u1, ya - drop, proj), E = fr.at(u0, ya - drop, proj);
+    qd(b, 'frame_paint', A, B, C, E, up, { col });
+    qd(b, 'frame_paint', A, B, C, E, under, { col: mulc(col, 0.55) });
+    qd(b, 'frame_paint', fr.at(u0, ya - drop - 0.13, proj), fr.at(u1, ya - drop - 0.13, proj), C, E, fr.n, { col: mulc(col, 0.92) });
+  }
+  for (const u of [ua + 0.03, ub - 0.03]) fbox(G, side, u, ya - 0.2, proj * 0.5, 0.025, 0.025, Math.hypot(proj, drop) + 0.04, 'rail_metal', hx(0x2b2e31));
+}
+
+/**
+ * The backs of the south row (L11-L15, L50, L51) face the promenade. A cafe's or a restaurant's storeroom door (layouthelp.js `beachDoor`, an `alley` entrance) gets a terrace: a canvas cover over it on two arms (the
+ * building's own awning colours), its name on a board above, and a planter with its shrubs either side of the steps. The others get what their wall can take: the shop's board on the sea side, a planter at each end of the
+ * wall, and for a house a faded advert. Everything keeps clear of every opening and of whatever `elevations` put up before it (`busyAt`), is recorded on `bp.facade` (`terrace`, `sign`, `planter`, `ghost`, each with `rear: true`) and is a
+ * hash of the building id (no stream). Visual only: a planter is 0.4 m tall (a walker steps over it; the plan's steps stand between the two) and the cover is over a walker's head. Every other lot: untouched.
+ */
+function beachRear(G, kit) {
+  const { S, bp, ctx } = G, mode = beachSide(bp.lot, ctx);
+  if (!mode || !kit.finished) return;
+  const fr = G.FR.back, fl = bp.frame, ph = ctx.plan?.heightAt, lot = bp.lot, h = (n) => hash01(bp.id, 520 + n), W = S.W;
+  const door = bp.doors.find((d) => d.ext && d.side === 'back' && d.floor === 0 && d.entrance === 'alley');
+  const busy = (u0, u1, y0, y1) => busyAt(G, 'back', u0, u1, y0, y1, true);
+  const clear = (u0, u1, y0, y1) => !bp.windows.some((w) => w.side === 'back' && w.x + w.w / 2 + 0.15 > u0 && w.x - w.w / 2 - 0.15 < u1 && w.floor * S.fh + w.y + w.h + 0.15 > y0 && w.floor * S.fh + w.y - 0.15 < y1)
+    && !G.recs.some((r) => r.side === 'back' && r.u1 + 0.05 > u0 && r.u0 - 0.05 < u1 && r.y1 > y0 && r.y0 < y1);                       // (like `busy`, but the door itself is not in the way: the cover is meant to hang over it)
+  const ground = (u, a) => { const p = fl.toWorld(u, 0, -S.D / 2 - a), g = ph ? ph(p[0], p[2]) : NaN; return Number.isFinite(g) ? g - fl.y : -0.3; };      // the ground `a` m out from the wall, from the floor line
+  /** A planter of 0.55 x 0.4 m and 0.4 m tall with three shrubs, standing on the ground `u` along the wall; false when the wall there is taken. */
+  const planter = (u, k) => {
+    const pw = 0.55, dp = 0.4, hg = 0.4, off = dp / 2 + 0.05, low = Math.min(...[-pw / 2, pw / 2].flatMap((du) => [off - dp / 2, off + dp / 2].map((a) => ground(u + du, a)))) - 0.03;
+    if (Math.abs(u) > W / 2 - 0.4 || busy(u - pw / 2 - 0.05, u + pw / 2 + 0.05, Math.max(0, low), low + hg + 0.3)) return false;
+    fbox(G, 'back', u, low + hg / 2, off, pw, hg, dp, 'plaster_rough', hx([0xa8553a, 0x6f8f4f, 0xd9d2c0, 0x8a5a34][Math.floor(h(k) * 4) % 4]));
+    const p0 = fr.at(u, low + hg, off);
+    for (let i = 0; i < 3; i++) bush(G, p0[0] + (i - 1) * pw * 0.3, p0[1], p0[2], 0.13 + 0.05 * h(k + 1 + i), 0.28 + 0.16 * h(k + 4 + i), mulc(hx([0x3f8a3f, 0x4f9a48, 0x2f7a4a][i]), 0.9 + 0.2 * h(k + 7 + i)));
+    G.rec('planter', 'back', u - pw / 2, u + pw / 2, Math.max(0, low), low + hg + 0.3, off + dp / 2, { rear: true });
+    return true;
+  };
+  /** The shop's board on the sea side, `bw` x `bw / 4` with its foot at `y0`, as near `uPref` along the wall as a free stretch allows (the atlas rect of the front's board: the same lettering). */
+  const board = (uPref, y0, bw) => {
+    const t = signText(lot), bh = bw / 4;
+    if (!t) return false;
+    const c = signColours(lot), hand = handPainted(lot), flat = hexToLin(hand ? HAND_BG : c.bg), A = ctx.signAtlas;
+    const u = [0, 0.5, -0.5, 1, -1, 1.5, -1.5].map((d) => clamp(uPref + d, -W / 2 + 0.2 + bw / 2, W / 2 - 0.2 - bw / 2)).find((uu) => !busy(uu - bw / 2 - 0.05, uu + bw / 2 + 0.05, y0 - 0.06, y0 + bh + 0.06));
+    if (u === undefined || y0 + bh + 0.1 > S.F * S.fh) return false;
+    const y = y0 + bh / 2, rect = A?.uv?.[`board:${lot.id}`] ?? null;
+    if (hand) fbox(G, 'back', u, y, 0.025, bw + 0.08, bh + 0.08, 0.05, 'plaster_a', hexToLin(HAND_BG)); else fbox(G, 'back', u, y, 0.03, bw + 0.1, bh + 0.1, 0.06, 'frame_paint', mulc(G.fs.metal, 1.3));
+    plate(G, 'sign_atlas', fr.at(u, y, hand ? 0.056 : 0.065), fr.n, bw, bh, rect ? [1, 1, 1] : flat, rect);
+    G.rec('sign', 'back', u - bw / 2 - 0.05, u + bw / 2 + 0.05, y0 - 0.05, y0 + bh + 0.05, hand ? 0.06 : 0.07, { rear: true, ...(hand ? { hand: true } : {}) });
+    return true;
+  };
+  if (door) {
+    const w = Math.min(door.w + 1.3, W - 0.4), ya = door.h + 0.45, drop = 0.4, proj = 1.15, ua = clamp(door.x - w / 2, -W / 2 + 0.12, W / 2 - 0.12 - w), ub = ua + w;
+    if (clear(ua, ub, ya - drop - 0.1, ya + 0.02)) {
+      canvasCover(G, 'back', ua, ub, ya, proj, drop, kit.awnPair);
+      G.rec('terrace', 'back', ua, ub, ya - drop - 0.13, ya, proj, { rear: true });                                // (not an 'awning': weather.js looks for the shop door's awning among the records of EVERY side)
+    }
+    board(door.x, ya + 0.12, 2.0);
+    for (const sg of [-1, 1]) planter(door.x + sg * (door.w / 2 + 0.2 + 0.45), 10 + 10 * (sg > 0));
+  } else {
+    if (!board(0, 2.5, 1.9) && !signText(lot)) {                                                  // a house: a faded advert on the blank stretch of the wall, as the side walls have
+      const pw = 2.4, ph2 = 1.5, yc = S.F * S.fh - 0.35 - ph2 / 2, A = ctx.signAtlas, idx = (kit.ghostIdx + 3) % GHOST_COUNT;
+      for (let i = 0; i < 6; i++) {
+        const u = (hash01(bp.id, 540 + i) - 0.5) * (W - pw - 0.6);
+        if (yc - ph2 / 2 < S.fh || busy(u - pw / 2, u + pw / 2, yc - ph2 / 2, yc + ph2 / 2)) continue;
+        const r = A?.uv?.[`ghost:${idx}`] ?? null;
+        plate(G, 'sign_atlas', fr.at(u, yc, 0.012), fr.n, pw, ph2, r ? [1, 1, 1] : hx([0xe8e2d0, 0xb8201c, 0xf2c200, 0x1f4f8c][idx % 4]), r);
+        G.rec('ghost', 'back', u - pw / 2, u + pw / 2, yc - ph2 / 2, yc + ph2 / 2, 0.012, { rear: true });
+        break;
+      }
+    }
+    for (const sg of [-1, 1]) planter(sg * (W / 2 - 0.7), 10 + 10 * (sg > 0));
+  }
+}
+
 // ---- the roof kit -------------------------------------------------------------------------------------------------------------------------------
 function dish(G, x, y, z, yaw, tint) {
   if (buildingClutter(G, 'clutter_dish', x, y, z, yaw, { size: [0.72, 0.96, 0.72] })) return;
@@ -873,7 +950,7 @@ export function buildFacade(G) {
   kit.limit = kit.limitAt(-G.S.W / 2 + 0.3, G.S.W / 2 - 0.3);
   kit.sign = signGeo(G, kit);
   courses(G, kit); pilasters(G, kit); awning(G, kit); signs(G, kit);
-  balconies(G, kit); wallFurniture(G, kit); elevations(G, kit);
+  balconies(G, kit); wallFurniture(G, kit); elevations(G, kit); beachRear(G, kit);
   if (G.S.roofStyle === 'terrace') terraceKit(G, kit); else if (G.S.roofStyle === 'tile') tileKit(G, kit);
   if (kit.kind === 'chapel') chapel(G, kit); else if (kit.kind === 'school') school(G, kit); else if (kit.kind === 'clinic') clinic(G, kit);
   weatherFacade(G, kit);                                                                   // last: every mark keeps clear of what is already on the wall (weather.js)

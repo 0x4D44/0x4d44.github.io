@@ -22,13 +22,16 @@ const LOD = Object.freeze({ big: [70, 260], mid: [36, 130], small: [22, 80], tin
 const LOD_OF = (name) => (/^(kiosk|lifeguard_tower|palm_|volleyball_court|groyne_rock)/.test(name) ? 'big'
   : /^(towel|bag|cool_box|thermos|flipflop|bucket|sandcastle|ball|pool_ring|volleyball_ball|first_aid|rescue_buoy|shell|seaweed|sign_)/.test(name) ? (/^(shell|seaweed|flipflop|thermos|ball|bucket)/.test(name) ? 'tiny' : 'small') : 'mid');
 
+/** Whether (x, z) is on an access of the promenade (a stair or the ramp: its flight and its landing) or within `m` metres of one: where nothing is laid (dunegrass.js keeps its tufts off it too). */
+export const onAccess = (coast, x, z, m = 0) => coast.accesses.some((a) => Math.abs(x - a.x) <= a.w / 2 + 0.35 + m && z >= DECK_Z - 2.6 - m && z <= (a.kind === 'ramp' ? coast.rampEnd : STAIR_FLIGHT[1]) + 1.2 + m);
+
 export function planFront(coast, o = {}) {
   const rng = makeRng(((o.seed ?? coast.seed ?? 1) * 2654435761 + 4711) >>> 0), H = coast.heightAt;
   const items = [], groynes = [], solids = [], lamps = [], huts = [], palapas = [], posts = [], discs = [], n = {};
   const nid = (g) => `${g}.${(n[g] = (n[g] ?? -1) + 1)}`;
   const free = (x, z, r) => discs.every((d) => Math.hypot(d.x - x, d.z - z) >= d.r + r);
   const take = (x, z, r) => discs.push({ x, z, r });
-  const inAccess = (x, z, m = 0) => coast.accesses.some((a) => Math.abs(x - a.x) <= a.w / 2 + 0.35 + m && z >= DECK_Z - 2.6 - m && z <= (a.kind === 'ramp' ? coast.rampEnd : STAIR_FLIGHT[1]) + 1.2 + m);
+  const inAccess = (x, z, m = 0) => onAccess(coast, x, z, m);
   const inPier = (x, z, m = 0) => Math.abs(x - PIER.x) <= PIER.w / 2 + m && z >= PIER.z0 - 1.5;
   const dry = (x, z) => z < coast.shoreZ(x) - 3;
   const onBoat = (x, z) => SAND_BOATS.some((b) => Math.abs(x - b.x) < 1.25 && Math.abs(z - b.z) < 3.05);       // (a hull is 1.8 x 5.5 m: the small things that need no free ground keep off it too)
@@ -181,6 +184,17 @@ export function planFront(coast, o = {}) {
   for (const s of [-1, 1]) for (let i = 0; i < 20; i++) {
     const z = 103 + i * 4.3 + rng.range(-0.6, 0.6), x = s * (100.9 + (i % 2) * 2.6 + rng.range(0, 1.2)), k = rng.range(1.25, 1.9);
     groynes.push(make(`groyne_rock_${1 + ((i * 7 + (s > 0 ? 1 : 0)) % 3)}`, x, z, rng.range(0, 6.2832), 'groyne', { y: H(x, z) - 0.25 * k, scale: [k, k, k] }));
+  }
+
+  // ---- the three safety signs (round 7, 2c): plaques of the same kind as the kiosks', on posts of their own, facing the way a walker comes. Last, and from no stream, so that nothing laid out above them moves:
+  // the Zona de baño on the dry sand above the bathing water, the Bandera roja by the lifeguard tower (the flags are its own), the Prohibido el paso at the east end, where the sand meets the rocks
+  const SAFETY = [['sign_zona_bano', Math.PI, [[16, 139], [19, 139], [13, 139], [16, 137.4], [22, 137.4]]], ['sign_bandera_roja', Math.PI, [[1.6, 129.4], [1.2, 131], [9, 133], [12.6, 129.5]]], ['sign_prohibido_paso', -Math.PI / 2, [[97.4, 121], [97.4, 124], [97.4, 118.6], [96.8, 127]]]];
+  for (const [name, yaw, spots] of SAFETY) {
+    const at = spots.find(([x, z]) => dry(x, z) && Math.abs(x) <= XW - 1.5 && !inAccess(x, z, 1.2) && !inPier(x, z, 2) && !onBoat(x, z) && free(x, z, 0.6));
+    if (!at) continue;
+    const [x, z] = at;
+    posts.push({ id: nid('post'), x, y: H(x, z), z, h: 1.9 }); post('signpost', x, z, 0.06, 1.9); take(x, z, 0.5);
+    put(name, x + Math.sin(yaw) * 0.045, z + Math.cos(yaw) * 0.045, yaw, 'sign', { y: H(x, z) + PLAQUE_Y });             // (the plaque stands 4.5 cm in front of its post, as the kiosks' do)
   }
 
   const by = {}; for (const it of items) by[it.group] = (by[it.group] ?? 0) + 1;

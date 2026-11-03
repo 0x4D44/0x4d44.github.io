@@ -2,7 +2,7 @@
 import { T_INT, R, cutSouth, cutX, cutWest, cutEast, rw, rd, rcx, rcz, clamp, rectMinusRects } from './geom.js';
 import { coreGeo } from './coregeo.js';
 import { coreDims } from './stairs.js';
-import { stack, carveBath, bathCut, FLAT_BATH, entranceU, wallLen } from './layouthelp.js';
+import { stack, carveBath, bathCut, FLAT_BATH, entranceU, wallLen, beachDoor } from './layouthelp.js';
 import { planCourtyard, planTenement, planSchool, planClinic, planHall } from './layouts_special.js';
 import { NAVE_H, LOW_H, DAIS_H, DAIS_D, DAIS_HALF } from './chapel_interior.js';
 
@@ -236,6 +236,7 @@ export function layoutShopHouse(S) {
     const bath = carveBath(S, back, 0, 'east');
     S.link(shop, back); S.link(back, bath);
     S.extDoor(shop, 'front', entranceU(S), { kind: 'shutter', w: clamp(rw(front) * 0.5, 1.8, 2.6), h: 2.2, entrance: 'shop' });
+    beachDoor(S);                                                                                                // (only a promenade cafe or restaurant: layouthelp.js beachSide)
     return;
   }
   S.placeCore(g.core, g.orient, g.flip); S.addCoreRooms();
@@ -274,6 +275,7 @@ export function layoutShopHouse(S) {
   // upper floors: home. One storey above the shop is a flat (flatFloor: a home needs a bedroom); a taller one has its living floor and the private floors above it
   if (S.F === 2) flatFloor(S, g, 1);
   else for (let k = 1; k < S.F; k++) homeFloor(S, g, k, k === 1 ? 'public' : 'private');
+  beachDoor(S);                                                                                                  // the promenade door comes last: no other door's id or draw moves (layouthelp.js)
 }
 
 /** Narrowest a flat may be when it has the floor to itself (beside the hall and stair column); two to a floor need 2.8 m each. */

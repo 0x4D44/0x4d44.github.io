@@ -8,6 +8,8 @@
 //   dup      two props share an id                            budget   nine hundred props                                poi      the court's anchors a metre off the court
 //   tower    the lifeguard stands on the sand under the tower  inside   a vendor's post inside a kiosk
 //   groyne   a groyne's rock stands on the beach itself        boat     a towel is laid on a boat's hull                  nonet    the nets are gone from between the boats
+//   nosign   a safety sign is missing                          nopost   a safety sign hangs on no post                    signfar  the Bandera roja is a long way from the lifeguard tower
+//   signturn the Zona de baño faces the sea, away from the stairs                nosolid  a safety sign's post is not solid
 import './nice.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,6 +45,11 @@ function front(seed) {
   if (on('groyne')) f.groynes[0].x = XW - 5;
   if (on('boat')) f.items.push(it('towel_01_flat', SAND_BOATS[2].x, SAND_BOATS[2].z));
   if (on('nonet')) f.items = f.items.filter((i) => i.group !== 'net');
+  if (on('nosign')) f.items = f.items.filter((i) => i.name !== 'sign_prohibido_paso');
+  if (on('nopost')) { const s = f.items.find((i) => i.name === 'sign_zona_bano'); f.posts = f.posts.filter((p) => Math.hypot(p.x - s.x, p.z - s.z) > 0.2); }
+  if (on('nosolid')) { const s = f.items.find((i) => i.name === 'sign_zona_bano'); f.solids = f.solids.filter((q) => !(q.kind === 'post' && Math.hypot(q.x - s.x, q.z - s.z) < 0.1)); }
+  if (on('signfar')) { const s = f.items.find((i) => i.name === 'sign_bandera_roja'), p = f.posts.find((q) => Math.hypot(q.x - s.x, q.z - s.z) < 0.1), k = f.solids.find((q) => q.kind === 'post' && Math.hypot(q.x - p.x, q.z - p.z) < 0.01); s.x += 40; p.x += 40; k.x += 40; }   // (the whole sign, post and collider, forty metres along the sand)
+  if (on('signturn')) { const s = f.items.find((i) => i.name === 'sign_zona_bano'); s.yaw = 0; s.z += 0.09; }   // (turned round to face the sea, its 4.5 cm offset turned with it)
   if (on('dup')) f.items.push({ ...f.items[3] });
   if (on('budget')) for (let i = 0; i < 900; i++) f.items.push(it('seaweed', -90 + (i % 180), 135, SEA));
   return f;
@@ -188,4 +195,26 @@ test('the promenade keeps a walking lane the whole length of the deck: nothing b
   for (const l of F.lamps) assert.ok(!accessZones().some((z) => overlaps({ c: [l.x, l.z], r: 0.11 }, z)), `${l.id} stands in a stair`);
   const xs = F.lamps.map((l) => l.x).sort((p, q) => p - q);
   for (let i = 1; i < xs.length; i++) { const gap = xs[i] - xs[i - 1]; if (gap < 30) continue; assert.ok(coast.accesses.some((a) => a.x > xs[i - 1] && a.x < xs[i]), `${gap.toFixed(1)} m of the deck without a lamp or a stair between`); }
+});
+
+test('the three safety signs: the Zona de baño on the dry sand above the bathing water, the Bandera roja by the lifeguard tower, the Prohibido el paso at an end of the beach; each a plaque on a post of its own, 1 to 2 m up, facing the way a walker comes, off the stairs and the pier', () => {
+  const NAMES = ['sign_zona_bano', 'sign_bandera_roja', 'sign_prohibido_paso'];
+  for (const name of NAMES) assert.equal(F.items.filter((i) => i.name === name).length, 1, `one ${name}`);
+  const [zona, bandera, paso] = NAMES.map((name) => F.items.find((i) => i.name === name)), tower = F.items.find((i) => i.group === 'lifeguard_tower');
+  for (const s of [zona, bandera, paso]) {
+    assert.equal(s.group, 'sign', `${s.id}: a plaque`);
+    const post = F.posts.find((p) => Math.hypot(p.x - s.x, p.z - s.z) < 0.1);
+    assert.ok(post, `${s.name}: it hangs on a post`);
+    assert.ok(F.solids.some((q) => q.kind === 'post' && Math.hypot(q.x - post.x, q.z - post.z) < 0.01), `${s.name}: and the post is solid`);
+    assert.ok(Math.abs(s.x - post.x - Math.sin(s.yaw) * 0.045) < 0.002 && Math.abs(s.z - post.z - Math.cos(s.yaw) * 0.045) < 0.002, `${s.name}: the plaque stands 4.5 cm in front of its post, on the side it faces`);
+    const g = coast.heightAt(post.x, post.z);
+    assert.ok(s.y - g > 1 && s.y - g < 2 && post.h >= 1.8, `${s.name}: a plaque at head height on a post of ${post.h} m`);
+    assert.ok(post.z < coast.shoreZ(post.x) - 3 && g > SEA + 0.25 && Math.abs(post.x) <= XW - 1.5, `${s.name}: on the dry sand, 3 m or more from the waterline and 0.25 m above the sea (ground ${g.toFixed(2)})`);
+    assert.ok(!accessZones().some((z) => overlaps({ c: [post.x, post.z], r: 0.3 }, z)) && !overlaps({ c: [post.x, post.z], r: 0.3 }, pierZone()), `${s.name}: clear of the stairs, the ramp and the pier`);
+  }
+  assert.ok(coast.shoreZ(zona.x) - zona.z < 8 && zona.z > 130, `the Zona de baño is at the bathing water, ${(coast.shoreZ(zona.x) - zona.z).toFixed(1)} m from the waterline`);
+  assert.ok(Math.hypot(bandera.x - tower.x, bandera.z - tower.z) < 8, 'the Bandera roja is by the tower and its flags');
+  assert.ok(Math.abs(paso.x) > 90, 'the Prohibido el paso is at an end of the beach');
+  assert.ok(Math.cos(zona.yaw) < -0.9 && Math.cos(bandera.yaw) < -0.9, 'the two on the sand face north, toward the stairs a bather comes down');
+  assert.ok(Math.sin(paso.yaw) * Math.sign(paso.x) < -0.9, 'the one at the end faces in along the beach');
 });

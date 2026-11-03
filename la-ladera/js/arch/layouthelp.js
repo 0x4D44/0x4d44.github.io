@@ -1,5 +1,6 @@
 // Helpers shared by the layout files (layouts.js: the house family; layouts_special.js: the patio buildings and institutions). Pure data.
-import { T_INT, cutSouth, cutNorth, cutEast, cutWest, rw, rd, sharedWall } from './geom.js';
+import { T_INT, cutSouth, cutNorth, cutEast, cutWest, rw, rd, rcx, sharedWall } from './geom.js';
+import { Z0, coastLive } from '../world/coast.js';
 
 const ti = T_INT;
 
@@ -85,4 +86,37 @@ export function bathStrip(S, room, k, away, o = {}) {
     return { bath, util, strip };
   }
   return { bath: S.addRoom(k, 'bathroom', strip), util: null, strip };
+}
+
+// ---- the south row's back to the promenade (round 7, dev/FEATURE-BEACH.md 1.3) ---------------------------------------------------------------------------------------------------------
+/** The kinds of lot that turn their back to the promenade: the ones a household or a trade lives in (an institution's back is its own yard wall). */
+const BEACH_KINDS = new Set(['house', 'shophouse', 'cornerstore', 'workshop']);
+/** The shops whose storeroom opens onto the promenade: the cafe and the restaurant, which have a terrace on it. */
+const BEACH_HOSPITALITY = new Set(['cafe', 'restaurante']);
+/** How near the plot's south edge a rear wall stands for the lot to have its back to the beach (the south row's backs are at z = Z0 - 1.9). */
+const BEACH_REACH = 3.2;
+
+/**
+ * Which lots have their back to the promenade, and what their back does: 'door' (a cafe or a restaurant: its storeroom gets a service door onto the promenade, `beachDoor`, and a terrace over
+ * it, shellfacade `beachRear`), 'rear' (a dressed rear wall, no door), or null (every other lot; nothing in the plan or on the wall is touched). A lot's back is on the promenade when its rear wall
+ * faces south (rotY of pi: local -z is world +z) and stands within BEACH_REACH of the plot's south edge. Pure data from the lot: no stamp on it, no randomness. Where the beach is not live
+ * (`?skip=coast`, or a Node build that did not ask for the coast: world/coast.js `coastLive`) the south row is as it was: the gate is shut, there is no promenade to open onto.
+ */
+export function beachSide(lot, ctx) {
+  if (!coastLive(ctx?.opts)) return null;
+  if (!BEACH_KINDS.has(lot.kind) || !(Math.cos(lot.rotY ?? 0) < -0.99)) return null;
+  const rear = lot.z + lot.d / 2;
+  if (rear > Z0 || rear < Z0 - BEACH_REACH) return null;
+  return (lot.kind === 'shophouse' || lot.kind === 'cornerstore') && BEACH_HOSPITALITY.has(lot.shop) ? 'door' : 'rear';
+}
+
+/**
+ * The service door of a promenade cafe or restaurant: an outside door in the back wall of its storeroom, made LAST by the layout so that no other door's id, no hinge draw
+ * and no stream moves (the hinge is given, so `extDoor` draws nothing). An `alley` entrance: `makeEntrances` ranks it after the shop's and the main door, so the lot's own entrances keep their
+ * ids and the people sim still enters by the shop. The windows keep 0.3 m clear of it (`genWindows`), the steps (`planSteps`) come from the ground behind the wall.
+ */
+export function beachDoor(S) {
+  if (beachSide(S.lot, S.ctx) !== 'door') return null;
+  const room = S.rooms.find((r) => r.floor === 0 && r.type === 'backroom' && Math.abs(r.rect.z0 - S.inner.z0) < 1e-3);      // (a storeroom against the back wall; a shop with none gets no door, only the dressing)
+  return room ? S.extDoor(room, 'back', rcx(room.rect), { entrance: 'alley', w: 1.0, h: 2.1, hinge: 'right' }) : null;
 }

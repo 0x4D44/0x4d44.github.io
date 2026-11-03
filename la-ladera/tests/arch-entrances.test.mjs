@@ -61,7 +61,7 @@ function lowestUnder(bp, ph, s) {
 // 0.3 m of plinth pocket round every footprint, as the plan's heightAt gives. A street more than 0.4 m over the sill, with an abrupt lip, needs a raised landing: not a stoop.
 const DROPS = [0.52, 0.3, 0.1, 0, -0.1, -0.25, -0.33, -0.4];
 const lots = testLots();
-const real = await buildData({ world: true });                                      // the page's own stage order: street guards, perimeter, props, furniture
+const real = await buildData({ world: true, coast: true });                         // the page's own stage order, the beach built as the page builds it: street guards, perimeter, props, furniture, the gate open (the south row's promenade doors open onto it)
 
 test('a walker leaves and enters every ground-floor door with the street anywhere from 0.52 m below the sill to 0.4 m above it', { timeout: 300000 }, () => {
   const problems = []; let walked = 0;
@@ -159,15 +159,16 @@ test('every ground-floor door of the barrio has a step or a landing in front of 
   assert.deepEqual(none, []);
 });
 
-test('every entrance of the barrio (137, page world: street guards, props, furniture) can be walked out of and into, the main door of L78 among them', { timeout: 300000 }, () => {
-  const bad = []; let n = 0, l78 = 0;
+test('every entrance of the barrio (page world: street guards, props, furniture, the beach built) can be walked out of and into, the main door of L78 and the service doors onto the promenade among them', { timeout: 300000 }, () => {
+  const bad = []; let n = 0, l78 = 0, deck = 0;
   for (const bp of real.buildings) for (const e of bp.entrances) {
     if (e.kind === 'roof') continue;                                                // a roof door has its own test (arch-walk.test.mjs)
     n++;
     if (e.id === 'L78.e0') l78++;
+    if (e.kind === 'alley' && e.outside[2] > 98.5 && e.outside[2] < 100) deck++;     // the cafes' and the restaurant's back doors (L12, L14, L50: arch-beachrear.test.mjs): they open onto the promenade, through the gate the beach opens
     bad.push(...walkEntrance(real.ctx, e, 'barrio'));
   }
-  assert.ok(n >= 130 && l78 === 1, `${n} entrances, L78.e0 found ${l78} times`);
+  assert.ok(n >= 130 && l78 === 1 && deck === 3, `${n} entrances, L78.e0 found ${l78} times, ${deck} doors onto the promenade`);
   assert.deepEqual(bad.slice(0, 10), [], `${bad.length} failed walks`);
 });
 
