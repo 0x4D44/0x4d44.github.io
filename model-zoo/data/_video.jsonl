@@ -1,0 +1,2 @@
+{"model": "sora-2-pro", "seconds": 8, "code": 403, "cost": 0.0, "error": "{\"code\": null, \"message\": \"deltic proxy: request not allowed\", \"param\": null, \"type\": \"permission_error\"}", "secs": 0.0}
+{"model": "sora-2", "seconds": 8, "code": 403, "cost": 0.0, "error": "{\"code\": null, \"message\": \"deltic proxy: request not allowed\", \"param\": null, \"type\": \"permission_error\"}", "secs": 0.0}

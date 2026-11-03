@@ -18,6 +18,8 @@ QUESTIONS = {q["id"]: q for q in json.load(open(os.path.join(HERE, "questions.js
 BUDGET = float(os.environ.get("ZOO_BUDGET", "23.0"))   # hard cap on estimated spend, USD
 WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
 LOCK = threading.Lock()
+# gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.
+SAMPLE_CAP = {"gpt-5-pro": 3}
 
 SKIP = re.compile(r"embedding|moderation|tts|whisper|transcribe|image|sora|realtime|live|dall-e")
 SNAPSHOT = re.compile(r"-(\d{4}-\d{2}-\d{2}|\d{4})$")
@@ -222,6 +224,7 @@ def ask(qids):
         jobs = []
         for m, ep in sorted(models.items()):
             n = q.get("samples_pro", 1) if is_pro(m) else q.get("samples", 1)
+            n = min(n, SAMPLE_CAP.get(m, n))
             jobs += [(m, ep, s) for s in range(n) if (m, s) not in have]
         print(f"[{qid}] {len(jobs)} calls over {len(models)} models; spent so far ${SPENT[0]:.2f}", flush=True)
         skipped = []

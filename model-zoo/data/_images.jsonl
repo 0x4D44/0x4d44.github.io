@@ -1,0 +1,22 @@
+{"model": "gpt-image-1-mini", "prompt": "_test", "quality": "low", "code": 200, "secs": 8.7, "usage": {"in": 20, "out": 400}, "cost": 0.00336, "revised_prompt": null}
+{"model": "gpt-image-1", "prompt": "haggis", "quality": "high", "code": 400, "secs": 0.4, "error": "{\"message\": \"The model 'gpt-image-1' does not exist.\", \"type\": \"image_generation_user_error\", \"param\": \"model\", \"code\": \"invalid_value\"}", "cost": 0.0}
+{"model": "gpt-image-2.5-flare", "prompt": "haggis", "quality": "high", "code": 200, "secs": 21.1, "usage": {"in": 43, "out": 1372}, "cost": 0.041504, "revised_prompt": null}
+{"model": "gpt-image-1-mini", "prompt": "haggis", "quality": "high", "code": 200, "secs": 38.3, "usage": {"in": 43, "out": 6208}, "cost": 0.050008, "revised_prompt": null}
+{"model": "gpt-image-1.5", "prompt": "haggis", "quality": "high", "code": 200, "secs": 46.7, "usage": {"in": 43, "out": 6671}, "cost": 0.213816, "revised_prompt": null}
+{"model": "gpt-image-1", "prompt": "zoo", "quality": "high", "code": 400, "secs": 0.2, "error": "{\"message\": \"The model 'gpt-image-1' does not exist.\", \"type\": \"image_generation_user_error\", \"param\": \"model\", \"code\": \"invalid_value\"}", "cost": 0.0}
+{"model": "gpt-image-2.5-sunburst", "prompt": "haggis", "quality": "high", "code": 200, "secs": 36.5, "usage": {"in": 43, "out": 1372}, "cost": 0.041504, "revised_prompt": null}
+{"model": "chatgpt-image-latest", "prompt": "haggis", "quality": "high", "code": 200, "secs": 45.8, "usage": {"in": 43, "out": 6642}, "cost": 0.212888, "revised_prompt": null}
+{"model": "gpt-image-1-mini", "prompt": "zoo", "quality": "high", "code": 200, "secs": 38.7, "usage": {"in": 42, "out": 6208}, "cost": 0.05, "revised_prompt": null}
+{"model": "gpt-image-2", "prompt": "haggis", "quality": "high", "code": 200, "secs": 96.0, "usage": {"in": 43, "out": 5488}, "cost": 0.164984, "revised_prompt": null}
+{"model": "gpt-image-1.5", "prompt": "zoo", "quality": "high", "code": 200, "secs": 41.6, "usage": {"in": 42, "out": 6723}, "cost": 0.215472, "revised_prompt": null}
+{"model": "gpt-image-2.5-flare", "prompt": "zoo", "quality": "high", "code": 200, "secs": 23.2, "usage": {"in": 42, "out": 1372}, "cost": 0.041496, "revised_prompt": null}
+{"model": "gpt-image-1", "prompt": "glasgow", "quality": "high", "code": 400, "secs": 0.5, "error": "{\"message\": \"The model 'gpt-image-1' does not exist.\", \"type\": \"image_generation_user_error\", \"param\": \"model\", \"code\": \"invalid_value\"}", "cost": 0.0}
+{"model": "gpt-image-2.5-sunburst", "prompt": "zoo", "quality": "high", "code": 200, "secs": 35.1, "usage": {"in": 42, "out": 1372}, "cost": 0.041496, "revised_prompt": null}
+{"model": "chatgpt-image-latest", "prompt": "zoo", "quality": "high", "code": 200, "secs": 41.0, "usage": {"in": 42, "out": 6688}, "cost": 0.214352, "revised_prompt": null}
+{"model": "gpt-image-1-mini", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 38.4, "usage": {"in": 29, "out": 6208}, "cost": 0.049896, "revised_prompt": null}
+{"model": "gpt-image-2.5-flare", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 18.3, "usage": {"in": 29, "out": 1372}, "cost": 0.041392, "revised_prompt": null}
+{"model": "gpt-image-1.5", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 40.9, "usage": {"in": 29, "out": 6589}, "cost": 0.21108, "revised_prompt": null}
+{"model": "gpt-image-2", "prompt": "zoo", "quality": "high", "code": 200, "secs": 89.5, "usage": {"in": 42, "out": 5488}, "cost": 0.164976, "revised_prompt": null}
+{"model": "gpt-image-2.5-sunburst", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 33.5, "usage": {"in": 29, "out": 1372}, "cost": 0.041392, "revised_prompt": null}
+{"model": "chatgpt-image-latest", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 41.7, "usage": {"in": 29, "out": 6630}, "cost": 0.212392, "revised_prompt": null}
+{"model": "gpt-image-2", "prompt": "glasgow", "quality": "high", "code": 200, "secs": 79.0, "usage": {"in": 29, "out": 5488}, "cost": 0.164872, "revised_prompt": null}
