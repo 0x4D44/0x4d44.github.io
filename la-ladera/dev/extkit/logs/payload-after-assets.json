@@ -1,0 +1,11 @@
+{
+  "started": "2026-11-03T05:12:18.963713+00:00",
+  "ended": "2026-11-03T05:12:19.088767+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tests/payload.mjs",
+    "--json"
+  ],
+  "exitCode": 0,
+  "log": "payload-after-assets.log"
+}

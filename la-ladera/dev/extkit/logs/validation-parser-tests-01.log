@@ -1,0 +1,161 @@
+UTC start: 2026-11-03T05:03:51.848847+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --test --experimental-test-isolation=none --test-concurrency=1 --test-reporter=tap '--test-name-pattern=fixed family|tank capacity|rebar lengths|pipe and drain|eight grille|valid wall side|small prop triangle|facade cable|catalogue growth|GLB headers|accessors cannot|NaN vertex|triangle indices|declared position bounds|triangle winding|binary normal|UV coordinate|unit-square UV|packed GLBs remain|declared external atlas|cyclic orphan|piece roots|repeated mesh|unreviewed' la-ladera/tests/extkit-assets.test.mjs
+
+TAP version 13
+# Subtest: fixed family requirements reject a catalogue with all six plants removed
+ok 1 - fixed family requirements reject a catalogue with all six plants removed
+  ---
+  duration_ms: 3.571669
+  type: 'test'
+  ...
+# Subtest: tank capacity colour and stand combinations are checked independently
+ok 2 - tank capacity colour and stand combinations are checked independently
+  ---
+  duration_ms: 1.499959
+  type: 'test'
+  ...
+# Subtest: all three rebar lengths must include both rust levels
+ok 3 - all three rebar lengths must include both rust levels
+  ---
+  duration_ms: 0.992435
+  type: 'test'
+  ...
+# Subtest: pipe and drain catalogues retain their straight elbow tee and wall bracket designs
+ok 4 - pipe and drain catalogues retain their straight elbow tee and wall bracket designs
+  ---
+  duration_ms: 1.026586
+  type: 'test'
+  ...
+# Subtest: eight grille names cannot disguise duplicate pattern parameters
+ok 5 - eight grille names cannot disguise duplicate pattern parameters
+  ---
+  duration_ms: 1.143662
+  type: 'test'
+  ...
+# Subtest: every piece has a valid wall side height range clearance and facade zones
+ok 6 - every piece has a valid wall side height range clearance and facade zones
+  ---
+  duration_ms: 1.931229
+  type: 'test'
+  ...
+# Subtest: small prop triangle limits cannot be bypassed by relabelling the catalogue flag
+ok 7 - small prop triangle limits cannot be bypassed by relabelling the catalogue flag
+  ---
+  duration_ms: 0.884642
+  type: 'test'
+  ...
+# Subtest: facade cable assets remain short instancing segments rather than long span meshes
+ok 8 - facade cable assets remain short instancing segments rather than long span meshes
+  ---
+  duration_ms: 0.901948
+  type: 'test'
+  ...
+# Subtest: catalogue growth beyond the one hundred and twenty design cap is rejected
+ok 9 - catalogue growth beyond the one hundred and twenty design cap is rejected
+  ---
+  duration_ms: 2.192852
+  type: 'test'
+  ...
+# Subtest: GLB headers and complete chunk lengths are checked against the actual buffer
+ok 10 - GLB headers and complete chunk lengths are checked against the actual buffer
+  ---
+  duration_ms: 1.420269
+  type: 'test'
+  ...
+# Subtest: accessors cannot overrun their binary buffer views
+ok 11 - accessors cannot overrun their binary buffer views
+  ---
+  duration_ms: 1.916377
+  type: 'test'
+  ...
+# Subtest: NaN vertex values are rejected even when the manifest is otherwise plausible
+ok 12 - NaN vertex values are rejected even when the manifest is otherwise plausible
+  ---
+  duration_ms: 2.724312
+  type: 'test'
+  ...
+# Subtest: triangle indices must refer to existing binary position vertices
+ok 13 - triangle indices must refer to existing binary position vertices
+  ---
+  duration_ms: 2.053443
+  type: 'test'
+  ...
+# Subtest: declared position bounds cannot conceal different binary geometry
+ok 14 - declared position bounds cannot conceal different binary geometry
+  ---
+  duration_ms: 1.319867
+  type: 'test'
+  ...
+# Subtest: triangle winding and degenerate faces are checked against actual normals
+ok 15 - triangle winding and degenerate faces are checked against actual normals
+  ---
+  duration_ms: 2.288958
+  type: 'test'
+  ...
+# Subtest: binary normal vectors must have unit length
+ok 16 - binary normal vectors must have unit length
+  ---
+  duration_ms: 1.748333
+  type: 'test'
+  ...
+# Subtest: every UV coordinate stays in the atlas unit square
+ok 17 - every UV coordinate stays in the atlas unit square
+  ---
+  duration_ms: 0.94288
+  type: 'test'
+  ...
+# Subtest: unit-square UVs selecting another material cell are also rejected
+ok 18 - unit-square UVs selecting another material cell are also rejected
+  ---
+  duration_ms: 1.263082
+  type: 'test'
+  ...
+# Subtest: packed GLBs remain texture-free static core glTF with no external dependencies
+ok 19 - packed GLBs remain texture-free static core glTF with no external dependencies
+  ---
+  duration_ms: 1.293809
+  type: 'test'
+  ...
+# Subtest: only declared external atlas material names may be used by geometry
+ok 20 - only declared external atlas material names may be used by geometry
+  ---
+  duration_ms: 1.04888
+  type: 'test'
+  ...
+# Subtest: cyclic orphan and duplicate scene nodes cannot conceal missing pieces
+ok 21 - cyclic orphan and duplicate scene nodes cannot conceal missing pieces
+  ---
+  duration_ms: 3.105897
+  type: 'test'
+  ...
+# Subtest: piece roots have identity transforms rather than hidden rotations or offsets
+ok 22 - piece roots have identity transforms rather than hidden rotations or offsets
+  ---
+  duration_ms: 0.870902
+  type: 'test'
+  ...
+# Subtest: repeated mesh instances count toward triangle totals and transformed bounds
+ok 23 - repeated mesh instances count toward triangle totals and transformed bounds
+  ---
+  duration_ms: 1.628463
+  type: 'test'
+  ...
+# Subtest: unreviewed or decomposed drawn lettering cannot bypass the Colombian Spanish audit
+ok 24 - unreviewed or decomposed drawn lettering cannot bypass the Colombian Spanish audit
+  ---
+  duration_ms: 0.569818
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.125609
+
+UTC end: 2026-11-03T05:03:51.999898+00:00
+Exit status: 0

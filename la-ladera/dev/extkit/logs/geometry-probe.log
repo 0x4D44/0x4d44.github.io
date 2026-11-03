@@ -1,0 +1,56 @@
+UTC start: 2026-11-03T05:02:06.952742+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender --background --factory-startup --threads 2 --python-exit-code 1 --python /workspace/scratch/597af25581a6/extkit_geometry_probe.py
+
+socket(): Operation not permitted
+socket(): Operation not permitted
+extkit_tank_500_blue_steel near 1452 [1.21712, 1.6134, 0.92]
+extkit_tank_500_blue_steel LOD 300 [1.18176, 1.61408, 0.92]
+extkit_tank_500_blue_block near 1228 [1.21712, 1.3534, 0.92]
+extkit_tank_500_blue_block LOD 212 [1.18132, 1.35408, 0.92]
+extkit_tank_500_black_steel near 1452 [1.21712, 1.6134, 0.92]
+extkit_tank_500_black_steel LOD 300 [1.18176, 1.61408, 0.92]
+extkit_tank_500_black_block near 1228 [1.21712, 1.3534, 0.92]
+extkit_tank_500_black_block LOD 212 [1.18132, 1.35408, 0.92]
+extkit_tank_1000_blue_steel near 1452 [1.49712, 1.8238, 1.2]
+extkit_tank_1000_blue_steel LOD 300 [1.46176, 1.82451, 1.2]
+extkit_tank_1000_blue_block near 1228 [1.49712, 1.5638, 1.2]
+extkit_tank_1000_blue_block LOD 212 [1.46132, 1.56451, 1.2]
+extkit_tank_1000_black_steel near 1452 [1.49712, 1.8238, 1.2]
+extkit_tank_1000_black_steel LOD 300 [1.46176, 1.82451, 1.2]
+extkit_tank_1000_black_block near 1228 [1.49712, 1.5638, 1.2]
+extkit_tank_1000_black_block LOD 212 [1.46132, 1.56451, 1.2]
+extkit_tank_2000_blue_steel near 1452 [1.87712, 2.08423, 1.58]
+extkit_tank_2000_blue_steel LOD 300 [1.84176, 2.08497, 1.58]
+extkit_tank_2000_blue_block near 1228 [1.87712, 1.82423, 1.58]
+extkit_tank_2000_blue_block LOD 212 [1.84132, 1.82497, 1.58]
+extkit_tank_2000_black_steel near 1452 [1.87712, 2.08423, 1.58]
+extkit_tank_2000_black_steel LOD 300 [1.84176, 2.08497, 1.58]
+extkit_tank_2000_black_block near 1228 [1.87712, 1.82423, 1.58]
+extkit_tank_2000_black_block LOD 212 [1.84132, 1.82497, 1.58]
+extkit_tank_1000_blue_raised near 1452 [1.49712, 2.3838, 1.2]
+extkit_tank_1000_blue_raised LOD 300 [1.46193, 2.38451, 1.2]
+extkit_tank_1000_black_raised near 1452 [1.49712, 2.3838, 1.2]
+extkit_tank_1000_black_raised LOD 300 [1.46193, 2.38451, 1.2]
+Traceback (most recent call last):
+  File "/workspace/scratch/597af25581a6/extkit_geometry_probe.py", line 12, in <module>
+    a=F.Asset(item['id'],item);G.build(a,item,far)
+                               ~~~~~~~^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_geometry.py", line 500, in build
+    BUILDERS[item['family']](a,item,far)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_geometry.py", line 156, in laundry
+    garment(a,['shirt','trousers','towel'][i%3],xx,yy,z,.80 if shape=='balcony' else 1.0,colours[(i+j*3)%len(colours)],far,i+j)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_geometry.py", line 109, in garment
+    corners=[(v.x,v.y) for v in t]
+              ^^^
+AttributeError: 'int' object has no attribute 'x'
+
+Error: script failed, file: '/workspace/scratch/597af25581a6/extkit_geometry_probe.py', exiting.
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit
+
+UTC end: 2026-11-03T05:02:07.833033+00:00
+Exit status: 1

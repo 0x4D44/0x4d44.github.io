@@ -1,0 +1,11 @@
+{
+  "started": "2026-11-03T05:36:11.608019+00:00",
+  "ended": "2026-11-03T05:36:11.635575+00:00",
+  "argv": [
+    "python",
+    "-c",
+    "import ast; from pathlib import Path; ast.parse(Path('la-ladera/dev/extkit/write_verification.py').read_text()); print('Verification report source parses successfully')"
+  ],
+  "exitCode": 0,
+  "log": "report-syntax-final.log"
+}

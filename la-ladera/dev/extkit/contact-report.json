@@ -1,0 +1,2472 @@
+[
+  {
+    "id": "extkit_tank_500_blue_steel",
+    "baseId": "extkit_tank_500_blue_steel",
+    "label": "Tanque azul de 500 litros · estructura de acero",
+    "file": "extkit_tank_500_blue_steel.png",
+    "size": [
+      1.22,
+      1.67,
+      1.14
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.0974130630493164,
+      3.129985809326172,
+      3.872147560119629
+    ]
+  },
+  {
+    "id": "extkit_tank_500_blue_steel_lod1",
+    "baseId": "extkit_tank_500_blue_steel",
+    "label": "Tanque azul de 500 litros · estructura de acero",
+    "file": "extkit_tank_500_blue_steel_lod1.png",
+    "size": [
+      1.22,
+      1.67,
+      1.14
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.09830904006958,
+      3.1313228607177734,
+      3.8738017082214355
+    ]
+  },
+  {
+    "id": "extkit_tank_500_blue_block",
+    "baseId": "extkit_tank_500_blue_block",
+    "label": "Tanque azul de 500 litros · soporte de bloque",
+    "file": "extkit_tank_500_blue_block.png",
+    "size": [
+      1.22,
+      1.41,
+      1.14
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.759413242340088,
+      2.6255855560302734,
+      3.2481472492218018
+    ]
+  },
+  {
+    "id": "extkit_tank_500_blue_block_lod1",
+    "baseId": "extkit_tank_500_blue_block",
+    "label": "Tanque azul de 500 litros · soporte de bloque",
+    "file": "extkit_tank_500_blue_block_lod1.png",
+    "size": [
+      1.22,
+      1.41,
+      1.14
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.7603089809417725,
+      2.626923084259033,
+      3.2498018741607666
+    ]
+  },
+  {
+    "id": "extkit_tank_500_black_steel",
+    "baseId": "extkit_tank_500_black_steel",
+    "label": "Tanque negro de 500 litros · estructura de acero",
+    "file": "extkit_tank_500_black_steel.png",
+    "size": [
+      1.22,
+      1.67,
+      1.14
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.0974130630493164,
+      3.129985809326172,
+      3.872147560119629
+    ]
+  },
+  {
+    "id": "extkit_tank_500_black_steel_lod1",
+    "baseId": "extkit_tank_500_black_steel",
+    "label": "Tanque negro de 500 litros · estructura de acero",
+    "file": "extkit_tank_500_black_steel_lod1.png",
+    "size": [
+      1.22,
+      1.67,
+      1.14
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.09830904006958,
+      3.1313228607177734,
+      3.8738017082214355
+    ]
+  },
+  {
+    "id": "extkit_tank_500_black_block",
+    "baseId": "extkit_tank_500_black_block",
+    "label": "Tanque negro de 500 litros · soporte de bloque",
+    "file": "extkit_tank_500_black_block.png",
+    "size": [
+      1.22,
+      1.41,
+      1.14
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.759413242340088,
+      2.6255855560302734,
+      3.2481472492218018
+    ]
+  },
+  {
+    "id": "extkit_tank_500_black_block_lod1",
+    "baseId": "extkit_tank_500_black_block",
+    "label": "Tanque negro de 500 litros · soporte de bloque",
+    "file": "extkit_tank_500_black_block_lod1.png",
+    "size": [
+      1.22,
+      1.41,
+      1.14
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.7603089809417725,
+      2.626923084259033,
+      3.2498018741607666
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_steel",
+    "baseId": "extkit_tank_1000_blue_steel",
+    "label": "Tanque azul de 1.000 litros · estructura de acero",
+    "file": "extkit_tank_1000_blue_steel.png",
+    "size": [
+      1.5,
+      1.88,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3709421157836914,
+      3.538175106048584,
+      4.377124309539795
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_steel_lod1",
+    "baseId": "extkit_tank_1000_blue_steel",
+    "label": "Tanque azul de 1.000 litros · estructura de acero",
+    "file": "extkit_tank_1000_blue_steel_lod1.png",
+    "size": [
+      1.5,
+      1.88,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.371865749359131,
+      3.53955340385437,
+      4.378829002380371
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_block",
+    "baseId": "extkit_tank_1000_blue_block",
+    "label": "Tanque azul de 1.000 litros · soporte de bloque",
+    "file": "extkit_tank_1000_blue_block.png",
+    "size": [
+      1.5,
+      1.62,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.032942295074463,
+      3.0337753295898438,
+      3.7531239986419678
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_block_lod1",
+    "baseId": "extkit_tank_1000_blue_block",
+    "label": "Tanque azul de 1.000 litros · soporte de bloque",
+    "file": "extkit_tank_1000_blue_block_lod1.png",
+    "size": [
+      1.5,
+      1.62,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.033865451812744,
+      3.035153388977051,
+      3.754828929901123
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_steel",
+    "baseId": "extkit_tank_1000_black_steel",
+    "label": "Tanque negro de 1.000 litros · estructura de acero",
+    "file": "extkit_tank_1000_black_steel.png",
+    "size": [
+      1.5,
+      1.88,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3709421157836914,
+      3.538175106048584,
+      4.377124309539795
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_steel_lod1",
+    "baseId": "extkit_tank_1000_black_steel",
+    "label": "Tanque negro de 1.000 litros · estructura de acero",
+    "file": "extkit_tank_1000_black_steel_lod1.png",
+    "size": [
+      1.5,
+      1.88,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.371865749359131,
+      3.53955340385437,
+      4.378829002380371
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_block",
+    "baseId": "extkit_tank_1000_black_block",
+    "label": "Tanque negro de 1.000 litros · soporte de bloque",
+    "file": "extkit_tank_1000_black_block.png",
+    "size": [
+      1.5,
+      1.62,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.032942295074463,
+      3.0337753295898438,
+      3.7531239986419678
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_block_lod1",
+    "baseId": "extkit_tank_1000_black_block",
+    "label": "Tanque negro de 1.000 litros · soporte de bloque",
+    "file": "extkit_tank_1000_black_block_lod1.png",
+    "size": [
+      1.5,
+      1.62,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.033865451812744,
+      3.035153388977051,
+      3.754828929901123
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_blue_steel",
+    "baseId": "extkit_tank_2000_blue_steel",
+    "label": "Tanque azul de 2.000 litros · estructura de acero",
+    "file": "extkit_tank_2000_blue_steel.png",
+    "size": [
+      1.88,
+      2.14,
+      1.8
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7095038890838623,
+      4.0434136390686035,
+      5.002161026000977
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_blue_steel_lod1",
+    "baseId": "extkit_tank_2000_blue_steel",
+    "label": "Tanque azul de 2.000 litros · estructura de acero",
+    "file": "extkit_tank_2000_blue_steel_lod1.png",
+    "size": [
+      1.88,
+      2.14,
+      1.8
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7104556560516357,
+      4.044834136962891,
+      5.003918647766113
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_blue_block",
+    "baseId": "extkit_tank_2000_blue_block",
+    "label": "Tanque azul de 2.000 litros · soporte de bloque",
+    "file": "extkit_tank_2000_blue_block.png",
+    "size": [
+      1.88,
+      1.88,
+      1.8
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.4402551651000977,
+      3.615168571472168,
+      4.505086421966553
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_blue_block_lod1",
+    "baseId": "extkit_tank_2000_blue_block",
+    "label": "Tanque azul de 2.000 litros · soporte de bloque",
+    "file": "extkit_tank_2000_blue_block_lod1.png",
+    "size": [
+      1.88,
+      1.88,
+      1.8
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3937158584594727,
+      3.563983917236328,
+      4.419168472290039
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_black_steel",
+    "baseId": "extkit_tank_2000_black_steel",
+    "label": "Tanque negro de 2.000 litros · estructura de acero",
+    "file": "extkit_tank_2000_black_steel.png",
+    "size": [
+      1.88,
+      2.14,
+      1.8
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7095038890838623,
+      4.0434136390686035,
+      5.002161026000977
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_black_steel_lod1",
+    "baseId": "extkit_tank_2000_black_steel",
+    "label": "Tanque negro de 2.000 litros · estructura de acero",
+    "file": "extkit_tank_2000_black_steel_lod1.png",
+    "size": [
+      1.88,
+      2.14,
+      1.8
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7104556560516357,
+      4.044834136962891,
+      5.003918647766113
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_black_block",
+    "baseId": "extkit_tank_2000_black_block",
+    "label": "Tanque negro de 2.000 litros · soporte de bloque",
+    "file": "extkit_tank_2000_black_block.png",
+    "size": [
+      1.88,
+      1.88,
+      1.8
+    ],
+    "lod": false,
+    "triangles": 1228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.4402551651000977,
+      3.615168571472168,
+      4.505086421966553
+    ]
+  },
+  {
+    "id": "extkit_tank_2000_black_block_lod1",
+    "baseId": "extkit_tank_2000_black_block",
+    "label": "Tanque negro de 2.000 litros · soporte de bloque",
+    "file": "extkit_tank_2000_black_block_lod1.png",
+    "size": [
+      1.88,
+      1.88,
+      1.8
+    ],
+    "lod": true,
+    "triangles": 212,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3937158584594727,
+      3.563983917236328,
+      4.419168472290039
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_raised",
+    "baseId": "extkit_tank_1000_blue_raised",
+    "label": "Tanque azul de 1.000 litros · torre alta",
+    "file": "extkit_tank_1000_blue_raised.png",
+    "size": [
+      1.5,
+      2.49,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.0989418029785156,
+      4.624575614929199,
+      5.721124172210693
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_blue_raised_lod1",
+    "baseId": "extkit_tank_1000_blue_raised",
+    "label": "Tanque azul de 1.000 litros · torre alta",
+    "file": "extkit_tank_1000_blue_raised_lod1.png",
+    "size": [
+      1.5,
+      2.49,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.099865436553955,
+      4.625953197479248,
+      5.7228288650512695
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_raised",
+    "baseId": "extkit_tank_1000_black_raised",
+    "label": "Tanque negro de 1.000 litros · torre alta",
+    "file": "extkit_tank_1000_black_raised.png",
+    "size": [
+      1.5,
+      2.49,
+      1.42
+    ],
+    "lod": false,
+    "triangles": 1452,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.0989418029785156,
+      4.624575614929199,
+      5.721124172210693
+    ]
+  },
+  {
+    "id": "extkit_tank_1000_black_raised_lod1",
+    "baseId": "extkit_tank_1000_black_raised",
+    "label": "Tanque negro de 1.000 litros · torre alta",
+    "file": "extkit_tank_1000_black_raised_lod1.png",
+    "size": [
+      1.5,
+      2.49,
+      1.42
+    ],
+    "lod": true,
+    "triangles": 300,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.099865436553955,
+      4.625953197479248,
+      5.7228288650512695
+    ]
+  },
+  {
+    "id": "extkit_laundry_balcony",
+    "baseId": "extkit_laundry_balcony",
+    "label": "Tendedero corto de balcón",
+    "file": "extkit_laundry_balcony.png",
+    "size": [
+      2.2,
+      1.1,
+      0.65
+    ],
+    "lod": false,
+    "triangles": 612,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7039997577667236,
+      3.51055645942688,
+      4.992000102996826
+    ]
+  },
+  {
+    "id": "extkit_laundry_balcony_lod1",
+    "baseId": "extkit_laundry_balcony",
+    "label": "Tendedero corto de balcón",
+    "file": "extkit_laundry_balcony_lod1.png",
+    "size": [
+      2.2,
+      1.1,
+      0.65
+    ],
+    "lod": true,
+    "triangles": 128,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.7039997577667236,
+      3.5073471069335938,
+      4.992000102996826
+    ]
+  },
+  {
+    "id": "extkit_laundry_roof",
+    "baseId": "extkit_laundry_roof",
+    "label": "Tendedero largo de azotea",
+    "file": "extkit_laundry_roof.png",
+    "size": [
+      4.2,
+      2.1,
+      1.0
+    ],
+    "lod": false,
+    "triangles": 1308,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      5.407999515533447,
+      7.005399703979492,
+      9.984000205993652
+    ]
+  },
+  {
+    "id": "extkit_laundry_roof_lod1",
+    "baseId": "extkit_laundry_roof",
+    "label": "Tendedero largo de azotea",
+    "file": "extkit_laundry_roof_lod1.png",
+    "size": [
+      4.2,
+      2.1,
+      1.0
+    ],
+    "lod": true,
+    "triangles": 234,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      5.262399673461914,
+      6.844120025634766,
+      9.715200424194336
+    ]
+  },
+  {
+    "id": "extkit_laundry_rotary",
+    "baseId": "extkit_laundry_rotary",
+    "label": "Tendedero giratorio",
+    "file": "extkit_laundry_rotary.png",
+    "size": [
+      2.6,
+      2.2,
+      2.6
+    ],
+    "lod": false,
+    "triangles": 760,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.9241435527801514,
+      4.304051399230957,
+      5.398418426513672
+    ]
+  },
+  {
+    "id": "extkit_laundry_rotary_lod1",
+    "baseId": "extkit_laundry_rotary",
+    "label": "Tendedero giratorio",
+    "file": "extkit_laundry_rotary_lod1.png",
+    "size": [
+      2.6,
+      2.2,
+      2.6
+    ],
+    "lod": true,
+    "triangles": 188,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.9241435527801514,
+      4.304051399230957,
+      5.398418426513672
+    ]
+  },
+  {
+    "id": "extkit_laundry_pole",
+    "baseId": "extkit_laundry_pole",
+    "label": "Tendedero entre postes",
+    "file": "extkit_laundry_pole.png",
+    "size": [
+      3.0,
+      2.05,
+      0.18
+    ],
+    "lod": false,
+    "triangles": 676,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.8479998111724854,
+      5.277400016784668,
+      7.104000568389893
+    ]
+  },
+  {
+    "id": "extkit_laundry_pole_lod1",
+    "baseId": "extkit_laundry_pole",
+    "label": "Tendedero entre postes",
+    "file": "extkit_laundry_pole_lod1.png",
+    "size": [
+      3.0,
+      2.05,
+      0.18
+    ],
+    "lod": true,
+    "triangles": 122,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.702399969100952,
+      5.116120338439941,
+      6.835200309753418
+    ]
+  },
+  {
+    "id": "extkit_dish_46",
+    "baseId": "extkit_dish_46",
+    "label": "Antena parabólica de 46 cm",
+    "file": "extkit_dish_46.png",
+    "size": [
+      0.62,
+      0.91,
+      0.637
+    ],
+    "lod": false,
+    "triangles": 1220,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.299999713897705,
+      1.788464069366455,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_dish_46_lod1",
+    "baseId": "extkit_dish_46",
+    "label": "Antena parabólica de 46 cm",
+    "file": "extkit_dish_46_lod1.png",
+    "size": [
+      0.62,
+      0.91,
+      0.637
+    ],
+    "lod": true,
+    "triangles": 168,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.7850000858306885,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_dish_68",
+    "baseId": "extkit_dish_68",
+    "label": "Antena parabólica de 68 cm",
+    "file": "extkit_dish_68.png",
+    "size": [
+      0.84,
+      1.13,
+      0.736
+    ],
+    "lod": false,
+    "triangles": 1220,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.299999713897705,
+      1.8984640836715698,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_dish_68_lod1",
+    "baseId": "extkit_dish_68",
+    "label": "Antena parabólica de 68 cm",
+    "file": "extkit_dish_68_lod1.png",
+    "size": [
+      0.84,
+      1.13,
+      0.736
+    ],
+    "lod": true,
+    "triangles": 168,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8950001001358032,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_dish_92",
+    "baseId": "extkit_dish_92",
+    "label": "Antena parabólica de 92 cm",
+    "file": "extkit_dish_92.png",
+    "size": [
+      1.08,
+      1.37,
+      0.844
+    ],
+    "lod": false,
+    "triangles": 1220,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5040061473846436,
+      2.2444403171539307,
+      2.7766270637512207
+    ]
+  },
+  {
+    "id": "extkit_dish_92_lod1",
+    "baseId": "extkit_dish_92",
+    "label": "Antena parabólica de 92 cm",
+    "file": "extkit_dish_92_lod1.png",
+    "size": [
+      1.08,
+      1.37,
+      0.844
+    ],
+    "lod": true,
+    "triangles": 168,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.494999885559082,
+      2.2309999465942383,
+      2.759999990463257
+    ]
+  },
+  {
+    "id": "extkit_aerial_yagi",
+    "baseId": "extkit_aerial_yagi",
+    "label": "Antena de televisión Yagi",
+    "file": "extkit_aerial_yagi.png",
+    "size": [
+      1.3,
+      1.25,
+      0.86
+    ],
+    "lod": false,
+    "triangles": 646,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5755999088287354,
+      2.32528018951416,
+      2.9088001251220703
+    ]
+  },
+  {
+    "id": "extkit_aerial_yagi_lod1",
+    "baseId": "extkit_aerial_yagi",
+    "label": "Antena de televisión Yagi",
+    "file": "extkit_aerial_yagi_lod1.png",
+    "size": [
+      1.3,
+      1.25,
+      0.86
+    ],
+    "lod": true,
+    "triangles": 119,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5716999769210815,
+      2.32096004486084,
+      2.9016001224517822
+    ]
+  },
+  {
+    "id": "extkit_aerial_bowtie",
+    "baseId": "extkit_aerial_bowtie",
+    "label": "Antena de televisión de mariposa",
+    "file": "extkit_aerial_bowtie.png",
+    "size": [
+      0.82,
+      1.25,
+      0.21
+    ],
+    "lod": false,
+    "triangles": 498,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5079997777938843,
+      2.2504000663757324,
+      2.7839999198913574
+    ]
+  },
+  {
+    "id": "extkit_aerial_bowtie_lod1",
+    "baseId": "extkit_aerial_bowtie",
+    "label": "Antena de televisión de mariposa",
+    "file": "extkit_aerial_bowtie_lod1.png",
+    "size": [
+      0.82,
+      1.25,
+      0.21
+    ],
+    "lod": true,
+    "triangles": 139,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5079997777938843,
+      2.2504000663757324,
+      2.7839999198913574
+    ]
+  },
+  {
+    "id": "extkit_rebar_55_light",
+    "baseId": "extkit_rebar_55_light",
+    "label": "Arranque de varilla de 0.55 m · oxidación ligera",
+    "file": "extkit_rebar_55_light.png",
+    "size": [
+      0.38,
+      0.67,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7154420614242554,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_rebar_55_light_lod1",
+    "baseId": "extkit_rebar_55_light",
+    "label": "Arranque de varilla de 0.55 m · oxidación ligera",
+    "file": "extkit_rebar_55_light_lod1.png",
+    "size": [
+      0.38,
+      0.67,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7154420614242554,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_rebar_55_heavy",
+    "baseId": "extkit_rebar_55_heavy",
+    "label": "Arranque de varilla de 0.55 m · oxidación intensa",
+    "file": "extkit_rebar_55_heavy.png",
+    "size": [
+      0.38,
+      0.67,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7154420614242554,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_rebar_55_heavy_lod1",
+    "baseId": "extkit_rebar_55_heavy",
+    "label": "Arranque de varilla de 0.55 m · oxidación intensa",
+    "file": "extkit_rebar_55_heavy_lod1.png",
+    "size": [
+      0.38,
+      0.67,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7154420614242554,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_rebar_110_light",
+    "baseId": "extkit_rebar_110_light",
+    "label": "Arranque de varilla de 1.10 m · oxidación ligera",
+    "file": "extkit_rebar_110_light.png",
+    "size": [
+      0.38,
+      1.2200000000000002,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4284489154815674,
+      2.131685495376587,
+      2.637136936187744
+    ]
+  },
+  {
+    "id": "extkit_rebar_110_light_lod1",
+    "baseId": "extkit_rebar_110_light",
+    "label": "Arranque de varilla de 1.10 m · oxidación ligera",
+    "file": "extkit_rebar_110_light_lod1.png",
+    "size": [
+      0.38,
+      1.2200000000000002,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4284489154815674,
+      2.131685495376587,
+      2.637136936187744
+    ]
+  },
+  {
+    "id": "extkit_rebar_110_heavy",
+    "baseId": "extkit_rebar_110_heavy",
+    "label": "Arranque de varilla de 1.10 m · oxidación intensa",
+    "file": "extkit_rebar_110_heavy.png",
+    "size": [
+      0.38,
+      1.2200000000000002,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4284489154815674,
+      2.131685495376587,
+      2.637136936187744
+    ]
+  },
+  {
+    "id": "extkit_rebar_110_heavy_lod1",
+    "baseId": "extkit_rebar_110_heavy",
+    "label": "Arranque de varilla de 1.10 m · oxidación intensa",
+    "file": "extkit_rebar_110_heavy_lod1.png",
+    "size": [
+      0.38,
+      1.2200000000000002,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4284489154815674,
+      2.131685495376587,
+      2.637136936187744
+    ]
+  },
+  {
+    "id": "extkit_rebar_180_light",
+    "baseId": "extkit_rebar_180_light",
+    "label": "Arranque de varilla de 1.80 m · oxidación ligera",
+    "file": "extkit_rebar_180_light.png",
+    "size": [
+      0.38,
+      1.92,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3361217975616455,
+      3.486213207244873,
+      4.312840938568115
+    ]
+  },
+  {
+    "id": "extkit_rebar_180_light_lod1",
+    "baseId": "extkit_rebar_180_light",
+    "label": "Arranque de varilla de 1.80 m · oxidación ligera",
+    "file": "extkit_rebar_180_light_lod1.png",
+    "size": [
+      0.38,
+      1.92,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3361217975616455,
+      3.486213207244873,
+      4.312840938568115
+    ]
+  },
+  {
+    "id": "extkit_rebar_180_heavy",
+    "baseId": "extkit_rebar_180_heavy",
+    "label": "Arranque de varilla de 1.80 m · oxidación intensa",
+    "file": "extkit_rebar_180_heavy.png",
+    "size": [
+      0.38,
+      1.92,
+      0.36
+    ],
+    "lod": false,
+    "triangles": 1152,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3361217975616455,
+      3.486213207244873,
+      4.312840938568115
+    ]
+  },
+  {
+    "id": "extkit_rebar_180_heavy_lod1",
+    "baseId": "extkit_rebar_180_heavy",
+    "label": "Arranque de varilla de 1.80 m · oxidación intensa",
+    "file": "extkit_rebar_180_heavy_lod1.png",
+    "size": [
+      0.38,
+      1.92,
+      0.36
+    ],
+    "lod": true,
+    "triangles": 126,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3361217975616455,
+      3.486213207244873,
+      4.312840938568115
+    ]
+  },
+  {
+    "id": "extkit_gas_cage_1",
+    "baseId": "extkit_gas_cage_1",
+    "label": "Jaula para 1 pipa de gas",
+    "file": "extkit_gas_cage_1.png",
+    "size": [
+      0.6799999999999999,
+      1.08,
+      0.61
+    ],
+    "lod": false,
+    "triangles": 1332,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9375,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_gas_cage_1_lod1",
+    "baseId": "extkit_gas_cage_1",
+    "label": "Jaula para 1 pipa de gas",
+    "file": "extkit_gas_cage_1_lod1.png",
+    "size": [
+      0.6799999999999999,
+      1.08,
+      0.61
+    ],
+    "lod": true,
+    "triangles": 396,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9375,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_gas_cage_2",
+    "baseId": "extkit_gas_cage_2",
+    "label": "Jaula para 2 pipas de gas",
+    "file": "extkit_gas_cage_2.png",
+    "size": [
+      1.26,
+      1.08,
+      0.61
+    ],
+    "lod": false,
+    "triangles": 2440,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4754999876022339,
+      2.1319000720977783,
+      2.7239999771118164
+    ]
+  },
+  {
+    "id": "extkit_gas_cage_2_lod1",
+    "baseId": "extkit_gas_cage_2",
+    "label": "Jaula para 2 pipas de gas",
+    "file": "extkit_gas_cage_2_lod1.png",
+    "size": [
+      1.26,
+      1.08,
+      0.61
+    ],
+    "lod": true,
+    "triangles": 620,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.4754999876022339,
+      2.1319000720977783,
+      2.7239999771118164
+    ]
+  },
+  {
+    "id": "extkit_pipe_straight",
+    "baseId": "extkit_pipe_straight",
+    "label": "Tubería de agua · tramo recto",
+    "file": "extkit_pipe_straight.png",
+    "size": [
+      0.076,
+      1.0,
+      0.076
+    ],
+    "lod": false,
+    "triangles": 192,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9380000829696655,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_straight_lod1",
+    "baseId": "extkit_pipe_straight",
+    "label": "Tubería de agua · tramo recto",
+    "file": "extkit_pipe_straight_lod1.png",
+    "size": [
+      0.076,
+      1.0,
+      0.076
+    ],
+    "lod": true,
+    "triangles": 16,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9200000762939453,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_elbow",
+    "baseId": "extkit_pipe_elbow",
+    "label": "Tubería de agua · codo",
+    "file": "extkit_pipe_elbow.png",
+    "size": [
+      0.3,
+      0.3,
+      0.076
+    ],
+    "lod": false,
+    "triangles": 480,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5621200799942017,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_elbow_lod1",
+    "baseId": "extkit_pipe_elbow",
+    "label": "Tubería de agua · codo",
+    "file": "extkit_pipe_elbow_lod1.png",
+    "size": [
+      0.3,
+      0.3,
+      0.076
+    ],
+    "lod": true,
+    "triangles": 40,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5515000820159912,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_tee",
+    "baseId": "extkit_pipe_tee",
+    "label": "Tubería de agua · derivación en T",
+    "file": "extkit_pipe_tee.png",
+    "size": [
+      0.4,
+      0.36,
+      0.076
+    ],
+    "lod": false,
+    "triangles": 256,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.535620093345642,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_tee_lod1",
+    "baseId": "extkit_pipe_tee",
+    "label": "Tubería de agua · derivación en T",
+    "file": "extkit_pipe_tee_lod1.png",
+    "size": [
+      0.4,
+      0.36,
+      0.076
+    ],
+    "lod": true,
+    "triangles": 32,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.534000039100647,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_bracket",
+    "baseId": "extkit_pipe_bracket",
+    "label": "Tubería de agua · abrazadera de pared",
+    "file": "extkit_pipe_bracket.png",
+    "size": [
+      0.16,
+      0.15,
+      0.18
+    ],
+    "lod": false,
+    "triangles": 506,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_pipe_bracket_lod1",
+    "baseId": "extkit_pipe_bracket",
+    "label": "Tubería de agua · abrazadera de pared",
+    "file": "extkit_pipe_bracket_lod1.png",
+    "size": [
+      0.16,
+      0.15,
+      0.18
+    ],
+    "lod": true,
+    "triangles": 90,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_straight",
+    "baseId": "extkit_drain_straight",
+    "label": "Bajante · tramo recto",
+    "file": "extkit_drain_straight.png",
+    "size": [
+      0.15,
+      1.0,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 192,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9380000829696655,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_straight_lod1",
+    "baseId": "extkit_drain_straight",
+    "label": "Bajante · tramo recto",
+    "file": "extkit_drain_straight_lod1.png",
+    "size": [
+      0.15,
+      1.0,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 16,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.9200000762939453,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_elbow",
+    "baseId": "extkit_drain_elbow",
+    "label": "Bajante · codo",
+    "file": "extkit_drain_elbow.png",
+    "size": [
+      0.3,
+      0.3,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 480,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5839500427246094,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_elbow_lod1",
+    "baseId": "extkit_drain_elbow",
+    "label": "Bajante · codo",
+    "file": "extkit_drain_elbow_lod1.png",
+    "size": [
+      0.3,
+      0.3,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 40,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5700000524520874,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_tee",
+    "baseId": "extkit_drain_tee",
+    "label": "Bajante · derivación en T",
+    "file": "extkit_drain_tee.png",
+    "size": [
+      0.4,
+      0.36,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 256,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5574500560760498,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_tee_lod1",
+    "baseId": "extkit_drain_tee",
+    "label": "Bajante · derivación en T",
+    "file": "extkit_drain_tee_lod1.png",
+    "size": [
+      0.4,
+      0.36,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 32,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5525000095367432,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_bracket",
+    "baseId": "extkit_drain_bracket",
+    "label": "Bajante · abrazadera de pared",
+    "file": "extkit_drain_bracket.png",
+    "size": [
+      0.16,
+      0.15,
+      0.18
+    ],
+    "lod": false,
+    "triangles": 506,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.3000001907348633,
+      1.5,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_drain_bracket_lod1",
+    "baseId": "extkit_drain_bracket",
+    "label": "Bajante · abrazadera de pared",
+    "file": "extkit_drain_bracket_lod1.png",
+    "size": [
+      0.16,
+      0.15,
+      0.18
+    ],
+    "lod": true,
+    "triangles": 90,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_meter_1",
+    "baseId": "extkit_meter_1",
+    "label": "Caja de medidor con cables",
+    "file": "extkit_meter_1.png",
+    "size": [
+      0.44,
+      0.76,
+      0.23
+    ],
+    "lod": false,
+    "triangles": 688,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8080945014953613,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_meter_1_lod1",
+    "baseId": "extkit_meter_1",
+    "label": "Caja de medidor con cables",
+    "file": "extkit_meter_1_lod1.png",
+    "size": [
+      0.44,
+      0.76,
+      0.23
+    ],
+    "lod": true,
+    "triangles": 136,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.7828137874603271,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_meter_3",
+    "baseId": "extkit_meter_3",
+    "label": "Caja de tres medidores con cables",
+    "file": "extkit_meter_3.png",
+    "size": [
+      1.32,
+      0.76,
+      0.23
+    ],
+    "lod": false,
+    "triangles": 1728,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5600000619888306,
+      2.0960946083068848,
+      2.880000114440918
+    ]
+  },
+  {
+    "id": "extkit_meter_3_lod1",
+    "baseId": "extkit_meter_3",
+    "label": "Caja de tres medidores con cables",
+    "file": "extkit_meter_3_lod1.png",
+    "size": [
+      1.32,
+      0.76,
+      0.23
+    ],
+    "lod": true,
+    "triangles": 360,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5600000619888306,
+      2.0708138942718506,
+      2.880000114440918
+    ]
+  },
+  {
+    "id": "extkit_transformer_pole",
+    "baseId": "extkit_transformer_pole",
+    "label": "Transformador de distribución para poste",
+    "file": "extkit_transformer_pole.png",
+    "size": [
+      1.12,
+      1.5,
+      0.92
+    ],
+    "lod": false,
+    "triangles": 1860,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.7244303226470947,
+      2.573380947113037,
+      3.1835639476776123
+    ]
+  },
+  {
+    "id": "extkit_transformer_pole_lod1",
+    "baseId": "extkit_transformer_pole",
+    "label": "Transformador de distribución para poste",
+    "file": "extkit_transformer_pole_lod1.png",
+    "size": [
+      1.12,
+      1.5,
+      0.92
+    ],
+    "lod": true,
+    "triangles": 382,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.7244303226470947,
+      2.573380947113037,
+      3.1835639476776123
+    ]
+  },
+  {
+    "id": "extkit_cable_thin",
+    "baseId": "extkit_cable_thin",
+    "label": "Cable fino · segmento de 0,5 m",
+    "file": "extkit_cable_thin.png",
+    "size": [
+      0.5,
+      0.018,
+      0.018
+    ],
+    "lod": false,
+    "triangles": 64,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.4490000009536743,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_cable_thin_lod1",
+    "baseId": "extkit_cable_thin",
+    "label": "Cable fino · segmento de 0,5 m",
+    "file": "extkit_cable_thin_lod1.png",
+    "size": [
+      0.5,
+      0.018,
+      0.018
+    ],
+    "lod": true,
+    "triangles": 16,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.4490000009536743,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_cable_bundle",
+    "baseId": "extkit_cable_bundle",
+    "label": "Haz de cables · segmento de 0,5 m",
+    "file": "extkit_cable_bundle.png",
+    "size": [
+      0.5,
+      0.036,
+      0.036
+    ],
+    "lod": false,
+    "triangles": 144,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.4563350677490234,
+      2.3999998569488525
+    ]
+  },
+  {
+    "id": "extkit_cable_bundle_lod1",
+    "baseId": "extkit_cable_bundle",
+    "label": "Haz de cables · segmento de 0,5 m",
+    "file": "extkit_cable_bundle_lod1.png",
+    "size": [
+      0.5,
+      0.036,
+      0.036
+    ],
+    "lod": true,
+    "triangles": 16,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.4580000638961792,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_chalkboard",
+    "baseId": "extkit_chalkboard",
+    "label": "Tablero de menú sin escribir",
+    "file": "extkit_chalkboard.png",
+    "size": [
+      0.64,
+      0.91,
+      0.13
+    ],
+    "lod": false,
+    "triangles": 146,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.875,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_chalkboard_lod1",
+    "baseId": "extkit_chalkboard",
+    "label": "Tablero de menú sin escribir",
+    "file": "extkit_chalkboard_lod1.png",
+    "size": [
+      0.64,
+      0.91,
+      0.13
+    ],
+    "lod": true,
+    "triangles": 22,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.875,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_grille_1",
+    "baseId": "extkit_grille_1",
+    "label": "Reja · barrotes",
+    "file": "extkit_grille_1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 492,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_1_lod1",
+    "baseId": "extkit_grille_1",
+    "label": "Reja · barrotes",
+    "file": "extkit_grille_1_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 180,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_2",
+    "baseId": "extkit_grille_2",
+    "label": "Reja · cuadrícula",
+    "file": "extkit_grille_2.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 492,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_2_lod1",
+    "baseId": "extkit_grille_2",
+    "label": "Reja · cuadrícula",
+    "file": "extkit_grille_2_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 180,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_3",
+    "baseId": "extkit_grille_3",
+    "label": "Reja · rombos",
+    "file": "extkit_grille_3.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 924,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_3_lod1",
+    "baseId": "extkit_grille_3",
+    "label": "Reja · rombos",
+    "file": "extkit_grille_3_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 288,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_4",
+    "baseId": "extkit_grille_4",
+    "label": "Reja · abanico",
+    "file": "extkit_grille_4.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 1164,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_4_lod1",
+    "baseId": "extkit_grille_4",
+    "label": "Reja · abanico",
+    "file": "extkit_grille_4_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 240,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_5",
+    "baseId": "extkit_grille_5",
+    "label": "Reja · arcos",
+    "file": "extkit_grille_5.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 1428,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_5_lod1",
+    "baseId": "extkit_grille_5",
+    "label": "Reja · arcos",
+    "file": "extkit_grille_5_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 270,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_6",
+    "baseId": "extkit_grille_6",
+    "label": "Reja · espirales",
+    "file": "extkit_grille_6.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 1884,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_6_lod1",
+    "baseId": "extkit_grille_6",
+    "label": "Reja · espirales",
+    "file": "extkit_grille_6_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 360,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_7",
+    "baseId": "extkit_grille_7",
+    "label": "Reja · diagonales",
+    "file": "extkit_grille_7.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 492,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_7_lod1",
+    "baseId": "extkit_grille_7",
+    "label": "Reja · diagonales",
+    "file": "extkit_grille_7_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 180,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_8",
+    "baseId": "extkit_grille_8",
+    "label": "Reja · balcones",
+    "file": "extkit_grille_8.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": false,
+    "triangles": 780,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_grille_8_lod1",
+    "baseId": "extkit_grille_8",
+    "label": "Reja · balcones",
+    "file": "extkit_grille_8_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.19
+    ],
+    "lod": true,
+    "triangles": 252,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.5404999256134033,
+      2.2964000701904297,
+      2.8439998626708984
+    ]
+  },
+  {
+    "id": "extkit_shutter_100",
+    "baseId": "extkit_shutter_100",
+    "label": "Cajón de persiana de 1.0 m",
+    "file": "extkit_shutter_100.png",
+    "size": [
+      1.0,
+      0.34,
+      0.34
+    ],
+    "lod": false,
+    "triangles": 188,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5950000286102295,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_shutter_100_lod1",
+    "baseId": "extkit_shutter_100",
+    "label": "Cajón de persiana de 1.0 m",
+    "file": "extkit_shutter_100_lod1.png",
+    "size": [
+      1.0,
+      0.34,
+      0.34
+    ],
+    "lod": true,
+    "triangles": 36,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.5550000667572021,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_shutter_180",
+    "baseId": "extkit_shutter_180",
+    "label": "Cajón de persiana de 1.8 m",
+    "file": "extkit_shutter_180.png",
+    "size": [
+      1.8,
+      0.34,
+      0.34
+    ],
+    "lod": false,
+    "triangles": 188,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3399999141693115,
+      2.746999979019165,
+      4.320000171661377
+    ]
+  },
+  {
+    "id": "extkit_shutter_180_lod1",
+    "baseId": "extkit_shutter_180",
+    "label": "Cajón de persiana de 1.8 m",
+    "file": "extkit_shutter_180_lod1.png",
+    "size": [
+      1.8,
+      0.34,
+      0.34
+    ],
+    "lod": true,
+    "triangles": 36,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      2.3399999141693115,
+      2.7070000171661377,
+      4.320000171661377
+    ]
+  },
+  {
+    "id": "extkit_shutter_260",
+    "baseId": "extkit_shutter_260",
+    "label": "Cajón de persiana de 2.6 m",
+    "file": "extkit_shutter_260.png",
+    "size": [
+      2.6,
+      0.34,
+      0.34
+    ],
+    "lod": false,
+    "triangles": 188,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.3799996376037598,
+      3.8989999294281006,
+      6.240000247955322
+    ]
+  },
+  {
+    "id": "extkit_shutter_260_lod1",
+    "baseId": "extkit_shutter_260",
+    "label": "Cajón de persiana de 2.6 m",
+    "file": "extkit_shutter_260_lod1.png",
+    "size": [
+      2.6,
+      0.34,
+      0.34
+    ],
+    "lod": true,
+    "triangles": 36,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      3.3799996376037598,
+      3.8589999675750732,
+      6.240000247955322
+    ]
+  },
+  {
+    "id": "extkit_plant_sansevieria",
+    "baseId": "extkit_plant_sansevieria",
+    "label": "Lengua de suegra en matera de repisa",
+    "file": "extkit_plant_sansevieria.png",
+    "size": [
+      0.56,
+      0.92,
+      0.4032
+    ],
+    "lod": false,
+    "triangles": 676,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8968183994293213,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_sansevieria_lod1",
+    "baseId": "extkit_plant_sansevieria",
+    "label": "Lengua de suegra en matera de repisa",
+    "file": "extkit_plant_sansevieria_lod1.png",
+    "size": [
+      0.56,
+      0.92,
+      0.4032
+    ],
+    "lod": true,
+    "triangles": 156,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8962397575378418,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_aloe",
+    "baseId": "extkit_plant_aloe",
+    "label": "Sábila en matera de repisa",
+    "file": "extkit_plant_aloe.png",
+    "size": [
+      0.72,
+      0.61,
+      0.61
+    ],
+    "lod": false,
+    "triangles": 676,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7418181896209717,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_aloe_lod1",
+    "baseId": "extkit_plant_aloe",
+    "label": "Sábila en matera de repisa",
+    "file": "extkit_plant_aloe_lod1.png",
+    "size": [
+      0.72,
+      0.61,
+      0.61
+    ],
+    "lod": true,
+    "triangles": 156,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.7412395477294922,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_fern",
+    "baseId": "extkit_plant_fern",
+    "label": "Helecho en matera de repisa",
+    "file": "extkit_plant_fern.png",
+    "size": [
+      0.83,
+      0.63,
+      0.71
+    ],
+    "lod": false,
+    "triangles": 1504,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.299999713897705,
+      1.7536120414733887,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_fern_lod1",
+    "baseId": "extkit_plant_fern",
+    "label": "Helecho en matera de repisa",
+    "file": "extkit_plant_fern_lod1.png",
+    "size": [
+      0.83,
+      0.63,
+      0.71
+    ],
+    "lod": true,
+    "triangles": 306,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999998331069946,
+      1.7549399137496948,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_geranium",
+    "baseId": "extkit_plant_geranium",
+    "label": "Geranio en matera de repisa",
+    "file": "extkit_plant_geranium.png",
+    "size": [
+      0.7,
+      0.65,
+      0.504
+    ],
+    "lod": false,
+    "triangles": 1464,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.7501235008239746,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_geranium_lod1",
+    "baseId": "extkit_plant_geranium",
+    "label": "Geranio en matera de repisa",
+    "file": "extkit_plant_geranium_lod1.png",
+    "size": [
+      0.7,
+      0.65,
+      0.504
+    ],
+    "lod": true,
+    "triangles": 420,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.7477397918701172,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_croton",
+    "baseId": "extkit_plant_croton",
+    "label": "Croto en matera de repisa",
+    "file": "extkit_plant_croton.png",
+    "size": [
+      0.66,
+      0.91,
+      0.4752
+    ],
+    "lod": false,
+    "triangles": 684,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.863693356513977,
+      2.3999998569488525
+    ]
+  },
+  {
+    "id": "extkit_plant_croton_lod1",
+    "baseId": "extkit_plant_croton",
+    "label": "Croto en matera de repisa",
+    "file": "extkit_plant_croton_lod1.png",
+    "size": [
+      0.66,
+      0.91,
+      0.4752
+    ],
+    "lod": true,
+    "triangles": 168,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8374898433685303,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_pothos",
+    "baseId": "extkit_plant_pothos",
+    "label": "Potus colgante en matera de repisa",
+    "file": "extkit_plant_pothos.png",
+    "size": [
+      0.69,
+      0.73,
+      0.64
+    ],
+    "lod": false,
+    "triangles": 862,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8024206161499023,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_plant_pothos_lod1",
+    "baseId": "extkit_plant_pothos",
+    "label": "Potus colgante en matera de repisa",
+    "file": "extkit_plant_pothos_lod1.png",
+    "size": [
+      0.69,
+      0.73,
+      0.64
+    ],
+    "lod": true,
+    "triangles": 228,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.2999999523162842,
+      1.8012397289276123,
+      2.4000000953674316
+    ]
+  },
+  {
+    "id": "extkit_lattice_square",
+    "baseId": "extkit_lattice_square",
+    "label": "Celosía de bloque · cuadrada",
+    "file": "extkit_lattice_square.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 518,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  },
+  {
+    "id": "extkit_lattice_square_lod1",
+    "baseId": "extkit_lattice_square",
+    "label": "Celosía de bloque · cuadrada",
+    "file": "extkit_lattice_square_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 86,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  },
+  {
+    "id": "extkit_lattice_diamond",
+    "baseId": "extkit_lattice_diamond",
+    "label": "Celosía de bloque · rombos",
+    "file": "extkit_lattice_diamond.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 1814,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  },
+  {
+    "id": "extkit_lattice_diamond_lod1",
+    "baseId": "extkit_lattice_diamond",
+    "label": "Celosía de bloque · rombos",
+    "file": "extkit_lattice_diamond_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 662,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  },
+  {
+    "id": "extkit_lattice_flower",
+    "baseId": "extkit_lattice_flower",
+    "label": "Celosía de bloque · flor",
+    "file": "extkit_lattice_flower.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": false,
+    "triangles": 4694,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  },
+  {
+    "id": "extkit_lattice_flower_lod1",
+    "baseId": "extkit_lattice_flower",
+    "label": "Celosía de bloque · flor",
+    "file": "extkit_lattice_flower_lod1.png",
+    "size": [
+      1.2,
+      1.2,
+      0.15
+    ],
+    "lod": true,
+    "triangles": 1526,
+    "camera": "orthographic; independently framed",
+    "cameraGame": [
+      1.563249945640564,
+      2.3291001319885254,
+      2.886000156402588
+    ]
+  }
+]

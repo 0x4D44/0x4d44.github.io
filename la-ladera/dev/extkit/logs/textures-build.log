@@ -1,0 +1,30 @@
+UTC start: 2026-11-03T05:00:46.483011+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle python la-ladera/tools/blender/extkit_textures.py --preview la-ladera/dev/extkit
+
+extkit_wall_azul_anil: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_turquesa: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_amarillo_ocre: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_terracota: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_verde_menta: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_rosado: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_tolete: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_tolete_humedo: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_bloque: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_baldosin: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_panete: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_cal: 3 KTX2 planes, 1024px, 11 mips
+Traceback (most recent call last):
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_textures.py", line 311, in <module>
+    if __name__ == '__main__': main()
+                               ^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_textures.py", line 308, in main
+    a = p.parse_args(); build(a.out.resolve(), a.materials.resolve(), a.preview.resolve() if a.preview else None)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_textures.py", line 294, in build
+    if material['textureBytes'] > 8_000_000: raise ValueError(f'Texture disk budget exceeded: {material["textureBytes"]}')
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Texture disk budget exceeded: 10923587
+
+UTC end: 2026-11-03T05:01:07.854095+00:00
+Exit status: 1

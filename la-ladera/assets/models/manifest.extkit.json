@@ -1,0 +1,7378 @@
+{
+  "version": 1,
+  "libraryOnly": true,
+  "complete": true,
+  "license": "CC0-1.0",
+  "generator": "tools/blender/extkit_build.py",
+  "blenderVersion": "5.2.3 LTS",
+  "units": "m",
+  "axes": "+Y up, +Z front",
+  "origin": "base, centred X/Z footprint",
+  "drawnStrings": [],
+  "files": [
+    {
+      "glb": "extkit/extkit_near.glb",
+      "bytes": 2629920,
+      "sha256": "56c562993bc55e73ce908361016aea88723399dc41cab14f7129a1c05a4f7f9a",
+      "sharedMeshAliases": 51,
+      "assets": {
+        "extkit_tank_500_blue_steel": {
+          "node": "extkit_tank_500_blue_steel",
+          "size": [
+            1.22,
+            1.67,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.60856,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.60856,
+              1.613395,
+              0.46
+            ]
+          },
+          "triangles": 1452,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_500_blue_steel_lod1"
+        },
+        "extkit_tank_500_blue_block": {
+          "node": "extkit_tank_500_blue_block",
+          "size": [
+            1.22,
+            1.41,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.60856,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.60856,
+              1.353395,
+              0.46
+            ]
+          },
+          "triangles": 1228,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_500_blue_block_lod1"
+        },
+        "extkit_tank_500_black_steel": {
+          "node": "extkit_tank_500_black_steel",
+          "size": [
+            1.22,
+            1.67,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.60856,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.60856,
+              1.613395,
+              0.46
+            ]
+          },
+          "triangles": 1452,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_500_black_steel_lod1"
+        },
+        "extkit_tank_500_black_block": {
+          "node": "extkit_tank_500_black_block",
+          "size": [
+            1.22,
+            1.41,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.60856,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.60856,
+              1.353395,
+              0.46
+            ]
+          },
+          "triangles": 1228,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_500_black_block_lod1"
+        },
+        "extkit_tank_1000_blue_steel": {
+          "node": "extkit_tank_1000_blue_steel",
+          "size": [
+            1.5,
+            1.88,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              1.823802,
+              0.6
+            ]
+          },
+          "triangles": 1452,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_blue_steel_lod1"
+        },
+        "extkit_tank_1000_blue_block": {
+          "node": "extkit_tank_1000_blue_block",
+          "size": [
+            1.5,
+            1.62,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              1.563802,
+              0.6
+            ]
+          },
+          "triangles": 1228,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_blue_block_lod1"
+        },
+        "extkit_tank_1000_black_steel": {
+          "node": "extkit_tank_1000_black_steel",
+          "size": [
+            1.5,
+            1.88,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              1.823802,
+              0.6
+            ]
+          },
+          "triangles": 1452,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_black_steel_lod1"
+        },
+        "extkit_tank_1000_black_block": {
+          "node": "extkit_tank_1000_black_block",
+          "size": [
+            1.5,
+            1.62,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              1.563802,
+              0.6
+            ]
+          },
+          "triangles": 1228,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_black_block_lod1"
+        },
+        "extkit_tank_2000_blue_steel": {
+          "node": "extkit_tank_2000_blue_steel",
+          "size": [
+            1.88,
+            2.14,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.93856,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.93856,
+              2.084234,
+              0.79
+            ]
+          },
+          "triangles": 1452,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_2000_blue_steel_lod1"
+        },
+        "extkit_tank_2000_blue_block": {
+          "node": "extkit_tank_2000_blue_block",
+          "size": [
+            1.88,
+            1.88,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.93856,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.93856,
+              1.824234,
+              0.79
+            ]
+          },
+          "triangles": 1228,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_2000_blue_block_lod1"
+        },
+        "extkit_tank_2000_black_steel": {
+          "node": "extkit_tank_2000_black_steel",
+          "size": [
+            1.88,
+            2.14,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.93856,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.93856,
+              2.084234,
+              0.79
+            ]
+          },
+          "triangles": 1452,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_2000_black_steel_lod1"
+        },
+        "extkit_tank_2000_black_block": {
+          "node": "extkit_tank_2000_black_block",
+          "size": [
+            1.88,
+            1.88,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.93856,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.93856,
+              1.824234,
+              0.79
+            ]
+          },
+          "triangles": 1228,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_2000_black_block_lod1"
+        },
+        "extkit_tank_1000_blue_raised": {
+          "node": "extkit_tank_1000_blue_raised",
+          "size": [
+            1.5,
+            2.49,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              2.383802,
+              0.6
+            ]
+          },
+          "triangles": 1452,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_blue_raised_lod1"
+        },
+        "extkit_tank_1000_black_raised": {
+          "node": "extkit_tank_1000_black_raised",
+          "size": [
+            1.5,
+            2.49,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.74856,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.74856,
+              2.383802,
+              0.6
+            ]
+          },
+          "triangles": 1452,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "water_tank"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_tank_1000_black_raised_lod1"
+        },
+        "extkit_laundry_balcony": {
+          "node": "extkit_laundry_balcony",
+          "size": [
+            2.2,
+            1.1,
+            0.65
+          ],
+          "footprint": [
+            2.2,
+            0.65
+          ],
+          "bounds": {
+            "min": [
+              -1.04,
+              0.0,
+              -0.154705
+            ],
+            "max": [
+              1.04,
+              1.030714,
+              0.154705
+            ]
+          },
+          "triangles": 612,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "laundry"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.8,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.154705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false,
+          "lod1": "extkit_laundry_balcony_lod1"
+        },
+        "extkit_laundry_roof": {
+          "node": "extkit_laundry_roof",
+          "size": [
+            4.2,
+            2.1,
+            1.0
+          ],
+          "footprint": [
+            4.2,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -2.08,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              2.08,
+              2.03,
+              0.35
+            ]
+          },
+          "triangles": 1308,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "laundry"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_laundry_roof_lod1"
+        },
+        "extkit_laundry_rotary": {
+          "node": "extkit_laundry_rotary",
+          "size": [
+            2.6,
+            2.2,
+            2.6
+          ],
+          "footprint": [
+            2.6,
+            2.6
+          ],
+          "bounds": {
+            "min": [
+              -1.12467,
+              0.0,
+              -1.12467
+            ],
+            "max": [
+              1.12467,
+              2.13,
+              1.12467
+            ]
+          },
+          "triangles": 760,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "laundry"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_laundry_rotary_lod1"
+        },
+        "extkit_laundry_pole": {
+          "node": "extkit_laundry_pole",
+          "size": [
+            3.0,
+            2.05,
+            0.18
+          ],
+          "footprint": [
+            3.0,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -1.48,
+              0.0,
+              -0.08
+            ],
+            "max": [
+              1.48,
+              2.03,
+              0.08
+            ]
+          },
+          "triangles": 676,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "laundry"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_laundry_pole_lod1"
+        },
+        "extkit_dish_46": {
+          "node": "extkit_dish_46",
+          "size": [
+            0.62,
+            0.91,
+            0.637
+          ],
+          "footprint": [
+            0.62,
+            0.637
+          ],
+          "bounds": {
+            "min": [
+              -0.236912,
+              0.0,
+              -0.300149
+            ],
+            "max": [
+              0.236912,
+              0.696928,
+              0.300149
+            ]
+          },
+          "triangles": 1220,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_dish_46_lod1"
+        },
+        "extkit_dish_68": {
+          "node": "extkit_dish_68",
+          "size": [
+            0.84,
+            1.13,
+            0.736
+          ],
+          "footprint": [
+            0.84,
+            0.736
+          ],
+          "bounds": {
+            "min": [
+              -0.346912,
+              0.0,
+              -0.300149
+            ],
+            "max": [
+              0.346912,
+              0.916928,
+              0.300149
+            ]
+          },
+          "triangles": 1220,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_dish_68_lod1"
+        },
+        "extkit_dish_92": {
+          "node": "extkit_dish_92",
+          "size": [
+            1.08,
+            1.37,
+            0.844
+          ],
+          "footprint": [
+            1.08,
+            0.844
+          ],
+          "bounds": {
+            "min": [
+              -0.466912,
+              0.0,
+              -0.300149
+            ],
+            "max": [
+              0.466912,
+              1.156928,
+              0.300149
+            ]
+          },
+          "triangles": 1220,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_dish_92_lod1"
+        },
+        "extkit_aerial_yagi": {
+          "node": "extkit_aerial_yagi",
+          "size": [
+            1.3,
+            1.25,
+            0.86
+          ],
+          "footprint": [
+            1.3,
+            0.86
+          ],
+          "bounds": {
+            "min": [
+              -0.606,
+              0.0,
+              -0.39
+            ],
+            "max": [
+              0.606,
+              1.16,
+              0.39
+            ]
+          },
+          "triangles": 646,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "tv_aerial"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_aerial_yagi_lod1"
+        },
+        "extkit_aerial_bowtie": {
+          "node": "extkit_aerial_bowtie",
+          "size": [
+            0.82,
+            1.25,
+            0.21
+          ],
+          "footprint": [
+            0.82,
+            0.21
+          ],
+          "bounds": {
+            "min": [
+              -0.31274,
+              0.0,
+              -0.09
+            ],
+            "max": [
+              0.31274,
+              1.16,
+              0.09
+            ]
+          },
+          "triangles": 498,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "tv_aerial"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_aerial_bowtie_lod1"
+        },
+        "extkit_rebar_55_light": {
+          "node": "extkit_rebar_55_light",
+          "size": [
+            0.38,
+            0.67,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              0.550884,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_55_light_lod1"
+        },
+        "extkit_rebar_55_heavy": {
+          "node": "extkit_rebar_55_heavy",
+          "size": [
+            0.38,
+            0.67,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              0.550884,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_55_heavy_lod1"
+        },
+        "extkit_rebar_110_light": {
+          "node": "extkit_rebar_110_light",
+          "size": [
+            0.38,
+            1.2200000000000002,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.098807,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_110_light_lod1"
+        },
+        "extkit_rebar_110_heavy": {
+          "node": "extkit_rebar_110_heavy",
+          "size": [
+            0.38,
+            1.2200000000000002,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.098807,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_110_heavy_lod1"
+        },
+        "extkit_rebar_180_light": {
+          "node": "extkit_rebar_180_light",
+          "size": [
+            0.38,
+            1.92,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.797017,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_180_light_lod1"
+        },
+        "extkit_rebar_180_heavy": {
+          "node": "extkit_rebar_180_heavy",
+          "size": [
+            0.38,
+            1.92,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.797017,
+              0.134332
+            ]
+          },
+          "triangles": 1152,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "rebar"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true,
+          "lod1": "extkit_rebar_180_heavy_lod1"
+        },
+        "extkit_gas_cage_1": {
+          "node": "extkit_gas_cage_1",
+          "size": [
+            0.6799999999999999,
+            1.08,
+            0.61
+          ],
+          "footprint": [
+            0.6799999999999999,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.2925,
+              0.0,
+              -0.28825
+            ],
+            "max": [
+              0.2925,
+              0.995,
+              0.28825
+            ]
+          },
+          "triangles": 1332,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "gas_cage"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_gas_cage_1_lod1"
+        },
+        "extkit_gas_cage_2": {
+          "node": "extkit_gas_cage_2",
+          "size": [
+            1.26,
+            1.08,
+            0.61
+          ],
+          "footprint": [
+            1.26,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.5675,
+              0.0,
+              -0.28825
+            ],
+            "max": [
+              0.5675,
+              0.995,
+              0.28825
+            ]
+          },
+          "triangles": 2440,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "gas_cage"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false,
+          "lod1": "extkit_gas_cage_2_lod1"
+        },
+        "extkit_pipe_straight": {
+          "node": "extkit_pipe_straight",
+          "size": [
+            0.076,
+            1.0,
+            0.076
+          ],
+          "footprint": [
+            0.076,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.02124,
+              0.0,
+              -0.02124
+            ],
+            "max": [
+              0.02124,
+              0.996,
+              0.02124
+            ]
+          },
+          "triangles": 192,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_pipe_straight_lod1"
+        },
+        "extkit_pipe_elbow": {
+          "node": "extkit_pipe_elbow",
+          "size": [
+            0.3,
+            0.3,
+            0.076
+          ],
+          "footprint": [
+            0.3,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.12962,
+              0.0,
+              -0.02124
+            ],
+            "max": [
+              0.12962,
+              0.24424,
+              0.02124
+            ]
+          },
+          "triangles": 480,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_pipe_elbow_lod1"
+        },
+        "extkit_pipe_tee": {
+          "node": "extkit_pipe_tee",
+          "size": [
+            0.4,
+            0.36,
+            0.076
+          ],
+          "footprint": [
+            0.4,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.198,
+              0.0,
+              -0.02124
+            ],
+            "max": [
+              0.198,
+              0.19124,
+              0.02124
+            ]
+          },
+          "triangles": 256,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_pipe_tee_lod1"
+        },
+        "extkit_pipe_bracket": {
+          "node": "extkit_pipe_bracket",
+          "size": [
+            0.16,
+            0.15,
+            0.18
+          ],
+          "footprint": [
+            0.16,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.06,
+              0.0,
+              -0.06175
+            ],
+            "max": [
+              0.06,
+              0.12,
+              0.06175
+            ]
+          },
+          "triangles": 506,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "pipe"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.06175
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_pipe_bracket_lod1"
+        },
+        "extkit_drain_straight": {
+          "node": "extkit_drain_straight",
+          "size": [
+            0.15,
+            1.0,
+            0.15
+          ],
+          "footprint": [
+            0.15,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.0649,
+              0.0,
+              -0.0649
+            ],
+            "max": [
+              0.0649,
+              0.996,
+              0.0649
+            ]
+          },
+          "triangles": 192,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_drain_straight_lod1"
+        },
+        "extkit_drain_elbow": {
+          "node": "extkit_drain_elbow",
+          "size": [
+            0.3,
+            0.3,
+            0.15
+          ],
+          "footprint": [
+            0.3,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.15145,
+              0.0,
+              -0.0649
+            ],
+            "max": [
+              0.15145,
+              0.2879,
+              0.0649
+            ]
+          },
+          "triangles": 480,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_drain_elbow_lod1"
+        },
+        "extkit_drain_tee": {
+          "node": "extkit_drain_tee",
+          "size": [
+            0.4,
+            0.36,
+            0.15
+          ],
+          "footprint": [
+            0.4,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.198,
+              0.0,
+              -0.0649
+            ],
+            "max": [
+              0.198,
+              0.2349,
+              0.0649
+            ]
+          },
+          "triangles": 256,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_drain_tee_lod1"
+        },
+        "extkit_drain_bracket": {
+          "node": "extkit_drain_bracket",
+          "size": [
+            0.16,
+            0.15,
+            0.18
+          ],
+          "footprint": [
+            0.16,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.077966,
+              0.0,
+              -0.08025
+            ],
+            "max": [
+              0.077966,
+              0.12,
+              0.08025
+            ]
+          },
+          "triangles": 506,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "drain"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.08025
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_drain_bracket_lod1"
+        },
+        "extkit_meter_1": {
+          "node": "extkit_meter_1",
+          "size": [
+            0.44,
+            0.76,
+            0.23
+          ],
+          "footprint": [
+            0.44,
+            0.23
+          ],
+          "bounds": {
+            "min": [
+              -0.2,
+              0.0,
+              -0.111
+            ],
+            "max": [
+              0.2,
+              0.736189,
+              0.111
+            ]
+          },
+          "triangles": 688,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "meter_box"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.1,
+              2.1
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_meter_1_lod1"
+        },
+        "extkit_meter_3": {
+          "node": "extkit_meter_3",
+          "size": [
+            1.32,
+            0.76,
+            0.23
+          ],
+          "footprint": [
+            1.32,
+            0.23
+          ],
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.111
+            ],
+            "max": [
+              0.6,
+              0.736189,
+              0.111
+            ]
+          },
+          "triangles": 1728,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "meter_box"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.1,
+              2.1
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_meter_3_lod1"
+        },
+        "extkit_transformer_pole": {
+          "node": "extkit_transformer_pole",
+          "size": [
+            1.12,
+            1.5,
+            0.92
+          ],
+          "footprint": [
+            1.12,
+            0.92
+          ],
+          "bounds": {
+            "min": [
+              -0.482925,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.482925,
+              1.326485,
+              0.46
+            ]
+          },
+          "triangles": 1860,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "transformer"
+          ],
+          "anchors": {
+            "wallSide": "pole",
+            "heightRange": [
+              3.5,
+              7.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.46
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false,
+          "lod1": "extkit_transformer_pole_lod1"
+        },
+        "extkit_cable_thin": {
+          "node": "extkit_cable_thin",
+          "size": [
+            0.5,
+            0.018,
+            0.018
+          ],
+          "footprint": [
+            0.5,
+            0.018
+          ],
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.009
+            ],
+            "max": [
+              0.25,
+              0.018,
+              0.009
+            ]
+          },
+          "triangles": 64,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "cable_segment"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.5,
+              6.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.009
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_cable_thin_lod1"
+        },
+        "extkit_cable_bundle": {
+          "node": "extkit_cable_bundle",
+          "size": [
+            0.5,
+            0.036,
+            0.036
+          ],
+          "footprint": [
+            0.5,
+            0.036
+          ],
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.017275
+            ],
+            "max": [
+              0.25,
+              0.03267,
+              0.017275
+            ]
+          },
+          "triangles": 144,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "cable_segment"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.5,
+              6.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.017275
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_cable_bundle_lod1"
+        },
+        "extkit_chalkboard": {
+          "node": "extkit_chalkboard",
+          "size": [
+            0.64,
+            0.91,
+            0.13
+          ],
+          "footprint": [
+            0.64,
+            0.13
+          ],
+          "bounds": {
+            "min": [
+              -0.305,
+              0.0,
+              -0.05875
+            ],
+            "max": [
+              0.305,
+              0.87,
+              0.05875
+            ]
+          },
+          "triangles": 146,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "chalkboard"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.8,
+              1.7
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.05875
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_chalkboard_lod1"
+        },
+        "extkit_grille_1": {
+          "node": "extkit_grille_1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 492,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_1_lod1"
+        },
+        "extkit_grille_2": {
+          "node": "extkit_grille_2",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 492,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_2_lod1"
+        },
+        "extkit_grille_3": {
+          "node": "extkit_grille_3",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 924,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_3_lod1"
+        },
+        "extkit_grille_4": {
+          "node": "extkit_grille_4",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 1164,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_4_lod1"
+        },
+        "extkit_grille_5": {
+          "node": "extkit_grille_5",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 1428,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_5_lod1"
+        },
+        "extkit_grille_6": {
+          "node": "extkit_grille_6",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 1884,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_6_lod1"
+        },
+        "extkit_grille_7": {
+          "node": "extkit_grille_7",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 492,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_7_lod1"
+        },
+        "extkit_grille_8": {
+          "node": "extkit_grille_8",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.0895
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.0895
+            ]
+          },
+          "triangles": 780,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0895
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_grille_8_lod1"
+        },
+        "extkit_shutter_100": {
+          "node": "extkit_shutter_100",
+          "size": [
+            1.0,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            1.0,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.148
+            ],
+            "max": [
+              0.5,
+              0.31,
+              0.148
+            ]
+          },
+          "triangles": 188,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "shutter_box"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_shutter_100_lod1"
+        },
+        "extkit_shutter_180": {
+          "node": "extkit_shutter_180",
+          "size": [
+            1.8,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            1.8,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.148
+            ],
+            "max": [
+              0.9,
+              0.31,
+              0.148
+            ]
+          },
+          "triangles": 188,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "shutter_box"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_shutter_180_lod1"
+        },
+        "extkit_shutter_260": {
+          "node": "extkit_shutter_260",
+          "size": [
+            2.6,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            2.6,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -1.3,
+              0.0,
+              -0.148
+            ],
+            "max": [
+              1.3,
+              0.31,
+              0.148
+            ]
+          },
+          "triangles": 188,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "shutter_box"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_shutter_260_lod1"
+        },
+        "extkit_plant_sansevieria": {
+          "node": "extkit_plant_sansevieria",
+          "size": [
+            0.56,
+            0.92,
+            0.4032
+          ],
+          "footprint": [
+            0.56,
+            0.4032
+          ],
+          "bounds": {
+            "min": [
+              -0.2128,
+              0.0,
+              -0.18
+            ],
+            "max": [
+              0.2128,
+              0.913637,
+              0.18
+            ]
+          },
+          "triangles": 676,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.18
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_sansevieria_lod1"
+        },
+        "extkit_plant_aloe": {
+          "node": "extkit_plant_aloe",
+          "size": [
+            0.72,
+            0.61,
+            0.61
+          ],
+          "footprint": [
+            0.72,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.277246,
+              0.0,
+              -0.280111
+            ],
+            "max": [
+              0.277246,
+              0.603637,
+              0.280111
+            ]
+          },
+          "triangles": 676,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.280111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_aloe_lod1"
+        },
+        "extkit_plant_fern": {
+          "node": "extkit_plant_fern",
+          "size": [
+            0.83,
+            0.63,
+            0.71
+          ],
+          "footprint": [
+            0.83,
+            0.71
+          ],
+          "bounds": {
+            "min": [
+              -0.342766,
+              0.0,
+              -0.297547
+            ],
+            "max": [
+              0.342766,
+              0.627224,
+              0.297547
+            ]
+          },
+          "triangles": 1504,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.297547
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_fern_lod1"
+        },
+        "extkit_plant_geranium": {
+          "node": "extkit_plant_geranium",
+          "size": [
+            0.7,
+            0.65,
+            0.504
+          ],
+          "footprint": [
+            0.7,
+            0.504
+          ],
+          "bounds": {
+            "min": [
+              -0.266,
+              0.0,
+              -0.187074
+            ],
+            "max": [
+              0.266,
+              0.620247,
+              0.187074
+            ]
+          },
+          "triangles": 1464,
+          "parts": 7,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.187074
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_geranium_lod1"
+        },
+        "extkit_plant_croton": {
+          "node": "extkit_plant_croton",
+          "size": [
+            0.66,
+            0.91,
+            0.4752
+          ],
+          "footprint": [
+            0.66,
+            0.4752
+          ],
+          "bounds": {
+            "min": [
+              -0.2508,
+              0.0,
+              -0.205991
+            ],
+            "max": [
+              0.2508,
+              0.847387,
+              0.205991
+            ]
+          },
+          "triangles": 684,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.205991
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_croton_lod1"
+        },
+        "extkit_plant_pothos": {
+          "node": "extkit_plant_pothos",
+          "size": [
+            0.69,
+            0.73,
+            0.64
+          ],
+          "footprint": [
+            0.69,
+            0.64
+          ],
+          "bounds": {
+            "min": [
+              -0.2622,
+              0.0,
+              -0.297675
+            ],
+            "max": [
+              0.2622,
+              0.724841,
+              0.297675
+            ]
+          },
+          "triangles": 862,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.297675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true,
+          "lod1": "extkit_plant_pothos_lod1"
+        },
+        "extkit_lattice_square": {
+          "node": "extkit_lattice_square",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 518,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false,
+          "lod1": "extkit_lattice_square_lod1"
+        },
+        "extkit_lattice_diamond": {
+          "node": "extkit_lattice_diamond",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 1814,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false,
+          "lod1": "extkit_lattice_diamond_lod1"
+        },
+        "extkit_lattice_flower": {
+          "node": "extkit_lattice_flower",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 4694,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false,
+          "lod1": "extkit_lattice_flower_lod1"
+        }
+      }
+    },
+    {
+      "glb": "extkit/extkit_lod.glb",
+      "bytes": 653108,
+      "sha256": "d2382043e1836c407c41c7805875ea7077ce5c653bc44643126216fb40a0f474",
+      "sharedMeshAliases": 33,
+      "assets": {
+        "extkit_tank_500_blue_steel_lod1": {
+          "node": "extkit_tank_500_blue_steel_lod1",
+          "size": [
+            1.22,
+            1.67,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.590879,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.590879,
+              1.614084,
+              0.46
+            ]
+          },
+          "triangles": 300,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_500_blue_block_lod1": {
+          "node": "extkit_tank_500_blue_block_lod1",
+          "size": [
+            1.22,
+            1.41,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.59066,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.59066,
+              1.354084,
+              0.46
+            ]
+          },
+          "triangles": 212,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_500_black_steel_lod1": {
+          "node": "extkit_tank_500_black_steel_lod1",
+          "size": [
+            1.22,
+            1.67,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.590879,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.590879,
+              1.614084,
+              0.46
+            ]
+          },
+          "triangles": 300,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_500_black_block_lod1": {
+          "node": "extkit_tank_500_black_block_lod1",
+          "size": [
+            1.22,
+            1.41,
+            1.14
+          ],
+          "footprint": [
+            1.22,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.59066,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.59066,
+              1.354084,
+              0.46
+            ]
+          },
+          "triangles": 212,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_blue_steel_lod1": {
+          "node": "extkit_tank_1000_blue_steel_lod1",
+          "size": [
+            1.5,
+            1.88,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.730879,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.730879,
+              1.824512,
+              0.6
+            ]
+          },
+          "triangles": 300,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_blue_block_lod1": {
+          "node": "extkit_tank_1000_blue_block_lod1",
+          "size": [
+            1.5,
+            1.62,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.73066,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.73066,
+              1.564512,
+              0.6
+            ]
+          },
+          "triangles": 212,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_black_steel_lod1": {
+          "node": "extkit_tank_1000_black_steel_lod1",
+          "size": [
+            1.5,
+            1.88,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.730879,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.730879,
+              1.824512,
+              0.6
+            ]
+          },
+          "triangles": 300,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_black_block_lod1": {
+          "node": "extkit_tank_1000_black_block_lod1",
+          "size": [
+            1.5,
+            1.62,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.73066,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.73066,
+              1.564512,
+              0.6
+            ]
+          },
+          "triangles": 212,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_2000_blue_steel_lod1": {
+          "node": "extkit_tank_2000_blue_steel_lod1",
+          "size": [
+            1.88,
+            2.14,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.920879,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.920879,
+              2.084966,
+              0.79
+            ]
+          },
+          "triangles": 300,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_2000_blue_block_lod1": {
+          "node": "extkit_tank_2000_blue_block_lod1",
+          "size": [
+            1.88,
+            1.88,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.92066,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.92066,
+              1.824966,
+              0.79
+            ]
+          },
+          "triangles": 212,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_2000_black_steel_lod1": {
+          "node": "extkit_tank_2000_black_steel_lod1",
+          "size": [
+            1.88,
+            2.14,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.920879,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.920879,
+              2.084966,
+              0.79
+            ]
+          },
+          "triangles": 300,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_2000_black_block_lod1": {
+          "node": "extkit_tank_2000_black_block_lod1",
+          "size": [
+            1.88,
+            1.88,
+            1.8
+          ],
+          "footprint": [
+            1.88,
+            1.8
+          ],
+          "bounds": {
+            "min": [
+              -0.92066,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              0.92066,
+              1.824966,
+              0.79
+            ]
+          },
+          "triangles": 212,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_blue_raised_lod1": {
+          "node": "extkit_tank_1000_blue_raised_lod1",
+          "size": [
+            1.5,
+            2.49,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.730966,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.730966,
+              2.384512,
+              0.6
+            ]
+          },
+          "triangles": 300,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_tank_1000_black_raised_lod1": {
+          "node": "extkit_tank_1000_black_raised_lod1",
+          "size": [
+            1.5,
+            2.49,
+            1.42
+          ],
+          "footprint": [
+            1.5,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.730966,
+              0.0,
+              -0.6
+            ],
+            "max": [
+              0.730966,
+              2.384512,
+              0.6
+            ]
+          },
+          "triangles": 300,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "water_tank",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              1.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_laundry_balcony_lod1": {
+          "node": "extkit_laundry_balcony_lod1",
+          "size": [
+            2.2,
+            1.1,
+            0.65
+          ],
+          "footprint": [
+            2.2,
+            0.65
+          ],
+          "bounds": {
+            "min": [
+              -1.04,
+              0.0,
+              -0.154705
+            ],
+            "max": [
+              1.04,
+              1.024295,
+              0.154705
+            ]
+          },
+          "triangles": 128,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "laundry",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.8,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.154705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false
+        },
+        "extkit_laundry_roof_lod1": {
+          "node": "extkit_laundry_roof_lod1",
+          "size": [
+            4.2,
+            2.1,
+            1.0
+          ],
+          "footprint": [
+            4.2,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -2.024,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              2.024,
+              2.03,
+              0.35
+            ]
+          },
+          "triangles": 234,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "laundry",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_laundry_rotary_lod1": {
+          "node": "extkit_laundry_rotary_lod1",
+          "size": [
+            2.6,
+            2.2,
+            2.6
+          ],
+          "footprint": [
+            2.6,
+            2.6
+          ],
+          "bounds": {
+            "min": [
+              -1.12467,
+              0.0,
+              -1.12467
+            ],
+            "max": [
+              1.12467,
+              2.13,
+              1.12467
+            ]
+          },
+          "triangles": 188,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "laundry",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_laundry_pole_lod1": {
+          "node": "extkit_laundry_pole_lod1",
+          "size": [
+            3.0,
+            2.05,
+            0.18
+          ],
+          "footprint": [
+            3.0,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -1.424,
+              0.0,
+              -0.031458
+            ],
+            "max": [
+              1.424,
+              2.03,
+              0.031458
+            ]
+          },
+          "triangles": 122,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "laundry",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.3
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_dish_46_lod1": {
+          "node": "extkit_dish_46_lod1",
+          "size": [
+            0.62,
+            0.91,
+            0.637
+          ],
+          "footprint": [
+            0.62,
+            0.637
+          ],
+          "bounds": {
+            "min": [
+              -0.23,
+              0.0,
+              -0.295625
+            ],
+            "max": [
+              0.23,
+              0.69,
+              0.295625
+            ]
+          },
+          "triangles": 168,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_dish_68_lod1": {
+          "node": "extkit_dish_68_lod1",
+          "size": [
+            0.84,
+            1.13,
+            0.736
+          ],
+          "footprint": [
+            0.84,
+            0.736
+          ],
+          "bounds": {
+            "min": [
+              -0.34,
+              0.0,
+              -0.295625
+            ],
+            "max": [
+              0.34,
+              0.91,
+              0.295625
+            ]
+          },
+          "triangles": 168,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_dish_92_lod1": {
+          "node": "extkit_dish_92_lod1",
+          "size": [
+            1.08,
+            1.37,
+            0.844
+          ],
+          "footprint": [
+            1.08,
+            0.844
+          ],
+          "bounds": {
+            "min": [
+              -0.46,
+              0.0,
+              -0.295625
+            ],
+            "max": [
+              0.46,
+              1.15,
+              0.295625
+            ]
+          },
+          "triangles": 168,
+          "parts": 3,
+          "tags": [
+            "extkit",
+            "satellite_dish",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.8,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.300149
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_aerial_yagi_lod1": {
+          "node": "extkit_aerial_yagi_lod1",
+          "size": [
+            1.3,
+            1.25,
+            0.86
+          ],
+          "footprint": [
+            1.3,
+            0.86
+          ],
+          "bounds": {
+            "min": [
+              -0.6045,
+              0.0,
+              -0.39
+            ],
+            "max": [
+              0.6045,
+              1.16,
+              0.39
+            ]
+          },
+          "triangles": 119,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "tv_aerial",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_aerial_bowtie_lod1": {
+          "node": "extkit_aerial_bowtie_lod1",
+          "size": [
+            0.82,
+            1.25,
+            0.21
+          ],
+          "footprint": [
+            0.82,
+            0.21
+          ],
+          "bounds": {
+            "min": [
+              -0.312495,
+              0.0,
+              -0.065
+            ],
+            "max": [
+              0.312495,
+              1.16,
+              0.065
+            ]
+          },
+          "triangles": 139,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "tv_aerial",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_55_light_lod1": {
+          "node": "extkit_rebar_55_light_lod1",
+          "size": [
+            0.38,
+            0.67,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              0.550884,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_55_heavy_lod1": {
+          "node": "extkit_rebar_55_heavy_lod1",
+          "size": [
+            0.38,
+            0.67,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              0.550884,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_110_light_lod1": {
+          "node": "extkit_rebar_110_light_lod1",
+          "size": [
+            0.38,
+            1.2200000000000002,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.098807,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_110_heavy_lod1": {
+          "node": "extkit_rebar_110_heavy_lod1",
+          "size": [
+            0.38,
+            1.2200000000000002,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.098807,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_180_light_lod1": {
+          "node": "extkit_rebar_180_light_lod1",
+          "size": [
+            0.38,
+            1.92,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.797017,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_rebar_180_heavy_lod1": {
+          "node": "extkit_rebar_180_heavy_lod1",
+          "size": [
+            0.38,
+            1.92,
+            0.36
+          ],
+          "footprint": [
+            0.38,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -0.144201,
+              0.0,
+              -0.134332
+            ],
+            "max": [
+              0.144201,
+              1.797017,
+              0.134332
+            ]
+          },
+          "triangles": 126,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "rebar",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": true
+        },
+        "extkit_gas_cage_1_lod1": {
+          "node": "extkit_gas_cage_1_lod1",
+          "size": [
+            0.6799999999999999,
+            1.08,
+            0.61
+          ],
+          "footprint": [
+            0.6799999999999999,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.2925,
+              0.0,
+              -0.279
+            ],
+            "max": [
+              0.2925,
+              0.995,
+              0.279
+            ]
+          },
+          "triangles": 396,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "gas_cage",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_gas_cage_2_lod1": {
+          "node": "extkit_gas_cage_2_lod1",
+          "size": [
+            1.26,
+            1.08,
+            0.61
+          ],
+          "footprint": [
+            1.26,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.5675,
+              0.0,
+              -0.279
+            ],
+            "max": [
+              0.5675,
+              0.995,
+              0.279
+            ]
+          },
+          "triangles": 620,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "gas_cage",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "floor",
+            "heightRange": [
+              0,
+              0.2
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ],
+            "reference": "floor centre"
+          },
+          "smallProp": false
+        },
+        "extkit_pipe_straight_lod1": {
+          "node": "extkit_pipe_straight_lod1",
+          "size": [
+            0.076,
+            1.0,
+            0.076
+          ],
+          "footprint": [
+            0.076,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.018,
+              0.0,
+              -0.018
+            ],
+            "max": [
+              0.018,
+              0.96,
+              0.018
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_pipe_elbow_lod1": {
+          "node": "extkit_pipe_elbow_lod1",
+          "size": [
+            0.3,
+            0.3,
+            0.076
+          ],
+          "footprint": [
+            0.3,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.119,
+              0.0,
+              -0.018
+            ],
+            "max": [
+              0.119,
+              0.223,
+              0.018
+            ]
+          },
+          "triangles": 40,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_pipe_tee_lod1": {
+          "node": "extkit_pipe_tee_lod1",
+          "size": [
+            0.4,
+            0.36,
+            0.076
+          ],
+          "footprint": [
+            0.4,
+            0.076
+          ],
+          "bounds": {
+            "min": [
+              -0.18,
+              0.0,
+              -0.018
+            ],
+            "max": [
+              0.18,
+              0.188,
+              0.018
+            ]
+          },
+          "triangles": 32,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.02124
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_pipe_bracket_lod1": {
+          "node": "extkit_pipe_bracket_lod1",
+          "size": [
+            0.16,
+            0.15,
+            0.18
+          ],
+          "footprint": [
+            0.16,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.06,
+              0.0,
+              -0.06175
+            ],
+            "max": [
+              0.06,
+              0.12,
+              0.06175
+            ]
+          },
+          "triangles": 90,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "pipe",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.06175
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_drain_straight_lod1": {
+          "node": "extkit_drain_straight_lod1",
+          "size": [
+            0.15,
+            1.0,
+            0.15
+          ],
+          "footprint": [
+            0.15,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.055,
+              0.0,
+              -0.055
+            ],
+            "max": [
+              0.055,
+              0.96,
+              0.055
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_drain_elbow_lod1": {
+          "node": "extkit_drain_elbow_lod1",
+          "size": [
+            0.3,
+            0.3,
+            0.15
+          ],
+          "footprint": [
+            0.3,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.1375,
+              0.0,
+              -0.055
+            ],
+            "max": [
+              0.1375,
+              0.26,
+              0.055
+            ]
+          },
+          "triangles": 40,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_drain_tee_lod1": {
+          "node": "extkit_drain_tee_lod1",
+          "size": [
+            0.4,
+            0.36,
+            0.15
+          ],
+          "footprint": [
+            0.4,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.18,
+              0.0,
+              -0.055
+            ],
+            "max": [
+              0.18,
+              0.225,
+              0.055
+            ]
+          },
+          "triangles": 32,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0649
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_drain_bracket_lod1": {
+          "node": "extkit_drain_bracket_lod1",
+          "size": [
+            0.16,
+            0.15,
+            0.18
+          ],
+          "footprint": [
+            0.16,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.077696,
+              0.0,
+              -0.08025
+            ],
+            "max": [
+              0.077696,
+              0.12,
+              0.08025
+            ]
+          },
+          "triangles": 90,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "drain",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.1,
+              4.5
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.08025
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_meter_1_lod1": {
+          "node": "extkit_meter_1_lod1",
+          "size": [
+            0.44,
+            0.76,
+            0.23
+          ],
+          "footprint": [
+            0.44,
+            0.23
+          ],
+          "bounds": {
+            "min": [
+              -0.2,
+              0.0,
+              -0.10975
+            ],
+            "max": [
+              0.2,
+              0.685628,
+              0.10975
+            ]
+          },
+          "triangles": 136,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "meter_box",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.1,
+              2.1
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_meter_3_lod1": {
+          "node": "extkit_meter_3_lod1",
+          "size": [
+            1.32,
+            0.76,
+            0.23
+          ],
+          "footprint": [
+            1.32,
+            0.23
+          ],
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.10975
+            ],
+            "max": [
+              0.6,
+              0.685628,
+              0.10975
+            ]
+          },
+          "triangles": 360,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "meter_box",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              1.1,
+              2.1
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_transformer_pole_lod1": {
+          "node": "extkit_transformer_pole_lod1",
+          "size": [
+            1.12,
+            1.5,
+            0.92
+          ],
+          "footprint": [
+            1.12,
+            0.92
+          ],
+          "bounds": {
+            "min": [
+              -0.482925,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.482925,
+              1.326485,
+              0.46
+            ]
+          },
+          "triangles": 382,
+          "parts": 4,
+          "tags": [
+            "extkit",
+            "transformer",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "pole",
+            "heightRange": [
+              3.5,
+              7.5
+            ],
+            "wallClearance": 0,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.46
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false
+        },
+        "extkit_cable_thin_lod1": {
+          "node": "extkit_cable_thin_lod1",
+          "size": [
+            0.5,
+            0.018,
+            0.018
+          ],
+          "footprint": [
+            0.5,
+            0.018
+          ],
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.009
+            ],
+            "max": [
+              0.25,
+              0.018,
+              0.009
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "cable_segment",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.5,
+              6.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.009
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_cable_bundle_lod1": {
+          "node": "extkit_cable_bundle_lod1",
+          "size": [
+            0.5,
+            0.036,
+            0.036
+          ],
+          "footprint": [
+            0.5,
+            0.036
+          ],
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.018
+            ],
+            "max": [
+              0.25,
+              0.036,
+              0.018
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "cable_segment",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.5,
+              6.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side",
+              "roof"
+            ],
+            "position": [
+              0,
+              0,
+              -0.017275
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_chalkboard_lod1": {
+          "node": "extkit_chalkboard_lod1",
+          "size": [
+            0.64,
+            0.91,
+            0.13
+          ],
+          "footprint": [
+            0.64,
+            0.13
+          ],
+          "bounds": {
+            "min": [
+              -0.305,
+              0.0,
+              -0.02725
+            ],
+            "max": [
+              0.305,
+              0.87,
+              0.02725
+            ]
+          },
+          "triangles": 22,
+          "parts": 2,
+          "tags": [
+            "extkit",
+            "chalkboard",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.8,
+              1.7
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.05875
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_1_lod1": {
+          "node": "extkit_grille_1_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 180,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_2_lod1": {
+          "node": "extkit_grille_2_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 180,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_3_lod1": {
+          "node": "extkit_grille_3_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 288,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_4_lod1": {
+          "node": "extkit_grille_4_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 240,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_5_lod1": {
+          "node": "extkit_grille_5_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 270,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_6_lod1": {
+          "node": "extkit_grille_6_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 360,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_7_lod1": {
+          "node": "extkit_grille_7_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.04675
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.04675
+            ]
+          },
+          "triangles": 180,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.04675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_grille_8_lod1": {
+          "node": "extkit_grille_8_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.19
+          ],
+          "footprint": [
+            1.2,
+            0.19
+          ],
+          "bounds": {
+            "min": [
+              -0.5925,
+              0.0,
+              -0.089468
+            ],
+            "max": [
+              0.5925,
+              1.18,
+              0.089468
+            ]
+          },
+          "triangles": 252,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "grille",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0895
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_shutter_100_lod1": {
+          "node": "extkit_shutter_100_lod1",
+          "size": [
+            1.0,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            1.0,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              0.5,
+              0.23,
+              0.145
+            ]
+          },
+          "triangles": 36,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "shutter_box",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_shutter_180_lod1": {
+          "node": "extkit_shutter_180_lod1",
+          "size": [
+            1.8,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            1.8,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              0.9,
+              0.23,
+              0.145
+            ]
+          },
+          "triangles": 36,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "shutter_box",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_shutter_260_lod1": {
+          "node": "extkit_shutter_260_lod1",
+          "size": [
+            2.6,
+            0.34,
+            0.34
+          ],
+          "footprint": [
+            2.6,
+            0.34
+          ],
+          "bounds": {
+            "min": [
+              -1.3,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              1.3,
+              0.23,
+              0.145
+            ]
+          },
+          "triangles": 36,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "shutter_box",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              2.0,
+              3.2
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.148
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_sansevieria_lod1": {
+          "node": "extkit_plant_sansevieria_lod1",
+          "size": [
+            0.56,
+            0.92,
+            0.4032
+          ],
+          "footprint": [
+            0.56,
+            0.4032
+          ],
+          "bounds": {
+            "min": [
+              -0.2128,
+              0.0,
+              -0.18
+            ],
+            "max": [
+              0.2128,
+              0.91248,
+              0.18
+            ]
+          },
+          "triangles": 156,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.18
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_aloe_lod1": {
+          "node": "extkit_plant_aloe_lod1",
+          "size": [
+            0.72,
+            0.61,
+            0.61
+          ],
+          "footprint": [
+            0.72,
+            0.61
+          ],
+          "bounds": {
+            "min": [
+              -0.279695,
+              0.0,
+              -0.259818
+            ],
+            "max": [
+              0.279695,
+              0.60248,
+              0.259818
+            ]
+          },
+          "triangles": 156,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.280111
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_fern_lod1": {
+          "node": "extkit_plant_fern_lod1",
+          "size": [
+            0.83,
+            0.63,
+            0.71
+          ],
+          "footprint": [
+            0.83,
+            0.71
+          ],
+          "bounds": {
+            "min": [
+              -0.310399,
+              0.0,
+              -0.325754
+            ],
+            "max": [
+              0.310399,
+              0.62988,
+              0.325754
+            ]
+          },
+          "triangles": 306,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.297547
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_geranium_lod1": {
+          "node": "extkit_plant_geranium_lod1",
+          "size": [
+            0.7,
+            0.65,
+            0.504
+          ],
+          "footprint": [
+            0.7,
+            0.504
+          ],
+          "bounds": {
+            "min": [
+              -0.266,
+              0.0,
+              -0.18
+            ],
+            "max": [
+              0.266,
+              0.61548,
+              0.18
+            ]
+          },
+          "triangles": 420,
+          "parts": 7,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.187074
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_croton_lod1": {
+          "node": "extkit_plant_croton_lod1",
+          "size": [
+            0.66,
+            0.91,
+            0.4752
+          ],
+          "footprint": [
+            0.66,
+            0.4752
+          ],
+          "bounds": {
+            "min": [
+              -0.2508,
+              0.0,
+              -0.187932
+            ],
+            "max": [
+              0.2508,
+              0.79498,
+              0.187932
+            ]
+          },
+          "triangles": 168,
+          "parts": 6,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.205991
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_plant_pothos_lod1": {
+          "node": "extkit_plant_pothos_lod1",
+          "size": [
+            0.69,
+            0.73,
+            0.64
+          ],
+          "footprint": [
+            0.69,
+            0.64
+          ],
+          "bounds": {
+            "min": [
+              -0.2622,
+              0.0,
+              -0.229222
+            ],
+            "max": [
+              0.2622,
+              0.72248,
+              0.229222
+            ]
+          },
+          "triangles": 228,
+          "parts": 5,
+          "tags": [
+            "extkit",
+            "plant",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.6,
+              2.8
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.297675
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": true
+        },
+        "extkit_lattice_square_lod1": {
+          "node": "extkit_lattice_square_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 86,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false
+        },
+        "extkit_lattice_diamond_lod1": {
+          "node": "extkit_lattice_diamond_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 662,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false
+        },
+        "extkit_lattice_flower_lod1": {
+          "node": "extkit_lattice_flower_lod1",
+          "size": [
+            1.2,
+            1.2,
+            0.15
+          ],
+          "footprint": [
+            1.2,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -0.60125,
+              0.0,
+              -0.0705
+            ],
+            "max": [
+              0.60125,
+              1.195,
+              0.0705
+            ]
+          },
+          "triangles": 1526,
+          "parts": 1,
+          "tags": [
+            "extkit",
+            "lattice",
+            "lod"
+          ],
+          "anchors": {
+            "wallSide": "rear",
+            "heightRange": [
+              0.2,
+              3.0
+            ],
+            "wallClearance": 0.03,
+            "facadeZones": [
+              "back",
+              "side"
+            ],
+            "position": [
+              0,
+              0,
+              -0.0705
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ],
+            "reference": "near-geometry rear clearance plane"
+          },
+          "smallProp": false
+        }
+      }
+    }
+  ],
+  "materials": "extkit/materials.json",
+  "catalogue": "tools/blender/extkit.catalog.json",
+  "lodPolicy": {
+    "switchMetres": 18,
+    "tinyCullMetres": 35,
+    "integration": "Recommendations only; runtime integration is untested."
+  },
+  "artifacts": [
+    {
+      "path": "assets/models/extkit/extkit_lod.glb",
+      "bytes": 653108,
+      "sha256": "d2382043e1836c407c41c7805875ea7077ce5c653bc44643126216fb40a0f474"
+    },
+    {
+      "path": "assets/models/extkit/extkit_near.glb",
+      "bytes": 2629920,
+      "sha256": "56c562993bc55e73ce908361016aea88723399dc41cab14f7129a1c05a4f7f9a"
+    },
+    {
+      "path": "assets/models/extkit/materials.json",
+      "bytes": 25553,
+      "sha256": "2c237fb5b40a602e35df11f1900a130262537a4bb5e4cbcc06fda3da60c32356"
+    },
+    {
+      "path": "assets/textures/extkit/atlas.png",
+      "bytes": 178229,
+      "sha256": "3902363b8d5885d53abc46f30a5d8980ce8268eb60a23c59a3fe46f806ebf2be"
+    },
+    {
+      "path": "assets/textures/extkit/atlas_normal.png",
+      "bytes": 96020,
+      "sha256": "30fe59219a4dad01992698ea3f259a59f32b70e70e6b45bcb35ba8c1a7d71fd5"
+    },
+    {
+      "path": "assets/textures/extkit/atlas_orm.png",
+      "bytes": 106898,
+      "sha256": "ac3060ed3bad7600cebbcc457d139484f05527f9ae9d08d6ffca95d952db3c49"
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_albedo.ktx2",
+      "bytes": 262055,
+      "sha256": "84dd27185e6795db7f4ca0f58e0021d4a0ae1bd74c445b1d2c2ae0bd40dc49e8"
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_normal.ktx2",
+      "bytes": 239572,
+      "sha256": "2cc4d39e732f8e69944a627a4dc930127b899a968d308e6ee2171869edc07515"
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_orm.ktx2",
+      "bytes": 95224,
+      "sha256": "03bdf3066785451c0ec42a989db5b9cd1dae80cbcbd90dcf175b167df1edc690"
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_albedo.ktx2",
+      "bytes": 194493,
+      "sha256": "795f3b45e7ef9e40e2a19cc6b1f30bf0e1cd245ea76be474db8315a749c955dc"
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_normal.ktx2",
+      "bytes": 254330,
+      "sha256": "d64fcbaf10cfd6b2281adb2a1042ef15787461adf4723db609213415385c2033"
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_orm.ktx2",
+      "bytes": 100669,
+      "sha256": "b5fbbf5e588033105752034a38acf98dfa69ef833d93d9162df273a6a51a98ad"
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_albedo.ktx2",
+      "bytes": 188292,
+      "sha256": "c8d9c8343a4639c29e9307af9211835e4196f555856c301b65963de301bdb27d"
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_normal.ktx2",
+      "bytes": 8011,
+      "sha256": "fb00b03bae295bfab74bdb51d34e26f414db6c35a903503931d5257aa7f0bde4"
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_orm.ktx2",
+      "bytes": 21577,
+      "sha256": "8785c25193fc73838137e5930d889f63c9a637e66d9e0144943482d198ef9117"
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_albedo.ktx2",
+      "bytes": 216253,
+      "sha256": "c97c3a65f205fe8b375ccf9e1997887db5cb3049e802e162b2c9255cb435404d"
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_normal.ktx2",
+      "bytes": 33298,
+      "sha256": "f642a475d803263cf9d2d6f3902ed97967990eb449cd029180c594a983ba2634"
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_orm.ktx2",
+      "bytes": 156495,
+      "sha256": "4c12c2e85b0e9a8c12f2fc7560664d779a717ad9221ea8d45f026ab1618a1e00"
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_albedo.ktx2",
+      "bytes": 274989,
+      "sha256": "c4b4c04cf826ed00fcebbf9cce3b53a3d4ac92c1953b9614afc9da0c938bf73f"
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_normal.ktx2",
+      "bytes": 216877,
+      "sha256": "cb94f639e600f2dfd754f16810df6b8762972cf15a03f991cfede0f517a8d1be"
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_orm.ktx2",
+      "bytes": 85402,
+      "sha256": "0fb65c5a1928c0e603531782de7e252199c316744d048a9c224d18ea970d0439"
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_albedo.ktx2",
+      "bytes": 199837,
+      "sha256": "b2ec8bd8dd0a4a9dc68b8eb9030a52324cd1b201716c17cdeb24b6e46fcd4e73"
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_normal.ktx2",
+      "bytes": 106441,
+      "sha256": "554c81df770e014e8d9dfa5e11f21b626e835b779c4f3bbd1bc93c444e0fac3f"
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_orm.ktx2",
+      "bytes": 75590,
+      "sha256": "035ee6ffd66cfc3d7be8de5eb9c5fc74882eb082e3cf6bc1e216fb601eff454c"
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_albedo.ktx2",
+      "bytes": 218351,
+      "sha256": "034d97733c888a76fa00000782f18c92ed10965d9ae103089ef3038850446272"
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_normal.ktx2",
+      "bytes": 239591,
+      "sha256": "b957e34bd04a21e8dc5bd788e3f962235cc2d0fa5ea373fdb6dff14c001b0b71"
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_orm.ktx2",
+      "bytes": 92419,
+      "sha256": "906d1d82d6e54842641de95138dc83eb083acb643f468b3934c356d8cfd39cee"
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_albedo.ktx2",
+      "bytes": 192834,
+      "sha256": "e26e7d9cc9d638cc70d36ee120163fc72d262398d058bd18c64ac8602252f211"
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_normal.ktx2",
+      "bytes": 232945,
+      "sha256": "9eda054a49da30cc630151677d9802a8a58d81bb15fecd56bf1d6710d6e8459c"
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_orm.ktx2",
+      "bytes": 93267,
+      "sha256": "8ade7f1c8d975b8b4850804d8a0e8c2e3002f622300910c3fb5b2203d8963f73"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_albedo.ktx2",
+      "bytes": 171088,
+      "sha256": "a26d79a9a89e8f995c6fb498951b99036a0d9c63119eb2f447611cd6d38d95e4"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_albedo.ktx2",
+      "bytes": 167938,
+      "sha256": "b62b2fd7b57a0beeaa79ac7d5438dca9cec1a31680af803adaed8be825d9b495"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_normal.ktx2",
+      "bytes": 40262,
+      "sha256": "cfb46c753d524423bef6a9004db8d2d01734dfe72dae947cc7c5228ba416f50c"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_orm.ktx2",
+      "bytes": 167178,
+      "sha256": "8723f79dd2bbf778a6cada38581fdd7774f7f456e1b17ed7636085bbc8c7d06d"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_normal.ktx2",
+      "bytes": 39607,
+      "sha256": "e339d205507408f6195195a6a38411902dffad9f09a93a38df1437305511347a"
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_orm.ktx2",
+      "bytes": 152544,
+      "sha256": "8aa125db3a42fcea870639e727f8ca5622225296647aa6f4ea305aa525487937"
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_albedo.ktx2",
+      "bytes": 255953,
+      "sha256": "748d8f6fe249e6bcf795047ef1d3ef79fe918c24f345fe196b0754252d290c14"
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_normal.ktx2",
+      "bytes": 240345,
+      "sha256": "4d0a68bdef0cbd2f67ec9b9fbb1cef440a791a87d96a87cdaa14fadbae2d2d38"
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_orm.ktx2",
+      "bytes": 94212,
+      "sha256": "ba0efdc299bd2e527bf7208734b6f435553ff1312a7ed38ea1be916e7f33fdbe"
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_albedo.ktx2",
+      "bytes": 252747,
+      "sha256": "7794bd9e6262e1e50d9b5d71762629bbf43220c7648ded3692289de02cc29f48"
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_normal.ktx2",
+      "bytes": 227463,
+      "sha256": "dcd53f8147aaa37669cd31456052c1c9ae7a66041875c849fc7742c9c6567104"
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_orm.ktx2",
+      "bytes": 93761,
+      "sha256": "3fed1b2d814e1cfc0b96ab7473a17d29a82675333d1de657450fc46bd22b1546"
+    },
+    {
+      "path": "tools/blender/extkit.catalog.json",
+      "bytes": 55662,
+      "sha256": "aac89063fa090f766c354e9e3246b31a7f33ed2c6fac20d7eb2fdeab2862eec5"
+    }
+  ]
+}

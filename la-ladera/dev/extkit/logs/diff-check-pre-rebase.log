@@ -1,0 +1,9 @@
+UTC start: 2026-11-03T05:59:10.457754+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: git diff --cached --check
+
+la-ladera/dev/extkit/logs/geometry-probe-fern-frame.log:137: trailing whitespace.
++TOTAL 66414 13908 FAILURES 0 
+
+UTC end: 2026-11-03T05:59:10.484478+00:00
+Exit status: 2

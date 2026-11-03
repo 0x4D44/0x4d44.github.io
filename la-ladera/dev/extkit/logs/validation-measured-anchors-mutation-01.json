@@ -1,0 +1,15 @@
+{
+  "started": "2026-11-03T05:11:50.154823+00:00",
+  "ended": "2026-11-03T05:11:55.678160+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tests/extkit-mutations.mjs",
+    "--only",
+    "measured_anchors"
+  ],
+  "exitCode": 0,
+  "log": "validation-measured-anchors-mutation-01.log"
+}

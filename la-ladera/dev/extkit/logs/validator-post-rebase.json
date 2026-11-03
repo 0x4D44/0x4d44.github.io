@@ -1,0 +1,15 @@
+{
+  "started": "2026-11-03T06:00:29.464950+00:00",
+  "ended": "2026-11-03T06:00:32.298813+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/blender/extkit_validate.mjs",
+    "--complete",
+    "--json"
+  ],
+  "exitCode": 0,
+  "log": "validator-post-rebase.log"
+}

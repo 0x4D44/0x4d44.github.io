@@ -1,0 +1,2869 @@
+{
+  "version": 1,
+  "units": "m",
+  "axes": "+Y up, +Z front",
+  "origin": "base, centred X/Z footprint",
+  "libraryOnly": true,
+  "license": "CC0-1.0",
+  "drawnStrings": [],
+  "design": "Original Colombian exterior fittings; visual scenery only.",
+  "assets": [
+    {
+      "id": "extkit_tank_500_blue_steel",
+      "label": "Tanque azul de 500 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.22,
+        1.67,
+        1.14
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 500,
+        "colour": "blue",
+        "stand": "steel",
+        "radius": 0.46,
+        "bodyHeight": 0.91,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_500_blue_block",
+      "label": "Tanque azul de 500 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.22,
+        1.41,
+        1.14
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 500,
+        "colour": "blue",
+        "stand": "block",
+        "radius": 0.46,
+        "bodyHeight": 0.91,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_500_black_steel",
+      "label": "Tanque negro de 500 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.22,
+        1.67,
+        1.14
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 500,
+        "colour": "black",
+        "stand": "steel",
+        "radius": 0.46,
+        "bodyHeight": 0.91,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_500_black_block",
+      "label": "Tanque negro de 500 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.22,
+        1.41,
+        1.14
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 500,
+        "colour": "black",
+        "stand": "block",
+        "radius": 0.46,
+        "bodyHeight": 0.91,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_blue_steel",
+      "label": "Tanque azul de 1.000 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        1.88,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "blue",
+        "stand": "steel",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_blue_block",
+      "label": "Tanque azul de 1.000 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        1.62,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "blue",
+        "stand": "block",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_black_steel",
+      "label": "Tanque negro de 1.000 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        1.88,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "black",
+        "stand": "steel",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_black_block",
+      "label": "Tanque negro de 1.000 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        1.62,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "black",
+        "stand": "block",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_2000_blue_steel",
+      "label": "Tanque azul de 2.000 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.88,
+        2.14,
+        1.8
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 2000,
+        "colour": "blue",
+        "stand": "steel",
+        "radius": 0.79,
+        "bodyHeight": 1.38,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_2000_blue_block",
+      "label": "Tanque azul de 2.000 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.88,
+        1.88,
+        1.8
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 2000,
+        "colour": "blue",
+        "stand": "block",
+        "radius": 0.79,
+        "bodyHeight": 1.38,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_2000_black_steel",
+      "label": "Tanque negro de 2.000 litros · estructura de acero",
+      "family": "water_tank",
+      "size": [
+        1.88,
+        2.14,
+        1.8
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 2000,
+        "colour": "black",
+        "stand": "steel",
+        "radius": 0.79,
+        "bodyHeight": 1.38,
+        "standHeight": 0.56
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_2000_black_block",
+      "label": "Tanque negro de 2.000 litros · soporte de bloque",
+      "family": "water_tank",
+      "size": [
+        1.88,
+        1.88,
+        1.8
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "soporte abierto"
+      ],
+      "params": {
+        "volumeLitres": 2000,
+        "colour": "black",
+        "stand": "block",
+        "radius": 0.79,
+        "bodyHeight": 1.38,
+        "standHeight": 0.3
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_blue_raised",
+      "label": "Tanque azul de 1.000 litros · torre alta",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        2.49,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "torre de acero arriostrada"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "blue",
+        "stand": "steel",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 1.12,
+        "raised": true
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_tank_1000_black_raised",
+      "label": "Tanque negro de 1.000 litros · torre alta",
+      "family": "water_tank",
+      "size": [
+        1.5,
+        2.49,
+        1.42
+      ],
+      "smallProp": false,
+      "features": [
+        "cuerpo cilíndrico acanalado",
+        "tapa",
+        "tubo de flotador",
+        "tubo de alimentación",
+        "torre de acero arriostrada"
+      ],
+      "params": {
+        "volumeLitres": 1000,
+        "colour": "black",
+        "stand": "steel",
+        "radius": 0.6,
+        "bodyHeight": 1.12,
+        "standHeight": 1.12,
+        "raised": true
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          1.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_laundry_balcony",
+      "label": "Tendedero corto de balcón",
+      "family": "laundry",
+      "size": [
+        2.2,
+        1.1,
+        0.65
+      ],
+      "smallProp": false,
+      "features": [
+        "ropa con pliegues",
+        "pinzas",
+        "cuerda combada",
+        "soportes"
+      ],
+      "params": {
+        "shape": "balcony"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.8,
+          3.2
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.154705
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_laundry_roof",
+      "label": "Tendedero largo de azotea",
+      "family": "laundry",
+      "size": [
+        4.2,
+        2.1,
+        1.0
+      ],
+      "smallProp": false,
+      "features": [
+        "ropa con pliegues",
+        "pinzas",
+        "cuerda combada",
+        "soportes"
+      ],
+      "params": {
+        "shape": "roof"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.3
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_laundry_rotary",
+      "label": "Tendedero giratorio",
+      "family": "laundry",
+      "size": [
+        2.6,
+        2.2,
+        2.6
+      ],
+      "smallProp": false,
+      "features": [
+        "ropa con pliegues",
+        "pinzas",
+        "cuerda combada",
+        "soportes"
+      ],
+      "params": {
+        "shape": "rotary"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.3
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_laundry_pole",
+      "label": "Tendedero entre postes",
+      "family": "laundry",
+      "size": [
+        3.0,
+        2.05,
+        0.18
+      ],
+      "smallProp": false,
+      "features": [
+        "ropa con pliegues",
+        "pinzas",
+        "cuerda combada",
+        "soportes"
+      ],
+      "params": {
+        "shape": "pole"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.3
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_dish_46",
+      "label": "Antena parabólica de 46 cm",
+      "family": "satellite_dish",
+      "size": [
+        0.62,
+        0.91,
+        0.637
+      ],
+      "smallProp": true,
+      "features": [
+        "reflector cóncavo",
+        "brazo receptor",
+        "mástil",
+        "abrazadera"
+      ],
+      "params": {
+        "radius": 0.23
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          1.8,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.300149
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_dish_68",
+      "label": "Antena parabólica de 68 cm",
+      "family": "satellite_dish",
+      "size": [
+        0.84,
+        1.13,
+        0.736
+      ],
+      "smallProp": true,
+      "features": [
+        "reflector cóncavo",
+        "brazo receptor",
+        "mástil",
+        "abrazadera"
+      ],
+      "params": {
+        "radius": 0.34
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          1.8,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.300149
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_dish_92",
+      "label": "Antena parabólica de 92 cm",
+      "family": "satellite_dish",
+      "size": [
+        1.08,
+        1.37,
+        0.844
+      ],
+      "smallProp": true,
+      "features": [
+        "reflector cóncavo",
+        "brazo receptor",
+        "mástil",
+        "abrazadera"
+      ],
+      "params": {
+        "radius": 0.46
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          1.8,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.300149
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_aerial_yagi",
+      "label": "Antena de televisión Yagi",
+      "family": "tv_aerial",
+      "size": [
+        1.3,
+        1.25,
+        0.86
+      ],
+      "smallProp": true,
+      "features": [
+        "mástil",
+        "elementos receptores",
+        "cable coaxial"
+      ],
+      "params": {
+        "shape": "yagi",
+        "length": 1.2
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.5
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_aerial_bowtie",
+      "label": "Antena de televisión de mariposa",
+      "family": "tv_aerial",
+      "size": [
+        0.82,
+        1.25,
+        0.21
+      ],
+      "smallProp": true,
+      "features": [
+        "mástil",
+        "elementos receptores",
+        "cable coaxial"
+      ],
+      "params": {
+        "shape": "bowtie",
+        "length": 0.72
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.5
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_55_light",
+      "label": "Arranque de varilla de 0.55 m · oxidación ligera",
+      "family": "rebar",
+      "size": [
+        0.38,
+        0.67,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 0.55,
+        "rustLevel": "light"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_55_heavy",
+      "label": "Arranque de varilla de 0.55 m · oxidación intensa",
+      "family": "rebar",
+      "size": [
+        0.38,
+        0.67,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 0.55,
+        "rustLevel": "heavy"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_110_light",
+      "label": "Arranque de varilla de 1.10 m · oxidación ligera",
+      "family": "rebar",
+      "size": [
+        0.38,
+        1.2200000000000002,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 1.1,
+        "rustLevel": "light"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_110_heavy",
+      "label": "Arranque de varilla de 1.10 m · oxidación intensa",
+      "family": "rebar",
+      "size": [
+        0.38,
+        1.2200000000000002,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 1.1,
+        "rustLevel": "heavy"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_180_light",
+      "label": "Arranque de varilla de 1.80 m · oxidación ligera",
+      "family": "rebar",
+      "size": [
+        0.38,
+        1.92,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 1.8,
+        "rustLevel": "light"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_rebar_180_heavy",
+      "label": "Arranque de varilla de 1.80 m · oxidación intensa",
+      "family": "rebar",
+      "size": [
+        0.38,
+        1.92,
+        0.36
+      ],
+      "smallProp": true,
+      "features": [
+        "cuatro varillas",
+        "estribos de amarre",
+        "puntas desiguales"
+      ],
+      "params": {
+        "length": 1.8,
+        "rustLevel": "heavy"
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_gas_cage_1",
+      "label": "Jaula para 1 pipa de gas",
+      "family": "gas_cage",
+      "size": [
+        0.6799999999999999,
+        1.08,
+        0.61
+      ],
+      "smallProp": false,
+      "features": [
+        "jaula ventilada",
+        "pipa con hombros redondos",
+        "válvula protegida",
+        "manguera",
+        "puerta con pasador"
+      ],
+      "params": {
+        "cylinders": 1
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_gas_cage_2",
+      "label": "Jaula para 2 pipas de gas",
+      "family": "gas_cage",
+      "size": [
+        1.26,
+        1.08,
+        0.61
+      ],
+      "smallProp": false,
+      "features": [
+        "jaula ventilada",
+        "pipa con hombros redondos",
+        "válvula protegida",
+        "manguera",
+        "puerta con pasador"
+      ],
+      "params": {
+        "cylinders": 2
+      },
+      "anchors": {
+        "wallSide": "floor",
+        "heightRange": [
+          0,
+          0.2
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "normal": [
+          0,
+          -1,
+          0
+        ],
+        "reference": "floor centre"
+      }
+    },
+    {
+      "id": "extkit_pipe_straight",
+      "label": "Tubería de agua · tramo recto",
+      "family": "pipe",
+      "size": [
+        0.076,
+        1.0,
+        0.076
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "straight",
+        "radius": 0.018
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.02124
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_pipe_elbow",
+      "label": "Tubería de agua · codo",
+      "family": "pipe",
+      "size": [
+        0.3,
+        0.3,
+        0.076
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "elbow",
+        "radius": 0.018
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.02124
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_pipe_tee",
+      "label": "Tubería de agua · derivación en T",
+      "family": "pipe",
+      "size": [
+        0.4,
+        0.36,
+        0.076
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "tee",
+        "radius": 0.018
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.02124
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_pipe_bracket",
+      "label": "Tubería de agua · abrazadera de pared",
+      "family": "pipe",
+      "size": [
+        0.16,
+        0.15,
+        0.18
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "bracket",
+        "radius": 0.018
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.06175
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_drain_straight",
+      "label": "Bajante · tramo recto",
+      "family": "drain",
+      "size": [
+        0.15,
+        1.0,
+        0.15
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "straight",
+        "radius": 0.055
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0649
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_drain_elbow",
+      "label": "Bajante · codo",
+      "family": "drain",
+      "size": [
+        0.3,
+        0.3,
+        0.15
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "elbow",
+        "radius": 0.055
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0649
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_drain_tee",
+      "label": "Bajante · derivación en T",
+      "family": "drain",
+      "size": [
+        0.4,
+        0.36,
+        0.15
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "tee",
+        "radius": 0.055
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0649
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_drain_bracket",
+      "label": "Bajante · abrazadera de pared",
+      "family": "drain",
+      "size": [
+        0.16,
+        0.15,
+        0.18
+      ],
+      "smallProp": true,
+      "features": [
+        "pieza modular",
+        "uniones visibles",
+        "anclaje posterior"
+      ],
+      "params": {
+        "shape": "bracket",
+        "radius": 0.055
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.1,
+          4.5
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.08025
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_meter_1",
+      "label": "Caja de medidor con cables",
+      "family": "meter_box",
+      "size": [
+        0.44,
+        0.76,
+        0.23
+      ],
+      "smallProp": true,
+      "features": [
+        "ventana de lectura",
+        "tapa metálica",
+        "cables agrupados",
+        "conducto de entrada"
+      ],
+      "params": {
+        "count": 1
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          1.1,
+          2.1
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.111
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_meter_3",
+      "label": "Caja de tres medidores con cables",
+      "family": "meter_box",
+      "size": [
+        1.32,
+        0.76,
+        0.23
+      ],
+      "smallProp": true,
+      "features": [
+        "ventana de lectura",
+        "tapa metálica",
+        "cables agrupados",
+        "conducto de entrada"
+      ],
+      "params": {
+        "count": 3
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          1.1,
+          2.1
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.111
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_transformer_pole",
+      "label": "Transformador de distribución para poste",
+      "family": "transformer",
+      "size": [
+        1.12,
+        1.5,
+        0.92
+      ],
+      "smallProp": false,
+      "features": [
+        "tanque de aceite",
+        "aletas de enfriamiento",
+        "tres aisladores",
+        "soporte de poste",
+        "cables cortos"
+      ],
+      "params": {},
+      "anchors": {
+        "wallSide": "pole",
+        "heightRange": [
+          3.5,
+          7.5
+        ],
+        "wallClearance": 0,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.46
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_cable_thin",
+      "label": "Cable fino · segmento de 0,5 m",
+      "family": "cable_segment",
+      "size": [
+        0.5,
+        0.018,
+        0.018
+      ],
+      "smallProp": true,
+      "features": [
+        "segmento reutilizable por instancias",
+        "sin vano largo"
+      ],
+      "params": {
+        "radius": 0.009,
+        "length": 0.5,
+        "instanceAxis": "+X",
+        "instanceLength": 0.5
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          2.5,
+          6.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.009
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_cable_bundle",
+      "label": "Haz de cables · segmento de 0,5 m",
+      "family": "cable_segment",
+      "size": [
+        0.5,
+        0.036,
+        0.036
+      ],
+      "smallProp": true,
+      "features": [
+        "segmento reutilizable por instancias",
+        "sin vano largo"
+      ],
+      "params": {
+        "radius": 0.018,
+        "length": 0.5,
+        "instanceAxis": "+X",
+        "instanceLength": 0.5
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          2.5,
+          6.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side",
+          "roof"
+        ],
+        "position": [
+          0,
+          0,
+          -0.017275
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_chalkboard",
+      "label": "Tablero de menú sin escribir",
+      "family": "chalkboard",
+      "size": [
+        0.64,
+        0.91,
+        0.13
+      ],
+      "smallProp": true,
+      "features": [
+        "marco de madera",
+        "celda de pizarra escribible",
+        "sin texto"
+      ],
+      "params": {},
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.8,
+          1.7
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.05875
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_1",
+      "label": "Reja · barrotes",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 0
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_2",
+      "label": "Reja · cuadrícula",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 1
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_3",
+      "label": "Reja · rombos",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 2
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_4",
+      "label": "Reja · abanico",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 3
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_5",
+      "label": "Reja · arcos",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 4
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_6",
+      "label": "Reja · espirales",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 5
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_7",
+      "label": "Reja · diagonales",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 6
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.04675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_grille_8",
+      "label": "Reja · balcones",
+      "family": "grille",
+      "size": [
+        1.2,
+        1.2,
+        0.19
+      ],
+      "smallProp": true,
+      "features": [
+        "marco metálico",
+        "patrón abierto",
+        "patas de anclaje"
+      ],
+      "params": {
+        "pattern": 7
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0895
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_shutter_100",
+      "label": "Cajón de persiana de 1.0 m",
+      "family": "shutter_box",
+      "size": [
+        1.0,
+        0.34,
+        0.34
+      ],
+      "smallProp": true,
+      "features": [
+        "cajón plegado",
+        "tapa lateral",
+        "lamas inferiores",
+        "guías cortas"
+      ],
+      "params": {
+        "width": 1.0
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          2.0,
+          3.2
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.148
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_shutter_180",
+      "label": "Cajón de persiana de 1.8 m",
+      "family": "shutter_box",
+      "size": [
+        1.8,
+        0.34,
+        0.34
+      ],
+      "smallProp": true,
+      "features": [
+        "cajón plegado",
+        "tapa lateral",
+        "lamas inferiores",
+        "guías cortas"
+      ],
+      "params": {
+        "width": 1.8
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          2.0,
+          3.2
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.148
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_shutter_260",
+      "label": "Cajón de persiana de 2.6 m",
+      "family": "shutter_box",
+      "size": [
+        2.6,
+        0.34,
+        0.34
+      ],
+      "smallProp": true,
+      "features": [
+        "cajón plegado",
+        "tapa lateral",
+        "lamas inferiores",
+        "guías cortas"
+      ],
+      "params": {
+        "width": 2.6
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          2.0,
+          3.2
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.148
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_sansevieria",
+      "label": "Lengua de suegra en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.56,
+        0.92,
+        0.4032
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "sansevieria"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.18
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_aloe",
+      "label": "Sábila en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.72,
+        0.61,
+        0.61
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "aloe"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.280111
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_fern",
+      "label": "Helecho en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.83,
+        0.63,
+        0.71
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "fern"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.297547
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_geranium",
+      "label": "Geranio en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.7,
+        0.65,
+        0.504
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "geranium"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.187074
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_croton",
+      "label": "Croto en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.66,
+        0.91,
+        0.4752
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "croton"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.205991
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_plant_pothos",
+      "label": "Potus colgante en matera de repisa",
+      "family": "plant",
+      "size": [
+        0.69,
+        0.73,
+        0.64
+      ],
+      "smallProp": true,
+      "features": [
+        "matera con borde",
+        "tierra",
+        "hojas modeladas",
+        "repisa con escuadras"
+      ],
+      "params": {
+        "kind": "pothos"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.6,
+          2.8
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.297675
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_lattice_square",
+      "label": "Celosía de bloque · cuadrada",
+      "family": "lattice",
+      "size": [
+        1.2,
+        1.2,
+        0.15
+      ],
+      "smallProp": false,
+      "features": [
+        "huecos abiertos",
+        "piezas de concreto",
+        "juntas de mortero"
+      ],
+      "params": {
+        "pattern": "square"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.2,
+          3.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0705
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_lattice_diamond",
+      "label": "Celosía de bloque · rombos",
+      "family": "lattice",
+      "size": [
+        1.2,
+        1.2,
+        0.15
+      ],
+      "smallProp": false,
+      "features": [
+        "huecos abiertos",
+        "piezas de concreto",
+        "juntas de mortero"
+      ],
+      "params": {
+        "pattern": "diamond"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.2,
+          3.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0705
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    },
+    {
+      "id": "extkit_lattice_flower",
+      "label": "Celosía de bloque · flor",
+      "family": "lattice",
+      "size": [
+        1.2,
+        1.2,
+        0.15
+      ],
+      "smallProp": false,
+      "features": [
+        "huecos abiertos",
+        "piezas de concreto",
+        "juntas de mortero"
+      ],
+      "params": {
+        "pattern": "flower"
+      },
+      "anchors": {
+        "wallSide": "rear",
+        "heightRange": [
+          0.2,
+          3.0
+        ],
+        "wallClearance": 0.03,
+        "facadeZones": [
+          "back",
+          "side"
+        ],
+        "position": [
+          0,
+          0,
+          -0.0705
+        ],
+        "normal": [
+          0,
+          0,
+          -1
+        ],
+        "reference": "near-geometry rear clearance plane"
+      }
+    }
+  ]
+}

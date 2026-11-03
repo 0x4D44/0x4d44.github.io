@@ -1,0 +1,30 @@
+{
+  "started": "2026-11-03T05:06:13.327337+00:00",
+  "ended": "2026-11-03T05:06:45.814364+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender",
+    "--background",
+    "--factory-startup",
+    "--threads",
+    "2",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "la-ladera/tools/blender/extkit_contact.py",
+    "--",
+    "--out",
+    "/workspace/scratch/597af25581a6/review-sample",
+    "--only",
+    "extkit_tank_1000_blue_steel,extkit_laundry_balcony,extkit_plant_geranium,extkit_grille_8",
+    "--contacts-only",
+    "--samples",
+    "8",
+    "--decode-python",
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python"
+  ],
+  "exitCode": 0,
+  "log": "review-sample-01.log"
+}

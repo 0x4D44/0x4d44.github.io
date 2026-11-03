@@ -1,0 +1,17 @@
+{
+  "started": "2026-11-03T05:41:52.796994+00:00",
+  "ended": "2026-11-03T05:41:53.926656+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "python",
+    "la-ladera/tools/blender/extkit_sheets.py",
+    "--renders",
+    "/workspace/scratch/597af25581a6/review-final-release",
+    "--out",
+    "la-ladera/dev/extkit"
+  ],
+  "exitCode": 0,
+  "log": "sheets-final.log"
+}

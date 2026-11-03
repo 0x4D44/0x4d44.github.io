@@ -1,0 +1,197 @@
+UTC start: 2026-11-03T05:03:09.275111+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --input-type=module -e 'import {readFileSync} from "node:fs"; import {ROOT,validateCatalogue,validateMaterialDefinitions,inspectTextures} from "./la-ladera/tools/blender/extkit_validate.mjs"; const c=JSON.parse(readFileSync(ROOT+"/tools/blender/extkit.catalog.json")); const m=JSON.parse(readFileSync(ROOT+"/assets/models/extkit/materials.json")); console.log("CATALOGUE",validateCatalogue(c).size); validateMaterialDefinitions(m); const t=inspectTextures(ROOT,m); console.log(JSON.stringify({textureBytes:t.textureBytes,gpuBytes:t.gpuBytes,gpuCompressedWallBytes:t.gpuCompressedWallBytes,gpuAtlasBytes:t.gpuAtlasBytes,textures:t.textures.length,seams:t.textures.filter(x=>x.wall).map(x=>({wall:x.wall,channel:x.channel,seamMax:x.seamMax}))},null,2));'
+
+CATALOGUE 65
+{
+  "textureBytes": 6257029,
+  "gpuBytes": 37749372,
+  "gpuCompressedWallBytes": 33555072,
+  "gpuAtlasBytes": 4194300,
+  "textures": 39,
+  "seams": [
+    {
+      "wall": "extkit_wall_azul_anil",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_azul_anil",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_azul_anil",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_turquesa",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_turquesa",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_turquesa",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_terracota",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_terracota",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_terracota",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_verde_menta",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_verde_menta",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_verde_menta",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_rosado",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_rosado",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_rosado",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_bloque",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_bloque",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_bloque",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_baldosin",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_baldosin",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_baldosin",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_panete",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_panete",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_panete",
+      "channel": "orm",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_cal",
+      "channel": "map",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_cal",
+      "channel": "normal",
+      "seamMax": 0
+    },
+    {
+      "wall": "extkit_wall_cal",
+      "channel": "orm",
+      "seamMax": 0
+    }
+  ]
+}
+
+UTC end: 2026-11-03T05:03:12.993178+00:00
+Exit status: 0

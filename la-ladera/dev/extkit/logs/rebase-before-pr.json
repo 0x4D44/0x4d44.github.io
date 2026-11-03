@@ -1,0 +1,11 @@
+{
+  "started": "2026-11-03T05:59:59.637062+00:00",
+  "ended": "2026-11-03T06:00:04.543750+00:00",
+  "argv": [
+    "git",
+    "rebase",
+    "origin/main"
+  ],
+  "exitCode": 0,
+  "log": "rebase-before-pr.log"
+}

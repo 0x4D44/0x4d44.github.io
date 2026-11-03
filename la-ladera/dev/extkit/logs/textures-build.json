@@ -1,0 +1,15 @@
+{
+  "started": "2026-11-03T05:00:46.483011+00:00",
+  "ended": "2026-11-03T05:01:07.854095+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "python",
+    "la-ladera/tools/blender/extkit_textures.py",
+    "--preview",
+    "la-ladera/dev/extkit"
+  ],
+  "exitCode": 1,
+  "log": "textures-build.log"
+}

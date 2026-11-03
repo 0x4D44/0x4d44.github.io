@@ -1,0 +1,14 @@
+{
+  "started": "2026-11-03T05:04:23.315383+00:00",
+  "ended": "2026-11-03T05:04:25.727760+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/blender/extkit_validate.mjs",
+    "--json"
+  ],
+  "exitCode": 1,
+  "log": "geometry-independent-development.log"
+}

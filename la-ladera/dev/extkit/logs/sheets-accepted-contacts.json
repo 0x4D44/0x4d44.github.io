@@ -1,0 +1,17 @@
+{
+  "started": "2026-11-03T05:57:25.998484+00:00",
+  "ended": "2026-11-03T05:57:27.200204+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "python",
+    "la-ladera/tools/blender/extkit_sheets.py",
+    "--renders",
+    "/workspace/scratch/597af25581a6/review-final-accepted",
+    "--out",
+    "la-ladera/dev/extkit"
+  ],
+  "exitCode": 0,
+  "log": "sheets-accepted-contacts.log"
+}
