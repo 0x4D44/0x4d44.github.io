@@ -2,7 +2,7 @@
 // none of them reads `ctx.sea` itself. Why: on the shipped (lazy) road `ctx.sea` does NOT exist at the milestone (the `sea` unit builds the water about 375 ms after it, measured on a real lazy page)
 // and under `?skip=coast` it never exists, yet a player may already stand in the shallows, and every one of those consumers must have an answer from the first frame.
 //   seaOf(ctx)    ctx.sea once engine/water.js has built the water (it is read again at every call, so a sea built late is picked up and one that was disposed is let go), else a stand-in for the
-//                 context: the same four members ({ state, time, level, slope, depth }, core/sea.js makeSea) over the PURE sea (core/sea.js with seaState(ctx.hour)) and plan.coast.heightAt, with a
+//                 context: the same members ({ state, time, level, slope, depth, under, submerged }, core/sea.js makeSea; the camera is ctx.camera) over the PURE sea (core/sea.js with seaState(ctx.hour)) and plan.coast.heightAt, with a
 //                 swell that stands still (time 0) until the water exists: a few hundred ms of a page's life, and never moving under `?skip=coast`, where the gate is shut and nobody reaches the water.
 //   seaBuilt(ctx) is the real water there?
 // The stand-in is made once per context (a WeakMap) and answers without allocating. With no plan (a bare test context) the ground is far above the datum and every depth is negative: dry land.
@@ -15,7 +15,7 @@ const DRY = 1e3;                                                             // 
 
 function standIn(ctx) {
   const state = { wind: CALM.wind, amp: [1, 1, 1, 1] };
-  return makeSea({ state, clock: () => 0, still: SEA, ground: (x, z) => ctx?.plan?.coast?.heightAt(x, z) ?? DRY, refresh: () => seaState(ctx?.hour ?? 15, state) });
+  return makeSea({ state, clock: () => 0, still: SEA, ground: (x, z) => ctx?.plan?.coast?.heightAt(x, z) ?? DRY, refresh: () => seaState(ctx?.hour ?? 15, state), eye: () => ctx?.camera?.position });
 }
 
 /** The sea as the controller, the camera and the audio read it: `ctx.sea` when the water is built, the stand-in over the pure sea when it is not. Never null. */

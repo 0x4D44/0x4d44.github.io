@@ -92,7 +92,7 @@ test('buildWater: one group of three world-fixed transparent meshes (near, mid, 
   within(near.tris, 12000, 14500, 'near triangles (13k in 2.4 m cells)');
   assert.ok(near.tris + mid.tris + far.tris < 22000, `the whole sea is ${near.tris + mid.tris + far.tris} triangles`);
   assert.deepEqual(r.systems, [5], 'one system "water" at order 5');
-  assert.deepEqual(r.sea, ['depth', 'level', 'slope', 'state', 'time'], 'ctx.sea has state, level, depth, slope (and the clock)');
+  assert.deepEqual(r.sea, ['depth', 'level', 'slope', 'state', 'submerged', 'time', 'under'], 'ctx.sea has state, level, depth, slope, under, submerged (and the clock)');
   for (const x of r.tex) assert.ok(x.w >= 64 && x.wrap, `${x.k}: the image is loaded (${x.w} px), not the placeholder, and it repeats`);
 });
 

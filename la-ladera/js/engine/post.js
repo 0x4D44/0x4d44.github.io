@@ -12,12 +12,13 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { CopyShader } from 'three/addons/shaders/CopyShader.js';
+import { LAND } from './underwater.js';
 
-const GradeShader = {
+export const GradeShader = {                     // (exported for tests/engine-underwater.test.mjs: the land's numbers are pinned there)
   name: 'LaderaGrade',
   uniforms: {
-    tDiffuse: { value: null }, uVig: { value: 0.30 }, uSat: { value: 1.06 }, uCon: { value: 0.22 }, uTime: { value: 0 }, uGrain: { value: 0.010 },
-    uAspect: { value: 1 }, uFade: { value: 0 }, uWarm: { value: new THREE.Color(1.045, 1.0, 0.93) }, uCool: { value: new THREE.Color(0.93, 0.99, 1.07) },
+    tDiffuse: { value: null }, uVig: { value: LAND.vig }, uSat: { value: 1.06 }, uCon: { value: 0.22 }, uTime: { value: 0 }, uGrain: { value: 0.010 },
+    uAspect: { value: 1 }, uFade: { value: 0 }, uWarm: { value: new THREE.Color(...LAND.warm) }, uCool: { value: new THREE.Color(...LAND.cool) },   // (the land's grade: engine/underwater.js blends from it)
   },
   vertexShader: /* glsl */`varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }`,
   fragmentShader: /* glsl */`
@@ -127,6 +128,9 @@ export class Post {
     const st = look.state, g = this.grade.uniforms;
     if (this.bloom.enabled) { this.bloom.strength = st.bloomStrength; this.bloom.threshold = st.bloomThreshold; }
     g.uSat.value = st.saturation; g.uTime.value += dt; g.uFade.value = this.fade;
+    if (st.vignette != null) g.uVig.value = st.vignette;                    // the grade under the sea (engine/underwater.js: bluer, less saturated, a vignette that closes with the breath); the land's own on land
+    if (st.cool) g.uCool.value.copy(st.cool);
+    if (st.warm) g.uWarm.value.copy(st.warm);
     try { c.render(dt); } catch (e) {
       console.error('[post] render failed, falling back', e);
       this.ctx.errors.push({ stage: 'post', message: String(e?.message ?? e) });

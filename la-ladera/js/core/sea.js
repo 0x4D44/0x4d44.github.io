@@ -88,8 +88,10 @@ export function waveTime(t, out = [0, 0, 0, 0]) { for (let i = 0; i < N_WAVES; i
  *   level(x, z, t?)         the swell above the still sea: `level` of this file times nearWeight, exactly the surface the near mesh draws (the mid and far meshes are flat)
  *   slope(x, z, t?, out?)   [dh/dx, dh/dz] of that surface: the product rule, w dh + h dw (the weight is flat nearly everywhere, but not on the last 24 m before the near mesh's seams)
  *   depth(x, z, t?)         still + level - ground: the water over the ground at (x, z), negative on land
+ *   under(x, y, z, t?)      still + level - y: how far the point (x, y, z) is under the surface at its own place, negative above it (round 8: the camera's depth, engine/look.js)
+ *   submerged               is the `eye()` (a { x, y, z }, the camera's place) more than 2 cm under the surface? false with no `eye`
  */
-export function makeSea({ state, clock = () => 0, ground, still, refresh = null }) {
+export function makeSea({ state, clock = () => 0, ground, still, refresh = null, eye = null }) {
   const gw = [0, 0];
   const sea = {
     state,
@@ -107,9 +109,19 @@ export function makeSea({ state, clock = () => 0, ground, still, refresh = null 
       return out;
     },
     depth: (x, z, t = clock()) => still + sea.level(x, z, t) - ground(x, z),
+    under: (x, y, z, t = clock()) => still + sea.level(x, z, t) - y,
+    get submerged() { const e = eye?.(); return !!e && sea.under(e.x, e.y, e.z) > SUBMERGED; },
   };
   return sea;
 }
+/** How far under the surface a camera is before it is `submerged` (m): a ripple's worth, so a head that bobs at the waterline is not in and out of the sea every frame. */
+export const SUBMERGED = 0.02;
+
+/**
+ * How far the swell runs up the foreshore over the still sea's wet line (m, 0..0.10): it breathes with the long swell (`phase`, wave 0's omega t, engine/shaderpatch.js `uSwash`) and is smaller in a calm
+ * (`ampSum`, the sum of the live amplitudes: 0.27 m at a calm morning, 0.5 m and more in the afternoon breeze). The sand's wet line is the still sea + 12 cm + this.
+ */
+export function swashRunup(phase, ampSum) { return 0.10 * (0.5 + 0.5 * Math.sin(phase + 0.9)) * Math.min(1, Math.max(0.4, ampSum / 0.27)); }
 
 // ---- where the surface moves ---------------------------------------------------------------------------------------------------------
 /** The near sea mesh: x +-132, z 118 to 262. Only it is displaced (the mid and far meshes are flat). Its swell fades to nothing over the last `fade` metres before the edge of its box, so the surface

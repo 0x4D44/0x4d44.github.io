@@ -8,6 +8,8 @@ import { createSky } from './sky.js';
 import { installShaderPatches, lookUniforms } from './shaderpatch.js';
 import { clamp } from '../core/util.js';
 import { setRoomHour, syncRoomLooks } from './windowroom.js';
+import { seaOf } from './seaview.js';
+import { UW, LAND, blend, fogColor, fogDensity, lightScale, grade } from './underwater.js';
 
 const D2R = Math.PI / 180;
 /** La Ladera sits near 6 deg N (Andean Colombia); declination -13 deg = late October. */
@@ -120,8 +122,11 @@ export class Look {
     this.state = {
       hour: ctx.hour, elDeg: 10, night: 0, day: 1, sunDir: new THREE.Vector3(), moonDir: new THREE.Vector3(), exposure: 1,
       bloomThreshold: 2, bloomStrength: 0.3, saturation: 1.05, indoor: 0, sunIntensity: 1,
+      // the view from under the sea (engine/underwater.js): the blend, the camera's depth, and the grade engine/post.js reads (the land's own, until a camera goes under)
+      uw: 0, uwDepth: -1, vignette: LAND.vig, cool: new THREE.Color(...LAND.cool), warm: new THREE.Color(...LAND.warm),
     };
     this.indoorTarget = 0;
+    this._underOn = false; this._wc = new THREE.Color(); this._wn = new THREE.Color(); this._rgb = [0, 0, 0]; this._grade = grade(0);
     this._v = new THREE.Vector3(); this._r = new THREE.Vector3(); this._u = new THREE.Vector3(); this._c = new THREE.Vector3();
     this._cel = {}; this._moon = {};
     this.timeScale = 0;                       // game hours per real second (0 = frozen at the golden hour)
@@ -190,6 +195,7 @@ export class Look {
     this.renderer.toneMappingExposure = p.exp + (Math.min(p.exp * INDOOR.exposure, INDOOR.exposureMax) - p.exp) * ind;
     st.bloomThreshold = p.bloomT + (Math.max(p.bloomT, INDOOR.bloomT) - p.bloomT) * ind;
     st.bloomStrength = p.bloomS + (Math.min(p.bloomS, INDOOR.bloomS) - p.bloomS) * ind;
+    st.saturation = p.sat;                                                // (the palette's every time: the sea's grade below overwrites it, and the way out must not keep it)
     scene.fog.color.copy(p.hor); scene.fog.density = p.fog * (1 - 0.35 * ind);
     su.uZenith.value.copy(p.zen); su.uHorizon.value.copy(p.hor);
     su.uGround.value.copy(p.hor).multiplyScalar(0.28);
@@ -200,6 +206,49 @@ export class Look {
     su.uSunVis.value = sstep(-2.5, 0.5, st.elDeg); su.uMoonVis.value = sstep(-3, -9, st.elDeg) * sstep(-1, 4, st.moonEl);
     su.uCity.value = 1 - sstep(-9, -1, st.elDeg);                        // the valley's lights come on at dusk (sun 1 deg below the horizon), full by 9 deg
     lookUniforms.ladGlowCol.value.copy(su.uGlowCol.value); lookUniforms.ladGlowAmt.value = p.glow * (1 - 0.6 * ind);
+    lookUniforms.ladDay.value = st.day;
+    lookUniforms.ladUnder.value = st.uw;
+    if (st.uw > 0) this._applyUnder(st.uw);
+    else if (this._underOn) this._leaveUnder();
+  }
+
+  /**
+   * How far under the surface the camera is where it is, as the blend `uw` (engine/underwater.js): 0 on land, and north of the beach nothing is asked (the sea is not there; the land's frames cost nothing).
+   * The swell is the real one when the water is built and the stand-in's (frozen at t = 0) before that: engine/seaview.js.
+   */
+  _under() {
+    const ctx = this.ctx, p = this.camera.position, st = this.state;
+    if (!ctx.plan?.coast || p.z < UW.NORTH) { st.uwDepth = -1; return 0; }
+    st.uwDepth = seaOf(ctx).under(p.x, p.y, p.z);
+    return blend(st.uwDepth);
+  }
+
+  /**
+   * The view from under the sea, by `uw` (0..1) on top of what `_applyLights` has just set for the land: the fog the water's colour and denser with depth, the light less and bluer, the bloom fewer glints, the grade
+   * bluer with a vignette that closes when the breath is going, and (from half way) the dome off and the clear colour the fog's, so that nothing past the 60 m the camera sees shows a hole.
+   */
+  _applyUnder(uw) {
+    const st = this.state, p = this.pal, scene = this.scene, depth = Math.max(0, st.uwDepth), wc = this._wc, wn = this._wn, g = this._grade;
+    this._underOn = true;
+    fogColor(st.day, this._rgb); wc.setRGB(this._rgb[0], this._rgb[1], this._rgb[2]);
+    scene.fog.color.lerp(wc, uw); scene.fog.density += (fogDensity(depth) - scene.fog.density) * uw;
+    const k = lightScale(uw, depth), m = Math.max(wc.r, wc.g, wc.b, 1e-6);
+    wn.setRGB(wc.r / m, wc.g / m, wc.b / m);                                       // (the water's hue at full strength: the light's tint, not its dimness)
+    this.hemi.intensity *= k; this.sun.intensity *= k; st.sunIntensity = this.sun.intensity; scene.environmentIntensity *= k;
+    this.hemi.color.lerp(wn, UW.TINT * uw); this.hemi.groundColor.lerp(wn, UW.TINT * uw); this.sun.color.lerp(wn, UW.TINT * uw);
+    st.bloomStrength *= 1 - (1 - UW.BLOOM) * uw; st.bloomThreshold += 0.8 * uw;
+    grade(uw, this.ctx.player?.water?.breathSoft ?? 0, p.sat, g);
+    st.saturation = g.sat; st.vignette = g.vig; st.cool.setRGB(g.cool[0], g.cool[1], g.cool[2]); st.warm.setRGB(g.warm[0], g.warm[1], g.warm[2]);
+    const gone = uw >= UW.SKY_OFF;
+    this.sky.mesh.visible = !gone;
+    scene.background = gone ? (this._bg ??= new THREE.Color()).copy(scene.fog.color) : null;
+  }
+
+  /** Back to the land: the dome, the clear colour and the grade as `_applyLights` and the palette have them (it has set the lights, the fog and the saturation already). */
+  _leaveUnder() {
+    const st = this.state;
+    this._underOn = false; this.sky.mesh.visible = true; this.scene.background = null;
+    st.vignette = LAND.vig; st.cool.setRGB(...LAND.cool); st.warm.setRGB(...LAND.warm);
   }
 
   /** Rebuild the image-based sky light from the dome (only when the sky changed; ~ms). */
@@ -224,6 +273,9 @@ export class Look {
     const target = ctx.player?.indoors ? 1 : 0;
     if (Math.abs(st.indoor - target) > 1e-3) { st.indoor += (target - st.indoor) * Math.min(1, dt * 2.5); this._applyLights(); }
     else if (st.indoor !== target) { st.indoor = target; this._applyLights(); }
+    // under the sea: the camera's depth blends the fog, the light and the grade (engine/underwater.js); every frame while it is under (the depth moves the fog), once more on the way out
+    const uw = this._under();
+    if (uw > 0 || st.uw > 0) { st.uw = uw; this._applyLights(); }
     if (this.envDirty && (this.time - this.envAt > (this.timeScale ? 2.5 : 0) || this.envAt < 0)) this.refreshEnv();
     if (ctx.roomSlots && this.time - (this._looksAt ?? -9) > 1) { this._looksAt = this.time; syncRoomLooks(ctx); }   // lit windows borrow their rooms' paint and lamp as rooms are furnished (engine/windowroom.js, R1-211)
     this.sky.uniforms.uTime.value = this.time;

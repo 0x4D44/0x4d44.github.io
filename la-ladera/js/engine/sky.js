@@ -4,6 +4,17 @@
 // The dome is drawn last at the far plane (early-z rejects everything covered by geometry). Everything is linear HDR.
 import * as THREE from 'three';
 
+// The glow of the lights on the air above them (round 8): the valley city is gone from the plan, and the lights on the horizon are the village on the west headland: 163 houses and about 470 lit windows against the city's 1,500,
+// seen from the plaza at atan(x, z) = atan(-0.777, 0.629) = -0.89 rad (west-south-west). The glow is centred there, narrow, and thin; `citySector` is the shader's sector in JS, which is what tests/engine-sky.test.mjs holds the shape of.
+export const CITY_GLOW = Object.freeze({ centre: -0.89, inner: 0.12, outer: 0.50, floor: 0.04, gain: 0.05 });
+const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+/** The glow's share at the azimuth `a` = atan(rd.x, rd.z) (0 due south, negative toward the west): 1 over the headland, the floor beyond it. */
+export function citySector(a) {
+  let d = Math.abs(a - CITY_GLOW.centre); if (d > Math.PI) d = 2 * Math.PI - d;
+  return CITY_GLOW.floor + (1 - CITY_GLOW.floor) * (1 - smoothstep(CITY_GLOW.inner, CITY_GLOW.outer, d));
+}
+const f3 = (x) => x.toFixed(3);
+
 const VERT = /* glsl */`
 varying vec3 vDir;
 void main() {
@@ -43,14 +54,15 @@ float starField( vec3 rd ) {
   float tw = 0.75 + 0.25 * sin( uTime * ( 1.5 + 3.0 * hash13( id + 2.2 ) ) + h * 80.0 );
   return smoothstep( 0.16, 0.0, d ) * mag * tw;
 }
-// The glow of the distant city on the air above it: orange, hugging the horizon, strongest down the valley (+z, south) where the districts are, thin
-// behind the hill, patchy where the parks and the river are. The lights themselves are real points on the far hillsides (engine/glow.js): the
-// terrain ring covers everything of the dome below the horizon. Fades in with uCity at dusk.
+// The glow of the far village on the air above it: orange, hugging the horizon, over the west headland (CITY_GLOW above: about -0.89 rad, narrow), thin,
+// patchy where the lanes are. The lights themselves are real points on the far hillside (engine/glow.js): the terrain ring covers everything of the
+// dome below the horizon. Fades in with uCity at dusk.
 vec3 cityGlow( vec3 rd ) {
   float h = rd.y, a = atan( rd.x, rd.z );
-  float sector = 0.10 + 0.90 * ( 1.0 - smoothstep( 0.55, 2.5, abs( a ) ) );
+  float d = abs( a - ${f3(CITY_GLOW.centre)} ); d = min( d, 6.2831853 - d );
+  float sector = ${f3(CITY_GLOW.floor)} + ${f3(1 - CITY_GLOW.floor)} * ( 1.0 - smoothstep( ${f3(CITY_GLOW.inner)}, ${f3(CITY_GLOW.outer)}, d ) );
   float districts = 0.55 + 0.45 * vnoise( vec2( a * 5.0, 1.0 ) + 3.0 );
-  return vec3( 0.95, 0.50, 0.22 ) * 0.14 * sector * districts * exp( -abs( h ) * 13.0 ) * ( h > 0.0 ? 1.0 : 0.6 );
+  return vec3( 0.95, 0.50, 0.22 ) * ${f3(CITY_GLOW.gain)} * sector * districts * exp( -abs( h ) * 13.0 ) * ( h > 0.0 ? 1.0 : 0.6 );
 }
 
 void main() {
