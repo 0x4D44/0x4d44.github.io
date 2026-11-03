@@ -19,7 +19,7 @@ import { HALF } from '../js/world/field.js';
 import { makePlan, SEED } from './world-lib.mjs';
 
 const data = JSON.parse(await readFile(new URL('../assets/models/vista/placement.json', import.meta.url), 'utf8'));
-const { plan } = makePlan(), sites = vistaSites(plan), planned = clearLandmarks(planVista(plan, data), [sites.church, ...sites.towers]);
+const { plan } = makePlan(), sites = vistaSites(plan), planned = clearLandmarks(planVista(plan, data), [sites.church, sites.lighthouse, ...sites.towers]);
 const houses = farHouses(plan, { taken: kitZones(planned) }), P = planOutskirts(plan, planned, houses);
 
 /** the footprint of a house standing at (x, z) turned ry (vista-plan.js offset(): u along the row, v out of its front) */

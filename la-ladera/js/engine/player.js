@@ -22,6 +22,7 @@ const STRIDE = { walk: 0.72, sprint: 1.05, crouch: 0.5 };   // metres per footst
 const wrap = (a) => (a > Math.PI ? a - Math.PI * 2 : a < -Math.PI ? a + Math.PI * 2 : a);
 const STALL_TIME = 1.2, STALL_DIST = 0.1, STALL_IDLE = 0.5, STALL_HINT_EVERY = 20;   // the stall net: seconds held, metres that count as "got somewhere", seconds of released keys that reset it, seconds between hints
 const PORTRAIT_FOV_MAX = 90;                           // vertical degrees: wider than this on a tall narrow screen is a fisheye (review R2-007)
+const WADE_MAX = 1.25;                                 // metres of water over the ground the player may walk into, until the swim state machine (interim, see the clamp in update())
 
 /** Vertical field of view for a screen shape: the setting in landscape; on a tall narrow screen it is widened (up to 1.35x: little shows sideways) but never
  *  above 90 degrees, sprint kick included. */
@@ -286,11 +287,16 @@ export class Player {
     if (s.blocked && dt > 0) { this.vx = (s.x - x0) / dt; this.vz = (s.z - z0) / dt; }            // slide along walls instead of pushing into them
     if (this._stallNet(dt, f !== 0 || side !== 0, tx, tz, H)) { x0 = s.x; z0 = s.z; }            // put outside a pocket: that jump is no walking (no footsteps, no speed)
 
-    // the barrio ends at the plot edge (beyond it the world is scenery)
-    const lim = CONFIG.HALF - 1.0;
-    if (Math.abs(s.x) > lim || Math.abs(s.z) > lim) {
-      s.x = clamp(s.x, -lim, lim); s.z = clamp(s.z, -lim, lim); this.vx = this.vz = 0;
-      if (!this.warnedBounds) { this.warnedBounds = true; ctx.ui.toast('Más allá solo hay monte. Mejor sigamos por el barrio.', 3600); }
+    // the barrio ends at the plot edge (beyond it the world is scenery), except south of it: the promenade, the beach and the sea out to the swim limit (plan.coast.limit, dev/FEATURE-BEACH.md)
+    const lim = CONFIG.HALF - 1.0, C = ctx.plan?.coast, zmax = C ? C.limit(s.x, s.z).z : lim;
+    if (Math.abs(s.x) > lim || s.z < -lim || s.z > zmax) {
+      s.x = clamp(s.x, -lim, lim); s.z = clamp(s.z, -lim, zmax); this.vx = this.vz = 0;
+      if (!this.warnedBounds) { this.warnedBounds = true; ctx.ui.toast(C && s.z > lim ? 'Más allá solo hay mar abierto. Mejor volvamos a la orilla.' : 'Más allá solo hay monte. Mejor sigamos por el barrio.', 3600); }
+    }
+    // INTERIM, until the swim state machine lands (A1, FEATURE-BEACH 3.3): the shallows only, never deeper than the waist (the camera must not go under the sea before the water knows how to draw that)
+    if (C && s.z > lim && C.depthAt(s.x, s.z) > WADE_MAX) {
+      s.x = x0; s.z = z0; this.vx = this.vz = 0;
+      if (!this.warnedDeep) { this.warnedDeep = true; ctx.ui.toast('El agua ya está muy honda. Por ahora, solo hasta la cintura.', 3200); }
     }
     // safety nets: NaN or a fall through the world
     if (!Number.isFinite(s.x + s.y + s.z) || s.y < this.safe.y - 60) {

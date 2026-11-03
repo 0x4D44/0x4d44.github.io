@@ -9,6 +9,7 @@ import { buildSurfaces } from './surfaces.js';
 import { buildStairs } from './stairs.js';
 import { buildRetaining, findWallRuns, findCorners, wallNodes } from './walls.js';
 import { buildFarTerrain } from './periphery.js';
+import { KERNEL_Z, GATE } from './coast.js';
 
 const TILE = 25, CPT = TILE / CELL;          // 8 x 8 tiles of 50 x 50 cells
 const CARVE = 0.07, CARVE_STAIR = 0.13;       // terrain sits this far under paved surfaces (no z-fighting, no poke-through)
@@ -126,8 +127,15 @@ function buildTerrain(ctx, plan, masks) {
 }
 
 // ---------------------------------------------------------------------------------------------------- perimeter
-/** Invisible walls just inside the plot edge: nobody walks off the map. (Visible fences / hedges are props.) */
-function buildPerimeter(ctx) {
-  const e = HALF - 0.6, t = 0.4;
-  for (const [x1, z1, x2, z2] of [[-e, -e, e, -e], [e, -e, e, e], [e, e, -e, e], [-e, e, -e, -e]]) ctx.physics.addWall({ x1, z1, x2, z2, t, id: 'perimeter' });
+/**
+ * Invisible walls just inside the plot edge: nobody walks off the map. (Visible fences / hedges are props.)
+ * The south edge is the beach's gate (coast.js): a wall that stays shut until the beach exists (coast.js setGate, called when its ground and sea are built), with the east
+ * and west walls running on to the kernel wall at the sea's end (KERNEL_Z), which the player is stopped short of by `plan.coast.limit`.
+ */
+export function buildPerimeter(ctx) {
+  const e = HALF - 0.6, t = 0.4, P = ctx.physics;
+  for (const [x1, z1, x2, z2] of [[-e, -e, e, -e], [-e, KERNEL_Z, -e, -e]]) P.addWall({ x1, z1, x2, z2, t, id: 'perimeter' });
+  P.addWall({ x1: e, z1: -e, x2: e, z2: KERNEL_Z, t, id: 'perimeter' });
+  P.addWall({ x1: e, z1: e, x2: -e, z2: e, t, id: GATE });                       // the beach's gate, shut
+  P.addWall({ x1: -e, z1: KERNEL_Z, x2: e, z2: KERNEL_Z, t, id: 'perimeter' });  // the sea's end
 }

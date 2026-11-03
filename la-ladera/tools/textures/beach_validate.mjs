@@ -1,4 +1,4 @@
-// Independent decoding gate for the OFFLINE beach texture and sprite pack.
+// Independent decoding gate for the beach texture and sprite pack: offline, except the coast's ground materials the consuming beach work registered (REGISTERED, below).
 // node la-ladera/tools/textures/beach_validate.mjs --complete [--root la-ladera] [--json]
 import '../../tests/nice.mjs';
 import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'node:fs';
@@ -23,6 +23,9 @@ export const REQUIRED = Object.freeze({
   sails_kites: [1024, 512], board_decks: [1024, 512], towels_bags: [512, 512], signs_menus: [1024, 512],
   boat_names: [512, 256], gull_sprites: [1024, 256], fish_sprites: [512, 256], crab_shells: [256, 256], seagrass_coral: [512, 512],
 });
+// What the consuming beach work has registered in the active texture manifest, one material at a time (round 7, A5: js/world/coastmesh.js and periphery.js draw the coast's
+// ground with them). Everything else of the pack stays offline: a later consumer adds its ids here, which is the review.
+export const REGISTERED = Object.freeze(['sand_dry', 'sand_wet', 'seabed_sand', 'seabed_rock', 'rock_sea', 'seawall_concrete', 'promenade_pavers']);
 const CELL_COUNTS = Object.freeze({ sails_kites: 12, board_decks: 8, towels_bags: 16, signs_menus: 10,
   boat_names: 4, gull_sprites: 8, fish_sprites: 6, crab_shells: 3, seagrass_coral: 3 });
 const ALPHA = new Set(['foam_noise', 'boat_names', 'gull_sprites', 'fish_sprites', 'crab_shells', 'seagrass_coral']);
@@ -275,8 +278,18 @@ export function validateBeach({ root = ROOT, complete = false } = {}) {
   });
   capture('offline loader contract', () => {
     const models = readFileSync(resolve(root, 'assets/models/manifest.json'), 'utf8');
-    const textures = readFileSync(resolve(root, 'assets/textures/manifest.json'), 'utf8');
-    demand(!/manifest\.beach\.json/.test(models) && !/manifest\.beach\.json|["']beach\//.test(textures), 'beach library must not enter active model or texture manifests');
+    const active = JSON.parse(readFileSync(resolve(root, 'assets/textures/manifest.json'), 'utf8'));
+    demand(!/manifest\.beach\.json/.test(models), 'beach library must not enter active model or texture manifests');
+    // The texture manifest may name the library only as the registered coast materials, each one a PNG this gate has decoded (a `source` note may mention the pack's manifest, nothing else may).
+    const library = new Set(Object.values(m.files ?? {}).map((file) => file?.path));
+    demand(active.textures && typeof active.textures === 'object', 'the active texture manifest has no `textures` table to check');
+    for (const [id, entry] of Object.entries(active.textures)) {
+      if (!entry || typeof entry !== 'object') continue;
+      const refs = Object.entries(entry).filter(([key, value]) => key !== 'source' && typeof value === 'string' && /beach/.test(value));
+      if (!refs.length) continue;
+      demand(REGISTERED.includes(id), `beach library must not enter active model or texture manifests: "${id}" is not a registered coast material`);
+      for (const [key, value] of refs) demand(library.has(value), `beach library must not enter active model or texture manifests: "${id}.${key}" (${value}) is not a PNG of the library`);
+    }
   });
   report.ok = report.failures.length === 0;
   return report;

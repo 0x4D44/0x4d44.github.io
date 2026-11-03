@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { farCityLights } from '../js/engine/glow.js';
 import { makeFarHeight, urbanDensity } from '../js/world/periphery.js';
 import { makePlan } from './world-lib.mjs';
+import { SEA } from '../js/world/coast.js';
 
 const { plan } = makePlan();
 const far = makeFarHeight(plan), density = (x, z) => urbanDensity(plan, x, z);
@@ -17,7 +18,7 @@ test('the city is deterministic for a seed and changes with the seed', () => {
   assert.deepEqual(farCityLights({ far, density, seed: plan.seed }), real);
   const other = farCityLights({ far, density, seed: plan.seed + 1 });
   assert.notDeepEqual(other.slice(0, 20), real.slice(0, 20));
-  assert.ok(Math.abs(other.length - real.length) < real.length * 0.2, `another seed gives a similar size (${other.length} vs ${real.length})`);
+  assert.ok(Math.abs(other.length - real.length) < real.length * 0.35, `another seed gives a similar size (${other.length} vs ${real.length})`);       // 0.2 of the valley city's 2,700 lights, 0.35 of the few hundred on the flanks and the headland: one patch of the "quarter" noise is a larger share now
   // the seed decides WHICH cells are lit, not only where inside a cell the light stands: two seeds share well under half of their lit 12 m cells
   const cells = (list) => new Set(list.map((p) => `${Math.floor(p.x / 12)},${Math.floor(p.z / 12)}`));
   const a = cells(real), b = cells(other), both = [...a].filter((k) => b.has(k)).length, jaccard = both / (a.size + b.size - both);
@@ -35,7 +36,7 @@ test('the plot stays free of far lights whatever the density says, and the light
 
 test('a few thousand lights, none in the plot, every one above the ground and inside the camera range', (t) => {
   t.diagnostic(`${real.length} far-city lights`);
-  assert.ok(real.length > 1500 && real.length <= 9000, `${real.length} lights`);
+  assert.ok(real.length > 300 && real.length <= 9000, `${real.length} lights`);                            // the valley city is gone (round 7, the bay): the lights climb the flanks and the headland village, a few hundred
   for (const p of real) {
     assert.ok(!(Math.abs(p.x) < 108 && Math.abs(p.z) < 108), `light inside the plot at ${p.x.toFixed(0)}, ${p.z.toFixed(0)}`);
     assert.ok(p.y >= far(p.x, p.z) + 2.3 && p.y <= far(p.x, p.z) + 8.5, `height above ground ${(p.y - far(p.x, p.z)).toFixed(2)} m`);
@@ -51,13 +52,15 @@ test('lights are scattered, not laid out on a lattice, and stand at different he
   assert.ok(Math.max(...up) - Math.min(...up) > 3, `heights above ground span ${Math.min(...up).toFixed(1)} to ${Math.max(...up).toFixed(1)} m`);
 });
 
-test('the lights sit where the land is built up: nothing on bare land, many more over the valley district than behind the hill', () => {
+test('the lights sit where the land is built up: nothing on bare land or in the sea, many more around the bay and on the flanks than behind the hill', () => {
   assert.deepEqual(farCityLights({ far, density: flat, seed: plan.seed }), [], 'no density, no city');
   const dens = real.map((p) => density(p.x, p.z));
   assert.ok(mean(dens) > 0.25, `mean density under the lights ${mean(dens).toFixed(2)}`);
-  assert.ok(dens.filter((d) => d <= 0.02).length < real.length * 0.01, 'lights on land that urbanDensity calls empty (a jittered edge cell or two is fine)');
-  const south = real.filter((p) => p.z > 135).length, north = real.filter((p) => p.z < -135).length;
-  assert.ok(south > north * 3, `valley ${south} vs hill ${north}: the city lies down the valley`);
+  assert.ok(dens.filter((d) => d <= 0.02).length < real.length * 0.02, 'lights on land that urbanDensity calls empty (a jittered edge cell or two is fine)');
+  const bay = real.filter((p) => p.z > -135).length, north = real.filter((p) => p.z < -135).length;
+  assert.ok(bay > north * 3, `bay and flanks ${bay} vs hill ${north}: the city lies round the bay (the valley city is gone, round 7)`);
+  assert.ok(farCityLights({ far, density: () => 1, seed: 3, max: 1e6 }).some((p) => far(p.x, p.z) <= SEA), 'TEETH: a map built up everywhere does put lights in the sea, so the check below can fail');
+  assert.ok(real.every((p) => far(p.x, p.z) > SEA), 'no light stands in the sea');
   const half = farCityLights({ far, density: (x, z) => density(x, z) * 0.5, seed: plan.seed });
   assert.ok(half.length < real.length * 0.75 && half.length > real.length * 0.2, `half the density keeps ${half.length} of ${real.length}`);
 });

@@ -137,3 +137,16 @@ test('terrace pot clearance applies only to floor furniture in the same room', (
   assert.equal(plantClearOfFurniture([f], 'roof', 1, 2), false); assert.equal(plantClearOfFurniture([f], 'other', 1, 2), true);
   assert.equal(plantClearOfFurniture([{ ...f, kind: 'wall' }], 'roof', 1, 2), true); assert.equal(plantClearOfFurniture([], 'roof', 1, 2), true);
 });
+
+// The boot's warm-up frame compiles each batch's programs as the batch stands at the spawn, and three keys a program on `instanceColor !== null`. A batch that held no instance then had no colours yet: with no tree within 13 m of the
+// spawn, the shadow-depth program made for every tree's LOD 0 was the colourless one, and the first tree to come near (a banana east of the kiosk L01) compiled the coloured one in the frame that drew it
+// (engine-warm.test.mjs: "the first frame inside L22, L31 and L40 (and a hall and a kiosk) compiles nothing").
+test('every batch has its instance colours from finalize(), so a tree drawn later runs the program the warm-up compiled', () => {
+  const ctx = context(), lib = new VegetationLibrary(ctx); addFamily(lib, 'almendro', [2144, 592, 116, 2]); lib.place('almendro', 0, 0, -300); lib.finalize();
+  assert.equal(lib.stats().lods[0], 0, 'no tree is near: the LOD 0 batch is empty, as at a spawn with no tree around');
+  const colours = new Map([...lib.batches].map(([k, b]) => [k, b.mesh.instanceColor]));
+  for (const [k, c] of colours) assert.ok(c, `${k} has its instance colours before it draws anything`);
+  ctx.camera.position.set(0, 2, -290); lib.update(true);
+  assert.equal(lib.stats().lods[0], 1, 'the tree is near now: the LOD 0 batch draws it');
+  for (const [k, b] of lib.batches) assert.equal(b.mesh.instanceColor, colours.get(k), `${k} keeps the attribute it had (a new one would change the program's key in the frame that draws the tree)`);
+});

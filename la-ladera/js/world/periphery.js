@@ -1,15 +1,19 @@
 // PERIPHERY (A5): the land around the 200 x 200 m plot and the plot's own rim.
-//   makeFarHeight(plan)   the ground outside the plot (mountain wall behind, side ridges, a valley in front, the road that leaves at the
-//                         foot of S1), continuous with plan.heightAt at the edge. Pure data: runs under node.
-//   buildFarTerrain(ctx)  group world.terrain.far, ONE mesh: 100 m tiles at 5 m up to +-300 m and 150 m tiles at 15 m up to +-750 m
+//   makeFarHeight(plan)   the ground outside the plot (mountain wall behind, side ridges, and in front the BAY: the beach, the sea and the headlands that frame it, coast.js;
+//                         the road that leaves at the foot of S1 and runs along the promenade to the east flank), continuous with plan.heightAt at the edge. Pure data: runs under node.
+//   buildFarTerrain(ctx)  group world.terrain.far, ONE mesh per material (grass, sand, seabed, rock): 100 m tiles at 5 m up to +-300 m and 150 m tiles at 15 m up to +-750 m;
+//                         the strip in front of the plot (coastmesh.js draws it) and the tiles far under the sea are left out
 //   buildBoundary(K)      the visible perimeter: block / brick / stone walls and zinc fences, pilasters, a welcome arch with a lowered barrier
-//                         at the end of the entry road, the road leaving the plot. The physics walls (terrain.js buildPerimeter) stay 0.35 m inside.
+//                         at the end of the entry road, the road leaving the plot. The physics walls (terrain.js buildPerimeter) stay 0.35 m inside. The south wall is gone
+//                         (the promenade is the plot's south edge): two returns at the corners and the arch stay.
 import { ss, vnoise, lerp, project, resample, pointAt } from './geom.js';
 import { HALF } from './field.js';
-import { ribbon } from './mk.js';
+import { tangents, arcs } from './mk.js';
 import { panel, PAPERS, TAGS } from './signs.js';
 import { drape } from './flora.js';
 import { dressEdge } from './edgewall.js';
+import { SEA, Z0 as COAST_Z0, BAY_X } from './coast.js';
+import { sandTone, bedTone } from './coastmesh.js';
 
 // Both the mesh builder and placement sampler use these exact cell grids.
 const FAR_TERRAIN_GRIDS = Object.freeze([
@@ -31,51 +35,62 @@ function catmull(ctrl, per = 8) {
   return out;
 }
 
+const LANE_Z = 102;                    // the road's lane along the promenade's back edge (coast.js: the deck lies z 100 to 108)
+const LANE_HALF = 2.1;                 // half its width on the promenade; on the flank it is 3.2 (buildBoundary)
+
 function roadPath(plan) {
   const s1 = plan.streets.find((s) => s.id === 'S1'), pts = s1?._d?.pts ?? [[46, 100], [46, 90]];
   const a = pts[0], b = pts[pts.length - 1], st = a[1] > b[1] ? a : b, x0 = st[0], z0 = Math.min(st[1], HALF);
-  const ctrl = [[x0, z0], [x0, z0 + 30], [x0 + 6, z0 + 62], [x0 - 4, z0 + 98], [x0 - 34, z0 + 130], [x0 - 82, z0 + 154], [x0 - 142, z0 + 170], [x0 - 214, z0 + 194], [x0 - 290, z0 + 230]];
+  // out of the arch, onto the promenade, east along its back edge (a shared lane), out at the plot's east side and up the east flank (the valley it used to cross is the bay now)
+  const ctrl = [[x0, z0], [x0, z0 + 1.5], [x0 + 3.5, LANE_Z], [x0 + 12, LANE_Z], [74, LANE_Z], [97, LANE_Z], [113, LANE_Z - 3], [140, LANE_Z - 18], [172, LANE_Z - 46], [208, LANE_Z - 86],
+    [244, LANE_Z - 132], [280, LANE_Z - 184], [316, LANE_Z - 240], [350, LANE_Z - 300]];
   const { pts: p, cum } = resample(catmull(ctrl), 4);
   return { pts: p, cum, x0, z0 };
 }
 
 // ---------------------------------------------------------------------------------------------------- relief
-/** How built-up the land outside the plot is, 0..1 (the vista puts houses there, the far terrain turns dusty under them). */
+/** How built-up the land outside the plot is, 0..1 (the vista puts houses there, the far terrain turns dusty under them, the far lights follow). The valley city of the south is gone (the bay is there):
+ * what is left is the flanks (kept 28 to 60 m back from the waterline), the north and the headland village on the west horn of the bay. */
 export function urbanDensity(plan, x, z) {
   const ax = Math.abs(x), d = Math.max(ax - HALF, Math.abs(z) - HALF);
   if (d < 7) return 0;
-  const seed = plan.seed;
-  const south = ss(135, 250, z) * (1 - ss(650, 740, z)) * (1 - 0.55 * ss(205, 235, z) * (1 - ss(262, 300, z)));      // valley district + the opposite hillside, a gap for the river
-  const flank = ss(HALF + 5, HALF + 30, ax) * (1 - ss(250, 330, ax)) * ss(-250, -110, z) * (1 - ss(135, 175, z)) * 0.85;
+  const seed = plan.seed, C = plan.coast, inland = C ? C.shoreZ(x) - z : 1e3;
+  const flank = ss(HALF + 5, HALF + 30, ax) * (1 - ss(250, 330, ax)) * ss(-250, -110, z) * ss(28, 60, inland) * 0.85;
   const north = ss(-HALF - 8, -HALF - 40, z) * (1 - ss(-170, -240, z)) * 0.42 * (1 - ss(120, 190, ax));
+  const village = C && x < 0 ? 0.95 * ss(5, 11, C.headland(x, z)) : 0;                                                // the west headland: its crown and shoulders, 5 to 11 m above the sea floor of the foot (the dry rule of the houses keeps the rest off the water)
   const patch = 0.5 + 0.5 * vnoise(x, z, 55, seed + 61);
-  return Math.max(0, Math.min(1, (south + flank + north) * (0.3 + 0.8 * patch) - 0.08));
+  return Math.max(0, Math.min(1, (flank + north + village) * (0.3 + 0.8 * patch) - 0.08));
 }
 
 export function makeFarHeight(plan) {
-  const H = plan.heightAt, seed = plan.seed, road = roadPath(plan);
-  const raw = (x, z) => {
-    const ax = Math.abs(x), d = Math.max(ax - HALF, Math.abs(z) - HALF), base = H(x, z);
-    if (d <= 0) return base;
-    const w = ss(0, 70, d);
+  const Hin = plan._inner ?? plan.heightAt, C = plan.coast, seed = plan.seed, road = roadPath(plan);
+  /** The old far land (mountain wall behind, side ridges, roll), without its valley and the hillside across it: south of the plot's edge the coast takes the place of both, and the roll calms down towards the sea. */
+  const land = (x, z) => {
+    const ax = Math.abs(x), d = Math.max(ax - HALF, Math.abs(z) - HALF), base = Hin(x, z), w = ss(0, 70, d);
     const rid = 1 - Math.min(1, Math.abs(vnoise(x + 70, z, 120, seed + 41)) * 1.5);
     const mountain = 94 * ss(-100, -340, z) * (0.5 + 0.5 * rid) * (0.72 + 0.28 * vnoise(x, z, 200, seed + 43));
     const flank = 48 * ss(HALF, 320, ax) * (0.45 + 0.55 * ss(150, -150, z)) * (0.62 + 0.38 * vnoise(x, z, 150, seed + 45));
-    const valley = -14 * ss(100, 200, z);
-    const opposite = 70 * ss(300, 580, z) * (0.8 + 0.2 * vnoise(x, z, 180, seed + 51));
-    const roll = vnoise(x, z, 75, seed + 47) * 5.5 + vnoise(x, z, 31, seed + 49) * 1.8;
-    return base + w * (mountain + flank + valley + opposite + roll);
+    const roll = (vnoise(x, z, 75, seed + 47) * 5.5 + vnoise(x, z, 31, seed + 49) * 1.8) * (1 - 0.85 * ss(COAST_Z0, COAST_Z0 + 25, z));
+    return base + w * (mountain + flank + roll);
   };
-  // the road's own profile: the terrain along it, smoothed, starting exactly at the height of the street's end
+  const raw = (x, z) => {
+    const d = Math.max(Math.abs(x) - HALF, Math.abs(z) - HALF);
+    if (d <= 0) return plan.heightAt(x, z);
+    return z > COAST_Z0 && C ? C.ground(x, z, land) : land(x, z);
+  };
+  // the road's own profile: the terrain along it, smoothed, starting exactly at the height of the street's end. On the promenade it IS the ground (the deck is flat: no smoothing), and it
+  // takes the smoothed profile of the flank over the 28 m outside the plot's east edge
   const n = road.pts.length, ys = road.pts.map((p) => raw(p[0], p[1])), sm = ys.map((_, k) => { let s = 0, c = 0; for (let j = Math.max(0, k - 8); j <= Math.min(n - 1, k + 8); j++) { s += ys[j]; c++; } return s / c; });
-  const y0 = H(road.x0, road.z0);
-  const prof = sm.map((v, k) => lerp(y0, v, ss(0, 56, road.cum[k])));
+  const y0 = Hin(road.x0, road.z0);
+  const prof = sm.map((v, k) => lerp(lerp(y0, v, ss(0, 56, road.cum[k])), ys[k], 1 - ss(BAY_X - 4, BAY_X + 24, road.pts[k][0])));
   const roadY = (s) => { const q = pointAt(road.pts, road.cum, s), i = Math.min(n - 1, q.i), u = (s - road.cum[i - 1]) / (road.cum[i] - road.cum[i - 1] || 1); return lerp(prof[i - 1], prof[i], Math.max(0, Math.min(1, u))); };
+  const bx0 = Math.min(...road.pts.map((p) => p[0])) - 16, bx1 = Math.max(...road.pts.map((p) => p[0])) + 16, bz0 = Math.min(...road.pts.map((p) => p[1])) - 16, bz1 = Math.max(...road.pts.map((p) => p[1])) + 16;
   const far = (x, z) => {
     let h = raw(x, z);
-    if (z > HALF - 3) {
+    const k = ss(BAY_X, BAY_X + 12, Math.abs(x));          // the strip in front of the plot is the coast's: the road lies on its deck, and the ground is not cut for it there
+    if (k > 0 && x > bx0 && x < bx1 && z > bz0 && z < bz1) {
       const p = project(road.pts, road.cum, x, z);
-      if (p.d < 15 && p.s > 1) h = lerp(h, roadY(p.s) - 0.07, 1 - ss(6, 15, p.d));
+      if (p.d < 15 && p.s > 1) h = lerp(h, lerp(h, roadY(p.s) - 0.07, k), 1 - ss(6, 15, p.d));
     }
     return h;
   };
@@ -169,18 +184,38 @@ export function buildFarTerrain(ctx, plan, GRASS = 'grass_patchy') {
     return [Math.min(1, r * k), Math.min(1, g * k), Math.min(1, b * k)];
   };
   // ONE mesh for the whole far land (about 48 k vertices, 42 k triangles, no shadows): as 116 tiles of 100-150 m each was a draw call (the merge pass leaves
-  // anything wider than its 96 m span alone), 54 of them in the spawn view, for a few triangles each
-  const b = ctx.batch.builder('world.terrain.far', { cast: false }), acc = b._acc(GRASS);
+  // anything wider than its 96 m span alone), 54 of them in the spawn view, for a few triangles each. One mesh PER MATERIAL since the bay: grass inland, sand along the waterline,
+  // the seabed under water and rock where a headland falls steeply into it (a handful of calls, and the strip in front of the plot and the deep sea are left out, below)
+  const b = ctx.batch.builder('world.terrain.far', { cast: false }), acc = b._acc(GRASS), C = plan.coast;
+  const rockTone = (x, z) => { const k = 1 + 0.12 * vnoise(x, z, 14, seed + 81); return [0.66 * k, 0.63 * k, 0.58 * k]; };
+  /** What a cell of the far land is made of (heights are the four corners'): grass inland, sand along the waterline (a wavy dune line), seabed under water, rock where the ground is steep by the sea. */
+  const pick = (x, z, hm, slope) => {
+    if (!C || z < COAST_Z0) return GRASS;
+    const inl = C.shoreZ(x) - z, hd = C.headland(x, z);
+    if (hm < SEA - 0.04) return hd > 1.5 ? 'seabed_rock' : 'seabed_sand';
+    if (slope > 0.5 && (hd > 3 || inl < 60)) return 'rock_sea';
+    return inl < 28 + 10 * vnoise(x, z, 17, seed + 91) ? 'sand_dry' : GRASS;
+  };
+  const tint = (mat, x, z, h) => (mat === 'sand_dry' ? sandTone(h, x, z, seed) : mat === 'seabed_sand' || mat === 'seabed_rock' ? bedTone(h, x, z, seed) : mat === 'rock_sea' ? rockTone(x, z) : colour(x, z, h));
   const tile = (x0, z0, size, cells) => {
-    const step = size / cells, ix = (i, j) => j * (cells + 1) + i;
-    const V = new Int32Array((cells + 1) ** 2), hs = new Float32Array((cells + 1) ** 2);
-    for (let j = 0; j <= cells; j++) for (let i = 0; i <= cells; i++) {
-      const x = x0 + i * step, z = z0 + j * step, h = far(x, z), e = Math.max(1.5, step * 0.6);
-      const nx = -(far(x + e, z) - far(x - e, z)) / (2 * e), nz = -(far(x, z + e) - far(x, z - e)) / (2 * e), l = Math.hypot(nx, 1, nz);
-      hs[ix(i, j)] = h;
-      V[ix(i, j)] = b.vert(acc, [x, h, z], [nx / l, 1 / l, nz / l], x * 0.25, z * 0.25, colour(x, z, h));
+    const step = size / cells, n1 = cells + 1, ix = (i, j) => j * n1 + i, hs = new Float32Array(n1 * n1);
+    let top = -Infinity;
+    for (let j = 0; j <= cells; j++) for (let i = 0; i <= cells; i++) { const h = far(x0 + i * step, z0 + j * step); hs[ix(i, j)] = h; if (h > top) top = h; }
+    if (C && (top < SEA - 6 || (x0 >= -BAY_X && x0 + size <= BAY_X && z0 >= COAST_Z0 && z0 + size <= 300))) return;     // far under the sea (it hides the ground), or the strip coastmesh.js draws
+    const maps = new Map();
+    const vtx = (mat, i, j) => {
+      let m = maps.get(mat); if (!m) maps.set(mat, m = new Int32Array(n1 * n1).fill(-1));
+      const k = ix(i, j); if (m[k] >= 0) return m[k];
+      const x = x0 + i * step, z = z0 + j * step, e = Math.max(1.5, step * 0.6);
+      const nx = -(far(x + e, z) - far(x - e, z)) / (2 * e), nz = -(far(x, z + e) - far(x, z - e)) / (2 * e), l = Math.hypot(nx, 1, nz), s = mat === GRASS ? 0.25 : 1;
+      return (m[k] = b.vert(b._acc(mat), [x, hs[k], z], [nx / l, 1 / l, nz / l], x * s, z * s, tint(mat, x, z, hs[k])));
+    };
+    for (let j = 0; j < cells; j++) for (let i = 0; i < cells; i++) {
+      const h00 = hs[ix(i, j)], h01 = hs[ix(i, j + 1)], h11 = hs[ix(i + 1, j + 1)], h10 = hs[ix(i + 1, j)];
+      const mat = pick(x0 + (i + 0.5) * step, z0 + (j + 0.5) * step, (h00 + h01 + h11 + h10) / 4, Math.max(Math.abs(h00 - h11), Math.abs(h01 - h10), Math.abs(h00 - h01), Math.abs(h10 - h11)) / step), ac = b._acc(mat);
+      const a = vtx(mat, i, j), c = vtx(mat, i, j + 1), d = vtx(mat, i + 1, j + 1), e2 = vtx(mat, i + 1, j);
+      ac.idx.push(a, c, d, a, d, e2); b.tris += 2;
     }
-    for (let j = 0; j < cells; j++) for (let i = 0; i < cells; i++) { const a = V[ix(i, j)], c = V[ix(i, j + 1)], d = V[ix(i + 1, j + 1)], e2 = V[ix(i + 1, j)]; acc.idx.push(a, c, d, a, d, e2); b.tris += 2; }
     // skirts: a 4 m apron hanging off every border, so two tiles that disagree by a few cm (or a finer and a coarser one) never show the sky between them
     const skirt = (list, nrm) => {
       for (let k = 0; k + 1 < list.length; k++) {
@@ -212,6 +247,7 @@ const WALL_TINTS = ['d9c7a0', 'cfd8c4', 'e6c9b4', 'c9d3d8', 'e3d79a', 'd8b8a8'];
 const IN = { s: [0, -1], n: [0, 1], e: [-1, 0], w: [1, 0] };            // the way the middle of the plot lies from each side of the wall: the normal of its inside face
 const INSIDE_FACE = { s: 'nz', n: 'pz', e: 'nx', w: 'px' };            // which face of the panel's box that is
 const FACE_IN = 0.2;                                                    // the inside face lies this far off a panel's axis (the wall is 0.4 m thick)
+const SOUTH_RETURN = 4.5;                                               // the south wall (coast.js: the promenade replaces it) keeps this much at each corner, m
 const wallMat = (kind, tint) => ({ block: `plaster_rough#${tint}`, brick: 'brick_red_solid', stone: 'stone_wall', zinc: 'corrugated_zinc' }[kind]);
 
 /** One run of wall: kind decides material and height. Returns { yt: its top, c: its own tone }; adds boxes to builder b, all but the face on the plot's side (`inside`, drawn by insideFace). */
@@ -261,6 +297,7 @@ export function buildBoundary(K) {
     let kind = r.pick(kinds), tint = r.pick(WALL_TINTS), left = 0;
     for (let s = -HALF + 0.2; s < HALF - 0.2; s += 2) {
       const mid = s + 1, crest = crests.at(-1);
+      if (sd.id === 's' && Math.abs(mid) < HALF - SOUTH_RETURN) { if (crest.length) crests.push([]); continue; }          // the south wall is gone: the promenade is the plot's edge (two returns at the corners stay)
       if (sd.id === 's' && Math.abs(mid - gate.x) < gate.half) { if (crest.length) crests.push([]); continue; }
       if (left <= 0) { kind = r.pick(kinds); tint = r.pick(WALL_TINTS); left = r.range(14, 38); }
       left -= 2;
@@ -316,11 +353,20 @@ export function buildBoundary(K) {
   for (const k of [-3.2, 0, 3.2]) K.occ.take(gx + k, az, 0.6);        // the barrier arm: no vehicle or prop under it
   ctx.world.boundary = stats;
 
-  // ---- the road leaves the plot: asphalt ribbon + centre line + shoulders down to the valley
+  // ---- the road leaves the plot: out of the arch, east along the promenade's back edge as a shared lane (4.2 m), then, past the plot's east side, a country road (6.4 m) up the east flank:
+  // asphalt ribbon + centre line (on the flank) + edge lines. The lane's width follows the point's distance east (`hw`)
   const rd = ctx.batch.builder('props.boundary.road', { cast: false }), pts = far.road.pts, ys = pts.map((p, k) => far.road.roadY(far.road.cum[k]));
-  ribbon(rd, 'asphalt', pts, ys, -4, 4, { dy: 0.012 });
-  ribbon(rd, 'road_line_yellow', pts, ys, -0.07, 0.07, { dy: 0.022 });
-  ribbon(rd, 'road_line_white', pts, ys, -3.6, -3.52, { dy: 0.022 }); ribbon(rd, 'road_line_white', pts, ys, 3.52, 3.6, { dy: 0.022 });
+  const tan = tangents(pts), S = arcs(pts), hw = (k) => lerp(LANE_HALF, 3.2, ss(BAY_X, BAY_X + 24, pts[k][0]));
+  const P = (k, off, dy) => [pts[k][0] - tan[k][1] * off, ys[k] + dy, pts[k][1] + tan[k][0] * off];
+  const strip = (mat, fa, fb, dy, keep = () => true) => {
+    for (let k = 0; k + 1 < pts.length; k++) {
+      if (!keep(k)) continue;
+      rd.quad(mat, P(k, fa(k), dy), P(k, fb(k), dy), P(k + 1, fb(k + 1), dy), P(k + 1, fa(k + 1), dy), { uv: [fa(k), S[k], fb(k), S[k], fb(k + 1), S[k + 1], fa(k + 1), S[k + 1]] });
+    }
+  };
+  strip('asphalt', (k) => -hw(k), (k) => hw(k), 0.012);
+  strip('road_line_yellow', () => -0.07, () => 0.07, 0.022, (k) => pts[k][0] > BAY_X + 6);
+  strip('road_line_white', (k) => -hw(k) + 0.4, (k) => -hw(k) + 0.48, 0.022); strip('road_line_white', (k) => hw(k) - 0.48, (k) => hw(k) - 0.4, 0.022);
   stats.roadM = Math.round(far.road.cum[far.road.cum.length - 1]);
   return stats;
 }

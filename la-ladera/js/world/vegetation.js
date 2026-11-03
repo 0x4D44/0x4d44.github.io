@@ -164,6 +164,10 @@ export class VegetationLibrary {
         const mesh = new THREE.InstancedMesh(level.geometry, material, count);
         mesh.name = `vegetation.${species}.lod${lod}`; mesh.count = 0; mesh.visible = false;
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        // The colours are there from the first frame (setColorAt makes the attribute, white): three keys a program on `instanceColor !== null`, and the boot's warm-up frame compiles each batch's programs as the batch
+        // stands at the spawn, instances or none. A tree's LOD 0 with no instance there had no colours, so its shadow-depth program was the colourless one, and the first tree to come within 13 m compiled the other in the
+        // frame that drew it (the first frame inside the kiosk L01 compiled a program, engine-warm.test.mjs).
+        mesh.setColorAt(0, new THREE.Color(1, 1, 1));
         mesh.castShadow = TREE_SPECIES.has(species) && lod === 0;
         mesh.receiveShadow = lod < 3; mesh.customDepthMaterial = depth;
         // Individually sphere-culled on CPU; the instance population changes with the camera.

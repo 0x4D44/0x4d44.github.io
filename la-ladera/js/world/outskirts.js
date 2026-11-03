@@ -65,8 +65,14 @@ export function takenGround(plan, planned, houses) {
   taken.mark([[-HALF - 2.5, -HALF - 2.5], [HALF + 2.5, -HALF - 2.5], [HALF + 2.5, HALF + 2.5], [-HALF - 2.5, HALF + 2.5]]);
   const road = far.road;
   if (road) for (let k = 0; k < road.pts.length; k++) taken.disc(road.pts[k][0], road.pts[k][1], 9);
-  for (const s of [sites.church, ...sites.towers]) taken.disc(s.x, s.z, s.r);
+  for (const s of [sites.church, sites.lighthouse, ...sites.towers]) taken.disc(s.x, s.z, s.r);
   taken.disc(sites.mast.x, sites.mast.z, 8);
+  const C = plan.coast;
+  if (C) {                                                            // the bay: the promenade, the beach, the sea and a band of dune 30 m inland of the waterline (coast.js): no street, tree or house plan reaches it
+    taken.mark([[-110, HALF], [110, HALF], [110, 114], [-110, 114]]);
+    const shore = []; for (let x = -OUT.reach; x <= OUT.reach; x += 20) shore.push([x, C.shoreZ(x) - 30]);
+    taken.mark([...shore, [OUT.reach, OUT.reach + 60], [-OUT.reach, OUT.reach + 60]]);
+  }
   for (const h of planned?.houses ?? []) taken.mark(rect(h.x, h.z, h.ry, -h.width / 2 - 0.3, h.width / 2 + 0.3, -h.depth / 2 - 0.3, h.depth / 2 + 1.3));
   for (const p of planned?.pieces ?? []) if (p.category === 'stair') taken.mark(rect(p.x, p.z, p.ry, -p.size[0] / 2 - 0.6, p.size[0] / 2 + 0.6, -p.size[2] / 2 - 0.6, p.size[2] / 2 + 0.6));
   for (const h of houses ?? []) taken.mark(rect(h.x, h.z, h.ry, -h.w / 2 - 0.4, h.w / 2 + 0.4, -h.d / 2 - 0.4, h.d / 2 + 3.4));
@@ -240,7 +246,7 @@ export function planLandmarks(plan, taken, ground) {
     return best;
   };
   const out = [
-    pick('tower', 150, 235, -100, 100, 6, (x, z) => 0.35 * Math.abs(z) + 0.1 * Math.abs(x - 170)),
+    pick('tower', 150, 300, -140, 110, 6, (x, z) => 0.35 * Math.abs(z) + 0.1 * Math.abs(x - 170)),   // the east flank is a terraced town now (the south's quota went to it): the free knolls lie farther out and up
     pick('chapel', -70, 90, -220, -150, 9, (x, z) => 0.3 * Math.abs(x - 30) + 0.1 * Math.abs(z + 170)),
     pick('mast', -270, -190, -150, 110, 4, (x, z) => 0.3 * Math.abs(z + 20) + 0.3 * Math.abs(x + 205)),
   ].filter(Boolean);

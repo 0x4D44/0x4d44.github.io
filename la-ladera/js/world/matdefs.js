@@ -71,4 +71,13 @@ export default {
   // lamps: emissive at night only (the engine drives glow * ctx.night)
   lamp_glow: { color: 0xfff1cf, emissive: 0xffd596, emissiveIntensity: 0, glow: 3.4, tex: false, vertexColors: false },
   lamp_glow_cool: { color: 0xf3f7ff, emissive: 0xdfeaff, emissiveIntensity: 0, glow: 3.2, tex: false, vertexColors: false },
+
+  // ---- the beach (coast.js, coastmesh.js): the Codex beach library, bound by name from assets/textures/manifest.json (assets/textures/beach/*.png). No `desc`: the texture factory leaves them alone.
+  sand_dry: { color: 0xffffff, rough: 0.97, tile: 2.5, env: 0.35 },
+  sand_wet: { color: 0xffffff, rough: 0.55, tile: 2.5, env: 0.5 },
+  seabed_sand: { color: 0xffffff, rough: 0.95, tile: 3, env: 0.3 },
+  seabed_rock: { color: 0xffffff, rough: 0.9, tile: 3, env: 0.3 },
+  rock_sea: { color: 0xffffff, rough: 0.92, tile: 2, env: 0.4 },
+  seawall_concrete: { color: 0xffffff, rough: 0.9, tile: 2, env: 0.4 },
+  promenade_pavers: { color: 0xffffff, rough: 0.88, tile: 2.4, env: 0.4 },
 };

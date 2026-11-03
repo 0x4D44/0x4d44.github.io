@@ -35,13 +35,13 @@ await buildWorld(ctx);
 const kit = await buildVistaKit(ctx, { placement: data, load: (f) => load(ctx, f) });
 await buildProps(ctx);
 ctx.batch.flushAll();
-const plan = ctx.plan, W = ctx.world, planned = W.vistaKitPlan, sites = vistaSites(plan), landmarks = [sites.church, ...sites.towers];
+const plan = ctx.plan, W = ctx.world, planned = W.vistaKitPlan, sites = vistaSites(plan), landmarks = [sites.church, sites.lighthouse, ...sites.towers];
 const footprint = (h) => { const c = Math.cos(h.ry), s = Math.sin(h.ry); return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => [h.x + (u * h.w / 2) * c + (v * h.d / 2) * s, h.z - (u * h.w / 2) * s + (v * h.d / 2) * c]); };
 
 test('the kit is built before the far houses, owns world.vistaKit*, and leaves world.vista to the far city', () => {
   assert.equal(kit.enabled, true, kit.reason);
   assert.ok(W.vistaKit === kit && W.vistaKitPlan && W.vistaKitController, 'the kit publishes its stats, plan and controller');
-  assert.ok(W.vista && W.vista.houses >= 400 && W.vista.towers === 4 && W.vista.church === 1 && W.vista.lights > 0, 'the far city is still built, with its landmarks and lights');
+  assert.ok(W.vista && W.vista.houses >= 150 && W.vista.towers === 4 && W.vista.church === 1 && W.vista.lighthouse === 1 && W.vista.lights > 0, 'the far village is still built, with its landmarks and lights');     // the valley city (1,583 rows) is gone: the far rows are the headland village and the flanks now
   assert.ok(W.vista !== W.vistaKit && W.vista.enabled === undefined, 'the two stat objects are different things');
   assert.equal(W.vista.keptOffKit, planned.houses.length, 'every kit house reserved its ground in the far rows');
 });

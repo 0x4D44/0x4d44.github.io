@@ -1,5 +1,54 @@
 {
  "textures": {
+  "sand_dry": {
+   "map": "beach/sand_dry.png",
+   "normal": "beach/sand_dry_n.png",
+   "rough": "beach/sand_dry_r.png",
+   "size": 1024,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "sand_wet": {
+   "map": "beach/sand_wet.png",
+   "normal": "beach/sand_wet_n.png",
+   "rough": "beach/sand_wet_r.png",
+   "size": 1024,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "seabed_sand": {
+   "map": "beach/seabed_sand.png",
+   "normal": "beach/seabed_sand_n.png",
+   "rough": "beach/seabed_sand_r.png",
+   "size": 1024,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "seabed_rock": {
+   "map": "beach/seabed_rock.png",
+   "normal": "beach/seabed_rock_n.png",
+   "rough": "beach/seabed_rock_r.png",
+   "size": 512,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "rock_sea": {
+   "map": "beach/rock_sea.png",
+   "normal": "beach/rock_sea_n.png",
+   "rough": "beach/rock_sea_r.png",
+   "size": 1024,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "seawall_concrete": {
+   "map": "beach/seawall_concrete.png",
+   "normal": "beach/seawall_concrete_n.png",
+   "rough": "beach/seawall_concrete_r.png",
+   "size": 512,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
+  "promenade_pavers": {
+   "map": "beach/promenade_pavers.png",
+   "normal": "beach/promenade_pavers_n.png",
+   "rough": "beach/promenade_pavers_r.png",
+   "size": 512,
+   "source": "the Codex beach library (assets/textures/manifest.beach.json), registered for the coast"
+  },
   "vehicle_paint": {
    "map": "vehicles/paint.png",
    "size": [1024, 1024],

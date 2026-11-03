@@ -8,6 +8,8 @@ import { generatePlan } from '../js/world/plan.js';
 import { buildFarTerrain, makeFarHeight, makeFarTerrainSampler } from '../js/world/periphery.js';
 import { planVista, placementErrors, outsideVistaPlot, vistaBounds, VISTA_LIMITS, VISTA_CATEGORIES } from '../js/world/vista-plan.js';
 import { buildVistaKit, kitParts, selectVistaLODs } from '../js/world/vista-kit.js';
+import { SEA } from '../js/world/coast.js';
+import { DRY } from '../js/world/vista.js';
 
 const base = new URL('../assets/models/', import.meta.url);
 const data = JSON.parse(await readFile(new URL('vista/placement.json', base), 'utf8'));
@@ -42,13 +44,16 @@ test('TEETH: missing LODs, duplicate IDs, unknown categories and over-budget geo
   }
 });
 
-test('whole footprints stay outside the playable plot and river, and every stack follows its support metadata', () => {
+test('whole footprints stay outside the playable plot and out of the bay, and every stack follows its support metadata', () => {
   const byId = new Map(planned.pieces.map((p) => [p.id, p]));
   assert.equal(byId.size, planned.pieces.length);
+  const far = makeFarHeight(ctx.plan);
+  assert.ok(far(0, 180) < SEA - 1, 'the bay is really there: 80 m off the beach is deep water');
+  assert.ok(planned.pieces.some((p) => vistaBounds(p).z1 > 97), 'TEETH: terraces stand beyond the plot\'s south edge (the headland village), so the dry-ground check below is not vacuous');
   for (const p of planned.pieces) {
     assert.ok(outsideVistaPlot(p), p.id);
     const bounds = vistaBounds(p);
-    assert.ok(bounds.z1 <= 204 || bounds.z0 >= 282, `${p.id} leaves the river open`);
+    if (bounds.z1 > 97) for (const [x, z] of [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x0, bounds.z1], [bounds.x1, bounds.z1]]) assert.ok(far(x, z) >= SEA + DRY, `${p.id} stands in the bay at ${x.toFixed(1)},${z.toFixed(1)}`);
     assert.ok([p.x, p.y, p.z, p.ry, ...p.size, ...p.scale].every(Number.isFinite));
     if (!p.support) continue;
     const parent = byId.get(p.support), a = meta.get(parent?.key), b = meta.get(p.key);
@@ -65,7 +70,6 @@ test('whole footprints stay outside the playable plot and river, and every stack
       if (p.category === 'facade') assert.ok(p.size[0] <= parent.size[0] + 0.001 && p.size[2] <= parent.size[2] + 0.001);
     }
   }
-  const far = makeFarHeight(ctx.plan);
   for (const h of planned.houses) {
     assert.ok(h.y < h.terrainRange[0], `${h.id} first storey is anchored below its lowest corner`);
     assert.ok(h.y < far(h.x, h.z), `${h.id} does not float at its centre`);
@@ -152,7 +156,7 @@ test('foundations stay buried in the actual terrain triangles without moving exi
   };
   const sampler = makeFarTerrainSampler(ctx.plan);
   const foundations = planned.pieces.filter((p) => p.category === 'retaining' || p.category === 'facade' && p.level === 0);
-  assert.equal(foundations.length, 887);
+  assert.equal(foundations.length, 872);
   for (const p of foundations) {
     const ground = referenceMinimum(p), margin = p.category === 'facade' ? 0.17 : 0.11;
     assert.ok(Number.isFinite(ground));
@@ -165,13 +169,14 @@ test('foundations stay buried in the actual terrain triangles without moving exi
     { x: -300, z: -180, ry: -0.21, size: [12, 1, 17] },
     { x: -160, z: -150, ry: 0.17, size: [23, 1, 21] },
   ]) assert.ok(Math.abs(sampler.minimum(footprint(p)) - referenceMinimum(p)) < 1e-7);
-  const wall = planned.pieces.find((p) => p.id === 'terrace-61-h2-retaining');
-  assert.ok(43.01052 - referenceMinimum(wall) > 0.46, 'TEETH: the previous wall base must expose the reported gap');
-  assert.ok(Math.abs(wall.y + meta.get(wall.key).size[1] * wall.scale[1] - 44.091456) < 1e-8, 'previous wall cap stays fixed');
-  const floor = planned.pieces.find((p) => p.id === 'terrace-44-h1-floor0');
-  assert.ok(Math.abs(floor.y + meta.get(floor.key).size[1] * floor.scale[1] - 47.403661) < 1e-8, 'previous first-storey top stays fixed');
-  assert.equal(planned.pieces.find((p) => p.id === 'terrace-44-h1-roof').y, 50.10905, 'previous roof mounting elevation stays fixed');
-  assert.deepEqual([planned.houses.length, planned.pieces.length, planned.farTriangles], [578, 2260, 41968]);
+  // The headland village's numbers (round 7, the bay): the planner run without the burying loop gave these bases, caps and tops, so they are what the correction must not move.
+  const wall = planned.pieces.find((p) => p.id === 'terrace-18-h0-retaining');
+  assert.ok(31.7792 - referenceMinimum(wall) > 1.5, 'TEETH: the previous wall base must expose the reported gap');
+  assert.ok(Math.abs(wall.y + meta.get(wall.key).size[1] * wall.scale[1] - 33.532544) < 1e-8, 'previous wall cap stays fixed');
+  const floor = planned.pieces.find((p) => p.id === 'terrace-14-h5-floor0');
+  assert.ok(Math.abs(floor.y + meta.get(floor.key).size[1] * floor.scale[1] - 30.635122) < 1e-8, 'previous first-storey top stays fixed');
+  assert.equal(planned.pieces.find((p) => p.id === 'terrace-14-h5-roof').y, 33.25511, 'previous roof mounting elevation stays fixed');
+  assert.deepEqual([planned.houses.length, planned.pieces.length, planned.farTriangles], [571, 2270, 41800]);
 });
 
 test('TEETH: a large overhanging piece whose centre clears the plot still fails footprint clearance', () => {
@@ -190,7 +195,7 @@ test('placement stack limits are consumed by the planner, rather than being desc
 });
 
 test('near, far and hidden details are exclusive and keep the whole scene below the triangle ceiling', () => {
-  const points = [ctx.plan.spawn, { x: 0, y: 25, z: -90 }, { x: -95, y: 15, z: 0 }, { x: 95, y: 15, z: 0 }, { x: 0, y: 30, z: 475 }];
+  const points = [ctx.plan.spawn, { x: 0, y: 25, z: -90 }, { x: -95, y: 15, z: 0 }, { x: 95, y: 15, z: 0 }, { x: -330, y: 40, z: 330 }];      // the last: on the west headland, in its village
   for (const at of points) {
     const selected = selectVistaLODs(planned.pieces, at);
     assert.equal(selected.modes.length, planned.pieces.length);
@@ -241,7 +246,7 @@ test('actual GLBs produce InstancedMeshes, all roots match their declared cost, 
     assert.ok(b.mesh.boundingSphere.radius > 0 && Number.isFinite(b.mesh.boundingSphere.radius));
   }
   const first = [...control.buckets.values()].map((b) => b.mesh.count);
-  ctx.camera.position.set(0, 45, 490); control.update(0, true);
+  ctx.camera.position.set(-330, 45, 330); control.update(0, true);
   const second = [...control.buckets.values()].map((b) => b.mesh.count);
   assert.notDeepEqual(second, first);
   assert.equal(actualCost(), result.activeTriangles);

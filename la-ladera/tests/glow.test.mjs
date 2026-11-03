@@ -75,7 +75,7 @@ test('one sprite per street lamp and a far city, all in one draw call', async (t
   assert.equal(s.errors, 0, 'ctx.errors');
   assert.ok(s.lamps >= 20, `${s.lamps} street lamps registered`);
   assert.equal(s.glow.street, s.lamps, 'a sprite for every street lamp in the registry');
-  assert.ok(s.glow.far > 1500, `${s.glow.far} far-city lights`);
+  assert.ok(s.glow.far > 300, `${s.glow.far} far-village lights`);       // (was 1500 for the valley city; the far lights are the headland village's now, 469: dev/FEATURE-BEACH.md 1.2)
   assert.equal(s.glow.points, s.glow.street + s.glow.far + s.glow.extra, 'the sprites are exactly the lamps, the city and the extras');
   const r = await E(`__gl.lit()`);
   t.diagnostic(`draw calls ${r.callsOn} with, ${r.callsOff} without`);
@@ -148,7 +148,7 @@ test('a flashing beacon is dark and bright on its own clock', async (t) => {
   assert.ok(bright - base > 0.3, `bright phase ${bright.toFixed(3)} against ${base.toFixed(3)}`);
 });
 
-test('looking down the valley the far hillsides are full of lights, and they come on through the dusk', async (t) => {
+test('looking out over the bay the far shores are full of lights, and they come on through the dusk', async (t) => {
   await E(`__ladera.ctx.glow.clearExtras()`);
   const band = [200, 280, 800, 150];                       // the opposite hillside between the sky and the roofs
   // the hour at which the night is about half way (the sun at the horizon): where the dusk can be told from the dark
@@ -159,7 +159,7 @@ test('looking down the valley the far hillsides are full of lights, and they com
     lit[h] = await E(`__gl.lit(${JSON.stringify(band)}, 0.08)`);
   }
   t.diagnostic(`lit pixels on the far hill: 22:00 ${lit[22].lit}, dusk ${dusk.h} (night ${dusk.n}) ${lit[dusk.h].lit}, noon ${lit[12].lit}`);
-  assert.ok(lit[22].lit > 3000, `${lit[22].lit} pixels lit by the far city at 22:00`);
+  assert.ok(lit[22].lit > 1500, `${lit[22].lit} pixels lit by the far village at 22:00`);      // (was 3000 for the valley city's hillside; the bay's shores and the headland village measure 2437 in this view)
   assert.ok(lit[12].lit < lit[22].lit * 0.05, `no city by day (${lit[12].lit} pixels differ between two frames: sway)`);
   assert.ok(lit[dusk.h].lit > lit[22].lit * 0.1 && lit[dusk.h].lit < lit[22].lit * 0.8, `dusk is partial: ${lit[dusk.h].lit} at ${dusk.h} against ${lit[22].lit} at night`);
 });

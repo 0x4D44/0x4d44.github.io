@@ -8,6 +8,7 @@
 import { ss, vnoise, hash2, project, gapBetween } from './geom.js';
 import { HALF } from './field.js';
 import { urbanDensity, makeFarHeight } from './periphery.js';
+import { SEA, Z0 as COAST_Z0 } from './coast.js';
 
 const h01 = (i, j, s) => (hash2(i, j, s) + 1) / 2;
 const farOf = (plan) => plan._far ?? (plan._far = makeFarHeight(plan));
@@ -25,20 +26,22 @@ function flatNear(far, x, z, gmax = 0.1) {
   return [x, z];
 }
 
-/** Where the landmarks stand: the church, four towers, the mast. Every one has { x, z, y } = the ground there. */
+/** Where the landmarks stand: the church on the west headland's crown, four towers on the flanks that frame the bay, the lighthouse on the east headland's crown, the mast. Every one has { x, z, y } = the ground there. */
 export function vistaSites(plan) {
-  const far = farOf(plan), faceOrigin = (x, z) => Math.atan2(-x, -z);
+  const far = farOf(plan), faceOrigin = (x, z) => Math.atan2(-x, -z), hl = plan.coast.headlands;
   let mast = null;                                                    // the highest ground of the northern ridge (300 m off), leaning to the middle so the barrio sees it
   for (let z = -310; z <= -250; z += 10) for (let x = -280; x <= 280; x += 10) {
     const y = far(x, z), score = y - 0.06 * Math.abs(x);
     if (!mast || score > mast.score) mast = { x, z, y, score };
   }
-  const [cx, cz] = flatNear(far, -70, 320), church = { x: cx, z: cz, y: far(cx, cz), ry: faceOrigin(cx, cz), r: 34 };
-  const towers = [[75, 275, 14, 19, 14], [-150, 345, 18, 22, 15], [170, 410, 12, 18, 14], [15, 455, 20, 20, 16]].map(([tx, tz, floors, w, d]) => {
+  const west = hl.find((k) => k.x < 0), east = hl.find((k) => k.x > 0);
+  const [cx, cz] = flatNear(far, west.x, west.z), church = { x: cx, z: cz, y: far(cx, cz), ry: faceOrigin(cx, cz), r: 27 };
+  const [lx, lz] = flatNear(far, east.x, east.z), lighthouse = { x: lx, z: lz, y: far(lx, lz), h: 24, r: 22 };
+  const towers = [[240, 40, 14, 19, 14], [-235, 66, 18, 22, 15], [205, 118, 12, 18, 14], [-200, 132, 15, 20, 16]].map(([tx, tz, floors, w, d]) => {
     const [x, z] = flatNear(far, tx, tz);
     return { x, z, y: far(x, z), floors, w, d, h: floors * 3, ry: faceOrigin(x, z), r: 30 };
   });
-  return { mast: { x: mast.x, z: mast.z, y: mast.y, h: 62 }, church, towers };
+  return { mast: { x: mast.x, z: mast.z, y: mast.y, h: 62 }, church, towers, lighthouse };
 }
 
 const WALLS = [[0.86, 0.78, 0.62], [0.82, 0.52, 0.38], [0.58, 0.64, 0.72], [0.78, 0.72, 0.82], [0.64, 0.72, 0.56], [0.86, 0.62, 0.64], [0.72, 0.70, 0.66], [0.92, 0.86, 0.72],
@@ -57,13 +60,15 @@ export const ROOFS = [['roof_tile_clay', [0.95, 0.80, 0.72]], ['corrugated_zinc'
  */
 export const LANE = 4;                                              // the street in front of a row, m
 const REAR = 0.6;                                                   // the strip kept free behind a row, m
+export const DRY = 1.8;                                               // a far house stands at least this far above the sea (the bay's shore, coast.js)
 const SEEDING = 0.62;                                               // how often a lattice cell of built-up land starts a stack of terraces (up to 2.4 times that within 40 m of the rim, where the eye lands)
-export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 12, roadClear = 16, density = urbanDensity, taken = [] } = {}) {
-  const far = farOf(plan), seed = plan.seed, sites = vistaSites(plan), keep = [sites.church, ...sites.towers], road = far.road, out = [], n = Math.ceil(reach / cell);
+export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 12, roadClear = 16, dry = DRY, density = urbanDensity, taken = [] } = {}) {
+  const far = farOf(plan), seed = plan.seed, sites = vistaSites(plan), keep = [sites.church, sites.lighthouse, ...sites.towers], road = far.road, out = [], n = Math.ceil(reach / cell);
   const placed = new Map(), BK = 32, bk = (a, b) => a * 4096 + b;      // the ground each accepted house keeps for itself, in 32 m buckets
   const allowed = (x, z) => {
     if (x * x + z * z > reach * reach || Math.max(Math.abs(x) - HALF, Math.abs(z) - HALF) < margin) return false;
-    if (z > HALF - 3 && road && project(road.pts, road.cum, x, z).d < roadClear) return false;
+    if (road && project(road.pts, road.cum, x, z).d < roadClear) return false;                       // the road runs along the promenade and up the east flank now, so its clearance holds everywhere
+    if (z > COAST_Z0 - 3 && far(x, z) < SEA + dry) return false;                                   // the beach, the sea and the foot of the headlands: a house stands on dry ground
     return !keep.some((s) => Math.hypot(s.x - x, s.z - z) < s.r);
   };
   const corners = (x, z, w, d, c, s) => [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]].map(([u, v]) => [x + (u * (w / 2 - 0.4) * c + v * (d / 2 - 0.4) * s), z + (-u * (w / 2 - 0.4) * s + v * (d / 2 - 0.4) * c)]);
@@ -288,6 +293,8 @@ export function vistaLights(plan, houses, sites) {
   for (const [y, color, size, intensity, on] of [[29.5, 0xffd9a0, 2.6, 2.2, 0.2], [3.5, 0xffe9c0, 4.5, 2.6, 0.1]]) out.push(facade(ch.x, ch.z, 2 * 17.75, ch.ry, 0, ch.y + y, { color, size, intensity, on }));
   const m = sites.mast;
   [1, 0.64, 0.33].forEach((f, k) => out.push({ x: m.x, y: m.y + m.h * f + 0.8, z: m.z, color: 0xff2418, size: 11, intensity: 4.5, blink: 0.8, phase: k * 0.31, beacon: true }));
+  const lh = sites.lighthouse;                                        // the east headland's light: its lantern, steady, and the flash that comes round every ten seconds
+  out.push({ x: lh.x, y: lh.y + lh.h + 1.4, z: lh.z, color: 0xffe6a8, size: 6, intensity: 2.2 }, { x: lh.x, y: lh.y + lh.h + 1.4, z: lh.z, color: 0xfff0c8, size: 26, intensity: 6, blink: 0.1, phase: 0.2 });
   return out;
 }
 
@@ -367,9 +374,16 @@ export function buildVista(K) {
   for (let k = 0; k < 6; k++) b.cyl('concrete_bare', m.x, m.y - 1 + k * bandH, m.z, rAt(k / 6), bandH + 0.05, 4, { r1: rAt((k + 1) / 6), caps: false, col: k % 2 ? [0.95, 0.95, 0.95] : [0.9, 0.13, 0.1] });
   b.box('iron_black', m.x, m.y + m.h * 0.64, m.z, 4.4, 0.4, 4.4); b.box('iron_black', m.x + 1.8, m.y + m.h * 0.64 + 1.1, m.z, 1.4, 1.4, 0.3, { ry: 0.5 });
   b.cyl('iron_black', m.x, m.y + m.h, m.z, 0.22, 14, 6, { r1: 0.06 });
+  // the lighthouse on the east headland's crown: a plinth sunk into the pad, a tapering round tower in white with a red band, a gallery, the lantern room under a dark cap
+  const lh = sites.lighthouse, bands = 6, bh = lh.h / bands, lr = (f) => 3.3 - 1.1 * f;
+  b.cyl('concrete_bare', lh.x, lh.y - 2, lh.z, 3.9, 2.6, 12, { r1: 3.4, col: [0.62, 0.62, 0.6] });
+  for (let k = 0; k < bands; k++) b.cyl('plaster_rough', lh.x, lh.y + 0.6 + k * (lh.h - 0.6) / bands, lh.z, lr(k / bands), (lh.h - 0.6) / bands + 0.05, 12, { r1: lr((k + 1) / bands), caps: false, col: k === 2 || k === 3 ? [0.84, 0.16, 0.12] : [0.95, 0.94, 0.9] });
+  b.cyl('concrete_bare', lh.x, lh.y + lh.h, lh.z, 3.0, 0.5, 12, { col: [0.62, 0.62, 0.6] });
+  b.cyl('glass_dark', lh.x, lh.y + lh.h + 0.5, lh.z, 1.5, 2.2, 8, { caps: false, col: [0.6, 0.7, 0.8] });
+  b.cyl('iron_black', lh.x, lh.y + lh.h + 2.7, lh.z, 1.9, 1.5, 8, { r1: 0.15, col: [0.2, 0.22, 0.26] });
   ctx.batch.flush('world.vista');
   for (const l of lights) ctx.glow?.add({ x: l.x, y: l.y, z: l.z, color: l.color, size: l.size, intensity: l.intensity, ...(l.blink ? { blink: l.blink, phase: l.phase } : { on: l.on }) });
-  const stats = { houses: houses.length, towers: sites.towers.length, church: 1, mast: sites.mast, lights: lights.length, beacons: lights.filter((l) => l.beacon).length, windows: seen.windows, doors: seen.doors, roofItems: seen.boxes + seen.tanks, keptOffKit: taken.length };
+  const stats = { houses: houses.length, towers: sites.towers.length, church: 1, lighthouse: 1, mast: sites.mast, lights: lights.length, beacons: lights.filter((l) => l.beacon).length, windows: seen.windows, doors: seen.doors, roofItems: seen.boxes + seen.tanks, keptOffKit: taken.length };
   if (ctx.world) ctx.world.vista = stats;
   return stats;
 }

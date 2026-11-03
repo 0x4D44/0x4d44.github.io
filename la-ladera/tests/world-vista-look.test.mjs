@@ -11,7 +11,7 @@ import { kitLook, houseLooks, paintTint, hash32, PAINTS } from '../js/world/vist
 import { makePlan } from './world-lib.mjs';
 
 const data = JSON.parse(await readFile(new URL('../assets/models/vista/placement.json', import.meta.url), 'utf8'));
-const { plan } = makePlan(), sites = vistaSites(plan), planned = clearLandmarks(planVista(plan, data), [sites.church, ...sites.towers]);
+const { plan } = makePlan(), sites = vistaSites(plan), planned = clearLandmarks(planVista(plan, data), [sites.church, sites.lighthouse, ...sites.towers]);
 const meta = new Map(data.pieces.map((p) => [p.id, p]));
 // the kit's own beige: what a GLB's vertices average to when the paint is not told (the real averages are 0.1 to 0.45)
 const baseOf = (p) => (/^brick/.test(p.key) ? [0.18, 0.08, 0.05] : p.category === 'roof' ? [0.25, 0.25, 0.24] : [0.34, 0.29, 0.2]);
@@ -22,10 +22,10 @@ const spread = (values) => { const m = values.reduce((a, b) => a + b, 0) / value
 test('the plan is exactly the planner\'s: the same layout and the same piece ids as before this file (the look is applied when the pieces are drawn, never to the plan)', () => {
   const key = (p) => `${p.id}@${p.x.toFixed(1)},${p.z.toFixed(1)}`;
   const digest = hash32(planned.pieces.map(key).join('|'));
-  assert.equal(planned.pieces.length, 2102, 'pieces');
-  assert.equal(planned.houses.length, 540, 'houses');
-  assert.equal(planned.clusters.length, 108, 'terraces');
-  assert.equal(digest, 4002077181, `layout and ids digest ${digest}`);
+  assert.equal(planned.pieces.length, 2172, 'pieces');
+  assert.equal(planned.houses.length, 546, 'houses');
+  assert.equal(planned.clusters.length, 115, 'terraces');
+  assert.equal(digest, 865571633, `layout and ids digest ${digest}`);
   assert.equal(look.length, planned.pieces.length, 'a look for every piece, in order');
 });
 
