@@ -9,6 +9,8 @@
 //   taper   the swell dies over 60 m, not 24, so the swimming area is not at full swell                  wgrad   the weight's x gradient has a sign error
 //   tjunction  the mid mesh has no fans: the near mesh's vertices stand in the middle of its edge        gap  the mid mesh leaves out a ring of cells too many     overlap  a ring too few: it covers the near mesh
 //   winding    one triangle of the far mesh faces down                                                   drift  the mid mesh's vertices along the join are 1 mm out      cells  a near cell (5 m) that does not divide the mid mesh's 12 m
+//   mslope  makeSea's slope is the swell's own, without the near mesh's weight                           mdepth  makeSea's depth has the swell upside down                 mclock  makeSea answers at time 0, not at the clock
+//   mrefresh  makeSea never calls the refresh hook (the stand-in would not follow the hour)             mfresh  makeSea's slope hands out one shared array
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import './nice.mjs';
@@ -43,6 +45,17 @@ function broken(m) {
   }
   if (on('taper')) o.nearWeight = (x, z) => m.nearWeight(x * 1.3, z);
   if (on('wgrad')) o.nearWeightGrad = (x, z, out) => { const g = m.nearWeightGrad(x, z, out); g[0] = -g[0]; return g; };
+  if (on('mslope', 'mdepth', 'mclock', 'mrefresh', 'mfresh')) {
+    o.makeSea = (opts) => {
+      const s = m.makeSea(on('mrefresh') ? { ...opts, refresh: null } : opts), shared = [0, 0], now = () => (on('mclock') ? 0 : undefined);
+      return {
+        get state() { return s.state; }, get time() { return on('mclock') ? 0 : s.time; },
+        level: (x, z, t) => s.level(x, z, t ?? now()),
+        slope: on('mslope') ? (x, z, t, out = [0, 0]) => m.slope(x, z, t ?? opts.clock(), s.state, out) : on('mfresh') ? (x, z, t, out = shared) => s.slope(x, z, t ?? now(), out) : (x, z, t, out) => s.slope(x, z, t ?? now(), out),
+        depth: on('mdepth') ? (x, z, t) => opts.still - s.level(x, z, t ?? now()) - opts.ground(x, z) : (x, z, t) => s.depth(x, z, t ?? now()),
+      };
+    };
+  }
   return o;
 }
 const S = broken(real);
@@ -136,6 +149,56 @@ test('slope is the analytic derivative of level: it matches a numeric one to 1e-
   assert.ok(biggest > 0.05, `the largest slope seen is ${biggest}: the check is not vacuous`);
   assert.ok(biggest < 0.6, `a slope of ${biggest} is not a sea`);
   const out = [9, 9]; assert.equal(real.slope(1, 2, 3, real.CALM, out), out, 'slope fills the array it is given');
+});
+
+// ---- the sea as the rest of the engine asks it: makeSea, which is ctx.sea once engine/water.js has built the water and what engine/seaview.js hands out before that ---------------
+/** A sea over a sloping ground at the afternoon's state, with a clock the checks turn. */
+function make(extra = {}) {
+  let now = 12.5;
+  const state = real.seaState(15, { wind: 0, amp: [0, 0, 0, 0] }), ground = (x, z) => -3 + 0.01 * z;
+  return { sea: S.makeSea({ state, clock: () => now, ground, still: -1.2, ...extra }), state, ground, set: (t) => { now = t; } };
+}
+
+test('makeSea: level is the swell times the near mesh\'s weight, depth the still sea plus that level over the ground; time is the clock read when asked, and a given t wins over it', () => {
+  const m = make(), { sea, state, ground } = m, r = rng(41);
+  assert.equal(sea.state, state); assert.equal(sea.time, 12.5); m.set(99); assert.equal(sea.time, 99, 'a getter: the clock is read when asked'); m.set(12.5);
+  for (let i = 0; i < 2000; i++) {
+    const x = -160 + 320 * r(), z = 100 + 170 * r(), t = 400 * r();
+    close(sea.level(x, z, t), real.level(x, z, t, state) * real.nearWeight(x, z), 1e-12, `level at a given time (${x.toFixed(1)}, ${z.toFixed(1)})`);
+    close(sea.level(x, z), real.level(x, z, 12.5, state) * real.nearWeight(x, z), 1e-12, 'level at the clock');
+    close(sea.depth(x, z, t), -1.2 + sea.level(x, z, t) - ground(x, z), 1e-12, 'depth at a given time'); close(sea.depth(x, z), -1.2 + sea.level(x, z, 12.5) - ground(x, z), 1e-12, 'depth at the clock');
+  }
+  m.set(77); close(sea.level(10, 150), real.level(10, 150, 77, state) * real.nearWeight(10, 150), 1e-12, 'the clock moved: the answer moved with it');
+  assert.ok(Math.abs(sea.level(10, 150, 0) - sea.level(10, 150, 3)) > 1e-3, 'and the swell is not frozen');
+  assert.ok(sea.level(200, 150) === 0, 'no swell outside the near mesh (x 132)'); assert.ok(sea.level(0, 270) === 0, 'or south of it (z 262)');       // (=== so that a -0 is a 0)
+  assert.equal(sea.depth(200, 150), -1.2 - ground(200, 150), 'there the depth is the still sea over the ground');
+});
+
+test('makeSea: slope is the slope of the surface the mesh draws, the swell and its weight by the product rule: a difference quotient of its own level agrees to 1e-5, in the fade zones too', () => {
+  const { sea, state } = make(), r = rng(9), out = [0, 0];
+  let worst = 0, fade = 0, flat = 0;
+  for (let i = 0; i < 4000; i++) {
+    const x = -150 + 300 * r(), z = 100 + 180 * r(), e = 1e-4, g = sea.slope(x, z, undefined, out);
+    const nx = (sea.level(x + e, z) - sea.level(x - e, z)) / (2 * e), nz = (sea.level(x, z + e) - sea.level(x, z - e)) / (2 * e);
+    worst = Math.max(worst, Math.abs(g[0] - nx), Math.abs(g[1] - nz));
+    const w = real.nearWeight(x, z); if (w > 0 && w < 1) fade++; else if (w === 0) flat++;
+  }
+  assert.ok(fade > 400 && flat > 300, `the sample reaches the fade zones (${fade} points) and past the mesh (${flat})`);
+  assert.ok(worst < 1e-5, `slope is ${worst} from the difference quotient of level`);
+  assert.deepEqual(sea.slope(0, 150, 3), real.slope(0, 150, 3, state), 'in the full swell it is the swell\'s own slope');
+  assert.deepEqual(sea.slope(200, 150, 3), [0, 0], 'outside the near mesh there is none');
+  const o = [9, 9]; assert.equal(sea.slope(1, 150, 3, o), o, 'slope fills the array it is given'); const a = sea.slope(1, 150, 3), b = sea.slope(1, 150, 3);
+  assert.notEqual(a, b, 'and makes a fresh one when it is not given one'); assert.deepEqual(a, b);
+});
+
+test('makeSea: the refresh hook runs before every level, slope and depth answer, so a state kept by someone else is current (the stand-in of engine/seaview.js follows the hour with it)', () => {
+  let n = 0, hour = 3;
+  const state = { wind: 0, amp: [1, 1, 1, 1] }, sea = S.makeSea({ state, ground: () => -3, still: -1.2, refresh: () => { n++; real.seaState(hour, state); } });
+  sea.level(0, 150); assert.equal(n, 1); sea.slope(0, 150); assert.equal(n, 2); sea.depth(0, 150); assert.equal(n, 3, 'depth asks level once');
+  const top = () => Math.max(...Array.from({ length: 200 }, (_, i) => Math.abs(sea.level(i, 150 + i / 3, 0))));
+  const night = top(); hour = 15; const day = top();
+  assert.ok(night > 0.1 && day > 1.4 * night, `the swell at night ${night.toFixed(3)} m, in the afternoon ${day.toFixed(3)} m: the hook's state is what the answers use`);
+  assert.equal(S.makeSea({ state, ground: () => 0, still: 0 }).time, 0, 'the default clock stands still');
 });
 
 test('seaState: wind 0.35 at dawn and at night, 1.0 from 13:00 to 17:30, smooth between; amp is 1 at calm and the breeze factors at full wind', () => {

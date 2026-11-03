@@ -79,6 +79,38 @@ export function waveAmps(state = CALM, out = [0, 0, 0, 0]) { const s = state.amp
 /** omega * t of each wave reduced to [0, 2 pi) in double precision: what the shader subtracts from k (d . p) + phase. Same sine as `level`, but a small argument for the GPU however long the game runs. */
 export function waveTime(t, out = [0, 0, 0, 0]) { for (let i = 0; i < N_WAVES; i++) out[i] = (WAVES[i].omega * t) % TAU; return out; }
 
+// ---- the sea as the rest of the engine asks it -----------------------------------------------------------------------------------------
+/**
+ * `{ state, time, level, slope, depth }`: what `ctx.sea` is once engine/water.js has built the water, and what engine/seaview.js hands out before that (the `sea` unit builds it a few hundred ms after the
+ * lazy milestone, and under `?skip=coast` it never exists). ONE set of functions over a live sea state `state` ({ wind, amp }, kept by whoever owns it), a clock `clock()` (seconds the swell has run), a
+ * `ground(x, z)` (the seabed or the sand, metres over the datum) and the `still` sea's height over the datum (world/coast.js SEA), so a swimmer, a camera and a sound read the very surface the near
+ * mesh draws. `refresh()` runs before each answer when given (the stand-in uses it to follow the hour).
+ *   level(x, z, t?)         the swell above the still sea: `level` of this file times nearWeight, exactly the surface the near mesh draws (the mid and far meshes are flat)
+ *   slope(x, z, t?, out?)   [dh/dx, dh/dz] of that surface: the product rule, w dh + h dw (the weight is flat nearly everywhere, but not on the last 24 m before the near mesh's seams)
+ *   depth(x, z, t?)         still + level - ground: the water over the ground at (x, z), negative on land
+ */
+export function makeSea({ state, clock = () => 0, ground, still, refresh = null }) {
+  const gw = [0, 0];
+  const sea = {
+    state,
+    get time() { return clock(); },
+    level: (x, z, t = clock()) => { refresh?.(); return level(x, z, t, state) * nearWeight(x, z); },
+    slope: (x, z, t = clock(), out = [0, 0]) => {
+      refresh?.();
+      slope(x, z, t, state, out);
+      const w = nearWeight(x, z);
+      if (w === 0) { out[0] = out[1] = 0; return out; }
+      if (w === 1) return out;
+      nearWeightGrad(x, z, gw);
+      const h = level(x, z, t, state);
+      out[0] = out[0] * w + h * gw[0]; out[1] = out[1] * w + h * gw[1];
+      return out;
+    },
+    depth: (x, z, t = clock()) => still + sea.level(x, z, t) - ground(x, z),
+  };
+  return sea;
+}
+
 // ---- where the surface moves ---------------------------------------------------------------------------------------------------------
 /** The near sea mesh: x +-132, z 118 to 262. Only it is displaced (the mid and far meshes are flat). Its swell fades to nothing over the last `fade` metres before the edge of its box, so the surface
  *  is flat where the meshes meet. The swimming area (x +-99.4, z up to 220) is inside the full-swell part. The north edge is the beach, not a join: no fade there. */

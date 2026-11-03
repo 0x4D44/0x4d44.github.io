@@ -15,9 +15,11 @@ export class LightRegistry {
  * Anchors: places an NPC can stand/sit/work. { id?, kind, x,y,z (feet position), ry (facing, radians about Y),
  *   building?, room?, tags?:[], seatH? , capacity?:1, owner? }
  * kinds: stand sit sleep cook counter customer tv sweep laundry chat lean bench read phone work pray play wash
- *        carry vend greet.  (People animations cover exactly this list; add a kind => tell the people agent.)
+ *        carry vend greet, and the beach's (plan.coast.pois uses them; nothing reads them until the people phase, dev/FEATURE-BEACH.md 4.2): lie swim wade raft fish volley watch launch moor.
+ *        (People animations cover exactly this list; add a kind => tell the people agent.)
  */
-export const ANCHOR_KINDS = ['stand', 'sit', 'sleep', 'cook', 'counter', 'customer', 'tv', 'sweep', 'laundry', 'chat', 'lean', 'bench', 'read', 'phone', 'work', 'pray', 'play', 'wash', 'carry', 'vend', 'greet'];
+export const ANCHOR_KINDS = ['stand', 'sit', 'sleep', 'cook', 'counter', 'customer', 'tv', 'sweep', 'laundry', 'chat', 'lean', 'bench', 'read', 'phone', 'work', 'pray', 'play', 'wash', 'carry', 'vend', 'greet',
+  'lie', 'swim', 'wade', 'raft', 'fish', 'volley', 'watch', 'launch', 'moor'];
 
 /**
  * Discoveries: tiny rewards for curiosity. { id, name (Spanish), en (English line), x,y,z, radius, kind }
