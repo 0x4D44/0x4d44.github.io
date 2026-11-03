@@ -255,6 +255,12 @@ test('Colombian words, not Spanish ones', () => {
   assert.deepEqual(bad, []);
 });
 
+test('R3-209: the callers of the phone-minutes shop call people who ARE far away ("que están lejos", not "desde lejos"), and the team is "de Millonarios", which has no article', () => {
+  const es = LINES.map((l) => l.es);
+  assert.ok(!es.some((s) => /llama a los suyos desde lejos/.test(s)), 'it is the relatives who are far away, not the callers'); assert.ok(es.some((s) => /llama a los suyos que están lejos/.test(s)), 'the corrected line is there');
+  assert.ok(!es.some((s) => /\bdel Millonarios\b/.test(s))); assert.ok(es.some((s) => /del Nacional o de Millonarios/.test(s)), 'the corrected line is there');
+});
+
 // ---- tú for children, usted for adults, in EVERY menu entry --------------------------------------------------------------------------------------------------
 const USTED = /\b(usted|ustedes|su familia|se dedica|me indica|cuénteme|dígame|siga|quisiera|me recomienda|su barrio|tiene usted|puede decirme|perdone|disculpe)\b/i;
 test('kids and teens are addressed with tú in every menu entry of a full conversation', () => {
