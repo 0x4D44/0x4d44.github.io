@@ -1,0 +1,127 @@
+{
+  "near": 59,
+  "lod": 59,
+  "cameraHeightMetres": 1.6,
+  "figureHeightMetres": 1.8,
+  "sourcePinsVerified": 9,
+  "actualGlbTriangleCountsMatch": true,
+  "yard": {
+    "plan": "substation-plan.json",
+    "placedRecords": 462,
+    "conductorSegments": 903,
+    "eyeHeightAboveGround": 1.6,
+    "source": "actual exported GLB mesh instances",
+    "certification": "Plausible visual layout, not engineering-certified"
+  },
+  "images": [
+    {
+      "file": "contact-lod-01.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 310793,
+      "sha256": "755d4a12f25ee4c2fecb5d7c092a9cf98e6ebef95baccbe86c96a537c15780fe"
+    },
+    {
+      "file": "contact-lod-02.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 311475,
+      "sha256": "8d6663344607924c3bfb1ca73d5414facbc75a1f9d5ab957fff72ca87d5ac6ee"
+    },
+    {
+      "file": "contact-lod-03.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 291128,
+      "sha256": "8b7a329019e9cb799f85aacaec49a5201d740b921c11db71a7905a6c230f7b04"
+    },
+    {
+      "file": "contact-lod-04.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 316787,
+      "sha256": "bf0424e865d7edad97386ad4dcbd399a89230f1558fdb074ed17a7dfc17cbefc"
+    },
+    {
+      "file": "contact-lod-05.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 284856,
+      "sha256": "621f26ed990927f822d756df6c4e5cdae0f6cfe4abe3c5e4e0c912a328c57d15"
+    },
+    {
+      "file": "contact-near-01.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 330827,
+      "sha256": "bb9d78d401800848411952bc58ac598634cc8051be3e3b8c267895f49719425e"
+    },
+    {
+      "file": "contact-near-02.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 326993,
+      "sha256": "7e7e481ea5598a1f5d99b2d96f39af2824189875d8cb48e3459e6dee1d4ed165"
+    },
+    {
+      "file": "contact-near-03.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 297814,
+      "sha256": "359c4c5d03f45f53f820de1cb3c59177cc082ae0df1f2b19eb98403fec1b7029"
+    },
+    {
+      "file": "contact-near-04.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 331445,
+      "sha256": "cffe7eb1842ecfe4ae4b11b1516b6398952b48c03098da2981d053fec7cc737b"
+    },
+    {
+      "file": "contact-near-05.jpg",
+      "size": [
+        2240,
+        1628
+      ],
+      "bytes": 311359,
+      "sha256": "03cd619d4a2abc6f43a4344c9dbf0e8f131d6d95259c2e0fcd834e69d342e9c5"
+    },
+    {
+      "file": "yard-eye-1_6m.jpg",
+      "size": [
+        1800,
+        1300
+      ],
+      "bytes": 490492,
+      "sha256": "6fbff5975b2dca5c58386cc4f14055415d02b8864dfa70469c4a05a82654b0f9"
+    },
+    {
+      "file": "yard-overview.jpg",
+      "size": [
+        1800,
+        1300
+      ],
+      "bytes": 264240,
+      "sha256": "28ab8c2e94b384cc1139d1d8f71acec08dd3c0e488c26d59126dc37518cc1bef"
+    }
+  ],
+  "visualReview": "All ten contact sheets, final overview and eye-height view inspected. Attachment and plan-yaw corrections confirmed; no further visual blocker found."
+}

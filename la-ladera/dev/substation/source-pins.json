@@ -1,0 +1,11 @@
+{
+  "assets/models/manifest.substation.json": "527cae0b116175548fd6aa823ddc98c2a81be087bd5748a6e8c6db8037b6035c",
+  "assets/models/substation/substation-plan.json": "e0c5072a7d6b10fd40bcc4795a8f4ea4f9fa21b5b63c3121b4ca0b126a663656",
+  "assets/models/substation/materials.json": "fc517b942c75b74102b2cc27688dae91a987c6eebcc6962eec4db788362ad145",
+  "tools/blender/substation.catalog.json": "ea8d828d38f81280255443d6285114d34407bf5399c3f71df4c374f27e957c33",
+  "assets/models/substation/substation_near.glb": "3294c4e43d4d13b8d568cf0d78620b2b1f2dfbff2a6cf8099324f844402456ed",
+  "assets/models/substation/substation_lod.glb": "e688773c46d74df06926188185c576c1eb4de0b314b54fa6ab1b28425d603091",
+  "assets/textures/substation/atlas_orm.png": "54a54db18e7a9eb49f0ca2956da92ec5a759203274c40c3b676710f6b9a9d353",
+  "assets/textures/substation/atlas_normal.png": "16505ecde88dd92bf74c2bd2058f57307b2a1993d0f744e69cc9ac21042b7494",
+  "assets/textures/substation/atlas.png": "a196dce140a5a28acdbe59aab6c50a8f461fe6345c3a467fa31f36cbd05f428e"
+}

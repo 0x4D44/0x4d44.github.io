@@ -1,0 +1,2008 @@
+[
+  {
+    "id": "substation_transformer_132_33",
+    "file": "substation_transformer_132_33.png",
+    "size": [
+      7.04,
+      6.33,
+      5.2
+    ],
+    "cameraGame": [
+      10.791996955871582,
+      1.600000023841858,
+      15.164616584777832
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 5644
+  },
+  {
+    "id": "substation_transformer_132_33_lod1",
+    "file": "substation_transformer_132_33_lod1.png",
+    "size": [
+      7.04,
+      6.33,
+      5.2
+    ],
+    "cameraGame": [
+      10.791996955871582,
+      1.600000023841858,
+      15.164616584777832
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 624
+  },
+  {
+    "id": "substation_transformer_33_11",
+    "file": "substation_transformer_33_11.png",
+    "size": [
+      5.0,
+      4.47,
+      4.12
+    ],
+    "cameraGame": [
+      7.468409538269043,
+      1.600000023841858,
+      10.494402885437012
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 2992
+  },
+  {
+    "id": "substation_transformer_33_11_lod1",
+    "file": "substation_transformer_33_11_lod1.png",
+    "size": [
+      5.0,
+      4.47,
+      4.12
+    ],
+    "cameraGame": [
+      7.468409538269043,
+      1.600000023841858,
+      10.494402885437012
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 372
+  },
+  {
+    "id": "substation_breaker_oil_132",
+    "file": "substation_breaker_oil_132.png",
+    "size": [
+      5.8,
+      4.4,
+      4.24
+    ],
+    "cameraGame": [
+      7.685935974121094,
+      1.600000023841858,
+      10.800065040588379
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 3000
+  },
+  {
+    "id": "substation_breaker_oil_132_lod1",
+    "file": "substation_breaker_oil_132_lod1.png",
+    "size": [
+      5.8,
+      4.4,
+      4.24
+    ],
+    "cameraGame": [
+      7.685935974121094,
+      1.600000023841858,
+      10.800065040588379
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 478
+  },
+  {
+    "id": "substation_breaker_oil_33",
+    "file": "substation_breaker_oil_33.png",
+    "size": [
+      3.1,
+      3.0,
+      2.5
+    ],
+    "cameraGame": [
+      4.84902811050415,
+      1.600000023841858,
+      6.813720703125
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 2592
+  },
+  {
+    "id": "substation_breaker_oil_33_lod1",
+    "file": "substation_breaker_oil_33_lod1.png",
+    "size": [
+      3.1,
+      3.0,
+      2.5
+    ],
+    "cameraGame": [
+      4.84902811050415,
+      1.600000023841858,
+      6.813720703125
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 526
+  },
+  {
+    "id": "substation_breaker_truck_11",
+    "file": "substation_breaker_truck_11.png",
+    "size": [
+      0.86,
+      1.23,
+      1.1
+    ],
+    "cameraGame": [
+      2.6657657623291016,
+      1.600000023841858,
+      3.7458605766296387
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1066
+  },
+  {
+    "id": "substation_breaker_truck_11_lod1",
+    "file": "substation_breaker_truck_11_lod1.png",
+    "size": [
+      0.86,
+      1.23,
+      1.1
+    ],
+    "cameraGame": [
+      2.6657657623291016,
+      1.600000023841858,
+      3.7458605766296387
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 340
+  },
+  {
+    "id": "substation_disconnector_centre_132",
+    "file": "substation_disconnector_centre_132.png",
+    "size": [
+      4.0,
+      3.35,
+      1.3
+    ],
+    "cameraGame": [
+      5.127239227294922,
+      1.600000023841858,
+      7.204655170440674
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1442
+  },
+  {
+    "id": "substation_disconnector_centre_132_lod1",
+    "file": "substation_disconnector_centre_132_lod1.png",
+    "size": [
+      4.0,
+      3.35,
+      1.3
+    ],
+    "cameraGame": [
+      5.127239227294922,
+      1.600000023841858,
+      7.204655170440674
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 180
+  },
+  {
+    "id": "substation_disconnector_centre_33",
+    "file": "substation_disconnector_centre_33.png",
+    "size": [
+      2.9,
+      1.93,
+      1.28
+    ],
+    "cameraGame": [
+      3.716099500656128,
+      1.600000023841858,
+      5.221760272979736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1154
+  },
+  {
+    "id": "substation_disconnector_centre_33_lod1",
+    "file": "substation_disconnector_centre_33_lod1.png",
+    "size": [
+      2.9,
+      1.93,
+      1.28
+    ],
+    "cameraGame": [
+      3.716099500656128,
+      1.600000023841858,
+      5.221760272979736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 180
+  },
+  {
+    "id": "substation_disconnector_pantograph_132",
+    "file": "substation_disconnector_pantograph_132.png",
+    "size": [
+      2.3,
+      6.23,
+      1.56
+    ],
+    "cameraGame": [
+      8.746522903442383,
+      1.600000023841858,
+      12.290372848510742
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1128
+  },
+  {
+    "id": "substation_disconnector_pantograph_132_lod1",
+    "file": "substation_disconnector_pantograph_132_lod1.png",
+    "size": [
+      2.3,
+      6.23,
+      1.56
+    ],
+    "cameraGame": [
+      8.746522903442383,
+      1.600000023841858,
+      12.290372848510742
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 218
+  },
+  {
+    "id": "substation_ct_132",
+    "file": "substation_ct_132.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 962
+  },
+  {
+    "id": "substation_ct_132_lod1",
+    "file": "substation_ct_132_lod1.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 114
+  },
+  {
+    "id": "substation_ct_33",
+    "file": "substation_ct_33.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 770
+  },
+  {
+    "id": "substation_ct_33_lod1",
+    "file": "substation_ct_33_lod1.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 114
+  },
+  {
+    "id": "substation_cvt_132",
+    "file": "substation_cvt_132.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 824
+  },
+  {
+    "id": "substation_cvt_132_lod1",
+    "file": "substation_cvt_132_lod1.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 74
+  },
+  {
+    "id": "substation_cvt_33",
+    "file": "substation_cvt_33.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 632
+  },
+  {
+    "id": "substation_cvt_33_lod1",
+    "file": "substation_cvt_33_lod1.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 74
+  },
+  {
+    "id": "substation_arrester_132",
+    "file": "substation_arrester_132.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 858
+  },
+  {
+    "id": "substation_arrester_132_lod1",
+    "file": "substation_arrester_132_lod1.png",
+    "size": [
+      1.12,
+      4.56,
+      1.4
+    ],
+    "cameraGame": [
+      6.401949405670166,
+      1.600000023841858,
+      8.995842933654785
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 74
+  },
+  {
+    "id": "substation_arrester_33",
+    "file": "substation_arrester_33.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 558
+  },
+  {
+    "id": "substation_arrester_33_lod1",
+    "file": "substation_arrester_33_lod1.png",
+    "size": [
+      0.92,
+      2.56,
+      1.4
+    ],
+    "cameraGame": [
+      3.5940768718719482,
+      1.600000023841858,
+      5.050297737121582
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 74
+  },
+  {
+    "id": "substation_post_insulator_132",
+    "file": "substation_post_insulator_132.png",
+    "size": [
+      0.55,
+      2.1,
+      0.55
+    ],
+    "cameraGame": [
+      2.852369546890259,
+      1.600000023841858,
+      4.008070945739746
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 524
+  },
+  {
+    "id": "substation_post_insulator_132_lod1",
+    "file": "substation_post_insulator_132_lod1.png",
+    "size": [
+      0.55,
+      2.1,
+      0.55
+    ],
+    "cameraGame": [
+      2.852369546890259,
+      1.600000023841858,
+      4.008070945739746
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 52
+  },
+  {
+    "id": "substation_post_insulator_33",
+    "file": "substation_post_insulator_33.png",
+    "size": [
+      0.375,
+      1.05,
+      0.375
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 332
+  },
+  {
+    "id": "substation_post_insulator_33_lod1",
+    "file": "substation_post_insulator_33_lod1.png",
+    "size": [
+      0.375,
+      1.05,
+      0.375
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 52
+  },
+  {
+    "id": "substation_earth_switch_132",
+    "file": "substation_earth_switch_132.png",
+    "size": [
+      2.4,
+      3.0,
+      1.15
+    ],
+    "cameraGame": [
+      4.526229381561279,
+      1.600000023841858,
+      6.360132694244385
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 844
+  },
+  {
+    "id": "substation_earth_switch_132_lod1",
+    "file": "substation_earth_switch_132_lod1.png",
+    "size": [
+      2.4,
+      3.0,
+      1.15
+    ],
+    "cameraGame": [
+      4.526229381561279,
+      1.600000023841858,
+      6.360132694244385
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 118
+  },
+  {
+    "id": "substation_earth_switch_33",
+    "file": "substation_earth_switch_33.png",
+    "size": [
+      1.5,
+      1.73,
+      1.15
+    ],
+    "cameraGame": [
+      2.8751883506774902,
+      1.600000023841858,
+      4.040135383605957
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 700
+  },
+  {
+    "id": "substation_earth_switch_33_lod1",
+    "file": "substation_earth_switch_33_lod1.png",
+    "size": [
+      1.5,
+      1.73,
+      1.15
+    ],
+    "cameraGame": [
+      2.8751883506774902,
+      1.600000023841858,
+      4.040135383605957
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 118
+  },
+  {
+    "id": "substation_switchboard_panel_11",
+    "file": "substation_switchboard_panel_11.png",
+    "size": [
+      0.8,
+      2.4,
+      1.6
+    ],
+    "cameraGame": [
+      3.3694469928741455,
+      1.600000023841858,
+      4.734653949737549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 600
+  },
+  {
+    "id": "substation_switchboard_panel_11_lod1",
+    "file": "substation_switchboard_panel_11_lod1.png",
+    "size": [
+      0.8,
+      2.4,
+      1.6
+    ],
+    "cameraGame": [
+      3.3694469928741455,
+      1.600000023841858,
+      4.734653949737549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 22
+  },
+  {
+    "id": "substation_control_panel",
+    "file": "substation_control_panel.png",
+    "size": [
+      0.85,
+      2.25,
+      0.82
+    ],
+    "cameraGame": [
+      3.1588566303253174,
+      1.600000023841858,
+      4.438737869262695
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 576
+  },
+  {
+    "id": "substation_control_panel_lod1",
+    "file": "substation_control_panel_lod1.png",
+    "size": [
+      0.85,
+      2.25,
+      0.82
+    ],
+    "cameraGame": [
+      3.1588566303253174,
+      1.600000023841858,
+      4.438737869262695
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 22
+  },
+  {
+    "id": "substation_battery_bank",
+    "file": "substation_battery_bank.png",
+    "size": [
+      2.9,
+      1.55,
+      0.69
+    ],
+    "cameraGame": [
+      3.716099500656128,
+      1.600000023841858,
+      5.221760272979736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1634
+  },
+  {
+    "id": "substation_battery_bank_lod1",
+    "file": "substation_battery_bank_lod1.png",
+    "size": [
+      2.9,
+      1.55,
+      0.69
+    ],
+    "cameraGame": [
+      3.716099500656128,
+      1.600000023841858,
+      5.221760272979736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 108
+  },
+  {
+    "id": "substation_battery_charger",
+    "file": "substation_battery_charger.png",
+    "size": [
+      0.75,
+      1.55,
+      0.72
+    ],
+    "cameraGame": [
+      2.4913699626922607,
+      1.600000023841858,
+      3.5008044242858887
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 274
+  },
+  {
+    "id": "substation_battery_charger_lod1",
+    "file": "substation_battery_charger_lod1.png",
+    "size": [
+      0.75,
+      1.55,
+      0.72
+    ],
+    "cameraGame": [
+      2.4913699626922607,
+      1.600000023841858,
+      3.5008044242858887
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_station_transformer",
+    "file": "substation_station_transformer.png",
+    "size": [
+      1.72,
+      1.9,
+      1.52
+    ],
+    "cameraGame": [
+      3.138747453689575,
+      1.600000023841858,
+      4.410480976104736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1078
+  },
+  {
+    "id": "substation_station_transformer_lod1",
+    "file": "substation_station_transformer_lod1.png",
+    "size": [
+      1.72,
+      1.9,
+      1.52
+    ],
+    "cameraGame": [
+      3.138747453689575,
+      1.600000023841858,
+      4.410480976104736
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 236
+  },
+  {
+    "id": "substation_radiator_bank",
+    "file": "substation_radiator_bank.png",
+    "size": [
+      2.04,
+      2.1,
+      1.7
+    ],
+    "cameraGame": [
+      3.2916877269744873,
+      1.600000023841858,
+      4.6253886222839355
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 260
+  },
+  {
+    "id": "substation_radiator_bank_lod1",
+    "file": "substation_radiator_bank_lod1.png",
+    "size": [
+      2.04,
+      2.1,
+      1.7
+    ],
+    "cameraGame": [
+      3.2916877269744873,
+      1.600000023841858,
+      4.6253886222839355
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_cooling_fan",
+    "file": "substation_cooling_fan.png",
+    "size": [
+      0.74,
+      0.77,
+      0.32
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 206
+  },
+  {
+    "id": "substation_cooling_fan_lod1",
+    "file": "substation_cooling_fan_lod1.png",
+    "size": [
+      0.74,
+      0.77,
+      0.32
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 44
+  },
+  {
+    "id": "substation_insulator_disc",
+    "file": "substation_insulator_disc.png",
+    "size": [
+      0.3,
+      0.145,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 104
+  },
+  {
+    "id": "substation_insulator_disc_lod1",
+    "file": "substation_insulator_disc_lod1.png",
+    "size": [
+      0.3,
+      0.145,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 16
+  },
+  {
+    "id": "substation_insulator_string_132",
+    "file": "substation_insulator_string_132.png",
+    "size": [
+      0.3,
+      1.72,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1186
+  },
+  {
+    "id": "substation_insulator_string_132_lod1",
+    "file": "substation_insulator_string_132_lod1.png",
+    "size": [
+      0.3,
+      1.72,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 44
+  },
+  {
+    "id": "substation_insulator_string_33",
+    "file": "substation_insulator_string_33.png",
+    "size": [
+      0.3,
+      0.7,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 458
+  },
+  {
+    "id": "substation_insulator_string_33_lod1",
+    "file": "substation_insulator_string_33_lod1.png",
+    "size": [
+      0.3,
+      0.7,
+      0.3
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 44
+  },
+  {
+    "id": "substation_conductor_segment",
+    "file": "substation_conductor_segment.png",
+    "size": [
+      0.03,
+      1.0,
+      0.03
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 20
+  },
+  {
+    "id": "substation_conductor_segment_lod1",
+    "file": "substation_conductor_segment_lod1.png",
+    "size": [
+      0.03,
+      1.0,
+      0.03
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 6
+  },
+  {
+    "id": "substation_conductor_spacer",
+    "file": "substation_conductor_spacer.png",
+    "size": [
+      0.61,
+      0.52,
+      0.04
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 238
+  },
+  {
+    "id": "substation_conductor_spacer_lod1",
+    "file": "substation_conductor_spacer_lod1.png",
+    "size": [
+      0.61,
+      0.52,
+      0.04
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 46
+  },
+  {
+    "id": "substation_tower_suspension_132",
+    "file": "substation_tower_suspension_132.png",
+    "size": [
+      12,
+      32,
+      6.4
+    ],
+    "cameraGame": [
+      41.98687744140625,
+      1.600000023841858,
+      58.998802185058594
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 2826
+  },
+  {
+    "id": "substation_tower_suspension_132_lod1",
+    "file": "substation_tower_suspension_132_lod1.png",
+    "size": [
+      12,
+      32,
+      6.4
+    ],
+    "cameraGame": [
+      41.98687744140625,
+      1.600000023841858,
+      58.998802185058594
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 814
+  },
+  {
+    "id": "substation_tower_terminal_132",
+    "file": "substation_tower_terminal_132.png",
+    "size": [
+      13,
+      30,
+      8
+    ],
+    "cameraGame": [
+      39.36269760131836,
+      1.600000023841858,
+      55.311378479003906
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 2826
+  },
+  {
+    "id": "substation_tower_terminal_132_lod1",
+    "file": "substation_tower_terminal_132_lod1.png",
+    "size": [
+      13,
+      30,
+      8
+    ],
+    "cameraGame": [
+      39.36269760131836,
+      1.600000023841858,
+      55.311378479003906
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 814
+  },
+  {
+    "id": "substation_pole_hframe_33",
+    "file": "substation_pole_hframe_33.png",
+    "size": [
+      6.4,
+      13,
+      1.2
+    ],
+    "cameraGame": [
+      17.05716896057129,
+      1.600000023841858,
+      23.968263626098633
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 738
+  },
+  {
+    "id": "substation_pole_hframe_33_lod1",
+    "file": "substation_pole_hframe_33_lod1.png",
+    "size": [
+      6.4,
+      13,
+      1.2
+    ],
+    "cameraGame": [
+      17.05716896057129,
+      1.600000023841858,
+      23.968263626098633
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 240
+  },
+  {
+    "id": "substation_pole_concrete_11",
+    "file": "substation_pole_concrete_11.png",
+    "size": [
+      2.8,
+      10.5,
+      0.65
+    ],
+    "cameraGame": [
+      12.875649452209473,
+      1.600000023841858,
+      18.092506408691406
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1356
+  },
+  {
+    "id": "substation_pole_concrete_11_lod1",
+    "file": "substation_pole_concrete_11_lod1.png",
+    "size": [
+      2.8,
+      10.5,
+      0.65
+    ],
+    "cameraGame": [
+      12.875649452209473,
+      1.600000023841858,
+      18.092506408691406
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 375
+  },
+  {
+    "id": "substation_gantry_132",
+    "file": "substation_gantry_132.png",
+    "size": [
+      12,
+      10,
+      2.0
+    ],
+    "cameraGame": [
+      15.454137802124023,
+      1.600000023841858,
+      21.715728759765625
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1828
+  },
+  {
+    "id": "substation_gantry_132_lod1",
+    "file": "substation_gantry_132_lod1.png",
+    "size": [
+      12,
+      10,
+      2.0
+    ],
+    "cameraGame": [
+      15.454137802124023,
+      1.600000023841858,
+      21.715728759765625
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 338
+  },
+  {
+    "id": "substation_gantry_33",
+    "file": "substation_gantry_33.png",
+    "size": [
+      7,
+      5.5,
+      1.3
+    ],
+    "cameraGame": [
+      8.845010757446289,
+      1.600000023841858,
+      12.428765296936035
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 1252
+  },
+  {
+    "id": "substation_gantry_33_lod1",
+    "file": "substation_gantry_33_lod1.png",
+    "size": [
+      7,
+      5.5,
+      1.3
+    ],
+    "cameraGame": [
+      8.845010757446289,
+      1.600000023841858,
+      12.428765296936035
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 338
+  },
+  {
+    "id": "substation_busbar_tube",
+    "file": "substation_busbar_tube.png",
+    "size": [
+      3,
+      0.15,
+      0.15
+    ],
+    "cameraGame": [
+      3.564384698867798,
+      1.600000023841858,
+      5.008574962615967
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 160
+  },
+  {
+    "id": "substation_busbar_tube_lod1",
+    "file": "substation_busbar_tube_lod1.png",
+    "size": [
+      3,
+      0.15,
+      0.15
+    ],
+    "cameraGame": [
+      3.564384698867798,
+      1.600000023841858,
+      5.008574962615967
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 16
+  },
+  {
+    "id": "substation_bund_large",
+    "file": "substation_bund_large.png",
+    "size": [
+      10,
+      0.65,
+      7.4
+    ],
+    "cameraGame": [
+      10.949929237365723,
+      1.600000023841858,
+      15.3865385055542
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 468
+  },
+  {
+    "id": "substation_bund_large_lod1",
+    "file": "substation_bund_large_lod1.png",
+    "size": [
+      10,
+      0.65,
+      7.4
+    ],
+    "cameraGame": [
+      10.949929237365723,
+      1.600000023841858,
+      15.3865385055542
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 70
+  },
+  {
+    "id": "substation_bund_small",
+    "file": "substation_bund_small.png",
+    "size": [
+      7.2,
+      0.55,
+      5.6
+    ],
+    "cameraGame": [
+      8.286432266235352,
+      1.600000023841858,
+      11.643866539001465
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 468
+  },
+  {
+    "id": "substation_bund_small_lod1",
+    "file": "substation_bund_small_lod1.png",
+    "size": [
+      7.2,
+      0.55,
+      5.6
+    ],
+    "cameraGame": [
+      8.286432266235352,
+      1.600000023841858,
+      11.643866539001465
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 70
+  },
+  {
+    "id": "substation_firewall",
+    "file": "substation_firewall.png",
+    "size": [
+      0.69,
+      6.5,
+      8
+    ],
+    "cameraGame": [
+      10.339558601379395,
+      1.600000023841858,
+      14.528862953186035
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 160
+  },
+  {
+    "id": "substation_firewall_lod1",
+    "file": "substation_firewall_lod1.png",
+    "size": [
+      0.69,
+      6.5,
+      8
+    ],
+    "cameraGame": [
+      10.339558601379395,
+      1.600000023841858,
+      14.528862953186035
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_wall_brick",
+    "file": "substation_wall_brick.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 126
+  },
+  {
+    "id": "substation_wall_brick_lod1",
+    "file": "substation_wall_brick_lod1.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_wall_door",
+    "file": "substation_wall_door.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 148
+  },
+  {
+    "id": "substation_wall_door_lod1",
+    "file": "substation_wall_door_lod1.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 32
+  },
+  {
+    "id": "substation_wall_window",
+    "file": "substation_wall_window.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 158
+  },
+  {
+    "id": "substation_wall_window_lod1",
+    "file": "substation_wall_window_lod1.png",
+    "size": [
+      3,
+      3.2,
+      0.3
+    ],
+    "cameraGame": [
+      4.672181129455566,
+      1.600000023841858,
+      6.565220355987549
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 42
+  },
+  {
+    "id": "substation_roof_flat",
+    "file": "substation_roof_flat.png",
+    "size": [
+      3.2,
+      0.32,
+      3.2
+    ],
+    "cameraGame": [
+      4.425331115722656,
+      1.600000023841858,
+      6.218353271484375
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 70
+  },
+  {
+    "id": "substation_roof_flat_lod1",
+    "file": "substation_roof_flat_lod1.png",
+    "size": [
+      3.2,
+      0.32,
+      3.2
+    ],
+    "cameraGame": [
+      4.425331115722656,
+      1.600000023841858,
+      6.218353271484375
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 22
+  },
+  {
+    "id": "substation_door_steel",
+    "file": "substation_door_steel.png",
+    "size": [
+      1.1,
+      2.2,
+      0.18
+    ],
+    "cameraGame": [
+      2.8865978717803955,
+      1.600000023841858,
+      4.0561676025390625
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 94
+  },
+  {
+    "id": "substation_door_steel_lod1",
+    "file": "substation_door_steel_lod1.png",
+    "size": [
+      1.1,
+      2.2,
+      0.18
+    ],
+    "cameraGame": [
+      2.8865978717803955,
+      1.600000023841858,
+      4.0561676025390625
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_louvre",
+    "file": "substation_louvre.png",
+    "size": [
+      1,
+      0.75,
+      0.12
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 152
+  },
+  {
+    "id": "substation_louvre_lod1",
+    "file": "substation_louvre_lod1.png",
+    "size": [
+      1,
+      0.75,
+      0.12
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 16
+  },
+  {
+    "id": "substation_window",
+    "file": "substation_window.png",
+    "size": [
+      1.36,
+      1.1,
+      0.18
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 96
+  },
+  {
+    "id": "substation_window_lod1",
+    "file": "substation_window_lod1.png",
+    "size": [
+      1.36,
+      1.1,
+      0.18
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 14
+  },
+  {
+    "id": "substation_oil_store",
+    "file": "substation_oil_store.png",
+    "size": [
+      4.5,
+      3.2,
+      3.5
+    ],
+    "cameraGame": [
+      5.5415520668029785,
+      1.600000023841858,
+      7.786835670471191
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 630
+  },
+  {
+    "id": "substation_oil_store_lod1",
+    "file": "substation_oil_store_lod1.png",
+    "size": [
+      4.5,
+      3.2,
+      3.5
+    ],
+    "cameraGame": [
+      5.5415520668029785,
+      1.600000023841858,
+      7.786835670471191
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 112
+  },
+  {
+    "id": "substation_fence_panel",
+    "file": "substation_fence_panel.png",
+    "size": [
+      2.5,
+      2.4,
+      0.09
+    ],
+    "cameraGame": [
+      3.3249311447143555,
+      1.600000023841858,
+      4.6721014976501465
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 244
+  },
+  {
+    "id": "substation_fence_panel_lod1",
+    "file": "substation_fence_panel_lod1.png",
+    "size": [
+      2.5,
+      2.4,
+      0.09
+    ],
+    "cameraGame": [
+      3.3249311447143555,
+      1.600000023841858,
+      4.6721014976501465
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 84
+  },
+  {
+    "id": "substation_fence_post",
+    "file": "substation_fence_post.png",
+    "size": [
+      0.16,
+      2.94,
+      1.0
+    ],
+    "cameraGame": [
+      4.127572536468506,
+      1.600000023841858,
+      5.799951076507568
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 66
+  },
+  {
+    "id": "substation_fence_post_lod1",
+    "file": "substation_fence_post_lod1.png",
+    "size": [
+      0.16,
+      2.94,
+      1.0
+    ],
+    "cameraGame": [
+      4.127572536468506,
+      1.600000023841858,
+      5.799951076507568
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 18
+  },
+  {
+    "id": "substation_gate",
+    "file": "substation_gate.png",
+    "size": [
+      5,
+      2.9,
+      0.24
+    ],
+    "cameraGame": [
+      5.392274379730225,
+      1.600000023841858,
+      7.577075004577637
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 618
+  },
+  {
+    "id": "substation_gate_lod1",
+    "file": "substation_gate_lod1.png",
+    "size": [
+      5,
+      2.9,
+      0.24
+    ],
+    "cameraGame": [
+      5.392274379730225,
+      1.600000023841858,
+      7.577075004577637
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 192
+  },
+  {
+    "id": "substation_floodlight_mast",
+    "file": "substation_floodlight_mast.png",
+    "size": [
+      1.6,
+      8,
+      1.0
+    ],
+    "cameraGame": [
+      10.496719360351562,
+      1.600000023841858,
+      14.749700546264648
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 194
+  },
+  {
+    "id": "substation_floodlight_mast_lod1",
+    "file": "substation_floodlight_mast_lod1.png",
+    "size": [
+      1.6,
+      8,
+      1.0
+    ],
+    "cameraGame": [
+      10.496719360351562,
+      1.600000023841858,
+      14.749700546264648
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 64
+  },
+  {
+    "id": "substation_lightning_mast",
+    "file": "substation_lightning_mast.png",
+    "size": [
+      0.8,
+      18,
+      0.8
+    ],
+    "cameraGame": [
+      20.628543853759766,
+      1.600000023841858,
+      28.98666000366211
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 86
+  },
+  {
+    "id": "substation_lightning_mast_lod1",
+    "file": "substation_lightning_mast_lod1.png",
+    "size": [
+      0.8,
+      18,
+      0.8
+    ],
+    "cameraGame": [
+      20.628543853759766,
+      1.600000023841858,
+      28.98666000366211
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 30
+  },
+  {
+    "id": "substation_gravel_tile",
+    "file": "substation_gravel_tile.png",
+    "size": [
+      4,
+      0.12,
+      4
+    ],
+    "cameraGame": [
+      5.169779300689697,
+      1.600000023841858,
+      7.264431476593018
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 490
+  },
+  {
+    "id": "substation_gravel_tile_lod1",
+    "file": "substation_gravel_tile_lod1.png",
+    "size": [
+      4,
+      0.12,
+      4
+    ],
+    "cameraGame": [
+      5.169779300689697,
+      1.600000023841858,
+      7.264431476593018
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_concrete_tile",
+    "file": "substation_concrete_tile.png",
+    "size": [
+      4,
+      0.15,
+      4
+    ],
+    "cameraGame": [
+      5.169779300689697,
+      1.600000023841858,
+      7.264431476593018
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 82
+  },
+  {
+    "id": "substation_concrete_tile_lod1",
+    "file": "substation_concrete_tile_lod1.png",
+    "size": [
+      4,
+      0.15,
+      4
+    ],
+    "cameraGame": [
+      5.169779300689697,
+      1.600000023841858,
+      7.264431476593018
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_trench_cover",
+    "file": "substation_trench_cover.png",
+    "size": [
+      1,
+      0.13,
+      0.6
+    ],
+    "cameraGame": [
+      2.4913699626922607,
+      1.600000023841858,
+      3.5008044242858887
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 74
+  },
+  {
+    "id": "substation_trench_cover_lod1",
+    "file": "substation_trench_cover_lod1.png",
+    "size": [
+      1,
+      0.13,
+      0.6
+    ],
+    "cameraGame": [
+      2.4913699626922607,
+      1.600000023841858,
+      3.5008044242858887
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 10
+  },
+  {
+    "id": "substation_sign_danger",
+    "file": "substation_sign_danger.png",
+    "size": [
+      0.75,
+      0.55,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 160
+  },
+  {
+    "id": "substation_sign_danger_lod1",
+    "file": "substation_sign_danger_lod1.png",
+    "size": [
+      0.75,
+      0.55,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 12
+  },
+  {
+    "id": "substation_sign_access",
+    "file": "substation_sign_access.png",
+    "size": [
+      0.65,
+      0.45,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 160
+  },
+  {
+    "id": "substation_sign_access_lod1",
+    "file": "substation_sign_access_lod1.png",
+    "size": [
+      0.65,
+      0.45,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 12
+  },
+  {
+    "id": "substation_sign_touch",
+    "file": "substation_sign_touch.png",
+    "size": [
+      0.45,
+      0.3,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 160
+  },
+  {
+    "id": "substation_sign_touch_lod1",
+    "file": "substation_sign_touch_lod1.png",
+    "size": [
+      0.45,
+      0.3,
+      0.07
+    ],
+    "cameraGame": [
+      2.328383207321167,
+      1.600000023841858,
+      3.271779775619507
+    ],
+    "cameraHeightMetres": 1.600000023841858,
+    "figureHeightMetres": 1.8,
+    "triangles": 12
+  }
+]

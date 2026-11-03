@@ -1,0 +1,8 @@
+{
+  "plan": "substation-plan.json",
+  "placedRecords": 462,
+  "conductorSegments": 903,
+  "eyeHeightAboveGround": 1.6,
+  "source": "actual exported GLB mesh instances",
+  "certification": "Plausible visual layout, not engineering-certified"
+}

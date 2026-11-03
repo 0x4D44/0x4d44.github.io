@@ -1,0 +1,18 @@
+{
+  "requestedBase": "017eab90a749d317f181872aa620b5facaea06f8",
+  "observedMain": "2b0af7cfbde7c77ec8645ed8cd03f6b57d6556b5",
+  "overlappingAddedPaths": [
+    "la-ladera/assets/models/manifest.substation.json",
+    "la-ladera/tests/substation-assets.test.mjs",
+    "la-ladera/tests/substation-catenary.test.mjs",
+    "la-ladera/tools/blender/SUBSTATION.md",
+    "la-ladera/tools/blender/substation.catalog.json",
+    "la-ladera/tools/blender/substation_atlas.py",
+    "la-ladera/tools/blender/substation_build.py",
+    "la-ladera/tools/blender/substation_equipment.py",
+    "la-ladera/tools/blender/substation_site.py",
+    "la-ladera/tools/blender/substation_validate.mjs",
+    "la-ladera/tools/substation_catenary.mjs"
+  ],
+  "decision": "Preserve the explicitly requested base and additions-only scope. Do not merge or overwrite the other substation implementation."
+}

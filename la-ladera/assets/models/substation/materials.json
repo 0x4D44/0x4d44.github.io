@@ -1,0 +1,428 @@
+{
+  "version": 1,
+  "license": "CC0-1.0",
+  "generator": "tools/blender/substation_atlas.py",
+  "atlas": {
+    "map": "../../textures/substation/atlas.png",
+    "normal": "../../textures/substation/atlas_normal.png",
+    "orm": "../../textures/substation/atlas_orm.png",
+    "size": [
+      2048,
+      2048
+    ],
+    "normalSize": [
+      1024,
+      1024
+    ],
+    "ormSize": [
+      1024,
+      1024
+    ],
+    "uvConvention": "bottom-to-top; match existing TextureLoader flipY=true",
+    "gutterPixels": 16,
+    "tiles": {
+      "substation_steel": [
+        0.0078125,
+        0.7578125,
+        0.2421875,
+        0.9921875
+      ],
+      "substation_rust": [
+        0.2578125,
+        0.7578125,
+        0.4921875,
+        0.9921875
+      ],
+      "substation_paint": [
+        0.5078125,
+        0.7578125,
+        0.7421875,
+        0.9921875
+      ],
+      "substation_brown": [
+        0.7578125,
+        0.7578125,
+        0.9921875,
+        0.9921875
+      ],
+      "substation_grey": [
+        0.0078125,
+        0.5078125,
+        0.2421875,
+        0.7421875
+      ],
+      "substation_concrete": [
+        0.2578125,
+        0.5078125,
+        0.4921875,
+        0.7421875
+      ],
+      "substation_gravel": [
+        0.5078125,
+        0.5078125,
+        0.7421875,
+        0.7421875
+      ],
+      "substation_peeling": [
+        0.7578125,
+        0.5078125,
+        0.9921875,
+        0.7421875
+      ],
+      "substation_rubber": [
+        0.0078125,
+        0.2578125,
+        0.2421875,
+        0.4921875
+      ],
+      "substation_oil": [
+        0.2578125,
+        0.2578125,
+        0.4921875,
+        0.4921875
+      ],
+      "substation_brick": [
+        0.5078125,
+        0.2578125,
+        0.7421875,
+        0.4921875
+      ],
+      "substation_wood": [
+        0.7578125,
+        0.2578125,
+        0.9921875,
+        0.4921875
+      ],
+      "substation_sign_danger": [
+        0.0078125,
+        0.0078125,
+        0.2421875,
+        0.2421875
+      ],
+      "substation_sign_access": [
+        0.2578125,
+        0.0078125,
+        0.4921875,
+        0.2421875
+      ],
+      "substation_sign_touch": [
+        0.5078125,
+        0.0078125,
+        0.7421875,
+        0.2421875
+      ],
+      "substation_plate": [
+        0.76171875,
+        0.08544921875,
+        0.98828125,
+        0.1162109375
+      ],
+      "substation_plate_132": [
+        0.76171875,
+        0.17822265625,
+        0.98828125,
+        0.2373046875
+      ],
+      "substation_plate_33": [
+        0.76171875,
+        0.12451171875,
+        0.98828125,
+        0.171875
+      ],
+      "substation_plate_t1": [
+        0.76171875,
+        0.0556640625,
+        0.87060546875,
+        0.078125
+      ],
+      "substation_plate_t2": [
+        0.8798828125,
+        0.0556640625,
+        0.98828125,
+        0.078125
+      ],
+      "substation_plate_ocb": [
+        0.76171875,
+        0.0166015625,
+        0.98828125,
+        0.0458984375
+      ]
+    }
+  },
+  "materials": {
+    "substation_steel": {
+      "tile": "substation_steel",
+      "color": 16777215,
+      "rough": 0.44,
+      "metal": 0.8,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_rust": {
+      "tile": "substation_rust",
+      "color": 16777215,
+      "rough": 0.91,
+      "metal": 0.17,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_paint": {
+      "tile": "substation_paint",
+      "color": 16777215,
+      "rough": 0.67,
+      "metal": 0.23,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_brown": {
+      "tile": "substation_brown",
+      "color": 16777215,
+      "rough": 0.24,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_grey": {
+      "tile": "substation_grey",
+      "color": 16777215,
+      "rough": 0.27,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_concrete": {
+      "tile": "substation_concrete",
+      "color": 16777215,
+      "rough": 0.96,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_gravel": {
+      "tile": "substation_gravel",
+      "color": 16777215,
+      "rough": 0.99,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_peeling": {
+      "tile": "substation_peeling",
+      "color": 16777215,
+      "rough": 0.78,
+      "metal": 0.18,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_rubber": {
+      "tile": "substation_rubber",
+      "color": 16777215,
+      "rough": 0.89,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_oil": {
+      "tile": "substation_oil",
+      "color": 16777215,
+      "rough": 0.2,
+      "metal": 0.02,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_brick": {
+      "tile": "substation_brick",
+      "color": 16777215,
+      "rough": 0.94,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_wood": {
+      "tile": "substation_wood",
+      "color": 16777215,
+      "rough": 0.9,
+      "metal": 0,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_sign_danger": {
+      "tile": "substation_sign_danger",
+      "color": 16777215,
+      "rough": 0.62,
+      "metal": 0.1,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_sign_access": {
+      "tile": "substation_sign_access",
+      "color": 16777215,
+      "rough": 0.65,
+      "metal": 0.1,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_sign_touch": {
+      "tile": "substation_sign_touch",
+      "color": 16777215,
+      "rough": 0.62,
+      "metal": 0.1,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate": {
+      "tile": "substation_plate",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate_132": {
+      "tile": "substation_plate_132",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate_33": {
+      "tile": "substation_plate_33",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate_t1": {
+      "tile": "substation_plate_t1",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate_t2": {
+      "tile": "substation_plate_t2",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    },
+    "substation_plate_ocb": {
+      "tile": "substation_plate_ocb",
+      "color": 16777215,
+      "rough": 0.41,
+      "metal": 0.62,
+      "uv": "unit",
+      "vertexColors": true,
+      "side": "front",
+      "map": "atlas.png",
+      "normal": "atlas_normal.png",
+      "orm": "atlas_orm.png"
+    }
+  },
+  "reuse": {
+    "rust": "assets/textures/rusty_iron.jpg",
+    "paint": "assets/textures/metal_painted.jpg",
+    "concrete": "assets/textures/concrete_bare.jpg",
+    "peeling": "assets/textures/paint_peeling_soft.jpg",
+    "brick": "assets/textures/brick_red_solid.jpg",
+    "wood": "assets/textures/wood_old.jpg"
+  },
+  "files": {
+    "atlas.png": {
+      "bytes": 2933440,
+      "sha256": "a196dce140a5a28acdbe59aab6c50a8f461fe6345c3a467fa31f36cbd05f428e"
+    },
+    "atlas_normal.png": {
+      "bytes": 572509,
+      "sha256": "16505ecde88dd92bf74c2bd2058f57307b2a1993d0f744e69cc9ac21042b7494"
+    },
+    "atlas_orm.png": {
+      "bytes": 378247,
+      "sha256": "54a54db18e7a9eb49f0ca2956da92ec5a759203274c40c3b676710f6b9a9d353"
+    }
+  }
+}

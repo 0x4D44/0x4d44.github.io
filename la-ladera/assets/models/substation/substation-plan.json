@@ -1,0 +1,7347 @@
+{
+  "version": 1,
+  "units": "m",
+  "axes": "+Y up; +Z front/south; X east",
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "certification": "Plausible visual layout, not engineering-certified; do not use for construction, switching, working distances, fire design, earthing or protection settings.",
+  "compound": {
+    "width": 55,
+    "depth": 40,
+    "bounds": [
+      [
+        -27.5,
+        -20
+      ],
+      [
+        27.5,
+        20
+      ]
+    ],
+    "groundLevel": 0.12
+  },
+  "clearances": {
+    "phaseSpacing132": 2.7,
+    "phaseSpacing33": 1.2,
+    "minimumLiveHeightAtPerimeter": 4,
+    "liveEquipmentSetbackFromFence": 3.0,
+    "serviceAisleWidth": 3.5,
+    "notes": [
+      "Phase spacings describe the open-yard bay reference, not every bushing on packaged equipment.",
+      "132 kV CVTs are near the north fence but their live contacts are elevated above reach; yard entry remains restricted.",
+      "Bund widths exceed transformer envelopes; raised plinths place the wheels above the gravel.",
+      "The firewall separates T1 and T2 visually; fire rating and oil volume are not calculated.",
+      "No civil, electrical, flood, foundation, step/touch-potential or conductor-swing certification is implied."
+    ]
+  },
+  "equipment": [
+    {
+      "id": "GRAVEL-00-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-00-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -24,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-01-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -20,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-02-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -16,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-03-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -12,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-04-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -8,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-05-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        -4,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-06-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        0,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-07-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        4,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-08-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        8,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-09-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        12,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-10-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        16,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-11-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        20,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-00",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        -18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-01",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-02",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-03",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        -6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-04",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        -2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-05",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-06",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-07",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-08",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        14
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GRAVEL-12-09",
+      "asset": "substation_gravel_tile",
+      "position": [
+        24,
+        0,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "repeat"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-0-0",
+      "asset": "substation_concrete_tile",
+      "position": [
+        4,
+        0.12,
+        11.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-0-1",
+      "asset": "substation_concrete_tile",
+      "position": [
+        4,
+        0.12,
+        15.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-1-0",
+      "asset": "substation_concrete_tile",
+      "position": [
+        8,
+        0.12,
+        11.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-1-1",
+      "asset": "substation_concrete_tile",
+      "position": [
+        8,
+        0.12,
+        15.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-2-0",
+      "asset": "substation_concrete_tile",
+      "position": [
+        12,
+        0.12,
+        11.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-2-1",
+      "asset": "substation_concrete_tile",
+      "position": [
+        12,
+        0.12,
+        15.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-3-0",
+      "asset": "substation_concrete_tile",
+      "position": [
+        16,
+        0.12,
+        11.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "ROOM-FLOOR-3-1",
+      "asset": "substation_concrete_tile",
+      "position": [
+        16,
+        0.12,
+        15.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "ground",
+        "building"
+      ]
+    },
+    {
+      "id": "BUND-T1",
+      "asset": "substation_bund_large",
+      "position": [
+        -17,
+        0.12,
+        1
+      ],
+      "rotationY": 0,
+      "tags": [
+        "containment"
+      ]
+    },
+    {
+      "id": "T1",
+      "asset": "substation_transformer_132_33",
+      "position": [
+        -17,
+        0.58,
+        1
+      ],
+      "rotationY": 0,
+      "voltageKV": [
+        132,
+        33
+      ],
+      "mva": 40,
+      "bay": "TRANSFORMER-1",
+      "tags": [
+        "transformer",
+        "live",
+        "hum100Hz"
+      ]
+    },
+    {
+      "id": "BUND-T2",
+      "asset": "substation_bund_large",
+      "position": [
+        -4,
+        0.12,
+        1
+      ],
+      "rotationY": 0,
+      "tags": [
+        "containment"
+      ]
+    },
+    {
+      "id": "T2",
+      "asset": "substation_transformer_132_33",
+      "position": [
+        -4,
+        0.58,
+        1
+      ],
+      "rotationY": 0,
+      "voltageKV": [
+        132,
+        33
+      ],
+      "mva": 40,
+      "bay": "TRANSFORMER-2",
+      "tags": [
+        "transformer",
+        "live",
+        "hum100Hz"
+      ],
+      "materialOverrides": {
+        "substation_plate_t1": "substation_plate_t2"
+      }
+    },
+    {
+      "id": "BUND-T3",
+      "asset": "substation_bund_small",
+      "position": [
+        9,
+        0.12,
+        1
+      ],
+      "rotationY": 0,
+      "tags": [
+        "containment"
+      ]
+    },
+    {
+      "id": "T3",
+      "asset": "substation_transformer_33_11",
+      "position": [
+        9,
+        0.58,
+        1
+      ],
+      "rotationY": 0,
+      "voltageKV": [
+        33,
+        11
+      ],
+      "mva": 15,
+      "bay": "TRANSFORMER-3",
+      "tags": [
+        "transformer",
+        "live",
+        "hum100Hz"
+      ]
+    },
+    {
+      "id": "BUND-T4",
+      "asset": "substation_bund_small",
+      "position": [
+        19,
+        0.12,
+        1
+      ],
+      "rotationY": 0,
+      "tags": [
+        "containment"
+      ]
+    },
+    {
+      "id": "T4",
+      "asset": "substation_transformer_33_11",
+      "position": [
+        19,
+        0.58,
+        1
+      ],
+      "rotationY": 0,
+      "voltageKV": [
+        33,
+        11
+      ],
+      "mva": 15,
+      "bay": "TRANSFORMER-4",
+      "tags": [
+        "transformer",
+        "live",
+        "hum100Hz"
+      ]
+    },
+    {
+      "id": "FIREWALL-T1-T2",
+      "asset": "substation_firewall",
+      "position": [
+        -10.5,
+        0.12,
+        1
+      ],
+      "rotationY": 0,
+      "tags": [
+        "containment"
+      ]
+    },
+    {
+      "id": "PORTAL-132-1",
+      "asset": "substation_gantry_132",
+      "position": [
+        -17,
+        0.12,
+        -16
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "gantry"
+      ]
+    },
+    {
+      "id": "OCB-132-1",
+      "asset": "substation_breaker_oil_132",
+      "position": [
+        -17,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "132-BAY-1",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-1-A",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -19.7,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-1",
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-1-A",
+      "asset": "substation_ct_132",
+      "position": [
+        -19.7,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-1-A",
+      "asset": "substation_cvt_132",
+      "position": [
+        -19.7,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-1-A",
+      "asset": "substation_arrester_132",
+      "position": [
+        -19.7,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-1-B",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -17,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-1",
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-1-B",
+      "asset": "substation_ct_132",
+      "position": [
+        -17,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-1-B",
+      "asset": "substation_cvt_132",
+      "position": [
+        -17,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-1-B",
+      "asset": "substation_arrester_132",
+      "position": [
+        -17,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-1-C",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -14.3,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-1",
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-1-C",
+      "asset": "substation_ct_132",
+      "position": [
+        -14.3,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-1-C",
+      "asset": "substation_cvt_132",
+      "position": [
+        -14.3,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-1-C",
+      "asset": "substation_arrester_132",
+      "position": [
+        -14.3,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "PORTAL-132-2",
+      "asset": "substation_gantry_132",
+      "position": [
+        -4,
+        0.12,
+        -16
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "gantry"
+      ]
+    },
+    {
+      "id": "OCB-132-2",
+      "asset": "substation_breaker_oil_132",
+      "position": [
+        -4,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "132-BAY-2",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-2-A",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -6.7,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-2",
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-2-A",
+      "asset": "substation_ct_132",
+      "position": [
+        -6.7,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-2-A",
+      "asset": "substation_cvt_132",
+      "position": [
+        -6.7,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-2-A",
+      "asset": "substation_arrester_132",
+      "position": [
+        -6.7,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-2-B",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -4,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-2",
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-2-B",
+      "asset": "substation_ct_132",
+      "position": [
+        -4,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-2-B",
+      "asset": "substation_cvt_132",
+      "position": [
+        -4,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-2-B",
+      "asset": "substation_arrester_132",
+      "position": [
+        -4,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-132-2-C",
+      "asset": "substation_disconnector_centre_132",
+      "position": [
+        -1.2999999999999998,
+        0.12,
+        -14.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "132-BAY-2",
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-132-2-C",
+      "asset": "substation_ct_132",
+      "position": [
+        -1.2999999999999998,
+        0.12,
+        -5.4
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CVT-132-2-C",
+      "asset": "substation_cvt_132",
+      "position": [
+        -1.2999999999999998,
+        0.12,
+        -18
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-132-2-C",
+      "asset": "substation_arrester_132",
+      "position": [
+        -1.2999999999999998,
+        0.12,
+        -3.6
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "PORTAL-33-1",
+      "asset": "substation_gantry_33",
+      "position": [
+        9,
+        0.12,
+        -16
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "gantry"
+      ]
+    },
+    {
+      "id": "OCB-33-1",
+      "asset": "substation_breaker_oil_33",
+      "position": [
+        9,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "33-BAY-1",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-1-A",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        7.4,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-1",
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-1-A",
+      "asset": "substation_ct_33",
+      "position": [
+        7.8,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-1-A",
+      "asset": "substation_arrester_33",
+      "position": [
+        7.8,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-1-B",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        9.0,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-1",
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-1-B",
+      "asset": "substation_ct_33",
+      "position": [
+        9,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-1-B",
+      "asset": "substation_arrester_33",
+      "position": [
+        9,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-1-C",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        10.6,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-1",
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-1-C",
+      "asset": "substation_ct_33",
+      "position": [
+        10.2,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-1-C",
+      "asset": "substation_arrester_33",
+      "position": [
+        10.2,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "PORTAL-33-2",
+      "asset": "substation_gantry_33",
+      "position": [
+        19,
+        0.12,
+        -16
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "gantry"
+      ]
+    },
+    {
+      "id": "OCB-33-2",
+      "asset": "substation_breaker_oil_33",
+      "position": [
+        19,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "33-BAY-2",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-2-A",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        17.4,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-2",
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-2-A",
+      "asset": "substation_ct_33",
+      "position": [
+        17.8,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-2-A",
+      "asset": "substation_arrester_33",
+      "position": [
+        17.8,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "A",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-2-B",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        19.0,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-2",
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-2-B",
+      "asset": "substation_ct_33",
+      "position": [
+        19,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-2-B",
+      "asset": "substation_arrester_33",
+      "position": [
+        19,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "B",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "DS-33-2-C",
+      "asset": "substation_disconnector_centre_33",
+      "position": [
+        20.6,
+        0.12,
+        -14
+      ],
+      "rotationY": 1.5707963267948966,
+      "bay": "33-BAY-2",
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "CT-33-2-C",
+      "asset": "substation_ct_33",
+      "position": [
+        20.2,
+        0.12,
+        -5.7
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "LA-33-2-C",
+      "asset": "substation_arrester_33",
+      "position": [
+        20.2,
+        0.12,
+        -3.4
+      ],
+      "rotationY": 0,
+      "phase": "C",
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "ES-132-1",
+      "asset": "substation_earth_switch_132",
+      "position": [
+        -22,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "earthing"
+      ]
+    },
+    {
+      "id": "ES-132-2",
+      "asset": "substation_earth_switch_132",
+      "position": [
+        1,
+        0.12,
+        -10
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live",
+        "earthing"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-0",
+      "asset": "substation_wall_brick",
+      "position": [
+        3,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-1",
+      "asset": "substation_wall_brick",
+      "position": [
+        6,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-2",
+      "asset": "substation_wall_window",
+      "position": [
+        9,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WINDOW-BACK-2",
+      "asset": "substation_window",
+      "position": [
+        9,
+        1.32,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-3",
+      "asset": "substation_wall_brick",
+      "position": [
+        12,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-4",
+      "asset": "substation_wall_window",
+      "position": [
+        15,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WINDOW-BACK-4",
+      "asset": "substation_window",
+      "position": [
+        15,
+        1.32,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-BACK-5",
+      "asset": "substation_wall_brick",
+      "position": [
+        18,
+        0.12,
+        9
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-0",
+      "asset": "substation_wall_brick",
+      "position": [
+        3,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-1",
+      "asset": "substation_wall_door",
+      "position": [
+        6,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-DOOR",
+      "asset": "substation_door_steel",
+      "position": [
+        6,
+        0.2,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "door"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-2",
+      "asset": "substation_wall_window",
+      "position": [
+        9,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WINDOW-FRONT-2",
+      "asset": "substation_window",
+      "position": [
+        9,
+        1.32,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-3",
+      "asset": "substation_wall_brick",
+      "position": [
+        12,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-4",
+      "asset": "substation_wall_window",
+      "position": [
+        15,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WINDOW-FRONT-4",
+      "asset": "substation_window",
+      "position": [
+        15,
+        1.32,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-FRONT-5",
+      "asset": "substation_wall_brick",
+      "position": [
+        18,
+        0.12,
+        18
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WEST-0",
+      "asset": "substation_wall_brick",
+      "position": [
+        1.5,
+        0.12,
+        10.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WEST-1",
+      "asset": "substation_wall_brick",
+      "position": [
+        1.5,
+        0.12,
+        13.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-WEST-2",
+      "asset": "substation_wall_brick",
+      "position": [
+        1.5,
+        0.12,
+        16.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-LOUVRE-WEST",
+      "asset": "substation_louvre",
+      "position": [
+        1.5,
+        2.25,
+        15
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-EAST-0",
+      "asset": "substation_wall_brick",
+      "position": [
+        19.5,
+        0.12,
+        10.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-EAST-1",
+      "asset": "substation_wall_brick",
+      "position": [
+        19.5,
+        0.12,
+        13.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-EAST-2",
+      "asset": "substation_wall_brick",
+      "position": [
+        19.5,
+        0.12,
+        16.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-LOUVRE-EAST",
+      "asset": "substation_louvre",
+      "position": [
+        19.5,
+        2.25,
+        15
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-0-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        2.5,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-0-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        2.5,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-0-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        2.5,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-1-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        5.7,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-1-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        5.7,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-1-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        5.7,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-2-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        8.9,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-2-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        8.9,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-2-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        8.9,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-3-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        12.100000000000001,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-3-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        12.100000000000001,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-3-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        12.100000000000001,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-4-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        15.3,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-4-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        15.3,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-4-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        15.3,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-5-0",
+      "asset": "substation_roof_flat",
+      "position": [
+        18.5,
+        3.32,
+        10.3
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-5-1",
+      "asset": "substation_roof_flat",
+      "position": [
+        18.5,
+        3.32,
+        13.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "CONTROL-ROOF-5-2",
+      "asset": "substation_roof_flat",
+      "position": [
+        18.5,
+        3.32,
+        16.700000000000003
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "roof"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-01",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        2.8,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "T3 IN",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-02",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        3.6399999999999997,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 1",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-03",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        4.4799999999999995,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 2",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-04",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        5.32,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 3",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-05",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        6.16,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 4",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-06",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        7.0,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "BUS COUPLER",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-07",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        7.84,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "VT",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-08",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        8.68,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 5",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-09",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        9.52,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 6",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-10",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        10.36,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 7",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-11",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        11.2,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "FEEDER 8",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "11KV-PANEL-12",
+      "asset": "substation_switchboard_panel_11",
+      "position": [
+        12.04,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "label": "T4 IN",
+      "tags": [
+        "indoor",
+        "switchboard"
+      ]
+    },
+    {
+      "id": "CONTROL-PANEL-1",
+      "asset": "substation_control_panel",
+      "position": [
+        15,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "CONTROL-PANEL-2",
+      "asset": "substation_control_panel",
+      "position": [
+        16,
+        0.27,
+        10.2
+      ],
+      "rotationY": 0,
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "BATTERY-110V",
+      "asset": "substation_battery_bank",
+      "position": [
+        16.5,
+        0.27,
+        16.4
+      ],
+      "rotationY": 0,
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "BATTERY-CHARGER",
+      "asset": "substation_battery_charger",
+      "position": [
+        13.4,
+        0.27,
+        16.4
+      ],
+      "rotationY": 0,
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "OCB-11-SPARE",
+      "asset": "substation_breaker_truck_11",
+      "position": [
+        11.8,
+        0.27,
+        15.5
+      ],
+      "rotationY": 0,
+      "tags": [
+        "indoor",
+        "withdrawn"
+      ]
+    },
+    {
+      "id": "OIL-STORE",
+      "asset": "substation_oil_store",
+      "position": [
+        -22,
+        0.12,
+        15
+      ],
+      "rotationY": 0,
+      "tags": [
+        "building",
+        "containment"
+      ]
+    },
+    {
+      "id": "STATION-SERVICE",
+      "asset": "substation_station_transformer",
+      "position": [
+        -21,
+        0.12,
+        8
+      ],
+      "rotationY": 0,
+      "tags": [
+        "live"
+      ]
+    },
+    {
+      "id": "FLOOD-1",
+      "asset": "substation_floodlight_mast",
+      "position": [
+        -25,
+        0.12,
+        -17
+      ],
+      "rotationY": 0,
+      "tags": [
+        "light"
+      ]
+    },
+    {
+      "id": "FLOOD-2",
+      "asset": "substation_floodlight_mast",
+      "position": [
+        25,
+        0.12,
+        -17
+      ],
+      "rotationY": 0,
+      "tags": [
+        "light"
+      ]
+    },
+    {
+      "id": "FLOOD-3",
+      "asset": "substation_floodlight_mast",
+      "position": [
+        -25,
+        0.12,
+        17
+      ],
+      "rotationY": 0,
+      "tags": [
+        "light"
+      ]
+    },
+    {
+      "id": "FLOOD-4",
+      "asset": "substation_floodlight_mast",
+      "position": [
+        24,
+        0.12,
+        17
+      ],
+      "rotationY": 0,
+      "tags": [
+        "light"
+      ]
+    },
+    {
+      "id": "LIGHTNING-1",
+      "asset": "substation_lightning_mast",
+      "position": [
+        24,
+        0.12,
+        7
+      ],
+      "rotationY": 0,
+      "tags": [
+        "lightning"
+      ]
+    },
+    {
+      "id": "FENCE-N-00",
+      "asset": "substation_fence_panel",
+      "position": [
+        -26.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-01",
+      "asset": "substation_fence_panel",
+      "position": [
+        -23.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-02",
+      "asset": "substation_fence_panel",
+      "position": [
+        -21.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-03",
+      "asset": "substation_fence_panel",
+      "position": [
+        -18.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-04",
+      "asset": "substation_fence_panel",
+      "position": [
+        -16.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-05",
+      "asset": "substation_fence_panel",
+      "position": [
+        -13.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-06",
+      "asset": "substation_fence_panel",
+      "position": [
+        -11.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-07",
+      "asset": "substation_fence_panel",
+      "position": [
+        -8.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-08",
+      "asset": "substation_fence_panel",
+      "position": [
+        -6.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-09",
+      "asset": "substation_fence_panel",
+      "position": [
+        -3.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-10",
+      "asset": "substation_fence_panel",
+      "position": [
+        -1.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-11",
+      "asset": "substation_fence_panel",
+      "position": [
+        1.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-12",
+      "asset": "substation_fence_panel",
+      "position": [
+        3.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-13",
+      "asset": "substation_fence_panel",
+      "position": [
+        6.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-14",
+      "asset": "substation_fence_panel",
+      "position": [
+        8.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-15",
+      "asset": "substation_fence_panel",
+      "position": [
+        11.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-16",
+      "asset": "substation_fence_panel",
+      "position": [
+        13.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-17",
+      "asset": "substation_fence_panel",
+      "position": [
+        16.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-18",
+      "asset": "substation_fence_panel",
+      "position": [
+        18.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-19",
+      "asset": "substation_fence_panel",
+      "position": [
+        21.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-20",
+      "asset": "substation_fence_panel",
+      "position": [
+        23.75,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-N-21",
+      "asset": "substation_fence_panel",
+      "position": [
+        26.25,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-00",
+      "asset": "substation_fence_panel",
+      "position": [
+        -26.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-01",
+      "asset": "substation_fence_panel",
+      "position": [
+        -23.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-02",
+      "asset": "substation_fence_panel",
+      "position": [
+        -21.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-03",
+      "asset": "substation_fence_panel",
+      "position": [
+        -18.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-04",
+      "asset": "substation_fence_panel",
+      "position": [
+        -16.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-07",
+      "asset": "substation_fence_panel",
+      "position": [
+        -8.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-08",
+      "asset": "substation_fence_panel",
+      "position": [
+        -6.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-09",
+      "asset": "substation_fence_panel",
+      "position": [
+        -3.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-10",
+      "asset": "substation_fence_panel",
+      "position": [
+        -1.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-11",
+      "asset": "substation_fence_panel",
+      "position": [
+        1.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-12",
+      "asset": "substation_fence_panel",
+      "position": [
+        3.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-13",
+      "asset": "substation_fence_panel",
+      "position": [
+        6.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-14",
+      "asset": "substation_fence_panel",
+      "position": [
+        8.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-15",
+      "asset": "substation_fence_panel",
+      "position": [
+        11.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-16",
+      "asset": "substation_fence_panel",
+      "position": [
+        13.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-17",
+      "asset": "substation_fence_panel",
+      "position": [
+        16.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-18",
+      "asset": "substation_fence_panel",
+      "position": [
+        18.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-19",
+      "asset": "substation_fence_panel",
+      "position": [
+        21.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-20",
+      "asset": "substation_fence_panel",
+      "position": [
+        23.75,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-S-21",
+      "asset": "substation_fence_panel",
+      "position": [
+        26.25,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-00",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -18.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-01",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -16.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-02",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -13.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-03",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -11.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-04",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -8.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-05",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -6.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-06",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -3.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-07",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        -1.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-08",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        1.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-09",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        3.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-10",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        6.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-11",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        8.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-12",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        11.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-13",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        13.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-14",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        16.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-W-15",
+      "asset": "substation_fence_panel",
+      "position": [
+        -27.5,
+        0.12,
+        18.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-00",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -18.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-01",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -16.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-02",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -13.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-03",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -11.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-04",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -8.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-05",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -6.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-06",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -3.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-07",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        -1.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-08",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        1.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-09",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        3.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-10",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        6.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-11",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        8.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-12",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        11.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-13",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        13.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-14",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        16.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-E-15",
+      "asset": "substation_fence_panel",
+      "position": [
+        27.5,
+        0.12,
+        18.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-000",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-001",
+      "asset": "substation_fence_post",
+      "position": [
+        -25.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-002",
+      "asset": "substation_fence_post",
+      "position": [
+        -22.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-003",
+      "asset": "substation_fence_post",
+      "position": [
+        -20.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-004",
+      "asset": "substation_fence_post",
+      "position": [
+        -17.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-005",
+      "asset": "substation_fence_post",
+      "position": [
+        -15.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-006",
+      "asset": "substation_fence_post",
+      "position": [
+        -12.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-007",
+      "asset": "substation_fence_post",
+      "position": [
+        -10.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-008",
+      "asset": "substation_fence_post",
+      "position": [
+        -7.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-009",
+      "asset": "substation_fence_post",
+      "position": [
+        -5.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-010",
+      "asset": "substation_fence_post",
+      "position": [
+        -2.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-011",
+      "asset": "substation_fence_post",
+      "position": [
+        0.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-012",
+      "asset": "substation_fence_post",
+      "position": [
+        2.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-013",
+      "asset": "substation_fence_post",
+      "position": [
+        5.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-014",
+      "asset": "substation_fence_post",
+      "position": [
+        7.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-015",
+      "asset": "substation_fence_post",
+      "position": [
+        10.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-016",
+      "asset": "substation_fence_post",
+      "position": [
+        12.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-017",
+      "asset": "substation_fence_post",
+      "position": [
+        15.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-018",
+      "asset": "substation_fence_post",
+      "position": [
+        17.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-019",
+      "asset": "substation_fence_post",
+      "position": [
+        20.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-020",
+      "asset": "substation_fence_post",
+      "position": [
+        22.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-021",
+      "asset": "substation_fence_post",
+      "position": [
+        25.0,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-022",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-023",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-024",
+      "asset": "substation_fence_post",
+      "position": [
+        -25.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-025",
+      "asset": "substation_fence_post",
+      "position": [
+        -22.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-026",
+      "asset": "substation_fence_post",
+      "position": [
+        -20.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-027",
+      "asset": "substation_fence_post",
+      "position": [
+        -17.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-028",
+      "asset": "substation_fence_post",
+      "position": [
+        -15.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-029",
+      "asset": "substation_fence_post",
+      "position": [
+        -10.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-030",
+      "asset": "substation_fence_post",
+      "position": [
+        -7.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-031",
+      "asset": "substation_fence_post",
+      "position": [
+        -5.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-032",
+      "asset": "substation_fence_post",
+      "position": [
+        -2.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-033",
+      "asset": "substation_fence_post",
+      "position": [
+        0.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-034",
+      "asset": "substation_fence_post",
+      "position": [
+        2.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-035",
+      "asset": "substation_fence_post",
+      "position": [
+        5.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-036",
+      "asset": "substation_fence_post",
+      "position": [
+        7.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-037",
+      "asset": "substation_fence_post",
+      "position": [
+        10.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-038",
+      "asset": "substation_fence_post",
+      "position": [
+        12.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-039",
+      "asset": "substation_fence_post",
+      "position": [
+        15.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-040",
+      "asset": "substation_fence_post",
+      "position": [
+        17.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-041",
+      "asset": "substation_fence_post",
+      "position": [
+        20.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-042",
+      "asset": "substation_fence_post",
+      "position": [
+        22.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-043",
+      "asset": "substation_fence_post",
+      "position": [
+        25.0,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-044",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-045",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-046",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -15.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-047",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-048",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -10.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-049",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-050",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -5.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-051",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        -2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-052",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        0.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-053",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-054",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        5.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-055",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-056",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        10.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-057",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-058",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        15.0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-059",
+      "asset": "substation_fence_post",
+      "position": [
+        -27.5,
+        0.12,
+        17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-060",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-061",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -15.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-062",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-063",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -10.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-064",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-065",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -5.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-066",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        -2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-067",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        0.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-068",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-069",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        5.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-070",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-071",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        10.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-072",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-073",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        15.0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "FENCE-POST-074",
+      "asset": "substation_fence_post",
+      "position": [
+        27.5,
+        0.12,
+        17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "fence",
+        "repeat"
+      ]
+    },
+    {
+      "id": "GATE-SOUTH",
+      "asset": "substation_gate",
+      "position": [
+        -12.5,
+        0.12,
+        20
+      ],
+      "rotationY": 0,
+      "tags": [
+        "gate",
+        "door"
+      ]
+    },
+    {
+      "id": "DANGER-FENCE-1",
+      "asset": "substation_sign_danger",
+      "position": [
+        -24,
+        1.55,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "sign"
+      ]
+    },
+    {
+      "id": "DANGER-FENCE-2",
+      "asset": "substation_sign_danger",
+      "position": [
+        24,
+        1.55,
+        -20
+      ],
+      "rotationY": 3.141592653589793,
+      "tags": [
+        "sign"
+      ]
+    },
+    {
+      "id": "DANGER-FENCE-3",
+      "asset": "substation_sign_danger",
+      "position": [
+        -27.5,
+        1.55,
+        0
+      ],
+      "rotationY": -1.5707963267948966,
+      "tags": [
+        "sign"
+      ]
+    },
+    {
+      "id": "DANGER-FENCE-4",
+      "asset": "substation_sign_danger",
+      "position": [
+        27.5,
+        1.55,
+        0
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "sign"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-00",
+      "asset": "substation_trench_cover",
+      "position": [
+        -17,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-01",
+      "asset": "substation_trench_cover",
+      "position": [
+        -16,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-02",
+      "asset": "substation_trench_cover",
+      "position": [
+        -15,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-03",
+      "asset": "substation_trench_cover",
+      "position": [
+        -14,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-04",
+      "asset": "substation_trench_cover",
+      "position": [
+        -13,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-05",
+      "asset": "substation_trench_cover",
+      "position": [
+        -12,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-06",
+      "asset": "substation_trench_cover",
+      "position": [
+        -11,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-07",
+      "asset": "substation_trench_cover",
+      "position": [
+        -10,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-08",
+      "asset": "substation_trench_cover",
+      "position": [
+        -9,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-09",
+      "asset": "substation_trench_cover",
+      "position": [
+        -8,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-10",
+      "asset": "substation_trench_cover",
+      "position": [
+        -7,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-11",
+      "asset": "substation_trench_cover",
+      "position": [
+        -6,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-12",
+      "asset": "substation_trench_cover",
+      "position": [
+        -5,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-13",
+      "asset": "substation_trench_cover",
+      "position": [
+        -4,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-14",
+      "asset": "substation_trench_cover",
+      "position": [
+        -3,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-15",
+      "asset": "substation_trench_cover",
+      "position": [
+        -2,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-16",
+      "asset": "substation_trench_cover",
+      "position": [
+        -1,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-17",
+      "asset": "substation_trench_cover",
+      "position": [
+        0,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-18",
+      "asset": "substation_trench_cover",
+      "position": [
+        1,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-19",
+      "asset": "substation_trench_cover",
+      "position": [
+        2,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-20",
+      "asset": "substation_trench_cover",
+      "position": [
+        3,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-21",
+      "asset": "substation_trench_cover",
+      "position": [
+        4,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-22",
+      "asset": "substation_trench_cover",
+      "position": [
+        5,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-23",
+      "asset": "substation_trench_cover",
+      "position": [
+        6,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-24",
+      "asset": "substation_trench_cover",
+      "position": [
+        7,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-25",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-26",
+      "asset": "substation_trench_cover",
+      "position": [
+        9,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-27",
+      "asset": "substation_trench_cover",
+      "position": [
+        10,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-28",
+      "asset": "substation_trench_cover",
+      "position": [
+        11,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-29",
+      "asset": "substation_trench_cover",
+      "position": [
+        12,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-30",
+      "asset": "substation_trench_cover",
+      "position": [
+        13,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-31",
+      "asset": "substation_trench_cover",
+      "position": [
+        14,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-32",
+      "asset": "substation_trench_cover",
+      "position": [
+        15,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-33",
+      "asset": "substation_trench_cover",
+      "position": [
+        16,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-MAIN-34",
+      "asset": "substation_trench_cover",
+      "position": [
+        17,
+        0.12,
+        6.6
+      ],
+      "rotationY": 0,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-ROOM-00",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        7.1
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-ROOM-01",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        8.1
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-ROOM-02",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        9.1
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-ROOM-03",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        10.1
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    },
+    {
+      "id": "TRENCH-ROOM-04",
+      "asset": "substation_trench_cover",
+      "position": [
+        8,
+        0.12,
+        11.1
+      ],
+      "rotationY": 1.5707963267948966,
+      "tags": [
+        "trench",
+        "repeat"
+      ]
+    }
+  ],
+  "towers": [
+    {
+      "id": "TOWER-INCOMING",
+      "asset": "substation_tower_suspension_132",
+      "position": [
+        -18,
+        0,
+        -39
+      ],
+      "rotationY": 0,
+      "external": true,
+      "tags": [
+        "tower",
+        "incoming"
+      ]
+    },
+    {
+      "id": "TOWER-OUTGOING",
+      "asset": "substation_tower_terminal_132",
+      "position": [
+        15,
+        0,
+        -39
+      ],
+      "rotationY": 0,
+      "external": true,
+      "tags": [
+        "tower",
+        "outgoing"
+      ]
+    }
+  ],
+  "bays": [
+    {
+      "id": "132-BAY-1",
+      "voltageKV": 132,
+      "centre": [
+        -17,
+        -10
+      ],
+      "phaseSpacing": 2.7
+    },
+    {
+      "id": "132-BAY-2",
+      "voltageKV": 132,
+      "centre": [
+        -4,
+        -10
+      ],
+      "phaseSpacing": 2.7
+    },
+    {
+      "id": "33-BAY-1",
+      "voltageKV": 33,
+      "centre": [
+        9,
+        -10
+      ],
+      "phaseSpacing": 1.2
+    },
+    {
+      "id": "33-BAY-2",
+      "voltageKV": 33,
+      "centre": [
+        19,
+        -10
+      ],
+      "phaseSpacing": 1.2
+    }
+  ],
+  "trenches": [
+    {
+      "id": "MAIN-CABLE-TRENCH",
+      "width": 0.6,
+      "depth": 0.7,
+      "polyline": [
+        [
+          -17.5,
+          6.6
+        ],
+        [
+          17.5,
+          6.6
+        ]
+      ]
+    },
+    {
+      "id": "CONTROL-ENTRY",
+      "width": 0.6,
+      "depth": 0.7,
+      "polyline": [
+        [
+          8,
+          6.6
+        ],
+        [
+          8,
+          12
+        ]
+      ]
+    }
+  ],
+  "fence": {
+    "polyline": [
+      [
+        -27.5,
+        -20
+      ],
+      [
+        27.5,
+        -20
+      ],
+      [
+        27.5,
+        20
+      ],
+      [
+        -27.5,
+        20
+      ],
+      [
+        -27.5,
+        -20
+      ]
+    ],
+    "height": 2.4,
+    "gateGap": {
+      "fromPoint": [
+        -15,
+        20
+      ],
+      "toPoint": [
+        -10,
+        20
+      ]
+    },
+    "outriggerHeight": 0.5
+  },
+  "gate": {
+    "id": "GATE-SOUTH",
+    "asset": "substation_gate",
+    "position": [
+      -12.5,
+      0.12,
+      20
+    ],
+    "rotationY": 0,
+    "width": 5
+  },
+  "building": {
+    "id": "CONTROL",
+    "centre": [
+      10.5,
+      13.5
+    ],
+    "width": 18,
+    "depth": 9,
+    "height": 3.52,
+    "front": "+Z",
+    "panels": 12,
+    "interiorServiceAisle": {
+      "fromPoint": [
+        2,
+        12.3
+      ],
+      "toPoint": [
+        18,
+        12.3
+      ],
+      "width": 1.8
+    }
+  },
+  "nav": {
+    "publicAccess": false,
+    "serviceRoute": [
+      [
+        -12.5,
+        21
+      ],
+      [
+        -12.5,
+        8
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        16
+      ],
+      [
+        6,
+        16
+      ]
+    ],
+    "note": "Combine per-equipment keepOut polygons with door sweeps when integrating; this is placement data only."
+  },
+  "spans": [
+    {
+      "id": "LINE-1-A",
+      "start": [
+        -12.33,
+        16.020000000000003,
+        -39
+      ],
+      "end": [
+        -20.240000000000002,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "LINE-1-B",
+      "start": [
+        -12.33,
+        21.14,
+        -39
+      ],
+      "end": [
+        -17,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "LINE-1-C",
+      "start": [
+        -12.33,
+        25.94,
+        -39
+      ],
+      "end": [
+        -13.76,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "LINE-2-A",
+      "start": [
+        8.83,
+        16.8,
+        -37.1
+      ],
+      "end": [
+        -7.24,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "LINE-2-B",
+      "start": [
+        8.83,
+        21.6,
+        -37.1
+      ],
+      "end": [
+        -4,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "LINE-2-C",
+      "start": [
+        8.83,
+        26.1,
+        -37.1
+      ],
+      "end": [
+        -0.7599999999999998,
+        9.27,
+        -15.25
+      ],
+      "sag": 0.9,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-PORTAL-A",
+      "start": [
+        -20.240000000000002,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -19.7,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-ISOLATOR-A",
+      "start": [
+        -19.7,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -19.25,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-CT-A",
+      "start": [
+        -19.25,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -19.7,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-TRANSFORMER-A",
+      "start": [
+        -19.7,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -18.62,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-PORTAL-B",
+      "start": [
+        -17.0,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -17.0,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-ISOLATOR-B",
+      "start": [
+        -17.0,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -17,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-CT-B",
+      "start": [
+        -17,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -17.0,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-TRANSFORMER-B",
+      "start": [
+        -17.0,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -17,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-PORTAL-C",
+      "start": [
+        -13.76,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -14.3,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-ISOLATOR-C",
+      "start": [
+        -14.3,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -14.75,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-CT-C",
+      "start": [
+        -14.75,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -14.3,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-1-TRANSFORMER-C",
+      "start": [
+        -14.3,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -15.379999999999999,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-PORTAL-A",
+      "start": [
+        -7.24,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -6.7,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-ISOLATOR-A",
+      "start": [
+        -6.7,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -6.25,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-CT-A",
+      "start": [
+        -6.25,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -6.7,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-TRANSFORMER-A",
+      "start": [
+        -6.7,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -5.62,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-PORTAL-B",
+      "start": [
+        -4.0,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -4.0,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-ISOLATOR-B",
+      "start": [
+        -4.0,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -4,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-CT-B",
+      "start": [
+        -4,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -4.0,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-TRANSFORMER-B",
+      "start": [
+        -4.0,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -4,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-PORTAL-C",
+      "start": [
+        -0.7599999999999998,
+        9.27,
+        -15.25
+      ],
+      "end": [
+        -1.2999999999999998,
+        3.32,
+        -15.92
+      ],
+      "sag": 0.05,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-ISOLATOR-C",
+      "start": [
+        -1.2999999999999998,
+        3.32,
+        -13.08
+      ],
+      "end": [
+        -1.75,
+        4.34,
+        -11.37
+      ],
+      "sag": 0.08,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-CT-C",
+      "start": [
+        -1.75,
+        4.34,
+        -8.63
+      ],
+      "end": [
+        -1.2999999999999998,
+        4.45,
+        -5.4
+      ],
+      "sag": 0.12,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "BAY-2-TRANSFORMER-C",
+      "start": [
+        -1.2999999999999998,
+        4.45,
+        -5.4
+      ],
+      "end": [
+        -2.38,
+        6.91,
+        0.9
+      ],
+      "sag": 0.24,
+      "radius": 0.015,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 132
+    },
+    {
+      "id": "MV-1-TRANSFORMER-A",
+      "start": [
+        7.8,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        7.97,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    },
+    {
+      "id": "MV-1-TRANSFORMER-B",
+      "start": [
+        9,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        9,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    },
+    {
+      "id": "MV-1-TRANSFORMER-C",
+      "start": [
+        10.2,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        10.03,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    },
+    {
+      "id": "MV-2-TRANSFORMER-A",
+      "start": [
+        17.8,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        17.97,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    },
+    {
+      "id": "MV-2-TRANSFORMER-B",
+      "start": [
+        19,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        19,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    },
+    {
+      "id": "MV-2-TRANSFORMER-C",
+      "start": [
+        20.2,
+        2.45,
+        -5.7
+      ],
+      "end": [
+        20.03,
+        5.05,
+        1.12
+      ],
+      "sag": 0.18,
+      "radius": 0.011,
+      "segments": 24,
+      "maxSegmentLength": 1.2,
+      "voltageKV": 33
+    }
+  ],
+  "connectionNotes": [
+    "The 132 kV line loops via two outdoor bays; transformer and distribution connections are illustrative.",
+    "11 kV exits are underground via the declared trenches; no overhead 11 kV spans cross the access aisle.",
+    "Span transforms use the shared one-metre conductor segment; no long conductor mesh is shipped."
+  ]
+}

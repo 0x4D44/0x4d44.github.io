@@ -1,0 +1,16 @@
+{
+  "base": "017eab90a749d317f181872aa620b5facaea06f8",
+  "existingTrackedChanges": [],
+  "allAdditionsUnderLaLadera": true,
+  "gameJavaScriptAdditions": [],
+  "bootRegistries": {
+    "la-ladera/assets/models/manifest.json": {
+      "unchanged": true,
+      "sha256": "619b14435b4cc5f28feb334d34ab02a21db8e8edce90979ffd94ae2c8ba2f461"
+    },
+    "la-ladera/assets/textures/manifest.json": {
+      "unchanged": true,
+      "sha256": "da0d570ebb0e4297079f669204233c8700a6d6219e3f0b3702d9ad195906fe28"
+    }
+  }
+}

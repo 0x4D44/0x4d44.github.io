@@ -1,0 +1,6649 @@
+{
+  "version": 1,
+  "complete": true,
+  "license": "CC0-1.0",
+  "generator": "tools/blender/substation_build.py",
+  "blenderVersion": "5.0.1",
+  "units": "m",
+  "axes": "+Y up, +Z front",
+  "files": [
+    {
+      "glb": "substation/substation_near.glb",
+      "bytes": 2288968,
+      "sha256": "3294c4e43d4d13b8d568cf0d78620b2b1f2dfbff2a6cf8099324f844402456ed",
+      "sharedMeshAliases": 125,
+      "assets": {
+        "substation_transformer_132_33": {
+          "node": "substation_transformer_132_33",
+          "size": [
+            7.04,
+            6.33,
+            5.2
+          ],
+          "footprint": [
+            7.04,
+            5.2
+          ],
+          "bounds": {
+            "min": [
+              -3.51,
+              0.0,
+              -2.32
+            ],
+            "max": [
+              3.01,
+              6.33,
+              2.575
+            ]
+          },
+          "triangles": 5644,
+          "parts": 31,
+          "tags": [
+            "substation",
+            "power_transformer"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "marshalling_door",
+                "position": [
+                  -3.51,
+                  0.12,
+                  1.902
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ],
+            "hum": {
+              "position": [
+                0,
+                1.9,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -3.52,
+              -2.6
+            ],
+            [
+              3.52,
+              -2.6
+            ],
+            [
+              3.52,
+              2.6
+            ],
+            [
+              -3.52,
+              2.6
+            ]
+          ],
+          "lod1": "substation_transformer_132_33_lod1"
+        },
+        "substation_transformer_33_11": {
+          "node": "substation_transformer_33_11",
+          "size": [
+            5.0,
+            4.47,
+            4.12
+          ],
+          "footprint": [
+            5.0,
+            4.12
+          ],
+          "bounds": {
+            "min": [
+              -2.44,
+              0.0,
+              -1.855
+            ],
+            "max": [
+              2.32,
+              4.47,
+              2.055
+            ]
+          },
+          "triangles": 2992,
+          "parts": 18,
+          "tags": [
+            "substation",
+            "power_transformer"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "marshalling_door",
+                "position": [
+                  -2.44,
+                  0.1,
+                  1.377
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ],
+            "hum": {
+              "position": [
+                0,
+                1.4,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -2.5,
+              -2.06
+            ],
+            [
+              2.5,
+              -2.06
+            ],
+            [
+              2.5,
+              2.06
+            ],
+            [
+              -2.5,
+              2.06
+            ]
+          ],
+          "lod1": "substation_transformer_33_11_lod1"
+        },
+        "substation_breaker_oil_132": {
+          "node": "substation_breaker_oil_132",
+          "size": [
+            5.8,
+            4.4,
+            4.24
+          ],
+          "footprint": [
+            5.8,
+            4.24
+          ],
+          "bounds": {
+            "min": [
+              -2.88,
+              0.0,
+              -1.441509
+            ],
+            "max": [
+              2.88,
+              4.235905,
+              2.1145
+            ]
+          },
+          "triangles": 3000,
+          "parts": 18,
+          "tags": [
+            "substation",
+            "breaker"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "mechanism_door",
+                "position": [
+                  -0.45,
+                  0,
+                  2.057
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -2.9,
+              -2.12
+            ],
+            [
+              2.9,
+              -2.12
+            ],
+            [
+              2.9,
+              2.12
+            ],
+            [
+              -2.9,
+              2.12
+            ]
+          ],
+          "lod1": "substation_breaker_oil_132_lod1"
+        },
+        "substation_breaker_oil_33": {
+          "node": "substation_breaker_oil_33",
+          "size": [
+            3.1,
+            3.0,
+            2.5
+          ],
+          "footprint": [
+            3.1,
+            2.5
+          ],
+          "bounds": {
+            "min": [
+              -1.475,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              1.475,
+              2.957625,
+              1.2345
+            ]
+          },
+          "triangles": 2592,
+          "parts": 18,
+          "tags": [
+            "substation",
+            "breaker"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "mechanism_door",
+                "position": [
+                  -0.3,
+                  0,
+                  1.177
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -1.55,
+              -1.25
+            ],
+            [
+              1.55,
+              -1.25
+            ],
+            [
+              1.55,
+              1.25
+            ],
+            [
+              -1.55,
+              1.25
+            ]
+          ],
+          "lod1": "substation_breaker_oil_33_lod1"
+        },
+        "substation_breaker_truck_11": {
+          "node": "substation_breaker_truck_11",
+          "size": [
+            0.86,
+            1.23,
+            1.1
+          ],
+          "footprint": [
+            0.86,
+            1.1
+          ],
+          "bounds": {
+            "min": [
+              -0.37,
+              0.0,
+              -0.52
+            ],
+            "max": [
+              0.37,
+              1.23,
+              0.5475
+            ]
+          },
+          "triangles": 1066,
+          "parts": 10,
+          "tags": [
+            "substation",
+            "breaker"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.43,
+              -0.55
+            ],
+            [
+              0.43,
+              -0.55
+            ],
+            [
+              0.43,
+              0.55
+            ],
+            [
+              -0.43,
+              0.55
+            ]
+          ],
+          "lod1": "substation_breaker_truck_11_lod1"
+        },
+        "substation_disconnector_centre_132": {
+          "node": "substation_disconnector_centre_132",
+          "size": [
+            4.0,
+            3.35,
+            1.3
+          ],
+          "footprint": [
+            4.0,
+            1.3
+          ],
+          "bounds": {
+            "min": [
+              -1.91,
+              0.0,
+              -0.44
+            ],
+            "max": [
+              1.86,
+              3.26,
+              0.6295
+            ]
+          },
+          "triangles": 1442,
+          "parts": 11,
+          "tags": [
+            "substation",
+            "disconnector"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -0.65
+            ],
+            [
+              2.0,
+              -0.65
+            ],
+            [
+              2.0,
+              0.65
+            ],
+            [
+              -2.0,
+              0.65
+            ]
+          ],
+          "lod1": "substation_disconnector_centre_132_lod1"
+        },
+        "substation_disconnector_centre_33": {
+          "node": "substation_disconnector_centre_33",
+          "size": [
+            2.9,
+            1.93,
+            1.28
+          ],
+          "footprint": [
+            2.9,
+            1.28
+          ],
+          "bounds": {
+            "min": [
+              -1.43,
+              0.0,
+              -0.34
+            ],
+            "max": [
+              1.28,
+              1.9,
+              0.6295
+            ]
+          },
+          "triangles": 1154,
+          "parts": 11,
+          "tags": [
+            "substation",
+            "disconnector"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.45,
+              -0.64
+            ],
+            [
+              1.45,
+              -0.64
+            ],
+            [
+              1.45,
+              0.64
+            ],
+            [
+              -1.45,
+              0.64
+            ]
+          ],
+          "lod1": "substation_disconnector_centre_33_lod1"
+        },
+        "substation_disconnector_pantograph_132": {
+          "node": "substation_disconnector_pantograph_132",
+          "size": [
+            2.3,
+            6.23,
+            1.56
+          ],
+          "footprint": [
+            2.3,
+            1.56
+          ],
+          "bounds": {
+            "min": [
+              -1.14,
+              0.0,
+              -0.665
+            ],
+            "max": [
+              1.14,
+              6.215,
+              0.7745
+            ]
+          },
+          "triangles": 1128,
+          "parts": 6,
+          "tags": [
+            "substation",
+            "disconnector"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.15,
+              -0.78
+            ],
+            [
+              1.15,
+              -0.78
+            ],
+            [
+              1.15,
+              0.78
+            ],
+            [
+              -1.15,
+              0.78
+            ]
+          ],
+          "lod1": "substation_disconnector_pantograph_132_lod1"
+        },
+        "substation_ct_132": {
+          "node": "substation_ct_132",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.53,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.53,
+              4.55,
+              0.6795
+            ]
+          },
+          "triangles": 962,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ],
+          "lod1": "substation_ct_132_lod1"
+        },
+        "substation_ct_33": {
+          "node": "substation_ct_33",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.39,
+              0.0,
+              -0.38
+            ],
+            "max": [
+              0.39,
+              2.49,
+              0.6795
+            ]
+          },
+          "triangles": 770,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ],
+          "lod1": "substation_ct_33_lod1"
+        },
+        "substation_cvt_132": {
+          "node": "substation_cvt_132",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.47,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.47,
+              4.55,
+              0.45
+            ]
+          },
+          "triangles": 824,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ],
+          "lod1": "substation_cvt_132_lod1"
+        },
+        "substation_cvt_33": {
+          "node": "substation_cvt_33",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.36,
+              0.0,
+              -0.36
+            ],
+            "max": [
+              0.36,
+              2.55,
+              0.36
+            ]
+          },
+          "triangles": 632,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ],
+          "lod1": "substation_cvt_33_lod1"
+        },
+        "substation_arrester_132": {
+          "node": "substation_arrester_132",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.36,
+              4.55,
+              0.35
+            ]
+          },
+          "triangles": 858,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ],
+          "lod1": "substation_arrester_132_lod1"
+        },
+        "substation_arrester_33": {
+          "node": "substation_arrester_33",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.36,
+              2.55,
+              0.35
+            ]
+          },
+          "triangles": 558,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "instrument"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ],
+          "lod1": "substation_arrester_33_lod1"
+        },
+        "substation_post_insulator_132": {
+          "node": "substation_post_insulator_132",
+          "size": [
+            0.55,
+            2.1,
+            0.55
+          ],
+          "footprint": [
+            0.55,
+            0.55
+          ],
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.275,
+              2.1,
+              0.275
+            ]
+          },
+          "triangles": 524,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "insulator"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.275,
+              -0.275
+            ],
+            [
+              0.275,
+              -0.275
+            ],
+            [
+              0.275,
+              0.275
+            ],
+            [
+              -0.275,
+              0.275
+            ]
+          ],
+          "lod1": "substation_post_insulator_132_lod1"
+        },
+        "substation_post_insulator_33": {
+          "node": "substation_post_insulator_33",
+          "size": [
+            0.375,
+            1.05,
+            0.375
+          ],
+          "footprint": [
+            0.375,
+            0.375
+          ],
+          "bounds": {
+            "min": [
+              -0.1875,
+              0.0,
+              -0.1875
+            ],
+            "max": [
+              0.1875,
+              1.05,
+              0.1875
+            ]
+          },
+          "triangles": 332,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "insulator"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.1875,
+              -0.1875
+            ],
+            [
+              0.1875,
+              -0.1875
+            ],
+            [
+              0.1875,
+              0.1875
+            ],
+            [
+              -0.1875,
+              0.1875
+            ]
+          ],
+          "lod1": "substation_post_insulator_33_lod1"
+        },
+        "substation_earth_switch_132": {
+          "node": "substation_earth_switch_132",
+          "size": [
+            2.4,
+            3.0,
+            1.15
+          ],
+          "footprint": [
+            2.4,
+            1.15
+          ],
+          "bounds": {
+            "min": [
+              -0.67,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              1.092959,
+              2.995,
+              0.5695
+            ]
+          },
+          "triangles": 844,
+          "parts": 6,
+          "tags": [
+            "substation",
+            "earth-switch"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.2,
+              -0.575
+            ],
+            [
+              1.2,
+              -0.575
+            ],
+            [
+              1.2,
+              0.575
+            ],
+            [
+              -1.2,
+              0.575
+            ]
+          ],
+          "lod1": "substation_earth_switch_132_lod1"
+        },
+        "substation_earth_switch_33": {
+          "node": "substation_earth_switch_33",
+          "size": [
+            1.5,
+            1.73,
+            1.15
+          ],
+          "footprint": [
+            1.5,
+            1.15
+          ],
+          "bounds": {
+            "min": [
+              -0.67,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.678848,
+              1.725,
+              0.5695
+            ]
+          },
+          "triangles": 700,
+          "parts": 6,
+          "tags": [
+            "substation",
+            "earth-switch"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.75,
+              -0.575
+            ],
+            [
+              0.75,
+              -0.575
+            ],
+            [
+              0.75,
+              0.575
+            ],
+            [
+              -0.75,
+              0.575
+            ]
+          ],
+          "lod1": "substation_earth_switch_33_lod1"
+        },
+        "substation_switchboard_panel_11": {
+          "node": "substation_switchboard_panel_11",
+          "size": [
+            0.8,
+            2.4,
+            1.6
+          ],
+          "footprint": [
+            0.8,
+            1.6
+          ],
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.8
+            ],
+            "max": [
+              0.4,
+              2.4,
+              0.8005
+            ]
+          },
+          "triangles": 600,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "indoor"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "panel_door",
+                "position": [
+                  -0.37,
+                  0.08,
+                  0.748
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.4,
+              -0.8
+            ],
+            [
+              0.4,
+              -0.8
+            ],
+            [
+              0.4,
+              0.8
+            ],
+            [
+              -0.4,
+              0.8
+            ]
+          ],
+          "lod1": "substation_switchboard_panel_11_lod1"
+        },
+        "substation_control_panel": {
+          "node": "substation_control_panel",
+          "size": [
+            0.85,
+            2.25,
+            0.82
+          ],
+          "footprint": [
+            0.85,
+            0.82
+          ],
+          "bounds": {
+            "min": [
+              -0.425,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.425,
+              2.25,
+              0.4005
+            ]
+          },
+          "triangles": 576,
+          "parts": 7,
+          "tags": [
+            "substation",
+            "indoor"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "panel_door",
+                "position": [
+                  -0.39,
+                  0.08,
+                  0.348
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.425,
+              -0.41
+            ],
+            [
+              0.425,
+              -0.41
+            ],
+            [
+              0.425,
+              0.41
+            ],
+            [
+              -0.425,
+              0.41
+            ]
+          ],
+          "lod1": "substation_control_panel_lod1"
+        },
+        "substation_battery_bank": {
+          "node": "substation_battery_bank",
+          "size": [
+            2.9,
+            1.55,
+            0.69
+          ],
+          "footprint": [
+            2.9,
+            0.69
+          ],
+          "bounds": {
+            "min": [
+              -1.45,
+              0.0,
+              -0.33
+            ],
+            "max": [
+              1.45,
+              1.55,
+              0.342
+            ]
+          },
+          "triangles": 1634,
+          "parts": 63,
+          "tags": [
+            "substation",
+            "indoor"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.45,
+              -0.345
+            ],
+            [
+              1.45,
+              -0.345
+            ],
+            [
+              1.45,
+              0.345
+            ],
+            [
+              -1.45,
+              0.345
+            ]
+          ],
+          "lod1": "substation_battery_bank_lod1"
+        },
+        "substation_battery_charger": {
+          "node": "substation_battery_charger",
+          "size": [
+            0.75,
+            1.55,
+            0.72
+          ],
+          "footprint": [
+            0.75,
+            0.72
+          ],
+          "bounds": {
+            "min": [
+              -0.375,
+              0.007322,
+              -0.3
+            ],
+            "max": [
+              0.375,
+              1.55,
+              0.3645
+            ]
+          },
+          "triangles": 274,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "indoor"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "charger_door",
+                "position": [
+                  -0.34,
+                  0,
+                  0.33
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.375,
+              -0.36
+            ],
+            [
+              0.375,
+              -0.36
+            ],
+            [
+              0.375,
+              0.36
+            ],
+            [
+              -0.375,
+              0.36
+            ]
+          ],
+          "lod1": "substation_battery_charger_lod1"
+        },
+        "substation_station_transformer": {
+          "node": "substation_station_transformer",
+          "size": [
+            1.72,
+            1.9,
+            1.52
+          ],
+          "footprint": [
+            1.72,
+            1.52
+          ],
+          "bounds": {
+            "min": [
+              -0.58,
+              0.0,
+              -0.76
+            ],
+            "max": [
+              0.86,
+              1.9,
+              0.76
+            ]
+          },
+          "triangles": 1078,
+          "parts": 9,
+          "tags": [
+            "substation",
+            "transformer"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [],
+            "hum": {
+              "position": [
+                0,
+                0.75,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -0.86,
+              -0.76
+            ],
+            [
+              0.86,
+              -0.76
+            ],
+            [
+              0.86,
+              0.76
+            ],
+            [
+              -0.86,
+              0.76
+            ]
+          ],
+          "lod1": "substation_station_transformer_lod1"
+        },
+        "substation_radiator_bank": {
+          "node": "substation_radiator_bank",
+          "size": [
+            2.04,
+            2.1,
+            1.7
+          ],
+          "footprint": [
+            2.04,
+            1.7
+          ],
+          "bounds": {
+            "min": [
+              -1.015,
+              0.0,
+              -0.85
+            ],
+            "max": [
+              1.015,
+              2.1,
+              0.24
+            ]
+          },
+          "triangles": 260,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.02,
+              -0.85
+            ],
+            [
+              1.02,
+              -0.85
+            ],
+            [
+              1.02,
+              0.85
+            ],
+            [
+              -1.02,
+              0.85
+            ]
+          ],
+          "lod1": "substation_radiator_bank_lod1"
+        },
+        "substation_cooling_fan": {
+          "node": "substation_cooling_fan",
+          "size": [
+            0.74,
+            0.77,
+            0.32
+          ],
+          "footprint": [
+            0.74,
+            0.32
+          ],
+          "bounds": {
+            "min": [
+              -0.364919,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.36424,
+              0.764919,
+              0.155
+            ]
+          },
+          "triangles": 206,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.37,
+              -0.16
+            ],
+            [
+              0.37,
+              -0.16
+            ],
+            [
+              0.37,
+              0.16
+            ],
+            [
+              -0.37,
+              0.16
+            ]
+          ],
+          "lod1": "substation_cooling_fan_lod1"
+        },
+        "substation_insulator_disc": {
+          "node": "substation_insulator_disc",
+          "size": [
+            0.3,
+            0.145,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.15,
+              0,
+              -0.142658
+            ],
+            "max": [
+              0.15,
+              0.145,
+              0.142658
+            ]
+          },
+          "triangles": 104,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ],
+          "lod1": "substation_insulator_disc_lod1"
+        },
+        "substation_insulator_string_132": {
+          "node": "substation_insulator_string_132",
+          "size": [
+            0.3,
+            1.72,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.15,
+              0.0,
+              -0.142658
+            ],
+            "max": [
+              0.15,
+              1.72,
+              0.142658
+            ]
+          },
+          "triangles": 1186,
+          "parts": 23,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ],
+          "lod1": "substation_insulator_string_132_lod1"
+        },
+        "substation_insulator_string_33": {
+          "node": "substation_insulator_string_33",
+          "size": [
+            0.3,
+            0.7,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.15,
+              0.0,
+              -0.142658
+            ],
+            "max": [
+              0.15,
+              0.7,
+              0.142658
+            ]
+          },
+          "triangles": 458,
+          "parts": 9,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ],
+          "lod1": "substation_insulator_string_33_lod1"
+        },
+        "substation_conductor_segment": {
+          "node": "substation_conductor_segment",
+          "size": [
+            0.03,
+            1.0,
+            0.03
+          ],
+          "footprint": [
+            0.03,
+            0.03
+          ],
+          "bounds": {
+            "min": [
+              -0.015,
+              0.0,
+              -0.014266
+            ],
+            "max": [
+              0.015,
+              1,
+              0.014266
+            ]
+          },
+          "triangles": 20,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.015,
+              -0.015
+            ],
+            [
+              0.015,
+              -0.015
+            ],
+            [
+              0.015,
+              0.015
+            ],
+            [
+              -0.015,
+              0.015
+            ]
+          ],
+          "lod1": "substation_conductor_segment_lod1"
+        },
+        "substation_conductor_spacer": {
+          "node": "substation_conductor_spacer",
+          "size": [
+            0.61,
+            0.52,
+            0.04
+          ],
+          "footprint": [
+            0.61,
+            0.04
+          ],
+          "bounds": {
+            "min": [
+              -0.295392,
+              0.0,
+              -0.02
+            ],
+            "max": [
+              0.294601,
+              0.491392,
+              0.02
+            ]
+          },
+          "triangles": 238,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.305,
+              -0.02
+            ],
+            [
+              0.305,
+              -0.02
+            ],
+            [
+              0.305,
+              0.02
+            ],
+            [
+              -0.305,
+              0.02
+            ]
+          ],
+          "lod1": "substation_conductor_spacer_lod1"
+        },
+        "substation_tower_suspension_132": {
+          "node": "substation_tower_suspension_132",
+          "size": [
+            12,
+            32,
+            6.4
+          ],
+          "footprint": [
+            12,
+            6.4
+          ],
+          "bounds": {
+            "min": [
+              -5.892215,
+              0.0,
+              -3.2
+            ],
+            "max": [
+              5.892215,
+              32.0,
+              3.2
+            ]
+          },
+          "triangles": 2826,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "tower"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.5,
+              -3.5
+            ],
+            [
+              3.5,
+              -3.5
+            ],
+            [
+              3.5,
+              3.5
+            ],
+            [
+              -3.5,
+              3.5
+            ]
+          ],
+          "lod1": "substation_tower_suspension_132_lod1"
+        },
+        "substation_tower_terminal_132": {
+          "node": "substation_tower_terminal_132",
+          "size": [
+            13,
+            30,
+            8
+          ],
+          "footprint": [
+            13,
+            8
+          ],
+          "bounds": {
+            "min": [
+              -6.390384,
+              0.0,
+              -4.0
+            ],
+            "max": [
+              6.390384,
+              30.0,
+              4.0
+            ]
+          },
+          "triangles": 2826,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "tower"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -4.5,
+              -4.5
+            ],
+            [
+              4.5,
+              -4.5
+            ],
+            [
+              4.5,
+              4.5
+            ],
+            [
+              -4.5,
+              4.5
+            ]
+          ],
+          "lod1": "substation_tower_terminal_132_lod1"
+        },
+        "substation_pole_hframe_33": {
+          "node": "substation_pole_hframe_33",
+          "size": [
+            6.4,
+            13,
+            1.2
+          ],
+          "footprint": [
+            6.4,
+            1.2
+          ],
+          "bounds": {
+            "min": [
+              -3.2,
+              0.0,
+              -0.5
+            ],
+            "max": [
+              3.2,
+              13.0,
+              0.5
+            ]
+          },
+          "triangles": 738,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "pole"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.2,
+              -0.6
+            ],
+            [
+              3.2,
+              -0.6
+            ],
+            [
+              3.2,
+              0.6
+            ],
+            [
+              -3.2,
+              0.6
+            ]
+          ],
+          "lod1": "substation_pole_hframe_33_lod1"
+        },
+        "substation_pole_concrete_11": {
+          "node": "substation_pole_concrete_11",
+          "size": [
+            2.8,
+            10.5,
+            0.65
+          ],
+          "footprint": [
+            2.8,
+            0.65
+          ],
+          "bounds": {
+            "min": [
+              -1.35,
+              0.0,
+              -0.190211
+            ],
+            "max": [
+              1.35,
+              10.47,
+              0.26
+            ]
+          },
+          "triangles": 1356,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "pole"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.4,
+              -0.325
+            ],
+            [
+              1.4,
+              -0.325
+            ],
+            [
+              1.4,
+              0.325
+            ],
+            [
+              -1.4,
+              0.325
+            ]
+          ],
+          "lod1": "substation_pole_concrete_11_lod1"
+        },
+        "substation_gantry_132": {
+          "node": "substation_gantry_132",
+          "size": [
+            12,
+            10,
+            2.0
+          ],
+          "footprint": [
+            12,
+            2.0
+          ],
+          "bounds": {
+            "min": [
+              -6.0,
+              0.0,
+              -1.0
+            ],
+            "max": [
+              6.0,
+              9.975,
+              1.0
+            ]
+          },
+          "triangles": 1828,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "gantry"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -6.0,
+              -1.0
+            ],
+            [
+              6.0,
+              -1.0
+            ],
+            [
+              6.0,
+              1.0
+            ],
+            [
+              -6.0,
+              1.0
+            ]
+          ],
+          "lod1": "substation_gantry_132_lod1"
+        },
+        "substation_gantry_33": {
+          "node": "substation_gantry_33",
+          "size": [
+            7,
+            5.5,
+            1.3
+          ],
+          "footprint": [
+            7,
+            1.3
+          ],
+          "bounds": {
+            "min": [
+              -3.5,
+              0.0,
+              -0.65
+            ],
+            "max": [
+              3.5,
+              5.475,
+              0.65
+            ]
+          },
+          "triangles": 1252,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "gantry"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.5,
+              -0.65
+            ],
+            [
+              3.5,
+              -0.65
+            ],
+            [
+              3.5,
+              0.65
+            ],
+            [
+              -3.5,
+              0.65
+            ]
+          ],
+          "lod1": "substation_gantry_33_lod1"
+        },
+        "substation_busbar_tube": {
+          "node": "substation_busbar_tube",
+          "size": [
+            3,
+            0.15,
+            0.15
+          ],
+          "footprint": [
+            3,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.003,
+              -0.072
+            ],
+            "max": [
+              1.5,
+              0.147,
+              0.072
+            ]
+          },
+          "triangles": 160,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "busbar"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.075
+            ],
+            [
+              1.5,
+              -0.075
+            ],
+            [
+              1.5,
+              0.075
+            ],
+            [
+              -1.5,
+              0.075
+            ]
+          ],
+          "lod1": "substation_busbar_tube_lod1"
+        },
+        "substation_bund_large": {
+          "node": "substation_bund_large",
+          "size": [
+            10,
+            0.65,
+            7.4
+          ],
+          "footprint": [
+            10,
+            7.4
+          ],
+          "bounds": {
+            "min": [
+              -5.0,
+              0.0,
+              -3.7
+            ],
+            "max": [
+              5.0,
+              0.65,
+              3.7
+            ]
+          },
+          "triangles": 468,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "containment"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -5.0,
+              -3.7
+            ],
+            [
+              5.0,
+              -3.7
+            ],
+            [
+              5.0,
+              3.7
+            ],
+            [
+              -5.0,
+              3.7
+            ]
+          ],
+          "lod1": "substation_bund_large_lod1"
+        },
+        "substation_bund_small": {
+          "node": "substation_bund_small",
+          "size": [
+            7.2,
+            0.55,
+            5.6
+          ],
+          "footprint": [
+            7.2,
+            5.6
+          ],
+          "bounds": {
+            "min": [
+              -3.6,
+              0.0,
+              -2.8
+            ],
+            "max": [
+              3.6,
+              0.55,
+              2.8
+            ]
+          },
+          "triangles": 468,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "containment"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.6,
+              -2.8
+            ],
+            [
+              3.6,
+              -2.8
+            ],
+            [
+              3.6,
+              2.8
+            ],
+            [
+              -3.6,
+              2.8
+            ]
+          ],
+          "lod1": "substation_bund_small_lod1"
+        },
+        "substation_firewall": {
+          "node": "substation_firewall",
+          "size": [
+            0.69,
+            6.5,
+            8
+          ],
+          "footprint": [
+            0.69,
+            8
+          ],
+          "bounds": {
+            "min": [
+              -0.345,
+              0.0,
+              -4.0
+            ],
+            "max": [
+              0.345,
+              6.5,
+              4.0
+            ]
+          },
+          "triangles": 160,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "containment"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.345,
+              -4.0
+            ],
+            [
+              0.345,
+              -4.0
+            ],
+            [
+              0.345,
+              4.0
+            ],
+            [
+              -0.345,
+              4.0
+            ]
+          ],
+          "lod1": "substation_firewall_lod1"
+        },
+        "substation_wall_brick": {
+          "node": "substation_wall_brick",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.145
+            ]
+          },
+          "triangles": 126,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ],
+          "lod1": "substation_wall_brick_lod1"
+        },
+        "substation_wall_door": {
+          "node": "substation_wall_door",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.145
+            ]
+          },
+          "triangles": 148,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ],
+          "lod1": "substation_wall_door_lod1"
+        },
+        "substation_wall_window": {
+          "node": "substation_wall_window",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.145
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.145
+            ]
+          },
+          "triangles": 158,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ],
+          "lod1": "substation_wall_window_lod1"
+        },
+        "substation_roof_flat": {
+          "node": "substation_roof_flat",
+          "size": [
+            3.2,
+            0.32,
+            3.2
+          ],
+          "footprint": [
+            3.2,
+            3.2
+          ],
+          "bounds": {
+            "min": [
+              -1.6,
+              0.0,
+              -1.6
+            ],
+            "max": [
+              1.6,
+              0.32,
+              1.6
+            ]
+          },
+          "triangles": 70,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.6,
+              -1.6
+            ],
+            [
+              1.6,
+              -1.6
+            ],
+            [
+              1.6,
+              1.6
+            ],
+            [
+              -1.6,
+              1.6
+            ]
+          ],
+          "lod1": "substation_roof_flat_lod1"
+        },
+        "substation_door_steel": {
+          "node": "substation_door_steel",
+          "size": [
+            1.1,
+            2.2,
+            0.18
+          ],
+          "footprint": [
+            1.1,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.57,
+              0.0,
+              -0.025
+            ],
+            "max": [
+              0.55,
+              2.2,
+              0.09
+            ]
+          },
+          "triangles": 94,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "door_hinge",
+                "position": [
+                  -0.55,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.55,
+              -0.09
+            ],
+            [
+              0.55,
+              -0.09
+            ],
+            [
+              0.55,
+              0.09
+            ],
+            [
+              -0.55,
+              0.09
+            ]
+          ],
+          "lod1": "substation_door_steel_lod1"
+        },
+        "substation_louvre": {
+          "node": "substation_louvre",
+          "size": [
+            1,
+            0.75,
+            0.12
+          ],
+          "footprint": [
+            1,
+            0.12
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.5,
+              0.75,
+              0.06
+            ]
+          },
+          "triangles": 152,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.5,
+              -0.06
+            ],
+            [
+              0.5,
+              -0.06
+            ],
+            [
+              0.5,
+              0.06
+            ],
+            [
+              -0.5,
+              0.06
+            ]
+          ],
+          "lod1": "substation_louvre_lod1"
+        },
+        "substation_window": {
+          "node": "substation_window",
+          "size": [
+            1.36,
+            1.1,
+            0.18
+          ],
+          "footprint": [
+            1.36,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.68,
+              0.0,
+              -0.09
+            ],
+            "max": [
+              0.68,
+              1.1,
+              0.09
+            ]
+          },
+          "triangles": 96,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.68,
+              -0.09
+            ],
+            [
+              0.68,
+              -0.09
+            ],
+            [
+              0.68,
+              0.09
+            ],
+            [
+              -0.68,
+              0.09
+            ]
+          ],
+          "lod1": "substation_window_lod1"
+        },
+        "substation_oil_store": {
+          "node": "substation_oil_store",
+          "size": [
+            4.5,
+            3.2,
+            3.5
+          ],
+          "footprint": [
+            4.5,
+            3.5
+          ],
+          "bounds": {
+            "min": [
+              -2.25,
+              0.0,
+              -1.75
+            ],
+            "max": [
+              2.25,
+              3.2,
+              1.76
+            ]
+          },
+          "triangles": 630,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "building"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.25,
+              -1.75
+            ],
+            [
+              2.25,
+              -1.75
+            ],
+            [
+              2.25,
+              1.75
+            ],
+            [
+              -2.25,
+              1.75
+            ]
+          ],
+          "lod1": "substation_oil_store_lod1"
+        },
+        "substation_fence_panel": {
+          "node": "substation_fence_panel",
+          "size": [
+            2.5,
+            2.4,
+            0.09
+          ],
+          "footprint": [
+            2.5,
+            0.09
+          ],
+          "bounds": {
+            "min": [
+              -1.2375,
+              0.0,
+              -0.03
+            ],
+            "max": [
+              1.2375,
+              2.3,
+              0.03
+            ]
+          },
+          "triangles": 244,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "security"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.25,
+              -0.045
+            ],
+            [
+              1.25,
+              -0.045
+            ],
+            [
+              1.25,
+              0.045
+            ],
+            [
+              -1.25,
+              0.045
+            ]
+          ],
+          "lod1": "substation_fence_panel_lod1"
+        },
+        "substation_fence_post": {
+          "node": "substation_fence_post",
+          "size": [
+            0.16,
+            2.94,
+            1.0
+          ],
+          "footprint": [
+            0.16,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -0.08,
+              0.0,
+              -0.476015
+            ],
+            "max": [
+              0.08,
+              2.923414,
+              0.08
+            ]
+          },
+          "triangles": 66,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "security"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              0.1
+            ],
+            [
+              -0.1,
+              0.1
+            ]
+          ],
+          "lod1": "substation_fence_post_lod1"
+        },
+        "substation_gate": {
+          "node": "substation_gate",
+          "size": [
+            5,
+            2.9,
+            0.24
+          ],
+          "footprint": [
+            5,
+            0.24
+          ],
+          "bounds": {
+            "min": [
+              -2.49,
+              0.0,
+              -0.07
+            ],
+            "max": [
+              2.49,
+              2.9,
+              0.13
+            ]
+          },
+          "triangles": 618,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "security"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "left_leaf",
+                "position": [
+                  -2.5,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              },
+              {
+                "name": "right_leaf",
+                "position": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -2.5,
+              -0.12
+            ],
+            [
+              2.5,
+              -0.12
+            ],
+            [
+              2.5,
+              0.12
+            ],
+            [
+              -2.5,
+              0.12
+            ]
+          ],
+          "lod1": "substation_gate_lod1"
+        },
+        "substation_floodlight_mast": {
+          "node": "substation_floodlight_mast",
+          "size": [
+            1.6,
+            8,
+            1.0
+          ],
+          "footprint": [
+            1.6,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -0.775,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.775,
+              8.0,
+              0.325
+            ]
+          },
+          "triangles": 194,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "lighting"
+          ],
+          "anchors": {
+            "lamps": [
+              {
+                "name": "lamp_left",
+                "position": [
+                  -0.55,
+                  7.7,
+                  0.18
+                ]
+              },
+              {
+                "name": "lamp_right",
+                "position": [
+                  0.55,
+                  7.7,
+                  0.18
+                ]
+              }
+            ],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.8,
+              -0.5
+            ],
+            [
+              0.8,
+              -0.5
+            ],
+            [
+              0.8,
+              0.5
+            ],
+            [
+              -0.8,
+              0.5
+            ]
+          ],
+          "lod1": "substation_floodlight_mast_lod1"
+        },
+        "substation_lightning_mast": {
+          "node": "substation_lightning_mast",
+          "size": [
+            0.8,
+            18,
+            0.8
+          ],
+          "footprint": [
+            0.8,
+            0.8
+          ],
+          "bounds": {
+            "min": [
+              -0.325,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.325,
+              18.0,
+              0.325
+            ]
+          },
+          "triangles": 86,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "lighting"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.4,
+              -0.4
+            ],
+            [
+              0.4,
+              -0.4
+            ],
+            [
+              0.4,
+              0.4
+            ],
+            [
+              -0.4,
+              0.4
+            ]
+          ],
+          "lod1": "substation_lightning_mast_lod1"
+        },
+        "substation_gravel_tile": {
+          "node": "substation_gravel_tile",
+          "size": [
+            4,
+            0.12,
+            4
+          ],
+          "footprint": [
+            4,
+            4
+          ],
+          "bounds": {
+            "min": [
+              -2.0,
+              0.0,
+              -2.0
+            ],
+            "max": [
+              2.0,
+              0.13,
+              2.0
+            ]
+          },
+          "triangles": 490,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "ground"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              2.0
+            ],
+            [
+              -2.0,
+              2.0
+            ]
+          ],
+          "lod1": "substation_gravel_tile_lod1"
+        },
+        "substation_concrete_tile": {
+          "node": "substation_concrete_tile",
+          "size": [
+            4,
+            0.15,
+            4
+          ],
+          "footprint": [
+            4,
+            4
+          ],
+          "bounds": {
+            "min": [
+              -2.0,
+              0.0,
+              -2.0
+            ],
+            "max": [
+              2.0,
+              0.151,
+              2.0
+            ]
+          },
+          "triangles": 82,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "ground"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              2.0
+            ],
+            [
+              -2.0,
+              2.0
+            ]
+          ],
+          "lod1": "substation_concrete_tile_lod1"
+        },
+        "substation_trench_cover": {
+          "node": "substation_trench_cover",
+          "size": [
+            1,
+            0.13,
+            0.6
+          ],
+          "footprint": [
+            1,
+            0.6
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.5,
+              0.12,
+              0.3
+            ]
+          },
+          "triangles": 74,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "ground"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.5,
+              -0.3
+            ],
+            [
+              0.5,
+              -0.3
+            ],
+            [
+              0.5,
+              0.3
+            ],
+            [
+              -0.5,
+              0.3
+            ]
+          ],
+          "lod1": "substation_trench_cover_lod1"
+        },
+        "substation_sign_danger": {
+          "node": "substation_sign_danger",
+          "size": [
+            0.75,
+            0.55,
+            0.07
+          ],
+          "footprint": [
+            0.75,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.375,
+              0.0,
+              -0.0475
+            ],
+            "max": [
+              0.375,
+              0.55,
+              0.045
+            ]
+          },
+          "triangles": 160,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.375,
+              -0.035
+            ],
+            [
+              0.375,
+              -0.035
+            ],
+            [
+              0.375,
+              0.035
+            ],
+            [
+              -0.375,
+              0.035
+            ]
+          ],
+          "lod1": "substation_sign_danger_lod1"
+        },
+        "substation_sign_access": {
+          "node": "substation_sign_access",
+          "size": [
+            0.65,
+            0.45,
+            0.07
+          ],
+          "footprint": [
+            0.65,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.325,
+              0.0,
+              -0.0475
+            ],
+            "max": [
+              0.325,
+              0.45,
+              0.045
+            ]
+          },
+          "triangles": 160,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.325,
+              -0.035
+            ],
+            [
+              0.325,
+              -0.035
+            ],
+            [
+              0.325,
+              0.035
+            ],
+            [
+              -0.325,
+              0.035
+            ]
+          ],
+          "lod1": "substation_sign_access_lod1"
+        },
+        "substation_sign_touch": {
+          "node": "substation_sign_touch",
+          "size": [
+            0.45,
+            0.3,
+            0.07
+          ],
+          "footprint": [
+            0.45,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.0475
+            ],
+            "max": [
+              0.225,
+              0.3,
+              0.045
+            ]
+          },
+          "triangles": 160,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.225,
+              -0.035
+            ],
+            [
+              0.225,
+              -0.035
+            ],
+            [
+              0.225,
+              0.035
+            ],
+            [
+              -0.225,
+              0.035
+            ]
+          ],
+          "lod1": "substation_sign_touch_lod1"
+        }
+      }
+    },
+    {
+      "glb": "substation/substation_lod.glb",
+      "bytes": 559920,
+      "sha256": "e688773c46d74df06926188185c576c1eb4de0b314b54fa6ab1b28425d603091",
+      "sharedMeshAliases": 45,
+      "assets": {
+        "substation_transformer_132_33_lod1": {
+          "node": "substation_transformer_132_33_lod1",
+          "size": [
+            7.04,
+            6.33,
+            5.2
+          ],
+          "footprint": [
+            7.04,
+            5.2
+          ],
+          "bounds": {
+            "min": [
+              -3.51,
+              0.0,
+              -2.32
+            ],
+            "max": [
+              3.01,
+              6.33,
+              2.48
+            ]
+          },
+          "triangles": 624,
+          "parts": 25,
+          "tags": [
+            "substation",
+            "power_transformer",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "marshalling_door",
+                "position": [
+                  -3.51,
+                  0.12,
+                  1.902
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ],
+            "hum": {
+              "position": [
+                0,
+                1.9,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -3.52,
+              -2.6
+            ],
+            [
+              3.52,
+              -2.6
+            ],
+            [
+              3.52,
+              2.6
+            ],
+            [
+              -3.52,
+              2.6
+            ]
+          ]
+        },
+        "substation_transformer_33_11_lod1": {
+          "node": "substation_transformer_33_11_lod1",
+          "size": [
+            5.0,
+            4.47,
+            4.12
+          ],
+          "footprint": [
+            5.0,
+            4.12
+          ],
+          "bounds": {
+            "min": [
+              -2.44,
+              0.0,
+              -1.855
+            ],
+            "max": [
+              2.32,
+              4.47,
+              1.855
+            ]
+          },
+          "triangles": 372,
+          "parts": 11,
+          "tags": [
+            "substation",
+            "power_transformer",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "marshalling_door",
+                "position": [
+                  -2.44,
+                  0.1,
+                  1.377
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ],
+            "hum": {
+              "position": [
+                0,
+                1.4,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -2.5,
+              -2.06
+            ],
+            [
+              2.5,
+              -2.06
+            ],
+            [
+              2.5,
+              2.06
+            ],
+            [
+              -2.5,
+              2.06
+            ]
+          ]
+        },
+        "substation_breaker_oil_132_lod1": {
+          "node": "substation_breaker_oil_132_lod1",
+          "size": [
+            5.8,
+            4.4,
+            4.24
+          ],
+          "footprint": [
+            5.8,
+            4.24
+          ],
+          "bounds": {
+            "min": [
+              -2.86,
+              0.0,
+              -1.452741
+            ],
+            "max": [
+              2.86,
+              4.238535,
+              2.05
+            ]
+          },
+          "triangles": 478,
+          "parts": 15,
+          "tags": [
+            "substation",
+            "breaker",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "mechanism_door",
+                "position": [
+                  -0.45,
+                  0,
+                  2.057
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -2.9,
+              -2.12
+            ],
+            [
+              2.9,
+              -2.12
+            ],
+            [
+              2.9,
+              2.12
+            ],
+            [
+              -2.9,
+              2.12
+            ]
+          ]
+        },
+        "substation_breaker_oil_33_lod1": {
+          "node": "substation_breaker_oil_33_lod1",
+          "size": [
+            3.1,
+            3.0,
+            2.5
+          ],
+          "footprint": [
+            3.1,
+            2.5
+          ],
+          "bounds": {
+            "min": [
+              -1.475,
+              0.0,
+              -0.79
+            ],
+            "max": [
+              1.475,
+              2.956549,
+              1.17
+            ]
+          },
+          "triangles": 526,
+          "parts": 15,
+          "tags": [
+            "substation",
+            "breaker",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "mechanism_door",
+                "position": [
+                  -0.3,
+                  0,
+                  1.177
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -1.55,
+              -1.25
+            ],
+            [
+              1.55,
+              -1.25
+            ],
+            [
+              1.55,
+              1.25
+            ],
+            [
+              -1.55,
+              1.25
+            ]
+          ]
+        },
+        "substation_breaker_truck_11_lod1": {
+          "node": "substation_breaker_truck_11_lod1",
+          "size": [
+            0.86,
+            1.23,
+            1.1
+          ],
+          "footprint": [
+            0.86,
+            1.1
+          ],
+          "bounds": {
+            "min": [
+              -0.37,
+              0.0,
+              -0.52
+            ],
+            "max": [
+              0.37,
+              1.23,
+              0.52
+            ]
+          },
+          "triangles": 340,
+          "parts": 9,
+          "tags": [
+            "substation",
+            "breaker",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.43,
+              -0.55
+            ],
+            [
+              0.43,
+              -0.55
+            ],
+            [
+              0.43,
+              0.55
+            ],
+            [
+              -0.43,
+              0.55
+            ]
+          ]
+        },
+        "substation_disconnector_centre_132_lod1": {
+          "node": "substation_disconnector_centre_132_lod1",
+          "size": [
+            4.0,
+            3.35,
+            1.3
+          ],
+          "footprint": [
+            4.0,
+            1.3
+          ],
+          "bounds": {
+            "min": [
+              -1.86,
+              0.0,
+              -0.44
+            ],
+            "max": [
+              1.86,
+              3.255,
+              0.44
+            ]
+          },
+          "triangles": 180,
+          "parts": 9,
+          "tags": [
+            "substation",
+            "disconnector",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -0.65
+            ],
+            [
+              2.0,
+              -0.65
+            ],
+            [
+              2.0,
+              0.65
+            ],
+            [
+              -2.0,
+              0.65
+            ]
+          ]
+        },
+        "substation_disconnector_centre_33_lod1": {
+          "node": "substation_disconnector_centre_33_lod1",
+          "size": [
+            2.9,
+            1.93,
+            1.28
+          ],
+          "footprint": [
+            2.9,
+            1.28
+          ],
+          "bounds": {
+            "min": [
+              -1.28,
+              0.0,
+              -0.34
+            ],
+            "max": [
+              1.28,
+              1.878,
+              0.34
+            ]
+          },
+          "triangles": 180,
+          "parts": 9,
+          "tags": [
+            "substation",
+            "disconnector",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.45,
+              -0.64
+            ],
+            [
+              1.45,
+              -0.64
+            ],
+            [
+              1.45,
+              0.64
+            ],
+            [
+              -1.45,
+              0.64
+            ]
+          ]
+        },
+        "substation_disconnector_pantograph_132_lod1": {
+          "node": "substation_disconnector_pantograph_132_lod1",
+          "size": [
+            2.3,
+            6.23,
+            1.56
+          ],
+          "footprint": [
+            2.3,
+            1.56
+          ],
+          "bounds": {
+            "min": [
+              -1.098597,
+              0.0,
+              -0.665
+            ],
+            "max": [
+              1.098597,
+              6.215,
+              0.665
+            ]
+          },
+          "triangles": 218,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "disconnector",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.15,
+              -0.78
+            ],
+            [
+              1.15,
+              -0.78
+            ],
+            [
+              1.15,
+              0.78
+            ],
+            [
+              -1.15,
+              0.78
+            ]
+          ]
+        },
+        "substation_ct_132_lod1": {
+          "node": "substation_ct_132_lod1",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.53,
+              0.0,
+              -0.46
+            ],
+            "max": [
+              0.53,
+              4.55,
+              0.46
+            ]
+          },
+          "triangles": 114,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ]
+        },
+        "substation_ct_33_lod1": {
+          "node": "substation_ct_33_lod1",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.39,
+              0.0,
+              -0.38
+            ],
+            "max": [
+              0.39,
+              2.49,
+              0.38
+            ]
+          },
+          "triangles": 114,
+          "parts": 5,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ]
+        },
+        "substation_cvt_132_lod1": {
+          "node": "substation_cvt_132_lod1",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.47,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.47,
+              4.55,
+              0.45
+            ]
+          },
+          "triangles": 74,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ]
+        },
+        "substation_cvt_33_lod1": {
+          "node": "substation_cvt_33_lod1",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.36,
+              0.0,
+              -0.36
+            ],
+            "max": [
+              0.36,
+              2.55,
+              0.36
+            ]
+          },
+          "triangles": 74,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ]
+        },
+        "substation_arrester_132_lod1": {
+          "node": "substation_arrester_132_lod1",
+          "size": [
+            1.12,
+            4.56,
+            1.4
+          ],
+          "footprint": [
+            1.12,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.35,
+              4.55,
+              0.35
+            ]
+          },
+          "triangles": 74,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              -0.7
+            ],
+            [
+              0.56,
+              0.7
+            ],
+            [
+              -0.56,
+              0.7
+            ]
+          ]
+        },
+        "substation_arrester_33_lod1": {
+          "node": "substation_arrester_33_lod1",
+          "size": [
+            0.92,
+            2.56,
+            1.4
+          ],
+          "footprint": [
+            0.92,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.35,
+              2.55,
+              0.35
+            ]
+          },
+          "triangles": 74,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "instrument",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              -0.7
+            ],
+            [
+              0.46,
+              0.7
+            ],
+            [
+              -0.46,
+              0.7
+            ]
+          ]
+        },
+        "substation_post_insulator_132_lod1": {
+          "node": "substation_post_insulator_132_lod1",
+          "size": [
+            0.55,
+            2.1,
+            0.55
+          ],
+          "footprint": [
+            0.55,
+            0.55
+          ],
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.275,
+              2.1,
+              0.275
+            ]
+          },
+          "triangles": 52,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "insulator",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.275,
+              -0.275
+            ],
+            [
+              0.275,
+              -0.275
+            ],
+            [
+              0.275,
+              0.275
+            ],
+            [
+              -0.275,
+              0.275
+            ]
+          ]
+        },
+        "substation_post_insulator_33_lod1": {
+          "node": "substation_post_insulator_33_lod1",
+          "size": [
+            0.375,
+            1.05,
+            0.375
+          ],
+          "footprint": [
+            0.375,
+            0.375
+          ],
+          "bounds": {
+            "min": [
+              -0.1875,
+              0.0,
+              -0.1875
+            ],
+            "max": [
+              0.1875,
+              1.05,
+              0.1875
+            ]
+          },
+          "triangles": 52,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "insulator",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.1875,
+              -0.1875
+            ],
+            [
+              0.1875,
+              -0.1875
+            ],
+            [
+              0.1875,
+              0.1875
+            ],
+            [
+              -0.1875,
+              0.1875
+            ]
+          ]
+        },
+        "substation_earth_switch_132_lod1": {
+          "node": "substation_earth_switch_132_lod1",
+          "size": [
+            2.4,
+            3.0,
+            1.15
+          ],
+          "footprint": [
+            2.4,
+            1.15
+          ],
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              1.092959,
+              2.995,
+              0.45
+            ]
+          },
+          "triangles": 118,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "earth-switch",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.2,
+              -0.575
+            ],
+            [
+              1.2,
+              -0.575
+            ],
+            [
+              1.2,
+              0.575
+            ],
+            [
+              -1.2,
+              0.575
+            ]
+          ]
+        },
+        "substation_earth_switch_33_lod1": {
+          "node": "substation_earth_switch_33_lod1",
+          "size": [
+            1.5,
+            1.73,
+            1.15
+          ],
+          "footprint": [
+            1.5,
+            1.15
+          ],
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.678848,
+              1.725,
+              0.45
+            ]
+          },
+          "triangles": 118,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "earth-switch",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.75,
+              -0.575
+            ],
+            [
+              0.75,
+              -0.575
+            ],
+            [
+              0.75,
+              0.575
+            ],
+            [
+              -0.75,
+              0.575
+            ]
+          ]
+        },
+        "substation_switchboard_panel_11_lod1": {
+          "node": "substation_switchboard_panel_11_lod1",
+          "size": [
+            0.8,
+            2.4,
+            1.6
+          ],
+          "footprint": [
+            0.8,
+            1.6
+          ],
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.725
+            ],
+            "max": [
+              0.4,
+              2.4,
+              0.7405
+            ]
+          },
+          "triangles": 22,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "indoor",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "panel_door",
+                "position": [
+                  -0.37,
+                  0.08,
+                  0.748
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.4,
+              -0.8
+            ],
+            [
+              0.4,
+              -0.8
+            ],
+            [
+              0.4,
+              0.8
+            ],
+            [
+              -0.4,
+              0.8
+            ]
+          ]
+        },
+        "substation_control_panel_lod1": {
+          "node": "substation_control_panel_lod1",
+          "size": [
+            0.85,
+            2.25,
+            0.82
+          ],
+          "footprint": [
+            0.85,
+            0.82
+          ],
+          "bounds": {
+            "min": [
+              -0.425,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.425,
+              2.25,
+              0.3405
+            ]
+          },
+          "triangles": 22,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "indoor",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "panel_door",
+                "position": [
+                  -0.39,
+                  0.08,
+                  0.348
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.425,
+              -0.41
+            ],
+            [
+              0.425,
+              -0.41
+            ],
+            [
+              0.425,
+              0.41
+            ],
+            [
+              -0.425,
+              0.41
+            ]
+          ]
+        },
+        "substation_battery_bank_lod1": {
+          "node": "substation_battery_bank_lod1",
+          "size": [
+            2.9,
+            1.55,
+            0.69
+          ],
+          "footprint": [
+            2.9,
+            0.69
+          ],
+          "bounds": {
+            "min": [
+              -1.45,
+              0.0,
+              -0.33
+            ],
+            "max": [
+              1.45,
+              1.55,
+              0.33
+            ]
+          },
+          "triangles": 108,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "indoor",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.45,
+              -0.345
+            ],
+            [
+              1.45,
+              -0.345
+            ],
+            [
+              1.45,
+              0.345
+            ],
+            [
+              -1.45,
+              0.345
+            ]
+          ]
+        },
+        "substation_battery_charger_lod1": {
+          "node": "substation_battery_charger_lod1",
+          "size": [
+            0.75,
+            1.55,
+            0.72
+          ],
+          "footprint": [
+            0.75,
+            0.72
+          ],
+          "bounds": {
+            "min": [
+              -0.375,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.375,
+              1.55,
+              0.3
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "indoor",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "charger_door",
+                "position": [
+                  -0.34,
+                  0,
+                  0.33
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.375,
+              -0.36
+            ],
+            [
+              0.375,
+              -0.36
+            ],
+            [
+              0.375,
+              0.36
+            ],
+            [
+              -0.375,
+              0.36
+            ]
+          ]
+        },
+        "substation_station_transformer_lod1": {
+          "node": "substation_station_transformer_lod1",
+          "size": [
+            1.72,
+            1.9,
+            1.52
+          ],
+          "footprint": [
+            1.72,
+            1.52
+          ],
+          "bounds": {
+            "min": [
+              -0.58,
+              0.0,
+              -0.745
+            ],
+            "max": [
+              0.86,
+              1.9,
+              0.745
+            ]
+          },
+          "triangles": 236,
+          "parts": 8,
+          "tags": [
+            "substation",
+            "transformer",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [],
+            "hum": {
+              "position": [
+                0,
+                0.75,
+                0
+              ],
+              "frequencyHz": 100
+            }
+          },
+          "keepOut": [
+            [
+              -0.86,
+              -0.76
+            ],
+            [
+              0.86,
+              -0.76
+            ],
+            [
+              0.86,
+              0.76
+            ],
+            [
+              -0.86,
+              0.76
+            ]
+          ]
+        },
+        "substation_radiator_bank_lod1": {
+          "node": "substation_radiator_bank_lod1",
+          "size": [
+            2.04,
+            2.1,
+            1.7
+          ],
+          "footprint": [
+            2.04,
+            1.7
+          ],
+          "bounds": {
+            "min": [
+              -0.95,
+              0.0,
+              -0.24
+            ],
+            "max": [
+              0.95,
+              2.1,
+              0.24
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.02,
+              -0.85
+            ],
+            [
+              1.02,
+              -0.85
+            ],
+            [
+              1.02,
+              0.85
+            ],
+            [
+              -1.02,
+              0.85
+            ]
+          ]
+        },
+        "substation_cooling_fan_lod1": {
+          "node": "substation_cooling_fan_lod1",
+          "size": [
+            0.74,
+            0.77,
+            0.32
+          ],
+          "footprint": [
+            0.74,
+            0.32
+          ],
+          "bounds": {
+            "min": [
+              -0.34,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.34,
+              0.694449,
+              0.06
+            ]
+          },
+          "triangles": 44,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.37,
+              -0.16
+            ],
+            [
+              0.37,
+              -0.16
+            ],
+            [
+              0.37,
+              0.16
+            ],
+            [
+              -0.37,
+              0.16
+            ]
+          ]
+        },
+        "substation_insulator_disc_lod1": {
+          "node": "substation_insulator_disc_lod1",
+          "size": [
+            0.3,
+            0.145,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.14,
+              0,
+              -0.14
+            ],
+            "max": [
+              0.14,
+              0.09,
+              0.14
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ]
+        },
+        "substation_insulator_string_132_lod1": {
+          "node": "substation_insulator_string_132_lod1",
+          "size": [
+            0.3,
+            1.72,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.09,
+              0.0,
+              -0.09
+            ],
+            "max": [
+              0.09,
+              1.72,
+              0.09
+            ]
+          },
+          "triangles": 44,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ]
+        },
+        "substation_insulator_string_33_lod1": {
+          "node": "substation_insulator_string_33_lod1",
+          "size": [
+            0.3,
+            0.7,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -0.09,
+              0.0,
+              -0.09
+            ],
+            "max": [
+              0.09,
+              0.7,
+              0.09
+            ]
+          },
+          "triangles": 44,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              -0.15
+            ],
+            [
+              0.15,
+              0.15
+            ],
+            [
+              -0.15,
+              0.15
+            ]
+          ]
+        },
+        "substation_conductor_segment_lod1": {
+          "node": "substation_conductor_segment_lod1",
+          "size": [
+            0.03,
+            1.0,
+            0.03
+          ],
+          "footprint": [
+            0.03,
+            0.03
+          ],
+          "bounds": {
+            "min": [
+              -0.0075,
+              0.0,
+              -0.01299
+            ],
+            "max": [
+              0.015,
+              1,
+              0.01299
+            ]
+          },
+          "triangles": 6,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.015,
+              -0.015
+            ],
+            [
+              0.015,
+              -0.015
+            ],
+            [
+              0.015,
+              0.015
+            ],
+            [
+              -0.015,
+              0.015
+            ]
+          ]
+        },
+        "substation_conductor_spacer_lod1": {
+          "node": "substation_conductor_spacer_lod1",
+          "size": [
+            0.61,
+            0.52,
+            0.04
+          ],
+          "footprint": [
+            0.61,
+            0.04
+          ],
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.02
+            ],
+            "max": [
+              0.275,
+              0.435,
+              0.02
+            ]
+          },
+          "triangles": 46,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "component",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.305,
+              -0.02
+            ],
+            [
+              0.305,
+              -0.02
+            ],
+            [
+              0.305,
+              0.02
+            ],
+            [
+              -0.305,
+              0.02
+            ]
+          ]
+        },
+        "substation_tower_suspension_132_lod1": {
+          "node": "substation_tower_suspension_132_lod1",
+          "size": [
+            12,
+            32,
+            6.4
+          ],
+          "footprint": [
+            12,
+            6.4
+          ],
+          "bounds": {
+            "min": [
+              -5.894949,
+              0.0,
+              -3.2
+            ],
+            "max": [
+              5.894949,
+              32.0,
+              3.2
+            ]
+          },
+          "triangles": 814,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "tower",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.5,
+              -3.5
+            ],
+            [
+              3.5,
+              -3.5
+            ],
+            [
+              3.5,
+              3.5
+            ],
+            [
+              -3.5,
+              3.5
+            ]
+          ]
+        },
+        "substation_tower_terminal_132_lod1": {
+          "node": "substation_tower_terminal_132_lod1",
+          "size": [
+            13,
+            30,
+            8
+          ],
+          "footprint": [
+            13,
+            8
+          ],
+          "bounds": {
+            "min": [
+              -6.392861,
+              0.0,
+              -4.0
+            ],
+            "max": [
+              6.392861,
+              30.0,
+              4.0
+            ]
+          },
+          "triangles": 814,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "tower",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -4.5,
+              -4.5
+            ],
+            [
+              4.5,
+              -4.5
+            ],
+            [
+              4.5,
+              4.5
+            ],
+            [
+              -4.5,
+              4.5
+            ]
+          ]
+        },
+        "substation_pole_hframe_33_lod1": {
+          "node": "substation_pole_hframe_33_lod1",
+          "size": [
+            6.4,
+            13,
+            1.2
+          ],
+          "footprint": [
+            6.4,
+            1.2
+          ],
+          "bounds": {
+            "min": [
+              -3.2,
+              0.0,
+              -0.5
+            ],
+            "max": [
+              3.2,
+              13.0,
+              0.5
+            ]
+          },
+          "triangles": 240,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "pole",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.2,
+              -0.6
+            ],
+            [
+              3.2,
+              -0.6
+            ],
+            [
+              3.2,
+              0.6
+            ],
+            [
+              -3.2,
+              0.6
+            ]
+          ]
+        },
+        "substation_pole_concrete_11_lod1": {
+          "node": "substation_pole_concrete_11_lod1",
+          "size": [
+            2.8,
+            10.5,
+            0.65
+          ],
+          "footprint": [
+            2.8,
+            0.65
+          ],
+          "bounds": {
+            "min": [
+              -1.34,
+              0.0,
+              -0.190211
+            ],
+            "max": [
+              1.34,
+              10.47,
+              0.190211
+            ]
+          },
+          "triangles": 375,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "pole",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.4,
+              -0.325
+            ],
+            [
+              1.4,
+              -0.325
+            ],
+            [
+              1.4,
+              0.325
+            ],
+            [
+              -1.4,
+              0.325
+            ]
+          ]
+        },
+        "substation_gantry_132_lod1": {
+          "node": "substation_gantry_132_lod1",
+          "size": [
+            12,
+            10,
+            2.0
+          ],
+          "footprint": [
+            12,
+            2.0
+          ],
+          "bounds": {
+            "min": [
+              -6.0,
+              0.0,
+              -1.0
+            ],
+            "max": [
+              6.0,
+              9.964952,
+              1.0
+            ]
+          },
+          "triangles": 338,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "gantry",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -6.0,
+              -1.0
+            ],
+            [
+              6.0,
+              -1.0
+            ],
+            [
+              6.0,
+              1.0
+            ],
+            [
+              -6.0,
+              1.0
+            ]
+          ]
+        },
+        "substation_gantry_33_lod1": {
+          "node": "substation_gantry_33_lod1",
+          "size": [
+            7,
+            5.5,
+            1.3
+          ],
+          "footprint": [
+            7,
+            1.3
+          ],
+          "bounds": {
+            "min": [
+              -3.5,
+              0.0,
+              -0.65
+            ],
+            "max": [
+              3.5,
+              5.464952,
+              0.65
+            ]
+          },
+          "triangles": 338,
+          "parts": 3,
+          "tags": [
+            "substation",
+            "gantry",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.5,
+              -0.65
+            ],
+            [
+              3.5,
+              -0.65
+            ],
+            [
+              3.5,
+              0.65
+            ],
+            [
+              -3.5,
+              0.65
+            ]
+          ]
+        },
+        "substation_busbar_tube_lod1": {
+          "node": "substation_busbar_tube_lod1",
+          "size": [
+            3,
+            0.15,
+            0.15
+          ],
+          "footprint": [
+            3,
+            0.15
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.015,
+              -0.06
+            ],
+            "max": [
+              1.5,
+              0.135,
+              0.06
+            ]
+          },
+          "triangles": 16,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "busbar",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.075
+            ],
+            [
+              1.5,
+              -0.075
+            ],
+            [
+              1.5,
+              0.075
+            ],
+            [
+              -1.5,
+              0.075
+            ]
+          ]
+        },
+        "substation_bund_large_lod1": {
+          "node": "substation_bund_large_lod1",
+          "size": [
+            10,
+            0.65,
+            7.4
+          ],
+          "footprint": [
+            10,
+            7.4
+          ],
+          "bounds": {
+            "min": [
+              -5.0,
+              0.0,
+              -3.7
+            ],
+            "max": [
+              5.0,
+              0.65,
+              3.7
+            ]
+          },
+          "triangles": 70,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "containment",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -5.0,
+              -3.7
+            ],
+            [
+              5.0,
+              -3.7
+            ],
+            [
+              5.0,
+              3.7
+            ],
+            [
+              -5.0,
+              3.7
+            ]
+          ]
+        },
+        "substation_bund_small_lod1": {
+          "node": "substation_bund_small_lod1",
+          "size": [
+            7.2,
+            0.55,
+            5.6
+          ],
+          "footprint": [
+            7.2,
+            5.6
+          ],
+          "bounds": {
+            "min": [
+              -3.6,
+              0.0,
+              -2.8
+            ],
+            "max": [
+              3.6,
+              0.55,
+              2.8
+            ]
+          },
+          "triangles": 70,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "containment",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -3.6,
+              -2.8
+            ],
+            [
+              3.6,
+              -2.8
+            ],
+            [
+              3.6,
+              2.8
+            ],
+            [
+              -3.6,
+              2.8
+            ]
+          ]
+        },
+        "substation_firewall_lod1": {
+          "node": "substation_firewall_lod1",
+          "size": [
+            0.69,
+            6.5,
+            8
+          ],
+          "footprint": [
+            0.69,
+            8
+          ],
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -4.0
+            ],
+            "max": [
+              0.225,
+              6.5,
+              4.0
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "containment",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.345,
+              -4.0
+            ],
+            [
+              0.345,
+              -4.0
+            ],
+            [
+              0.345,
+              4.0
+            ],
+            [
+              -0.345,
+              4.0
+            ]
+          ]
+        },
+        "substation_wall_brick_lod1": {
+          "node": "substation_wall_brick_lod1",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.12
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.12
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ]
+        },
+        "substation_wall_door_lod1": {
+          "node": "substation_wall_door_lod1",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.12
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.12
+            ]
+          },
+          "triangles": 32,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ]
+        },
+        "substation_wall_window_lod1": {
+          "node": "substation_wall_window_lod1",
+          "size": [
+            3,
+            3.2,
+            0.3
+          ],
+          "footprint": [
+            3,
+            0.3
+          ],
+          "bounds": {
+            "min": [
+              -1.5,
+              0.0,
+              -0.12
+            ],
+            "max": [
+              1.5,
+              3.2,
+              0.12
+            ]
+          },
+          "triangles": 42,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              -0.15
+            ],
+            [
+              1.5,
+              0.15
+            ],
+            [
+              -1.5,
+              0.15
+            ]
+          ]
+        },
+        "substation_roof_flat_lod1": {
+          "node": "substation_roof_flat_lod1",
+          "size": [
+            3.2,
+            0.32,
+            3.2
+          ],
+          "footprint": [
+            3.2,
+            3.2
+          ],
+          "bounds": {
+            "min": [
+              -1.6,
+              0.0,
+              -1.6
+            ],
+            "max": [
+              1.6,
+              0.32,
+              1.6
+            ]
+          },
+          "triangles": 22,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.6,
+              -1.6
+            ],
+            [
+              1.6,
+              -1.6
+            ],
+            [
+              1.6,
+              1.6
+            ],
+            [
+              -1.6,
+              1.6
+            ]
+          ]
+        },
+        "substation_door_steel_lod1": {
+          "node": "substation_door_steel_lod1",
+          "size": [
+            1.1,
+            2.2,
+            0.18
+          ],
+          "footprint": [
+            1.1,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.55,
+              0.0,
+              -0.025
+            ],
+            "max": [
+              0.55,
+              2.2,
+              0.025
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "door_hinge",
+                "position": [
+                  -0.55,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -0.55,
+              -0.09
+            ],
+            [
+              0.55,
+              -0.09
+            ],
+            [
+              0.55,
+              0.09
+            ],
+            [
+              -0.55,
+              0.09
+            ]
+          ]
+        },
+        "substation_louvre_lod1": {
+          "node": "substation_louvre_lod1",
+          "size": [
+            1,
+            0.75,
+            0.12
+          ],
+          "footprint": [
+            1,
+            0.12
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.5,
+              0.75,
+              0.061
+            ]
+          },
+          "triangles": 16,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.5,
+              -0.06
+            ],
+            [
+              0.5,
+              -0.06
+            ],
+            [
+              0.5,
+              0.06
+            ],
+            [
+              -0.5,
+              0.06
+            ]
+          ]
+        },
+        "substation_window_lod1": {
+          "node": "substation_window_lod1",
+          "size": [
+            1.36,
+            1.1,
+            0.18
+          ],
+          "footprint": [
+            1.36,
+            0.18
+          ],
+          "bounds": {
+            "min": [
+              -0.65,
+              0.0,
+              -0.05
+            ],
+            "max": [
+              0.65,
+              1.1,
+              0.052
+            ]
+          },
+          "triangles": 14,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.68,
+              -0.09
+            ],
+            [
+              0.68,
+              -0.09
+            ],
+            [
+              0.68,
+              0.09
+            ],
+            [
+              -0.68,
+              0.09
+            ]
+          ]
+        },
+        "substation_oil_store_lod1": {
+          "node": "substation_oil_store_lod1",
+          "size": [
+            4.5,
+            3.2,
+            3.5
+          ],
+          "footprint": [
+            4.5,
+            3.5
+          ],
+          "bounds": {
+            "min": [
+              -2.25,
+              0.0,
+              -1.75
+            ],
+            "max": [
+              2.25,
+              3.2,
+              1.75
+            ]
+          },
+          "triangles": 112,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "building",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.25,
+              -1.75
+            ],
+            [
+              2.25,
+              -1.75
+            ],
+            [
+              2.25,
+              1.75
+            ],
+            [
+              -2.25,
+              1.75
+            ]
+          ]
+        },
+        "substation_fence_panel_lod1": {
+          "node": "substation_fence_panel_lod1",
+          "size": [
+            2.5,
+            2.4,
+            0.09
+          ],
+          "footprint": [
+            2.5,
+            0.09
+          ],
+          "bounds": {
+            "min": [
+              -1.2375,
+              0.0,
+              -0.03
+            ],
+            "max": [
+              1.2375,
+              2.3,
+              0.03
+            ]
+          },
+          "triangles": 84,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "security",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -1.25,
+              -0.045
+            ],
+            [
+              1.25,
+              -0.045
+            ],
+            [
+              1.25,
+              0.045
+            ],
+            [
+              -1.25,
+              0.045
+            ]
+          ]
+        },
+        "substation_fence_post_lod1": {
+          "node": "substation_fence_post_lod1",
+          "size": [
+            0.16,
+            2.94,
+            1.0
+          ],
+          "footprint": [
+            0.16,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -0.06,
+              0.0,
+              -0.47253
+            ],
+            "max": [
+              0.06,
+              2.920277,
+              0.06
+            ]
+          },
+          "triangles": 18,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "security",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              -0.1
+            ],
+            [
+              0.1,
+              0.1
+            ],
+            [
+              -0.1,
+              0.1
+            ]
+          ]
+        },
+        "substation_gate_lod1": {
+          "node": "substation_gate_lod1",
+          "size": [
+            5,
+            2.9,
+            0.24
+          ],
+          "footprint": [
+            5,
+            0.24
+          ],
+          "bounds": {
+            "min": [
+              -2.49,
+              0.0,
+              -0.07
+            ],
+            "max": [
+              2.49,
+              2.9,
+              0.07
+            ]
+          },
+          "triangles": 192,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "security",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": [
+              {
+                "name": "left_leaf",
+                "position": [
+                  -2.5,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              },
+              {
+                "name": "right_leaf",
+                "position": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  1,
+                  0
+                ]
+              }
+            ]
+          },
+          "keepOut": [
+            [
+              -2.5,
+              -0.12
+            ],
+            [
+              2.5,
+              -0.12
+            ],
+            [
+              2.5,
+              0.12
+            ],
+            [
+              -2.5,
+              0.12
+            ]
+          ]
+        },
+        "substation_floodlight_mast_lod1": {
+          "node": "substation_floodlight_mast_lod1",
+          "size": [
+            1.6,
+            8,
+            1.0
+          ],
+          "footprint": [
+            1.6,
+            1.0
+          ],
+          "bounds": {
+            "min": [
+              -0.775,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.775,
+              8.0,
+              0.325
+            ]
+          },
+          "triangles": 64,
+          "parts": 4,
+          "tags": [
+            "substation",
+            "lighting",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [
+              {
+                "name": "lamp_left",
+                "position": [
+                  -0.55,
+                  7.7,
+                  0.18
+                ]
+              },
+              {
+                "name": "lamp_right",
+                "position": [
+                  0.55,
+                  7.7,
+                  0.18
+                ]
+              }
+            ],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.8,
+              -0.5
+            ],
+            [
+              0.8,
+              -0.5
+            ],
+            [
+              0.8,
+              0.5
+            ],
+            [
+              -0.8,
+              0.5
+            ]
+          ]
+        },
+        "substation_lightning_mast_lod1": {
+          "node": "substation_lightning_mast_lod1",
+          "size": [
+            0.8,
+            18,
+            0.8
+          ],
+          "footprint": [
+            0.8,
+            0.8
+          ],
+          "bounds": {
+            "min": [
+              -0.325,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.325,
+              18.0,
+              0.325
+            ]
+          },
+          "triangles": 30,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "lighting",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.4,
+              -0.4
+            ],
+            [
+              0.4,
+              -0.4
+            ],
+            [
+              0.4,
+              0.4
+            ],
+            [
+              -0.4,
+              0.4
+            ]
+          ]
+        },
+        "substation_gravel_tile_lod1": {
+          "node": "substation_gravel_tile_lod1",
+          "size": [
+            4,
+            0.12,
+            4
+          ],
+          "footprint": [
+            4,
+            4
+          ],
+          "bounds": {
+            "min": [
+              -2.0,
+              0.0,
+              -2.0
+            ],
+            "max": [
+              2.0,
+              0.12,
+              2.0
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "ground",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              2.0
+            ],
+            [
+              -2.0,
+              2.0
+            ]
+          ]
+        },
+        "substation_concrete_tile_lod1": {
+          "node": "substation_concrete_tile_lod1",
+          "size": [
+            4,
+            0.15,
+            4
+          ],
+          "footprint": [
+            4,
+            4
+          ],
+          "bounds": {
+            "min": [
+              -2.0,
+              0.0,
+              -2.0
+            ],
+            "max": [
+              2.0,
+              0.15,
+              2.0
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "ground",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              -2.0
+            ],
+            [
+              2.0,
+              2.0
+            ],
+            [
+              -2.0,
+              2.0
+            ]
+          ]
+        },
+        "substation_trench_cover_lod1": {
+          "node": "substation_trench_cover_lod1",
+          "size": [
+            1,
+            0.13,
+            0.6
+          ],
+          "footprint": [
+            1,
+            0.6
+          ],
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.5,
+              0.1,
+              0.3
+            ]
+          },
+          "triangles": 10,
+          "parts": 1,
+          "tags": [
+            "substation",
+            "ground",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.5,
+              -0.3
+            ],
+            [
+              0.5,
+              -0.3
+            ],
+            [
+              0.5,
+              0.3
+            ],
+            [
+              -0.5,
+              0.3
+            ]
+          ]
+        },
+        "substation_sign_danger_lod1": {
+          "node": "substation_sign_danger_lod1",
+          "size": [
+            0.75,
+            0.55,
+            0.07
+          ],
+          "footprint": [
+            0.75,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.375,
+              0.0,
+              -0.035
+            ],
+            "max": [
+              0.375,
+              0.55,
+              0.036
+            ]
+          },
+          "triangles": 12,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.375,
+              -0.035
+            ],
+            [
+              0.375,
+              -0.035
+            ],
+            [
+              0.375,
+              0.035
+            ],
+            [
+              -0.375,
+              0.035
+            ]
+          ]
+        },
+        "substation_sign_access_lod1": {
+          "node": "substation_sign_access_lod1",
+          "size": [
+            0.65,
+            0.45,
+            0.07
+          ],
+          "footprint": [
+            0.65,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.325,
+              0.0,
+              -0.035
+            ],
+            "max": [
+              0.325,
+              0.45,
+              0.036
+            ]
+          },
+          "triangles": 12,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.325,
+              -0.035
+            ],
+            [
+              0.325,
+              -0.035
+            ],
+            [
+              0.325,
+              0.035
+            ],
+            [
+              -0.325,
+              0.035
+            ]
+          ]
+        },
+        "substation_sign_touch_lod1": {
+          "node": "substation_sign_touch_lod1",
+          "size": [
+            0.45,
+            0.3,
+            0.07
+          ],
+          "footprint": [
+            0.45,
+            0.07
+          ],
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.035
+            ],
+            "max": [
+              0.225,
+              0.3,
+              0.036
+            ]
+          },
+          "triangles": 12,
+          "parts": 2,
+          "tags": [
+            "substation",
+            "sign",
+            "lod"
+          ],
+          "anchors": {
+            "lamps": [],
+            "hinges": []
+          },
+          "keepOut": [
+            [
+              -0.225,
+              -0.035
+            ],
+            [
+              0.225,
+              -0.035
+            ],
+            [
+              0.225,
+              0.035
+            ],
+            [
+              -0.225,
+              0.035
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "materials": "substation/materials.json",
+  "plan": "substation/substation-plan.json",
+  "lodPolicy": {
+    "switchMetres": 22,
+    "tinyCullMetres": 45,
+    "towerSwitchMetres": 80,
+    "integration": "recommendations only; library is not loaded by the game"
+  }
+}
