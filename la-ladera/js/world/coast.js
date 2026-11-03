@@ -46,6 +46,13 @@ const RAMP_END = (() => {                                  // where the 1:12 ram
 })();
 export const RAMP_END_Z = RAMP_END;
 
+/** The cheeks (a stub of wall, 0.25 x 1.7 m, either side of every flight, flush with the deck) and the ramp's two side rails: the data the mesh (coastmesh.js) and the walls (coastColliders) are both made from. */
+export const CHEEK = Object.freeze({ w: 0.25, len: 1.7, rail: 0.9, foot: -1.2 });
+const CHEEKS = Object.freeze(STAIRS.flatMap((a) => [-1, 1].map((s) => Object.freeze({ id: `${a.id}${s < 0 ? 'w' : 'e'}`, x: +(a.x + s * (a.w / 2 + CHEEK.w / 2)).toFixed(3), z1: STAIR_FLIGHT[0], z2: STAIR_FLIGHT[0] + CHEEK.len }))));
+const RAMP_RAILS = Object.freeze([-1, 1].map((s) => Object.freeze({ id: `${RAMP.id}${s < 0 ? 'w' : 'e'}`, x: +(RAMP.x + s * (RAMP.w / 2 - 0.04)).toFixed(3), z1: DECK_Z, z2: RAMP_END })));
+/** The ramp's surface under a rail (1:12 from the deck's edge). */
+export const rampY = (z) => DECK - RAMP.slope * (Math.min(Math.max(z, DECK_Z), RAMP_END) - DECK_Z);
+
 // the headlands that cap the bay's horns: x, z, radius of the foot, height they add
 const HEADLANDS = Object.freeze([{ id: 'oeste', x: -300, z: 330, r: 110, h: 34 }, { id: 'este', x: 330, z: 370, r: 100, h: 42 }]);
 const CROWN = 0.22;                                          // the headland's summit is level out to this share of its radius (a church and a lighthouse stand on a pad, not on a point)
@@ -55,10 +62,22 @@ const bump = (d, r) => { if (d >= r) return 0; const t = Math.max(CROWN, d / r),
 export const GATE = 'coast.gate';
 export function setGate(physics, open) { let n = 0; for (const w of physics.walls) if (w.id === GATE) { w.on = !open; n++; } return n; }
 
-/** The sea wall's rail as physics walls (a wall blocks when its top is over 0.4 m above the walker's feet): the deck's edge is closed except at the accesses. Called by the page and by the headless build. */
+/**
+ * The sea wall's rail as physics walls (a wall blocks when its top is over 0.4 m above the walker's feet): the deck's edge is closed except at the accesses. The cheeks beside each flight are solid
+ * (a wall from under the sand to the rail's height), and the ramp's two side rails stand 0.9 m over its surface in 2 m runs, so nobody steps off its edge or into a cheek. Called by the page and by the headless build.
+ */
 export function coastColliders(physics, coast) {
-  for (const r of coast.rails) physics.addWall({ x1: r.x1, z1: r.z, x2: r.x2, z2: r.z, t: 0.06, y0: DECK, y1: DECK + 0.9, id: 'coast.rail' });
-  return coast.rails.length;
+  let n = 0;
+  for (const r of coast.rails) { physics.addWall({ x1: r.x1, z1: r.z, x2: r.x2, z2: r.z, t: 0.06, y0: DECK, y1: DECK + 0.9, id: 'coast.rail' }); n++; }
+  for (const c of coast.cheeks ?? []) { physics.addWall({ x1: c.x, z1: c.z1, x2: c.x, z2: c.z2, t: CHEEK.w / 2, y0: DECK + CHEEK.foot, y1: DECK + CHEEK.rail, id: 'coast.cheek' }); n++; }
+  for (const r of coast.rampRails ?? []) {
+    const runs = Math.max(1, Math.ceil((r.z2 - r.z1) / 2));
+    for (let i = 0; i < runs; i++) {
+      const za = r.z1 + ((r.z2 - r.z1) * i) / runs, zb = r.z1 + ((r.z2 - r.z1) * (i + 1)) / runs;
+      physics.addWall({ x1: r.x, z1: za, x2: r.x, z2: zb, t: 0.04, y0: rampY(zb) - 0.3, y1: rampY(za) + CHEEK.rail, id: 'coast.ramprail' }); n++;
+    }
+  }
+  return n;
 }
 
 function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -133,14 +152,14 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
   const R = mulberry(sd * 7 + 1331);
   const jit = (v, m) => v + (R() - 0.5) * 2 * m;
   const pois = [], addPoi = (kind, x, z, extra = {}) => pois.push({ id: `coast.${kind}.${pois.filter((p) => p.kind === kind).length}`, kind, x: +x.toFixed(2), y: +heightAt(x, z).toFixed(2), z: +z.toFixed(2), ry: 0, tags: ['coast'], ...extra });
-  for (const z of [119, 125]) for (const x of [...Array.from({ length: 6 }, (_, i) => -34 + i * 6), ...Array.from({ length: 6 }, (_, i) => 52 + i * 6)]) addPoi('lie', jit(x, 0.4), jit(z, 0.5), { ry: Math.PI });   // 24 loungers and towels, facing the sea
+  for (const z of [119, 125]) for (const x of [...Array.from({ length: 6 }, (_, i) => -34 + i * 6), ...Array.from({ length: 6 }, (_, i) => 48 + i * 6)]) addPoi('lie', jit(x, 0.4), jit(z, 0.5), { ry: Math.PI });   // 24 loungers and towels, facing the sea (the east block leaves the line of the stair at x 70 clear: a pair is 1.3 m wide, the gap 4.7 m)
   for (let i = 0; i < 8; i++) { const x = -84 + i * 24, z = SHORE0 + 1.2 + (i % 3) * 2.6; addPoi('wade', x, z); }
   for (let i = 0; i < 6; i++) addPoi('swim', -70 + i * 28, SHORE0 + 2.5);
   for (let i = 0; i < 6; i++) addPoi('fish', -6.5 + (i % 2 ? 1.2 : -1.2), 130 + i * 10);     // the pier (phase 2) is at x = -6.5
-  for (let i = 0; i < 4; i++) addPoi('volley', -66 + (i % 2) * 8, 123 + Math.floor(i / 2) * 6);
+  for (let i = 0; i < 4; i++) addPoi('volley', -66 + (i % 2) * 8, 124 + Math.floor(i / 2) * 4, { ry: i % 2 ? -Math.PI / 2 : Math.PI / 2 });   // the four anchors of the court the beach front lays at (-62, 126) (the library's `volley` anchors, +-4 and +-2 m), each facing the net
   for (const x of [-80, -50, -22, 14, 40, 76]) addPoi('vend', x, 113.5, { ry: Math.PI });
   addPoi('vend', -60, 140); addPoi('vend', 60, 140);                                               // two walking vendors' beats
-  addPoi('watch', 6, 128.5); addPoi('watch', 6, 118);
+  addPoi('watch', 6, 128.12, { y: +(heightAt(6, 128.12) + 1.73).toFixed(2) }); addPoi('watch', 6, 118);       // the first is the lifeguard tower's own `watch` anchor (the tower is at (6, 128): 1.73 m up, 0.12 m forward); the second stands on the sand behind it
   for (let i = 0; i < 6; i++) addPoi('moor', -88 + i * 3, 131.5);
   for (let i = 0; i < 6; i++) addPoi('launch', -88 + i * 3, SHORE0 - 4);
   addPoi('raft', 34, 185);
@@ -192,7 +211,7 @@ export function createCoast({ seed = 1, edge = () => 0.1 } = {}) {
 
   return Object.freeze({
     seed: sd, sea: SEA, z0: Z0, shoreZ, shift, heightAt, meshHeight, ground, headland, depthAt, surfaceAt, softAt, limit, bed, sandy, deckAt,
-    headlands: HEADLANDS, accesses: ACCESSES, stairs: STAIRS, ramp: RAMP, rampEnd: RAMP_END, stairFoot: FOOT, accessAt, rails,
+    headlands: HEADLANDS, accesses: ACCESSES, stairs: STAIRS, ramp: RAMP, rampEnd: RAMP_END, stairFoot: FOOT, accessAt, rails, cheeks: CHEEKS, rampRails: RAMP_RAILS,
     pois, areas, landmarks, nav, lanes, climbs,
     // the mesh and the far ground read these
     stats: { rails: rails.length, nodes: nav.nodes.length, edges: nav.edges.length, pois: pois.length },

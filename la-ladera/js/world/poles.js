@@ -296,7 +296,7 @@ function farol(K, b, x, z, ctx) {
   K.post(x, z, 0.07, 3);
 }
 
-function globePost(K, b, x, z, ctx) {
+export function globePost(K, b, x, z, ctx) {                        // (exported: the beach's promenade stands the same posts: beachfixtures.js)
   const gy = K.H(x, z), top = gy + 4.1;
   tube(b, 'iron_green', [x, gy - 0.1, z], [x, top, z], 0.07, 0.045, 8, { col: [1, 1, 1] });
   tube(b, 'iron_green', [x, gy + 0.05, z], [x, gy + 0.55, z], 0.14, 0.09, 8, { col: [1, 1, 1] });

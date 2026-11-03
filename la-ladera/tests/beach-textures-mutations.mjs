@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 const testFile = resolve(dirname(fileURLToPath(import.meta.url)), 'beach-textures.test.mjs');
 const source = readFileSync(testFile, 'utf8');
 const cases = [...source.matchAll(/^caseTest\('([a-z_]+)', '([^']+)'/gm)].map((m) => ({ id: m[1], title: m[2] }));
-if (cases.length !== 18) throw new Error(`Expected 18 named mutation-covered tests; found ${cases.length}`);
+if (cases.length !== 21) throw new Error(`Expected 21 named mutation-covered tests; found ${cases.length}`);
 const args = process.argv.slice(2);
 if (args.length && (args.length !== 2 || args[0] !== '--out')) throw new Error('Usage: beach-textures-mutations.mjs [--out DIR]');
 const out = args.length ? resolve(args[1]) : null;
