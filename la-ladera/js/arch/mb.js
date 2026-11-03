@@ -121,6 +121,20 @@ export const ROOM_ON = [17.5, 17.9, 18.3, 18.7, 19.1, 19.6, 20.1, 20.7];
 export const ROOM_OFF = [21.75, 22.25, 22.75, 23.5, 24, 24.5, 25.5, 99];
 /** The first colour channel of a pane that shows a room: 2 + (8 x the slot it comes on in + the slot it goes off in) + 0.999 x its look. a, b, c in 0..1 (hashes): the two slots, the look. */
 export function roomSeed(a, b, c) { return 2 + 8 * Math.min(7, Math.floor(a * 8)) + Math.min(7, Math.floor(b * 8)) + 0.999 * c; }
+/** The room-look table (engine/windowroom.js `syncRoomLooks`): each (building, room) with a lit window gets a slot 1..ROOM_SLOTS-1, in the order the shells are built (0 = none, or full).
+ *  The pane carries it in its third colour channel, `roomSize(height, slot)` = height + 8 x slot (a pane is never 8 m tall), so the card can paint the REAL room's walls and lamp
+ *  once the interiors have chosen them (R1-211: the card was a made-up grey room that did not match the room seen through the same glass at dusk). */
+export const ROOM_SLOTS = 2048;
+export function roomSlot(ctx, bpId, roomId) {
+  if (!ctx || roomId == null) return 0;
+  const T = (ctx.roomSlots ??= { map: new Map(), list: [] }), k = `${bpId}:${roomId}`;
+  let s = T.map.get(k);
+  if (s == null) { if (T.list.length + 1 >= ROOM_SLOTS) return 0; T.list.push({ bp: bpId, room: roomId, ok: false }); s = T.list.length; T.map.set(k, s); }
+  return s;
+}
+export const roomSize = (h, slot) => h + 8 * slot;
+/** The pane's height and slot back from its third colour channel. */
+export const roomSizeOf = (z) => { const slot = Math.floor(z / 8); return { h: z - 8 * slot, slot }; };
 /** Is the room of a pane whose first colour channel is `code` lit at clock hour `h`? (The shader's rule, in JS: hours before noon count as the end of the evening before.) */
 export function roomLitAt(code, h) {
   const k = Math.floor(code - 2 + 0.0005), e = h < 12 ? h + 24 : h;

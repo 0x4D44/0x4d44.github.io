@@ -7,8 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MaterialLib } from '../js/core/matlib.js';
-import { windowRoom, setRoomHour, ROOM_APPLY, ROOM_FUNCS, ROOM_TABLE } from '../js/engine/windowroom.js';
-import { roomSeed, roomLitAt, ROOM_ON, ROOM_OFF } from '../js/arch/mb.js';
+import { windowRoom, setRoomHour, syncRoomLooks, ROOM_APPLY, ROOM_FUNCS, ROOM_TABLE } from '../js/engine/windowroom.js';
+import { roomSeed, roomLitAt, ROOM_ON, ROOM_OFF, roomSizeOf, ROOM_SLOTS } from '../js/arch/mb.js';
 import { buildData } from './headless.mjs';
 import { buildBuilding } from '../js/arch/index.js';
 
@@ -30,7 +30,7 @@ test('the patch lands in three\'s standard shaders once, with the evening table,
   assert.equal(m.customProgramCacheKey(), m.customProgramCacheKey(), 'one program');
   assert.ok(ROOM_TABLE.includes(`float[${ROOM_ON.length}]( ${ROOM_ON.map((v) => v.toFixed(2)).join(', ')} )`), 'the shader\'s on-hours are arch/mb.js ROOM_ON');
   assert.ok(ROOM_TABLE.includes(`float[${ROOM_OFF.length}]( ${ROOM_OFF.map((v) => v.toFixed(2)).join(', ')} )`), 'and its off-hours ROOM_OFF');
-  assert.ok(/totalEmissiveRadiance \*= lrOn;/.test(ROOM_APPLY), 'a room that is off has no glow at all, near or far');
+  assert.ok(/totalEmissiveRadiance \*= lrOn \* step\( 0\.0, dot\( lrNo, lrEye \) \);/.test(ROOM_APPLY), 'a room that is off has no glow at all, near or far');
 });
 
 test('only window_lit carries the patch, and it starts on the clock as it is', () => {
@@ -53,8 +53,8 @@ test('the evening rule: a code says when its room comes on and goes off; the str
   for (const s of [0, 0.5, 0.999]) assert.equal(Math.floor(roomSeed(0.99, 0.99, s) - 2 + 0.0005), 63, 'the look never spills into the evening code');
 });
 
-// The real barrio, built (no furniture): every lit pane of every building.
-const real = await buildData({ furnish: false });
+// The real barrio, furnished and built: every lit pane of every building (a lit pane's height carries its room's slot: arch/mb.js roomSize).
+const real = await buildData({ furnish: true });
 for (const bp of real.buildings) buildBuilding(real.ctx, bp);
 const panes = [];
 for (const bp of real.buildings) {
@@ -62,7 +62,7 @@ for (const bp of real.buildings) {
   for (const m of g?.meshes ?? []) {
     if (m.userData.matKey !== 'window_lit') continue;
     const col = m.geometry.attributes.color, uv = m.geometry.attributes.uv;
-    for (let i = 0; i < col.count; i++) panes.push({ bp: bp.id, x: col.getX(i), w: col.getY(i), h: col.getZ(i), u: uv.getX(i), v: uv.getY(i) });
+    for (let i = 0; i < col.count; i++) { const z = roomSizeOf(col.getZ(i)); panes.push({ bp: bp.id, x: col.getX(i), w: col.getY(i), h: col.getX(i) >= 2 ? z.h : col.getZ(i), slot: col.getX(i) >= 2 ? z.slot : 0, u: uv.getX(i), v: uv.getY(i) }); }
   }
 }
 
@@ -87,4 +87,41 @@ test('R1-104: fewer windows glow at 23:00 than at 21:00, fewer at 19:30 (not hom
   assert.ok(f[23] < 0.8 * f[21] && f[23] > 0.3, `23:00: ${f[23]}: some have gone to bed`);
   assert.ok(f[19.5] > 0.35 && f[19.5] < 0.85, `19:30: ${f[19.5]}: some are not home yet`);
   assert.ok(f[1.5] > 0.05 && f[1.5] < f[23], `01:30: ${f[1.5]}: a few late ones`);
+});
+
+test('R1-202: from inside the room a lit pane gives no light of its own (it is glass over the night), from the street it glows', () => {
+  assert.ok(/totalEmissiveRadiance \*= lrOn \* step\( 0\.0, dot\( lrNo, lrEye \) \);/.test(ROOM_APPLY), 'the glow is gated by the side the eye is on');
+  assert.ok(ROOM_APPLY.indexOf('vec3 lrNo') < ROOM_APPLY.indexOf('totalEmissiveRadiance *= lrOn'), 'the street side is known before the gate');
+  assert.ok(/#ifdef FLIP_SIDED\s+lrNo = - lrNo;\s+#endif/.test(ROOM_APPLY), 'the back-face pass of a double-sided transparent mesh (FLIP_SIDED: vNormal negated) still knows which side is the street');
+  assert.ok(ROOM_APPLY.indexOf('#ifdef FLIP_SIDED') < ROOM_APPLY.indexOf('totalEmissiveRadiance *= lrOn'));
+});
+
+test('R1-211: every lit pane names its room in the room-look table; the panes of one room share one slot, two rooms never do', () => {
+  const lit = panes.filter((p) => p.x >= 2);
+  const withSlot = lit.filter((p) => p.slot > 0);
+  assert.ok(withSlot.length > 0.9 * lit.length, `${withSlot.length} of ${lit.length} lit pane corners carry a slot (the mirador's has no room record)`);
+  const T = real.ctx.roomSlots;
+  assert.ok(T && T.list.length > 100 && T.list.length < ROOM_SLOTS, `${T?.list.length} rooms with a lit window`);
+  for (const p of withSlot) { const e = T.list[p.slot - 1]; assert.equal(e.bp, p.bp, `slot ${p.slot} belongs to ${e.bp}, the pane to ${p.bp}`); }
+  assert.equal(new Set(T.list.map((e) => `${e.bp}:${e.room}`)).size, T.list.length, 'one slot per room');
+});
+
+test('R1-211: once the rooms are furnished the table holds each room\'s wall paint, kind and ceiling light, and an unfurnished room stays unknown', () => {
+  const T = real.ctx.roomSlots, tex = { image: { data: new Uint8Array(128 * 32 * 4) }, needsUpdate: false };
+  for (const e of T.list) e.ok = false;
+  const left = syncRoomLooks(real.ctx, tex);
+  assert.equal(tex.needsUpdate, true);
+  assert.ok(left < 0.05 * T.list.length, `${left} of ${T.list.length} rooms not furnished`);
+  let painted = 0, lamps = 0, kinds = 0;
+  T.list.forEach((e, i) => {
+    const s = i + 1, o = ((s >> 6) * 128 + 2 * (s & 63)) * 4, d = tex.image.data, bp = real.ctx.buildings.get(e.bp), room = bp.rooms.find((r) => r.id === e.room);
+    if (!room.finish) { assert.equal(d[o + 7], 0, `${e.room}: unfurnished, unknown`); return; }
+    assert.equal(d[o + 7], 255, `${e.room}: known`);
+    if (typeof room.finish.wallTint === 'number') { assert.deepEqual([...d.subarray(o, o + 3)], [(room.finish.wallTint >> 16) & 255, (room.finish.wallTint >> 8) & 255, room.finish.wallTint & 255], `${e.room}: its paint`); painted++; }
+    const l = bp.lights.find((x) => x.room === e.room && x.kind === 'ceiling');
+    if (l) { assert.deepEqual([...d.subarray(o + 4, o + 7)], [(l.color >> 16) & 255, (l.color >> 8) & 255, l.color & 255], `${e.room}: its lamp`); lamps++; }
+    if (d[o + 3]) kinds++;
+  });
+  assert.ok(painted > 0.6 * T.list.length && lamps > 0.5 * T.list.length && kinds > 0.5 * T.list.length, `painted ${painted}, lamps ${lamps}, kinds ${kinds} of ${T.list.length}`);
+  assert.equal(syncRoomLooks(real.ctx, tex), left, 'a second pass changes nothing');
 });
