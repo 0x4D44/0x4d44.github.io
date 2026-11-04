@@ -1,27 +1,33 @@
 // What the soundscape should be at a place and a time (owner: A1). Pure functions only: no WebAudio, no DOM, no THREE, no Math.random(), so the
 // zone logic is tested under Node and the engine just applies the numbers. Inputs are the plan (areas, landmarks), the anchors the furnishers
-// emit, the hour, how night it is, how high the player stands and how many neighbours are about.
+// emit, the hour, how night it is, how high the player stands and how many neighbours are about. The beach (round 8) adds the surf, the gulls and the sea heard from under it.
 import { hashSeed } from './dsp.js';
+import { seaState } from '../core/sea.js';
+import { BAY_X } from '../world/coast.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a || 1e-9), 0, 1); return t * t * (3 - 2 * t); };
 const wrap24 = (h) => ((h % 24) + 24) % 24;
 /** Soft trapezoid over the hour: rises a..b, flat b..c, falls c..d. */
 export const hourWindow = (h, a, b, c, d) => { const x = wrap24(h); return smooth(a, b, x) * (1 - smooth(c, d, x)); };
 
 // ---- the zones: how much of each sound belongs to each named area of the plan (CONTRACT: plan.areas ids) -----------------------------------
-export const ZONE_KEYS = ['wind', 'traffic', 'murmur', 'children', 'birds', 'dogs', 'horns'];
+// `surf` is how much of the sea's roar the place keeps (the open ground faces it, an alley between houses does not) and `gulls` how many gulls call over it; the beach's two areas (plan.coast.areas) are the last two.
+export const ZONE_KEYS = ['wind', 'traffic', 'murmur', 'children', 'birds', 'dogs', 'horns', 'surf', 'gulls'];
 export const ZONES = {
-  plan:      { wind: 0.30, traffic: 1.00, murmur: 0.75, children: 0.30, birds: 0.35, dogs: 0.60, horns: 1.00 },   // El Plan: the bottom street, shops, buses
-  almendros: { wind: 0.45, traffic: 0.38, murmur: 0.50, children: 0.35, birds: 1.00, dogs: 0.50, horns: 0.25 },   // Los Almendros: trees and a plaza
-  faroles:   { wind: 0.45, traffic: 0.30, murmur: 0.55, children: 0.40, birds: 0.65, dogs: 0.70, horns: 0.20 },   // El Farol: the alley of lamps
-  cruz:      { wind: 0.55, traffic: 0.22, murmur: 0.60, children: 0.45, birds: 0.65, dogs: 0.55, horns: 0.12 },
-  cumbre:    { wind: 0.90, traffic: 0.14, murmur: 0.30, children: 0.25, birds: 0.70, dogs: 0.30, horns: 0.05 },   // La Cumbre: the chapel plaza, high and open
-  ridge:     { wind: 1.00, traffic: 0.08, murmur: 0.10, children: 0.05, birds: 0.60, dogs: 0.20, horns: 0.00 },   // El Mirador: the ridge, mostly wind and sky
-  west:      { wind: 0.60, traffic: 0.20, murmur: 0.45, children: 0.40, birds: 0.70, dogs: 0.75, horns: 0.08 },
-  east:      { wind: 0.60, traffic: 0.20, murmur: 0.45, children: 0.40, birds: 0.70, dogs: 0.75, horns: 0.08 },
+  plan:      { wind: 0.30, traffic: 1.00, murmur: 0.75, children: 0.30, birds: 0.35, dogs: 0.60, horns: 1.00, surf: 1.00, gulls: 0.35 },   // El Plan: the bottom street, shops, buses; the sea is at the end of it
+  almendros: { wind: 0.45, traffic: 0.38, murmur: 0.50, children: 0.35, birds: 1.00, dogs: 0.50, horns: 0.25, surf: 0.85, gulls: 0.10 },   // Los Almendros: trees and a plaza
+  faroles:   { wind: 0.45, traffic: 0.30, murmur: 0.55, children: 0.40, birds: 0.65, dogs: 0.70, horns: 0.20, surf: 0.70, gulls: 0.12 },   // El Farol: the alley of lamps
+  cruz:      { wind: 0.55, traffic: 0.22, murmur: 0.60, children: 0.45, birds: 0.65, dogs: 0.55, horns: 0.12, surf: 0.80, gulls: 0.10 },
+  cumbre:    { wind: 0.90, traffic: 0.14, murmur: 0.30, children: 0.25, birds: 0.70, dogs: 0.30, horns: 0.05, surf: 0.95, gulls: 0.15 },   // La Cumbre: the chapel plaza, high and open
+  ridge:     { wind: 1.00, traffic: 0.08, murmur: 0.10, children: 0.05, birds: 0.60, dogs: 0.20, horns: 0.00, surf: 1.00, gulls: 0.20 },   // El Mirador: the ridge, mostly wind and sky
+  west:      { wind: 0.60, traffic: 0.20, murmur: 0.45, children: 0.40, birds: 0.70, dogs: 0.75, horns: 0.08, surf: 0.80, gulls: 0.10 },
+  east:      { wind: 0.60, traffic: 0.20, murmur: 0.45, children: 0.40, birds: 0.70, dogs: 0.75, horns: 0.08, surf: 0.80, gulls: 0.10 },
+  playa:     { wind: 0.70, traffic: 0.35, murmur: 0.60, children: 0.70, birds: 0.90, dogs: 0.20, horns: 0.20, surf: 1.00, gulls: 1.00 },   // La Playa: the sand and the promenade (dev/FEATURE-BEACH.md 5)
+  mar:       { wind: 0.95, traffic: 0.06, murmur: 0.12, children: 0.20, birds: 0.40, dogs: 0.05, horns: 0.05, surf: 1.00, gulls: 0.90 },   // El Mar: open water, a swimmer's shouts from far off, the gulls over it
 };
-export const DEFAULT_ZONE = { wind: 0.5, traffic: 0.25, murmur: 0.45, children: 0.3, birds: 0.6, dogs: 0.5, horns: 0.1 };
+export const DEFAULT_ZONE = { wind: 0.5, traffic: 0.25, murmur: 0.45, children: 0.3, birds: 0.6, dogs: 0.5, horns: 0.1, surf: 0.8, gulls: 0.1 };
 
 /** Distance from (x,z) to polygon `poly` ([[x,z],...]); 0 inside. */
 export function distToPoly(poly, x, z) {
@@ -86,24 +92,60 @@ export function activity(kind, hour) {
   }
 }
 
+// ---- the beach: the surf, the gulls, the sea heard from under it (A1, round 8, engine patch 4; dev/FEATURE-BEACH.md 5) ------------------------------------------------------
+/** The surf carries `REACH` metres (the level falls to 1/e in that distance); the gulls call 6 times a minute where `zone.gulls` is 1, by day. */
+export const SURF = Object.freeze({ REACH: 45 });
+export const GULLS_PER_MIN = 6;
+
+/**
+ * The nearest point of the waterline from (x, z): { x, z, dist }, or null when the coast has no waterline (or the place is not a number). The waterline is the line z = coast.shoreZ(x): straight between
+ * the bay's walls (|x| <= BAY_X) and curving away to the south beyond them, so while the listener is between the walls the nearest point is straight across from him (the same x, from either side of the
+ * line, the sand or the sea) and past them it is the end of the straight shore.
+ */
+export function nearestShore(coast, x, z) {
+  if (typeof coast?.shoreZ !== 'function' || !Number.isFinite(x) || !Number.isFinite(z)) return null;
+  const xs = clamp(x, -BAY_X, BAY_X), zs = coast.shoreZ(xs);
+  return { x: xs, z: zs, dist: Math.hypot(xs - x, zs - z) };
+}
+
+/** How loud the surf is `dist` metres from the nearest shore point: exp(-dist / REACH) x (0.5 + 0.5 x the sea's wind, 0.35 at dawn to 1.0 in the afternoon breeze) x the zone's share. 0 with no shore. */
+export const surfLevel = (dist, wind, zoneSurf) => (Number.isFinite(dist) ? Math.exp(-Math.max(0, dist) / SURF.REACH) * (0.5 + 0.5 * clamp(wind, 0, 1)) * zoneSurf : 0);
+
+/**
+ * The sea heard from under it. `uw` (0..1) is how far under the ears are (engine/look.js `state.uw`: a smoothstep over the first 14 cm), `breath` (0..1) how short of breath the swimmer is
+ * (engine/swim.js `breathSoft`) and `low` whether the heartbeat has started (the breath's 'low' phase, 25 s). The beds' low-pass goes from wide open to 500 Hz (a geometric blend: the ear hears octaves),
+ * every bed but the sea's own keeps a quarter of its level, the world's one-shots are not heard through the surface, and the heart beats faster and louder as the breath goes.
+ * -> { uw, cutoff (Hz), beds (the share the beds keep), shots (the share of the world's one-shots), bed (the `underwater` bed's level), heart: { on, bpm, gain } }
+ */
+export const UNDER = Object.freeze({ CUT: 500, AIR: 16000, BEDS: 0.25, BPM: Object.freeze([66, 120]), HEART: Object.freeze([0.35, 1.0]), FADE: 0.15 });
+export function underwaterMix(uw = 0, breath = 0, low = false) {
+  const u = clamp(Number.isFinite(uw) ? uw : 0, 0, 1), b = clamp(Number.isFinite(breath) ? breath : 0, 0, 1);
+  return {
+    uw: u, cutoff: UNDER.AIR * Math.pow(UNDER.CUT / UNDER.AIR, u), beds: 1 - (1 - UNDER.BEDS) * u, shots: 1 - u, bed: u,
+    heart: { on: !!low && u > 0.5, bpm: lerp(UNDER.BPM[0], UNDER.BPM[1], b), gain: lerp(UNDER.HEART[0], UNDER.HEART[1], b) * u },
+  };
+}
+
 // ---- the mix ---------------------------------------------------------------------------------------------------------------------------------
 /**
  * Target levels for the outdoor beds and the rates of the random one-shots at a place and time.
- * env: { areas, x, z, alt (0 bottom .. 1 ridge), hour, night (0..1; default from hour), crowd (0..1 neighbours about) }
- * -> { beds: { wind, traffic, crickets, murmur, children }, rates: { birds, dogs, horns } (events per minute), zone }
+ * env: { areas, x, z, alt (0 bottom .. 1 ridge), hour, night (0..1; default from hour), crowd (0..1 neighbours about),
+ *        shore (metres to the nearest point of the waterline, `nearestShore`; none: no sea), under (0..1: the ears' depth, `underwaterMix`), breath, breathLow }
+ * -> { beds: { wind, traffic, crickets, murmur, children, surf, underwater }, rates: { birds, dogs, horns, gulls } (events per minute), zone, under: underwaterMix(...) }
  */
 export function computeMix(env) {
   const hour = env.hour ?? 17.2, night = clamp(env.night ?? nightFromHour(hour), 0, 1), day = 1 - night, alt = clamp(env.alt ?? 0.5, 0, 1), crowd = clamp(env.crowd ?? 0.3, 0, 1);
-  const z = blendZones(env.areas, env.x ?? 0, env.z ?? 0), awake = activity('awake', hour);
+  const z = blendZones(env.areas, env.x ?? 0, env.z ?? 0), awake = activity('awake', hour), um = underwaterMix(env.under, env.breath, env.breathLow), k = um.beds, s = um.shots;
   const wind = z.wind * (0.4 + 0.95 * alt) * (0.85 + 0.25 * night);
   const traffic = z.traffic * (1.15 - 0.8 * alt) * activity('traffic', hour);
-  const crickets = night ** 1.5 * (0.45 + 0.55 * (1 - clamp(z.traffic, 0, 1))) * (1 - 0.55 * alt);
+  const surf = surfLevel(env.shore, seaState(hour).wind, z.surf);
+  const crickets = night ** 1.5 * (0.45 + 0.55 * (1 - clamp(z.traffic, 0, 1))) * (1 - 0.55 * alt) * (1 - 0.5 * clamp(surf, 0, 1));          // the sea masks the night's chirring
   const murmur = z.murmur * (0.3 + 0.7 * crowd) * awake * (0.55 + 0.45 * day);
   const children = z.children * activity('kids', hour) * (0.35 + 0.65 * crowd) * day;
   return {
-    beds: { wind, traffic, crickets, murmur, children },
-    rates: { birds: 13 * z.birds * day * activity('birds', hour), dogs: 1.3 * z.dogs * (0.5 + night), horns: 1.5 * z.horns * awake * activity('traffic', hour) },
-    zone: z,
+    beds: { wind: wind * k, traffic: traffic * k, crickets: crickets * k, murmur: murmur * k, children: children * k, surf: surf * k, underwater: um.bed },
+    rates: { birds: 13 * z.birds * day * activity('birds', hour) * s, dogs: 1.3 * z.dogs * (0.5 + night) * s, horns: 1.5 * z.horns * awake * activity('traffic', hour) * s, gulls: GULLS_PER_MIN * z.gulls * day * s },
+    zone: z, under: um,
   };
 }
 

@@ -1,5 +1,5 @@
 // One-shot sounds, synthesised (owner: A1): footsteps per surface, landings, doors and shutters, UI ticks and chimes, the chapel bell, birds,
-// dogs, horns. Each recipe is `(seed) -> Float32Array` (mono, SR Hz, starts and ends at exactly zero, peak <= its stated level) so it renders under
+// dogs, horns, and the sea's voices (gulls, splashes, strokes, a dive, a gasp, a whistle, a heartbeat). Each recipe is `(seed) -> Float32Array` (mono, SR Hz, starts and ends at exactly zero, peak <= its stated level) so it renders under
 // Node in tests and the engine only wraps it in an AudioBuffer. Variants differ by seed, never by Math.random().
 import { SR, rng, hashSeed, buf, clamp, lerp, whiteNoise, pinkNoise, bandpass, lowpass, highpass, sweepBandpass, addTo, normalize, fade, softclip, removeDC } from './dsp.js';
 
@@ -415,4 +415,89 @@ export function horn(kind = 0) {
   const tone = (at, dur, fs) => { const n = Math.round(dur * SR); for (let i = 0; i < n; i++) { let v = 0; for (const f of fs) v += Math.sign(Math.sin(TAU * f * i / SR)) * 0.5 + Math.sin(TAU * f * i / SR) * 0.5; out[at + i] += v * Math.min(1, i / 120) * Math.min(1, (n - i) / 200); } };
   if (kind) tone(0, 0.42, [392, 494]); else { tone(0, 0.09, [740]); tone(Math.round(0.16 * SR), 0.11, [740]); }
   const x = lowpass(out, 2400); fade(x, 1, 20); return normalize(softclip(x, 1.2), 0.5);
+}
+
+// ---- the sea's voices (A1, round 8, engine patch 4; dev/FEATURE-BEACH.md 5): gulls, a body in the water, a stroke, the head going under and coming out, a lifeguard's whistle, a heart -------------------
+/** One gull note: a harmonic squeal that glides from `f0` to `f1` with a shake in it and a little breath. */
+function gullNote(out, at, dur, f0, f1, o = {}) {
+  const n = Math.round(dur * SR), r = o.r; let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const u = i / n, f = lerp(f0, f1, u ** (o.curve ?? 1)) * (1 + (o.vib ?? 0.025) * Math.sin(TAU * (o.vr ?? 38) * i / SR)), env = Math.sin(Math.PI * u) ** (o.shape ?? 0.6);
+    ph += f / SR;
+    const k = at + i; if (k < out.length) out[k] += ((Math.sin(TAU * ph) + 0.6 * Math.sin(TAU * 2 * ph + 0.4) + 0.32 * Math.sin(TAU * 3 * ph + 1.1) + 0.12 * Math.sin(TAU * 4 * ph)) * env + (r ? (r() * 2 - 1) * 0.07 * env : 0)) * (o.a ?? 1);
+  }
+}
+const GULLS = [
+  (o, r) => { for (let k = 0; k < 3; k++) gullNote(o, Math.round(k * 0.42 * SR), 0.30 - 0.02 * k, 2000 - 60 * k, 1250 - 40 * k, { a: 1 - 0.12 * k, r }); },                                              // kyow-kyow-kyow
+  (o, r) => { gullNote(o, 0, 0.62, 1500, 2350, { curve: 0.8, shape: 0.9, vib: 0.03, vr: 30, r }); gullNote(o, Math.round(0.58 * SR), 0.38, 2350, 1250, { a: 0.85, shape: 0.8, r }); },               // keee-ah
+  (o, r) => { for (let k = 0; k < 6; k++) gullNote(o, Math.round(k * 0.17 * SR), 0.13, 1250 - 40 * k, 950 - 30 * k, { a: 1 - 0.1 * k, shape: 0.5, vib: 0.05, r }); },                              // ha-ha-ha-ha-ha
+  (o, r) => { for (let k = 0; k < 2; k++) gullNote(o, Math.round(k * 0.17 * SR), 0.09, 2500, 2100, { a: 0.8, shape: 0.5, r }); gullNote(o, Math.round(0.4 * SR), 0.5, 1900, 1150, { shape: 0.8, vib: 0.04, r }); },   // kek-kek-kyoooow
+];
+export const GULL_COUNT = GULLS.length;
+/** One gull's call (variant picks which: a run of kyows, a long keee-ah, a laugh, a kek-kek and a falling cry). Distance and air are the engine's job. */
+export function gull(variant = 0) {
+  const r = rng(hashSeed('gull') + variant * 41), out = buf(2.0);
+  GULLS[variant % GULLS.length](out, r);
+  let last = out.length - 1; while (last > 0 && Math.abs(out[last]) < 1e-4) last--;
+  const x = out.slice(0, Math.min(out.length, last + Math.round(0.02 * SR)));
+  highpass(x, 500); fade(x, 1, 10); return normalize(x, 0.6);
+}
+
+/** `n` bubbles over the first `span` seconds of `out`: each a short tone that climbs as it pinches off (the same recipe as the beach's footsteps), between `f0` and `f1` Hz, none above 900. */
+function bubblesInto(out, r, n, span, f0, f1, amp) {
+  for (let k = 0; k < n; k++) {
+    const at = Math.floor(r() * span * SR), bf = f0 + (f1 - f0) * r(), bt = 0.012 + 0.02 * r(), ba = amp * (0.35 + 0.65 * r()), cnt = Math.min(out.length - at, Math.round(6 * bt * SR));
+    for (let i = 0; i < cnt; i++) { const t = i / SR; out[at + i] += Math.sin(TAU * bf * (t + 4.5 * t * t)) * Math.exp(-t / bt) * ba * smooth(Math.min(1, t / 0.003)); }
+  }
+}
+/** A body into the sea: a splat of noise (the bigger, the longer and the lower), a gloop as the hole closes, and bubbles. size 0 is a hand slapping it, 1 a step off a ledge, 2 a plunge from the pier. */
+export function splash(size = 1) {
+  const sz = Math.min(2, Math.max(0, Math.round(size) || 0)), S = [{ len: 0.7, tau: 0.10, f: 2600, body: 0, bub: 6 }, { len: 1.1, tau: 0.20, f: 1800, body: 0.35, bub: 10 }, { len: 1.7, tau: 0.38, f: 1200, body: 0.6, bub: 16 }][sz];
+  const r = rng(hashSeed('splash') + sz * 131), out = buf(S.len), x = lowpass(whiteNoise(out.length, r), S.f);
+  for (let i = 0; i < out.length; i++) { const t = i / SR; out[i] += x[i] * smooth(Math.min(1, t / 0.006)) * Math.exp(-t / S.tau) * 1.6; }
+  if (S.body) for (let i = 0; i < out.length; i++) { const t = i / SR; out[i] += Math.sin(TAU * (80 + 70 * Math.exp(-t / 0.12)) * t) * Math.exp(-t / (S.tau * 1.2)) * S.body * 0.8 * smooth(Math.min(1, t / 0.01)); }
+  bubblesInto(out, r, S.bub, 0.45, 380, 900, 0.5);
+  removeDC(out); fade(out, 1, 40); return normalize(out, 0.7);
+}
+/** One arm's stroke through the water: a short plash of noise and a few bubbles. Two takes, for the two arms. */
+export function stroke(take = 0) {
+  const t1 = take ? 1 : 0, r = rng(hashSeed('stroke') + t1 * 17), out = buf(0.5), x = bandpass(whiteNoise(out.length, r), 1500 * (t1 ? 1.15 : 1), 0.5);
+  for (let i = 0; i < out.length; i++) { const t = i / SR; out[i] = x[i] * smooth(Math.min(1, t / 0.03)) * Math.exp(-t / 0.11) * 1.6; }
+  bubblesInto(out, r, 4, 0.25, 420, 800, 0.35);
+  removeDC(out); fade(out, 2, 60); return normalize(out, 0.45);
+}
+/** The head goes under: the rush of the water closing over the ears, then one bubble's bloop (a tone that falls from 420 to 170 Hz in a tenth of a second). */
+export function bloop() {
+  const r = rng(hashSeed('bloop')), out = buf(0.55), x = lowpass(whiteNoise(out.length, r), 900);
+  for (let i = 0; i < out.length; i++) {
+    const t = i / SR, tb = t - 0.08;
+    out[i] = x[i] * smooth(Math.min(1, t / 0.02)) * Math.exp(-t / 0.09) + (tb < 0 ? 0 : Math.sin(TAU * (170 * tb + 250 * 0.05 * (1 - Math.exp(-tb / 0.05)))) * Math.exp(-tb / 0.10) * 0.9 * smooth(Math.min(1, tb / 0.004)));
+  }
+  removeDC(out); fade(out, 1, 50); return normalize(out, 0.6);
+}
+/** The first breath of air: a rush that swells over a quarter of a second and trails off, noise around 1.1 kHz with the mouth's own low resonance under it, shaken a little at the throat. */
+export function gasp() {
+  const r = rng(hashSeed('gasp')), out = buf(0.8), x = lowpass(bandpass(whiteNoise(out.length, r), 1100, 0.5), 3200), y = lowpass(highpass(whiteNoise(out.length, r), 250), 800);
+  for (let i = 0; i < out.length; i++) { const t = i / SR, env = smooth(Math.min(1, t / 0.22)) * Math.exp(-Math.max(0, t - 0.22) / 0.2); out[i] = (x[i] + 0.5 * y[i]) * env * (0.85 + 0.15 * Math.sin(TAU * 34 * t)); }
+  removeDC(out); fade(out, 2, 80); return normalize(out, 0.6);
+}
+/** A lifeguard's pea whistle: a 2.9 kHz tone shaken by the pea (a 26 Hz trill) with a little air in it, 0.7 s. */
+export function whistle() {
+  const r = rng(hashSeed('whistle')), n = Math.round(0.7 * SR), out = new Float32Array(n), air = highpass(whiteNoise(n, r), 2000); let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR, f = 2900 * (1 + 0.04 * Math.sin(TAU * 26 * t) + 0.02 * Math.sin(TAU * 61 * t)), env = smooth(Math.min(1, t / 0.04)) * (1 - smooth(Math.min(1, Math.max(0, (t - 0.55) / 0.15))));
+    ph += f / SR; out[i] = ((Math.sin(TAU * ph) + 0.25 * Math.sin(TAU * 2 * ph)) * (0.9 + 0.1 * Math.sin(TAU * 26 * t)) + air[i] * 0.06) * env;
+  }
+  fade(out, 2, 20); return normalize(out, 0.6);
+}
+/** A heartbeat heard from inside: lub, and dub a quarter of a second later, two soft thumps (58 and 72 Hz, each falling as it fades, with its octave above so that a small speaker has something to play) and the dull knock of the valve, nothing above 400 Hz. */
+export function heart() {
+  const r = rng(hashSeed('heart')), out = buf(0.6), knock = lowpass(whiteNoise(out.length, r), 400);
+  for (const [at, f, a, tau] of [[0, 58, 1.0, 0.075], [0.25, 72, 0.7, 0.06]]) {
+    for (let i = Math.round(at * SR); i < out.length; i++) {
+      const t = i / SR - at, ph = TAU * f * (1 - 0.25 * (1 - Math.exp(-t / tau))) * t;
+      out[i] += (Math.sin(ph) + 0.5 * Math.sin(2 * ph)) * Math.exp(-t / tau) * a * smooth(Math.min(1, t / 0.008)) + knock[i] * Math.exp(-t / 0.012) * a * 0.9;
+    }
+  }
+  lowpass(out, 400); removeDC(out); fade(out, 2, 30); return normalize(out, 0.8);
 }

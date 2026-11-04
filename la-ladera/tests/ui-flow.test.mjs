@@ -494,9 +494,9 @@ test('the journal lists what is still to find by area (a row each: the count lef
 const overlap = (a, b) => a[0] < b[0] + b[2] && a[0] + a[2] > b[0] && a[1] < b[1] + b[3] && a[1] + a[3] > b[1];
 test('the map places its labels by priority: apart from each other, inside the canvas, clear of the buttons and the legend, at every zoom, on a desktop and on a phone', async () => {
   const labels = async () => JSON.parse(await page.eval(`(() => { const cv = document.querySelector('#panelbody canvas'), wr = cv.parentElement.getBoundingClientRect(), box = (e) => { const r = e.getBoundingClientRect(); return [r.left - wr.left, r.top - wr.top, r.width, r.height]; };
-    const lm = __ladera.ctx.plan.landmarks;
-    return JSON.stringify({ L: cv.__labels, taken: cv.__taken, v: cv.__view, ui: [...cv.parentElement.querySelectorAll('.mapctl, .maplegend')].map(box), legend: box(cv.parentElement.querySelector('.maplegend')), names: lm.map((l) => l.name), first: lm.filter((l) => ['viewpoint', 'chapel', 'school', 'clinic', 'hall', 'court'].includes(l.kind)).map((l) => l.name),
-      areas: __ladera.ctx.plan.areas.map((a) => a.name.toUpperCase()) }); })()`));
+    const C = cv.__view.ext?.live ? __ladera.ctx.plan.coast : null, lm = [...__ladera.ctx.plan.landmarks, ...(C?.landmarks ?? [])];                                   // (the beach's landmarks and areas are the map's too when the coast is built)
+    return JSON.stringify({ L: cv.__labels, taken: cv.__taken, v: cv.__view, ui: [...cv.parentElement.querySelectorAll('.mapctl, .maplegend')].map(box), legend: box(cv.parentElement.querySelector('.maplegend')), names: lm.map((l) => l.name), first: lm.filter((l) => ['viewpoint', 'chapel', 'school', 'clinic', 'hall', 'court', 'pier', 'beach'].includes(l.kind)).map((l) => l.name),
+      areas: [...__ladera.ctx.plan.areas, ...(C?.areas ?? [])].map((a) => a.name.toUpperCase()) }); })()`));
   const check = (m, label) => {
     const R = m.L.map((l) => [l.x - l.w / 2, l.y - l.h / 2, l.w, l.h]);
     for (let i = 0; i < R.length; i++) {
@@ -527,7 +527,9 @@ test('the map places its labels by priority: apart from each other, inside the c
   const diamonds = m.taken.filter((r) => Math.abs(r[2] - 14) < 0.01 && Math.abs(r[3] - 14) < 0.01).length;
   assert.ok(diamonds >= m.names.length, `every landmark's marker (a 14 px square) is an obstacle for the labels: ${diamonds} for ${m.names.length} landmarks`);
   assert.ok(named(m, m.names).length >= 10, `${named(m, m.names).length} of ${m.names.length} landmark names are on the map at the default zoom`);
-  assert.ok(named(m, m.first).length >= 5, `the important kinds (viewpoint, chapel, school, clinic, hall, court) are named first: ${named(m, m.first)}`);
+  // (the plan is 322 m deep now: 1.53 px a metre in this canvas, 2.42 on the square plan. The chapel's, the school's, the clinic's and the hall's names are 150 to 190 px long and the plan's frame is 306 px wide, so they do not fit beside their markers on the first look and come at the first
+  // zoom: 4 of the 8 important kinds (the town's six and the pier and the beach), where the square plan names 5 of the 6, which tests/ui-map-coast-page.test.mjs holds for ?skip=coast)
+  assert.ok(named(m, m.first).length >= 4, `the important kinds (viewpoint, chapel, school, clinic, hall, court, pier, beach) are named first: ${named(m, m.first)}`);
   assert.ok(named(m, m.areas).length >= 2, 'and some area names find a place too');
   assert.ok(m.L.some((l) => l.text === 'N'), 'the compass letter is there');
   await zoomBtn('Centrar en mí'); await tick(250); m = await labels(); check(m, 'centred on the player');

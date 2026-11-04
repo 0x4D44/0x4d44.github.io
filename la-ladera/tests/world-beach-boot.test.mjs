@@ -51,6 +51,13 @@ const PROBE = `(() => {
 })()`;
 const read = async (page) => JSON.parse(await page.eval(PROBE));
 
+/** The coast's late groups are drawn only while the camera can see the coast (js/engine/visibility.js `_coast`, round 8 patch 4): from the spawn, looking north, the rule has them not drawn (`visible` false), which says nothing
+ *  of whether their unit left them shown. So a probe of `shown` is read from the beach (`look(page, 'beach')`: the sand, the water ahead, three steps for the rule to judge), and from the hill (`'hill'`: the spawn, looking north) they must not be drawn. */
+const COAST_GROUPS = ['props.beachprops', 'props.watersports', 'props.seafloat', 'props.searopes', 'props.seabed', 'props.shorelife'];
+const LOOK = { beach: '__ladera.tp("beach")', hill: '__ladera.teleport(-6.5, 92.5, { yaw: 0, pitch: 0 })' };
+const look = (page, where) => page.eval(`(() => { ${LOOK[where]}; __ladera.step(3, 1 / 60); return true; })()`);
+const drawn = (page) => page.eval(`${JSON.stringify(COAST_GROUPS)}.map((n) => { const g = __ladera.ctx.scene.children.find((o) => o.name === n); return g ? g.visible : null; })`);
+
 /** What the shore's life must be wherever it is built (js/world/shorelife.js): ONE group of three meshes (one draw call per sheet), 72 cards, 288 triangles, ONE system at order 41, nothing added to ctx.world.life. */
 function assertShore(r, where) {
   assert.ok(r.shore, `${where}: the shore's life is in the scene`);
@@ -67,6 +74,7 @@ function assertShore(r, where) {
 test('?lazy=1: the gate is open and the front and the pier are solid; the sea, the props, the pieces and the shore\'s life join the staged queue, are warmed off the frame, and the sea is the only one', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=1&warmtrace&skip=people,furnish');
   await page.eval('__ladera.settle({ timeout: 300000 }).then(() => true)', 320000);
+  await look(page, 'beach');
   const r = await read(page);
   assert.deepEqual(r.beach, { live: true, sea: 'staged', props: 'staged', waterprops: 'staged', shorelife: 'staged' }, 'the boot leaves the sea, the props, the pieces and the shore\'s life to the queue');
   assert.deepEqual(r.gate, ['open'], 'the plot\'s south gate is open');
@@ -117,6 +125,10 @@ test('?lazy=1 with the furnishing on: the props\' files wait for the packs the i
 
 test('eager (?lazy=0): the boot builds the sea, the props, the pieces and the shore\'s life itself, and there is no queue to wait for', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=0&skip=people,furnish,warm');
+  await look(page, 'hill');
+  assert.deepEqual(await drawn(page), COAST_GROUPS.map(() => false), 'from the hill, looking north, the six groups of the coast are in the scene and none of them is drawn (engine/visibility.js)');
+  await look(page, 'beach');
+  assert.deepEqual(await drawn(page), COAST_GROUPS.map(() => true), 'from the beach every one of them is drawn: the boot left them all shown');
   const r = await read(page);
   assert.deepEqual(r.beach, { live: true, sea: 'inline', props: 'inline', waterprops: 'inline', shorelife: 'inline' });
   assert.deepEqual(r.gate, ['open']);

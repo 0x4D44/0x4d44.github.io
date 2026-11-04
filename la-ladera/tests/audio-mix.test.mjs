@@ -4,6 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as M from '../js/audio/mix.js';
+import { seaState } from '../js/core/sea.js';
+import { createCoast, BAY_X } from '../js/world/coast.js';
 import { makePlan } from './world-lib.mjs';
 
 const { plan } = makePlan();
@@ -178,4 +180,117 @@ test('pickStream: a seeded stream of numbers in range', () => {
   const xs = Array.from({ length: 50 }, () => a()), ys = Array.from({ length: 50 }, () => b()), zs = Array.from({ length: 50 }, () => c());
   assert.deepEqual(xs, ys); assert.notDeepEqual(xs, zs); assert.ok(xs.every((v) => v >= 0 && v < 1));
   const r = M.pickStream(1); for (let i = 0; i < 200; i++) { const v = r.range(3, 4), k = r.int(2, 4); assert.ok(v >= 3 && v < 4 && k >= 2 && k <= 4); }
+});
+
+// ---- the beach (round 8, engine patch 4; dev/FEATURE-BEACH.md 5): the surf, the gulls and the sea heard from under it --------------------------------------------------------
+const coast = createCoast({ seed: 1, edge: () => 0.1 }), BEACH = [...plan.areas, ...coast.areas];
+const close = (a, b, tol = 1e-9, msg = '') => assert.ok(Math.abs(a - b) <= tol, `${msg} ${a} against ${b} (+-${tol})`.trim());
+const beachAt = (x, z, o = {}) => M.computeMix({ areas: BEACH, x, z, alt: 0.1, hour: 15, night: 0, crowd: 0.4, shore: M.nearestShore(coast, x, z)?.dist, ...o });
+const AIR = ['wind', 'traffic', 'crickets', 'murmur', 'children', 'surf'];
+
+test('the beach\'s two areas are zones with a full recipe, and zoneAt names them where the sand and the sea are', () => {
+  assert.deepEqual(coast.areas.map((a) => a.id).sort(), ['mar', 'playa']);
+  for (const a of coast.areas) assert.ok(M.ZONES[a.id], 'no zone recipe for area ' + a.id);
+  assert.equal(M.zoneAt(BEACH, 0, 125), 'playa', 'the sand'); assert.equal(M.zoneAt(BEACH, 0, 112), 'playa', 'and the promenade');
+  assert.equal(M.zoneAt(BEACH, 0, 190), 'mar', 'the water'); assert.equal(M.zoneAt(BEACH, plan.spawn.x, plan.spawn.z), 'plan', 'the town keeps its own');
+  assert.ok(M.ZONES.playa.gulls === 1 && M.ZONES.mar.gulls >= 0.8 && M.ZONES.playa.surf === 1 && M.ZONES.mar.surf === 1, 'the gulls and the surf are at home here');
+  for (const id of ['plan', 'almendros', 'faroles', 'cruz', 'cumbre', 'ridge', 'west', 'east']) assert.ok(M.ZONES[id].gulls <= 0.35 && M.ZONES[id].surf <= 1, id + ': the town keeps a small share of the sea');
+  assert.ok(M.ZONES.ridge.surf >= 0.9 && M.ZONES.almendros.surf < 0.9, 'the open ridge faces the sea, the plaza among its trees less');
+});
+
+test('nearestShore: the point of the waterline straight across from you between the bay\'s walls, the end of the straight shore beyond them, from either side of the line', () => {
+  const z0 = coast.shoreZ(20), town = M.nearestShore(coast, 20, 100), sea = M.nearestShore(coast, 20, 200), on = M.nearestShore(coast, 0, coast.shoreZ(0));
+  assert.equal(town.x, 20); assert.equal(town.z, z0); close(town.dist, z0 - 100, 1e-9, 'from the town');
+  assert.equal(sea.x, 20); assert.equal(sea.z, z0); close(sea.dist, 200 - z0, 1e-9, 'from the sea');
+  assert.equal(on.dist, 0, 'standing on the waterline');
+  const east = M.nearestShore(coast, 150, 150), west = M.nearestShore(coast, -150, 150);
+  assert.equal(east.x, BAY_X); assert.equal(west.x, -BAY_X); assert.equal(east.z, coast.shoreZ(BAY_X));
+  close(east.dist, Math.hypot(150 - BAY_X, 150 - coast.shoreZ(BAY_X)), 1e-9, 'beyond the east wall: to the end of the straight shore, not to the curve');
+  close(west.dist, east.dist, 1e-9, 'and the west is the same');
+  assert.equal(M.nearestShore(undefined, 0, 0), null, 'no coast'); assert.equal(M.nearestShore({}, 0, 0), null, 'a coast with no shore line');
+  assert.equal(M.nearestShore(coast, NaN, 0), null); assert.equal(M.nearestShore(coast, 0, undefined), null);
+});
+
+test('surfLevel: a third of the roar at 45 m, more in the afternoon\'s breeze than at dawn, and the zone sets what the place keeps of it', () => {
+  const f = M.surfLevel;
+  assert.equal(M.SURF.REACH, 45); assert.equal(f(0, 1, 1), 1); close(f(45, 1, 1), Math.exp(-1), 1e-12, 'e^-1 at the reach');
+  close(f(0, 0.35, 1), 0.5 + 0.5 * 0.35, 1e-12, 'the breeze at dawn'); close(f(30, 1, 0.5), 0.5 * f(30, 1, 1), 1e-12, 'half the zone');
+  for (let d = 0; d < 300; d += 5) assert.ok(f(d + 5, 0.7, 1) < f(d, 0.7, 1), `monotone at ${d}`);
+  for (const w of [0, 0.2, 0.4, 0.6, 0.8]) assert.ok(f(20, w + 0.2, 1) > f(20, w, 1), `a stronger breeze is louder at ${w}`);
+  assert.equal(f(-5, 1, 1), f(0, 1, 1), 'inside the line is the line'); assert.equal(f(10, 5, 1), f(10, 1, 1)); assert.equal(f(10, -1, 1), f(10, 0, 1), 'the wind is a share of one');
+  for (const bad of [NaN, undefined, null, Infinity]) assert.equal(f(bad, 1, 1), 0, `no shore (${bad}): no surf`);
+});
+
+test('underwaterMix: nothing changes in the air; with the head under the beds are dull and a quarter as loud, the world is gone and the sea\'s own bed is full', () => {
+  const air = M.underwaterMix(0), deep = M.underwaterMix(1), mid = M.underwaterMix(0.5);
+  assert.deepEqual([air.uw, air.cutoff, air.beds, air.shots, air.bed, air.heart.on], [0, 16000, 1, 1, 0, false]);
+  assert.deepEqual([deep.uw, deep.cutoff, deep.beds, deep.shots, deep.bed], [1, 500, 0.25, 0, 1]);
+  assert.deepEqual([M.UNDER.CUT, M.UNDER.AIR, M.UNDER.BEDS, M.UNDER.FADE], [500, 16000, 0.25, 0.15]); assert.ok(Object.isFrozen(M.UNDER) && Object.isFrozen(M.UNDER.BPM) && Object.isFrozen(M.UNDER.HEART));
+  close(mid.cutoff, Math.sqrt(16000 * 500), 1e-6, 'the low-pass runs by octaves (a geometric blend)'); close(mid.beds, 0.625, 1e-12); close(mid.shots, 0.5, 1e-12); close(mid.bed, 0.5, 1e-12);
+  let prev = M.underwaterMix(0);
+  for (let u = 0.05; u <= 1.0001; u += 0.05) { const m = M.underwaterMix(u); assert.ok(m.cutoff < prev.cutoff && m.beds < prev.beds && m.shots < prev.shots && m.bed > prev.bed, `monotone at ${u.toFixed(2)}`); prev = m; }
+  assert.deepEqual(M.underwaterMix(-1), air, 'above the water is the air'); assert.deepEqual(M.underwaterMix(7), deep, 'and deeper than deep is deep');
+  assert.deepEqual(M.underwaterMix(NaN), air); assert.deepEqual(M.underwaterMix('x'), air); assert.deepEqual(M.underwaterMix(), air);
+});
+
+test('underwaterMix: the heart starts with the low breath and the head well under, and beats faster and louder as the breath goes', () => {
+  const h = (uw, b, low) => M.underwaterMix(uw, b, low).heart;
+  assert.equal(h(1, 0.5, false).on, false, 'no low breath, no heart'); assert.equal(h(0, 1, true).on, false, 'at the surface it is not heard, short of breath or not');
+  assert.equal(h(0.5, 1, true).on, false, 'half under is not enough'); assert.equal(h(0.51, 1, true).on, true); assert.equal(h(1, 0, true).on, true);
+  close(h(1, 0, true).bpm, 66, 1e-9); close(h(1, 1, true).bpm, 120, 1e-9); close(h(1, 0.5, true).bpm, 93, 1e-9);
+  close(h(1, 0, true).gain, 0.35, 1e-9); close(h(1, 1, true).gain, 1.0, 1e-9); close(h(0.75, 1, true).gain, 0.75, 1e-9, 'its level goes with the depth');
+  for (let i = 0; i < 10; i++) { const a = h(1, i / 10, true), c = h(1, (i + 1) / 10, true); assert.ok(c.bpm > a.bpm && c.gain > a.gain, `faster and louder from a breath of ${i / 10}`); }
+  assert.equal(h(1, 9, true).bpm, 120); assert.equal(h(1, -3, true).bpm, 66); assert.ok(Number.isFinite(h(1, NaN, true).bpm), 'a garbage breath is a calm one');
+});
+
+test('mix: the surf is the sea\'s roar by the distance to the shore and the afternoon\'s wind; nowhere near it, or with no coast, there is none', () => {
+  const line = beachAt(0, 144), sand = beachAt(0, 125), prom = beachAt(0, 112), spawn = beachAt(plan.spawn.x, plan.spawn.z), ridge = beachAt(0, -60);
+  const s = [line, sand, prom, spawn, ridge].map((m) => m.beds.surf);
+  for (let i = 1; i < s.length; i++) assert.ok(s[i] < s[i - 1], `the surf falls with the distance: ${s.map((v) => v.toFixed(3))}`);
+  assert.ok(line.beds.surf > 0.9 && ridge.beds.surf < 0.03 && spawn.beds.surf > 0.2 && spawn.beds.surf < 0.45, `at the line ${line.beds.surf}, at the spawn ${spawn.beds.surf}, on the far ridge ${ridge.beds.surf}`);
+  for (const [name, m, x, z] of [['sand', sand, 0, 125], ['spawn', spawn, plan.spawn.x, plan.spawn.z]]) assert.equal(m.beds.surf, M.surfLevel(M.nearestShore(coast, x, z).dist, seaState(15).wind, M.blendZones(BEACH, x, z).surf), name + ': the bed is surfLevel of the real distance, wind and zone');
+  const dawn = beachAt(0, 125, { hour: 6, night: 0.3 });
+  close(sand.beds.surf / dawn.beds.surf, (0.5 + 0.5 * seaState(15).wind) / (0.5 + 0.5 * seaState(6).wind), 1e-9, 'the same place is louder in the afternoon\'s breeze than at dawn, by the sea\'s own wind');
+  assert.ok(sand.beds.surf > 1.3 * dawn.beds.surf, 'by about half as much again');
+  const none = M.computeMix({ areas: BEACH, x: 0, z: 125, alt: 0.1, hour: 15, night: 0, crowd: 0.4 });
+  assert.equal(none.beds.surf, 0, 'no shore given: no surf'); assert.equal(M.computeMix({ areas: plan.areas, x: 0, z: 90, hour: 12, shore: NaN }).beds.surf, 0, 'a garbage distance is no shore');
+  assert.ok(none.beds.wind === sand.beds.wind && none.beds.traffic === sand.beds.traffic, 'and everything else is as it was');
+});
+
+test('mix: the surf masks the night\'s crickets, in proportion', () => {
+  const night = { hour: 23, night: 1 }, a = beachAt(0, 125, night), b = beachAt(0, 125, { ...night, shore: undefined });
+  assert.ok(b.beds.crickets > 0.3 && a.beds.crickets < b.beds.crickets, `crickets ${a.beds.crickets.toFixed(3)} by the sea against ${b.beds.crickets.toFixed(3)} without it`);
+  close(a.beds.crickets, b.beds.crickets * (1 - 0.5 * a.beds.surf), 1e-12, 'by half the surf\'s level');
+  const far = beachAt(0, -60, night), farNo = beachAt(0, -60, { ...night, shore: undefined });
+  assert.ok(far.beds.crickets > 0.98 * farNo.beds.crickets, 'on the far ridge nearly all of them are heard');
+});
+
+test('mix: gulls call about six times a minute over the sand by day, less in the town, never at night and never from under the water', () => {
+  const sand = beachAt(0, 125), town = beachAt(plan.spawn.x, plan.spawn.z), sea = beachAt(0, 190), ridge = beachAt(0, -60);
+  assert.equal(M.GULLS_PER_MIN, 6);
+  assert.ok(sand.rates.gulls > 5 && sand.rates.gulls <= 6.0001, `on the sand ${sand.rates.gulls}`); assert.ok(sea.rates.gulls > 4.5 && sea.rates.gulls <= 6.0001, `over the sea ${sea.rates.gulls}`);
+  assert.ok(town.rates.gulls > 1.5 && town.rates.gulls < 0.6 * sand.rates.gulls, `in the town ${town.rates.gulls}`); assert.ok(ridge.rates.gulls > 0 && ridge.rates.gulls < town.rates.gulls, 'fewer still up the hill');
+  close(beachAt(0, 125, { night: 0.5 }).rates.gulls, 0.5 * sand.rates.gulls, 1e-9, 'by the share of the day'); assert.equal(beachAt(0, 125, { hour: 23, night: 1 }).rates.gulls, 0);
+  close(beachAt(0, 190, { under: 0.5 }).rates.gulls, 0.5 * sea.rates.gulls, 1e-9, 'half under, half the calls'); assert.equal(beachAt(0, 190, { under: 1 }).rates.gulls, 0);
+});
+
+test('mix: with the head under the sea the beds keep a quarter, the sea\'s own bed fills in, the world\'s one-shots stop', () => {
+  const air = beachAt(0, 190), half = beachAt(0, 190, { under: 0.5 }), deep = beachAt(0, 190, { under: 1 });
+  assert.equal(air.beds.underwater, 0); close(half.beds.underwater, 0.5, 1e-12); assert.equal(deep.beds.underwater, 1);
+  for (const k of AIR) { assert.ok(air.beds[k] > 0 || k === 'crickets' || k === 'children', k + ' is there in the air'); close(deep.beds[k], 0.25 * air.beds[k], 1e-12, k + ' under'); close(half.beds[k], 0.625 * air.beds[k], 1e-12, k + ' half under'); }
+  for (const k of ['birds', 'dogs', 'horns', 'gulls']) { assert.ok(air.rates[k] > 0, k + ' in the air'); assert.equal(deep.rates[k], 0, k + ' under'); close(half.rates[k], 0.5 * air.rates[k], 1e-12, k + ' half under'); }
+  assert.deepEqual(deep.under, M.underwaterMix(1, undefined, undefined), 'the mix carries the sea\'s own numbers for the engine'); assert.equal(air.under.uw, 0);
+  const breath = beachAt(0, 190, { under: 1, breath: 0.6, breathLow: true }).under;
+  assert.deepEqual(breath, M.underwaterMix(1, 0.6, true), 'and the breath reaches the heart'); assert.equal(breath.heart.on, true);
+  assert.equal(beachAt(0, 190, { under: 1, breath: 0.6 }).under.heart.on, false, 'but only with the low breath');
+});
+
+test('mix: every output is finite and bounded for the beach too: any shore, depth and breath', () => {
+  for (const x of [-150, -100, 0, 100, 150]) for (const z of [0, 100, 125, 144, 190, 222, 260]) for (const hour of [0, 6, 12, 15, 22]) for (const under of [0, 0.3, 1]) for (const [breath, low] of [[0, false], [1, true]]) {
+    const m = beachAt(x, z, { hour, night: undefined, under, breath, breathLow: low });
+    for (const [k, v] of [...Object.entries(m.beds), ...Object.entries(m.rates), ['bpm', m.under.heart.bpm], ['hgain', m.under.heart.gain], ['cut', m.under.cutoff]]) assert.ok(Number.isFinite(v) && v >= 0 && v < 30000, `${k} = ${v} at ${x},${z} ${hour}h uw ${under}`);
+    for (const k of Object.keys(m.beds)) assert.ok(m.beds[k] <= 2, `${k} bed ${m.beds[k]}`);
+    assert.ok(m.under.heart.gain <= 1 && m.under.heart.bpm >= 66 && m.under.heart.bpm <= 120);
+  }
+  const wild = M.computeMix({ areas: BEACH, x: 0, z: 125, hour: 15, shore: -3, under: NaN, breath: NaN, breathLow: 'yes' }); assert.ok(Number.isFinite(wild.beds.surf) && wild.under.uw === 0, 'garbage in the beach\'s fields never gives a number out of range');
 });

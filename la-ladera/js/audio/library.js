@@ -2,10 +2,11 @@
 // Pure and deterministic (no AudioContext, no Math.random), so the same code runs in the sound worker, on the main thread as a fallback, and under
 // Node in the tests. Keys: bed:<id>  step:<surface>:<v>  land:<surface>:<v>  rustle:<v>  door:open|close:<v>  shutter:open|close  tick  chime
 //                          paper:<v>  sheet:<v>  furn:<kind>:open|close:<v>  find:<collection>  bell  bird:<species>:<take>  dog:<v>  horn:<kind>
+//                          gull:<v>  splash:<size>  stroke:<arm>  bloop  gasp  whistle  heart      (the beds include `surf` and `underwater`)
 import * as F from './foley.js';
 import { BEDS, bed } from './beds.js';
 
-export const VARIANTS = { step: 4, land: 2, rustle: 2, door: 2, paper: 2, sheet: 2, furn: 2, take: 2, dog: 2, horn: 2 };
+export const VARIANTS = { step: 4, land: 2, rustle: 2, door: 2, paper: 2, sheet: 2, furn: 2, take: 2, dog: 2, horn: 2, splash: 3, stroke: 2 };
 
 /** Every key the engine may ask for. */
 export function keys() {
@@ -21,6 +22,10 @@ export function keys() {
   for (const sp of n(F.BIRD_COUNT)) for (const t of n(VARIANTS.take)) out.push(`bird:${sp}:${t}`);
   for (const v of n(VARIANTS.dog)) out.push(`dog:${v}`);
   for (const v of n(VARIANTS.horn)) out.push(`horn:${v}`);
+  for (const v of n(F.GULL_COUNT)) out.push(`gull:${v}`);
+  for (const v of n(VARIANTS.splash)) out.push(`splash:${v}`);
+  for (const v of n(VARIANTS.stroke)) out.push(`stroke:${v}`);
+  out.push('bloop', 'gasp', 'whistle', 'heart');
   return out;
 }
 
@@ -59,6 +64,13 @@ export function render(key) {
     case 'bird': return F.bird(v(a), v(b));
     case 'dog': return F.dogBarks(v(a));
     case 'horn': return F.horn(v(a));
+    case 'gull': return F.gull(v(a));
+    case 'splash': return F.splash(v(a));
+    case 'stroke': return F.stroke(v(a));
+    case 'bloop': return F.bloop();
+    case 'gasp': return F.gasp();
+    case 'whistle': return F.whistle();
+    case 'heart': return F.heart();
     default: throw new Error(`unknown sound "${key}"`);
   }
 }
