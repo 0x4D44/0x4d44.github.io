@@ -55,6 +55,9 @@ const COST = `(() => {
   return JSON.stringify({ shown, hidden, calls: shown[0] - hidden[0], tris: shown[1] - hidden[1] });
 })()`;
 const read = async (page) => JSON.parse(await page.eval(PROBE));
+/** The coast's late groups are drawn only while the camera can see the coast (js/engine/visibility.js `_coast`, round 8 patch 4): from the spawn, looking north, the group is not drawn whatever its unit did, so the probe's `shown`
+ *  is read from the beach (the sand, the water ahead), after three steps for the rule to judge. A group that a unit (or the `hidden` sabotage, which is made after the look) left hidden is not the rule's to show: it stays hidden and the test still fails. */
+const lookAtBeach = (page) => page.eval('(() => { __ladera.tp("beach"); __ladera.step(3, 1 / 60); return true; })()');
 const asked = (page) => [...page.reqs.values()].filter((u) => /seagrass_coral\.png/.test(u)).length;
 async function sabotage(page) {
   if (on('dup')) await page.eval(`(() => { const c = __ladera.ctx, g = ${GROUP}; if (g) c.scene.add(g.clone()); })()`);
@@ -83,7 +86,7 @@ test('?lazy=1: `seabed` is a unit of the queue, starts after the sea has risen, 
   const asks0 = asked(b.page);
   const page = await b.open(`la-ladera/index.html?autostart&manual&lazy=1${on('nowarm') ? '' : '&warmtrace'}&skip=people,furnish`);
   await page.eval('__ladera.settle({ timeout: 300000 }).then(() => true)', 320000);
-  await sabotage(page);
+  await lookAtBeach(page); await sabotage(page);          // (the look first: a group the rule had hidden and the `hidden` sabotage hides again would be shown by the rule at the look, and the sabotage would go unseen)
   const r = await read(page);
   assert.deepEqual(r.beach, { live: true, sea: 'staged', seabed: 'staged' }, 'the boot leaves the seabed to the queue');
   assert.ok(r.units.includes('seabed'), `the seabed is a unit of the queue (${r.units})`);
@@ -102,7 +105,7 @@ test('?lazy=1: `seabed` is a unit of the queue, starts after the sea has risen, 
 
 test('eager (?lazy=0): the boot builds the seabed itself, it is in the scene at the milestone, and there is no queue to wait for', async () => {
   const page = await b.open('la-ladera/index.html?autostart&manual&lazy=0&skip=people,furnish,warm');
-  await sabotage(page);
+  await lookAtBeach(page); await sabotage(page);
   const r = await read(page);
   assert.deepEqual(r.beach, { live: true, sea: 'inline', seabed: 'inline' });
   assert.equal(r.waters, 1, 'the sea is in the scene at the milestone');

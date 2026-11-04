@@ -6,9 +6,25 @@
 //  * Hysteresis (show at R, hide at R + 3) so a building does not flicker while the player stands on the threshold.
 //  * Hidden subtrees keep their matrices: three draws nothing under a hidden object, yet Object3D.updateMatrixWorld still walks every object below it,
 //    every frame. The interiors alone are 6000 objects of the 10000 in the scene, and the people hide whoever is out of sight. See skipHidden().
+//  * The coast (round 8, patch 4; dev/FEATURE-BEACH.md 2.4): the beach's late groups (the props, the sea's three set-piece groups, the seabed, the shore's life) are drawn, and cast into the sun's
+//    shadow map, only while the camera can see the coast (a frustum test of the coast's box, every frame); and under the sea the camera's far plane comes in to 60 m (engine/underwater.js UW.FAR),
+//    where the water's fog has taken everything. See `_coast()` and `_far()`.
 import * as THREE from 'three';
+import { BAY_X, Z0, STOP_Z } from '../world/coast.js';
+import { UW } from './underwater.js';
 
 export const INT_RANGE = 28;
+
+/**
+ * The coast's late groups, by name (world/beach.js: `beachprops`, `waterprops` (three groups), `seabed`, `shorelife`): each is a unit of the staged queue that is built AFTER the first frame, hidden, warmed and then shown by
+ * its unit, so they are looked up again whenever the scene gains a child and judged in the frame they arrive. `BOX` is everything they hold (the plot's south edge to the buoy line and the hard stop, the bay's width and a
+ * margin for the groynes outside the walls): the groups are drawn only while the camera's frustum meets it. (The sea culls its own three meshes, engine/water.js `water.cull`; the coast's ground is merged into chunks
+ * that three culls itself; the props' own distance limits, 46 to 260 m, are the clutter's: world/clutter.js.)
+ */
+export const COAST = Object.freeze({
+  GROUPS: Object.freeze(['props.beachprops', 'props.watersports', 'props.seafloat', 'props.searopes', 'props.seabed', 'props.shorelife']),
+  BOX: Object.freeze({ x: BAY_X + 40, z0: Z0, z1: STOP_Z + 20, y0: -8, y1: 40 }),
+});
 const INDOOR_OTHERS = 14;
 const HYST = 3;
 const BIG_GROUP = 16, BIG_FAMILY = 8;                   // a top-level group with >= 16 children of >= 8 objects each is a crowd (people): its hidden children are skipped too
@@ -52,6 +68,50 @@ function setSkipHidden(st, on) {
 export class Visibility {
   constructor(ctx) {
     this.ctx = ctx; this.ints = []; this.acc = 1; this.lx = 1e9; this.lz = 1e9; this.ly = 1e9; this.shown = 0; this.p = new THREE.Vector3(); this.skips = [];
+    const B = COAST.BOX;
+    this.coast = {                                                      // the coast's late groups: found by name, hidden by this rule (`mine`), and the frustum test they are judged by
+      scan: -1, groups: [], mine: new WeakSet(), seen: true, hid: 0,
+      frustum: new THREE.Frustum(), pv: new THREE.Matrix4(), box: new THREE.Box3(new THREE.Vector3(-B.x, B.y0, B.z0), new THREE.Vector3(B.x, B.y1, B.z1)),
+    };
+    this.far = { land: null, under: false };                           // the camera's far plane on land, while it is brought in under the sea
+  }
+
+  /**
+   * The coast's late groups (COAST.GROUPS) are drawn only while the camera's frustum meets the coast's box: from the hill, looking north, none of the beach is behind a single pixel, and drawing nothing from it keeps its
+   * casters out of the sun's shadow pass too. Every frame (a box test and a few flags), because a unit shows its group when it is warm, in any frame, and the rule must have judged it before it is drawn. A group is
+   * hidden by this rule only if it is shown (a unit that has made its group hidden, to warm it, stays in charge of it) and is shown again by this rule only if this rule hid it. The groups are looked up by name when
+   * the scene gains or loses a child, or when one that was found has left it; a group that has not arrived yet is not an error.
+   */
+  _coast() {
+    const ctx = this.ctx, scene = ctx.scene, cam = ctx.camera, cs = this.coast;
+    if (!scene || !cam?.projectionMatrix) return;
+    if (cs.scan !== scene.children.length || cs.groups.some((g) => g.parent !== scene)) {
+      cs.scan = scene.children.length;
+      cs.groups = scene.children.filter((o) => COAST.GROUPS.includes(o.name));
+    }
+    if (!cs.groups.length) return;
+    cam.updateMatrixWorld();                                              // (the systems run before the frame's own update: the pose the player has just set is not in the matrices yet)
+    cs.pv.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    cs.frustum.setFromProjectionMatrix(cs.pv, cam.coordinateSystem, cam.reversedDepth);
+    cs.seen = cs.frustum.intersectsBox(cs.box);
+    let hid = 0;
+    for (const g of cs.groups) {
+      if (!cs.seen) { if (g.visible) { g.visible = false; cs.mine.add(g); } }
+      else if (cs.mine.has(g)) { cs.mine.delete(g); g.visible = true; }
+      if (cs.mine.has(g)) hid++;
+    }
+    cs.hid = hid;
+  }
+
+  /** Under the sea (the look's blend `uw` from half way, where the dome goes too) the camera's far plane is 60 m: the water's fog has taken everything beyond it, and nothing is drawn for it. On the way out it is the land's again. */
+  _far() {
+    const cam = this.ctx.camera, uw = this.ctx.look?.state?.uw ?? 0, f = this.far;
+    if (!cam) return;
+    const under = uw >= UW.SKY_OFF;
+    if (under === f.under && (!under || cam.far === UW.FAR)) return;
+    if (under) { f.land = cam.far; cam.far = UW.FAR; }
+    else if (f.land != null) { cam.far = f.land; f.land = null; }
+    f.under = under; cam.updateProjectionMatrix();
   }
 
   /** Hidden-subtree matrix skip on the scene and on every crowd-like top-level group. `on` = false turns them all off (the A/B switch of the tests and ?skiphidden=0). */
@@ -126,6 +186,7 @@ export class Visibility {
 
   /** dt in seconds; force = evaluate now (after a teleport). */
   update(dt, force = false) {
+    this._coast(); this._far();                                           // (every frame, whatever the interiors do: see them)
     const pl = this.ctx.player; if (!pl || !this.ints.length) return;
     this.acc += dt;
     const s = pl.s, moved = Math.abs(s.x - this.lx) + Math.abs(s.z - this.lz) + Math.abs(s.y - this.ly);
@@ -145,5 +206,5 @@ export class Visibility {
     this.shown = shown;
   }
 
-  stats() { return { intGroups: this.ints.length, intShown: this.shown, matrixSkipped: this.skippedNow() }; }
+  stats() { return { intGroups: this.ints.length, intShown: this.shown, matrixSkipped: this.skippedNow(), coast: { groups: this.coast.groups.length, hidden: this.coast.hid, seen: this.coast.seen }, far: this.ctx.camera?.far ?? null }; }
 }

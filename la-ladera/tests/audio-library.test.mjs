@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import * as L from '../js/audio/library.js';
 import * as F from '../js/audio/foley.js';
 import { BEDS } from '../js/audio/beds.js';
-import { SR, peak, rms, mean, finite } from '../js/audio/dsp.js';
+import { SR, peak, rms, mean, finite, highpass, lowpass } from '../js/audio/dsp.js';
 import { acPitch, bandShare, centroid, peakFreq, stepStats, windowRms } from './audio-lib.mjs';
 
 const KEYS = L.keys(), cache = new Map();
@@ -21,7 +21,7 @@ const code = (f) => readFileSync(join(AUDIO_DIR, f), 'utf8').replace(/\/\*[\s\S]
 
 test('the key list: unique, complete, and every bed, surface and event has its samples', () => {
   assert.equal(new Set(KEYS).size, KEYS.length, 'unique');
-  assert.ok(KEYS.length >= 90 && KEYS.length <= 170, 'count ' + KEYS.length);          // (140 until the beach: its five surfaces are 30 more samples, 4 steps and 2 landings each)
+  assert.ok(KEYS.length >= 90 && KEYS.length <= 185, 'count ' + KEYS.length);          // (140 until the beach: its five surfaces are 30 more samples, 4 steps and 2 landings each; the sea is 14 more: the surf and underwater beds, 4 gulls, 3 splashes, 2 strokes, bloop, gasp, whistle, heart = 177)
   for (const s of ['sand', 'wetsand', 'shallow', 'wade', 'jetty']) assert.ok(F.SURFACES.includes(s), `the beach's ${s} is a footstep surface`);
   for (const b of BEDS) assert.ok(KEYS.includes('bed:' + b), 'bed ' + b);
   for (const s of F.SURFACES) for (const v of [0, 1, 2, 3]) assert.ok(KEYS.includes(`step:${s}:${v}`) && (v > 1 || KEYS.includes(`land:${s}:${v}`)), `${s} ${v}`);
@@ -40,7 +40,7 @@ test('every sample is finite, not silent, not clipping, and has no DC offset', (
     const p = peak(x); assert.ok(p >= 0.12 && p <= 0.96, `${k}: peak ${p.toFixed(3)} outside 0.12..0.96`);
     assert.ok(Math.abs(mean(x)) < 0.01, `${k}: DC ${mean(x).toFixed(4)}`);
   }
-  assert.ok(total < 6.0e6, `the whole library is ${(total * 4 / 1048576).toFixed(1)} MB as float32: keep it small`);   // (5.5e6 until the beach: its 30 steps and landings are 280 000 of the 5.59 million)
+  assert.ok(total < 7.0e6, `the whole library is ${(total * 4 / 1048576).toFixed(1)} MB as float32: keep it small`);   // (5.5e6 until the beach: its 30 steps and landings are 280 000 of the 5.59 million; the sea adds 1.04 million, half of it the 24 s surf loop, to 6.63 million. Nothing is rendered until it is first needed)
 });
 
 test('loudness: the loops sit at one level so a gain of 1 means the same everywhere; one-shots are not whispers', () => {
@@ -249,4 +249,97 @@ test('chime, tick, birds, dogs and horns sit where their pitch should', () => {
   for (const i of [0, 1]) { const p = acPitch(get(`dog:${i}`), 0.01, 0.04, 90, 700); assert.ok(p.f > 250 && p.f < 440 && p.strength > 0.5, `dog ${i}: its voice is ${p.f.toFixed(0)} Hz (strength ${p.strength.toFixed(2)}): a small dog's 300-400, not a big one's 120`); }
   assert.ok(peakFreq(get('horn:0'), 100, 3000, SR, 2048) > 600 && peakFreq(get('horn:0'), 100, 3000, SR, 2048) < 900, 'motorbike pip');
   assert.ok(peakFreq(get('horn:1'), 100, 3000, SR, 2048) > 350 && peakFreq(get('horn:1'), 100, 3000, SR, 2048) < 600, 'car horn');
+});
+
+// ---- the sea's samples (round 8, engine patch 4; dev/FEATURE-BEACH.md 5): the surf and the underwater beds, the gulls, a body in the water, a stroke, the head under and out, a whistle, a heart --------------------
+const swing = (x, win = 1, hop = 0.25) => { const o = []; for (let t = 0; t + win <= x.length / SR; t += hop) o.push(windowRms(x, t, t + win)); return o; };
+const pf = (x, a, b, lo, hi, n = 1024) => peakFreq(x.subarray(Math.round(a * SR), Math.round(b * SR)), lo, hi, SR, n);
+
+test('the sea\'s samples are in the library: two loops, four gull calls, three splashes, two strokes and four one-shots of the swimmer', () => {
+  for (const b of ['surf', 'underwater']) assert.ok(BEDS.includes(b) && KEYS.includes('bed:' + b) && L.isLoop('bed:' + b), `bed ${b}`);
+  assert.equal(F.GULL_COUNT, 4); assert.equal(L.VARIANTS.splash, 3); assert.equal(L.VARIANTS.stroke, 2);
+  for (const k of ['gull:0', 'gull:3', 'splash:0', 'splash:2', 'stroke:0', 'stroke:1', 'bloop', 'gasp', 'whistle', 'heart']) assert.ok(KEYS.includes(k) && !L.isLoop(k), k);
+  for (const k of ['gull:4', 'splash:3', 'stroke:2']) assert.ok(!KEYS.includes(k), k + ' is not a key');
+  assert.deepEqual(KEYS.filter((k) => /^(gull|splash|stroke):/.test(k)).length, 4 + 3 + 2);
+});
+
+test('the sea\'s beds: the surf is a roar under a hiss with three swells in its loop; the underwater bed is steady and low, with nothing above 500 Hz', () => {
+  const surf = get('bed:surf'), under = get('bed:underwater'), es = swing(surf), eu = swing(under), med = [...es].sort((a, b) => a - b)[es.length >> 1];
+  assert.ok(surf.length / SR >= 20 && surf.length / SR <= 30, `the surf loop is ${surf.length / SR} s: long enough for its swells never to repeat in a hurry`);
+  let peaks = 0; es.forEach((v, i) => { if (v > 1.15 * med && es.slice(Math.max(0, i - 6), i + 7).every((w) => w <= v)) peaks++; });
+  assert.equal(peaks, 3, 'three swells in the loop'); assert.ok(Math.max(...es) / Math.min(...es) > 3, `swells and lulls: the loudest second is ${(Math.max(...es) / Math.min(...es)).toFixed(1)} x the quietest`);
+  assert.ok(centroid(surf) > 450 && centroid(surf) < 1100, 'the surf: ' + centroid(surf).toFixed(0));
+  assert.ok(bandShare(surf, 0, 500) > 0.55 && bandShare(surf, 500, 11025) > 0.15, `a roar (${(bandShare(surf, 0, 500) * 100).toFixed(0)} % under 500 Hz) with a hiss over it (${(bandShare(surf, 500, 11025) * 100).toFixed(0)} %)`);
+  assert.ok(Math.max(...eu) / Math.min(...eu) < 2.5, `the underwater bed is steady: ${(Math.max(...eu) / Math.min(...eu)).toFixed(2)}`);
+  assert.ok(bandShare(under, 0, 500) > 0.99 && centroid(under) < 200, `underwater is a rumble that the 500 Hz low-pass of the sea leaves whole: ${(bandShare(under, 0, 500) * 100).toFixed(1)} % under 500, centroid ${centroid(under).toFixed(0)}`);
+  assert.ok(centroid(under) < 0.25 * centroid(surf) && centroid(under) < centroid(get('bed:wind')) / 3, 'and the lowest of all the beds');
+  // The bubbles are the only events in it, and the 500 Hz cut leaves them only 250-700 Hz to be heard in: a bubble there is a spike that the rumble alone (a crest of 4.5, as a noise has) does not make.
+  // (Bubbles at 2.6-6.2 kHz, which the cut would remove, leave a crest of 4.55; the bed as built has 6.06.)
+  const band = Float32Array.from(under); highpass(band, 250); lowpass(band, 700); const crest = peak(band) / rms(band);
+  assert.ok(crest > 5.4, `bubbles rise out of the rumble in the 250-700 Hz band the sea's cut leaves them: crest ${crest.toFixed(2)}`);
+});
+
+test('gulls: four calls with their own shapes, a squeal between 800 and 3600 Hz that glides, in notes with silence between them', () => {
+  const G = [0, 1, 2, 3].map((v) => get(`gull:${v}`));
+  G.forEach((x, v) => {
+    const t = x.length / SR;
+    assert.ok(t >= 0.8 && t <= 1.4, `gull ${v}: ${t.toFixed(2)} s`); assert.ok(bandShare(x, 0, 400) < 0.01, `gull ${v}: a bird, nothing under 400 Hz`);
+    assert.ok(bandShare(x, 800, 3600) > 0.65, `gull ${v}: ${(bandShare(x, 800, 3600) * 100).toFixed(0)} % between 800 and 3600 Hz`); assert.ok(centroid(pad(x)) > 1200 && centroid(pad(x)) < 3200, `gull ${v}: centroid ${centroid(pad(x)).toFixed(0)}`);
+  });
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) assert.ok(G[i].length !== G[j].length && Math.abs(centroid(pad(G[i])) - centroid(pad(G[j]))) > 20, `gulls ${i} and ${j} are the same call`);
+  assert.ok(windowRms(G[0], 0.33, 0.4) < 0.01 * windowRms(G[0], 0.1, 0.25) && windowRms(G[0], 0.75, 0.82) < 0.01 * windowRms(G[0], 0.5, 0.65), 'kyow-kyow-kyow: three notes, silence between');
+  assert.ok(pf(G[1], 0.45, 0.6, 500, 4000) - pf(G[1], 0.03, 0.15, 500, 4000) > 300 && pf(G[1], 0.45, 0.6, 500, 4000) - pf(G[1], 0.8, 0.95, 500, 4000) > 300, 'keee-ah: it climbs a long way and then falls');
+  const slot = [0, 1, 2, 3, 4, 5].map((k) => windowRms(G[2], 0.17 * k, 0.17 * k + 0.13));
+  // (the notes' own spectral slope makes each a fraction of a percent softer even with no decay at all, so a laugh must be at least 5 % softer than the one before to count: as built they are 10-17 % softer each, half the first by the sixth)
+  for (let k = 1; k < 6; k++) assert.ok(slot[k] < 0.95 * slot[k - 1], `ha-ha-ha: each laugh is softer than the one before (${slot.map((v) => v.toFixed(3))})`);
+  assert.ok(slot[5] < 0.6 * slot[0], `ha-ha-ha: and the last is well under the first (${(slot[5] / slot[0]).toFixed(2)})`);
+  for (let k = 0; k < 5; k++) assert.ok(windowRms(G[2], 0.17 * k + 0.135, 0.17 * (k + 1)) < 0.02 * slot[k], `ha-ha-ha: a gap after laugh ${k + 1}`);
+});
+
+test('splashes: three sizes, each longer, lower and heavier than the one before, with the slap first, and a tail that dies away', () => {
+  const S = [0, 1, 2].map((v) => get(`splash:${v}`)), T = S.map((x) => x.length / SR), c = S.map((x) => centroid(pad(x)));
+  assert.ok(T[0] >= 0.6 && T[0] <= 0.8 && T[1] >= 0.95 && T[1] <= 1.25 && T[2] >= 1.5 && T[2] <= 1.9, `lengths ${T}`);
+  assert.ok(c[0] > 1.3 * c[1] && c[1] > 1.6 * c[2], `lower with size: ${c.map(Math.round)}`);
+  assert.ok(windowRms(S[0], 0.4, 0.6) < windowRms(S[1], 0.4, 0.6) && windowRms(S[1], 0.4, 0.6) < windowRms(S[2], 0.4, 0.6), 'and it rings on longer the bigger it is');
+  S.forEach((x, v) => {
+    assert.ok(loudAt(x) < 0.1, `splash ${v}: the slap comes first (the loudest moment is at ${loudAt(x).toFixed(3)} s)`);
+    assert.ok(windowRms(x, x.length / SR - 0.2, x.length / SR) < 0.05 * windowRms(x, 0, 0.1), `splash ${v}: it dies away`);
+    assert.ok(bandShare(x, 0, 150) < 0.6, `splash ${v}: ${(bandShare(x, 0, 150) * 100).toFixed(0)} % of the power is below 150 Hz (a laptop plays none of it)`);
+  });
+  assert.ok(bandShare(S[2], 0, 150) > 3 * bandShare(S[0], 0, 150), 'the plunge has weight that the hand\'s slap has not');
+  assert.ok(S[0].some((v, i) => v !== S[1][i]) && S[1].some((v, i) => v !== S[2][i]), 'three different sounds');
+});
+
+test('strokes: a short plash at 2-3 kHz, a different take for each arm, no thump', () => {
+  const a = get('stroke:0'), b = get('stroke:1'); let sab = 0, saa = 0, sbb = 0;
+  for (let i = 0; i < Math.min(a.length, b.length); i++) { sab += a[i] * b[i]; saa += a[i] * a[i]; sbb += b[i] * b[i]; }
+  for (const x of [a, b]) {
+    assert.ok(Math.abs(x.length / SR - 0.5) < 0.01, 'half a second'); assert.ok(centroid(pad(x)) > 2200 && centroid(pad(x)) < 3200, 'centroid ' + centroid(pad(x)).toFixed(0));
+    assert.ok(bandShare(x, 0, 500) < 0.08, `almost nothing under 500 Hz (${(bandShare(x, 0, 500) * 100).toFixed(1)} %)`);
+    assert.ok(windowRms(x, 0, 0.25) > 5 * windowRms(x, 0.3, 0.5) && loudAt(x) < 0.1, 'the plash is at the front and dies away');
+  }
+  assert.ok(centroid(pad(b)) > 1.08 * centroid(pad(a)), 'the second arm is a little brighter'); assert.ok(Math.abs(sab / Math.sqrt(saa * sbb)) < 0.3, 'two recordings, not one noise twice');
+});
+
+test('the head under and out: the rush and bloop of going under falls in pitch; the first breath of air swells and trails off', () => {
+  const bl = get('bloop'), gp = get('gasp');
+  assert.ok(Math.abs(bl.length / SR - 0.55) < 0.01 && bandShare(bl, 0, 600) > 0.9, `bloop is low: ${(bandShare(bl, 0, 600) * 100).toFixed(0)} % under 600 Hz, centroid ${centroid(pad(bl)).toFixed(0)}`);
+  assert.ok(windowRms(bl, 0.1, 0.2) > 2 * windowRms(bl, 0, 0.06), 'the bubble follows the rush'); assert.ok(windowRms(bl, 0.4, 0.55) < 0.1 * windowRms(bl, 0.1, 0.2), 'and fades');
+  assert.ok(pf(bl, 0.1, 0.2, 100, 800) - pf(bl, 0.2, 0.3, 100, 800) > 60, `the bubble falls: ${pf(bl, 0.1, 0.2, 100, 800).toFixed(0)} then ${pf(bl, 0.2, 0.3, 100, 800).toFixed(0)} Hz`);
+  assert.ok(Math.abs(gp.length / SR - 0.8) < 0.01 && bandShare(gp, 500, 3000) > 0.75 && bandShare(gp, 0, 200) < 0.01, `a breath: ${(bandShare(gp, 500, 3000) * 100).toFixed(0)} % between 500 and 3000 Hz, ${(bandShare(gp, 0, 200) * 100).toFixed(2)} % under 200 (a rumble there, as a noise with no high-pass has, is 2.2 %; as built 0.46 %)`);
+  assert.ok(windowRms(gp, 0.15, 0.3) > 10 * windowRms(gp, 0, 0.03), 'it swells in'); assert.ok(windowRms(gp, 0.7, 0.8) < 0.15 * windowRms(gp, 0.15, 0.3), 'and trails off');
+  assert.ok(loudAt(gp) > 0.1 && loudAt(gp) < 0.35, `the swell peaks at ${loudAt(gp).toFixed(2)} s`);
+});
+
+test('the lifeguard\'s whistle is a pea whistle near 2.9 kHz, loud and shaken; the heart is two soft thumps a quarter of a second apart', () => {
+  const w = get('whistle'), h = get('heart');
+  assert.ok(Math.abs(w.length / SR - 0.7) < 0.01 && Math.abs(peakFreq(w, 2000, 4500, SR, 8192) - 2900) < 150, `whistle at ${peakFreq(w, 2000, 4500, SR, 8192).toFixed(0)} Hz`);
+  assert.ok(bandShare(w, 2000, 4500) > 0.85 && bandShare(w, 0, 1500) < 0.01, `and nothing else: ${(bandShare(w, 2000, 4500) * 100).toFixed(0)} % between 2 and 4.5 kHz`);
+  assert.ok(windowRms(w, 0.2, 0.4) > 0.2 && windowRms(w, 0.2, 0.4) > 1.5 * windowRms(w, 0.62, 0.7), 'loud while it is blown, then it lets go');
+  // (as built 0.001 % of its power is above 450 Hz; either of its two low-passes alone leaves 0.01 %, and with neither the knock's noise puts 0.66 % there, which a bound of 1 % let through)
+  assert.ok(Math.abs(h.length / SR - 0.6) < 0.01 && bandShare(h, 0, 450) > 0.999, `the heart: nothing above 450 Hz (${((1 - bandShare(h, 0, 450)) * 100).toFixed(4)} % of its power is)`);
+  assert.ok(bandShare(h, 100, 450) > 0.05, `though a small speaker has something to play: ${(bandShare(h, 100, 450) * 100).toFixed(0)} % of it is above 100 Hz`);
+  const f = peakFreq(h, 30, 200, SR, 8192); assert.ok(f > 38 && f < 80, `its thump is at ${f.toFixed(0)} Hz`);
+  assert.ok(windowRms(h, 0.25, 0.3) > 2 * windowRms(h, 0.12, 0.2) && windowRms(h, 0, 0.05) > windowRms(h, 0.25, 0.3), 'lub, then a softer dub after a gap');
+  assert.ok(windowRms(h, 0.45, 0.6) < 0.05 * windowRms(h, 0, 0.05) && loudAt(h) < 0.05, 'and nothing after it');
 });

@@ -9,7 +9,8 @@
 //   ctx.audio.find({ collection: 'coins'|'watches'|'jewels'|'oddities', rarity })   the ting of a special find; ui/flow.js plays it with the 'Hallazgo' toast
 //   ctx.audio.state()     { mode: idle|blocked|live|dry|off|failed|unsupported, zone, beds, voices, stats, samples, errors, ... } (also in __ladera.state().audio)
 // Events heard: player:step|land|jump, door:toggle, mode, npc:talk|end, container:open|close (a drawer, wardrobe, cupboard, lid or fridge: placed at the piece),
-//               reader:page (a page turn). Nothing else needs to call the audio for furniture or papers: emit the event.
+//               reader:page (a page turn), player:splash|stroke|dive|surface|breath|whistle (the swimmer: a splash where he fell in, a stroke, the head under and out, the gasp, the lifeguard).
+//               Nothing else needs to call the audio for furniture or papers: emit the event. The sea itself (the surf by the distance to the shore, the sea heard from under it, the gulls) follows the player by itself.
 //   ctx.audio.selfTest()  render a few offline scenes through the real graph and measure them (no sound, no gesture needed)
 // URL: ?audio=0 turns the engine off, ?audio=live forces a real context even under automation.
 import { AudioEngine } from './engine.js';
@@ -52,6 +53,12 @@ export function initAudio(ctx) {
   ev.on('mode', (e) => engine.onMode(e));
   ev.on('npc:talk', () => engine.onTalk(true));
   ev.on('npc:end', () => engine.onTalk(false));
+  ev.on('player:splash', (e) => engine.onSplash(e));                       // the swimmer (engine/swim.js, engine/player.js): a fall into the sea, an arm's stroke, the head going under and coming out, the breath, the lifeguard's whistle
+  ev.on('player:stroke', (e) => engine.onStroke(e));
+  ev.on('player:dive', () => engine.onDive());
+  ev.on('player:surface', () => engine.onSurface());
+  ev.on('player:breath', (e) => engine.onBreath(e));
+  ev.on('player:whistle', () => engine.onWhistle());
   // a small tick when a button is pressed (trusted clicks only: a test script clicking a hundred buttons stays silent)
   document.addEventListener('click', (e) => { if (e.isTrusted && engine.running && e.target?.closest?.('button, .btn, [role="button"], select, summary')) engine.tick(); }, true);
 

@@ -1,12 +1,12 @@
 // Looping ambience, synthesised (owner: A1): wind, traffic, crickets, neighbours, children, a ball court, a television, a cumbia radio, a frying
-// pan, a metal workshop and the hum of a room. Each bed is `bed(id) -> Float32Array` (mono, SR Hz) that loops with no seam: noise beds are
+// pan, a metal workshop, the hum of a room, the surf and the sea heard from under it. Each bed is `bed(id) -> Float32Array` (mono, SR Hz) that loops with no seam: noise beds are
 // cross-faded head into tail (loopify), tonal beds are built from whole cycles so the wrap is mathematically continuous. Every bed is scaled to
 // a common loudness (RMS), so the mixer's 0..1 gains mean the same thing for all of them. Deterministic: the seed is the bed's name.
 import { SR, rng, hashSeed, buf, clamp, lerp, smoothstep, whiteNoise, pinkNoise, brownNoise, biquad, applyBiquad, lowpass, highpass, bandpass, sweepBandpass,
   normalizeRms, softclip, removeDC, fade, addTo, loopify, lfo, babble } from './dsp.js';
 
 const TAU = Math.PI * 2;
-export const BEDS = ['wind', 'traffic', 'crickets', 'murmur', 'children', 'court', 'tv', 'radio', 'sizzle', 'workshop', 'room'];
+export const BEDS = ['wind', 'traffic', 'crickets', 'murmur', 'children', 'court', 'tv', 'radio', 'sizzle', 'workshop', 'room', 'surf', 'underwater'];
 
 /** Cross-fade into a seamless loop, remove DC and set the loudness. */
 const finish = (x, xf, level) => { const y = loopify(x, xf); removeDC(y); normalizeRms(y, level); return y; };
@@ -222,7 +222,52 @@ function room() {
   return normalizeRms(removeDC(out), 0.035);
 }
 
-const MAKERS = { wind, traffic, crickets, murmur, children, court, tv, radio, sizzle, workshop, room };
+// ---- the sea (A1, round 8, engine patch 4; dev/FEATURE-BEACH.md 5) --------------------------------------------------------------------------------------
+/**
+ * The surf on the beach: three swells 7.4, 8.4 and 8.2 s apart (the last one to the first of the next time round), each a 2.5 s roar that builds, a 3 s crash and a 2 s hiss that drains off the sand, over a
+ * low rumble from far out and the slow wash of the shoreline (a high-passed pink noise whose level breathes at 0.12 Hz, out of step with the swells). Loops with no seam (noise, cross-faded). The engine
+ * plays it twice, 16 m apart along the shore, from two places in the loop, so the two voices are not the same sound.
+ */
+function surf() {
+  const xf = 2.5, len = 24, r = rng(hashSeed('bed:surf')), n = Math.round((len + xf) * SR);
+  const roar = scaled(lowpass(pinkNoise(n, r), 3500), 1.0), hiss = scaled(highpass(lowpass(whiteNoise(n, r), 7000), 2200), 0.6), rumble = scaled(lowpass(brownNoise(n, r), 220), 0.7), wash = scaled(highpass(pinkNoise(n, r), 1200), 0.45);
+  const env = new Float32Array(n), drain = new Float32Array(n);
+  let t0 = 2.5;                                                 // (the first swell begins after the cross-faded head; the last one drains out into it)
+  for (const T of [7.4, 8.4, 8.2]) {
+    for (let i = Math.max(0, Math.round(t0 * SR)); i < n && i < Math.round((t0 + 8) * SR); i++) {
+      const t = i / SR - t0, rise = smoothstep(0, 2.5, t) ** 1.6, crash = t < 2.5 ? 0 : Math.exp(-(t - 2.5) / 2.6), gone = 1 - smoothstep(5.2, 7.6, t);
+      env[i] = Math.max(env[i], t < 2.5 ? rise : (0.45 + 0.55 * crash) * gone);
+      drain[i] = Math.max(drain[i], t < 2.4 ? 0 : smoothstep(2.4, 3.1, t) * Math.exp(-(t - 3.1) / 1.4) * (1 - smoothstep(6.5, 8, t)));
+    }
+    t0 += T;
+  }
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR, breathe = (0.5 + 0.5 * Math.sin(TAU * 0.12 * t + 1.1)) ** 2;
+    out[i] = roar[i] * (0.12 + 0.88 * env[i]) + hiss[i] * drain[i] + rumble[i] * (0.3 + 0.5 * env[i]) + wash[i] * (0.1 + 0.3 * breathe);
+  }
+  return finish(out, xf, 0.07);
+}
+/**
+ * The sea from under it: a low rumble (noise with nothing above 400 Hz and little above 150) that breathes slowly, and bubbles rising (small tones that climb as each one pinches off, 260 to 620 Hz, about
+ * one and a half a second). It is heard through the beds' low-pass (500 Hz under the sea), so nothing in it is above where that lets it through. The rumble is made in a circle (the filters run round the
+ * loop three times and the middle turn is kept), so the loop's end is the continuation of its start and no cross-fade is needed.
+ */
+function underwater() {
+  const len = 12, r = rng(hashSeed('bed:underwater')), n = Math.round(len * SR), x = whiteNoise(n, r), z = new Float32Array(3 * n), out = new Float32Array(n);
+  z.set(x, 0); z.set(x, n); z.set(x, 2 * n); lowpass(z, 400); lowpass(z, 150);
+  const low = scaled(z.subarray(n, 2 * n), 1.0);
+  for (let i = 0; i < n; i++) out[i] = low[i] * (0.8 + 0.2 * Math.sin(TAU * (2 / len) * i / SR + 0.7));
+  let t = 0.3;
+  while (t < len - 0.4) {
+    const f = r.range(260, 620), tau = r.range(0.012, 0.03), a = r.range(0.25, 1.0) * 1.1, at0 = Math.round(t * SR), m = Math.min(n - at0, Math.round(6 * tau * SR));
+    for (let i = 0; i < m; i++) { const te = i / SR; out[at0 + i] += Math.sin(TAU * f * (te + 0.5 * 9 * te * te)) * Math.exp(-te / tau) * a * Math.min(1, te / 0.003); }
+    t += -Math.log(1 - r()) / 1.5;
+  }
+  return normalizeRms(removeDC(out), 0.06);
+}
+
+const MAKERS = { wind, traffic, crickets, murmur, children, court, tv, radio, sizzle, workshop, room, surf, underwater };
 /** The loop for bed `id` (see BEDS). Cheap enough to call once per page load; callers cache it. */
 export function bed(id) {
   const f = MAKERS[id]; if (!f) throw new Error('unknown bed ' + id);

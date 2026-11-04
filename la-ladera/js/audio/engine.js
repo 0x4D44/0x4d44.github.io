@@ -1,6 +1,9 @@
 // The sound engine (owner: A1): turns the pure library (library.js) and the pure mixing rules (mix.js) into a WebAudio graph that follows the player.
 //
-//   beds      wind / traffic / crickets / neighbours / children loops     -> bedBus -> lowpass (muffled indoors) -> ambBus
+//   beds      wind / traffic / crickets / neighbours / children loops     -> bedBus -> lowpass (muffled indoors, and under the sea) -> ambBus
+//   surf      two voices of one loop, 16 m either side of the nearest shore -> panner -> bedBus (so the sea is muffled with the beds; mix.js `nearestShore`, `surfLevel`)
+//   underwater the sea's own bed, only with the head under                  -> bedBus (the beds keep a quarter of their level and the low-pass is 500 Hz: mix.js `underwaterMix`)
+//   gulls     calls from the shore's own gulls (ctx.shoreLife), 6 a minute over the sand, by day -> worldBus; the swimmer's splash, strokes, breath and heart (player:* events) -> sfxBus
 //   room      the hum of a room, only indoors                              -> ambBus
 //   emitters  up to 6 positional loops (a tv, a radio, a stove, the court,  -> panner -> emitBus -> ambBus
 //             the school, the workshop), each through its own lowpass for distance and walls
@@ -14,8 +17,9 @@
 import { SR, reverbIR } from './dsp.js';
 import { render, furnKind } from './library.js';
 import { BEDS } from './beds.js';
-import { SURFACES, FURN_KINDS, FIND_SOUNDS } from './foley.js';
-import { computeMix, buildEmitters, pickEmitters, heightRange, strokesForHour, activity, pickStream, nightFromHour, zoneAt } from './mix.js';
+import { SURFACES, FURN_KINDS, FIND_SOUNDS, GULL_COUNT } from './foley.js';
+import { computeMix, buildEmitters, pickEmitters, heightRange, strokesForHour, activity, pickStream, nightFromHour, zoneAt, nearestShore, underwaterMix, UNDER } from './mix.js';
+import { coastLive } from '../world/coast.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const fin = (v, d = 0) => (Number.isFinite(v) ? v : d);
@@ -23,7 +27,9 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const TAU = Math.PI * 2;
 
 /** Engine-level balance on top of each bed's own loudness (all beds are normalised to a similar RMS in beds.js). */
-export const BED_TRIM = { wind: 0.80, traffic: 0.65, crickets: 0.80, murmur: 0.95, children: 0.85 };
+export const BED_TRIM = { wind: 0.80, traffic: 0.65, crickets: 0.80, murmur: 0.95, children: 0.85, underwater: 0.90 };
+/** The surf's two voices (each at this level: two decorrelated voices add up to about 1.25 of one), 16 m either side of the nearest point of the waterline, and the loop's offset between them (half of it). */
+export const SURF_VOICES = Object.freeze({ trim: 0.62, apart: 16, at: [0, 0.5], em: Object.freeze({ id: 'surf', bed: 'surf', ref: 20, rolloff: 0 }) });
 const OUTDOOR_BEDS = Object.keys(BED_TRIM);
 /**
  * How loud a footstep is: its sample (foley.js normalises each surface to its own `level`, 0.27-0.63) times this. A walking step is about 9.5 dB quieter than it was at 0.5
@@ -95,11 +101,12 @@ export class AudioEngine {
   constructor(ctx, o = {}) {
     this.ctx = ctx; this.o = o; this.mode = 'idle'; this.ac = null; this.dry = false; this.n = {}; this.errors = [];
     this.bank = o.bank ?? null; this.rnd = pickStream(fin(ctx?.opts?.seed, 20261029) + 17);
-    this.t = 0; this.next = { mix: 0, emit: 0, crowd: 0 }; this.acc = { birds: 6, dogs: 20, horns: 15 };
+    this.t = 0; this.next = { mix: 0, emit: 0, crowd: 0 }; this.acc = { birds: 6, dogs: 20, horns: 15, gulls: 12 };
+    this.um = underwaterMix(0); this.uwFast = 0; this.uwPrev = 0; this.surfV = null; this.surfGain = 0; this.shore = null; this.areas = null; this.coastOn = false; this.gullMode = new Map(); this.gullAt = -99; this.heartAcc = 0;
     this.volume = 0.8; this.modeScale = 0.3; this.duckTalk = 1; this.indoor = 0; this.override = null; this.gains = {};
     this.beds = {}; this.voices = new Map(); this.emitters = []; this.emitterKey = ''; this.range = null; this.crowd = 0.3; this.activeShots = 0;
     this.stepN = 0; this.lastBird = -1; this.bell = { clock: 0, devotion: 45, prevHour: null, last: -99, queued: 0, strokes: 0 };
-    this.stats = { steps: 0, lands: 0, jumps: 0, doors: 0, furn: 0, finds: 0, sheets: 0, shots: 0, bells: 0, chimes: 0, ticks: 0, dropped: 0, blocked: 0 };
+    this.stats = { steps: 0, lands: 0, jumps: 0, doors: 0, furn: 0, finds: 0, sheets: 0, shots: 0, bells: 0, chimes: 0, ticks: 0, dropped: 0, blocked: 0, splashes: 0, strokes: 0, dives: 0, whistles: 0, gulls: 0, hearts: 0 };
     this.lastMix = null; this.zoneId = null; this.listener = { x: 0, y: 0, z: 0 };
   }
 
@@ -149,7 +156,10 @@ export class AudioEngine {
     const rest = [];
     for (const s of SURFACES) for (let i = 0; i < 4; i++) rest.push(`step:${s}:${i}`);
     for (const s of SURFACES) for (let i = 0; i < 2; i++) rest.push(`land:${s}:${i}`);
-    for (const b of ['court', 'tv', 'radio', 'sizzle', 'workshop']) rest.push(`bed:${b}`);
+    for (const b of ['court', 'tv', 'radio', 'sizzle', 'workshop', 'surf', 'underwater']) rest.push(`bed:${b}`);
+    for (let v = 0; v < GULL_COUNT; v++) rest.push(`gull:${v}`);
+    for (let v = 0; v < 3; v++) rest.push(`splash:${v}`);
+    rest.push('stroke:0', 'stroke:1', 'bloop', 'gasp', 'whistle', 'heart');
     rest.push('door:open:0', 'door:close:0', 'door:open:1', 'door:close:1', 'shutter:open', 'shutter:close', 'rustle:0', 'rustle:1', 'paper:0', 'paper:1', 'sheet:0', 'sheet:1');
     for (const f of FURN_KINDS) for (const k of ['open', 'close']) for (let v = 0; v < 2; v++) rest.push(`furn:${f}:${k}:${v}`);       // a first drawer must not be silent: the bank drops a play while it renders
     for (const c of FIND_SOUNDS) rest.push(`find:${c}`);
@@ -241,11 +251,12 @@ export class AudioEngine {
       return src;
     } catch (e) { this._err('play ' + key, e); return null; }
   }
-  /** A sound placed in the world at (x,y,z): distance law, panning, air and wall filtering. */
+  /** A sound placed in the world at (x,y,z): distance law, panning, air and wall filtering. With the head under the sea the world is dull (500 Hz) and a quarter as loud, but for the swimmer's own sounds (`own: true`). */
   playAt(key, x, y, z, o = {}) {
-    const L = this.listener, d = Math.hypot(x - L.x, y - L.y, z - L.z), bus = o.bus ?? 'worldBus';
+    const L = this.listener, d = Math.hypot(x - L.x, y - L.y, z - L.z), bus = o.bus ?? 'worldBus', um = this.um;
     const muffle = o.muffle ?? (bus === 'worldBus' && this.indoor > 0.5 ? 0.35 : 1);           // the world outside, heard from inside a building
-    return this.play(key, { ref: 2, ...o, pos: [x, y, z], lp: Math.min(o.lp ?? 18000, airCutoff(d)) * muffle, bus });
+    const under = um.uw > 0 && !o.own;
+    return this.play(key, { ref: 2, ...o, gain: (o.gain ?? 1) * (under ? um.beds : 1), pos: [x, y, z], lp: Math.min(o.lp ?? 18000, airCutoff(d), under ? um.cutoff : 18000) * muffle, bus });
   }
 
   chime() { this.stats.chimes++; return this.play('chime', { gain: 0.55, bus: 'uiBus' }); }
@@ -300,7 +311,30 @@ export class AudioEngine {
   }
   onMode(e) { this._applyMode(e?.mode); if (e?.mode === 'panel') { if (this.ctx?.flow?.current === 'reader') this.sheet(); else this.paper(); } }
   onTalk(on) { this.duckTalk = on ? 0.5 : 1; if (this.n.duck) this._set(this.n.duck.gain, this.duckTalk, 0.25); }
-  _bedCutoff() { const out = 16000 * Math.pow(700 / 16000, this.indoor); return this.modeScale < 1 && this.modeScale > 0.35 ? Math.min(out, 2200) : out; }
+  _bedCutoff() { const out = 16000 * Math.pow(700 / 16000, this.indoor); return Math.min(this.modeScale < 1 && this.modeScale > 0.35 ? Math.min(out, 2200) : out, this.um.cutoff); }
+
+  // ---- the swimmer's own sounds (engine/player.js: player:splash | stroke | dive | surface | breath | whistle) --------------------------------------------------------------------------------------
+  /** A body into the sea at the surface where it landed: a hand's slap, a step off a ledge or a plunge from the pier, by the speed it came in at. */
+  onSplash(e) {
+    const sp = fin(e?.speed, 3), size = sp < 2.5 ? 0 : sp < 5 ? 1 : 2, L = this.listener;
+    this.stats.splashes++;
+    return this.playAt(`splash:${size}`, fin(e?.x, L.x), fin(e?.y, L.y), fin(e?.z, L.z), { bus: 'sfxBus', gain: 0.55 + 0.2 * size, ref: 4, rate: 0.96 + 0.08 * this.rnd(), own: true });
+  }
+  /** One arm's stroke: alternating takes, a little louder fast, and dull when the head is under (the strokes are the swimmer's own: they stay at their level, the sea is what is muffled). */
+  onStroke(e) {
+    this.stats.strokes++;
+    return this.play(`stroke:${e?.foot ? 1 : 0}`, { gain: 0.5 * (e?.fast ? 1.25 : 1), rate: 0.95 + 0.1 * this.rnd(), lp: e?.under ? 900 : 0 });
+  }
+  onDive() { this.stats.dives++; return this.play('bloop', { gain: 0.7 }); }
+  /** The head comes out: a breath of air (a gasp when he was carried up out of breath: `player:breath` 'gasp' asks for the full one). */
+  onSurface() { return this.play('gasp', { gain: 0.3 }); }
+  onBreath(e) { if (e?.phase === 'gasp') return this.play('gasp', { gain: 0.8 }); return null; }
+  /** The lifeguard's whistle comes from the tower on the sand. */
+  onWhistle() {
+    const coast = this._coast(), t = coast?.landmarks?.find?.((l) => l.kind === 'tower'); if (!t) return null;
+    this.stats.whistles++;
+    return this.playAt('whistle', t.x, fin(coast.heightAt?.(t.x, t.z), 0) + 3.5, t.z, { bus: 'sfxBus', gain: 0.8, ref: 25, rolloff: 0.8 });
+  }
 
   _blockedBetween(x, z) {
     try { const L = this.listener; return !!this.ctx?.physics?.segmentBlocked?.(L.x, L.z, x, z, L.y - 1.6, 1.4); } catch { return false; }
@@ -312,15 +346,22 @@ export class AudioEngine {
     if (this.override) return this.override;
     const c = this.ctx, p = c.player, s = p?.s, cam = c.camera;
     if (!s) return null;
-    const e = cam?.matrixWorld?.elements;
+    const e = cam?.matrixWorld?.elements, W = p.water;
     const eye = e ? { x: e[12], y: e[13], z: e[14], fx: -e[8], fy: -e[9], fz: -e[10], ux: e[4], uy: e[5], uz: e[6] } : { x: s.x, y: s.y + 1.6, z: s.z, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 };
-    return { ...eye, px: s.x, py: s.y, pz: s.z, indoors: !!p.indoors, building: p.building ?? null, hour: fin(c.hour, 17.2), night: Number.isFinite(c.night) ? c.night : nightFromHour(fin(c.hour, 17.2)) };
+    return {
+      ...eye, px: s.x, py: s.y, pz: s.z, indoors: !!p.indoors, building: p.building ?? null, hour: fin(c.hour, 17.2), night: Number.isFinite(c.night) ? c.night : nightFromHour(fin(c.hour, 17.2)),
+      under: fin(c.look?.state?.uw, 0), breath: fin(W?.breathSoft, 0), breathLow: !!W?.breath?.low,          // the ears under the sea (engine/look.js `uw`), and how short of breath the swimmer is (engine/swim.js)
+    };
   }
+  /** The plan's coast when the beach is built, else null: `?skip=coast` (and a Node build that did not ask for it: world/coast.js `coastLive`) leaves the plan's data in place and the beach out, and a plan without its beach sounds as it did. */
+  _coast() { const coast = this.ctx?.plan?.coast; return coast && coastLive(this.ctx?.opts) ? coast : null; }
   _world() {
     const c = this.ctx, plan = c?.plan; if (!plan) return false;
     if (!this.range && plan.heightAt) this.range = heightRange(plan.heightAt);
     const key = `${plan.landmarks?.length ?? 0}:${c.anchors?.length ?? 0}`;
     if (key !== this.emitterKey) { this.emitterKey = key; this.emitters = buildEmitters(plan, c.anchors ?? []); }
+    const coast = this._coast();
+    if (!this.areas || this.coastOn !== !!coast) { this.coastOn = !!coast; this.areas = [...(plan.areas ?? []), ...(coast?.areas ?? [])]; }          // the beach's two areas (Playa, Mar) count as zones too
     return true;
   }
   _listen(e) {
@@ -340,8 +381,9 @@ export class AudioEngine {
       const e = this._env(); if (!e || !this._world()) return;
       this._listen(e);
       if (this.t >= this.next.mix) { this.next.mix = this.t + 0.12; this._mix(e); }
-      if (this.t >= this.next.emit) { this.next.emit = this.t + 0.3; this._emitters(e); }
+      if (this.t >= this.next.emit) { this.next.emit = this.t + 0.3; this._emitters(e); this._gullWatch(); }
       this._shots(dt, e);
+      this._heartbeat(dt);
       this._bells(dt, e);
     } catch (err) { this._err('update', err); }
   }
@@ -354,18 +396,53 @@ export class AudioEngine {
   _mix(e) {
     if (this.t >= this.next.crowd) { this.next.crowd = this.t + 2; this._crowd(e); }
     const plan = this.ctx.plan, r = this.range ?? { lo: 0, hi: 30 }, alt = clamp((e.py - r.lo) / (r.hi - r.lo), 0, 1);
-    const m = computeMix({ areas: plan.areas, x: e.px, z: e.pz, alt, hour: e.hour, night: e.night, crowd: this.crowd });
-    this.lastMix = m; this.alt = alt;
+    this.shore = nearestShore(this._coast(), e.px, e.pz);
+    const m = computeMix({ areas: this.areas ?? plan.areas, x: e.px, z: e.pz, alt, hour: e.hour, night: e.night, crowd: this.crowd, shore: this.shore?.dist, under: e.under, breath: e.breath, breathLow: e.breathLow });
+    this.lastMix = m; this.alt = alt; this.um = m.under;
     this.indoor = e.indoors ? 1 : 0;
     const out = 1 - 0.6 * this.indoor;
-    for (const id of OUTDOOR_BEDS) { const b = this.beds[id]; if (b) this._set(b.gain.gain, (BED_TRIM[id] ?? 1) * (m.beds[id] ?? 0) * out, 1.2); else this._loop(id, this.n.bedBus); }
+    // the head going under (or coming out) is heard at once: the beds follow it over `UNDER.FADE` seconds (a time constant a third of it), not over the 1.2 s that walking from a street to a plaza takes
+    const moving = Math.abs(m.under.uw - this.uwPrev) > 1e-3; this.uwPrev = m.under.uw;
+    this.uwFast = moving ? 0.6 : Math.max(0, this.uwFast - 0.12);
+    const tc = this.uwFast > 0 ? UNDER.FADE / 3 : 1.2;
+    for (const id of OUTDOOR_BEDS) { const b = this.beds[id]; if (b) this._set(b.gain.gain, (BED_TRIM[id] ?? 1) * (m.beds[id] ?? 0) * out, tc); else this._loop(id, this.n.bedBus); }
+    this._surf(m, out, tc);
     if (!this.beds.room) this._loop('room', this.n.roomGain, 'room', 1);
     this._set(this.n.roomGain.gain, this.indoor * 1.0, 0.5);
-    this._set(this.n.bedLP.frequency, this._bedCutoff(), 0.35);
+    this._set(this.n.bedLP.frequency, this._bedCutoff(), this.uwFast > 0 ? UNDER.FADE / 3 : 0.35);
     if (this.n.sendRoom) this._set(this.n.sendRoom.gain, this.indoor * 0.3, 0.3);
     if (this.n.sendValley) this._set(this.n.sendValley.gain, (1 - this.indoor) * 0.12 * (0.5 + 0.5 * alt), 0.5);
-    this.zoneId = zoneAt(plan.areas, e.px, e.pz);
+    this.zoneId = zoneAt(this.areas ?? plan.areas, e.px, e.pz);
     this._master();
+  }
+
+  /**
+   * The sea's roar, from the nearest point of the waterline: two voices of the one loop, half a loop apart (so the swells of the one are the lulls of the other), 16 m either side of that point, each panned from where it is.
+   * They have no distance law of their own (rolloff 0): the level is `surfLevel`'s (mix.js: by the distance to the shore, the sea's wind and the zone), so the surf fades the way the design says it does and the pan still turns with the head.
+   * They go through the beds' bus: indoors and under the water the surf is dull with the rest. Not even rendered (the loop is 24 s) until it is wanted at all.
+   */
+  _surf(m, out, tc) {
+    const gain = SURF_VOICES.trim * (m.beds.surf ?? 0) * out;
+    this.surfGain = gain;
+    if (!this.surfV) { if (gain < 0.002 || !this.shore || !(this.surfV = this._startSurf())) return; }
+    const sh = this.shore, y = fin(this._coast()?.sea, -1.2);
+    this.surfV.forEach((v, i) => {
+      if (sh) setPos(v.pan, sh.x + (i ? 1 : -1) * SURF_VOICES.apart, y, sh.z);
+      this._set(v.gain.gain, sh ? gain : 0, tc);
+    });
+  }
+  _startSurf() {
+    const ac = this.ac, buf = this.bank?.buffer('bed:surf', ac), em = SURF_VOICES.em;
+    if (!buf) { this.bank?.request('bed:surf'); return null; }
+    const base = this.rnd() * buf.duration;
+    return SURF_VOICES.at.map((at) => {
+      const src = ac.createBufferSource(), gain = ac.createGain(), pan = ac.createPanner();
+      src.buffer = buf; src.loop = true; gain.gain.value = 0;
+      pan.panningModel = 'equalpower'; pan.distanceModel = 'inverse'; pan.refDistance = em.ref; pan.rolloffFactor = em.rolloff; pan.maxDistance = 100000;
+      src.connect(gain); gain.connect(pan); pan.connect(this.n.bedBus);
+      src.start(0, (base + at * buf.duration) % buf.duration);
+      return { src, gain, pan };
+    });
   }
 
   _emitters(e) {
@@ -400,9 +477,9 @@ export class AudioEngine {
 
   _shots(dt, e) {
     const m = this.lastMix; if (!m) return;
-    for (const kind of ['birds', 'dogs', 'horns']) {
+    for (const kind of ['birds', 'dogs', 'horns', 'gulls']) {
       this.acc[kind] -= dt; if (this.acc[kind] > 0) continue;
-      const rate = m.rates[kind] ?? 0, rpm = Math.max(rate, 0.05);
+      const rate = kind === 'gulls' && !this.coastOn ? 0 : m.rates[kind] ?? 0, rpm = Math.max(rate, 0.05);       // (no sea, no gulls: the plan without its beach sounds as it did)
       this.acc[kind] = Math.min(150, -Math.log(1 - this.rnd()) * 60 / rpm);
       if (rate < 0.05) continue;
       this._shot(kind, e);
@@ -416,10 +493,47 @@ export class AudioEngine {
       const d = 9 + r() * 32; x = L.x + Math.cos(a) * d; z = L.z + Math.sin(a) * d; y = ground(x, z) + 4 + r() * 9; key = `bird:${sp}:${Math.floor(r() * 2)}`; o = { gain: 0.9, ref: 7, rate: 0.96 + 0.1 * r() };
     } else if (kind === 'dogs') {
       const d = 28 + r() * 70; x = L.x + Math.cos(a) * d; z = L.z + Math.sin(a) * d; y = ground(x, z) + 0.6; key = `dog:${Math.floor(r() * 2)}`; o = { gain: 1.3, ref: 14, rate: 0.9 + 0.2 * r() };
+    } else if (kind === 'gulls') {
+      const g = this._gullPick();
+      if (g) { x = g.x; y = g.y; z = g.z; }
+      else { x = clamp(L.x + (r() - 0.5) * 70, -90, 90); z = Math.max(L.z + 25, 135) + r() * 40; y = 9 + r() * 6; }       // none of the shore's own about (not loaded yet, or away for the night): one over the sea, ahead of the shore
+      key = `gull:${Math.floor(r() * GULL_COUNT)}`; o = { gain: 0.9, ref: 14, rate: 0.93 + 0.14 * r() };
+      if (this.playAt(key, x, y, z, o)) { this.stats.gulls++; this.gullAt = this.t; }
+      return;
     } else {
       x = clamp(L.x + (r() - 0.5) * 90, -92, 92); z = 88 + (r() - 0.5) * 6; y = ground(x, z) + 1; key = `horn:${r() < 0.7 ? 0 : 1}`; o = { gain: 1.0, ref: 10, rate: 0.95 + 0.1 * r() };
     }
     if (this.playAt(key, x, y, z, o)) this.stats.shots++;
+  }
+
+  /** Which of the shore's gulls calls (ctx.shoreLife.state.gulls, from world/shorelife.js): by a small score, the ones that have just taken off or landed (4 s), then the ones in the air, then the near ones. null: none to be had (every gull is away from night 0.5, at dusk and dawn, while the mix may still ask for a call; or the shore is not loaded): the call is made over the sea. */
+  _gullPick() {
+    const list = this.ctx?.shoreLife?.state?.gulls; if (!list?.length) return null;
+    const L = this.listener; let best = null, top = -Infinity;
+    for (const g of list) {
+      if (g.hidden || !Number.isFinite(g.x + g.y + g.z)) continue;
+      const d = Math.hypot(g.x - L.x, g.z - L.z); if (d > 140) continue;
+      const rec = this.gullMode.get(g.id), s = (rec && this.t - rec.t < 4 ? 2 : 0) + (g.mode === 'perch' ? 0 : 1) - d / 100 + 0.6 * this.rnd();
+      if (s > top) { top = s; best = g; }
+    }
+    return best;
+  }
+  /** Note when each gull changes what it is doing (perch, rise, circle, land): the next call is likelier to come from the one that did. */
+  _gullWatch() {
+    const list = this.ctx?.shoreLife?.state?.gulls; if (!list?.length) return;
+    for (const g of list) {
+      const rec = this.gullMode.get(g.id);
+      if (!rec) this.gullMode.set(g.id, { mode: g.mode, t: -99 });
+      else if (rec.mode !== g.mode) { rec.mode = g.mode; rec.t = this.t; }
+    }
+  }
+
+  /** The swimmer's own heart, once the breath is low (engine/swim.js: 25 s without air): a beat at the breath's pace, from inside the head (not placed, not dulled, not ducked). */
+  _heartbeat(dt) {
+    const h = this.um.heart;
+    if (!h.on || this.ctx?.running === false) { this.heartAcc = 0; return; }
+    this.heartAcc -= dt; if (this.heartAcc > 0) return;
+    if (this.play('heart', { gain: 0.8 * h.gain })) { this.stats.hearts++; this.heartAcc = 60 / h.bpm; } else this.heartAcc = 0.25;
   }
 
   // ---- the chapel bell ---------------------------------------------------------------------------------------------------------------------------------
@@ -450,9 +564,14 @@ export class AudioEngine {
   state() {
     const r3 = (v) => (Number.isFinite(v) ? +v.toFixed(3) : null), gains = {};
     for (const [k, b] of Object.entries(this.beds)) gains[k] = r3(b.gain.gain.value);
+    if (this.surfV) gains.surf = r3(this.surfV[0].gain.gain.value);                      // (the surf's two voices share one level)
+    const um = this.um, sh = this.shore;
     return {
       mode: this.mode, ctxState: this.ac?.state ?? null, sampleRate: this.ac?.sampleRate ?? null, volume: this.volume, modeScale: this.modeScale, indoor: this.indoor, zone: this.zoneId, alt: r3(this.alt),
       master: r3(this.n.master?.gain.value), beds: gains, bedCutoff: r3(this.n.bedLP?.frequency.value), crowd: r3(this.crowd),
+      surf: { target: r3(this.surfGain), dist: sh ? r3(sh.dist) : null, at: sh ? [r3(sh.x), r3(sh.z)] : null, voices: this.surfV ? this.surfV.length : 0 },
+      under: { uw: r3(um.uw), cutoff: r3(um.cutoff), beds: r3(um.beds), heart: { on: um.heart.on, bpm: r3(um.heart.bpm), gain: r3(um.heart.gain) } },
+      gulls: { rate: r3(this.lastMix?.rates?.gulls), calls: this.stats.gulls, last: r3(this.gullAt), watched: this.gullMode.size },
       voices: [...this.voices.values()].map((v) => ({ id: v.em.id, kind: v.em.kind, dist: r3(v.dist), gain: r3(v.gain.gain.value), cutoff: r3(v.lp.frequency.value), occluded: v.occluded })),
       emitters: this.emitters.length, activeShots: this.activeShots, stats: { ...this.stats },
       samples: { ready: (this.bank?.raw.size ?? 0) + (this.bank?.bufs.size ?? 0), pending: this.bank?.pending ?? 0, requested: this.bank?.requested ?? 0, ms: Math.round(this.bank?.ms ?? 0), via: this.bank?.mode ?? null, errors: [...(this.bank?.errors ?? [])] },
