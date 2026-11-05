@@ -6,15 +6,16 @@
 - **Area:** glasgow-subway
 - **Raised:** 2026-11-05T14:35:34Z
 - **Discovery source:** Agent
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20261105T144812Z-99ce25b3
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-FLU-00010-run-fix-20261105T144812Z-99ce25b3
+- **Owner base:** da519a8971f57d55b8aecaa6aa7be9dfbf94f427
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-11-05T14:48:12Z
+- **Owner until:** 2026-11-05T18:48:12Z
+- **Owner session:** flux/317b34f0-c9e3-4915-adfe-95600d23f8ca (run fix-20261105T144812Z-99ce25b3)
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
