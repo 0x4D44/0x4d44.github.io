@@ -21,6 +21,14 @@ export const STAIR = {
   parapet: 1.1,    // wall height above the nosing line before the stair enters the ceiling opening
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+/** the framed portrait adverts on the stair-shaft side walls: size (2:3), bottom edge above the walking line, frame border, spacing along the flight */
+export const STAIR_AD = { w: 0.5, h: 0.75, lift: 1.3, frame: 0.03, pitch: 0.85 };
+/** u (metres along the flight) of each advert's centre: from just inside the ceiling opening to just short of the landing's back wall */
+export function advertSlots(sp) {
+  const a = sp.uN + 0.45, b = sp.U - 0.4, n = Math.max(0, Math.floor((b - a) / STAIR_AD.pitch) + 1), out = [];
+  for (let i = 0; i < n; i++) out.push(a + i * STAIR_AD.pitch + ((b - a) - (n - 1) * STAIR_AD.pitch) / 2);
+  return out;
+}
 
 /** Stair geometry for one marker {x, z} of a hall (hall frame). ceilMin/ceilMax: lowest / highest soffit over the stair's width. u = metres along the flight from the foot. */
 export function stairSpec(info, mk, ceilMin, ceilMax) {
@@ -253,6 +261,18 @@ export function buildStairs(THREE, sp, mats, opts = {}) {
     bar(steel, r0, r1, 0.045, 0.045, cSteel); bar(steel, r1, r2, 0.045, 0.045, cSteel);
     for (const u of [0.15, uE * 0.34, uE * 0.67, uE - 0.1, (uE + U) / 2]) { const yy = yLine(sp, u) + 0.92; steel.box(Math.min(xi, xrl) - 0.0, yy - 0.12, Z(u) - 0.02, Math.max(xi, xrl), yy, Z(u) + 0.02, cSteel, 1); }
   }
+  // ---- small framed portrait adverts stepping up both side walls of the shaft and landing (opts.adverts = { map, rects: [[u0, v0, u1, v1], ...] })
+  const ads = opts.adverts && opts.adverts.map && opts.adverts.rects && opts.adverts.rects.length ? opts.adverts : null, posters = new GeoBuilder();
+  if (ads) {
+    let k = 0;
+    for (const s of [-1, 1]) for (const uc of advertSlots(sp)) {
+      const xi = x + s * S.clear, ni = [-s, 0, 0], zc = Z(uc), z0 = zc - STAIR_AD.w / 2, z1 = zc + STAIR_AD.w / 2, yb = yLine(sp, uc) + STAIR_AD.lift, yt = yb + STAIR_AD.h, f = STAIR_AD.frame;
+      const r = ads.rects[k++ % ads.rects.length], xp = xi - s * 0.012, xf = xi - s * 0.006;
+      face(trim, [[xf, yb - f, z0 - f], [xf, yb - f, z1 + f], [xf, yt + f, z1 + f], [xf, yt + f, z0 - f]], ni, () => [0, 0], cSteel);
+      // text reads left to right for someone facing the wall: u runs along +z on the +x wall, along -z on the -x wall; v0 is the poster's top edge
+      face(posters, [[xp, yb, z0], [xp, yb, z1], [xp, yt, z1], [xp, yt, z0]], ni, (p) => { const fu = s > 0 ? (p[2] - z0) / (z1 - z0) : (z1 - p[2]) / (z1 - z0); return [r[0] + (r[2] - r[0]) * fu, p[1] > yb + 1e-6 ? r[1] : r[3]]; });
+    }
+  }
   // ---- shaft above the ceiling: closure over the opening's near edge, back wall, lit ceiling
   face(wall, [[xl, sp.ceilMax, Z(uN)], [xr, sp.ceilMax, Z(uN)], [xr, H, Z(uN)], [xl, H, Z(uN)]], [0, 0, d], tileUV);
   face(wall, [[xl, yTop, Z(U)], [xr, yTop, Z(U)], [xr, H, Z(U)], [xl, H, Z(U)]], [0, 0, -d], tileUV);
@@ -267,6 +287,7 @@ export function buildStairs(THREE, sp, mats, opts = {}) {
   add(treads, mVC, 'stair_steps'); add(trim, mVC, 'stair_trim'); add(steel, mSteel, 'stair_rails'); add(glow, mGlow, 'stair_glow');
   const dm = mats.dado || new THREE.MeshLambertMaterial({ color: 0x4a6a8a }), wm = mats.wall || new THREE.MeshLambertMaterial({ color: 0xe6e0d0 });
   add(dado, dm, 'stair_dado'); add(wall, wm, 'stair_wall');
+  if (posters.count) { const pm = new THREE.MeshLambertMaterial({ name: 'advert_stair', map: ads.map, emissive: 0xffffff, emissiveMap: ads.map, emissiveIntensity: 0.2, side: THREE.DoubleSide }); owned.push(pm); add(posters, pm, 'stair_adverts'); }
   // ---- walker data (hall frame, x0<x1, z0<z1)
   const rect = (xa, xb, za, zb) => ({ x0: Math.min(xa, xb), x1: Math.max(xa, xb), z0: Math.min(za, zb), z1: Math.max(za, zb) });
   const ramp = { ...rect(xl, xr, Z(0), Z(uE)), up: d, yFoot: yLine(sp, 0), yTop };       // height runs from yFoot at the foot (z = Z(0)) to yTop at Z(uE)
