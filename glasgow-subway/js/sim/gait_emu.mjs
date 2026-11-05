@@ -1,9 +1,10 @@
 // An offline stand-in for the recorder (tools/people_motion.html): drives js/sim/gait.js with the real rig of four of the people (js/sim/gait_rig_fixture.json) through the
-// same scripted plans, steers the root the way the game's AnimCrowd._step / _turn do, and writes recordings in the recorder's format - so js/sim/motion_metrics.mjs can score
+// same scripted plans, steers the root with the game's own steering kinematics (js/sim/steer.js: speed, braking, turning), and writes recordings in the recorder's format - so js/sim/motion_metrics.mjs can score
 // the gait in milliseconds under `node --test`, without a browser. It is a model of the steering, not the steering itself: tools/people_motion.mjs scores the real thing.
 import fs from 'fs';
 import * as G from './gait.js';
 import * as M from './motion_metrics.mjs';
+import * as S from './steer.js';
 const here = new URL('.', import.meta.url);
 export const FIXTURE = JSON.parse(fs.readFileSync(new URL('gait_rig_fixture.json', here), 'utf8'));
 export const PEOPLE = Object.keys(FIXTURE.chars);
@@ -30,25 +31,27 @@ const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 const angD = (a, b) => { let d = (a - b) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
 /** Record one person through a plan (segments { dur (s), v (m/s), state, turn (deg), to (m) }, as motion_metrics.SCEN builds them) at 60 Hz.
- *  opts: armOut [l, r] (deg), var (the gait's per-person variation), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
+ *  opts: armOut [l, r] (deg), var (the gait's per-person variation), noStopD (do not tell the gait how far it still has to go to a place it will stand at - the control for the planned-stop test), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
  *  (feed.pos < 1 makes the planted feet slide across the floor, feed.speed < 1 gives a cadence that is too slow for the speed). */
 export function record(id, plan, opts = {}) {
   const B = bodyOf(id), C = carried(B), g = G.newGait(B, { armOut: opts.armOut || [6, 6], var: opts.var }), dt = 1 / 60, fp = (opts.feed && opts.feed.pos) || 1, fv = (opts.feed && opts.feed.speed) || 1;
   const n = Math.round(plan.reduce((s, a) => s + a.dur, 0) / dt), Lc = M.LM.length, pos = new Array(n * Lc * 3), root = new Array(n * 3), yaw = new Array(n), spd = new Array(n), st = new Array(n), seg = new Array(n), ph = new Array(n);
-  let x = 0, z = 0, vx = 0, vz = 0, yw = 0, yawT = 0, hd = 0, k = 0, state = 'stand', tx = null, tz = null, arrived = false, pv = 0;
+  const P = { yaw: 0, yw: 0, sp: 0, stopHere: false };
+  let x = 0, z = 0, yawT = 0, hd = 0, k = 0, state = 'stand', tx = null, tz = null, arrived = false, pv = 0;
   for (let si = 0; si < plan.length; si++) {
     const s = plan[si]; if (s.state) state = s.state;
     if (s.turn) { hd += s.turn * Math.PI / 180; if (!(s.v > 0)) yawT = hd; }
-    const cx = -Math.sin(hd), cz = -Math.cos(hd); tx = s.to ? x + cx * s.to : null; tz = s.to ? z + cz * s.to : null; arrived = false;
+    const cx = -Math.sin(hd), cz = -Math.cos(hd); tx = s.to ? x + cx * s.to : null; tz = s.to ? z + cz * s.to : null; arrived = false; P.stopHere = !!s.to;
     const steps = Math.round(s.dur / dt);
     for (let i = 0; i < steps && k < n; i++, k++) {
+      let stopD = null;   // the distance still to go to a place the person will stand at (the gait shortens its last steps onto it)
       if (s.v > 0 && !arrived) {
-        if (tx != null && Math.hypot(tx - x, tz - z) < 0.3) { arrived = true; vx = vz = 0; state = 'stand'; }
-        else { const a = 1 - Math.exp(-8 * dt); vx += (cx * s.v - vx) * a; vz += (cz * s.v - vz) * a; yawT = Math.atan2(-vx, -vz); }
-      } else { vx = vz = 0; }
-      x += vx * dt; z += vz * dt; const rate = (Math.hypot(vx, vz) > 0.2 ? 9 : 5); yw += clampN(angD(yawT, yw), -rate * dt, rate * dt);
-      const v = Math.hypot(vx, vz); pv += (v - pv) * Math.min(1, dt * 12);
-      G.gaitUpdate(g, dt, { x: x * fp, z: z * fp, yaw: yw, v: pv * fv, walking: state === 'walk' || state === 'go' });
+        const gx = tx != null ? tx : x + cx * 50, gz = tz != null ? tz : z + cz * 50, d = Math.hypot(gx - x, gz - z);
+        if (tx != null && S.arrived(P, d)) { arrived = true; P.sp = 0; state = 'stand'; }
+        else { if (P.stopHere && !opts.noStopD) stopD = Math.max(0, d - S.STEER.ARR); const mv = S.steerStep(P, dt, { hT: Math.atan2(-(gx - x), -(gz - z)), want: s.v, d, stop: P.stopHere }); x += -Math.sin(P.yaw) * mv; z += -Math.cos(P.yaw) * mv; yawT = P.yaw; }
+      } else { P.sp = 0; S.turnToward(P, yawT, dt, S.STEER.PIVOT); }
+      const yw = P.yaw, v = P.sp; pv += (v - pv) * Math.min(1, dt * 12);
+      G.gaitUpdate(g, dt, { x: x * fp, z: z * fp, yaw: yw, v: pv * fv, walking: state === 'walk' || state === 'go', stopD });
       const T = G.gaitTargets(g), sol = G.gaitSolve(g, T), lm = landmarks(B, C, sol, { x, z, yaw: yw });
       for (let j = 0; j < lm.length; j++) pos[k * Lc * 3 + j] = +lm[j].toFixed(4);
       root[k * 3] = x; root[k * 3 + 1] = 0; root[k * 3 + 2] = z; yaw[k] = yw; spd[k] = pv; st[k] = state; seg[k] = si; ph[k] = g.phase;

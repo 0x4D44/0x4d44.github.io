@@ -140,6 +140,22 @@ test('setting off: the first heel strike follows the command within 0.8 s and no
   for (const id of PEOPLE) { const rec = new M.Rec(record(id, M.SCEN.startstop().plan)), st = M.analyseStart(rec), sp = M.analyseStop(rec); assert.ok(st.ok && sp.ok);
     assert.ok(st.latency < 0.8 && st.glide < 0.12, `${id} latency ${st.latency} glide ${st.glide}`); assert.ok(sp.slideCm < 1 && sp.finalStagger < 0.05 && sp.settle < 1.3, `${id} stop ${JSON.stringify(sp)}`); }
 });
+test('a planned stop lands the feet where the person will stand: no foot is walked back, the last step is quick, and it is the knowledge of the distance that does it', () => {
+  const backstep = (rec, kS) => { let back = 0; for (const nm of ['heel_l', 'heel_r']) { const S = rec.s(nm); for (let k = kS; k < rec.n; k++) back = Math.max(back, S.z[k] - S.z[kS]); } return back; };   // heading is -z: a heel that gains z is going backwards
+  for (const id of PEOPLE) {
+    const plan = M.SCEN.startstop().plan, told = new M.Rec(record(id, plan)), blind = new M.Rec(record(id, plan, { noStopD: true })), a = M.analyseStop(told), b = M.analyseStop(blind);
+    assert.ok(a.settle < 0.7 && a.finalStagger < 0.04 && a.slideCm < 1, `${id}: ${JSON.stringify(a)}`);
+    assert.ok(backstep(told, a.kStop) < 0.02, `${id}: a foot is walked back ${(backstep(told, a.kStop) * 100).toFixed(1)} cm once the person has arrived`);
+    assert.ok(backstep(blind, b.kStop) > 0.04 || b.settle > a.settle + 0.2, `${id}: without the distance the stop is no better (control): back ${(backstep(blind, b.kStop) * 100).toFixed(1)} cm, settle ${b.settle} vs ${a.settle}`);
+  }
+});
+test('setting off and stopping do not pop the body: no hand moves more in a frame, relative to the pelvis, than it does in the steadiest part of the swing', () => {
+  const step = (rec, k0, k1) => { const P = rec.s('pelvis'); let m = 0; for (const nm of ['hand_l', 'hand_r', 'lowerarm_l', 'lowerarm_r']) { const S = rec.s(nm); for (let k = Math.max(1, k0); k < Math.min(rec.n, k1); k++) m = Math.max(m, Math.hypot(S.x[k] - P.x[k] - (S.x[k - 1] - P.x[k - 1]), S.y[k] - P.y[k] - (S.y[k - 1] - P.y[k - 1]), S.z[k] - P.z[k] - (S.z[k - 1] - P.z[k - 1]))); } return m; };
+  for (const id of PEOPLE) {
+    const rec = new M.Rec(record(id, M.SCEN.startstop().plan)), sp = M.analyseStop(rec), mid = step(rec, Math.round(3.5 / rec.dt), Math.round(6 / rec.dt)), edge = Math.max(step(rec, 0, Math.round(3 / rec.dt)), step(rec, sp.kStop - 30, rec.n));
+    assert.ok(edge < 1.1 * mid, `${id}: the biggest one-frame hand move at the start / stop is ${(edge * 100).toFixed(2)} cm; in the steady swing ${(mid * 100).toFixed(2)} cm`);
+  }
+});
 
 // ------------------------------------------------------------------------------------------------------------------------ the metrics notice flaws
 // a good walk (man_commuter, 1.2 m/s, walking along -z) is spoiled in the recording itself, the way a bad animator or a bad clip would spoil it

@@ -1,7 +1,8 @@
 // How well do the people walk and move, the way the GAME moves them? Records scripted walks through the game's own crowd code (tools/people_motion.html), measures them
 // (js/sim/motion_metrics.mjs) and scores them against research/people-motion-rubric.md.
-//   node tools/people_motion.mjs [--people a,b,c|default|all] [--speeds 0.4,0.8,1.2,1.6,1.9] [--scen steady,startstop,turn,spin] [--gait clip|default]
+//   node tools/people_motion.mjs [--people a,b,c|default|all] [--speeds 0.4,0.8,1.2,1.6,1.9] [--scen steady,startstop,turn,spin] [--gait clip|default] [--detail 0|1]
 //                                [--items] [--worst N] [--json out.json] [--rec DIR] [--film DIR] [--seed N] [--base URL]
+//     --detail 1       record the simplified (LOD1) model the crowd wears beyond ~11 m, not the full-detail one the nearest people have (default 0)
 //     --gait clip      the clip-driven walk the game had before the procedural gait layer (the baseline); default = whatever the game does now
 //     --items          print every sub-metric (mean value and score over the recordings); --worst N the N lowest-scoring recordings, item by item
 //     --rec DIR        keep the raw recordings (landmarks per frame) as JSON, so a reviewer can re-score or plot them
@@ -21,7 +22,7 @@ const flag = (k) => process.argv.includes(k);
 if (flag('--rubric')) { console.log(M.rubricTable()); process.exit(0); }
 const { chromium } = require('playwright');
 const DEFAULT_PEOPLE = ['man_commuter', 'woman_midi', 'boy', 'man_elder', 'girl_school_kilt', 'woman_coat'];
-const GAIT = arg('--gait', 'default'), SEED = +arg('--seed', 1), SPEEDS = arg('--speeds', M.SPEEDS.join(',')).split(',').map(Number), SCENS = arg('--scen', 'steady,startstop,turn,spin').split(',');
+const GAIT = arg('--gait', 'default'), DETAIL = arg('--detail', '0'), SEED = +arg('--seed', 1), SPEEDS = arg('--speeds', M.SPEEDS.join(',')).split(',').map(Number), SCENS = arg('--scen', 'steady,startstop,turn,spin').split(',');
 let PEOPLE = arg('--people', 'default'); const WORST = +arg('--worst', 0);
 let BASE = arg('--base', null), server = null;
 if (!BASE) { const port = 8330 + Math.floor(Math.random() * 60); server = spawn('python3', ['-m', 'http.server', String(port), '--directory', root], { stdio: 'ignore' }); BASE = `http://localhost:${port}`; await new Promise((r) => setTimeout(r, 1200)); }
@@ -30,7 +31,7 @@ let exit = 0;
 try {
   const page = await browser.newPage({ viewport: { width: 300, height: 400 } });
   page.on('pageerror', (e) => console.log('pageerror', String(e).slice(0, 300)));
-  await page.goto(`${BASE}/glasgow-subway/tools/people_motion.html?gait=${GAIT}`);
+  await page.goto(`${BASE}/glasgow-subway/tools/people_motion.html?gait=${GAIT}&detail=${DETAIL}`);
   await page.waitForFunction('window.__ready', null, { timeout: 300000 });
   const err = await page.evaluate('window.__err'); if (err) throw new Error('load: ' + err);
   const ids = await page.evaluate('window.__ids');
