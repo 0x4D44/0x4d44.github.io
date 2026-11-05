@@ -393,3 +393,29 @@ for (const [file, ratio] of [['people.glb', 0.6], ['people_lod.glb', 0.7]]) {
     }
   });
 }
+
+test('adverts: each poster quad gets its own atlas cell, inside the gutter, keeping its U reversal', async () => {
+  const { mapAdvertQuads, advertOrder, ADVERT_CELLS } = await import('./adverts.js');
+  // three wall posters on the -x wall, wound like the generator's: U runs backwards (0.25 -> 0) along +z
+  const P = [], U = [], I = [];
+  for (let k = 0; k < 3; k++) {
+    const z = k * 8, b = P.length / 3;
+    P.push(-5, 1, z, -5, 1, z + 0.9, -5, 2.3, z + 0.9, -5, 2.3, z);
+    U.push(0.25, 0.25, 0, 0.25, 0, 0, 0.25, 0);
+    I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(I);
+  const order = advertOrder('govan');
+  assert.equal(new Set(order).size, ADVERT_CELLS);
+  assert.notDeepEqual(order, advertOrder('hillhead'));
+  assert.equal(mapAdvertQuads(g, order), 3);
+  const uv = g.attributes.uv, cells = new Set();
+  for (let k = 0; k < 3; k++) {
+    const c = order[k], u0 = (c % 4) / 4, v0 = Math.floor(c / 4) / 4, a = k * 4;
+    for (let j = 0; j < 4; j++) { const u = uv.getX(a + j), v = uv.getY(a + j); assert.ok(u > u0 && u < u0 + 0.25 && v > v0 && v < v0 + 0.25, `quad ${k} vertex ${j} outside cell ${c}`); }
+    assert.ok(uv.getX(a) > uv.getX(a + 2), 'U still runs backwards along the wall');
+    cells.add(Math.floor(uv.getX(a) * 4) + 4 * Math.floor(uv.getY(a) * 4));
+  }
+  assert.equal(cells.size, 3);
+});
