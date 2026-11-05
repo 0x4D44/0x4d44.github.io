@@ -375,6 +375,43 @@ export function trimWebbing(THREE, root) {
   return stats.dropped ? stats : null;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Stiff shoes.
+// A shoe bends at the ball of the foot and nowhere else. The authored skin weights smear that one bend over the whole toe box (the front of the sole is
+// ~60 % toe bone and ~40 % foot bone), which does no harm while the toes hardly move - but a stride's push-off bends the toe joint 50-70 degrees with the heel
+// in the air, and a toe box that is half carried by the foot then dips 7-10 mm below the floor the toe bone is standing on (measured on the rendered mesh, tools/people_motion.mjs).
+// Re-weighting the vertices that only the foot and the toe bone carry to a narrow blend about the ball joint (all foot behind it, all toe bone ahead of it) turns the shoe
+// into the two rigid parts and the hinge the gait plants: the dip falls to 3-5 mm. Patches each shared geometry once. Returns { meshes, verts } or null when there is no shoe to fit.
+const SHOE = /shoe|boot|sneaker/i;
+export function fitShoes(THREE, root, o = {}) {
+  const half = o.blend == null ? 0.02 : o.blend, stats = { meshes: 0, verts: 0 };
+  root.updateMatrixWorld(true);
+  root.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.geometry || !m.skeleton || !m.geometry.attributes.skinIndex || !m.geometry.attributes.skinWeight) return;
+    if (!SHOE.test((m.material && m.material.name) || m.name)) return;
+    const g = m.geometry, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, P = g.attributes.position;
+    if (g.userData.shoeFit == null) {
+      const names = m.skeleton.bones.map((b) => b.name.replace(/_\d+$/, '')), side = {}, v = new THREE.Vector3();
+      for (const s of ['l', 'r']) {
+        const fi = names.indexOf('foot_' + s), bi = names.indexOf('ball_' + s); if (fi < 0 || bi < 0) continue;
+        const a = m.skeleton.bones[fi].getWorldPosition(new THREE.Vector3()), b = m.skeleton.bones[bi].getWorldPosition(new THREE.Vector3());
+        side[fi] = side[bi] = { fi, bi, ball: b, ax: new THREE.Vector3(b.x - a.x, 0, b.z - a.z).normalize() };   // ax: along the foot, heel to toe, level
+      }
+      let n = 0;
+      for (let i = 0; i < P.count; i++) {
+        const idx = []; for (let c = 0; c < 4; c++) if (SW.getComponent(i, c) > 1e-4) idx.push(SI.getComponent(i, c));
+        const S = side[idx[0]]; if (!S || idx.some((k) => side[k] !== S)) continue;   // only vertices that one foot and its toe bone carry between them
+        m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld);
+        const t = ((v.x - S.ball.x) * S.ax.x + (v.z - S.ball.z) * S.ax.z) / half, u = Math.max(0, Math.min(1, 0.5 + 0.5 * t)), wb = u * u * (3 - 2 * u);   // 0 behind the ball joint, 1 ahead of it
+        SI.setXYZW(i, S.fi, S.bi, 0, 0); SW.setXYZW(i, 1 - wb, wb, 0, 0); n++;
+      }
+      g.userData.shoeFit = n; SI.needsUpdate = true; SW.needsUpdate = true;
+    }
+    if (g.userData.shoeFit) { stats.meshes++; stats.verts += g.userData.shoeFit; }
+  });
+  return stats.verts ? stats : null;
+}
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Arms kept out of the body.

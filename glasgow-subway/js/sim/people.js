@@ -1,6 +1,6 @@
 // Instanced low-poly people (platform crowd, boarding/alighting streams).
 import { mulberry32, clamp } from './util.js';
-import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
+import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
 import { ARM_OUT, ARM_DROP } from './armfit.js';
 import * as G from './gait.js';
 import { readBody, GaitRig } from './gait_three.js';
@@ -150,7 +150,8 @@ export class AnimCrowd {
       const legs = skirted ? fitLegs(THREE, c.node) : null, legsLod = skirted && c.lodNode ? fitLegs(THREE, c.lodNode, { radii: legs && legs.radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
       const trim = skirted ? trimUnderSkirt(THREE, c.node) : null, trimLod = skirted && c.lodNode ? trimUnderSkirt(THREE, c.lodNode) : null;   // tops: nothing drawn under the skirt's waist edge
       const web = trimWebbing(THREE, c.node), webLod = c.lodNode ? trimWebbing(THREE, c.lodNode) : null;   // the simplified body has a few triangles joining a hand to a thigh
-      this.fit[c.id] = { hair: h, hairLod: hl, legs, legsLod, trim, trimLod, web, webLod };
+      const shoes = fitShoes(THREE, c.node);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
+      this.fit[c.id] = { hair: h, hairLod: hl, legs, legsLod, trim, trimLod, web, webLod, shoes };
     }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)

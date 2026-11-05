@@ -1,11 +1,13 @@
 // How well do the people walk and move, the way the GAME moves them? Records scripted walks through the game's own crowd code (tools/people_motion.html), measures them
 // (js/sim/motion_metrics.mjs) and scores them against research/people-motion-rubric.md.
 //   node tools/people_motion.mjs [--people a,b,c|default|all] [--speeds 0.4,0.8,1.2,1.6,1.9] [--scen steady,startstop,turn,spin] [--gait clip|default] [--detail 0|1]
-//                                [--items] [--worst N] [--json out.json] [--rec DIR] [--film DIR] [--seed N] [--base URL]
+//                                [--items] [--worst N] [--json out.json] [--rec DIR] [--film DIR] [--seed N] [--base URL] [--no-mesh]
 //     --detail 1       record the simplified (LOD1) model the crowd wears beyond ~11 m, not the full-detail one the nearest people have (default 0)
 //     --gait clip      the clip-driven walk the game had before the procedural gait layer (the baseline); default = whatever the game does now
 //     --items          print every sub-metric (mean value and score over the recordings); --worst N the N lowest-scoring recordings, item by item
 //     --rec DIR        keep the raw recordings (landmarks per frame) as JSON, so a reviewer can re-score or plot them
+//     --no-mesh        do not record the lowest point of the RENDERED shoes (shoeY). By default every frame records it, and GRD.sink / GRD.float / GRD.flight judge that instead of the
+//                      gait's own foot landmarks (a walker cannot mark its own homework: see the rubric's Revisions). Without it they fall back to the landmarks.
 //     --film DIR       side / front / top filmstrips of one stride at 1.2 m/s per person, as PNG
 //     --rubric         print the rubric table and exit
 // Serves the repo root with python3 -m http.server unless --base is given. Needs Playwright (like tools/people_holes.mjs).
@@ -37,7 +39,7 @@ try {
   const ids = await page.evaluate('window.__ids');
   PEOPLE = PEOPLE === 'all' ? ids : PEOPLE === 'default' ? DEFAULT_PEOPLE.filter((p) => ids.includes(p)) : PEOPLE.split(',');
   const recDir = arg('--rec', null); if (recDir) fs.mkdirSync(recDir, { recursive: true });
-  const record = async (id, spec, tag) => { const raw = await page.evaluate((s) => window.__run(s), { id, plan: spec.plan, seed: SEED }); if (recDir) fs.writeFileSync(path.join(recDir, `${id}_${tag}.json`), JSON.stringify(raw)); return new M.Rec(raw); };
+  const record = async (id, spec, tag) => { const raw = await page.evaluate((s) => window.__run(s), { id, plan: spec.plan, seed: SEED, mesh: !flag('--no-mesh') }); if (recDir) fs.writeFileSync(path.join(recDir, `${id}_${tag}.json`), JSON.stringify(raw)); return new M.Rec(raw); };
   const results = { steady: {}, trans: {}, gait: GAIT, people: PEOPLE, speeds: SPEEDS }, t0 = Date.now();
   for (const id of PEOPLE) {
     results.steady[id] = {}; results.trans[id] = {};
