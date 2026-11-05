@@ -12,8 +12,8 @@ export const RAT = {
   startle: 1.9,          // a person this close (plan view) sends it bolting
   trainClear: 24,        // seconds of quiet needed before a rat is let out onto a track
   trainBolt: 14,         // ...and the timer below which everything on that track bolts
-  trot: 2.5, bolt: 4.6,  // m/s
-  stride: 0.34,          // metres per full gait cycle
+  trot: 1.0, bolt: 2.8,  // m/s: a brown rat potters about at around 1 m/s and sprints at 2.5-3 (these were 2.5 and 4.6: 16 km/h, legs a blur)
+  accelUp: 9, accelDown: 14,   // m/s^2 at most: a rat is quick off the mark, not instant
   maxLive: 3,
   K: 1.0,                // overall scale (a big brown rat: ~0.30 m head-and-body, ~0.20 m tail - a little large, so it reads from the platform)
 };
@@ -34,6 +34,8 @@ const RINGS = [
 const SIDES = 8, TAIL_SEG = 0.04, TAIL_T = [0.010, 0.0085, 0.007, 0.0055, 0.004];
 const BACK = [0.34, 0.25, 0.18], BELLY = [0.60, 0.51, 0.43], NOSE = [0.72, 0.52, 0.50], EAR = [0.74, 0.55, 0.55], SKIN = [0.64, 0.50, 0.47];
 const lerp = (a, b, t) => a + (b - a) * t, clamp01 = (t) => Math.max(0, Math.min(1, t));
+/** metres covered per full leg cycle at ground speed v: short quick steps when it potters, a long bound when it bolts - about 4 cycles a second at a trot, 7 flat out */
+export const strideAt = (v) => 0.15 + 0.09 * Math.max(0, v);
 const wrapPi = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 
 /** the three shared geometries: body (lofted, with ears and eyes), a leg+foot hanging from its hip, and one unit tail segment running back along -z */
@@ -165,21 +167,22 @@ export class Rats {
           }
         }
       } else if (r.state === 'bolt') want = RAT.bolt * (0.95 + 0.1 * Math.sin(r.age * 9 + r.seed));
-      // motion: quick to start, quick to stop
-      r.speed += (want - r.speed) * Math.min(1, dt * (want > r.speed ? 9 : 16)); if (want === 0 && r.speed < 0.05) r.speed = 0;
+      // motion: quick to start, quicker to stop, but never instant
+      { const up = want > r.speed, lim = (up ? RAT.accelUp : RAT.accelDown) * dt, dv = (want - r.speed) * Math.min(1, dt * (up ? 6 : 10)); r.speed += Math.max(-lim, Math.min(lim, dv)); }
+      if (want === 0 && r.speed < 0.05) r.speed = 0;
       r.z += r.dir * r.speed * dt;
-      const wob = 0.035 * Math.sin(r.age * 5.3 + r.seed), vlat = 0.035 * 5.3 * Math.cos(r.age * 5.3 + r.seed) * Math.min(1, r.speed / 1.2);
-      r.x = r.lane + wob * Math.min(1, r.speed / 1.2);
-      let yawT = Math.atan2(vlat, r.dir * Math.max(r.speed, 0.6));
+      const wob = 0.035 * Math.sin(r.age * 5.3 + r.seed), vlat = 0.035 * 5.3 * Math.cos(r.age * 5.3 + r.seed) * Math.min(1, r.speed / 0.8);
+      r.x = r.lane + wob * Math.min(1, r.speed / 0.8);
+      let yawT = Math.atan2(vlat, r.dir * Math.max(r.speed, 0.4));
       if (r.state === 'sniff') yawT = (r.dir > 0 ? 0 : Math.PI) + 0.7 * Math.sin(r.age * 2.3 + r.seed);      // head swinging about while it sniffs
       r.yaw += wrapPi(yawT - r.yaw) * Math.min(1, dt * (r.state === 'sniff' ? 6 : 14));
       // gait
-      const moving = r.speed > 0.15; if (moving) r.phase += (Math.PI * 2 * r.speed * dt) / RAT.stride;
-      const amp = 0.95 * Math.min(1, r.speed / 1.6);
+      const moving = r.speed > 0.15; if (moving) r.phase += (Math.PI * 2 * r.speed * dt) / strideAt(r.speed);
+      const amp = Math.min(1.05, 0.45 + 0.25 * r.speed) * Math.min(1, r.speed / 0.4);   // small steps when it potters, long reaches flat out
       r.legs[0].rotation.x = Math.sin(r.phase) * amp; r.legs[3].rotation.x = Math.sin(r.phase) * amp;
       r.legs[1].rotation.x = Math.sin(r.phase + Math.PI) * amp; r.legs[2].rotation.x = Math.sin(r.phase + Math.PI) * amp;
-      const sn = r.state === 'sniff' ? 1 : 0, bob = moving ? Math.abs(Math.sin(r.phase)) * 0.007 * Math.min(1, r.speed / 1.6) : 0;
-      r.pitch += ((sn ? 0.16 + 0.1 * Math.sin(r.age * 17 + r.seed) : -0.04 * Math.min(1, r.speed / 2) + Math.sin(r.phase * 2) * 0.05 * Math.min(1, r.speed / 1.6)) - r.pitch) * Math.min(1, dt * 12);
+      const sn = r.state === 'sniff' ? 1 : 0, bob = moving ? Math.abs(Math.sin(r.phase)) * 0.007 * Math.min(1, r.speed / 1.0) : 0;
+      r.pitch += ((sn ? 0.16 + 0.1 * Math.sin(r.age * 17 + r.seed) : -0.04 * Math.min(1, r.speed / 1.5) + Math.sin(r.phase * 2) * 0.05 * Math.min(1, r.speed / 1.0)) - r.pitch) * Math.min(1, dt * 12);
       r.body.position.y = bob; r.body.rotation.x = r.pitch;
       const tw = moving ? 8 + r.speed * 1.2 : 2.4;
       for (let k = 0; k < r.tail.length; k++) { r.tail[k].rotation.y = (moving ? 0.16 + 0.05 * k : 0.22 + 0.06 * k) * Math.sin(r.age * tw - k * 0.9); r.tail[k].rotation.x = k ? 0.05 : -0.1; }

@@ -384,9 +384,10 @@ try {
     let n = 0; while (s.shuttle.state !== 'wait' && n++ < 8000) { s.tick(0.1); s.sync(0.05); }
     { const inf = s.activeStation.info; s.walker.place((inf.xe + inf.xo) / 2, -12, 0); s.tick(0.05); s.sync(0.05); }   // mid-platform, far from the +z tunnel the test rats come out of
     const quiet = () => { s.shuttle.state = 'wait'; s.shuttle.timer = 400; if (s.bg && s.bg.sh) { s.bg.sh.state = 'wait'; s.bg.sh.timer = 400; s.bg.mode = 'shuttle'; } };
-    quiet(); R.clear(); R.gap = 1e9; const r = R.spawn(0, 1); const seen = new Set(); let bad = 0, t = 0;
-    while (R.rats.includes(r) && t < 120) { quiet(); s.tick(0.05); s.sync(0.05); t += 0.05; seen.add(r.state); if (![r.x, r.z, r.yaw, r.speed].every(isFinite) || Math.abs(r.x) > 6 || Math.abs(r.z) > 34) bad++; }
-    out.life = { seen: [...seen], gone: !R.rats.includes(r), t: +t.toFixed(1), bad };
+    quiet(); R.clear(); R.gap = 1e9; const r = R.spawn(0, 1); const seen = new Set(); let bad = 0, t = 0, vmax = 0, vrun = 0, amax = 0, prevV = 0, prevSt = '';
+    while (R.rats.includes(r) && t < 120) { quiet(); s.tick(0.05); s.sync(0.05); t += 0.05; seen.add(r.state); if (![r.x, r.z, r.yaw, r.speed].every(isFinite) || Math.abs(r.x) > 6 || Math.abs(r.z) > 34) bad++;
+      vmax = Math.max(vmax, r.speed); if (r.state === 'run') vrun = Math.max(vrun, r.speed); if (r.state === prevSt) amax = Math.max(amax, Math.abs(r.speed - prevV) / 0.05); prevV = r.speed; prevSt = r.state; }
+    out.life = { seen: [...seen], gone: !R.rats.includes(r), t: +t.toFixed(1), bad }; out.pace = { vrun: +vrun.toFixed(2), vmax: +vmax.toFixed(2), amax: +amax.toFixed(1) };
     // the scheduler lets a visit happen now and then while the tracks are quiet (and never twice at once beyond a pair)
     R.clear(); R.gap = 5; const v0 = R.stats.spawned; let maxLive = 0; for (let i = 0; i < 4000; i++) { quiet(); s.tick(0.1); s.sync(0.1); maxLive = Math.max(maxLive, R.rats.length); }
     out.visits = R.stats.spawned - v0; out.maxLive = maxLive;
@@ -401,6 +402,7 @@ try {
     return out;
   });
   ok('a rat runs out of a tunnel, sniffs about, bolts back into the tunnel and is gone (no NaN, stays in the pit)', rat.life.gone && rat.life.seen.includes('sniff') && rat.life.seen.includes('bolt') && rat.life.bad === 0, JSON.stringify(rat.life));
+  ok('rats move at a rat\'s speeds: pottering at most 1.3 m/s, flat out at most 3 m/s (they were 2.5 and 4.7), never starting or stopping faster than 15 m/s^2', rat.pace.vrun <= 1.31 && rat.pace.vmax <= 3.05 && rat.pace.vmax >= 2 && rat.pace.amax <= 15, JSON.stringify(rat.pace));
   ok('rats visit now and then while the tracks are quiet (>=3 visits in 400 s, at most 3 out at once)', rat.visits >= 3 && rat.maxLive <= 3, `visits=${rat.visits} maxLive=${rat.maxLive}`);
   ok('no rat is ever on a track while its train is in the station or within 60 m of it', rat.viol === 0 && rat.trains >= 2, `viol=${rat.viol} trains=${rat.trains} ${rat.worst}`);
   await p.close();
