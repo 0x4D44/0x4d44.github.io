@@ -15,7 +15,7 @@ export const CONTACT_M = 0.008;                                 // a sole point 
 export const SPEEDS = [0.4, 0.8, 1.2, 1.6, 1.9];            // steady walks (m/s)
 export const NORMAL = [0.8, 1.2, 1.6];                      // the everyday range the kinematic categories are judged at
 export const SCEN = {
-  steady: (v) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: [7, 14] }),
+  steady: (v) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: v < 0.6 ? [3.5, 14] : [7, 14] }),   // a slow walk needs a longer window to hold the three strides the repeatability item wants
   startstop: () => ({ plan: [{ dur: 1.2, v: 0, state: 'stand' }, { dur: 7.0, v: 1.2, state: 'walk', to: 6.5 }, { dur: 2.5, v: 0 }], win: [0, 10.7] }),
   turn: (deg) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 5.0, v: 1.2, state: 'walk' }, { dur: 4.0, v: 1.2, turn: deg }], win: [6, 10] }),
   spin: (deg) => ({ plan: [{ dur: 1.5, v: 0, state: 'stand' }, { dur: 3.5, v: 0, turn: deg }], win: [1.5, 5] }),
@@ -139,7 +139,7 @@ export function analyseSteady(rec, win) {
     J['knee_' + s] = J['thigh_' + s].map((t, i) => t - J['shank_' + s][i]);
     J['arm_' + s] = Array.from(ua.f, (f, i) => sagAng(f, ua.u[i])); J['fore_' + s] = Array.from(fa.f, (f, i) => sagAng(f, fa.u[i]));
     J['elbow_' + s] = J['fore_' + s].map((t, i) => t - J['arm_' + s][i]);
-    const hp = P('heel_' + s), tp = P('toe_' + s);   // the sole: toes up = +
+    const hp = P('heel_' + s), tp = P('bs_' + s);   // the rigid foot, heel to ball of the foot, toes up = + (the toes bend separately at push-off: heel to toe TIP would read a heel that is 60 degrees up as 30)
     J['pitch_' + s] = Array.from(hp.f, (f, i) => Math.atan2(tp.y[i] - hp.y[i], tp.f[i] - f) * DEG);
     J['ankle_' + s] = Array.from(fk.f, (f, i) => Math.atan2(f, fk.u[i]) * DEG + J['pitch_' + s][i]);   // shank lean + sole pitch: 0 standing, + dorsiflexion
   }
@@ -170,10 +170,10 @@ export function analyseSteady(rec, win) {
     a.head = { pitchPP: pp(ens(pitch).mean), rollPP: pp(ens(roll).mean), yawPP: pp(ens(yaw).mean), pitchMean: mean(pitch), yawMean: Math.abs(mean(yaw)) }; }
   // ---- smoothness
   { const hf = (x) => { const m = x.length, mu = mean(x); let hi = 0, tot = 0; for (let f = 1; f < m / 2; f++) { let c = 0, s = 0; for (let i = 0; i < m; i++) { const w = 2 * Math.PI * f * i / m; c += (x[i] - mu) * Math.cos(w); s += (x[i] - mu) * Math.sin(w); } const p = c * c + s * s; tot += p; if (f / (m * dt) > 6) hi += p; } return tot > 0 ? 100 * hi / tot : 0; };
-    const keys = Object.keys(J).filter((k) => !/^(pitch|ankle)_/.test(k)); let rate = 0; for (const k of keys) for (let i = 1; i < J[k].length; i++) rate = Math.max(rate, Math.abs(J[k][i] - J[k][i - 1]) / dt);
+    const keys = Object.keys(J).filter((k) => !/^(pitch|ankle)_/.test(k)); let rate = 0, rateKey = '', rateAt = 0; for (const k of keys) for (let i = 1; i < J[k].length; i++) { const r = Math.abs(J[k][i] - J[k][i - 1]) / dt; if (r > rate) { rate = r; rateKey = k; rateAt = i; } }
     const rep = []; for (const k of ['thigh_l', 'knee_l', 'arm_l', 'elbow_l']) { const e = E[k]; if (e.cycles.length < 3) continue; const r = pp(e.mean) || 1; for (let c = 1; c < e.cycles.length; c++) rep.push(100 * rms(e.cycles[c].map((v, i) => v - e.cycles[c - 1][i])) / r); }
     let jump = 0; for (const nm of ['hand_l', 'hand_r', 'foot_l', 'foot_r', 'head', 'calf_l', 'calf_r']) { const S = rec.s(nm); for (let k = k0 + 1; k < k1; k++) jump = Math.max(jump, Math.hypot(S.x[k] - S.x[k - 1] - (rec.root[k * 3] - rec.root[(k - 1) * 3]), S.y[k] - S.y[k - 1], S.z[k] - S.z[k - 1] - (rec.root[k * 3 + 2] - rec.root[(k - 1) * 3 + 2]))); }
-    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100 }; }
+    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100 }; }
   return a;
 }
 
