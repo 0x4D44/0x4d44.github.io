@@ -17,12 +17,12 @@ import { buildStreet } from './street.js';
 import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
 import { cutStairHoles } from './stairs.js';
 import { Rats } from './rats.js';
+import { Fleet, measureCycle, advanceToLap } from './fleet.js';
 import { peopleVariants } from './kit.js';
 
 // Explore-mode shuttle timing (shared by both circles; the platform indicator boards and the HUD count down to the same clock)
 const ARRIVE_S = 31;    // seconds from a train appearing 220 m out to standing in the platform (measured: 30.7-31.3 s at every station)
 const CLEAR_TAIL = 70;  // a departed train keeps running until its tail is this far (m) past the station centre - ~43 m inside the bore, out of sight - and only then is recycled
-const LEAVE_S = 15;     // roughly how long that takes: the next-train countdown starts this much earlier so the wait after the train is recycled stays the same
 
 export function simAvailable() {
   try { return typeof WebGLRenderingContext !== 'undefined' && typeof document !== 'undefined'; } catch (e) { return false; }
@@ -47,7 +47,8 @@ class Sim {
     this.keys = new Set(); this.line = ctx.line === 'inner' ? 'inner' : 'outer'; this.diffId = ctx.difficulty || 'standard';
     this.sel = { mode: ctx.mode || 'drive', station: ctx.startStation || this.stations[0].id, line: this.line, diff: this.diffId };
     this.tracks = {}; this.stationViews = new Map(); this.time = 0; this.alightNext = false;
-    this.shuttle = { state: 'none', t: 0, idx: 0, headway: 70 };
+    this.shuttle = { state: 'none', t: 0, idx: 0 };
+    this.fleet = null; this.fleetKey = null; this.fleetSeed = ctx.fleetSeed != null ? ctx.fleetSeed : (Math.random() * 1e9) >>> 0;   // the numbered units (fleet.js)
     this.fadeLock = false; this.timeScale = 1; this.ctxKind = 'train'; this.bobT = 0;
     this._v = {}; this.errors = [];
   }
@@ -223,7 +224,7 @@ class Sim {
       const rt = baselineRunTimes(track, this.stock, this.stations);
       const dw = track.stops.map((s) => s.dwellS);
       const schedule = buildSchedule(rt, dw, 1.06, 0);
-      rec = this.tracks[line] = { line, track, schedule, runTimes: rt, svc: null, view: null, layouts: null, dock: null, mode: 'free', sh: { state: 'none', timer: 0, t: 0 } };
+      rec = this.tracks[line] = { line, track, schedule, runTimes: rt, svc: null, view: null, layouts: null, dock: null, mode: 'free', sh: { state: 'none', timer: 0, t: 0 }, unit: null };
     }
     return rec;
   }
@@ -264,7 +265,7 @@ class Sim {
   }
   setupLine(line, startIdx = 0) {
     this.line = line;
-    const rec = this._rec(line);
+    const rec = this._rec(line); this._ensureFleet();
     this.track = rec.track; this.schedule = rec.schedule;
     this.trainView = this._viewFor(line); rec.view = this.trainView;
     this._applyTrack();
@@ -295,39 +296,78 @@ class Sim {
     return svc;
   }
 
+  // ------------------------------------------------------------------ the numbered fleet (fleet.js)
+  /** The roster: 17 units (301-317), six on each circle, a lap measured from the real service on the real track (so the numbers on the boards, the trains and the lap time agree).
+   *  Rebuilt when the difficulty changes (the brake lag does), keeping the clock. */
+  _ensureFleet() {
+    const diff = this.sel.diff || this.diffId; if (this.fleet && this.fleetKey === diff) return this.fleet;
+    const cycles = {};
+    for (const line of ['outer', 'inner']) {
+      const rec = this._rec(line);
+      cycles[line] = measureCycle(new Service({ track: rec.track, stock: this.stock, stations: this.stations, difficulty: diff, startIdx: 0, lineKey: line, platformLen: 45, ato: true, autoDoors: true, seed: 7 + (line === 'inner' ? 100 : 0) }));
+    }
+    const old = this.fleet; this.fleet = new Fleet(cycles, { seed: this.fleetSeed, now: old ? old.clock : 0 }); this.fleetKey = diff;
+    return this.fleet;
+  }
+  /** a circle's train is this numbered unit (null: none on show) - its plates are repainted */
+  _setUnit(rec, unit) { rec.unit = unit == null ? null : unit; if (rec.view && rec.view.setUnit) rec.view.setUnit(rec.unit); }
+  /** the real train stopped at (or left) stop `idx`: keep its unit's place in the roster in step with it (the ring slips by the difference) */
+  _anchorUnit(rec, kind, idx, t) { if (this.fleet && rec && rec.unit != null) this.fleet.anchor(rec.line, rec.unit, idx, kind, t); }
+  /** the next train due at stop `idx` of a circle that is not yet in the platform: its unit and the seconds until it stands there */
+  _nextDue(line, idx) { const nx = this.fleet && this.fleet.nextArriving(line, idx); return nx ? { unit: nx.unit, eta: nx.eta } : { unit: null, eta: 90 }; }
+  /** which unit the player's train is when a session starts: explore - the one the roster has due next (enterExplore puts it ~200 m out); ride/drive - a unit standing in the platform */
+  _seatPlayer(mode, idx) {
+    const f = this.fleet, rec = this.tracks[this.line], ring = f.ring(this.line);
+    if (mode === 'explore') { ring.alignNext(idx, f.clock, ARRIVE_S - 3); const nx = ring.nextArriving(idx, f.clock); this._setUnit(rec, nx ? nx.unit : null); }
+    else { const u = ring.units[0], since = mode === 'drive' ? Math.max(0, this.svc.stop.dwellS - 10) : 0; f.anchor(this.line, u, idx, 'arrive', f.clock - since); this._setUnit(rec, u); }
+  }
+
   // ------------------------------------------------------------------ the other circle
-  /** (re)start the other circle's train. explore: it comes and goes on its own headway; otherwise it free-runs its timetable (both trains standing in this station at the start) */
+  /** (re)start the other circle's train. explore: it comes and goes as the roster says; otherwise it free-runs (both trains standing in this station at the start) */
   _bgReset(mode) {
     const rec = this.bg; if (!rec || !this.svc) return;
     const stId = this.svc.stop.station; let idx = rec.track.stops.findIndex((x) => x.station === stId); if (idx < 0) idx = 0;
     rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null; this._wireBg(rec);
-    if (mode === 'explore') { rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 6 + Math.random() * 30, t: 0 }; rec.view.root.visible = false; }
-    else { rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 }; rec.svc.dwellT = Math.random() * 10; rec.view.root.visible = true; }
+    const f = this.fleet, ring = f.ring(rec.line);
+    if (mode === 'explore') {
+      rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 0, t: 0 }; rec.view.root.visible = false; this._setUnit(rec, null);
+      const nx = ring.nextArriving(idx, f.clock); if (nx && nx.eta < ARRIVE_S + 8) ring.alignNext(idx, f.clock, ARRIVE_S + 8 + Math.random() * 25);   // a train needs ARRIVE_S to come in from the bore
+    } else {
+      rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 }; rec.svc.dwellT = Math.random() * 10; rec.view.root.visible = true;
+      const u = ring.units[0]; f.anchor(rec.line, u, idx, 'arrive', f.clock - rec.svc.dwellT); this._setUnit(rec, u);
+    }
   }
   _bgStopIdx(stationId) { return Math.max(0, this.bg.track.stops.findIndex((x) => x.station === stationId)); }
-  /** the player stepped off at a station: the other circle's train now comes and goes there */
+  /** the player stepped off at a station: the other circle's trains now come and go there on the roster's times */
   _bgToShuttle() {
     const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId);
     rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null; this._wireBg(rec);
-    rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 5 + Math.random() * 20, t: 0 }; rec.view.root.visible = false;
+    rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 0, t: 0 }; rec.view.root.visible = false; this._setUnit(rec, null);
+    const f = this.fleet, ring = f.ring(rec.line), nx = ring.nextArriving(idx, f.clock); if (nx && nx.eta < ARRIVE_S + 4) ring.alignNext(idx, f.clock, ARRIVE_S + 4 + Math.random() * 20);
   }
-  /** the player boarded: the other circle's train (wherever it is) resumes its timetable */
+  /** the player boarded: the other circle's train resumes its run. If it is not on show, the unit the roster has due next at this station is put exactly where the roster has it on its lap. */
   _bgToFree() {
-    const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId), sh = rec.sh;
-    if (sh.state === 'wait' || sh.state === 'none') { rec.svc.placeApproaching(idx, 260 + Math.random() * 500, 12); rec.view.root.visible = true; }
+    const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId), sh = rec.sh, f = this.fleet, ring = f.ring(rec.line);
+    if (sh.state === 'wait' || sh.state === 'none') {
+      const nx = ring.nextArriving(idx, f.clock);
+      if (nx) {
+        const svc = this._newServiceFor(rec, 0, { ato: true, autoDoors: true }); advanceToLap(svc, f.cycles[rec.line], ring.lapTime(nx.unit, f.clock));
+        rec.svc = svc; rec.dock = null; this._wireBg(rec); this._setUnit(rec, nx.unit); rec.view.root.visible = true;
+      }
+    }
     rec.svc.ato = true; rec.svc.autoDoors = true; rec.svc.schedule = rec.schedule; rec.svc.t0 = rec.svc.t - rec.schedule.arr[rec.svc.idx];
     rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 };
   }
-  /** explore: the other circle's train arrives, dwells (doors open on its platform) and leaves, on its own random headway */
+  /** explore: the other circle's train arrives, dwells (doors open on its platform) and leaves, as the roster says (its countdown is the roster's, so it only ever falls) */
   _bgShuttle(dt) {
     const rec = this.bg, sh = rec.sh, svc = rec.svc, idx = this._bgStopIdx(this.track.stops[this.exploreIdx].station);
+    if (sh.state === 'wait' || sh.state === 'leaving') { const d = this._nextDue(rec.line, idx); sh.timer = d.eta - ARRIVE_S; sh.due = d.unit; }
     if (sh.state === 'wait') {
-      sh.timer -= dt;
-      if (sh.timer <= 0) { svc.schedule = null; svc.placeApproaching(idx, 220, 9); svc.ato = true; svc.autoDoors = true; svc._autoOpened = false; svc._autoClosed = false; rec.view.root.visible = true; sh.state = 'arriving'; sh.arrT = 0; }
+      if (sh.timer <= 0) { this._setUnit(rec, sh.due); svc.schedule = null; svc.placeApproaching(idx, 220, 9); svc.ato = true; svc.autoDoors = true; svc._autoOpened = false; svc._autoClosed = false; rec.view.root.visible = true; sh.state = 'arriving'; sh.arrT = 0; }
     } else if (sh.state === 'arriving') { sh.arrT = (sh.arrT || 0) + dt; if (svc.phase === 'station') sh.state = 'dwell'; }
-    else if (sh.state === 'dwell') { if (svc.phase !== 'station') { sh.state = 'leaving'; sh.t = 0; sh.timer = LEAVE_S + this.shuttle.headway * (0.7 + Math.random() * 0.5); } }   // the next train's countdown starts the moment this one leaves
+    else if (sh.state === 'dwell') { if (svc.phase !== 'station') { sh.state = 'leaving'; sh.t = 0; } }   // the next train's countdown is the roster's: it is already running
     else if (sh.state === 'leaving') {   // the train runs on into the bore and is only recycled once its tail is out of sight (never while it is still in the platform)
-      sh.t += dt; sh.timer -= dt;
+      sh.t += dt;
       if (this._tailPast(rec, idx) > CLEAR_TAIL || sh.t > 45) { rec.view.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
     }
   }
@@ -396,7 +436,7 @@ class Sim {
     return this._doorSound(tv, own, open, side);
   }
   /** the other circle's train (not the player's): its doors are heard from where you stand */
-  _wireBg(rec) { const svc = rec.svc; svc.on((t, d) => { if (t === 'doors' && svc !== this.svc) this._svcDoors(svc, rec.view, false, d); }); }
+  _wireBg(rec) { const svc = rec.svc; svc.on((t, d) => { if (t === 'doors' && svc !== this.svc) this._svcDoors(svc, rec.view, false, d); else if (t === 'arrive' && svc !== this.svc && (rec.mode !== 'shuttle' || rec.sh.state === 'arriving')) this._anchorUnit(rec, 'arrive', d.idx); }); }   // (a hidden shuttle train, running on unseen, must not slip the roster)
 
   _onSvc(type, d) {
     if (type === 'toast') this.hud.toast(d.text, d.kind, 3);
@@ -410,9 +450,10 @@ class Sim {
     } else if (type === 'arrive') {
       if (this.mode === 'ride') this._announce(`This is ${this.svc.station.name}. Please mind the gap.`);
       if (this.mode === 'drive') { this.hud.toast(`${d.label}  ${d.err >= 0 ? '+' : ''}${d.err.toFixed(2)} m  (+${d.score})`, d.score >= 75 ? 'info' : 'warn', 4); }
+      if (this.mode !== 'explore' || this.shuttle.state === 'arriving') this._anchorUnit(this.tracks[this.line], 'arrive', d.idx);   // the roster follows the real train (not the hidden one that runs on unseen after it has left)
       if (this.mode === 'explore' && this.shuttle.state === 'arriving') { this.shuttle.state = 'dwell'; }
     } else if (type === 'depart') {
-      if (this.mode === 'explore' && this.shuttle.state === 'dwell') { const sh = this.shuttle; sh.state = 'leaving'; sh.t = 0; sh.timer = LEAVE_S + sh.headway * (0.7 + Math.random() * 0.5); }   // the next train's countdown starts the moment this one leaves
+      if (this.mode === 'explore' && this.shuttle.state === 'dwell') { const sh = this.shuttle; sh.state = 'leaving'; sh.t = 0; }   // the next train's countdown is the roster's: it is already running
       this.alightNext = this.mode === 'ride' ? this.alightNext : false;
     }
   }
@@ -436,6 +477,7 @@ class Sim {
     this.tunnel.reset(); this.annDone = false;
     { const i0 = Math.max(0, idx2); await this._prepare(i0); await this._prepare((i0 + 1) % this.track.stops.length); }
     this.trainView.root.visible = true;
+    this._seatPlayer(mode === 'drive' || mode === 'ride' ? mode : 'explore', Math.max(0, idx2));
     if (mode === 'drive') {
       svc.dwellT = Math.max(0, svc.stop.dwellS - 10); svc.ato = false;
       this.enterDrive();
@@ -607,24 +649,24 @@ class Sim {
     if (sh.state === 'wait' || sh.state === 'leaving') return Math.max(0, sh.timer || 0) + ARRIVE_S;
     return null;
   }
-  /** seconds until the circle's train next reaches station `id` (0 = standing in it, null = unknown) */
-  _lineEta(line, id) {
-    const rec = this.tracks[line]; if (!rec || !rec.svc) return null; const svc = rec.svc, L = rec.track.length;
-    if (this.mode === 'explore' && this.track.stops[this.exploreIdx] && this.track.stops[this.exploreIdx].station === id) {   // the station you stand in: the shuttle state machine IS the timetable
-      const sh = rec === this.tracks[this.line] ? this.shuttle : rec.sh;
-      if (!sh) return null;
-      return this._shuttleEta(sh, svc);
-    }
-    if (svc.phase === 'station' && svc.stop.station === id) return 0;
+  /** The next train due at station `id` on a circle: {eta, unit} - eta in seconds until it stands in the platform (0 = it is), unit its number. It comes from the roster
+   *  (fleet.js), so every board agrees and a countdown only falls; at the station you stand in, while a train is arriving or in the platform, the real train is the answer. */
+  _lineDue(line, id) {
+    const rec = this.tracks[line], f = this.fleet; if (!rec || !rec.svc || !f) return null;
     const k = rec.track.stops.findIndex((x) => x.station === id); if (k < 0) return null;
-    return wrapL(rec.track.stops[k].s - svc.train.s, L) / 6.5;
+    if (this.mode === 'explore' && this.track.stops[this.exploreIdx] && this.track.stops[this.exploreIdx].station === id) {   // the station you stand in
+      const sh = rec === this.tracks[this.line] ? this.shuttle : rec.sh;
+      if (sh && (sh.state === 'dwell' || sh.state === 'arriving')) return { eta: this._shuttleEta(sh, rec.svc), unit: rec.unit };
+      if (sh && (sh.state === 'wait' || sh.state === 'leaving')) return this._nextDue(line, k);   // (never the unit that has just left)
+    }
+    const u = f.upcoming(line, k, 1)[0]; return u ? { eta: u.inStation ? 0 : u.eta, unit: u.unit } : null;
   }
   _updateIndicators() {
     for (const v of this.stationViews.values()) {
       if (!v.indicators || !v.indicators.length) continue; const id = v.station.id;
       for (const ind of v.indicators) {
-        const rows = ind.lines.map((l) => ({ line: l, name: l === 'outer' ? 'OUTER' : 'INNER', sub: l === 'outer' ? 'clockwise' : 'anticlockwise', eta: this._fmtEta(this._lineEta(l, id)) }));
-        const key = rows.map((r) => r.eta).join('|'); if (key === ind.key) continue; ind.key = key; ind.draw(rows);
+        const rows = ind.lines.map((l) => { const d = this._lineDue(l, id); return { line: l, name: l === 'outer' ? 'OUTER' : 'INNER', sub: l === 'outer' ? 'clockwise' : 'anticlockwise', eta: this._fmtEta(d ? d.eta : null), unit: d && d.unit != null ? d.unit : null }; });
+        const key = rows.map((r) => r.eta + '/' + r.unit).join('|'); if (key === ind.key) continue; ind.key = key; ind.draw(rows);
       }
     }
   }
@@ -996,7 +1038,7 @@ class Sim {
   // ------------------------------------------------------------------ simulation tick
   tick(dt) {
     const svc = this.svc; if (!svc) return;
-    this.time += dt;
+    this.time += dt; if (this.fleet) this.fleet.advance(dt);
     let n = Math.ceil(dt / 0.05); const h = dt / n;
     // someone in a doorway (passenger walking through an open door) holds the doors; resumes when clear
     { const w = this.walker; let obs = false;
@@ -1036,13 +1078,14 @@ class Sim {
   }
 
   _shuttle(dt) {
-    const sh = this.shuttle, svc = this.svc;
+    const sh = this.shuttle, svc = this.svc, rec = this.tracks[this.line];
+    if (sh.state === 'wait' || sh.state === 'leaving') { const d = this._nextDue(this.line, sh.idx); sh.timer = d.eta - ARRIVE_S; sh.due = d.unit; }   // one countdown, the roster's: it only ever falls
     if (sh.state === 'leaving') {   // the train runs on into the bore and is only recycled once its tail is out of sight (never while it is still in the platform)
-      sh.t += dt; sh.timer -= dt;
+      sh.t += dt;
       if (this._tailPast(this.tracks[this.line], this.exploreIdx) > CLEAR_TAIL || sh.t > 45) { this.trainView.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
     } else if (sh.state === 'wait') {
-      sh.timer -= dt;
       if (sh.timer <= 0) {
+        this._setUnit(rec, sh.due);
         svc.placeApproaching(sh.idx, 220, 9); svc.ato = true; svc.autoDoors = true; this.trainView.root.visible = true; sh.state = 'arriving'; sh.arrT = 0; svc._autoOpened = false; svc._autoClosed = false;
       }
     } else if (sh.state === 'arriving') sh.arrT = (sh.arrT || 0) + dt;
@@ -1145,12 +1188,14 @@ class Sim {
     this._computeContext();
     const info = svc.info();
     const upNext = svc.phase === 'depart' ? (svc.stationById.get(svc.stops[(svc.idx + 1) % svc.stops.length].station) || svc.station) : svc.station;
+    const unit = (this.tracks[this.line] || {}).unit;
     let title = 'Next: ' + upNext.name, distText = svc.phase === 'station' ? '' : svc.phase === 'depart' ? '' : fmtDist(Math.max(0, svc.distToStop)), sub = '';
     if (this.mode === 'drive') {
       sub = svc.phase === 'station' ? (svc.doorsClosed ? (svc.signalGreen ? 'Signal clear - depart' : `Dwell ${Math.ceil(info.dwellLeft)} s`) : 'Doors open') : `${this.line === 'outer' ? 'Outer' : 'Inner'} circle - ${svc.diff.label}`;
+      if (unit != null) sub = `Train ${unit} - ${sub}`;
       if (svc.phase === 'station') title = 'At: ' + svc.station.name;
-    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + upNext.name; sub = this.alightNext ? 'Getting off here' : 'N: get off at next stop'; }
-    else if (this.mode === 'explore') { title = this.activeStation ? this.activeStation.station.name : ''; sub = this.shuttle.state === 'wait' || this.shuttle.state === 'leaving' ? `Next train ${fmtTime(this._shuttleEta(this.shuttle, svc))}` : (this.shuttle.state === 'arriving' ? 'Train arriving' : this.shuttle.state === 'dwell' ? 'Train at platform' : ''); distText = ''; }
+    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + upNext.name; sub = (unit != null ? `Train ${unit} - ` : '') + (this.alightNext ? 'Getting off here' : 'N: get off at next stop'); }
+    else if (this.mode === 'explore') { title = this.activeStation ? this.activeStation.station.name : ''; { const sh = this.shuttle, tn = sh.state === 'wait' || sh.state === 'leaving' ? sh.due : unit, nm = tn != null ? ` ${tn}` : ''; sub = sh.state === 'wait' || sh.state === 'leaving' ? `Next train${nm} in ${fmtTime(this._shuttleEta(sh, svc))}` : (sh.state === 'arriving' ? `Train${nm} arriving` : sh.state === 'dwell' ? `Train${nm} at platform` : ''); } distText = ''; }
     else if (this.mode === 'street') { title = 'Street level'; sub = ''; distText = ''; }
     let late = null;
     if (this.mode === 'drive' && svc.schedule) { const sched = svc.schedule.arr[svc.idx] + svc.lap * svc.schedule.period + (svc.t0 || 0); late = svc.phase === 'station' ? (svc.stopStatus && svc.stopStatus.late) : Math.max(svc.t - sched, -999); if (late != null && svc.phase !== 'station' && late < 0) late = null; }
@@ -1305,13 +1350,13 @@ class Sim {
   // ------------------------------------------------------------------ misc
   getState() {
     const svc = this.svc; if (!svc) return {};
-    return { mode: this.mode, line: this.line, station: svc.station.name, kmh: svc.train.v / KMH, phase: svc.phase, score: svc.score.total, stops: svc.score.stopsDone, paused: this.paused };
+    return { mode: this.mode, line: this.line, station: svc.station.name, kmh: svc.train.v / KMH, unit: (this.tracks[this.line] || {}).unit, phase: svc.phase, score: svc.score.total, stops: svc.score.stopsDone, paused: this.paused };
   }
   _exposeHooks() {
     const self = this;
     window.__sim = {
       sim: this,
-      state: () => this.getState(), bg: () => this.bg, boardOther: () => this._boardOther(), cross: () => this._crossPlatform(), info: () => this.svc.info(), svc: () => this.svc,
+      state: () => this.getState(), fleet: () => this.fleet, unit: (line) => (this.tracks[line || this.line] || {}).unit, due: (line, id) => this._lineDue(line, id), bg: () => this.bg, boardOther: () => this._boardOther(), cross: () => this._crossPlatform(), info: () => this.svc.info(), svc: () => this.svc,
       go: (sel) => this.go(sel), tick: (dt) => this.tick(dt), ff: (s, st) => this.fastForward(s, st), sync: () => { this._mgrT = 0; this.sync(0.016); },
       ato: (on) => this.svc.setAto(on), key: (k, down = true) => this._key({ key: k, code: k, repeat: false, preventDefault() {}, target: document.body }, down),
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,

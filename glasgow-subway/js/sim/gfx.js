@@ -159,7 +159,7 @@ export function infoPanelTexture(THREE, title, body, style, opts = {}) {
   });
 }
 
-/** Dot-matrix style "next train" board: rows = [{ name, sub, eta }] (eta already formatted: 'Due', '2 min', 'In station', '-'). */
+/** Dot-matrix style "next train" board: rows = [{ name, sub, eta, unit? }] (eta already formatted: 'Due', '2 min', 'In station', '-'; unit = the fleet number of that train, shown beside the time). */
 export function drawIndicator(g, w, h, rows) {
   g.fillStyle = '#07090b'; g.fillRect(0, 0, w, h);
   g.strokeStyle = '#2a2f36'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
@@ -172,6 +172,9 @@ export function drawIndicator(g, w, h, rows) {
     g.fillStyle = '#8a8f96'; g.font = `600 ${Math.round(rh * 0.22)}px "Courier New", monospace`; g.fillText(r.sub, 24, cy + rh * 0.26);
     g.textAlign = 'right'; g.fillStyle = r.eta === 'Due' || r.eta === 'In station' ? '#ffffff' : '#ffb02e';
     g.font = `700 ${Math.round(rh * 0.52)}px "Courier New", monospace`; g.fillText(r.eta, w - 24, cy);
+    if (r.unit != null && r.eta !== '-') {   // which train: dim, right-aligned just left of the time
+      const etaW = g.measureText(r.eta).width; g.fillStyle = '#9aa1a9'; g.font = `600 ${Math.round(rh * 0.30)}px "Courier New", monospace`; g.fillText(`unit ${r.unit}`, w - 24 - etaW - 20, cy);
+    }
     if (i < n - 1) { g.fillStyle = '#1b1f24'; g.fillRect(14, y0 + rh - 1, w - 28, 2); }
   });
 }

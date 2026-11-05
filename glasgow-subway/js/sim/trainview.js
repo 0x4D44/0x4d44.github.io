@@ -201,9 +201,64 @@ export class TrainView {
         o.material = o.material.clone(); o.material.map = this._destTex; o.material.emissiveMap = this._destTex; o.material.emissive.set(0xffffff); o.material.needsUpdate = true; } }); }
     const g = this._destCanvas.getContext('2d'); g.fillStyle = '#120900'; g.fillRect(0, 0, 512, 68); g.fillStyle = '#ffb02e'; g.font = '700 40px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 36); this._destTex.needsUpdate = true;
   }
+  /**
+   * Unit and car numbers on the bodywork (research/train-numbering.md): "305A".."305D" on both flanks of cars 0..3 and
+   * the unit number "305" on each cab front; null hides them (a train that is not in service). The plates are decals
+   * on the A3 model's plain white flank panels (below the window band, clear of door pairs and roundels) and on the dark
+   * panel beside the cab-front roundel, found by scanning models/train.glb; each site is re-checked with rays against the
+   * live mesh and silently dropped if the surface there is not what was scanned (a different model: no plates, no harm).
+   * Where the real units carry their numbers is not verified: this is a plausible, legible choice.
+   */
+  setUnit(unit) {
+    unit = unit == null ? null : unit; if (this._unit === unit && this._plates) return; this._unit = unit;
+    if (!this._plates) { if (unit == null) return; this._buildPlates(); }
+    for (const p of this._plates) {
+      if (unit != null) { const t = p.nose ? String(unit) : `${unit}${String.fromCharCode(65 + p.car)}`; if (p.set.text !== t) paintPlate(p.set, t); }
+      p.mesh.visible = unit != null && !(this._driveCab && p.car === 0);
+    }
+  }
+  _buildPlates() {
+    const THREE = this.THREE, plates = this._plates = [];
+    const four = this.carInfo.length === 4 && this.carInfo.every((c) => c.node) && Math.abs(this.zMax - 20.108) < 0.3 && Math.abs(this.zMin + 20.108) < 0.3;
+    if (!four || typeof document === 'undefined') return;
+    const saved = this.cars.map((g) => g.matrix.clone());
+    this.cars.forEach((g, i) => { g.matrix.makeTranslation(0, 0, this.carInfo[i].zc); g.matrixWorldNeedsUpdate = true; });   // root frame = train frame while we measure
+    this.root.updateMatrixWorld(true);
+    const rc = new THREE.Raycaster(), V = THREE.Vector3, geo = new THREE.PlaneGeometry(1, 1);
+    const meshesOf = (ci, re) => { const a = []; this.cars[ci].traverse((o) => { if (o.isMesh && re.test(o.name)) a.push(o); }); return a; };
+    const hit = (list, o, d, far, want) => { rc.set(o, d); rc.near = 0; rc.far = far; const h = rc.intersectObjects(list, false)[0]; if (!h) return null; const m = Array.isArray(h.object.material) ? h.object.material[h.face.materialIndex] : h.object.material; return m && m.name === want ? h : null; };
+    const newSet = (w, h, ink) => { const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * h / w); const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, roughness: 0.6, metalness: 0 }); return { c, tex, mat, ink, text: null, w, h }; };
+    const sideSets = [0, 1, 2, 3].map(() => newSet(PLATE.sideW, PLATE.sideH, PLATE.sideInk)), noseSets = [newSet(PLATE.noseW, PLATE.noseH, PLATE.noseInk), newSet(PLATE.noseW, PLATE.noseH, PLATE.noseInk)];
+    const add = (set, car, nose, pos, rotY) => { const m = new THREE.Mesh(geo, set.mat); m.scale.set(set.w, set.h, 1); m.position.copy(pos); m.rotation.y = rotY; m.renderOrder = 2; m.frustumCulled = false; m.name = nose ? 'unit_nose' : 'unit_plate'; m.visible = false;
+      this.cars[car].add(m); plates.push({ mesh: m, set, car, nose }); };
+    // flanks: the clear white panel of each car (y 0.98..1.22 all livery_white across the plate's width) - both sides
+    PLATE.sideZ.forEach((z, ci) => {
+      const ext = meshesOf(ci, /_exterior(_\d+)?$/);
+      for (const s of [1, -1]) {
+        let x = null, ok = true;
+        for (const y of [PLATE.y - 0.12, PLATE.y, PLATE.y + 0.12]) for (const dz of [-PLATE.sideW / 2, 0, PLATE.sideW / 2]) {
+          const h = hit(ext, new V(s * 3, y, z + dz), new V(-s, 0, 0), 4, 'livery_white'); if (!h) ok = false; else if (dz === 0 && y === PLATE.y) x = h.point.x;
+        }
+        if (ok && x != null) add(sideSets[ci], ci, false, new V(x + s * 0.004, PLATE.y, z - this.carInfo[ci].zc), s * Math.PI / 2);   // +X flank faces +X: rotY +90 deg; the text then reads left-to-right seen from outside on both flanks
+      }
+    });
+    // cab fronts: the dark panel beside the roundel, beyond the door-pillar strip (front: car 0, -Z end; rear: car 3, +Z end - the rear is the front mirrored in z, not turned round, so the same x)
+    [{ ci: 0, dir: 1, x: PLATE.noseX, z0: this.zMin - 6, rot: Math.PI, set: noseSets[0] }, { ci: 3, dir: -1, x: PLATE.noseX, z0: this.zMax + 6, rot: 0, set: noseSets[1] }].forEach((e) => {
+      const list = meshesOf(e.ci, /_(exterior|cab|glass)(_\d+)?$/);
+      let ok = true, z = null;
+      for (const dx of [-PLATE.noseW / 2, 0, PLATE.noseW / 2]) for (const y of [PLATE.noseY - 0.04, PLATE.noseY + 0.04]) {
+        const h = hit(list, new V(e.x + dx, y, e.z0), new V(0, 0, e.dir), 12, 'glass_black'); if (!h) ok = false; else if (dx === 0 && y === PLATE.noseY + 0.04) z = h.point.z;
+      }
+      if (ok && z != null) add(e.set, e.ci, true, new V(e.x, PLATE.noseY, z - e.dir * 0.004 - this.carInfo[e.ci].zc), e.rot);
+    });
+    this.cars.forEach((g, i) => { g.matrix.copy(saved[i]); g.matrixWorldNeedsUpdate = true; });
+    this._plateGeo = geo;
+  }
   /** Drive mode swaps A3's cab shell for the procedural cab (see buildCab). */
   setDriveCab(on) {
     on = !!on && !!this.cabKit; if (this._driveCab === on) return; this._driveCab = on;
+    if (this._plates) for (const p of this._plates) if (p.car === 0) p.mesh.visible = !on && this._unit != null;   // car 0's shell is hidden from the cab: its decals must go with it
     if (this.cabKit) this.cabKit.visible = on;
     for (const nm of ['car_0_exterior', 'car_0_glass', 'car_0_cab', 'car_0_saloon', 'cab_dest']) { const n = this.byName[nm]; if (n) n.visible = !on; }
     for (const n of [this.cabScreen, this.cabSpeedo]) if (n) n.visible = !on;
@@ -271,5 +326,20 @@ export class TrainView {
     if (this.cabEye) this.cabEye.getWorldPosition(outPos); else outPos.copy(this.eyeLocal).applyMatrix4(g.matrix);
     if (outQuat) outQuat.setFromRotationMatrix(this._m.extractRotation(g.matrix));
   }
-  dispose() { this.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+  dispose() {
+    this.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    if (this._plates) { const seen = new Set(); for (const p of this._plates) if (!seen.has(p.set)) { seen.add(p.set); p.set.tex.dispose(); p.set.mat.dispose(); } }
+  }
+}
+
+/** where the numbers go on models/train.glb (see TrainView.setUnit): flank z of the plate on cars 0..3 (root frame), height, and the cab-front site */
+const PLATE = { sideZ: [-13.08, -2.28, 2.28, 13.08], y: 1.10, sideW: 0.62, sideH: 0.25, sideInk: '#1b1e22', noseX: -0.54, noseY: 0.98, noseW: 0.2, noseH: 0.085, noseInk: '#f3f5f7' };
+const PLATE_FONT = '"Helvetica Neue", Helvetica, Arial, "Liberation Sans", "DejaVu Sans", sans-serif';
+/** draw `text` centred on a plate's transparent canvas, as large as fits */
+function paintPlate(set, text) {
+  const { c, ink } = set, g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height);
+  g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+  let px = Math.round(c.height * 0.76); g.font = `700 ${px}px ${PLATE_FONT}`;
+  const w = g.measureText(text).width; if (w > c.width * 0.92) { px = Math.floor(px * c.width * 0.92 / w); g.font = `700 ${px}px ${PLATE_FONT}`; }
+  g.fillText(text, c.width / 2, c.height * 0.54); set.text = text; set.tex.needsUpdate = true;
 }
