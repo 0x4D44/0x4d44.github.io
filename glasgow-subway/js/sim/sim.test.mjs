@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
 import { Rats, RAT, strideAt } from './rats.js';
 import { Fleet, Ring, measureCycle, advanceToLap, unitIds, carIds, unitOfCar, isUnit, FLEET_FIRST, FLEET_SIZE, IN_SERVICE, CAR_LETTERS } from './fleet.js';
+import { readGlb, personIds, skinThrough } from './skincheck.mjs';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -362,3 +363,33 @@ test('fleet: alignNext puts the next arrival a chosen time away, and where() rea
   const w = ring.where(u, f.clock); assert.equal(w.stop, 4); assert.ok(w.standing);
   f.clock += C.inner.dep[4] - C.inner.arr[4]; assert.ok(!ring.where(u, f.clock).standing);
 });
+
+// ---- people: skin showing through the garments ---------------------------------------------------------------------------------------------------------
+// The garments are low-poly: where a T-shirt's surface dips under the body, bare skin shows through it (the grey tee with holes at the shoulders; a sweater's
+// chest; the calves under a kilt's hose). tools/people_skinfit.py pushes those skin vertices under the garment and stamps each person it repairs
+// (extras.skinfit on the mesh node). js/sim/skincheck.mjs is a separate ruler - it counts skin samples that sit outside a garment in the rest pose, ten per
+// triangle - so the repair is not marked by its own measure. SKIN_BUDGET is what the committed models measure, plus 15% and ten samples; SKIN_EXPORTED is the
+// same ruler on the models as the exporter wrote them, before the repair. A people.glb that was regenerated and forgot to run the repair fails both.
+const SKIN_REPAIRED = ['boy_kilt', 'girl_school_kilt', 'man_commuter', 'man_kilt_casual', 'man_student', 'man_trews', 'teen_boy', 'woman_midi'];   // = RECIPE in tools/people_skinfit.py
+const SKIN_EXPORTED = {
+  'people.glb': { boy_kilt: 1876, girl_school_kilt: 2022, man_commuter: 468, man_kilt_casual: 2474, man_student: 3616, man_trews: 422, teen_boy: 497, woman_midi: 740 },
+  'people_lod.glb': { boy_kilt: 260, girl_school_kilt: 303, man_commuter: 69, man_kilt_casual: 304, man_student: 433, man_trews: 98, teen_boy: 305, woman_midi: 133 },
+};
+const SKIN_BUDGET = {
+  'people.glb': { boy: 552, boy_kilt: 874, boy_small: 14, girl: 178, girl_school_kilt: 1202, girl_small: 216, man_beard: 10, man_commuter: 84, man_elder: 10, man_highland: 414, man_hoodie: 1957, man_kilt_casual: 865, man_longcoat: 594, man_puffer: 281, man_student: 390, man_trews: 74, staff_hivis: 14, teen_boy: 174, teen_girl: 1157, teen_skirt: 204, woman_bob: 10, woman_coat: 397, woman_dress: 59, woman_elder: 978, woman_midi: 101, woman_mini: 155, woman_puffer: 206, woman_sash: 102, woman_scarf: 214, woman_student: 1097 },
+  'people_lod.glb': { boy: 82, boy_kilt: 134, boy_small: 10, girl: 124, girl_school_kilt: 222, girl_small: 10, man_beard: 10, man_commuter: 56, man_elder: 10, man_highland: 13, man_hoodie: 882, man_kilt_casual: 134, man_longcoat: 323, man_puffer: 89, man_student: 59, man_trews: 79, staff_hivis: 16, teen_boy: 129, teen_girl: 733, teen_skirt: 115, woman_bob: 10, woman_coat: 19, woman_dress: 13, woman_elder: 235, woman_midi: 78, woman_mini: 94, woman_puffer: 51, woman_sash: 63, woman_scarf: 107, woman_student: 844 },
+};
+for (const [file, ratio] of [['people.glb', 0.6], ['people_lod.glb', 0.7]]) {
+  test(`people: ${file} - the skin stays under the garments, and the repaired people carry the repair mark`, () => {
+    const g = readGlb(fileURLToPath(new URL('../../models/' + file, import.meta.url))), ids = personIds(g);
+    assert.equal(ids.length, 30, '30 people in ' + file);
+    assert.deepEqual(Object.keys(SKIN_BUDGET[file]).sort(), ids, 'a budget for every person - add one for a new person');
+    const showing = {}; for (const id of ids) showing[id] = skinThrough(g, id).showing;
+    for (const id of ids) assert.ok(showing[id] <= SKIN_BUDGET[file][id], `${file} ${id}: ${showing[id]} skin samples show through a garment (budget ${SKIN_BUDGET[file][id]}) - rerun tools/people_skinfit.py --write`);
+    for (const id of SKIN_REPAIRED) {
+      const node = g.json.nodes.find((n) => n.name === `person_${id}_mesh`);
+      assert.equal(node.extras && node.extras.skinfit && node.extras.skinfit.v, 1, `${file} ${id} carries the skinfit mark`);
+      assert.ok(showing[id] <= ratio * SKIN_EXPORTED[file][id], `${file} ${id}: ${showing[id]} samples showing vs ${SKIN_EXPORTED[file][id]} unrepaired (the repair must remove at least ${Math.round((1 - ratio) * 100)}%)`);
+    }
+  });
+}
