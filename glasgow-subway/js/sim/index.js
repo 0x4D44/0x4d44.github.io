@@ -14,7 +14,7 @@ import { SimAudio, reach, panOf } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
-import { loadAdvertAtlas, applyAdverts } from './adverts.js';
+import { loadAdvertAtlas, applyAdverts, trackWallAdverts } from './adverts.js';
 import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
 import { cutStairHoles } from './stairs.js';
 import { Rats } from './rats.js';
@@ -720,13 +720,14 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = Promise.all([loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)), this._advertAtlas()]).then(([tpl, ads]) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); applyAdverts(tpl, ads, id); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = Promise.all([loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)), this._advertAtlas()]).then(([tpl, ads]) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); applyAdverts(tpl, ads.portrait, id); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); trackWallAdverts(this.THREE, tpl, hi, ads, id); cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
-  /** the shared platform-advert atlas, loaded once; null (keep the baked placeholder posters) if it fails */
+  /** the shared advert atlases, loaded once: { portrait, landscape }, either null if it fails (portrait: the baked placeholder posters stay) */
   _advertAtlas() {
-    if (!this.advertAtlasP) this.advertAtlasP = loadAdvertAtlas(this.THREE, this.url('models/adverts.jpg')).catch((e) => { console.warn('[sim] advert atlas missing', e && e.message); return null; });
+    const one = (f) => loadAdvertAtlas(this.THREE, this.url('models/' + f)).catch((e) => { console.warn('[sim] advert atlas missing', f, e && e.message); return null; });
+    if (!this.advertAtlasP) this.advertAtlasP = Promise.all([one('adverts.jpg'), one('adverts_land.jpg')]).then(([portrait, landscape]) => ({ portrait, landscape }));
     return this.advertAtlasP;
   }
   _evictHalls(keep) {

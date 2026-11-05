@@ -136,9 +136,9 @@ export function measureHallWalls(tpl, y = 1.8, zs = [-17, -9, 3.3, 9, 17]) {
  * z-intervals (hall frame) of the wall already taken inside the height band [y0, y1]: adverts, murals, route strips, wall clocks and boxes.
  * side -1 = the hall's left wall, +1 = the right wall; wallX = that wall's |x|. Anything within `reach` of the wall surface counts. Merged, ascending.
  */
-export function hallWallClutter(tpl, side, wallX, y0, y1, reach = 0.35) {
+export function hallWallClutter(tpl, side, wallX, y0, y1, reach = 0.35, nodes = ['hall_signs', 'hall_art', 'hall_furniture']) {
   const out = []; if (!tpl) return out; tpl.updateMatrixWorld(true);
-  for (const nm of ['hall_signs', 'hall_art', 'hall_furniture']) {
+  for (const nm of nodes) {
     const node = tpl.getObjectByName(nm); if (!node) continue;
     node.traverse((m) => {
       if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return;
