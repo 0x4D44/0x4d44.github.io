@@ -14,6 +14,8 @@
 //     bg          background colour, hex
 // Exposes window.__spawn(id, state, frac, yaw): one person at the origin, in a mode ('stand' | 'walk' | 'sit' | ...) frozen `frac` (0..1) of the way through its clip,
 // and window.__ids, __crowd, __THREE, __scene, __cam, __renderer. window.__ready turns true when loaded (window.__err holds the reason if it failed).
+// window.__walk(id, v, t, yaw, vr): one person walked t seconds at v m/s by the crowd's own steering and gait (the walk of the game, not a clip frozen mid-stride), then frozen where they are
+// and put back at the origin; gait=clip in the URL turns the procedural gait layer off, so the same call poses the clip walk.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SU from 'three/addons/utils/SkeletonUtils.js';
@@ -30,11 +32,19 @@ const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, 
     const gltf = await load(q.get('glb') || '../models/people.glb'), lod = q.get('lod') === '0' ? null : await load(q.get('lod') || '../models/people_lod.glb');
     const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
     const crowd = new AnimCrowd(THREE, SU, gltf, 60, 'high', lod); crowd.group = new THREE.Group(); scene.add(crowd.group);
+    if (q.get('gait') === 'clip' && crowd.setGait) crowd.setGait(false);
     window.__crowd = crowd; window.__THREE = THREE; window.__scene = scene; window.__cam = cam; window.__renderer = r;
     window.__ids = crowd.chars.map((c) => c.id); window.__fit = crowd.fit;
     // The crowd picks a clip variant (which idle, which walk) from its random stream. Seed it from the person and the state, so the same person in the same state is
     // posed the same way in every run - whatever else was spawned before it, in whatever order - and two models can be compared pose for pose.
     const seeded = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); let a = h >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+    const tint = (p) => {
+      if (q.get('tint') !== '0') p.obj.traverse((o) => {
+        if (!o.isSkinnedMesh) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some((m) => /^skin_/.test(m.name || ''))) return;
+        const mk = (m) => { const y = m.clone(); y.map = null; y.color.set('#ff2020'); if (y.emissive) y.emissive.set('#ff2020').multiplyScalar(0.35); y.alphaTest = 0; y.transparent = false; return y; };
+        o.material = Array.isArray(o.material) ? o.material.map(mk) : mk(o.material);
+      });
+    };
     window.__spawn = (id, state, frac, yaw) => {
       crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) return null;
       crowd.rng = seeded(id + ':' + state);
@@ -42,14 +52,39 @@ const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, 
       if (!p.obj) return null;
       if (p.cur) { p.cur.time = (frac || 0) * p.cur.getClip().duration; p.cur.paused = true; }
       p.mixer.update(0.0001);
-      if (q.get('tint') !== '0') p.obj.traverse((o) => {
-        if (!o.isSkinnedMesh) return; const ms = Array.isArray(o.material) ? o.material : [o.material]; if (!ms.some((m) => /^skin_/.test(m.name || ''))) return;
-        const mk = (m) => { const y = m.clone(); y.map = null; y.color.set('#ff2020'); if (y.emissive) y.emissive.set('#ff2020').multiplyScalar(0.35); y.alphaTest = 0; y.transparent = false; return y; };
-        o.material = Array.isArray(o.material) ? o.material.map(mk) : mk(o.material);
-      });
+      tint(p);
       p.obj.position.set(0, 0, 0); p.obj.rotation.y = yaw || 0; p.obj.updateMatrixWorld(true);
       r.render(scene, cam);
       return { clip: p.cur && p.cur.getClip().name, lod: p.lod };
+    };
+    // window.__clip(id, cat, frac, yaw): the person in one clip of a category of the asset (phone, sitphone, talk, ...) frozen frac through it - for looking at what a clip does with the hands
+    window.__clip = (id, cat, frac, yaw, which) => {
+      crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) return null;
+      crowd.rng = seeded(id + ':clip');
+      const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: yaw || 0, mode: cat === 'sitphone' || cat === 'sit' ? 'sit' : 'stand', static: q.get('forcelod') !== '1', speed: 1.2, wait: 0 }, crowd.group);
+      if (!p.obj) return null;
+      const list = ch.pools[cat] || []; if (!list.length) return { err: 'no clips in ' + cat };
+      crowd._play(p, list[(which || 0) % list.length], 0, 1);
+      p.cur.time = (frac || 0) * p.cur.getClip().duration; p.cur.paused = true; p.mixer.update(0.0001);
+      tint(p);
+      p.obj.position.set(0, 0, 0); p.obj.rotation.y = yaw || 0; p.obj.updateMatrixWorld(true);
+      r.render(scene, cam);
+      return { clip: p.cur && p.cur.getClip().name, n: list.length, lod: p.lod };
+    };
+    const BIG = { x0: -1e4, x1: 1e4, z0: -1e4, z1: 1e4 };
+    window.__walk = (id, v, t, yaw, vr) => {
+      crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) return null;
+      delete ch.pools.fidget; crowd.rng = seeded(id + ':walk');
+      const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: yaw || 0, mode: 'script', static: false, speed: 1, wait: 0, rect: BIG }, crowd.group);
+      if (!p.obj) return null;
+      p.nextT = 1e9; if (q.get('forcelod') !== '1' && p.lod) crowd._swapLod(p, false);   // the full-detail model, unless the simplified one is asked for
+      const cx = -Math.sin(yaw || 0), cz = -Math.cos(yaw || 0), dt = 1 / 60; let tt = 0;
+      crowd._enter(p, 'walk');
+      for (let i = 0, n = Math.round(t / dt); i < n; i++) { p.tx = p.x + cx * 50; p.tz = p.z + cz * 50; crowd._step(p, dt, v); crowd.update(dt, tt, null, null); tt += dt; if (vr && p.gait && !p._vr) { Object.assign(p.gait.g.var, vr); p._vr = true; } }
+      tint(p);
+      p.obj.position.set(0, 0, 0); p.obj.rotation.y = yaw || 0; p.obj.updateMatrixWorld(true);
+      r.render(scene, cam);
+      return { clip: p.cur && p.cur.getClip().name, lod: p.lod, gait: !!p.gait };
     };
     window.__ready = true;
   } catch (e) { window.__err = String(e && e.stack || e); window.__ready = true; }

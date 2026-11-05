@@ -4,7 +4,11 @@
 //     --glb / --lod-glb  the models to measure: a path under the repo root, or any local file (served to the page as it is). Defaults: the committed models.
 //     --lod              measure the LOD models (people_lod.glb, what a moving person is in the game) instead of the full ones (people.glb, standing people)
 //     --poses            state:fraction pairs - 'walk:0.3' is the walk clip frozen 30% through. 'sit' is left out of the default set: a hand resting on a lap is
-//                        legitimate skin-in-front-of-cloth and would be counted as a hole.
+//                        legitimate skin-in-front-of-cloth and would be counted as a hole. 'gait:3.2' is the person walked 3.2 s at 1.2 m/s by the game's own steering and gait
+//                        (a stride is ~1.05 s: several times a few tenths apart cover it) - the walk as the player sees it, not a clip frozen mid-stride.
+//     --speed V          with 'gait:T' poses: the walking speed, m/s (default 1.2)
+//     --var JSON         with 'gait:T' poses: a variation put on the person's gait, e.g. '{"step":0.8}' (see gaitParams)
+//     --gait clip        with 'gait:T' poses: pose the old clip walk instead (the procedural gait layer off), to compare the two
 //     --azs              the camera azimuths, degrees (default eight, every 45)
 // Per person, pose and azimuth: depth of the skin meshes alone and of the garment meshes alone (float target, depth material), at 320x512 from 3.6 m. A pixel where
 // both exist and the skin is nearer by more than 0.5 mm is "skin in front of cloth"; when it is in front by less than 3 cm it is a HOLE - skin poking out through
@@ -23,7 +27,7 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const flag = (k) => process.argv.includes(k);
 const POSES = arg('--poses', 'stand:0,walk:0.3,walk:0.8').split(',').map((s) => { const [state, frac] = s.split(':'); return { state, frac: +(frac || 0) }; });
 const AZS = arg('--azs', '0,45,90,135,180,225,270,315').split(',').map(Number);
-const ONLY = arg('--only', null);
+const ONLY = arg('--only', null), SPEED = +arg('--speed', 1.2), VAR = JSON.parse(arg('--var', 'null'));
 let BASE = arg('--base', null), server = null;
 if (!BASE) { const port = 8280 + Math.floor(Math.random() * 50); server = spawn('python3', ['-m', 'http.server', String(port), '--directory', root], { stdio: 'ignore' }); BASE = `http://localhost:${port}`; await new Promise((r) => setTimeout(r, 1200)); }
 
@@ -42,13 +46,13 @@ try {
   const page = await browser.newPage({ viewport: { width: 400, height: 640 } });
   page.on('pageerror', (e) => console.log('pageerror', String(e).slice(0, 300)));
   for (const [url, file] of Object.entries(routes)) await page.route('**' + url, (route) => route.fulfill({ path: file, contentType: 'model/gltf-binary' }));
-  const q = new URLSearchParams({ glb: GLB, lod: LODGLB, tint: '0', forcelod: flag('--lod') ? '1' : '0' });
+  const q = new URLSearchParams({ glb: GLB, lod: LODGLB, tint: '0', forcelod: flag('--lod') ? '1' : '0', gait: arg('--gait', 'default') });
   await page.goto(`${BASE}/glasgow-subway/tools/people_view.html?${q}`);
   await page.waitForFunction('window.__ready', null, { timeout: 300000 });
   const err = await page.evaluate('window.__err'); if (err) throw new Error('load: ' + err);
   const out = {};
   for (const pose of POSES) {
-    const res = await page.evaluate(({ azs, pose, only }) => {
+    const res = await page.evaluate(({ azs, pose, only, speed, vr }) => {
       const THREE = window.__THREE, r = window.__renderer, scene = window.__scene, cam = window.__cam;
       r.setAnimationLoop(null);
       const W = 320, H = 512, D = 3.6, TY = 0.95, FOV = 35, N = 0.02, F = 100;
@@ -66,7 +70,7 @@ try {
       };
       const res = {};
       for (const id of (only ? only.split(',') : window.__ids)) {
-        window.__spawn(id, pose.state, pose.frac, 0); const o = window.__crowd.people[0].obj, meshes = []; o.traverse((m) => { if (m.isSkinnedMesh) meshes.push(m); });
+        if (pose.state === 'gait') window.__walk(id, speed, pose.frac, 0, vr); else window.__spawn(id, pose.state, pose.frac, 0); const o = window.__crowd.people[0].obj, meshes = []; o.traverse((m) => { if (m.isSkinnedMesh) meshes.push(m); });
         const kind = meshes.map((m) => { const nm = (Array.isArray(m.material) ? m.material.map((x) => x.name).join('|') : m.material.name) || ''; return skinRe.test(nm) ? 'skin' : clothRe.test(nm) ? 'cloth' : 'other'; });
         const per = [];
         for (const az of azs) {
@@ -84,7 +88,7 @@ try {
         res[id] = per;
       }
       return res;
-    }, { azs: AZS, pose, only: ONLY });
+    }, { azs: AZS, pose, only: ONLY, speed: SPEED, vr: VAR });
     out[`${pose.state}:${pose.frac}`] = res;
   }
   // report: mean hole cm^2 per view, per person and pose

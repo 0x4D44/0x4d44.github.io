@@ -139,16 +139,17 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 
 /** A new gait state for a body. */
 export function newGait(B, opts = {}) {
-  const g = { body: B, phase: 0, walking: false, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8],
-    var: Object.assign({ arm: 1, bob: 1, sway: 1, phase0: 0, yawBias: 0 }, opts.var || {}), pole: [0, 0] };
+  const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8],
+    var: Object.assign({ arm: 1, bob: 1, sway: 1, phase0: 0, yawBias: 0 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99 };
   return g;
 }
 
 // the world position / yaw of the natural standing stance of a foot, for a person at (x, z) facing yaw
-function standTarget(g, s) {
+// (adv: where it is for a person who has gone on `adv` m further along their heading - the place a planned stop ends)
+function standTarget(g, s, adv = 0) {
   const B = g.body, o = B.leg[s], sgn = s ? 1 : -1, sx = B.hipHalf * 0.92, az = B.P0[B.ix['foot_' + o.sd]][2];
   const l = rotY([sgn * sx, 0, az + B.heelBack], g.yaw);
-  return { H: [g.x + l[0], g.z + l[2]], psi: g.yaw - sgn * 7 * D2R };
+  return { H: [g.x - Math.sin(g.yaw) * adv + l[0], g.z - Math.cos(g.yaw) * adv + l[2]], psi: g.yaw - sgn * 7 * D2R };
 }
 function plantBoth(g) { for (let s = 0; s < 2; s++) { const t = standTarget(g, s), f = g.feet[s]; f.mode = 'stance'; f.H = t.H; f.psi = t.psi; f.th = 0; f.sw = null; } }
 
@@ -166,20 +167,23 @@ function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th
 
 // ------------------------------------------------------------------------------------------------------------------------ the update
 const V_ON = 0.16, V_OFF = 0.09;
-/** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk) } */
+/** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk),
+ *  stopD (optional: the metres the body still has to travel along its heading before it comes to rest, for a person who is walking to a place to STAND - the last steps then land where
+ *  they will stand instead of a stride ahead of it) } */
 export function gaitUpdate(g, dt, inp) {
   const B = g.body, F = g.feet;
-  g.x = inp.x; g.z = inp.z; g.yaw = inp.yaw; g.v = inp.v; g.t += dt;
+  g.x = inp.x; g.z = inp.z; g.yaw = inp.yaw; g.v = inp.v; g.t += dt; g.stopD = inp.stopD != null && inp.stopD >= 0 ? inp.stopD : null;
   if (!g.placed) { plantBoth(g); g.placed = true; for (let s = 0; s < 2; s++) { F[s].cur = footOut(g, F[s]); F[s].vA = [0, 0]; } }
   const want = !!inp.walking && (g.walking ? inp.v > V_OFF : inp.v > V_ON);
   const P = g.P = gaitParams(B, Math.max(inp.v, 0));
+  g.wk = clamp(g.wk + (want ? dt / WK_UP : -dt / WK_DN), 0, 1);       // how much of a walker the body is: the arms, the sway and the bob grow over the first steps and die away over the last
   if (want && !g.walking) {                                  // set off: the foot that trails swings first
     g.walking = true; g.walkT = 0;
     const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], ahead = F.map((f) => (f.H[0] - g.x) * fwd[0] + (f.H[1] - g.z) * fwd[1]), first = ahead[0] <= ahead[1] ? 0 : 1;
     g.phase = wrap1(P.S + (first ? 0.5 : 0)); g.firstStep = true;
     for (let s = 0; s < 2; s++) F[s].th = 0;
   } else if (!want && g.walking) {                            // stop: a swinging foot lands where the body stands now, a planted one settles
-    g.walking = false;
+    g.walking = false; g.stoppedAt = g.t;
     for (let s = 0; s < 2; s++) { const f = F[s]; if (f.mode === 'swing') { const t = standTarget(g, s); startSwing(g, f, { H: t.H, psi: t.psi }, { T: 0.3, th1: 0, clear: 0.05 * B.Lh }); } }
   }
   if (g.walking) walkStep(g, dt, P); else standStep(g, dt);
@@ -189,6 +193,7 @@ export function gaitUpdate(g, dt, inp) {
   if (g.walking) { const hc = gaitTargets(g).hCap; g.hF = (g.hF == null || hc < g.hF) ? hc : g.hF + (hc - g.hF) * (1 - Math.exp(-dt / H_TAU)); } else g.hF = null;
 }
 const H_TAU = 0.05;
+const WK_UP = 0.7, WK_DN = 0.5;   // s: the walking body language builds up over the first strides and is let go over half a second after the last
 
 function walkStep(g, dt, P) {
   const F = g.feet; g.walkT += dt; g.phase = wrap1(g.phase + dt * P.fs * 0.5 * (g.v > 0.02 ? 1 : 0));
@@ -208,17 +213,17 @@ function walkStep(g, dt, P) {
 const stanceTh = (P, pf) => (pf < P.ff ? P.thHS * (1 - cosEase(pf / P.ff)) : pf < P.ho ? 0 : -P.thTO * Math.pow(clamp((pf - P.ho) / (P.S - P.ho), 0, 1), 1.5));
 
 function standStep(g, dt) {
-  const F = g.feet, B = g.body;
+  const F = g.feet, B = g.body, closing = g.t - g.stoppedAt < 1.5;   // the last steps of a walk follow on at once (a person does not stand on their toes and wait); idle re-plants wait for stillness
+  const err = [0, 1].map((s) => { const t = standTarget(g, s), f = F[s]; return Math.hypot(t.H[0] - f.H[0], t.H[1] - f.H[1]) + 0.25 * Math.abs(angDiff(t.psi, f.psi)); });
   for (let s = 0; s < 2; s++) { const f = F[s];
     if (f.mode === 'swing') { if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) land(g, f, null); } }
-    else f.th += (0 - f.th) * Math.min(1, dt * 9);        // the heel comes back down
+    else if (!(closing && err[s] > 0.075 && f.th < 0)) f.th += (0 - f.th) * Math.min(1, dt * 9);        // the heel comes back down (unless this foot is about to take the closing step from its toes)
   }
-  // a foot that is too far from where the body stands steps back to it (one at a time)
-  if (F[0].mode === 'stance' && F[1].mode === 'stance' && Math.abs(F[0].th) + Math.abs(F[1].th) < 0.05 && g.t - Math.max(F[0].landedAt, F[1].landedAt) > 0.25) {
-    let worst = -1, we = 0;
-    for (let s = 0; s < 2; s++) { const t = standTarget(g, s), f = F[s], e = Math.hypot(t.H[0] - f.H[0], t.H[1] - f.H[1]) + 0.25 * Math.abs(angDiff(t.psi, f.psi)); if (e > we) { we = e; worst = s; } }
-    if (worst >= 0 && we > 0.075) { const t = standTarget(g, worst), f = F[worst], d = Math.hypot(t.H[0] - f.H[0], t.H[1] - f.H[1]);
-      startSwing(g, f, { H: t.H, psi: t.psi }, { T: clamp(0.3 + 0.35 * d, 0.3, 0.55), th1: 0, clear: 0.05 * B.Lh }); }
+  // a foot that is too far from where the body stands steps back to it (one at a time), once the other carries the weight (flat, or on its heel)
+  if (F[0].mode === 'stance' && F[1].mode === 'stance' && g.t - Math.max(F[0].landedAt, F[1].landedAt) > (closing ? 0.08 : 0.25)) {
+    const worst = err[1] > err[0] ? 1 : 0, we = err[worst], other = F[1 - worst];
+    if (we > 0.075 && (closing ? other.th > -0.05 : Math.abs(F[0].th) + Math.abs(F[1].th) < 0.05)) { const t = standTarget(g, worst), f = F[worst], d = Math.hypot(t.H[0] - f.H[0], t.H[1] - f.H[1]);
+      f.cur = footOut(g, f); startSwing(g, f, { H: t.H, psi: t.psi }, { T: clamp(0.3 + 0.35 * d, 0.3, 0.55), th1: 0, clear: 0.05 * B.Lh }); }
   }
 }
 
@@ -232,7 +237,13 @@ function landTarget(g, s, P, rem) {
   const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], rgt = [Math.cos(g.yaw), -Math.sin(g.yaw)], sgn = s ? 1 : -1;
   const f = g.feet[s], T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), ahead = P.aH * (g.firstStep ? 0.75 : 1) + P.v * T;
   const toe = (g.var.yawBias + (sgn > 0 ? -6.5 : 6.5)) * D2R;
-  return { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * P.stepHalf, g.z + fwd[1] * ahead + rgt[1] * sgn * P.stepHalf], psi: g.yaw + toe };
+  const W = { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * P.stepHalf, g.z + fwd[1] * ahead + rgt[1] * sgn * P.stepHalf], psi: g.yaw + toe };
+  if (g.stopD != null) {   // on the way to a planned stop the last steps shorten: a foot lands no further on than where it will stand once the body has got there (a person does not
+    // stop with a foot a stride ahead and then walk it back), blending into the walking placement while that is still well short of it
+    const st = standTarget(g, s, g.stopD), al = (h) => (h[0] - g.x) * fwd[0] + (h[1] - g.z) * fwd[1], k = smoother((al(W.H) - al(st.H) + 0.08) / 0.1);
+    if (k > 0) { W.H = [W.H[0] + (st.H[0] - W.H[0]) * k, W.H[1] + (st.H[1] - W.H[1]) * k]; W.psi += angDiff(st.psi, W.psi) * k; }
+  }
+  return W;
 }
 
 /** the pitch of the toe bone that puts its tip on the floor while the foot above it is pitched `th` with the ankle at height ay (the toes stay flat as the heel rises) */
@@ -291,11 +302,11 @@ function swingLift(clear, s) { return clear * Math.max(0, Math.sin(PI * Math.pow
 /** The pose of the body for the current state, as world-delta orientations and positions in the NODE frame:
  *  { pelvisPos, pelvisD, spineD:[3], neckD, headD, claD:[2], upD:[2], loD:[2], feet:[{A, psi, th, thb}] } */
 export function gaitTargets(g) {
-  const B = g.body, P = g.P || gaitParams(B, 0), ph = g.phase, w = g.walking ? 1 : 0, T = {};
+  const B = g.body, P = g.P || gaitParams(B, 0), ph = g.phase, w = smoother(g.wk), T = {};
   const V = g.var;
   // pelvis: height (2 / stride), lateral shift (1 / stride), rotation, drop on the swing side
-  const sway = 0.5 * P.sway * V.sway * Math.cos(2 * PI * (ph - 0.3)), ramp = g.walking ? smoother(g.walkT / 0.7) : 0, bobH = P.hAt(ph, ramp * V.bob);
-  const yawP = 0.5 * P.yaw * Math.sin(2 * PI * (ph - 0.25)), rollP = -0.5 * P.obl * Math.cos(2 * PI * (ph - 0.3));
+  const sway = 0.5 * P.sway * V.sway * Math.cos(2 * PI * (ph - 0.3)), ramp = w, bobH = P.hAt(ph, ramp * V.bob);
+  const yawP = w * 0.5 * P.yaw * Math.sin(2 * PI * (ph - 0.25)), rollP = -w * 0.5 * P.obl * Math.cos(2 * PI * (ph - 0.3));   // (all of it grows with the walk: a standing pelvis is level, and setting off must not jump the phase's rotation in)
   T.pelvisD = qmul(qy(yawP), qz(rollP));
   T.pelvisPos = [-sway * w, bobH, B.P0[B.ix.pelvis][2]];
   T.feet = g.feet.map((f) => f.cur);
@@ -316,7 +327,7 @@ export function gaitTargets(g) {
     const a = B.arm[s], sgn = s ? 1 : -1, amp = 0.5 * P.armSwing * V.arm, sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + 4 * D2R * w;
     const abd = (6 + g.armOut[s]) * D2R, dAbd = abd - a.abd0;
     const up = qmul(T.spineD[2], qmul(qx(sw), qz(sgn * dAbd)));
-    const el = (P.elbow + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w) * (w ? 1 : 0.5);
+    const el = P.elbow * (0.5 + 0.5 * w) + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w;
     T.upD[s] = up; T.loD[s] = qmul(up, qx(el));
   }
   return T;
@@ -346,7 +357,7 @@ export function gaitSolve(g, T, opts = {}) {
   const B = g.body, ix = B.ix, rootP = opts.rootP || B.P0[ix.Root], rootQ = opts.rootQ || B.Q0[ix.Root], out = { q: {}, pelvisPos: null }, Qw = {};
   const Q0 = (n) => B.Q0[ix[n]], par = (n) => B.rig.bones[B.rig.parent[ix[n]]];
   let pelvisQ, pelvisP;
-  if (opts.legsOnly) { pelvisQ = opts.pelvis.q; pelvisP = opts.pelvis.pos; Qw.pelvis = pelvisQ; }
+  if (opts.legsOnly) { pelvisQ = opts.pelvis.q; pelvisP = opts.pelvis.pos; Qw.pelvis = pelvisQ; }   // the pelvis as it is in the node frame (a clip's, or a blend of a clip's and the gait's)
   else {
     pelvisP = T.pelvisPos; Qw.pelvis = pelvisQ = qmul(T.pelvisD, Q0('pelvis')); out.q.pelvis = qnorm(qmul(qinv(rootQ), pelvisQ));
     out.pelvisPos = qrot(qinv(rootQ), sub(pelvisP, rootP));
@@ -354,6 +365,8 @@ export function gaitSolve(g, T, opts = {}) {
     Qw.neck_01 = qmul(T.neckD, Q0('neck_01')); Qw.head = qmul(T.headD, Q0('head'));
     for (let s = 0; s < 2; s++) { const sd = SIDE[s]; Qw['clavicle_' + sd] = qmul(T.claD[s], Q0('clavicle_' + sd)); Qw['upperarm_' + sd] = qmul(T.upD[s], Q0('upperarm_' + sd)); Qw['lowerarm_' + sd] = qmul(T.loD[s], Q0('lowerarm_' + sd)); }
   }
+  out.pelvisW = { pos: pelvisP, q: pelvisQ };
+  const pelvisYaw = yawOf(qmul(pelvisQ, qinv(Q0('pelvis'))));          // the pelvis's turn from its rest orientation: the knees point halfway between it and the foot
   // legs: hip -> knee -> ankle by two-bone IK, the foot and toe bones set from the foot pose
   for (let s = 0; s < 2; s++) {
     const o = B.leg[s], sd = o.sd, hip = add(pelvisP, qrot(pelvisQ, B.hipLocal[s])), f = T.feet[s], l = toLocal(g, f.A[0], f.A[2]);
@@ -361,7 +374,7 @@ export function gaitSolve(g, T, opts = {}) {
     let d = sub(A, hip), D = len(d); const u0 = nrm(d), Dmax = (o.l1 + o.l2) * 0.9995, Dmin = Math.abs(o.l1 - o.l2) + 1e-3;
     if (D > Dmax) { A = add(hip, mul(u0, Dmax)); D = Dmax; } else if (D < Dmin) { D = Dmin; }
     const cosA = clamp((o.l1 * o.l1 + D * D - o.l2 * o.l2) / (2 * o.l1 * D), -1, 1), al = Math.acos(cosA);
-    const poleYaw = 0.5 * (psiRel + (T.pelvisD ? yawOf(T.pelvisD) : 0)), pole = rotY([0, 0, -1], poleYaw);
+    const poleYaw = 0.5 * (psiRel + pelvisYaw), pole = rotY([0, 0, -1], poleYaw);
     const n = nrm(sub(pole, mul(u0, dot(pole, u0)))), K = add(hip, add(mul(u0, o.l1 * cosA), mul(n, o.l1 * Math.sin(al))));
     const a1 = nrm(cross(u0, n)), dT = nrm(sub(K, hip)), dS = nrm(sub(A, K));
     Qw['thigh_' + sd] = qmul(qAlign(o.d0, o.a0t, dT, a1), Q0('thigh_' + sd));

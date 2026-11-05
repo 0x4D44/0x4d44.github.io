@@ -43,7 +43,7 @@ PEOPLE = [
          clothes=['male_worksuit01', 'toigo_ankle_boots_male'], tint=(1.0, 0.95, 0.12)),
     dict(id='man_student', kind='man', outfit='trousers', H=1.80, gender=1, age=0.34, weight=0.4, muscle=0.4, race=(0.6, 0.3, 0.1), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short02', hair_col='#241812',
          clothes=['elvs_male_boho_top1', 'punkduck_male_classic_jeans', 'elvs_zombie_killer_sneakers']),
-    dict(id='woman_coat', kind='woman', outfit='trousers', H=1.67, gender=0, age=0.52, weight=0.45, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='brown', brows='eyebrow007', lashes='eyelashes02', hair='long01', hair_col='#6d4a2c',
+    dict(id='woman_coat', kind='woman', outfit='skirt_pencil', H=1.67, gender=0, age=0.52, weight=0.45, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='brown', brows='eyebrow007', lashes='eyelashes02', hair='long01', hair_col='#6d4a2c',
          clothes=['female_elegantsuit01', 'toigo_ankle_boots_female']),
     dict(id='woman_puffer', kind='woman', outfit='trousers', H=1.62, gender=0, age=0.40, weight=0.45, muscle=0.4, race=(0.1, 0.85, 0.05), skin='young_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes01', hair='ponytail01', hair_col='#d8b86c',
          clothes=['female_casualsuit02', 'culturalibre_sneakers']),

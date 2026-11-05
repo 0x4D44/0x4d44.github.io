@@ -2,6 +2,12 @@
 import { mulberry32, clamp } from './util.js';
 import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
 import { ARM_OUT, ARM_DROP } from './armfit.js';
+import * as G from './gait.js';
+import { readBody, GaitRig } from './gait_three.js';
+import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
+// ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
+const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
+const GAIT_IN = 0.2, GAIT_OUT = 0.35, GAIT_TAIL = 0.6;   // s: the gait is blended in over GAIT_IN, its upper body held GAIT_TAIL after the person stops (the last foot lands, the arms settle), then blended out over GAIT_OUT; the legs stay on the gait for good (feet that stay where they were planted)
 
 const PALETTE = [0x2f3b52, 0x6b2d2d, 0x2d5a3b, 0x7a6a4f, 0x1f1f24, 0x8a4f7a, 0x3d6a8a, 0xb5523b, 0x56585c, 0xc0a040, 0x2a2a5a];
 const SKIN = [0xf0c8a0, 0xd9a577, 0xa8714a, 0x7a4a2e, 0xf5d3b8];
@@ -118,7 +124,6 @@ const catOf = (n) => {   // shared A3 clip names (rev 7) -> behaviour category
   return null;
 };
 const dflt = (a, b) => (a != null ? a : b);
-const angDiff = (a, b) => { let d = b - a; d -= Math.PI * 2 * Math.round(d / (Math.PI * 2)); return d; };   // signed shortest turn a -> b
 const SIDESTEPS = [0, 0.55, -0.55, 1.1, -1.1];   // headings tried (rad off the straight line to the goal): straight on, then veering to the person's preferred side first. Never backwards - a person who can only retreat is boxed in and stops
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
@@ -167,7 +172,7 @@ export class AnimCrowd {
       this.armFit[c.id] = n;
     }
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
-    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
+    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gseed = 0;
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
@@ -248,7 +253,7 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; }
+  _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; }
   _rawPick() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
     const r = this.rng(); let pool;
@@ -269,7 +274,7 @@ export class AnimCrowd {
     if (!this.hasAnim || this.people.length >= this.max) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch;
     const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
-    p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.vx = p.vx || 0; p.vz = p.vz || 0;
+    p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
     p.parent = parent || this.group; p.obj = obj; p.parent.add(obj);
     this._enter(p, p.state, 0);
@@ -282,7 +287,7 @@ export class AnimCrowd {
   _swapLod(p, lod) {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
     par.remove(old); p.mixer.stopAllAction(); p.lod = lod; const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
-    p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null;
+    p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
     if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; this._place(p, true);
   }
   _action(p, clip) { let a = p.act.get(clip.name); if (!a) { a = p.mixer.clipAction(clip); a.setEffectiveWeight(0); a.play(); p.act.set(clip.name, a); } return a; }
@@ -300,7 +305,7 @@ export class AnimCrowd {
     else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : 'idle'; }   // idle poses only: talk/wave/point and the phone clips (hands raised, no phone prop in the model) read as flailing arms
-    let clip = this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
+    let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
   }
@@ -308,6 +313,7 @@ export class AnimCrowd {
   _yOffset(p) {
     const m = p.m; if (!m) return 0;
     if (p.state === 'sit' && p.seatY != null) return this._sitOff(m, p.seatY - p.y);
+    const gs = p.gait; if (gs && gs.wL > 0) return -m.minY * (1 - gs.wL) - gs.gb.sole * gs.wL;   // under the gait the soles are where the gait puts them (the body is NOT lifted to hide a captured stride's feet)
     return -m.minY;
   }
   /** pelvis on the seat top; if that would push the shoes through the floor, shoes win; if the feet would hang, sink the pelvis up to 6 cm into the cushion */
@@ -433,38 +439,44 @@ export class AnimCrowd {
       p.stateT += dt;
       if (!p.static) {
         if (p.mode === 'walk') {
-          if (p.wait > 0) { p.wait -= dt; p.vx = p.vz = 0; if (p.wait <= 0) this._enter(p, 'walk'); }
+          if (p.wait > 0) { p.wait -= dt; p.sp = 0; if (p.wait <= 0) this._enter(p, 'walk'); }
           else {
-            if (p.tx == null || Math.hypot(p.tx - p.x, p.tz - p.z) < 0.3) {
+            if (p.tx == null || arrived(p, Math.hypot(p.tx - p.x, p.tz - p.z))) {
               if (p.revert) this._settle(p);   // finished stepping out of the user's way: back to standing / the queue
               else {
+                const stood = p.stopHere && p.tx != null;   // it came here to stand a while: it has braked to a halt on the spot
                 let tx, tz, k = 0; do { tx = p.rect.x0 + this.rng() * (p.rect.x1 - p.rect.x0); tz = p.rect.z0 + this.rng() * (p.rect.z1 - p.rect.z0); } while (k++ < 12 && !this._free(tx, tz, 0.3, p));
-                p.tx = tx; p.tz = tz; p.bestD = 1e9; p.stuckT = 0; if (this.rng() < 0.45) { p.wait = 2 + this.rng() * 7; p.vx = p.vz = 0; this._enter(p, 'stand'); }
+                p.tx = tx; p.tz = tz; p.bestD = 1e9; p.stuckT = 0; p.turnT = 0; p.stopHere = this.rng() < 0.45;   // decided now, so the walk there can end in a planned stop
+                if (stood) { p.wait = 2 + this.rng() * 7; p.sp = 0; this._enter(p, 'stand'); }
               }
             }
             if (p.mode === 'walk' && !(p.wait > 0)) {
               const moved = this._step(p, dt, p.speed * 0.85), dd = Math.hypot(p.tx - p.x, p.tz - p.z);
-              if (moved && dd < (p.bestD ?? 1e9) - 0.05) { p.bestD = dd; p.stuckT = 0; } else p.stuckT = (p.stuckT || 0) + dt;
-              if (!moved || p.stuckT > 1.6) { p.tx = null; p.wait = 0.5 + this.rng(); p.vx = p.vz = 0; p.stuckT = 0; this._enter(p, 'stand'); }   // boxed in / going nowhere: stop and think again, never shuffle on the spot
+              this._progress(p, moved, dd, dt, 0.05);
+              if (!moved || p.stuckT > 1.6) { p.tx = null; p.stopHere = false; p.wait = 0.5 + this.rng(); p.sp = 0; p.stuckT = 0; this._enter(p, 'stand'); }   // boxed in / going nowhere: stop and think again, never shuffle on the spot
             }
           }
         } else if (p.mode === 'queue') {
-          const dq = Math.hypot(p.tx - p.x, p.tz - p.z);
-          if (dq > 0.12) {
+          const dq = Math.hypot(p.tx - p.x, p.tz - p.z); p.stopHere = true;   // its place in the line is somewhere to stand: it brakes into it
+          if (p.state === 'walk' ? !arrived(p, dq) : dq > 0.15) {
             const moved = this._step(p, dt, p.speed * 0.9);
-            if (moved && dq < (p.bestD ?? 1e9) - 0.05) { p.bestD = dq; p.stuckT = 0; } else p.stuckT = (p.stuckT || 0) + dt;
+            this._progress(p, moved, dq, dt, 0.05);
             if (moved) { p.blockT = 0; if (p.state !== 'walk') this._enter(p, 'walk'); }
             else { p.blockT = (p.blockT || 0) + dt; if (p.state === 'walk' && p.blockT > 0.3) this._enter(p, 'stand'); }   // boxed in: wait quietly
-            if (p.stuckT > 2.5) { p.tx = p.x; p.tz = p.z; p.stuckT = 0; p.yawT = p.qyaw; p.vx = p.vz = 0; this._enter(p, 'stand'); }   // no way through to its place: wait where it stands
-          } else if (p.state === 'walk') { p.yawT = p.qyaw; p.vx = p.vz = 0; this._enter(p, 'stand'); }
+            if (p.stuckT > 2.5) { p.tx = p.x; p.tz = p.z; p.stuckT = 0; p.yawT = p.qyaw; p.sp = 0; this._enter(p, 'stand'); }   // no way through to its place: wait where it stands
+          } else if (p.state === 'walk') { p.yawT = p.qyaw; p.sp = 0; this._enter(p, 'stand'); }
         } else if (p.mode === 'go') {
           if (p.delay > 0) { p.delay -= dt; if (p.hidden) continue; }   // streamers stay invisible until their turn; queued boarders idle in the line
           else {
-            if (!p.goStarted) { p.goStarted = true; p.bestD = 1e9; p.stuckT = 0; p.blockT = 0; p.vx = p.vz = 0; if (p.hidden) { p.hidden = false; p.obj.visible = true; } this._enter(p, 'go', 0.2); }
+            if (!p.goStarted) {
+              p.goStarted = true; p.bestD = 1e9; p.stuckT = 0; p.turnT = 0; p.blockT = 0; p.sp = 0; p.stopHere = false;   // a passenger on the way to a door or the stairs does not stop for them
+              if (p.hidden) { p.hidden = false; p.obj.visible = true; p.yaw = p.yawT = Math.atan2(-(p.tx - p.x), -(p.tz - p.z)); p.yw = 0; }   // a streamer appears already facing the way it goes
+              this._enter(p, 'go', 0.2);
+            }
             const moved = this._step(p, dt, p.speed, p.blockT > 0.8 ? 2 : 1);   // walks round people and furniture; only a person truly boxed in for a moment goes through
             p.blockT = moved ? 0 : p.blockT + dt; if (yAt) p.y = yAt(p.x, p.z, p.y);
             const dd = Math.hypot(p.tx - p.x, p.tz - p.z);   // progress-based watchdog: sliding along a wall without getting closer is being stuck too
-            if (dd < p.bestD - 0.03) { p.bestD = dd; p.stuckT = 0; } else p.stuckT += dt;
+            this._progress(p, moved, dd, dt, 0.03);
             if (dd < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
           }
         }
@@ -479,8 +491,60 @@ export class AnimCrowd {
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
       if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
-      if ((dist < this.rAnim || p.v > 0.2) && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible;
+      if ((animate || p.dirty) && p.gait && p.gait.rig) p.gait.rig.restore();   // the mixer's own pose back on the bones before it advances (see gait_three.js)
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) this._gaitStep(p, dt); } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
     }
+  }
+  // ------------------------------------------------------------------ the procedural walk (gait.js: the maths, gait_three.js: the skeleton)
+  /** switch the procedural walk on or off: off = the captured clip walk the game had before it (the baseline of research/people-motion-rubric.md) */
+  setGait(on) {
+    this.gaitOn = !!on;
+    if (!on) for (const p of this.people) if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; }
+  }
+  /** the plain `walk` clip of a character (not walk_bag, whose hand is curled round a bag there is no model of), or null */
+  _plainWalk(ch) { const a = ch.pools.walk; return a && a.find((c) => /(^|__)walk$/.test(c.name)) || null; }
+  /** a character's rest skeleton and feet for the gait (gait_three.readBody), measured once from an unanimated clone of the level of detail the person wears: the simplified
+   *  model's skeleton is NOT the full one's (bones a percent or so shorter, the root an inch higher), and a gait solved for the wrong one leaves the feet floating. null (never
+   *  retried) if the rig is not the expected one. */
+  _gaitBody(ch, lod) {
+    const key = lod && ch.lodNode ? 'gbLo' : 'gbHi';
+    if (ch[key] === undefined) { try { ch[key] = readBody(this.THREE, this._clone(ch, key === 'gbLo')); } catch (e) { ch[key] = null; } }
+    return ch[key];
+  }
+  /** the options a person's gait is made with: a little individuality (it is a crowd, not a squad) - how much each arm swings, how much the body bobs and sways, how the feet
+   *  toe out - none of it is in the clip. Fixed for the person, so a re-plant (below) does not change who they are. */
+  _gaitOpts(p) {
+    const r = mulberry32(0x6a17 + 977 * (++this._gseed)), tab = ARM_OUT[p.char.id];
+    return { armOut: (tab && tab.walk) || [8, 8], var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), phase0: 0, yawBias: (r() - 0.5) * 3 } };
+  }
+  /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
+   *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step
+   *  (the arms settle), then goes back to the clip; the legs (wL) are the gait's from the first step for good, solved against whatever pelvis the person has, so the feet that were
+   *  planted stay planted whatever the idle clips do, and a person who turns on the spot re-plants them with steps. Hands stay with the clip. */
+  _gaitStep(p, dt) {
+    const walking = p.state === 'walk' || p.state === 'go', standing = p.state === 'stand'; let gs = p.gait;
+    if (!gs) {
+      if (!walking && !(standing && p.yawT != null && Math.abs(angDiff(p.yaw, p.yawT)) > 0.35)) return;   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
+      const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
+      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, opts), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
+    }
+    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.g = G.newGait(gs.gb.body, gs.opts); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
+    if (walking) gs.hold = 0; else gs.hold += dt;
+    gs.wU = walking || gs.hold < GAIT_TAIL ? Math.min(1, gs.wU + dt / GAIT_IN) : Math.max(0, gs.wU - dt / GAIT_OUT);
+    gs.wL = walking || standing ? Math.min(1, gs.wL + dt / GAIT_IN) : Math.max(0, gs.wL - dt / GAIT_OUT); gs.t = this._clock;
+    if (gs.wU <= 0 && gs.wL <= 0) { gs.g.placed = false; gs.g.walking = false; gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; return; }   // by clip again: the next walk plants its feet where the person stands then
+    const n = Math.min(4, Math.max(1, Math.ceil(dt * 30))), dy = angDiff(gs.py, p.yaw), stopD = p.stopHere && p.tx != null && walking ? Math.max(0, Math.hypot(p.tx - p.x, p.tz - p.z) - STEER.ARR) : null;   // metres to go to the place where it will stand (steer.js brakes to rest ARR short of it)
+    for (let i = 1; i <= n; i++) { const f = i / n; G.gaitUpdate(gs.g, dt / n, { x: gs.px + (p.x - gs.px) * f, z: gs.pz + (p.z - gs.pz) * f, yaw: gs.py + dy * f, v: p.v, walking, stopD }); }
+    gs.px = p.x; gs.pz = p.z; gs.py = p.yaw;
+    if (!gs.rig) gs.rig = new GaitRig(this.THREE, p.obj, gs.gb);
+    const T = G.gaitTargets(gs.g), sol = gs.wU > 0 ? G.gaitSolve(gs.g, T) : null; let legs = sol;
+    if (!sol || gs.wU < 0.999) {   // the legs reach for their planted feet from the pelvis the person really has: the clip's, or the blend of the clip's and the gait's
+      let pel = gs.rig.clipPelvis();
+      if (sol) { const c = pel, w = gs.wU, b = sol.pelvisW; pel = { pos: [c.pos[0] + (b.pos[0] - c.pos[0]) * w, c.pos[1] + (b.pos[1] - c.pos[1]) * w, c.pos[2] + (b.pos[2] - c.pos[2]) * w], q: G.qslerp(c.q, b.q, w) }; }
+      legs = G.gaitSolve(gs.g, T, { legsOnly: true, pelvis: pel });
+    }
+    gs.rig.apply(sol, gs.wU, legs, gs.wL); gs.phase = gs.g.phase;
   }
   /** ground speed (m/s) at which the walk cycle's planted foot does not slip: on the real skinned soles the mean contact-point speed over the stance is the asset's own
    *  `walkSpeedMps` x ~1.07 (adults 1.02-1.10, children 1.06-1.09 across the rigs), so nothing needs measuring at run time */
@@ -507,14 +571,16 @@ export class AnimCrowd {
     return true;
   }
   /** One steering step toward (tx,tz). The straight line is tried first, then wider and wider veers (to the person's preferred side first, so two people meeting head-on pass on
-   *  opposite sides); the chosen direction feeds a low-passed velocity, so the path and the body heading are smooth - no snapping, no crab-walking, no jitter.
+   *  opposite sides); the chosen direction is the heading the person wants, and steer.js turns them toward it and speeds them up or brakes them (a person is a unicycle: they move
+   *  the way they face, at a limited acceleration and braking, slowly while their facing is far off, and braking into the target when p.stopHere) - no snapping, no crab-walking,
+   *  no jitter, nobody stopped dead.
    *  lvl 0: normal wanderer / queuer (slab inset 0.22); 1: passenger going for a door / the stairs (inset 0.12, still walks round people); 2: boxed-in passenger (floor only).
    *  Returns false when there is no way forward (the person then faces the goal and stands still - never a random shuffle). */
   _step(p, dt, sp, lvl = 0) {
     sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching handles the rest)
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true;
     const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
-    const h0 = Math.atan2(dz, dx), side = p.side || 1, want = p.mode === 'go' ? sp : sp * Math.min(1, 0.3 + d / 0.7), near = Math.min(d, 0.4), far = Math.min(d, 0.85);
+    const h0 = Math.atan2(dz, dx), side = p.side || 1, near = Math.min(d, 0.4), far = Math.min(d, 0.85);
     if (p.sideT > 0) p.sideT -= dt;
     // pick a heading: straight on if it is clear well ahead, else the smallest veer that is (preferred side first, and once a side is chosen the person COMMITS to it for a
     // second - flipping sides every frame in front of an obstacle is the dithering this prevents); pass 1 settles for "clear just ahead", pass 2 may swap sides
@@ -526,21 +592,29 @@ export class AnimCrowd {
       if (pass === 0 && !ok(p.x + ux * far, p.z + uz * far)) continue;
       pick = { ux, uz, off }; break;
     }
-    if (!pick) { p.vx = p.vz = 0; p.yawT = Math.atan2(-dx, -dz); return false; }
-    const cx = pick.ux, cz = pick.uz;
+    if (!pick) { p.sp = 0; p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
-    const a = 1 - Math.exp(-dt * 8);
-    p.vx = (p.vx || 0) + (cx * want - (p.vx || 0)) * a; p.vz = (p.vz || 0) + (cz * want - (p.vz || 0)) * a;
-    let sx = p.vx * dt, sz = p.vz * dt; const sm = Math.hypot(sx, sz); if (sm > d) { sx *= d / sm; sz *= d / sm; }
-    if (!ok(p.x + sx, p.z + sz)) { const s1 = Math.min(want * dt, d) * 0.6; sx = cx * s1; sz = cz * s1; p.vx = cx * want * 0.6; p.vz = cz * want * 0.6; }   // the smoothed step would clip something: ease along the checked heading
+    // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
+    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: sp, d, stop: !!p.stopHere });
+    p.steered = true; p.yawT = p.yaw;
+    let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
+    if (!ok(p.x + sx, p.z + sz)) { p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); sx = sz = 0; }   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
     p.x += sx; p.z += sz;
-    if (Math.hypot(p.vx, p.vz) > 0.1) p.yawT = Math.atan2(-p.vx, -p.vz);
     return true;
   }
-  /** body heading follows the direction of travel through a low-pass (never a snap); people standing still turn on the spot a little slower */
+  /** the watchdog of a person on the way somewhere: getting closer (by tol) resets it; turning to face the way (a few seconds at most) is neither progress nor being stuck */
+  _progress(p, moved, dd, dt, tol) {
+    if (dd < (p.bestD ?? 1e9) - tol) { p.bestD = dd; p.stuckT = 0; p.turnT = 0; }
+    else if (moved && p.turning && (p.turnT = (p.turnT || 0) + dt) < 4) { /* pivoting to face the way */ }
+    else p.stuckT = (p.stuckT || 0) + dt;
+  }
+  /** a person who is not being steered this frame is standing: they have no speed, and turn on the spot toward p.yawT (a queue slot, the user) at a pivoting pace. A person who WAS steered
+   *  (_step has turned them) is left alone. */
   _turn(p, dt) {
-    if (p.yawT == null) return; const d = angDiff(p.yaw, p.yawT); if (Math.abs(d) < 1e-3) return;
-    p.yaw += d * (1 - Math.exp(-dt * (p.state === 'walk' || p.state === 'go' ? 9 : 5)));
+    if (p.steered) { p.steered = false; return; }
+    p.sp = 0;
+    if (p.yawT == null || (!p.yw && Math.abs(angDiff(p.yaw, p.yawT)) < 1e-3)) return;
+    turnToward(p, p.yawT, dt, STEER.PIVOT);
   }
   /** someone standing too close to the user: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
   _makeWay(p, ux, uz) {
@@ -549,13 +623,13 @@ export class AnimCrowd {
       const tx = p.x + Math.cos(a0 + off) * dist, tz = p.z + Math.sin(a0 + off) * dist;
       if (!this._free(tx, tz, 0.3, p)) continue;
       if (p.mode !== 'walk') { p.revert = p.mode; p.mode = 'walk'; }
-      p.tx = tx; p.tz = tz; p.wait = 0; p.vx = p.vz = 0; p.bestD = 1e9; p.stuckT = 0; this._enter(p, 'walk'); return true;
+      p.tx = tx; p.tz = tz; p.wait = 0; p.sp = 0; p.stopHere = true; p.bestD = 1e9; p.stuckT = 0; p.turnT = 0; this._enter(p, 'walk'); return true;
     }
     return false;
   }
   /** back from stepping aside: queue people return to their place in the line, everyone else just stands where they are */
   _settle(p) {
-    const m = p.revert; p.revert = null; p.vx = p.vz = 0;
+    const m = p.revert; p.revert = null; p.sp = 0; p.stopHere = false;
     if (m === 'queue' && p.slot) { p.mode = 'queue'; p.tx = p.slot.x; p.tz = p.slot.z; p.qyaw = p.slot.yaw; p.blockT = 0; p.bestD = 1e9; p.stuckT = 0; return; }
     p.mode = m || 'stand'; p.tx = null; this._enter(p, 'stand');
   }

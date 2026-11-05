@@ -14,10 +14,12 @@
 //     within 0.3 m of the target the person stops dead and goes to 'stand'; with to=0 it just keeps walking on).
 //   window.__film({ id, v, frames, every, ... })  -> PNG data URL of a filmstrip (side view)
 // ?gait=clip switches the gait layer off (the clip-driven walk the game had before the layer existed); anything else uses the game's default.
+// ?detail=1 records the simplified (LOD1) model the crowd wears beyond ~11 m; by default the full-detail one (LOD0): the two rigs differ by up to a centimetre in the ankle's height above the sole.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SU from 'three/addons/utils/SkeletonUtils.js';
 import { AnimCrowd } from '../js/sim/people.js';
+import { arrived } from '../js/sim/steer.js';
 const q = new URLSearchParams(location.search);
 const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace;
@@ -37,18 +39,22 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
     const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
     const crowd = new AnimCrowd(THREE, SU, gltf, 60, 'high', lod); crowd.group = new THREE.Group(); scene.add(crowd.group);
     if (q.get('gait') === 'clip' && crowd.setGait) crowd.setGait(false);
-    window.__crowd = crowd; window.__THREE = THREE; window.__ids = crowd.chars.map((c) => c.id); window.__meta = gltf.meta;
+    window.__crowd = crowd; window.__THREE = THREE; window.__r = r; window.__scene = scene; window.__cam = cam; window.__ids = crowd.chars.map((c) => c.id); window.__meta = gltf.meta;
     const BIG = { x0: -1e4, x1: 1e4, z0: -1e4, z1: 1e4 };
     const fresh = (id, seed) => {
       crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) throw new Error('no such person ' + id);
       delete ch.pools.fidget;   // a child's fidget clips are movement while standing by design: keep them out of a measurement of stopping
       crowd.rng = seeded(id + ':' + (seed || 1));
       const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: 0, mode: 'script', static: false, speed: 1, wait: 0, rect: BIG }, crowd.group);
-      p.nextT = 1e9; p.obj.updateMatrixWorld(true); return p;   // and no idle-variant rotation (a new idle pose has its own feet)
+      p.nextT = 1e9;   // and no idle-variant rotation (a new idle pose has its own feet)
+      if (q.get('detail') !== '1' && p.lod) crowd._swapLod(p, false);   // the person the player looks at is the full-detail model (the nearest few within ~11 m); ?detail=1 records the simplified one the rest of the crowd wears
+      p.obj.updateMatrixWorld(true); return p;
     };
-    // rest-pose geometry of the character: the feet (heel back, toe tip, ball) from the skinned vertices, so the sole landmarks are the shoe, not a guess
+    // rest-pose geometry of the character: the feet (heel back, toe tip, ball) from the skinned vertices, so the sole landmarks are the shoe, not a guess. Measured on a clone no
+    // mixer has touched: a person is in some clip's pose by the time they are recorded, and a foot a few degrees off its rest pitch there (idle poses are 3-6 degrees off) tilts every
+    // point defined from it - the heel-to-ball vector the ankle angle is judged on included (a revision of the instrument, see research/people-motion-rubric.md)
     const geom = (p) => {
-      const o = p.obj, bone = {}; o.traverse((b) => { if (b.isBone) bone[b.name] = b; });
+      const o = crowd._clone(p.char, !!p.lod); o.updateMatrixWorld(true); const bone = {}; o.traverse((b) => { if (b.isBone) bone[b.name] = b; });
       const w = (n) => bone[n].getWorldPosition(new THREE.Vector3());
       const an = w('foot_l'), ba = w('ball_l'), v = new THREE.Vector3(); let zmax = -1e9, zmin = 1e9, ymin = 1e9;
       o.traverse((m) => {
@@ -61,19 +67,19 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
         }
       });
       const head = w('head'), hip = w('thigh_l'), kn = w('calf_l');
-      return { an, ba, heelBack: Math.max(0.04, Math.min(0.09, zmax - an.z)), toeFwd: Math.max(0.13, Math.min(0.25, an.z - zmin)), sole: ymin, ankleH: an.y - ymin, thigh: hip.distanceTo(kn), shank: kn.distanceTo(an), hipY: hip.y, hipHalf: Math.abs(hip.x), headY: head.y };
+      return { rest: bone, an, ba, heelBack: Math.max(0.04, Math.min(0.09, zmax - an.z)), toeFwd: Math.max(0.13, Math.min(0.25, an.z - zmin)), sole: ymin, ankleH: an.y - ymin, thigh: hip.distanceTo(kn), shank: kn.distanceTo(an), hipY: hip.y, hipHalf: Math.abs(hip.x), headY: head.y };
     };
-    // carried points: a world rest position, expressed in a bone's local frame once, then moved with the bone
+    // carried points: a rest-pose world position, expressed in the REST bone's local frame once, then moved with the person's own bone
     const carriers = (p, g) => {
       const bone = {}; p.obj.traverse((b) => { if (b.isBone) bone[b.name] = b; });
-      const spec = {}, loc = (name, wp) => ({ b: bone[name], l: bone[name].worldToLocal(wp.clone()) });
+      const spec = {}, loc = (name, wp) => ({ b: bone[name], l: g.rest[name].worldToLocal(wp.clone()) });
       for (const s of ['l', 'r']) {
-        const sx = s === 'l' ? 1 : -1, an = bone['foot_' + s].getWorldPosition(new THREE.Vector3()), ba = bone['ball_' + s].getWorldPosition(new THREE.Vector3());
+        const an = g.rest['foot_' + s].getWorldPosition(new THREE.Vector3()), ba = g.rest['ball_' + s].getWorldPosition(new THREE.Vector3());
         spec['heel_' + s] = loc('foot_' + s, new THREE.Vector3(an.x, g.sole, an.z + g.heelBack));
         spec['bs_' + s] = loc('foot_' + s, new THREE.Vector3(ba.x, g.sole, ba.z));
         spec['toe_' + s] = loc('ball_' + s, new THREE.Vector3(ba.x, g.sole, an.z - g.toeFwd));
       }
-      const hd = bone.head.getWorldPosition(new THREE.Vector3()); spec.nose = loc('head', new THREE.Vector3(hd.x, hd.y + 0.04, hd.z - 0.12));
+      const hd = g.rest.head.getWorldPosition(new THREE.Vector3()); spec.nose = loc('head', new THREE.Vector3(hd.x, hd.y + 0.04, hd.z - 0.12));
       return { bone, spec };
     };
     window.__run = (spec) => {
@@ -81,16 +87,16 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
       const names = BONES.concat(EXTRA), n = Math.round(plan.reduce((s, a) => s + a.dur, 0) / dt), Lc = names.length, pos = new Array(n * Lc * 3), root = new Array(n * 3), yaw = new Array(n), spd = new Array(n), st = new Array(n), ts = new Array(n), seg = new Array(n), ph = new Array(n);
       let t = 0, k = 0, hd = 0, tx = null, tz = null;
       for (let si = 0; si < plan.length; si++) {
-        const s = plan[si]; if (s.state && s.state !== p.state) { p.vx = s.state === 'stand' ? 0 : p.vx; crowd._enter(p, s.state); p.nextT = s.state === 'stand' ? 1e9 : p.nextT; }
+        const s = plan[si]; if (s.state && s.state !== p.state) { p.sp = s.state === 'stand' ? 0 : p.sp; crowd._enter(p, s.state); p.nextT = s.state === 'stand' ? 1e9 : p.nextT; }
         if (s.turn) { hd += s.turn * Math.PI / 180; if (!(s.v > 0)) p.yawT = hd; }   // standing: face the new way (the game sets yawT directly for a queue slot); walking: the steering finds it
-        const cx = -Math.sin(hd), cz = -Math.cos(hd); tx = s.to ? p.x + cx * s.to : null; tz = s.to ? p.z + cz * s.to : null; let arrived = false;
+        const cx = -Math.sin(hd), cz = -Math.cos(hd); tx = s.to ? p.x + cx * s.to : null; tz = s.to ? p.z + cz * s.to : null; let there = false; p.stopHere = !!s.to;   // a target to stand at is braked into
         const steps = Math.round(s.dur / dt);
         for (let i = 0; i < steps && k < n; i++, k++) {
-          if (s.v > 0 && !arrived) {
-            if (tx != null) { p.tx = tx; p.tz = tz; if (Math.hypot(tx - p.x, tz - p.z) < 0.3) { arrived = true; p.vx = p.vz = 0; crowd._enter(p, 'stand'); p.nextT = 1e9; } }
+          if (s.v > 0 && !there) {
+            if (tx != null) { p.tx = tx; p.tz = tz; if (arrived(p, Math.hypot(tx - p.x, tz - p.z))) { there = true; p.sp = 0; crowd._enter(p, 'stand'); p.nextT = 1e9; } }   // the game's arrival rule (steer.arrived), then its wanderer's 'stand'
             else { p.tx = p.x + cx * 50; p.tz = p.z + cz * 50; }
-            if (!arrived) crowd._step(p, dt, s.v);
-          } else { p.vx = p.vz = 0; }   // standing (or arrived): no steering, as the game zeroes the velocity when a wanderer stops
+            if (!there) crowd._step(p, dt, s.v);
+          }   // standing (or arrived): no steering - the crowd's own _turn then holds the person still, as it does for anyone not being steered
           crowd.update(dt, t, null, null); t += dt;
           p.obj.updateMatrixWorld(true);
           const o = k * Lc * 3; let j = 0;
