@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glasgow Subway - people in motion, recorded</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#3a4048}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+// The recorder behind tools/people_motion.mjs. One person is put through the game's own AnimCrowd.update() - its steering (_step), turning (_turn), pace matching
+// (_pace), placement (_place) and mixer, and whatever gait layer is switched on - along a scripted path, and a set of body landmarks is recorded in world space every frame.
+// Nothing here knows what a good walk looks like: the judging is in js/sim/motion_metrics.mjs.
+//   window.__run({ id, dt, plan:[{ dur, v, state, turn, to }], seed })   -> recording
+//     plan segment: dur seconds long; v = the ground speed the person is steered at (0 = stand still); state = 'walk' | 'stand' (set at the segment start, as the game
+//     does when a wanderer sets off or arrives); turn = degrees to change the heading by at the segment start; to = metres, stop that far ahead (the game's arrival rule:
+//     within 0.3 m of the target the person stops dead and goes to 'stand'; with to=0 it just keeps walking on).
+//   window.__film({ id, v, frames, every, ... })  -> PNG data URL of a filmstrip (side view)
+// ?gait=clip switches the gait layer off (the clip-driven walk the game had before the layer existed); anything else uses the game's default.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SU from 'three/addons/utils/SkeletonUtils.js';
+import { AnimCrowd } from '../js/sim/people.js';
+const q = new URLSearchParams(location.search);
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#d8dde3');
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 100);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x777788, 1.7)); const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(3, 6, 5); scene.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshBasicMaterial({ color: 0xaab0b8 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.002; scene.add(floor);
+const grid = new THREE.GridHelper(40, 80, 0x778088, 0x99a0a8); scene.add(grid);
+const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, undefined, no));
+const seeded = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); let a = h >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+// the landmarks: bone origins in the world frame, plus four points carried rigidly by a bone (offsets measured from the skinned feet / head in the rest pose)
+const BONES = ['pelvis', 'spine_01', 'spine_03', 'neck_01', 'head', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'hand_l', 'hand_r', 'thigh_l', 'thigh_r', 'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r'];
+const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
+(async () => {
+  try {
+    const gltf = await load(q.get('glb') || '../models/people.glb'), lod = await load(q.get('lod') || '../models/people_lod.glb');
+    const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
+    const crowd = new AnimCrowd(THREE, SU, gltf, 60, 'high', lod); crowd.group = new THREE.Group(); scene.add(crowd.group);
+    if (q.get('gait') === 'clip' && crowd.setGait) crowd.setGait(false);
+    window.__crowd = crowd; window.__THREE = THREE; window.__ids = crowd.chars.map((c) => c.id); window.__meta = gltf.meta;
+    const BIG = { x0: -1e4, x1: 1e4, z0: -1e4, z1: 1e4 };
+    const fresh = (id, seed) => {
+      crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) throw new Error('no such person ' + id);
+      delete ch.pools.fidget;   // a child's fidget clips are movement while standing by design: keep them out of a measurement of stopping
+      crowd.rng = seeded(id + ':' + (seed || 1));
+      const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: 0, mode: 'script', static: false, speed: 1, wait: 0, rect: BIG }, crowd.group);
+      p.nextT = 1e9; p.obj.updateMatrixWorld(true); return p;   // and no idle-variant rotation (a new idle pose has its own feet)
+    };
+    // rest-pose geometry of the character: the feet (heel back, toe tip, ball) from the skinned vertices, so the sole landmarks are the shoe, not a guess
+    const geom = (p) => {
+      const o = p.obj, bone = {}; o.traverse((b) => { if (b.isBone) bone[b.name] = b; });
+      const w = (n) => bone[n].getWorldPosition(new THREE.Vector3());
+      const an = w('foot_l'), ba = w('ball_l'), v = new THREE.Vector3(); let zmax = -1e9, zmin = 1e9, ymin = 1e9;
+      o.traverse((m) => {
+        if (!m.isSkinnedMesh) return; const a = m.geometry.attributes, si = a.skinIndex, sw = a.skinWeight, bs = m.skeleton.bones;
+        for (let i = 0; i < a.position.count; i++) {
+          let s = 0; for (let k = 0; k < 4; k++) { const nm = bs[si.getComponent(i, k)].name; if (nm === 'foot_l' || nm === 'ball_l') s += sw.getComponent(i, k); }
+          if (s < 0.9) continue; m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld);
+          if (v.x > -0.01 || v.x < an.x - 0.12) continue;   // left foot only
+          zmax = Math.max(zmax, v.z); zmin = Math.min(zmin, v.z); ymin = Math.min(ymin, v.y);
+        }
+      });
+      const head = w('head'), hip = w('thigh_l'), kn = w('calf_l');
+      return { an, ba, heelBack: Math.max(0.04, Math.min(0.09, zmax - an.z)), toeFwd: Math.max(0.13, Math.min(0.25, an.z - zmin)), sole: ymin, ankleH: an.y - ymin, thigh: hip.distanceTo(kn), shank: kn.distanceTo(an), hipY: hip.y, hipHalf: Math.abs(hip.x), headY: head.y };
+    };
+    // carried points: a world rest position, expressed in a bone's local frame once, then moved with the bone
+    const carriers = (p, g) => {
+      const bone = {}; p.obj.traverse((b) => { if (b.isBone) bone[b.name] = b; });
+      const spec = {}, loc = (name, wp) => ({ b: bone[name], l: bone[name].worldToLocal(wp.clone()) });
+      for (const s of ['l', 'r']) {
+        const sx = s === 'l' ? 1 : -1, an = bone['foot_' + s].getWorldPosition(new THREE.Vector3()), ba = bone['ball_' + s].getWorldPosition(new THREE.Vector3());
+        spec['heel_' + s] = loc('foot_' + s, new THREE.Vector3(an.x, g.sole, an.z + g.heelBack));
+        spec['bs_' + s] = loc('foot_' + s, new THREE.Vector3(ba.x, g.sole, ba.z));
+        spec['toe_' + s] = loc('ball_' + s, new THREE.Vector3(ba.x, g.sole, an.z - g.toeFwd));
+      }
+      const hd = bone.head.getWorldPosition(new THREE.Vector3()); spec.nose = loc('head', new THREE.Vector3(hd.x, hd.y + 0.04, hd.z - 0.12));
+      return { bone, spec };
+    };
+    window.__run = (spec) => {
+      const { id, plan, dt = 1 / 60, seed = 1 } = spec, p = fresh(id, seed), g = geom(p), C = carriers(p, g), v3 = new THREE.Vector3();
+      const names = BONES.concat(EXTRA), n = Math.round(plan.reduce((s, a) => s + a.dur, 0) / dt), Lc = names.length, pos = new Array(n * Lc * 3), root = new Array(n * 3), yaw = new Array(n), spd = new Array(n), st = new Array(n), ts = new Array(n), seg = new Array(n), ph = new Array(n);
+      let t = 0, k = 0, hd = 0, tx = null, tz = null;
+      for (let si = 0; si < plan.length; si++) {
+        const s = plan[si]; if (s.state && s.state !== p.state) { p.vx = s.state === 'stand' ? 0 : p.vx; crowd._enter(p, s.state); p.nextT = s.state === 'stand' ? 1e9 : p.nextT; }
+        if (s.turn) { hd += s.turn * Math.PI / 180; if (!(s.v > 0)) p.yawT = hd; }   // standing: face the new way (the game sets yawT directly for a queue slot); walking: the steering finds it
+        const cx = -Math.sin(hd), cz = -Math.cos(hd); tx = s.to ? p.x + cx * s.to : null; tz = s.to ? p.z + cz * s.to : null; let arrived = false;
+        const steps = Math.round(s.dur / dt);
+        for (let i = 0; i < steps && k < n; i++, k++) {
+          if (s.v > 0 && !arrived) {
+            if (tx != null) { p.tx = tx; p.tz = tz; if (Math.hypot(tx - p.x, tz - p.z) < 0.3) { arrived = true; p.vx = p.vz = 0; crowd._enter(p, 'stand'); p.nextT = 1e9; } }
+            else { p.tx = p.x + cx * 50; p.tz = p.z + cz * 50; }
+            if (!arrived) crowd._step(p, dt, s.v);
+          } else { p.vx = p.vz = 0; }   // standing (or arrived): no steering, as the game zeroes the velocity when a wanderer stops
+          crowd.update(dt, t, null, null); t += dt;
+          p.obj.updateMatrixWorld(true);
+          const o = k * Lc * 3; let j = 0;
+          for (const nm of BONES) { C.bone[nm].getWorldPosition(v3); pos[o + j++] = +v3.x.toFixed(4); pos[o + j++] = +v3.y.toFixed(4); pos[o + j++] = +v3.z.toFixed(4); }
+          for (const nm of EXTRA) { const c = C.spec[nm]; v3.copy(c.l).applyMatrix4(c.b.matrixWorld); pos[o + j++] = +v3.x.toFixed(4); pos[o + j++] = +v3.y.toFixed(4); pos[o + j++] = +v3.z.toFixed(4); }
+          root[k * 3] = +p.x.toFixed(4); root[k * 3 + 1] = +p.obj.position.y.toFixed(4); root[k * 3 + 2] = +p.z.toFixed(4); yaw[k] = +p.yaw.toFixed(4); spd[k] = +p.v.toFixed(4); st[k] = p.state; seg[k] = si;
+          ts[k] = p.cur ? +p.cur.timeScale.toFixed(3) : 0; ph[k] = p.gait && p.gait.phase != null ? +p.gait.phase.toFixed(4) : -1;
+        }
+      }
+      const meta = gltf.meta[id] || {};
+      return { id, dt, n: k, names, pos, root, yaw, v: spd, state: st, seg, timeScale: ts, phase: ph, floor: 0, info: { heightM: meta.heightM, legLengthM: meta.legLengthM, walkSpeedMps: meta.walkSpeedMps, kid: p.char.kid, gaitLayer: !!(crowd.gaitOn), thigh: g.thigh, shank: g.shank, hipY: g.hipY, hipHalf: g.hipHalf, ankleH: g.ankleH, heelBack: g.heelBack, toeFwd: g.toeFwd } };
+    };
+    // a side-view filmstrip of one steady walk: `frames` stills spread over `span` seconds (default one stride), the camera travelling with the person
+    window.__film = (spec) => {
+      const { id, v = 1.2, frames = 8, span = 1.0, w = 150, h = 300, view = 'side', warm = 3.0, dt = 1 / 60 } = spec, p = fresh(id, spec.seed || 1);
+      const cx = 0, cz = -1; let t = 0, hd = 0;
+      const step = () => { p.tx = p.x + cx * 50; p.tz = p.z + cz * 50; crowd._step(p, dt, v); crowd.update(dt, t, null, null); t += dt; };
+      crowd._enter(p, 'walk'); for (let i = 0; i < Math.round(warm / dt); i++) step();
+      const cv = document.createElement('canvas'); cv.width = w * frames; cv.height = h; const g2 = cv.getContext('2d');
+      r.setPixelRatio(1); r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+      const every = span / frames / dt;
+      for (let f = 0; f < frames; f++) {
+        for (let i = 0; i < Math.round(every); i++) step();
+        p.obj.updateMatrixWorld(true);
+        const fx = p.x, fz = p.z;
+        if (view === 'side') { cam.position.set(fx + 3.4, 0.95, fz); cam.lookAt(fx, 0.9, fz); }
+        else if (view === 'front') { cam.position.set(fx, 1.0, fz - 3.6); cam.lookAt(fx, 0.9, fz); }
+        else { cam.position.set(fx, 4.2, fz + 0.01); cam.lookAt(fx, 0, fz); }
+        grid.position.set(Math.round(fx), 0, Math.round(fz)); r.render(scene, cam); g2.drawImage(r.domElement, f * w, 0, w, h);
+      }
+      return cv.toDataURL('image/png');
+    };
+    window.__ready = true;
+  } catch (e) { window.__err = String(e && e.stack || e); window.__ready = true; }
+})();
+</script></body></html>
