@@ -445,3 +445,15 @@ test('adverts: the cross-track row fills free wall without overlaps, gaps or was
     assert.ok(b - a - used < 1 + 0.3, `stretch ${a}..${b} left ${(b - a - used).toFixed(2)} m unused`);
   }
 });
+
+test('stairs: adverts step up the shaft walls, inside the opening and clear of the landing wall', async () => {
+  const { advertSlots, STAIR_AD, stairSpec, buildStairs } = await import('./stairs.js');
+  const sp = stairSpec({ platformTopY: 0.695 }, { x: 2.845, z: 21 }, 3.4, 3.9), u = advertSlots(sp);
+  assert.ok(u.length >= 3, 'a few posters per wall: ' + u.length);
+  assert.ok(u[0] - STAIR_AD.w / 2 >= sp.uN && u[u.length - 1] + STAIR_AD.w / 2 <= sp.U - 0.15, JSON.stringify({ u, uN: sp.uN, U: sp.U }));
+  for (let i = 1; i < u.length; i++) assert.ok(Math.abs(u[i] - u[i - 1] - STAIR_AD.pitch) < 1e-9);
+  const map = new THREE.Texture(), built = buildStairs(THREE, sp, {}, { adverts: { map, rects: [[0, 0, 0.25, 0.25]] } });
+  const m = built.group.getObjectByName('stair_adverts');
+  assert.ok(m && m.material.map === map && m.geometry.index.count === 2 * u.length * 6, 'one quad per slot per wall');
+  assert.equal(buildStairs(THREE, sp, {}).group.getObjectByName('stair_adverts'), undefined, 'no atlas: no posters');
+});

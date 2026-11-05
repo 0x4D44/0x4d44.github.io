@@ -8,6 +8,7 @@ import { hallPosterZone, ceilingAtHallX, hallWallClutter } from './hall.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 import { kitParts, instanceKit, placeMatrix } from './kit.js';
 import { buildStairs, stairZ, STAIR } from './stairs.js';
+import { advertOrder, cellRect } from './adverts.js';
 
 export const PY = 0.695;           // platform surface above rail head
 export const EDGE = 1.5;          // track centre to platform edge
@@ -39,6 +40,7 @@ export function buildStation(THREE, o) {
   const KM = { pillar: [], bench: [], gate: [], tm: [], bin: [], clock: [] };
   const style = styleFor(st, idx);
   const seed = hashStr(st.id); const rng = mulberry32(seed);
+  const stationId = st.id;   // (the stair loop below shadows `st`)
   const type = (st.platform && st.platform.type) || 'island';
   const island = useHall ? HL.island : (type === 'island' || type === 'split');
   // ---- textured A3 vault (models/tunnel_station_vault.glb): sections instanced along the platform
@@ -425,7 +427,8 @@ export function buildStation(THREE, o) {
         continue;
       }
       const dado = hallMat.dado ? hallMat.dado.clone() : null, wallM = hallMat.wall ? hallMat.wall.clone() : null; if (dado) ownMats.push(dado); if (wallM) ownMats.push(wallM);
-      const st = buildStairs(THREE, sp, { dado, wall: wallM });
+      const atl = o.adverts, stairAds = atl && atl.portrait ? { map: atl.portrait, rects: advertOrder(stationId + '/stair' + sp.d + sp.x.toFixed(1)).map(cellRect) } : null;
+      const st = buildStairs(THREE, sp, { dado, wall: wallM }, { adverts: stairAds });
       st.group.rotation.y = hallG.rotation.y; st.group.position.copy(hallG.position); group.add(st.group); ownMats.push(...st.owned);
       // portal = the spot at the foot where passengers leave / join the platform
       const [px, pz] = hallToL(sp.x, stairZ(sp, -0.45)); pt.x = px; pt.z = pz;

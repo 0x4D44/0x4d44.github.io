@@ -720,7 +720,7 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = Promise.all([loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)), this._advertAtlas()]).then(([tpl, ads]) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); applyAdverts(tpl, ads.portrait, id); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); trackWallAdverts(this.THREE, tpl, hi, ads, id); cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = Promise.all([loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)), this._advertAtlas()]).then(([tpl, ads]) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); applyAdverts(tpl, ads.portrait, id); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); trackWallAdverts(this.THREE, tpl, hi, ads, id); this.advertAtlases = ads; cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
@@ -751,7 +751,7 @@ class Sim {
       else if (!force) { this._loadHall(stop.station); return null; }
     }
     const side = lay ? lay.S : this.svc.sideOf[stopIdx];
-    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl, low: this.quality === 'low', hall });
+    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl, low: this.quality === 'low', hall, adverts: this.advertAtlases || null });
     placeStation(THREE, v, stop); v.stopIdx = stopIdx; v.station = station;
     this._decorateStation(v);
     this.scene.add(v.group); this.stationViews.set(stopIdx, v);

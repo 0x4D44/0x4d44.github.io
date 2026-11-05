@@ -151,7 +151,8 @@ function addSheet(buf, pts, side, z0, z1, s0, s1, inset, uvRect) {
   for (let r = 0; r < ss.length - 1; r++) { const a = base + r * 2; buf.idx.push(a, a + 1, a + 3, a, a + 3, a + 2); }
 }
 
-const cellRect = (cell) => { const w = 1 / ADVERT_GRID, u0 = (cell % ADVERT_GRID) * w + CELL_INSET, v0 = Math.floor(cell / ADVERT_GRID) * w + CELL_INSET; return [u0, v0, u0 + w - 2 * CELL_INSET, v0 + w - 2 * CELL_INSET]; };
+/** UV rectangle [u0, v0, u1, v1] of an atlas cell, inside its gutter (v0 = top edge) */
+export const cellRect = (cell) => { const w = 1 / ADVERT_GRID, u0 = (cell % ADVERT_GRID) * w + CELL_INSET, v0 = Math.floor(cell / ADVERT_GRID) * w + CELL_INSET; return [u0, v0, u0 + w - 2 * CELL_INSET, v0 + w - 2 * CELL_INSET]; };
 
 /** Removes the triangles of the given vertex groups from an indexed geometry. */
 function dropQuads(THREE, geo, groups) {
