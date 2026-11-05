@@ -93,4 +93,4 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | MPFB2 2.0.18 (character generator, used as a tool) | Joel Palmius and contributors | GPL-3.0-or-later (code only; generated meshes are CC0) |
 | MakeHuman base mesh and targets | MakeHuman Community | CC0 |
 
-Platform-wall adverts in `adverts.jpg` were generated with OpenAI image generation (via the Codex CLI) from our own briefs (`tools/adverts_prompts.md`). Every product, brand, book, author and charity in them is fictional.
+Station adverts in `adverts.jpg` and `adverts_land.jpg` were generated with OpenAI image generation (via the Codex CLI) from our own briefs (`tools/adverts_prompts.md`). Every product, brand, book, author and charity in them is fictional.

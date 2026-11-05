@@ -419,3 +419,29 @@ test('adverts: each poster quad gets its own atlas cell, inside the gutter, keep
   }
   assert.equal(cells.size, 3);
 });
+
+test('adverts: track walls are the walls with a track, not a platform, in front of them', async () => {
+  const { trackWalls } = await import('./adverts.js');
+  const idx = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/stations_index.json', import.meta.url)), 'utf8')).stations;
+  assert.deepEqual(trackWalls(idx['shields-road']), [-1, 1], 'island: both walls face a track');
+  assert.deepEqual(trackWalls(idx['govan']), [], 'side platforms: both walls are platform walls');
+  assert.deepEqual(trackWalls(idx['hillhead']), [-1], 'split: only the wall beyond the island\'s outer track');
+  assert.deepEqual(trackWalls(idx['buchanan-street']), [-1]);
+});
+
+test('adverts: the cross-track row fills free wall without overlaps, gaps or wasted pattern', async () => {
+  const { planRow, freeIntervals } = await import('./adverts.js');
+  const free = freeIntervals([[-12.2, -11.8], [-8.5, -5.5], [11.8, 12.2]], -20.5, 20.5, 0.25, 1);
+  assert.deepEqual(free.map((f) => f.map((v) => +v.toFixed(2))), [[-20.5, -12.45], [-11.55, -8.75], [-5.25, 11.55], [12.45, 20.5]]);
+  const P = { kind: 'portrait', w: 1 }, L = { kind: 'landscape', w: 2.25 };
+  const row = planRow(free, [P, P, P, L], 0.3);
+  for (const f of row) assert.ok(free.some(([a, b]) => f.z0 >= a - 1e-9 && f.z1 <= b + 1e-9), `frame ${f.z0}..${f.z1} outside the free wall`);
+  for (let i = 1; i < row.length; i++) assert.ok(row[i].z0 >= row[i - 1].z1 + 0.3 - 1e-9, 'frames keep their gap');
+  assert.ok(row.filter((f) => f.kind === 'landscape').length >= 3 && row.filter((f) => f.kind === 'portrait').length >= 9, JSON.stringify(row.map((f) => f.kind)));
+  const tail = planRow([[0, 5]], [P, P, P, L], 0.3);   // the landscape is due but only a portrait still fits: take the portrait
+  assert.deepEqual(tail.map((f) => f.kind), ['portrait', 'portrait', 'portrait', 'portrait']);
+  for (const [a, b] of free) {   // no free stretch left wide enough for another portrait
+    const inn = row.filter((f) => f.z0 >= a && f.z1 <= b); const used = inn.reduce((s, f) => s + (f.z1 - f.z0) + 0.3, 0);
+    assert.ok(b - a - used < 1 + 0.3, `stretch ${a}..${b} left ${(b - a - used).toFixed(2)} m unused`);
+  }
+});
