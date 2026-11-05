@@ -46,3 +46,19 @@ Source briefs for the 12 billboards in `models/adverts_land.jpg` (1536x1024 each
 10. Clothing tech advert, cosy warm orange glow. Product: "THERMAKILT" heated kilt. Headline: "Three settings." Three illustrated dial positions labelled "ABERDEEN", "INVERNESS", "SHETLAND". Photo of a contented man in a gently glowing tartan kilt standing in a snowy Highland glen. Small line: "USB rechargeable. Do not wear in the bath."
 11. Support group advert, gentle soft-focus charity design. Brand: "TABLET ANONYMOUS". Headline: "One square is too many. Ten is not enough." Photo of a circle of people in a church hall, one of them guiltily hiding a large slab of Scottish tablet fudge behind his back. Small line: "Meetings every Tuesday. Please do not bring snacks."
 12. Leisure attraction advert, dramatic mountain photography. Brand: "MUNRO LIFTS". Headline: "All 282 Munros. Zero climbing." Photo of a sleek glass elevator rising up the side of a misty Scottish mountain, smug passengers waving at exhausted hillwalkers below. Small line: "Summit selfies guaranteed. Midges extra."
+
+## Car-cards (in-train)
+
+Source briefs for the 8 cards in `models/adverts_cards.jpg` (1536x1024 pages with a centred banner, cropped to content and fitted
+to 3:1 by `python3 tools/build_adverts.py <dir> card models/adverts_cards.jpg`). Shared preamble:
+
+> Image: a realistic, professionally designed in-train CAR-CARD advert, the long thin kind mounted in the curved strip above the windows inside a metro carriage. Lay it out as a WIDE BANNER: the whole design must sit inside a horizontal band 1536 px wide and 512 px tall, centred vertically (from y=256 to y=768); the area above and below that band must be plain flat white (it will be cropped off). Inside the band: glossy, real-world print-advert design quality, bold, clean, correctly spelled, legible typography (short text, large letters, one line of headline), with a photo or product shot on one side. Flat, straight-on, no frame, no perspective, no mock-up. Deadpan, completely serious corporate advertising tone for an absurd product. All brands and people are fictional; no real brand logos.
+
+1. Public notice. Brand: "SUBWAY WILDLIFE UNIT". Headline: "Haggis on board? Do not feed it." Photo of a small furry wild haggis curled up on a train seat. Small line: "Report sightings to a member of staff."
+2. Book advert. Product: "THE WEEGIE-ENGLISH DICTIONARY". Headline: "Now with 40% more \"aye\"." Photo of a thick tartan-bound dictionary. Small line: "Pure dead brilliant. Out now."
+3. Membership club advert. Brand: "THE SQUARE SAUSAGE SOCIETY". Headline: "Join the squared circle." Photo of a perfect square slice of Lorne sausage on a morning roll. Small line: "Members only. Roll not included."
+4. Umbrella advert. Product: "RAINFINDER". Headline: "The umbrella that knows where the rain is." Small subheading: "(Everywhere.)" Photo of a sleek black umbrella opening in a sideways Glasgow downpour.
+5. Ferry company advert. Brand: "ISLAND MAYBE FERRIES". Headline: "It'll probably sail." Photo of a small red and black ferry on choppy grey sea near a misty island. Small line: "Check before you travel. Then check again."
+6. Health product advert. Product: "TABLET PATCH". Headline: "Quit tablet one square at a time." Photo of a skin patch shaped like a square of Scottish tablet fudge on someone's arm. Small line: "Ask your pharmacist. Or your granny."
+7. Recruitment advert. Brand: "CEILIDH CALLERS WANTED". Headline: "Can you shout \"and ROUND!\" with conviction?" Photo of a man in a kilt on a stage with a microphone, mid-shout, dancers spinning below. Small line: "Apply within. Hearing loss an advantage."
+8. Food product advert, bright summer colours. Product: "THE DEEP-FRIED SMOOTHIE". Headline: "The healthy option. Fried." Photo of a tall golden battered smoothie cup with a straw sticking out. Small line: "Now with one of your five a day."
