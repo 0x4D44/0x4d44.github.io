@@ -10,6 +10,8 @@ import { Walker } from './walker.js';
 import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import * as THREE from '../../vendor/three/build/three.module.js';
+import { Rats, RAT, strideAt } from './rats.js';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -206,4 +208,35 @@ test('audio: every recorded sound has its file, a sane level trim, and a CC0 / C
     assert.match(c.licence, /^(CC0|CC-BY)/, `${name}: licence ${c.licence}`);
     assert.ok(c.author && /^https:\/\//.test(c.url), `${name} needs an author and a source link`);
   }
+});
+
+test('rats: they potter and sprint at a brown rat\'s speeds, start and stop at believable accelerations, and never beat their legs faster than a rat can', () => {
+  // a rat that goes about its business, one that is scared by somebody walking up, and one that bolts because a train is announced
+  const run = (threat) => {
+    const R = new Rats(THREE), view = { info: { hall: true, otherTrackX: null }, group: new THREE.Group() }; R.attach(view);
+    const o = { maxRun: 0, maxBolt: 0, maxAcc: 0, maxHz: 0, bolted: false, gone: false, sniffed: false };
+    let skip = true; R.onEvent = (kind) => { if (kind === 'bolt') { o.bolted = true; skip = true; } };   // (an about-turn is a reversal, not an acceleration)
+    const r = R.spawn(0, 1), dt = 1 / 30, ctx = { walker: { x: 99, z: 99, y: 0 }, own: { state: 'wait', timer: 400 }, other: null };
+    let prev = 0;
+    for (let i = 0; i < 30 * 200 && R.rats.includes(r); i++) {
+      if (i === 30 * 6) { if (threat === 'walker') ctx.walker = { x: r.x + 0.5, z: r.z, y: 0 }; if (threat === 'train') ctx.own = { state: 'arriving', timer: 5 }; }
+      R.update(dt, ctx);
+      const v = r.speed; if (r.state === 'sniff') o.sniffed = true;
+      if (r.state === 'bolt') o.maxBolt = Math.max(o.maxBolt, v); else o.maxRun = Math.max(o.maxRun, v);
+      if (!skip) o.maxAcc = Math.max(o.maxAcc, Math.abs(v - prev) / dt); skip = false; prev = v;
+      if (v > 0.15) o.maxHz = Math.max(o.maxHz, v / strideAt(v));
+    }
+    o.gone = !R.rats.includes(r); return o;
+  };
+  for (const threat of ['none', 'walker', 'train']) {
+    const o = run(threat);
+    assert.ok(o.gone && o.bolted, `${threat}: the rat ends up bolting into the tunnel and gone (${JSON.stringify(o)})`);
+    assert.ok(o.maxRun <= 1.31 && o.maxBolt <= 3.0, `${threat}: potter ${o.maxRun.toFixed(2)} m/s (<= 1.3), sprint ${o.maxBolt.toFixed(2)} m/s (<= 3)`);
+    assert.ok(o.maxAcc <= 15, `${threat}: acceleration ${o.maxAcc.toFixed(1)} m/s^2 (<= 15)`);
+    assert.ok(o.maxHz <= 8, `${threat}: legs cycle ${o.maxHz.toFixed(1)} times a second (<= 8)`);
+  }
+  assert.ok(RAT.bolt <= 3 && RAT.trot <= 1.2, 'the speeds the rats aim for');
+  assert.ok(strideAt(RAT.trot) > 0.2 && RAT.trot / strideAt(RAT.trot) >= 3 && RAT.trot / strideAt(RAT.trot) <= 6, 'a trot is 3-6 leg cycles a second');
+  assert.ok(RAT.bolt / strideAt(RAT.bolt) >= 5.5 && RAT.bolt / strideAt(RAT.bolt) <= 8, 'flat out it is 5.5-8 a second, with a longer stride');
+  assert.ok(strideAt(2.8) > strideAt(1.0) && strideAt(1.0) > strideAt(0.2), 'the stride lengthens with speed');
 });
