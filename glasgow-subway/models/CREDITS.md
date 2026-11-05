@@ -92,3 +92,5 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/young_caucasian_male2 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | MPFB2 2.0.18 (character generator, used as a tool) | Joel Palmius and contributors | GPL-3.0-or-later (code only; generated meshes are CC0) |
 | MakeHuman base mesh and targets | MakeHuman Community | CC0 |
+
+Station and in-train adverts in `adverts.jpg`, `adverts_land.jpg` and `adverts_cards.jpg` were generated with OpenAI image generation (via the Codex CLI) from our own briefs (`tools/adverts_prompts.md`). Every product, brand, book, author and charity in them is fictional.

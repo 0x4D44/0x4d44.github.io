@@ -11,6 +11,9 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-05 - Blender's bundled Python has no Pillow on macOS: glasgow-subway asset builds need it (tools/assets_tex.py)
+  Install Pillow to a folder outside the repo and add it to sys.path in a wrapper run as blender -b --factory-startup --python wrapper -- tools/assets_train.py.
+  The builders also hard-code SCRATCH under /tmp/claude-0/... (tools/assets_lib.py, assets_tex.py) and create it on every run.
 - 2026-11-01 - core/physics.mjs:PLOUGH_LOCAL: verge pull is yaw torque from per-wheel plough drag
   Two wheels on grass at 90 km/h swung the heading 14 deg in 1 s. With no plough drag the swing is 0.5 deg; gravel rolling
   resistance still gives 14, gravel grip 15, assist off 23. Applying the along-track drag at the centre of mass (10 % kept at
