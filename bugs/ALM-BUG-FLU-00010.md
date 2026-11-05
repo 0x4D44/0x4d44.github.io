@@ -1,26 +1,25 @@
 # ALM-BUG-FLU-00010 — Glasgow Subway: a platform wall poster overlaps the station mural (Hillhead, Govan)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** glasgow-subway
 - **Raised:** 2026-11-05T14:35:34Z
 - **Discovery source:** Agent
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20261105T144812Z-99ce25b3
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-FLU-00010-run-fix-20261105T144812Z-99ce25b3
-- **Owner base:** da519a8971f57d55b8aecaa6aa7be9dfbf94f427
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-11-05T14:48:12Z
-- **Owner until:** 2026-11-05T18:48:12Z
-- **Owner session:** flux/317b34f0-c9e3-4915-adfe-95600d23f8ca (run fix-20261105T144812Z-99ce25b3)
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-11-05T14:35:34Z, raised via `deltic bugs new --land` model=claude-opus-5-5@medium)
+- **State history:** Open (2026-11-05T14:35:34Z, raised via `deltic bugs new --land` model=claude-opus-5-5@medium) -> Fixed (2026-11-05T14:48:47Z, deltic:auto role=fix run=fix-20261105T144812Z-99ce25b3 branch=task/bug-ALM-BUG-FLU-00010-run-fix-20261105T144812Z-99ce25b3 code=d8e59da96ee2cef5214612195e02105edfde311c gate=manual)
 
 ## Observation
 
