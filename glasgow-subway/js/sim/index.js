@@ -15,6 +15,7 @@ import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
 import { loadAdvertAtlas, applyAdverts, trackWallAdverts } from './adverts.js';
+import { fitTrainAdverts } from './carcards.js';
 import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
 import { cutStairHoles } from './stairs.js';
 import { Rats } from './rats.js';
@@ -87,6 +88,7 @@ class Sim {
     this.trainTpl = trainTpl; this.views = {};
     this.trainView = new TrainView(THREE, trainTpl.scene, {}); this.views[this.line] = this.trainView; this.trainView.line = this.line;
     this.scene.add(this.trainView.root);
+    { const tv = this.trainView, ln = this.line; this._advertAtlas().then((a) => fitTrainAdverts(THREE, tv, a, ln)).catch((e) => console.warn('[sim] train adverts', e)); }
     this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
     this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2); this.trainView.setDest(this.line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
@@ -237,6 +239,7 @@ class Sim {
     tv.setDest(line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     this.tms.attach(tv); tv.buildCab(this.tms.tex, this.tms.tex2);
     tv.line = line; tv.saloon = this._makeSaloon(); tv.saloonDone = false;
+    this._advertAtlas().then((a) => fitTrainAdverts(this.THREE, tv, a, line)).catch((e) => console.warn('[sim] train adverts', e));
     this.scene.add(tv.root); this.views[line] = tv; return tv;
   }
   /** a crowd of passengers for one train (the saloon crowds share one measuring cache: same characters, same clips) */
@@ -724,10 +727,10 @@ class Sim {
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
-  /** the shared advert atlases, loaded once: { portrait, landscape }, either null if it fails (portrait: the baked placeholder posters stay) */
+  /** the shared advert atlases, loaded once: { portrait, landscape, cards }, any null if it fails (portrait: the baked placeholder posters stay) */
   _advertAtlas() {
     const one = (f) => loadAdvertAtlas(this.THREE, this.url('models/' + f)).catch((e) => { console.warn('[sim] advert atlas missing', f, e && e.message); return null; });
-    if (!this.advertAtlasP) this.advertAtlasP = Promise.all([one('adverts.jpg'), one('adverts_land.jpg')]).then(([portrait, landscape]) => ({ portrait, landscape }));
+    if (!this.advertAtlasP) this.advertAtlasP = Promise.all([one('adverts.jpg'), one('adverts_land.jpg'), one('adverts_cards.jpg')]).then(([portrait, landscape, cards]) => ({ portrait, landscape, cards }));
     return this.advertAtlasP;
   }
   _evictHalls(keep) {
@@ -1207,6 +1210,8 @@ class Sim {
     let late = null;
     if (this.mode === 'drive' && svc.schedule) { const sched = svc.schedule.arr[svc.idx] + svc.lap * svc.schedule.period + (svc.t0 || 0); late = svc.phase === 'station' ? (svc.stopStatus && svc.stopStatus.late) : Math.max(svc.t - sched, -999); if (late != null && svc.phase !== 'station' && late < 0) late = null; }
     this.hud.update(info, { title, distText, sub, late });
+    // in-car screens: the player's train knows its next stop; the other circle's train shows the logo and adverts
+    for (const v of Object.values(this.views)) if (v && v.updatePis) v.updatePis(this.time, v === this.trainView ? { line: this.line, next: upNext.name, at: svc.phase === 'station' } : null);
   }
 
   /** explore only: the occasional rat on the track bed of the station you are standing in (see rats.js) */

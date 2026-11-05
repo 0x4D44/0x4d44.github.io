@@ -457,3 +457,26 @@ test('stairs: adverts step up the shaft walls, inside the opening and clear of t
   assert.ok(m && m.material.map === map && m.geometry.index.count === 2 * u.length * 6, 'one quad per slot per wall');
   assert.equal(buildStairs(THREE, sp, {}).group.getObjectByName('stair_adverts'), undefined, 'no atlas: no posters');
 });
+
+test('in-car screens: the 28 s cycle shows the logo, the next station twice and two adverts; adverts fill in without info', async () => {
+  const { Pis } = await import('./carcards.js');
+  const kinds = (info) => [1, 6, 12, 18, 25].map((t) => Pis.slide(t, info).kind);
+  assert.deepEqual(kinds(true), ['logo', 'next', 'ad', 'next', 'ad']);
+  assert.deepEqual(kinds(false), ['logo', 'ad', 'ad', 'ad', 'ad']);
+  const ads = [6, 12, 18, 25, 34, 40].map((t) => Pis.slide(t, false).n);
+  assert.equal(new Set(ads).size, ads.length, 'each advert slot shows the next advert: ' + ads);
+});
+
+test('car-cards: atlas cells are 3:1 and stay inside their gutter', async () => {
+  const { cardRect, CARDS, CARD, RI } = await import('./carcards.js');
+  const seen = new Set();
+  for (let i = 0; i < CARDS; i++) {
+    const [u0, v0, u1, v1] = cardRect(i), c = i % 2, r = Math.floor(i / 2);
+    assert.ok(u0 > c / 2 && u1 < (c + 1) / 2 && v0 > r / 4 && v1 < (r + 1) / 4, `cell ${i}`);
+    assert.ok(Math.abs(((u1 - u0) * 2048) / ((v1 - v0) * 1408) - 1008 / 336) < 1e-9);
+    seen.add(u0 + ',' + v0);
+  }
+  assert.equal(seen.size, CARDS);
+  const arc = RI * (CARD.a1 - CARD.a0) * Math.PI / 180;
+  assert.ok(Math.abs(CARD.w / arc - 3) < 0.1, 'the card band is 3:1 like the art: ' + (CARD.w / arc).toFixed(2));
+});
