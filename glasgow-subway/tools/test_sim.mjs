@@ -417,7 +417,7 @@ try {
     return { bgDwell: s.bg.sh.state === 'dwell', line0: s.line, before, audit: { bad: audit.bad, trains: audit.trains } };
   });
   const trains = Object.values(salA.before);
-  ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', salA.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.perCar[i] === 0))), JSON.stringify(salA.before));
+  ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', salA.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.near[i] === 0))), JSON.stringify(salA.before));   // a car with nobody inside the crowd's view range (a train still pulling in or away) is rightly undrawn
   ok('riders of both circles pass the people audit (feet, seats, ceiling, walls, overlaps)', salA.audit.bad.length === 0 && Object.keys(salA.audit.trains).length === 2, JSON.stringify(salA.audit));
   // sound at the island platform: the other circle's train opens and closes its doors across the platform, and you hear it - from its doorways, to the left or right, fainter with distance
   const kps = await ev(p, async () => {
