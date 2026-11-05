@@ -27,7 +27,12 @@ as a **2-car, ~27.8 m, 2.30 m wide, 2.72 m high (rail head to roof; +0.06 roof p
 Floor height 0.695 m above rail head; platform top 0.695 m; platform edge gap ~0.10 m. Fit check: train max roof corner clears the 3.35 m bore (axis at +1.20 m).
 Power: two conductor rails at x=+-0.92 m (top height +0.12 m) with bogie collector shoes (~ stylised; exact Subway arrangement not verified).
 
-## train.glb  (~830 KB, ~12k tris)   train_lod.glb (~22 KB, 248 tris)
+## train.glb  (~2.2 MB, ~31.8k tris)   train_lod.glb (~105 KB, ~1.5k tris)
+**REVISION 5 (livery from the in-service photos; node names, door pivots, walkable JSON and dimensions are unchanged - see `tools/assets_train.py`)**: body white, ONE continuous black window ribbon (the pillars between windows are black, not white; glazing is the dark tint `glass_tint`),
+the orange is the door LEAVES only (the old broad orange bands on the roof/shoulders are gone). Doors are tall: the opening and the leaf run from the floor up into the roof arch to 64 deg (inner face 1.78 m above the floor, 0.24 m above the window head at 45 deg) and the leaf face sits 42 mm behind the body skin
+(black reveals + a 30 mm black seal outline round each opening). Cross-section is unchanged (research/train-dimensions.md pins it: vertical sides to y=1.487, then one R=1.155 arch).
+New nodes **`car_N_bellows`** (smooth shaded, one per car, N=0..3): the outer dark sleeve (`bellows_dark`) over each 0.17 m gap on the body outline (each car builds its half, they meet in the middle of the gap; pleats stand at most 12 mm proud, max width stays 2.334 m) and the grey (`bellows_grey`) concertina lining of each gangway
+aperture (6 rounded folds per passage, floor to roof and over the top; ridges 30 mm into the 1.3 m opening). Gangway poles run floor to ceiling; the SOS box moved from inside the aperture onto the bulkhead. Route diagrams (`route_map_panel`) sit above the windows of each long bay (they used to be placed at the wrong world y). The cab doors keep the old 45 deg head.
 Root `train` (identity). Unit centred at origin, length ~27.9 m (z in [-13.92, +13.92]). Car 0 = front (z<0, cab at -Z end), car 1 = rear (cab at +Z end).
 | node | notes |
 |---|---|
