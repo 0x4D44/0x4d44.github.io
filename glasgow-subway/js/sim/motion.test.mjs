@@ -179,3 +179,27 @@ test('the metrics score a good walk well (the control for the flaw tests)', () =
 for (const [name, f] of Object.entries(FLAWS)) test(`the metrics notice: ${name}`, () => {
   const c = SCORE(f.raw()); assert.ok(c[f.cat] <= BASE[f.cat] - 2.5 && c[f.cat] < 7, `${f.cat}: good ${BASE[f.cat].toFixed(1)}, spoiled ${c[f.cat].toFixed(1)}`);
 });
+
+// ------------------------------------------------------------------------------------------------------------------------ the floor is judged on the rendered shoe
+// A recording made in the browser also carries shoeY: the lowest skinned vertex of the rendered shoes, every frame (tools/people_motion.html). The gait plants its own foot landmarks,
+// so it must not mark its own homework: when shoeY is there GRD.sink / float / flight read it, and the landmarks only when it is not. (The synthetic shoes below are the landmarks'
+// own lowest point moved up or down, which is the cleanest way to ask "does the metric believe the shoe?")
+const lowOf = (raw) => Array.from({ length: raw.n }, (_, k) => Math.min(...['heel_', 'bs_', 'toe_'].flatMap((p) => ['l', 'r'].map((s) => raw.pos[idx(k, p + s) + 1]))));
+const withShoe = (fn) => { const low = lowOf(RAW), raw = Object.assign({}, RAW); raw.shoeY = low.map((y, k) => fn(y, k)); return raw; };
+const FLOOR = (raw) => M.analyseSteady(new M.Rec(raw), WIN);
+test('the floor items read the landmarks when a recording has no rendered shoe, and the shoe when it has', () => {
+  const lm = FLOOR(RAW), same = FLOOR(withShoe((y) => y));
+  assert.equal(lm.floorFrom, 'landmarks'); assert.equal(same.floorFrom, 'mesh');
+  near(same.sinkMm, lm.sinkMm, 1e-6, 'sink'); near(same.floatMm, lm.floatMm, 1e-6, 'float'); near(same.noContactPct, lm.noContactPct, 1e-9, 'flight');
+});
+test('a rendered shoe that dips 8 mm below the floor is a sink of 8 mm, whatever the landmarks say', () => {
+  const lm = FLOOR(RAW), a = FLOOR(withShoe((y) => y - 0.008));
+  assert.ok(a.sinkMm >= 8 && a.sinkMm <= lm.sinkMm + 8.01, `sink ${a.sinkMm.toFixed(2)} mm (landmarks ${lm.sinkMm.toFixed(2)})`);
+  assert.ok(catsOf(a).GRD <= catsOf(lm).GRD - 1, `grounding ${catsOf(lm).GRD.toFixed(1)} -> ${catsOf(a).GRD.toFixed(1)}`);
+});
+test('a rendered shoe that hovers 10 mm above the floor is a float, and time in the air', () => {
+  const lm = FLOOR(RAW), a = FLOOR(withShoe((y) => y + 0.010));
+  assert.ok(a.floatMm >= 9 && a.floatMm <= 11, `float ${a.floatMm.toFixed(2)} mm`);
+  assert.ok(a.noContactPct > 80 && lm.noContactPct < 30, `neither foot down: ${lm.noContactPct.toFixed(0)}% -> ${a.noContactPct.toFixed(0)}%`);
+  assert.ok(catsOf(a).GRD <= catsOf(lm).GRD - 1, `grounding ${catsOf(lm).GRD.toFixed(1)} -> ${catsOf(a).GRD.toFixed(1)}`);
+});

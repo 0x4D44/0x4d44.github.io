@@ -109,7 +109,12 @@ export function analyseSteady(rec, win) {
   const k0 = Math.max(0, Math.round(win[0] / rec.dt)), k1 = Math.min(rec.n, Math.round(win[1] / rec.dt)), n = k1 - k0, fr = bodyFrame(rec, k0, k1), P = proj(rec, fr, k0, k1), dt = rec.dt;
   const hipY = rec.info.hipY, a = { v: fr.speed, hipY, ok: true }; a.ex = expected(fr.speed, hipY);
   // ---- the floor
-  const ct = contactOf(rec, k0, k1), low = Float64Array.from(ct.sole.l, (y, i) => Math.min(y, ct.sole.r[i]));   // low: the lower foot, per frame
+  // The sole is judged on the RENDERED shoe when the recording carries it (rec.shoeY: the lowest skinned vertex of both shoes, every frame - tools/people_motion.html), and on the
+  // sole landmarks otherwise. The landmarks are the gait's own model of the foot, the very points its IK plants, so a walker could score 0.0 mm of sink while the shoe it draws dips
+  // 7-10 mm into the floor (the first version of this metric did exactly that): the mesh is the witness that does not share the gait's assumptions.
+  const ct = contactOf(rec, k0, k1), fl = rec.floor || 0;
+  const low = rec.shoeY ? Float64Array.from({ length: n }, (_, i) => rec.shoeY[k0 + i] - fl) : Float64Array.from(ct.sole.l, (y, i) => Math.min(y, ct.sole.r[i]));   // low: the lower foot, per frame
+  a.floorFrom = rec.shoeY ? 'mesh' : 'landmarks';
   a.sinkMm = Math.max(0, -mn(low)) * 1000;
   a.noContactPct = 100 * mean(Array.from(low, (y) => (y > CONTACT_M ? 1 : 0)));
   a.floatMm = pct(Array.from(low, (y) => Math.max(0, y)), 0.5) * 1000;   // a walker that hovers has its lower foot off the floor all the time
