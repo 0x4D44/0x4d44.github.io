@@ -393,3 +393,90 @@ for (const [file, ratio] of [['people.glb', 0.6], ['people_lod.glb', 0.7]]) {
     }
   });
 }
+
+test('adverts: each poster quad gets its own atlas cell, inside the gutter, keeping its U reversal', async () => {
+  const { mapAdvertQuads, advertOrder, ADVERT_CELLS } = await import('./adverts.js');
+  // three wall posters on the -x wall, wound like the generator's: U runs backwards (0.25 -> 0) along +z
+  const P = [], U = [], I = [];
+  for (let k = 0; k < 3; k++) {
+    const z = k * 8, b = P.length / 3;
+    P.push(-5, 1, z, -5, 1, z + 0.9, -5, 2.3, z + 0.9, -5, 2.3, z);
+    U.push(0.25, 0.25, 0, 0.25, 0, 0, 0.25, 0);
+    I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setIndex(I);
+  const order = advertOrder('govan');
+  assert.equal(new Set(order).size, ADVERT_CELLS);
+  assert.notDeepEqual(order, advertOrder('hillhead'));
+  assert.equal(mapAdvertQuads(g, order), 3);
+  const uv = g.attributes.uv, cells = new Set();
+  for (let k = 0; k < 3; k++) {
+    const c = order[k], u0 = (c % 4) / 4, v0 = Math.floor(c / 4) / 4, a = k * 4;
+    for (let j = 0; j < 4; j++) { const u = uv.getX(a + j), v = uv.getY(a + j); assert.ok(u > u0 && u < u0 + 0.25 && v > v0 && v < v0 + 0.25, `quad ${k} vertex ${j} outside cell ${c}`); }
+    assert.ok(uv.getX(a) > uv.getX(a + 2), 'U still runs backwards along the wall');
+    cells.add(Math.floor(uv.getX(a) * 4) + 4 * Math.floor(uv.getY(a) * 4));
+  }
+  assert.equal(cells.size, 3);
+});
+
+test('adverts: track walls are the walls with a track, not a platform, in front of them', async () => {
+  const { trackWalls } = await import('./adverts.js');
+  const idx = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/stations_index.json', import.meta.url)), 'utf8')).stations;
+  assert.deepEqual(trackWalls(idx['shields-road']), [-1, 1], 'island: both walls face a track');
+  assert.deepEqual(trackWalls(idx['govan']), [], 'side platforms: both walls are platform walls');
+  assert.deepEqual(trackWalls(idx['hillhead']), [-1], 'split: only the wall beyond the island\'s outer track');
+  assert.deepEqual(trackWalls(idx['buchanan-street']), [-1]);
+});
+
+test('adverts: the cross-track row fills free wall without overlaps, gaps or wasted pattern', async () => {
+  const { planRow, freeIntervals } = await import('./adverts.js');
+  const free = freeIntervals([[-12.2, -11.8], [-8.5, -5.5], [11.8, 12.2]], -20.5, 20.5, 0.25, 1);
+  assert.deepEqual(free.map((f) => f.map((v) => +v.toFixed(2))), [[-20.5, -12.45], [-11.55, -8.75], [-5.25, 11.55], [12.45, 20.5]]);
+  const P = { kind: 'portrait', w: 1 }, L = { kind: 'landscape', w: 2.25 };
+  const row = planRow(free, [P, P, P, L], 0.3);
+  for (const f of row) assert.ok(free.some(([a, b]) => f.z0 >= a - 1e-9 && f.z1 <= b + 1e-9), `frame ${f.z0}..${f.z1} outside the free wall`);
+  for (let i = 1; i < row.length; i++) assert.ok(row[i].z0 >= row[i - 1].z1 + 0.3 - 1e-9, 'frames keep their gap');
+  assert.ok(row.filter((f) => f.kind === 'landscape').length >= 3 && row.filter((f) => f.kind === 'portrait').length >= 9, JSON.stringify(row.map((f) => f.kind)));
+  const tail = planRow([[0, 5]], [P, P, P, L], 0.3);   // the landscape is due but only a portrait still fits: take the portrait
+  assert.deepEqual(tail.map((f) => f.kind), ['portrait', 'portrait', 'portrait', 'portrait']);
+  for (const [a, b] of free) {   // no free stretch left wide enough for another portrait
+    const inn = row.filter((f) => f.z0 >= a && f.z1 <= b); const used = inn.reduce((s, f) => s + (f.z1 - f.z0) + 0.3, 0);
+    assert.ok(b - a - used < 1 + 0.3, `stretch ${a}..${b} left ${(b - a - used).toFixed(2)} m unused`);
+  }
+});
+
+test('stairs: adverts step up the shaft walls, inside the opening and clear of the landing wall', async () => {
+  const { advertSlots, STAIR_AD, stairSpec, buildStairs } = await import('./stairs.js');
+  const sp = stairSpec({ platformTopY: 0.695 }, { x: 2.845, z: 21 }, 3.4, 3.9), u = advertSlots(sp);
+  assert.ok(u.length >= 3, 'a few posters per wall: ' + u.length);
+  assert.ok(u[0] - STAIR_AD.w / 2 >= sp.uN && u[u.length - 1] + STAIR_AD.w / 2 <= sp.U - 0.15, JSON.stringify({ u, uN: sp.uN, U: sp.U }));
+  for (let i = 1; i < u.length; i++) assert.ok(Math.abs(u[i] - u[i - 1] - STAIR_AD.pitch) < 1e-9);
+  const map = new THREE.Texture(), built = buildStairs(THREE, sp, {}, { adverts: { map, rects: [[0, 0, 0.25, 0.25]] } });
+  const m = built.group.getObjectByName('stair_adverts');
+  assert.ok(m && m.material.map === map && m.geometry.index.count === 2 * u.length * 6, 'one quad per slot per wall');
+  assert.equal(buildStairs(THREE, sp, {}).group.getObjectByName('stair_adverts'), undefined, 'no atlas: no posters');
+});
+
+test('in-car screens: the 28 s cycle shows the logo, the next station twice and two adverts; adverts fill in without info', async () => {
+  const { Pis } = await import('./carcards.js');
+  const kinds = (info) => [1, 6, 12, 18, 25].map((t) => Pis.slide(t, info).kind);
+  assert.deepEqual(kinds(true), ['logo', 'next', 'ad', 'next', 'ad']);
+  assert.deepEqual(kinds(false), ['logo', 'ad', 'ad', 'ad', 'ad']);
+  const ads = [6, 12, 18, 25, 34, 40].map((t) => Pis.slide(t, false).n);
+  assert.equal(new Set(ads).size, ads.length, 'each advert slot shows the next advert: ' + ads);
+});
+
+test('car-cards: atlas cells are 3:1 and stay inside their gutter', async () => {
+  const { cardRect, CARDS, CARD, RI } = await import('./carcards.js');
+  const seen = new Set();
+  for (let i = 0; i < CARDS; i++) {
+    const [u0, v0, u1, v1] = cardRect(i), c = i % 2, r = Math.floor(i / 2);
+    assert.ok(u0 > c / 2 && u1 < (c + 1) / 2 && v0 > r / 4 && v1 < (r + 1) / 4, `cell ${i}`);
+    assert.ok(Math.abs(((u1 - u0) * 2048) / ((v1 - v0) * 1408) - 1008 / 336) < 1e-9);
+    seen.add(u0 + ',' + v0);
+  }
+  assert.equal(seen.size, CARDS);
+  const arc = RI * (CARD.a1 - CARD.a0) * Math.PI / 180;
+  assert.ok(Math.abs(CARD.w / arc - 3) < 0.1, 'the card band is 3:1 like the art: ' + (CARD.w / arc).toFixed(2));
+});

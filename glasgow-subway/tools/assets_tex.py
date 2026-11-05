@@ -9,7 +9,8 @@ SCRATCH = '/tmp/claude-0/-home-user/52020da6-bb97-5dd3-88b8-ef2e78784739/scratch
 TEX = os.path.join(SCRATCH, 'tex'); os.makedirs(TEX, exist_ok=True)
 
 def font(size, bold=True):
-    for p in ('/usr/share/fonts/opentype/inter/Inter-Bold.otf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf'):
+    for p in ('/usr/share/fonts/opentype/inter/Inter-Bold.otf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
+              '/System/Library/Fonts/Supplemental/Arial Bold.ttf'):       # macOS fallback (Linux paths first, so a Linux build is unchanged)
         if os.path.exists(p):
             try: return ImageFont.truetype(p, size)
             except Exception: pass
