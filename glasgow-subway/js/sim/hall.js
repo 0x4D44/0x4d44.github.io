@@ -43,7 +43,7 @@ export function disposeTemplate(root) {
   if (!root) return;
   root.traverse((o) => {
     if (o.geometry) o.geometry.dispose();
-    if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'aoMap']) if (m[k]) m[k].dispose(); m.dispose(); } }
+    if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) { for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'aoMap']) if (m[k] && !m[k].userData.shared) m[k].dispose(); m.dispose(); } }
   });
 }
 
@@ -67,6 +67,15 @@ export function lookHints(look) {
  * stand the posters on top of it, shrunk to fit the free wall (aspect kept).
  * Returns the free-wall rectangle {y0, y1} (hall y, platform = 0.695) that wall panels may use.
  */
+/** Vertex-index lists of the geometry's connected pieces (each wall poster is its own quad inside one merged mesh). */
+export function quadGroups(geo) {
+  const idx = geo.index, n = geo.attributes.position.count, parent = new Int32Array(n).map((_, i) => i);
+  const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+  const tri = idx ? idx.count / 3 : n / 3;
+  for (let t = 0; t < tri; t++) { const a = idx ? idx.getX(t * 3) : t * 3, b = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, c = idx ? idx.getX(t * 3 + 2) : t * 3 + 2; parent[find(b)] = find(a); parent[find(c)] = find(a); }
+  const groups = new Map(); for (let i = 0; i < n; i++) { const r = find(i); (groups.get(r) || groups.set(r, []).get(r)).push(i); }
+  return [...groups.values()];
+}
 export function hallPosterZone(info) { return info && info.coved ? { y0: 1.35, y1: 2.25 } : { y0: 1.55, y1: 2.75 }; }
 export function fixHallSigns(tpl, info) {
   if (!tpl || tpl.userData.signsFixed) return; tpl.userData.signsFixed = true;
@@ -76,12 +85,7 @@ export function fixHallSigns(tpl, info) {
     const mn = m.material.name || '', pos = m.geometry.attributes.position; if (!pos) return;
     if (/^bandmat_/.test(mn)) { for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) + dy); pos.needsUpdate = true; }
     else if (mn === 'advert_atlas') {   // each poster is a separate quad: find them as connected vertex groups, stand each one in the poster zone
-      const idx = m.geometry.index, n = pos.count, parent = new Int32Array(n).map((_, i) => i);
-      const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
-      const tri = idx ? idx.count / 3 : n / 3;
-      for (let t = 0; t < tri; t++) { const a = idx ? idx.getX(t * 3) : t * 3, b = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, c = idx ? idx.getX(t * 3 + 2) : t * 3 + 2; parent[find(b)] = find(a); parent[find(c)] = find(a); }
-      const groups = new Map(); for (let i = 0; i < n; i++) { const r = find(i); (groups.get(r) || groups.set(r, []).get(r)).push(i); }
-      for (const vs of groups.values()) {
+      for (const vs of quadGroups(m.geometry)) {
         let y0 = 1e9, y1 = -1e9, z0 = 1e9, z1 = -1e9; for (const i of vs) { const y = pos.getY(i), z = pos.getZ(i); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
         // the quad runs along the hall (z) and up the wall (y); the long hall axis here is z
         const h = y1 - y0; if (h < 0.5) continue; const k = Math.min(1, H / h), zc = (z0 + z1) / 2;
