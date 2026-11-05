@@ -87,5 +87,36 @@ Root `portal_depot`. Origin `portal_mouth` = tunnel portal centre on rail head, 
 ## people.glb  (3.6 MB)
 See the PEOPLE (REVISION 7) note at the top of this file; the older description was removed.
 
+### Skin under garments  (people.glb and people_lod.glb, `tools/people_skinfit.py`)
+`tools/assets_people_mpfb.py` decimates every garment hard (a T-shirt ends up ~340 triangles, the body ~4400) and masks the body away under the clothes, but a mask stops at the
+garment's border, so strips of body skin (shoulders, armpits, upper back, waist; calves and knees under a kilt's hose) are left lying just beneath a shirt that cannot follow their
+curve. They showed through as skin-coloured slits and patches - "holes in the grey T-shirt" (`teen_boy`), a sweater's chest and sleeves (`man_student`), bare calves under a kilt.
+
+**The repair** is run on the two GLBs *after* the pipeline: `python3 tools/people_skinfit.py --write`. It moves the offending skin vertices inwards along the garment's normal
+(rest pose, numpy only) until every sampled point of the triangle is 4 mm under it; vertices that cannot move (head, neck, hands, anything near a hem, anything with other bone weights
+than the garment - a forearm swinging past a shirt is bare skin) stay put, and footwear is not treated as a garment. Only POSITION data of the skin primitives changes: bones,
+weights, UVs, normals, the other primitives and the file layout are byte-identical, and each repaired person carries `extras.skinfit` on its mesh node (a second run leaves it alone;
+`--check` lists the ones not done yet and exits 1). It is listed person by person in `RECIPE` in that file, with how hard to push (3 cm for kilts and the sweater, 1.5 cm for tees,
+trousers and the midi dress), because a repair applied everywhere made some people worse (a hoodie's cuffs grew slivers, a jacket's armpit opened up) - those stay as exported.
+Re-run it, and re-measure, whenever the pipeline regenerates the people. **A fresh export that skips this step fails `js/sim/sim.test.mjs`.**
+
+**Measuring** is done two independent ways, because a repair must not be marked by its own ruler:
+- `js/sim/skincheck.mjs` (used by the unit test): plain Node, rest pose, ten samples per body triangle, counts those outside a garment (not near a hem, bone weights overlapping, not
+  covered by anything else along the normal). `sim.test.mjs` holds a budget per person and file, and requires the eight repaired people to have shed at least 40% (main) / 30% (LOD).
+- `node tools/people_holes.mjs [--glb F] [--lod-glb F] [--lod] [--only a,b] [--json out]` (needs Playwright): what the player sees. It builds the people with the game's own `AnimCrowd`
+  (`tools/people_view.html`, so the runtime fits in `js/sim/bodyfit.js` and the pose are in), renders skin-only and garment-only depth from eight azimuths in stand and two walk phases
+  (the clip variant is seeded per person and state, so two models are compared pose for pose), and sums the area where skin is nearer than the garment by under 3 cm.
+
+Result, mean hole area in cm² per view over those poses (committed tool, original export -> repaired; the sum over all 30 people): full models 887 -> 350 (-61%), LOD models
+693 -> 293 (-58%). The eight repaired people: `man_student` 382 -> 158, `man_kilt_casual` 220 -> 78, `boy_kilt` 119 -> 36, `girl_school_kilt` 96 -> 20, `woman_midi` 14.4 -> 11.2, `man_commuter` 6.1 -> 0.9,
+`man_trews` 3.1 -> 1.3, `teen_boy` 3.8 -> 1.9 (LOD 8.3 -> 1.2). Nobody got worse in any measured pose. (The repair tool's own before/after counts are not comparable - it samples
+more densely after the repair - so judge by the two rulers above.)
+
+**What is not fixed** (do not mistake these for regressions): `man_student`'s left upper arm still shows through the sweater sleeve (tucking is capped at 4.5 cm); small knee specks remain
+under the kilts; people outside the recipe keep the few cm² they were exported with (a tee-sized speck at a distance); in the LOD models `woman_mini` has a gap between the crop top and the
+skirt at the lower back (35 cm² per view, constant across poses - the LOD top is shorter than the full one), and `girl_small`, `teen_skirt`, `man_puffer`, `woman_coat` show 10-16 cm² - a
+rest-pose tuck does not move these (tried at 1.5 cm). They need the garment itself re-meshed (Blender, which is not part of this toolchain). Only stand and walk are measured: the sit
+pose is excluded (a hand resting on a lap is legitimately skin in front of cloth) and so are the phone and talk poses.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
