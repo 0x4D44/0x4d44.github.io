@@ -447,10 +447,12 @@ try {
     const s = __sim.sim; let n = 0; while (s.bg.sh && s.bg.sh.state === 'dwell' && n++ < 20000) { s.tick(0.1); s.sync(0.05); }
     n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 40000) { s.tick(0.1); s.sync(0.05); }   // the next time it stands in the station, doors open
     for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
+    const uBg = s.bg.unit, uPl = s.tracks[s.line].unit;
     await __sim.boardOther(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
-    return { after: __sim.saloons(), line1: s.line, mode: s.mode, listeners: [s.svc.listeners.length, s.bg.svc.listeners.length] };
+    return { after: __sim.saloons(), line1: s.line, mode: s.mode, listeners: [s.svc.listeners.length, s.bg.svc.listeners.length], units: { uBg, uPl, now: s.tracks[s.line].unit, bgNow: s.bg.unit } };
   });
   ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== salA.line0 && ['outer', 'inner'].every((l) => sal.after[l].total === salA.before[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify(sal.after));
+  ok('boarding the other circle\'s train: each unit stays the same train - you are now on the one that was on the other circle, and the one you left carries on under its own number', sal.units.uBg != null && sal.units.uPl != null && sal.units.uBg !== sal.units.uPl && sal.units.now === sal.units.uBg && sal.units.bgNow === sal.units.uPl, JSON.stringify(sal.units));
   // ... and the sounds follow the swap: each service has exactly one door listener again; aboard, your own doors are full level and centred; the train you left is heard through the walls
   await doorLog(p);
   const post = await ev(p, () => {
@@ -475,6 +477,49 @@ try {
   await p.close();
   p = await open(browser, 'mode=explore&station=hillhead&diff=easy');
   await shot(p, '21_explore_hillhead');
+  await p.close();
+
+  // ---------------------------------------------------------------- the fleet: numbered units on both circles, one roster, countdowns that only fall
+  p = await open(browser, 'mode=explore&station=shields-road&line=outer');
+  const fl = await ev(p, () => {
+    const f = __sim.fleet(), r = f.roster(), all = [...r.outer, ...r.inner, ...r.spare];
+    return { r, n: all.length, distinct: new Set(all).size, lo: Math.min(...all), hi: Math.max(...all), lap: { outer: f.cycles.outer.period, inner: f.cycles.inner.period } };
+  });
+  ok('fleet: 17 distinct units numbered 301-317; six run each circle, five are spare in the depot', fl.n === 17 && fl.distinct === 17 && fl.lo === 301 && fl.hi === 317 && fl.r.outer.length === 6 && fl.r.inner.length === 6 && fl.r.spare.length === 5, JSON.stringify(fl.r));
+  ok('fleet: a lap is the real service\'s lap - 24 to 27 minutes on both circles (measured from the ATO service on the track, not typed in)', ['outer', 'inner'].every((l) => fl.lap[l] > 24 * 60 && fl.lap[l] < 27 * 60), JSON.stringify(fl.lap));
+  const pl = await ev(p, () => {
+    const s = __sim.sim; let n = 0; while (!(s.shuttle.state === 'dwell' && s.svc.doorsOpen) && n++ < 8000) s.tick(0.1);
+    s.tick(0.6); s._indT = 0; s.tick(0.1);   // let the boards redraw
+    const r = __sim.fleet().roster(), u = __sim.unit('outer'), tv = s.tracks.outer.view, due = __sim.due('outer', 'shields-road'), st = __sim.state();
+    const side = tv._plates ? tv._plates.filter((q) => !q.nose).map((q) => q.car + ':' + q.set.text + ':' + q.mesh.visible) : null;
+    const nose = tv._plates ? tv._plates.filter((q) => q.nose).map((q) => q.car + ':' + q.set.text + ':' + q.mesh.visible) : null;
+    const ind = [...s.stationViews.values()].flatMap((v) => (v.indicators || []).map((i) => i.key));
+    const bg = __sim.unit('inner');
+    return { state: s.shuttle.state, u, inOuter: r.outer.includes(u), due, st: st.unit, side, nose, bg, bgOk: bg == null || (r.inner.includes(bg) && !r.outer.includes(bg)), ind };
+  });
+  ok('the train standing at the platform is a numbered unit of its own circle\'s roster, and the HUD state names it', pl.state === 'dwell' && pl.inOuter && pl.st === pl.u, JSON.stringify([pl.state, pl.u, pl.st]));
+  ok('its bodywork carries the number: <unit>A-D on both flanks of the four cars, <unit> on both cab fronts', !!pl.side && pl.side.length === 8 && ['A', 'B', 'C', 'D'].every((c, i) => pl.side.filter((q) => q === `${i}:${pl.u}${c}:true`).length === 2) && pl.nose.length === 2 && pl.nose.every((q, i) => q === `${[0, 3][i]}:${pl.u}:true`), JSON.stringify([pl.side, pl.nose]));
+  ok('the platform board names the unit that is in the station; the other circle\'s train, when on show, is one of the inner circle\'s units (never an outer one)', !!pl.due && pl.due.unit === pl.u && pl.due.eta === 0 && pl.bgOk && pl.ind.some((k) => new RegExp('/' + pl.u + '(\\||$)').test(k)), JSON.stringify([pl.due, pl.bg, pl.ind]));
+  const cd = await ev(p, () => {
+    const out = { outer: [], inner: [] };
+    for (let t = 0; t < 800; t++) { __sim.ff(1, 0.125); for (const l of ['outer', 'inner']) { const d = __sim.due(l, 'shields-road'); out[l].push(d ? [d.unit, +d.eta.toFixed(2), +__sim.fleet().clock.toFixed(1)] : null); } }
+    return { seq: out, roster: __sim.fleet().roster(), lap: { outer: __sim.fleet().cycles.outer.period, inner: __sim.fleet().cycles.inner.period } };
+  });
+  for (const l of ['outer', 'inner']) {
+    let worstUp = 0, prev = null; const arr = [];
+    cd.seq[l].forEach((q) => { if (!q) return; if (prev && prev[0] === q[0]) worstUp = Math.max(worstUp, q[1] - prev[1]); if (q[1] === 0 && (!prev || prev[0] !== q[0] || prev[1] !== 0)) arr.push([q[0], Math.round(q[2])]); prev = q; });   // (times are the fleet clock: sim seconds)
+    const R = cd.roster[l], head = cd.lap[l] / R.length;
+    const inOrder = arr.every((a, i) => i === 0 || R[(R.indexOf(arr[i - 1][0]) + 1) % R.length] === a[0]), gaps = arr.slice(1).map((a, i) => a[1] - arr[i][1]);
+    ok(`${l} circle, 800 s at Shields Road: each unit's countdown only falls (never steps up when a train leaves), ${arr.length} trains arrive in roster order, one headway (${head.toFixed(0)} s) apart`, worstUp <= 1.5 && arr.length >= 3 && arr.every((a) => R.includes(a[0])) && inOrder && gaps.every((g) => Math.abs(g - head) < 6), `worst rise ${worstUp.toFixed(2)} s; arrivals ${JSON.stringify(arr)}; gaps ${JSON.stringify(gaps)}; headway ${head.toFixed(1)}`);
+  }
+  const seat = [];
+  for (const [mode, line] of [['drive', 'outer'], ['ride', 'inner'], ['explore', 'inner']]) {
+    const r = await ev(p, async ([m, ln]) => { await __sim.go({ mode: m, station: 'partick', line: ln }); __sim.ff(3, 0.1); const f = __sim.fleet().roster(), u = __sim.unit(ln); return { m, ln, u, ok: f[ln].includes(u), st: __sim.state().unit, other: __sim.fleet().lineOfUnit(u) }; }, [mode, line]);
+    seat.push(r);
+  }
+  ok('every way in (drive / ride / explore, either circle) puts you on a numbered unit of that circle\'s roster, and the roster is the one fleet throughout', seat.every((r) => r.ok && r.st === r.u && r.other === r.ln), JSON.stringify(seat));
+  const rost2 = await ev(p, async () => { const a = JSON.stringify(__sim.fleet().roster()); await __sim.go({ mode: 'explore', station: 'govan', line: 'outer', diff: 'easy' }); return { a, b: JSON.stringify(__sim.fleet().roster()) }; });
+  ok('the same units run the same circles after a restart (changing station / difficulty does not reshuffle the fleet)', rost2.a === rost2.b, JSON.stringify(rost2));
   await p.close();
 
   // ---------------------------------------------------------------- MOBILE 390x844 touch

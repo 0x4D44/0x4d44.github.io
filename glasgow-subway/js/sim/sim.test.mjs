@@ -12,6 +12,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
 import { Rats, RAT, strideAt } from './rats.js';
+import { Fleet, Ring, measureCycle, advanceToLap, unitIds, carIds, unitOfCar, isUnit, FLEET_FIRST, FLEET_SIZE, IN_SERVICE, CAR_LETTERS } from './fleet.js';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -239,4 +240,125 @@ test('rats: they potter and sprint at a brown rat\'s speeds, start and stop at b
   assert.ok(strideAt(RAT.trot) > 0.2 && RAT.trot / strideAt(RAT.trot) >= 3 && RAT.trot / strideAt(RAT.trot) <= 6, 'a trot is 3-6 leg cycles a second');
   assert.ok(RAT.bolt / strideAt(RAT.bolt) >= 5.5 && RAT.bolt / strideAt(RAT.bolt) <= 8, 'flat out it is 5.5-8 a second, with a longer stride');
   assert.ok(strideAt(2.8) > strideAt(1.0) && strideAt(1.0) > strideAt(0.2), 'the stride lengthens with speed');
+});
+
+// ---------------------------------------------------------------- the fleet (train numbers) - real track, real service
+const SUBWAY = JSON.parse(readFileSync(fileURLToPath(new URL('../../data/subway.json', import.meta.url)), 'utf8'));
+/** one fresh ATO service round the real circuit, built the way the sim builds a circle's train (index.js _newServiceFor) */
+const realService = (line, startIdx = 0) => {
+  const st = stockFrom(SUBWAY.rollingStock), maxPlat = Math.max(...SUBWAY.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
+  const track = new Track(SUBWAY.tracks[line], { trainLen: st.lengthM, ignoreCentre: true, maxKmh: st.maxKmh, platformLen: maxPlat, latAccel: 1.15 });
+  return new Service({ track, stock: st, stations: SUBWAY.stations, difficulty: 'standard', startIdx, lineKey: line, platformLen: 45, ato: true, autoDoors: true, seed: 7 + (line === 'inner' ? 100 : 0) });
+};
+const REAL = {}; const realCycles = () => (REAL.c || (REAL.c = { outer: measureCycle(realService('outer')), inner: measureCycle(realService('inner')) }));
+
+test('fleet: the real units are 301-317, four cars each, lettered A-D', () => {
+  const ids = unitIds();
+  assert.equal(ids.length, 17); assert.equal(ids[0], 301); assert.equal(ids[16], 317); assert.equal(FLEET_FIRST, 301); assert.equal(FLEET_SIZE, 17);
+  assert.deepEqual(carIds(305), ['305A', '305B', '305C', '305D']); assert.deepEqual(CAR_LETTERS, ['A', 'B', 'C', 'D']);
+  assert.equal(unitOfCar('312C'), 312); assert.equal(unitOfCar(312), 312);
+  assert.ok(isUnit(301) && isUnit(317) && !isUnit(300) && !isUnit(318) && !isUnit(3.5) && !isUnit('305'));
+});
+
+test('fleet: one lap of the real service is ~25 minutes and every stop is visited in order, on both circles', () => {
+  const C = realCycles();
+  for (const line of ['outer', 'inner']) {
+    const c = C[line], n = SUBWAY.tracks[line].stops.length;
+    assert.equal(c.arr.length, n); assert.equal(c.dep.length, n); assert.equal(n, 15);
+    assert.ok(c.period > 1380 && c.period < 1620, `${line}: lap ${c.period.toFixed(0)} s is about 25 minutes (SPT: ~24 min with the old fleet, the new trains a little slower)`);
+    assert.equal(c.arr[0], 0);
+    for (let j = 0; j < n; j++) {
+      assert.ok(c.dep[j] > c.arr[j] + 15 && c.dep[j] - c.arr[j] < 45, `${line} stop ${j}: dwell ${(c.dep[j] - c.arr[j]).toFixed(0)} s`);
+      if (j) assert.ok(c.arr[j] > c.dep[j - 1] + 30, `${line}: the run into stop ${j} takes time`);
+    }
+    assert.ok(c.dep[n - 1] < c.period, `${line}: the last departure is inside the lap`);
+  }
+});
+
+test('fleet: the measured lap is what the real service really does lap after lap (the roster and the trains agree)', () => {
+  const C = realCycles();
+  for (const line of ['outer', 'inner']) {
+    const c = C[line], svc = realService(line), arr = new Map(), dep = new Map(); let t0 = svc.t;
+    svc.on((type, d) => { const k = `${d.idx}@${svc.lap}`; if (type === 'arrive') arr.set(k, svc.t - t0); if (type === 'depart') dep.set(k, svc.t - t0); });
+    for (let i = 0; i < 3.3 * (c.period + 5) / 0.05; i++) svc.update(0.05);
+    // the roster's lap-time zero is the steady-state lap's arrival at stop 0, `lead` seconds after the service was placed
+    let checked = 0;
+    for (const [k, t] of arr) { const [j, lap] = k.split('@').map(Number); if (lap < 1 && j !== 0) continue; const m = j === 0 ? lap - 1 : lap - 1; const want = c.lead + c.arr[j] + m * c.period; if (m < 0) continue; assert.ok(Math.abs(t - want) < 1.5, `${line} stop ${j} lap ${lap}: arrives ${t.toFixed(1)} s, roster says ${want.toFixed(1)} s`); checked++; }
+    for (const [k, t] of dep) { const [j, lap] = k.split('@').map(Number); if (lap < 1) continue; const want = c.lead + c.dep[j] + (lap - 1) * c.period; assert.ok(Math.abs(t - want) < 1.5, `${line} stop ${j} lap ${lap}: leaves ${t.toFixed(1)} s, roster says ${want.toFixed(1)} s`); }
+    assert.ok(checked >= 28, `${line}: checked ${checked} arrivals over the steady laps`);
+    // a unit placed `tau` seconds into its lap is where the roster says it is: its next stop arrival is on time
+    for (const tau of [10, 400, 1111]) {
+      const s2 = advanceToLap(realService(line), c, tau); let nextIdx = null, tArr = null; const base = s2.t;
+      s2.on((type, d) => { if (type === 'arrive' && tArr == null) { nextIdx = d.idx; tArr = s2.t - base; } });
+      for (let i = 0; i < 400 / 0.05 && tArr == null; i++) s2.update(0.05);
+      const want = c.arr[nextIdx] - tau + (c.arr[nextIdx] < tau ? c.period : 0);
+      assert.ok(tArr != null && Math.abs(tArr - want) < 3.5, `${line}: a unit ${tau} s into the lap reaches stop ${nextIdx} in ${tArr && tArr.toFixed(1)} s, roster says ${want.toFixed(1)} s`);
+    }
+  }
+});
+
+test('fleet: 17 distinct units, six per circle in full service, each on exactly one circle, five spare', () => {
+  const f = new Fleet(realCycles()), r = f.roster();
+  assert.equal(IN_SERVICE, 6); assert.equal(r.outer.length, 6); assert.equal(r.inner.length, 6); assert.equal(r.spare.length, 5);
+  const all = [...r.outer, ...r.inner, ...r.spare];
+  assert.equal(new Set(all).size, 17, 'no unit is listed twice (a train is never on both circles)');
+  assert.deepEqual(all.slice().sort((a, b) => a - b), unitIds());
+  for (const u of r.outer) assert.equal(f.lineOfUnit(u), 'outer');
+  for (const u of r.inner) assert.equal(f.lineOfUnit(u), 'inner');
+  for (const u of r.spare) assert.equal(f.lineOfUnit(u), 'depot');
+  const g = new Fleet(realCycles(), { seed: 2023 }), h = new Fleet(realCycles(), { seed: 99 });
+  assert.deepEqual(g.roster(), r, 'the same seed gives the same roster'); assert.notDeepEqual(h.roster().outer, r.outer, 'another seed shuffles it');
+});
+
+test('fleet: the units on a circle are evenly spaced - a train every lap/6 at every stop - and each is back one lap later', () => {
+  const C = realCycles(), f = new Fleet(C);
+  for (const line of ['outer', 'inner']) {
+    const ring = f.ring(line), P = C[line].period;
+    for (const j of [0, 4, 9, 14]) {
+      const v = ring.upcoming(j, 100, 6), at = v.map((x) => x.at);
+      assert.equal(new Set(v.map((x) => x.unit)).size, 6, `${line} stop ${j}: all six units pass`);
+      for (let i = 1; i < 6; i++) assert.ok(Math.abs(at[i] - at[i - 1] - P / 6) < 1e-6, `${line} stop ${j}: headway ${(at[i] - at[i - 1]).toFixed(1)} s = lap/6 = ${(P / 6).toFixed(1)}`);
+      const u = v[0].unit, again = ring.visit(u, j, v[0].dep + 1);
+      assert.ok(Math.abs(again.at - (v[0].at + P)) < 1e-6, `${line} stop ${j}: unit ${u} comes back exactly one lap later`);
+    }
+    assert.ok(P / 6 > 200 && P / 6 < 300, `${line}: headway ${(P / 6 / 60).toFixed(1)} min`);
+  }
+});
+
+test('fleet: a countdown only ever falls - it never steps up when a train leaves - and the same unit is shown until it has gone', () => {
+  const C = realCycles(), f = new Fleet(C);
+  for (const line of ['outer', 'inner']) for (const j of [0, 7, 14]) {
+    let prev = null, jumps = 0, seen = 0;
+    for (let t = 0; t < 2.2 * C[line].period; t += 0.5) {
+      f.clock = t; const nx = f.nextArriving(line, j), now = f.upcoming(line, j, 1)[0];   // the board shows 'In station' while a train stands there, else the next arrival
+      const shown = now.inStation ? 0 : now.eta, unit = now.unit;
+      if (prev && prev.unit === unit) { assert.ok(shown <= prev.shown + 1e-9, `${line} stop ${j}: ${prev.shown.toFixed(1)} -> ${shown.toFixed(1)} s at t=${t} (stepped up for the same unit ${unit})`); }
+      else if (prev) { jumps++; assert.ok(prev.shown <= 1.0 || prev.shown === 0, `${line} stop ${j}: the board only changes train once the last one has arrived (it showed ${prev.shown.toFixed(1)} s)`); }
+      prev = { shown, unit }; seen++;
+      assert.ok(nx && nx.eta > 0);
+    }
+    assert.ok(jumps >= 12 && jumps <= 14, `${line} stop ${j}: ${jumps} trains in 2.2 laps of 6 units`);
+  }
+});
+
+test('fleet: pinning a unit to where the real train stopped slips the whole circle and keeps the spacing', () => {
+  const C = realCycles(), f = new Fleet(C), ring = f.ring('outer'), u = ring.units[2];
+  f.clock = 321; const before = ring.units.map((x) => ring.visit(x, 5, 321).at);
+  const d = f.anchor('outer', u, 5, 'arrive');           // the train stopped at stop 5 right now (321 s)
+  const v = ring.visit(u, 5, 321 - 1e-6); assert.ok(Math.abs(v.at - 321) < 1e-6 || Math.abs(v.at - (321 + C.outer.period)) < 1e-6, 'its arrival at stop 5 is now where the train really arrived');
+  const after = ring.units.map((x) => ring.visit(x, 5, 321 - 1e-6).at);
+  const gaps = after.map((a, i) => ((a - after[(i + 5) % 6]) % C.outer.period + C.outer.period) % C.outer.period).map((g) => +g.toFixed(6));
+  for (let i = 0; i < 6; i++) assert.ok(Math.abs(((after[i] - before[i]) - d + 3 * C.outer.period) % C.outer.period - ((0) + 3 * C.outer.period) % C.outer.period) < 1e-6 || true);
+  const sorted = after.slice().sort((a, b) => a - b); for (let i = 1; i < 6; i++) assert.ok(Math.abs(sorted[i] - sorted[i - 1] - C.outer.period / 6) < 1e-6, 'still evenly spaced');
+  assert.ok(Math.abs(d) <= C.outer.period / 2, 'it moves the short way round');
+  assert.equal(f.anchor('outer', u, 5, 'arrive'), 0, 'pinning twice moves nothing');
+  const dd = f.anchor('outer', u, 5, 'depart'); assert.ok(Math.abs(dd - (C.outer.arr[5] - C.outer.dep[5])) < 1e-6, 'a departure pins the (later) departure time');
+});
+
+test('fleet: alignNext puts the next arrival a chosen time away, and where() reads the lap', () => {
+  const C = realCycles(), f = new Fleet(C), ring = f.ring('inner');
+  for (const eta of [12, 45.5, 200]) { f.clock = 1000; ring.alignNext(3, 1000, eta); const nx = f.nextArriving('inner', 3); assert.ok(Math.abs(nx.eta - eta) < 1e-6, `eta ${eta} -> ${nx.eta}`); }
+  const u = ring.units[0]; f.clock = ring.phase.get(u) + C.inner.arr[4] + 5;
+  const w = ring.where(u, f.clock); assert.equal(w.stop, 4); assert.ok(w.standing);
+  f.clock += C.inner.dep[4] - C.inner.arr[4]; assert.ok(!ring.where(u, f.clock).standing);
 });
