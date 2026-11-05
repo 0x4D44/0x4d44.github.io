@@ -1,7 +1,11 @@
-"""Builds models/train.glb, models/train_lod.glb and models/train_walkable.json   REVISION 4
+"""Builds models/train.glb, models/train_lod.glb and models/train_walkable.json   REVISION 5
 True cross-section from research/train-dimensions.md: body 2.31 m wide, vertical sides only to y=1.487, then a single R=1.155 arch to the 2.642 m crown;
 interior wall R=1.085, floor 0.695 m, centre-line headroom 1.88 m.  4 cars (12.4 + 7.0 + 7.0 + 12.4 + 3 x 0.17 m gaps = 39.3 m), 6 doors per side.
 Blender frame: +Y = direction of travel (nose).  glTF: nose along -Z.  Origin: set centre, between the rails, at rail-head level.
+Rev 5 (livery from the in-service photos): white body, ONE continuous black window band (the pillars between windows are black, not white), orange door leaves only
+(no orange bands on the body), doors tall - they run from the floor up into the roof arch (DOOR_HEAD_DEG, well above the window head) and sit 42 mm behind the body skin with
+black reveals and a black seal outline - dark ribbed bellows (sleeve) bridging the 0.17 m gap between cars and grey vertical concertina folds lining each gangway aperture.
+Build:  blender -b --factory-startup --python tools/assets_train.py   (needs numpy + Pillow importable inside Blender's Python, see assets_tex.py)
 """
 import math, sys, os, json
 sys.path.insert(0, os.path.dirname(__file__))
@@ -16,8 +20,14 @@ DOORS_END = [-3.7, 2.9]; DOORS_MID = [0.77]          # 2+1+1+2 per side, centres
 DOOR_W = 1.3                                      # opening width (single 1.2 m sliding leaf per node)
 SKIRT_Z = 0.82
 CAB_LEN = 1.8                                     # cab depth behind the nose (partition at t=1.8)
-SILL_DEG, HEAD_DEG = 7.5, 45.0                    # window / door glazing spans the arch from 7.5 to 45 deg
+SILL_DEG, HEAD_DEG = 7.5, 45.0                    # window glazing spans the arch from 7.5 to 45 deg
+DOOR_HEAD_DEG = 64.0                              # door opening head: well up into the roof arch (inner face 1.78 m above the floor), 0.24 m above the window head
+LEAF_RO, LEAF_RN = RO - 0.042, RI + 0.003         # sliding leaf skins: outer face 42 mm behind the body skin (visible recess), inner face just behind the lining
+SEAL = 0.030                                      # width of the black seal outline round each door opening
 CFG = dict(seat_mat='seat_moquette', pole_mat='orange_pole')
+new_mat('glass_tint', '#05080a', 0.0, 0.05, None, 0, 0.68)   # side / door glazing: dark tinted (the black window band reads black; riders still show faintly)
+new_mat('bellows_dark', '#1e2023', 0.0, 0.92)     # outer bellows sleeve between the cars
+new_mat('bellows_grey', '#62666c', 0.0, 0.92)     # gangway concertina lining
 
 def A(R, a0, a1, step=7.5, sgn=1):
     n = max(1, int(round(abs(a1 - a0) / step)))
@@ -26,10 +36,13 @@ def A(R, a0, a1, step=7.5, sgn=1):
 def mir(pts, sg): return [(sg * x, z) for x, z in pts]
 
 OUT_FULL = A(RO, 0, 180)                  # right belt -> crown -> left belt
-ROOF_OUT = A(RO, HEAD_DEG, 180 - HEAD_DEG)
+ROOF_OUT = A(RO, HEAD_DEG, 180 - HEAD_DEG)                    # roof over the window bays / cab bay: down to the window head
 CEIL = A(RI, HEAD_DEG, 180 - HEAD_DEG)
+ROOF_DOOR = A(RO, DOOR_HEAD_DEG, 180 - DOOR_HEAD_DEG)         # roof over a door opening: only above the (higher) door head
+CEIL_DOOR = A(RI, DOOR_HEAD_DEG, 180 - DOOR_HEAD_DEG)
 CEIL_FULL = A(RI, 0, 180)
 SECTION = [(RO, 0.62)] + OUT_FULL + [(-RO, 0.62)]         # closed outer outline
+SLEEVE = [(1.05, 0.5), (1.10, 0.55)] + SECTION + [(-1.10, 0.55), (-1.05, 0.5)]   # closed ring: body outline down to the underframe, flat underside
 
 AP_HW, AP_HEAD = 0.65, 0.05              # gangway aperture half-width; head sits this far below the ceiling lining
 def AP_HEAD_Y(x):
@@ -39,6 +52,39 @@ def AP_HEAD_Y(x):
 def head_room(x):
     x = abs(x)
     return 0.0 if x > RI else CZ + math.sqrt(max(0.0, RI * RI - x * x)) - FLOOR if True else 0
+
+def vnormals(pts, closed, ref, outward):
+    """Unit 2-D normals at the vertices of a polyline in the (x, z) plane (mean of the adjacent segment normals), pointing away from `ref` (outward) or toward it."""
+    n = len(pts); out = []
+    for i in range(n):
+        sg_ = []
+        if closed or i > 0: sg_.append((pts[i - 1], pts[i]))
+        if closed or i < n - 1: sg_.append((pts[i], pts[(i + 1) % n]))
+        nx = nz = 0.0
+        for p, q in sg_:
+            dx, dz = q[0] - p[0], q[1] - p[1]; ln = math.hypot(dx, dz) or 1.0
+            nx += -dz / ln; nz += dx / ln
+        ln = math.hypot(nx, nz) or 1.0; nx /= ln; nz /= ln
+        if ((pts[i][0] - ref[0]) * nx + (pts[i][1] - ref[1]) * nz < 0) == outward: nx, nz = -nx, -nz
+        out.append((nx, nz))
+    return out
+
+def ribbed_tube(M_, pts, closed, ref, outward, y0, d, length, K, delta, mat):
+    """Corrugated sleeve: K + 1 rings of the (x, z) polyline `pts` from world y0 to y0 + d * length, ring k pushed `delta(k)` along its vertex normal
+    (a fold = a swing of delta), quads between rings, explicit orientation (away from `ref` if outward, else toward it) so smooth shading is consistent."""
+    bm = M_.bm; nrm = vnormals(pts, closed, ref, outward); rings = []
+    for k in range(K + 1):
+        dl = delta(k); y = y0 + d * length * k / K
+        rings.append([bm.verts.new((x + nx * dl, y, z + nz * dl)) for (x, z), (nx, nz) in zip(pts, nrm)])
+    fs = []
+    for k in range(K):
+        for i in range(len(pts) if closed else len(pts) - 1):
+            j = (i + 1) % len(pts)
+            f = bm.faces.new((rings[k][i], rings[k][j], rings[k + 1][j], rings[k + 1][i]))
+            cx = sum(v.co.x for v in f.verts) / 4; cz = sum(v.co.z for v in f.verts) / 4
+            if (((cx - ref[0]) * f.normal.x + (cz - ref[1]) * f.normal.z) < 0) == outward: f.normal_flip()
+            f[M_.fx] = 1; fs.append(f)
+    M_._tag(fs, mat)
 
 def arc_panel_uv(M_, sg, R0, a0, a1, y0, y1, mat, flip=False):
     """Arc strip with UV u along y, v along the arc (for wide route-map labels)."""
@@ -63,7 +109,7 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     lights = []
     def P(x, y, z): return (x, yc + s * y, z)
     car = group(f'car_{idx}', parent=root)
-    ext = M(); sal = M(); cab = M(); gls = M()
+    ext = M(); sal = M(); cab = M(); gls = M(); bel = M()          # bel: bellows (smooth shaded)
     def ysort(a, b):
         p, q = yc + s * a, yc + s * b
         return min(p, q), max(p, q)
@@ -79,6 +125,14 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     for d in DOORS: edges += [d - DOOR_W / 2, d + DOOR_W / 2]
     edges.append(CAB_Y)
     segs = [(edges[2 * k], edges[2 * k + 1]) for k in range(len(DOORS) + 1)]
+    RG = 1.12                                                        # glazing radius: window reveals are black outside it, white inside it
+    def radial(M_, sg, ang, a, b, r_mid, outer_mat):
+        """Reveal across the wall thickness at arc angle `ang` (sill / head faces), running a..b: outer part in outer_mat, inner part white."""
+        pts = [A(R_, ang, ang)[0] for R_ in (RO, r_mid, RI)]
+        S(M_, mir([pts[0], pts[1]], sg), a, b, outer_mat); S(M_, mir([pts[1], pts[2]], sg), a, b, 'interior_panel')
+    def reveal(M_, sg, y, polys, mats):
+        """Jamb reveal at constant y between successive same-length polylines (outer -> inner), one material each."""
+        for (pa, pb), mt in zip(zip(polys, polys[1:]), mats): quadsY(M_, mir(pa, sg), mir(pb, sg), y, mt)
     for sg in (-1, 1):
         for (a, b) in segs:
             Ln = b - a
@@ -86,45 +140,49 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
             S(ext, mir([(1.05, 0.5), (1.10, 0.55), (RO, 0.62), (RO, SKIRT_Z)], sg), a, b, 'skirt_black', away=AX)
             S(ext, mir([(RO, SKIRT_Z), (RO, CZ)] + A(RO, 0, SILL_DEG), sg), a, b, 'livery_white', away=AX)
             S(sal, mir([(RI, FLOOR), (RI, CZ)] + A(RI, 0, SILL_DEG), sg), a, b, 'interior_panel', toward=AX)
-            quadsY_pts = (mir([A(RO, SILL_DEG, SILL_DEG)[0]], sg), mir([A(RI, SILL_DEG, SILL_DEG)[0]], sg))
-            S(ext, mir([A(RO, SILL_DEG, SILL_DEG)[0], A(RI, SILL_DEG, SILL_DEG)[0]], sg), a, b, 'interior_panel')   # sill reveal
-            S(ext, mir([A(RO, HEAD_DEG, HEAD_DEG)[0], A(RI, HEAD_DEG, HEAD_DEG)[0]], sg), a, b, 'interior_panel')     # head reveal
-            if has_cab and b == CAB_Y: pass
-            # ---- window zone: pillars (white) and glazing
+            radial(ext, sg, SILL_DEG, a, b, RG, 'glass_black')                                                       # sill face
+            radial(ext, sg, HEAD_DEG, a, b, RG, 'glass_black')                                                       # head face
+            # ---- the black window band: ONE continuous ribbon along the bay (pillars included), 2.5 deg of black above and below the glazing
+            S(ext, mir(A(RO + 0.003, SILL_DEG - 2.5, SILL_DEG, step=2.5), sg), a, b, 'glass_black', away=AX)
+            S(ext, mir(A(RO + 0.003, HEAD_DEG, HEAD_DEG + 2.5, step=2.5), sg), a, b, 'glass_black', away=AX)
             n = max(1, int(round(Ln / 1.25))) if Ln > 0.9 else 0
-            if n == 0:
-                S(ext, mir(A(RO, SILL_DEG, HEAD_DEG), sg), a, b, 'livery_white', away=AX)
+            if n == 0:                                                   # blank bay: the band just carries on
+                S(ext, mir(A(RO, SILL_DEG, HEAD_DEG), sg), a, b, 'glass_black', away=AX)
                 S(sal, mir(A(RI, SILL_DEG, HEAD_DEG), sg), a, b, 'interior_panel', toward=AX)
                 continue
             pw = 0.16 if n > 1 else 0.20; wl = (Ln - pw * (n + 1)) / n
-            for k in range(n + 1):
+            for k in range(n + 1):                                       # pillars: black outside (the band runs on), white lining inside
                 ya = a + k * (wl + pw); yb = ya + pw
-                S(ext, mir(A(RO, SILL_DEG, HEAD_DEG), sg), ya, yb, 'livery_white', away=AX)
+                S(ext, mir(A(RO, SILL_DEG, HEAD_DEG), sg), ya, yb, 'glass_black', away=AX)
                 S(sal, mir(A(RI, SILL_DEG, HEAD_DEG), sg), ya, yb, 'interior_panel', toward=AX)
             for k in range(n):
                 ya = a + pw + k * (wl + pw); yb = ya + wl
-                S(gls, mir(A(1.12, SILL_DEG, HEAD_DEG), sg), ya, yb, 'glass_window', toward=AX)
+                S(gls, mir(A(RG, SILL_DEG, HEAD_DEG), sg), ya, yb, 'glass_tint', toward=AX)
                 for edge in (ya, yb):
-                    quadsY(ext, mir(A(RO, SILL_DEG, HEAD_DEG), sg), mir(A(RI, SILL_DEG, HEAD_DEG), sg), edge, 'interior_panel')
-                S(ext, mir(A(RO + 0.002, SILL_DEG - 2.5, SILL_DEG, step=2.5), sg), ya - 0.04, yb + 0.04, 'glass_black')       # black surround
-                S(ext, mir(A(RO + 0.002, HEAD_DEG, HEAD_DEG + 2.5, step=2.5), sg), ya - 0.04, yb + 0.04, 'glass_black')
-                for e2, o2 in ((ya - 0.04, ya), (yb, yb + 0.04)):
-                    S(ext, mir(A(RO + 0.002, SILL_DEG, HEAD_DEG), sg), e2, o2, 'glass_black')
-                S(sal, mir(A(RI - 0.004, HEAD_DEG - 7.5, HEAD_DEG - 7.5), sg) + mir(A(RI - 0.004, HEAD_DEG - 7.5, HEAD_DEG - 7.5), sg), ya, yb, 'led_warm') if False else None
+                    reveal(ext, sg, edge, [A(RO, SILL_DEG, HEAD_DEG), A(RG, SILL_DEG, HEAD_DEG), A(RI, SILL_DEG, HEAD_DEG)], ['glass_black', 'interior_panel'])
                 S(sal, mir(A(RI - 0.004, HEAD_DEG + 1, HEAD_DEG + 4, step=3), sg), ya + 0.05, yb - 0.05, 'panel_ceiling', toward=AX)   # vent grille
                 S(sal, mir(A(RI - 0.004, HEAD_DEG - 6, HEAD_DEG - 3, step=3), sg), ya + 0.05, yb - 0.05, 'led_warm', toward=AX)         # LED strip along the window head
         for d in DOORS:
             ya, yb = d - DOOR_W / 2, d + DOOR_W / 2
             S(ext, mir([(1.05, 0.5), (1.10, 0.55), (RO, 0.62), (RO, 0.70)], sg), ya, yb, 'skirt_black', away=AX)
-            od = mir([(RO, 0.70), (RO, CZ)] + A(RO, 0, HEAD_DEG), sg); idd = mir([(RI, FLOOR), (RI, CZ)] + A(RI, 0, HEAD_DEG), sg)
-            for edge in (ya, yb): quadsY(ext, od, idd, edge, 'interior_panel')                                        # door jambs
-            S(ext, mir([A(RO, HEAD_DEG, HEAD_DEG)[0], A(RI, HEAD_DEG, HEAD_DEG)[0]], sg), ya, yb, 'subway_orange')
+            # opening outline (outer skin R=RO, leaf face R=LEAF_RO, lining R=RI) from the sill up the jamb and well into the roof arch
+            prof = lambda R_, z0: [(R_, z0)] + A(R_, 0, DOOR_HEAD_DEG)           # A() starts at (R, CZ): the straight jamb is one segment
+            for edge in (ya, yb):                                                                                        # jambs: 42 mm black recess, then white
+                reveal(ext, sg, edge, [prof(RO, 0.70), prof(LEAF_RO, 0.70), prof(RI, FLOOR)], ['rubber_black', 'interior_panel'])
+            radial(ext, sg, DOOR_HEAD_DEG, ya, yb, LEAF_RO, 'rubber_black')                                            # head: black recess, white lining
+            for e_, o_ in ((ya - SEAL, ya), (yb, yb + SEAL)):                                                            # black seal outline on the skin (reads as the shadow gap round the slab)
+                S(ext, mir([(RO + 0.003, 0.70)] + A(RO + 0.003, 0, DOOR_HEAD_DEG), sg), e_, o_, 'rubber_black', away=AX)
+            S(ext, mir(A(RO + 0.003, DOOR_HEAD_DEG, DOOR_HEAD_DEG + 3.0, step=3.0), sg), ya - SEAL, yb + SEAL, 'rubber_black', away=AX)
             ext.box(P(sg * (RO - 0.09), d, 0.695), (0.2, DOOR_W, 0.012), 'steel_dark')                                 # threshold wedge
             ext.box(P(sg * (RO - 0.02), d, 0.70), (0.04, DOOR_W, 0.012), 'sign_yellow')
             sal.box(P(sg * (RI - 0.4), d, FLOOR + 0.004), (0.8, DOOR_W, 0.008), 'floor_light')                          # light threshold band
-            for off in (DOOR_W / 2, -DOOR_W / 2 - 0.45):        # orange door-zone bands on the outer skin (overlay), roof included
-                S(ext, mir([(RO + 0.0025, SKIRT_Z), (RO + 0.0025, CZ)] + A(RO + 0.0025, 0, 90, step=7.5), sg), d + off if off > 0 else d + off, (d + off + 0.45), 'subway_orange', away=AX)
             ext.box(P(sg * (RI - 0.05), d + DOOR_W / 2 + 0.12, 1.2), (0.05, 0.1, 0.1), 'sos_green')
+    # ---- roof (outer) and ceiling (inner): over the window bays and the cab bay down to the window head, over each door only above the higher door head
+    for (a, b) in segs:
+        S(ext, ROOF_OUT, a, b, 'livery_white', away=AX); S(sal, CEIL, a, b, 'interior_ceiling', toward=AX)
+    for d in DOORS:
+        S(ext, ROOF_DOOR, d - DOOR_W / 2, d + DOOR_W / 2, 'livery_white', away=AX); S(sal, CEIL_DOOR, d - DOOR_W / 2, d + DOOR_W / 2, 'interior_ceiling', toward=AX)
+    if ROOFEND > CAB_Y: S(ext, ROOF_OUT, CAB_Y, ROOFEND, 'livery_white', away=AX)
     # ---- floor, underframe
     sal.box(P(0, (-HALF + CAB_Y) / 2, FLOOR - 0.02), (2 * RI, CAB_Y + HALF, 0.04), 'floor_dark')
     ext.box(P(0, -0.0, 0.5 + 0.02), (2.0, L - 0.3, 0.04), 'skirt_black')
@@ -132,8 +190,6 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     for yy in (-HALF * 0.4, 0.0, HALF * 0.4):
         ext.box(P(0.0, yy, 0.55), (1.3, min(1.0, HALF * 0.2), 0.12), 'steel_dark')
     # ---- roof (outer) and ceiling (inner): closed, explicit normals.  Roof panel strip along the crown.
-    S(ext, ROOF_OUT, -HALF, ROOFEND, 'livery_white', away=AX)
-    S(sal, CEIL, -HALF, CAB_Y, 'interior_ceiling', toward=AX)
     ext.box(P(0, (ROOFEND - HALF) / 2, 2.644), (0.5, ROOFEND + HALF - 0.4, 0.006), 'panel_ceiling')
     # ---- end walls with a narrow (1.3 m) FULL-HEIGHT gangway aperture (the saloon reads as one continuous space; no door arch), bellows, turn-plate.
     # Straight jambs at x = +-0.65 from the floor, the head follows the ceiling arc (AP_HEAD below the lining) - see AP_HEAD_Y().
@@ -151,13 +207,17 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
             if isinstance(f, bm_.types.BMFace):
                 f.material_index = ext._mi('livery_white'); f[ext.fx] = 1
                 if f.normal.y * s * e < 0: f.normal_flip()
-        ya, yb = ysort(e * (HALF - 0.03), e * (HALF + GAP / 2 + 0.01))
-        ext.strip_y(ap + [ap[0]], ya, yb, 'rubber_black', closed=False)
         ya, yb = ysort(e * (HALF - 0.1), e * (HALF + GAP / 2 + 0.05))
         sal.bbox((-0.65, ya, FLOOR - 0.03), (0.65, yb, FLOOR + 0.005), 'steel_bright')
-        for sgx in (-1, 1):
-            sal.cyl(P(sgx * 0.70, e * (HALF - 0.12), (FLOOR + 2.0) / 2), 0.019, 2.0 - FLOOR - 0.1, CFG['pole_mat'], seg=8)
-        sal.box(P(0.55, e * (HALF - 0.1), 1.45), (0.2, 0.04, 0.1), 'sos_green')
+        # concertina lining of the passage: from the bulkhead plate to the middle of the gap, 3 rounded folds (6 samples each) per half = 6 folds per passage, valleys at the plate and
+        # at the middle of the gap; grey, floor to roof and over the top; ridges stand 30 mm into the 1.3 m opening
+        dy = s * e
+        ribbed_tube(bel, ap, False, (0.0, 1.6), False, yy, dy, 0.03 + GAP / 2, 18, lambda k: 0.030 * (1 - math.cos(math.pi * k / 3)) / 2, 'bellows_grey')
+        # outer sleeve over the 0.17 m gap, on the body profile: a dark pleat in each half of the gap, 12 mm proud of the skin at most (the 2.34 m width limit)
+        ribbed_tube(bel, SLEEVE, True, (0.0, 1.4), True, yc + dy * HALF, dy, GAP / 2, 4, lambda k: -0.004 + 0.016 * math.sin(math.pi * k / 4) ** 2, 'bellows_dark')
+        for sgx in (-1, 1):       # orange grab poles either side of the opening, floor to ceiling
+            sal.cyl_between(P(sgx * 0.70, e * (HALF - 0.12), FLOOR), P(sgx * 0.70, e * (HALF - 0.12), 2.30), 0.019, CFG['pole_mat'], seg=8)
+        sal.box(P(0.86, e * (HALF - 0.052), FLOOR + 1.3), (0.2, 0.04, 0.1), 'sos_green')    # on the bulkhead beside the opening, 1.3 m above the floor (it used to float inside the aperture, 0.75 m up)
         sal.sphere(P(0.7, e * (HALF - 0.5), 2.36), 0.05, 'plastic_grey', sz=0.6, seg=8)
         sal.sphere(P(-0.7, e * (HALF - 0.5), 2.36), 0.05, 'plastic_grey', sz=0.6, seg=8)
     # ---- cab partition
@@ -209,17 +269,19 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
         for sx in (-0.15, 0.15):
             sal.box(P(sx, yy, 2.555), (0.05, 1.3, 0.01), 'strip_light')
         lights.append(yc + s * yy)
-    for sg in (-1, 1):
-        for d in DOORS:
-            arc_panel_uv(sal, sg, RI - 0.006, 52, 64, d - 0.65, d + 0.65, 'route_map_panel')
-    # ---- exterior: side roundels.  Each sits wholly on the white body panel, never across a door or its orange band: one near the car's outer
-    # end and one near the saloon end.  On a cab car the latter goes in the free white strip between the first door's orange band (0.45 m) and
-    # the cab door aperture (CAB_Y + 0.1), centred ~4.25 m, 0.5 m wide - it used to sit 0.95 m in from the partition, straddling the door edge.
+    for sg in (-1, 1):                  # route diagrams: on the lining above the windows of each long bay (the door heads now run up through where they used to sit)
+        for (a, b) in segs:
+            if b - a < 1.9: continue
+            w = min(1.3, b - a - 0.5); y0, y1 = ysort((a + b) / 2 - w / 2, (a + b) / 2 + w / 2)
+            arc_panel_uv(sal, sg, RI - 0.006, 52, 64, y0, y1, 'route_map_panel')
+    # ---- exterior: side roundels.  Each sits wholly on the white body panel, never across a door or its black seal outline: one near the car's outer
+    # end and one near the saloon end.  On a cab car the latter goes in the free white strip between the first door's edge and
+    # the cab door aperture (CAB_Y + 0.1), centred ~4.0 m, 0.4 m wide - it used to sit 0.95 m in from the partition, straddling the door edge.
     # frontFaceSigns() draws sign_roundel as THREE.BackSide and quad_uv reverses U, so every quad is built from the OUTSIDE viewer's frame as
     # BR, BL, TL, TR (clockwise seen from outside => geometric normal points inward, back face outward, U increases to the viewer's right).
     # The outside viewer's right is world +y on the +x side and -y on the -x side, and car-local y runs along world y only for s=+1, so the
     # corner order follows sg*s (building every car/side the same way left the +x side of cars 0/1, the -x side of cars 2/3 culled/mirrored).
-    ROUNDEL_YY = [-HALF + 1.0, ((DOORS[-1] + DOOR_W / 2 + 0.45) + (CAB_Y + 0.1)) / 2 if has_cab else CAB_Y - 0.95]
+    ROUNDEL_YY = [-HALF + 1.0, ((DOORS[-1] + DOOR_W / 2) + (CAB_Y + 0.1)) / 2 if has_cab else CAB_Y - 0.95]
     for sg in (-1, 1):
         for yy in ROUNDEL_YY:
             xo = sg * (RO + 0.003)
@@ -234,21 +296,24 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
             wyc = yc + s * d
             for half, off in (('a', +0.3225), ('b', -0.3225)):
                 wy = wyc + off
-                lm = M(); Ro, Rn = 1.135, 1.095
+                lm = M(); Ro, Rn = LEAF_RO, LEAF_RN                           # outer face 42 mm behind the body skin: a recessed orange slab
                 ax_ = (-sgx * 1.12, CZ)
                 def pl(pts, y0, y1, mat, **kw):
                     lm.strip_y([(sgx * x - sgx * 1.12, z) for x, z in pts], y0, y1, mat, **kw)
-                low = [(Ro, 0.70), (Ro, CZ)] + A(Ro, 0, SILL_DEG); lowi = [(Rn, 0.70), (Rn, CZ)] + A(Rn, 0, SILL_DEG)
+                ST = 0.09                                                     # frame stiles, so the leaf reads as an orange slab with a window in it
+                RT, RB = 4.5, 3.0                                             # top rail 4.5 deg (~0.09 m) / bottom rail 3 deg of arc
+                low = [(Ro, 0.70)] + A(Ro, 0, SILL_DEG); lowi = [(Rn, 0.70)] + A(Rn, 0, SILL_DEG)
                 pl(low, -h, h, 'subway_orange', away=ax_); pl(lowi, -h, h, 'interior_panel', toward=ax_)
-                # window zone: frame stiles (outer edge 0.07, meeting edge 0.09), top/bottom rails and the glass pane
-                pl(A(Ro, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'subway_orange', away=ax_); pl(A(Ro, SILL_DEG, HEAD_DEG), h - 0.08, h, 'subway_orange', away=ax_)
-                pl(A(Rn, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'interior_panel', toward=ax_); pl(A(Rn, SILL_DEG, HEAD_DEG), h - 0.08, h, 'interior_panel', toward=ax_)
-                pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'subway_orange', away=ax_)
-                pl(A(Rn, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'interior_panel', toward=ax_)
-                pl(A(Ro, SILL_DEG, SILL_DEG + 3, step=3), -h + 0.08, h - 0.08, 'subway_orange', away=ax_)
-                pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), -h + 0.08, h - 0.08, 'glass_window', toward=ax_)       # GLASS in each leaf
-                for yy in (-h, h):
-                    lm.strip_y([(sgx * Ro - sgx * 1.12, 0.72), (sgx * Ro - sgx * 1.12, 1.45)], yy - 0.004, yy + 0.004, 'rubber_black')
+                # glazed zone: from the window sill UP INTO THE ROOF ARCH to the door head (DOOR_HEAD_DEG): stiles, top / bottom rails and the glass pane
+                for yy0, yy1 in ((-h, -h + ST), (h - ST, h)):
+                    pl(A(Ro, SILL_DEG, DOOR_HEAD_DEG), yy0, yy1, 'subway_orange', away=ax_); pl(A(Rn, SILL_DEG, DOOR_HEAD_DEG), yy0, yy1, 'interior_panel', toward=ax_)
+                pl(A(Ro, DOOR_HEAD_DEG - RT, DOOR_HEAD_DEG, step=RT), -h + ST, h - ST, 'subway_orange', away=ax_)
+                pl(A(Rn, DOOR_HEAD_DEG - RT, DOOR_HEAD_DEG, step=RT), -h + ST, h - ST, 'interior_panel', toward=ax_)
+                pl(A(Ro, SILL_DEG, SILL_DEG + RB, step=RB), -h + ST, h - ST, 'subway_orange', away=ax_)
+                pl(A(Rn, SILL_DEG, SILL_DEG + RB, step=RB), -h + ST, h - ST, 'interior_panel', toward=ax_)
+                pl(A((Ro + Rn) / 2, SILL_DEG + RB, DOOR_HEAD_DEG - RT), -h + ST, h - ST, 'glass_tint', toward=ax_)       # GLASS in each leaf
+                for yy in (-h, h):                                            # seal ribbon down each leaf edge (meeting seam / outer edge), all the way up the arch
+                    pl([(Ro + 0.0008, 0.72)] + A(Ro + 0.0008, 0, DOOR_HEAD_DEG), yy - 0.004, yy + 0.004, 'rubber_black', away=ax_)
                 o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0))
                 nodes.setdefault(nm, []).append((wyc, half, o))
     if has_cab:
@@ -256,6 +321,7 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     ext.to_obj(f'car_{idx}_exterior', parent=car)
     sal.to_obj(f'car_{idx}_saloon', parent=car)
     gls.to_obj(f'car_{idx}_glass', parent=car)
+    bel.to_obj(f'car_{idx}_bellows', parent=car, smooth=True)
     if has_cab: cab.to_obj(f'car_{idx}_cab', parent=car)
     nodes['_lights'] = lights; nodes['_benches'] = benches; nodes['_doors'] = [yc + s * d for d in DOORS]
     return nodes
@@ -316,7 +382,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
         for (u0, u1) in ((ya_, ya_ + 0.1), (yb_ - 0.1, yb_)):
             pl(A(Ro, SILL_DEG, HEAD_DEG), u0, u1, 'subway_orange', away=axl); pl(A(Rn, SILL_DEG, HEAD_DEG), u0, u1, 'interior_panel', toward=axl)
         pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), ya_, yb_, 'subway_orange', away=axl)
-        pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), ya_ + 0.1, yb_ - 0.1, 'glass_window', toward=axl)
+        pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), ya_ + 0.1, yb_ - 0.1, 'glass_tint', toward=axl)
         nm = 'L' if (sg * s) < 0 else 'R'
         suffix = '' if s > 0 else '_rear'
         hinge = empty(f'cab_door_{nm}{suffix}', loc=(sg * 1.12, P(0, Y(t0), 0)[1], 0.0), parent=car, kind='ARROWS', size=0.2)
@@ -565,10 +631,15 @@ def build_lod():
             m.box((0, yc + sg * (HALF_ - 0.0), 1.4), (1.5, 0.02, 1.3), 'glass_black')
         else:
             m.prism_y(prof, yc - HALF_, yc + HALF_, 'livery_white')
+        # livery as the full model: black window ribbon along the saloon, tall orange door slabs up the arch, dark sleeve over half of each 0.17 m gap
+        ya_, yb_ = sorted((yc - sg * HALF_, yc + sg * (HALF_ - (CAB_LEN if cab else 0.0))))
         for sx in (-1, 1):
-            m.box((sx * 1.05, yc, 1.95), (0.02, L - 1.2, 0.5), 'glass_black', rot=(0, sx * math.radians(-30), 0))
+            m.strip_y(mir(A(RO + 0.004, SILL_DEG - 2.5, HEAD_DEG + 2.5, step=7.5), sx), ya_, yb_, 'glass_black', away=(0.0, CZ))
             for d in doors:
-                m.box((sx * 1.16, yc + sg * d, 1.2), (0.01, 1.3, 1.1), 'subway_orange')
+                m.strip_y(mir([(RO + 0.007, 0.70)] + A(RO + 0.007, 0, DOOR_HEAD_DEG), sx), yc + sg * d - DOOR_W / 2, yc + sg * d + DOOR_W / 2, 'subway_orange', away=(0.0, CZ))
+        for e in ((-1,) if cab else (-1, 1)):
+            yend = yc + sg * e * HALF_
+            m.prism_y(prof, min(yend, yend + sg * e * GAP / 2), max(yend, yend + sg * e * GAP / 2), 'bellows_dark', cap=False)
         m.box((0, yc, 0.58), (2.3, L - 0.2, 0.3), 'skirt_black')
         m.to_obj(f'car_{idx}_body', parent=car)
     bm_ = M()
