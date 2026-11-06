@@ -34,4 +34,4 @@ The synthesised versions (`synthDoorOpen`, `synthDoorClose`) are always availabl
 ## Limits
 - These are London Underground sounds, not the Glasgow Subway's own; the beep and chime are generic, not matched to the Stadler trains.
 - Nobody has *listened* to the result from inside the build environment: levels, timing, pitch and spectra were measured, tone and balance were not judged by ear. Tune `gain`, the cut points in the script, or fall back to `?sfx=synth` as needed.
-- The rest of the audio (motor, rumble, squeal, brake hiss, the platform bell, rat squeaks) is still synthesised.
+- The motor whine, the wheel rumble and the brake hiss are recordings too now, from other sources (see `running-sounds.md`). The squeal, the platform bell and the rat squeaks are still synthesised.

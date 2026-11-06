@@ -7,7 +7,7 @@ import { Service, baselineRunTimes, DOOR_TIME } from './service.js';
 import { doorPermission, berthingScore, punctualityScore, buildSchedule, platformInterval, platformSide, DIFFICULTY, paxExchange } from './rules.js';
 import { KMH } from './util.js';
 import { Walker } from './walker.js';
-import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES } from './audio.js';
+import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
@@ -197,9 +197,21 @@ test('audio: the door sounds last exactly as long as the leaves take, and the cl
   assert.ok(BEEP_LEN < BEEP_EVERY * 0.6, 'a beep is shorter than the gap that follows it');
 });
 
+/** an MP3's sample rate (Hz) and how long it plays (s): the length from the frame count in its LAME / Xing tag when it has one, else from its size at a constant bitrate; the encoder's padding (about 50 ms) is not taken off */
+function mp3Info(b) {
+  let i = b.toString('latin1', 0, 3) === 'ID3' ? 10 + (((b[6] & 0x7f) << 21) | ((b[7] & 0x7f) << 14) | ((b[8] & 0x7f) << 7) | (b[9] & 0x7f)) : 0;
+  while (i < b.length - 4 && !(b[i] === 0xff && (b[i + 1] & 0xe0) === 0xe0)) i++;
+  const ver = (b[i + 1] >> 3) & 3, rates = ver === 3 ? [44100, 48000, 32000] : ver === 2 ? [22050, 24000, 16000] : [11025, 12000, 8000], sr = rates[(b[i + 2] >> 2) & 3], spf = ver === 3 ? 1152 : 576;
+  const kbps = (ver === 3 ? [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320] : [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160])[(b[i + 2] >> 4) & 15];
+  const k = Math.max(b.indexOf('Info', i), b.indexOf('Xing', i));
+  if (k > 0 && k < i + 64 && (b[k + 7] & 1)) return { sr, seconds: (b.readUInt32BE(k + 8) * spf) / sr };
+  return { sr, seconds: ((b.length - i) * 8) / (kbps * 1000) };
+}
+const mp3Seconds = (b) => mp3Info(b).seconds;
+
 test('audio: every recorded sound has its file, a sane level trim, and a CC0 / CC-BY credit with an author and a source link', () => {
   const dir = fileURLToPath(new URL('../../audio/', import.meta.url)), credits = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/credits.json', import.meta.url)), 'utf8'));
-  assert.deepEqual(Object.keys(SAMPLES).sort(), ['doorClose', 'doorOpen']);
+  assert.deepEqual(Object.keys(SAMPLES).sort(), ['brakeHiss1', 'brakeHiss2', 'doorClose', 'doorOpen', 'motor', 'rumble']);
   for (const [name, s] of Object.entries(SAMPLES)) {
     const bytes = readFileSync(dir + s.file), size = statSync(dir + s.file).size;
     assert.ok(size > 5000 && size < 200000, `${name}: ${s.file} is ${size} bytes`);
@@ -210,6 +222,98 @@ test('audio: every recorded sound has its file, a sane level trim, and a CC0 / C
     assert.match(c.licence, /^(CC0|CC-BY)/, `${name}: licence ${c.licence}`);
     assert.ok(c.author && /^https:\/\//.test(c.url), `${name} needs an author and a source link`);
   }
+});
+
+test('audio: a looping recording keeps its loop points well inside the file, where the encoder\'s padding is never played, and the cycle between them is a sensible length', () => {
+  const dir = fileURLToPath(new URL('../../audio/', import.meta.url));
+  const loops = Object.entries(SAMPLES).filter(([, s]) => s.loop); assert.deepEqual(loops.map(([n]) => n).sort(), ['motor', 'rumble']);
+  for (const [name, s] of loops) {
+    const dur = mp3Seconds(readFileSync(dir + s.file)), [a, b] = s.loop;
+    assert.ok(a >= 0.25 && dur - b >= 0.25, `${name}: the loop runs ${a}..${b} s of a ${dur.toFixed(2)} s file - less than 0.25 s of margin at an end`);
+    assert.ok(b - a >= 1.5 && b - a <= 30, `${name}: a ${(b - a).toFixed(2)} s cycle`);
+    assert.ok(Math.abs(a - (dur - b)) < 0.15, `${name}: the margin is the same either side (${a} before, ${(dur - b).toFixed(2)} after) - the file holds the cycle repeated`);
+  }
+  for (const n of ['doorOpen', 'doorClose']) assert.ok(!SAMPLES[n].loop, `${n} is a one-shot`);
+  for (const n of ['brakeHiss1', 'brakeHiss2']) { const d = mp3Seconds(readFileSync(dir + SAMPLES[n].file)); assert.ok(!SAMPLES[n].loop && d > 0.5 && d < 2.5, `${n} is a ${d.toFixed(2)} s one-shot`); }
+});
+
+test('audio: a loop starts and ends on a whole sample at the file\'s own rate and at 44.1, 48, 88.2 and 96 kHz, so the cycle is exact however the browser resamples the file to its sound card', () => {
+  // a loop that is a fraction of a sample long at the card's rate is replayed that much long or short on every pass: a phase step at the join, which a bright tone like the whine shows. The products are
+  // compared exactly - a browser that rounds a loop point down would otherwise land a sample early on a product that came out a hair under a whole number.
+  const dir = fileURLToPath(new URL('../../audio/', import.meta.url));
+  for (const [name, s] of Object.entries(SAMPLES).filter(([, v]) => v.loop)) {
+    const { sr } = mp3Info(readFileSync(dir + s.file));
+    for (const rate of [sr, 44100, 48000, 88200, 96000]) for (const x of s.loop) assert.equal(x * rate, Math.round(x * rate), `${name}: ${x} s is ${x * rate} samples at ${rate} Hz`);
+  }
+});
+
+test('audio: the synthesised running sound is driven exactly as it was before the recordings (they are only the layers\' replacements, so ?sfx=synth and a missing file keep the old sound)', () => {
+  // the formulas update() used before: gain and pitch of the motor, cutoff and gain of the rumble, centre and gain of the squeal, gain of the hiss
+  const old = (st, rel) => {
+    const v = st.v || 0, inside = st.inTrain ? 1 : 0.25, sq = Math.min(1, Math.abs(st.curv || 0) * 130) * Math.min(1, v / 8) * 0.12 + (st.brake > 0.2 && v < 6 && v > 0.4 ? 0.07 * st.brake : 0);
+    return { motorHz: 70 + v * 15 + st.traction * 40, motorGain: Math.min(0.07, v * 0.006 + st.traction * 0.035) * inside * (st.doorsOpen ? 0.5 : 1), rumbleLP: 120 + v * 22, rumbleGain: Math.min(0.5, v * 0.028) * inside,
+      squealHz: 2300 + v * 60, squealGain: sq * inside, hissGain: Math.min(0.18, rel * 6 + (st.brake > 0.1 ? st.brake * 0.02 : 0)) * inside };
+  };
+  let n = 0;
+  for (const v of [0, 0.3, 2, 6, 11.7, 15]) for (const traction of [0, 0.4, 1]) for (const brake of [0, 0.15, 0.5, 1, 1.3]) for (const curv of [0, 0.004, -0.01]) for (const inTrain of [true, false]) for (const doorsOpen of [false, true]) for (const rel of [0, 0.02]) {
+    const st = { v, traction, brake, curv, inTrain, doorsOpen }, a = runningMix(st, rel), b = old(st, rel);
+    for (const k of Object.keys(b)) { assert.ok(Math.abs(a[k] - b[k]) < 1e-12, `${k} for ${JSON.stringify(st)} rel ${rel}: ${a[k]} against ${b[k]}`); n++; }
+  }
+  assert.ok(n > 5000);
+});
+
+test('audio: the recorded running sound follows the train - louder and higher in pitch with speed, whine under power, a murmur coasting, quieter heard from outside', () => {
+  const S = (o) => runningMix(Object.assign({ v: 0, traction: 0, brake: 0, curv: 0, inTrain: true, doorsOpen: false }, o));
+  // rumble: silent at a standstill, rising with speed in level and in pitch, as calibrated at RUN_V and played as recorded there, with the pitch kept within a believable range
+  assert.equal(S({}).rumbleLevel, 0);
+  let prevL = -1, prevR = 0;
+  for (let v = 0.5; v <= 18; v += 0.5) { const m = S({ v }); assert.ok(m.rumbleLevel > prevL && m.rumbleRate >= prevR, `rumble not rising at ${v} m/s`); assert.ok(m.rumbleRate >= 0.5 && m.rumbleRate <= 1.25, `rumble rate ${m.rumbleRate} at ${v}`); prevL = m.rumbleLevel; prevR = m.rumbleRate; }
+  assert.equal(S({ v: RUN_V }).rumbleLevel, 1); assert.ok(Math.abs(S({ v: RUN_V }).rumbleRate - 1) < 1e-9, 'played as recorded at RUN_V');
+  assert.ok(S({ v: 30 }).rumbleLevel <= 1.5 && S({ v: 30 }).rumbleRate === 1.25, 'bounded at any speed');
+  // whine: under power > braking > coasting > nothing at a standstill; it rises in pitch with speed and is never louder than the level it was calibrated at
+  const cruise = { v: RUN_V }, power = S({ v: RUN_V, traction: 1 }), brake = S({ v: RUN_V, brake: 1 }), coast = S(cruise), stand = S({});
+  assert.ok(power.motorLevel > brake.motorLevel && brake.motorLevel > coast.motorLevel && coast.motorLevel > stand.motorLevel && stand.motorLevel === 0, JSON.stringify([power.motorLevel, brake.motorLevel, coast.motorLevel, stand.motorLevel]));
+  assert.equal(power.motorLevel, 1); assert.ok(coast.motorLevel > 0.1 && coast.motorLevel < 0.4, 'a murmur when coasting');
+  assert.ok(S({ v: 12, traction: 1 }).motorRate > S({ v: 6, traction: 1 }).motorRate && S({ v: 6, traction: 1 }).motorRate > S({ v: 0, traction: 1 }).motorRate);
+  assert.equal(S({ traction: 1, brake: 1 }).motorLevel <= 1, true); assert.ok(S({ v: 0, brake: 1 }).motorLevel === 0, 'a train held at a standstill does not whine');
+  assert.ok(S({ v: 12, traction: 1, doorsOpen: true }).motorLevel === 0.5 * power.motorLevel, 'open doors let the motor down');
+  // outside the train: a quarter as loud, the same pitch
+  const out = runningMix({ v: 12, traction: 1, brake: 0, inTrain: false, doorsOpen: false });
+  assert.ok(Math.abs(out.rumbleLevel - 0.25) < 1e-12 && Math.abs(out.motorLevel - 0.25) < 1e-12 && out.rumbleRate === 1 && out.inside === 0.25);
+  // a state with fields missing (the first frame, a test) is still a finite mix
+  for (const x of Object.values(runningMix({}))) assert.ok(Number.isFinite(x));
+});
+
+test('audio: the brake being let off is heard once per release, at its start - not when it goes on, not when it is merely eased, and not when the train is put somewhere', () => {
+  // the brake as the sim drives it: it comes on over about 0.6 s and goes off over about 0.9 s (dynamics.js lagApply / lagRelease)
+  const run = (plan, fps = 60, det = new ReleaseDetector()) => {
+    let b = 0, t = 0; const dt = 1 / fps, fires = []; let lastWant = 0;
+    for (const [secs, want, teleport] of plan) {
+      if (teleport != null) { b = teleport; const s = det.update(b, t); if (s != null) fires.push({ t, s }); }
+      for (let i = 0; i < Math.round(secs * fps); i++) { const tau = want > b ? 0.6 : 0.9; b += (want - b) * Math.min(1, dt / tau); t += dt; const s = det.update(b, t); if (s != null) fires.push({ t, s }); }
+      lastWant = want;
+    }
+    return fires;
+  };
+  // approach, hold at the platform, depart: one release, within a third of a second of the driver letting go, for nearly the whole brake
+  for (const fps of [60, 30, 10]) {
+    const f = run([[3, 1], [20, 1], [8, 0]], fps); assert.equal(f.length, 1, `${fps} fps: ${JSON.stringify(f)}`);
+    assert.ok(f[0].t >= 23 && f[0].t < 23.4 && f[0].s > 0.85, `${fps} fps: fired at ${f[0].t.toFixed(2)} s, strength ${f[0].s.toFixed(2)}`);
+  }
+  // five station stops, a minute apart: five releases
+  assert.equal(run(Array.from({ length: 5 }, () => [[3, 1], [10, 1], [47, 0]]).flat(1)).length, 5);
+  // applying the brake, however hard, is silent; a brake that never gets beyond a light touch is too gentle to hear
+  assert.equal(run([[2, 1], [3, 1]]).length, 0); assert.equal(run([[2, 0.25], [3, 0.25], [4, 0]]).length, 0);
+  // easing off a hard brake part-way is a smaller release, heard once; a brake that wobbles by a few per cent is silent
+  const ease = run([[3, 0.9], [4, 0.9], [4, 0.5], [5, 0.5], [4, 0]]); assert.ok(ease.length >= 1 && ease.length <= 3 && ease[0].s > 0.8, JSON.stringify(ease));
+  assert.equal(run(Array.from({ length: 40 }, (_, i) => [0.25, i % 2 ? 0.55 : 0.5])).length, 0);
+  // a brake that is pumped on and off quickly cannot be heard more often than every 2 s
+  const pump = run(Array.from({ length: 24 }, (_, i) => [0.5, i % 2 ? 0.5 : 1]).flat(0)); for (let i = 1; i < pump.length; i++) assert.ok(pump[i].t - pump[i - 1].t >= 2 - 1e-9, `${pump[i].t - pump[i - 1].t} s apart`);
+  assert.ok(pump.length >= 1 && pump.length <= 6, `${pump.length} releases from pumping`);
+  // the train put somewhere with its brake released (brakeAct jumps from 1 to 0 in one frame) is not a release - and the detector carries on working afterwards
+  const jump = run([[3, 1], [5, 1], [0.05, 0, 0], [3, 1], [10, 1], [8, 0]]); assert.equal(jump.length, 1, JSON.stringify(jump));
+  // nothing breaks on odd input
+  const d = new ReleaseDetector(); for (const x of [undefined, null, NaN, -1, 2, 0]) assert.doesNotThrow(() => d.update(x, 1));
 });
 
 test('rats: they potter and sprint at a brown rat\'s speeds, start and stop at believable accelerations, and never beat their legs faster than a rat can', () => {
