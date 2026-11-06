@@ -250,7 +250,7 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 /** A new gait state for a body. */
 export function newGait(B, opts = {}) {
   const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8],
-    var: Object.assign({ arm: 1, bob: 1, sway: 1, phase0: 0, yawBias: 0, cad: 1, vary: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
+    var: Object.assign({ arm: 1, bob: 1, sway: 1, yawBias: 0, cad: 1, vary: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
     rng: rng32(opts.seed != null ? opts.seed : 0x2f6e), eT: 0, rate: 1,      // eT, rate: the step-to-step wander of the timing (see VARY)
     acc: 0, vPrev: null };                                                    // acc: how fast the body is speeding up (m/s^2, smoothed): the foot is put where the body will be
   return g;
@@ -296,6 +296,11 @@ export function gaitUpdate(g, dt, inp) {
   if (want && !g.walking) {                                  // set off: the foot that trails swings first
     g.walking = true; g.walkT = 0;
     const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], ahead = F.map((f) => (f.H[0] - g.x) * fwd[0] + (f.H[1] - g.z) * fwd[1]), first = ahead[0] <= ahead[1] ? 0 : 1;
+    // The first step is fixed by which foot trails; there is no per-walker start offset. People set walking on the SAME frame therefore step off together: in the round-2 review's probe 12
+    // different characters released at once kept their steps in unison for about a second (step-phase order parameter 0.99 / 0.91 / 0.60 / 0.37 at 0.3 / 0.6 / 1 / 1.5 s; random phases read 0.26),
+    // and 12 copies of one character for 4 - 6 s. people.js staggers the people it sends through stream() and board(), but queue() sets several walking on one frame, so a group sent to the
+    // doors starts in step; how that looks on the platform has not been watched. A `phase0` trait that looked as if it broke the lockstep used to be carried in var and was read by nothing;
+    // it is gone rather than left to suggest otherwise.
     g.phase = wrap1(P.S + (first ? 0.5 : 0));
     for (let s = 0; s < 2; s++) F[s].th = 0;
   } else if (!want && g.walking) {                            // stop: a swinging foot lands where the body stands now, a planted one settles

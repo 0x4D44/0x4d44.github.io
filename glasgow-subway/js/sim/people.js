@@ -569,7 +569,7 @@ export class AnimCrowd {
   _gaitOpts(p) {
     const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
     return { armOut: (tab && tab.walk) || [8, 8], seed: (G.seedOf(id) + 7919 * n) >>> 0,
-      var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), phase0: 0, yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r() } };
+      var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r() } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step
