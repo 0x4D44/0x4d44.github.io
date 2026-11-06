@@ -179,7 +179,7 @@ export class AnimCrowd {
       this.armFit[c.id] = n;
     }
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
-    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gseed = 0; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5);   // phones have their own random stream: switching them off changes nothing else
+    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gcount = {}; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5);   // phones have their own random stream: switching them off changes nothing else
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
@@ -563,10 +563,13 @@ export class AnimCrowd {
     return ch[key];
   }
   /** the options a person's gait is made with: a little individuality (it is a crowd, not a squad) - how much each arm swings, how much the body bobs and sways, how the feet
-   *  toe out - none of it is in the clip. Fixed for the person, so a re-plant (below) does not change who they are. */
+   *  toe out, how quick their steps are for their speed - none of it is in the clip. Fixed for the person, so a re-plant (below) does not change who they are. The traits and the
+   *  seed of the step-to-step wander (gait.js VARY) come from the character's id and how many of that character have walked before, not from the order the crowd was made in, so a
+   *  recording of one character is the same whatever else is on the platform. */
   _gaitOpts(p) {
-    const r = mulberry32(0x6a17 + 977 * (++this._gseed)), tab = ARM_OUT[p.char.id];
-    return { armOut: (tab && tab.walk) || [8, 8], var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), phase0: 0, yawBias: (r() - 0.5) * 3 } };
+    const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
+    return { armOut: (tab && tab.walk) || [8, 8], seed: (G.seedOf(id) + 7919 * n) >>> 0,
+      var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), phase0: 0, yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r() } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step
@@ -579,7 +582,7 @@ export class AnimCrowd {
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
       const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, opts), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
     }
-    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.g = G.newGait(gs.gb.body, gs.opts); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
+    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, gs.opts); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
     if (walking) gs.hold = 0; else gs.hold += dt;
     gs.wU = walking || gs.hold < GAIT_TAIL ? Math.min(1, gs.wU + dt / GAIT_IN) : Math.max(0, gs.wU - dt / GAIT_OUT);
     gs.wL = walking || standing ? Math.min(1, gs.wL + dt / GAIT_IN) : Math.max(0, gs.wL - dt / GAIT_OUT); gs.t = this._clock;

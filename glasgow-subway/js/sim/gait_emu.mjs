@@ -31,10 +31,10 @@ const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 const angD = (a, b) => { let d = (a - b) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
 /** Record one person through a plan (segments { dur (s), v (m/s), state, turn (deg), to (m) }, as motion_metrics.SCEN builds them) at 60 Hz.
- *  opts: armOut [l, r] (deg), var (the gait's per-person variation), onFrame (k, gait, targets, solved) called every frame, noStopD (do not tell the gait how far it still has to go to a place it will stand at - the control for the planned-stop test), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
+ *  opts: armOut [l, r] (deg), var (the gait's per-person variation; var.vary 0 is a metronome: no stride-to-stride variability), seed (the stride-to-stride variability's random seed; default: one per person, so every test sees the same walk every run), onFrame (k, gait, targets, solved) called every frame, noStopD (do not tell the gait how far it still has to go to a place it will stand at - the control for the planned-stop test), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
  *  (feed.pos < 1 makes the planted feet slide across the floor, feed.speed < 1 gives a cadence that is too slow for the speed). */
 export function record(id, plan, opts = {}) {
-  const B = bodyOf(id), C = carried(B), g = G.newGait(B, { armOut: opts.armOut || [6, 6], var: opts.var }), dt = 1 / 60, fp = (opts.feed && opts.feed.pos) || 1, fv = (opts.feed && opts.feed.speed) || 1;
+  const B = bodyOf(id), C = carried(B), g = G.newGait(B, { armOut: opts.armOut || [6, 6], var: opts.var, seed: opts.seed != null ? opts.seed : G.seedOf(id) }), dt = 1 / 60, fp = (opts.feed && opts.feed.pos) || 1, fv = (opts.feed && opts.feed.speed) || 1;
   const n = Math.round(plan.reduce((s, a) => s + a.dur, 0) / dt), Lc = M.LM.length, pos = new Array(n * Lc * 3), root = new Array(n * 3), yaw = new Array(n), spd = new Array(n), st = new Array(n), seg = new Array(n), ph = new Array(n);
   const P = { yaw: 0, yw: 0, sp: 0, stopHere: false };
   let x = 0, z = 0, yawT = 0, hd = 0, k = 0, state = 'stand', tx = null, tz = null, arrived = false, pv = 0;
