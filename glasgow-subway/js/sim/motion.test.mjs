@@ -148,6 +148,30 @@ test('the pelvis acceleration item sees a stomp: a 3 cm notch, 6 frames wide, at
   assert.ok(score(spoiled) < 3, `p99 ${spoiled.toFixed(1)} m/s^2 -> ${score(spoiled).toFixed(1)}`);
   assert.ok(score(a.smooth.pelAcc) > 8, `the unspoiled walk: p99 ${a.smooth.pelAcc.toFixed(1)} -> ${score(a.smooth.pelAcc).toFixed(1)}`);
 });
+test('the pelvis acceleration is judged at 60 Hz whatever the recording rate: the second difference taken at 144 Hz read the same walk 1.5 - 3 times as rough (round-2 review, 5.1)', () => {
+  // the resampler: the series itself (the very array) at 60 Hz and slower, exact on a straight line at any faster rate, and one sample per 1/60 s
+  const ramp = (dt, n) => Float64Array.from({ length: n }, (_, i) => 0.9 + 0.35 * i * dt);
+  for (const dt of [1 / 60, 1 / 30]) { const y = ramp(dt, 50); assert.strictEqual(M.atAnalysisRate(y, dt), y, `1/${Math.round(1 / dt)} s is read as recorded`); }
+  for (const dt of [1 / 90, 1 / 120, 1 / 144]) {
+    const y = ramp(dt, 300), r = M.atAnalysisRate(y, dt);
+    assert.equal(r.length, Math.floor(299 * dt * 60 + 1e-9) + 1, `1/${Math.round(1 / dt)} s: one sample per 1/60 s`);
+    for (let j = 0; j < r.length; j++) near(r[j], 0.9 + 0.35 * j / 60, 1e-9, `1/${Math.round(1 / dt)} s sample ${j}`);
+  }
+  // a kink in a series (a heel strike) is a second difference of (slope change) / dt, so a series with one at every step reads 2.4 times as large at 144 Hz as at 60 Hz when it is not resampled
+  const kinked = (dt) => { const n = Math.round(6 / dt), y = new Float64Array(n); for (let i = 0; i < n; i++) { const f = (i * dt / 0.5) % 1; y[i] = 0.03 * (f < 0.5 ? f * 2 : 2 - f * 2); } return y; };
+  const p99 = (y, dt) => { const a = []; for (let i = 1; i < y.length - 1; i++) a.push(Math.abs(y[i + 1] - 2 * y[i] + y[i - 1]) / (dt * dt)); a.sort((p, q) => p - q); return a[Math.floor(0.99 * a.length)]; };
+  const raw144 = p99(kinked(1 / 144), 1 / 144), at60 = p99(kinked(1 / 60), 1 / 60), via60 = p99(M.atAnalysisRate(kinked(1 / 144), 1 / 144), 1 / 60);
+  assert.ok(raw144 / at60 > 1.8, `a kinked series at 144 Hz reads ${(raw144 / at60).toFixed(2)} times the 60 Hz value when its second difference is taken at the recording rate (the control: this is the artefact)`);
+  assert.ok(via60 / at60 > 0.6 && via60 / at60 < 1.4, `... and ${(via60 / at60).toFixed(2)} times it when it is read at 60 Hz`);
+  // the real gait through the real item: the same walk recorded at 144 Hz scores within a factor of 1.5 of itself at 60 Hz (the gait's own step is the frame time, so it is not identical), and the raw second difference does not
+  let worstRaw = 0;
+  for (const id of PEOPLE) for (const v of [1.2, 1.6]) {
+    const sc = M.SCEN.steady(v), a60 = steady(id, v).a.smooth.pelAcc, { rec, a } = steady(id, v, { dt: 1 / 144 }), yw = rec.s('pelvis').y, k0 = Math.round(sc.win[0] / rec.dt), k1 = Math.min(rec.n, Math.round(sc.win[1] / rec.dt));
+    const ratio = a.smooth.pelAcc / a60, rawRatio = p99(Float64Array.from(yw).subarray(k0, k1), rec.dt) / a.smooth.pelAcc; worstRaw = Math.max(worstRaw, rawRatio);
+    assert.ok(ratio > 0.6 && ratio < 1.5, `${id}@${v}: 144 Hz ${a.smooth.pelAcc.toFixed(1)} vs 60 Hz ${a60.toFixed(1)} m/s^2 (ratio ${ratio.toFixed(2)})`);
+  }
+  assert.ok(worstRaw > 2, `the raw second difference at 144 Hz reads up to ${worstRaw.toFixed(2)} times what the item reads (it must be over 2 for the test to be able to tell the old item from the new)`);
+});
 test('faster is quicker and longer; shorter legs step quicker', () => {
   const by = {}; for (const id of PEOPLE) { by[id] = SPEEDS.map((v) => steady(id, v).a); for (let i = 1; i < SPEEDS.length; i++) assert.ok(by[id][i].cadence > by[id][i - 1].cadence && by[id][i].stepLen > by[id][i - 1].stepLen, id); }
   assert.ok(by.boy[1].cadence > by.man_commuter[1].cadence && by.boy[1].stepLen < by.man_commuter[1].stepLen, 'boy vs man at 1.2 m/s');

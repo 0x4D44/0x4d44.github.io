@@ -30,6 +30,18 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const fall = (x, good, bad) => (Number.isFinite(x) ? 10 * clamp((bad - x) / (bad - good), 0, 1) : 0);              // 10 at <= good, 0 at >= bad
 export const rise = (x, bad, good) => (Number.isFinite(x) ? 10 * clamp((x - bad) / (good - bad), 0, 1) : 0);              // 0 at <= bad, 10 at >= good
 export const band = (x, lo, hi, zlo, zhi) => (!Number.isFinite(x) ? 0 : x < lo ? 10 * clamp((x - zlo) / (lo - zlo), 0, 1) : x > hi ? 10 * clamp((zhi - x) / (zhi - hi), 0, 1) : 10);
+/** The frame rate the pelvis-acceleration item is taken at. A pelvis's vertical acceleration is the second difference of its height over the frame time squared, and the kink a heel
+ *  strike puts in the pelvis's path (a step in its vertical velocity, a few frames wide) gives a spike that grows as 1/dt: the round-2 review measured a roster mean 99th percentile of
+ *  9.3 m/s^2 at 60 Hz and 21 - 31 m/s^2 in each of six recordings at 144 Hz (section 5.1 of that review), which scored the item 0 at a frame rate the game can run at. So the item is always taken at 60 Hz: a recording
+ *  made at a higher rate is resampled to it (linear in time) first; one made at a lower rate is taken as it stands (resampling it upwards would only draw straight lines between
+ *  what it saw). At the recorder's own 60 Hz the series is untouched, so every score made before this change stands. */
+export const ANALYSIS_DT = 1 / 60;
+export function atAnalysisRate(y, dt) {
+  if (!(dt < ANALYSIS_DT - 1e-9) || y.length < 3) return y;
+  const m = Math.floor((y.length - 1) * dt / ANALYSIS_DT + 1e-9) + 1, o = new Float64Array(m);
+  for (let j = 0; j < m; j++) { const t = j * ANALYSIS_DT / dt, i = Math.min(y.length - 2, Math.floor(t + 1e-9)), f = t - i; o[j] = y[i] * (1 - f) + y[i + 1] * f; }
+  return o;
+}
 const mean = (a) => { let s = 0, n = 0; for (const x of a) if (Number.isFinite(x)) { s += x; n++; } return n ? s / n : NaN; };
 const rms = (a) => (a.length ? Math.sqrt(a.reduce((s, x) => s + x * x, 0) / a.length) : NaN);
 const pct = (a, p) => { const b = Float64Array.from(a).sort(); return b.length ? b[clamp(Math.round(p * (b.length - 1)), 0, b.length - 1)] : NaN; };
@@ -232,7 +244,7 @@ export function analyseSteady(rec, win) {
     let jump = 0; for (const nm of ['hand_l', 'hand_r', 'foot_l', 'foot_r', 'head', 'calf_l', 'calf_r']) { const S = rec.s(nm); for (let k = k0 + 1; k < k1; k++) jump = Math.max(jump, Math.hypot(S.x[k] - S.x[k - 1] - (rec.root[k * 3] - rec.root[(k - 1) * 3]), S.y[k] - S.y[k - 1], S.z[k] - S.z[k - 1] - (rec.root[k * 3 + 2] - rec.root[(k - 1) * 3 + 2]))); }
     // the pelvis's vertical acceleration (central second difference of the height, over the window): a walker's moves at a few m/s^2 and, however brisk, has no spikes. REVIEW_1 never saw this one - nothing in the rubric did - and the gait's pelvis was
     // being held to the legs' reach so hard that it stomped at every step, 4 - 59 m/s^2 at the 99th percentile (mean 32 over 0.8 - 1.9 m/s; see the rubric); the joint-angle items and the 1-frame jump do not see a move that is 3 cm over 4 frames
-    const pyv = P('pelvis').y, pacc = []; for (let i = 1; i < pyv.length - 1; i++) pacc.push(Math.abs(pyv[i + 1] - 2 * pyv[i] + pyv[i - 1]) / (dt * dt)); pacc.sort((x, y) => x - y);
+    const pyv = atAnalysisRate(P('pelvis').y, dt), ah = Math.max(dt, ANALYSIS_DT), pacc = []; for (let i = 1; i < pyv.length - 1; i++) pacc.push(Math.abs(pyv[i + 1] - 2 * pyv[i] + pyv[i - 1]) / (ah * ah)); pacc.sort((x, y) => x - y);
     a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100, pelAcc: pacc.length ? pacc[Math.min(pacc.length - 1, Math.floor(0.99 * pacc.length))] : NaN, trem: tremorMm(P, ['hand_l', 'hand_r', 'head', 'spine_03', 'pelvis'], ev.l.hsF.slice(1).map((x, i) => [ev.l.hsF[i], x]), n, dt) }; }   // (cycles bounded at the sub-frame heel strikes: with whole-frame ones every cycle is shifted by up to half a frame against the mean, which a hand moving 8 mm a frame reads as 2-3 mm of shake)
   return a;
 }
