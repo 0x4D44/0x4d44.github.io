@@ -38,6 +38,11 @@ function resample(sig, k0, k1, m = 101) { const o = new Array(m); for (let i = 0
 // share of an oscillation's power (mean removed) that sits in harmonic h of a signal repeating every `per` samples
 function harmonic(sig, per, h) { const n = sig.length, m = mean(sig); let c = 0, s = 0, tot = 0; for (let i = 0; i < n; i++) { const a = 2 * Math.PI * h * i / per, d = sig[i] - m; c += d * Math.cos(a); s += d * Math.sin(a); tot += d * d; } tot /= n; return tot > 1e-14 ? (c * c + s * s) * 2 / (n * n) / tot : 0; }
 const unwrap = (a) => { const o = new Float64Array(a.length); let off = 0; for (let i = 0; i < a.length; i++) { if (i && Math.abs(a[i] - a[i - 1]) > Math.PI) off -= 2 * Math.PI * Math.sign(a[i] - a[i - 1]); o[i] = a[i] + off; } return o; };
+// the spread of a repeated quantity as a percentage of its mean. Every list is taken about ITS OWN mean (a left/right difference is judged by the symmetry items, not here) and the lists
+// are pooled with (samples - lists) degrees of freedom; NaN with fewer than two degrees of freedom
+const pooledCV = (lists) => { let ss = 0, df = 0, sum = 0, cnt = 0; for (const l of lists) { if (l.length < 2) continue; const m = mean(l); for (const x of l) ss += (x - m) ** 2; df += l.length - 1; sum += l.reduce((s, x) => s + x, 0); cnt += l.length; } return df >= 2 && sum > 0 ? 100 * Math.sqrt(ss / df) / (sum / cnt) : NaN; };
+// a sampled signal at a fractional index (linear), clamped to its ends
+const atF = (arr, x) => { const i = Math.max(0, Math.min(arr.length - 1, Math.floor(x))), j = Math.min(arr.length - 1, i + 1), f = Math.max(0, Math.min(1, x - i)); return arr[i] * (1 - f) + arr[j] * f; };
 
 // ------------------------------------------------------------------------------------------------------------------------ the recording
 export class Rec {
@@ -66,12 +71,16 @@ const sagAng = (df, du) => Math.atan2(df, -du) * DEG;   // angle of a segment fr
 // ------------------------------------------------------------------------------------------------------------------------ gait events
 // Zeni, Richards & Higginson (2008): a foot is at heel strike when it is furthest AHEAD of the pelvis, at toe-off when it is furthest BEHIND. Kinematic, so a foot that
 // skates or floats is segmented the same way as one that is planted - the floor is judged separately, by contactOf / slipOf.
-function zeniEvents(g, dt) {
+// hsF / toF are the same events to a fraction of a frame (the vertex of the parabola through the extremum and its two neighbours), for the items that are about TIME to a fraction of a
+// percent - stride-time variability above all: at 60 Hz one frame is 1.5 % of a 1.1 s stride, so integer events read a perfectly regular walk as 0.5-1 % variable (the round-1 reviewer's
+// 0-1.05 % was exactly that).
+const vertexAt = (s, i) => { if (i <= 0 || i >= s.length - 1) return i; const a = s[i - 1], b = s[i], c = s[i + 1], d = a - 2 * b + c; return Math.abs(d) < 1e-12 ? i : i + clamp(0.5 * (a - c) / d, -1, 1); };
+export function zeniEvents(g, dt) {
   const n = g.length, s = smooth(g, Math.max(1, Math.round(0.03 / dt))), m = mean(s), ups = [], gap = Math.round(0.4 / dt);
   for (let i = 1; i < n; i++) if (s[i - 1] < m && s[i] >= m && (!ups.length || i - ups[ups.length - 1] > gap)) ups.push(i);
-  const hs = [], to = [];
-  for (let c = 0; c + 1 < ups.length; c++) { const a = ups[c], b = ups[c + 1]; let imax = a, imin = a; for (let i = a; i < b; i++) { if (s[i] > s[imax]) imax = i; if (s[i] < s[imin]) imin = i; } if (imin > imax) { hs.push(imax); to.push(imin); } }
-  return { hs, to };
+  const hs = [], to = [], hsF = [], toF = [];
+  for (let c = 0; c + 1 < ups.length; c++) { const a = ups[c], b = ups[c + 1]; let imax = a, imin = a; for (let i = a; i < b; i++) { if (s[i] > s[imax]) imax = i; if (s[i] < s[imin]) imin = i; } if (imin > imax) { hs.push(imax); to.push(imin); hsF.push(vertexAt(s, imax)); toF.push(vertexAt(s, imin)); } }
+  return { hs, to, hsF, toF };
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ floor contact
@@ -109,11 +118,15 @@ function slipOf(rec, k0, k1, src) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ expected values (normative; see the rubric)
-const CAD = [[0.4, 62], [0.6, 77], [0.8, 90], [1.0, 101], [1.2, 110], [1.4, 118], [1.6, 126], [1.8, 134], [2.0, 143], [2.4, 160]];   // steps/min at a 0.92 m hip height
-const lerpTab = (t, x) => { if (x <= t[0][0]) return t[0][1]; for (let i = 1; i < t.length; i++) if (x <= t[i][0]) return t[i - 1][1] + (t[i][1] - t[i - 1][1]) * (x - t[i - 1][0]) / (t[i][0] - t[i - 1][0]); return t[t.length - 1][1]; };
+// CADENCE AGAINST SPEED comes from the WALK RATIO - step length over cadence, about 0.006 m per (step/min) for healthy adults and roughly constant from a stroll to a brisk walk -
+// and not from a table of steps/min that the gait also holds. (Round 1 scored STR against the very table the gait was built from, which the independent review rightly called
+// circular: it could only catch a bug in carrying the table out, never a wrong table.) Step length = WR x cadence and speed = step length x cadence / 60 give cadence = sqrt(60 v / WR).
+// I met the 0.006 in a 2023 review that cites Sekiya (1996), Zijlstra (2008) and Bogen (2018); those papers I did not read, and the figure is reported to the second significant
+// digit only, so STR is a coarse check of the stride against the speed (js/sim/motion.test.mjs holds the gait's table to within 4 % of it, both ways).
+export const WALK_RATIO = 0.006;
 /** what a healthy adult does at ground speed v (m/s) with a hip joint hipY (m) off the floor. Dynamic similarity: speeds scale with sqrt(leg length), cadence with 1/sqrt(leg length) */
 export function expected(v, hipY) {
-  const L = hipY || 0.92, s = Math.sqrt(0.92 / L), ve = v * s, cad = lerpTab(CAD, ve) * s;
+  const L = hipY || 0.92, s = Math.sqrt(0.92 / L), ve = v * s, cad = Math.sqrt(60 * Math.max(ve, 0.05) / WALK_RATIO) * s;
   return { ve, cadence: cad, stepLen: v * 60 / cad, hipRange: 26 + 13 * ve, kneeSwing: 48 + 11 * ve, armRange: 12 + 19 * ve, bob: 0.040 * Math.pow(Math.max(ve, 0.05) / 1.2, 1.1) * L / 0.92, stance: 61 - 6.4 * (ve - 1.2), ds: 22 - 6 * (ve - 1.2) };
 }
 
@@ -138,15 +151,25 @@ export function analyseSteady(rec, win) {
   const ev = {}; for (const s of ['l', 'r']) { const f = P('foot_' + s).f, pf = P('pelvis').f; ev[s] = zeniEvents(Float64Array.from(f, (x, i) => x - pf[i]), dt); }
   a.cycles = Math.min(ev.l.hs.length, ev.r.hs.length);
   if (ev.l.hs.length < 2 || ev.r.hs.length < 2) { a.ok = false; a.reason = 'fewer than two strides found (' + ev.l.hs.length + ' left, ' + ev.r.hs.length + ' right)'; return a; }
-  const hsAll = [...ev.l.hs.map((i) => [i, 'l']), ...ev.r.hs.map((i) => [i, 'r'])].sort((p, q) => p[0] - q[0]), stepT = { l: [], r: [] }, stepL = { l: [], r: [] };
-  for (let i = 1; i < hsAll.length; i++) if (hsAll[i][1] !== hsAll[i - 1][1]) { const [ka, sa] = hsAll[i], [kb, sb] = hsAll[i - 1]; stepT[sa].push((ka - kb) * dt); stepL[sa].push(Math.abs(P('heel_' + sa).f[ka] - P('heel_' + sb).f[kb])); }
+  // Steps are timed, measured and (for the width) placed at the heel strikes to a fraction of a frame, with the heel's position read between the two frames either side (hsF): at 60 Hz one
+  // frame is 1.5 % of a stride, and the heel is still travelling 2 cm a frame when Zeni's event fires, so integer events would read a perfectly regular walk as 1 % variable.
+  const hsAll = [...ev.l.hsF.map((x) => [x, 'l']), ...ev.r.hsF.map((x) => [x, 'r'])].sort((p, q) => p[0] - q[0]), stepT = { l: [], r: [] }, stepL = { l: [], r: [] }, stepW = { l: [], r: [] };
+  for (let i = 1; i < hsAll.length; i++) if (hsAll[i][1] !== hsAll[i - 1][1]) {
+    const [xa, sa] = hsAll[i], [xb, sb] = hsAll[i - 1], ha = P('heel_' + sa), hb = P('heel_' + sb);
+    stepT[sa].push((xa - xb) * dt); stepL[sa].push(Math.abs(atF(ha.f, xa) - atF(hb.f, xb)));
+    const wa = atF(ha.r, xa), wb = atF(hb.r, xb); stepW[sa].push(sa === 'r' ? wa - wb : wb - wa);   // step width: sideways between the two heels, + = the landing heel is on its own side of the one before it, - = it has crossed over
+  }
   const all = (o) => o.l.concat(o.r);
   a.stepTime = mean(all(stepT)); a.cadence = 60 / a.stepTime; a.stepLen = mean(all(stepL));
   a.symStepTime = 100 * Math.abs(mean(stepT.l) - mean(stepT.r)) / mean(all(stepT)); a.symStepLen = 100 * Math.abs(mean(stepL.l) - mean(stepL.r)) / mean(all(stepL));
-  { const per = []; for (const s of ['l', 'r']) for (let i = 1; i < ev[s].hs.length; i++) per.push((ev[s].hs[i] - ev[s].hs[i - 1]) * dt); a.strideTime = mean(per); }
+  a.stepWidth = mean(all(stepW)); a.crossPct = 100 * mean(all(stepW).map((w) => (w < 0 ? 1 : 0)));
+  { const per = { l: [], r: [] }; for (const s of ['l', 'r']) for (let i = 1; i < ev[s].hsF.length; i++) per[s].push((ev[s].hsF[i] - ev[s].hsF[i - 1]) * dt); a.strideTime = mean(all(per)); a.strideTimeCV = pooledCV([per.l, per.r]); a.stepLenCV = pooledCV([stepL.l, stepL.r]); }   // variability: the stride time (the standard measure) and the step length, each left/right list about its own mean
   const stance = { l: new Uint8Array(n), r: new Uint8Array(n) }; let span0 = n, span1 = 0;   // stance share and double support, from the events
   for (const s of ['l', 'r']) for (let i = 0; i < ev[s].hs.length; i++) { for (let k = ev[s].hs[i]; k < ev[s].to[i]; k++) stance[s][k] = 1; span0 = Math.min(span0, ev[s].hs[i]); span1 = Math.max(span1, ev[s].to[i]); }
   { let st = 0, dsN = 0, tot = 0; for (let k = span0; k < span1; k++) { tot++; if (stance.l[k] && stance.r[k]) dsN++; st += stance.l[k] + stance.r[k]; } a.stance = 100 * st / (2 * tot); a.ds = 100 * dsN / tot; }
+  // the same two numbers from the floor itself (the rendered shoe within CONTACT_M of it, over the whole window): REPORTED beside the event-based ones, not scored. A sole 8 mm from the floor
+  // counts as down, so these run a little high; they say whether the events (which overstate stance and double support when the foot slows against the pelvis before it lands) are fair.
+  { let s2 = 0, d2 = 0; for (let i = 0; i < n; i++) { s2 += (ct.c.l[i] ? 1 : 0) + (ct.c.r[i] ? 1 : 0); if (ct.c.l[i] && ct.c.r[i]) d2++; } a.stanceC = 100 * s2 / (2 * n); a.dsC = 100 * d2 / n; }
   { const sh = (s) => mean(ev[s].hs.map((h, i) => { const nx = ev[s].hs[i + 1]; return nx ? (ev[s].to[i] - h) / (nx - h) : NaN; })); a.stanceSym = 100 * Math.abs(sh('l') - sh('r')); }
   const clearOf = (c) => { const cl = []; for (const s of ['l', 'r']) for (let i = 0; i < ev[s].to.length; i++) { const to = ev[s].to[i], nx = ev[s].hs[i + 1]; if (!nx) continue; let lo = Infinity; for (let k = to + Math.round(0.35 * (nx - to)); k <= to + Math.round(0.8 * (nx - to)); k++) lo = Math.min(lo, c.sole[s][k]); cl.push(lo); } return cl.length ? mean(cl) * 1000 : NaN; };
   a.clearMm = clearOf(ct); if (rec.shoe) a.clearLm = clearOf(contactOf(rec, k0, k1, 'landmarks'));
@@ -182,19 +205,43 @@ export function analyseSteady(rec, win) {
   // ---- arms
   { const rg = ['l', 'r'].map((s) => pp(E['arm_' + s].mean)), cr = ['l', 'r'].map((s) => corr(E['arm_' + s].mean, E['thigh_' + s].mean));
     a.arm = { rangeL: rg[0], rangeR: rg[1], range: mean(rg), sym: 100 * Math.abs(rg[0] - rg[1]) / mean(rg), corr: Math.max(cr[0], cr[1]), flexMean: mean([mean(J.elbow_l), mean(J.elbow_r)]), flexCouple: mean([corr(E.elbow_l.mean, E.arm_l.mean), corr(E.elbow_r.mean, E.arm_r.mean)]) };
-    let m = Infinity; for (const s of ['l', 'r']) { const h = P('hand_' + s).r, p = P('pelvis').r; for (let i = 0; i < n; i++) m = Math.min(m, Math.abs(h[i] - p[i]) - (rec.info.hipHalf || 0.1)); } a.arm.clear = m; }
+    let m = Infinity; for (const s of ['l', 'r']) { const h = P('hand_' + s).r, p = P('pelvis').r; for (let i = 0; i < n; i++) m = Math.min(m, Math.abs(h[i] - p[i]) - (rec.info.hipHalf || 0.1)); } a.arm.clear = m;
+    // splay: how far OUTSIDE its own shoulder the hand gets (95th percentile of the hand's sideways distance from the pelvis, less half the shoulder width): a hand that hangs from the shoulder stays
+    // within a hand's width of that line; a chicken-wing or a boxer's stance does not, and nothing above (swing, phase, elbow) would notice
+    { const ul = P('upperarm_l').r, ur = P('upperarm_r').r, p = P('pelvis').r, out = []; let sh = 0; for (let i = 0; i < n; i++) sh += Math.abs(ur[i] - ul[i]) / 2; sh /= n;
+      for (const s of ['l', 'r']) { const h = P('hand_' + s).r; for (let i = 0; i < n; i++) out.push(Math.abs(h[i] - p[i])); }
+      a.arm.splay = pct(out, 0.95) - sh; } }
   // ---- head
   { const nk = P('neck_01'), hp = P('head'), np = P('nose');
     const pitch = Array.from(hp.f, (_, i) => Math.atan2(np.y[i] - hp.y[i], Math.hypot(np.f[i] - hp.f[i], np.r[i] - hp.r[i])) * DEG - NOSE_REST_PITCH);
     const yaw = Array.from(np.f, (_, i) => Math.atan2(np.r[i] - hp.r[i], np.f[i] - hp.f[i]) * DEG), roll = Array.from(hp.f, (_, i) => Math.atan2(hp.r[i] - nk.r[i], hp.y[i] - nk.y[i]) * DEG);
-    a.head = { pitchPP: pp(ens(pitch).mean), rollPP: pp(ens(roll).mean), yawPP: pp(ens(yaw).mean), pitchMean: mean(pitch), yawMean: Math.abs(mean(yaw)) }; }
+    const pPP = pp(ens(pitch).mean), rPP = pp(ens(roll).mean), yPP = pp(ens(yaw).mean);
+    // still: the three swings together (root sum of squares) - a head that does not move at all is as wrong as one that nods; poke: the neck bone from the vertical, + = the head is carried ahead of its base
+    a.head = { pitchPP: pPP, rollPP: rPP, yawPP: yPP, pitchMean: mean(pitch), yawMean: Math.abs(mean(yaw)), still: Math.hypot(pPP, rPP, yPP), poke: mean(Array.from(hp.f, (_, i) => Math.atan2(hp.f[i] - nk.f[i], hp.y[i] - nk.y[i]) * DEG)) }; }
   // ---- smoothness
   { const hf = (x) => { const m = x.length, mu = mean(x); let hi = 0, tot = 0; for (let f = 1; f < m / 2; f++) { let c = 0, s = 0; for (let i = 0; i < m; i++) { const w = 2 * Math.PI * f * i / m; c += (x[i] - mu) * Math.cos(w); s += (x[i] - mu) * Math.sin(w); } const p = c * c + s * s; tot += p; if (f / (m * dt) > 6) hi += p; } return tot > 0 ? 100 * hi / tot : 0; };
     const keys = Object.keys(J).filter((k) => !/^(pitch|ankle)_/.test(k)); let rate = 0, rateKey = '', rateAt = 0; for (const k of keys) for (let i = 1; i < J[k].length; i++) { const r = Math.abs(J[k][i] - J[k][i - 1]) / dt; if (r > rate) { rate = r; rateKey = k; rateAt = i; } }
     const rep = []; for (const k of ['thigh_l', 'knee_l', 'arm_l', 'elbow_l']) { const e = E[k]; if (e.cycles.length < 3) continue; const r = pp(e.mean) || 1; for (let c = 1; c < e.cycles.length; c++) rep.push(100 * rms(e.cycles[c].map((v, i) => v - e.cycles[c - 1][i])) / r); }
     let jump = 0; for (const nm of ['hand_l', 'hand_r', 'foot_l', 'foot_r', 'head', 'calf_l', 'calf_r']) { const S = rec.s(nm); for (let k = k0 + 1; k < k1; k++) jump = Math.max(jump, Math.hypot(S.x[k] - S.x[k - 1] - (rec.root[k * 3] - rec.root[(k - 1) * 3]), S.y[k] - S.y[k - 1], S.z[k] - S.z[k - 1] - (rec.root[k * 3 + 2] - rec.root[(k - 1) * 3 + 2]))); }
-    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100 }; }
+    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100, trem: tremorMm(P, ['hand_l', 'hand_r', 'head', 'spine_03', 'pelvis'], ev.l.hsF.slice(1).map((x, i) => [ev.l.hsF[i], x]), n, dt) }; }   // (cycles bounded at the sub-frame heel strikes: with whole-frame ones every cycle is shifted by up to half a frame against the mean, which a hand moving 8 mm a frame reads as 2-3 mm of shake)
   return a;
+}
+/** Shake: what is left of a landmark's motion once the slow wander (a moving average of a third of a second: steering, speed) and the stride-locked waveform (the mean over the left-heel-strike
+ *  cycles, harmonics and all) are taken out. RMS of the three axes together in mm, the worst of the landmarks; NaN with fewer than three whole cycles inside the window (a moving average has
+ *  no neighbours at the ends of it, so those samples are dropped). The joint-angle items cannot see this: they are sagittal angles, and shake is sideways, or small, or not in a joint. */
+export function tremorMm(P, names, cyc, n, dt) {
+  const w = Math.max(2, Math.round(0.165 / dt)), ok = cyc.filter(([A, B]) => A >= w && B <= n - w);
+  if (ok.length < 3) return NaN;
+  let worst = 0;
+  for (const nm of names) {
+    let ss = 0, cnt = 0;
+    for (const ax of ['f', 'r', 'y']) {
+      const x = P(nm)[ax], lp = smooth(x, w), hp = Float64Array.from(x, (v, i) => v - lp[i]), cs = ok.map(([A, B]) => resample(hp, A, B)), m = cs[0].map((_, i) => mean(cs.map((c) => c[i])));
+      ok.forEach(([A, B]) => { for (let i = Math.ceil(A); i < B; i++) { const u = (i - A) / (B - A) * 100, j = Math.min(99, Math.floor(u)), f = u - j; ss += (hp[i] - (m[j] * (1 - f) + m[j + 1] * f)) ** 2; cnt++; } });
+    }
+    worst = Math.max(worst, Math.sqrt(ss / (cnt / 3)));
+  }
+  return worst * 1000;
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ transitions
@@ -258,6 +305,8 @@ export const ITEMS = [
   { id: 'TIM.symL', w: 1.5, label: 'left/right step-length difference', unit: '%', v: (a) => a.symStepLen, fall: [4, 15] },
   { id: 'TIM.stance', w: 2, label: 'stance share of the stride', unit: '%', v: (a) => a.stance, band: off('stance', 3, 10) },
   { id: 'TIM.ds', w: 1.5, label: 'double support', unit: '%', v: (a) => a.ds, band: off('ds', 4, 12) },
+  { id: 'TIM.cvT', w: 1.5, label: 'stride-time variability (CV)', unit: '%', v: (a) => a.strideTimeCV, band: [1.0, 3.5, 0.3, 8] },
+  { id: 'TIM.cvL', w: 1, label: 'step-length variability (CV)', unit: '%', v: (a) => a.stepLenCV, band: [1.0, 4.0, 0.3, 9] },
   { id: 'LEG.hip', w: 3, label: 'hip flexion-extension range', unit: 'deg', v: (a) => a.hip.range, band: off('hipRange', 6, 18) },
   { id: 'LEG.kneeSw', w: 3, label: 'knee flexion peak in swing', unit: 'deg', v: (a) => a.knee.swing, band: off('kneeSwing', 7, 22) },
   { id: 'LEG.kneeLd', w: 2, label: 'knee flexion in loading response', unit: 'deg', v: (a) => a.knee.loading, band: [8, 24, 0, 40] },
@@ -265,6 +314,7 @@ export const ITEMS = [
   { id: 'LEG.plantar', w: 2, label: 'ankle plantarflexion at push-off', unit: 'deg', v: (a) => a.ankle.plantar, band: [-28, -8, -45, 2] },
   { id: 'LEG.dorsi', w: 1, label: 'ankle dorsiflexion in late stance', unit: 'deg', v: (a) => a.ankle.dorsi, band: [6, 20, 0, 34] },
   { id: 'LEG.hsPitch', w: 1, label: 'foot pitch at heel strike (toes up)', unit: 'deg', v: (a) => a.hsPitch, band: [8, 30, 0, 45] },
+  { id: 'LEG.width', w: 1.5, label: 'step width, heel to heel (- = crossed over)', unit: 'm', v: (a) => a.stepWidth, band: [0.05, 0.14, 0, 0.20] },
   { id: 'PEL.bob', w: 3, label: 'pelvis vertical excursion, peak to peak', unit: 'mm', v: (a) => a.pelvis.bobPP, band: (a) => [a.ex.bob * 650, a.ex.bob * 1400, a.ex.bob * 300, a.ex.bob * 2200] },
   { id: 'PEL.bobH2', w: 1, label: 'bob at twice the stride rate (two per stride)', unit: 'share', v: (a) => a.pelvis.bobH2, rise: [0.4, 0.8] },
   { id: 'PEL.sway', w: 2, label: 'pelvis lateral excursion, peak to peak', unit: 'mm', v: (a) => a.pelvis.swayPP, band: [25, 65, 8, 105] },
@@ -273,21 +323,26 @@ export const ITEMS = [
   { id: 'PEL.obl', w: 1, label: 'pelvic obliquity, peak to peak', unit: 'deg', v: (a) => a.pelvis.oblPP, band: [3, 10, 0.5, 18] },
   { id: 'PEL.thorax', w: 1, label: 'shoulder-line rotation, peak to peak', unit: 'deg', v: (a) => a.pelvis.thoraxPP, band: [4, 16, 1, 28] },
   { id: 'PEL.anti', w: 0.5, label: 'thorax against pelvis rotation (correlation)', unit: 'r', v: (a) => a.pelvis.anti, fall: [-0.5, 0.4] },
+  { id: 'PEL.lean', w: 1.5, label: 'trunk lean from the vertical, pelvis to neck (+ = forward)', unit: 'deg', v: (a) => a.trunk.lean, band: [-4, 12, -16, 28] },
   { id: 'ARM.range', w: 3, label: 'upper-arm swing, peak to peak', unit: 'deg', v: (a) => a.arm.range, band: off('armRange', 10, 25) },
   { id: 'ARM.phase', w: 3, label: 'arm against same-side thigh (correlation)', unit: 'r', v: (a) => a.arm.corr, fall: [-0.8, -0.2] },
   { id: 'ARM.elbow', w: 2, label: 'elbow flexion, mean', unit: 'deg', v: (a) => a.arm.flexMean, band: [15, 50, 0, 80] },
   { id: 'ARM.couple', w: 1, label: 'elbow bends as the arm swings forward (correlation)', unit: 'r', v: (a) => a.arm.flexCouple, rise: [0.1, 0.6] },
   { id: 'ARM.sym', w: 2, label: 'left/right swing difference', unit: '%', v: (a) => a.arm.sym, fall: [15, 50] },
   { id: 'ARM.clear', w: 2, label: 'hand beyond the hip joint, closest', unit: 'm', v: (a) => a.arm.clear, rise: [-0.02, 0.03] },
+  { id: 'ARM.splay', w: 1.5, label: 'hand outside its own shoulder line (95th percentile)', unit: 'm', v: (a) => a.arm.splay, fall: [0.10, 0.20] },
   { id: 'HEA.pitch', w: 1.5, label: 'head pitch, peak to peak', unit: 'deg', v: (a) => a.head.pitchPP, fall: [4, 12] },
   { id: 'HEA.roll', w: 1, label: 'head roll, peak to peak', unit: 'deg', v: (a) => a.head.rollPP, fall: [3, 10] },
   { id: 'HEA.yaw', w: 1, label: 'head yaw, peak to peak', unit: 'deg', v: (a) => a.head.yawPP, fall: [6, 16] },
   { id: 'HEA.gaze', w: 1, label: 'gaze pitch off level, mean', unit: 'deg', v: (a) => Math.abs(a.head.pitchMean), fall: [8, 25] },
   { id: 'HEA.dir', w: 0.5, label: 'head turned off the direction of travel, mean', unit: 'deg', v: (a) => a.head.yawMean, fall: [6, 20] },
+  { id: 'HEA.poke', w: 1, label: 'neck bone from the vertical (+ = head carried ahead of its base)', unit: 'deg', v: (a) => a.head.poke, fall: [35, 55] },
+  { id: 'HEA.still', w: 1, label: 'head swing in pitch, roll and yaw together (a head that never moves is wrong too)', unit: 'deg', v: (a) => a.head.still, rise: [0.3, 1.2] },
   { id: 'SMO.hf', w: 2, label: 'joint-angle power above 6 Hz', unit: '%', v: (a) => a.smooth.hf, fall: [2, 12] },
   { id: 'SMO.rate', w: 2, label: 'fastest joint-angle change', unit: 'deg/s', v: (a) => a.smooth.rate, fall: [700, 1800] },
   { id: 'SMO.rep', w: 1.5, label: 'stride-to-stride difference, of the range', unit: '%', v: (a) => a.smooth.period, fall: [5, 25] },
   { id: 'SMO.jump', w: 1.5, label: 'biggest one-frame move of a hand, foot or head', unit: 'cm', v: (a) => a.smooth.jumpCm, fall: [12, 30] },
+  { id: 'SMO.trem', w: 1.5, label: 'shake of hand, head, spine or pelvis, not stride-locked (RMS, worst landmark)', unit: 'mm', v: (a) => a.smooth.trem, fall: [1.5, 6] },
 ];
 export const TRN_ITEMS = [
   { id: 'TRN.lat', w: 1.5, label: 'walk command to first heel strike', unit: 's', v: (t) => t.start.latency, fall: [0.7, 1.6] },
@@ -307,7 +362,34 @@ export const RNG_ITEMS = [
   { id: 'RNG.cv', w: 2, label: 'spread of cadence between people at 1.2 m/s', unit: '% CV', v: (r) => r.cadCV, band: [2, 15, 0.3, 30] },
   { id: 'RNG.legs', w: 1, label: 'shorter legs, faster cadence (correlation with hip height)', unit: 'r', v: (r) => r.legCorr, fall: [-0.4, 0.3] },
 ];
-const evalItem = (it, ctx) => { let value = NaN, s = 0; try { value = it.v(ctx); } catch (e) { value = NaN; } if (it.fall) s = fall(value, ...it.fall); else if (it.rise) s = rise(value, ...it.rise); else { const b = typeof it.band === 'function' ? it.band(ctx) : it.band; s = band(value, ...b); } return { id: it.id, w: it.w, label: it.label, unit: it.unit, value, score: s }; };
+// WHERE EACH BAND COMES FROM. Added after the independent review found the rubric read as better founded than it is (REVIEW_1, R7): every edge of every band is tagged with the weakest
+// honest description of its source, and the doc prints the share of the weight that rests on each.
+//   pub      a figure I read in a published source this session (Winter 1992 minimum toe clearance 1.29 cm)
+//   derived  computed from a published relation: the walk ratio, dynamic similarity (Alexander)
+//   text     my reading of standard gait texts and norms that I did NOT re-read (Perry & Burnfield, Winter's book, Saunders et al. 1953, Meyns et al. 2013): lines fitted by eye
+//   phys     geometry or physics: a sole under the floor, a foot dragging while it is down, a hand through the hip
+//   judge    my judgement - there is no published figure behind the edge (a published figure may sit nearby: the doc says where). Attack these first.
+export const BASIS = ['pub', 'derived', 'text', 'phys', 'judge'];
+const SRC = {
+  'GRD.slip': 'phys', 'GRD.sink': 'phys', 'GRD.float': 'phys', 'GRD.flight': 'phys', 'GRD.clear': 'pub', 'GRD.hipH': 'judge',
+  'STR.cad': 'derived', 'STR.step': 'derived',
+  'TIM.symT': 'judge', 'TIM.symL': 'judge', 'TIM.stance': 'text', 'TIM.ds': 'text', 'TIM.cvT': 'judge', 'TIM.cvL': 'judge',
+  'LEG.hip': 'text', 'LEG.kneeSw': 'text', 'LEG.kneeLd': 'text', 'LEG.kneeSt': 'text', 'LEG.plantar': 'text', 'LEG.dorsi': 'text', 'LEG.hsPitch': 'text', 'LEG.width': 'judge',
+  'PEL.bob': 'text', 'PEL.bobH2': 'judge', 'PEL.sway': 'text', 'PEL.swayH1': 'judge', 'PEL.yaw': 'text', 'PEL.obl': 'text', 'PEL.thorax': 'text', 'PEL.anti': 'text', 'PEL.lean': 'judge',
+  'ARM.range': 'text', 'ARM.phase': 'text', 'ARM.elbow': 'text', 'ARM.couple': 'text', 'ARM.sym': 'judge', 'ARM.clear': 'phys', 'ARM.splay': 'judge',
+  'HEA.pitch': 'judge', 'HEA.roll': 'judge', 'HEA.yaw': 'judge', 'HEA.gaze': 'judge', 'HEA.dir': 'judge', 'HEA.poke': 'judge', 'HEA.still': 'judge',
+  'SMO.hf': 'judge', 'SMO.rate': 'judge', 'SMO.rep': 'judge', 'SMO.jump': 'phys', 'SMO.trem': 'judge',
+  'TRN.lat': 'judge', 'TRN.glide': 'judge', 'TRN.acc': 'judge', 'TRN.dec': 'judge', 'TRN.settle': 'judge', 'TRN.slide': 'phys', 'TRN.stand': 'judge', 'TRN.tslip': 'judge', 'TRN.trate': 'judge', 'TRN.spin': 'judge',
+  'RNG.mono': 'derived', 'RNG.slope': 'derived', 'RNG.cv': 'judge', 'RNG.legs': 'derived',
+};
+for (const it of [...ITEMS, ...TRN_ITEMS, ...RNG_ITEMS]) it.src = SRC[it.id];
+/** the weight resting on each kind of basis, over all the items of the categories the steady walks, the transitions and the range are judged on (weights as a share of the item weights in their own category x the category weight) */
+export function basisShares() {
+  const out = Object.fromEntries(BASIS.map((b) => [b, 0])), by = {}; for (const it of [...ITEMS, ...TRN_ITEMS, ...RNG_ITEMS]) (by[it.id.split('.')[0]] = by[it.id.split('.')[0]] || []).push(it);
+  for (const c of Object.keys(by)) { const W = by[c].reduce((s, i) => s + i.w, 0); for (const it of by[c]) out[it.src] += CATS[c] * it.w / W; }
+  return out;
+}
+const evalItem = (it, ctx) => { let value = NaN, s = 0; try { value = it.v(ctx); } catch (e) { value = NaN; } if (it.fall) s = fall(value, ...it.fall); else if (it.rise) s = rise(value, ...it.rise); else { const b = typeof it.band === 'function' ? it.band(ctx) : it.band; s = band(value, ...b); } return { id: it.id, w: it.w, label: it.label, unit: it.unit, value, score: s, src: it.src }; };
 /** category score of a list of scored items: 0.6 x weighted mean + 0.4 x the worst, so one broken sub-metric cannot hide in an average */
 export const catScore = (items) => { if (!items.length) return NaN; const W = items.reduce((s, i) => s + i.w, 0), m = items.reduce((s, i) => s + i.w * i.score, 0) / W; return 0.6 * m + 0.4 * Math.min(...items.map((i) => i.score)); };
 /** the steady-walk items of one analysis, grouped by category */
@@ -334,6 +416,20 @@ export function rangeStats(steady) {
 export function scoreRange(steady) { const r = rangeStats(steady); return { stats: r, items: RNG_ITEMS.map((it) => evalItem(it, r)) }; }
 
 // ------------------------------------------------------------------------------------------------------------------------ the whole thing
+/** THE GATE, every clause, so that a failure says which: overall > 9, the discriminating 55 points > 9, every category's mean >= 8, every category's 10th percentile >= 8, no steady recording
+ *  below 8, it only counts on the whole roster (--people all: six chosen people can hide the one whose shoes hover), and only when the floor was judged on the rendered shoe for everybody
+ *  (not on the landmarks the gait itself plants). Returns the list of clauses that fail (empty = met). */
+export function gateOf({ overall, disc, cats, p10, worst, roster, meshOk }) {
+  const why = [], f = (x) => (Number.isFinite(x) ? x.toFixed(1) : 'n/a');
+  if (!(overall > 9.0)) why.push(`overall ${f(overall)} <= 9`);
+  if (!(disc > 9.0)) why.push(`discriminating 55 points ${f(disc)} <= 9`);
+  for (const c of Object.keys(CATS)) if (!(cats[c] >= 8.0)) why.push(`${c} ${f(cats[c])} < 8`);
+  for (const c of Object.keys(CATS)) if (!(p10[c] >= 8.0)) why.push(`${c} p10 ${f(p10[c])} < 8`);
+  if (worst && !(worst.score >= 8.0)) why.push(`worst recording ${worst.person}@${worst.v} ${f(worst.score)} < 8`);
+  if (!roster) why.push('not the whole roster');
+  if (meshOk === false) why.push('the floor was not judged on the rendered shoe for everybody');
+  return why;
+}
 /** results = { steady:{ person:{ speed: analysis } }, trans:{ person:{ start, stop, turn, spin } } }  ->  { cats, overall, worst, rows, trn, rng, gate } */
 export function scoreAll(results) {
   const people = Object.keys(results.steady), rows = [], perCat = {}; for (const c of Object.keys(CATS)) perCat[c] = [];
@@ -346,17 +442,22 @@ export function scoreAll(results) {
   const rng = scoreRange(results.steady); perCat.RNG.push(catScore(rng.items));
   const cats = {}; for (const c of Object.keys(CATS)) cats[c] = mean(perCat[c]);
   const overall = Object.keys(CATS).reduce((s, c) => s + CATS[c] * (Number.isFinite(cats[c]) ? cats[c] : 0), 0) / 100;
+  // The DISCRIMINATING subscore: the five categories whose targets are not the gait's own design numbers or a table both sides share (grounding, timing, legs, smoothness, starts/stops/turns: 55
+  // of the 100 points). STR and RNG are consistency checks against the relation the gait was built from; PEL, ARM and HEA are bands round the amplitudes it is designed to produce. A walk can
+  // score 10 on those 45 points by being built to, which is why the first overall (9.4) was a good deal rosier than the 8.9 these 55 give.
+  const DISC = ['GRD', 'TIM', 'LEG', 'SMO', 'TRN'], disc = DISC.reduce((s, c) => s + CATS[c] * (Number.isFinite(cats[c]) ? cats[c] : 0), 0) / DISC.reduce((s, c) => s + CATS[c], 0);
+  const p10 = {}; for (const c of Object.keys(CATS)) p10[c] = pct(perCat[c].filter(Number.isFinite), 0.1);   // the category score that nine recordings in ten reach: a category can hold 8 on average and fail on one person in five
   const per = rows.map((r) => { let w = 0, s = 0; for (const c of Object.keys(r.cat)) { w += CATS[c]; s += CATS[c] * r.cat[c]; } return { person: r.person, v: r.v, score: s / w }; });   // each recording on its own, over the steady categories it is judged on
   const worst = per.length ? per.reduce((m, r) => (r.score < m.score ? r : m)) : null;
-  const gate = overall > 9.0 && Object.values(cats).every((x) => x >= 8.0) && (!worst || worst.score >= 8.0);
-  return { cats, overall, worst, per, rows, trn, rng, gate };
+  const why = gateOf({ overall, disc, cats, p10, worst, roster: results.rosterAll !== false, meshOk: results.meshOk !== false });
+  return { cats, overall, disc, p10, worst, per, rows, trn, rng, gate: why.length === 0, why, roster: results.rosterAll !== false, meshOk: results.meshOk !== false };
 }
 /** the rubric as a markdown table (the doc quotes this, so the two cannot drift), the bands evaluated for a 0.92 m hip at 1.2 m/s */
 export function rubricTable() {
   const ref = { ex: expected(1.2, 0.92) }, f = (x) => String(+x.toFixed(3)), line = (it) => {
     const b = it.fall ? it.fall : it.rise ? it.rise : typeof it.band === 'function' ? it.band(ref) : it.band;
     const full = it.fall ? `<= ${f(b[0])}` : it.rise ? `>= ${f(b[1])}` : `${f(b[0])} to ${f(b[1])}`, zero = it.fall ? `>= ${f(b[1])}` : it.rise ? `<= ${f(b[0])}` : `<= ${f(b[2])} or >= ${f(b[3])}`;
-    return `| ${it.id} | ${it.w} | ${it.label} | ${it.unit} | ${full} | ${zero} |`;
+    return `| ${it.id} | ${it.w} | ${it.label} | ${it.unit} | ${full} | ${zero} | ${it.src} |`;
   };
-  return ['| item | weight | measured | unit | full marks | no marks |', '|---|---|---|---|---|---|', ...ITEMS.map(line), ...TRN_ITEMS.map(line), ...RNG_ITEMS.map(line)].join('\n');
+  return ['| item | weight | measured | unit | full marks | no marks | basis |', '|---|---|---|---|---|---|---|', ...ITEMS.map(line), ...TRN_ITEMS.map(line), ...RNG_ITEMS.map(line)].join('\n');
 }

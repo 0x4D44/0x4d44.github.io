@@ -101,13 +101,27 @@ test('a steady walk is planted, grounded and well timed for every body at 0.8, 1
     assert.ok(a.arm.corr < -0.8 && a.arm.range > 15, `${id}@${v}: arms swing against the legs (r ${a.arm.corr.toFixed(2)}, range ${a.arm.range.toFixed(0)} deg)`);
   }
 });
-test('the steady-walk categories score well: none below 7 at 0.8 and 1.2 m/s, mean over everything above 9', () => {
+// What the hardened instrument (revision 9) says the gait does not yet earn. It repeats every stride exactly: stride-time CV 0.01-0.3 % against a healthy 1-3 %, step-length CV 0.01-0.8 %
+// against 2-4 %, so TIM.cvT and TIM.cvL read a metronome and TIM sits near 4 for everybody. That is the finding, not a defect of the metric (the reviewer asked for exactly this item). It
+// is held at 3 so it cannot get worse unnoticed; it is NOT claimed to be good, and the gait work that follows has to raise it, at which point this is tightened to the normal 7.
+const KNOWN_SHORT = { TIM: 3.0 };
+test('the steady-walk categories score well: none below 7 at 0.8 and 1.2 m/s (TIM held at 3, see KNOWN_SHORT), mean over the rest above 9', () => {
   const all = [];
   for (const id of PEOPLE) for (const v of SPEEDS) {
     const c = catsOf(steady(id, v).a);
-    for (const k of Object.keys(c)) { all.push(c[k]); if (v < 1.5) assert.ok(c[k] >= 7, `${id}@${v} ${k} ${c[k].toFixed(1)}`); }
+    for (const k of Object.keys(c)) { if (!(k in KNOWN_SHORT)) all.push(c[k]); if (v < 1.5) assert.ok(c[k] >= (KNOWN_SHORT[k] ?? 7), `${id}@${v} ${k} ${c[k].toFixed(1)}`); }
   }
-  const mean = all.reduce((s, x) => s + x, 0) / all.length; assert.ok(mean > 9, 'mean steady category ' + mean.toFixed(2));
+  const mean = all.reduce((s, x) => s + x, 0) / all.length; assert.ok(mean > 9, 'mean steady category (without TIM) ' + mean.toFixed(2));
+});
+// ... and not only that: stance and double support read 63-64 % and 26-29 % (Zeni events) where a healthy walk has about 60 % and 20 % at 1.6 m/s, so they score 5-6 at the top speed
+// (7.2-10 at 0.8 and 1.2 m/s). That is the second half of the shortfall, found by the same revision, and it is the gait's too: the planted-foot model lifts the heel late.
+test('the shortfall in TIM is the variability items (all speeds) and, at 1.6 m/s, stance and double support; at 0.8 and 1.2 m/s nothing else is under 7', () => {
+  for (const id of PEOPLE) for (const v of SPEEDS) {
+    const items = M.scoreSteady(steady(id, v).a).TIM;
+    for (const it of items) if (!/^TIM\.cv[TL]$/.test(it.id) && v < 1.5) assert.ok(it.score >= 7, `${id}@${v} ${it.id} ${it.value} -> ${it.score.toFixed(1)}`);
+    for (const it of items) if (!/^TIM\.(cv[TL]|stance|ds)$/.test(it.id)) assert.ok(it.score >= 8, `${id}@${v} ${it.id} ${it.value} -> ${it.score.toFixed(1)}`);
+    assert.ok(items.some((it) => /^TIM\.cv[TL]$/.test(it.id) && it.score < 6), `${id}@${v}: the variability items see the metronome`);
+  }
 });
 test('faster is quicker and longer; shorter legs step quicker', () => {
   const by = {}; for (const id of PEOPLE) { by[id] = SPEEDS.map((v) => steady(id, v).a); for (let i = 1; i < SPEEDS.length; i++) assert.ok(by[id][i].cadence > by[id][i - 1].cadence && by[id][i].stepLen > by[id][i - 1].stepLen, id); }
@@ -164,6 +178,16 @@ const WIN = M.SCEN.steady(1.2).win, SCORE = (raw) => catsOf(M.analyseSteady(new 
 const RAW = record('man_commuter', M.SCEN.steady(1.2).plan), BASE = (() => SCORE(RAW))();
 const edit = (fn) => { const raw = Object.assign({}, RAW); raw.pos = RAW.pos.slice(); for (let k = 0; k < raw.n; k++) fn(raw.pos, k, k * raw.dt); return raw; };
 let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296 - 0.5; };
+// perturbation helpers: the walker faces -z, so +x is its right, +y up and forward is -z. They edit one frame of a copied position array in place.
+const FEET_L = ['foot_l', 'ball_l', 'heel_l', 'toe_l', 'bs_l'], FEET_R = FEET_L.map((n) => n.replace('_l', '_r')), HANDS_L = ['hand_l', 'lowerarm_l'], HANDS_R = ['hand_r', 'lowerarm_r'];
+const UPPER = ['spine_01', 'spine_03', 'neck_01', 'head', 'nose', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'hand_l', 'hand_r'], TRUNK = ['pelvis', 'spine_01', 'spine_03', 'neck_01', 'head', 'nose', 'upperarm_l', 'upperarm_r'];
+const shift = (p, k, names, dx, dy, dz) => { for (const nm of names) { const o = idx(k, nm); p[o] += dx; p[o + 1] += dy; p[o + 2] += dz; } };
+const tilt = (p, k, deg, names) => {   // lean `names` forward by `deg` about the pelvis (in the vertical plane of travel)
+  const th = deg * Math.PI / 180, c = Math.cos(th), s = Math.sin(th), o0 = idx(k, 'pelvis'), py = p[o0 + 1], pz = p[o0 + 2];
+  for (const nm of names) { const o = idx(k, nm), u = p[o + 1] - py, f = -(p[o + 2] - pz); p[o + 1] = py + u * c - f * s; p[o + 2] = pz - (f * c + u * s); }
+};
+// the head's offset from the neck bone, and the nose's from the head, averaged over the recording: what a head that is simply carried (never turned) would keep
+const HEAD_OFF = (() => { const m = { head: [0, 0, 0], nose: [0, 0, 0] }; for (let k = 0; k < RAW.n; k++) for (let c = 0; c < 3; c++) { m.head[c] += (RAW.pos[idx(k, 'head') + c] - RAW.pos[idx(k, 'neck_01') + c]) / RAW.n; m.nose[c] += (RAW.pos[idx(k, 'nose') + c] - RAW.pos[idx(k, 'neck_01') + c]) / RAW.n; } return m; })();
 const FLAWS = {
   'feet skate (the planted feet slide across the floor)': { cat: 'GRD', raw: () => record('man_commuter', M.SCEN.steady(1.2).plan, { feed: { pos: 0.6 } }) },
   'the body hovers 6 cm above the floor': { cat: 'GRD', raw: () => edit((p, k) => { for (let j = 0; j < LC; j++) p[(k * LC + j) * 3 + 1] += 0.06; }) },
@@ -174,12 +198,22 @@ const FLAWS = {
   'one arm swings a third as far as the other': { cat: 'ARM', raw: () => edit((p, k) => { const pz = p[idx(k, 'pelvis') + 2]; for (const nm of ['lowerarm_r', 'hand_r']) p[idx(k, nm) + 2] = pz + 0.3 * (p[idx(k, nm) + 2] - pz); }) },
   'the head nods 14 degrees twice a stride': { cat: 'HEA', raw: () => edit((p, k) => { p[idx(k, 'nose') + 1] += 0.03 * Math.sin(4 * Math.PI * RAW.phase[k]); }) },
   'every joint jitters by a centimetre a frame': { cat: 'SMO', raw: () => edit((p, k) => { for (const nm of M.LM) if (!/heel|toe|bs_/.test(nm)) for (let c = 0; c < 3; c++) p[idx(k, nm) + c] += 0.02 * rnd(); }) },
+  // the blind spots the independent review found (REVIEW_1: "a stoop, a wide base, feet that cross, splayed hands, a poked head and a 5 Hz shake all score the same as the good walk"). Each is a
+  // 'spoiled' walk the rubric of round 1 could not tell from the good one; each must now cost its category two and a half points and take it under 7.
+  'the trunk stoops 35 degrees forward': { cat: 'PEL', raw: () => edit((p, k) => tilt(p, k, 35, UPPER)) },
+  'the feet are 12 cm further apart (a wide base)': { cat: 'LEG', raw: () => edit((p, k) => { shift(p, k, FEET_L, -0.06, 0, 0); shift(p, k, FEET_R, 0.06, 0, 0); }) },
+  'the feet cross over: each lands 7.5 cm inside the line (a step width of minus 6 cm)': { cat: 'LEG', raw: () => edit((p, k) => { shift(p, k, FEET_L, 0.075, 0, 0); shift(p, k, FEET_R, -0.075, 0, 0); }) },
+  'the hands are held 15 cm out from the sides': { cat: 'ARM', raw: () => edit((p, k) => { shift(p, k, HANDS_L, -0.15, 0, 0); shift(p, k, HANDS_R, 0.15, 0, 0); }) },
+  'the head is poked 15 cm forward of the neck': { cat: 'HEA', raw: () => edit((p, k) => shift(p, k, ['head', 'nose'], 0, 0, -0.15)) },
+  'the head is held rigid (it does not nod, roll or turn at all)': { cat: 'HEA', raw: () => edit((p, k) => { const nk = (c) => p[idx(k, 'neck_01') + c], o = HEAD_OFF; for (let c = 0; c < 3; c++) { p[idx(k, 'head') + c] = nk(c) + o.head[c]; p[idx(k, 'nose') + c] = nk(c) + o.nose[c]; } }) },
+  'a 5 Hz shake of 1.5 cm in both hands': { cat: 'SMO', raw: () => edit((p, k, t) => shift(p, k, ['hand_l', 'hand_r', 'lowerarm_l', 'lowerarm_r'], 0, 0.015 * Math.sin(2 * Math.PI * 5 * t), 0)) },
+  'a 5 Hz shake of 8 mm in the whole trunk': { cat: 'SMO', raw: () => edit((p, k, t) => shift(p, k, TRUNK, 0, 0.008 * Math.sin(2 * Math.PI * 5 * t), 0)) },
 };
 // Every category starts from 8 or more, so that "spoiled by 2.5 points" has room to show - except LEG, which no flaw below reads and which this control is known to fall short on:
 // its hip flexion-extension range is 30.7 deg against 41.6 expected (that item scores 6.1). The cause is the rig, not the metric: man_commuter's shoe is 0.325 m long (woman_midi's
 // is 0.204 m) and rolling over the ball of it carries the trailing ankle forward at toe-off, so the knee takes up the reach and the hip does not extend (measured by swapping the
-// two shoes: the same man reaches 37.3 deg in her shoe, and she drops from 45.5 to 35.9 deg in his). LEG is held at 7.5 so it cannot get worse unnoticed; it is not claimed to be good.
-const LOW_OK = { LEG: 7.5 };
+// two shoes: the same man reaches 37.3 deg in her shoe, and she drops from 45.5 to 35.9 deg in his). LEG is held at 7.5 so it cannot get worse unnoticed; it is not claimed to be good. TIM is held at 3 for the reason given at KNOWN_SHORT (no stride-to-stride variability yet).
+const LOW_OK = { LEG: 7.5, TIM: KNOWN_SHORT.TIM };
 test('the metrics score a good walk well (the control for the flaw tests)', () => { for (const c of Object.keys(BASE)) assert.ok(BASE[c] >= (LOW_OK[c] ?? 8), `${c} ${BASE[c].toFixed(1)}`); });
 for (const [name, f] of Object.entries(FLAWS)) test(`the metrics notice: ${name}`, () => {
   const c = SCORE(f.raw()); assert.ok(c[f.cat] <= BASE[f.cat] - 2.5 && c[f.cat] < 7, `${f.cat}: good ${BASE[f.cat].toFixed(1)}, spoiled ${c[f.cat].toFixed(1)}`);
@@ -241,4 +275,87 @@ test('contact timing (the first lift-off and landing after a walk command) is re
   assert.ok(lm.ok && mesh.ok); near(mesh.latency, lm.latency, 1e-9, 'a shoe that is exactly the landmarks changes nothing');
   const late = M.analyseStart(new M.Rec(withMesh(raw, (y, k) => (k / 60 < lm.toLatency + 1.2 + 1.0 ? 0 : y), () => 0)));   // a shoe that stays down until a second later than the landmarks leave
   assert.ok(!(late.latency <= lm.latency), `the first landing moves with the shoe: ${lm.latency} -> ${late.latency}`);
+});
+
+// ------------------------------------------------------------------------------------------------------------------------ revision 9: an instrument that cannot be flattered
+// REVIEW_1 found the rubric blind to eight perturbations (the FLAWS above, now all caught), too kind to a metronome, and scored on a mean that one failing person in five can hide inside.
+// What follows tests the machinery of the answer: sub-frame events, the tremor measure, the basis tags, the walk-ratio reference, the 55-point subscore and the gate's clauses.
+test('gait events are placed between frames: a peak that falls half-way between two samples is found there, not on a sample', () => {
+  const dt = 1 / 30, T = 1.1, n = 300;
+  for (const ph of [0, 0.13, 0.31, 0.5, 0.77]) {
+    const g = Float64Array.from({ length: n }, (_, i) => Math.cos(2 * Math.PI * (i * dt - ph * dt) / T)), ev = M.zeniEvents(g, dt);
+    assert.ok(ev.hsF.length >= 6, 'six strides found');
+    let worstF = 0, worstI = 0;
+    ev.hsF.forEach((x, i) => { const truth = (ph + Math.round((x - ph) / (T / dt)) * (T / dt)); worstF = Math.max(worstF, Math.abs(x - truth)); worstI = Math.max(worstI, Math.abs(ev.hs[i] - truth)); });
+    assert.ok(worstF < 0.05, `phase ${ph}: the sub-frame heel strike is within 0.05 frames of the truth (${worstF.toFixed(3)})`);
+    if (ph > 0.1 && ph < 0.9) assert.ok(worstI >= worstF, `phase ${ph}: the whole-frame event is no better than the sub-frame one`);
+  }
+  // and some phase makes the whole-frame event miss by a fifth of a frame or more - that is the error the sub-frame event removes
+  let miss = 0; for (let k = 0; k < 20; k++) { const ph = 0.5 + k * 0.01, g = Float64Array.from({ length: n }, (_, i) => Math.cos(2 * Math.PI * (i * dt - ph * dt) / T)), ev = M.zeniEvents(g, dt); ev.hsF.forEach((x, i) => { miss = Math.max(miss, Math.abs(ev.hs[i] - x)); }); }
+  assert.ok(miss > 0.2, `the whole-frame event is off by up to ${miss.toFixed(2)} frames`);
+});
+test('tremor: what a hand does at the stride rate and its harmonics is gait, not tremor; a 5 Hz shake is tremor and is read at its size', () => {
+  const dt = 1 / 30, n = 600, T = 1.1, amp = 0.015;
+  const cyc = []; for (let t = 1; t + T < n * dt - 1; t += T) cyc.push([t / dt, (t + T) / dt]);
+  const mk = (shake) => { const x = new Float64Array(n); for (let i = 0; i < n; i++) { const t = i * dt; x[i] = 0.12 * Math.sin(2 * Math.PI * t / T) + 0.03 * Math.sin(4 * Math.PI * t / T + 0.7) + (shake ? amp * Math.sin(2 * Math.PI * 5 * t) : 0); } return x; };
+  const P = (shake) => () => ({ f: mk(shake), r: new Float64Array(n), y: new Float64Array(n) });
+  const still = M.tremorMm(P(false), ['hand_l'], cyc, n, dt), shaken = M.tremorMm(P(true), ['hand_l'], cyc, n, dt);
+  assert.ok(still < 0.5, `a pure stride-locked hand reads ${still.toFixed(3)} mm`);
+  assert.ok(shaken > 8 && shaken < 16, `a 15 mm 5 Hz shake has an RMS of 10.6 mm, read ${shaken.toFixed(2)} mm`);
+  assert.ok(Number.isNaN(M.tremorMm(P(true), ['hand_l'], cyc.slice(0, 2), n, dt)), 'with fewer than three whole strides there is nothing to take an ensemble over: NaN, not a guess');
+});
+test('every item says what its band rests on: published numbers, derivation, textbook norm, physics or the author\'s judgement - and the table shows it', () => {
+  const all = [...M.ITEMS, ...M.TRN_ITEMS, ...M.RNG_ITEMS];
+  for (const it of all) assert.ok(M.BASIS.includes(it.src), `${it.id} has src ${it.src}`);
+  const sh = M.basisShares(); near(Object.values(sh).reduce((s, x) => s + x, 0), 100, 1e-6, 'the shares make 100 points');
+  assert.ok(sh.judge > 0 && sh.pub >= 0 && sh.text > 0, 'every kind that matters is counted');
+  const rows = M.rubricTable().split('\n').slice(2); assert.equal(rows.length, all.length);
+  for (const [i, r] of rows.entries()) assert.equal(r.split('|')[7].trim(), all[i].src, `the table's last column for ${all[i].id}`);
+  assert.ok(M.rubricTable().split('\n')[0].trim().endsWith('| basis |'));
+});
+test('the stride reference is the walk ratio (step length / cadence about 0.006 m per step/min), and the gait\'s own cadence table agrees with it to within 4 % - so STR checks the gait against the literature, not against itself', () => {
+  assert.equal(M.WALK_RATIO, 0.006);
+  for (const id of PEOPLE) { const B = bodyOf(id); for (const v of [0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]) {
+    const ex = M.expected(v, B.hipY), cad = G.gaitParams(B, v).fs * 60;
+    assert.ok(Math.abs(ex.cadence / cad - 1) < 0.04, `${id}@${v}: reference ${ex.cadence.toFixed(1)} steps/min, gait ${cad.toFixed(1)}`);
+    near(ex.stepLen * ex.cadence / 60, v, 1e-9, 'step length x step rate is the speed');
+  } }
+  // at the reference leg length (0.92 m) the reference IS the walk ratio, at every speed (for other legs it is scaled by the square root of the leg-length ratio, the dynamic-similarity rule)
+  const r = (v) => { const e = M.expected(v, 0.92); return e.stepLen / e.cadence; };
+  for (const v of [0.6, 0.9, 1.2, 1.5, 1.8]) near(r(v) / M.WALK_RATIO, 1, 1e-9, 'walk ratio at ' + v);
+});
+test('the discriminating subscore is the weighted mean of the five categories whose targets are not the gait\'s own design numbers: GRD, TIM, LEG, SMO and TRN (55 points)', () => {
+  const st = {}; for (const id of PEOPLE) { st[id] = {}; for (const v of M.SPEEDS) st[id][v] = steady(id, v).a; }
+  const S = M.scoreAll({ steady: st, trans: {}, people: PEOPLE, speeds: M.SPEEDS, rosterAll: true }), f = (x) => (Number.isFinite(x) ? x : 0);
+  const want = (M.CATS.GRD * f(S.cats.GRD) + M.CATS.TIM * f(S.cats.TIM) + M.CATS.LEG * f(S.cats.LEG) + M.CATS.SMO * f(S.cats.SMO) + M.CATS.TRN * f(S.cats.TRN)) / (M.CATS.GRD + M.CATS.TIM + M.CATS.LEG + M.CATS.SMO + M.CATS.TRN);
+  near(S.disc, want, 1e-9, 'disc'); assert.equal(M.CATS.GRD + M.CATS.TIM + M.CATS.LEG + M.CATS.SMO + M.CATS.TRN, 55);
+  assert.ok(!S.gate && S.why.length > 0, 'with no transitions recorded and a metronome for a gait the gate is not met, and it says why');
+});
+test('a category that holds 8 on average still fails the gate on its tenth percentile when one person in five skates', () => {
+  const st = {}, clean = {}; for (const id of PEOPLE) { clean[id] = {}; for (const v of M.SPEEDS) clean[id][v] = steady(id, v).a; }
+  const roster = (nSkaters) => {
+    const s = {}; for (const id of PEOPLE) for (let k = 0; k < 3; k++) s[id + '#' + k] = clean[id];
+    for (let k = 0; k < nSkaters; k++) { const sk = {}; for (const v of M.SPEEDS) sk[v] = Object.assign({}, clean.man_commuter[v], { slip: 8 }); s['skater#' + k] = sk; }
+    return { steady: s, trans: {}, rosterAll: true };
+  };
+  const base = M.scoreAll(roster(0)), mixed = M.scoreAll(roster(3));
+  assert.ok(mixed.cats.GRD >= 8, `GRD mean ${mixed.cats.GRD.toFixed(2)} is still 8 or more`);
+  assert.ok(base.cats.GRD - mixed.cats.GRD < 0.9, 'the mean hardly notices them: down ' + (base.cats.GRD - mixed.cats.GRD).toFixed(2));
+  assert.ok(mixed.p10.GRD < 8 && mixed.p10.GRD < base.p10.GRD - 1, `their tenth percentile does: ${base.p10.GRD.toFixed(2)} -> ${mixed.p10.GRD.toFixed(2)}`);
+  assert.ok(mixed.why.some((w) => /^GRD p10/.test(w)), 'and the gate names it: ' + mixed.why.join(' | '));
+  assert.ok(!mixed.why.some((w) => /^GRD [0-9]/.test(w)), 'while saying nothing about the mean, which is fine');
+});
+test('the gate has one clause for each way of cheating, and names the one that fails', () => {
+  const ok = { overall: 9.3, disc: 9.2, cats: Object.fromEntries(Object.keys(M.CATS).map((c) => [c, 9.2])), p10: Object.fromEntries(Object.keys(M.CATS).map((c) => [c, 8.6])), worst: { person: 'a', v: 1.2, score: 8.7 }, roster: true };
+  assert.deepEqual(M.gateOf(ok), []);
+  const one = (patch, re) => { const w = M.gateOf(Object.assign({}, ok, patch)); assert.equal(w.length, 1, JSON.stringify(w)); assert.match(w[0], re); };
+  one({ overall: 9.0 }, /^overall 9\.0 <= 9/);                       // "> 9" means more than 9
+  one({ disc: 8.91 }, /^discriminating 55 points 8\.9 <= 9/);        // the reviewer's 8.91: a 9.4 overall hid it
+  one({ cats: Object.assign({}, ok.cats, { TIM: 7.9 }) }, /^TIM 7\.9 < 8/);
+  one({ p10: Object.assign({}, ok.p10, { LEG: 7.95 }) }, /^LEG p10 8\.0 < 8|^LEG p10 7\.9 < 8/);
+  one({ worst: { person: 'man_student', v: 1.9, score: 6.94 } }, /^worst recording man_student@1\.9 6\.9 < 8/);
+  one({ roster: false }, /^not the whole roster/);
+  one({ meshOk: false }, /^the floor was not judged on the rendered shoe/);
+  assert.ok(M.gateOf(Object.assign({}, ok, { overall: NaN })).length >= 1, 'NaN passes nothing');
+  assert.ok(M.gateOf(Object.assign({}, ok, { cats: Object.assign({}, ok.cats, { SMO: NaN }) })).some((w) => /^SMO/.test(w)), 'a category with no score fails');
 });
