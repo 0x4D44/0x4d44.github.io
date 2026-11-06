@@ -13,12 +13,14 @@
 import * as G from './gait.js';
 
 const FOOT_FALLBACK = { heelBack: 0.06, toeFwd: 0.19 };
+const SHOE = /shoe|boot|sneaker/i;   // the meshes that are shoes: the same test as bodyfit.fitShoes and the recorder's rendered-shoe channel (tools/people_motion.html)
 const REQUIRED = [...G.CONTROLLED, 'Root', 'hand_l', 'hand_r'];
 const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 const UPPER = 12;   // G.CONTROLLED: the first twelve bones (pelvis, spine, neck, head, clavicles, arms) are the upper body, the last eight (thighs, calves, feet, balls) the legs
 
 /** A character's rest skeleton as gait.makeBody wants it, and its feet measured from the skinned vertices. `obj` = a clone that no mixer has touched (rest pose).
- *  Returns { body, sole, heelBack, toeFwd } or null when the skeleton is not the expected rig (the person then keeps walking by clip).
+ *  Returns { body, sole, heelBack, toeFwd, prof, profR } or null when the skeleton is not the expected rig (the person then keeps walking by clip). `prof` / `profR` are the left / right
+ *  shoe's profile (gait.footProfile) when the character has shoe meshes, else null.
  *  `sole` is how far the lowest point of the shoes sits above the origin of the clone at rest: the body description is shifted down by it, so that its floor (y = 0) is the
  *  sole, and the clone has to be placed `sole` lower than the floor to stand on it. */
 export function readBody(THREE, obj) {
@@ -28,21 +30,33 @@ export function readBody(THREE, obj) {
   for (const n of REQUIRED) if (!by[n]) return null;
   const idx = new Map(list.map((b, i) => [b, i]));
   const rig = { bones: list.map((b) => b.name), parent: list.map((b) => (idx.has(b.parent) ? idx.get(b.parent) : -1)), pos: list.map((b) => b.position.toArray()), quat: list.map((b) => b.quaternion.toArray()) };
-  // the left foot: every vertex that is (almost) wholly skinned to the foot or toe bone and lies on the left of the body
-  const an = by.foot_l.getWorldPosition(new THREE.Vector3()), v = new THREE.Vector3(); let zmax = -1e9, zmin = 1e9, ymin = 1e9, found = 0;
+  // the left foot: every vertex that is (almost) wholly skinned to the foot or toe bone and lies on the left of the body gives the heel and toe reach (the gait's three-point sole); every
+  // vertex of a shoe (the meshes the recorder and fitShoes call shoes, whatever its skin weights) gives that shoe's profile and the height of its lowest point - the right shoe's own,
+  // since it is not always the left one mirrored (a different mesh, vertex for vertex: man_student's differs by up to 11 mm where the toe springs)
+  const an = by.foot_l.getWorldPosition(new THREE.Vector3()), ba = by.ball_l.getWorldPosition(new THREE.Vector3()), anR = by.foot_r.getWorldPosition(new THREE.Vector3()), baR = by.ball_r.getWorldPosition(new THREE.Vector3()), v = new THREE.Vector3();
+  let zmax = -1e9, zmin = 1e9, ymin = 1e9, found = 0;
+  const shoe = [], shoeR = [];
   obj.traverse((m) => {
     if (!m.isSkinnedMesh) return;
     const a = m.geometry.attributes, si = a.skinIndex, sw = a.skinWeight, bs = m.skeleton.bones; if (!si || !sw) return;
+    const isShoe = SHOE.test((m.material && m.material.name) || m.name);
     for (let i = 0; i < a.position.count; i++) {
-      let s = 0; for (let k = 0; k < 4; k++) { const nm = bs[si.getComponent(i, k)].name; if (nm === 'foot_l' || nm === 'ball_l') s += sw.getComponent(i, k); }
-      if (s < 0.9) continue; m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld);
+      let wf = 0, wb = 0, rf = 0, rb = 0;
+      for (let k = 0; k < 4; k++) { const nm = bs[si.getComponent(i, k)].name, w = sw.getComponent(i, k); if (nm === 'foot_l') wf += w; else if (nm === 'ball_l') wb += w; else if (nm === 'foot_r') rf += w; else if (nm === 'ball_r') rb += w; }
+      if (wf + wb < 0.9 && !isShoe) continue; m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld);
+      if (isShoe && v.x >= 0.01 && v.x <= anR.x + 0.12) shoeR.push([v.x, v.y, v.z, rf, rb]);
       if (v.x > -0.01 || v.x < an.x - 0.12) continue;
+      if (isShoe) shoe.push([v.x, v.y, v.z, wf, wb]);
+      if (wf + wb < 0.9) continue;
       zmax = Math.max(zmax, v.z); zmin = Math.min(zmin, v.z); ymin = Math.min(ymin, v.y); found++;
     }
   });
-  const heelBack = found ? clampN(zmax - an.z, 0.04, 0.09) : FOOT_FALLBACK.heelBack, toeFwd = found ? clampN(an.z - zmin, 0.13, 0.25) : FOOT_FALLBACK.toeFwd, sole = found && ymin > -0.05 && ymin < 0.08 ? ymin : 0;
+  const heelBack = found ? clampN(zmax - an.z, 0.04, 0.09) : FOOT_FALLBACK.heelBack, toeFwd = found ? clampN(an.z - zmin, 0.13, 0.25) : FOOT_FALLBACK.toeFwd;
+  let sole = found && ymin > -0.05 && ymin < 0.08 ? ymin : 0, prof = null, profR = null;
+  const profOf = (pts, a, b) => { const f = pts.length >= 12 ? G.footProfile([a.x, a.y, a.z], [b.x, b.y, b.z], pts) : null; return f && f.sole > -0.05 && f.sole < 0.08 ? f : null; };
+  prof = profOf(shoe, an, ba); if (prof) { sole = prof.sole; profR = profOf(shoeR, anR, baR); }   // the lowest point of the (left) shoe, not of what the three-point sole took for it; the right foot stands on its own shoe if it has one
   const r0 = rig.parent.indexOf(-1); rig.pos[r0][1] -= sole;
-  return { body: G.makeBody(rig, { heelBack, toeFwd }), sole, heelBack, toeFwd, restRootQ: rig.quat[r0].slice() };
+  return { body: G.makeBody(rig, { heelBack, toeFwd, prof, profR }), sole, heelBack, toeFwd, prof, profR, restRootQ: rig.quat[r0].slice() };
 }
 
 /** The gait's hold on ONE clone's skeleton (a person's level-of-detail swap makes a new clone, hence a new GaitRig; the gait state itself lives on). */
