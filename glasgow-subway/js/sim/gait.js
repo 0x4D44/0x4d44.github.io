@@ -130,6 +130,37 @@ function profLowest(pf, jy, jz, th, thb) {
   return m;
 }
 
+/** The same lowest vertex as profLowest, and how far it travels along the floor as the foot pitches: [height above the ankle, d(z of that vertex) / d(th)] with the ankle held still. A vertex
+ *  of the foot bone moves along z at its own height above the ankle per radian of pitch; one of the toe bone rides on the ball joint (whose z moves at the joint's height above the ankle)
+ *  and turns with the toe bone's pitch thb, which itself changes at dthb per radian of th; a blended vertex is the blend of the two. */
+function profContact(pf, jy, jz, th, thb, dthb) {
+  const c = Math.cos(th), s = Math.sin(th), cb = Math.cos(thb), sb = Math.sin(thb), r = pf.rear, f = pf.front, x = pf.mix, jh = jy * c - jz * s;
+  let m = Infinity, k = 0, h, hf;
+  for (let i = 0; i < r.length; i += 2) { h = r[i + 1] * c - r[i] * s; if (h < m) { m = h; k = h; } }
+  for (let i = 0; i < f.length; i += 2) { hf = f[i + 1] * cb - f[i] * sb; h = jh + hf; if (h < m) { m = h; k = jh + dthb * hf; } }
+  for (let i = 0; i < x.length; i += 5) { const b = x[i], hr = x[i + 2] * c - x[i + 1] * s; hf = x[i + 4] * cb - x[i + 3] * sb; h = (1 - b) * hr + b * (jh + hf); if (h < m) { m = h; k = (1 - b) * hr + b * (jh + dthb * hf); } }
+  return [m, k];
+}
+/** How a shoe ROLLS on the floor. The planted foot is not a hinge on one fixed point: whichever vertex of the shoe is the lowest is the one that stands on the floor, and it does not move
+ *  while it does (a wheel does not slide on the road it rolls on). Each foot pitch th has its own lowest vertex (profContact), and the ankle must travel along the floor, per radian
+ *  of pitch, exactly as far as that vertex would carry it for the vertex to stay put: d(ankle z) / d(th) = - d(z of the vertex) / d(th). The ankle's place along the floor is then a function of the
+ *  pitch alone, the integral of that from the flat foot (th = 0, where the table is 0): the ankle's z offset from where it stands with the foot flat (+z is back), tabulated every ROLL_STEP rad
+ *  from ROLL_LO. The old model pivoted the planted foot on the heel point and then on a point at half the ball joint's height (see makeBody), which is a fair guess at any shoe and never the
+ *  point the actual shoe is standing on: on the heeled shoes the lowest vertex slid along the floor at 4 - 7 cm/s through heel strike and push-off. */
+const ROLL_LO = -1.7, ROLL_HI = 0.7, ROLL_STEP = 0.002;
+function rollTable(o) {
+  const n = Math.round((ROLL_HI - ROLL_LO) / ROLL_STEP), i0 = Math.round(-ROLL_LO / ROLL_STEP), thb = new Float64Array(n + 1), g = new Float64Array(n + 1), dz = new Float64Array(n + 1);
+  for (let i = 0; i <= n; i++) { const th = ROLL_LO + i * ROLL_STEP; thb[i] = th >= 0 ? th : levelToe(o, pivotAnkle(o, [0, 0], 0, th)[1], th); }
+  for (let i = 0; i <= n; i++) {
+    const th = ROLL_LO + i * ROLL_STEP, d = i === i0 ? 1 : (thb[Math.min(n, i + 1)] - thb[Math.max(0, i - 1)]) / ((Math.min(n, i + 1) - Math.max(0, i - 1)) * ROLL_STEP);
+    g[i] = -profContact(o.prof, o.ballRel[1], o.ballRel[2], th, thb[i], d)[1];
+  }
+  for (let i = i0 + 1; i <= n; i++) dz[i] = dz[i - 1] + 0.5 * (g[i - 1] + g[i]) * ROLL_STEP;
+  for (let i = i0 - 1; i >= 0; i--) dz[i] = dz[i + 1] - 0.5 * (g[i + 1] + g[i]) * ROLL_STEP;
+  return dz;
+}
+const rollAt = (dz, th) => { const x = clamp((th - ROLL_LO) / ROLL_STEP, 0, dz.length - 1 - 1e-9), i = Math.floor(x); return dz[i] + (dz[i + 1] - dz[i]) * (x - i); };
+
 /** The constants of one person, from the rest skeleton. rig = { bones:[name], parent:[index|-1], pos:[[x,y,z]] (local), quat:[[x,y,z,w]] (local) }, parents before
  *  children; foot = { heelBack, toeFwd, prof?, profR? } (m: heel behind / toe tip ahead of the ankle, from the skinned foot; prof: the shoe's profile, footProfile - the left shoe's, and the
  *  right's too unless profR is given: the two shoes of a character are not always mirror images, and the right one of man_student's stands up to 11 mm lower than the left in terminal
@@ -149,6 +180,7 @@ export function makeBody(rig, foot) {
       hB: [bx, 0, bz - foot.heelBack],                              // the heel-up pivot, from the heel point (its height is hp)
       bA: [-bx, aH - hp, -bz],                                      // the ankle, from the pivot
       heelRel: [0, -aH, foot.heelBack], bsRel: [bx, -aH, bz], ballRel: sub(ba, an), toeRel: [0, -ba[1], (an[2] - foot.toeFwd) - ba[2]] };   // sole points and the ball joint, from the ankle
+    if (B.leg[s].prof && foot.roll !== false) B.leg[s].roll = rollTable(B.leg[s]);   // (foot.roll === false: the pivot model, kept for the tests that compare the two)
     B.hipLocal[s] = rig.pos[ix['thigh_' + sd]]; B.hipOff[s] = sub(g('thigh_' + sd), g('pelvis'));
     const sh = g('upperarm_' + sd), el = g('lowerarm_' + sd), wr = g('hand_' + sd), dU = nrm(sub(el, sh));
     B.arm[s] = { sd, sh, upper: len(sub(el, sh)), fore: len(sub(wr, el)), dU, abd0: Math.atan2(Math.abs(dU[0]), -dU[1]), tilt0: Math.atan2(-dU[2], -dU[1]) };
@@ -183,14 +215,25 @@ export function gaitParams(B, v, cad = 1) {
   P.hMax = B.leg[0].ankleH - B.hipOff[0][1] + Math.sqrt(Math.max(1e-3, P.cL * P.cL - P.lat * P.lat));
   P.hPeak = Math.min(P.hMax, B.P0[B.ix.pelvis][1] + 0.004);          // the top of the bob: a little above the standing height (the rest pose has the knee a few degrees bent), and never beyond the legs' reach
   P.hAt = (phi, amp = 1, hp = P.hPeak, bp = P.bobPh) => hp - P.bob * amp * 0.5 * (1 - Math.cos(4 * PI * (phi - bp)));   // (hp, bp: the top and the phase of the bob the legs' reach has been fitted to - see trackReach)
-  P.aH = 0.44 * P.SL;                                                 // the heel lands this far ahead of the pelvis (a little under half a step: the other foot is that far behind it at toe-off)
+  // the heel lands this far ahead of the pelvis: a little under half a step (the other foot is that far behind it at toe-off). 0.45 of a step, where it was 0.44 while the foot pivoted: a shoe that
+  // ROLLS (rollTable) leaves the ankle about a centimetre further behind the planted foot at toe-off than the pivot did, so the heel lands 1 % of a step (0.7 cm at 1.6 m/s) further ahead, which puts the reach of the leading
+  // and of the trailing leg back in balance (offline, the real rigs and shoes of 8 people, 8 seeds each at 1.2, 1.6 and 1.9 m/s: pelvis jolts over 30 m/s^2 2.44 -> 2.22 per 1000 frames from 0.44 to 0.45, loading-response
+  // knee flexion 31.9 -> 30.7 deg at 1.6 m/s; 0.46 and 0.47 buy a little more of that with a deeper stance knee)
+  P.aH = 0.45 * P.SL;
   P.bobPh = clamp((P.aH + B.heelBack) / (2 * P.SL), 0.2, 0.34);       // the pelvis is highest when the planted ankle is under the hip (the legs can reach furthest up), lowest a quarter stride earlier
   return P;
 }
 // ------------------------------------------------------------------------------------------------------------------------ feet
-/** the ankle (world x, height, world z) of a planted foot: H = world heel point with the foot flat, psi = world yaw, th = pitch (toes up +): pivots on the heel when
- *  toes-up, on the ball of the foot when heel-up */
+/** the ankle (world x, height, world z) of a planted foot: H = world heel point with the foot flat, psi = world yaw, th = pitch (toes up +). Where the shoe has a profile it ROLLS (rollTable): the
+ *  ankle's place along the floor is the one at which the shoe's lowest vertex stays still; the height is then the shoe's too (footOut), and what is left of the pivot model here is the
+ *  height that levels the toes. Without a profile the foot pivots on the heel when toes-up and on the ball of the foot when heel-up (pivotAnkle). */
 function stanceAnkle(o, H, psi, th) {
+  const A = pivotAnkle(o, H, psi, th);
+  if (o.roll) { const d = rotY([0, 0, o.hA[2] + rollAt(o.roll, th)], psi); A[0] = H[0] + d[0]; A[2] = H[1] + d[2]; }
+  return A;
+}
+/** the ankle of a foot that pivots: on the heel point when toes-up, on the ball of the foot when heel-up */
+function pivotAnkle(o, H, psi, th) {
   if (th >= 0) { const v = rotY(rotX(o.hA, th), psi); return [H[0] + v[0], v[1], H[1] + v[2]]; }
   const bs = rotY(o.hB, psi), v = rotY(rotX(o.bA, th), psi);
   return [H[0] + bs[0] + v[0], o.hp + v[1], H[1] + bs[2] + v[2]];

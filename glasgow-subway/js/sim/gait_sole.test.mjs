@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { FIXTURE, PEOPLE, G } from './gait_emu.mjs';
 
 const rigOf = (id) => { const c = FIXTURE.chars[id]; return { bones: FIXTURE.bones, parent: FIXTURE.parent, pos: c.pos, quat: c.quat }; };
-const bodyWith = (id, prof, profR) => G.makeBody(rigOf(id), Object.assign({}, FIXTURE.chars[id].foot, { prof, profR }));
+const bodyWith = (id, prof, profR, extra) => G.makeBody(rigOf(id), Object.assign({}, FIXTURE.chars[id].foot, { prof, profR }, extra));
 const rng = (seed) => () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 const D2R = Math.PI / 180;
 
@@ -82,9 +82,9 @@ const gait = (B, v, secs, onFrame) => {
     onFrame(k, g);
   }
 };
-test('a shoe that is just the gait\'s own three points (heel, ball of the foot, toe tip) lands the ankles exactly where the three-point sole does', () => {
+test('a shoe that is just the gait\'s own three points (heel, ball of the foot, toe tip) lands the ankles exactly where the three-point sole does (the pivot model: roll off)', () => {
   for (const id of PEOPLE) for (const v of [0.6, 1.2, 1.7]) {
-    const B0 = bodyOf(id), B1 = bodyWith(id, profOf(B0, flatThree(B0))), rec = [];
+    const B0 = bodyOf(id), B1 = bodyWith(id, profOf(B0, flatThree(B0)), undefined, { roll: false }), rec = [];
     assert.ok(B1.leg[0].prof);
     gait(B0, v, 7, (k, g) => rec.push(g.feet.map((f) => f.cur.A.concat(f.cur.th, f.cur.thb))));
     let k = 0, worst = 0;
@@ -136,6 +136,56 @@ test('the same walk on the three-point sole does not (control: the test can see 
   assert.ok(worst > 0.004, `the three-point sole should hover or dip by more than 4 mm on a rocker: ${(worst * 1000).toFixed(2)} mm`);
 });
 function bodyOf(id) { return G.makeBody(rigOf(id), FIXTURE.chars[id].foot); }
+
+// ------------------------------------------------------------------------------------------------------------------------ the shoe ROLLS: the vertex it stands on stays still
+test('on a three-point shoe the rolling foot and the heel pivot are the same thing while the toes are up (the rolling table is integrated the right way round)', () => {
+  for (const id of PEOPLE) for (const v of [0.6, 1.2, 1.7]) {
+    const B0 = bodyOf(id), Br = bodyWith(id, profOf(B0, flatThree(B0))), Bp = bodyWith(id, profOf(B0, flatThree(B0)), undefined, { roll: false }), rec = [];
+    assert.ok(Br.leg[0].roll && !Bp.leg[0].roll);
+    gait(Bp, v, 7, (k, g) => rec.push(g.feet.map((f) => ({ A: f.cur.A.slice(), th: f.cur.th }))));
+    let k = 0, worst = 0, n = 0;
+    gait(Br, v, 7, (_, g) => { g.feet.forEach((f, s) => { const a = f.cur, b = rec[k][s]; if (f.mode === 'stance' && a.th > 0.02 && a.th === b.th) { worst = Math.max(worst, Math.hypot(a.A[0] - b.A[0], a.A[2] - b.A[2])); n++; } }); k++; });
+    assert.ok(n > 30, `${id} @ ${v}: only ${n} heel-strike frames`);
+    assert.ok(worst < 1e-5, `${id} @ ${v}: the ankle is ${(worst * 1e6).toFixed(1)} micron off the heel pivot at heel strike`);
+  }
+});
+/** pose every vertex of one shoe through the solved skeleton, as skinning would, and return [x, y, z] of each (node frame) */
+function poseAll(B, V, sol, s) {
+  const fk = G.gaitFK(B, sol), ix = B.ix, fb = ix['foot_' + s], bb = ix['ball_' + s], mir = s === 'r' ? -1 : 1;
+  const carry = (bi, wp) => G.add(fk.P[bi], G.qrot(fk.Q[bi], G.qrot(G.qinv(B.Q0[bi]), G.sub(wp, B.P0[bi]))));
+  return V.map((v) => { const wp = [v[0] * mir, v[1], v[2]], w = v[4] / (v[3] + v[4]), pf = carry(fb, wp), pb = carry(bb, wp); return [0, 1, 2].map((i) => (1 - w) * pf[i] + w * pb[i]); });
+}
+/** the way tools/people_motion measures a skating foot: the lowest vertex of each shoe at each frame, its OWN speed (the same vertex one frame either side), taken while it is within 8 mm of the
+ *  floor and not lifting (|vy| <= 0.12 m/s). Returns the RMS (cm/s) over the frames that are neither a landing nor a lift-off (no swing frame within one either side of them), and over all of them. */
+function rockerSlip(id, v, roll) {
+  const B0 = bodyOf(id), V = rocker(B0), B = bodyWith(id, profOf(B0, V), undefined, { roll }), dt = 1 / 60, F = [[], []];
+  gait(B, v, 9, (k, g) => {
+    if (k < 150 || k > 450) return;
+    const sol = G.gaitSolve(g, G.gaitTargets(g));
+    ['l', 'r'].forEach((s, si) => { const P = poseAll(B, V, sol, s).map((p) => [p[0] + g.x, p[1], p[2] + g.z]); let m = 0; for (let i = 1; i < P.length; i++) if (P[i][1] < P[m][1]) m = i; F[si].push({ P, m, swing: g.feet[si].mode === 'swing' }); });
+  });
+  const planted = [], all = [];
+  for (let si = 0; si < 2; si++) for (let k = 1; k < F[si].length - 1; k++) {
+    const m = F[si][k].m, a = F[si][k - 1].P[m], b = F[si][k + 1].P[m], c = F[si][k].P[m], vy = (b[1] - a[1]) / (2 * dt);
+    if (c[1] > 0.008 || Math.abs(vy) > 0.12) continue;
+    const w = 100 * Math.hypot(b[0] - a[0], b[2] - a[2]) / (2 * dt); all.push(w);
+    if (!F[si][k - 1].swing && !F[si][k].swing && !F[si][k + 1].swing) planted.push(w);
+  }
+  const r = (a) => Math.sqrt(a.reduce((x, y) => x + y * y, 0) / a.length);
+  return { planted: r(planted), all: r(all), n: planted.length };
+}
+test('a walker on rocker soles does not skate: the vertex the shoe stands on stays still through heel strike, flat foot and push-off', () => {
+  for (const id of PEOPLE) for (const v of [0.8, 1.2, 1.6]) {
+    const p = rockerSlip(id, v, true);
+    assert.ok(p.n > 200, `${id} @ ${v}: ${p.n} planted frames`);
+    assert.ok(p.planted < 0.5, `${id} @ ${v}: the planted shoe slides at ${p.planted.toFixed(2)} cm/s RMS`);
+  }
+});
+test('the same walk pivoting on the heel and then on a point half way up the ball joint skates (control: the test can see the error rolling removes)', () => {
+  let worst = 0;
+  for (const id of PEOPLE) for (const v of [0.8, 1.2, 1.6]) worst = Math.max(worst, rockerSlip(id, v, false).planted);
+  assert.ok(worst > 1.5, `the pivot model should skate by more than 1.5 cm/s on a rocker: ${worst.toFixed(2)} cm/s`);
+});
 
 // ------------------------------------------------------------------------------------------------------------------------ and it does not make the ankle jump
 test('taking the ankle\'s height from the shoe does not add a jump: its frame-to-frame step is no worse than the three-point sole\'s, plus a millimetre', () => {
