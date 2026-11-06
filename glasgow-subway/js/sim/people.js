@@ -317,7 +317,12 @@ export class AnimCrowd {
     const use = this.phones ? this._phoneUse(p, state, cat) : null;   // who is on a phone: it takes the body of the stock phone clip (head down, or to the ear) and the arms of hold_three.js
     if (use && use.clip) clip = use.clip;
     if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
+    const was = p.cat, m0 = p.m;
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
+    // Walking off from a standing pose: remember the pose that was left. Until the gait has the legs, the height of the body is a blend of that pose's and the gait's (_yOffset); the
+    // walk clip being faded in is no part of it: its lowest sole is 12-59 mm lower than any standing clip's (30 characters, every idle / fidget / pole clip; median 28 mm for the idle ones),
+    // and the body is placed to put the lowest sole of the clip it is in on the floor, so it hopped 9-25 mm (median 15) at the first step and came back down once the gait had the legs.
+    p.cat = cat; if (cat !== 'walk') p.mFrom = null; else if (was !== 'walk') p.mFrom = m0 && was && !was.startsWith('sit') ? m0 : null;
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9; if (use) p.nextT = use.dur;
     this._holdTo(p, use);
   }
@@ -361,9 +366,13 @@ export class AnimCrowd {
   _yOffset(p) {
     const m = p.m; if (!m) return 0;
     if (p.state === 'sit' && p.seatY != null) return this._sitOff(m, p.seatY - p.y);
-    const gs = p.gait; if (gs && gs.wL > 0) return -m.minY * (1 - gs.wL) - gs.gb.sole * gs.wL;   // under the gait the soles are where the gait puts them (the body is NOT lifted to hide a captured stride's feet)
+    const gs = p.gait, b = p.mFrom || m;   // (b: the pose the person is walking out of while the gait takes the legs over - see _enter - otherwise the clip they are in)
+    if (gs && gs.wL > 0) return -b.minY * (1 - gs.wL) - gs.gb.sole * gs.wL;   // under the gait the soles are where the gait puts them (the body is NOT lifted to hide a captured stride's feet)
+    if (p.mFrom && this._gaitDue(p)) return -p.mFrom.minY;   // the first walking frame: the gait is made after the person has been placed, and is about to have the legs
     return -m.minY;
   }
+  /** will the gait take this person's legs? (it is on, they are animated people, and the rig is one it can drive; a rig not yet looked at counts: _gaitStep looks at it next) */
+  _gaitDue(p) { return this.gaitOn && !p.static && p.char[p.lod && p.char.lodNode ? 'gbLo' : 'gbHi'] !== null; }
   /** pelvis on the seat top; if that would push the shoes through the floor, shoes win; if the feet would hang, sink the pelvis up to 6 cm into the cushion */
   _sitOff(m, seatRel) { const yA = seatRel - m.contact, feet = yA + m.minY; return feet < 0 ? -m.minY : yA - Math.min(feet, 0.06); }
   _place(p, snap) {
