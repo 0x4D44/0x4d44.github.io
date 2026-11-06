@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
 import { Rats, RAT, strideAt } from './rats.js';
 import { Fleet, Ring, measureCycle, advanceToLap, unitIds, carIds, unitOfCar, isUnit, FLEET_FIRST, FLEET_SIZE, IN_SERVICE, CAR_LETTERS } from './fleet.js';
-import { readGlb, personIds, skinThrough } from './skincheck.mjs';
+import { readGlb, personIds, skinThrough, accessor } from './skincheck.mjs';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -497,6 +497,41 @@ for (const [file, ratio] of [['people.glb', 0.6], ['people_lod.glb', 0.7]]) {
     }
   });
 }
+
+// ---- people: the hair and eyebrows of the LOD people ----------------------------------------------------------------------------------------------------
+// The LOD export decimates the thin open shell of the "ponytail01" hair (girl, girl_school_kilt, teen_girl, woman_puffer) down to a few big wedges - the cap
+// over the scalp is gone and the LOD girl is a bald head with a ponytail - and cuts everybody's eyebrows to heavy black wedges. tools/people_lodhair.py copies
+// the full-detail hair (the four, 6 mm) and brows (all thirty, 1 mm) into people_lod.glb, out along their normals so the decimated head does not swallow
+// them, and stamps each person it repaired (extras.lodparts). A people_lod.glb that was regenerated and forgot to run the repair fails here.
+const LOD_HAIR_REPAIRED = ['girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer'];   // = RECIPE_HAIR in tools/people_lodhair.py
+test('people: people_lod.glb carries the full-detail hair of the ponytail people and the eyebrows of everybody', () => {
+  const full = readGlb(fileURLToPath(new URL('../../models/people.glb', import.meta.url))), lod = readGlb(fileURLToPath(new URL('../../models/people_lod.glb', import.meta.url)));
+  const ids = personIds(lod);
+  assert.equal(ids.length, 30);
+  const find = (g, id, prefix) => {
+    const node = g.json.nodes.find((n) => n.name === `person_${id}_mesh`);
+    return { node, prim: g.json.meshes[node.mesh].primitives.find((q) => (g.json.materials[q.material].name || '').startsWith(prefix)) };
+  };
+  for (const [part, prefix, who, maxLift] of [['hair', 'alpha_hair', LOD_HAIR_REPAIRED, 0.0065], ['brows', 'alpha_brows', ids, 0.0015]]) {
+    for (const id of who) {
+      const f = find(full, id, prefix), l = find(lod, id, prefix);
+      assert.ok(f.prim && l.prim, `${id}: a ${part} primitive in both files`);
+      const mark = l.node.extras && l.node.extras.lodparts && l.node.extras.lodparts[part];
+      assert.equal(mark && mark.v, 1, `${id}: people_lod.glb carries the ${part} repair mark - rerun tools/people_lodhair.py --write`);
+      const tris = (g, p) => g.json.accessors[p.indices].count / 3;
+      assert.equal(tris(lod, l.prim), tris(full, f.prim), `${id}: the LOD ${part} has the full ${part}'s triangles`);
+      const PF = accessor(full, f.prim.attributes.POSITION), PL = accessor(lod, l.prim.attributes.POSITION);
+      assert.equal(PL.length, PF.length, `${id}: the same vertices`);
+      let far = 0; for (let k = 0; k < PF.length; k += 3) far = Math.max(far, Math.hypot(PL[k] - PF[k], PL[k + 1] - PF[k + 1], PL[k + 2] - PF[k + 2]));
+      assert.ok(far <= maxLift, `${id}: the LOD ${part} sits ${(far * 1000).toFixed(1)} mm from the full one (at most ${maxLift * 1000} mm)`);
+      // a well-formed primitive: every attribute has one entry per vertex, and the triangles index real vertices
+      const n = PL.length / 3;
+      for (const k of ['NORMAL', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0']) assert.equal(lod.json.accessors[l.prim.attributes[k]].count, n, `${id} ${part}: ${k} has one entry per vertex`);
+      let top = 0; for (const v of accessor(lod, l.prim.indices)) top = Math.max(top, v);
+      assert.ok(top < n, `${id} ${part}: the triangles index real vertices`);
+    }
+  }
+});
 
 test('adverts: each poster quad gets its own atlas cell, inside the gutter, keeping its U reversal', async () => {
   const { mapAdvertQuads, advertOrder, ADVERT_CELLS } = await import('./adverts.js');

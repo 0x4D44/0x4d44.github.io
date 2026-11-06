@@ -26,7 +26,7 @@ export function readGlb(path) {
   return { json, bin, dv: new DataView(bin.buffer, bin.byteOffset, bin.byteLength) };
 }
 
-function accessor(g, i) {
+export function accessor(g, i) {
   const a = g.json.accessors[i], bv = g.json.bufferViews[a.bufferView], nc = NC[a.type], T = CT[a.componentType];
   const base = (bv.byteOffset || 0) + (a.byteOffset || 0), stride = bv.byteStride || T.BYTES_PER_ELEMENT * nc;
   const out = a.normalized ? new Float32Array(a.count * nc) : new T(a.count * nc), size = T.BYTES_PER_ELEMENT;
