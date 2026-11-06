@@ -67,8 +67,56 @@ export const CONTROLLED = ['pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_0
   'thigh_l', 'thigh_r', 'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r'];
 const SIDE = ['l', 'r'];
 
+/** The shoe as the floor sees it.
+ *  The planted foot of the gait is three points (heel, ball of the foot, toe tip) on a flat sole, and that is only a model of the shoe: a real sole is a rocker - the heel is
+ *  chamfered, the toe sprung - so the rendered mesh hovers 8-13 mm above the floor through the heel strike and push-off, or dips into it where the shoe is stiffer than its model. The
+ *  gait therefore takes the foot's HEIGHT from the mesh itself (the pivots, angles and the slide of the planted foot are left alone).
+ *  A shoe is two rigid parts and a hinge: what the foot bone carries (heel and sole back to the ball of the foot), what the toe bone carries (the toe box), and the few centimetres
+ *  blended between them. The lowest point of a rigid part, however it is pitched, is a vertex on the lower convex hull of its side profile (height is linear across a triangle, so
+ *  the lowest point of a triangle is a corner), so a part is kept as that hull - a few dozen points about its own joint. The blended vertices (the bend itself) are kept whole and
+ *  posed as the skinning poses them.
+ *  an, ba: the rest positions of the ankle and of the ball-of-foot joint; verts: [x, y, z, wFoot, wToe] for each vertex of the shoe on this side, in the same frame as an and ba (x is not
+ *  used: a pitch about x leaves the heights alone; a vertex that is mostly on other bones (the shoe's collar, high above the sole) counts only for `sole`; a low one that has up to a fifth of its
+ *  weight on the calf is taken as foot + toe alone).
+ *  Returns { rear: [z, y, ...] about the ankle, front: [z, y, ...] about the ball joint, mix: [wToe, za, ya, zb, yb, ...] about the ankle and about the ball joint, sole: the height
+ *  of the lowest vertex (in the frame of the input) }, or null when the shoe has too little of a part for a profile to mean anything (the three-point sole is then what there is). */
+export function footProfile(an, ba, verts) {
+  let sole = Infinity; for (const v of verts) if (v[1] < sole) sole = v[1];
+  const R = [], F = [], M = [];
+  for (const v of verts) {
+    const w = v[3] + v[4]; if (w < 0.8 || (w < 0.98 && v[1] - sole > 0.04)) continue;
+    const b = v[4] / w;   // (the heel of an oxford carries up to 14 % calf: renormalised, it moves with the foot - the shank turns with the foot to within a few degrees where the heel is what stands on the floor)
+    if (b <= 0.01) R.push([v[2] - an[2], v[1] - an[1]]);
+    else if (b >= 0.99) F.push([v[2] - ba[2], v[1] - ba[1]]);
+    else if (v[1] - sole < 0.05) M.push([b, v[2] - an[2], v[1] - an[1], v[2] - ba[2], v[1] - ba[1]]);
+  }
+  if (R.length < 3 || F.length + M.length < 3 || !(sole < Infinity)) return null;
+  const hull = (pts) => {   // lower convex hull, left to right (Andrew's monotone chain); flat [z, y, ...]
+    pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const h = [];
+    for (const p of pts) {
+      while (h.length >= 2) { const a = h[h.length - 2], c = h[h.length - 1]; if ((c[0] - a[0]) * (p[1] - a[1]) - (c[1] - a[1]) * (p[0] - a[0]) <= 0) h.pop(); else break; }
+      h.push(p);
+    }
+    return h.flat();
+  };
+  return { rear: Float64Array.from(hull(R)), front: Float64Array.from(hull(F)), mix: Float64Array.from(M.flat()), sole };
+}
+/** height (m) above the ankle of the lowest vertex of a profile (footProfile), for foot pitch th and toe-bone pitch thb (radians, toes up +). jy, jz: the ball joint's height and z
+ *  relative to the ankle. */
+function profLowest(pf, jy, jz, th, thb) {
+  const c = Math.cos(th), s = Math.sin(th), cb = Math.cos(thb), sb = Math.sin(thb), r = pf.rear, f = pf.front, x = pf.mix, jh = jy * c - jz * s;
+  let m = Infinity, h;
+  for (let i = 0; i < r.length; i += 2) { h = r[i + 1] * c - r[i] * s; if (h < m) m = h; }
+  for (let i = 0; i < f.length; i += 2) { h = jh + f[i + 1] * cb - f[i] * sb; if (h < m) m = h; }
+  for (let i = 0; i < x.length; i += 5) { const b = x[i]; h = (1 - b) * (x[i + 2] * c - x[i + 1] * s) + b * (jh + x[i + 4] * cb - x[i + 3] * sb); if (h < m) m = h; }
+  return m;
+}
+
 /** The constants of one person, from the rest skeleton. rig = { bones:[name], parent:[index|-1], pos:[[x,y,z]] (local), quat:[[x,y,z,w]] (local) }, parents before
- *  children; foot = { heelBack, toeFwd } (m: heel behind / toe tip ahead of the ankle, from the skinned foot). The rest pose stands with the soles on y = 0. */
+ *  children; foot = { heelBack, toeFwd, prof?, profR? } (m: heel behind / toe tip ahead of the ankle, from the skinned foot; prof: the shoe's profile, footProfile - the left shoe's, and the
+ *  right's too unless profR is given: the two shoes of a character are not always mirror images, and the right one of man_student's stands up to 11 mm lower than the left in terminal
+ *  stance). The rest pose stands with the soles on y = 0. */
 export function makeBody(rig, foot) {
   const n = rig.bones.length, ix = {}; rig.bones.forEach((b, i) => { ix[b] = i; });
   const P0 = new Array(n), Q0 = new Array(n);
@@ -79,7 +127,7 @@ export function makeBody(rig, foot) {
     const sd = SIDE[s], hip = g('thigh_' + sd), knee = g('calf_' + sd), an = g('foot_' + sd), ba = g('ball_' + sd), d0 = nrm(sub(knee, hip)), e0 = nrm(sub(an, knee)), aH = an[1];
     const bx = ba[0] - an[0], bz = ba[2] - an[2];
     const hp = 0.5 * ba[1];   // the heel-up pivot: half way between the ball-of-foot sole point and the ball joint, so the sole point and the toe tip each slide half as far
-    B.leg[s] = { sd, l1: len(sub(knee, hip)), l2: len(sub(an, knee)), d0, e0, a0t: ort([1, 0, 0], d0), a0s: ort([1, 0, 0], e0), ankleH: aH, hp,
+    B.leg[s] = { sd, l1: len(sub(knee, hip)), l2: len(sub(an, knee)), d0, e0, a0t: ort([1, 0, 0], d0), a0s: ort([1, 0, 0], e0), ankleH: aH, hp, prof: (s === 1 && foot.profR) || foot.prof || null,
       hA: [0, aH, -foot.heelBack],                                  // the ankle, from the heel point (foot flat)
       hB: [bx, 0, bz - foot.heelBack],                              // the heel-up pivot, from the heel point (its height is hp)
       bA: [-bx, aH - hp, -bz],                                      // the ankle, from the pivot
@@ -130,8 +178,10 @@ function stanceAnkle(o, H, psi, th) {
   const bs = rotY(o.hB, psi), v = rotY(rotX(o.bA, th), psi);
   return [H[0] + bs[0] + v[0], o.hp + v[1], H[1] + bs[2] + v[2]];
 }
-/** height of the lowest of heel, ball-of-foot and toe tip above the ankle, for foot pitch th and toe-bone pitch thb */
-function lowestRel(o, th, thb) {
+/** height of the lowest point of the foot above the ankle, for foot pitch th and toe-bone pitch thb: the lowest vertex of the shoe when the body has its profile (footProfile), else the
+ *  lowest of the heel, ball-of-foot and toe-tip points */
+export function lowestRel(o, th, thb) {
+  if (o.prof) return profLowest(o.prof, o.ballRel[1], o.ballRel[2], th, thb);
   const yh = rotX(o.heelRel, th)[1], yb = rotX(o.bsRel, th)[1], yt = rotX(o.ballRel, th)[1] + rotX(o.toeRel, thb)[1];
   return Math.min(yh, yb, yt);
 }
@@ -261,8 +311,9 @@ function levelToe(o, ay, th) {
 function footOut(g, f, pfNow) {
   const B = g.body, o = B.leg[f.s], P = g.P;
   if (f.mode === 'stance') {
-    const th = f.th, A = stanceAnkle(o, f.H, f.psi, th);
-    return { A, psi: f.psi, th, thb: th >= 0 ? th : levelToe(o, A[1], th) };
+    const th = f.th, A = stanceAnkle(o, f.H, f.psi, th), thb = th >= 0 ? th : levelToe(o, A[1], th);
+    if (o.prof) A[1] = -lowestRel(o, th, thb);   // the pivots place the foot along the floor; the shoe itself decides how high the ankle is, so that its lowest point is ON the floor
+    return { A, psi: f.psi, th, thb };
   }
   const sw = f.sw, s = sw.s;
   if (!sw.tgt && !sw.mark && s >= SW_MARK) sw.mark = landTarget(g, f.s, P, 1 - s);          // the landing mark is fixed over the last part of the swing

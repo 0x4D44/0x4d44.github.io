@@ -208,3 +208,37 @@ test('a rendered shoe that hovers 10 mm above the floor is a float, and time in 
   assert.ok(a.noContactPct > 80 && lm.noContactPct < 30, `neither foot down: ${lm.noContactPct.toFixed(0)}% -> ${a.noContactPct.toFixed(0)}%`);
   assert.ok(catsOf(a).GRD <= catsOf(lm).GRD - 1, `grounding ${catsOf(lm).GRD.toFixed(1)} -> ${catsOf(a).GRD.toFixed(1)}`);
 });
+
+// ------------------------------------------------------------------------------------------------------------------------ slip and clearance are judged on the rendered shoe too
+// rec.shoe, per foot: y = the height of the lowest vertex of that shoe, v = the horizontal speed (m/s) of that very vertex (tools/people_motion.html). Contact timing, swing clearance and
+// planted-foot slip read it when it is there, because the three sole landmarks stopped being the sole when the gait began to stand the shoe itself on the floor (gait.footProfile): a
+// rocker's landmarks hang under the floor in terminal stance, and drag across it, while the shoe is planted and still. The landmark figures remain, as slipLm and clearLm (not scored).
+const lowFoot = (raw, s) => Array.from({ length: raw.n }, (_, k) => Math.min(...['heel_', 'bs_', 'toe_'].map((p) => raw.pos[idx(k, p + s) + 1])));
+const withMesh = (base, yFn, vFn) => {
+  const raw = Object.assign({}, base); raw.shoe = {};
+  for (const s of ['l', 'r']) { const y = lowFoot(base, s).map(yFn); raw.shoe[s] = { y, v: y.map((h, k) => vFn(h, k)) }; }
+  raw.shoeY = Array.from({ length: raw.n }, (_, k) => Math.min(raw.shoe.l.y[k], raw.shoe.r.y[k])); return raw;
+};
+test('slip is the speed of the part of the rendered shoe that is on the floor: a planted shoe over skating landmarks does not skate, and a skating shoe over still landmarks does', () => {
+  const SK = record('man_commuter', M.SCEN.steady(1.2).plan, { feed: { pos: 0.6 } }), base = FLOOR(RAW);
+  const still = FLOOR(withMesh(SK, (y) => y, () => 0)), skating = FLOOR(withMesh(RAW, (y) => y, (h) => (h < 0.008 ? 0.10 : 4)));
+  assert.equal(still.contactFrom, 'mesh'); assert.equal(skating.contactFrom, 'mesh');
+  assert.ok(still.slipLm > 6, `the control: the skating walk's landmarks do slide (${still.slipLm.toFixed(1)} cm/s)`);
+  near(still.slip, 0, 1e-9, 'a planted shoe');
+  near(skating.slip, 10, 1e-6, 'a shoe sliding at 10 cm/s while it is down (and 4 m/s while it is in the air, which must not count)');
+  assert.ok(skating.slipLm < 3, `the landmarks of that walk are planted (${skating.slipLm.toFixed(1)} cm/s)`);
+  assert.ok(catsOf(skating).GRD <= catsOf(base).GRD - 1, `grounding ${catsOf(base).GRD.toFixed(1)} -> ${catsOf(skating).GRD.toFixed(1)}`);
+});
+test('swing clearance follows the rendered shoe, and the landmark clearance is still reported beside it', () => {
+  const lm = FLOOR(RAW), up = FLOOR(withMesh(RAW, (y) => y + 0.010, () => 0));
+  near(up.clearMm, lm.clearMm + 10, 1e-6, 'a shoe 10 mm higher than the landmarks clears 10 mm more'); near(up.clearLm, lm.clearMm, 1e-6, 'the landmarks have not moved');
+});
+test('with no rendered shoe in the recording the landmarks are the witness, as before', () => {
+  const a = FLOOR(RAW); assert.equal(a.contactFrom, 'landmarks'); assert.equal(a.slipLm, undefined); assert.equal(a.clearLm, undefined); assert.ok(Number.isFinite(a.slip) && Number.isFinite(a.clearMm));
+});
+test('contact timing (the first lift-off and landing after a walk command) is read from the rendered shoe', () => {
+  const raw = record('man_commuter', M.SCEN.startstop().plan), lm = M.analyseStart(new M.Rec(raw)), mesh = M.analyseStart(new M.Rec(withMesh(raw, (y) => y, () => 0)));
+  assert.ok(lm.ok && mesh.ok); near(mesh.latency, lm.latency, 1e-9, 'a shoe that is exactly the landmarks changes nothing');
+  const late = M.analyseStart(new M.Rec(withMesh(raw, (y, k) => (k / 60 < lm.toLatency + 1.2 + 1.0 ? 0 : y), () => 0)));   // a shoe that stays down until a second later than the landmarks leave
+  assert.ok(!(late.latency <= lm.latency), `the first landing moves with the shoe: ${lm.latency} -> ${late.latency}`);
+});

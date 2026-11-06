@@ -75,23 +75,36 @@ function zeniEvents(g, dt) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ floor contact
-function contactOf(rec, k0, k1) {   // heights are measured from the real floor (the recorder's y = rec.floor): a foot sunk into it is in contact, and the sinking is judged by GRD.sink
-  const sole = {}, c = {}, n = k1 - k0, fl = rec.floor || 0;
-  for (const s of ['l', 'r']) { const h = rec.s('heel_' + s), b = rec.s('bs_' + s), t = rec.s('toe_' + s); sole[s] = new Float64Array(n); for (let i = 0; i < n; i++) sole[s][i] = Math.min(h.y[k0 + i], b.y[k0 + i], t.y[k0 + i]) - fl; }
+// WHAT THE FOOT STANDS ON. Contact and slip are judged on the RENDERED shoe when the recording carries it (rec.shoe: per foot, the lowest skinned vertex of the shoe mesh at each frame and
+// the horizontal speed of that very vertex - tools/people_motion.html), and on the three sole landmarks (heel, ball of the foot, toe tip: points carried by the foot bones at the
+// character's nominal sole) otherwise. The first versions of these items used the landmarks always, which was fair while the gait stood the landmarks on the floor; it stopped being
+// fair when the gait began to stand the shoe itself there (gait.footProfile): a rocker sole's real contact point is not any of the three landmarks, which then hang several mm
+// under the floor in terminal stance and drag across it while the actual shoe is planted and still. The landmark figures are still computed (slipLm, clearLm) and reported.
+const useMesh = (rec, src) => (src || (rec.shoe ? 'mesh' : 'landmarks')) === 'mesh';
+function contactOf(rec, k0, k1, src) {   // heights are measured from the real floor (the recorder's y = rec.floor): a foot sunk into it is in contact, and the sinking is judged by GRD.sink
+  const sole = {}, c = {}, n = k1 - k0, fl = rec.floor || 0, mesh = useMesh(rec, src);
+  for (const s of ['l', 'r']) {
+    sole[s] = new Float64Array(n);
+    if (mesh) for (let i = 0; i < n; i++) sole[s][i] = rec.shoe[s].y[k0 + i] - fl;
+    else { const h = rec.s('heel_' + s), b = rec.s('bs_' + s), t = rec.s('toe_' + s); for (let i = 0; i < n; i++) sole[s][i] = Math.min(h.y[k0 + i], b.y[k0 + i], t.y[k0 + i]) - fl; }
+  }
   for (const s of ['l', 'r']) c[s] = Array.from(sole[s], (y) => y < CONTACT_M);
   return { sole, c };
 }
-/** RMS horizontal speed (cm/s) of every sole point while it is on the floor and not lifting; and the path (cm) the worst one covers in that time */
-function slipOf(rec, k0, k1) {
+/** RMS horizontal speed (cm/s) of the sole while it is on the floor and not lifting; and the path (cm) the worst one covers in that time.
+ *  On the rendered shoe: the point of each shoe that is lowest at a frame (its own speed, not the foot's). On the landmarks: every one of the three per foot that is within CONTACT_M. */
+function slipOf(rec, k0, k1, src) {
   const sp = [], fl = rec.floor || 0; let pathMax = 0;
-  for (const s of ['l', 'r']) for (const lm of ['heel_', 'bs_', 'toe_']) {
-    const S = rec.s(lm + s); let pl = 0;
+  const one = (y, v) => {   // y(k): height of the point, v(k): its horizontal speed (m/s)
+    let pl = 0;
     for (let k = Math.max(k0, 1); k < Math.min(k1, rec.n - 1); k++) {
-      const vy = (S.y[k + 1] - S.y[k - 1]) / (2 * rec.dt); if (S.y[k] - fl > CONTACT_M || Math.abs(vy) > 0.12) continue;
-      const v = Math.hypot(S.x[k + 1] - S.x[k - 1], S.z[k + 1] - S.z[k - 1]) / (2 * rec.dt); sp.push(v * 100); pl += v * rec.dt * 100;
+      const vy = (y(k + 1) - y(k - 1)) / (2 * rec.dt); if (y(k) - fl > CONTACT_M || Math.abs(vy) > 0.12) continue;
+      const w = v(k); sp.push(w * 100); pl += w * rec.dt * 100;
     }
     pathMax = Math.max(pathMax, pl);
-  }
+  };
+  if (useMesh(rec, src)) for (const s of ['l', 'r']) { const S = rec.shoe[s]; one((k) => S.y[k], (k) => S.v[k]); }
+  else for (const s of ['l', 'r']) for (const lm of ['heel_', 'bs_', 'toe_']) { const S = rec.s(lm + s); one((k) => S.y[k], (k) => Math.hypot(S.x[k + 1] - S.x[k - 1], S.z[k + 1] - S.z[k - 1]) / (2 * rec.dt)); }
   return { rms: sp.length >= 8 ? rms(sp) : NaN, n: sp.length, pathMax };
 }
 
@@ -118,7 +131,8 @@ export function analyseSteady(rec, win) {
   a.sinkMm = Math.max(0, -mn(low)) * 1000;
   a.noContactPct = 100 * mean(Array.from(low, (y) => (y > CONTACT_M ? 1 : 0)));
   a.floatMm = pct(Array.from(low, (y) => Math.max(0, y)), 0.5) * 1000;   // a walker that hovers has its lower foot off the floor all the time
-  const sl = slipOf(rec, k0, k1); a.slip = sl.rms; a.slipN = sl.n;
+  const sl = slipOf(rec, k0, k1); a.slip = sl.rms; a.slipN = sl.n; a.contactFrom = rec.shoe ? 'mesh' : 'landmarks';
+  if (rec.shoe) a.slipLm = slipOf(rec, k0, k1, 'landmarks').rms;   // what the three nominal sole landmarks would have said (not scored)
   { const hl = P('thigh_l').y, hr = P('thigh_r').y; a.hipRel = mean(Array.from(hl, (y, i) => (y + hr[i]) / 2)) / hipY; }
   // ---- cycles from the feet's position relative to the pelvis
   const ev = {}; for (const s of ['l', 'r']) { const f = P('foot_' + s).f, pf = P('pelvis').f; ev[s] = zeniEvents(Float64Array.from(f, (x, i) => x - pf[i]), dt); }
@@ -134,7 +148,8 @@ export function analyseSteady(rec, win) {
   for (const s of ['l', 'r']) for (let i = 0; i < ev[s].hs.length; i++) { for (let k = ev[s].hs[i]; k < ev[s].to[i]; k++) stance[s][k] = 1; span0 = Math.min(span0, ev[s].hs[i]); span1 = Math.max(span1, ev[s].to[i]); }
   { let st = 0, dsN = 0, tot = 0; for (let k = span0; k < span1; k++) { tot++; if (stance.l[k] && stance.r[k]) dsN++; st += stance.l[k] + stance.r[k]; } a.stance = 100 * st / (2 * tot); a.ds = 100 * dsN / tot; }
   { const sh = (s) => mean(ev[s].hs.map((h, i) => { const nx = ev[s].hs[i + 1]; return nx ? (ev[s].to[i] - h) / (nx - h) : NaN; })); a.stanceSym = 100 * Math.abs(sh('l') - sh('r')); }
-  { const cl = []; for (const s of ['l', 'r']) for (let i = 0; i < ev[s].to.length; i++) { const to = ev[s].to[i], nx = ev[s].hs[i + 1]; if (!nx) continue; let lo = Infinity; for (let k = to + Math.round(0.35 * (nx - to)); k <= to + Math.round(0.8 * (nx - to)); k++) lo = Math.min(lo, ct.sole[s][k]); cl.push(lo); } a.clearMm = cl.length ? mean(cl) * 1000 : NaN; }
+  const clearOf = (c) => { const cl = []; for (const s of ['l', 'r']) for (let i = 0; i < ev[s].to.length; i++) { const to = ev[s].to[i], nx = ev[s].hs[i + 1]; if (!nx) continue; let lo = Infinity; for (let k = to + Math.round(0.35 * (nx - to)); k <= to + Math.round(0.8 * (nx - to)); k++) lo = Math.min(lo, c.sole[s][k]); cl.push(lo); } return cl.length ? mean(cl) * 1000 : NaN; };
+  a.clearMm = clearOf(ct); if (rec.shoe) a.clearLm = clearOf(contactOf(rec, k0, k1, 'landmarks'));
   // ---- joint angles in the sagittal plane of the direction of travel
   const seg = (A, B) => { const a1 = P(A), b1 = P(B); return { f: Float64Array.from(b1.f, (x, i) => x - a1.f[i]), u: Float64Array.from(b1.y, (y, i) => y - a1.y[i]) }; };
   const J = {};

@@ -6,8 +6,9 @@
 //     --gait clip      the clip-driven walk the game had before the procedural gait layer (the baseline); default = whatever the game does now
 //     --items          print every sub-metric (mean value and score over the recordings); --worst N the N lowest-scoring recordings, item by item
 //     --rec DIR        keep the raw recordings (landmarks per frame) as JSON, so a reviewer can re-score or plot them
-//     --no-mesh        do not record the lowest point of the RENDERED shoes (shoeY). By default every frame records it, and GRD.sink / GRD.float / GRD.flight judge that instead of the
-//                      gait's own foot landmarks (a walker cannot mark its own homework: see the rubric's Revisions). Without it they fall back to the landmarks.
+//     --no-mesh        do not record the RENDERED shoes: the lowest point of each (shoeY, and per foot shoe.l / shoe.r = height of the lowest vertex and the horizontal speed of that very
+//                      vertex). By default every frame records them, and GRD.sink / float / flight / slip / clear and the contact timing judge them instead of the gait's own foot
+//                      landmarks (a walker cannot mark its own homework: see the rubric's Revisions). Without it they fall back to the landmarks.
 //     --film DIR       side / front / top filmstrips of one stride at 1.2 m/s per person, as PNG
 //     --rubric         print the rubric table and exit
 // Serves the repo root with python3 -m http.server unless --base is given. Needs Playwright (like tools/people_holes.mjs).

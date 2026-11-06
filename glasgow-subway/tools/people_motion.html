@@ -8,7 +8,7 @@
 // The recorder behind tools/people_motion.mjs. One person is put through the game's own AnimCrowd.update() - its steering (_step), turning (_turn), pace matching
 // (_pace), placement (_place) and mixer, and whatever gait layer is switched on - along a scripted path, and a set of body landmarks is recorded in world space every frame.
 // Nothing here knows what a good walk looks like: the judging is in js/sim/motion_metrics.mjs.
-//   window.__run({ id, dt, plan:[{ dur, v, state, turn, to }], seed, mesh })   -> recording   (mesh: true also records shoeY, the lowest vertex of the rendered shoes, per frame)
+//   window.__run({ id, dt, plan:[{ dur, v, state, turn, to }], seed, mesh })   -> recording   (mesh: true also records shoeY, the lowest vertex of the rendered shoes, per frame, and shoe, the same per foot with the horizontal speed of that vertex)
 //     plan segment: dur seconds long; v = the ground speed the person is steered at (0 = stand still); state = 'walk' | 'stand' (set at the segment start, as the game
 //     does when a wanderer sets off or arrives); turn = degrees to change the heading by at the segment start; to = metres, stop that far ahead (the game's arrival rule:
 //     within 0.3 m of the target the person stops dead and goes to 'stand'; with to=0 it just keeps walking on).
@@ -90,6 +90,12 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
       // floor items that does not depend on how the foot landmarks above were defined
       const shoes = []; if (spec.mesh) p.obj.traverse((o) => { if (o.isSkinnedMesh && /shoe|boot|sneaker/i.test((o.material && o.material.name) || o.name)) shoes.push(o); });
       const my = spec.mesh && shoes.length ? new Array(n) : null, sv = new THREE.Vector3();   // (a person with no shoe mesh records no channel: the metrics fall back to the landmarks)
+      // and, to judge SLIP on the rendered shoe, every shoe vertex's world position every frame (Pb: frame k, vertex i at (k * V + i) * 3), with the foot each vertex belongs to read from the
+      // bones that skin it: the point of the shoe that is lowest at a frame is followed through the frames either side of it, so what is measured is how fast THAT point of the shoe is
+      // travelling over the floor (a rolling foot's contact point is at rest on the floor however fast the foot moves, and a skating one's is not)
+      let V = 0; for (const sm of shoes) V += sm.geometry.attributes.position.count;
+      const side = new Uint8Array(V), Pb = my ? new Float32Array(n * V * 3) : null;
+      if (my) { let q = 0; for (const sm of shoes) { const a = sm.geometry.attributes, si = a.skinIndex, sw = a.skinWeight, bs = sm.skeleton.bones; for (let i = 0; i < a.position.count; i++, q++) { let l = 0, r = 0; for (let j = 0; j < 4; j++) { const nm = bs[si.getComponent(i, j)].name, w = sw.getComponent(i, j); if (/_l$/.test(nm)) l += w; else if (/_r$/.test(nm)) r += w; } side[q] = r > l ? 1 : 0; } } }
       let t = 0, k = 0, hd = 0, tx = null, tz = null;
       for (let si = 0; si < plan.length; si++) {
         const s = plan[si]; if (s.state && s.state !== p.state) { p.sp = s.state === 'stand' ? 0 : p.sp; crowd._enter(p, s.state); p.nextT = s.state === 'stand' ? 1e9 : p.nextT; }
@@ -104,7 +110,7 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
           }   // standing (or arrived): no steering - the crowd's own _turn then holds the person still, as it does for anyone not being steered
           crowd.update(dt, t, null, null); t += dt;
           p.obj.updateMatrixWorld(true);
-          if (my) { let m = 1e9; for (const sm of shoes) { const c = sm.geometry.attributes.position.count; for (let i = 0; i < c; i++) { sm.getVertexPosition(i, sv).applyMatrix4(sm.matrixWorld); if (sv.y < m) m = sv.y; } } my[k] = +m.toFixed(4); }
+          if (my) { let m = 1e9, q = 0; const o3 = k * V * 3; for (const sm of shoes) { const c = sm.geometry.attributes.position.count; for (let i = 0; i < c; i++, q++) { sm.getVertexPosition(i, sv).applyMatrix4(sm.matrixWorld); const w3 = o3 + q * 3; Pb[w3] = sv.x; Pb[w3 + 1] = sv.y; Pb[w3 + 2] = sv.z; if (sv.y < m) m = sv.y; } } my[k] = +m.toFixed(4); }
           const o = k * Lc * 3; let j = 0;
           for (const nm of BONES) { C.bone[nm].getWorldPosition(v3); pos[o + j++] = +v3.x.toFixed(4); pos[o + j++] = +v3.y.toFixed(4); pos[o + j++] = +v3.z.toFixed(4); }
           for (const nm of EXTRA) { const c = C.spec[nm]; v3.copy(c.l).applyMatrix4(c.b.matrixWorld); pos[o + j++] = +v3.x.toFixed(4); pos[o + j++] = +v3.y.toFixed(4); pos[o + j++] = +v3.z.toFixed(4); }
@@ -112,8 +118,20 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
           ts[k] = p.cur ? +p.cur.timeScale.toFixed(3) : 0; ph[k] = p.gait && p.gait.phase != null ? +p.gait.phase.toFixed(4) : -1;
         }
       }
+      // per foot, per frame: the height of the lowest vertex, and the horizontal speed (m/s, centred difference over the frames either side) of the vertex that is lowest at that frame
+      let shoe = null;
+      if (Pb && V) {
+        const ly = [new Float32Array(k), new Float32Array(k)], li = [new Int32Array(k), new Int32Array(k)], sp = [new Float32Array(k), new Float32Array(k)];
+        for (let f = 0; f < k; f++) {
+          ly[0][f] = ly[1][f] = 1e9;
+          for (let i = 0; i < V; i++) { const y = Pb[(f * V + i) * 3 + 1], s2 = side[i]; if (y < ly[s2][f]) { ly[s2][f] = y; li[s2][f] = i; } }
+        }
+        for (let f = 1; f < k - 1; f++) for (let s2 = 0; s2 < 2; s2++) { const i = li[s2][f], a = ((f + 1) * V + i) * 3, b = ((f - 1) * V + i) * 3; sp[s2][f] = Math.hypot(Pb[a] - Pb[b], Pb[a + 2] - Pb[b + 2]) / (2 * dt); }
+        const r4 = (a) => Array.from(a, (x) => +x.toFixed(4));
+        shoe = { l: { y: r4(ly[0]), v: r4(sp[0]) }, r: { y: r4(ly[1]), v: r4(sp[1]) }, verts: V };
+      }
       const meta = gltf.meta[id] || {};
-      return { id, dt, n: k, names, pos, root, yaw, v: spd, state: st, seg, timeScale: ts, phase: ph, floor: 0, shoeY: my, info: { heightM: meta.heightM, legLengthM: meta.legLengthM, walkSpeedMps: meta.walkSpeedMps, kid: p.char.kid, gaitLayer: !!(crowd.gaitOn), thigh: g.thigh, shank: g.shank, hipY: g.hipY, hipHalf: g.hipHalf, ankleH: g.ankleH, heelBack: g.heelBack, toeFwd: g.toeFwd } };
+      return { id, dt, n: k, names, pos, root, yaw, v: spd, state: st, seg, timeScale: ts, phase: ph, floor: 0, shoeY: my, shoe, info: { heightM: meta.heightM, legLengthM: meta.legLengthM, walkSpeedMps: meta.walkSpeedMps, kid: p.char.kid, gaitLayer: !!(crowd.gaitOn), thigh: g.thigh, shank: g.shank, hipY: g.hipY, hipHalf: g.hipHalf, ankleH: g.ankleH, heelBack: g.heelBack, toeFwd: g.toeFwd } };
     };
     // a side-view filmstrip of one steady walk: `frames` stills spread over `span` seconds (default one stride), the camera travelling with the person
     window.__film = (spec) => {
