@@ -39,6 +39,7 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
     const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
     const crowd = new AnimCrowd(THREE, SU, gltf, 60, 'high', lod); crowd.group = new THREE.Group(); scene.add(crowd.group);
     if (q.get('gait') === 'clip' && crowd.setGait) crowd.setGait(false);
+    crowd.phones = false;   // the recordings are of walking and standing: a phone bout (people.js _phoneUse) puts the hands at the face, which the arm metrics would score as a fault
     window.__crowd = crowd; window.__THREE = THREE; window.__r = r; window.__scene = scene; window.__cam = cam; window.__ids = crowd.chars.map((c) => c.id); window.__meta = gltf.meta;
     const BIG = { x0: -1e4, x1: 1e4, z0: -1e4, z1: 1e4 };
     const fresh = (id, seed) => {

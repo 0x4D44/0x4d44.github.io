@@ -5,8 +5,14 @@ import { ARM_OUT, ARM_DROP } from './armfit.js';
 import * as G from './gait.js';
 import { readBody, GaitRig } from './gait_three.js';
 import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
+import { HoldRig } from './hold_three.js';
+import { VARIANTS as PHONE_VARIANTS } from './phone.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
+// ?phones=0: nobody uses a mobile phone (to compare; the walking metrics of research/people-motion-rubric.md are measured without them)
+const NO_PHONES = typeof location !== 'undefined' && /[?&]phones=0(&|$)/.test(location.search || '');
+const HOLD_IN = 0.55, HOLD_OUT = 0.5;   // s: the arms come up to the phone over HOLD_IN, and go back down over HOLD_OUT
+const PHONE_USE = 0.25, PHONE_CALL = 0.28;   // the share of a standing grown-up's idle bouts spent on a phone, and of those the share that are a call (the rest are typing / reading)
 const GAIT_IN = 0.2, GAIT_OUT = 0.35, GAIT_TAIL = 0.6;   // s: the gait is blended in over GAIT_IN, its upper body held GAIT_TAIL after the person stops (the last foot lands, the arms settle), then blended out over GAIT_OUT; the legs stay on the gait for good (feet that stay where they were planted)
 
 const PALETTE = [0x2f3b52, 0x6b2d2d, 0x2d5a3b, 0x7a6a4f, 0x1f1f24, 0x8a4f7a, 0x3d6a8a, 0xb5523b, 0x56585c, 0xc0a040, 0x2a2a5a];
@@ -173,7 +179,7 @@ export class AnimCrowd {
       this.armFit[c.id] = n;
     }
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
-    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gseed = 0;
+    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gseed = 0; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5);   // phones have their own random stream: switching them off changes nothing else
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
@@ -254,7 +260,7 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; }
+  _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
   _rawPick() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
     const r = this.rng(); let pool;
@@ -281,6 +287,7 @@ export class AnimCrowd {
     this._enter(p, p.state, 0);
     if (p.cur) p.cur.time = this.rng() * p.cur.getClip().duration;
     p.mixer.update(0.0001); p.dirty = false;   // pose the skeleton now (far people are frozen, never in the bind pose)
+    if (p.hold) this._holdStep(p, 0, true);
     this.people.push(p); this._place(p, true);
     return p;
   }
@@ -289,7 +296,7 @@ export class AnimCrowd {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
     par.remove(old); p.mixer.stopAllAction(); p.lod = lod; const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
     p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
-    if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; this._place(p, true);
+    if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true);
   }
   _action(p, clip) { let a = p.act.get(clip.name); if (!a) { a = p.mixer.clipAction(clip); a.setEffectiveWeight(0); a.play(); p.act.set(clip.name, a); } return a; }
   _play(p, clip, fade = this.crossfade, speed = 1) {
@@ -303,13 +310,53 @@ export class AnimCrowd {
     const ch = p.char, r = this.rng; p.state = state;
     let cat = 'idle';
     if (state === 'walk' || state === 'go') cat = 'walk';
-    else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
+    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
-    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : 'idle'; }   // idle poses only: talk/wave/point and the phone clips (hands raised, no phone prop in the model) read as flailing arms
+    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
+    const use = this.phones ? this._phoneUse(p, state, cat) : null;   // who is on a phone: it takes the body of the stock phone clip (head down, or to the ear) and the arms of hold_three.js
+    if (use && use.clip) clip = use.clip;
+    if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
-    p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
+    p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9; if (use) p.nextT = use.dur;
+    this._holdTo(p, use);
   }
+  // ------------------------------------------------------------------ phones (hold.js: the maths, hold_three.js: the skeleton, phone.js: the phone)
+  /** Does this person spend this bout on a phone? Seated: the stock sit_phone clip (cat 'sitphone', already chosen) with a phone in the hands. Standing grown-ups: PHONE_USE of the idle bouts,
+   *  a call PHONE_CALL of those, otherwise typing / reading. Walking, riding a pole and children (their arms and eye-lines are not the adults') do not. null, or { kind, clip, dur }. */
+  _phoneUse(p, state, cat) {
+    const ch = p.char, pr = this.prng;
+    if (state === 'sit') return cat === 'sitphone' && !ch.kid && !ch.staff ? { kind: 'sit', clip: null, dur: 8 + pr() * 14 } : null;
+    if (state !== 'stand' || cat !== 'idle' || ch.kid || ch.staff || !ch.pools.phone || pr() >= PHONE_USE) return null;
+    const call = pr() < PHONE_CALL, want = call ? /phone_call$/ : /phone_stand$/, find = (a) => a && a.find((c) => want.test(c.name));
+    const clip = find(ch.pools.phone) || find(ch.pools0 && ch.pools0.phone); if (!clip) return null;
+    return { kind: call ? 'call' : 'text', clip, dur: 8 + pr() * 14 };
+  }
+  /** start, change or end a person's phone bout (the arms are blended in and out by _holdStep; a change of kind lowers the arms first) */
+  _holdTo(p, use) {
+    let h = p.hold;
+    if (!use) { if (h) { h.target = 0; h.next = null; } return; }
+    if (!h) h = p.hold = { kind: use.kind, w: 0, target: 1, next: null, rig: null, variant: Math.floor(this.prng() * PHONE_VARIANTS), cap: false };
+    else if (h.kind === use.kind || h.w <= 0.02) { h.kind = use.kind; h.target = 1; h.next = null; } else { h.next = use.kind; h.target = 0; return; }
+    // the phone is coming out: take the arms as they are NOW, before the animation starts blending in the stock phone clip, so that the first frame of that blend (which swings the hands a tenth
+    // of the way to the face) is not shown either: the arms rise from this pose
+    if (h.w <= 0.02 && !h.dead && p.obj) {
+      if (!h.rig || h.rig.obj !== p.obj) { h.rig = new HoldRig(this.THREE, p.obj, h.variant); if (!h.rig.ok) { h.dead = true; return; } }
+      h.rig.capture(); h.cap = true;
+    }
+  }
+  /** One frame of the hold, after the mixer and the gait: ramp its weight, and lay the arms over the pose. snap = the person is not being animated (far, or a one-off pose): no ramp, the weight is the target. */
+  _holdStep(p, dt, snap) {
+    const h = p.hold; if (!h || h.dead) return; const w0 = h.w;
+    h.w = snap ? h.target : h.target > h.w ? Math.min(h.target, h.w + dt / HOLD_IN) : Math.max(h.target, h.w - dt / HOLD_OUT);
+    if (h.w <= 0 && h.next) { h.kind = h.next; h.next = null; h.target = 1; if (snap) h.w = 1; }
+    if (h.w <= 0) { if (h.rig) h.rig.hide(); return; }
+    if (!h.rig || h.rig.obj !== p.obj) { h.rig = new HoldRig(this.THREE, p.obj, h.variant); if (!h.rig.ok) { h.dead = true; return; } }
+    if (w0 <= 0) { if (h.cap) h.cap = false; else h.rig.capture(); }   // the arms rise from the pose they were in when the phone came out (taken in _holdTo), not from the stock phone clip's (which swings the hands to the face on its own, fast)
+    h.rig.apply(h.kind, h.w * h.w * (3 - 2 * h.w), h.target > 0);   // eased
+  }
+  /** phones on or off (off: whoever holds one lets go) */
+  setPhones(on) { this.phones = !!on; if (!on) for (const p of this.people) if (p.hold) { p.hold.target = 0; p.hold.next = null; p.dirty = true; } }   // (dirty: someone far away, who is not being animated, lets go on the next frame too)
   /** feet exactly on the surface (p.y): lowest sole over the clip sits on it; seated: pelvis contact on the seat top (p.seatY) */
   _yOffset(p) {
     const m = p.m; if (!m) return 0;
@@ -492,9 +539,11 @@ export class AnimCrowd {
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
       if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
-      const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible;
-      if ((animate || p.dirty) && p.gait && p.gait.rig) p.gait.rig.restore();   // the mixer's own pose back on the bones before it advances (see gait_three.js)
+      const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
+      if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
+      if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) this._gaitStep(p, dt); } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (hold && upd) this._holdStep(p, dt, !animate);
     }
   }
   // ------------------------------------------------------------------ the procedural walk (gait.js: the maths, gait_three.js: the skeleton)

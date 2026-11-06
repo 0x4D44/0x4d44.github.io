@@ -360,6 +360,25 @@ try {
   ok('every hall, both circles: each way out is a real staircase, climbable with W held, rising through the vault', portals.stairs.length === 0, portals.stairs.slice(0, 4).join(' | '));
   const pa = await ev(p, async () => { const bad = []; for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) { await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.render(); __sim.render(); const cl = __sim.crowdClearance(); if (cl.n > 3 && (cl.d < 2.4 || cl.front < 3)) bad.push(id + ': spawned ' + cl.d.toFixed(2) + ' m from the walker (front ' + cl.front.toFixed(1) + ')'); __sim.ff(8, 0.1); __sim.render(); __sim.render(); const a = __sim.peopleAudit(); if (a.platform < 3 || a.bad.length) bad.push(id + ':' + a.platform + ':' + a.bad.slice(0, 2).join(';')); } return bad; });
   ok('platform crowds (6 halls): nobody spawns within 2.4 m / the near view cone of the walker; soles on the platform, nobody inside furniture or each other', pa.length === 0, pa.join(' | '));
+  // phones: some of the people waiting are on one (typing, or a call), the phone in the right hand where the hold put it and the wrists on their targets; nobody is who should not be (children, staff, anyone
+  // on the move); setPhones(false) - what ?phones=0 does from the start - puts every one away, and setPhones(true) lets them take them out again
+  const pho = await ev(p, async () => {
+    const s = __sim.sim, o = { samples: 0, people: 0, holding: 0, text: 0, call: 0, steady: 0, shown: 0, strayed: 0, kids: 0, staff: 0, moving: 0, dead: 0, maxStray: 0, maxHand: 0, maxMiss: 0, maxFlex: 0, maxReach: 0 }, run = (sec) => { for (let i = 0; i < sec * 10; i++) { s.tick(0.1); s.sync(0.1); } };
+    for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) {
+      await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.render();
+      for (let k = 0; k < 4; k++) {
+        run(5); const a = __sim.phoneAudit(); o.samples++;
+        for (const f of ['people', 'holding', 'text', 'call', 'steady', 'shown', 'strayed', 'kids', 'staff', 'moving', 'dead']) o[f] += a[f];
+        for (const f of ['maxStray', 'maxHand', 'maxMiss', 'maxFlex', 'maxReach']) o[f] = Math.max(o[f], a[f]);
+      }
+    }
+    __sim.phones(false); run(3); const off = __sim.phoneAudit();   // the platform's crowd and the riders' (each train's saloon is a crowd of its own)
+    __sim.phones(true); run(25); const on = __sim.phoneAudit();
+    return { o, off, on };
+  });
+  ok('phones: people on the platform hold them (typing and calling), the phone in the hand where the hold put it, wrists on their targets', pho.o.people > 100 && pho.o.holding >= 10 && pho.o.text > 0 && pho.o.call > 0 && pho.o.steady > 0 && pho.o.strayed === 0 && pho.o.maxMiss < 0.03 && pho.o.maxFlex < 150 && pho.o.maxReach < 0.95 && pho.o.dead === 0, JSON.stringify(pho.o));
+  ok('phones: no child, no member of staff and nobody on the move is ever on one', pho.o.kids === 0 && pho.o.staff === 0 && pho.o.moving === 0, JSON.stringify({ kids: pho.o.kids, staff: pho.o.staff, moving: pho.o.moving }));
+  ok('phones: setPhones(false) puts every phone away (none held, none shown), setPhones(true) brings them back', !pho.off.phonesOn && pho.off.holding === 0 && pho.off.shown === 0 && pho.on.phonesOn && pho.on.holding > 0, JSON.stringify({ off: pho.off, on: pho.on }));
   await p.close();
   // ---------------------------------------------------------------- the stairs for real: climb with W through the full sim, reach the ticket hall, come back down
   p = await open(browser, 'mode=explore&station=shields-road&line=outer');
@@ -419,6 +438,18 @@ try {
   const trains = Object.values(salA.before);
   ok('the other circle\'s train carries passengers too: every car of BOTH trains has riders, and the ones in view are shown', salA.bgDwell && trains.length === 2 && trains.every((t) => t.built && t.perCar.length === 4 && t.perCar.every((c) => c >= 1) && (!t.trainVisible || t.shown.every((c, i) => c >= 1 || t.near[i] === 0))), JSON.stringify(salA.before));   // a car with nobody inside the crowd's view range (a train still pulling in or away) is rightly undrawn
   ok('riders of both circles pass the people audit (feet, seats, ceiling, walls, overlaps)', salA.audit.bad.length === 0 && Object.keys(salA.audit.trains).length === 2, JSON.stringify(salA.audit));
+  // phones on the train: a rider on one (seated) has it where the hold put it; no child and no member of staff has one
+  const salP = await ev(p, () => {
+    const s = __sim.sim, o = { samples: 0, people: 0, holding: 0, sit: 0, steady: 0, strayed: 0, kids: 0, staff: 0, moving: 0, dead: 0, maxStray: 0, maxHand: 0, maxMiss: 0, maxFlex: 0, maxReach: 0 };
+    for (let k = 0; k < 6; k++) {
+      for (let i = 0; i < 40; i++) { s.tick(0.05); s.sync(0.05); }   // a couple of seconds of the riders' lives between samples
+      const a = __sim.phoneAudit(); o.samples++;
+      for (const f of ['people', 'holding', 'sit', 'steady', 'strayed', 'kids', 'staff', 'moving', 'dead']) o[f] += a[f];
+      for (const f of ['maxStray', 'maxHand', 'maxMiss', 'maxFlex', 'maxReach']) o[f] = Math.max(o[f], a[f]);
+    }
+    return o;
+  });
+  ok('phones on the train: whoever holds one (seated) has it where the hold put it, the arms inside what arms can do; no child, no member of staff', salP.people > 0 && salP.strayed === 0 && salP.kids === 0 && salP.staff === 0 && salP.dead === 0 && salP.maxMiss < 0.03 && salP.maxFlex < 150 && salP.maxReach < 0.95, JSON.stringify(salP));
   // sound at the island platform: the other circle's train opens and closes its doors across the platform, and you hear it - from its doorways, to the left or right, fainter with distance
   const kps = await ev(p, async () => {
     const s = __sim.sim, T = s.THREE, o = {}, m = await import('/glasgow-subway/js/sim/audio.js');

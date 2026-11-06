@@ -213,6 +213,30 @@ class Sim {
     }
     return out;
   }
+  /** Regression audit of the phones (platform crowd and both circles' riders): who holds one, that a steady hold has the phone where it was meant to be (the hold's own target, in the right
+   *  hand) with the wrists on their targets, and that nobody holds one who should not (children, staff, anyone on the move). */
+  _phoneAudit() {
+    const T = this.THREE, ph = new T.Vector3(), hd = new T.Vector3(), want = new T.Vector3();
+    const out = { people: 0, holding: 0, text: 0, call: 0, sit: 0, shown: 0, steady: 0, strayed: 0, maxStray: 0, maxHand: 0, maxMiss: 0, maxFlex: 0, maxReach: 0, kids: 0, staff: 0, moving: 0, dead: 0, phonesOn: true };
+    for (const cr of [this.crowd, ...Object.values(this.views).map((tv) => tv.saloon)]) {
+      if (!cr || !cr.people) continue; if (cr.phones === false) out.phonesOn = false;
+      for (const p of cr.people) {
+        if (!p.obj) continue; out.people++;
+        const h = p.hold; if (!h) continue; if (h.dead) { out.dead++; continue; }
+        const rig = h.rig, phone = rig && rig.phone; let shown = !!(phone && phone.visible); for (let o = p.obj; shown && o; o = o.parent) shown = o.visible;   // (drawn: visible all the way up to the scene)
+        if (h.target > 0 && h.w > 0.02) { out.holding++; out[h.kind]++; if (p.char.kid) out.kids++; if (p.char.staff) out.staff++; if (p.v > 0.2) out.moving++; }
+        if (shown) out.shown++;
+        if (!shown || h.target <= 0 || h.w < 0.999 || !rig.dbg) continue;   // (only a hold that has finished coming out has to be where it was meant to be)
+        out.steady++; phone.getWorldPosition(ph); rig.by.hand_r.getWorldPosition(hd);
+        const C = rig.dbg.ph.C; want.set(C[0], C[1], C[2]).applyMatrix4(p.obj.matrixWorld);   // the target, from the clone's frame into the world
+        const arms = Object.values(rig.dbg.err), stray = ph.distanceTo(want), inHand = ph.distanceTo(hd), miss = Math.max(...arms.map((e) => e.miss));
+        out.maxStray = Math.max(out.maxStray, stray); out.maxHand = Math.max(out.maxHand, inHand); out.maxMiss = Math.max(out.maxMiss, miss);
+        out.maxFlex = Math.max(out.maxFlex, ...arms.map((e) => e.flex)); out.maxReach = Math.max(out.maxReach, ...arms.map((e) => e.reach));   // the elbow's bend (degrees from straight) and how far out the wrist is (1 = the arm at full stretch)
+        if (stray > 0.04 || inHand > 0.14) out.strayed++;
+      }
+    }
+    return out;
+  }
   async _opt(path) {
     try { const g = await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); return g.scene; } catch (e) { console.warn('[sim] optional model missing', path); return null; }
   }
@@ -1375,7 +1399,7 @@ class Sim {
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
       stationView: async (i) => this._prepare(i),
-      peopleAudit: () => this._peopleAudit(), rats: () => this.rats,
+      peopleAudit: () => this._peopleAudit(), phoneAudit: () => this._phoneAudit(), phones: (on) => { for (const cr of [this.crowd, ...Object.values(this.views).map((tv) => tv.saloon)]) if (cr && cr.setPhones) cr.setPhones(on); }, rats: () => this.rats,
       saloons: () => { const out = {}, cam = this.camera.position, v = new this.THREE.Vector3(); for (const [line, tv] of Object.entries(this.views)) { const sc = tv.saloon, perCar = tv.cars.map(() => 0), shown = tv.cars.map(() => 0), near = tv.cars.map(() => 0); if (sc) for (const q of sc.people) { const ci = tv.cars.indexOf(q.parent); if (ci >= 0) { perCar[ci]++; if (q.obj && q.obj.visible) shown[ci]++; if (q.obj && (q.obj.getWorldPosition(v), v.distanceTo(cam) < sc.rVis)) near[ci]++; } } out[line] = { player: tv === this.trainView, built: !!tv.saloonDone, trainVisible: tv.root.visible, enabled: !!(sc && sc.enabled !== false), perCar, shown, near, total: perCar.reduce((a, b) => a + b, 0) }; } return out; },   // near = riders within the crowd's view range (rVis) of the camera: the only ones that are meant to be drawn
       peopleBind: () => { const c = this.crowd, T = this.THREE; if (!c.chars) return null; let miss = 0, tracks = 0, lodMiss = 0; const bad = new Set();
         for (const lod of [false, true]) for (const ch of c.chars) { if (lod && !ch.lodNode) continue; const o = c._clone(ch, lod); const seen = new Set();
