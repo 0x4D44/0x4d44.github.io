@@ -9,96 +9,110 @@ This note is the rubric, how it is measured, where its targets come from, and a 
 ## How it is measured
 1. **The game's own code walks the person.** `tools/people_motion.html` loads `models/people.glb`, builds an `AnimCrowd`, and drives one person through the real `crowd._step` / `crowd.update` with a scripted plan (stand, walk at speed v, turn, stop). No renderer is needed (the skinning runs on the CPU). Every frame at 60 Hz it records 26 landmarks in world space: 19 bone origins, plus heel, toe, ball-of-foot (sole) and nose points carried rigidly by their bones, their offsets measured once from the skinned foot and head geometry of a clone in the rest pose; and `shoeY`, the lowest vertex of the rendered shoes, which the floor items read in place of the landmarks (see Revisions 3-5).
 2. **Scenarios** (`SCEN` in the metrics): steady walks at 0.4, 0.8, 1.2, 1.6 and 1.9 m/s (7 s of a 13 s walk judged, after it settles; 10.5 s of the 0.4 m/s walk, so that it still holds three strides), a start-and-stop over 6.5 m, 90-degree turns left and right at 1.2 m/s, and a 120-degree turn on the spot. People: six by default (adult man, woman, boy, elderly man, schoolgirl in a kilt, woman in a coat), or `--people all` for the 30. A person capped by the game below the requested speed is judged at the speed actually walked, against what a person of that leg length should do at that speed.
-3. **Gait events** come from the foot's position relative to the pelvis, not from floor contact (Zeni, Richards & Higginson 2008): a foot is at heel strike when it is furthest ahead of the pelvis and at toe-off when furthest behind. So a foot that skates or floats is segmented the same way as a planted one, and the floor is judged separately (a sole point within 8 mm of the floor is "on it"; slip is the horizontal speed of those points while they are on it and not lifting). How far the sole sinks, how high the planted sole floats and how long neither foot is down are judged on the rendered shoe instead (its lowest skinned vertex, every frame): the gait plants the landmarks itself, so they cannot be the witness of how well it does that. Slip is still measured on the landmarks.
+3. **Gait events** come from the foot's position relative to the pelvis, not from floor contact (Zeni, Richards & Higginson 2008): a foot is at heel strike when it is furthest ahead of the pelvis and at toe-off when furthest behind. So a foot that skates or floats is segmented the same way as a planted one, and the floor is judged separately (a sole point within 8 mm of the floor is "on it"; slip is the horizontal speed of those points while they are on it and not lifting). How far the sole sinks, how high the planted sole floats and how long neither foot is down are judged on the rendered shoe instead (its lowest skinned vertex, every frame): the gait plants the landmarks itself, so they cannot be the witness of how well it does that. Slip is still measured on the landmarks. (Since revision 7 slip, clearance and the contact times are judged on the rendered shoe too.) Since revision 9 every event is placed *between* frames - the vertex of the parabola through the three samples round the extremum - because a whole-frame heel strike is up to half a frame (8 ms at 60 Hz) out: quantisation alone would make a perfectly regular 1.1 s stride read about 0.6 % stride-time variability, and it put 0.5-2.6 mm of false "tremor" into a deterministic walk, which sub-frame cycles remove (0.07-1.16 mm). Stance and double support from the sole's actual contact with the floor are computed beside Zeni's (`stanceC`, `dsC`) and reported, not scored: they disagree with Zeni's by several points (see Revision 9).
 4. **Joint angles** are taken in the sagittal plane of the direction of *travel* (not the model's own heading, so a crab-walker is judged by where it goes), averaged over the left-heel-strike cycles. The ankle angle uses the rigid foot - the heel to the ball-of-foot sole point - not the heel to the toe tip: the toes bend separately at push-off, and a heel lifted 60 degrees off the floor reads as 30 if the toes are included.
 5. **Scoring.** Each sub-metric maps to 0-10 by a linear ramp between "full marks" and "no marks" (a band where both too much and too little are wrong). A category scores `0.6 x weighted mean + 0.4 x its worst item`, so one broken sub-metric cannot hide in an average. The overall score is the weighted mean of the ten categories (weights sum to 100). Expected values scale with speed and leg length by dynamic similarity (Alexander): `ve = v * sqrt(0.92 / hipHeight)`, cadence scales as `1/sqrt(leg)` (`expected()` in the metrics).
-6. **The gate** for "done": overall > 9.0, **and** every category >= 8.0, **and** no single steady recording below 8.0, **and** an independent reviewer who has tried to break the rubric and the measurements agrees.
+6. **The gate** for "done" (as hardened by revision 9). All of: overall > 9.0; **the 55 discriminating points > 9.0** (grounding, timing, legs, smoothness and starts/stops/turns: the categories whose targets are not the gait's own design numbers or a table both sides share - the first review showed the other 45 points can be earned by a walk built to them, so an overall of 9.4 hid 8.9 here); every category's mean >= 8.0 **and its 10th percentile over the recordings >= 8.0** (a category can hold 8 on average and fail one person in five); no single steady recording below 8.0; all of it measured on `--people all` (the whole roster of 30, every scenario at every speed) with the floor judged on the rendered shoe for everybody, because six chosen people can hide the one whose shoes hover; **and** an independent reviewer who has tried to break the rubric and the measurements agrees. `gateOf` (in the metrics) returns the list of clauses that fail, and the driver prints it.
 
 ## The rubric
 Weights: grounding 16, stride/cadence 10, timing 7, legs 13, pelvis/trunk 11, arms 13, head 5, smoothness 7, starts/stops/turns 12, speed range and individuality 6. The bands below are for a 0.92 m hip at 1.2 m/s (they scale with speed and leg length in the code).
 
+The last column says what a band rests on, so a reader can see how much of the score is anyone's data and how much is mine: **pub** - a number from a paper whose text or abstract I read; **derived** - derived from a published relation (the walk ratio) rather than copied from a table; **text** - a textbook norm I did not re-derive (the weakest published sources: see below); **phys** - physics (a sole cannot sink through the floor); **judge** - my judgement, with no source. Of the 100 points: pub 1.5, derived 14.0, text 30.2, phys 17.0, **judge 37.2**. More than a third of the rubric is my opinion, and the revision-9 items are nearly all in that class; a disagreement with a band there is a reasonable disagreement.
+
 <!--RUBRIC_TABLE-->
-| item | weight | measured | unit | full marks | no marks |
-|---|---|---|---|---|---|
-| GRD.slip | 7 | planted-foot slip, RMS | cm/s | <= 1.5 | >= 12 |
-| GRD.sink | 2 | deepest a sole goes below the floor | mm | <= 3 | >= 15 |
-| GRD.float | 2 | height of the planted sole | mm | <= 4 | >= 20 |
-| GRD.flight | 1.5 | time with neither foot on the floor | % | <= 2 | >= 15 |
-| GRD.clear | 1.5 | swing-foot clearance (mid-swing) | mm | 10 to 45 | <= 0 or >= 110 |
-| GRD.hipH | 2 | hip height / standing hip height |  | 0.93 to 1 | <= 0.84 or >= 1.04 |
-| STR.cad | 5 | cadence against speed | steps/min | 101.2 to 118.8 | <= 77 or >= 143 |
-| STR.step | 5 | step length against speed | m | 0.602 to 0.707 | <= 0.458 or >= 0.851 |
-| TIM.symT | 2 | left/right step-time difference | % | <= 3 | >= 12 |
-| TIM.symL | 1.5 | left/right step-length difference | % | <= 4 | >= 15 |
-| TIM.stance | 2 | stance share of the stride | % | 58 to 64 | <= 51 or >= 71 |
-| TIM.ds | 1.5 | double support | % | 18 to 26 | <= 10 or >= 34 |
-| LEG.hip | 3 | hip flexion-extension range | deg | 35.6 to 47.6 | <= 23.6 or >= 59.6 |
-| LEG.kneeSw | 3 | knee flexion peak in swing | deg | 54.2 to 68.2 | <= 39.2 or >= 83.2 |
-| LEG.kneeLd | 2 | knee flexion in loading response | deg | 8 to 24 | <= 0 or >= 40 |
-| LEG.kneeSt | 1 | knee in mid-stance (least flexion) | deg | 0 to 14 | <= -8 or >= 30 |
-| LEG.plantar | 2 | ankle plantarflexion at push-off | deg | -28 to -8 | <= -45 or >= 2 |
-| LEG.dorsi | 1 | ankle dorsiflexion in late stance | deg | 6 to 20 | <= 0 or >= 34 |
-| LEG.hsPitch | 1 | foot pitch at heel strike (toes up) | deg | 8 to 30 | <= 0 or >= 45 |
-| PEL.bob | 3 | pelvis vertical excursion, peak to peak | mm | 26 to 56 | <= 12 or >= 88 |
-| PEL.bobH2 | 1 | bob at twice the stride rate (two per stride) | share | >= 0.8 | <= 0.4 |
-| PEL.sway | 2 | pelvis lateral excursion, peak to peak | mm | 25 to 65 | <= 8 or >= 105 |
-| PEL.swayH1 | 1 | sway at the stride rate (one per stride) | share | >= 0.8 | <= 0.4 |
-| PEL.yaw | 1.5 | pelvis rotation, peak to peak | deg | 5 to 14 | <= 1.5 or >= 26 |
-| PEL.obl | 1 | pelvic obliquity, peak to peak | deg | 3 to 10 | <= 0.5 or >= 18 |
-| PEL.thorax | 1 | shoulder-line rotation, peak to peak | deg | 4 to 16 | <= 1 or >= 28 |
-| PEL.anti | 0.5 | thorax against pelvis rotation (correlation) | r | <= -0.5 | >= 0.4 |
-| ARM.range | 3 | upper-arm swing, peak to peak | deg | 24.8 to 44.8 | <= 9.8 or >= 59.8 |
-| ARM.phase | 3 | arm against same-side thigh (correlation) | r | <= -0.8 | >= -0.2 |
-| ARM.elbow | 2 | elbow flexion, mean | deg | 15 to 50 | <= 0 or >= 80 |
-| ARM.couple | 1 | elbow bends as the arm swings forward (correlation) | r | >= 0.6 | <= 0.1 |
-| ARM.sym | 2 | left/right swing difference | % | <= 15 | >= 50 |
-| ARM.clear | 2 | hand beyond the hip joint, closest | m | >= 0.03 | <= -0.02 |
-| HEA.pitch | 1.5 | head pitch, peak to peak | deg | <= 4 | >= 12 |
-| HEA.roll | 1 | head roll, peak to peak | deg | <= 3 | >= 10 |
-| HEA.yaw | 1 | head yaw, peak to peak | deg | <= 6 | >= 16 |
-| HEA.gaze | 1 | gaze pitch off level, mean | deg | <= 8 | >= 25 |
-| HEA.dir | 0.5 | head turned off the direction of travel, mean | deg | <= 6 | >= 20 |
-| SMO.hf | 2 | joint-angle power above 6 Hz | % | <= 2 | >= 12 |
-| SMO.rate | 2 | fastest joint-angle change | deg/s | <= 700 | >= 1800 |
-| SMO.rep | 1.5 | stride-to-stride difference, of the range | % | <= 5 | >= 25 |
-| SMO.jump | 1.5 | biggest one-frame move of a hand, foot or head | cm | <= 12 | >= 30 |
-| TRN.lat | 1.5 | walk command to first heel strike | s | <= 0.7 | >= 1.6 |
-| TRN.glide | 1.5 | distance covered before the first foot leaves the floor | m | <= 0.25 | >= 0.7 |
-| TRN.acc | 0.5 | peak acceleration setting off | m/s2 | <= 3 | >= 8 |
-| TRN.dec | 1.5 | peak deceleration stopping | m/s2 | <= 3 | >= 8 |
-| TRN.settle | 1.5 | time from arrival until the feet are still | s | <= 0.8 | >= 2.5 |
-| TRN.slide | 1.5 | distance the planted feet drag after arriving | cm | <= 3 | >= 15 |
-| TRN.stand | 1 | one foot ahead of the other once stopped | m | <= 0.22 | >= 0.45 |
-| TRN.tslip | 1 | planted-foot slip through a 90-degree turn, RMS | cm/s | <= 3 | >= 14 |
-| TRN.trate | 1 | fastest heading change in a walking turn | deg/s | <= 200 | >= 500 |
-| TRN.spin | 1 | foot drag turning 120 degrees on the spot | cm | <= 8 | >= 40 |
-| RNG.mono | 1.5 | cadence and step length both rise with speed (rank correlation) | r | >= 0.95 | <= 0.5 |
-| RNG.slope | 1.5 | step-length growth with speed, against normative | ratio | 0.7 to 1.3 | <= 0.2 or >= 2.2 |
-| RNG.cv | 2 | spread of cadence between people at 1.2 m/s | % CV | 2 to 15 | <= 0.3 or >= 30 |
-| RNG.legs | 1 | shorter legs, faster cadence (correlation with hip height) | r | <= -0.4 | >= 0.3 |
+| item | weight | measured | unit | full marks | no marks | basis |
+|---|---|---|---|---|---|---|
+| GRD.slip | 7 | planted-foot slip, RMS | cm/s | <= 1.5 | >= 12 | phys |
+| GRD.sink | 2 | deepest a sole goes below the floor | mm | <= 3 | >= 15 | phys |
+| GRD.float | 2 | height of the planted sole | mm | <= 4 | >= 20 | phys |
+| GRD.flight | 1.5 | time with neither foot on the floor | % | <= 2 | >= 15 | phys |
+| GRD.clear | 1.5 | swing-foot clearance (mid-swing) | mm | 10 to 45 | <= 0 or >= 110 | pub |
+| GRD.hipH | 2 | hip height / standing hip height |  | 0.93 to 1 | <= 0.84 or >= 1.04 | judge |
+| STR.cad | 5 | cadence against speed | steps/min | 100.781 to 118.308 | <= 76.681 or >= 142.408 | derived |
+| STR.step | 5 | step length against speed | m | 0.605 to 0.71 | <= 0.46 or >= 0.854 | derived |
+| TIM.symT | 2 | left/right step-time difference | % | <= 3 | >= 12 | judge |
+| TIM.symL | 1.5 | left/right step-length difference | % | <= 4 | >= 15 | judge |
+| TIM.stance | 2 | stance share of the stride | % | 58 to 64 | <= 51 or >= 71 | text |
+| TIM.ds | 1.5 | double support | % | 18 to 26 | <= 10 or >= 34 | text |
+| TIM.cvT | 1.5 | stride-time variability (CV) | % | 1 to 3.5 | <= 0.3 or >= 8 | judge |
+| TIM.cvL | 1 | step-length variability (CV) | % | 1 to 4 | <= 0.3 or >= 9 | judge |
+| LEG.hip | 3 | hip flexion-extension range | deg | 35.6 to 47.6 | <= 23.6 or >= 59.6 | text |
+| LEG.kneeSw | 3 | knee flexion peak in swing | deg | 54.2 to 68.2 | <= 39.2 or >= 83.2 | text |
+| LEG.kneeLd | 2 | knee flexion in loading response | deg | 8 to 24 | <= 0 or >= 40 | text |
+| LEG.kneeSt | 1 | knee in mid-stance (least flexion) | deg | 0 to 14 | <= -8 or >= 30 | text |
+| LEG.plantar | 2 | ankle plantarflexion at push-off | deg | -28 to -8 | <= -45 or >= 2 | text |
+| LEG.dorsi | 1 | ankle dorsiflexion in late stance | deg | 6 to 20 | <= 0 or >= 34 | text |
+| LEG.hsPitch | 1 | foot pitch at heel strike (toes up) | deg | 8 to 30 | <= 0 or >= 45 | text |
+| LEG.width | 1.5 | step width, heel to heel (- = crossed over) | m | 0.05 to 0.14 | <= 0 or >= 0.2 | judge |
+| PEL.bob | 3 | pelvis vertical excursion, peak to peak | mm | 26 to 56 | <= 12 or >= 88 | text |
+| PEL.bobH2 | 1 | bob at twice the stride rate (two per stride) | share | >= 0.8 | <= 0.4 | judge |
+| PEL.sway | 2 | pelvis lateral excursion, peak to peak | mm | 25 to 65 | <= 8 or >= 105 | text |
+| PEL.swayH1 | 1 | sway at the stride rate (one per stride) | share | >= 0.8 | <= 0.4 | judge |
+| PEL.yaw | 1.5 | pelvis rotation, peak to peak | deg | 5 to 14 | <= 1.5 or >= 26 | text |
+| PEL.obl | 1 | pelvic obliquity, peak to peak | deg | 3 to 10 | <= 0.5 or >= 18 | text |
+| PEL.thorax | 1 | shoulder-line rotation, peak to peak | deg | 4 to 16 | <= 1 or >= 28 | text |
+| PEL.anti | 0.5 | thorax against pelvis rotation (correlation) | r | <= -0.5 | >= 0.4 | text |
+| PEL.lean | 1.5 | trunk lean from the vertical, pelvis to neck (+ = forward) | deg | -4 to 12 | <= -16 or >= 28 | judge |
+| ARM.range | 3 | upper-arm swing, peak to peak | deg | 24.8 to 44.8 | <= 9.8 or >= 59.8 | text |
+| ARM.phase | 3 | arm against same-side thigh (correlation) | r | <= -0.8 | >= -0.2 | text |
+| ARM.elbow | 2 | elbow flexion, mean | deg | 15 to 50 | <= 0 or >= 80 | text |
+| ARM.couple | 1 | elbow bends as the arm swings forward (correlation) | r | >= 0.6 | <= 0.1 | text |
+| ARM.sym | 2 | left/right swing difference | % | <= 15 | >= 50 | judge |
+| ARM.clear | 2 | hand beyond the hip joint, closest | m | >= 0.03 | <= -0.02 | phys |
+| ARM.splay | 1.5 | hand outside its own shoulder line (95th percentile) | m | <= 0.1 | >= 0.2 | judge |
+| HEA.pitch | 1.5 | head pitch, peak to peak | deg | <= 4 | >= 12 | judge |
+| HEA.roll | 1 | head roll, peak to peak | deg | <= 3 | >= 10 | judge |
+| HEA.yaw | 1 | head yaw, peak to peak | deg | <= 6 | >= 16 | judge |
+| HEA.gaze | 1 | gaze pitch off level, mean | deg | <= 8 | >= 25 | judge |
+| HEA.dir | 0.5 | head turned off the direction of travel, mean | deg | <= 6 | >= 20 | judge |
+| HEA.poke | 1 | neck bone from the vertical (+ = head carried ahead of its base) | deg | <= 35 | >= 55 | judge |
+| HEA.still | 1 | head swing in pitch, roll and yaw together (a head that never moves is wrong too) | deg | >= 1.2 | <= 0.3 | judge |
+| SMO.hf | 2 | joint-angle power above 6 Hz | % | <= 2 | >= 12 | judge |
+| SMO.rate | 2 | fastest joint-angle change | deg/s | <= 700 | >= 1800 | judge |
+| SMO.rep | 1.5 | stride-to-stride difference, of the range | % | <= 5 | >= 25 | judge |
+| SMO.jump | 1.5 | biggest one-frame move of a hand, foot or head | cm | <= 12 | >= 30 | phys |
+| SMO.trem | 1.5 | shake of hand, head, spine or pelvis, not stride-locked (RMS, worst landmark) | mm | <= 1.5 | >= 6 | judge |
+| TRN.lat | 1.5 | walk command to first heel strike | s | <= 0.7 | >= 1.6 | judge |
+| TRN.glide | 1.5 | distance covered before the first foot leaves the floor | m | <= 0.25 | >= 0.7 | judge |
+| TRN.acc | 0.5 | peak acceleration setting off | m/s2 | <= 3 | >= 8 | judge |
+| TRN.dec | 1.5 | peak deceleration stopping | m/s2 | <= 3 | >= 8 | judge |
+| TRN.settle | 1.5 | time from arrival until the feet are still | s | <= 0.8 | >= 2.5 | judge |
+| TRN.slide | 1.5 | distance the planted feet drag after arriving | cm | <= 3 | >= 15 | phys |
+| TRN.stand | 1 | one foot ahead of the other once stopped | m | <= 0.22 | >= 0.45 | judge |
+| TRN.tslip | 1 | planted-foot slip through a 90-degree turn, RMS | cm/s | <= 3 | >= 14 | judge |
+| TRN.trate | 1 | fastest heading change in a walking turn | deg/s | <= 200 | >= 500 | judge |
+| TRN.spin | 1 | foot drag turning 120 degrees on the spot | cm | <= 8 | >= 40 | judge |
+| RNG.mono | 1.5 | cadence and step length both rise with speed (rank correlation) | r | >= 0.95 | <= 0.5 | derived |
+| RNG.slope | 1.5 | step-length growth with speed, against normative | ratio | 0.7 to 1.3 | <= 0.2 or >= 2.2 | derived |
+| RNG.cv | 2 | spread of cadence between people at 1.2 m/s | % CV | 2 to 15 | <= 0.3 or >= 30 | judge |
+| RNG.legs | 1 | shorter legs, faster cadence (correlation with hip height) | r | <= -0.4 | >= 0.3 | derived |
 <!--/RUBRIC_TABLE-->
 
 Where the normative targets come from:
-- **Cadence against speed** - a table of steps/min against speed for healthy adults (62 at 0.4 m/s, 90 at 0.8, 110 at 1.2, 126 at 1.6, 143 at 2.0), with step length = speed / cadence. Consistent with the stride/cadence/speed relations of Grieve & Gear (1966), the reference data of Oberg, Karsznia & Oberg (1993) and the comfortable-speed norms of Bohannon (1997; 1.27-1.46 m/s by age and sex). The table values are my reading of those, not their tables.
+- **Cadence against speed** - from revision 9 the reference is the **walk ratio**, step length / cadence = 0.006 m per step/min, which is close to constant over the comfortable speeds of healthy adults (Sekiya et al. 1996; Zijlstra 2008; Bogen et al. 2018 - **I read these only through a 2023 review, not the papers**), scaled to other leg lengths by dynamic similarity: `cadence = sqrt(60 ve / 0.006) sqrt(0.92 / L)`. Before it, the reference was a table of steps/min against speed (62 at 0.4 m/s, 90 at 0.8, 110 at 1.2, 126 at 1.6, 143 at 2.0) that was *also the table the gait is built from*, so scoring the gait against it asked the gait whether it agreed with itself (a finding of the first review). The two agree to within 2.1 % for all four test bodies from 0.4 to 1.9 m/s (a unit test), so the STR scores did not move, but the check is now against a different published relation. The table is consistent with Grieve & Gear (1966), the reference data of Oberg, Karsznia & Oberg (1993) and the comfortable-speed norms of Bohannon (1997; 1.27-1.46 m/s by age and sex); its values were my reading of those, not their tables.
 - **Hip and knee range, arm swing, stance and double support** - `26 + 13 ve` degrees of hip flexion-extension, `48 + 11 ve` of peak swing knee flexion, `12 + 19 ve` of arm swing, stance `61 - 6.4 (ve - 1.2)` %, double support `22 - 6 (ve - 1.2)` %. These are straight lines I fitted by eye to the ranges in standard gait texts (Perry & Burnfield, *Gait Analysis*; Winter, *Biomechanics and Motor Control of Human Movement*), and are the weakest numbers here.
 - **Pelvis** - vertical excursion of about 4 cm at 1.2 m/s, lateral about 4-6 cm, rotation about 5-14 degrees and obliquity 3-10 degrees peak to peak, with the thorax counter-rotating: the classic descriptions of Saunders, Inman & Eberhart (1953). Their "six determinants" *explanation* of why has been questioned (Lin, Gfoehler & Pandy 2014); the rubric only uses the observed excursions.
 - **Arms** swing in antiphase with the same-side leg, with the elbow flexed and bending more as the arm swings forward, and the amplitude grows with speed (Meyns, Bruijn & Duysens 2013, "The how and why of arm swing during human walking", *Gait & Posture* 38(4):555-562).
 - **Footskate** is the standard complaint about cheap walk cycles; the standard cure is planting the foot and solving the leg to it (Kovar, Schreiner & Gleicher 2002, "Footskate Cleanup for Motion Capture Editing", SCA 2002). Boulic, Magnenat-Thalmann & Thalmann (1990, "A global human walking model with real-time kinematic personification", *The Visual Computer* 6(6):344-358) derive step length and cadence from speed and leg length in just this way.
 - **Phones** (a later item): Schabrun et al. (2014, "Texting and walking: strategies for postural control and implications for safety", *PLoS ONE* 9(1):e84312) - slower, shorter steps, head flexed, less trunk and arm motion.
+- **Variability** (revision 9, `TIM.cvT`, `TIM.cvL`): the stride-time variability of healthy young adults is low, generally under about 3 % CV, and grows as walking slows (Beauchet et al. 2009, *J NeuroEng Rehabil* 6:32, abstract read); at a preferred speed step length varied 2.0 % (CV) and speed 2.3 % in Collins & Kuo (2013, abstract read). The **upper** ends of the bands (3.5 % and 4 % for full marks) are those numbers with some slack; the **lower** ends (1.0 %) are my judgement - I have no source for where a too-regular walk starts to look mechanical, only the argument that real walkers are not metronomes and a rubric that rewards 0.1 % rewards the wrong thing.
+- **Step width** (`LEG.width`): Collins & Kuo (2013) report 0.168 +- 0.044 m (CV 15.4 %) measured between forefoot markers. The rubric measures **heel to heel**, which is smaller, and I have not verified a heel-to-heel figure: the band 0.05-0.14 m is my judgement, set to reject feet that cross (negative width) and a wide base (0.20 m) while accepting a normal narrow walk.
+- **Trunk lean, hand splay, head poke, head stillness, tremor** (`PEL.lean`, `ARM.splay`, `HEA.poke`, `HEA.still`, `SMO.trem`): **no source for these bands; all are judgement.** They exist because the first review showed the old rubric could not tell a 35-degree stoop, hands held 15 cm out, a head poked 15 cm forward, a rigid head or a 5 Hz shake from a good walk. Each was added with a negative control (below). `ARM.splay` in particular was set **after** I had measured 8-11 cm of splay in the gait's own arms (it holds them 6 degrees out from the body so sleeves clear the torso); the band [0.10, 0.20] m fits what the game does and is honestly a loose reading of "hands near the body".
 
 Verified this session by search: Zeni et al. 2008 (*Gait & Posture* 27(4):710-714), Grieve & Gear 1966 (*Ergonomics* 9(5):379-399), Oberg et al. 1993 (*J Rehabil Res Dev* 30(2):210-223), Saunders et al. 1953 (*J Bone Joint Surg Am* 35-A:543-558), Bohannon 1997 (*Age and Ageing* 26(1):15-19), Meyns et al. 2013, Kovar et al. 2002, Boulic et al. 1990, Schabrun et al. 2014. Also read this session (round 2): the abstract of Winter 1992, "Foot trajectory in human gait: a precise and multifactorial motor control task" (*Physical Therapy*): minimum toe clearance 1.29 cm with about 4 mm variability, 11 subjects, 10 trials each; and Beauchet et al. 2009 (*J NeuroEng Rehabil* 6:32): stride-time variability of healthy young adults is low (generally under about 3 % CoV) and grows as walking slows. Cited from memory and **not** re-checked: Perry & Burnfield (the texts' roughly 15 degrees of loading-response and 60 degrees of peak swing knee flexion were seen only on teaching sites), Winter's book, Alexander's dynamic similarity, Lin et al. 2014 (seen only as a search snippet). I did not read the full text of any of them; the numbers above are summaries, not quotations.
 
 ## What it does not judge
-Cloth and hair, faces, sound, sitting / phone / talk poses (only standing and walking are scored), how people avoid each other, and anything you would only see by watching: a gait that scores 9 here could still look off in a way these 56 numbers do not capture. Children and short people are judged against dynamic-similarity scaling of an adult norm, which is a convention, not a measurement of children.
+Cloth and hair, faces, sound, sitting / phone / talk poses (only standing and walking are scored), how people avoid each other, and anything you would only see by watching: a gait that scores 9 here could still look off in a way these 64 numbers do not capture. Children and short people are judged against dynamic-similarity scaling of an adult norm, which is a convention, not a measurement of children.
 
 ## How to run
 ```
 node tools/people_motion.mjs                          # default 6 people, all scenarios (about 20 s)
 node tools/people_motion.mjs --gait clip              # the old clip-driven walk, for comparison
 node tools/people_motion.mjs --items --worst 3        # every sub-metric, and the three worst recordings in detail
-node tools/people_motion.mjs --people all --json out.json --rec recs --film films
+node tools/people_motion.mjs --people all --json out.json --rec recs --film films   # the whole roster: the only run the gate can be met on
+node tools/people_motion.mjs --from recs              # re-score kept recordings (no browser; seconds)
 ```
-`--no-mesh` leaves out the rendered-shoe channel (the floor, slip, clearance and contact items then read the landmarks). `--detail 1` records the simplified far-crowd model instead of the full-detail one. `--rec DIR` keeps the raw recordings (landmarks, `shoeY` and the per-foot `shoe` channel per frame) so someone else can re-score or plot them; `--film DIR` writes side, front and top filmstrips of a stride at 1.2 m/s. Needs Playwright (like `tools/people_holes.mjs`).
+`--no-mesh` leaves out the rendered-shoe channel (the floor, slip, clearance and contact items then read the landmarks). `--detail 1` records the simplified far-crowd model instead of the full-detail one. `--rec DIR` keeps the raw recordings (landmarks, `shoeY` and the per-foot `shoe` channel per frame, and a `meta.json` saying who was recorded, doing what, and with which instrument) so someone else can re-score or plot them, and `--from DIR` does exactly that without a browser - refusing if the recordings were made to different scenarios than the metrics now hold, and reading the roster from `meta.json` so a re-score of six people cannot be passed off as the whole roster; the printout carries the hash of `motion_metrics.mjs` so a score can be tied to the instrument that gave it; `--film DIR` writes side, front and top filmstrips of a stride at 1.2 m/s. Needs Playwright (like `tools/people_holes.mjs`).
 
 ## Revisions to the rubric after the first scores
 The metrics were written before the procedural gait existed, and the first runs of the gait showed two of them were wrong. Both are disclosed here because they were changed *after* seeing scores, so a reader can judge whether they flatter the result. Neither changes the verdict on the clip walk: the baseline moves from 3.73 to 3.78.
@@ -131,6 +145,53 @@ The independent review (below) found that the gait's remaining worst recordings 
 **What it cost.** The swing knee peak fell 4-6 degrees and the hip range 2, so LEG is now only 0.2-0.3 above its 8.0 floor. Mid-swing clearance did not change (25.0 -> 24.8 mm); the loss is in early swing, where the old gait lifted the ankle by the shoe's toe spring more than it was designed to, because the toe landmark sat below the real toe. I have not won it back by raising the clearance parameter: that would be tuning to the metric without a physical argument, and Winter's minimum toe clearance is 1.29 cm (about 4 mm spread; *Physical Therapy*, 1992, abstract read), so 25 mm is already generous. The swing knee is now 53-54 degrees where the texts say about 60, and that is open. **What is left of the slip** (shoe: 5.8-6.3 cm/s for the worst women at 1.9 m/s): the horizontal pivots are still the nominal heel point and ball joint while the real contact vertex rolls along a rounded heel; a pivot-to-contact error of 10-15 mm times 3-6 rad/s is 3-6 cm/s. A rolling-contact horizontal planting would remove it and is not done. Residual vertical error: up to 1.5 mm for Oxford heels (the calf's 14 % skinning share is neglected), and the profile treats the shank as turning with the foot (error bounds measured against the real mesh: 0.2 mm in a walk-like pose, up to 3 mm with the calf unrotated).
 
 Not changed, and worth an adversary's attention: the bands (my reading of the norms, not data), the Zeni events (they overstate stance share and double support when the foot slows against the pelvis before it lands: the gait reads 63.7 % stance / 27 % double support against 61 / 22 expected, and I have left that in the score rather than widen the band), and the fastest rungs of the speed ladder (1.9 m/s is above the Froude-0.4 walking limit for the boy, 1.66 m/s, and above anything the game's own crowd ever walks, 1.6 m/s at most: it is kept because removing the hard case would flatter the score).
+
+### Round 2, part 2: what the independent review found, and a harder instrument (revision 9)
+The first independent review (a separate agent told to break the rubric and the measurements, with its own scripts driving the game's recorder) said the 9.4 was overstated. Its findings, as I recorded them, and what I did about each:
+
+- **The 55 points that matter were below the line.** Grounding, timing, legs, smoothness and starts/stops/turns are the categories whose targets are not the gait's own design numbers. On those 55 points the gait scored 8.91 (LOD0) and 8.87 (LOD1) against the 9.0 a gate needs; I reproduce 8.91 and 8.85 on today's recordings (below). The other 45 points (stride, pelvis, arms, head, range) are bands round amplitudes the gait is designed to produce, and a walk built to them scores 10 there. **Done:** the gate now includes "the 55 points > 9".
+- **STR and RNG were circular.** Cadence against speed was checked against the very table the gait's cadence comes from. **Done:** the reference is the walk ratio (see Sources), a relation the gait was not built from; the two agree to 2.1 % at worst (a unit test holds them under 4 %), so the scores did not move (STR 10.0 -> 10.0; `RNG.mono` 1.000 -> 0.977 and `RNG.slope` 0.998 -> 0.982, both still 10.0).
+- **Eight spoiled walks scored exactly as the good one.** A 35-degree stoop, feet 12 cm further apart, feet crossing over, hands held 15 cm out, a head poked 15 cm forward, a rigid head, a 5 Hz shake of the hands and a 5 Hz shake of the trunk each changed their category by **0.00** (`motion.test.mjs` now holds all eight as negative controls). **Done:** eight new items - `LEG.width`, `PEL.lean`, `ARM.splay`, `HEA.poke`, `HEA.still`, `SMO.trem` and, for the variability the reviewer also asked for, `TIM.cvT` and `TIM.cvL`. With them each of the eight costs its category 3.1-4.9 points and takes it under 7:
+
+| the walk is spoiled by | category | before (old items) | after (new items) |
+|---|---|---|---|
+| a 35 degree stoop | PEL | 10.00 -> 10.00 | 10.00 -> 5.28 |
+| feet 12 cm further apart | LEG | 7.89 -> 7.89 | 7.95 -> 4.87 |
+| feet crossing over (step width -6 cm) | LEG | 7.89 -> 7.89 | 7.95 -> 4.87 |
+| hands held 15 cm out | ARM | 10.00 -> 10.00 | 9.61 -> 5.38 |
+| head poked 15 cm forward | HEA | 10.00 -> 10.00 | 10.00 -> 5.14 |
+| head held rigid | HEA | 10.00 -> 10.00 | 10.00 -> 5.14 |
+| 5 Hz, 1.5 cm shake of both hands | SMO | 9.70 -> 9.70 | 9.72 -> 4.87 |
+| 5 Hz, 8 mm shake of the trunk | SMO | 9.70 -> 9.70 | 9.72 -> 4.87 |
+
+  (man_commuter at 1.2 m/s from the emulator in `gait_emu.mjs`. The good walk's own ARM falls from 10.00 to 9.61 because it already carries the 8-11 cm of splay. A category is 0.6 x the weighted mean + 0.4 x its worst item, so an item at zero takes 0.4 x the category's previous worst score off it, and its share of the mean as well.)
+- **A metronome got full marks.** The gait repeats itself: stride-time variability 0.145 % (CV) and step-length variability 0.311 % on the roster, where healthy walkers are about 1-3 % (Sources). **Done:** `TIM.cvT` and `TIM.cvL` score the gait **0.0** and **1.1**. This is not a mistake of the metric, and it is the largest single thing the revision does to the score. Real walkers are not that regular, and a rubric that cannot say so rewards the wrong thing.
+- **A category mean hides one person in five.** **Done:** every category must also hold 8 at its 10th percentile over the recordings. On the *old* items the gait's 10th percentiles were already GRD 7.58, TIM 7.50 and LEG 7.04: the earlier 9.4 was reached with three categories each failing the person in ten at the bottom of the roster.
+- **Six chosen people can hide the worst of thirty,** and so can a recording that drops to 6.94 behind a mean of 9.4. **Done:** the gate counts only on `--people all` with every scenario at every speed, and `--rec` / `--from` carry the roster in `meta.json` so that a re-score of six cannot pass as the whole.
+- **The shoe channel could silently turn itself off,** or match something that is not a shoe, and hand the floor back to the gait's own landmarks. **Done:** the recorder refuses a run when the pattern finds nothing, when a matched mesh is not mostly on the foot bones, when one foot has no shoe, or when a shoe is not where its foot is (`shoeError`), and the gate says so. (A vertex-count rule was tried first and fired on a real shoe - the simplified model of man_student wears a 13,715-vertex sneaker, five times the full-detail one's 2,468 - so the rule is now "over 70 % of the vertices are skinned at least half to the foot, ball or toe bones", which the jeans and every other mesh fail and every shoe passes.) That sneaker is an asset oddity worth fixing separately.
+- **Sampling-rate dependence.** Whole-frame events put 0.5-2.6 mm of false tremor and 0.8-1.0 % of false left/right asymmetry into a deterministic walk. **Done:** events are placed between frames (vertex of a parabola through three samples). `TIM.symT` read 0.80 % and `TIM.symL` 1.02 % on the roster; sub-frame they read 0.137 % and 0.153 %.
+- **Bands that looked lenient.** Not changed except where listed, and now labelled: the new `basis` column of the table says which bands rest on a published number (1.5 points of 100), a published relation (14), a textbook norm (30.2), physics (17) or my judgement (**37.2**).
+- **Revisions made after seeing scores.** The reviewer is right that every revision of the instrument in this file was made after seeing a score, and that I decide whether they flatter. Revision 9 is the first to go the other way on purpose (the headline falls), and its new items are tested against spoiled walks that were specified by the reviewer, not by me. The one band I set after seeing the data is `ARM.splay` (see Sources) - it is the item that costs the gait most outside TIM, and I have left it loose rather than tight.
+
+**What revision 9 does to the same recordings.** The committed gait (`2cd988bd`), recorded again today with the browser harness: 30 people x 5 speeds x the 4 scenarios, at both levels of detail, scored by the instrument as it stood (the `HEAD` copy of `motion_metrics.mjs`) and as it stands now. The old instrument reproduces the numbers this file already gave (9.40 / 9.36, worst recording 8.3 / 8.1), so nothing else has moved.
+
+| | LOD0 old -> new | LOD1 old -> new |
+|---|---|---|
+| overall | 9.40 -> **8.96** | 9.36 -> **8.94** |
+| the 55 discriminating points | 8.91 -> **8.35** | 8.85 -> **8.29** |
+| TIM timing and symmetry | 8.66 -> **4.17** | 8.62 -> **4.15** |
+| ARM arms | 10.00 -> **9.02** | 10.00 -> **9.09** |
+| LEG, GRD, SMO, TRN, STR, PEL, HEA, RNG | within 0.1 | within 0.1 |
+| 10th percentile: GRD / TIM / LEG / ARM | 7.58 / 7.50 / 7.04 / 10.0 -> 7.58 / **3.72** / 7.12 / **7.90** | 7.59 / 7.41 / 7.36 / 10.0 -> 7.59 / **3.70** / 7.44 / **7.98** |
+| 10th percentile: TRN (LOD1) | 9.39 -> 9.39 | 6.34 -> 6.34 |
+| worst recording | woman_coat @1.9 8.28 -> teen_girl @1.6 **7.87** | woman_puffer @1.9 8.13 -> woman_student @1.6 8.01 |
+| gate | met -> **NOT MET** (8 clauses) | met -> **NOT MET** (8 clauses) |
+
+Of the eight new items only three move this gait: `TIM.cvT` (0.02 of 10), `TIM.cvL` (1.1) and `ARM.splay` (7.9: the hands hang 12 cm outside the shoulder line, because the gait holds the arms 6 degrees out so sleeves clear the torso). The other five - width 8.1 cm, lean 1.8 degrees, poke 19.8 degrees, head swing 3.2 degrees, tremor 0.42 mm - score the gait 10.0; they are there to catch a regression, and each is shown to by its negative control.
+
+**What else the new instrument says is wrong with the gait** (mean over the roster, LOD0): double support 27.4 % where about 22 is expected, stance 63.7 % (expected 61); and this is *not* only the Zeni events. The same quantities from the rendered shoe's contact with the floor (`stanceC`, `dsC`, an 8 mm threshold) are 63.5 % / 27.0 % at 1.2 m/s (65.5 / 31.1 at 0.8; 62.2 / 24.3 at 1.6) against 60.6 / 21.6 / 58.3 and 24.1 / 19.5 expected. An 8 mm threshold alone adds roughly 3 points to stance and 6 to double support if the foot arrives at and leaves the floor at about 0.5 m/s (a back-of-envelope figure, not a measurement), so contact cannot settle whether the gait is the 61 / 22 it is designed to be; at a 0.5 mm threshold I had earlier found 25.2 % against 22. The two readings agree that it is not better than about 63 / 25, and the band has not been widened. At 1.6 m/s the lowest-scoring recordings (the short-legged women, LOD1) show the swing knee at 50.8-53.6 degrees (about 60 expected), planted-foot slip of 4.3-6.7 cm/s and joint-angle power above 6 Hz of 4-5 %.
+
+**So the gate is not met, at either level of detail, and I am not saying it is.** Round 2's motion work is aimed at exactly these: stride-to-stride variability (seeded, with a per-person cadence trait), double support and stance, the swing knee, slip, arm splay, the 1.6 m/s corner of the roster, and the people-specific outliers (LOD1's 10th percentile for starts/stops/turns, 6.3).
 
 ## Results log
 ### Baseline: the clip-driven walk (before any change), `--gait clip`, six people
