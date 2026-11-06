@@ -58,6 +58,23 @@ function qAlign(d0, a0, d1, a1) {
 const rotX = (v, a) => { const c = Math.cos(a), s = Math.sin(a); return [v[0], v[1] * c - v[2] * s, v[1] * s + v[2] * c]; };
 const rotY = (v, a) => { const c = Math.cos(a), s = Math.sin(a); return [v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c]; };
 const smoother = (s) => { s = clamp(s, 0, 1); return s * s * s * (s * (6 * s - 15) + 10); };     // zero velocity and acceleration at both ends
+
+// ------------------------------------------------------------------------------------------------------------------------ variability
+/** Nobody walks like a metronome. The duration, the length and the width of one step each wander by a few per cent from step to step: the stride time of healthy adults varies by
+ *  1-3 % (Beauchet et al. 2009: usually below 3 %), the step length by about 2 % and the step width by 15 % or so (Collins & Kuo 2013: 2.0 % and 15.4 % on a treadmill, which holds
+ *  the speed fixed). Here the wander is a seeded pseudo-random sequence, so the same person always walks the same way and a test can repeat it:
+ *    T    the step's duration: sd of the phase rate's multiplier, redrawn at each heel strike (AR(1) with correlation rho between steps, and eased over tau seconds so the rate
+ *         never jumps)
+ *    L    the length of the step: sd of the factor on how far ahead of the pelvis the heel lands
+ *    W    the width of the step: sd of the factor on the half-width
+ *    toe  the foot angle at landing: sd of the foot's turn-out (rad)
+ *  g.var.vary scales all of it (0 = the metronome, which the tests keep as a control). */
+const VARY = { T: 0.026, rho: 0.35, tau: 0.09, L: 0.016, W: 0.12, toe: 1.5 * D2R };
+/** a small seeded generator (mulberry32) and a normal deviate clipped at 2.2 sd */
+function rng32(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const gauss = (r) => clamp(Math.sqrt(-2 * Math.log(r() || 1e-9)) * Math.cos(2 * PI * r()), -2.2, 2.2);
+/** a 32-bit hash of a string (FNV-1a): the seed of a person from their character's id */
+export const seedOf = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 const cosEase = (s) => 0.5 - 0.5 * Math.cos(PI * clamp(s, 0, 1));
 const wrap1 = (x) => x - Math.floor(x);
 const angDiff = (a, b) => { let d = (a - b) % (2 * PI); if (d > PI) d -= 2 * PI; if (d < -PI) d += 2 * PI; return d; };
@@ -144,9 +161,9 @@ export function makeBody(rig, foot) {
 
 // ------------------------------------------------------------------------------------------------------------------------ the gait's parameters
 /** Everything that depends on how fast this person walks. v in m/s; ve is the speed of a standard 0.92 m hip that walks the same way (dynamic similarity). */
-export function gaitParams(B, v) {
+export function gaitParams(B, v, cad = 1) {
   const Lh = B.Lh, ve = v * Math.sqrt(0.92 / Lh), kv = clamp(ve / 1.2, 0.3, 1.8);
-  const fs = stepRate(ve) * Math.sqrt(0.92 / Lh);                    // steps per second (dynamic similarity: an adult's cadence at the same dimensionless speed, scaled by 1 / sqrt(leg length))
+  const fs = stepRate(ve) * Math.sqrt(0.92 / Lh) * cad;             // steps per second (cad: this person's own cadence, a few per cent either side of the average) (dynamic similarity: an adult's cadence at the same dimensionless speed, scaled by 1 / sqrt(leg length))
   const SL = v / fs;                                                  // step length
   const S = clamp(0.61 - 0.05 * (ve - 1.2), 0.59, 0.64);            // stance share of the stride
   const P = { v, ve, fs, SL, S, ff: 0.1, ho: Math.max(0.3, S - 0.25), thHS: clamp((8 + 10 * kv) * D2R, 8 * D2R, 24 * D2R), thTO: clamp((36 + 22 * kv) * D2R, 34 * D2R, 78 * D2R) };
@@ -165,7 +182,7 @@ export function gaitParams(B, v) {
   P.lat = B.hipHalf - P.stepHalf;                                      // hip to ankle, sideways
   P.hMax = B.leg[0].ankleH - B.hipOff[0][1] + Math.sqrt(Math.max(1e-3, P.cL * P.cL - P.lat * P.lat));
   P.hPeak = Math.min(P.hMax, B.P0[B.ix.pelvis][1] + 0.004);          // the top of the bob: a little above the standing height (the rest pose has the knee a few degrees bent), and never beyond the legs' reach
-  P.hAt = (phi, amp = 1) => P.hPeak - P.bob * amp * 0.5 * (1 - Math.cos(4 * PI * (phi - P.bobPh)));
+  P.hAt = (phi, amp = 1, hp = P.hPeak, bp = P.bobPh) => hp - P.bob * amp * 0.5 * (1 - Math.cos(4 * PI * (phi - bp)));   // (hp, bp: the top and the phase of the bob the legs' reach has been fitted to - see trackReach)
   P.aH = 0.44 * P.SL;                                                 // the heel lands this far ahead of the pelvis (a little under half a step: the other foot is that far behind it at toe-off)
   P.bobPh = clamp((P.aH + B.heelBack) / (2 * P.SL), 0.2, 0.34);       // the pelvis is highest when the planted ankle is under the hip (the legs can reach furthest up), lowest a quarter stride earlier
   return P;
@@ -190,7 +207,9 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 /** A new gait state for a body. */
 export function newGait(B, opts = {}) {
   const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8],
-    var: Object.assign({ arm: 1, bob: 1, sway: 1, phase0: 0, yawBias: 0 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99 };
+    var: Object.assign({ arm: 1, bob: 1, sway: 1, phase0: 0, yawBias: 0, cad: 1, vary: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
+    rng: rng32(opts.seed != null ? opts.seed : 0x2f6e), eT: 0, rate: 1,      // eT, rate: the step-to-step wander of the timing (see VARY)
+    acc: 0, vPrev: null };                                                    // acc: how fast the body is speeding up (m/s^2, smoothed): the foot is put where the body will be
   return g;
 }
 
@@ -207,7 +226,9 @@ const toLocal = (g, x, z) => { const dx = x - g.x, dz = z - g.z, c = Math.cos(g.
 
 function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th1, clear }
   const cur = f.cur;
-  f.sw = { A0: cur.A.slice(), th0: cur.th, thb0: cur.thb, psi0: cur.psi, tgt: tgt, T: o.T || null, t: 0, s: 0, th1: o.th1, clear: o.clear, A1: null, m0: 0 };
+  const vy = g.var.vary;
+  f.sw = { A0: cur.A.slice(), th0: cur.th, thb0: cur.thb, psi0: cur.psi, tgt: tgt, T: o.T || null, t: 0, s: 0, th1: o.th1, clear: o.clear, A1: null, m0: 0,
+    kL: 1 + VARY.L * vy * gauss(g.rng), kW: 1 + VARY.W * vy * gauss(g.rng), dToe: VARY.toe * vy * gauss(g.rng) };   // this step's own length, width and foot angle (see VARY)
   f.mode = 'swing';
   // the foot leaves the floor already moving forward (it has been rolling over the toes): its path starts with that speed, not from rest
   const P = g.P, T = o.T || (P ? (1 - P.S) * 2 / Math.max(P.fs, 0.2) : 0), t1 = tgt || (P ? landTarget(g, f.s, P, 0) : null);
@@ -216,41 +237,90 @@ function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ the update
-const V_ON = 0.16, V_OFF = 0.09;
+const V_ON = 0.16, V_OFF = 0.09, ACC_TAU = 0.1, ACC_MAX = 3;   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
 /** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk),
  *  stopD (optional: the metres the body still has to travel along its heading before it comes to rest, for a person who is walking to a place to STAND - the last steps then land where
  *  they will stand instead of a stride ahead of it) } */
 export function gaitUpdate(g, dt, inp) {
   const B = g.body, F = g.feet;
+  if (dt > 0) g.acc += ((inp.v - (g.vPrev != null ? g.vPrev : inp.v)) / dt - g.acc) * (1 - Math.exp(-dt / ACC_TAU));   // (a frame of no time has no acceleration: dividing by it would poison every landing from then on)
+  g.vPrev = inp.v;
   g.x = inp.x; g.z = inp.z; g.yaw = inp.yaw; g.v = inp.v; g.t += dt; g.stopD = inp.stopD != null && inp.stopD >= 0 ? inp.stopD : null;
   if (!g.placed) { plantBoth(g); g.placed = true; for (let s = 0; s < 2; s++) { F[s].cur = footOut(g, F[s]); F[s].vA = [0, 0]; } }
   const want = !!inp.walking && (g.walking ? inp.v > V_OFF : inp.v > V_ON);
-  const P = g.P = gaitParams(B, Math.max(inp.v, 0));
+  const P = g.P = gaitParams(B, Math.max(inp.v, 0), g.var.cad);
   g.wk = clamp(g.wk + (want ? dt / WK_UP : -dt / WK_DN), 0, 1);       // how much of a walker the body is: the arms, the sway and the bob grow over the first steps and die away over the last
   if (want && !g.walking) {                                  // set off: the foot that trails swings first
     g.walking = true; g.walkT = 0;
     const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], ahead = F.map((f) => (f.H[0] - g.x) * fwd[0] + (f.H[1] - g.z) * fwd[1]), first = ahead[0] <= ahead[1] ? 0 : 1;
-    g.phase = wrap1(P.S + (first ? 0.5 : 0)); g.firstStep = true;
+    g.phase = wrap1(P.S + (first ? 0.5 : 0));
     for (let s = 0; s < 2; s++) F[s].th = 0;
   } else if (!want && g.walking) {                            // stop: a swinging foot lands where the body stands now, a planted one settles
     g.walking = false; g.stoppedAt = g.t;
     for (let s = 0; s < 2; s++) { const f = F[s]; if (f.mode === 'swing') { const t = standTarget(g, s); startSwing(g, f, { H: t.H, psi: t.psi }, { T: 0.3, th1: 0, clear: 0.05 * B.Lh }); } }
   }
-  if (g.walking) walkStep(g, dt, P); else standStep(g, dt);
+  if (g.walking) { P.fs *= g.rate; walkStep(g, dt, P); } else standStep(g, dt);   // (g.rate: how much faster or slower than its average this step is being taken)
   for (let s = 0; s < 2; s++) { const f = F[s], was = f.cur, now = footOut(g, f); f.vA = was && dt > 0 ? [(now.A[0] - was.A[0]) / dt, (now.A[2] - was.A[2]) / dt] : [0, 0]; f.cur = now; }
-  // The pelvis may not be higher than the legs can reach (lowerForReach), but when the cap lifts - the trailing foot leaves the floor and its reach is suddenly not a limit - the
-  // pelvis must not pop up with it (up to 6 cm in a frame for a short foot at a fast walk): it is let down at once and eased up with a time constant of H_TAU.
-  if (g.walking) { const hc = gaitTargets(g).hCap; g.hF = (g.hF == null || hc < g.hF) ? hc : g.hF + (hc - g.hF) * (1 - Math.exp(-dt / H_TAU)); } else g.hF = null;
+  if (g.walking) trackReach(g, dt); else { g.capB = null; g.fitT = null; if (g.capG) g.capG.fill(Infinity); }   // (the reach log starts afresh with each walk; the fit it made is kept for the next)
 }
-const H_TAU = 0.05;
 const WK_UP = 0.7, WK_DN = 0.5;   // s: the walking body language builds up over the first strides and is let go over half a second after the last
 
+// ------------------------------------------------------------------------------------------------------------------------ fitting the bob to the legs' reach
+/** The pelvis may not be higher than the legs can reach (lowerForReach), and at a brisk walk that is LOWER than the bob the stride asks for around each double support, where both
+ *  feet are far from the hips. Held to that cap alone the pelvis RODE it - the leading leg's cap collapses 3 cm in four frames as its foot reaches its mark and then notches as the
+ *  heel lands, the trailing leg's notches at toe-off - and it was eased back up afterwards, which turned every small dip into more of the same: a vertical stomp at every step of
+ *  20 - 58 m/s^2 (p99 of the pelvis's acceleration, over four people at 0.8 - 1.9 m/s; a walker's pelvis moves at about 2 - 6; max up to 93).
+ *  So the bob is FITTED to the reach instead. The cap alone (the pelvis lifted out of its way) is logged against the phase: the lowest it has been in each 1/CAP_NB of the stride.
+ *  The log forgets slowly (CAP_REC per visit - one long step does not lower the walk for good) and a deep notch faster (CAP_RK of whatever is more than CAP_RD below the cap now: a
+ *  stride that was twice as long is not worth 7 cm of the height for the next twenty seconds). The bob - keeping its own shape and size, so the stride keeps its rhythm - is slid down
+ *  (hp) and a little along the phase (bp) to the highest position that clears the log by CAP_MARG, and the pelvis follows that smoothly. The cap then binds only in the odd stride
+ *  that is much longer than the rest; the price is the height of the walk (the bob's top is found 10 - 30 mm below where the stomp had it, more at a brisk walk).
+ *  The first CAP_SETTLE seconds of a walk are not logged: the body is still speeding up, its feet are placed for a pelvis that has not got there yet, and a log that held those strides
+ *  (caps 5 - 11 cm lower than any later stride) kept the whole walk 20 mm too low for the 15 s it took to forget them. Until the log is whole the bob is lowered by CAP_PRIOR of its
+ *  own size, which is what it was found to need at every speed (0.4 - 0.5 of the bob), and the hand-over to the measured fit is the same smooth following. */
+const CAP_NB = 96, CAP_REC = 0.003, CAP_RK = 0.3, CAP_RD = 0.03, CAP_MARG = 0.002, CAP_SPAN = 0.08, CAP_EVERY = 6, CAP_TAU = 0.3, CAP_SETTLE = 2.5, CAP_PRIOR = 0.42;
+const CAP_CS = new Float64Array(CAP_NB), CAP_SN = new Float64Array(CAP_NB);
+for (let b = 0; b < CAP_NB; b++) { CAP_CS[b] = Math.cos(4 * PI * (b + 0.5) / CAP_NB); CAP_SN[b] = Math.sin(4 * PI * (b + 0.5) / CAP_NB); }
+function trackReach(g, dt) {
+  const P = g.P;
+  if (g.walkT < CAP_SETTLE) g.fitT = { hp: P.hPeak - CAP_PRIOR * P.bob * g.var.bob, bp: P.bobPh };   // (no log yet: what the bob has been found to need)
+  else {
+    const R = lowerForReach(g, gaitTargets(g), P, 10);
+    if (!g.capG) { g.capG = new Float32Array(CAP_NB).fill(Infinity); g.capN = 0; }
+    const b0 = Math.floor(wrap1(g.phase) * CAP_NB) % CAP_NB, G = g.capG;
+    if (g.capB == null || g.capB === b0) G[b0] = Math.min(R, G[b0]);            // (still in the same bin: it has been given its recovery already)
+    else for (let j = (g.capB + 1) % CAP_NB, n = 0; n < CAP_NB; n++, j = (j + 1) % CAP_NB) {   // every bin the phase has swept since the last frame
+      G[j] = R < G[j] ? R : Math.min(R, G[j] + CAP_REC + CAP_RK * Math.max(0, R - G[j] - CAP_RD));
+      if (j === b0) break;
+    }
+    g.capB = b0;
+    if (++g.capN % CAP_EVERY === 0 && G.every(Number.isFinite)) {                // (a fit to a log with gaps in it would be a fit to the stretch of the stride it has seen)
+      const amp = P.bob * g.var.bob; let bestM = -Infinity, bestBp = P.bobPh;
+      for (let bp = P.bobPh - CAP_SPAN; bp <= P.bobPh + CAP_SPAN + 1e-9; bp += 0.01) {   // the highest the bob's top can be, for each phase it could have
+        const c4 = Math.cos(4 * PI * bp), s4 = Math.sin(4 * PI * bp); let m = Infinity;
+        for (let b = 0; b < CAP_NB; b++) { const r = G[b] + amp * 0.5 * (1 - (CAP_CS[b] * c4 + CAP_SN[b] * s4)); if (r < m) m = r; }
+        if (m > bestM) { bestM = m; bestBp = bp; }
+      }
+      g.fitT = { hp: Math.min(P.hPeak, bestM - CAP_MARG), bp: bestBp };
+    }
+  }
+  if (g.fitT) {
+    if (!g.fit) g.fit = { hp: g.fitT.hp, bp: g.fitT.bp };
+    const a = 1 - Math.exp(-dt / CAP_TAU); g.fit.hp += (g.fitT.hp - g.fit.hp) * a; g.fit.bp += (g.fitT.bp - g.fit.bp) * a;   // (a step of the target every few frames would be a jolt: it is followed every frame)
+  }
+}
+
 function walkStep(g, dt, P) {
-  const F = g.feet; g.walkT += dt; g.phase = wrap1(g.phase + dt * P.fs * 0.5 * (g.v > 0.02 ? 1 : 0));
+  const F = g.feet, half0 = g.phase < 0.5 ? 0 : 1; g.walkT += dt; g.phase = wrap1(g.phase + dt * P.fs * 0.5 * (g.v > 0.02 ? 1 : 0));
+  if ((g.phase < 0.5 ? 0 : 1) !== half0) g.eT = VARY.rho * g.eT + Math.sqrt(1 - VARY.rho * VARY.rho) * VARY.T * g.var.vary * gauss(g.rng);   // a new step has begun: its own pace
+  g.rate += (1 + g.eT - g.rate) * (1 - Math.exp(-dt / VARY.tau));
   for (let s = 0; s < 2; s++) {
     const f = F[s], pf = wrap1(g.phase - (s ? 0.5 : 0));
     if (f.mode === 'stance') {
       if (pf >= P.S && pf < 0.97) {                         // toe-off: swing begins from the pose the foot has now
+        // (the roll of this frame first: f.th is still the one of the frame before, and the foot read through it at the instant of toe-off stood still for a frame - the ankle and the
+        // roll of the shoe stalled at every toe-off, and the pelvis, held by that leg's reach, lurched with them: part of the 20 - 58 m/s^2 vertical stomp of the pelvis, see trackReach)
+        f.th = stanceTh(P, pf);
         f.cur = footOut(g, f, pf); startSwing(g, f, null, { T: null, th1: P.thHS, clear: P.clear });
         // The foot did not leave the floor at the start of this frame but somewhere in the step since the last one: (pf - S) of the stride ago. Draw it that far into its swing, not at
         // the instant of toe-off. Left at s = 0 the foot stays on its toes for up to a whole frame too long (stance +1.6 % of the stride on average) and the whole of the knee's
@@ -284,15 +354,19 @@ function standStep(g, dt) {
 
 function land(g, f, P) {
   const t = f.sw.tgt || f.sw.mark || landTarget(g, f.s, P, 0);
-  f.H = t.H; f.psi = t.psi; f.mode = 'stance'; f.sw = null; f.landedAt = g.t; f.th = P ? P.thHS : 0; if (P) g.firstStep = false;
+  f.H = t.H; f.psi = t.psi; f.mode = 'stance'; f.sw = null; f.landedAt = g.t; f.th = P ? P.thHS : 0;
 }
 
 // where the heel will land: ahead of the pelvis by aH at the time of landing, stepHalf off the line of travel
 function landTarget(g, s, P, rem) {
   const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], rgt = [Math.cos(g.yaw), -Math.sin(g.yaw)], sgn = s ? 1 : -1;
-  const f = g.feet[s], T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), ahead = P.aH * (g.firstStep ? 0.75 : 1) + P.v * T;
-  const toe = (g.var.yawBias + (sgn > 0 ? -6.5 : 6.5)) * D2R;
-  const W = { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * P.stepHalf, g.z + fwd[1] * ahead + rgt[1] * sgn * P.stepHalf], psi: g.yaw + toe };
+  const f = g.feet[s], sw = f.sw, T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), half = P.stepHalf * (sw ? sw.kW : 1);
+  // A body that is speeding up is further on by the time the foot lands, and takes the longer step of the speed it is reaching: the foot is put where it will be (constant acceleration
+  // over the rest of the swing). Placed for the speed of the moment, the first foot of a walk landed 0.1 - 0.2 m short of the pelvis's lead, and that stance foot then trailed 0.15 m
+  // further behind at its toe-off than at any other step: the pelvis was dragged down by 10 cm on the second step of every walk (mean sag over the first six seconds 102 -> 65 mm).
+  const up = clamp(g.acc, 0, ACC_MAX), PL = up > 0 ? gaitParams(g.body, P.v + up * T, g.var.cad) : P, ahead = PL.aH * (sw ? sw.kL : 1) + P.v * T + 0.5 * up * T * T;
+  const toe = (g.var.yawBias + (sgn > 0 ? -6.5 : 6.5)) * D2R + (sw ? sw.dToe : 0);
+  const W = { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * half, g.z + fwd[1] * ahead + rgt[1] * sgn * half], psi: g.yaw + toe };
   if (g.stopD != null) {   // on the way to a planned stop the last steps shorten: a foot lands no further on than where it will stand once the body has got there (a person does not
     // stop with a foot a stride ahead and then walk it back), blending into the walking placement while that is still well short of it
     const st = standTarget(g, s, g.stopD), al = (h) => (h[0] - g.x) * fwd[0] + (h[1] - g.z) * fwd[1], k = smoother((al(W.H) - al(st.H) + 0.08) / 0.1);
@@ -361,13 +435,13 @@ export function gaitTargets(g) {
   const B = g.body, P = g.P || gaitParams(B, 0), ph = g.phase, w = smoother(g.wk), T = {};
   const V = g.var;
   // pelvis: height (2 / stride), lateral shift (1 / stride), rotation, drop on the swing side
-  const sway = 0.5 * P.sway * V.sway * Math.cos(2 * PI * (ph - 0.3)), ramp = w, bobH = P.hAt(ph, ramp * V.bob);
+  const fit = g.fit, sway = 0.5 * P.sway * V.sway * Math.cos(2 * PI * (ph - 0.3)), ramp = w;
+  const bobH = fit ? P.hAt(ph, ramp * V.bob, P.hPeak + (fit.hp - P.hPeak) * w, fit.bp) : P.hAt(ph, ramp * V.bob);   // (the bob as fitted under the legs' reach, as far as this person is a walker: see trackReach)
   const yawP = w * 0.5 * P.yaw * Math.sin(2 * PI * (ph - 0.25)), rollP = -w * 0.5 * P.obl * Math.cos(2 * PI * (ph - 0.3));   // (all of it grows with the walk: a standing pelvis is level, and setting off must not jump the phase's rotation in)
   T.pelvisD = qmul(qy(yawP), qz(rollP));
   T.pelvisPos = [-sway * w, bobH, B.P0[B.ix.pelvis][2]];
   T.feet = g.feet.map((f) => f.cur);
-  T.hCap = lowerForReach(g, T, P);
-  T.pelvisPos[1] = g.hF == null ? T.hCap : Math.min(T.hCap, g.hF);       // g.hF: the cap's height, but only ever eased UP (see gaitUpdate)
+  T.pelvisPos[1] = lowerForReach(g, T, P);
   // trunk: counter-rotates against the pelvis, leans a little forward; the head stays level and straight ahead
   const yawT = -P.thorax * yawP, lean = -P.lean, rollT = 0.3 * rollP;
   const mix = (a, b, t) => a + (b - a) * t;
@@ -394,8 +468,8 @@ const softMin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; r
  *  the trailing leg leaves the floor (the knee starts to flex in the second half of stance; a leg that is dead straight until toe-off has to snap into its swing, and the knee
  *  angle of a nearly straight leg changes very fast for a small move of the ankle). Once the foot is in the air the reach relaxes over the first half of the swing. */
 const KNEE_MIN = 9, KNEE_TOE = 14;
-function lowerForReach(g, T, P) {
-  const B = g.body, pz = T.pelvisPos[2]; let h = T.pelvisPos[1];
+function lowerForReach(g, T, P, h = T.pelvisPos[1]) {     // (h: the height to be lowered; a pelvis far out of the way gives the cap alone - the `reach` that trackReach logs)
+  const B = g.body, pz = T.pelvisPos[2];
   for (let s = 0; s < 2; s++) {
     const hv = qrot(T.pelvisD, B.hipOff[s]), f = T.feet[s], l = toLocal(g, f.A[0], f.A[2]), fs = g.feet[s];
     const dx = l[0] - T.pelvisPos[0] - hv[0], dz = l[1] - pz - hv[2];

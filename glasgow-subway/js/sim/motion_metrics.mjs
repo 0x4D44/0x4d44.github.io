@@ -9,13 +9,17 @@ export const LM = ['pelvis', 'spine_01', 'spine_03', 'neck_01', 'head', 'upperar
   'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r', 'heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
 const DEG = 180 / Math.PI;
 export const NOSE_REST_PITCH = Math.atan2(0.04, 0.12) * DEG;   // the recorder's nose point sits 4 cm up and 12 cm forward of the head bone: that is a level gaze
-export const CONTACT_M = 0.008;                                 // a sole point within 8 mm of the floor is on it
+export const CONTACT_M = 0.008;                                 // a sole point within 8 mm of the floor is on it: standing on it as the eye reads it (slip, flight, clearance)
+export const LOAD_M = 0.002;                                    // within 2 mm of it the shoe is carrying weight, as a force plate or foot switch reads it (stance share, double support)
 
 // ------------------------------------------------------------------------------------------------------------------------ scenarios
 export const SPEEDS = [0.4, 0.8, 1.2, 1.6, 1.9];            // steady walks (m/s)
 export const NORMAL = [0.8, 1.2, 1.6];                      // the everyday range the kinematic categories are judged at
 export const SCEN = {
-  steady: (v) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: v < 0.6 ? [3.5, 14] : [7, 14] }),   // a slow walk needs a longer window to hold the three strides the repeatability item wants
+  // A slow walk (0.4 m/s) needs a longer window than its pace to hold the three strides the repeatability item wants. At the everyday speeds the window is 17 s (14 to 21 strides a foot): the
+  // variability items (TIM.cvT, TIM.cvL) estimate a spread of about 2 % from the strides in the window, and from the 7 s (5-8 strides) this scenario had until revision 10 that estimate is itself
+  // 25-30 % uncertain - a perfectly good walk would have fallen under the band's floor on one recording in ten for nothing but sampling error.
+  steady: (v) => (v < 0.6 ? { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: [3.5, 14] } : { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 23, v, state: 'walk' }], win: [7, 24] }),
   startstop: () => ({ plan: [{ dur: 1.2, v: 0, state: 'stand' }, { dur: 7.0, v: 1.2, state: 'walk', to: 6.5 }, { dur: 2.5, v: 0 }], win: [0, 10.7] }),
   turn: (deg) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 5.0, v: 1.2, state: 'walk' }, { dur: 4.0, v: 1.2, turn: deg }], win: [6, 10] }),
   spin: (deg) => ({ plan: [{ dur: 1.5, v: 0, state: 'stand' }, { dur: 3.5, v: 0, turn: deg }], win: [1.5, 5] }),
@@ -97,8 +101,8 @@ function contactOf(rec, k0, k1, src) {   // heights are measured from the real f
     if (mesh) for (let i = 0; i < n; i++) sole[s][i] = rec.shoe[s].y[k0 + i] - fl;
     else { const h = rec.s('heel_' + s), b = rec.s('bs_' + s), t = rec.s('toe_' + s); for (let i = 0; i < n; i++) sole[s][i] = Math.min(h.y[k0 + i], b.y[k0 + i], t.y[k0 + i]) - fl; }
   }
-  for (const s of ['l', 'r']) c[s] = Array.from(sole[s], (y) => y < CONTACT_M);
-  return { sole, c };
+  const ld = {}; for (const s of ['l', 'r']) { c[s] = Array.from(sole[s], (y) => y < CONTACT_M); ld[s] = Array.from(sole[s], (y) => y < LOAD_M); }
+  return { sole, c, ld };
 }
 /** RMS horizontal speed (cm/s) of the sole while it is on the floor and not lifting; and the path (cm) the worst one covers in that time.
  *  On the rendered shoe: the point of each shoe that is lowest at a frame (its own speed, not the foot's). On the landmarks: every one of the three per foot that is within CONTACT_M. */
@@ -166,10 +170,13 @@ export function analyseSteady(rec, win) {
   { const per = { l: [], r: [] }; for (const s of ['l', 'r']) for (let i = 1; i < ev[s].hsF.length; i++) per[s].push((ev[s].hsF[i] - ev[s].hsF[i - 1]) * dt); a.strideTime = mean(all(per)); a.strideTimeCV = pooledCV([per.l, per.r]); a.stepLenCV = pooledCV([stepL.l, stepL.r]); }   // variability: the stride time (the standard measure) and the step length, each left/right list about its own mean
   const stance = { l: new Uint8Array(n), r: new Uint8Array(n) }; let span0 = n, span1 = 0;   // stance share and double support, from the events
   for (const s of ['l', 'r']) for (let i = 0; i < ev[s].hs.length; i++) { for (let k = ev[s].hs[i]; k < ev[s].to[i]; k++) stance[s][k] = 1; span0 = Math.min(span0, ev[s].hs[i]); span1 = Math.max(span1, ev[s].to[i]); }
-  { let st = 0, dsN = 0, tot = 0; for (let k = span0; k < span1; k++) { tot++; if (stance.l[k] && stance.r[k]) dsN++; st += stance.l[k] + stance.r[k]; } a.stance = 100 * st / (2 * tot); a.ds = 100 * dsN / tot; }
-  // the same two numbers from the floor itself (the rendered shoe within CONTACT_M of it, over the whole window): REPORTED beside the event-based ones, not scored. A sole 8 mm from the floor
-  // counts as down, so these run a little high; they say whether the events (which overstate stance and double support when the foot slows against the pelvis before it lands) are fair.
-  { let s2 = 0, d2 = 0; for (let i = 0; i < n; i++) { s2 += (ct.c.l[i] ? 1 : 0) + (ct.c.r[i] ? 1 : 0); if (ct.c.l[i] && ct.c.r[i]) d2++; } a.stanceC = 100 * s2 / (2 * n); a.dsC = 100 * d2 / n; }
+  { let st = 0, dsN = 0, tot = 0; for (let k = span0; k < span1; k++) { tot++; if (stance.l[k] && stance.r[k]) dsN++; st += stance.l[k] + stance.r[k]; } a.stanceZ = 100 * st / (2 * tot); a.dsZ = 100 * dsN / tot; }   // from Zeni's events: reported, not scored (see below)
+  // STANCE AND DOUBLE SUPPORT are scored from the floor: the share of the window in which the rendered shoe is within LOAD_M of it (one foot: stance; both: double support). The published
+  // figures the bands come from are force-plate and foot-switch times - the foot carrying weight - and Zeni's events are a kinematic stand-in for those that over-reads both when the foot slows
+  // against the pelvis before it lands. They were scored until revision 10 (a.stanceZ / a.dsZ, still computed). stanceC / dsC are the same shares at CONTACT_M (8 mm), reported: a foot 8 mm up
+  // looks down but is not loaded, and at 1.2 m/s that threshold alone adds 2.5 points to stance and 5 to double support (research/people-motion-rubric.md, "Revision 10", has the table).
+  { let s2 = 0, d2 = 0, s3 = 0, d3 = 0; for (let i = 0; i < n; i++) { s2 += (ct.c.l[i] ? 1 : 0) + (ct.c.r[i] ? 1 : 0); if (ct.c.l[i] && ct.c.r[i]) d2++; s3 += (ct.ld.l[i] ? 1 : 0) + (ct.ld.r[i] ? 1 : 0); if (ct.ld.l[i] && ct.ld.r[i]) d3++; }
+    a.stanceC = 100 * s2 / (2 * n); a.dsC = 100 * d2 / n; a.stance = 100 * s3 / (2 * n); a.ds = 100 * d3 / n; }
   { const sh = (s) => mean(ev[s].hs.map((h, i) => { const nx = ev[s].hs[i + 1]; return nx ? (ev[s].to[i] - h) / (nx - h) : NaN; })); a.stanceSym = 100 * Math.abs(sh('l') - sh('r')); }
   const clearOf = (c) => { const cl = []; for (const s of ['l', 'r']) for (let i = 0; i < ev[s].to.length; i++) { const to = ev[s].to[i], nx = ev[s].hs[i + 1]; if (!nx) continue; let lo = Infinity; for (let k = to + Math.round(0.35 * (nx - to)); k <= to + Math.round(0.8 * (nx - to)); k++) lo = Math.min(lo, c.sole[s][k]); cl.push(lo); } return cl.length ? mean(cl) * 1000 : NaN; };
   a.clearMm = clearOf(ct); if (rec.shoe) a.clearLm = clearOf(contactOf(rec, k0, k1, 'landmarks'));
@@ -223,7 +230,10 @@ export function analyseSteady(rec, win) {
     const keys = Object.keys(J).filter((k) => !/^(pitch|ankle)_/.test(k)); let rate = 0, rateKey = '', rateAt = 0; for (const k of keys) for (let i = 1; i < J[k].length; i++) { const r = Math.abs(J[k][i] - J[k][i - 1]) / dt; if (r > rate) { rate = r; rateKey = k; rateAt = i; } }
     const rep = []; for (const k of ['thigh_l', 'knee_l', 'arm_l', 'elbow_l']) { const e = E[k]; if (e.cycles.length < 3) continue; const r = pp(e.mean) || 1; for (let c = 1; c < e.cycles.length; c++) rep.push(100 * rms(e.cycles[c].map((v, i) => v - e.cycles[c - 1][i])) / r); }
     let jump = 0; for (const nm of ['hand_l', 'hand_r', 'foot_l', 'foot_r', 'head', 'calf_l', 'calf_r']) { const S = rec.s(nm); for (let k = k0 + 1; k < k1; k++) jump = Math.max(jump, Math.hypot(S.x[k] - S.x[k - 1] - (rec.root[k * 3] - rec.root[(k - 1) * 3]), S.y[k] - S.y[k - 1], S.z[k] - S.z[k - 1] - (rec.root[k * 3 + 2] - rec.root[(k - 1) * 3 + 2]))); }
-    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100, trem: tremorMm(P, ['hand_l', 'hand_r', 'head', 'spine_03', 'pelvis'], ev.l.hsF.slice(1).map((x, i) => [ev.l.hsF[i], x]), n, dt) }; }   // (cycles bounded at the sub-frame heel strikes: with whole-frame ones every cycle is shifted by up to half a frame against the mean, which a hand moving 8 mm a frame reads as 2-3 mm of shake)
+    // the pelvis's vertical acceleration (central second difference of the height, over the window): a walker's moves at a few m/s^2 and, however brisk, has no spikes. REVIEW_1 never saw this one - nothing in the rubric did - and the gait's pelvis was
+    // being held to the legs' reach so hard that it stomped at every step, 15 - 59 m/s^2 at the 99th percentile; the joint-angle items and the 1-frame jump do not see a move that is 3 cm over 4 frames
+    const pyv = P('pelvis').y, pacc = []; for (let i = 1; i < pyv.length - 1; i++) pacc.push(Math.abs(pyv[i + 1] - 2 * pyv[i] + pyv[i - 1]) / (dt * dt)); pacc.sort((x, y) => x - y);
+    a.smooth = { hf: Math.max(...['thigh_l', 'knee_l', 'arm_l', 'elbow_l', 'thigh_r'].map((k) => hf(J[k]))), rate, rateKey, rateAt, period: rep.length ? mean(rep) : NaN, jumpCm: jump * 100, pelAcc: pacc.length ? pacc[Math.min(pacc.length - 1, Math.floor(0.99 * pacc.length))] : NaN, trem: tremorMm(P, ['hand_l', 'hand_r', 'head', 'spine_03', 'pelvis'], ev.l.hsF.slice(1).map((x, i) => [ev.l.hsF[i], x]), n, dt) }; }   // (cycles bounded at the sub-frame heel strikes: with whole-frame ones every cycle is shifted by up to half a frame against the mean, which a hand moving 8 mm a frame reads as 2-3 mm of shake)
   return a;
 }
 /** Shake: what is left of a landmark's motion once the slow wander (a moving average of a third of a second: steering, speed) and the stride-locked waveform (the mean over the left-heel-strike
@@ -343,6 +353,7 @@ export const ITEMS = [
   { id: 'SMO.rep', w: 1.5, label: 'stride-to-stride difference, of the range', unit: '%', v: (a) => a.smooth.period, fall: [5, 25] },
   { id: 'SMO.jump', w: 1.5, label: 'biggest one-frame move of a hand, foot or head', unit: 'cm', v: (a) => a.smooth.jumpCm, fall: [12, 30] },
   { id: 'SMO.trem', w: 1.5, label: 'shake of hand, head, spine or pelvis, not stride-locked (RMS, worst landmark)', unit: 'mm', v: (a) => a.smooth.trem, fall: [1.5, 6] },
+  { id: 'SMO.pelAcc', w: 2, label: 'vertical acceleration of the pelvis, 99th percentile', unit: 'm/s^2', v: (a) => a.smooth.pelAcc, fall: [8, 20] },
 ];
 export const TRN_ITEMS = [
   { id: 'TRN.lat', w: 1.5, label: 'walk command to first heel strike', unit: 's', v: (t) => t.start.latency, fall: [0.7, 1.6] },
@@ -378,7 +389,7 @@ const SRC = {
   'PEL.bob': 'text', 'PEL.bobH2': 'judge', 'PEL.sway': 'text', 'PEL.swayH1': 'judge', 'PEL.yaw': 'text', 'PEL.obl': 'text', 'PEL.thorax': 'text', 'PEL.anti': 'text', 'PEL.lean': 'judge',
   'ARM.range': 'text', 'ARM.phase': 'text', 'ARM.elbow': 'text', 'ARM.couple': 'text', 'ARM.sym': 'judge', 'ARM.clear': 'phys', 'ARM.splay': 'judge',
   'HEA.pitch': 'judge', 'HEA.roll': 'judge', 'HEA.yaw': 'judge', 'HEA.gaze': 'judge', 'HEA.dir': 'judge', 'HEA.poke': 'judge', 'HEA.still': 'judge',
-  'SMO.hf': 'judge', 'SMO.rate': 'judge', 'SMO.rep': 'judge', 'SMO.jump': 'phys', 'SMO.trem': 'judge',
+  'SMO.hf': 'judge', 'SMO.rate': 'judge', 'SMO.rep': 'judge', 'SMO.jump': 'phys', 'SMO.trem': 'judge', 'SMO.pelAcc': 'judge',
   'TRN.lat': 'judge', 'TRN.glide': 'judge', 'TRN.acc': 'judge', 'TRN.dec': 'judge', 'TRN.settle': 'judge', 'TRN.slide': 'phys', 'TRN.stand': 'judge', 'TRN.tslip': 'judge', 'TRN.trate': 'judge', 'TRN.spin': 'judge',
   'RNG.mono': 'derived', 'RNG.slope': 'derived', 'RNG.cv': 'judge', 'RNG.legs': 'derived',
 };
