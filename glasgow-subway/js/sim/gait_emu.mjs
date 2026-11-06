@@ -31,7 +31,7 @@ const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 const angD = (a, b) => { let d = (a - b) % (2 * Math.PI); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; return d; };
 
 /** Record one person through a plan (segments { dur (s), v (m/s), state, turn (deg), to (m) }, as motion_metrics.SCEN builds them) at 60 Hz.
- *  opts: armOut [l, r] (deg), var (the gait's per-person variation), noStopD (do not tell the gait how far it still has to go to a place it will stand at - the control for the planned-stop test), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
+ *  opts: armOut [l, r] (deg), var (the gait's per-person variation), onFrame (k, gait, targets, solved) called every frame, noStopD (do not tell the gait how far it still has to go to a place it will stand at - the control for the planned-stop test), feed { pos, speed } - for tests of the metrics only: the fraction of the body's position / speed the gait is TOLD
  *  (feed.pos < 1 makes the planted feet slide across the floor, feed.speed < 1 gives a cadence that is too slow for the speed). */
 export function record(id, plan, opts = {}) {
   const B = bodyOf(id), C = carried(B), g = G.newGait(B, { armOut: opts.armOut || [6, 6], var: opts.var }), dt = 1 / 60, fp = (opts.feed && opts.feed.pos) || 1, fv = (opts.feed && opts.feed.speed) || 1;
@@ -53,6 +53,7 @@ export function record(id, plan, opts = {}) {
       const yw = P.yaw, v = P.sp; pv += (v - pv) * Math.min(1, dt * 12);
       G.gaitUpdate(g, dt, { x: x * fp, z: z * fp, yaw: yw, v: pv * fv, walking: state === 'walk' || state === 'go', stopD });
       const T = G.gaitTargets(g), sol = G.gaitSolve(g, T), lm = landmarks(B, C, sol, { x, z, yaw: yw });
+      if (opts.onFrame) opts.onFrame(k, g, T, sol);   // (a hook for probes: the state, the pose targets and the solved pose of every frame)
       for (let j = 0; j < lm.length; j++) pos[k * Lc * 3 + j] = +lm[j].toFixed(4);
       root[k * 3] = x; root[k * 3 + 1] = 0; root[k * 3 + 2] = z; yaw[k] = yw; spd[k] = pv; st[k] = state; seg[k] = si; ph[k] = g.phase;
     }

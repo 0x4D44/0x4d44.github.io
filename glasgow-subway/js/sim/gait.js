@@ -202,6 +202,11 @@ function walkStep(g, dt, P) {
     if (f.mode === 'stance') {
       if (pf >= P.S && pf < 0.97) {                         // toe-off: swing begins from the pose the foot has now
         f.cur = footOut(g, f, pf); startSwing(g, f, null, { T: null, th1: P.thHS, clear: P.clear });
+        // The foot did not leave the floor at the start of this frame but somewhere in the step since the last one: (pf - S) of the stride ago. Draw it that far into its swing, not at
+        // the instant of toe-off. Left at s = 0 the foot stays on its toes for up to a whole frame too long (stance +1.6 % of the stride on average) and the whole of the knee's
+        // first move - tens of degrees at the speed of the pelvis - lands on the NEXT frame: a one-frame pop at every toe-off (peak joint rate 776 -> 518 deg/s on the fixtures).
+        // Only when the crossing really is within this frame (a foot found late in its stance after a restart starts its swing from the beginning).
+        const eps = pf - P.S; if (eps <= 1.5 * dt * P.fs * 0.5) f.sw.s = clamp(eps / (1 - P.S), 0, 1);
       } else f.th = stanceTh(P, pf);
     } else if (f.mode === 'swing') {
       if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) land(g, f, P); }
@@ -337,7 +342,7 @@ const softMin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; r
 /** the pelvis's height, held down so that neither leg is asked to stretch past its reach: a knee bent by KNEE_MIN at mid-stance (nearly straight), and by KNEE_MIN + KNEE_TOE as
  *  the trailing leg leaves the floor (the knee starts to flex in the second half of stance; a leg that is dead straight until toe-off has to snap into its swing, and the knee
  *  angle of a nearly straight leg changes very fast for a small move of the ankle). Once the foot is in the air the reach relaxes over the first half of the swing. */
-const KNEE_MIN = 9, KNEE_TOE = 20;
+const KNEE_MIN = 9, KNEE_TOE = 14;
 function lowerForReach(g, T, P) {
   const B = g.body, pz = T.pelvisPos[2]; let h = T.pelvisPos[1];
   for (let s = 0; s < 2; s++) {
