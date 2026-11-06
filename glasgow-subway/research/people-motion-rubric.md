@@ -231,7 +231,54 @@ So the price is real: the pelvis rides 0.9 % lower on average and the legs are m
 
 **The walk start had a blind spot too, and a fix.** No item in the rubric looked at the pelvis in the first seconds of a walk. Measured (four bodies, 1.2 and 1.6 m/s, first 6 s): every walk start sagged the pelvis **102 mm** below walking height on average (up to 158 mm at 1.6 m/s). The cause: the first foot to land was put down for the speed of the *first frame*, ~0.2 m/s, while the root went on to 1.2-1.6 m/s in about a second, so the trailing foot was 15 cm farther back than a step's reach at its toe-off. Feet are now placed for the speed the body will have when they land (the smoothed acceleration, capped at 3 m/s^2, run forward to the end of the swing), and the first foot is no longer shortened. Sag: **102 -> 68 mm** (57-81 per body). Two residuals, both measured and not fixed: the first trailing foot is still planted where the person stood while the pelvis accelerates away from it (-53 to -65 mm at the first toe-off), and the pelvis then comes up 14-23 mm in a single frame when that leg's reach releases (**the largest rise per frame went from 17.1 to 18.6 mm: slightly worse**; the vertical acceleration p99 over those 6 s went from 28.8 to 19.9). The cause of both is the steering's speed ramp, about 1.4 m/s^2 up to speed, which a person does not do. `motion.test.mjs` holds the sag under 95 mm; it does not hold the one-frame rise.
 
-All of this was measured on the emulator (`js/sim/gait_emu.mjs`, the gait driven with the real rig of four of the people and the game's steering kinematics), not the browser recorder, and *not yet re-scored on the whole roster of 30 at both levels of detail*, which is what the gate asks for; the browser re-recording, the re-score and the second independent review are Round 2's next steps and are not claimed here.
+The figures in this part were measured on the emulator (`js/sim/gait_emu.mjs`, the gait driven with the real rig of four of the people and the game's steering kinematics) while the work was done. The gate asks for the browser recorder on the whole roster, so once the work was in I re-recorded all 30 people at the five speeds in the four scenarios, at both levels of detail, with the gait as it stood after this part (the planted foot still pivoting). It scored **9.26 overall and 8.95 on the 55 discriminating points at LOD0, and 9.23 and 8.88 at LOD1**, on the instrument now called `88c5c72187e4` (the sha moved from `ab83878b16fe` only because a comment was corrected; those recordings, re-scored today, give the same numbers under both). The gate was **not met**: at LOD0 the 55 points (8.95), the 10th percentile of GRD (7.3), LEG (7.1), ARM (7.9) and SMO (7.4), and the worst recording (woman_coat at 1.9 m/s, 7.4); at LOD1 the same, plus the 10th percentile of TRN (6.5), with woman_puffer at 1.9 m/s the worst recording at 7.7. The biggest cost left in grounding was the planted foot sliding along the floor, which is what the next part is about.
+
+### Round 2, part 4: the planted foot rolls on its sole (a model change; the instrument is unchanged)
+**The instrument did not move** (`88c5c72187e4`; the roster recordings from before this part, re-scored today with it, give 9.26 / 8.95 and 9.23 / 8.88 as they did at the time), so every difference below is the walking. The change is in `js/sim/gait.js` (commit `4decc715`).
+
+**What was wrong.** Planted-foot slip was 3.6 cm/s RMS over the roster at LOD0 (3.4 at LOD1) and 4.65 on the eight people I looked at closely at 1.6 m/s; a foot on the floor should move by under 1.5. It kept GRD's 10th percentile at 7.3 / 7.7. I had named the cause in Round 2 ("What is left of the slip"): the gait pivoted the planted shoe on the nominal heel point and then on a point at half the ball joint's height, but the point of a real shoe that is on the floor is its lowest vertex, a different one at every foot pitch, so the contact point travels along the sole as the foot rolls. A pivot-to-contact error of 10-15 mm times a foot turning at 3-6 rad/s is 3-6 cm/s, and the slip item reads exactly that vertex of the rendered shoe.
+
+**What it does now.** A shoe stands on whichever of its vertices is lowest and that vertex does not move while it does (a wheel does not slide on the road). For each foot pitch the gait already knows which vertex that is (it stands the sole with the shoe-profile hulls of Round 2), so it integrates how far the ankle must travel along the floor, per radian of pitch, to keep that vertex still. The result is a table built once per shoe, `rollTable`: the ankle's offset along the floor as a function of foot pitch alone, applied wherever the heel struck. The old pivot is kept behind `foot.roll = false` for the tests that compare the two. Three unit tests hold it: on a three-point shoe, where the contact is the heel point and then the ball joint, rolling and pivoting agree to 1e-5 m while the toes are up (the integration runs the right way round); a walker on rocker soles keeps the contact vertex still through heel strike, flat foot and push-off (planted slip under 0.5 cm/s; it reads 0.09-0.24 over the test's characters and speeds); and the same walk on the pivot model skates in the same test (the control asserts that the worst case exceeds 1.5 cm/s; the cases read 0.7-2.2), so the test can see the error that rolling removes.
+
+**The one constant that moved, `aH`** (where the heel lands ahead of the pelvis, as a share of the step: 0.44 -> 0.45). A rolling shoe leaves the ankle about a centimetre further behind the planted foot at toe-off than the pivot did, and the heel landing 1 % of a step (0.7 cm at 1.6 m/s) further ahead puts the reach of the leading and of the trailing leg back in balance. Loading-response knee flexion shows it (8 people at 1.6 m/s, browser: 30.6 degrees with the pivot, 31.4 with the foot rolling at 0.44, 30.2 at 0.45). I picked the value from a grid in the offline emulator, the real rigs and shoes of eight people at 1.2, 1.6 and 1.9 m/s, eight seeds each, scoring the eight steady categories (82 of the 100 points) with the shipped instrument:
+
+| | weighted score of the 82 steady points |
+|---|---|
+| pivot foot, `aH` 0.44 (before) | 9.238 |
+| rolling foot, 0.44 | 9.346 |
+| rolling foot, **0.45 (shipped)** | 9.377 |
+| rolling foot, 0.46 | 9.390 |
+| rolling foot, 0.47 | 9.392 |
+| rolling foot, 0.48 | 9.374 |
+
+I took 0.45, the lowest value that gets almost all of the gain: the score is flat across 0.45-0.47 (0.015), and 0.46-0.47 buy a little less loading-response knee flexion at the price of a deeper stance knee. (The commit message for this change gave a different reason, "without pushing the swing-knee deficit further"; the one here is the one the grid and the code comment support.) **This is a constant tuned against the metric**, like the 2 mm contact threshold, so it is not an independent choice. The browser roster below is the check on it, and that is only partly independent: it shares the instrument and the roster's rigs, though not the emulator's steering.
+
+**What it did** (browser recorder, 30 people x 5 speeds x 4 scenarios, same instrument, recordings before and after):
+
+| | LOD0 before -> after | LOD1 before -> after |
+|---|---|---|
+| overall | 9.26 -> **9.37** | 9.23 -> **9.33** |
+| the 55 discriminating points | 8.95 -> **9.16** | 8.88 -> **9.04** |
+| GRD grounding (mean / 10th percentile) | 8.68 / 7.33 -> **9.48 / 8.86** | 8.77 / 7.70 -> **9.36 / 8.60** |
+| TRN starts, stops, turns (mean / 10th percentile) | 9.49 / 9.13 -> 9.74 / 9.58 | 9.20 / 6.54 -> 9.36 / 6.56 |
+| LEG lower limb (mean / 10th percentile) | 8.22 / 7.13 -> **7.96 / 6.45** | 8.05 / 6.24 -> **7.86 / 6.13** |
+| SMO smoothness (mean / 10th percentile) | 8.99 / 7.42 -> **8.84 / 7.10** | 8.99 / 7.48 -> 9.00 / 7.63 |
+| PEL, ARM (mean) | 9.77, 9.02 -> 9.77, 9.02 | 9.85, 9.09 -> 9.91, 9.09 |
+| STR, TIM, HEA, RNG | unchanged (10.0, 10.0, 10.0, 9.71) | unchanged |
+| planted-foot slip, RMS, cm/s (score) | 3.58 (8.0) -> **2.26 (9.2)** | 3.44 (8.1) -> **2.46 (9.0)** |
+| slip through a 90 degree turn, cm/s | 3.74 -> 2.43 | 3.57 -> 2.53 |
+| knee in mid-stance, degrees (score) | 17.3 (8.0) -> **18.5 (7.2)** | 18.6 (7.2) -> **19.4 (6.7)** |
+| ankle dorsiflexion in late stance, degrees (score) | 22.2 (8.3) -> 22.7 (8.0) | 23.0 (7.7) -> 23.8 (7.2) |
+| pelvis vertical acceleration p99, m/s^2 (score) | 8.57 (8.7) -> **9.26 (8.3)** | 8.81 (8.7) -> 9.22 (8.5) |
+| recordings that improved / got worse | 109 / 2 of 150 (worst fall 0.10) | 92 / 7 of 150 (worst fall 0.22: girl_small at 0.4 m/s) |
+| worst recording | woman_coat @1.9 7.36 -> woman_elder @1.6 **8.24** | woman_puffer @1.9 7.66 -> woman_student @1.6 **8.35** |
+| gate clauses failed | 6 -> **4** | 7 -> **5** |
+
+The mean change per recording is +0.20 at LOD0 and +0.16 at LOD1; the largest gains are at 1.9 m/s (up to +1.4). Slip fell by 37 % at LOD0 and 28 % at LOD1 over the whole roster, and on the eight-person set from 4.65 to 2.57 cm/s, of which the frames in the middle of stance are about 0.4: what remains is mostly the first and last frames of a contact, where the foot is changing from swinging to carrying weight.
+
+**What it cost.** LEG, which was already the weakest category, loses 0.26 (LOD0) and 0.19 (LOD1): the knee in mid-stance is 0.8-1.2 degrees more flexed and the late-stance dorsiflexion 0.5-0.8 degrees larger. SMO loses 0.15 at LOD0 on the pelvis's vertical acceleration (8.57 -> 9.26 m/s^2). That item is hard to compare on a few recordings, because its 99th percentile is set by a handful of one-frame spikes at the double-support transitions: the first eight-person browser set read 11.3 -> 13.6 after the change, which looked like a regression, and the emulator at 96 walks per cell read 12.0 -> 12.3 at 1.6 m/s, so neither number was to be trusted alone. The roster mean over 150 recordings is the figure to read, and it says the effect is real and small. I kept the change because the net is positive on both levels of detail and on 201 of 300 recordings; whoever disagrees should look at LEG first.
+
+**Where this leaves the gate: still not met, at either level of detail.** The literal ask, an overall score above 9, holds (9.37 and 9.33), and so does my clause that the 55 discriminating points exceed 9 (9.16 and 9.04). What fails is the stricter set I added after the first review: LEG's mean (7.96 / 7.86) and 10th percentile (6.45 / 6.13), ARM's 10th percentile (7.90 / 7.99; the only ARM item below 10 on the roster is the hand-splay item, whose band I set after looking at the data), SMO's 10th percentile (7.10 / 7.63), and at LOD1 TRN's (6.56). The LEG tail is a few crouched walkers whose reach cap binds at 1.6 m/s (woman_puffer at LOD1: knee flexion in loading response 38.4 degrees, in mid-stance 33.6, ankle dorsiflexion 31.6; woman_student's mid-stance knee at LOD1 is 28.3; teen_skirt and woman_elder are the next), and I have not fixed it. The re-review of Round 2 by the independent reviewer is also still to come, so none of this has been tested by anyone but me.
 
 ## Results log
 ### Baseline: the clip-driven walk (before any change), `--gait clip`, six people
@@ -262,7 +309,7 @@ What the numbers say is wrong with the old walk (man_commuter at 1.2 m/s unless 
 The "no strides found at 0.4 m/s" and the capped speeds of the boys and the kilt girl (1.4 m/s, the most the game lets them walk) are real outcomes of the old behaviour, not harness faults.
 
 ### After: the procedural gait in the game, six people, five speeds, four scenarios
-Overall **9.44 / 10** for the full-detail model (LOD0, what the player watches), **9.29** for the simplified far-crowd model (LOD1), against 3.78 for the clip walk as first scored and 3.95 for the clip walk under the final instrument (revisions 3-5 above). The gate: LOD0 passes; LOD1 does not (below). An independent reviewer has not yet had their say.
+Overall **9.44 / 10** for the full-detail model (LOD0, what the player watches), **9.29** for the simplified far-crowd model (LOD1), against 3.78 for the clip walk as first scored and 3.95 for the clip walk under the final instrument (revisions 3-5 above). The gate: LOD0 passes; LOD1 does not (below). This is the first round's six-person result, under the instrument of the time; the whole roster under today's instrument is at the end of this log, and the independent review that followed this round is in "Round 2, part 2".
 
 | category | clip, first scored | clip, final instrument (LOD0 / LOD1) | gait, LOD0 | gait, LOD1 |
 |---|---|---|---|---|
@@ -294,3 +341,24 @@ The clip's own gain from 3.78 to 3.95 is the instrument and the new steering (tu
 **What changed in the game to get here** (commits `cbdf3cc7`, `fb1eab83` and the shoe commit): a planted-foot gait on the real skeleton (`js/sim/gait.js`, `gait_three.js`) with a pivot-on-the-spot gait, a closing step onto a planned stop, and pelvis bob and sway that grow with the walk; a steering model that moves a person along the way they face and brakes into a place to stand (`js/sim/steer.js`); stiff shoes (`fitShoes`); and the woman in the coat relabelled as wearing a pencil skirt (she was labelled trousers), so the leg collider treats her as skirted.
 
 **What the gait did to the clothes** (`tools/people_holes.mjs`, skin showing through a garment, cm^2 per view): the legs now move more than the clips did, and a vented pencil skirt shows the thigh through its own back vent when she walks (woman_midi 4.3 -> about 21; the garment doing what a vent does, but it is counted as a hole), and two of the men in trousers (the `elvs_male_trouser` garment) show small seat specks (man_commuter 0.8 -> 5.9, man_trews 1.4 -> 4.0). Two attempts to reduce these were made and dropped: splitting long cloth edges at load time doubled the kilt people's triangles (quadrupled at LOD1) and made woman_sash worse; shortening the stride to keep the legs inside ("hobbling") cost the stride category.
+
+### After: Round 2, the whole roster of 30, both levels of detail (the browser recorder; commit `4decc715`)
+30 people x 5 speeds (0.4-1.9 m/s, each capped at the fastest that person walks in the game) x the 4 scenarios, recorded in the browser and scored by `motion_metrics.mjs` `88c5c72187e4`, floor on the rendered shoe. Mean over the recordings, with the 10th percentile in brackets:
+
+| category | LOD0 | LOD1 |
+|---|---|---|
+| GRD grounding | 9.5 (8.9) | 9.4 (8.6) |
+| STR stride and cadence | 10.0 (10.0) | 10.0 (10.0) |
+| TIM timing and symmetry | 10.0 (10.0) | 10.0 (10.0) |
+| LEG lower limb | **8.0 (6.5)** | **7.9 (6.1)** |
+| PEL pelvis and trunk | 9.8 (9.1) | 9.9 (9.6) |
+| ARM arms | 9.0 (**7.9**) | 9.1 (**8.0**, 7.99) |
+| HEA head | 10.0 (10.0) | 10.0 (10.0) |
+| SMO smoothness | 8.8 (**7.1**) | 9.0 (**7.6**) |
+| TRN starts, stops, turns | 9.7 (9.6) | 9.4 (**6.6**) |
+| RNG range and individuality | 9.7 (9.7) | 9.7 (9.7) |
+| **overall** | **9.37** | **9.33** |
+| **the 55 discriminating points** | **9.16** | **9.04** |
+| worst recording | woman_elder @1.6 m/s, 8.24 | woman_student @1.6 m/s, 8.35 |
+
+**Gate: not met at either level of detail.** LOD0 fails four clauses (LEG's mean and 10th percentile, and the 10th percentiles of ARM and SMO); LOD1 fails five (the same four, and the 10th percentile of TRN). Overall and the 55 discriminating points both exceed 9, and no recording is under 8. For how the score got here, see "Revisions", "Round 2" and its parts above; the whole-roster score has gone 9.40 / 9.36 (the gait of commit `2cd988bd` on the instrument of Round 2), 8.96 / 8.94 (the same recordings under revision 9's harder instrument), 8.99 / 8.96 (under revision 10), 9.26 / 9.23 (the gait made for them, part 3, recorded afresh) and 9.37 / 9.33 now (part 4): the first three are one set of recordings under three instruments, the last three two different gaits under the last of them. The re-review of these rounds by the independent reviewer is still to come.
