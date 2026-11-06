@@ -181,8 +181,9 @@ function tintedGeometry(p, tint) {
   return g;
 }
 
-/** Draw one record from its GLB; returns the number of parts drawn (0 = use the stand-in). */
-function drawGlb(ctx, b, rec, c) {
+/** Draw one record from its GLB; returns the number of parts drawn (0 = use the stand-in).
+ * Also used by model-only visual inspection. buildInteriorSteps still decides which world pieces need opening carcasses. */
+export function drawGlb(ctx, b, rec, c) {
   const parts = glbParts(ctx, rec.name);
   if (!parts.length) return 0;
   // ceiling fixtures: rec.y is the ceiling, the model stands on y = 0 like every other; a hung garment's model hangs from y = 0 (its top edge), its record's y is its bottom

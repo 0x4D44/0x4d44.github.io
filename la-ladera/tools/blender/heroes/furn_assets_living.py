@@ -107,7 +107,7 @@ def table_formica(A, key, c):
     for sx in (-1, 1):
         for sz in (-1, 1):
             x, z = sx * (W / 2 - 0.06), sz * (D / 2 - 0.06)
-            A.cyl('metal_chrome', x, 0.016, z, 0.016, H - 0.066, 10, r1=0.019, caps=False)
+            A.cyl('metal_chrome', x, 0.016, z, 0.016, H - 0.046, 10, r1=0.019, caps=False)  # ends at H-.03, 1 cm inside the top
             A.cyl(FLAT, x, 0, z, 0.019, 0.018, 10, col=0x1c1c1c)
 
 

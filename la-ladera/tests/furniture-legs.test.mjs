@@ -118,8 +118,8 @@ const SETS = [['library', 'manifest.furniture.json'], ['heroes', 'manifest.heroe
   return { name, where, glb: (path) => { if (!glbs.get(path)) glbs.set(path, parseGlb(readFileSync(join(MODELS, path)), path)); return glbs.get(path); } };
 });
 // the chairs and tables of a terrace, a balcony, a patio, a classroom and a bar: every one is held to the rule in the library, and in the heroes where there is a hero
-// (table_foosball stood 4 cm above its legs. Not listed yet, because their legs still stop a little short: table_formica_4/6 by 1 cm and stool_plastic by 5 mm; chair_metal's legs butt against the seat's sides)
-const MODELLED = ['chair_plastic', 'chair_plastic_arm', 'chair_wood', 'chair_wood_padded', 'table_plastic', 'table_wood_6', 'side_table', 'table_foosball'];
+// Formica table legs, the plastic stool and the metal chair are covered too: a small gap or a leg beside the seat is visible at arm's length.
+const MODELLED = ['chair_plastic', 'chair_plastic_arm', 'chair_wood', 'chair_wood_padded', 'chair_metal', 'stool_plastic', 'table_plastic', 'table_wood_6', 'table_formica_4', 'table_formica_6', 'side_table', 'table_foosball'];
 
 for (const key of MODELLED) {
   const c = CATALOG[key], table = c.arch === 'table', y = table ? c.size[1] - 0.02 : c.seat[0] - 0.01;
@@ -135,6 +135,17 @@ test('the hero set and the library both model the chair of the roof terrace (the
   assert.ok(SETS.every((s) => s.where.has('chair_plastic') && s.where.has('table_plastic')), 'chair_plastic and table_plastic are in the library and the hero set');
   assert.equal(modelSolids(SETS[1].glb(SETS[1].where.get('chair_plastic')), 'chair_plastic').filter(isLeg).length, 4);
   assert.equal(modelSolids(SETS[0].glb(SETS[0].where.get('chair_plastic_arm')), 'chair_plastic_arm').filter(isLeg).length, 4);
+});
+
+test('the repaired formica tables, plastic stool and metal chair retain all four supports', () => {
+  for (const set of SETS) {
+    const keys = set.name === 'library' ? ['table_formica_4', 'table_formica_6', 'stool_plastic', 'chair_metal'] : ['table_formica_4', 'table_formica_6'];
+    for (const key of keys) {
+      const path = set.where.get(key);
+      assert.ok(path, `${set.name}: missing ${key}`);
+      assert.equal(modelSolids(set.glb(path), key).filter(isLeg).length, 4, `${set.name}/${key}: four supports, not a missing leg hidden by the contact check`);
+    }
+  }
 });
 
 // ------------------------------------------------------------------------------------------------ the stand-ins
