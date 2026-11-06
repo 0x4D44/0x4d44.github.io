@@ -148,7 +148,7 @@ test('the pelvis acceleration item sees a stomp: a 3 cm notch, 6 frames wide, at
   assert.ok(score(spoiled) < 3, `p99 ${spoiled.toFixed(1)} m/s^2 -> ${score(spoiled).toFixed(1)}`);
   assert.ok(score(a.smooth.pelAcc) > 8, `the unspoiled walk: p99 ${a.smooth.pelAcc.toFixed(1)} -> ${score(a.smooth.pelAcc).toFixed(1)}`);
 });
-test('the pelvis acceleration is judged at 60 Hz whatever the recording rate: the second difference taken at 144 Hz read the same walk 1.5 - 3 times as rough (round-2 review, 5.1)', () => {
+test('the pelvis acceleration is judged at 60 Hz for any faster recording (and as recorded for a slower one): the second difference taken at 144 Hz read the same walk 1.5 - 3 times as rough (round-2 review, 5.1); the resampled item still reads 10 - 23 % below its native value (round-3 review), which this emulator test, with its 0.6 - 1.5 tolerance, cannot see', () => {
   // the resampler: the series itself (the very array) at 60 Hz and slower, exact on a straight line at any faster rate, and one sample per 1/60 s
   const ramp = (dt, n) => Float64Array.from({ length: n }, (_, i) => 0.9 + 0.35 * i * dt);
   for (const dt of [1 / 60, 1 / 30]) { const y = ramp(dt, 50); assert.strictEqual(M.atAnalysisRate(y, dt), y, `1/${Math.round(1 / dt)} s is read as recorded`); }
