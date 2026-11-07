@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>King's Cross Live</title>
+<meta name="description" content="A real-time 3D model of King's Cross station, built from OpenStreetMap and live Network Rail train describer data.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e1218'/%3E%3Cpath d='M9 26 14 6M23 26 18 6M11 20h10M12.5 13h7' stroke='%23d9a441' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0e1218;
+    --fg: #d7dde6;
+    --muted: #8793a3;
+    --panel: rgba(14, 18, 24, 0.78);
+    --line: rgba(215, 221, 230, 0.16);
+  }
+  :root[data-theme="light"] {
+    --bg: #e9edf2;
+    --fg: #1c2430;
+    --muted: #5a6677;
+    --panel: rgba(233, 237, 242, 0.85);
+    --line: rgba(28, 36, 48, 0.18);
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+  body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hud {
+    position: fixed; left: 16px; right: 16px; bottom: 12px;
+    display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between; align-items: flex-end;
+    pointer-events: none; font-size: 12px; color: var(--muted);
+  }
+  .hud > * { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; pointer-events: auto; }
+  .hud a { color: inherit; }
+  h1 { position: fixed; top: 12px; right: 16px; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .02em;
+       background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
+  #fallback { position: fixed; inset: 0; display: none; place-items: center; padding: 24px; text-align: center; }
+  .no-webgl #fallback { display: grid; }
+</style>
+</head>
+<body>
+<div id="app" aria-label="3D model of King's Cross station"></div>
+<h1>King's Cross</h1>
+<div id="fallback"><p>This page needs WebGL to draw the 3D model, and your browser has it turned off or unavailable.</p></div>
+<div class="hud">
+  <span id="status">Loading…</span>
+  <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL)</span>
+</div>
+<script type="module" src="./src/main.ts"></script>
+<!-- the shared "← Almanac" back button is injected into the production build by vite.config.ts -->
+
+</body>
+</html>
