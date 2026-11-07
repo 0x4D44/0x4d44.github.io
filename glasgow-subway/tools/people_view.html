@@ -9,6 +9,7 @@
 // else: no station, no train, no lights beyond a hemisphere and a sun. It is the harness behind tools/people_holes.mjs; open it by hand to look at one person.
 //   people_view.html?glb=<main GLB>&lod=<LOD GLB>&forcelod=1&bg=ff00ff&tint=1
 //     glb / lod   the models to load (default ../models/people.glb, ../models/people_lod.glb)
+//     lodfirst=1  build the crowd the way the game does: from the LOD models alone, then attach the full ones (AnimCrowd.attachFull); the fits must come out the same
 //     forcelod=1  build every person from the LOD models (what a moving person in the game is) instead of the full ones (what a standing, static one is)
 //     tint=1      paint the skin red, so a hole in a garment shows as red (default on; tint=0 keeps the real textures)
 //     bg          background colour, hex
@@ -31,7 +32,10 @@ const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, 
   try {
     const gltf = await load(q.get('glb') || '../models/people.glb'), lod = q.get('lod') === '0' ? null : await load(q.get('lod') || '../models/people_lod.glb');
     const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
-    const crowd = new AnimCrowd(THREE, SU, gltf, 60, 'high', lod); crowd.group = new THREE.Group(); scene.add(crowd.group);
+    if (lod) lod.meta = gltf.meta;
+    const crowd = q.get('lodfirst') === '1' && lod ? new AnimCrowd(THREE, SU, null, 60, 'high', lod) : new AnimCrowd(THREE, SU, gltf, 60, 'high', lod);
+    if (q.get('lodfirst') === '1' && lod) crowd.attachFull(gltf);   // the game's order: built from people_lod.glb alone, then people.glb attached
+    crowd.group = new THREE.Group(); scene.add(crowd.group);
     if (q.get('gait') === 'clip' && crowd.setGait) crowd.setGait(false);
     window.__crowd = crowd; window.__THREE = THREE; window.__scene = scene; window.__cam = cam; window.__renderer = r;
     window.__ids = crowd.chars.map((c) => c.id); window.__fit = crowd.fit;
