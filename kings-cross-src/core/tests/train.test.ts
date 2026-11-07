@@ -80,9 +80,11 @@ test('train: bogie, wheel and pantograph figures are pinned in metres, so changi
     near(got[0], want[0], 1e-9, 'bogie a');
     near(got[1], want[1], 1e-9, 'bogie b');
   }
-  const pan = (cars[4] as { pantograph: readonly [number, number] | null }).pantograph as readonly [number, number];
-  near(pan[0], 129.7 - 20.88 - 1.01, 1e-9, 'pantograph base, front end');
-  near(pan[1], 129.7 - 20.88 + 1.01, 1e-9, 'pantograph base, rear end');
+  const pan = (i: number): readonly [number, number] => (cars[i] as { pantograph: readonly [number, number] | null }).pantograph as readonly [number, number];
+  near(pan(4)[0], 129.7 - 20.88 - 1.01, 1e-9, 'rear pantograph base, front end');
+  near(pan(4)[1], 129.7 - 20.88 + 1.01, 1e-9, 'rear pantograph base, rear end');
+  near(pan(0)[0], 20.88 - 1.01, 1e-9, 'front pantograph base, front end');
+  near(pan(0)[1], 20.88 + 1.01, 1e-9, 'front pantograph base, rear end');
 });
 
 test('train: a bogie is symmetric about the middle of its intermediate car, and the train is the same front to back for the cab cars', () => {
@@ -94,22 +96,24 @@ test('train: a bogie is symmetric about the middle of its intermediate car, and 
   near(front.bogies[1] - front.start, rear.end - rear.bogies[0], 1e-9, 'inner bogie from nose, both ends');
 });
 
-test('train: the pantograph is on the first-class driving car, between its bogies and the car end, in the published position', () => {
-  for (const kind of ['lner5', 'lner9', 'hull5'] as const) {
+test('train: every driving car, and only those, carries a pantograph near its inner end, 20.88 m from its own nose', () => {
+  for (const kind of TRAIN_KINDS) {
     const { cars } = trainLayout(kind);
     const withPan = cars.filter((c) => c.pantograph);
-    assert.equal(withPan.length, 1, `${kind}: one pantograph`);
-    const car = withPan[0] as (typeof cars)[number];
-    assert.equal(car.type, 'DPTF');
-    const [p0, p1] = car.pantograph as readonly [number, number];
-    near(p1 - p0, FIGURES.pantographLength.value, 1e-9, 'base length');
-    near((p0 + p1) / 2, car.end - FIGURES.pantographFromNose.value, 1e-9, 'centre is 20.88 m from the rear nose');
-    assert.ok(p0 > car.start && p1 < car.end, 'on the roof of that car');
+    // the codes are DPTS and DPTF, Driving Pantograph Trailer: one on each cab car, two a train
+    assert.deepEqual(withPan.map((c) => c.index), [0, cars.length - 1], `${kind}: a pantograph on the two cab cars`);
+    for (const car of cars) assert.equal(car.pantograph !== null, DRIVING.has(car.type), `${kind} car ${car.index} ${car.type}`);
+    for (const car of withPan) {
+      const [p0, p1] = car.pantograph as readonly [number, number];
+      near(p1 - p0, FIGURES.pantographLength.value, 1e-9, 'base length');
+      const fromNose = car.cab === 'front' ? (p0 + p1) / 2 - car.start : car.end - (p0 + p1) / 2;
+      near(fromNose, FIGURES.pantographFromNose.value, 1e-9, `${kind} car ${car.index}: centre measured from its own nose`);
+      assert.ok(p0 > car.start && p1 < car.end, 'on the roof of that car');
+      // inner end: the base sits nearer the car's inner end than its nose
+      const middle = (car.start + car.end) / 2;
+      assert.ok(car.cab === 'front' ? p0 > middle : p1 < middle, `${kind} car ${car.index}: toward the inner end`);
+    }
   }
-  // the 803 has no first-class car: the pantograph is an assumption on the rear driving car
-  const lumo = trainLayout('lumo5').cars.filter((c) => c.pantograph);
-  assert.equal(lumo.length, 1);
-  assert.equal((lumo[0] as { type: CarType }).type, 'DPTS');
 });
 
 test('train: every figure has a source, and only the manufacturer-printed ones are called published', () => {

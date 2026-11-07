@@ -6,17 +6,19 @@
 // core/geo.ts), so the group is turned by (PI - heading) to stand along the shed's tracks.
 //
 // Structure (the test relies on these names):
-//   car-<i>           one per car: the body meshes, the doors, the bogies, and on one car the pantograph
+//   car-<i>           one per car: the body meshes, the doors, the bogies, and on each driving car the pantograph
 //     body-shell      the sides and lower shoulders, textured with the livery
 //     body-detail     roof, covers, nose front, windscreen, skirts, door leaves (vertex colours)
 //     door            a marker per door leaf (4 per car: 2 per side)
 //     bogie-<i>-<k>   a group at z = car.bogies[k]: one merged mesh and four `wheel` markers
-//     pantograph      a group over the pantograph's base (one per train)
+//     pantograph      a group over the pantograph base (one per driving car)
 //
 // Doors and wheels are named marker nodes whose geometry is merged into a few meshes, so a nine-car
 // train draws in about forty calls rather than two hundred. The marker is the source: the merged
 // geometry is generated from it.
 import * as THREE from 'three';
+import { standingTrainPose } from '../../core/station.ts';
+import type { ShedLayout } from '../../core/station.ts';
 import { FIGURES, roofHeight, trainLayout } from '../../core/train.ts';
 import type { Car, Livery, TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, shellMaterial, TEX_Y0, TEX_Y1 } from './livery.ts';
@@ -233,7 +235,7 @@ function without(spans: [number, number][], a: number, b: number): [number, numb
   return out;
 }
 
-function carPlan(car: Car): CarPlan {
+export function carPlan(car: Car): CarPlan {
   const L = car.length;
   const nose = car.cab ? ASSUMED.noseLength : 0;
   const doors = [car.cab ? nose + ASSUMED.doorFromNose : ASSUMED.doorFromEnd, L - ASSUMED.doorFromEnd];
@@ -496,4 +498,13 @@ export function buildTrain(kind: TrainKind): THREE.Group {
   root.userData = { kind, length: layout.length, cars: layout.cars.length };
   for (const car of layout.cars) root.add(buildCar(car, def, livery));
   return root;
+}
+
+/** Stand a built train nose-in at a buffer stop, body along the shed's tracks to the north. Returns the nose in world metres. */
+export function standTrain(group: THREE.Group, shed: Pick<ShedLayout, 'heading'>, stop: { x: number; z: number }, noseGap: number): [number, number, number] {
+  const pose = standingTrainPose(shed, stop, noseGap);
+  group.position.set(pose.nose[0], 0, pose.nose[1]);
+  group.rotation.y = pose.rotationY;
+  group.updateMatrixWorld(true);
+  return [pose.nose[0], 0, pose.nose[1]];
 }

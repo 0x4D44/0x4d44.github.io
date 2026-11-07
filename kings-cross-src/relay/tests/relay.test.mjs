@@ -167,6 +167,11 @@ test('relay: a non-loopback Host header is refused, as is any method but GET', a
   const { relay, cleanup } = await setup({ feedEnabled: false });
   assert.equal((await get(relay.port, '/health', { host: 'evil.example' })).status, 403);
   assert.equal((await get(relay.port, '/health', { host: `localhost:${relay.port}` })).status, 200);
+  assert.equal((await get(relay.port, '/health', { host: `127.0.0.1:${relay.port}` })).status, 200);
+  // a host that merely starts or ends like a loopback one, or has the wrong port, is not loopback
+  for (const host of [`127.0.0.1.evil.example:${relay.port}`, `localhost.evil.example:${relay.port}`, `127.0.0.1:${relay.port}.evil.example`, `localhost:${relay.port}0`, `evil.example:${relay.port}`, '127.0.0.1:1', 'localhost']) {
+    assert.equal((await get(relay.port, '/health', { host })).status, 403, `Host ${host} must be refused`);
+  }
   assert.equal((await get(relay.port, '/health', { method: 'POST' })).status, 405);
   assert.equal((await get(relay.port, '/nope')).status, 404);
   const ok = await get(relay.port, '/health');
