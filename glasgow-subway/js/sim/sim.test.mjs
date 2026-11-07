@@ -698,6 +698,19 @@ test('people: a rare person (the top hat) turns up in few crowds, but is still t
   const meta = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/people_meta.json', import.meta.url)), 'utf8'));
   assert.deepEqual(meta.people.filter((q) => q.rare).map((q) => q.id), ['adult_tophat'], 'the one rare person is the top hat');
 });
+// A seated body whose soles would go through the floor is lifted until they reach it (_sitOff), which leaves the pelvis above the seat: legs (with heels) too
+// long for the seat. Such a person must not be given the seat - test_sim's people audit flags a pelvis more than 8 cm off it (adult_heel_boots, 12 cm).
+test('people: nobody is seated whose feet cannot reach the floor with the pelvis on the seat', () => {
+  const c = Object.create(AnimCrowd.prototype), clip = { name: 'sit_a' };
+  const ch = (minY) => ({ id: 'p' + minY, pools: { sit: [clip] }, m: { contact: 0.1, minY } });   // soles minY below the pelvis contact (m, in the clip's frame)
+  c.measure = (who) => who.m;
+  const seat = { x: 0, y: 0, yaw: 0, seatY: 0.43, mode: 'sit' };   // seat top 0.43 m above the floor
+  for (const [minY, ok] of [[-0.25, true], [-0.33, true], [-0.39, true], [-0.42, false], [-0.45, false], [-0.6, false]]) {
+    const feet = seat.seatY - seat.y - 0.1 + minY;   // where the soles end up with the pelvis on the seat
+    assert.equal(c._canSit(ch(minY), seat), ok, `soles ${feet.toFixed(2)} m from the floor: ${ok ? 'may sit' : 'must stand'}`);
+    if (ok) { const y = c._sitOff(ch(minY).m, seat.seatY - seat.y) + 0.1; assert.ok(y - seat.seatY <= 0.08, 'a person allowed to sit has the pelvis within the audit\'s 8 cm of the seat'); }
+  }
+});
 // The game builds its crowds from people_lod.glb alone and attaches people.glb later (index.js _streamFullPeople), so the simplified model's skirt fit cannot
 // measure the legs on the full skin: it takes them from legradii.js. Every skirted person needs an entry, or their LOD skirt fit would measure its own coarse skin.
 // Whether the numbers are current is tools/legradii.mjs's check (it needs a browser); AnimCrowd.attachFull also warns in the console when they are stale.
