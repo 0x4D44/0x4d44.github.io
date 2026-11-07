@@ -241,5 +241,11 @@ walk + gait): full 419.9 -> 450.9 cm2/view, no person up more than 4.1 (`elder_w
 person). `adult_tophat` is now 1.68 m (was 1.70): with the hat and the phone raised, the tallest posture was 1.824 m, over test_sim's 1.82.
 Armfit and legradii re-solved; 49 skin budgets tightened, 4 rose with their visible holes unchanged (see `SKIN_BUDGET` in `sim.test`).
 
+## Made hats in cloth (2026-11-07)
+A made hat may name a fabric: `hat=(kind, colour, fabric)` with `tools/fabrics/<fabric>.png` (`wrap_uv` gives the hat UVs round the head, 9 cm a
+repeat, in the body's `UVMap` layer - any other name joins as a second map and `tools/people_lodhair.py` refuses the file). Felt (lifted and
+tinted to the colour) on the top hat and the beret, tweed (its own browns) on `elder_man_cap`'s flat cap. Holes unchanged for all three.
+Of the five swatches made, the cable knit, denim and gingham found no made garment to go on and are not in the repo.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
