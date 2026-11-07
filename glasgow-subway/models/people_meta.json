@@ -148,7 +148,7 @@
    "source": "mpfb2",
    "heightM": 1.79,
    "shoulderWidthM": 0.469,
-   "eyeHeightM": 1.665,
+   "eyeHeightM": 1.664,
    "seatRootDropM": 0.423,
    "seatedEyeHeightM": 1.242,
    "seatedHeadTopM": 1.367,
@@ -756,7 +756,7 @@
    "legLengthM": 0.7,
    "walkSpeedMps": 1.09,
    "walkFastSpeedMps": 1.76,
-   "tris": 9496,
+   "tris": 9497,
    "clips": [
     "idle_a",
     "idle_b",
@@ -956,7 +956,7 @@
    "legLengthM": 0.919,
    "walkSpeedMps": 1.43,
    "walkFastSpeedMps": 2.31,
-   "tris": 9497,
+   "tris": 9498,
    "clips": [
     "idle_a",
     "idle_b",

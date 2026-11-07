@@ -9,7 +9,7 @@ import addon_utils
 from mathutils import Vector, Matrix, Quaternion
 sys.path.insert(0, os.path.dirname(__file__))
 
-SCRATCH = '/tmp/claude-0/-home-user/52020da6-bb97-5dd3-88b8-ef2e78784739/scratchpad/mpfb'
+SCRATCH = os.environ.get('MPFB_SCRATCH') or '/tmp/claude-0/-home-user/52020da6-bb97-5dd3-88b8-ef2e78784739/scratchpad/mpfb'   # textures, --blend output
 DATA = os.environ.get('MPFB_DATA') or os.path.join(SCRATCH, 'home/.config/blender/5.2/extensions/.user/user_default/mpfb/data')
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTDIR = os.path.join(os.path.dirname(HERE), 'models')
@@ -375,14 +375,35 @@ def solid_material(name, rgb, rough=0.7, metal=0.0):
     MAT_CACHE[key] = m
     return m
 
-def slab(human, z, band=0.012, side=0):
-    """extents of the body surface around height z: (xmin, xmax, ymin, ymax); side=-1/+1 restricts to one leg"""
+ARM_BONES = ('upperarm', 'lowerarm', 'hand', 'thumb', 'index', 'middle', 'ring', 'pinky')
+
+def slab(human, z, band=0.012, side=0, over=(), need=0, into=None, hips=False):
+    """extents of the body surface around height z: (xmin, xmax, ymin, ymax); side=-1/+1 restricts to one leg.
+    over: garments worn there too (their torso part is measured as well, sleeves are not), so what is built goes over them.
+    The clothes' delete groups have already removed the skin they cover - at a sweater's waist there is NO body left to measure, and the old
+    silent fallback (an adult-sized 30 x 20 cm oval) gave the children's kilts a waistband standing several cm off the body. need > 0: return
+    None when fewer points than that were found, so the caller can decide; need = 0 keeps the fallback (with a warning). into: a list that gets the (x, y)
+    of every point measured (the kilt's rings follow the body's outline, not just its extents)."""
     xs = []; ys = []
     lim = abs(human.get('_thx', 0.1)) + 0.085
+    harm = [vg.index for vg in human.vertex_groups if vg.name.startswith(ARM_BONES)] if hips else []   # hips: what a kilt goes round, so not the hands
     for v in human.data.vertices:
         c = v.co
-        if abs(c.z - z) < band and abs(c.x) < lim and (side == 0 or c.x * side > 0): xs.append(c.x); ys.append(c.y)
-    if not xs: return (-0.15, 0.15, -0.1, 0.1)
+        if abs(c.z - z) >= band or abs(c.x) >= lim or (side and c.x * side <= 0): continue
+        if harm and sum(g.weight for g in v.groups if g.group in harm) > 0.3: continue   # a hand hanging beside the hips is not the hips (the kilt's outline-following rings would bulge out to it)
+        xs.append(c.x); ys.append(c.y)
+    for o in over:
+        arm = [vg.index for vg in o.vertex_groups if vg.name.startswith(ARM_BONES)]
+        for v in o.data.vertices:
+            c = v.co
+            if abs(c.z - z) >= band or abs(c.x) >= lim or (side and c.x * side <= 0): continue
+            if arm and sum(g.weight for g in v.groups if g.group in arm) > 0.3: continue   # a sleeve hanging beside the hips
+            xs.append(c.x); ys.append(c.y)
+    if len(xs) < max(1, need):
+        if band < 0.05: return slab(human, z, band * 2, side, over, need, into, hips)   # a coarse garment (a suit's trouser legs) can have no vertex row this close: look wider
+        if need: return None
+        print('slab: nothing measured at z=%.3f (side %d) - fallback oval' % (z, side)); return (-0.15, 0.15, -0.1, 0.1)
+    if into is not None: into.extend(zip(xs, ys))
     return (min(xs), max(xs), min(ys), max(ys))
 
 def new_part(person, name, bm, mat, groups_fn, role='kilt'):
@@ -407,6 +428,75 @@ def kilt_weights(zt, zh, wmax, sl, back_factor=0.7):
         return [('pelvis', (1 - wt) * 0.75), ('spine_01', (1 - wt) * 0.25), ('thigh_l', wt * wr), ('thigh_r', wt * (1 - wr))]
     return fn
 
+HEM_DROP = 0.13   # = AnimCrowd._extendHem(drop) in js/sim/people.js: a cut top's hem is extruded this far straight down at load, to tuck inside the kilt
+
+def waist_slab(person, z, into=None):
+    """what a kilt (or its belt) must go round at height z: the body there, and - within HEM_DROP below a cut top's hem - that hem's loop, which the game extrudes
+    straight down. Not the top's own cloth at z: below the cut it is gone, and above the cut the loose bottom of a sweater flares out (measuring it there
+    stood the children's waistbands off their backs)."""
+    human = person['human']; spec = person['spec']
+    b = slab(human, z, need=1, into=into, hips=True)
+    if spec.get('cut'):
+        zc = person['rig'].data.bones['pelvis'].head_local.z + spec['cut'][1]
+        if z >= zc - HEM_DROP:
+            for o in worn_over(person):
+                t = hem_loop(o, into) if spec['cut'][0] in o.name else None
+                if t: b = t if not b else (min(b[0], t[0]), max(b[1], t[1]), min(b[2], t[2]), max(b[3], t[3]))
+    if not b:   # no body left here at all (a suit's leg mask): what is worn there stands in for it
+        b = slab(human, z, over=worn_over(person), need=1, into=into, hips=True)
+    return b or slab(human, z, hips=True)   # (the last: the warned fallback)
+
+def hem_loop(o, into=None):
+    """extents (xmin, xmax, ymin, ymax) of a cut top's torso hem: the open boundary loop that encloses the body's centre line, the lowest such - the same
+    loop js/sim/people.js _extendHem picks and extrudes straight down. (Measuring the top's cloth near the cut height instead caught its loose sides.)"""
+    import bmesh
+    bm = bmesh.new(); bm.from_mesh(o.data)
+    bd = [e for e in bm.edges if e.is_boundary]; adj = {}
+    for e in bd:
+        a, b = e.verts; adj.setdefault(a, []).append(b); adj.setdefault(b, []).append(a)
+    seen, best, by = set(), None, 1e9
+    for v in adj:
+        if v in seen: continue
+        comp, st = [], [v]; seen.add(v)
+        while st:
+            u = st.pop(); comp.append(u)
+            for w in adj[u]:
+                if w not in seen: seen.add(w); st.append(w)
+        xs = [u.co.x for u in comp]; z = sum(u.co.z for u in comp) / len(comp)
+        if len(comp) > 8 and min(xs) < -0.05 and max(xs) > 0.05 and z < by: by, best = z, comp
+    r = (min(u.co.x for u in best), max(u.co.x for u in best), min(u.co.y for u in best), max(u.co.y for u in best)) if best else None
+    if best and into is not None: into.extend((u.co.x, u.co.y) for u in best)
+    bm.free(); return r
+
+def worn_over(person):
+    """the clothes a kilt / belt goes over (not footwear): measured with the body, see slab()"""
+    return [o for o, r, _ in person['parts'] if r == 'cloth' and not any(w in o.name.lower() for w in ('shoe', 'boot', 'sneaker'))]
+
+def convex_hull_2d(pts):
+    """the convex hull of 2-D points, counter-clockwise (Andrew's monotone chain)"""
+    P = sorted(set(pts))
+    if len(P) < 3: return P
+    cross = lambda o, a, b: (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo = []; hi = []
+    for p in P:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], p) <= 0: lo.pop()
+        lo.append(p)
+    for p in reversed(P):
+        while len(hi) >= 2 and cross(hi[-2], hi[-1], p) <= 0: hi.pop()
+        hi.append(p)
+    return lo[:-1] + hi[:-1]
+
+def ray_to_hull(hull, th):
+    """distance from the origin along direction th to a convex polygon around the origin"""
+    dx, dy = math.cos(th), math.sin(th); best = 0.0
+    for i in range(len(hull)):
+        (ax, ay), (bx, by) = hull[i], hull[(i + 1) % len(hull)]
+        ex, ey = bx - ax, by - ay; den = dx * ey - dy * ex
+        if abs(den) < 1e-12: continue
+        t = (ax * ey - ay * ex) / den; u = (ax * dy - ay * dx) / den
+        if t > 0 and -1e-9 <= u <= 1 + 1e-9: best = max(best, t)
+    return best
+
 def build_skirt(person, kd):
     import bmesh
     human = person['human']; rig = person['rig']; H = person['spec']['H'] / 1.0
@@ -417,13 +507,40 @@ def build_skirt(person, kd):
     if kind == 'kilt': zh = knee + 0.01
     else: zh = knee + kd.get('hem', 0.12) * H / 1.75
     prm = dict(kilt=dict(flare=0.045, apron=0.80, npl=7, amp=0.020, thick=0.007, wmax=0.50), pleated=dict(flare=0.065, apron=0.0, npl=9, amp=0.016, thick=0.006, wmax=0.50))[kind]
+    k = H / 1.75; prm = dict(prm, amp=prm['amp'] * k)   # pleat depth scales with the child; the flare does not - it is the room a swinging thigh needs
+    # (measured 2026-11-07, tools/people_holes.mjs, stand + walk + gait: a flare scaled down with height showed 2-3x the skin through the children's kilts)
     n = 72; NR = 7
-    cen = lambda z: slab(human, z)
+    cen = lambda z, into=None: waist_slab(person, z, into)   # round the body AND the top's tucked-in hem (the skin under a sweater is gone: see slab)
     rings = []
-    def ring_at(z, t, inner=0.0):
-        xmn, xmx, ymn, ymx = cen(z)
-        rx = max(abs(xmn), abs(xmx)) + 0.016 + prm['flare'] * t ** 1.3; ry = (ymx - ymn) / 2 + 0.014 + prm['flare'] * 0.8 * t ** 1.3; cy = (ymx + ymn) / 2
+    def ring_at(z, t, inner=0.0, zup=None, zdn=None):
+        # the cloth between two rings is straight: a ring must clear the body over the spans on both sides of it, up to the ring above and down to the one
+        # below, or the belly's curve between two rings pokes through the chord (the children's tummies under the waistband, 2026-11-07: 7 mm clear at rest
+        # and through in the idle sway). So measure at the ring and at thirds of the way to each neighbour.
+        zs = [z] + ([z + (zup - z) / 3, z + 2 * (zup - z) / 3] if zup is not None else []) + ([z + (zdn - z) / 3, z + 2 * (zdn - z) / 3] if zdn is not None else [])
+        pts = []; ex = [cen(zz, pts) for zz in zs]
+        xmn = min(e[0] for e in ex); xmx = max(e[1] for e in ex); ymn = min(e[2] for e in ex); ymx = max(e[3] for e in ex)
+        # LOD: the decimated kilt is a few big flat faces that cut into the hips as they swing; 8 mm more room below the waistband keeps them inside
+        # (the near, full-detail kilt keeps the snug fit; the simplified one is only drawn beyond ~11 m)
+        lx = (0.008 * min(1.0, t * 4)) if LOD else 0.0
+        rx = max(abs(xmn), abs(xmx)) + 0.016 + lx + prm['flare'] * t ** 1.3; ry = (ymx - ymn) / 2 + 0.014 + lx + prm['flare'] * 0.8 * t ** 1.3; cy = (ymx + ymn) / 2
+        # an oval through the extents is not enough: a hip is a rounded box, and on the diagonals (front of the hip bones, the seat) it reaches outside an
+        # oval of its own width and depth - the skin came out there. So along each direction the ring is also held off the body's own outline.
+        pa = [(math.atan2(py - cy, px), math.hypot(px, py - cy)) for px, py in pts]
+        def scale(th):
+            el = rx * ry / math.hypot(ry * math.cos(th), rx * math.sin(th))
+            near = [d for a, d in pa if abs((a - th + math.pi) % (2 * math.pi) - math.pi) < 2.5 * math.pi / n]
+            return max(1.0, (max(near) + 0.016 + lx + prm['flare'] * t ** 1.3) / el) if near else 1.0
         fade = min(1.0, max(0.0, (t - 0.04) / 0.35)); fade = fade * fade * (3 - 2 * fade)
+        # the front needs room for the thighs to flex forward at the hip (a child shifting its weight, a step): the capsules that js/sim/bodyfit.js fitLegs
+        # holds the cloth off start at the hip joint, and the top of a flexed thigh came through the front a hand's width under the waistband (2026-11-07)
+        fe = 0.015 * min(1.0, t / 0.25)
+        def front(th): c = math.sin(th); return fe * c * c if c > 0 else 0.0   # sin(th) > 0: the front half (+y)
+        base = [(rx * scale(2 * math.pi * i / n) + front(2 * math.pi * i / n), ry * scale(2 * math.pi * i / n) + front(2 * math.pi * i / n)) for i in range(n)]
+        # cloth spans a hollow, it does not follow it in: following the outline, the ring dipped into the gap between the thighs at the front centre
+        # (1 cm, every ring below the waistband) and the thighs came through there as the person moved (2026-11-07). So each ring is pushed out to its
+        # own convex hull before the pleats go on.
+        bp = [(ax * math.cos(2 * math.pi * i / n), ay * math.sin(2 * math.pi * i / n)) for i, (ax, ay) in enumerate(base)]
+        hull = convex_hull_2d(bp)
         out = []
         for i in range(n):
             th = 2 * math.pi * i / n
@@ -432,10 +549,25 @@ def build_skirt(person, kd):
             if abs(phi) > prm['apron'] and prm['amp'] > 0:
                 pp = (abs(phi) - prm['apron']) / (math.pi - prm['apron'] + 1e-9) * prm['npl']; fr = pp - math.floor(pp)
                 off = prm['amp'] * (fr / 0.78 if fr < 0.78 else (1 - fr) / 0.22) * fade
-            out.append(Vector(((rx + off - inner) * math.cos(th), cy + (ry + off - inner) * math.sin(th), z)))
+            h = ray_to_hull(hull, th) / math.hypot(*bp[i])   # >= 1: how far out the hull is along this direction
+            out.append(Vector(((base[i][0] * h + off - inner) * math.cos(th), cy + (base[i][1] * h + off - inner) * math.sin(th), z)))
         return out
-    for i in range(NR): rings.append(ring_at(zt + (zh - zt) * i / (NR - 1), i / (NR - 1)))
-    rings.append(ring_at(zh, 1.0, prm['thick'])); rings.append(ring_at(zt, 0.0, prm['thick']))
+    zr = lambda i: zt + (zh - zt) * i / (NR - 1)
+    for i in range(NR): rings.append(ring_at(zr(i), i / (NR - 1), zup=None if i == 0 else zr(i - 1), zdn=None if i in (0, NR - 1) else zr(i + 1)))   # (the waistband stays snug)
+    # cloth hangs from its widest point: below the seat a ring that follows the thighs' outline would tuck back in, and the kilt bulged at the seat and
+    # narrowed again to the hem (seen from behind, 2026-11-07). So no ring is smaller than the one above it, direction by direction.
+    ctr = lambda rg: (sum(p.x for p in rg) / len(rg), sum(p.y for p in rg) / len(rg))
+    for r in range(1, NR):
+        (ax, ay), (bx, by) = ctr(rings[r - 1]), ctr(rings[r])
+        for i, p in enumerate(rings[r]):
+            q = rings[r - 1][i]; d0 = math.hypot(q.x - ax, q.y - ay); d = math.hypot(p.x - bx, p.y - by)
+            if d < d0: rings[r][i] = Vector((bx + (p.x - bx) * d0 / d, by + (p.y - by) * d0 / d, p.z))
+    def shrink(rg, by_):   # the inside face of the hem / waistband: the outer ring, the cloth's thickness in
+        cx, cy_ = ctr(rg); out = []
+        for p in rg:
+            d = math.hypot(p.x - cx, p.y - cy_); out.append(Vector((cx + (p.x - cx) * (d - by_) / d, cy_ + (p.y - cy_) * (d - by_) / d, p.z)))
+        return out
+    rings.append(shrink(rings[NR - 1], prm['thick'])); rings.append(shrink(rings[0], prm['thick']))
     bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap')
     vr = [[bm.verts.new(p) for p in rg] for rg in rings]
     tm = 0.96
@@ -453,13 +585,13 @@ def build_skirt(person, kd):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     mat = tartan_material(kd['tart']) if 'tart' in kd else solid_material('skirt_' + kd.get('col', '#303030'), hex_rgb(kd.get('col', '#303030')))
     new_part(person, 'kilt', bm, mat, kilt_weights(zt, zh, prm['wmax'], person['sl']))
-    person['kilt_zt'] = zt; person['kilt_zh'] = zh
+    person['kilt_zt'] = zt; person['kilt_zh'] = zh; person['kilt_wmax'] = prm['wmax']
     return zt, zh
 
 def build_belt_sporran(person, kd, zt):
     import bmesh
     human = person['human']; H = person['spec']['H']; k = H / 1.75
-    xmn, xmx, ymn, ymx = slab(human, zt)
+    xmn, xmx, ymn, ymx = waist_slab(person, zt)   # the same measure as the kilt's waistband, which the belt sits on
     if kd.get('belt', True):
         bm = bmesh.new(); rings = []
         for z, ex in ((zt + 0.032 * k, 0.012), (zt - 0.006 * k, 0.012)):
@@ -470,7 +602,16 @@ def build_belt_sporran(person, kd, zt):
         new_part(person, 'belt', bm, solid_material('belt', hex_rgb('#2a1a12'), 0.55), lambda co: [('pelvis', 0.6), ('spine_01', 0.4)])
     if kd.get('sporran'):
         bm = bmesh.new()
-        zc = zt - 0.21 * k; yfront = slab(human, zc)[3] + 0.040
+        zc = zt - 0.21 * k
+        # hung on the kilt's own front, its back 6 mm clear of the cloth: the kilt is held off the body by a measured, eased amount (build_skirt), so a fixed
+        # distance off the body put the sporran inside it (the boy's, 2026-11-07)
+        kilt = next(o for o in person.get('extra', []) if o.name.startswith('kilt'))
+        fr = {}   # the kilt's front profile: per ring height, its front-most point near the centre line (an adult's rings are ~8 cm apart: interpolate)
+        for v in kilt.data.vertices:
+            if abs(v.co.x) < 0.03 and v.co.y > 0: zk = round(v.co.z, 4); fr[zk] = max(fr.get(zk, 0.0), v.co.y)
+        zk = sorted(fr); lo = max([z_ for z_ in zk if z_ <= zc], default=zk[0]); hi = min([z_ for z_ in zk if z_ >= zc], default=zk[-1])
+        yk = fr[lo] if hi == lo else fr[lo] + (fr[hi] - fr[lo]) * (zc - lo) / (hi - lo)
+        yfront = yk + 0.024 * k + 0.006
         for (cx, cy, cz, rx, ry, rz, col) in ((0, yfront, zc, 0.055 * k, 0.024 * k, 0.078 * k, '#5b4a3a'), (0, yfront + 0.010, zc + 0.043 * k, 0.044 * k, 0.018 * k, 0.030 * k, '#b8bcc4')):
             bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=1.0, matrix=Matrix.Translation((cx, cy, cz)) @ Matrix.Diagonal((rx, ry, rz, 1.0)))
         bm.faces.ensure_lookup_table()
@@ -478,23 +619,29 @@ def build_belt_sporran(person, kd, zt):
             for z_ in (zc - 0.06 * k, zc - 0.11 * k):
                 bm.verts.new((tx * k, yfront + 0.006, z_))
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-        def sw(co):
-            t = max(0.0, min(1.0, (zt - co.z) / 0.4)); wr = max(0.0, min(1.0, 0.5 + person['sl'] * co.x / 0.09))
-            return [('pelvis', 0.6), ('spine_01', 0.2), ('thigh_l', 0.2 * wr * t), ('thigh_r', 0.2 * (1 - wr) * t)]
-        new_part(person, 'sporran', bm, solid_material('sporran', hex_rgb('#5b4a3a'), 0.9), sw)
+        # it moves with the cloth it hangs on: the kilt's own weights at the sporran's centre, the same for every vertex (rigid). With weights of its own
+        # (mostly pelvis) the kilt swung forward over a flexed thigh and the sporran was left behind inside it (2026-11-07)
+        ws = kilt_weights(zt, person['kilt_zh'], person['kilt_wmax'], person['sl'])(Vector((0.0, yfront, zc)))
+        new_part(person, 'sporran', bm, solid_material('sporran', hex_rgb('#5b4a3a'), 0.9), lambda co: ws)
 
 def build_hose(person, kd, zh):
     import bmesh
-    rig = person['rig']; H = person['spec']['H']; k = H / 1.75
+    human = person['human']; rig = person['rig']; H = person['spec']['H']; k = H / 1.75
     colr, cuff = kd['hose']; bn = rig.data.bones
     bm = bmesh.new(); cb = bmesh.new(); seg = 18
     knee_z = bn['calf_l'].head_local.z; ankle_z = bn['foot_l'].head_local.z
     ztop = zh + 0.03; zbot = ankle_z + 0.06 * k
     for sn in ('l', 'r'):
-        kh = bn['calf_' + sn].head_local; ah = bn['foot_' + sn].head_local
+        kh = bn['calf_' + sn].head_local; ah = bn['foot_' + sn].head_local; side = 1 if (kh.x > 0) else -1
         def ctr(z):
+            # centred on the leg itself, not on the bone: the calf muscle sits behind the calf bone and the kneecap in front of it, so a ring round
+            # the bone let the knee and calf out through the back and front of the cuff (7-11 mm off centre on the children). Where the clothes
+            # left no skin to measure (a suit's leg mask), the bone axis and an average leg radius.
             t = max(0.0, min(1.0, (kh.z - z) / max(1e-6, kh.z - ah.z)))
-            return kh.x + (ah.x - kh.x) * t, kh.y + (ah.y - kh.y) * t - 0.0, 0.066 * k - 0.024 * k * t
+            bx, by, br = kh.x + (ah.x - kh.x) * t, kh.y + (ah.y - kh.y) * t, 0.066 * k - 0.024 * k * t
+            s = slab(human, z, 0.012, side, need=6)
+            if not s: return bx, by, br
+            return (s[0] + s[1]) / 2, (s[2] + s[3]) / 2, max(br * 0.85, (s[1] - s[0]) / 2, (s[3] - s[2]) / 2 / 1.05)
         rings = []; crings = []
         NZ = 8
         for i in range(NZ):
@@ -514,6 +661,15 @@ def build_hose(person, kd, zh):
         return [('calf_' + s_, 1.0 - 0.5 * t), ('thigh_' + s_, 0.5 * t)] if co.z > ankle_z + 0.12 else [('calf_' + s_, 0.75), ('foot_' + s_, 0.25)]
     new_part(person, 'hose', bm, solid_material('hose_' + colr, hex_rgb(colr), 0.95), lw)
     new_part(person, 'hose_cuff', cb, solid_material('hose_cuff_' + cuff, hex_rgb(cuff), 0.9), lw)
+    # The leg skin inside the hose is never meant to be seen, but the hose is a closed tube across the knee: when the knee bends the kneecap and calf came out
+    # through it (and the rest-pose tuck in tools/people_skinfit.py cannot follow a bend). Delete it, as the MakeHuman clothes' own masks do under every
+    # garment: 1.5 cm inside each open end, legs only (an arm or a hand passing at that height is left alone).
+    leg = [vg.index for vg in human.vertex_groups if vg.name.startswith(('thigh_', 'calf_', 'foot_'))]
+    lim = abs(human.get('_thx', 0.1)) + 0.085
+    bmh = bmesh.new(); bmh.from_mesh(human.data); dl = bmh.verts.layers.deform.verify()
+    kill = [v for v in bmh.verts if zbot + 0.015 < v.co.z < ztop - 0.015 and abs(v.co.x) < lim and sum(w for g, w in v[dl].items() if g in leg) > 0.5]
+    bmesh.ops.delete(bmh, geom=kill, context='VERTS'); bmh.to_mesh(human.data); bmh.free()
+    print('hose: removed %d leg skin vertices under the hose' % len(kill))
 
 def build_sash(person, tid):
     import bmesh
@@ -575,15 +731,15 @@ def add_garments(person):
     th = person['rig'].data.bones['thigh_l'].head_local
     person['human']['_thx'] = th.x; person['sl'] = 1.0 if th.x > 0 else -1.0
     if spec.get('trews') is not None: retexture_trews(person, spec['trews'])
+    for o, role, _ in person['parts']:   # first: the kilt is fitted round the cut top's hem (waist_slab)
+        if spec.get('cut') and role == 'cloth' and spec['cut'][0] in o.name:
+            o['_thx'] = person['human']['_thx']; cut_below(o, person['rig'].data.bones['pelvis'].head_local.z + spec['cut'][1])
     kd = spec.get('kilt')
     if kd:
         zt, zh = build_skirt(person, kd)
         build_belt_sporran(person, kd, zt)
         if kd.get('hose'): build_hose(person, kd, zh)
     if spec.get('sash') is not None: build_sash(person, spec['sash'])
-    for o, role, _ in person['parts']:
-        if spec.get('cut') and role == 'cloth' and spec['cut'][0] in o.name:
-            o['_thx'] = person['human']['_thx']; cut_below(o, person['rig'].data.bones['pelvis'].head_local.z + spec['cut'][1])
 
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
