@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { KxData } from '../osm.ts';
-import { bounds, buildingHeight, buildingPrisms, DEFAULT_BUILDING_HEIGHT, MAX_BUILDING_HEIGHT, MIN_BUILDING_HEIGHT, platformPrisms, railSegments, TUNNEL_DEPTH } from '../scene.ts';
+import { bounds, buildingHeight, buildingPrisms, DEFAULT_BUILDING_HEIGHT, MAX_BUILDING_HEIGHT, MIN_BUILDING_HEIGHT, platformPrisms, railSegments, ribbonTriangles, TUNNEL_DEPTH, twinRails } from '../scene.ts';
+import { GAUGE, RAIL_HEAD_WIDTH } from '../station.ts';
 
 const nodes: KxData['nodes'] = [[1, 0, 0], [2, 10, 0], [3, 20, 0], [4, 20, 10]];
 const rails: KxData['rails'] = [
@@ -60,4 +61,36 @@ test('scene: the real data yields tens of thousands of main-line vertices and a 
   const prisms = buildingPrisms(data);
   assert.ok(prisms.length > 900);
   assert.ok(prisms.every((p) => p.height >= MIN_BUILDING_HEIGHT && p.height <= MAX_BUILDING_HEIGHT));
+});
+
+test('scene: buildings can be excluded by id (the station is drawn as a roof, not a block)', () => {
+  const sq: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  const b = buildingPrisms({ buildings: [{ id: 1, pts: sq, kind: 'yes' }, { id: 2, pts: sq, kind: 'train_station' }] }, new Set([2]));
+  assert.equal(b.length, 1);
+  assert.equal(buildingPrisms({ buildings: [{ id: 1, pts: sq, kind: 'yes' }, { id: 2, pts: sq, kind: 'train_station' }] }).length, 2, 'nothing is excluded by default');
+});
+
+test('scene: twin rails are two lines per segment, one gauge apart, at the segment height', () => {
+  const seg = [0, 0, 0, 30, 0, 40, 5, -4, 5, 5, -4, 15]; // a main segment and a tunnel segment
+  const t = twinRails(seg);
+  assert.equal(t.length, 2 * seg.length, 'two lines per segment');
+  // first segment: rails offset along the normal (-0.8, 0.6) by half the centre spacing
+  const half = (GAUGE + RAIL_HEAD_WIDTH) / 2;
+  assert.ok(Math.abs((t[0] as number) - -0.8 * half) < 1e-9 && Math.abs((t[2] as number) - 0.6 * half) < 1e-9);
+  // heights are kept, so a tunnel's rails stay underground
+  assert.equal(t[13], -4);
+  assert.deepEqual(twinRails([1, 0, 1, 1, 0, 1]), [], 'a zero-length segment draws nothing');
+});
+
+test('scene: a ribbon of width w under a segment of length l covers exactly w * l, lifted by the given amount', () => {
+  const tri = ribbonTriangles([0, 0, 0, 30, 0, 40], 3, 0.02);
+  assert.equal(tri.length, 18);
+  let area = 0;
+  for (let i = 0; i < tri.length; i += 9) {
+    const [ax, , az, bx, , bz, cx, , cz] = tri.slice(i, i + 9) as number[];
+    area += Math.abs(((bx as number) - (ax as number)) * ((cz as number) - (az as number)) - ((cx as number) - (ax as number)) * ((bz as number) - (az as number))) / 2;
+  }
+  assert.ok(Math.abs(area - 3 * 50) < 1e-9, `area ${area}`);
+  assert.ok(tri.every((v, i) => i % 3 !== 1 || v === 0.02), 'every vertex is lifted by 0.02');
+  assert.deepEqual(ribbonTriangles([4, 0, 4, 4, 0, 4], 3), []);
 });

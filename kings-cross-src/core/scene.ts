@@ -2,6 +2,7 @@
 // No three.js here, so the rules are testable without a browser.
 import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
+import { railPair } from './station.ts';
 
 /** Height of the rail head above ground, metres. Tunnels are drawn below ground. */
 export const TUNNEL_DEPTH = -4;
@@ -47,9 +48,10 @@ export function buildingHeight(b: { height?: number; levels?: number }): number 
   return Math.min(MAX_BUILDING_HEIGHT, Math.max(MIN_BUILDING_HEIGHT, raw));
 }
 
-export function buildingPrisms(data: Pick<KxData, 'buildings'>): Prism[] {
+/** `exclude`: OSM ids drawn some other way (the station building is a roof, not a solid block). */
+export function buildingPrisms(data: Pick<KxData, 'buildings'>, exclude: ReadonlySet<number> = new Set()): Prism[] {
   return data.buildings
-    .filter((b) => b.pts.length >= 3)
+    .filter((b) => b.pts.length >= 3 && !exclude.has(b.id))
     .map((b) => {
       const p: Prism = { outline: b.pts, height: buildingHeight(b) };
       if (b.name) p.label = b.name;
@@ -65,6 +67,47 @@ export function platformPrisms(data: Pick<KxData, 'platforms'>): Prism[] {
       if (p.ref !== undefined) prism.label = p.ref;
       return prism;
     });
+}
+
+/**
+ * Twin running rails for flat xyz centre-line segments: two lines per segment, set one gauge
+ * (plus a rail head) apart. Same flat layout in and out, so it feeds a LineSegments directly.
+ */
+export function twinRails(segments: number[]): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 5 < segments.length; i += 6) {
+    const pair = railPair([segments[i] as number, segments[i + 2] as number], [segments[i + 3] as number, segments[i + 5] as number]);
+    if (!pair) continue;
+    const y1 = segments[i + 1] as number;
+    const y2 = segments[i + 4] as number;
+    for (const [x1, z1, x2, z2] of pair) out.push(x1, y1, z1, x2, y2, z2);
+  }
+  return out;
+}
+
+/**
+ * A flat strip `width` metres wide under each centre-line segment, as triangles (two per
+ * segment, flat xyz), lifted by `lift` so it sits just above the ground plane. Used for the
+ * ballast under the track.
+ */
+export function ribbonTriangles(segments: number[], width: number, lift = 0): number[] {
+  const out: number[] = [];
+  const h = width / 2;
+  for (let i = 0; i + 5 < segments.length; i += 6) {
+    const x1 = segments[i] as number;
+    const z1 = segments[i + 2] as number;
+    const x2 = segments[i + 3] as number;
+    const z2 = segments[i + 5] as number;
+    const l = Math.hypot(x2 - x1, z2 - z1);
+    if (l === 0) continue;
+    const nx = (-(z2 - z1) / l) * h;
+    const nz = ((x2 - x1) / l) * h;
+    const y1 = (segments[i + 1] as number) + lift;
+    const y2 = (segments[i + 4] as number) + lift;
+    out.push(x1 + nx, y1, z1 + nz, x1 - nx, y1, z1 - nz, x2 + nx, y2, z2 + nz);
+    out.push(x1 - nx, y1, z1 - nz, x2 - nx, y2, z2 - nz, x2 + nx, y2, z2 + nz);
+  }
+  return out;
 }
 
 /** Axis-aligned bounds of a set of flat xyz positions, for framing the camera. */
