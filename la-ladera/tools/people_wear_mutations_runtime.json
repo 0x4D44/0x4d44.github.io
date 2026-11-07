@@ -1,0 +1,268 @@
+[
+  {
+    "id": "runtime-01",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "lossless gzip loading preserves exact GLB bytes, resource roots and direct-GLB compatibility",
+    "description": "Resolve external model resources against the GLB URL rather than its directory.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "return loader.parseAsync(bytes, new URL('.', absolute).href);",
+        "to": "return loader.parseAsync(bytes, absolute.href);"
+      }
+    ]
+  },
+  {
+    "id": "runtime-02",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "CPU pose targets share packed data without GPU attributes and reject malformed input before registering a fit",
+    "description": "Accept unsupported seated target activation during parseFit.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "if (!activation || activation.parentJoint !== 'hips' || !Array.isArray(activation.thighJoints) || activation.thighJoints.length !== 2 || activation.thighJoints[0] !== 'thigh_l' || activation.thighJoints[1] !== 'thigh_r' || activation.startRadians !== Math.PI / 4 || activation.fullRadians !== 4 * Math.PI / 9) fail(`${label} has an unsupported seated activation`);",
+        "to": "void 0; /* mutation: omit validation */"
+      }
+    ]
+  },
+  {
+    "id": "runtime-03",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "generated sources reject invented reused designs and colours absent from the original design",
+    "description": "Accept an invented reused Part A design.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "if (!variants) throw new Error(`${g.id}: source design ${g.sourceDesign} is absent from the Part A garment manifest`);",
+        "to": "void 0; /* mutation: omit validation */"
+      }
+    ]
+  },
+  {
+    "id": "runtime-04",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "default construction and all original resident instantiations make no wardrobe requests or appearance changes",
+    "description": "Start a wardrobe manifest request during construction.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "    this._manifestLoad = null;",
+        "to": "    this._manifestLoad = this.fetchJson(this.root + \"manifest.people-wear.json\");"
+      }
+    ]
+  },
+  {
+    "id": "runtime-05",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "actual seated targets prepare independent LOD uploads before the mixer returns and remain inactive while standing",
+    "description": "Disable articulation-driven seated targets.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_pose.js",
+        "from": "  return weight;",
+        "to": "  return 0;"
+      }
+    ]
+  },
+  {
+    "id": "runtime-06",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "target displacement keeps the immutable total-bound origin and restores the original look on an activated violation",
+    "description": "Raise the live total displacement allowance to 300 mm.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_correction.js",
+        "from": "maxDistance: 0.18, out: pool.out",
+        "to": "maxDistance: 0.30, out: pool.out"
+      }
+    ]
+  },
+  {
+    "id": "runtime-07",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "real generated garments preserve all 32 clips and clear the actual posed body in both LODs",
+    "description": "Bind wearable meshes to the unanimated template skeleton.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "mesh.bind(original.skeleton, original.bindMatrix);",
+        "to": "mesh.bind(source.skeleton, original.bindMatrix);"
+      }
+    ]
+  },
+  {
+    "id": "runtime-08",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "bad garment, colour, archetype, slot and context replacements leave a live outfit intact",
+    "description": "Restore the active outfit before validating a replacement.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "    const normalized = validateOutfit(inst.id, items, options);",
+        "to": "    this.restore(inst);\n    const normalized = validateOutfit(inst.id, items, options);"
+      }
+    ]
+  },
+  {
+    "id": "runtime-09",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "children and teens cannot enter any wardrobe context, even with relabelled live metadata",
+    "description": "Remove the authoritative adult identity gate.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "if (!isAdultWearFit(id)) fail(`${id}: only existing adult and elder residents have wearable fits`);",
+        "to": "void 0; /* mutation: omit validation */"
+      }
+    ]
+  },
+  {
+    "id": "runtime-10",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "original far-LOD custom appearance restores exactly; wearable layers change LOD together",
+    "description": "Restore the material but retain the optional body geometry.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "inst.mesh.geometry = s.saved.geometry; inst.mesh.material = s.saved.material;",
+        "to": "inst.mesh.material = s.saved.material;"
+      }
+    ]
+  },
+  {
+    "id": "runtime-11",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "replacing an active outfit keeps its current LOD and does not make a hidden resident visible",
+    "description": "Reset replacement outfits to near LOD.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "const currentLod = inst.lod ?? 0, currentVisible = original.visible;",
+        "to": "const currentLod = 0, currentVisible = original.visible;"
+      }
+    ]
+  },
+  {
+    "id": "runtime-12",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "palette variants share one atlas Source and never rewrite source geometry or material colours",
+    "description": "Borrow mutable template position buffers across residents.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear_correction.js",
+        "from": "name === 'position' ? pool.position : name === 'normal' ? pool.normal : attr",
+        "to": "name === 'position' ? source.attributes.position : name === 'normal' ? pool.normal : attr"
+      }
+    ]
+  },
+  {
+    "id": "runtime-13",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "mixed geometry with and without COLOR_0 keeps correct materials through dressing and LOD swaps",
+    "description": "Enable vertex colours even on garments with no COLOR_0.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "name: 'wear_' + variant, vertexColors, roughness:",
+        "to": "name: 'wear_' + variant, vertexColors: true, roughness:"
+      }
+    ]
+  },
+  {
+    "id": "runtime-14",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "the optional body preserves the resident skin shade, shares its cached tint and restores the original material",
+    "description": "Discard an existing resident skin tint on the optional body.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "    const ratio = slotRatio(slot, hex);",
+        "to": "    return source;\n    const ratio = slotRatio(slot, hex);"
+      }
+    ]
+  },
+  {
+    "id": "runtime-15",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "the existing mixer updates private correction streams before returning, without drift or borrowed-buffer disposal",
+    "description": "Skip post-mixer updates of correction buffers.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "if (active) active.library.update(inst);",
+        "to": "if (false && active) active.library.update(inst);"
+      }
+    ]
+  },
+  {
+    "id": "runtime-16",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "finished callbacks can replace or restore outfits before the existing mixer returns",
+    "description": "Update the obsolete wardrobe after a mixer callback replaces it.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "if (active) active.library.update(inst);",
+        "to": "if (active) state.correction.update();"
+      }
+    ]
+  },
+  {
+    "id": "runtime-17",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "candidate geometry failures preserve the live outfit; later correction failures restore the original look",
+    "description": "Leave a failed active correction installed.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "catch (error) { this.restore(inst); throw error; }",
+        "to": "catch (error) { throw error; }"
+      }
+    ]
+  },
+  {
+    "id": "runtime-18",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "disposing a live library restores its residents and disposes only resources it owns",
+    "description": "Dispose library resources without first restoring live residents.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "for (const inst of [...this.active]) this.restore(inst);",
+        "to": "void 0; /* mutation: leave active residents installed */"
+      }
+    ]
+  },
+  {
+    "id": "runtime-19",
+    "suite": "la-ladera/tests/people-wear-runtime.test.mjs",
+    "test": "all generated garment entries can be inspected on each of the three adult body types",
+    "description": "Apply ordinary archetype restrictions in explicit studio inspection.",
+    "requiresAssets": true,
+    "changes": [
+      {
+        "path": "la-ladera/js/people/wear.js",
+        "from": "    if (context !== 'studio') {",
+        "to": "    if (true) {"
+      }
+    ]
+  }
+]

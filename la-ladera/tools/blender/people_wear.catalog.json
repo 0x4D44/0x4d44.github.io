@@ -1,0 +1,982 @@
+{
+  "schemaVersion": 1,
+  "set": "people-wear",
+  "adultOnly": true,
+  "defaultEnabled": false,
+  "source": "Original generated wearable meshes using the existing adult garment designs and palette. Existing resident appearances remain the default.",
+  "contexts": [
+    "daily",
+    "private",
+    "beach",
+    "studio"
+  ],
+  "limits": {
+    "nearTrianglesPerGarment": 1800,
+    "farTrianglesPerGarment": 600,
+    "farLodRatio": 0.4,
+    "compressedModelBytes": 6000000,
+    "gpuGrowthBytes": 12000000,
+    "maxInfluences": 4
+  },
+  "atlas": {
+    "file": "wear/wear_atlas.png",
+    "size": [
+      256,
+      256
+    ],
+    "grid": [
+      4,
+      4
+    ],
+    "tileOrder": "column,row from image top-left",
+    "insetPixels": 2,
+    "colourSpace": "srgb",
+    "embedded": false
+  },
+  "palette": "garments/palette.json",
+  "archetypes": {
+    "adult_man": {
+      "label": "Adult man",
+      "garments": [
+        "tshirt",
+        "shirt",
+        "jumper",
+        "trousers",
+        "jeans",
+        "shorts",
+        "leggings",
+        "cap",
+        "sun_hat",
+        "straw_hat",
+        "socks_pair",
+        "shoes",
+        "briefs",
+        "boxers",
+        "swim_trunks",
+        "rash_vest"
+      ]
+    },
+    "adult_woman": {
+      "label": "Adult woman",
+      "garments": [
+        "tshirt",
+        "shirt",
+        "blouse",
+        "jumper",
+        "trousers",
+        "jeans",
+        "skirt",
+        "dress",
+        "shorts",
+        "leggings",
+        "cap",
+        "sun_hat",
+        "straw_hat",
+        "socks_pair",
+        "shoes",
+        "briefs",
+        "boxers",
+        "bra",
+        "bikini_top",
+        "bikini_bottom",
+        "swimsuit_onepiece",
+        "swim_trunks",
+        "rash_vest"
+      ]
+    },
+    "elder_man": {
+      "label": "Elder man",
+      "garments": [
+        "tshirt",
+        "shirt",
+        "jumper",
+        "trousers",
+        "jeans",
+        "shorts",
+        "leggings",
+        "cap",
+        "sun_hat",
+        "straw_hat",
+        "socks_pair",
+        "shoes",
+        "briefs",
+        "boxers",
+        "swim_trunks",
+        "rash_vest"
+      ]
+    },
+    "elder_woman": {
+      "label": "Elder woman",
+      "garments": [
+        "tshirt",
+        "shirt",
+        "blouse",
+        "jumper",
+        "trousers",
+        "jeans",
+        "skirt",
+        "dress",
+        "shorts",
+        "leggings",
+        "cap",
+        "sun_hat",
+        "straw_hat",
+        "socks_pair",
+        "shoes",
+        "briefs",
+        "boxers",
+        "bra",
+        "bikini_top",
+        "bikini_bottom",
+        "swimsuit_onepiece",
+        "swim_trunks",
+        "rash_vest"
+      ]
+    }
+  },
+  "fits": {
+    "m_tendero": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "shop"
+      ]
+    },
+    "m_obrero": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "work",
+        "builder"
+      ]
+    },
+    "w_tendera": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "shop"
+      ]
+    },
+    "w_ama": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "home"
+      ]
+    },
+    "w_elder": {
+      "archetype": "elder_woman",
+      "kind": "elder",
+      "tags": [
+        "woman",
+        "elder"
+      ]
+    },
+    "m_elder": {
+      "archetype": "elder_man",
+      "kind": "elder",
+      "tags": [
+        "man",
+        "elder"
+      ]
+    },
+    "m_afro": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult"
+      ]
+    },
+    "w_afro": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult"
+      ]
+    },
+    "m_panadero": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:panaderia",
+        "cook",
+        "uniform"
+      ]
+    },
+    "w_cocinera": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:restaurante",
+        "shop:cafe",
+        "cook",
+        "vendor",
+        "uniform"
+      ]
+    },
+    "m_carnicero": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:carniceria",
+        "uniform"
+      ]
+    },
+    "w_peluquera": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:peluqueria",
+        "shop:modista",
+        "shop:zapateria"
+      ]
+    },
+    "m_mecanico": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:taller",
+        "shop:ferreteria",
+        "work",
+        "uniform"
+      ]
+    },
+    "w_farmaceutica": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:drogueria",
+        "nurse",
+        "uniform"
+      ]
+    },
+    "w_maestra": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "teacher",
+        "shop:papeleria",
+        "shop:minutos"
+      ]
+    },
+    "m_mototaxi": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "moto",
+        "work",
+        "uniform"
+      ]
+    },
+    "m_vendedor": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "vendor",
+        "work"
+      ]
+    },
+    "m_abuelo": {
+      "archetype": "elder_man",
+      "kind": "elder",
+      "tags": [
+        "man",
+        "elder"
+      ]
+    },
+    "w_beata": {
+      "archetype": "elder_woman",
+      "kind": "elder",
+      "tags": [
+        "woman",
+        "elder",
+        "beata",
+        "uniform"
+      ]
+    },
+    "m_joven": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult",
+        "young"
+      ]
+    },
+    "w_vecina": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "home"
+      ]
+    },
+    "m_don": {
+      "archetype": "adult_man",
+      "kind": "man",
+      "tags": [
+        "man",
+        "adult"
+      ]
+    },
+    "w_joven": {
+      "archetype": "adult_woman",
+      "kind": "woman",
+      "tags": [
+        "woman",
+        "adult",
+        "young"
+      ]
+    }
+  },
+  "evidenceBodies": [
+    "w_joven",
+    "m_tendero",
+    "w_vecina"
+  ],
+  "garments": [
+    {
+      "id": "tshirt",
+      "label": "Tshirt",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_navy",
+        "plain_teal",
+        "stripe_navy",
+        "stripe_teal",
+        "football_blue_white",
+        "football_red_white",
+        "football_green_yellow",
+        "football_burgundy_navy"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": "tshirt",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "shirt",
+      "label": "Shirt",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_navy",
+        "plain_teal",
+        "stripe_navy",
+        "stripe_teal"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "blouse",
+      "label": "Blouse",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_coral",
+        "plain_teal",
+        "plain_lavender",
+        "floral_cream"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "jumper",
+      "label": "Jumper",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_navy",
+        "plain_charcoal",
+        "plain_teal",
+        "plain_lavender"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "trousers",
+      "label": "Trousers",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_charcoal",
+        "plain_cream"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "jeans",
+      "label": "Jeans",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_charcoal"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "skirt",
+      "label": "Skirt",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_teal",
+        "plain_coral",
+        "floral_cream",
+        "floral_teal"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "dress",
+      "label": "Dress",
+      "slot": "dress",
+      "occupies": [
+        "top",
+        "bottom"
+      ],
+      "variants": [
+        "plain_teal",
+        "plain_coral",
+        "plain_lavender",
+        "floral_cream",
+        "floral_teal"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "shorts",
+      "label": "Shorts",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_charcoal",
+        "plain_teal",
+        "football_blue_white",
+        "football_green_yellow"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": "shorts",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "leggings",
+      "label": "Leggings",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_charcoal",
+        "plain_navy",
+        "plain_lavender"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "private"
+      ],
+      "sourceDesign": "leggings",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "cap",
+      "label": "Cap",
+      "slot": "hat",
+      "occupies": [
+        "hat"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_coral",
+        "plain_charcoal",
+        "football_burgundy_navy"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "beach",
+        "private"
+      ],
+      "sourceDesign": "cap",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "sun_hat",
+      "label": "Sun hat",
+      "slot": "hat",
+      "occupies": [
+        "hat"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_coral",
+        "plain_teal",
+        "floral_cream"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "beach",
+        "private"
+      ],
+      "sourceDesign": "sun_hat",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "straw_hat",
+      "label": "Straw hat",
+      "slot": "hat",
+      "occupies": [
+        "hat"
+      ],
+      "variants": [
+        "straw_natural",
+        "straw_pale"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "beach",
+        "private"
+      ],
+      "sourceDesign": "straw_hat",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "socks_pair",
+      "label": "Socks pair",
+      "slot": "socks",
+      "occupies": [
+        "socks"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_charcoal",
+        "plain_navy",
+        "stripe_teal"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "beach",
+        "private"
+      ],
+      "sourceDesign": "socks_pair",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "shoes",
+      "label": "Shoes",
+      "slot": "shoes",
+      "occupies": [
+        "shoes"
+      ],
+      "variants": [
+        "plain_charcoal",
+        "plain_navy",
+        "plain_cream"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "daily",
+        "beach",
+        "private"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "briefs",
+      "label": "Briefs",
+      "slot": "underwear_bottom",
+      "occupies": [
+        "underwear_bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_charcoal",
+        "plain_cream",
+        "stripe_navy"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "private"
+      ],
+      "sourceDesign": "briefs",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "boxers",
+      "label": "Boxers",
+      "slot": "underwear_bottom",
+      "occupies": [
+        "underwear_bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "stripe_navy",
+        "stripe_teal",
+        "plain_coral"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "private"
+      ],
+      "sourceDesign": "boxers",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "bra",
+      "label": "Bra",
+      "slot": "underwear_top",
+      "occupies": [
+        "underwear_top"
+      ],
+      "variants": [
+        "plain_cream",
+        "plain_lavender",
+        "plain_charcoal",
+        "floral_cream"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "private"
+      ],
+      "sourceDesign": "bra",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "bikini_top",
+      "label": "Bikini top",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_teal",
+        "plain_coral",
+        "floral_cream",
+        "floral_teal"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "beach"
+      ],
+      "sourceDesign": "bikini_top",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "bikini_bottom",
+      "label": "Bikini bottom",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_teal",
+        "plain_coral",
+        "floral_cream",
+        "floral_teal"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "beach"
+      ],
+      "sourceDesign": "bikini_bottom",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "swimsuit_onepiece",
+      "label": "Swimsuit onepiece",
+      "slot": "dress",
+      "occupies": [
+        "top",
+        "bottom"
+      ],
+      "variants": [
+        "plain_teal",
+        "plain_navy",
+        "floral_teal"
+      ],
+      "archetypes": [
+        "adult_woman",
+        "elder_woman"
+      ],
+      "contexts": [
+        "beach"
+      ],
+      "sourceDesign": "swimsuit_onepiece",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "swim_trunks",
+      "label": "Swim trunks",
+      "slot": "bottom",
+      "occupies": [
+        "bottom"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_coral",
+        "stripe_teal"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "beach"
+      ],
+      "sourceDesign": "swim_trunks",
+      "source": "original-generated",
+      "maxTriangles": 1800
+    },
+    {
+      "id": "rash_vest",
+      "label": "Rash vest",
+      "slot": "top",
+      "occupies": [
+        "top"
+      ],
+      "variants": [
+        "plain_navy",
+        "plain_teal",
+        "plain_coral",
+        "stripe_teal"
+      ],
+      "archetypes": [
+        "adult_man",
+        "adult_woman",
+        "elder_man",
+        "elder_woman"
+      ],
+      "contexts": [
+        "beach"
+      ],
+      "sourceDesign": null,
+      "source": "original-generated",
+      "maxTriangles": 1800
+    }
+  ]
+}

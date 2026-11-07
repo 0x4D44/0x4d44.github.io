@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Ladera · Adult wearable garment contact sheets</title>
+<link rel="icon" href="data:,">
+<script type="importmap">
+{"imports":{"three":"../vendor/three/build/three.module.min.js","three/addons/":"../vendor/three/examples/jsm/"}}
+</script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#e9e6de;color:#283530;font:14px system-ui,sans-serif}
+header{height:110px;padding:22px 30px;background:#223f36;color:#fbf8ed;display:flex;align-items:center;justify-content:space-between}
+h1{margin:0;font:600 29px Georgia,serif}header p{margin:8px 0 0;color:#ccd9ce;font-size:13px}
+#status{white-space:pre-line;text-align:right;font-variant-numeric:tabular-nums}
+#sheet{position:relative}canvas{position:absolute;inset:0;display:block}#labels{position:absolute;inset:0;display:grid;pointer-events:none}
+.label{position:relative;padding:13px 14px;border-right:1px solid #bfc8bd;border-bottom:1px solid #bfc8bd}
+.label strong{font-size:15px;font-weight:650}.sub{color:#69736a;font-size:11px;margin-top:3px}.fits{position:absolute;left:0;right:0;bottom:12px;display:grid;grid-template-columns:repeat(3,1fr);text-align:center;font-size:11px;color:#4b5e53}
+</style>
+</head>
+<body>
+<header><div><h1>La Ladera · The wearable wardrobe</h1><p>Actual exported skinned garments · three adult body types · shared designs and colours · identical camera and lighting</p></div><div id="status">Loading…</div></header>
+<main id="sheet"><canvas id="gallery" aria-label="Every wearable garment on three adult body types"></canvas><div id="labels"></div></main>
+<script type="module" src="./people-wear-gallery.mjs"></script>
+</body>
+</html>

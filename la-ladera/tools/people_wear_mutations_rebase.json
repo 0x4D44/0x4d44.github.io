@@ -1,0 +1,422 @@
+[
+  {
+    "id": "rebase-01",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source inventory pins both bodies all texture pages six recipes and both protected manifests",
+    "description": "Omit the current source head recipe from the required provenance inventory.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "'tools/blender/people_tex.py', 'tools/blender/people_head.py',",
+        "to": "'tools/blender/people_tex.py',"
+      }
+    ]
+  },
+  {
+    "id": "rebase-02",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source text pins use identical canonical LF bytes for LF and CRLF checkouts",
+    "description": "Fingerprint CRLF text without canonical LF normalization.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "raw.toString('utf8').replace(/\\r\\n/g, '\\n')",
+        "to": "raw.toString('utf8')"
+      }
+    ]
+  },
+  {
+    "id": "rebase-03",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source binary pins preserve every byte including CRLF and non-UTF8 bytes",
+    "description": "Decode and normalize binary files as UTF8 text before hashing them.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "const bytes = text ? Buffer.from(raw.toString('utf8').replace(/\\r\\n/g, '\\n')) : raw;",
+        "to": "const bytes = Buffer.from(raw.toString('utf8').replace(/\\r\\n/g, '\\n'));"
+      }
+    ]
+  },
+  {
+    "id": "rebase-04",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear source certificate rejects omitted reordered stale or extended rows and changed live sources",
+    "description": "Bypass comparison of supplied provenance with all current source files.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "if (!Array.isArray(actual) || JSON.stringify(actual) !== JSON.stringify(expected))",
+        "to": "if (false)"
+      }
+    ]
+  },
+  {
+    "id": "rebase-05",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear far LOD accepts exactly forty percent and rejects one triangle above the boundary",
+    "description": "Allow far meshes up to sixty percent of their decoded near mesh.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "far * 5 <= near * 2",
+        "to": "far * 5 <= near * 3"
+      }
+    ]
+  },
+  {
+    "id": "rebase-06",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD budgets reject zero fractional nonfinite unsafe and nonnumeric triangle counts",
+    "description": "Accept finite zero, fractional and unsafe triangle counts.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "Number.isSafeInteger(near) && near > 0 && Number.isSafeInteger(far) && far > 0",
+        "to": "Number.isFinite(near) && Number.isFinite(far)"
+      }
+    ]
+  },
+  {
+    "id": "rebase-07",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear compressed model budget accepts six million bytes and rejects one byte more",
+    "description": "Let one compressed model byte above the explicit budget pass.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "bytes <= COMPRESSED_MODEL_BYTES,",
+        "to": "bytes <= COMPRESSED_MODEL_BYTES + 1,"
+      }
+    ]
+  },
+  {
+    "id": "rebase-08",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear model budget rejects zero negative fractional nonfinite and nonnumeric byte counts",
+    "description": "Omit the positive safe-integer byte-count guard.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_validate.mjs",
+        "from": "Number.isSafeInteger(bytes) && bytes > 0 && bytes <= COMPRESSED_MODEL_BYTES",
+        "to": "bytes <= COMPRESSED_MODEL_BYTES"
+      }
+    ]
+  },
+  {
+    "id": "rebase-09-lf",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs preserve full LF fingerprints across CRLF checkouts without changing summaries",
+    "description": "Remove canonical LF normalization from full authoring report bytes.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "const bytes = Buffer.from(readFileSync(join(root, proof.path), 'utf8').replace(/\\r\\n/g, '\\n'));",
+        "to": "const bytes = Buffer.from(readFileSync(join(root, proof.path), 'utf8'));"
+      }
+    ]
+  },
+  {
+    "id": "rebase-10-path",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs reject redirected phase paths and non-LF pin forms",
+    "description": "Accept an existing proof from a different path and a non-LF declaration.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "proof?.path !== `dev/wear/authoring/${id}/${phase}.json` || proof.form !== 'LF'",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-11-bytes",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs reject stale byte counts hashes and changed full report bytes",
+    "description": "Ignore a stale certified canonical byte length while preserving its hash check.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "bytes.length !== proof.bytes || createHash('sha256').update(bytes).digest('hex') !== proof.sha256",
+        "to": "createHash('sha256').update(bytes).digest('hex') !== proof.sha256"
+      }
+    ]
+  },
+  {
+    "id": "rebase-11-hash",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs reject stale byte counts hashes and changed full report bytes",
+    "description": "Ignore a stale certified hash while preserving its byte-length check.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "bytes.length !== proof.bytes || createHash('sha256').update(bytes).digest('hex') !== proof.sha256",
+        "to": "bytes.length !== proof.bytes"
+      }
+    ]
+  },
+  {
+    "id": "rebase-12-identity",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs require the claimed resident authoring-only status and convergence even after repinning",
+    "description": "Accept a fresh proof belonging to a different resident.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "authored.id !== id || authored.authoringOnly !== true || authored.converged !== true",
+        "to": "authored.authoringOnly !== true || authored.converged !== true"
+      }
+    ]
+  },
+  {
+    "id": "rebase-12-authoring",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs require the claimed resident authoring-only status and convergence even after repinning",
+    "description": "Accept a proof that is not explicitly authoring-only.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "authored.id !== id || authored.authoringOnly !== true || authored.converged !== true",
+        "to": "authored.id !== id || authored.converged !== true"
+      }
+    ]
+  },
+  {
+    "id": "rebase-12-convergence",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring proofs require the claimed resident authoring-only status and convergence even after repinning",
+    "description": "Accept a nonconverged authoring report after its hashes and summary are refreshed.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "authored.id !== id || authored.authoringOnly !== true || authored.converged !== true",
+        "to": "authored.id !== id || authored.authoringOnly !== true"
+      }
+    ]
+  },
+  {
+    "id": "rebase-13-summary",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring compact summaries reject omitted extra or changed values from their pinned full proofs",
+    "description": "Omit the compact-summary versus full-proof semantic equality check.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "JSON.stringify(ordered(actual)) !== JSON.stringify(ordered(expected))",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-14-rest-array",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring full proofs require actual pass pool and target arrays rather than length-shaped objects",
+    "description": "Accept a fake rest pass collection with only a length property.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "!Array.isArray(authored.passes)",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-14-face-array",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring full proofs require actual pass pool and target arrays rather than length-shaped objects",
+    "description": "Accept a fake face-pool collection with only a length property.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "!Array.isArray(authored.pools)",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-14-seated-array",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear authoring full proofs require actual pass pool and target arrays rather than length-shaped objects",
+    "description": "Accept fake seated row and target collections with only length properties.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "!Array.isArray(authored.staticRows) || !Array.isArray(authored.targets)",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-15-lod-lf",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance pins the complete report identically in LF and CRLF form without mutating runtime counts",
+    "description": "Hash authoring LOD report checkout text without LF normalization.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "const reportBytes = Buffer.from(readFileSync(join(root, reference.path), 'utf8').replace(/\\r\\n/g, '\\n'));",
+        "to": "const reportBytes = Buffer.from(readFileSync(join(root, reference.path), 'utf8'));"
+      }
+    ]
+  },
+  {
+    "id": "rebase-16-lod-path",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects redirected paths non-LF forms stale pins and changed report bytes",
+    "description": "Accept an existing redirected report or a non-LF pin form.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "reference?.path !== `dev/wear/lod-provenance/${id}.json` || reference.form !== 'LF'",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-16-lod-bytes",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects redirected paths non-LF forms stale pins and changed report bytes",
+    "description": "Omit the complete relocated LOD report byte fingerprint.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "reportBytes.length !== reference.bytes || createHash('sha256').update(reportBytes).digest('hex') !== reference.sha256",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-17-lod-identity",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects repinned foreign identities missing garments and invented garment maps",
+    "description": "Allow a report that names another resident or schema.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "report.schema !== 1 || report.id !== id || !report.garments",
+        "to": "!report.garments"
+      }
+    ]
+  },
+  {
+    "id": "rebase-18-lod-far",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance binds reduction results and the forty-percent target to measured near and far triangles",
+    "description": "Accept a reduction result different from the measured far triangle count.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row?.triangles !== garment.farTris || row.targetTriangles",
+        "to": "false || row.targetTriangles"
+      }
+    ]
+  },
+  {
+    "id": "rebase-18-lod-target",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance binds reduction results and the forty-percent target to measured near and far triangles",
+    "description": "Omit the exact forty-percent or600-triangle authoring target.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row.targetTriangles !== Math.min(600, Math.floor(2 * garment.tris / 5))",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-19-lod-source",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects impossible reduction counters and malformed component topology",
+    "description": "Allow a source cut with fewer triangles than its claimed reduction result.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "!Number.isSafeInteger(row.sourceTriangles) || row.sourceTriangles < row.triangles",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-19-lod-topology",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear LOD provenance rejects impossible reduction counters and malformed component topology",
+    "description": "Accept malformed per-component topology pairs.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/people_wear_data.mjs",
+        "from": "row.topology.some(pair => !Array.isArray(pair) || pair.length !== 2 || !Number.isSafeInteger(pair[0]) || !Number.isSafeInteger(pair[1]) || pair[1] < 0)",
+        "to": "false"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-map",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Drop topology detail from the map while relocating it.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "maps={gid:copy.deepcopy(gar['lodReduction']) for gid,gar in garments.items() if 'lodReduction' in gar}",
+        "to": "maps={gid:{key:value for key,value in copy.deepcopy(gar['lodReduction']).items() if key!='topology'} for gid,gar in garments.items() if 'lodReduction' in gar}"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-count",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Accidentally remove the actual near triangle measurement during cleanup.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "for gar in garments.values():del gar['lodReduction']",
+        "to": "for gar in garments.values():gar.pop('tris',None);del gar['lodReduction']"
+      }
+    ]
+  },
+  {
+    "id": "rebase-20-lod-repin",
+    "suite": "la-ladera/tests/people-wear-rebase.test.mjs",
+    "test": "wear builder hoists every full LOD map losslessly and preserves all geometry metadata across repeated refreshes",
+    "description": "Silently accept an existing changed LOD evidence report.",
+    "requiresAssets": false,
+    "changes": [
+      {
+        "path": "la-ladera/tools/blender/people_wear_build.py",
+        "from": "if pin.get('bytes')!=len(data) or pin.get('sha256')!=hashlib.sha256(data).hexdigest():",
+        "to": "if False:"
+      }
+    ]
+  }
+]

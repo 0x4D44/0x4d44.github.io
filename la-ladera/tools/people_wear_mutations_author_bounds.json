@@ -1,0 +1,45 @@
+[
+  {
+    "id":"author-bound-01-upload",
+    "suite":"la-ladera/tests/people-wear-author-bounds.test.mjs",
+    "test":"authoring displacement includes a Float32 upload that rounds an otherwise bounded double candidate past eighty millimetres",
+    "description":"Ignore the actual Float32 upload displacement.",
+    "requiresAssets":false,
+    "changes":[{"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"return Math.max(simulated, emitted);","to":"return simulated;"}]
+  },
+  {
+    "id":"author-bound-02-double",
+    "suite":"la-ladera/tests/people-wear-author-bounds.test.mjs",
+    "test":"authoring displacement retains the double bound when Float32 rounding would hide an excessive simulation move",
+    "description":"Discard the original double-precision authoring bound.",
+    "requiresAssets":false,
+    "changes":[{"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"return Math.max(simulated, emitted);","to":"return emitted;"}]
+  },
+  {
+    "id":"author-bound-03-integration",
+    "suite":"la-ladera/tests/people-wear-author-bounds.test.mjs",
+    "test":"actual rest authoring rejects an emitted Float32 overshoot when no permitted alternative exit exists",
+    "description":"Bypass both wired emitted-byte checks in the actual rest authoring path.",
+    "requiresAssets":false,
+    "changes":[
+      {"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"let displacement = measureAuthorDisplacement(original, candidate);","to":"let displacement = Math.hypot(...candidate.map((value, k) => value - original[k]));"},
+      {"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"displacement = measureAuthorDisplacement(original, a.POSITION.subarray(at, at + 3));","to":"displacement = Math.hypot(...Array.from(a.POSITION.subarray(at, at + 3), (value, k) => value - original[k]));"}
+    ]
+  },
+  {
+    "id":"author-bound-04-trajectory",
+    "suite":"la-ladera/tests/people-wear-author-bounds.test.mjs",
+    "test":"ordinary rest authoring retains double simulation coordinates and emits the same once-rounded Float32 geometry",
+    "description":"Prematurely quantize the ordinary simulation trajectory to Float32.",
+    "requiresAssets":false,
+    "changes":[{"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"let candidate = current.map((value, k) => value + delta[k]);","to":"let candidate = current.map((value, k) => Math.fround(value + delta[k]));"}]
+  },
+  {
+    "id":"author-bound-05-committed",
+    "suite":"la-ladera/tests/people-wear-author-bounds.test.mjs",
+    "test":"rest authoring rechecks the actual committed stream after the candidate bound has passed",
+    "description":"Omit the committed-stream guard after a successful proposal check.",
+    "requiresAssets":false,
+    "changes":[{"path":"la-ladera/tools/blender/people_wear_validate.mjs","from":"need(displacement <= maxMove, `${id}/${pool.entries[0].gid}: committed authoring position exceeds ${maxMove} m in simulation or Float32 export`);","to":"need(true, `${id}/${pool.entries[0].gid}: committed authoring position exceeds ${maxMove} m in simulation or Float32 export`);"}]
+  }
+]
