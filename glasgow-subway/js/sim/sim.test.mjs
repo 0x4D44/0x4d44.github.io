@@ -15,6 +15,7 @@ import * as THREE from '../../vendor/three/build/three.module.js';
 import { Rats, RAT, strideAt } from './rats.js';
 import { Fleet, Ring, measureCycle, advanceToLap, unitIds, carIds, unitOfCar, isUnit, FLEET_FIRST, FLEET_SIZE, IN_SERVICE, CAR_LETTERS } from './fleet.js';
 import { readGlb, personIds, skinThrough, accessor } from './skincheck.mjs';
+import { chestPrint, takePrint, releasePrint, printsInUse, resetPrintsInUse, PRINT_COUNT, TEE } from './tees.js';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -679,4 +680,57 @@ test('people: with the whole roster in this crowd, the one least used in this cr
   for (const [i, n] of [[0, 1], [1, 1], [2, 1], [3, 2]]) for (let k = 0; k < n; k++) c.people.push({ char: roster[i], counted: true });
   for (const [i, n] of [[0, 5], [1, 5], [2, 5], [3, 2]]) charsInUse().set('p' + i, n);   // p3 is rarest globally but doubled here
   for (let seed = 1; seed <= 10; seed++) { c.rng = mulberry32(seed); assert.notEqual(c._pick().id, 'p3', 'seed ' + seed); }
+});
+
+// ---- people: T-shirt chest prints (tees.js)
+const teeShirts = (file) => {
+  const g = readGlb(fileURLToPath(new URL('../../models/' + file, import.meta.url))), out = [];
+  for (const node of g.json.nodes.filter((n) => /^person_.*_mesh$/.test(n.name))) for (const pr of g.json.meshes[node.mesh].primitives)
+    if (TEE.test(g.json.materials[pr.material].name)) out.push({ who: node.name, P: accessor(g, pr.attributes.POSITION) });
+  return out;
+};
+
+test('tees: every T-shirt in both people files gets a chest print square on its front, at chest height, and none on its back', () => {
+  for (const file of ['people.glb', 'people_lod.glb']) {
+    const shirts = teeShirts(file); assert.ok(shirts.length >= 1, file + ' has T-shirts');
+    for (const { who, P } of shirts) {
+      const cp = chestPrint(P), n = P.length / 3, at = file + ' ' + who; assert.ok(cp, at);
+      let y0 = Infinity, y1 = -Infinity; for (let i = 0; i < n; i++) { y0 = Math.min(y0, P[3 * i + 1]); y1 = Math.max(y1, P[3 * i + 1]); }
+      assert.ok(cp.size >= 0.12 && cp.size <= 0.22, at + ' size ' + cp.size);
+      assert.ok(cp.centre[1] > y0 + 0.5 * (y1 - y0) && cp.centre[1] + cp.size / 2 < y1, at + ' the square is on the upper chest, below the collar');
+      // the shirt surface nearest the middle of the square, in front (the people face -z) and behind: the front one is mid-print, the back one unprinted
+      let fi = -1, bi = -1, fd = Infinity, bd = Infinity;
+      for (let i = 0; i < n; i++) {
+        const d = Math.hypot(P[3 * i] - cp.centre[0], P[3 * i + 1] - cp.centre[1]);
+        if (P[3 * i + 2] < 0 && cp.attr[3 * i + 2] > 0.5 && d < fd) { fd = d; fi = i; }
+        if (P[3 * i + 2] > 0 && d < bd) { bd = d; bi = i; }
+      }
+      assert.ok(fi >= 0 && fd < cp.size, at + ' a printed front vertex within a print width of the middle (the LOD is sparse there): ' + fd);
+      assert.ok(Math.hypot(cp.attr[3 * fi] - 0.5, cp.attr[3 * fi + 1] - 0.5) <= fd / cp.size + 1e-4, at + ' the print is laid flat on the chest, unstretched');
+      // reads left to right as you face the wearer: they face -z, so your right is their -x side
+      for (let i = 0; i < n; i++) if (cp.attr[3 * i + 2] === 1 && Math.abs(P[3 * i] - cp.centre[0]) > 0.02) assert.equal(cp.attr[3 * i] > 0.5, P[3 * i] < cp.centre[0], at + ' print not mirrored');
+      assert.ok(bi >= 0); assert.equal(cp.attr[3 * bi + 2], 0, at + ' the back behind it is not printed');
+    }
+  }
+});
+
+test('tees: prints are spread evenly across the T-shirts on screen and handed back when people leave', () => {
+  resetPrintsInUse(); const rng = mulberry32(4), got = [];
+  for (let i = 0; i < 2 * PRINT_COUNT; i++) got.push(takePrint(rng));
+  assert.equal(new Set(got.slice(0, PRINT_COUNT)).size, PRINT_COUNT, 'no print twice before every print is worn');
+  for (let k = 0; k < PRINT_COUNT; k++) assert.equal(printsInUse().get(k), 2);
+  for (const k of got) releasePrint(k);
+  assert.equal(printsInUse().size, 0);
+  // through the crowd: a T-shirt wearer takes a print (from its own rng: the crowd's stream is untouched), keeps it across a re-dress, gives it back on _drop
+  resetCharsInUse(); const c = mkCrowd(mkRoster(4), 1); c.THREE = THREE; c.printRng = mulberry32(2);
+  const r0 = c.rng(); c.rng = mulberry32(1);
+  const { P } = teeShirts('people.glb')[0], g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  const dressed = (name) => { const o = new THREE.Group(); o.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ name }))); return o; };
+  const p = { char: c.chars[0], obj: dressed('cloth_T-shirt_basic.png') }, q = { char: c.chars[1], obj: dressed('cloth_hoodie.png') };
+  c._dressTee(p, p.obj); c._dressTee(q, q.obj);
+  assert.equal(c.rng(), r0, 'the crowd rng was not drawn on');
+  assert.ok(p.print >= 0 && p.print < PRINT_COUNT); assert.equal(q.print, undefined, 'no T-shirt, no print');
+  const k = p.print; c._dressTee(p, dressed('cloth_T-shirt_basic.png')); assert.equal(p.print, k, 'the same print after an LOD swap');
+  assert.equal(printsInUse().get(k), 1);
+  c._drop(p); assert.equal(p.print, null); assert.equal(printsInUse().size, 0);
 });

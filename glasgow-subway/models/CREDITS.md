@@ -94,3 +94,5 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | MakeHuman base mesh and targets | MakeHuman Community | CC0 |
 
 Station and in-train adverts in `adverts.jpg`, `adverts_land.jpg` and `adverts_cards.jpg` were generated with OpenAI image generation (via the Codex CLI) from our own briefs (`tools/adverts_prompts.md`). Every product, brand, book, author and charity in them is fictional.
+
+The T-shirt chest prints in `tee_prints.png` were generated the same way from our own briefs (`tools/tee_prompts.md`) and keyed and packed by `tools/build_tee_prints.py`. Every name, brand and logo on them is fictional or one of this site's own documents.
