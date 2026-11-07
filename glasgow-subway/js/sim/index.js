@@ -1444,6 +1444,7 @@ class Sim {
   dispose() {
     if (this.disposed) return; this.disposed = true;
     this.renderer.setAnimationLoop(null);
+    if (this.crowd) this.crowd.clear(); for (const v of Object.values(this.views || {})) if (v && v.saloon) v.saloon.clear();   // hand the characters back to the shared no-repeat registry (people.js IN_USE) before a new sim starts
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
     const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}

@@ -131,6 +131,20 @@ const catOf = (n) => {   // shared A3 clip names (rev 7) -> behaviour category
 };
 const dflt = (a, b) => (a != null ? a : b);
 const SIDESTEPS = [0, 0.55, -0.55, 1.1, -1.1];   // headings tried (rad off the straight line to the goal): straight on, then veering to the person's preferred side first. Never backwards - a person who can only retreat is boxed in and stops
+// Characters in use, shared by every AnimCrowd in the page: id -> number of people wearing it.
+const IN_USE = new Map();
+export const charsInUse = () => IN_USE;
+export const resetCharsInUse = () => IN_USE.clear();
+const useChar = (id, d) => { const n = (IN_USE.get(id) || 0) + d; if (n > 0) IN_USE.set(id, n); else IN_USE.delete(id); };
+/** Choose a character for one more person. Preference: (a) unused anywhere, from `pool` (the category the mix rolled); (b) unused anywhere, from any category;
+ *  (c) unused in this crowd (`local`: id -> count), least used globally; (d) least used in this crowd. `filter` (a spot only some fit) applies throughout; null when nobody fits.
+ *  Random among equals, drawn from `rng` only. */
+export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
+  const g = (c) => global.get(c.id) || 0, l = (c) => local.get(c.id) || 0;
+  const draw = (list) => { const a = list.slice(); while (a.length) { const i = Math.floor(rng() * a.length), c = a[i]; if (!filter || filter(c)) return c; a[i] = a[a.length - 1]; a.pop(); } return null; };   // filter lazily: it can be expensive
+  const least = (list, key) => { const by = new Map(); for (const c of list) { const k = key(c); (by.get(k) || by.set(k, []).get(k)).push(c); } for (const k of [...by.keys()].sort((x, y) => x - y)) { const c = draw(by.get(k)); if (c) return c; } return null; };
+  return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c));
+}
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99);
@@ -260,26 +274,23 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
-  _rawPick() {
+  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
+  _rollPool() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
     const r = this.rng(); let pool;
     const skirt = (c) => /skirt|dress|sash|highland_dress/.test(c.outfit), kilt = (c) => /kilt|highland/.test(c.outfit) && !skirt(c);
     if (r < 0.10) pool = this.chars.filter((c) => c.kid); else if (r < 0.13) pool = this.chars.filter((c) => c.staff);
     else if (r < 0.25) pool = this.chars.filter((c) => skirt(c) && !c.kid); else if (r < 0.33) pool = this.chars.filter((c) => kilt(c) && !c.kid);
     else pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c));
-    if (!pool.length) pool = this.chars; return pool[Math.floor(this.rng() * pool.length)];
+    return pool.length ? pool : this.chars;
   }
-  _pick(filter) {
-    const used = (c) => this.people.reduce((n, q) => n + (q.char === c ? 1 : 0), 0);   // spread the mix: repeats are progressively less likely
-    if (!filter) { for (let i = 0; i < 6; i++) { const c = this._rawPick(); if (this.rng() < 1 / (1 + used(c))) return c; } return this._rawPick(); }
-    for (let i = 0; i < 18; i++) { const c = this._rawPick(); if (this.rng() < 1 / (1 + 0.8 * used(c)) && filter(c)) return c; }
-    for (let i = 0; i < 10; i++) { const c = this._rawPick(); if (filter(c)) return c; }   // sample, don't test everyone (measuring is the expensive part)
-    return [...this.chars].sort((a, b) => (a.metaH || 9) - (b.metaH || 9)).find(filter) || null;   // nobody fits this spot -> leave it empty
+  _pick(filter) {   // never the same person twice in a crowd, nor (while the roster allows) twice on screen across crowds: see pickChar
+    const own = new Map(); for (const q of this.people) if (q.char) own.set(q.char.id, (own.get(q.char.id) || 0) + 1);
+    return pickChar(this.chars, this._rollPool(), filter, this.rng, own);
   }
   add(p, parent, filter) {
     if (!this.hasAnim || this.people.length >= this.max) return p;
-    const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch;
+    const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
     const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
