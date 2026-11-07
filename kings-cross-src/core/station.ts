@@ -255,6 +255,39 @@ export function shedBufferStops(data: Pick<KxData, 'buffers'>, shed: Pick<ShedLa
   });
 }
 
+/**
+ * OSM buildings that stand where the model already draws the station: their middle is inside the
+ * Western Concourse's circle or the shed's footprint (2 m beyond its walls). Drawn as plain blocks
+ * they would show up inside the dome and against the south front. Neighbours that merely touch
+ * the station polygon, such as the Great Northern Hotel, stay.
+ */
+export function buildingsUnderStation(data: Pick<KxData, 'buildings'>, shed: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'>, canopy: { centre: Pt; radius: number }): number[] {
+  const out: number[] = [];
+  for (const b of data.buildings) {
+    if (b.pts.length < 3) continue;
+    const c = centroid(b.pts);
+    const { u, v } = worldToShed(shed, c);
+    const inShed = u > -2 && u < shed.width + 2 && v > -2 && v < shed.length + 2;
+    const inDome = Math.hypot(c[0] - canopy.centre[0], c[1] - canopy.centre[1]) < canopy.radius;
+    if (inShed || inDome) out.push(b.id);
+  }
+  return out;
+}
+
+/**
+ * Where a train stands nose-in at a buffer stop, and how to turn it. The train's own frame (see
+ * web/src/train.ts) has the nose at z = 0 and the body running to +z. In three.js a turn of
+ * `rotationY` sends local (x, z) to (x cos + z sin, -x sin + z cos); turning by pi - heading
+ * sends +z to the shed's north (sin heading, -cos heading), along the tracks, and the nose
+ * stands `noseGap` metres north of the stop.
+ */
+export function standingTrainPose(shed: Pick<ShedLayout, 'heading'>, stop: { x: number; z: number }, noseGap: number): { nose: Pt; rotationY: number } {
+  return {
+    nose: [stop.x + Math.sin(shed.heading) * noseGap, stop.z - Math.cos(shed.heading) * noseGap],
+    rotationY: Math.PI - shed.heading,
+  };
+}
+
 /** Is the point inside the polygon (even-odd rule)? */
 export function pointInPolygon(p: Pt, pts: Pt[]): boolean {
   let inside = false;

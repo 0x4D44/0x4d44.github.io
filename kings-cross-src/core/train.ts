@@ -43,7 +43,7 @@ export const FIGURES = {
   intermediateBogieSpan: { value: 16.7, unit: 'm', basis: 'drawn', source: `${GBTRAINS} (via its Class 803 page): 16,700 mm for the 800, against Beacon's 17,000 mm for the 803` },
   /** Wheel diameter. Nobody has published it; the wheels are mostly hidden behind skirts. */
   wheelDiameter: { value: 0.86, unit: 'm', basis: 'assumed', source: 'not published; gbtrains.uk: "no source gives the real wheel size". A typical value for a UK EMU, to be replaced.' },
-  /** Centre of the pantograph base, measured from the cab nose of the first-class driving car. */
+  /** Centre of the pantograph base, measured from the cab nose of its driving car (measured on a first-class car; the other car is assumed the same). */
   pantographFromNose: { value: 20.88, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: folded pantograph spans 19,870 to 21,890 mm from the nose on 802111 (19,700 to 21,750 on 815020); this is the middle` },
   /** Folded pantograph height above the roof edge (a lower bound). */
   pantographFoldedHeight: { value: 0.24, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: "the folded pantograph standing about 240 mm above the roof edge", a lower bound` },
@@ -110,10 +110,12 @@ export interface TrainLayout {
  * The cars of a train laid end to end. Lengths already include the couplings (the unit lengths
  * are the sum of the car lengths), so cars abut.
  *
- * The pantograph goes on the first-class driving car (DPTF), measured from its cab nose.
- * gbtrains.uk draws a second one on the other driving car; nothing confirms that, so it is
- * left off. The 803 has no first-class car: its pantograph is placed on the rear driving car,
- * mirroring the 800's, which is an assumption.
+ * Each driving car carries a pantograph near its inner end: the car codes are DPTS and DPTF,
+ * "Driving Pantograph Trailer Standard / First", a Hornby model review of the Class 800 says
+ * "one pantograph on each driving car, at the inner ends", and gbtrains.uk draws two per
+ * train. Only the first-class car's position was measured (from photographs); the standard-
+ * class car, and both cars of the 803, take the same distance from their own nose, which is
+ * an assumption.
  */
 export function trainLayout(kind: TrainKind): TrainLayout {
   const spec = TRAIN_SPECS[kind];
@@ -136,12 +138,11 @@ export function trainLayout(kind: TrainKind): TrainLayout {
       const mid = (start + end) / 2;
       bogies = [mid - FIGURES.intermediateBogieSpan.value / 2, mid + FIGURES.intermediateBogieSpan.value / 2];
     }
-    // the DPTF is the rear car, so "from the nose" counts forwards from this car's rear end;
-    // the base is centred on that distance
-    const carries = type === 'DPTF' || (kind === 'lumo5' && index === last);
-    const centre = end - FIGURES.pantographFromNose.value;
+    // every driving car carries a pantograph at its inner end; "from the nose" counts from the
+    // car's own cab nose, so from `start` on the front car and back from `end` on the rear car
+    const centre = cab === 'front' ? start + FIGURES.pantographFromNose.value : end - FIGURES.pantographFromNose.value;
     const half = FIGURES.pantographLength.value / 2;
-    const pantograph = carries ? ([centre - half, centre + half] as const) : null;
+    const pantograph = cab !== null ? ([centre - half, centre + half] as const) : null;
     cars.push({ type, index, length, start, end, bogies, pantograph, cab });
     at = end;
   });

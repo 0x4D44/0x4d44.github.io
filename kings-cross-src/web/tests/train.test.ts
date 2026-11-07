@@ -3,10 +3,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
+import { worldToShed } from '../../core/station.ts';
 import { FIGURES, roofHeight, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIVERIES } from '../src/livery.ts';
-import { buildTrain } from '../src/train.ts';
+import { ASSUMED, buildTrain, carPlan, standTrain } from '../src/train.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
 
@@ -117,28 +118,29 @@ test('train: every bogie is at its layout position with four wheels of the right
   }
 });
 
-test('train: exactly one pantograph, folded, over the car and the span the layout gives', () => {
+test('train: two pantographs, one on each driving car, folded, over the span the layout gives', () => {
   for (const kind of TRAIN_KINDS) {
     const g = built(kind);
     const layout = trainLayout(kind);
     const pans = all(g, 'pantograph');
-    assert.equal(pans.length, 1, `${kind} pantographs`);
     const carriers = layout.cars.filter((c) => c.pantograph !== null);
-    assert.equal(carriers.length, 1, `${kind} cars with a pantograph in the layout`);
-    const car = carriers[0] as (typeof layout.cars)[number];
-    const pan = pans[0] as THREE.Object3D;
-    assert.equal(pan.parent?.name, `car-${car.index}`, `${kind} pantograph is on the right car`);
-    const [p0, p1] = car.pantograph as readonly [number, number];
-    const b = boxOf(pan);
-    near(b.min.z, p0, 0.02, `${kind} pantograph base start`);
-    near(b.max.z, p1, 0.02, `${kind} pantograph base end`);
-    near(b.max.y, FIGURES.roofEdgeHeight.value + FIGURES.pantographFoldedHeight.value, 0.01, `${kind} folded height above the roof edge`);
-    assert.ok(b.max.y < roofHeight(), `${kind} the folded pantograph stays under the roof covers`);
-    assert.ok(b.min.y >= FIGURES.roofEdgeHeight.value - 0.05, `${kind} pantograph stands on the roof`);
-    assert.ok(b.max.x - b.min.x < FIGURES.bodyWidth.value, `${kind} pantograph is narrower than the body`);
-    // the roof covers leave the pantograph's span clear
-    const carBox = boxOf(named(g, `car-${car.index}`));
-    assert.ok(carBox.max.y <= roofHeight() + 0.02);
+    assert.equal(carriers.length, 2, `${kind} cars with a pantograph in the layout`);
+    assert.equal(pans.length, 2, `${kind} pantographs`);
+    for (const car of carriers) {
+      const pan = pans.find((p) => p.parent?.name === `car-${car.index}`);
+      assert.ok(pan, `${kind} car ${car.index} has its pantograph`);
+      const [p0, p1] = car.pantograph as readonly [number, number];
+      const b = boxOf(pan as THREE.Object3D);
+      near(b.min.z, p0, 0.02, `${kind} pantograph base start`);
+      near(b.max.z, p1, 0.02, `${kind} pantograph base end`);
+      near(b.max.y, FIGURES.roofEdgeHeight.value + FIGURES.pantographFoldedHeight.value, 0.01, `${kind} folded height above the roof edge`);
+      assert.ok(b.max.y < roofHeight(), `${kind} the folded pantograph stays under the roof covers`);
+      assert.ok(b.min.y >= FIGURES.roofEdgeHeight.value - 0.05, `${kind} pantograph stands on the roof`);
+      assert.ok(b.max.x - b.min.x < FIGURES.bodyWidth.value, `${kind} pantograph is narrower than the body`);
+      // the roof covers leave the pantograph's span clear
+      const carBox = boxOf(named(g, `car-${car.index}`));
+      assert.ok(carBox.max.y <= roofHeight() + 0.02);
+    }
   }
 });
 
@@ -226,4 +228,73 @@ test('train: every livery says how good its colours are, and the Hull Trains one
   for (const [name, def] of Object.entries(LIVERIES)) assert.ok(def.basis.length > 10, `${name} has no basis note`);
   assert.match(LIVERIES.hulltrains.basis, /PLACEHOLDER/);
   assert.doesNotMatch(LIVERIES.lner.basis, /PLACEHOLDER/);
+});
+
+test('train: a standing train is nose-in at its buffer stop with every car north of it, on the stop track', () => {
+  const heading = 0.0287;
+  const shed = { origin: [7, -13] as [number, number], heading };
+  const stop = { x: 30, z: -20 };
+  const toShed = (x: number, z: number): { u: number; v: number } => worldToShed(shed, [x, z]);
+  const s = toShed(stop.x, stop.z);
+  for (const kind of TRAIN_KINDS) {
+    const g = buildTrain(kind);
+    const nose = standTrain(g, shed, stop, 1.5);
+    const noseShed = toShed(nose[0], nose[2]);
+    near(noseShed.v, s.v + 1.5, 1e-6, `${kind} nose is 1.5 m north of the stop`);
+    // each car's middle is on the track line, and the cars follow one another northwards
+    let last = s.v;
+    for (const car of trainLayout(kind).cars) {
+      const c = boxOf(named(g, `car-${car.index}`)).getCenter(new THREE.Vector3());
+      const p = toShed(c.x, c.z);
+      near(p.u, s.u, 0.2, `${kind} car ${car.index} on the track line`);
+      near(p.v, s.v + 1.5 + (car.start + car.end) / 2, 0.2, `${kind} car ${car.index} along the track`);
+      assert.ok(p.v > last, `${kind} car ${car.index} is further north than the one before`);
+      last = p.v;
+    }
+    // the rear of the last car is a full train length north of the nose
+    const rear = new THREE.Vector3(0, 0, trainLayout(kind).length).applyMatrix4(g.matrixWorld);
+    near(toShed(rear.x, rear.z).v, noseShed.v + trainLayout(kind).length, 1e-6, `${kind} rear along`);
+    near(toShed(rear.x, rear.z).u, s.u, 1e-6, `${kind} rear across`);
+  }
+});
+
+test('train: windows sit between the doors, about 2 m apart: nine on a through car, six on a driving car', () => {
+  for (const kind of TRAIN_KINDS) {
+    for (const car of trainLayout(kind).cars) {
+      const p = carPlan(car);
+      // gbtrains.uk: "the DPTS has six saloon windows"; the through cars are the same length with a door at each end
+      assert.equal(p.windows.length, car.cab !== null ? 6 : 9, `${kind} car ${car.index} ${car.type} window count`);
+      assert.equal(p.doors.length, 2, `${kind} car ${car.index} doors`);
+      const [d0, d1] = p.doors as [number, number];
+      const first = p.windows[0] as [number, number];
+      // a window is 1.6 to 1.75 m long: the 2 to 2.15 m pitch less a 0.4 m pier (an assumption; none is published)
+      assert.ok(first[1] - first[0] > 1.45 && first[1] - first[0] < 1.8, `${kind} car ${car.index} window length ${first[1] - first[0]}`);
+      for (const [a, b] of p.windows) {
+        assert.ok(a >= d0 + ASSUMED.doorWidth / 2 && b <= d1 - ASSUMED.doorWidth / 2, `${kind} car ${car.index} window ${a}-${b} between the doors`);
+        near(b - a, first[1] - first[0], 1e-9, 'every window is the same size');
+      }
+      for (let k = 1; k < p.windows.length; k++) {
+        const pitch = (p.windows[k] as [number, number])[0] - (p.windows[k - 1] as [number, number])[0];
+        assert.ok(pitch > 1.9 && pitch < 2.25, `${kind} car ${car.index} window pitch ${pitch}`);
+      }
+    }
+  }
+});
+
+test('train: the liveries are what they are named for: LNER white with a red sweep, Lumo blue, Hull Trains an unsourced placeholder', () => {
+  const rgb = (c: number): [number, number, number] => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+  const [lr, lg, lb] = rgb(LIVERIES.lner.body);
+  assert.ok(lr > 225 && lg > 225 && lb > 220, 'LNER body is white');
+  assert.notEqual(LIVERIES.lner.swoosh, null, 'LNER has a sweep');
+  const [sr, sg, sb] = rgb(LIVERIES.lner.swoosh as number);
+  assert.ok(sr > 170 && sg < 60 && sb < 80, 'the LNER sweep is red');
+  const [wr, wg, wb] = rgb(LIVERIES.lner.surround as number);
+  assert.ok(wr < 40 && wg < 40 && wb < 40, 'the LNER window surround is black');
+  const [yr, yg, yb] = rgb(LIVERIES.lner.noseFront);
+  assert.ok(yr > 220 && yg > 170 && yb < 40, 'the LNER nose front is yellow');
+  const [br, bg, bb] = rgb(LIVERIES.lumo.body);
+  assert.ok(bb > 170 && br < 60 && bg < 110, 'the Lumo body is blue');
+  assert.match(LIVERIES.hulltrains.basis, /^PLACEHOLDER/);
+  assert.match(LIVERIES.lner.basis, /sourced/);
+  assert.match(LIVERIES.lumo.basis, /blue sourced/);
 });

@@ -3,13 +3,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { bounds, buildingPrisms, PLATFORM_HEIGHT, platformPrisms, railSegments, ribbonTriangles, twinRails } from '../../core/scene.ts';
 import type { Prism } from '../../core/scene.ts';
-import { concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
-import { buildTrain } from './train.ts';
+import { buildTrain, standTrain } from './train.ts';
 import { addWorld } from './world.ts';
 import trackData from './data/kx-track.json';
 
@@ -98,15 +98,19 @@ function start(): void {
   if (platforms) scene.add(platforms);
   scene.add(lines(outlineSegments(platPrisms, PLATFORM_HEIGHT + 0.02), 0xe9d25a));
 
-  // The station footprint is a roof, not a block: skip it as a building and build the shed.
+  // The station footprint is a roof, not a block: skip it as a building and build the shed. So are
+  // the blocks that would stand inside the concourse dome or against the south front.
   const station = stationBuilding(data);
-  const buildings = mergedPrisms(buildingPrisms(data, new Set(station ? [station.id] : [])), new THREE.MeshLambertMaterial({ color: 0x56627a }));
+  const layout = shedLayout(data);
+  const canopy = concourseCanopy(data);
+  const hidden = new Set(buildingsUnderStation(data, layout, canopy));
+  if (station) hidden.add(station.id);
+  const buildings = mergedPrisms(buildingPrisms(data, hidden), new THREE.MeshLambertMaterial({ color: 0x56627a }));
   // ?bare=1 hides the surrounding buildings, so the evidence shots can measure the shed and platforms.
   if (buildings && !params.has('bare')) scene.add(buildings);
-  const layout = shedLayout(data);
   const shed = buildShed(layout);
   scene.add(shed);
-  if (station) scene.add(buildConcourse(concourseCanopy(data), station.pts, layout));
+  if (station) scene.add(buildConcourse(canopy, station.pts, layout));
 
   // buffer stops: a red block across each terminating track, turned with the platforms
   const stopMaterial = new THREE.MeshLambertMaterial({ color: 0xa83232 });
@@ -128,10 +132,8 @@ function start(): void {
     for (const [kind, trackIndex] of picks) {
       const stop = stops[trackIndex];
       if (!stop) continue;
-      const nose: [number, number, number] = [stop.x + Math.sin(layout.heading) * NOSE_TO_STOP, 0, stop.z - Math.cos(layout.heading) * NOSE_TO_STOP];
       const group = buildTrain(kind);
-      group.position.set(nose[0], nose[1], nose[2]);
-      group.rotation.y = Math.PI - layout.heading;
+      const nose = standTrain(group, layout, stop, NOSE_TO_STOP);
       scene.add(group);
       trains.push({ kind, group, noseWorld: nose, headingRad: layout.heading, trackIndex });
     }

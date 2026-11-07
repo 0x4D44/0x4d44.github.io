@@ -25,6 +25,8 @@ import {
   shedBufferStops,
   shedLayout,
   shedToWorld,
+  buildingsUnderStation,
+  standingTrainPose,
   stationBuilding,
   stationPlatforms,
   worldToShed,
@@ -251,4 +253,62 @@ test('station: the station building is found by name, and St Pancras is not it',
   const decoy = { id: 9, pts: [[0, 0], [1, 0], [1, 1]] as Pt[], kind: 'train_station', name: 'London St Pancras International' };
   assert.equal(stationBuilding({ buildings: [decoy] }), undefined);
   assert.throws(() => shedLayout({ platforms: data.platforms, buildings: [decoy] }), /station building/);
+});
+
+test('station: a train stands nose-in at its buffer stop and runs north along the track, at any heading', () => {
+  for (const heading of [0, 0.0287, -0.4, 1.2]) {
+    const shed = { origin: [7, -13] as Pt, heading };
+    const stop = { x: 30, z: -20 };
+    const { nose, rotationY } = standingTrainPose(shed, stop, 1.5);
+    // three.js turns local (x, z) by rotationY about the up axis to (x cos + z sin, -x sin + z cos)
+    const turn = (x: number, z: number): Pt => [x * Math.cos(rotationY) + z * Math.sin(rotationY), -x * Math.sin(rotationY) + z * Math.cos(rotationY)];
+    const at = (x: number, z: number): { u: number; v: number } => {
+      const d = turn(x, z);
+      return worldToShed(shed, [nose[0] + d[0], nose[1] + d[1]]);
+    };
+    const s = worldToShed(shed, [stop.x, stop.z]);
+    const near = (a: number, b: number, msg: string): void => assert.ok(Math.abs(a - b) < 1e-9, `${msg}: ${a} vs ${b} at heading ${heading}`);
+    // the nose is on the stop's track line, 1.5 m further north
+    near(at(0, 0).u, s.u, 'nose across');
+    near(at(0, 0).v, s.v + 1.5, 'nose along');
+    // the body of a 130 m train runs on up the same line, away from the buffers
+    near(at(0, 130).u, s.u, 'rear across');
+    near(at(0, 130).v, s.v + 1.5 + 130, 'rear along');
+    // the train's right-hand side (local +x) faces the shed's west, not its east
+    near(at(1, 0).u, s.u - 1, 'right hand is west');
+  }
+});
+
+test('station: blocks whose middle is under the dome or the shed are not drawn as buildings, neighbours are', () => {
+  const shed = { origin: [0, 0] as Pt, heading: 0, width: 72, length: 244 };
+  const canopy = { centre: [-100, -100] as Pt, radius: 50 };
+  const sq = (id: number, cx: number, cz: number, half = 2): { id: number; pts: Pt[] } => ({ id, pts: [[cx - half, cz - half], [cx + half, cz - half], [cx + half, cz + half], [cx - half, cz + half]] });
+  // heading 0: shed v runs north (-z), u east (+x); the shed covers x 0..72, z 0 down to -244
+  const under = buildingsUnderStation(
+    {
+      buildings: [
+        sq(1, -100, -100), // in the dome
+        sq(2, -100 + 49, -100), // just inside the dome's rim
+        sq(3, -100 + 52, -100), // just outside the rim
+        sq(4, 36, -100), // in the shed
+        sq(5, 73, -100), // 1 m outside the wall: inside the 2 m margin
+        sq(6, 75, -100), // 3 m outside: a neighbour
+        sq(7, 36, 1), // 1 m south of the front: inside the margin
+        sq(8, 36, 4), // 4 m south of the front: a neighbour
+        sq(9, 36, -245), // 1 m past the north mouth: inside the margin
+        sq(10, 36, -247), // 3 m past it: beyond the shed
+        { id: 11, pts: [[0, 0], [1, 1]] }, // degenerate
+        sq(12, -1, -100), // 1 m outside the west wall: inside the margin
+        sq(13, -3, -100), // 3 m outside it: a neighbour
+      ],
+    } as never,
+    shed,
+    canopy,
+  );
+  assert.deepEqual(under.sort((a, b) => a - b), [1, 2, 4, 5, 7, 9, 12]);
+  // the real data: the station polygon, the "Postmark" block in the dome and an industrial box on the
+  // south front; the Great Northern Hotel and the other neighbours stay
+  const real = buildingsUnderStation(data, shedLayout(data), concourseCanopy(data)).sort((a, b) => a - b);
+  assert.deepEqual(real, [260720558, 416601715, 971709486]);
+  assert.ok(!real.includes(46821177), 'the Great Northern Hotel is still drawn');
 });
