@@ -188,5 +188,25 @@ Player-visible skin, `tools/people_holes.mjs` (stand + walk + gait, cm² per vie
 `teen_hood` and `ya_tube_heels` are repaired by `tools/people_skinfit.py`; the tube top's waistband needed a 5 mm hem margin (a RECIPE (push, hem)
 pair). Sizes: `people.glb` 16.4 MB, `people_lod.glb` 8.4 MB (from 11.7 and 6.1) - about 0.35 MB per new person.
 
+## Roster growth, batch 2 (2026-11-07): 44 -> 58 people
+Fourteen adults (`adult_*`), with `face=True`, and the garments no CC0 / CC-BY asset offered, made in `tools/assets_people_mpfb.py` `add_garments`:
+- **Lycra leggings and bike shorts** (`lycra=`, `paint_lycra`): the body's own skin from the waist to the ankle or mid-thigh gets a cloth material,
+  so nothing can come through. The skin is cut along both hems first, and the hem vertices are kept out of the decimation (vertex group `keepW`):
+  whole faces, then the decimator, each left the hem a zigzag.
+- **Baggy jeans** (`baggy=`, `widen_jeans`): `elvs_jeans_straight_leg` pushed out from each leg's axis, nothing at the crotch, the fraction at the hem.
+- **Waist tuck** (`tuck=`, `tuck_waist`): the jeans' waistband (belt loops, a white label) stood out through a sweater or loose tee worn over it; the
+  bottom is pulled in, up to 1.5 cm, above the top's hem.
+- **Baseball caps and the top hat** (`hat=`, `build_cap` / `build_tophat`): fitted to the head + hair outline above the brows, weighted to `head`.
+  `fit_height` scales a person to the top of the head or hair, not the hat (`person['crown']`).
+- **One top hat, seen rarely**: `adult_tophat` has `rare: 0.12` in `people_meta.json`; `people.js` `pickChar` takes a rare person only that fraction
+  of the times they are drawn, except in its last step, so a crowd that needs everyone still gets him. He is 1.70 m, 1.80 m in the hat.
+
+Tried and dropped after renders: `toigo_halter_dress_knee_length` (skin through the skirt), `fedora_cocked` (grey shards),
+`elvs_male_trouser_short_1` (most of the seat missing).
+
+Player-visible skin, `tools/people_holes.mjs` (cm² per view): every new person is at most 13.1 full / 15.8 LOD (batch total full 54.1, LOD 59.7).
+The top is `adult_runner`, almost all of it in the standing pose (43 / 48; 5-9 walking): a tinted render shows only her bare arms and the crop top's
+bare midriff; the measure counts a hand within 3 cm of cloth. No skinfit repair was needed. Sizes: `people.glb` 21.0 MB, `people_lod.glb` 10.5 MB.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

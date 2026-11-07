@@ -3,19 +3,22 @@
 Only CC0 and CC-BY assets are used (no AGPL, NC or share-alike).
 
 ## Attribution
-People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman Plugin For Blender, GPL code used as a tool) from the CC0 MakeHuman base mesh, targets, skins, hair, eyes and clothes, plus CC-BY clothes and hair by culturalibre, Elvaerwyn, Mindfront (Sweden), MTKnife and punkduck, all from the MakeHuman community asset repository (https://static.makehumancommunity.org/assets.html). CC-BY items: (c) the authors named below, licensed CC BY (3.0 / 4.0), https://creativecommons.org/licenses/by/4.0/ ; textures were resized and re-compressed, meshes decimated and fitted. Tartan kilts, skirts, hose, sporran, sash, trews and all other models are our own work (generic setts, no official clan tartan is claimed).
+People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman Plugin For Blender, GPL code used as a tool) from the CC0 MakeHuman base mesh, targets, skins, hair, eyes and clothes, plus CC-BY clothes and hair by culturalibre, DredNicolson, Elvaerwyn, Mindfront (Sweden), MTKnife and punkduck, all from the MakeHuman community asset repository (https://static.makehumancommunity.org/assets.html). CC-BY items: (c) the authors named below, licensed CC BY (3.0 / 4.0), https://creativecommons.org/licenses/by/4.0/ ; textures were resized and re-compressed, meshes decimated and fitted. Tartan kilts, skirts, hose, sporran, sash, trews and all other models are our own work (generic setts, no official clan tartan is claimed).
 
 ## Assets
 | asset | author | licence |
 |---|---|---|
 | clothes/culturalibre_sneakers | culturalibre | CC-BY |
+| clothes/drednicolson_short-tail_camo_tee | DredNicolson | CC-BY |
 | clothes/elvs_crude_t-shirt_male | Makehuman edited by Elvaerwyn | CC0 |
 | clothes/elvs_disco_pants_skinny | Elvaerwyn | CC-BY |
 | clothes/elvs_hooded_sweat_jacket1 | Elvaerwyn | CC-BY |
 | clothes/elvs_jeans_bootcut | Elvaerwyn | CC-BY |
 | clothes/elvs_jeans_straight_leg | Elvaerwyn | CC-BY |
 | clothes/elvs_male_boho_top1 | Elvaerwyn | CC-BY |
+| clothes/elvs_male_logo_tshirt1 | Elvaerwyn | CC-BY 4.0 |
 | clothes/elvs_male_shirt_tie_tucked1 | Elvaerwyn | CC-BY |
+| clothes/elvs_male_shirt_untucked_bd1 | Elvaerwyn | CC-BY |
 | clothes/elvs_male_trouser | Elvaerwyn | CC-BY |
 | clothes/elvs_pencil_skirt | Elvaerwyn | CC-BY |
 | clothes/elvs_zombie_killer_sneakers | Elvaerwyn | CC-BY |
@@ -31,31 +34,42 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | clothes/mindfront_female_trousers_1 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_knitted_sweater_01 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_knitted_sweater_02 | Mindfront (Sweden) | CC-BY 4.0 |
+| clothes/mindfront_lusekofta | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_male_trousers_1 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_male_trousers_2 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_shoes_monk_strap_female | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_shoes_monk_strap_male | Mindfront (Sweden) | CC-BY 4.0 |
+| clothes/mindfront_shoes_oxford_female | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_shoes_oxford_male | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mtknife_pleated_mini_skirt | MTKnife | CC-BY |
 | clothes/punkduck_comfortable_sneakers | punkduck | CC-BY 3.0 |
+| clothes/punkduck_cycling_shoes | punkduck | CC-BY 3.0 |
 | clothes/punkduck_female_short_jeans | punkduck | CC-BY 4.0 |
 | clothes/punkduck_female_tight_jeans | punkduck | CC-BY 3.0 |
 | clothes/punkduck_male_classic_jeans | punkduck | CC-BY 4.0 |
 | clothes/punkduck_running_shoes_01 | punkduck | CC-BY 3.0 |
+| clothes/punkduck_sleeveless_crop_top | punkduck | CC-BY 3.0 |
 | clothes/punkduck_tennis_shoes | punkduck | CC-BY 3.0 |
 | clothes/punkduck_tube_top | punkduck | CC-BY 3.0 |
+| clothes/punkduck_v_neck_top | punkduck | CC-BY 3.0 |
+| clothes/punkduck_winter_boots | punkduck | CC-BY 3.0 |
 | clothes/punkduck_winter_coat | punkduck | CC-BY 3.0 |
 | clothes/toigo_ankle_boots_female | MRT | CC0 |
 | clothes/toigo_ankle_boots_male | MRT | CC0 |
 | clothes/toigo_ballet_flats | MRT | CC0 |
 | clothes/toigo_basic_tucked_t-shirt | MRT | CC0 |
 | clothes/toigo_camisole_top | MRT | CC0 |
+| clothes/toigo_female_suit_2 | MRT | CC0 |
 | clothes/toigo_fisherman_sweater | MRT | CC0 |
 | clothes/toigo_flats | MRT | CC0 |
 | clothes/toigo_halter_dress_midi | MRT | CC0 |
+| clothes/toigo_harem_pants | MRT | CC0 |
+| clothes/toigo_keyhole_tank_top | MRT | CC0 |
 | clothes/toigo_male_suit_tie_and_jacket | MRT | CC0 |
 | clothes/toigo_shift_dress | MRT | CC0 |
 | clothes/toigo_stiletto_booties | MRT | CC0 |
+| clothes/toigo_suit_with_dinner_jacket | MRT | CC0 |
+| clothes/toigo_wool_pants | MRT | CC0 |
 | eyebrows/eyebrow001 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyebrows/eyebrow002 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyebrows/eyebrow003 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
@@ -82,10 +96,13 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/bob01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/bob02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/culturalibre_hair_05 | culturalibre | CC0 |
+| hair/elvs_50s_updo | Elvaerwyn | CC-BY |
 | hair/elvs_daisy_hair | Elvaerwyn | CC-BY |
+| hair/elvs_island_princess_hair | Elvaerwyn | CC-BY |
 | hair/elvs_katherine_hair | Elvaerwyn | CC-BY |
 | hair/elvs_lady_hippy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_maxwell_hair | Elvaerwyn | CC-BY |
+| hair/elvs_reverse_french_braid_bun | Elvaerwyn | CC-BY |
 | hair/elvs_short_daisy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_wavy_bob | Elvaerwyn | CC-BY |
 | hair/long01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
@@ -96,10 +113,13 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/short04 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/toigo_blunt_bob_with_bangs | MRT | CC0 |
 | hair/toigo_curled_under_bob | MRT | CC0 |
+| hair/toigo_curled_under_bob_with_bangs | MRT | CC0 |
+| hair/toigo_inverted_bob | MRT | CC0 |
 | hair/toigo_inverted_bob_with_bangs | MRT | CC0 |
 | skins/middleage_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/middleage_african_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/middleage_asian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| skins/middleage_asian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/middleage_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/middleage_caucasian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/old_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |

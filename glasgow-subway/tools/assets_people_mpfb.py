@@ -93,7 +93,8 @@ PEOPLE = [
     #     comes through a T-shirt's hem: only under jumpers, hoodies and cardigans. Tried and dropped (renders, 2026-11-07): the o4saken hairs
     #     (draw as black shards), joepal_crude_t-shirt_female and namuhekam_male_polo_shirt (the jeans' waistband comes through), toigo_fisherman_sweater over
     #     elvs_disco_pants_skinny (the same), and
-    #     mindfront_cardigan_long_open_front (a lab coat, with the top under it showing through).
+    #     mindfront_cardigan_long_open_front (a lab coat, with the top under it showing through). Batch 2 dropped: toigo_halter_dress_knee_length
+    #     (skin through the skirt), fedora_cocked (draws as grey shards), elvs_male_trouser_short_1 (most of the seat missing).
     dict(id='teen_skater', kind='teen', outfit='trousers', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
     dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
@@ -122,6 +123,36 @@ PEOPLE = [
          clothes=['elvs_crude_t-shirt_male', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
     dict(id='ya_winter', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
          clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
+    # --- batch 2 (2026-11-07): adults, and the garments made here (add_garments): lycra=(leggings|shorts, colour) paints the body's own skin;
+    #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat, colour). rare=f: the crowd takes this person only f of the times they come up.
+    dict(id='adult_cap_baggy', kind='man', outfit='trousers', H=1.77, gender=1, age=0.52, weight=0.45, muscle=0.5, race=(0.05, 0.2, 0.75), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short02', hair_col='#17120e', face=True,
+         clothes=['elvs_male_logo_tshirt1', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01'], baggy=0.55, tuck=('jeans', 'tshirt'), hat=('cap', '#1d2a4a')),
+    dict(id='adult_runner', kind='woman', outfit='leggings', H=1.67, gender=0, age=0.55, weight=0.4, muscle=0.45, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes02', hair='ponytail01', hair_col='#b5854b', face=True,
+         clothes=['punkduck_sleeveless_crop_top', 'punkduck_running_shoes_01'], lycra=('leggings', '#1a1a1e')),
+    dict(id='adult_cyclist', kind='man', outfit='shorts', H=1.79, gender=1, age=0.60, weight=0.4, muscle=0.55, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#5a4a3a', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_cycling_shoes'], lycra=('shorts', '#121214')),
+    dict(id='adult_tophat', kind='man', outfit='trousers', H=1.70, gender=1, age=0.66, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='grey', brows='eyebrow004', lashes=None, hair='short04', hair_col='#8c8c8c', face=True,
+         clothes=['toigo_suit_with_dinner_jacket', 'mindfront_shoes_oxford_male'], hat=('tophat', '#141414'), rare=0.12),
+    dict(id='adult_baggy_knit', kind='woman', outfit='trousers', H=1.64, gender=0, age=0.50, weight=0.4, muscle=0.35, race=(0.9, 0.1, 0.0), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_inverted_bob', hair_col='#3a281c', face=True,
+         clothes=['mindfront_lusekofta', 'elvs_jeans_straight_leg', 'punkduck_comfortable_sneakers'], baggy=0.5, tuck=('jeans', 'lusekofta')),
+    dict(id='adult_leggings_knit', kind='woman', outfit='leggings', H=1.62, gender=0, age=0.68, weight=0.55, muscle=0.35, race=(0.9, 0.1, 0.0), skin='middleage_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='toigo_curled_under_bob_with_bangs', hair_col='#2a1d14', face=True,
+         clothes=['mindfront_knitted_sweater_02', 'toigo_ankle_boots_female'], lycra=('leggings', '#3b2140')),
+    dict(id='adult_cap_shorts', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.53, weight=0.45, muscle=0.4, race=(0.1, 0.85, 0.05), skin='young_caucasian_female2', eye='bluegreen', brows='eyebrow007', lashes='eyelashes01', hair='toigo_inverted_bob', hair_col='#b5854b', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_short_jeans', 'punkduck_tennis_shoes'], hat=('cap', '#2e5e3a')),
+    dict(id='adult_oxford_shirt', kind='man', outfit='trousers', H=1.74, gender=1, age=0.62, weight=0.55, muscle=0.45, race=(0.9, 0.1, 0.0), skin='middleage_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short03', hair_col='#241812', face=True,
+         clothes=['elvs_male_shirt_untucked_bd1', 'toigo_wool_pants', 'mindfront_shoes_oxford_male']),
+    dict(id='adult_vneck', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.58, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow006', lashes='eyelashes03', hair='elvs_50s_updo', hair_col='#c9a25e', face=True,
+         clothes=['punkduck_v_neck_top', 'punkduck_female_tight_jeans', 'mindfront_shoes_oxford_female']),
+    dict(id='adult_camo_cap', kind='man', outfit='trousers', H=1.78, gender=1, age=0.50, weight=0.5, muscle=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short02', hair_col='#a87a43', face=True,
+         clothes=['drednicolson_short-tail_camo_tee', 'mindfront_male_trousers_2', 'culturalibre_sneakers'], hat=('cap', '#111111')),
+    dict(id='adult_harem', kind='woman', outfit='trousers', H=1.65, gender=0, age=0.56, weight=0.45, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes01', hair='elvs_island_princess_hair', hair_col='#17120e', face=True,
+         clothes=['toigo_keyhole_tank_top', 'toigo_harem_pants', 'toigo_ballet_flats']),
+    dict(id='adult_lusekofta', kind='man', outfit='trousers', H=1.79, gender=1, age=0.64, weight=0.55, muscle=0.5, race=(0.05, 0.1, 0.85), skin='middleage_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#241812', face=True,
+         clothes=['mindfront_lusekofta', 'elvs_jeans_straight_leg', 'punkduck_winter_boots'], baggy=0.4, tuck=('jeans', 'lusekofta')),
+    dict(id='adult_tie_suit', kind='man', outfit='trousers', H=1.72, gender=1, age=0.72, weight=0.6, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='short03', hair_col='#9a9a9a', face=True,
+         clothes=['toigo_male_suit_tie_and_jacket', 'mindfront_shoes_monk_strap_male']),
+    dict(id='adult_suit_bun', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.60, weight=0.45, muscle=0.35, race=(0.85, 0.1, 0.05), skin='middleage_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes02', hair='elvs_reverse_french_braid_bun', hair_col='#17120e', face=True,
+         clothes=['toigo_female_suit_2', 'mindfront_shoes_oxford_female']),
 ]
 
 # ------------------------------------------------------------------ helpers: mhmat / images / materials
@@ -771,6 +802,173 @@ def build_sash(person, tid):
         return [('spine_03', t), ('spine_01', 1 - t)]
     new_part(person, 'sash', bm, tartan_material(tid), sw)
 
+# ------------------------------------------------------------------ batch 2 (2026-11-07): Lycra, baggy jeans, caps and the top hat. No CC0/CC-BY MakeHuman asset fits
+# these, so they are made here, fitted to the person as the kilt is.
+def paint_lycra(person, kind, colr):
+    """Lycra leggings or bike shorts: the body's own skin from the waist down to the ankle (leggings) or to mid-thigh (shorts) gets a cloth material.
+    Skin-tight by construction, so nothing can come through it, and nothing is drawn over it to fit. The arms are left as skin: a hand hangs beside the thigh."""
+    human = person['human']; bn = person['rig'].data.bones; k = person['spec']['H'] / 1.75
+    hip = bn['thigh_l'].head_local.z; knee = bn['calf_l'].head_local.z
+    z_hi = bn['pelvis'].head_local.z + 0.11 * k
+    z_lo = bn['foot_l'].head_local.z + 0.035 * k if kind == 'leggings' else hip - 0.42 * (hip - knee)
+    # cut the skin along the two edges first, so they are straight rather than the stair-step of whole faces (the new vertices' weights and UVs interpolate)
+    import bmesh
+    bm = bmesh.new(); bm.from_mesh(human.data)
+    for z in (z_lo, z_hi):
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5, plane_co=(0, 0, z), plane_no=(0, 0, 1))
+    bm.to_mesh(human.data); bm.free(); human.data.update()
+    arm = {vg.index for vg in human.vertex_groups if vg.name.startswith(ARM_BONES)}
+    inside = [z_lo - 1e-4 < v.co.z < z_hi + 1e-4 and sum(g.weight for g in v.groups if g.group in arm) < 0.3 for v in human.data.vertices]
+    mat = solid_material('cloth_lycra_' + colr.lstrip('#'), hex_rgb(colr), 0.42)
+    human.data.materials.append(mat); slot = len(human.data.materials) - 1
+    n = 0
+    for p_ in human.data.polygons:
+        if all(inside[i] for i in p_.vertices): p_.material_index = slot; n += 1
+    # the decimation (budget_and_join) collapsed edges across the new hem and left it a zigzag again: weight 0 = kept (Blender adds
+    # length * (2 - w1 - w2) * factor to an edge's collapse cost), so the vertices on the hem are 0 and every other vertex 1
+    mats = {}
+    for p_ in human.data.polygons:
+        for i in p_.vertices: mats.setdefault(i, set()).add(p_.material_index == slot)
+    vg = human.vertex_groups.new(name='keepW')
+    vg.add([i for i, m in mats.items() if len(m) == 1], 1.0, 'REPLACE')
+    print('lycra %s: %d body faces, %d hem vertices kept' % (kind, n, sum(1 for m in mats.values() if len(m) == 2)))
+
+def widen_jeans(person, amt):
+    """baggy jeans: elvs_jeans_straight_leg with each leg pushed out from its own axis, nothing at the crotch and amt (a fraction of the leg's radius)
+    at the hem. The skin under the jeans is already deleted by the jeans' own mask, so a wider leg cannot let anything through."""
+    bn = person['rig'].data.bones; sl = person['sl']
+    crotch = bn['thigh_l'].head_local.z - 0.06 * person['spec']['H'] / 1.75; ankle = bn['foot_l'].head_local.z
+    def axis(s, z):   # the leg bone axis at height z: hip -> knee -> ankle
+        a, b, c = bn['thigh_' + s].head_local, bn['calf_' + s].head_local, bn['foot_' + s].head_local
+        p, q = (a, b) if z > b.z else (b, c)
+        t = max(0.0, min(1.0, (p.z - z) / max(1e-6, p.z - q.z)))
+        return p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t
+    for o, role, _ in person['parts']:
+        if role != 'cloth' or 'jeans' not in o.name.lower(): continue
+        for v in o.data.vertices:
+            c = v.co
+            if c.z >= crotch: continue
+            t = min(1.0, (crotch - c.z) / max(1e-6, crotch - ankle)) ** 0.7
+            cx, cy = axis('l' if c.x * sl > 0 else 'r', c.z)
+            f = 1.0 + amt * t
+            c.x = cx + (c.x - cx) * f; c.y = cy + (c.y - cy) * f
+        o.data.update()
+        print('baggy: widened', o.name)
+
+def tuck_waist(person, bottom, top):
+    """the jeans' waistband (belt loops, a light label) stood out through a sweater or loose tee worn over it: pull the bottom garment in towards the body's
+    axis wherever the top hangs over it, 1.5 cm at most, ramped in over the 2.5 cm above the top's hem. The skin there is deleted by both garments' masks."""
+    bo = [o for o, r, _ in person['parts'] if r == 'cloth' and bottom in o.name]
+    to = [o for o, r, _ in person['parts'] if r == 'cloth' and top in o.name]
+    if not bo or not to: print('tuck: missing', bottom, top); return
+    arm = [vg.index for vg in to[0].vertex_groups if vg.name.startswith(ARM_BONES)]
+    lim = abs(person['human'].get('_thx', 0.1)) + 0.085
+    hem = min(v.co.z for v in to[0].data.vertices if abs(v.co.x) < lim and sum(g.weight for g in v.groups if g.group in arm) < 0.3)
+    bn = person['rig'].data.bones; cx = 0.0; cy = (bn['pelvis'].head_local.y + bn['spine_01'].head_local.y) / 2
+    n = 0
+    for v in bo[0].data.vertices:
+        c = v.co
+        if c.z <= hem: continue
+        dx, dy = c.x - cx, c.y - cy; r = math.hypot(dx, dy)
+        if r < 1e-6: continue
+        pull = min(0.015, 0.4 * r) * min(1.0, (c.z - hem) / 0.025)
+        c.x -= dx / r * pull; c.y -= dy / r * pull; n += 1
+    bo[0].data.update()
+    print('tuck: %s under %s, %d vertices above the hem at %.3f' % (bottom, top, n, hem))
+
+def head_fit(person):
+    """band height (just above the brows), crown height and the measured outline of head + hair between them, for a hat to go over"""
+    human = person['human']; k = person['spec']['H'] / 1.75
+    brows = [o for o, r, _ in person['parts'] if r == 'brows'][0]
+    hair = [o for o, r, _ in person['parts'] if r == 'hair']
+    zb = max(v.co.z for v in brows.data.vertices) + 0.018 * k
+    ztop = max(v.co.z for o in [human] + hair for v in o.data.vertices)
+    def ring(z, half):
+        s = slab(human, z, half, over=hair, need=6)
+        if not s: return None
+        return (s[0] + s[1]) / 2, (s[2] + s[3]) / 2, (s[1] - s[0]) / 2, (s[3] - s[2]) / 2
+    return zb, ztop, ring, k
+
+def _ellipse(bm, cx, cy, rx, ry, z, seg):
+    return [bm.verts.new((cx + rx * math.cos(2 * math.pi * j / seg), cy + ry * math.sin(2 * math.pi * j / seg), z)) for j in range(seg)]
+
+def _wall(bm, lo, hi):   # quads between two rings of equal length, wound to face outward (rings run anticlockwise seen from above)
+    n = len(lo)
+    for j in range(n): bm.faces.new((lo[j], lo[(j + 1) % n], hi[(j + 1) % n], hi[j]))
+
+def _closed_strip(bm, sections):
+    """a closed loop of 4-vertex cross-sections (a brim, a peak's edge): quads between consecutive sections, normals made consistent afterwards"""
+    fs = []
+    n = len(sections)
+    for i in range(n):
+        a, b = sections[i], sections[(i + 1) % n]
+        for e in range(4): fs.append(bm.faces.new((a[e], a[(e + 1) % 4], b[(e + 1) % 4], b[e])))
+    return fs
+
+def head_weights(co): return [('head', 1.0)]
+
+def build_cap(person, colr):
+    """a baseball cap: a crown that follows the head + hair outline up from the band, and a peak at the front (+y)"""
+    import bmesh
+    zb, ztop, ring, k = head_fit(person)
+    seg = 20; NZ = 5; h = (ztop - zb) / NZ
+    bm = bmesh.new(); rings = []
+    base = ring(zb + h / 2, h / 2 + 0.004)
+    for i in range(NZ):
+        z = zb + h * i
+        r = ring(z + h / 2, h / 2 + 0.004) or base   # each ring clears everything up to the next one
+        cx, cy, rx, ry = r
+        rings.append(_ellipse(bm, cx, cy, rx * 1.03 + 0.006, ry * 1.03 + 0.006, z, seg))
+    for i in range(NZ - 1): _wall(bm, rings[i], rings[i + 1])
+    cx, cy = base[0], base[1]
+    top = bm.verts.new((cx, cy, ztop + 0.008)); last = rings[-1]
+    for j in range(seg): bm.faces.new((last[j], last[(j + 1) % seg], top))
+    # peak: the front half of the band, reaching 7 cm forward, slightly down; 5 mm thick
+    _, _, rx, ry = base; rx = rx * 1.03 + 0.006; ry = ry * 1.03 + 0.006; L = 0.072 * k
+    secs = []; pts = []
+    for i in range(13):
+        th = math.radians(15 + 150 * i / 12)          # 15 .. 165 degrees: the front, +y
+        ix, iy = cx + rx * math.cos(th), cy + ry * math.sin(th)
+        reach = L * max(0.0, math.sin(th)) ** 1.5
+        pts.append(((ix, iy, zb + 0.004), (ix + 0.25 * reach * math.cos(th), iy + reach, zb - 0.010 * k)))
+    for (ix, iy, iz), (ox, oy, oz) in pts:
+        secs.append([bm.verts.new((ix, iy, iz)), bm.verts.new((ox, oy, oz)), bm.verts.new((ox, oy, oz - 0.005)), bm.verts.new((ix, iy, iz - 0.005))])
+    fs = []
+    for i in range(len(secs) - 1):
+        a, b = secs[i], secs[i + 1]
+        for e in range(4): fs.append(bm.faces.new((a[e], a[(e + 1) % 4], b[(e + 1) % 4], b[e])))
+    fs.append(bm.faces.new(secs[0][::-1])); fs.append(bm.faces.new(secs[-1]))
+    bmesh.ops.recalc_face_normals(bm, faces=fs)
+    new_part(person, 'cap', bm, solid_material('cloth_cap_' + colr.lstrip('#'), hex_rgb(colr), 0.85), head_weights)
+
+def build_tophat(person, colr):
+    """the one top hat: a slightly flared crown over the head + hair outline, a ribbon band, and a brim curled up at the sides"""
+    import bmesh
+    zb, ztop, ring, k = head_fit(person)
+    # the crown is a cylinder, so it must clear the widest the head + hair gets anywhere above the band
+    cx, cy, rx, ry = ring((zb + ztop) / 2, (ztop - zb) / 2 + 0.004)
+    rx = rx * 1.03 + 0.008; ry = ry * 1.03 + 0.008
+    seg = 24; Hc = 0.165 * k; z0 = zb - 0.004
+    bm = bmesh.new()
+    lo = _ellipse(bm, cx, cy, rx, ry, z0, seg); hi = _ellipse(bm, cx, cy, rx * 1.07, ry * 1.07, z0 + Hc, seg)
+    _wall(bm, lo, hi)
+    top = bm.verts.new((cx, cy, z0 + Hc))
+    for j in range(seg): bm.faces.new((hi[j], hi[(j + 1) % seg], top))
+    secs = []
+    for j in range(seg):
+        th = 2 * math.pi * j / seg; c_, s_ = math.cos(th), math.sin(th)
+        curl = 0.022 * k * abs(c_) ** 2                  # up at the sides
+        wx, wy = rx + 0.050 * k, ry + 0.058 * k
+        secs.append([bm.verts.new((cx + (rx - 0.002) * c_, cy + (ry - 0.002) * s_, z0 + 0.004)), bm.verts.new((cx + wx * c_, cy + wy * s_, z0 + curl + 0.002)),
+                     bm.verts.new((cx + wx * c_, cy + wy * s_, z0 + curl - 0.002)), bm.verts.new((cx + (rx - 0.002) * c_, cy + (ry - 0.002) * s_, z0 - 0.002))])
+    fs = _closed_strip(bm, secs)
+    bmesh.ops.recalc_face_normals(bm, faces=fs)
+    new_part(person, 'tophat', bm, solid_material('cloth_tophat_' + colr.lstrip('#'), hex_rgb(colr), 0.5), head_weights)
+    bb = bmesh.new()
+    blo = _ellipse(bb, cx, cy, rx * 1.004 + 0.0015, ry * 1.004 + 0.0015, z0 + 0.004, seg); bhi = _ellipse(bb, cx, cy, rx * 1.012 + 0.0015, ry * 1.012 + 0.0015, z0 + 0.032 * k, seg)
+    _wall(bb, blo, bhi)
+    new_part(person, 'tophat_band', bb, solid_material('cloth_tophat_band', hex_rgb('#4a1420'), 0.6), head_weights)
+
 def cut_below(obj, z):
     import bmesh
     bm = bmesh.new(); bm.from_mesh(obj.data)
@@ -812,6 +1010,13 @@ def add_garments(person):
         build_belt_sporran(person, kd, zt)
         if kd.get('hose'): build_hose(person, kd, zh)
     if spec.get('sash') is not None: build_sash(person, spec['sash'])
+    if spec.get('lycra'): paint_lycra(person, *spec['lycra'])
+    if spec.get('baggy'): widen_jeans(person, spec['baggy'])
+    if spec.get('tuck'): tuck_waist(person, *spec['tuck'])
+    # the height the person is scaled to (fit_height) is to the top of the head or hair, not of a hat made here
+    hat = spec.get('hat')
+    if hat: person['crown'] = max(v.co.z for o in person_objects(person) for v in o.data.vertices)
+    if hat: (build_cap if hat[0] == 'cap' else build_tophat)(person, hat[1])
 
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
@@ -855,11 +1060,11 @@ def budget_and_join(person, total):
     for o, r in parts:
         if r == 'lashes' and LOD:
             bpy.data.objects.remove(o); continue
-        wg = None
+        wg = 'keepW' if 'keepW' in o.vertex_groups else None   # paint_lycra: a hem the decimation must keep straight
         if r == 'cloth' and any(w in o.name.lower() for w in ('shoe', 'sneaker', 'boot')): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], 520))
         decimate(o, tgt[id(o)] / max(1, cnt[id(o)]), wg)
         if wg:
-            o.vertex_groups.remove(o.vertex_groups['faceW'])
+            o.vertex_groups.remove(o.vertex_groups[wg])
         keep.append(o)
     # shoes get a floor so they do not turn into blobs
     select_only(keep); bpy.context.view_layer.objects.active = person['human']
@@ -873,7 +1078,7 @@ def budget_and_join(person, total):
 
 def fit_height(person, H):
     me = person['mesh']; rig = person['rig']
-    zs = [v.co.z for v in me.data.vertices]; cur = max(zs) - min(zs); s = H / cur
+    zs = [v.co.z for v in me.data.vertices]; cur = person.get('crown', max(zs)) - min(zs); s = H / cur
     if abs(s - 1) < 0.002: return 1.0
     me.data.transform(Matrix.Scale(s, 4)); me.data.update()
     select_only([rig]); bpy.ops.object.mode_set(mode='EDIT')
@@ -886,6 +1091,7 @@ def shift_soles(person):
     zmin = min(v.co.z for v in me.data.vertices)
     if abs(zmin) > 1e-4:
         for v in me.data.vertices: v.co.z -= zmin
+        if 'crown' in person: person['crown'] -= zmin
         select_only([rig]); bpy.ops.object.mode_set(mode='EDIT')
         for eb in rig.data.edit_bones: eb.head.z -= zmin; eb.tail.z -= zmin
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -981,7 +1187,8 @@ def person_meta(person, eye_z):
     hip = bn['thigh_l'].head_local.z
     shw = abs(bn['upperarm_l'].head_local.x)
     drop = hip - SEAT_HIP
-    return dict(id=spec['id'], kind=spec['kind'], outfit=spec['outfit'], source='mpfb2', heightM=round(H, 3), shoulderWidthM=round(2 * shw + 0.09, 3), eyeHeightM=round(eye_z, 3),
+    extra = {'rare': spec['rare']} if spec.get('rare') else {}   # rare: the crowd picker takes this person only that fraction of the times they come up
+    return dict(**extra, id=spec['id'], kind=spec['kind'], outfit=spec['outfit'], source='mpfb2', heightM=round(H, 3), shoulderWidthM=round(2 * shw + 0.09, 3), eyeHeightM=round(eye_z, 3),
                 seatRootDropM=round(drop, 3), seatedEyeHeightM=round(eye_z - drop, 3), seatedHeadTopM=round(H - drop, 3), hipHeightM=round(hip, 3), legLengthM=round(hip, 3),
                 walkSpeedMps=round(4 * hip * math.sin(0.40) / 1.0, 2), walkFastSpeedMps=round(4 * hip * math.sin(0.52) / (19 / 24), 2), tris=tri_count(me))
 

@@ -6,6 +6,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/drednicolson_short-tail_camo_tee",
+  "author": "DredNicolson",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/elvs_crude_t-shirt_male",
   "author": "Makehuman edited by Elvaerwyn",
   "licence": "CC0",
@@ -42,7 +48,19 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/elvs_male_logo_tshirt1",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY 4.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/elvs_male_shirt_tie_tucked1",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/elvs_male_shirt_untucked_bd1",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -138,6 +156,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/mindfront_lusekofta",
+  "author": "Mindfront (Sweden)",
+  "licence": "CC-BY 4.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/mindfront_male_trousers_1",
   "author": "Mindfront (Sweden)",
   "licence": "CC-BY 4.0",
@@ -162,6 +186,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/mindfront_shoes_oxford_female",
+  "author": "Mindfront (Sweden)",
+  "licence": "CC-BY 4.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/mindfront_shoes_oxford_male",
   "author": "Mindfront (Sweden)",
   "licence": "CC-BY 4.0",
@@ -175,6 +205,12 @@
  },
  {
   "name": "clothes/punkduck_comfortable_sneakers",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_cycling_shoes",
   "author": "punkduck",
   "licence": "CC-BY 3.0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -204,6 +240,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/punkduck_sleeveless_crop_top",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/punkduck_tennis_shoes",
   "author": "punkduck",
   "licence": "CC-BY 3.0",
@@ -211,6 +253,18 @@
  },
  {
   "name": "clothes/punkduck_tube_top",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_v_neck_top",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_winter_boots",
   "author": "punkduck",
   "licence": "CC-BY 3.0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -252,6 +306,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/toigo_female_suit_2",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/toigo_fisherman_sweater",
   "author": "MRT",
   "licence": "CC0",
@@ -270,6 +330,18 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/toigo_harem_pants",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_keyhole_tank_top",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/toigo_male_suit_tie_and_jacket",
   "author": "MRT",
   "licence": "CC0",
@@ -283,6 +355,18 @@
  },
  {
   "name": "clothes/toigo_stiletto_booties",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_suit_with_dinner_jacket",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_wool_pants",
   "author": "MRT",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -444,7 +528,19 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "hair/elvs_50s_updo",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "hair/elvs_daisy_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_island_princess_hair",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -463,6 +559,12 @@
  },
  {
   "name": "hair/elvs_maxwell_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_reverse_french_braid_bun",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -528,6 +630,18 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "hair/toigo_curled_under_bob_with_bangs",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/toigo_inverted_bob",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "hair/toigo_inverted_bob_with_bangs",
   "author": "MRT",
   "licence": "CC0",
@@ -547,6 +661,12 @@
  },
  {
   "name": "skins/middleage_asian_female",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/middleage_asian_male",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"

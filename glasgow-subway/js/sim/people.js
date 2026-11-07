@@ -139,12 +139,13 @@ export const resetCharsInUse = () => IN_USE.clear();
 const useChar = (id, d) => { const n = (IN_USE.get(id) || 0) + d; if (n > 0) IN_USE.set(id, n); else IN_USE.delete(id); };
 /** Choose a character for one more person. Preference: (a) unused anywhere, from `pool` (the category the mix rolled); (b) unused anywhere, from any category;
  *  (c) unused in this crowd (`local`: id -> count), least used globally; (d) least used in this crowd. `filter` (a spot only some fit) applies throughout; null when nobody fits.
- *  Random among equals, drawn from `rng` only. */
+ *  Random among equals, drawn from `rng` only. A character with `rare` (0..1, from people_meta.json: the one top hat) is taken only that fraction of the
+ *  times it is drawn, in every step but the last, which must always find someone. */
 export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
   const g = (c) => global.get(c.id) || 0, l = (c) => local.get(c.id) || 0;
-  const draw = (list) => { const a = list.slice(); while (a.length) { const i = Math.floor(rng() * a.length), c = a[i]; if (!filter || filter(c)) return c; a[i] = a[a.length - 1]; a.pop(); } return null; };   // filter lazily: it can be expensive
-  const least = (list, key) => { const by = new Map(); for (const c of list) { const k = key(c); (by.get(k) || by.set(k, []).get(k)).push(c); } for (const k of [...by.keys()].sort((x, y) => x - y)) { const c = draw(by.get(k)); if (c) return c; } return null; };
-  return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c));
+  const draw = (list, rare = true) => { const a = list.slice(); while (a.length) { const i = Math.floor(rng() * a.length), c = a[i]; if ((!rare || !c.rare || rng() < c.rare) && (!filter || filter(c))) return c; a[i] = a[a.length - 1]; a.pop(); } return null; };   // filter lazily: it can be expensive
+  const least = (list, key, rare) => { const by = new Map(); for (const c of list) { const k = key(c); (by.get(k) || by.set(k, []).get(k)).push(c); } for (const k of [...by.keys()].sort((x, y) => x - y)) { const c = draw(by.get(k), rare); if (c) return c; } return null; };
+  return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c), false);
 }
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
@@ -162,7 +163,7 @@ export class AnimCrowd {
       const pools = {}; for (const k of Object.keys(shared)) { if (k === 'fidget' && !kid) continue; pools[k] = shared[k].filter((a) => !a.name.includes('__') || a.name.startsWith(m[1] + '__')); if (!pools[k].length) delete pools[k]; }
       if (!pools.idle) continue;
       const lodNode = lodGltf ? (lodGltf.scene.getObjectByName('person_' + m[1])) : null;
-      this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
+      this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3, rare: (mt && mt.rare) || 0 });
     }
     for (const c of this.chars) if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) { this._extendHem(c.node); if (c.lodNode) this._extendHem(c.lodNode); }
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
