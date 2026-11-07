@@ -1,0 +1,12 @@
+{
+  "started": "2026-11-03T05:05:17.803062+00:00",
+  "ended": "2026-11-03T05:05:19.987395+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--input-type=module",
+    "-e",
+    "import { readFileSync } from \"node:fs\"; import { resolve } from \"node:path\"; import { createHash } from \"node:crypto\"; import assert from \"node:assert/strict\"; import { inspectKtx2, decodeKtx2, seamMetrics } from \"./la-ladera/tools/blender/extkit_texture_codec.mjs\"; const root=\"la-ladera/assets/models/extkit\"; const materials=JSON.parse(readFileSync(root+\"/materials.json\")); let count=0,gpu=0,maxNormalXY2=0; for(const file of materials.files) { const b=readFileSync(resolve(root,file.file)); assert.equal(b.length,file.bytes); assert.equal(createHash(\"sha256\").update(b).digest(\"hex\"),file.sha256); } for (const wall of materials.walls) for (const key of [\"map\",\"normal\",\"orm\"]) { const info=inspectKtx2(readFileSync(resolve(root,wall[key]))); gpu+=info.gpuBytes; for(let level=0;level<info.levelCount;level++) { const decoded=decodeKtx2(info,level); const seam=seamMetrics(decoded); assert.equal(seam.horizontalMax,0,wall.id+\" \"+key+\" mip\"+level); assert.equal(seam.verticalMax,0,wall.id+\" \"+key+\" mip\"+level); if(key===\"normal\") for(let p=0;p<decoded.pixels.length;p+=3) { const x=decoded.pixels[p]/127.5-1,y=decoded.pixels[p+1]/127.5-1; maxNormalXY2=Math.max(maxNormalXY2,x*x+y*y); } count++; } console.log(wall.id+\" \"+key+\":11 valid mips; opposite edges identical\"); } assert.ok(maxNormalXY2<=1); console.log(JSON.stringify({hashedTexturePlanes:materials.files.length,decodedMips:count,wallGpuBytes:gpu,maxNormalXY2,allEdgesExact:true}));"
+  ],
+  "exitCode": 0,
+  "log": "textures-final-byte-decode.log"
+}

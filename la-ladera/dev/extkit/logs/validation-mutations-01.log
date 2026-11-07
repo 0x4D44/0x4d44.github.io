@@ -1,0 +1,61 @@
+UTC start: 2026-11-03T05:07:20.813374+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tests/extkit-mutations.mjs
+
+KILLED complete: the complete dormant library decodes every near and LOD root inside all budgets
+KILLED family_coverage: fixed family requirements reject a catalogue with all six plants removed
+KILLED tank_variants: tank capacity colour and stand combinations are checked independently
+KILLED rebar_variants: all three rebar lengths must include both rust levels
+KILLED pipe_variants: pipe and drain catalogues retain their straight elbow tee and wall bracket designs
+KILLED grille_patterns: eight grille names cannot disguise duplicate pattern parameters
+KILLED anchors: every piece has a valid wall side height range clearance and facade zones
+KILLED small_classification: small prop triangle limits cannot be bypassed by relabelling the catalogue flag
+KILLED short_cables: facade cable assets remain short instancing segments rather than long span meshes
+KILLED design_cap: catalogue growth beyond the one hundred and twenty design cap is rejected
+KILLED binary_header: GLB headers and complete chunk lengths are checked against the actual buffer
+KILLED accessor_range: accessors cannot overrun their binary buffer views
+KILLED nonfinite: NaN vertex values are rejected even when the manifest is otherwise plausible
+KILLED indices: triangle indices must refer to existing binary position vertices
+KILLED accessor_bounds: declared position bounds cannot conceal different binary geometry
+KILLED winding: triangle winding and degenerate faces are checked against actual normals
+KILLED normals: binary normal vectors must have unit length
+KILLED uv_range: every UV coordinate stays in the atlas unit square
+KILLED uv_cell: unit-square UVs selecting another material cell are also rejected
+KILLED dependencies: packed GLBs remain texture-free static core glTF with no external dependencies
+KILLED material_names: only declared external atlas material names may be used by geometry
+KILLED node_graph: cyclic orphan and duplicate scene nodes cannot conceal missing pieces
+KILLED root_transform: piece roots have identity transforms rather than hidden rotations or offsets
+KILLED shared_geometry: repeated mesh instances count toward triangle totals and transformed bounds
+KILLED metric_origin: metre envelopes and floor-centred origins are measured from transformed shipped vertices
+KILLED manifest_counts: forged triangle and part counts fail against decoded GLB primitives
+KILLED lod_ratio: near geometry relabelled as LOD fails the forty-percent triangle ceiling
+KILLED small_triangle_cap: duplicated small-prop instances exceed the two-thousand triangle cap despite honest metadata
+KILLED complete_roots: a catalogue entry without both actual packed roots fails complete validation
+KILLED hash_inventory: the manifest checks SHA-256 and byte sizes of every payload and catalogue file
+KILLED unlisted_payload: unlisted stale model files cannot escape the hashed payload inventory
+KILLED namespace_paths: manifest paths cannot leave the exterior-kit namespace
+KILLED glb_budget: stale GLB bytes are counted against the four-point-five-million-byte library cap
+KILLED texture_budget: all texture disk bytes including undeclared files count against eight million bytes
+KILLED atlas_png: shared atlas planes have complete independently inflated PNG data and valid CRCs
+KILLED ktx_container: compressed wall textures reject truncated KTX2 headers and payloads
+KILLED ktx_mips: every KTX2 mip declares the independently expected GPU block byte count
+KILLED ktx_dfd: KTX2 colour space and channel descriptors cannot contradict the GPU format
+KILLED ktx_zlib: KTX2 compressed payloads are actually inflated rather than trusted by their headers
+KILLED ktx_gpu: GPU memory is measured from all native BC1 and BC5 mip blocks
+KILLED decoded_seams: seam checks inspect decoded compressed pixel edges rather than producer promises
+KILLED normal_hemisphere: BC5 normal pixels leave a real positive Z component to reconstruct
+KILLED wall_coverage: all twelve distinct 1024-square wall material definitions are required
+KILLED wall_resolution: wall material definitions cannot silently reduce the requested 1024 resolution
+KILLED pbr_semantics: external PBR bindings distinguish sRGB albedo linear normals and ordered ORM channels
+KILLED atlas_overlap: shared atlas cells cannot overlap even if all UVs remain inside the unit square
+KILLED drawn_strings: unreviewed or decomposed drawn lettering cannot bypass the Colombian Spanish audit
+KILLED library_flag: a complete asset manifest must explicitly declare libraryOnly true
+KILLED complete_flag: a partial release cannot pass the complete acceptance command
+KILLED boot_isolation: the dormant exterior kit must not enter either production boot registry
+KILLED js_isolation: no production JavaScript module may import or otherwise reference the exterior kit
+KILLED cli: the complete validator CLI succeeds using the same Node runtime as the tests
+MUTATIONS: 52/52 killed under v22.16.0
+{"runtime":"v22.16.0","suites":1,"tests":52,"killed":52,"failures":[]}
+
+UTC end: 2026-11-03T05:08:03.215740+00:00
+Exit status: 0

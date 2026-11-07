@@ -1,0 +1,16 @@
+{
+  "started": "2026-11-03T06:02:06.660600+00:00",
+  "ended": "2026-11-03T06:02:06.664267+00:00",
+  "argv": [
+    "git",
+    "diff",
+    "--cached",
+    "--check",
+    "--",
+    ".",
+    ":(exclude)la-ladera/dev/extkit/logs/**",
+    ":(exclude)la-ladera/dev/extkit/VERIFICATION.md"
+  ],
+  "exitCode": 0,
+  "log": "diff-check-source-post-rebase.log"
+}

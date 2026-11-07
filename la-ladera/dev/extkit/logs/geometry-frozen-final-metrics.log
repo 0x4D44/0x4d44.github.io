@@ -1,0 +1,35 @@
+UTC start: 2026-11-03T05:48:51.681544+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: python -c 'import json,hashlib
+from pathlib import Path
+root=Path("la-ladera")
+m=json.loads((root/"assets/models/manifest.extkit.json").read_text())
+for f in m["files"]:
+ p=root/"assets/models"/f["glb"]
+ h=hashlib.sha256(p.read_bytes()).hexdigest()
+ assert h==f["sha256"]
+ print(f["glb"],p.stat().st_size,h,"triangles",sum(a["triangles"] for a in f["assets"].values()))
+print("total GLB",sum(f["bytes"] for f in m["files"]))
+print("manifest", (root/"assets/models/manifest.extkit.json").stat().st_size)
+for key in ["extkit_pipe_elbow","extkit_drain_elbow","extkit_shutter_100","extkit_shutter_180","extkit_shutter_260"]:
+ n=m["files"][0]["assets"][key];d=m["files"][1]["assets"][key+"_lod1"]
+ print(key,"near/LOD",n["triangles"],d["triangles"],"anchor",n["anchors"]["position"],"near bounds",n["bounds"])
+pins=json.loads(Path("/workspace/scratch/597af25581a6/review-final-release/source-pins-all.json").read_text())
+cat="tools/blender/extkit.catalog.json"
+assert hashlib.sha256((root/cat).read_bytes()).hexdigest()==pins[cat]
+print("Catalogue and anchors unchanged from prior full review.")
+'
+
+extkit/extkit_near.glb 2629920 56c562993bc55e73ce908361016aea88723399dc41cab14f7129a1c05a4f7f9a triangles 66438
+extkit/extkit_lod.glb 653108 d2382043e1836c407c41c7805875ea7077ce5c653bc44643126216fb40a0f474 triangles 13932
+total GLB 3283028
+manifest 162015
+extkit_pipe_elbow near/LOD 480 40 anchor [0, 0, -0.02124] near bounds {'min': [-0.12962, 0.0, -0.02124], 'max': [0.12962, 0.24424, 0.02124]}
+extkit_drain_elbow near/LOD 480 40 anchor [0, 0, -0.0649] near bounds {'min': [-0.15145, 0.0, -0.0649], 'max': [0.15145, 0.2879, 0.0649]}
+extkit_shutter_100 near/LOD 188 36 anchor [0, 0, -0.148] near bounds {'min': [-0.5, 0.0, -0.148], 'max': [0.5, 0.31, 0.148]}
+extkit_shutter_180 near/LOD 188 36 anchor [0, 0, -0.148] near bounds {'min': [-0.9, 0.0, -0.148], 'max': [0.9, 0.31, 0.148]}
+extkit_shutter_260 near/LOD 188 36 anchor [0, 0, -0.148] near bounds {'min': [-1.3, 0.0, -0.148], 'max': [1.3, 0.31, 0.148]}
+Catalogue and anchors unchanged from prior full review.
+
+UTC end: 2026-11-03T05:48:51.711396+00:00
+Exit status: 0

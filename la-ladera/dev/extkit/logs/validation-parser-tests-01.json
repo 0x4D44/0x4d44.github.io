@@ -1,0 +1,18 @@
+{
+  "started": "2026-11-03T05:03:51.848847+00:00",
+  "ended": "2026-11-03T05:03:51.999898+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--test",
+    "--experimental-test-isolation=none",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "--test-name-pattern=fixed family|tank capacity|rebar lengths|pipe and drain|eight grille|valid wall side|small prop triangle|facade cable|catalogue growth|GLB headers|accessors cannot|NaN vertex|triangle indices|declared position bounds|triangle winding|binary normal|UV coordinate|unit-square UV|packed GLBs remain|declared external atlas|cyclic orphan|piece roots|repeated mesh|unreviewed",
+    "la-ladera/tests/extkit-assets.test.mjs"
+  ],
+  "exitCode": 0,
+  "log": "validation-parser-tests-01.log"
+}

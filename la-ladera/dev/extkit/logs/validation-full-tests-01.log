@@ -1,0 +1,330 @@
+UTC start: 2026-11-03T05:06:18.902818+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --test --experimental-test-isolation=none --test-concurrency=1 --test-reporter=tap la-ladera/tests/extkit-assets.test.mjs
+
+TAP version 13
+# extkit: 65 near + 65 LOD; GLBs 3282428; textures 6083057; GPU 37749372 bytes
+# Subtest: the complete dormant library decodes every near and LOD root inside all budgets
+ok 1 - the complete dormant library decodes every near and LOD root inside all budgets
+  ---
+  duration_ms: 2519.643646
+  type: 'test'
+  ...
+# Subtest: fixed family requirements reject a catalogue with all six plants removed
+ok 2 - fixed family requirements reject a catalogue with all six plants removed
+  ---
+  duration_ms: 3.442703
+  type: 'test'
+  ...
+# Subtest: tank capacity colour and stand combinations are checked independently
+ok 3 - tank capacity colour and stand combinations are checked independently
+  ---
+  duration_ms: 0.718392
+  type: 'test'
+  ...
+# Subtest: all three rebar lengths must include both rust levels
+ok 4 - all three rebar lengths must include both rust levels
+  ---
+  duration_ms: 0.613804
+  type: 'test'
+  ...
+# Subtest: pipe and drain catalogues retain their straight elbow tee and wall bracket designs
+ok 5 - pipe and drain catalogues retain their straight elbow tee and wall bracket designs
+  ---
+  duration_ms: 0.656749
+  type: 'test'
+  ...
+# Subtest: eight grille names cannot disguise duplicate pattern parameters
+ok 6 - eight grille names cannot disguise duplicate pattern parameters
+  ---
+  duration_ms: 0.656278
+  type: 'test'
+  ...
+# Subtest: every piece has a valid wall side height range clearance and facade zones
+ok 7 - every piece has a valid wall side height range clearance and facade zones
+  ---
+  duration_ms: 0.817921
+  type: 'test'
+  ...
+# Subtest: small prop triangle limits cannot be bypassed by relabelling the catalogue flag
+ok 8 - small prop triangle limits cannot be bypassed by relabelling the catalogue flag
+  ---
+  duration_ms: 0.577489
+  type: 'test'
+  ...
+# Subtest: facade cable assets remain short instancing segments rather than long span meshes
+ok 9 - facade cable assets remain short instancing segments rather than long span meshes
+  ---
+  duration_ms: 0.736529
+  type: 'test'
+  ...
+# Subtest: catalogue growth beyond the one hundred and twenty design cap is rejected
+ok 10 - catalogue growth beyond the one hundred and twenty design cap is rejected
+  ---
+  duration_ms: 0.960285
+  type: 'test'
+  ...
+# Subtest: GLB headers and complete chunk lengths are checked against the actual buffer
+ok 11 - GLB headers and complete chunk lengths are checked against the actual buffer
+  ---
+  duration_ms: 0.735518
+  type: 'test'
+  ...
+# Subtest: accessors cannot overrun their binary buffer views
+ok 12 - accessors cannot overrun their binary buffer views
+  ---
+  duration_ms: 0.541816
+  type: 'test'
+  ...
+# Subtest: NaN vertex values are rejected even when the manifest is otherwise plausible
+ok 13 - NaN vertex values are rejected even when the manifest is otherwise plausible
+  ---
+  duration_ms: 1.356102
+  type: 'test'
+  ...
+# Subtest: triangle indices must refer to existing binary position vertices
+ok 14 - triangle indices must refer to existing binary position vertices
+  ---
+  duration_ms: 0.786303
+  type: 'test'
+  ...
+# Subtest: declared position bounds cannot conceal different binary geometry
+ok 15 - declared position bounds cannot conceal different binary geometry
+  ---
+  duration_ms: 0.794936
+  type: 'test'
+  ...
+# Subtest: triangle winding and degenerate faces are checked against actual normals
+ok 16 - triangle winding and degenerate faces are checked against actual normals
+  ---
+  duration_ms: 2.370512
+  type: 'test'
+  ...
+# Subtest: binary normal vectors must have unit length
+ok 17 - binary normal vectors must have unit length
+  ---
+  duration_ms: 0.73702
+  type: 'test'
+  ...
+# Subtest: every UV coordinate stays in the atlas unit square
+ok 18 - every UV coordinate stays in the atlas unit square
+  ---
+  duration_ms: 0.905443
+  type: 'test'
+  ...
+# Subtest: unit-square UVs selecting another material cell are also rejected
+ok 19 - unit-square UVs selecting another material cell are also rejected
+  ---
+  duration_ms: 0.964272
+  type: 'test'
+  ...
+# Subtest: packed GLBs remain texture-free static core glTF with no external dependencies
+ok 20 - packed GLBs remain texture-free static core glTF with no external dependencies
+  ---
+  duration_ms: 1.304914
+  type: 'test'
+  ...
+# Subtest: only declared external atlas material names may be used by geometry
+ok 21 - only declared external atlas material names may be used by geometry
+  ---
+  duration_ms: 0.663789
+  type: 'test'
+  ...
+# Subtest: cyclic orphan and duplicate scene nodes cannot conceal missing pieces
+ok 22 - cyclic orphan and duplicate scene nodes cannot conceal missing pieces
+  ---
+  duration_ms: 1.89982
+  type: 'test'
+  ...
+# Subtest: piece roots have identity transforms rather than hidden rotations or offsets
+ok 23 - piece roots have identity transforms rather than hidden rotations or offsets
+  ---
+  duration_ms: 0.679573
+  type: 'test'
+  ...
+# Subtest: repeated mesh instances count toward triangle totals and transformed bounds
+ok 24 - repeated mesh instances count toward triangle totals and transformed bounds
+  ---
+  duration_ms: 1.369822
+  type: 'test'
+  ...
+# Subtest: metre envelopes and floor-centred origins are measured from transformed shipped vertices
+ok 25 - metre envelopes and floor-centred origins are measured from transformed shipped vertices
+  ---
+  duration_ms: 2462.668101
+  type: 'test'
+  ...
+# Subtest: forged triangle and part counts fail against decoded GLB primitives
+ok 26 - forged triangle and part counts fail against decoded GLB primitives
+  ---
+  duration_ms: 2458.485124
+  type: 'test'
+  ...
+# Subtest: near geometry relabelled as LOD fails the forty-percent triangle ceiling
+ok 27 - near geometry relabelled as LOD fails the forty-percent triangle ceiling
+  ---
+  duration_ms: 3327.202305
+  type: 'test'
+  ...
+# Subtest: duplicated small-prop instances exceed the two-thousand triangle cap despite honest metadata
+ok 28 - duplicated small-prop instances exceed the two-thousand triangle cap despite honest metadata
+  ---
+  duration_ms: 3119.939668
+  type: 'test'
+  ...
+# Subtest: a catalogue entry without both actual packed roots fails complete validation
+ok 29 - a catalogue entry without both actual packed roots fails complete validation
+  ---
+  duration_ms: 2820.221115
+  type: 'test'
+  ...
+# Subtest: the manifest checks SHA-256 and byte sizes of every payload and catalogue file
+ok 30 - the manifest checks SHA-256 and byte sizes of every payload and catalogue file
+  ---
+  duration_ms: 16.432809
+  type: 'test'
+  ...
+# Subtest: unlisted stale model files cannot escape the hashed payload inventory
+ok 31 - unlisted stale model files cannot escape the hashed payload inventory
+  ---
+  duration_ms: 19.802706
+  type: 'test'
+  ...
+# Subtest: manifest paths cannot leave the exterior-kit namespace
+ok 32 - manifest paths cannot leave the exterior-kit namespace
+  ---
+  duration_ms: 11.972955
+  type: 'test'
+  ...
+# Subtest: stale GLB bytes are counted against the four-point-five-million-byte library cap
+ok 33 - stale GLB bytes are counted against the four-point-five-million-byte library cap
+  ---
+  duration_ms: 2490.068341
+  type: 'test'
+  ...
+# Subtest: all texture disk bytes including undeclared files count against eight million bytes
+ok 34 - all texture disk bytes including undeclared files count against eight million bytes
+  ---
+  duration_ms: 13.229006
+  type: 'test'
+  ...
+# Subtest: shared atlas planes have complete independently inflated PNG data and valid CRCs
+ok 35 - shared atlas planes have complete independently inflated PNG data and valid CRCs
+  ---
+  duration_ms: 10.756183
+  type: 'test'
+  ...
+# Subtest: compressed wall textures reject truncated KTX2 headers and payloads
+ok 36 - compressed wall textures reject truncated KTX2 headers and payloads
+  ---
+  duration_ms: 0.422797
+  type: 'test'
+  ...
+# Subtest: every KTX2 mip declares the independently expected GPU block byte count
+ok 37 - every KTX2 mip declares the independently expected GPU block byte count
+  ---
+  duration_ms: 0.443227
+  type: 'test'
+  ...
+# Subtest: KTX2 colour space and channel descriptors cannot contradict the GPU format
+ok 38 - KTX2 colour space and channel descriptors cannot contradict the GPU format
+  ---
+  duration_ms: 0.360713
+  type: 'test'
+  ...
+# Subtest: KTX2 compressed payloads are actually inflated rather than trusted by their headers
+ok 39 - KTX2 compressed payloads are actually inflated rather than trusted by their headers
+  ---
+  duration_ms: 1.004031
+  type: 'test'
+  ...
+# Subtest: GPU memory is measured from all native BC1 and BC5 mip blocks
+ok 40 - GPU memory is measured from all native BC1 and BC5 mip blocks
+  ---
+  duration_ms: 4.196047
+  type: 'test'
+  ...
+# Subtest: seam checks inspect decoded compressed pixel edges rather than producer promises
+ok 41 - seam checks inspect decoded compressed pixel edges rather than producer promises
+  ---
+  duration_ms: 49.70544
+  type: 'test'
+  ...
+# Subtest: BC5 normal pixels leave a real positive Z component to reconstruct
+ok 42 - BC5 normal pixels leave a real positive Z component to reconstruct
+  ---
+  duration_ms: 25.023734
+  type: 'test'
+  ...
+# Subtest: all twelve distinct 1024-square wall material definitions are required
+ok 43 - all twelve distinct 1024-square wall material definitions are required
+  ---
+  duration_ms: 0.460984
+  type: 'test'
+  ...
+# Subtest: wall material definitions cannot silently reduce the requested 1024 resolution
+ok 44 - wall material definitions cannot silently reduce the requested 1024 resolution
+  ---
+  duration_ms: 0.29929
+  type: 'test'
+  ...
+# Subtest: external PBR bindings distinguish sRGB albedo linear normals and ordered ORM channels
+ok 45 - external PBR bindings distinguish sRGB albedo linear normals and ordered ORM channels
+  ---
+  duration_ms: 0.49227
+  type: 'test'
+  ...
+# Subtest: shared atlas cells cannot overlap even if all UVs remain inside the unit square
+ok 46 - shared atlas cells cannot overlap even if all UVs remain inside the unit square
+  ---
+  duration_ms: 0.246561
+  type: 'test'
+  ...
+# Subtest: unreviewed or decomposed drawn lettering cannot bypass the Colombian Spanish audit
+ok 47 - unreviewed or decomposed drawn lettering cannot bypass the Colombian Spanish audit
+  ---
+  duration_ms: 0.513623
+  type: 'test'
+  ...
+# Subtest: a complete asset manifest must explicitly declare libraryOnly true
+ok 48 - a complete asset manifest must explicitly declare libraryOnly true
+  ---
+  duration_ms: 2321.72301
+  type: 'test'
+  ...
+# Subtest: a partial release cannot pass the complete acceptance command
+ok 49 - a partial release cannot pass the complete acceptance command
+  ---
+  duration_ms: 2756.687717
+  type: 'test'
+  ...
+# Subtest: the dormant exterior kit must not enter either production boot registry
+ok 50 - the dormant exterior kit must not enter either production boot registry
+  ---
+  duration_ms: 18.175682
+  type: 'test'
+  ...
+# Subtest: no production JavaScript module may import or otherwise reference the exterior kit
+ok 51 - no production JavaScript module may import or otherwise reference the exterior kit
+  ---
+  duration_ms: 17.009028
+  type: 'test'
+  ...
+# Subtest: the complete validator CLI succeeds using the same Node runtime as the tests
+ok 52 - the complete validator CLI succeeds using the same Node runtime as the tests
+  ---
+  duration_ms: 3490.982826
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28053.217836
+
+UTC end: 2026-11-03T05:06:47.051420+00:00
+Exit status: 0

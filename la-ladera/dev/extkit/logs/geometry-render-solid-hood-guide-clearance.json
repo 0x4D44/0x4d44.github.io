@@ -1,0 +1,30 @@
+{
+  "started": "2026-11-03T05:48:51.700343+00:00",
+  "ended": "2026-11-03T05:49:02.642813+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender",
+    "--background",
+    "--factory-startup",
+    "--threads",
+    "2",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "la-ladera/tools/blender/extkit_contact.py",
+    "--",
+    "--out",
+    "/workspace/scratch/597af25581a6/review-solid-hood-guide-clearance",
+    "--only",
+    "extkit_shutter_100",
+    "--samples",
+    "8",
+    "--contacts-only",
+    "--decode-python",
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python"
+  ],
+  "exitCode": 0,
+  "log": "geometry-render-solid-hood-guide-clearance.log"
+}

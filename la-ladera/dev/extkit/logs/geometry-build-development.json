@@ -1,0 +1,24 @@
+{
+  "started": "2026-11-03T05:03:30.530984+00:00",
+  "ended": "2026-11-03T05:03:36.908136+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender",
+    "--background",
+    "--factory-startup",
+    "--threads",
+    "2",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "la-ladera/tools/blender/extkit_build.py",
+    "--",
+    "--development",
+    "--node",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node"
+  ],
+  "exitCode": 0,
+  "log": "geometry-build-development.log"
+}

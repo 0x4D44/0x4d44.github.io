@@ -1,0 +1,18 @@
+{
+  "started": "2026-11-03T05:11:27.206558+00:00",
+  "ended": "2026-11-03T05:11:37.426673+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--test",
+    "--experimental-test-isolation=none",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "--test-name-pattern=^the complete dormant library|^wall anchors follow",
+    "la-ladera/tests/extkit-assets.test.mjs"
+  ],
+  "exitCode": 0,
+  "log": "validation-measured-anchors-tests-01.log"
+}

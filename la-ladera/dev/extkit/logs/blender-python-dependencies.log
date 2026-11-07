@@ -1,0 +1,17 @@
+UTC start: 2026-11-03T05:00:09.552363+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender --background --factory-startup --threads 2 --python-exit-code 1 --python-expr 'import numpy, PIL; print(numpy.__version__, PIL.__version__)'
+
+socket(): Operation not permitted
+socket(): Operation not permitted
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'PIL'
+
+Error: script failed, expr: 'import numpy, PIL; print(numpy.__version__, PIL.__version__)', exiting.
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit
+
+UTC end: 2026-11-03T05:00:10.384833+00:00
+Exit status: 1

@@ -1,0 +1,13 @@
+{
+  "started": "2026-11-03T05:07:20.813374+00:00",
+  "ended": "2026-11-03T05:08:03.215740+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tests/extkit-mutations.mjs"
+  ],
+  "exitCode": 0,
+  "log": "validation-mutations-01.log"
+}

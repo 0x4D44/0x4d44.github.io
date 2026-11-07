@@ -1,0 +1,11 @@
+{
+  "started": "2026-11-03T05:48:51.681544+00:00",
+  "ended": "2026-11-03T05:48:51.711396+00:00",
+  "argv": [
+    "python",
+    "-c",
+    "import json,hashlib\nfrom pathlib import Path\nroot=Path(\"la-ladera\")\nm=json.loads((root/\"assets/models/manifest.extkit.json\").read_text())\nfor f in m[\"files\"]:\n p=root/\"assets/models\"/f[\"glb\"]\n h=hashlib.sha256(p.read_bytes()).hexdigest()\n assert h==f[\"sha256\"]\n print(f[\"glb\"],p.stat().st_size,h,\"triangles\",sum(a[\"triangles\"] for a in f[\"assets\"].values()))\nprint(\"total GLB\",sum(f[\"bytes\"] for f in m[\"files\"]))\nprint(\"manifest\", (root/\"assets/models/manifest.extkit.json\").stat().st_size)\nfor key in [\"extkit_pipe_elbow\",\"extkit_drain_elbow\",\"extkit_shutter_100\",\"extkit_shutter_180\",\"extkit_shutter_260\"]:\n n=m[\"files\"][0][\"assets\"][key];d=m[\"files\"][1][\"assets\"][key+\"_lod1\"]\n print(key,\"near/LOD\",n[\"triangles\"],d[\"triangles\"],\"anchor\",n[\"anchors\"][\"position\"],\"near bounds\",n[\"bounds\"])\npins=json.loads(Path(\"/workspace/scratch/597af25581a6/review-final-release/source-pins-all.json\").read_text())\ncat=\"tools/blender/extkit.catalog.json\"\nassert hashlib.sha256((root/cat).read_bytes()).hexdigest()==pins[cat]\nprint(\"Catalogue and anchors unchanged from prior full review.\")\n"
+  ],
+  "exitCode": 0,
+  "log": "geometry-frozen-final-metrics.log"
+}
