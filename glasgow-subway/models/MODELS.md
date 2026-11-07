@@ -233,5 +233,13 @@ station (and any hall still loading), then handed to each crowd (`AnimCrowd.atta
   run `node tools/legradii.mjs --write`** (without `--write` it checks and exits 1 when stale; `attachFull` also warns in the console).
 - The tools that build the game's own crowd (`tools/armfit.mjs`) wait for `sim.peopleFull` before measuring.
 
+## Full detail at 8k triangles (2026-11-07)
+`budget_and_join`'s full-detail budget is 8000 (was 9500): `people.glb` 25.6 -> 23.2 MB at 72 people (geometry is ~19 of the 25.6 MB; textures 6, clips 0.3).
+A person may keep more with `tris=` in their spec: `teen_tube` (the tube top's hem and the skirt's waist opened, 9.7 -> 75.6 cm2/view) and
+`ya_knit` (holes through the sweater, 9.1 -> 18.0) keep 9500. With those two, player-visible skin over all 72 (`tools/people_holes.mjs`, stand +
+walk + gait): full 419.9 -> 450.9 cm2/view, no person up more than 4.1 (`elder_woman_dress` 3.3 -> 7.4); LOD 414.0 -> 413.5 (unchanged person for
+person). `adult_tophat` is now 1.68 m (was 1.70): with the hat and the phone raised, the tallest posture was 1.824 m, over test_sim's 1.82.
+Armfit and legradii re-solved; 49 skin budgets tightened, 4 rose with their visible holes unchanged (see `SKIN_BUDGET` in `sim.test`).
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

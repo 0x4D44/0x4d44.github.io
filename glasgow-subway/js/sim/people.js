@@ -547,7 +547,7 @@ export class AnimCrowd {
   update(dt, t, yAt, camWorld) {
     if (this.enabled === false) return;
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
-    // LOD0 (~9.5k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
+    // LOD0 (~8k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
     let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
     this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
