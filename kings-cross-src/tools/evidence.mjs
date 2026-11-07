@@ -13,7 +13,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { platformReport, shedLayout } from '../core/station.ts';
+import { PLATFORM_HEIGHT } from '../core/scene.ts';
+import { platformReport, pointInPolygon, shedLayout, stationPlatforms } from '../core/station.ts';
+import { trainLayout } from '../core/train.ts';
 
 const args = process.argv.slice(2);
 const flag = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
@@ -40,9 +42,58 @@ export const CAMERAS = {
   'south-front': { pos: [45, 34, 150], target: [45, 14, -12] },
   'north-approach': { pos: [20, 28, -560], target: [45, 3, -330] },
 };
+// The standing trains (?trains=demo) get their cameras from where the page put them, not from
+// fixed numbers: window.__kx.trains gives each train's nose position and heading, and the camera
+// is placed relative to those. `at(t, s, off, y)` is the point s metres north of the nose, off
+// metres east of the track, y metres up; north and east are the shed's (see shedToWorld).
+export const TRAIN_CAMERA_NAMES = ['train-closeup', 'train-side', 'train-nose', 'train-pantograph', 'train-lumo', 'train-hull'];
+function trainCameras(trains) {
+  const platforms = [...stationPlatforms(kx).values()];
+  const groundAt = (x, z) => (platforms.some((p) => pointInPolygon([x, z], p.pts)) ? PLATFORM_HEIGHT : 0);
+  const at = (t, s, off, y) => [t.nose[0] + Math.sin(t.h) * s + Math.cos(t.h) * off, y, t.nose[2] - Math.cos(t.h) * s + Math.sin(t.h) * off];
+  // Stand `off` metres from the track on whichever side has a platform (east first), eyes `eye` metres above it.
+  const stand = (t, s, off, eye) => {
+    for (const sign of [1, -1]) {
+      const p = at(t, s, sign * off, 0);
+      const g = groundAt(p[0], p[2]);
+      if (g > 0) return [p[0], g + eye, p[2]];
+    }
+    const p = at(t, s, off, 0);
+    return [p[0], eye, p[2]];
+  };
+  const find = (kind) => {
+    const t = trains.find((x) => x.kind === kind);
+    if (!t) throw new Error(`no ${kind} train in window.__kx.trains`);
+    return t;
+  };
+  const half = 1.35; // half the body width, only to say "3 m from the side of the coach"
+  const cams = {};
+  const l9 = find('lner9');
+  const cars = trainLayout('lner9').cars;
+  // a coach of the nine-car train, 3 m from its side, at standing eye height, on its first door and the windows beside it
+  const coach = cars[1];
+  cams['train-closeup'] = { pos: stand(l9, coach.start + 4.2, half + 3, 1.6), target: at(l9, coach.start + 4.2, 0, 2.2), fov: 50, near: 0.1 };
+  // the whole train from far to the west, over the shed's wall and the neighbouring blocks (hidden for this shot)
+  const len = trainLayout('lner9').length;
+  const vfov = 7;
+  const dist = (len / 2 / (Math.tan((vfov / 2) * (Math.PI / 180)) * (VIEWPORTS.desktop.width / VIEWPORTS.desktop.height))) * 1.08;
+  cams['train-side'] = { pos: at(l9, len / 2, -dist, 8), target: at(l9, len / 2, 0, 2), fov: vfov, near: 100, hideScenery: true };
+  cams['train-nose'] = { pos: stand(l9, -7, 9.8, 1.7), target: at(l9, 0.6, 0, 1.9), fov: 50, near: 0.1 };
+  const dptf = cars[cars.length - 1];
+  const pz = (dptf.pantograph[0] + dptf.pantograph[1]) / 2;
+  cams['train-pantograph'] = { pos: at(l9, pz - 2.2, 5.5, 8.9), target: at(l9, pz, 0, 3.9), fov: 50, near: 0.1 };
+  for (const [name, kind] of [['train-lumo', 'lumo5'], ['train-hull', 'hull5']]) {
+    const t = find(kind);
+    cams[name] = { pos: stand(t, 6.5, half + 5, 1.6), target: at(t, 6.5, 0, 2.0), fov: 50, near: 0.1 };
+  }
+  return cams;
+}
+
 // Cameras used on the phone-sized viewport.
 const PHONE_CAMERAS = ['overview', 'shed-interior', 'platform-heads'];
 const VIEWPORTS = { desktop: { width: 1280, height: 800 }, phone: { width: 390, height: 844 } };
+
+const kx = JSON.parse(await readFile(path.join(here, '..', 'web', 'src', 'data', 'kx-track.json'), 'utf8'));
 
 const CHROME = [flag('--chrome'), process.env.CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].filter(Boolean);
 let chromeBin = null;
@@ -184,16 +235,19 @@ const report = {
 try {
   for (const [vpName, vp] of Object.entries(VIEWPORTS)) {
     await S('Emulation.setDeviceMetricsOverride', { width: vp.width, height: vp.height, deviceScaleFactor: 1, mobile: vpName === 'phone' });
-    // Two loads per viewport: the plain page, and the page with the 10 m measuring grid (?grid=1).
-    for (const grid of vpName === 'desktop' ? [false, true] : [false]) {
-      await S('Page.navigate', { url: `${base}/kings-cross/${grid ? '?grid=1&bare=1' : ''}` });
+    // Loads per viewport: the plain page; on the desktop also the page with the 10 m measuring grid
+    // (?grid=1) and the page with the standing trains (?trains=demo).
+    for (const mode of vpName === 'desktop' ? ['plain', 'grid', 'trains'] : ['plain']) {
+      const grid = mode === 'grid';
+      const trainsMode = mode === 'trains';
+      await S('Page.navigate', { url: `${base}/kings-cross/${grid ? '?grid=1&bare=1' : trainsMode ? '?trains=demo' : ''}` });
       let ready = false;
       for (let i = 0; i < 300 && !ready; i++) {
         await delay(100);
         ready = await evaluate('!!(window.__kx && window.__kx.ready)').catch(() => false);
       }
-      if (!ready) throw new Error(`page did not become ready at ${vpName}${grid ? ' with the grid' : ''}`);
-      if (!grid) {
+      if (!ready) throw new Error(`page did not become ready at ${vpName} (${mode})`);
+      if (mode === 'plain') {
         const info = await evaluate(`(() => {
           const gl = window.__kx.renderer.getContext();
           const dbg = gl.getExtension('WEBGL_debug_renderer_info');
@@ -206,9 +260,17 @@ try {
         })()`);
         report.viewports[vpName] = { ...vp, ...info };
       }
-      const wanted = Object.keys(CAMERAS).filter((n) => (vpName === 'desktop' ? !!CAMERAS[n].grid === grid : !grid && PHONE_CAMERAS.includes(n)));
+      let cameras = CAMERAS;
+      let wanted = Object.keys(CAMERAS).filter((n) => (vpName === 'desktop' ? !!CAMERAS[n].grid === grid : !grid && PHONE_CAMERAS.includes(n)));
+      if (trainsMode) {
+        const trains = await evaluate('window.__kx.trains.map((t) => ({ kind: t.kind, nose: t.noseWorld, h: t.headingRad }))');
+        cameras = trainCameras(trains);
+        wanted = TRAIN_CAMERA_NAMES;
+      }
       for (const name of wanted) {
-        const c = CAMERAS[name];
+        const c = cameras[name];
+        // the side-on view of a whole train looks over the shed and the blocks beside it, so they are hidden for that shot only
+        if (trainsMode) await evaluate(`(() => { const p = window.__kx.parts; p.shed.visible = ${!c.hideScenery}; if (p.buildings) p.buildings.visible = ${!c.hideScenery}; return true; })()`);
         await evaluate(`(() => { const k = window.__kx; k.controls.maxDistance = 1e5; k.controls.maxPolarAngle = Math.PI; k.camera.far = 20000; k.camera.near = ${c.near ?? 0.5}; k.camera.fov = ${c.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${c.pos}); k.controls.target.set(${c.target}); k.controls.update(); return true; })()`);
         await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))');
         const shot = await S('Page.captureScreenshot', { format: 'png' });
@@ -216,7 +278,7 @@ try {
         await writeFile(path.join(out, file), Buffer.from(shot.data, 'base64'));
         report.screenshots.push(file);
       }
-      if (!grid) {
+      if (mode === 'plain') {
         const fps = await evaluate(`new Promise((resolve) => { let n = 0; const t0 = performance.now(); const tick = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(tick); else resolve(n / ((performance.now() - t0) / 1000)); }; requestAnimationFrame(tick); })`);
         report.viewports[vpName].fps = Math.round(fps * 10) / 10;
         // Moving camera: an orbit round the station at half a radian a second for 5 s, from the
@@ -279,7 +341,6 @@ report.bundle = { totalBytes: raw, totalGzipBytes: gz, budgetGzipBytes: 2 * 1024
 
 // Geometry the model is drawn from: platform lengths and the shed, from the committed data.
 // (tools/fidelity.ts compares these with the raw OpenStreetMap extract.)
-const kx = JSON.parse(await readFile(path.join(here, '..', 'web', 'src', 'data', 'kx-track.json'), 'utf8'));
 report.platforms = platformReport(kx).map((p) => ({ ref: p.ref, osmId: p.osmId, lengthM: Math.round(p.lengthM * 10) / 10, meanWidthM: Math.round(p.meanWidthM * 10) / 10 }));
 const shed = shedLayout(kx);
 report.shed = { widthM: Math.round(shed.width * 10) / 10, lengthM: Math.round(shed.length * 10) / 10, aisleM: Math.round(shed.aisle * 10) / 10, crownM: Math.round(shed.crown * 10) / 10, headingDeg: Math.round(((shed.heading * 180) / Math.PI) * 100) / 100 };
