@@ -44,6 +44,18 @@ M = [
     ("scene: underground platforms drawn", C, " && isSurfacePlatform(p))", ")"),
     ("buffers: any position across the shed", S, "u >= 0 && u <= shed.width && v >= 0 && v <= 40", "v >= 0 && v <= 40"),
     ("buffers: any distance up the shed", S, "u >= 0 && u <= shed.width && v >= 0 && v <= 40", "u >= 0 && u <= shed.width && v >= 0"),
+    ("under the station: dome ignored", S, "const inDome = Math.hypot(c[0] - canopy.centre[0], c[1] - canopy.centre[1]) < canopy.radius;", "const inDome = false;"),
+    ("under the station: dome twice as wide", S, "c[1] - canopy.centre[1]) < canopy.radius;", "c[1] - canopy.centre[1]) < canopy.radius * 2;"),
+    ("under the station: shed ignored", S, "const inShed = u > -2 && u < shed.width + 2 && v > -2 && v < shed.length + 2;", "const inShed = false;"),
+    ("under the station: no margin west", S, "const inShed = u > -2 &&", "const inShed = u > 0 &&"),
+    ("under the station: margin too wide east", S, "u < shed.width + 2 &&", "u < shed.width + 20 &&"),
+    ("under the station: no margin south", S, "&& v > -2 &&", "&& v > 0 &&"),
+    ("under the station: first corner, not the middle", S, "const c = centroid(b.pts);\n    const { u, v } = worldToShed(shed, c);", "const c = b.pts[0] as Pt;\n    const { u, v } = worldToShed(shed, c);"),
+    ("under the station: degenerate outlines kept", S, "    if (b.pts.length < 3) continue;\n    const c = centroid(b.pts);\n    const { u, v }", "    const c = centroid(b.pts);\n    const { u, v }"),
+    ("train pose: facing away from the buffers", S, "rotationY: Math.PI - shed.heading,", "rotationY: shed.heading,"),
+    ("train pose: ignores the shed heading", S, "rotationY: Math.PI - shed.heading,", "rotationY: Math.PI,"),
+    ("train pose: nose across the stop", S, "nose: [stop.x + Math.sin(shed.heading) * noseGap,", "nose: [stop.x - Math.sin(shed.heading) * noseGap,"),
+    ("train pose: nose south of the stop", S, "stop.z - Math.cos(shed.heading) * noseGap]", "stop.z + Math.cos(shed.heading) * noseGap]"),
     ("buffers: behind the south end", S, "u >= 0 && u <= shed.width && v >= 0 && v <= 40", "u >= 0 && u <= shed.width && v <= 40"),
 ]
 survived = []
