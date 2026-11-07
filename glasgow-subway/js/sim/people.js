@@ -7,6 +7,7 @@ import { readBody, GaitRig } from './gait_three.js';
 import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
 import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
+import { dressTee, undressTee, takePrint, releasePrint, printAtlas, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
 // ?phones=0: nobody uses a mobile phone (to compare; the walking metrics of research/people-motion-rubric.md are measured without them)
@@ -147,7 +148,8 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 }
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
-    this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99);
+    this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99); this.printRng = mulberry32(1149);   // prints draw from their own stream: the crowd's sequence is unchanged
+    printAtlas(THREE);   // start loading the print atlas now, so the first T-shirts are not blank (null in Node)
     this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 36 : 60; this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
     this.chars = []; this.meas = new Map();
     const scene = gltf.scene, holder = scene.getObjectByName('people') || scene;
@@ -274,7 +276,7 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
+  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
   _rollPool() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
     const r = this.rng(); let pool;
@@ -292,6 +294,7 @@ export class AnimCrowd {
     if (!this.hasAnim || this.people.length >= this.max) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
     const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this._dressTee(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
     p.parent = parent || this.group; p.obj = obj; p.parent.add(obj);
@@ -302,10 +305,17 @@ export class AnimCrowd {
     this.people.push(p); this._place(p, true);
     return p;
   }
+  /** a T-shirt wearer keeps one chest print (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
+  _dressTee(p, obj) {
+    let tee = false; obj.traverse((m) => { if (m.isMesh && m.material && TEE.test(m.material.name || '')) tee = true; });
+    if (!tee) return;
+    if (p.print == null) p.print = takePrint(this.printRng);
+    dressTee(this.THREE, obj, p.print);
+  }
   /** LOD0 (people.glb) near, LOD1 (people_lod.glb, same rig/clips) beyond ~12 m: rebuild the clone and resume the same clip at the same time */
   _swapLod(p, lod) {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
-    par.remove(old); p.mixer.stopAllAction(); p.lod = lod; const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    par.remove(old); p.mixer.stopAllAction(); p.lod = lod; undressTee(old); const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; }); this._dressTee(p, obj);
     p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
     if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true);
   }
