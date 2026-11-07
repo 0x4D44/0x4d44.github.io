@@ -42,6 +42,11 @@ CLOTH = ('cloth_', 'hose_', 'belt', 'sporran')
 RECIPE = {
     'man_student': 0.03, 'man_kilt_casual': 0.03, 'boy_kilt': 0.03, 'girl_school_kilt': 0.03,     # sweater torso and kilt hose: big gaps, big pushes
     'woman_midi': 0.015, 'man_commuter': 0.015, 'man_trews': 0.015, 'teen_boy': 0.015,   # shoulders, upper back, thighs: a centimetre or two
+    'teen_hood': 0.03,                                                                    # hoodie torso (2026-11-07: holes LOD 24.1 -> 12.7 cm2/view)
+    # A tube top leaves the waistband of the jeans on show, and the skin comes through right at that open edge, inside the usual 15 mm hem margin.
+    # A (push, hem) pair repairs closer to the edge (2026-11-07, tools/people_holes.mjs full model: ya_tube_heels 34.6 -> 13.4 cm2/view; with the
+    # usual margin it got worse, 37.2). Tried and dropped: a tube top over denim shorts (102 cm2/view, and the repair raised the rest-pose count).
+    'ya_tube_heels': (0.03, 0.005),
 }
 DEFAULT_PUSH = 0.03
 MARK = 'skinfit'
@@ -298,11 +303,17 @@ _JOB = {}
 
 
 def _push(pid):
-    return _JOB['maxpush'] if _JOB['maxpush'] is not None else RECIPE.get(pid, DEFAULT_PUSH)
+    r = RECIPE.get(pid, DEFAULT_PUSH)
+    return _JOB['maxpush'] if _JOB['maxpush'] is not None else (r[0] if isinstance(r, tuple) else r)
+
+DEFAULT_HEM = 0.015
+def _hem(pid):   # --hem if given, else a RECIPE (push, hem) pair's margin, else DEFAULT_HEM
+    r = RECIPE.get(pid)
+    return _JOB['hem'] if _JOB['hem'] is not None else (r[1] if isinstance(r, tuple) else DEFAULT_HEM)
 
 
 def _job(pid):
-    return pid, fit_person(_JOB['glb'], pid, margin=_JOB['margin'], maxpush=_push(pid), hem=_JOB['hem'], verbose=_JOB['verbose'])
+    return pid, fit_person(_JOB['glb'], pid, margin=_JOB['margin'], maxpush=_push(pid), hem=_hem(pid), verbose=_JOB['verbose'])
 
 
 def main():
@@ -317,7 +328,7 @@ def main():
     ap.add_argument('--maxpush', type=float, default=None, help='most a vertex moves in one pass (m), 1.5x that in all (default: the RECIPE value of each person, else %g)' % DEFAULT_PUSH)
     ap.add_argument('--all', action='store_true', help='repair everybody, not just the people in RECIPE (an experiment: the others got worse or no better when measured)')
     ap.add_argument('--force', action='store_true', help='repair people already marked as repaired (their push limit applies afresh: the skin moves again)')
-    ap.add_argument('--hem', type=float, default=0.015, help='leave alone everything this close to an open edge of a garment (neck, cuff, hem) (m)')
+    ap.add_argument('--hem', type=float, default=None, help='leave alone everything this close to an open edge of a garment (neck, cuff, hem) (m; default: the RECIPE value of each person, else 0.015)')
     ap.add_argument('--jobs', type=int, default=1, help='fit this many people in parallel (fork)')
     a = ap.parse_args()
     files = a.files or [os.path.join(MODELS, 'people.glb'), os.path.join(MODELS, 'people_lod.glb')]
