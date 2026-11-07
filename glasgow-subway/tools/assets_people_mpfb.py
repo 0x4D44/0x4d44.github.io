@@ -103,7 +103,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
     dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'punkduck_running_shoes_01']),
-    dict(id='teen_tube', kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
+    dict(id='teen_tube', tris=9500, kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'mtknife_pleated_mini_skirt', 'toigo_flats']),
     dict(id='teen_tee', kind='teen', outfit='trousers', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_inverted_bob_with_bangs', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_tight_jeans', 'punkduck_tennis_shoes']),
@@ -119,7 +119,7 @@ PEOPLE = [
          clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male', 'fedora01']),
     dict(id='ya_tube_heels', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.48, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='elvs_katherine_hair', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
-    dict(id='ya_knit', kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='elvs_wavy_bob', hair_col='#241812', face=True,
+    dict(id='ya_knit', tris=9500, kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='elvs_wavy_bob', hair_col='#241812', face=True,
          clothes=['mindfront_knitted_sweater_01', 'elvs_disco_pants_skinny', 'toigo_flats']),
     dict(id='ya_bootcut', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='elvs_short_daisy_hair', hair_col='#4a3020', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_bootcut', 'punkduck_tennis_shoes']),
@@ -135,7 +135,7 @@ PEOPLE = [
          clothes=['punkduck_sleeveless_crop_top', 'punkduck_running_shoes_01'], lycra=('leggings', '#1a1a1e')),
     dict(id='adult_cyclist', kind='man', outfit='shorts', H=1.79, gender=1, age=0.60, weight=0.4, muscle=0.55, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#5a4a3a', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_cycling_shoes'], lycra=('shorts', '#121214')),
-    dict(id='adult_tophat', kind='man', outfit='trousers', H=1.70, gender=1, age=0.66, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='grey', brows='eyebrow004', lashes=None, hair='short04', hair_col='#8c8c8c', face=True,
+    dict(id='adult_tophat', kind='man', outfit='trousers', H=1.68, gender=1, age=0.66, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='grey', brows='eyebrow004', lashes=None, hair='short04', hair_col='#8c8c8c', face=True,
          clothes=['toigo_suit_with_dinner_jacket', 'mindfront_shoes_oxford_male'], hat=('tophat', '#141414'), rare=0.12),
     dict(id='adult_baggy_knit', kind='woman', outfit='trousers', H=1.64, gender=0, age=0.50, weight=0.4, muscle=0.35, race=(0.9, 0.1, 0.0), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_inverted_bob', hair_col='#3a281c', face=True,
          clothes=['mindfront_lusekofta', 'elvs_jeans_straight_leg', 'punkduck_comfortable_sneakers'], baggy=0.5, tuck=('jeans', 'lusekofta')),
@@ -1250,7 +1250,7 @@ def main():
     mpfb_setup()
     specs = [p for p in PEOPLE if not ARGS or p['id'] in ARGS]
     people = []; metas = {}
-    total = 2600 if LOD else 9500
+    total = 2600 if LOD else 8000   # full detail 9500 -> 8000 (2026-11-07, design note: ~22 MB at 72 people)
     maxpx = 256 if LOD else 512
     for spec in specs:
         pr = build_person(spec)
@@ -1259,7 +1259,7 @@ def main():
         add_garments(pr)
         eyes = [o for o, r, _ in pr['parts'] if r == 'eyes'][0]
         eye_z = sum(v.co.z for v in eyes.data.vertices) / len(eyes.data.vertices)
-        budget_and_join(pr, total)
+        budget_and_join(pr, total if LOD else spec.get('tris', total))   # tris=: a person whose garments break up at the default budget keeps more
         zmin = shift_soles(pr)
         sc = fit_height(pr, spec['H'])
         pr['eye_z'] = (eye_z - zmin) * sc
