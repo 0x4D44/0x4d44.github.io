@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { bounds, buildingPrisms, PLATFORM_HEIGHT, platformPrisms, railSegments, ribbonTriangles, twinRails } from '../../core/scene.ts';
 import type { Prism } from '../../core/scene.ts';
-import { concourseCanopy, platformSouthEnd, shedLayout, stationBuilding, stationPlatforms } from '../../core/station.ts';
+import { concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms } from '../../core/station.ts';
 import type { KxData } from '../../core/osm.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
@@ -103,6 +103,15 @@ function start(): void {
   scene.add(buildShed(layout));
   if (station) scene.add(buildConcourse(concourseCanopy(data), station.pts, layout));
 
+  // buffer stops: a red block across each terminating track, turned with the platforms
+  const stopMaterial = new THREE.MeshLambertMaterial({ color: 0xa83232 });
+  for (const b of shedBufferStops(data, layout)) {
+    const stop = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 0.7), stopMaterial);
+    stop.position.set(b.x, 0.58, b.z);
+    stop.rotation.y = -layout.heading;
+    scene.add(stop);
+  }
+
   for (const [ref, p] of stationPlatforms(data)) {
     const [x, z] = platformSouthEnd(p.pts);
     scene.add(platformSign(ref, [x, PLATFORM_HEIGHT + 3.1, z - 1.2]));
@@ -131,12 +140,16 @@ function start(): void {
   window.addEventListener('resize', resize);
   resize();
 
+  // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
+  // navigation began, which the evidence script reports as the time to first render.
+  const kx = { ready: true, scene, camera, controls, renderer, layout, firstFrameMs: 0 };
   renderer.setAnimationLoop(() => {
     controls.update();
     world.follow(camera);
     renderer.render(scene, camera);
+    if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
 
   status.textContent = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
-  (window as unknown as { __kx: unknown }).__kx = { ready: true, scene, camera, controls, renderer, layout };
+  (window as unknown as { __kx: unknown }).__kx = kx;
 }
