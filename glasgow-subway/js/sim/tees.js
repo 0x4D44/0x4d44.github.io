@@ -5,7 +5,7 @@
 // added to the material's shaders draw the person's print there (dressTee); each person gets their own copy of the T-shirt material (the uniforms
 // differ), and every copy shares one shader program.
 export const PRINT_COLS = 6, PRINT_ROWS = 4, PRINT_COUNT = 24, PRINT_GUTTER = 6 / 256;
-export const TEE = /^cloth_.*t-?shirt/i;   // the T-shirt materials in people.glb (MakeHuman names: cloth_T-shirt_basic.png, ...)
+export const TEE = /^cloth_(.*t-?shirt|crude_male_tex)/i;   // the T-shirt materials in people.glb, named after their textures (cloth_T-shirt_basic.png, cloth_CrudeFemaleTshirtDiffuse.png, cloth_crude_male_tex.png)
 
 /** The print coordinates of a T-shirt's vertices, from its bind-pose positions P (flat xyz; the people face -z in glTF, +y up).
  *  Returns { attr: Float32Array(n * 3), size, centre: [x, y], front: count } or null for a shirt with no front: attr holds per vertex (s, t, f) -
@@ -58,9 +58,12 @@ export const teeColour = (rng) => TEE_COLOURS[Math.floor(rng() * TEE_COLOURS.len
 
 const FRAG = `
 #ifdef USE_MAP
-{ if (uTeeTint.r >= 0.0) {   // recolour: the texel over the texture's mean (its top mip level) keeps the weave, the tint sets the colour
-    vec3 tm = max(textureLod(map, vec2(0.5), 16.0).rgb, vec3(0.02));
-    diffuseColor.rgb = uTeeTint * clamp(texture2D(map, vMapUv).rgb / tm, 0.0, 2.0);
+{ if (uTeeTint.r >= 0.0) {   // recolour: the texel's brightness over its neighbourhood's (a coarse mip) keeps the weave, the tint sets the colour.
+    // A local mean, not the whole texture's: some shirts are white islands on a grey or black ground. Clamped, so an island's edge (where the
+    // neighbourhood takes in some ground) brightens a little at most.
+    const vec3 L = vec3(0.2126, 0.7152, 0.0722);
+    float lm = max(dot(textureLod(map, vMapUv, 3.0).rgb, L), 0.02);
+    diffuseColor.rgb = uTeeTint * clamp(dot(texture2D(map, vMapUv).rgb, L) / lm, 0.8, 1.2);
 } }
 #endif
 if (uPrintCell >= 0.0) {   // sampled outside any per-pixel branch (mip selection needs the UV's screen derivatives everywhere), then masked
