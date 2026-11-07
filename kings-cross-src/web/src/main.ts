@@ -3,15 +3,19 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { bounds, buildingPrisms, PLATFORM_HEIGHT, platformPrisms, railSegments, ribbonTriangles, twinRails } from '../../core/scene.ts';
 import type { Prism } from '../../core/scene.ts';
-import { concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms } from '../../core/station.ts';
+import { concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import type { KxData } from '../../core/osm.ts';
+import type { TrainKind } from '../../core/train.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
+import { buildTrain } from './train.ts';
 import { addWorld } from './world.ts';
 import trackData from './data/kx-track.json';
 
 const data = trackData as unknown as KxData;
+/** A standing train's nose stops this far (metres) north of its buffer stop. */
+const NOSE_TO_STOP = 1.5;
 const status = document.getElementById('status') as HTMLElement;
 const host = document.getElementById('app') as HTMLElement;
 
@@ -100,7 +104,8 @@ function start(): void {
   // ?bare=1 hides the surrounding buildings, so the evidence shots can measure the shed and platforms.
   if (buildings && !params.has('bare')) scene.add(buildings);
   const layout = shedLayout(data);
-  scene.add(buildShed(layout));
+  const shed = buildShed(layout);
+  scene.add(shed);
   if (station) scene.add(buildConcourse(concourseCanopy(data), station.pts, layout));
 
   // buffer stops: a red block across each terminating track, turned with the platforms
@@ -110,6 +115,26 @@ function start(): void {
     stop.position.set(b.x, 0.58, b.z);
     stop.rotation.y = -layout.heading;
     scene.add(stop);
+  }
+
+  // ?trains=demo: four trains standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
+  // from the west), so no two share a platform face and the evidence cameras can stand between them.
+  // The local frame has the nose at z = 0 and the body running to +z; turning by (PI - heading) sends
+  // +z to the shed's north, along the tracks.
+  const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex: number }[] = [];
+  if (params.get('trains') === 'demo') {
+    const stops = shedBufferStops(data, layout).sort((p, q) => worldToShed(layout, [p.x, p.z]).u - worldToShed(layout, [q.x, q.z]).u);
+    const picks: [TrainKind, number][] = [['lner9', 1], ['lner5', 3], ['hull5', 5], ['lumo5', 7]];
+    for (const [kind, trackIndex] of picks) {
+      const stop = stops[trackIndex];
+      if (!stop) continue;
+      const nose: [number, number, number] = [stop.x + Math.sin(layout.heading) * NOSE_TO_STOP, 0, stop.z - Math.cos(layout.heading) * NOSE_TO_STOP];
+      const group = buildTrain(kind);
+      group.position.set(nose[0], nose[1], nose[2]);
+      group.rotation.y = Math.PI - layout.heading;
+      scene.add(group);
+      trains.push({ kind, group, noseWorld: nose, headingRad: layout.heading, trackIndex });
+    }
   }
 
   for (const [ref, p] of stationPlatforms(data)) {
@@ -142,7 +167,8 @@ function start(): void {
 
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
-  const kx = { ready: true, scene, camera, controls, renderer, layout, firstFrameMs: 0 };
+  // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
+  const kx = { ready: true, scene, camera, controls, renderer, layout, trains, parts: { shed, buildings }, firstFrameMs: 0 };
   renderer.setAnimationLoop(() => {
     controls.update();
     world.follow(camera);

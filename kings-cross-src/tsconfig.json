@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["core/**/*.ts", "web/src/**/*.ts", "tools/**/*.ts", "vite.config.ts"]
+  "include": ["core/**/*.ts", "web/src/**/*.ts", "web/tests/**/*.ts", "tools/**/*.ts", "vite.config.ts"]
 }
