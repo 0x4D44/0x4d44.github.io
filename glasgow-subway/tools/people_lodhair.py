@@ -97,9 +97,15 @@ def check_compatible(src, dst, pid, sp, dp):
     assert set(sp['attributes']) == set(dp['attributes']) == set(ATTRS), f"{pid}: vertex attributes differ: {sorted(sp['attributes'])} vs {sorted(dp['attributes'])}"
     sm, dm = src.j['materials'][sp['material']], dst.j['materials'][dp['material']]
     assert sm['name'] == dm['name'] and sm['pbrMetallicRoughness'].get('baseColorFactor') == dm['pbrMetallicRoughness'].get('baseColorFactor'), f'{pid}: the materials differ'
-    for k in ATTRS:   # same formats, so the data can be copied byte for byte
+    for k in ATTRS:   # the copy takes new accessors in the source's own format (append_accessor), byte for byte
         sa, da = src.j['accessors'][sp['attributes'][k]], dst.j['accessors'][dp['attributes'][k]]
-        assert (sa['componentType'], sa['type'], sa.get('normalized', False)) == (da['componentType'], da['type'], da.get('normalized', False)), f'{pid}: {k} formats differ'
+        sf, df = (sa['componentType'], sa['type'], sa.get('normalized', False)), (da['componentType'], da['type'], da.get('normalized', False))
+        if k == 'TEXCOORD_0' and sf[1] == df[1] == 'VEC2':
+            # The exporter picks the UV format per primitive (2026-11-07: teen_tube's brows are normalized ushort in people.glb, float in the LOD).
+            # Either may be copied, as long as the LOD file can carry the source's format: float and normalized unsigned byte / short are core glTF.
+            assert sf in ((5126, 'VEC2', False), (5121, 'VEC2', True), (5123, 'VEC2', True)) or 'KHR_mesh_quantization' in (dst.j.get('extensionsRequired') or []), f'{pid}: {k} format {sf} needs KHR_mesh_quantization in the LOD file'
+            continue
+        assert sf == df, f'{pid}: {k} formats differ'   # POSITION (read as float32) and NORMAL (int8) must match what transplant() reads
 
 
 def transplant(src, dst, pid, part, lift):

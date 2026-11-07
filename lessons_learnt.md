@@ -11,6 +11,9 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-07 - armfit/people_holes --base is the server ROOT; they add /glasgow-subway/ (glasgow-subway tools/people_holes.mjs)
+  Passing http://host:port/glasgow-subway/ makes every page 404 and the tool waits 300 s for window.__ready, then times out with no other
+  clue. Both also need Playwright: NODE_PATH to its install and PLAYWRIGHT_BROWSERS_PATH to its downloaded Chromium.
 - 2026-11-07 - blender -b exits 0 after a Python traceback: check the EXPORTED line (glasgow-subway tools/assets_people_mpfb.py:export_all)
   A crashed people build left the previous people.glb in its out dir and a wrapper that tested the exit code installed it as new. Delete the outputs
   before building and require both "EXPORTED" and no "Traceback" in the log.

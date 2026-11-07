@@ -6,6 +6,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/elvs_crude_t-shirt_male",
+  "author": "Makehuman edited by Elvaerwyn",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/elvs_disco_pants_skinny",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
@@ -13,6 +19,18 @@
  },
  {
   "name": "clothes/elvs_hooded_sweat_jacket1",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/elvs_jeans_bootcut",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/elvs_jeans_straight_leg",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -45,6 +63,12 @@
   "name": "clothes/elvs_zombie_killer_sneakers",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/fedora01",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
@@ -156,6 +180,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/punkduck_female_short_jeans",
+  "author": "punkduck",
+  "licence": "CC-BY 4.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/punkduck_female_tight_jeans",
   "author": "punkduck",
   "licence": "CC-BY 3.0",
@@ -168,6 +198,30 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/punkduck_running_shoes_01",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_tennis_shoes",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_tube_top",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/punkduck_winter_coat",
+  "author": "punkduck",
+  "licence": "CC-BY 3.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/toigo_ankle_boots_female",
   "author": "MRT",
   "licence": "CC0",
@@ -175,6 +229,12 @@
  },
  {
   "name": "clothes/toigo_ankle_boots_male",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_ballet_flats",
   "author": "MRT",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -198,6 +258,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/toigo_flats",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/toigo_halter_dress_midi",
   "author": "MRT",
   "licence": "CC0",
@@ -211,6 +277,12 @@
  },
  {
   "name": "clothes/toigo_shift_dress",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_stiletto_booties",
   "author": "MRT",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -366,6 +438,48 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "hair/culturalibre_hair_05",
+  "author": "culturalibre",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_daisy_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_katherine_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_lady_hippy_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_maxwell_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_short_daisy_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/elvs_wavy_bob",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "hair/long01",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
@@ -398,6 +512,24 @@
  {
   "name": "hair/short04",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/toigo_blunt_bob_with_bangs",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/toigo_curled_under_bob",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "hair/toigo_inverted_bob_with_bangs",
+  "author": "MRT",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
  },

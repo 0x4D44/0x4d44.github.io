@@ -19,7 +19,13 @@ export const ARM_OUT = {
   staff_hivis: { idle_a: [6, 7.5], idle_b: [6, 6], walk: [6, 6], walk_bag: [6, 13.5], sit_idle: [6, 7.5], sit_phone: [0, 4.5], sit_look: [6, 9], sit_cross_legs: [4.5, 9], stand_hold_pole: [6, 0], stand_hold_rail: [0, 7.5] },
   teen_boy: { idle_a: [6, 7.5], idle_b: [6, 6], walk: [6, 6], walk_bag: [6, 13.5], sit_idle: [3, 3], sit_look: [9, 4.5], sit_cross_legs: [4.5, 0], stand_hold_pole: [6, 0], stand_hold_rail: [0, 7.5] },
   teen_girl: { idle_a: [13.5, 16.5], idle_b: [13.5, 16.5], walk: [15, 16.5], walk_bag: [15, 21], sit_idle: [10.5, 13.5], sit_phone: [12, 10.5], sit_look: [12, 13.5], sit_cross_legs: [10.5, 15], stand_hold_pole: [13.5, 0], stand_hold_rail: [0, 16.5] },
+  teen_hippy: { idle_a: [16.5, 16.5], idle_b: [15, 16.5], walk: [16.5, 16.5], walk_bag: [15, 21], sit_idle: [9, 16.5], sit_phone: [12, 10.5], sit_look: [10.5, 16.5], sit_cross_legs: [9, 13.5], stand_hold_pole: [16.5, 0], stand_hold_rail: [0, 16.5] },
+  teen_hood: { idle_a: [9, 13.5], idle_b: [9, 15], walk: [9, 13.5], walk_bag: [9, 19.5], sit_idle: [3, 7.5], sit_phone: [4.5, 15], sit_look: [6, 12], sit_cross_legs: [3, 12], stand_hold_pole: [9, 0], stand_hold_rail: [0, 13.5] },
+  teen_runner: { idle_a: [6, 6], idle_b: [6, 6], walk: [4.5, 6], walk_bag: [6, 12], sit_idle: [4.5, 4.5], sit_look: [9, 6], sit_cross_legs: [4.5, 0], stand_hold_pole: [6, 0], stand_hold_rail: [0, 6] },
+  teen_skater: { idle_a: [6, 6], idle_b: [6, 6], walk: [6, 6], walk_bag: [9, 12], sit_idle: [1.5, 0], sit_look: [7.5, 3], sit_cross_legs: [1.5, 0], stand_hold_pole: [6, 0], stand_hold_rail: [0, 6] },
   teen_skirt: { idle_a: [12, 12], idle_b: [12, 12], walk: [10.5, 10.5], walk_bag: [10.5, 19.5], sit_idle: [7.5, 7.5], sit_phone: [4.5, 6], sit_look: [9, 9], sit_cross_legs: [7.5, 7.5], stand_hold_pole: [12, 0], stand_hold_rail: [0, 12] },
+  teen_tee: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [9, 15], sit_idle: [6, 4.5], sit_phone: [1.5, 0], sit_look: [7.5, 4.5], sit_cross_legs: [6, 1.5], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
+  teen_tube: { idle_a: [12, 12], idle_b: [12, 12], walk: [10.5, 10.5], walk_bag: [10.5, 18], sit_look: [1.5, 0], stand_hold_pole: [12, 0], stand_hold_rail: [0, 12] },
   woman_bob: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [10.5, 16.5], sit_look: [4.5, 3], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
   woman_coat: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [9, 16.5], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
   woman_dress: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [9, 15], sit_idle: [3, 4.5], sit_phone: [3, 6], sit_look: [4.5, 6], sit_cross_legs: [3, 9], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
@@ -30,6 +36,14 @@ export const ARM_OUT = {
   woman_sash: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [9, 13.5], sit_idle: [1.5, 0], sit_look: [3, 3], sit_cross_legs: [1.5, 3], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
   woman_scarf: { idle_a: [7.5, 7.5], idle_b: [7.5, 9], walk: [7.5, 9], walk_bag: [9, 15], sit_idle: [1.5, 3], sit_phone: [4.5, 4.5], sit_look: [1.5, 4.5], sit_cross_legs: [1.5, 6], stand_hold_pole: [7.5, 1.5], stand_hold_rail: [0, 9] },
   woman_student: { idle_a: [15, 16.5], idle_b: [15, 16.5], walk: [15, 16.5], walk_bag: [15, 21], sit_idle: [9, 16.5], sit_phone: [7.5, 13.5], sit_look: [9, 16.5], sit_cross_legs: [10.5, 15], stand_hold_pole: [15, 0], stand_hold_rail: [0, 16.5] },
+  ya_bootcut: { idle_a: [9, 9], idle_b: [9, 9], walk: [9, 9], walk_bag: [9, 18], sit_idle: [9, 9], sit_phone: [7.5, 7.5], sit_look: [12, 9], sit_cross_legs: [9, 12], stand_hold_pole: [12, 0], stand_hold_rail: [0, 9] },
+  ya_fedora: { idle_a: [6, 6], idle_b: [6, 6], walk: [6, 6], walk_bag: [6, 12], sit_look: [4.5, 1.5], stand_hold_pole: [6, 0], stand_hold_rail: [0, 7.5] },
+  ya_knit: { idle_a: [9, 7.5], idle_b: [7.5, 9], walk: [9, 9], walk_bag: [10.5, 12], stand_hold_pole: [9, 0], stand_hold_rail: [0, 9] },
+  ya_shorts: { idle_a: [10.5, 15], idle_b: [10.5, 15], walk: [15, 16.5], walk_bag: [13.5, 21], sit_idle: [10.5, 16.5], sit_phone: [10.5, 16.5], sit_look: [10.5, 16.5], sit_cross_legs: [10.5, 16.5], stand_hold_pole: [10.5, 10.5], stand_hold_rail: [0, 15] },
+  ya_spiky: { idle_a: [6, 6], idle_b: [6, 6], walk: [4.5, 6], walk_bag: [6, 12], sit_look: [4.5, 0], stand_hold_pole: [6, 0], stand_hold_rail: [0, 6] },
+  ya_tee_jeans: { idle_a: [9, 6], idle_b: [9, 7.5], walk: [9, 6], walk_bag: [9, 12], sit_idle: [9, 0], sit_phone: [10.5, 9], sit_look: [9, 0], sit_cross_legs: [7.5, 1.5], stand_hold_pole: [9, 0], stand_hold_rail: [0, 6] },
+  ya_tube_heels: { idle_a: [7.5, 9], idle_b: [7.5, 9], walk: [9, 9], walk_bag: [9, 13.5], sit_idle: [3, 3], sit_look: [3, 1.5], sit_cross_legs: [3, 3], stand_hold_pole: [7.5, 0], stand_hold_rail: [0, 9] },
+  ya_winter: { idle_a: [12, 12], idle_b: [12, 12], walk: [12, 12], walk_bag: [12, 18], sit_idle: [0, 1.5], stand_hold_pole: [12, 0], stand_hold_rail: [0, 12] },
 };
 // Clips that no turn-out can clear (still buried more than 4 cm): the crowd does not play them. Same tool.
 export const ARM_DROP = {

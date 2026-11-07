@@ -172,5 +172,21 @@ Measured with `tools/people_holes.mjs` (stand + walk + gait, cm² per view, the 
 measure counts). Still seen: a hairline notch at the top front of `boy_kilt` in the `kid_fidget` side view. The arm turn-out table (`js/sim/armfit.js`) was re-solved: the
 kilted men now turn their arms out 12-15 degrees (was 9).
 
+## Roster growth, batch 1 (2026-11-07): 30 -> 44 people
+Fourteen teens and young adults (`teen_*`, `ya_*` in `tools/assets_people_mpfb.py`), the first of three batches towards 72 (design note
+`wrk_docs/2026.11.07 - HUM - glasgow-subway wider range of people.md`). Each new person sets `face=True`: seeded MakeHuman face targets (nose, mouth,
+chin, cheeks, brows, forehead, ears, eyes; a third of each region's controls, symmetric), loaded before the rig and every asset so hair and eyes fit
+the face. The thirty earlier people do not set it and come out of the build unchanged (their rest-pose skin counts are identical).
+
+New garments and hair, all CC0 / CC-BY (`CREDITS.md`, now generated with the CC-BY author list and the audio rows kept): straight and bootcut jeans,
+denim shorts, a tube top, the crude male T-shirt, a winter coat, a fedora, running and tennis shoes, flats, ballet flats, stiletto booties; hair
+`afro01`, `culturalibre_hair_05`, `elvs_*` (daisy, short daisy, lady hippy, maxwell, katherine, wavy bob), `toigo_*` bobs. Tried and dropped after
+renders: the female crude T-shirt and the polo (the jeans' waistband comes through), the long open cardigan, a fisherman sweater over the high
+skinny trousers, a tube top over denim shorts, and both O4saken hairs (they draw as black shards).
+
+Player-visible skin, `tools/people_holes.mjs` (stand + walk + gait, cm² per view): every new person is at most 14.2 (batch total full 75.0, LOD 88.6).
+`teen_hood` and `ya_tube_heels` are repaired by `tools/people_skinfit.py`; the tube top's waistband needed a 5 mm hem margin (a RECIPE (push, hem)
+pair). Sizes: `people.glb` 16.4 MB, `people_lod.glb` 8.4 MB (from 11.7 and 6.1) - about 0.35 MB per new person.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

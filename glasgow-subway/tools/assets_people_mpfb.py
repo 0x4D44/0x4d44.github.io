@@ -90,30 +90,33 @@ PEOPLE = [
          clothes=['toigo_camisole_top', 'mtknife_pleated_mini_skirt', 'mindfront_shoes_monk_strap_female']),
     # --- batch 1 (2026-11-07): teens and young adults. face=True: each gets seeded face targets of their own (face_targets). Ids must not
     #     contain boy/girl/kid/child unless they start with teen_ (people.js reads those as children). elvs_disco_pants_skinny rides high and
-    #     comes through a T-shirt's hem: only under jumpers, hoodies and cardigans.
+    #     comes through a T-shirt's hem: only under jumpers, hoodies and cardigans. Tried and dropped (renders, 2026-11-07): the o4saken hairs
+    #     (draw as black shards), joepal_crude_t-shirt_female and namuhekam_male_polo_shirt (the jeans' waistband comes through), toigo_fisherman_sweater over
+    #     elvs_disco_pants_skinny (the same), and
+    #     mindfront_cardigan_long_open_front (a lab coat, with the top under it showing through).
     dict(id='teen_skater', kind='teen', outfit='trousers', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
     dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'punkduck_running_shoes_01']),
-    dict(id='teen_tube', kind='teen', outfit='shorts', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
-         clothes=['punkduck_tube_top', 'punkduck_female_short_jeans', 'toigo_flats']),
-    dict(id='teen_tee', kind='teen', outfit='trousers', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='o4saken_chinesebob01', hair_col='#17120e', face=True,
-         clothes=['joepal_crude_t-shirt_female', 'punkduck_female_tight_jeans', 'punkduck_tennis_shoes']),
+    dict(id='teen_tube', kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
+         clothes=['punkduck_tube_top', 'mtknife_pleated_mini_skirt', 'toigo_flats']),
+    dict(id='teen_tee', kind='teen', outfit='trousers', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_inverted_bob_with_bangs', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_tight_jeans', 'punkduck_tennis_shoes']),
     dict(id='teen_hippy', kind='teen', outfit='leggings', H=1.63, gender=0, age=0.29, weight=0.4, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='elvs_lady_hippy_hair', hair_col='#c9a25e', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'elvs_disco_pants_skinny', 'punkduck_comfortable_sneakers']),
-    dict(id='teen_polo', kind='teen', outfit='trousers', H=1.75, gender=1, age=0.34, weight=0.45, muscle=0.45, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short04', hair_col='#17120e', face=True,
-         clothes=['namuhekam_male_polo_shirt', 'elvs_jeans_bootcut', 'culturalibre_sneakers']),
+    dict(id='teen_hood', kind='teen', outfit='trousers', H=1.75, gender=1, age=0.34, weight=0.45, muscle=0.45, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short04', hair_col='#17120e', face=True,
+         clothes=['elvs_hooded_sweat_jacket1', 'elvs_jeans_straight_leg', 'culturalibre_sneakers']),
     dict(id='ya_tee_jeans', kind='man', outfit='trousers', H=1.79, gender=1, age=0.43, weight=0.45, muscle=0.55, race=(0.0, 0.15, 0.85), skin='young_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01']),
     dict(id='ya_shorts', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.41, weight=0.45, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes03', hair='elvs_daisy_hair', hair_col='#7a2f1a', face=True,
-         clothes=['joepal_crude_t-shirt_female', 'punkduck_female_short_jeans', 'toigo_ballet_flats']),
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_short_jeans', 'toigo_ballet_flats']),
     dict(id='ya_fedora', kind='man', outfit='trousers', H=1.77, gender=1, age=0.51, weight=0.5, muscle=0.5, race=(0.1, 0.85, 0.05), skin='young_caucasian_male2', eye='brown', brows='eyebrow004', lashes=None, hair='short04', hair_col='#3a281c', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male', 'fedora01']),
     dict(id='ya_tube_heels', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.48, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='elvs_katherine_hair', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
-    dict(id='ya_cardigan', kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='elvs_wavy_bob', hair_col='#241812', face=True,
-         clothes=['toigo_camisole_top', 'mindfront_cardigan_long_open_front', 'elvs_disco_pants_skinny', 'toigo_flats']),
-    dict(id='ya_bootcut', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='o4saken_long01', hair_col='#4a3020', face=True,
+    dict(id='ya_knit', kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='elvs_wavy_bob', hair_col='#241812', face=True,
+         clothes=['mindfront_knitted_sweater_01', 'elvs_disco_pants_skinny', 'toigo_flats']),
+    dict(id='ya_bootcut', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='elvs_short_daisy_hair', hair_col='#4a3020', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_bootcut', 'punkduck_tennis_shoes']),
     dict(id='ya_spiky', kind='man', outfit='trousers', H=1.80, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow002', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
          clothes=['elvs_crude_t-shirt_male', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
@@ -148,7 +151,19 @@ def load_image(path, maxpx, alpha=False, quality=80, srgb=True):
     key = (path, maxpx, alpha)
     if key in IMG_CACHE: return IMG_CACHE[key]
     if not os.path.exists(path): return None
-    im = Image.open(path)
+    try:
+        im = Image.open(path); im.load()
+    except Exception as e:
+        # A few community textures (elvs_katherine_hair/erbehairtex1.png) carry a metadata chunk (iCCP) with a bad checksum; the pixels are intact.
+        # PIL refuses the file outright. Its lenient mode skips checksum errors in optional chunks, but would also accept a cut-off file, so it is
+        # only used on a PNG that ends in its IEND marker (the file is complete).
+        from PIL import ImageFile
+        with open(path, 'rb') as fh: fh.seek(-12, 2); tail = fh.read()
+        if not tail[4:8] == b'IEND': raise
+        print('image: %s (%s) - reading with optional-chunk checksums ignored' % (os.path.basename(path), e))
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
+        try: im = Image.open(path); im.load()
+        finally: ImageFile.LOAD_TRUNCATED_IMAGES = False
     if max(im.size) > maxpx:
         s = maxpx / max(im.size); im = im.resize((max(8, int(im.size[0] * s)), max(8, int(im.size[1] * s))), Image.LANCZOS)
     base = os.path.splitext(os.path.relpath(path, DATA).replace(os.sep, '_'))[0] + f'_{maxpx}'
