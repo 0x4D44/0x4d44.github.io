@@ -22,7 +22,7 @@ export function loadAdvertAtlas(THREE, url) {
   });
 }
 
-export const LAND_POSTERS = 12;   // real posters in the landscape atlas (its last cells repeat the first ones)
+export const LAND_POSTERS = 16;   // posters in the landscape atlas: all 16 cells are distinct (12 originals + 4 Daily Flange)
 
 /** Deterministic per-station order of n cells (string-seeded Fisher-Yates). */
 export function advertOrder(seed, n = ADVERT_CELLS) {
