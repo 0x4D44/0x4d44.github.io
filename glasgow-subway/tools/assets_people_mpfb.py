@@ -33,7 +33,7 @@ PEOPLE = [
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_male_classic_jeans', 'culturalibre_sneakers']),
     dict(id='man_longcoat', kind='man', outfit='trousers', H=1.79, gender=1, age=0.50, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#8c8c8c',
          clothes=['male_elegantsuit01', 'mindfront_shoes_monk_strap_male']),
-    dict(id='man_elder', kind='elder', outfit='trousers', H=1.68, gender=1, age=0.88, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short04', hair_col='#d0d0d0',
+    dict(id='man_elder', kind='elder', outfit='trousers', H=1.68, gender=1, age=0.88, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short04', hair_col='#d0d0d0', hair_lift=True,
          clothes=['mindfront_knitted_sweater_01', 'mindfront_male_trousers_1', 'mindfront_shoes_oxford_male']),
     dict(id='man_puffer', kind='man', outfit='trousers', H=1.76, gender=1, age=0.42, weight=0.5, muscle=0.55, race=(0.05, 0.05, 0.9), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short02', hair_col='#17120e',
          clothes=['male_casualsuit04', 'culturalibre_sneakers']),
@@ -94,7 +94,11 @@ PEOPLE = [
     #     (draw as black shards), joepal_crude_t-shirt_female and namuhekam_male_polo_shirt (the jeans' waistband comes through), toigo_fisherman_sweater over
     #     elvs_disco_pants_skinny (the same), and
     #     mindfront_cardigan_long_open_front (a lab coat, with the top under it showing through). Batch 2 dropped: toigo_halter_dress_knee_length
-    #     (skin through the skirt), fedora_cocked (draws as grey shards), elvs_male_trouser_short_1 (most of the seat missing).
+    #     (skin through the skirt), fedora_cocked (draws as grey shards), elvs_male_trouser_short_1 (most of the seat missing). Batch 3 dropped (people_holes 30-96 cm2/view, skin at
+    #     the edges): punkduck_retro_top, punkduck_retro_polka_dot_skirt, toigo_turtleneck_halter_top, mindfront_tank_top_01, punkduck_v_neck_top (skin at the neck),
+    #     toigo_tiered_mini_skirt (165 under a tee), punkduck_female_short_jeans and Lycra shorts under toigo_keyhole_tank_top (31 LOD),
+    #     the tube top + pleated mini of teen_tube on an adult body (55: skin through the skirt's waistband), and
+    #     toigo_flats with Lycra (rest-pose skin count ~3400 whatever the top, hair or body; 559 in ankle boots; skin showed through the tee and sleeves too).
     dict(id='teen_skater', kind='teen', outfit='trousers', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
     dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
@@ -124,7 +128,7 @@ PEOPLE = [
     dict(id='ya_winter', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
          clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
     # --- batch 2 (2026-11-07): adults, and the garments made here (add_garments): lycra=(leggings|shorts, colour) paints the body's own skin;
-    #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat, colour). rare=f: the crowd takes this person only f of the times they come up.
+    #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat|beret, colour). rare=f: the crowd takes this person only f of the times they come up.
     dict(id='adult_cap_baggy', kind='man', outfit='trousers', H=1.77, gender=1, age=0.52, weight=0.45, muscle=0.5, race=(0.05, 0.2, 0.75), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short02', hair_col='#17120e', face=True,
          clothes=['elvs_male_logo_tshirt1', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01'], baggy=0.55, tuck=('jeans', 'tshirt'), hat=('cap', '#1d2a4a')),
     dict(id='adult_runner', kind='woman', outfit='leggings', H=1.67, gender=0, age=0.55, weight=0.4, muscle=0.45, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes02', hair='ponytail01', hair_col='#b5854b', face=True,
@@ -153,6 +157,36 @@ PEOPLE = [
          clothes=['toigo_male_suit_tie_and_jacket', 'mindfront_shoes_monk_strap_male']),
     dict(id='adult_suit_bun', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.60, weight=0.45, muscle=0.35, race=(0.85, 0.1, 0.05), skin='middleage_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes02', hair='elvs_reverse_french_braid_bun', hair_col='#17120e', face=True,
          clothes=['toigo_female_suit_2', 'mindfront_shoes_oxford_female']),
+    # --- batch 3 (2026-11-07): two children (ids boy_* / girl_*: people.js reads those as children), four elders (elder_*), one member of staff (staff_*),
+    #     seven adults; heels, a coat, a beret (hat=('beret', colour)).
+    dict(id='boy_cap', kind='boy', outfit='trousers', H=1.42, gender=1, age=0.16, weight=0.45, muscle=0.4, race=(0.85, 0.1, 0.05), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short03', hair_col='#17120e', face=True,
+         clothes=['male_casualsuit01', 'culturalibre_sneakers'], hat=('cap', '#c8102e')),
+    dict(id='girl_leggings', kind='girl', outfit='leggings', H=1.32, gender=0, age=0.13, weight=0.45, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_curled_under_bob', hair_col='#17120e', face=True,
+         clothes=['mindfront_knitted_sweater_01', 'toigo_ballet_flats'], lycra=('leggings', '#2b4a8a')),
+    dict(id='elder_man_cap', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short04', hair_col='#bfbfbf', face=True, hair_lift=True,
+         clothes=['male_casualsuit06', 'mindfront_shoes_oxford_male'], hat=('cap', '#5a4a3a')),
+    dict(id='elder_woman_coat', kind='elder', outfit='trousers', H=1.55, gender=0, age=0.88, weight=0.5, muscle=0.3, race=(0.9, 0.1, 0.0), skin='old_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes04', hair='bob02', hair_col='#cfcfcf', face=True,
+         clothes=['punkduck_winter_coat', 'mindfront_female_trousers_1', 'toigo_ankle_boots_female']),
+    dict(id='elder_man_suit', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.92, weight=0.5, muscle=0.3, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='short04', hair_col='#e0e0e0', face=True, hair_lift=True,
+         clothes=['toigo_male_suit_3', 'mindfront_shoes_monk_strap_male']),
+    dict(id='elder_woman_dress', kind='elder', outfit='dress', H=1.58, gender=0, age=0.86, weight=0.6, muscle=0.3, race=(0.0, 0.1, 0.9), skin='old_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes04', hair='bob02', hair_col='#cfcfcf', face=True,
+         clothes=['elvs_simple_60s_dress', 'mindfront_shoes_monk_strap_female']),
+    dict(id='staff_woman', kind='staff', outfit='trousers', H=1.66, gender=0, age=0.48, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow007', lashes='eyelashes02', hair='ponytail01', hair_col='#6d4a2c', face=True,
+         clothes=['male_worksuit01', 'toigo_ankle_boots_female'], tint=(1.0, 0.95, 0.12)),
+    dict(id='adult_heel_boots', kind='woman', outfit='trousers', H=1.69, gender=0, age=0.54, weight=0.4, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow009', lashes='eyelashes03', hair='elvs_ashley_may_hair', hair_col='#d8b86c', face=True,
+         clothes=['elvs_hooded_sweat_jacket1', 'punkduck_female_tight_jeans', 'elvs_knee_high_heel_boots1']),
+    dict(id='adult_camisole', kind='woman', outfit='trousers', H=1.64, gender=0, age=0.58, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='middleage_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes02', hair='elvs_50s_updo', hair_col='#17120e', face=True,
+         clothes=['toigo_camisole_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
+    dict(id='adult_beret', kind='woman', outfit='skirt_pencil', H=1.67, gender=0, age=0.62, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow006', lashes='eyelashes03', hair='toigo_blunt_bob', hair_col='#a8452a', face=True,
+         clothes=['toigo_female_suit', 'punkduck_riding_boots'], hat=('beret', '#7a1f2b')),
+    dict(id='adult_casual5', kind='man', outfit='trousers', H=1.73, gender=1, age=0.58, weight=0.55, muscle=0.5, race=(0.9, 0.1, 0.0), skin='middleage_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short04', hair_col='#241812', face=True,
+         clothes=['male_casualsuit05', 'culturalibre_sneakers']),
+    dict(id='adult_casual2', kind='man', outfit='trousers', H=1.78, gender=1, age=0.47, weight=0.5, muscle=0.55, race=(0.05, 0.05, 0.9), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short03', hair_col='#17120e', face=True,
+         clothes=['male_casualsuit02', 'toigo_ankle_boots_male']),
+    dict(id='adult_fisherman_leggings', kind='woman', outfit='leggings', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow007', lashes='eyelashes01', hair='elvs_island_princess_hair', hair_col='#4a3020', face=True,
+         clothes=['toigo_fisherman_sweater', 'toigo_ankle_boots_female'], lycra=('leggings', '#5a2a6a')),
+    dict(id='adult_sport_cap', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.52, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes02', hair='toigo_inverted_bob', hair_col='#17120e', face=True,
+         clothes=['female_sportsuit01', 'punkduck_running_shoes_01'], hat=('cap', '#e8e8e8')),
 ]
 
 # ------------------------------------------------------------------ helpers: mhmat / images / materials
@@ -176,10 +210,10 @@ def mhclo_material(mhclo_path):
 IMG_CACHE = {}
 TEXDIR = os.path.join(SCRATCH, 'out', 'tex_lod' if LOD else 'tex')
 os.makedirs(TEXDIR, exist_ok=True)
-def load_image(path, maxpx, alpha=False, quality=80, srgb=True):
+def load_image(path, maxpx, alpha=False, quality=80, srgb=True, lift=False):
     """resized copy (PIL) -> bpy image; opaque maps become JPEG, alpha maps PNG; cached so shared textures are embedded once"""
     from PIL import Image
-    key = (path, maxpx, alpha)
+    key = (path, maxpx, alpha, lift)
     if key in IMG_CACHE: return IMG_CACHE[key]
     if not os.path.exists(path): return None
     try:
@@ -197,7 +231,18 @@ def load_image(path, maxpx, alpha=False, quality=80, srgb=True):
         finally: ImageFile.LOAD_TRUNCATED_IMAGES = False
     if max(im.size) > maxpx:
         s = maxpx / max(im.size); im = im.resize((max(8, int(im.size[0] * s)), max(8, int(im.size[1] * s))), Image.LANCZOS)
-    base = os.path.splitext(os.path.relpath(path, DATA).replace(os.sep, '_'))[0] + f'_{maxpx}'
+    base = os.path.splitext(os.path.relpath(path, DATA).replace(os.sep, '_'))[0] + f'_{maxpx}' + ('_lift' if lift else '')
+    if lift:
+        # grey hair: the material tint multiplies the texture, and the short MakeHuman hairs are near black, so a grey tint stayed black (man_elder
+        # had black hair at 88). Keep the strand shading but make it grey and light: luma over its own mean, to a mean of 0.8. The tint is done in
+        # the image because glTF clamps a colour factor at 1.
+        import numpy as _np
+        rgba = _np.asarray(im.convert('RGBA')).astype(_np.float32); msk = rgba[..., 3] > 128
+        lum = rgba[..., :3] @ _np.array([0.299, 0.587, 0.114], _np.float32)
+        mean = max(1.0, float(lum[msk].mean()) if msk.any() else 128.0)
+        g = _np.clip(lum / mean * 0.8 * 255, 0, 255)
+        rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = g
+        im = Image.fromarray(rgba.astype(_np.uint8), 'RGBA')
     if alpha:
         out = os.path.join(TEXDIR, base + '.png'); im.convert('RGBA').quantize(colors=48, method=Image.FASTOCTREE).save(out, optimize=True)
     else:
@@ -215,15 +260,15 @@ def load_image(path, maxpx, alpha=False, quality=80, srgb=True):
     return img
 
 MAT_CACHE = {}
-def make_material(name, diffuse=None, normal=None, alpha=False, rough=0.6, tint=None, color=(0.8, 0.8, 0.8), spec=0.3, maxpx=1024, nmaxpx=512, metal=0.0, cull=False):
-    key = (name, diffuse, normal, alpha, rough, tint, color, maxpx)
+def make_material(name, diffuse=None, normal=None, alpha=False, rough=0.6, tint=None, color=(0.8, 0.8, 0.8), spec=0.3, maxpx=1024, nmaxpx=512, metal=0.0, cull=False, lift=False):
+    key = (name, diffuse, normal, alpha, rough, tint, color, maxpx, lift)
     if key in MAT_CACHE: return MAT_CACHE[key]
     m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; bs = nt.nodes['Principled BSDF']
     bs.inputs['Roughness'].default_value = rough; bs.inputs['Metallic'].default_value = metal
     for nm in ('Specular IOR Level', 'Specular'):
         if nm in bs.inputs: bs.inputs[nm].default_value = spec
     m.use_backface_culling = False
-    img = load_image(diffuse, maxpx, alpha=alpha) if diffuse else None
+    img = load_image(diffuse, maxpx, alpha=alpha, lift=lift) if diffuse else None
     if img:
         t = nt.nodes.new('ShaderNodeTexImage'); t.image = img
         if tint:
@@ -399,8 +444,8 @@ def assign_materials(person, maxpx=1024):
         elif role in ('brows', 'lashes'):
             o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=None))
         elif role == 'hair':
-            o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'], os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
-                                                  tint=tuple(lin(c) for c in hex_rgb(spec['hair_col']))))
+            o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
+                                                  tint=tuple(lin(c) for c in hex_rgb(spec['hair_col'])), lift=bool(spec.get('hair_lift'))))
         else:
             tr = mh.get('transparent', 'False') == 'True' and False
             tn = spec.get('tint') if 'suit' in o.name.lower() else None
@@ -907,22 +952,30 @@ def _closed_strip(bm, sections):
 
 def head_weights(co): return [('head', 1.0)]
 
-def build_cap(person, colr):
-    """a baseball cap: a crown that follows the head + hair outline up from the band, and a peak at the front (+y)"""
+def build_cap(person, colr, beret=False):
+    """a baseball cap: a crown that follows the head + hair outline up from the band, and a peak at the front (+y). beret: no peak; the top ring
+    is let out 25 % and the crown raised, so the soft top overhangs the band"""
     import bmesh
     zb, ztop, ring, k = head_fit(person)
-    seg = 20; NZ = 5; h = (ztop - zb) / NZ
+    # Rings packed towards the top (sine spacing), the last one level with the top of the hair. Each is as wide as everything above the ring
+    # below it, so the wall between two rings clears all the hair at those heights; a crown narrowing to a point above the last measured ring let
+    # the top of the hair through.
+    seg = 20; NZ = 6; zc = ztop + 0.006
     bm = bmesh.new(); rings = []
-    base = ring(zb + h / 2, h / 2 + 0.004)
+    zs = [zb + (zc - zb) * math.sin(math.pi / 2 * i / (NZ - 1)) for i in range(NZ)]
+    base = ring((zb + zs[1]) / 2, (zs[1] - zb) / 2 + 0.004)
     for i in range(NZ):
-        z = zb + h * i
-        r = ring(z + h / 2, h / 2 + 0.004) or base   # each ring clears everything up to the next one
+        a_ = zs[max(0, i - 1)]
+        r = ring((a_ + zc) / 2, (zc - a_) / 2 + 0.004) or base
         cx, cy, rx, ry = r
-        rings.append(_ellipse(bm, cx, cy, rx * 1.03 + 0.006, ry * 1.03 + 0.006, z, seg))
+        g = 1.0 + (0.25 * (i / (NZ - 1)) ** 2 if beret else 0.0)
+        rings.append(_ellipse(bm, cx, cy, (rx * 1.03 + 0.006) * g, (ry * 1.03 + 0.006) * g, zs[i], seg))
     for i in range(NZ - 1): _wall(bm, rings[i], rings[i + 1])
     cx, cy = base[0], base[1]
-    top = bm.verts.new((cx, cy, ztop + 0.008)); last = rings[-1]
+    top = bm.verts.new((cx, cy, zc + (0.022 * k if beret else 0.006))); last = rings[-1]
     for j in range(seg): bm.faces.new((last[j], last[(j + 1) % seg], top))
+    if beret:
+        new_part(person, 'beret', bm, solid_material('cloth_beret_' + colr.lstrip('#'), hex_rgb(colr), 0.95), head_weights); return
     # peak: the front half of the band, reaching 7 cm forward, slightly down; 5 mm thick
     _, _, rx, ry = base; rx = rx * 1.03 + 0.006; ry = ry * 1.03 + 0.006; L = 0.072 * k
     secs = []; pts = []
@@ -1016,7 +1069,7 @@ def add_garments(person):
     # the height the person is scaled to (fit_height) is to the top of the head or hair, not of a hat made here
     hat = spec.get('hat')
     if hat: person['crown'] = max(v.co.z for o in person_objects(person) for v in o.data.vertices)
-    if hat: (build_cap if hat[0] == 'cap' else build_tophat)(person, hat[1])
+    if hat: {'cap': build_cap, 'tophat': build_tophat, 'beret': lambda p, c: build_cap(p, c, beret=True)}[hat[0]](person, hat[1])
 
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
