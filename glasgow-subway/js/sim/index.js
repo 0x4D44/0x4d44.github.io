@@ -62,18 +62,20 @@ class Sim {
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     this.GLTFLoader = GLTFLoader;
     this.saved = { clear: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha(), tm: r.toneMapping, exp: r.toneMappingExposure };
-    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl, vaultTpl, sigWallTpl, boardsTpl] = await Promise.all([
+    // people: the simplified people_lod.glb (~13 MB) now, the full-detail people.glb (~26 MB) streamed in once the station is drawn (_streamFullPeople)
+    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleLodTpl, vaultTpl, sigWallTpl, boardsTpl] = await Promise.all([
       loadTrainTemplate(THREE, GLTFLoader, this.url('models/train.glb')),
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
-      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._optG('models/people.glb'),  this._opt('models/tunnel_station_vault.glb'), this._opt('models/signal_wall.glb'), this._opt('models/signal_boards.glb'),
+      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._optG('models/people_lod.glb'),  this._opt('models/tunnel_station_vault.glb'), this._opt('models/signal_wall.glb'), this._opt('models/signal_boards.glb'),
     ]);
     this.hallIndex = await this._json('models/stations_index.json');
     const looksJ = await this._json('data/station_looks.json');
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
     this.walkable = await this._json('models/train_walkable.json');
     this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
-    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; try { frontFaceSigns(kioskTpl); } catch (e) {} this.peopleGltf = peopleTpl; this.peopleVariants = null; this.peopleLod = await this._optG('models/people_lod.glb');
-    { const pm = await this._json('models/people_meta.json'); if (peopleTpl && pm && pm.people) { peopleTpl.meta = {}; for (const q of pm.people) peopleTpl.meta[q.id] = q; } } this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; try { frontFaceSigns(kioskTpl); } catch (e) {} this.peopleVariants = null;
+    this.peopleLod = peopleLodTpl; this.peopleGltf = peopleLodTpl ? null : await this._optG('models/people.glb');   // (no LOD file: the full one, before the first frame, as before)
+    { const pm = await this._json('models/people_meta.json'); this.peopleMeta = null; if (pm && pm.people) { this.peopleMeta = {}; for (const q of pm.people) this.peopleMeta[q.id] = q; } for (const t of [this.peopleLod, this.peopleGltf]) if (t) t.meta = this.peopleMeta; } this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
     try { const SU = await import('three/addons/utils/SkeletonUtils.js'); this.SU = SU; } catch (e) { console.warn('[sim] SkeletonUtils unavailable', e && e.message); this.SU = null; }
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
@@ -95,7 +97,7 @@ class Sim {
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
-    { const lowQ = this.quality === 'low'; const ok = this.SU && this.peopleGltf && this.peopleGltf.animations && this.peopleGltf.animations.length;
+    { const lowQ = this.quality === 'low', ok = this._peopleOk();
       this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null);
       this.trainView.saloon = this._makeSaloon(); this.trainView.saloonDone = false;   // (each circle's train carries its own riders: see _populateSaloon)
       this.scene.add(this.crowd.group); }
@@ -117,6 +119,7 @@ class Sim {
     this._resize(); addEventListener('resize', this._onResize = () => this._resize());
     this.lastNow = performance.now();
     this.renderer.setAnimationLoop((t) => this.frame(t));
+    this.peopleFull = this._streamFullPeople();
     if (this.ctx.mode || this.ctx.startStation) this.go({ mode: this.ctx.mode || 'drive', station: this.sel.station, line: this.line, diff: this.diffId });
     else this.openMenu('start');
   }
@@ -131,6 +134,21 @@ class Sim {
   }
 
   async _json(path) { try { const r = await fetch(this.url(path)); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+
+  _peopleOk() { const g = this.peopleGltf || this.peopleLod; return !!(this.SU && g && g.animations && g.animations.length); }
+  /** people.glb, fetched after the first frame of a station (and any hall still loading), so it does not hold up the drawing or share the line with it; then handed
+   *  to every crowd (the platform's and each train's riders), whose nearest people swap up to it a couple a frame. Resolves true once attached (the tools wait on it). */
+  async _streamFullPeople() {
+    if (this.peopleGltf || !this.peopleLod || !this.SU) return !!this.peopleGltf;
+    await new Promise((res) => { this._onStationFrame = res; setTimeout(res, 12000); });
+    this._onStationFrame = null;
+    await Promise.race([Promise.allSettled([...this.hallLoading.values()]), new Promise((r) => setTimeout(r, 8000))]);
+    const g = this.disposed ? null : await this._optG('models/people.glb'); if (!g || this.disposed) return false;
+    g.meta = this.peopleMeta; this.peopleGltf = g;
+    const crowds = [this.crowd, ...Object.values(this.views || {}).map((tv) => tv && tv.saloon)].filter((c) => c && c.attachFull);
+    for (const c of crowds) { try { c.attachFull(g); } catch (e) { console.warn('[sim] people.glb attach', e); } }
+    return true;
+  }
 
   async _optG(path) {
     try { return await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); } catch (e) { console.warn('[sim] optional model missing', path); return null; }
@@ -268,7 +286,7 @@ class Sim {
   }
   /** a crowd of passengers for one train (the saloon crowds share one measuring cache: same characters, same clips) */
   _makeSaloon() {
-    if (!(this.SU && this.peopleGltf && this.peopleGltf.animations && this.peopleGltf.animations.length)) return null;
+    if (!this._peopleOk()) return null;
     const low = this.quality === 'low', sc = new AnimCrowd(this.THREE, this.SU, this.peopleGltf, low ? 8 : 24, this.quality, this.peopleLod);
     if (this._saloonMeas) sc.meas = this._saloonMeas; else this._saloonMeas = sc.meas;
     if (low) sc.rVis = 22;   // a low-quality train hides the interior of cars beyond ~22 m (TrainView.cull): their riders must not be left floating
@@ -1165,6 +1183,7 @@ class Sim {
       if (this.mode) this.sync(dt);
       const scene = this.mode === 'street' && this.street ? this.street.scene : this.scene;
       this.renderer.render(scene, this.camera);
+      if (this._onStationFrame && this.mode) this._onStationFrame();
     } catch (e) { console.error('[sim] frame error', e); this.errors.push(String(e && e.stack || e)); if (this.errors.length > 5) this.renderer.setAnimationLoop(null); }
   }
 

@@ -7,6 +7,7 @@ import { Service, baselineRunTimes, DOOR_TIME } from './service.js';
 import { doorPermission, berthingScore, punctualityScore, buildSchedule, platformInterval, platformSide, DIFFICULTY, paxExchange } from './rules.js';
 import { KMH, mulberry32 } from './util.js';
 import { AnimCrowd, pickChar, resetCharsInUse, charsInUse } from './people.js';
+import { LEG_RADII } from './legradii.js';
 import { Walker } from './walker.js';
 import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
@@ -696,6 +697,18 @@ test('people: a rare person (the top hat) turns up in few crowds, but is still t
   assert.equal(new Set(c.people.map((p) => p.char.id)).size, 30, 'a crowd of the whole roster still has everybody');
   const meta = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/people_meta.json', import.meta.url)), 'utf8'));
   assert.deepEqual(meta.people.filter((q) => q.rare).map((q) => q.id), ['adult_tophat'], 'the one rare person is the top hat');
+});
+// The game builds its crowds from people_lod.glb alone and attaches people.glb later (index.js _streamFullPeople), so the simplified model's skirt fit cannot
+// measure the legs on the full skin: it takes them from legradii.js. Every skirted person needs an entry, or their LOD skirt fit would measure its own coarse skin.
+// Whether the numbers are current is tools/legradii.mjs's check (it needs a browser); AnimCrowd.attachFull also warns in the console when they are stale.
+test('people: legradii.js holds the full-detail leg radii of every skirted person, and nobody else', () => {
+  const meta = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/people_meta.json', import.meta.url)), 'utf8'));
+  const skirted = meta.people.filter((q) => AnimCrowd.prototype._skirted({ outfit: q.outfit || 'trousers' })).map((q) => q.id).sort();
+  assert.ok(skirted.length >= 10, 'skirted people: ' + skirted.length);
+  assert.deepEqual(Object.keys(LEG_RADII).sort(), skirted, 'legradii.js lists exactly the skirted people - rerun node tools/legradii.mjs --write');
+  for (const [id, r] of Object.entries(LEG_RADII)) {
+    assert.ok(Array.isArray(r) && r.length >= 2 && r.every((a) => Array.isArray(a) && a.length >= 4 && a.every((v) => Number.isFinite(v) && v > 0.01 && v < 0.25)), id + ': radii are rows of plausible leg radii (m)');
+  }
 });
 
 // ---- people: T-shirt chest prints (tees.js)

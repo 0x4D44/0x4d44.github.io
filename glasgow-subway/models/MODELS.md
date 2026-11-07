@@ -224,5 +224,14 @@ skirt, denim shorts under a tank top, and `toigo_flats` with Lycra (rest-pose co
 Player-visible skin, `tools/people_holes.mjs` (cm² per view): every new person at most 12.7 full / 8.4 LOD (batch 41.8 / 42.5); the top,
 `elder_woman_dress`, is the standing pose (49.5 / 23.3; 3-4 walking). Sizes at 72: `people.glb` 25.6 MB, `people_lod.glb` 12.6 MB.
 
+## Loading: people_lod.glb first (2026-11-07)
+The game fetches `people_lod.glb` with the other models and builds every crowd from it alone; `people.glb` is fetched after the first frame of a
+station (and any hall still loading), then handed to each crowd (`AnimCrowd.attachFull`), whose nearest people swap up to it a couple a frame. So
+12.6 MB stands between the player and the station instead of 38.2 MB. Built either way, the fits and the fitted geometry come out identical
+(`tools/people_view.html?lodfirst=1`).
+- The LOD skirt fit borrows the leg radii measured on the full skin, so they are kept in `js/sim/legradii.js`. **After rebuilding `people.glb`,
+  run `node tools/legradii.mjs --write`** (without `--write` it checks and exits 1 when stale; `attachFull` also warns in the console).
+- The tools that build the game's own crowd (`tools/armfit.mjs`) wait for `sim.peopleFull` before measuring.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

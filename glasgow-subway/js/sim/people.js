@@ -2,6 +2,7 @@
 import { mulberry32, clamp } from './util.js';
 import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
 import { ARM_OUT, ARM_DROP } from './armfit.js';
+import { LEG_RADII } from './legradii.js';
 import * as G from './gait.js';
 import { readBody, GaitRig } from './gait_three.js';
 import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
@@ -148,36 +149,29 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
   return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c), false);
 }
 export class AnimCrowd {
+  /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
+   *  (the game loads the small file first, so the station is drawn without waiting for the big one). */
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99); this.printRng = mulberry32(1149);   // prints draw from their own stream: the crowd's sequence is unchanged
     printAtlas(THREE);   // start loading the print atlas now, so the first T-shirts are not blank (null in Node)
     this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 36 : 60; this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
     this.chars = []; this.meas = new Map();
-    const scene = gltf.scene, holder = scene.getObjectByName('people') || scene;
-    const meta = gltf.meta || null;   // optional models/people_meta.json: { <id>: { height } }
-    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name; return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
+    const prim = gltf || lodGltf, scene = prim.scene, holder = scene.getObjectByName('people') || scene;
+    const meta = prim.meta || (lodGltf && lodGltf.meta) || null;   // optional models/people_meta.json: { <id>: { height } }
+    const anims = prim.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name; return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
     const shared = {}; for (const a of anims) { const cat = catOf(a.name.includes('__') ? a.name.split('__')[1] : a.name); if (cat) (shared[cat] = shared[cat] || []).push(a); }
     for (const n of holder.children) {
       const m = /^person_(.+)$/.exec(n.name); if (!m) continue;
       const mt = meta && meta[m[1]], kid = /boy|girl|kid|child/.test(m[1]) && !/teen/.test(m[1]);
       const pools = {}; for (const k of Object.keys(shared)) { if (k === 'fidget' && !kid) continue; pools[k] = shared[k].filter((a) => !a.name.includes('__') || a.name.startsWith(m[1] + '__')); if (!pools[k].length) delete pools[k]; }
       if (!pools.idle) continue;
-      const lodNode = lodGltf ? (lodGltf.scene.getObjectByName('person_' + m[1])) : null;
-      this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3, rare: (mt && mt.rare) || 0 });
+      const lodNode = !lodGltf ? null : gltf ? lodGltf.scene.getObjectByName('person_' + m[1]) : n;
+      this.chars.push({ id: m[1], node: gltf ? n : null, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3, rare: (mt && mt.rare) || 0 });
     }
-    for (const c of this.chars) if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) { this._extendHem(c.node); if (c.lodNode) this._extendHem(c.lodNode); }
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
-    for (const c of this.chars) {
-      const h = fitHair(THREE, c.node), hl = c.lodNode ? fitHair(THREE, c.lodNode) : null, skirted = /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit);
-      // skirts held off the thighs (shader patch + slimmed thigh skin). The lower level of detail (all but the 8 nearest people) has cloth made of far bigger flat faces, so its hidden skin gives way more.
-      const legs = skirted ? fitLegs(THREE, c.node) : null, legsLod = skirted && c.lodNode ? fitLegs(THREE, c.lodNode, { radii: legs && legs.radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
-      const trim = skirted ? trimUnderSkirt(THREE, c.node) : null, trimLod = skirted && c.lodNode ? trimUnderSkirt(THREE, c.lodNode) : null;   // tops: nothing drawn under the skirt's waist edge
-      const web = trimWebbing(THREE, c.node), webLod = c.lodNode ? trimWebbing(THREE, c.lodNode) : null;   // the simplified body has a few triangles joining a hand to a thigh
-      const shoes = fitShoes(THREE, c.node);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
-      this.fit[c.id] = { hair: h, hairLod: hl, legs, legsLod, trim, trimLod, web, webLod, shoes };
-    }
+    for (const c of this.chars) { this.fit[c.id] = { hair: null, hairLod: null, legs: null, legsLod: null, trim: null, trimLod: null, web: null, webLod: null, shoes: null }; if (c.node) this._fitFull(c); if (c.lodNode) this._fitLod(c); }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
-    this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
+    this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
     for (const a of anims) for (const k of a.tracks) { const m = /^(.*)\.(quaternion|position|scale)$/.exec(k.name); if (m) k.name = this.canon(m[1]) + '.' + m[2]; }
     for (const k of Object.keys(shared)) shared[k] = shared[k];
@@ -186,7 +180,7 @@ export class AnimCrowd {
     // can clear (hands clasped behind the back, inside the pelvis: ARM_DROP) is simply not played, so long as the pool keeps another.
     this.armRigs = {}; this.armFit = {};
     for (const c of this.chars) {
-      const rig = armRig(THREE, c.node), tab = ARM_OUT[c.id], drop = ARM_DROP[c.id] || []; let n = 0; this.armRigs[c.id] = rig;
+      const rig = armRig(THREE, c.node || c.lodNode), tab = ARM_OUT[c.id], drop = ARM_DROP[c.id] || []; let n = 0; this.armRigs[c.id] = rig;
       c.pools0 = {}; for (const cat of Object.keys(c.pools)) c.pools0[cat] = c.pools[cat].slice();
       if (rig && tab) for (const cat of Object.keys(c.pools)) c.pools[cat] = c.pools[cat].map((clip) => {
         const d = tab[clip.name.split('__').pop()]; if (!d) return clip;
@@ -198,6 +192,45 @@ export class AnimCrowd {
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gcount = {}; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5);   // phones have their own random stream: switching them off changes nothing else
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
+  }
+  _skirted(c) { return /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit); }
+  /** the bodyfit.js fits of the full-detail model (people.glb) */
+  _fitFull(c) {
+    const T = this.THREE, n = c.node, f = this.fit[c.id], sk = this._skirted(c);
+    if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
+    f.hair = fitHair(T, n);
+    f.legs = sk ? fitLegs(T, n) : null;   // skirts held off the thighs (shader patch + slimmed thigh skin)
+    f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
+    f.web = trimWebbing(T, n);
+    f.shoes = fitShoes(T, n);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
+  }
+  /** the fits of the simplified model (people_lod.glb). Its cloth is made of far bigger flat faces, so its hidden skin gives way more; its own skin is too coarse to
+   *  measure the legs on, so it takes the full model's leg radii - measured now when both are here, else the same numbers from legradii.js (tools/legradii.mjs). */
+  _fitLod(c) {
+    const T = this.THREE, n = c.lodNode, f = this.fit[c.id], sk = this._skirted(c);
+    if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
+    f.hairLod = fitHair(T, n);
+    const radii = (f.legs && f.legs.radii) || LEG_RADII[c.id];
+    f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
+    f.trimLod = sk ? trimUnderSkirt(T, n) : null;
+    f.webLod = trimWebbing(T, n);   // the simplified body has a few triangles joining a hand to a thigh
+  }
+  /** people.glb has arrived (after a crowd was built from people_lod.glb alone): fit it and let the nearest people swap up to it, a couple a frame, in update().
+   *  Measurements so far came from the simplified model; they are dropped so that from now on they come from the full one, as they would have. */
+  attachFull(gltf) {
+    if (!gltf || this.chars.every((c) => c.node)) return 0;
+    const holder = gltf.scene.getObjectByName('people') || gltf.scene; let n = 0;
+    for (const c of this.chars) {
+      if (c.node) continue; const node = holder.getObjectByName('person_' + c.id); if (!node) continue;
+      c.node = node; this._fitFull(c); n++;
+      const want = LEG_RADII[c.id], got = this.fit[c.id].legs && this.fit[c.id].legs.radii;
+      if (got && JSON.stringify(got) !== JSON.stringify(want)) console.warn('[people] legradii.js is stale for', c.id, '- rerun node tools/legradii.mjs --write');
+      for (const k of Object.keys(c)) if (/^_h_/.test(k)) delete c[k];
+      c.gbHi = undefined;
+    }
+    const f = this.chars.find((c) => c.node); if (f) f.node.traverse((o) => { if (o.isBone && !this.boneNames.has(this.canon(o.name))) console.warn('[people] people.glb bone not in the rig of people_lod.glb', o.name); });
+    this.meas.clear();
+    return n;
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
    *  band at the midriff. Find the top's centred lower hem loop and extrude it straight down (same skin weights) so it tucks inside the skirt. Patches the shared geometry once. */
@@ -238,7 +271,7 @@ export class AnimCrowd {
     const T = this.THREE;
     return { rigs: this.armRigs, probe: (ch, lod) => armProbe(T, this._clone(ch, lod)), axes: (ch, clip) => armAxes(T, this.armRigs[ch.id], clip), bake: (clip, axes, l, r) => armClip(T, clip, axes, l, r) };
   }
-  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
+  _clone(ch, lod) { const o = this.SU.clone((lod && ch.lodNode) || !ch.node ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
   measure(ch, clip) {
@@ -294,7 +327,7 @@ export class AnimCrowd {
   add(p, parent, filter) {
     if (!this.hasAnim || this.people.length >= this.max) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
-    const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    p.lod = !!ch.lodNode && (!p.static || !ch.node); const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
     this._dressTee(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
@@ -568,7 +601,7 @@ export class AnimCrowd {
       this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
+      if (cam && hiSet && p.char.lodNode && p.char.node && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)

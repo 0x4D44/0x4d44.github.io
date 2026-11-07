@@ -31,6 +31,7 @@ try {
   await page.goto(`${BASE}/glasgow-subway/tools/test_sim.html?pr=1&aa=0&mode=explore&q=high&line=outer&station=ibrox`);
   await page.waitForFunction(() => window.__sim, null, { timeout: 300000 });
   await page.waitForFunction(() => __sim.mode(), null, { timeout: 300000 });
+  await page.evaluate(() => __sim.sim.peopleFull);   // the crowd is built from people_lod.glb; the full people.glb is attached after the first frame
   let ids = await page.evaluate(() => __sim.sim.crowd.chars.map((c) => c.id));
   const only = arg('--chars', null); if (only) ids = ids.filter((i) => only.split(',').includes(i));
   const out = {};
