@@ -15,7 +15,7 @@ import * as THREE from '../../vendor/three/build/three.module.js';
 import { Rats, RAT, strideAt } from './rats.js';
 import { Fleet, Ring, measureCycle, advanceToLap, unitIds, carIds, unitOfCar, isUnit, FLEET_FIRST, FLEET_SIZE, IN_SERVICE, CAR_LETTERS } from './fleet.js';
 import { readGlb, personIds, skinThrough, accessor } from './skincheck.mjs';
-import { chestPrint, takePrint, releasePrint, printsInUse, resetPrintsInUse, PRINT_COUNT, TEE } from './tees.js';
+import { chestPrint, takePrint, releasePrint, printsInUse, resetPrintsInUse, PRINT_COUNT, TEE, TEE_COLOURS, teeColour } from './tees.js';
 
 const F = makeFixture();
 const stock = stockFrom(F.rollingStock);
@@ -730,7 +730,10 @@ test('tees: prints are spread evenly across the T-shirts on screen and handed ba
   c._dressTee(p, p.obj); c._dressTee(q, q.obj);
   assert.equal(c.rng(), r0, 'the crowd rng was not drawn on');
   assert.ok(p.print >= 0 && p.print < PRINT_COUNT); assert.equal(q.print, undefined, 'no T-shirt, no print');
-  const k = p.print; c._dressTee(p, dressed('cloth_T-shirt_basic.png')); assert.equal(p.print, k, 'the same print after an LOD swap');
+  assert.ok(TEE_COLOURS.includes(p.teeColour), 'a shirt colour from the palette');
+  const k = p.print, col = p.teeColour; c._dressTee(p, dressed('cloth_T-shirt_basic.png'));
+  assert.equal(p.print, k, 'the same print after an LOD swap'); assert.equal(p.teeColour, col, 'and the same shirt colour');
+  const many = new Set(); for (let i = 0; i < 200; i++) many.add(teeColour(c.printRng)); assert.equal(many.size, new Set(TEE_COLOURS).size, 'every colour gets worn');
   assert.equal(printsInUse().get(k), 1);
   c._drop(p); assert.equal(p.print, null); assert.equal(printsInUse().size, 0);
 });

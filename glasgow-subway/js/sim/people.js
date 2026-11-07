@@ -7,7 +7,7 @@ import { readBody, GaitRig } from './gait_three.js';
 import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
 import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
-import { dressTee, undressTee, takePrint, releasePrint, printAtlas, TEE } from './tees.js';
+import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
 // ?phones=0: nobody uses a mobile phone (to compare; the walking metrics of research/people-motion-rubric.md are measured without them)
@@ -305,12 +305,12 @@ export class AnimCrowd {
     this.people.push(p); this._place(p, true);
     return p;
   }
-  /** a T-shirt wearer keeps one chest print (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
+  /** a T-shirt wearer keeps one chest print and shirt colour (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
   _dressTee(p, obj) {
     let tee = false; obj.traverse((m) => { if (m.isMesh && m.material && TEE.test(m.material.name || '')) tee = true; });
     if (!tee) return;
-    if (p.print == null) p.print = takePrint(this.printRng);
-    dressTee(this.THREE, obj, p.print);
+    if (p.print == null) { p.print = takePrint(this.printRng); p.teeColour = teeColour(this.printRng); }
+    dressTee(this.THREE, obj, p.print, p.teeColour);
   }
   /** LOD0 (people.glb) near, LOD1 (people_lod.glb, same rig/clips) beyond ~12 m: rebuild the clone and resume the same clip at the same time */
   _swapLod(p, lod) {
