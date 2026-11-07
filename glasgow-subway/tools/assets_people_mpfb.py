@@ -136,7 +136,7 @@ PEOPLE = [
     dict(id='adult_cyclist', kind='man', outfit='shorts', H=1.79, gender=1, age=0.60, weight=0.4, muscle=0.55, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#5a4a3a', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_cycling_shoes'], lycra=('shorts', '#121214')),
     dict(id='adult_tophat', kind='man', outfit='trousers', H=1.68, gender=1, age=0.66, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='grey', brows='eyebrow004', lashes=None, hair='short04', hair_col='#8c8c8c', face=True,
-         clothes=['toigo_suit_with_dinner_jacket', 'mindfront_shoes_oxford_male'], hat=('tophat', '#141414'), rare=0.12),
+         clothes=['toigo_suit_with_dinner_jacket', 'mindfront_shoes_oxford_male'], hat=('tophat', '#141414', 'felt'), rare=0.12),
     dict(id='adult_baggy_knit', kind='woman', outfit='trousers', H=1.64, gender=0, age=0.50, weight=0.4, muscle=0.35, race=(0.9, 0.1, 0.0), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_inverted_bob', hair_col='#3a281c', face=True,
          clothes=['mindfront_lusekofta', 'elvs_jeans_straight_leg', 'punkduck_comfortable_sneakers'], baggy=0.5, tuck=('jeans', 'lusekofta')),
     dict(id='adult_leggings_knit', kind='woman', outfit='leggings', H=1.62, gender=0, age=0.68, weight=0.55, muscle=0.35, race=(0.9, 0.1, 0.0), skin='middleage_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='toigo_curled_under_bob_with_bangs', hair_col='#2a1d14', face=True,
@@ -164,7 +164,7 @@ PEOPLE = [
     dict(id='girl_leggings', kind='girl', outfit='leggings', H=1.32, gender=0, age=0.13, weight=0.45, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_curled_under_bob', hair_col='#17120e', face=True,
          clothes=['mindfront_knitted_sweater_01', 'toigo_ballet_flats'], lycra=('leggings', '#2b4a8a')),
     dict(id='elder_man_cap', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short04', hair_col='#bfbfbf', face=True, hair_lift=True,
-         clothes=['male_casualsuit06', 'mindfront_shoes_oxford_male'], hat=('cap', '#5a4a3a')),
+         clothes=['male_casualsuit06', 'mindfront_shoes_oxford_male'], hat=('cap', '#5a4a3a', 'tweed')),
     dict(id='elder_woman_coat', kind='elder', outfit='trousers', H=1.55, gender=0, age=0.88, weight=0.5, muscle=0.3, race=(0.9, 0.1, 0.0), skin='old_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes04', hair='bob02', hair_col='#cfcfcf', face=True,
          clothes=['punkduck_winter_coat', 'mindfront_female_trousers_1', 'toigo_ankle_boots_female']),
     dict(id='elder_man_suit', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.92, weight=0.5, muscle=0.3, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='short04', hair_col='#e0e0e0', face=True, hair_lift=True,
@@ -178,7 +178,7 @@ PEOPLE = [
     dict(id='adult_camisole', kind='woman', outfit='trousers', H=1.64, gender=0, age=0.58, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='middleage_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes02', hair='elvs_50s_updo', hair_col='#17120e', face=True,
          clothes=['toigo_camisole_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
     dict(id='adult_beret', kind='woman', outfit='skirt_pencil', H=1.67, gender=0, age=0.62, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow006', lashes='eyelashes03', hair='toigo_blunt_bob', hair_col='#a8452a', face=True,
-         clothes=['toigo_female_suit', 'punkduck_riding_boots'], hat=('beret', '#7a1f2b')),
+         clothes=['toigo_female_suit', 'punkduck_riding_boots'], hat=('beret', '#7a1f2b', 'felt')),
     dict(id='adult_casual5', kind='man', outfit='trousers', H=1.73, gender=1, age=0.58, weight=0.55, muscle=0.5, race=(0.9, 0.1, 0.0), skin='middleage_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short04', hair_col='#241812', face=True,
          clothes=['male_casualsuit05', 'culturalibre_sneakers']),
     dict(id='adult_casual2', kind='man', outfit='trousers', H=1.78, gender=1, age=0.47, weight=0.5, muscle=0.55, race=(0.05, 0.05, 0.9), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short03', hair_col='#17120e', face=True,
@@ -952,7 +952,31 @@ def _closed_strip(bm, sections):
 
 def head_weights(co): return [('head', 1.0)]
 
-def build_cap(person, colr, beret=False):
+FABRIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fabrics')   # felt.png, tweed.png: tileable cloth, made with an image model for this project
+
+def fabric_material(name, fabric, colr, rough):
+    """a made hat's cloth: tools/fabrics/<fabric>.png. felt is grey, lifted to a mean of 0.8 and tinted to colr (load_image lift, as grey hair);
+    tweed keeps its own browns (colr ignored)"""
+    tint = None if fabric == 'tweed' else tuple(lin(c) for c in hex_rgb(colr))
+    return make_material('cloth_' + name + '_' + fabric + ('' if tint is None else '_' + colr.lstrip('#')), os.path.join(FABRIC_DIR, fabric + '.png'), None,
+                         rough=rough, spec=0.2, maxpx=256, tint=tint, lift=tint is not None)
+
+def wrap_uv(bm, cx, cy, tile):
+    """UVs for a made hat: round the head (arc length / tile) on the walls, straight down (x, y / tile) on faces that look up or down; tile = metres per repeat"""
+    uvl = bm.loops.layers.uv.get('UVMap') or bm.loops.layers.uv.new('UVMap'); bm.normal_update()   # the body's map name: another name joins as a second map (TEXCOORD_1)
+    for f in bm.faces:
+        if abs(f.normal.z) > 0.7:
+            for l in f.loops: l[uvl].uv = ((l.vert.co.x - cx) / tile, (l.vert.co.y - cy) / tile)
+            continue
+        r = sum(math.hypot(v.co.x - cx, v.co.y - cy) for v in f.verts) / len(f.verts)
+        th0 = math.atan2(f.verts[0].co.y - cy, f.verts[0].co.x - cx)
+        for l in f.loops:
+            th = math.atan2(l.vert.co.y - cy, l.vert.co.x - cx)
+            while th - th0 > math.pi: th -= 2 * math.pi
+            while th - th0 < -math.pi: th += 2 * math.pi
+            l[uvl].uv = (th * r / tile, l.vert.co.z / tile)
+
+def build_cap(person, colr, beret=False, fabric=None):
     """a baseball cap: a crown that follows the head + hair outline up from the band, and a peak at the front (+y). beret: no peak; the top ring
     is let out 25 % and the crown raised, so the soft top overhangs the band"""
     import bmesh
@@ -975,7 +999,8 @@ def build_cap(person, colr, beret=False):
     top = bm.verts.new((cx, cy, zc + (0.022 * k if beret else 0.006))); last = rings[-1]
     for j in range(seg): bm.faces.new((last[j], last[(j + 1) % seg], top))
     if beret:
-        new_part(person, 'beret', bm, solid_material('cloth_beret_' + colr.lstrip('#'), hex_rgb(colr), 0.95), head_weights); return
+        if fabric: wrap_uv(bm, cx, cy, 0.09)
+        new_part(person, 'beret', bm, fabric_material('beret', fabric, colr, 0.95) if fabric else solid_material('cloth_beret_' + colr.lstrip('#'), hex_rgb(colr), 0.95), head_weights); return
     # peak: the front half of the band, reaching 7 cm forward, slightly down; 5 mm thick
     _, _, rx, ry = base; rx = rx * 1.03 + 0.006; ry = ry * 1.03 + 0.006; L = 0.072 * k
     secs = []; pts = []
@@ -992,9 +1017,10 @@ def build_cap(person, colr, beret=False):
         for e in range(4): fs.append(bm.faces.new((a[e], a[(e + 1) % 4], b[(e + 1) % 4], b[e])))
     fs.append(bm.faces.new(secs[0][::-1])); fs.append(bm.faces.new(secs[-1]))
     bmesh.ops.recalc_face_normals(bm, faces=fs)
-    new_part(person, 'cap', bm, solid_material('cloth_cap_' + colr.lstrip('#'), hex_rgb(colr), 0.85), head_weights)
+    if fabric: wrap_uv(bm, cx, cy, 0.09)
+    new_part(person, 'cap', bm, fabric_material('cap', fabric, colr, 0.85) if fabric else solid_material('cloth_cap_' + colr.lstrip('#'), hex_rgb(colr), 0.85), head_weights)
 
-def build_tophat(person, colr):
+def build_tophat(person, colr, fabric=None):
     """the one top hat: a slightly flared crown over the head + hair outline, a ribbon band, and a brim curled up at the sides"""
     import bmesh
     zb, ztop, ring, k = head_fit(person)
@@ -1016,7 +1042,8 @@ def build_tophat(person, colr):
                      bm.verts.new((cx + wx * c_, cy + wy * s_, z0 + curl - 0.002)), bm.verts.new((cx + (rx - 0.002) * c_, cy + (ry - 0.002) * s_, z0 - 0.002))])
     fs = _closed_strip(bm, secs)
     bmesh.ops.recalc_face_normals(bm, faces=fs)
-    new_part(person, 'tophat', bm, solid_material('cloth_tophat_' + colr.lstrip('#'), hex_rgb(colr), 0.5), head_weights)
+    if fabric: wrap_uv(bm, cx, cy, 0.09)
+    new_part(person, 'tophat', bm, fabric_material('tophat', fabric, colr, 0.5) if fabric else solid_material('cloth_tophat_' + colr.lstrip('#'), hex_rgb(colr), 0.5), head_weights)
     bb = bmesh.new()
     blo = _ellipse(bb, cx, cy, rx * 1.004 + 0.0015, ry * 1.004 + 0.0015, z0 + 0.004, seg); bhi = _ellipse(bb, cx, cy, rx * 1.012 + 0.0015, ry * 1.012 + 0.0015, z0 + 0.032 * k, seg)
     _wall(bb, blo, bhi)
@@ -1069,7 +1096,7 @@ def add_garments(person):
     # the height the person is scaled to (fit_height) is to the top of the head or hair, not of a hat made here
     hat = spec.get('hat')
     if hat: person['crown'] = max(v.co.z for o in person_objects(person) for v in o.data.vertices)
-    if hat: {'cap': build_cap, 'tophat': build_tophat, 'beret': lambda p, c: build_cap(p, c, beret=True)}[hat[0]](person, hat[1])
+    if hat: {'cap': build_cap, 'tophat': build_tophat, 'beret': lambda p, c, fabric=None: build_cap(p, c, beret=True, fabric=fabric)}[hat[0]](person, hat[1], fabric=hat[2] if len(hat) > 2 else None)   # hat[2]: tools/fabrics/<name>.png
 
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
