@@ -88,6 +88,37 @@ PEOPLE = [
          clothes=['toigo_fisherman_sweater', 'elvs_pencil_skirt', 'toigo_ankle_boots_female']),
     dict(id='teen_skirt', kind='teen', outfit='skirt_pleated', H=1.60, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.1, 0.8, 0.1), skin='young_caucasian_female2', eye='brown', brows='eyebrow007', lashes='eyelashes01', hair='long01', hair_col='#6d4a2c',
          clothes=['toigo_camisole_top', 'mtknife_pleated_mini_skirt', 'mindfront_shoes_monk_strap_female']),
+    # --- batch 1 (2026-11-07): teens and young adults. face=True: each gets seeded face targets of their own (face_targets). Ids must not
+    #     contain boy/girl/kid/child unless they start with teen_ (people.js reads those as children). elvs_disco_pants_skinny rides high and
+    #     comes through a T-shirt's hem: only under jumpers, hoodies and cardigans.
+    dict(id='teen_skater', kind='teen', outfit='trousers', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
+    dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
+         clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'punkduck_running_shoes_01']),
+    dict(id='teen_tube', kind='teen', outfit='shorts', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
+         clothes=['punkduck_tube_top', 'punkduck_female_short_jeans', 'toigo_flats']),
+    dict(id='teen_tee', kind='teen', outfit='trousers', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='o4saken_chinesebob01', hair_col='#17120e', face=True,
+         clothes=['joepal_crude_t-shirt_female', 'punkduck_female_tight_jeans', 'punkduck_tennis_shoes']),
+    dict(id='teen_hippy', kind='teen', outfit='leggings', H=1.63, gender=0, age=0.29, weight=0.4, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='elvs_lady_hippy_hair', hair_col='#c9a25e', face=True,
+         clothes=['elvs_hooded_sweat_jacket1', 'elvs_disco_pants_skinny', 'punkduck_comfortable_sneakers']),
+    dict(id='teen_polo', kind='teen', outfit='trousers', H=1.75, gender=1, age=0.34, weight=0.45, muscle=0.45, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short04', hair_col='#17120e', face=True,
+         clothes=['namuhekam_male_polo_shirt', 'elvs_jeans_bootcut', 'culturalibre_sneakers']),
+    dict(id='ya_tee_jeans', kind='man', outfit='trousers', H=1.79, gender=1, age=0.43, weight=0.45, muscle=0.55, race=(0.0, 0.15, 0.85), skin='young_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01']),
+    dict(id='ya_shorts', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.41, weight=0.45, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes03', hair='elvs_daisy_hair', hair_col='#7a2f1a', face=True,
+         clothes=['joepal_crude_t-shirt_female', 'punkduck_female_short_jeans', 'toigo_ballet_flats']),
+    dict(id='ya_fedora', kind='man', outfit='trousers', H=1.77, gender=1, age=0.51, weight=0.5, muscle=0.5, race=(0.1, 0.85, 0.05), skin='young_caucasian_male2', eye='brown', brows='eyebrow004', lashes=None, hair='short04', hair_col='#3a281c', face=True,
+         clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male', 'fedora01']),
+    dict(id='ya_tube_heels', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.48, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='elvs_katherine_hair', hair_col='#17120e', face=True,
+         clothes=['punkduck_tube_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
+    dict(id='ya_cardigan', kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='elvs_wavy_bob', hair_col='#241812', face=True,
+         clothes=['toigo_camisole_top', 'mindfront_cardigan_long_open_front', 'elvs_disco_pants_skinny', 'toigo_flats']),
+    dict(id='ya_bootcut', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='o4saken_long01', hair_col='#4a3020', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_bootcut', 'punkduck_tennis_shoes']),
+    dict(id='ya_spiky', kind='man', outfit='trousers', H=1.80, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow002', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
+         clothes=['elvs_crude_t-shirt_male', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
+    dict(id='ya_winter', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
+         clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
 ]
 
 # ------------------------------------------------------------------ helpers: mhmat / images / materials
@@ -186,6 +217,30 @@ def macro_dict(spec):
     md['race'] = dict(asian=a, caucasian=c, african=f)
     return md
 
+FACE_REGIONS = dict(nose=0.5, mouth=0.45, chin=0.5, cheek=0.5, eyebrows=0.4, forehead=0.45, ears=0.5, eyes=0.35)   # region -> the largest weight used there
+
+def face_targets(human, seed):
+    """A face of its own: MakeHuman's face targets, a third of each region's paired controls pushed one way by up to the region's limit, seeded
+    by the person's id (the same build gives the same face). Left and right get the same value: faces stay symmetric. Only people whose spec
+    sets face=True get them, so the people built before this keep their faces exactly."""
+    import random, zlib
+    _, TargetService = _services()
+    import bl_ext.user_default.mpfb as mpfb_pkg
+    root = os.path.join(os.path.dirname(mpfb_pkg.__file__), 'data', 'targets')
+    rng = random.Random(zlib.crc32(seed.encode())); n = 0
+    for region, lim in FACE_REGIONS.items():
+        groups = {}
+        for f in sorted(os.listdir(os.path.join(root, region))):
+            if not f.endswith('.target.gz'): continue
+            name = f[:-len('.target.gz')]; side = name[:2] if name[:2] in ('l-', 'r-') else ''
+            core = name[len(side):]; key, _, way = core.rpartition('-')
+            groups.setdefault(key, {}).setdefault(way, []).append(os.path.join(root, region, f))
+        for key in sorted(groups):
+            if rng.random() >= 0.33: continue
+            ways = sorted(groups[key]); way = ways[rng.randrange(len(ways))]; w = round(rng.uniform(0.1, lim), 3)
+            for path in groups[key][way]: TargetService.load_target(human, path, weight=w); n += 1
+    print('face: %s %d targets' % (seed, n))
+
 def body_height(h):
     dg = bpy.context.evaluated_depsgraph_get(); ev = h.evaluated_get(dg); me = ev.to_mesh()
     zs = [v.co.z for v in me.vertices]; ev.to_mesh_clear()
@@ -204,10 +259,12 @@ def build_person(spec):
     HumanService, TargetService = _services()
     md = macro_dict(spec)
     h0 = HumanService.create_human(macro_detail_dict=md, scale=0.1)
+    if spec.get('face'): face_targets(h0, spec['id'])
     hb = body_height(h0)
     me = h0.data; bpy.data.objects.remove(h0); bpy.data.meshes.remove(me)
     k = (spec['H'] - 0.02) / hb
     human = HumanService.create_human(macro_detail_dict=md, scale=0.1 * k)
+    if spec.get('face'): face_targets(human, spec['id'])   # before the rig and every asset, so the rig, eyes and hair fit the face
     rig = HumanService.add_builtin_rig(human, 'game_engine')
     pid = spec['id']
     parts = []            # (object, role, material kwargs)
