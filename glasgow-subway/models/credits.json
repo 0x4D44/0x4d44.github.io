@@ -42,6 +42,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/elvs_knee_high_heel_boots1",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/elvs_male_boho_top1",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
@@ -78,6 +84,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/elvs_simple_60s_dress",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/elvs_zombie_killer_sneakers",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
@@ -108,8 +120,26 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/female_sportsuit01",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/janexx_old_female_sweater",
   "author": "janexx",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/male_casualsuit01",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/male_casualsuit02",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
  },
@@ -121,6 +151,18 @@
  },
  {
   "name": "clothes/male_casualsuit04",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/male_casualsuit05",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/male_casualsuit06",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -234,6 +276,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/punkduck_riding_boots",
+  "author": "punkduck",
+  "licence": "CC-BY 4.0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/punkduck_running_shoes_01",
   "author": "punkduck",
   "licence": "CC-BY 3.0",
@@ -306,6 +354,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "clothes/toigo_female_suit",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "clothes/toigo_female_suit_2",
   "author": "MRT",
   "licence": "CC0",
@@ -337,6 +391,12 @@
  },
  {
   "name": "clothes/toigo_keyhole_tank_top",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "clothes/toigo_male_suit_3",
   "author": "MRT",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -534,6 +594,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "hair/elvs_ashley_may_hair",
+  "author": "Elvaerwyn",
+  "licence": "CC-BY",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "hair/elvs_daisy_hair",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
@@ -618,6 +684,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "hair/toigo_blunt_bob",
+  "author": "MRT",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "hair/toigo_blunt_bob_with_bangs",
   "author": "MRT",
   "licence": "CC0",
@@ -679,6 +751,24 @@
  },
  {
   "name": "skins/middleage_caucasian_male",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/old_african_female",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/old_african_male",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/old_asian_female",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"

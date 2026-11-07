@@ -208,5 +208,21 @@ Player-visible skin, `tools/people_holes.mjs` (cm² per view): every new person 
 The top is `adult_runner`, almost all of it in the standing pose (43 / 48; 5-9 walking): a tinted render shows only her bare arms and the crop top's
 bare midriff; the measure counts a hand within 3 cm of cloth. No skinfit repair was needed. Sizes: `people.glb` 21.0 MB, `people_lod.glb` 10.5 MB.
 
+## Roster growth, batch 3 (2026-11-07): 58 -> 72 people
+Two children (`boy_cap`, `girl_leggings`), four elders (`elder_*`), a second member of staff (`staff_woman`, the hi-vis worksuit), seven adults:
+knee-high heel boots, stiletto booties, a winter coat, suits, a beret (`hat=('beret', colour)`: the cap's crown let out 25 % at the top, no peak).
+- **Caps**: the crown is now as wide as everything above the ring below it, rings packed towards the top and closed flat at the top of the hair;
+  it used to narrow to a point above the last ring, and the top of the hair came through every cap (batch 2's three were rebuilt).
+- **Grey hair** (`hair_lift=True`): the short MakeHuman hairs are near black, and a material tint multiplies, so grey stayed black (`man_elder` had
+  black hair at 88). The texture is made grey and light (luma over its mean, to 0.8) before the tint; glTF clamps a colour factor at 1, so it cannot
+  be done in the material. On `man_elder` and the new elders that have those hairs; nobody else changes.
+- `adult_camisole` and `elder_woman_dress` are repaired by `tools/people_skinfit.py`.
+
+Tried and dropped (listed above batch 1 in `PEOPLE`): the retro top, polka-dot skirt, turtleneck halter, two tank tops, the v-neck, the tiered mini
+skirt, denim shorts under a tank top, and `toigo_flats` with Lycra (rest-pose count ~3400 whatever the top, hair or body; 559 in ankle boots).
+
+Player-visible skin, `tools/people_holes.mjs` (cm² per view): every new person at most 12.7 full / 8.4 LOD (batch 41.8 / 42.5); the top,
+`elder_woman_dress`, is the standing pose (49.5 / 23.3; 3-4 walking). Sizes at 72: `people.glb` 25.6 MB, `people_lod.glb` 12.6 MB.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

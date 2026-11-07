@@ -11,6 +11,10 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-07 - a hair_col tint can't make dark hair grey; use hair_lift=True (glasgow-subway tools/assets_people_mpfb.py:load_image)
+  The tint multiplies the texture, and short01-04/bob01 are near black, so a grey tint stayed black (man_elder had black hair at 88). Renders are the
+  check: people_holes and sim.test never look at hair colour. Also: toigo_flats on a Lycra person drove the rest-pose skin count to ~3400 whatever the
+  top; when a count does not move as garments change, swap the item you have not tested yet (here the shoes).
 - 2026-11-07 - armfit/people_holes --base is the server ROOT; they add /glasgow-subway/ (glasgow-subway tools/people_holes.mjs)
   Passing http://host:port/glasgow-subway/ makes every page 404 and the tool waits 300 s for window.__ready, then times out with no other
   clue. Both also need Playwright: NODE_PATH to its install and PLAYWRIGHT_BROWSERS_PATH to its downloaded Chromium.

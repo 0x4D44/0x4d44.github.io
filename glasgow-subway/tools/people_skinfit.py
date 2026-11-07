@@ -47,6 +47,8 @@ RECIPE = {
     # A (push, hem) pair repairs closer to the edge (2026-11-07, tools/people_holes.mjs full model: ya_tube_heels 34.6 -> 13.4 cm2/view; with the
     # usual margin it got worse, 37.2). Tried and dropped: a tube top over denim shorts (102 cm2/view, and the repair raised the rest-pose count).
     'ya_tube_heels': (0.03, 0.005),
+    'adult_camisole': (0.03, 0.005),   # the same: a short top over tight jeans
+    'elder_woman_dress': 0.03,         # 2026-11-07 trial: people_holes 22.8 -> 12.7 full, 6.0 -> 4.9 LOD
 }
 DEFAULT_PUSH = 0.03
 MARK = 'skinfit'
