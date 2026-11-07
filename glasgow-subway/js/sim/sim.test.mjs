@@ -5,7 +5,8 @@ import { Track } from './track.js';
 import { Train, stockFrom, notchToCmd } from './dynamics.js';
 import { Service, baselineRunTimes, DOOR_TIME } from './service.js';
 import { doorPermission, berthingScore, punctualityScore, buildSchedule, platformInterval, platformSide, DIFFICULTY, paxExchange } from './rules.js';
-import { KMH } from './util.js';
+import { KMH, mulberry32 } from './util.js';
+import { AnimCrowd, pickChar, resetCharsInUse, charsInUse } from './people.js';
 import { Walker } from './walker.js';
 import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
@@ -618,4 +619,62 @@ test('car-cards: atlas cells are 3:1 and stay inside their gutter', async () => 
   assert.equal(seen.size, CARDS);
   const arc = RI * (CARD.a1 - CARD.a0) * Math.PI / 180;
   assert.ok(Math.abs(CARD.w / arc - 3) < 0.1, 'the card band is 3:1 like the art: ' + (CARD.w / arc).toFixed(2));
+});
+
+// ---- people: no repeated faces (the shared registry of characters in use)
+const mkRoster = (n) => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, outfit: i % 9 === 0 ? 'kilt' : i % 7 === 0 ? 'skirt' : 'trousers', kid: i % 10 === 1, staff: i % 30 === 2 }));
+const mkCrowd = (chars, seed) => { const c = Object.create(AnimCrowd.prototype); c.chars = chars; c.people = []; c.rng = mulberry32(seed); return c; };
+const addOne = (c, filter) => { const ch = c._pick(filter); if (!ch) return null; const p = { char: ch, counted: true }; c.people.push(p); charsInUse().set(ch.id, (charsInUse().get(ch.id) || 0) + 1); return p; };
+const dropOne = (c, p) => { c._drop(p); c.people.splice(c.people.indexOf(p), 1); };
+
+test('people: one crowd up to the roster size never repeats a person', () => {
+  for (const n of [30, 72]) for (let seed = 1; seed <= 20; seed++) {
+    resetCharsInUse(); const roster = mkRoster(n), c = mkCrowd(roster, seed);
+    for (let i = 0; i < n; i++) addOne(c);
+    assert.equal(new Set(c.people.map((p) => p.char.id)).size, n, 'seed ' + seed + ' roster ' + n);
+  }
+});
+
+test('people: two crowds that fit the roster together share nobody', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    resetCharsInUse(); const roster = mkRoster(60), a = mkCrowd(roster, seed), b = mkCrowd(roster, seed + 100);
+    for (let i = 0; i < 30; i++) { addOne(a); addOne(b); }
+    const ids = [...a.people, ...b.people].map((p) => p.char.id);
+    assert.equal(new Set(ids).size, 60, 'seed ' + seed);
+  }
+});
+
+test('people: a crowd bigger than the roster repeats only after using everyone, evenly', () => {
+  resetCharsInUse(); const roster = mkRoster(30), c = mkCrowd(roster, 7), seen = new Set();
+  for (let i = 0; i < 75; i++) {
+    const p = addOne(c);
+    if (i < 30) assert.ok(!seen.has(p.char.id), 'repeat at ' + i); seen.add(p.char.id);
+    const cnt = roster.map((r) => c.people.filter((q) => q.char === r).length);
+    if (i >= 29) assert.ok(Math.max(...cnt) - Math.min(...cnt) <= 1, 'uneven at ' + i);
+  }
+});
+
+test('people: removing people frees their characters; clear frees all', () => {
+  resetCharsInUse(); const roster = mkRoster(10), a = mkCrowd(roster, 3), b = mkCrowd(roster, 4);
+  for (let i = 0; i < 5; i++) addOne(a); for (let i = 0; i < 5; i++) addOne(b);
+  assert.equal(charsInUse().size, 10);
+  const gone = a.people[0].char.id; dropOne(a, a.people[0]);
+  assert.ok(!charsInUse().has(gone)); assert.equal(charsInUse().size, 9);
+  assert.equal(addOne(b).char.id, gone, 'the freed person is the only one unused anywhere');
+  a.clear(); b.clear(); assert.equal(charsInUse().size, 0);
+});
+
+test('people: a filter nobody fits leaves the spot empty; the filter holds when the roster is used up', () => {
+  resetCharsInUse(); const roster = mkRoster(12), c = mkCrowd(roster, 5);
+  assert.equal(c._pick(() => false), null);
+  const odd = (ch) => Number(ch.id.slice(1)) % 2 === 1;
+  for (let i = 0; i < 20; i++) assert.ok(odd(addOne(c, odd).char));
+  assert.equal(pickChar(roster, roster, () => false, c.rng, new Map()), null);
+});
+
+test('people: with the whole roster in this crowd, the one least used in this crowd wins over the one least used globally', () => {
+  resetCharsInUse(); const roster = mkRoster(4), c = mkCrowd(roster, 9);
+  for (const [i, n] of [[0, 1], [1, 1], [2, 1], [3, 2]]) for (let k = 0; k < n; k++) c.people.push({ char: roster[i], counted: true });
+  for (const [i, n] of [[0, 5], [1, 5], [2, 5], [3, 2]]) charsInUse().set('p' + i, n);   // p3 is rarest globally but doubled here
+  for (let seed = 1; seed <= 10; seed++) { c.rng = mulberry32(seed); assert.notEqual(c._pick().id, 'p3', 'seed ' + seed); }
 });
