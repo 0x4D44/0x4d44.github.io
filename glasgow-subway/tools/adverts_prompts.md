@@ -29,8 +29,10 @@ Generated 2026-11-05 with Codex's built-in image tool (`codex exec`, gpt-6.1-sol
 
 ## Landscape (cross-track) posters
 
-Source briefs for the 12 billboards in `models/adverts_land.jpg` (1536x1024 each; packed with
-`python3 tools/build_adverts.py <dir> land models/adverts_land.jpg`, cells 13-16 repeat 1-4). Shared preamble:
+Source briefs for the 16 billboards in `models/adverts_land.jpg` (1536x1024 each; packed with
+`python3 tools/build_adverts.py <dir> land models/adverts_land.jpg`; 16 distinct posters fill all 16 cells, `LAND_POSTERS` in `js/sim/adverts.js`).
+Posters 13-16 are the Daily Flange set (the spoof newspaper in `news/`; headlines quoted from `news/articles.js`); they were spliced into cells 13-16
+of the existing atlas, as the original 12 source PNGs are not kept. Shared preamble:
 
 > Image: a realistic, professionally designed LANDSCAPE cross-track billboard poster (aspect ratio 3:2) as it would appear printed on the curved tunnel wall across the tracks in the Glasgow Subway. Glossy, real-world print-advert design quality with bold, clean, correctly spelled, legible typography (keep the text short and very large; it is read from across the tracks). It must be a flat, straight-on, full-bleed poster design filling the entire frame (no frame, no wall, no perspective, no mock-up). Deadpan, completely serious corporate advertising tone for an absurd product. All brands, people and products are fictional; do not use any real brand logos.
 
@@ -46,6 +48,10 @@ Source briefs for the 12 billboards in `models/adverts_land.jpg` (1536x1024 each
 10. Clothing tech advert, cosy warm orange glow. Product: "THERMAKILT" heated kilt. Headline: "Three settings." Three illustrated dial positions labelled "ABERDEEN", "INVERNESS", "SHETLAND". Photo of a contented man in a gently glowing tartan kilt standing in a snowy Highland glen. Small line: "USB rechargeable. Do not wear in the bath."
 11. Support group advert, gentle soft-focus charity design. Brand: "TABLET ANONYMOUS". Headline: "One square is too many. Ten is not enough." Photo of a circle of people in a church hall, one of them guiltily hiding a large slab of Scottish tablet fudge behind his back. Small line: "Meetings every Tuesday. Please do not bring snacks."
 12. Leisure attraction advert, dramatic mountain photography. Brand: "MUNRO LIFTS". Headline: "All 282 Munros. Zero climbing." Photo of a sleek glass elevator rising up the side of a misty Scottish mountain, smug passengers waving at exhausted hillwalkers below. Small line: "Summit selfies guaranteed. Midges extra."
+13. Newspaper advert, "The Daily Flange" (masthead in bold black Georgia-style serif, red #b80000 rules and banners, cream paper, strapline "All the news that's unfit to be true"; this branding is shared by 13-16). Front-page "READ ALL ABOUT IT" billboard. Headline: "Ten Pots Whose Bottoms Show Exceptional Staying Power". Photo: a row of ten worn copper saucepans seen from below. Small line: "Today. Everywhere. Allegedly."
+14. Newspaper subscription advert, "The Daily Flange". Headline: "Subscribe. Stay attached." Clipping: "Collaboration Chief Wears Velcro Suit and Becomes Attached to Company Values". Photo: a smiling executive in a grey Velcro suit stuck to a wall of company-values posters. Small line: "12 issues for the price of 12."
+15. Supplement advert, "FLANGE WEEKLY" (the Saturday supplement) with a small Daily Flange masthead. Headline: "Raise your aspirations." Subheading: "Manager Removes Lower Rungs from Ladder to Encourage Aspiration". Photo: a tall ladder with its bottom rungs missing, a manager gazing up, a puzzled employee on the floor. Small line: "Free with Saturday's Daily Flange. Ladder not included."
+16. Glasgow local edition advert, "The Daily Flange" with a red "GLASGOW EDITION" banner. Headline: "Now printed on a brick." Clipping: "Executive Compacts Annual Report into Brick for Easier Reading". Photo: a hand holding a dense paper brick labelled "ANNUAL REPORT" in a rainy Glasgow tenement street. Small line: "Wet-weather resistant. Mostly."
 
 ## Car-cards (in-train)
 
