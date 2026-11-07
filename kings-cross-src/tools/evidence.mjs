@@ -30,8 +30,9 @@ export const CAMERAS = {
   overview: { pos: [260, 220, 90], target: [45, 5, -140] },
   // Measuring views: far away with a narrow lens, so they are close to orthographic and the 10 m
   // grid reads true. They load the page with ?grid=1&bare=1 (no buildings, no fog).
-  top: { pos: [40, 3000, -139], target: [40, 0, -140], grid: true, fov: 12 },
-  side: { pos: [1500, 70, -135], target: [45, 70, -135], grid: true, fov: 7 },
+  // (A larger near plane keeps depth precision at that distance; with 0.5 m the grid z-fights the ground.)
+  top: { pos: [40, 3000, -139], target: [40, 0, -140], grid: true, fov: 12, near: 100 },
+  side: { pos: [1500, 70, -135], target: [45, 70, -135], grid: true, fov: 7, near: 100 },
   'shed-interior': { pos: [48, 7.5, -16], target: [52, 6, -160] },
   concourse: { pos: [-70, 2.2, -35], target: [-18, 10, -95] },
   'platform-heads': { pos: [50, 3, -352], target: [52, 6, -250] },
@@ -208,7 +209,7 @@ try {
       const wanted = Object.keys(CAMERAS).filter((n) => (vpName === 'desktop' ? !!CAMERAS[n].grid === grid : !grid && PHONE_CAMERAS.includes(n)));
       for (const name of wanted) {
         const c = CAMERAS[name];
-        await evaluate(`(() => { const k = window.__kx; k.controls.maxDistance = 1e5; k.controls.maxPolarAngle = Math.PI; k.camera.far = 20000; k.camera.fov = ${c.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${c.pos}); k.controls.target.set(${c.target}); k.controls.update(); return true; })()`);
+        await evaluate(`(() => { const k = window.__kx; k.controls.maxDistance = 1e5; k.controls.maxPolarAngle = Math.PI; k.camera.far = 20000; k.camera.near = ${c.near ?? 0.5}; k.camera.fov = ${c.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${c.pos}); k.controls.target.set(${c.target}); k.controls.update(); return true; })()`);
         await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))');
         const shot = await S('Page.captureScreenshot', { format: 'png' });
         const file = `${vpName}-${name}${grid ? '-grid' : ''}.png`;
@@ -218,6 +219,34 @@ try {
       if (!grid) {
         const fps = await evaluate(`new Promise((resolve) => { let n = 0; const t0 = performance.now(); const tick = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(tick); else resolve(n / ((performance.now() - t0) / 1000)); }; requestAnimationFrame(tick); })`);
         report.viewports[vpName].fps = Math.round(fps * 10) / 10;
+        // Moving camera: an orbit round the station at half a radian a second for 5 s, from the
+        // overview position, recording every frame's duration. A steady 60 fps shows as p95 near
+        // 16.7 ms and no frames over 20 ms. (Headless Chrome caps animation frames at the display rate.)
+        const o = CAMERAS.overview;
+        await evaluate(`(() => { const k = window.__kx; k.controls.maxPolarAngle = Math.PI * 0.495; k.camera.near = 0.5; k.camera.fov = 50; k.camera.updateProjectionMatrix(); k.camera.position.set(${o.pos}); k.controls.target.set(${o.target}); k.controls.update(); return true; })()`);
+        const motion = await evaluate(`new Promise((resolve) => {
+          const k = window.__kx; const c = k.camera, t = k.controls.target;
+          const r0 = Math.hypot(c.position.x - t.x, c.position.z - t.z), y0 = c.position.y;
+          const a0 = Math.atan2(c.position.z - t.z, c.position.x - t.x);
+          const dts = []; let last = performance.now(); const t0 = last;
+          const tick = (now) => {
+            dts.push(now - last); last = now;
+            const a = a0 + ((now - t0) / 1000) * 0.5;
+            c.position.set(t.x + r0 * Math.cos(a), y0, t.z + r0 * Math.sin(a));
+            if (now - t0 < 5000) requestAnimationFrame(tick);
+            else {
+              dts.shift();
+              const s = [...dts].sort((x, y) => x - y);
+              const q = (p) => s[Math.min(s.length - 1, Math.floor(p * s.length))];
+              resolve({ frames: dts.length, seconds: (now - t0) / 1000, p50: q(0.5), p95: q(0.95), p99: q(0.99), max: s[s.length - 1], over20ms: dts.filter((d) => d > 20).length });
+            }
+          };
+          requestAnimationFrame(tick);
+        })`);
+        const r1 = (n) => Math.round(n * 10) / 10;
+        report.viewports[vpName].motion = { frames: motion.frames, fps: r1(motion.frames / motion.seconds), frameMs: { p50: r1(motion.p50), p95: r1(motion.p95), p99: r1(motion.p99), max: r1(motion.max) }, framesOver20ms: motion.over20ms };
+        // time to the first drawn frame, from the start of navigation (ms), on this load
+        report.viewports[vpName].firstFrameMs = Math.round(await evaluate('window.__kx.firstFrameMs'));
       }
     }
   }
