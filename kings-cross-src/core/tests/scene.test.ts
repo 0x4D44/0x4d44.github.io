@@ -49,6 +49,29 @@ test('scene: prisms drop degenerate outlines and keep labels', () => {
   assert.equal(p[0]?.height, 0.9);
 });
 
+test('scene: underground platforms are not drawn, surface and upper-level ones are', () => {
+  const sq: [number, number][] = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  const p = platformPrisms({
+    platforms: [
+      { id: 1, pts: sq, ref: '1' },
+      { id: 2, pts: sq, ref: '2', layer: 1 }, // St Pancras upper level
+      { id: 3, pts: sq, ref: '3', layer: -3, tunnel: true }, // deep tube
+      { id: 4, pts: sq, ref: '4', layer: -2 }, // sub-surface, tunnel tag missing
+      { id: 5, pts: sq, ref: '5', tunnel: true }, // tunnel tag, no layer
+    ],
+  });
+  assert.deepEqual(p.map((x) => x.label), ['1', '2']);
+});
+
+test('scene: of the real platforms, the 14 underground ones are dropped and 26 are drawn', () => {
+  const data: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  assert.equal(data.platforms.length, 40);
+  const drawn = platformPrisms(data);
+  assert.equal(drawn.length, 26);
+  // nothing underground among them: every drawn platform maps back to a data platform with layer >= 0 and no tunnel tag
+  for (const prism of drawn) assert.ok(data.platforms.some((q) => q.pts === prism.outline && !q.tunnel && (q.layer ?? 0) >= 0));
+});
+
 test('scene: bounds of flat positions', () => {
   assert.deepEqual(bounds([1, 0, -5, 9, 0, 7, 4, 0, 0]), { minX: 1, maxX: 9, minZ: -5, maxZ: 7 });
 });

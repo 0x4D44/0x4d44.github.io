@@ -2,7 +2,7 @@
 // No three.js here, so the rules are testable without a browser.
 import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
-import { railPair } from './station.ts';
+import { isSurfacePlatform, railPair } from './station.ts';
 
 /** Height of the rail head above ground, metres. Tunnels are drawn below ground. */
 export const TUNNEL_DEPTH = -4;
@@ -59,9 +59,10 @@ export function buildingPrisms(data: Pick<KxData, 'buildings'>, exclude: Readonl
     });
 }
 
+/** Surface platforms only: the Underground ones are far below and would cut through the shed floor. */
 export function platformPrisms(data: Pick<KxData, 'platforms'>): Prism[] {
   return data.platforms
-    .filter((p) => p.pts.length >= 3)
+    .filter((p) => p.pts.length >= 3 && isSurfacePlatform(p))
     .map((p) => {
       const prism: Prism = { outline: p.pts, height: PLATFORM_HEIGHT };
       if (p.ref !== undefined) prism.label = p.ref;

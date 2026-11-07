@@ -8,6 +8,7 @@ import {
   concourseHeight,
   fitCircle,
   GAUGE,
+  isSurfacePlatform,
   longAxis,
   PLATFORM_REFS,
   platformHeading,
@@ -21,6 +22,7 @@ import {
   SHED_LENGTH,
   SHED_PLATFORM_REFS,
   SHED_SPAN_WIDTH,
+  shedBufferStops,
   shedLayout,
   shedToWorld,
   stationBuilding,
@@ -105,6 +107,34 @@ test('station: twin rails sit one gauge plus a rail head apart, either side of t
   assert.equal(railPair([5, 5], [5, 5]), null);
 });
 
+test('station: an underground platform that shares a number, and sits in the zone, never replaces the real one', () => {
+  const real = slab(50, -60, 250, 4, 0);
+  const tube = slab(52, -70, 240, 4, 0);
+  for (const first of [true, false]) {
+    const list = [
+      { id: 1, ref: '3', pts: real },
+      { id: 2, ref: '3', pts: tube, layer: -3, tunnel: true },
+    ];
+    if (!first) list.reverse();
+    assert.equal(stationPlatforms({ platforms: list }).get('3')?.id, 1, first ? 'tube listed second' : 'tube listed first');
+  }
+  assert.equal(isSurfacePlatform({}), true);
+  assert.equal(isSurfacePlatform({ layer: 1 }), true);
+  assert.equal(isSurfacePlatform({ layer: -1 }), false);
+  assert.equal(isSurfacePlatform({ tunnel: true }), false);
+});
+
+test('station: platform lengths are pinned to the independent raw-OSM measurements (+/- 0.5 m), so a drift fails npm test', () => {
+  // From `node tools/fidelity.ts --raw <extract>` (each platform re-measured from latitude and
+  // longitude in its own frame). Re-pin them only after a deliberate change of the data.
+  const pinned: Record<string, number> = { '0': 338.2, '1': 343.8, '2': 306.1, '3': 305.9, '4': 305.9, '5': 305.8, '6': 302.3, '7': 302.4, '8': 291.6, '9': 162.4, '10': 174.9 };
+  const got = new Map(platformReport(data).map((r) => [r.ref, r.lengthM]));
+  for (const [ref, want] of Object.entries(pinned)) {
+    const have = got.get(ref);
+    assert.ok(have !== undefined && Math.abs(have - want) <= 0.5, `platform ${ref}: ${have} m, pinned ${want} m`);
+  }
+});
+
 test('station: a platform\'s south end is the middle of its two southmost vertices, not its centre', () => {
   assert.deepEqual(platformSouthEnd([[0, -300], [4, -300], [4, -20], [0, -22]]), [2, -21]);
   const p = stationPlatforms(data).get('3');
@@ -112,6 +142,22 @@ test('station: a platform\'s south end is the middle of its two southmost vertic
   const [x, z] = platformSouthEnd(p.pts);
   assert.ok(z > -30 && z < -15, `P3 south end z ${z}`);
   assert.ok(x > 45 && x < 58, `P3 south end x ${x}`);
+});
+
+test('station: the shed has nine buffer stops at its south end, each on a platform track, and no others', () => {
+  const s = shedLayout(data);
+  const stops = shedBufferStops(data, s);
+  assert.equal(stops.length, 9);
+  for (const b of stops) {
+    const { u, v } = worldToShed(s, [b.x, b.z]);
+    assert.ok(u > 0 && u < s.width && v > 5 && v < 30, `stop ${b.id} at u ${u.toFixed(1)}, v ${v.toFixed(1)}`);
+  }
+  const ids = new Set(stops.map((b) => b.id));
+  assert.ok(data.buffers.some((b) => !ids.has(b.id)), 'buffers elsewhere (St Pancras, the suburban lines) are left out');
+  // synthetic: a stop beyond 40 m up the shed, one west of the wall, one behind the south end
+  const shed = { origin: [0, 0] as Pt, heading: 0, width: 72 };
+  const got = shedBufferStops({ buffers: [{ id: 1, x: 10, z: -20 }, { id: 2, x: 10, z: -41 }, { id: 3, x: -1, z: -20 }, { id: 4, x: 10, z: 1 }, { id: 5, x: 73, z: -20 }] }, shed);
+  assert.deepEqual(got.map((b) => b.id), [1]);
 });
 
 test('station: point in polygon, inside and outside, on a concave outline', () => {

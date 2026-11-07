@@ -50,6 +50,10 @@ export interface Platform {
   ref?: string;
   name?: string;
   pts: Pt[];
+  /** OSM layer, kept only when it is not 0. Underground platforms are negative; St Pancras is 1. */
+  layer?: number;
+  /** Set when the platform is tagged tunnel: an Underground platform, not on the surface. */
+  tunnel?: boolean;
 }
 
 export interface Building {
@@ -144,6 +148,9 @@ export function compactOsm(elements: RawElement[], origin: LatLon = ORIGIN): KxD
         const p: Platform = { id: e.id, pts: ring(e.geometry, origin) };
         if (tags.ref) p.ref = tags.ref;
         if (tags.name) p.name = tags.name;
+        const layer = num(tags.layer);
+        if (layer !== undefined && layer !== 0) p.layer = layer;
+        if (tags.tunnel !== undefined && tags.tunnel !== 'no') p.tunnel = true;
         platforms.push(p);
       } else if (tags.building !== undefined && e.geometry && e.geometry.length >= 4) {
         const b: Building = { id: e.id, pts: ring(e.geometry, origin), kind: tags.building };
