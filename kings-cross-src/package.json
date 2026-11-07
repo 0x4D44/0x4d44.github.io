@@ -1,0 +1,14 @@
+{
+  "name": "kings-cross-src",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Source for the live 3D King's Cross model: the Network Rail relay (relay/) and, later, the Vite page (web/).",
+  "scripts": {
+    "test": "node --test relay/tests/*.test.mjs",
+    "relay": "node relay/main.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
