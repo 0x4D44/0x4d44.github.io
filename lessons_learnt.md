@@ -11,6 +11,9 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-07 - blender -b exits 0 after a Python traceback: check the EXPORTED line (glasgow-subway tools/assets_people_mpfb.py:export_all)
+  A crashed people build left the previous people.glb in its out dir and a wrapper that tested the exit code installed it as new. Delete the outputs
+  before building and require both "EXPORTED" and no "Traceback" in the log.
 - 2026-11-05 - Blender's bundled Python has no Pillow on macOS: glasgow-subway asset builds need it (tools/assets_tex.py)
   Install Pillow to a folder outside the repo and add it to sys.path in a wrapper run as blender -b --factory-startup --python wrapper -- tools/assets_train.py.
   The builders also hard-code SCRATCH under /tmp/claude-0/... (tools/assets_lib.py, assets_tex.py) and create it on every run.

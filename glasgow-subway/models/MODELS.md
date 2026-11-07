@@ -155,5 +155,22 @@ it, and a lift cannot mend that; `woman_sash` keeps 0.17 and `girl_small` 0.47 o
 nearly transparent), so a ratio for them means little. The other 26 LOD hairs are the decimated shells, 6-27% bulkier than the originals. The tool measures the stand pose only (the
 contact sheets also showed walking, where nothing looked wrong with the new hair); a swinging ponytail meeting a shoulder is not checked, and nobody has watched any of this in motion.
 
+## Kilt refit (2026-11-07)
+
+The kilts stood off the children (Arthur: "too big, a gap between it and their legs") and let skin through at the hips. `build_skirt` in `tools/assets_people_mpfb.py` now:
+- measures the waist as the body there plus the cut top's hem loop (cut first, then measured), never the loose sweater above the cut, and never the hands hanging beside the hips;
+- holds each ring off the body's own outline, not an oval through its extents, then pushes it to its convex hull (cloth spans the gap between the thighs instead of dipping in);
+- keeps each ring at least as wide as the one above (cloth hangs from the seat; it does not tuck back in) and clear of the body up to the ring above;
+- gives the front 1.5 cm more room below the waistband, for a thigh flexing forward at the hip;
+- keeps the adult flare on children (a scaled-down flare showed 2-3x the skin) and adds 8 mm below the waistband in the LOD.
+
+The hose now sit on the measured leg and the skin under them is deleted (it came through as knee and shin shards). The sporran hangs 6 mm in front of the kilt's own front and
+carries the kilt's weights at its centre, so it moves with the cloth.
+
+Measured with `tools/people_holes.mjs` (stand + walk + gait, cm² per view, the four kilted people), committed -> now: full 119.5 -> 60.8, LOD 62.0 -> 42.8. `boy_kilt` 29.5 -> 7.7,
+`girl_school_kilt` 23.5 -> 3.5, `man_kilt_casual` 62.7 -> 43.9; `man_highland` 3.8 -> 5.7 (its standing view: hands now within 3 cm in front of the fuller kilt, which the
+measure counts). Still seen: a hairline notch at the top front of `boy_kilt` in the `kid_fidget` side view. The arm turn-out table (`js/sim/armfit.js`) was re-solved: the
+kilted men now turn their arms out 12-15 degrees (was 9).
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
