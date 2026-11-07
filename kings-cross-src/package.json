@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "relay": "node relay/main.mjs",
     "build:data": "node tools/build-data.ts --raw ../.scratch/kx-osm.json",
+    "fidelity": "node tools/fidelity.ts",
+    "evidence": "node tools/evidence.mjs",
     "dev": "vite",
     "build": "vite build"
   },
