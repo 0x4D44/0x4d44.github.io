@@ -5,10 +5,21 @@
   "type": "module",
   "description": "Source for the live 3D King's Cross model: the Network Rail relay (relay/) and, later, the Vite page (web/).",
   "scripts": {
-    "test": "node --test relay/tests/*.test.mjs",
-    "relay": "node relay/main.mjs"
+    "test": "node --test relay/tests/*.test.mjs core/tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "relay": "node relay/main.mjs",
+    "build:data": "node tools/build-data.ts --raw ../.scratch/kx-osm.json",
+    "dev": "vite",
+    "build": "vite build"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
+    "three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
   }
 }
