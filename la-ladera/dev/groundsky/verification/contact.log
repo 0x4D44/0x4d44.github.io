@@ -1,0 +1,15 @@
+{
+  "contactSheets": 7,
+  "reviewFiles": 9,
+  "paths": [
+    "dev/groundsky/contact-ground.png",
+    "dev/groundsky/contact-decals.png",
+    "dev/groundsky/contact-masks.png",
+    "dev/groundsky/contact-city.png",
+    "dev/groundsky/contact-vegetation.png",
+    "dev/groundsky/contact-haze.png",
+    "dev/groundsky/contact-delivery.png",
+    "dev/groundsky/eye-height-ground.png",
+    "dev/groundsky/eye-height-mirador.png"
+  ]
+}

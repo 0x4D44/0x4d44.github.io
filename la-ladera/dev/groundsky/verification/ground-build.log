@@ -1,0 +1,191 @@
+Ground and patch generation verification
+UTC 2026-11-03T05:00:52.367456+00:00
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python la-ladera/tools/groundsky_ground.py
+ground 01/24 kikuyu_lush: 406,383 bytes
+ground 02/24 kikuyu_dry: 413,885 bytes
+ground 03/24 kikuyu_trampled: 220,104 bytes
+ground 04/24 kikuyu_clover_edge: 428,558 bytes
+ground 05/24 dirt_brown: 112,897 bytes
+ground 06/24 dirt_dry_pale: 121,410 bytes
+ground 07/24 red_clay_dry: 159,094 bytes
+ground 08/24 red_clay_wet: 119,579 bytes
+ground 09/24 gravel_fine_grey: 454,507 bytes
+ground 10/24 gravel_coarse_river: 542,220 bytes
+ground 11/24 packed_earth_tyres: 148,489 bytes
+ground 12/24 packed_earth_footworn: 119,789 bytes
+ground 13/24 mud_rutted: 92,925 bytes
+ground 14/24 mud_puddled: 73,543 bytes
+ground 15/24 stone_scatter_dark: 203,149 bytes
+ground 16/24 stone_scatter_pale: 189,394 bytes
+ground 17/24 leaf_litter_eucalyptus: 144,404 bytes
+ground 18/24 leaf_litter_mixed: 162,568 bytes
+ground 19/24 cobble_edge_moss: 331,589 bytes
+ground 20/24 cracked_concrete_light: 118,551 bytes
+ground 21/24 cracked_concrete_dark: 124,884 bytes
+ground 22/24 asphalt_repaired: 128,325 bytes
+ground 23/24 asphalt_gravel_edge: 133,269 bytes
+ground 24/24 sand_to_kikuyu: 269,993 bytes
+decal dirt_patch_soft: 27,910 bytes
+decal dirt_scuffed_path: 25,534 bytes
+decal dirt_footworn_spots: 33,758 bytes
+decal dirt_clay_margin: 35,878 bytes
+decal gravel_patch_fine: 59,434 bytes
+decal gravel_patch_coarse: 56,246 bytes
+decal gravel_spill_elongated: 62,738 bytes
+decal gravel_grass_intrusion: 37,072 bytes
+decal grass_patch_lush: 66,445 bytes
+decal grass_patch_dry: 74,420 bytes
+decal grass_patch_sparse: 54,606 bytes
+decal grass_patch_moss: 77,855 bytes
+decal mud_patch_dark: 25,159 bytes
+decal mud_patch_puddle: 21,753 bytes
+decal mud_patch_rut: 23,756 bytes
+decal mud_patch_splash: 37,672 bytes
+mask atlas 1: 346,161 bytes
+mask atlas 2: 515,281 bytes
+Source self-check: 90 PNGs; 148 exact edge comparisons; total 6,801,187 bytes
+
+Exit status: 0
+
+UTC 2026-11-03T05:02:31.814778+00:00
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python la-ladera/tools/groundsky_ground.py --only repack
+repack dirt_clay_margin_albedo: 35,878 -> 35,471 bytes
+repack dirt_footworn_spots_albedo: 33,758 -> 32,631 bytes
+repack dirt_patch_soft_albedo: 27,910 -> 27,915 bytes
+repack dirt_scuffed_path_albedo: 25,534 -> 25,534 bytes
+repack grass_patch_dry_albedo: 74,420 -> 74,407 bytes
+repack grass_patch_lush_albedo: 66,445 -> 66,202 bytes
+repack grass_patch_moss_albedo: 77,855 -> 77,813 bytes
+repack grass_patch_sparse_albedo: 54,606 -> 51,210 bytes
+repack gravel_grass_intrusion_albedo: 37,072 -> 34,815 bytes
+repack gravel_patch_coarse_albedo: 56,246 -> 56,158 bytes
+repack gravel_patch_fine_albedo: 59,434 -> 59,500 bytes
+repack gravel_spill_elongated_albedo: 62,738 -> 62,776 bytes
+repack mud_patch_dark_albedo: 25,159 -> 24,257 bytes
+repack mud_patch_puddle_albedo: 21,753 -> 21,754 bytes
+repack mud_patch_rut_albedo: 23,756 -> 23,330 bytes
+repack mud_patch_splash_albedo: 37,672 -> 35,918 bytes
+repack asphalt_gravel_edge_albedo: 38,368 -> 37,718 bytes
+repack asphalt_gravel_edge_normal: 42,981 -> 42,590 bytes
+repack asphalt_gravel_edge_orm: 51,920 -> 51,263 bytes
+repack asphalt_repaired_albedo: 44,391 -> 43,725 bytes
+repack asphalt_repaired_normal: 33,923 -> 33,318 bytes
+repack asphalt_repaired_orm: 50,011 -> 49,354 bytes
+repack cobble_edge_moss_albedo: 51,468 -> 50,833 bytes
+repack cobble_edge_moss_normal: 183,452 -> 175,394 bytes
+repack cobble_edge_moss_orm: 96,669 -> 89,327 bytes
+repack cracked_concrete_dark_albedo: 34,578 -> 33,897 bytes
+repack cracked_concrete_dark_normal: 29,397 -> 28,926 bytes
+repack cracked_concrete_dark_orm: 60,909 -> 55,591 bytes
+repack cracked_concrete_light_albedo: 33,019 -> 32,337 bytes
+repack cracked_concrete_light_normal: 29,602 -> 29,122 bytes
+repack cracked_concrete_light_orm: 55,930 -> 53,059 bytes
+repack dirt_brown_albedo: 30,626 -> 29,949 bytes
+repack dirt_brown_normal: 33,223 -> 32,853 bytes
+repack dirt_brown_orm: 49,048 -> 48,400 bytes
+repack dirt_dry_pale_albedo: 31,544 -> 30,871 bytes
+repack dirt_dry_pale_normal: 33,313 -> 32,943 bytes
+repack dirt_dry_pale_orm: 56,553 -> 55,906 bytes
+repack gravel_coarse_river_albedo: 90,507 -> 89,850 bytes
+repack gravel_coarse_river_normal: 324,578 -> 291,579 bytes
+repack gravel_coarse_river_orm: 127,135 -> 117,013 bytes
+repack gravel_fine_grey_albedo: 92,018 -> 91,363 bytes
+repack gravel_fine_grey_normal: 254,746 -> 251,547 bytes
+repack gravel_fine_grey_orm: 107,743 -> 103,314 bytes
+repack kikuyu_clover_edge_albedo: 124,867 -> 124,235 bytes
+repack kikuyu_clover_edge_normal: 254,445 -> 254,250 bytes
+repack kikuyu_clover_edge_orm: 49,246 -> 48,589 bytes
+repack kikuyu_dry_albedo: 121,487 -> 120,865 bytes
+repack kikuyu_dry_normal: 238,961 -> 238,698 bytes
+repack kikuyu_dry_orm: 53,437 -> 52,794 bytes
+repack kikuyu_lush_albedo: 120,513 -> 119,887 bytes
+repack kikuyu_lush_normal: 237,245 -> 236,991 bytes
+repack kikuyu_lush_orm: 48,625 -> 47,816 bytes
+repack kikuyu_trampled_albedo: 73,503 -> 72,841 bytes
+repack kikuyu_trampled_normal: 96,973 -> 96,561 bytes
+repack kikuyu_trampled_orm: 49,628 -> 48,971 bytes
+repack leaf_litter_eucalyptus_albedo: 41,412 -> 40,748 bytes
+repack leaf_litter_eucalyptus_normal: 53,690 -> 53,257 bytes
+repack leaf_litter_eucalyptus_orm: 49,302 -> 48,207 bytes
+repack leaf_litter_mixed_albedo: 44,688 -> 44,026 bytes
+repack leaf_litter_mixed_normal: 67,965 -> 67,545 bytes
+repack leaf_litter_mixed_orm: 49,915 -> 49,219 bytes
+repack mud_puddled_albedo: 27,123 -> 26,448 bytes
+repack mud_puddled_normal: 21,304 -> 20,754 bytes
+repack mud_puddled_orm: 25,116 -> 24,393 bytes
+repack mud_rutted_albedo: 27,495 -> 26,232 bytes
+repack mud_rutted_normal: 30,453 -> 30,122 bytes
+repack mud_rutted_orm: 34,977 -> 31,756 bytes
+repack packed_earth_footworn_albedo: 31,609 -> 30,937 bytes
+repack packed_earth_footworn_normal: 34,862 -> 34,384 bytes
+repack packed_earth_footworn_orm: 53,318 -> 50,523 bytes
+repack packed_earth_tyres_albedo: 37,810 -> 36,151 bytes
+repack packed_earth_tyres_normal: 47,961 -> 47,581 bytes
+repack packed_earth_tyres_orm: 62,718 -> 55,642 bytes
+repack red_clay_dry_albedo: 36,202 -> 34,490 bytes
+repack red_clay_dry_normal: 55,383 -> 55,057 bytes
+repack red_clay_dry_orm: 67,509 -> 60,615 bytes
+repack red_clay_wet_albedo: 31,708 -> 30,914 bytes
+repack red_clay_wet_normal: 36,618 -> 36,172 bytes
+repack red_clay_wet_orm: 51,253 -> 47,067 bytes
+repack sand_to_kikuyu_albedo: 90,311 -> 89,641 bytes
+repack sand_to_kikuyu_normal: 131,946 -> 131,543 bytes
+repack sand_to_kikuyu_orm: 47,736 -> 47,078 bytes
+repack stone_scatter_dark_albedo: 39,804 -> 39,160 bytes
+repack stone_scatter_dark_normal: 91,094 -> 83,261 bytes
+repack stone_scatter_dark_orm: 72,251 -> 68,824 bytes
+repack stone_scatter_pale_albedo: 38,043 -> 37,402 bytes
+repack stone_scatter_pale_normal: 83,863 -> 77,558 bytes
+repack stone_scatter_pale_orm: 67,488 -> 66,236 bytes
+repack terrain_blend_masks_01: 346,161 -> 338,769 bytes
+repack terrain_blend_masks_02: 515,281 -> 517,766 bytes
+Source self-check: 90 PNGs; 148 exact edge comparisons; total 6,633,709 bytes
+
+Exit status: 0
+
+Palette/detail tuning: 12 normal directions, four slopes, eight roughness values, 32 decal alpha values; semantic details retained.
+UTC 2026-11-03T05:04:52.766651+00:00
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python la-ladera/tools/groundsky_ground.py
+ground 01/24 kikuyu_lush: 271,017 bytes
+ground 02/24 kikuyu_dry: 274,317 bytes
+ground 03/24 kikuyu_trampled: 168,714 bytes
+ground 04/24 kikuyu_clover_edge: 288,345 bytes
+ground 05/24 dirt_brown: 80,633 bytes
+ground 06/24 dirt_dry_pale: 87,367 bytes
+ground 07/24 red_clay_dry: 116,271 bytes
+ground 08/24 red_clay_wet: 88,089 bytes
+ground 09/24 gravel_fine_grey: 310,626 bytes
+ground 10/24 gravel_coarse_river: 353,649 bytes
+ground 11/24 packed_earth_tyres: 105,358 bytes
+ground 12/24 packed_earth_footworn: 85,959 bytes
+ground 13/24 mud_rutted: 68,634 bytes
+ground 14/24 mud_puddled: 54,282 bytes
+ground 15/24 stone_scatter_dark: 144,942 bytes
+ground 16/24 stone_scatter_pale: 136,906 bytes
+ground 17/24 leaf_litter_eucalyptus: 106,463 bytes
+ground 18/24 leaf_litter_mixed: 119,065 bytes
+ground 19/24 cobble_edge_moss: 231,707 bytes
+ground 20/24 cracked_concrete_light: 86,237 bytes
+ground 21/24 cracked_concrete_dark: 89,910 bytes
+ground 22/24 asphalt_repaired: 93,857 bytes
+ground 23/24 asphalt_gravel_edge: 97,409 bytes
+ground 24/24 sand_to_kikuyu: 204,379 bytes
+decal dirt_patch_soft: 21,656 bytes
+decal dirt_scuffed_path: 19,595 bytes
+decal dirt_footworn_spots: 29,009 bytes
+decal dirt_clay_margin: 28,223 bytes
+decal gravel_patch_fine: 46,685 bytes
+decal gravel_patch_coarse: 38,484 bytes
+decal gravel_spill_elongated: 46,574 bytes
+decal gravel_grass_intrusion: 29,663 bytes
+decal grass_patch_lush: 53,211 bytes
+decal grass_patch_dry: 56,686 bytes
+decal grass_patch_sparse: 44,639 bytes
+decal grass_patch_moss: 56,701 bytes
+decal mud_patch_dark: 20,742 bytes
+decal mud_patch_puddle: 19,398 bytes
+
+UTC 2026-11-03T05:07:31.938663+00:00
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python la-ladera/tools/groundsky_ground.py --only verify
+Source self-check: 90 PNGs; 148 exact edge comparisons; total 4,710,806 bytes
+Exit status: 0

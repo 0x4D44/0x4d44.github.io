@@ -1,0 +1,106 @@
+[
+  {
+    "id": "vegetation_eucalyptus_stands_lod0",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 1.2968802261464671,
+    "opacityRmse": 1.2950868343270523,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 144876
+  },
+  {
+    "id": "vegetation_eucalyptus_stands_lod1",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 2.8027676038998552,
+    "opacityRmse": 2.1025424643638293,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 87098
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod0",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 1.0638990416229301,
+    "opacityRmse": 0.9909780745558846,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 175466
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod1",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 2.1300495311624434,
+    "opacityRmse": 1.6205853871580826,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 93500
+  }
+]

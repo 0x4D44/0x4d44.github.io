@@ -1,0 +1,140 @@
+  1/122 dirt_clay_margin_albedo: 22,106 bytes
+  2/122 dirt_footworn_spots_albedo: 39,955 bytes
+  3/122 dirt_patch_soft_albedo: 20,327 bytes
+  4/122 dirt_scuffed_path_albedo: 25,102 bytes
+  5/122 grass_patch_dry_albedo: 25,790 bytes
+  6/122 grass_patch_lush_albedo: 25,270 bytes
+  7/122 grass_patch_moss_albedo: 26,770 bytes
+  8/122 grass_patch_sparse_albedo: 57,855 bytes
+  9/122 gravel_grass_intrusion_albedo: 45,132 bytes
+ 10/122 gravel_patch_coarse_albedo: 54,613 bytes
+ 11/122 gravel_patch_fine_albedo: 43,777 bytes
+ 12/122 gravel_spill_elongated_albedo: 41,373 bytes
+ 13/122 mud_patch_dark_albedo: 25,475 bytes
+ 14/122 mud_patch_puddle_albedo: 23,036 bytes
+ 15/122 mud_patch_rut_albedo: 25,048 bytes
+ 16/122 mud_patch_splash_albedo: 40,084 bytes
+ 17/122 asphalt_gravel_edge_albedo: 45,565 bytes
+ 18/122 asphalt_gravel_edge_normal: 5,337 bytes
+ 19/122 asphalt_gravel_edge_orm: 7,235 bytes
+ 20/122 asphalt_repaired_albedo: 49,737 bytes
+ 21/122 asphalt_repaired_normal: 966 bytes
+ 22/122 asphalt_repaired_orm: 8,137 bytes
+ 23/122 cobble_edge_moss_albedo: 95,627 bytes
+ 24/122 cobble_edge_moss_normal: 49,692 bytes
+ 25/122 cobble_edge_moss_orm: 19,649 bytes
+ 26/122 cracked_concrete_dark_albedo: 30,213 bytes
+ 27/122 cracked_concrete_dark_normal: 2,106 bytes
+ 28/122 cracked_concrete_dark_orm: 11,219 bytes
+ 29/122 cracked_concrete_light_albedo: 32,210 bytes
+ 30/122 cracked_concrete_light_normal: 2,154 bytes
+ 31/122 cracked_concrete_light_orm: 9,301 bytes
+ 32/122 dirt_brown_albedo: 22,717 bytes
+ 33/122 dirt_brown_normal: 3,807 bytes
+ 34/122 dirt_brown_orm: 8,260 bytes
+ 35/122 dirt_dry_pale_albedo: 23,717 bytes
+ 36/122 dirt_dry_pale_normal: 3,753 bytes
+ 37/122 dirt_dry_pale_orm: 7,933 bytes
+ 38/122 gravel_coarse_river_albedo: 129,551 bytes
+ 39/122 gravel_coarse_river_normal: 119,551 bytes
+ 40/122 gravel_coarse_river_orm: 38,383 bytes
+ 41/122 gravel_fine_grey_albedo: 133,394 bytes
+ 42/122 gravel_fine_grey_normal: 129,927 bytes
+ 43/122 gravel_fine_grey_orm: 14,645 bytes
+ 44/122 kikuyu_clover_edge_albedo: 52,448 bytes
+ 45/122 kikuyu_clover_edge_normal: 10,846 bytes
+ 46/122 kikuyu_clover_edge_orm: 6,752 bytes
+ 47/122 kikuyu_dry_albedo: 77,959 bytes
+ 48/122 kikuyu_dry_normal: 8,840 bytes
+ 49/122 kikuyu_dry_orm: 7,270 bytes
+ 50/122 kikuyu_lush_albedo: 50,093 bytes
+ 51/122 kikuyu_lush_normal: 8,858 bytes
+ 52/122 kikuyu_lush_orm: 6,835 bytes
+ 53/122 kikuyu_trampled_albedo: 73,905 bytes
+ 54/122 kikuyu_trampled_normal: 4,889 bytes
+ 55/122 kikuyu_trampled_orm: 8,097 bytes
+ 56/122 leaf_litter_eucalyptus_albedo: 46,968 bytes
+ 57/122 leaf_litter_eucalyptus_normal: 5,816 bytes
+ 58/122 leaf_litter_eucalyptus_orm: 8,267 bytes
+ 59/122 leaf_litter_mixed_albedo: 54,114 bytes
+ 60/122 leaf_litter_mixed_normal: 8,042 bytes
+ 61/122 leaf_litter_mixed_orm: 9,067 bytes
+ 62/122 mud_puddled_albedo: 18,731 bytes
+ 63/122 mud_puddled_normal: 2,914 bytes
+ 64/122 mud_puddled_orm: 18,142 bytes
+ 65/122 mud_rutted_albedo: 23,935 bytes
+ 66/122 mud_rutted_normal: 12,295 bytes
+ 67/122 mud_rutted_orm: 28,344 bytes
+ 68/122 packed_earth_footworn_albedo: 26,488 bytes
+ 69/122 packed_earth_footworn_normal: 3,842 bytes
+ 70/122 packed_earth_footworn_orm: 8,971 bytes
+ 71/122 packed_earth_tyres_albedo: 32,442 bytes
+ 72/122 packed_earth_tyres_normal: 4,563 bytes
+ 73/122 packed_earth_tyres_orm: 9,814 bytes
+ 74/122 red_clay_dry_albedo: 32,812 bytes
+ 75/122 red_clay_dry_normal: 8,358 bytes
+ 76/122 red_clay_dry_orm: 12,288 bytes
+ 77/122 red_clay_wet_albedo: 18,034 bytes
+ 78/122 red_clay_wet_normal: 3,575 bytes
+ 79/122 red_clay_wet_orm: 20,976 bytes
+ 80/122 sand_to_kikuyu_albedo: 71,449 bytes
+ 81/122 sand_to_kikuyu_normal: 2,808 bytes
+ 82/122 sand_to_kikuyu_orm: 7,137 bytes
+ 83/122 stone_scatter_dark_albedo: 47,716 bytes
+ 84/122 stone_scatter_dark_normal: 27,604 bytes
+ 85/122 stone_scatter_dark_orm: 22,168 bytes
+ 86/122 stone_scatter_pale_albedo: 44,305 bytes
+ 87/122 stone_scatter_pale_normal: 25,278 bytes
+ 88/122 stone_scatter_pale_orm: 18,417 bytes
+ 89/122 terrain_blend_masks_01: 127,005 bytes
+ 90/122 terrain_blend_masks_02: 271,887 bytes
+ 91/122 city_far_day: 162,562 bytes
+ 92/122 city_far_dusk: 145,277 bytes
+ 93/122 city_far_night: 68,187 bytes
+ 94/122 city_middle_day: 162,098 bytes
+ 95/122 city_middle_dusk: 164,080 bytes
+ 96/122 city_middle_night: 129,192 bytes
+ 97/122 city_near_day: 143,320 bytes
+ 98/122 city_near_dusk: 152,868 bytes
+ 99/122 city_near_night: 133,187 bytes
+100/122 haze_07: 1,706 bytes
+101/122 haze_12: 1,716 bytes
+102/122 haze_17p2: 1,722 bytes
+103/122 haze_19p5: 1,713 bytes
+104/122 haze_22: 1,742 bytes
+105/122 vegetation_eucalyptus_stands_lod0: 230,403 bytes
+106/122 vegetation_eucalyptus_stands_lod1: 128,485 bytes
+107/122 vegetation_eucalyptus_stands_lod2: 49,395 bytes
+108/122 vegetation_kikuyu_slopes_lod0: 176,268 bytes
+109/122 vegetation_kikuyu_slopes_lod1: 64,551 bytes
+110/122 vegetation_kikuyu_slopes_lod2: 20,735 bytes
+111/122 vegetation_banana_groves_lod0: 140,428 bytes
+112/122 vegetation_banana_groves_lod1: 86,600 bytes
+113/122 vegetation_banana_groves_lod2: 37,292 bytes
+114/122 vegetation_cypress_hedges_lod0: 136,491 bytes
+115/122 vegetation_cypress_hedges_lod1: 76,329 bytes
+116/122 vegetation_cypress_hedges_lod2: 33,333 bytes
+117/122 vegetation_cloud_forest_edge_lod0: 255,028 bytes
+118/122 vegetation_cloud_forest_edge_lod1: 129,847 bytes
+119/122 vegetation_cloud_forest_edge_lod2: 50,902 bytes
+120/122 vegetation_rooftop_container_gardens_lod0: 135,370 bytes
+121/122 vegetation_rooftop_container_gardens_lod1: 73,715 bytes
+122/122 vegetation_rooftop_container_gardens_lod2: 29,710 bytes
+{
+  "masterPngCount": 122,
+  "deliveryCount": 122,
+  "masterPngBytes": 5990566,
+  "deliveryBytes": 6072115,
+  "textureBytes": 12062681,
+  "gpuBytes": 71203680,
+  "uncompressedRgba8WithMipsBytes": 580939256,
+  "largestTextureBytes": 294731
+}
+Traceback (most recent call last):
+  File "/workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/tools/groundsky_build.py", line 354, in <module>
+    main()
+  File "/workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/tools/groundsky_build.py", line 349, in main
+    write_manifest(ground, records, delivery)
+  File "/workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/tools/groundsky_build.py", line 320, in write_manifest
+    raise RuntimeError('Fixed texture budget exceeded; manifest marked incomplete')
+RuntimeError: Fixed texture budget exceeded; manifest marked incomplete

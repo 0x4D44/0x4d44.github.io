@@ -1,0 +1,2672 @@
+{
+  "version": 1,
+  "generator": "tools/groundsky_ground.py",
+  "seed": 913000,
+  "provenance": "Entirely original deterministic procedural texturing. No source photographs, scraped images, or reused textures.",
+  "materials": [
+    {
+      "id": "kikuyu_lush",
+      "title": "Kikuyu \u2014 lush",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "grass"
+    },
+    {
+      "id": "kikuyu_dry",
+      "title": "Kikuyu \u2014 dry",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "grass"
+    },
+    {
+      "id": "kikuyu_trampled",
+      "title": "Kikuyu \u2014 trampled",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "grass"
+    },
+    {
+      "id": "kikuyu_clover_edge",
+      "title": "Kikuyu \u2014 clover margin",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "grass"
+    },
+    {
+      "id": "dirt_brown",
+      "title": "Bare dirt \u2014 warm brown",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "dirt"
+    },
+    {
+      "id": "dirt_dry_pale",
+      "title": "Bare dirt \u2014 dry pale",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "dirt"
+    },
+    {
+      "id": "red_clay_dry",
+      "title": "Red clay \u2014 dry fissures",
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "family": "clay"
+    },
+    {
+      "id": "red_clay_wet",
+      "title": "Red clay \u2014 rain darkened",
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "family": "clay"
+    },
+    {
+      "id": "gravel_fine_grey",
+      "title": "Gravel \u2014 fine grey",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "gravel"
+    },
+    {
+      "id": "gravel_coarse_river",
+      "title": "Gravel \u2014 river rounded",
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "family": "gravel"
+    },
+    {
+      "id": "packed_earth_tyres",
+      "title": "Packed earth \u2014 tyre tracks",
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "family": "tracks"
+    },
+    {
+      "id": "packed_earth_footworn",
+      "title": "Packed earth \u2014 footworn",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "tracks"
+    },
+    {
+      "id": "mud_rutted",
+      "title": "Mud \u2014 shallow wheel ruts",
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "family": "mud"
+    },
+    {
+      "id": "mud_puddled",
+      "title": "Mud \u2014 puddled depressions",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "mud"
+    },
+    {
+      "id": "stone_scatter_dark",
+      "title": "Stone scatter \u2014 dark soil",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "stones"
+    },
+    {
+      "id": "stone_scatter_pale",
+      "title": "Stone scatter \u2014 pale soil",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "stones"
+    },
+    {
+      "id": "leaf_litter_eucalyptus",
+      "title": "Leaf litter \u2014 eucalyptus",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "leaves"
+    },
+    {
+      "id": "leaf_litter_mixed",
+      "title": "Leaf litter \u2014 mixed broadleaf",
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "family": "leaves"
+    },
+    {
+      "id": "cobble_edge_moss",
+      "title": "Cobble edge \u2014 moss joints",
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "family": "cobbles"
+    },
+    {
+      "id": "cracked_concrete_light",
+      "title": "Concrete \u2014 pale weathered",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "concrete"
+    },
+    {
+      "id": "cracked_concrete_dark",
+      "title": "Concrete \u2014 damp cracked",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "concrete"
+    },
+    {
+      "id": "asphalt_repaired",
+      "title": "Asphalt \u2014 repair patches",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "asphalt"
+    },
+    {
+      "id": "asphalt_gravel_edge",
+      "title": "Asphalt \u2014 gravel margin",
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "family": "asphalt"
+    },
+    {
+      "id": "sand_to_kikuyu",
+      "title": "Sand to kikuyu \u2014 organic margin",
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "family": "transition"
+    }
+  ],
+  "files": [
+    {
+      "id": "dirt_clay_margin_albedo",
+      "path": "dev/groundsky/masters/decals/dirt_clay_margin_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        3.0,
+        2.6
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 28223,
+      "sha256": "8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f",
+      "material": "red_clay_dry",
+      "materialId": "red_clay_dry",
+      "decalId": "dirt_clay_margin",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "dirt_footworn_spots_albedo",
+      "path": "dev/groundsky/masters/decals/dirt_footworn_spots_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1.8,
+        1.6
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 29009,
+      "sha256": "726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39",
+      "material": "dirt_dry_pale",
+      "materialId": "dirt_dry_pale",
+      "decalId": "dirt_footworn_spots",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "dirt_patch_soft_albedo",
+      "path": "dev/groundsky/masters/decals/dirt_patch_soft_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.4,
+        2.1
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 21656,
+      "sha256": "c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09",
+      "material": "dirt_brown",
+      "materialId": "dirt_brown",
+      "decalId": "dirt_patch_soft",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "dirt_scuffed_path_albedo",
+      "path": "dev/groundsky/masters/decals/dirt_scuffed_path_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        3.8,
+        1.8
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 19595,
+      "sha256": "1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c",
+      "material": "packed_earth_footworn",
+      "materialId": "packed_earth_footworn",
+      "decalId": "dirt_scuffed_path",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "grass_patch_dry_albedo",
+      "path": "dev/groundsky/masters/decals/grass_patch_dry_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.8,
+        2.4
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 56686,
+      "sha256": "d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e",
+      "material": "kikuyu_dry",
+      "materialId": "kikuyu_dry",
+      "decalId": "grass_patch_dry",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "grass_patch_lush_albedo",
+      "path": "dev/groundsky/masters/decals/grass_patch_lush_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.5,
+        2.2
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 53211,
+      "sha256": "9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a",
+      "material": "kikuyu_lush",
+      "materialId": "kikuyu_lush",
+      "decalId": "grass_patch_lush",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "grass_patch_moss_albedo",
+      "path": "dev/groundsky/masters/decals/grass_patch_moss_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1.2,
+        1.0
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 56701,
+      "sha256": "623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616",
+      "material": "kikuyu_clover_edge",
+      "materialId": "kikuyu_clover_edge",
+      "decalId": "grass_patch_moss",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "grass_patch_sparse_albedo",
+      "path": "dev/groundsky/masters/decals/grass_patch_sparse_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        3.4,
+        2.2
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 44639,
+      "sha256": "01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031",
+      "material": "kikuyu_trampled",
+      "materialId": "kikuyu_trampled",
+      "decalId": "grass_patch_sparse",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "gravel_grass_intrusion_albedo",
+      "path": "dev/groundsky/masters/decals/gravel_grass_intrusion_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.5,
+        2.0
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 29663,
+      "sha256": "33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb",
+      "material": "stone_scatter_pale",
+      "materialId": "stone_scatter_pale",
+      "decalId": "gravel_grass_intrusion",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "gravel_patch_coarse_albedo",
+      "path": "dev/groundsky/masters/decals/gravel_patch_coarse_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.8,
+        2.4
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 38484,
+      "sha256": "f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831",
+      "material": "gravel_coarse_river",
+      "materialId": "gravel_coarse_river",
+      "decalId": "gravel_patch_coarse",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "gravel_patch_fine_albedo",
+      "path": "dev/groundsky/masters/decals/gravel_patch_fine_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.2,
+        2.0
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 46685,
+      "sha256": "c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518",
+      "material": "gravel_fine_grey",
+      "materialId": "gravel_fine_grey",
+      "decalId": "gravel_patch_fine",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "gravel_spill_elongated_albedo",
+      "path": "dev/groundsky/masters/decals/gravel_spill_elongated_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        4.0,
+        1.5
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 46574,
+      "sha256": "aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d",
+      "material": "gravel_fine_grey",
+      "materialId": "gravel_fine_grey",
+      "decalId": "gravel_spill_elongated",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "mud_patch_dark_albedo",
+      "path": "dev/groundsky/masters/decals/mud_patch_dark_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        2.4,
+        2.0
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 20742,
+      "sha256": "64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb",
+      "material": "mud_rutted",
+      "materialId": "mud_rutted",
+      "decalId": "mud_patch_dark",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "mud_patch_puddle_albedo",
+      "path": "dev/groundsky/masters/decals/mud_patch_puddle_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        3.0,
+        2.5
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 19398,
+      "sha256": "7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b",
+      "material": "mud_puddled",
+      "materialId": "mud_puddled",
+      "decalId": "mud_patch_puddle",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "mud_patch_rut_albedo",
+      "path": "dev/groundsky/masters/decals/mud_patch_rut_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        4.0,
+        1.4
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 19573,
+      "sha256": "66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7",
+      "material": "mud_rutted",
+      "materialId": "mud_rutted",
+      "decalId": "mud_patch_rut",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "mud_patch_splash_albedo",
+      "path": "dev/groundsky/masters/decals/mud_patch_splash_albedo.png",
+      "format": "png",
+      "kind": "decal",
+      "role": "albedo",
+      "width": 512,
+      "height": 512,
+      "tiling": {
+        "x": false,
+        "y": false
+      },
+      "worldSizeM": [
+        1.6,
+        1.2
+      ],
+      "intendedUse": "Place just above terrain, straight alpha blend, depth-write off; apply at the documented metre scale.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 31844,
+      "sha256": "34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b",
+      "material": "red_clay_wet",
+      "materialId": "red_clay_wet",
+      "decalId": "mud_patch_splash",
+      "alphaMode": "straight",
+      "transparentGutterPx": 8,
+      "featherMetres": [
+        0.08,
+        0.32
+      ],
+      "channelPacking": "RGB=sRGB material colour, A=linear terrain coverage"
+    },
+    {
+      "id": "asphalt_gravel_edge_albedo",
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 37718,
+      "sha256": "458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e",
+      "material": "asphalt_gravel_edge",
+      "materialId": "asphalt_gravel_edge",
+      "title": "Asphalt \u2014 gravel margin",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "asphalt_gravel_edge_normal",
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 28975,
+      "sha256": "8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef",
+      "material": "asphalt_gravel_edge",
+      "materialId": "asphalt_gravel_edge",
+      "title": "Asphalt \u2014 gravel margin",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "asphalt_gravel_edge_orm",
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 30716,
+      "sha256": "f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8",
+      "material": "asphalt_gravel_edge",
+      "materialId": "asphalt_gravel_edge",
+      "title": "Asphalt \u2014 gravel margin",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "asphalt_repaired_albedo",
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 43725,
+      "sha256": "7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02",
+      "material": "asphalt_repaired",
+      "materialId": "asphalt_repaired",
+      "title": "Asphalt \u2014 repair patches",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "asphalt_repaired_normal",
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 22059,
+      "sha256": "652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d",
+      "material": "asphalt_repaired",
+      "materialId": "asphalt_repaired",
+      "title": "Asphalt \u2014 repair patches",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "asphalt_repaired_orm",
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 28073,
+      "sha256": "cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f",
+      "material": "asphalt_repaired",
+      "materialId": "asphalt_repaired",
+      "title": "Asphalt \u2014 repair patches",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "cobble_edge_moss_albedo",
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 50833,
+      "sha256": "d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089",
+      "material": "cobble_edge_moss",
+      "materialId": "cobble_edge_moss",
+      "title": "Cobble edge \u2014 moss joints",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "cobble_edge_moss_normal",
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 112657,
+      "sha256": "ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143",
+      "material": "cobble_edge_moss",
+      "materialId": "cobble_edge_moss",
+      "title": "Cobble edge \u2014 moss joints",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "cobble_edge_moss_orm",
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 68217,
+      "sha256": "470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc",
+      "material": "cobble_edge_moss",
+      "materialId": "cobble_edge_moss",
+      "title": "Cobble edge \u2014 moss joints",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "cracked_concrete_dark_albedo",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 33897,
+      "sha256": "e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f",
+      "material": "cracked_concrete_dark",
+      "materialId": "cracked_concrete_dark",
+      "title": "Concrete \u2014 damp cracked",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "cracked_concrete_dark_normal",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 21165,
+      "sha256": "2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe",
+      "material": "cracked_concrete_dark",
+      "materialId": "cracked_concrete_dark",
+      "title": "Concrete \u2014 damp cracked",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "cracked_concrete_dark_orm",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 34848,
+      "sha256": "86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de",
+      "material": "cracked_concrete_dark",
+      "materialId": "cracked_concrete_dark",
+      "title": "Concrete \u2014 damp cracked",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "cracked_concrete_light_albedo",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 32337,
+      "sha256": "374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89",
+      "material": "cracked_concrete_light",
+      "materialId": "cracked_concrete_light",
+      "title": "Concrete \u2014 pale weathered",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "cracked_concrete_light_normal",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 21630,
+      "sha256": "cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160",
+      "material": "cracked_concrete_light",
+      "materialId": "cracked_concrete_light",
+      "title": "Concrete \u2014 pale weathered",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "cracked_concrete_light_orm",
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 32270,
+      "sha256": "1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a",
+      "material": "cracked_concrete_light",
+      "materialId": "cracked_concrete_light",
+      "title": "Concrete \u2014 pale weathered",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "dirt_brown_albedo",
+      "path": "dev/groundsky/masters/ground/dirt_brown_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 29949,
+      "sha256": "88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e",
+      "material": "dirt_brown",
+      "materialId": "dirt_brown",
+      "title": "Bare dirt \u2014 warm brown",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "dirt_brown_normal",
+      "path": "dev/groundsky/masters/ground/dirt_brown_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 23042,
+      "sha256": "848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149",
+      "material": "dirt_brown",
+      "materialId": "dirt_brown",
+      "title": "Bare dirt \u2014 warm brown",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "dirt_brown_orm",
+      "path": "dev/groundsky/masters/ground/dirt_brown_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 27642,
+      "sha256": "e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1",
+      "material": "dirt_brown",
+      "materialId": "dirt_brown",
+      "title": "Bare dirt \u2014 warm brown",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "dirt_dry_pale_albedo",
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 30871,
+      "sha256": "3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e",
+      "material": "dirt_dry_pale",
+      "materialId": "dirt_dry_pale",
+      "title": "Bare dirt \u2014 dry pale",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "dirt_dry_pale_normal",
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 23156,
+      "sha256": "80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8",
+      "material": "dirt_dry_pale",
+      "materialId": "dirt_dry_pale",
+      "title": "Bare dirt \u2014 dry pale",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "dirt_dry_pale_orm",
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 33340,
+      "sha256": "f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e",
+      "material": "dirt_dry_pale",
+      "materialId": "dirt_dry_pale",
+      "title": "Bare dirt \u2014 dry pale",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "gravel_coarse_river_albedo",
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 79293,
+      "sha256": "bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d",
+      "material": "gravel_coarse_river",
+      "materialId": "gravel_coarse_river",
+      "title": "Gravel \u2014 river rounded",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "gravel_coarse_river_normal",
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 183115,
+      "sha256": "5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412",
+      "material": "gravel_coarse_river",
+      "materialId": "gravel_coarse_river",
+      "title": "Gravel \u2014 river rounded",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "gravel_coarse_river_orm",
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 91241,
+      "sha256": "8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425",
+      "material": "gravel_coarse_river",
+      "materialId": "gravel_coarse_river",
+      "title": "Gravel \u2014 river rounded",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "gravel_fine_grey_albedo",
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 82754,
+      "sha256": "be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29",
+      "material": "gravel_fine_grey",
+      "materialId": "gravel_fine_grey",
+      "title": "Gravel \u2014 fine grey",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "gravel_fine_grey_normal",
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 151654,
+      "sha256": "d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179",
+      "material": "gravel_fine_grey",
+      "materialId": "gravel_fine_grey",
+      "title": "Gravel \u2014 fine grey",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "gravel_fine_grey_orm",
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 76218,
+      "sha256": "9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171",
+      "material": "gravel_fine_grey",
+      "materialId": "gravel_fine_grey",
+      "title": "Gravel \u2014 fine grey",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "kikuyu_clover_edge_albedo",
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 106842,
+      "sha256": "de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f",
+      "material": "kikuyu_clover_edge",
+      "materialId": "kikuyu_clover_edge",
+      "title": "Kikuyu \u2014 clover margin",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "kikuyu_clover_edge_normal",
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 153456,
+      "sha256": "de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488",
+      "material": "kikuyu_clover_edge",
+      "materialId": "kikuyu_clover_edge",
+      "title": "Kikuyu \u2014 clover margin",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "kikuyu_clover_edge_orm",
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 28047,
+      "sha256": "3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d",
+      "material": "kikuyu_clover_edge",
+      "materialId": "kikuyu_clover_edge",
+      "title": "Kikuyu \u2014 clover margin",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "kikuyu_dry_albedo",
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 102511,
+      "sha256": "2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65",
+      "material": "kikuyu_dry",
+      "materialId": "kikuyu_dry",
+      "title": "Kikuyu \u2014 dry",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "kikuyu_dry_normal",
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 141327,
+      "sha256": "ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45",
+      "material": "kikuyu_dry",
+      "materialId": "kikuyu_dry",
+      "title": "Kikuyu \u2014 dry",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "kikuyu_dry_orm",
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 30479,
+      "sha256": "e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422",
+      "material": "kikuyu_dry",
+      "materialId": "kikuyu_dry",
+      "title": "Kikuyu \u2014 dry",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "kikuyu_lush_albedo",
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 102705,
+      "sha256": "e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c",
+      "material": "kikuyu_lush",
+      "materialId": "kikuyu_lush",
+      "title": "Kikuyu \u2014 lush",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "kikuyu_lush_normal",
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 140896,
+      "sha256": "dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422",
+      "material": "kikuyu_lush",
+      "materialId": "kikuyu_lush",
+      "title": "Kikuyu \u2014 lush",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "kikuyu_lush_orm",
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 27416,
+      "sha256": "7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983",
+      "material": "kikuyu_lush",
+      "materialId": "kikuyu_lush",
+      "title": "Kikuyu \u2014 lush",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "kikuyu_trampled_albedo",
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 72841,
+      "sha256": "489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5",
+      "material": "kikuyu_trampled",
+      "materialId": "kikuyu_trampled",
+      "title": "Kikuyu \u2014 trampled",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "kikuyu_trampled_normal",
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 67641,
+      "sha256": "ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369",
+      "material": "kikuyu_trampled",
+      "materialId": "kikuyu_trampled",
+      "title": "Kikuyu \u2014 trampled",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "kikuyu_trampled_orm",
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 28232,
+      "sha256": "b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f",
+      "material": "kikuyu_trampled",
+      "materialId": "kikuyu_trampled",
+      "title": "Kikuyu \u2014 trampled",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "leaf_litter_eucalyptus_albedo",
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 40748,
+      "sha256": "8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42",
+      "material": "leaf_litter_eucalyptus",
+      "materialId": "leaf_litter_eucalyptus",
+      "title": "Leaf litter \u2014 eucalyptus",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "leaf_litter_eucalyptus_normal",
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 37945,
+      "sha256": "d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2",
+      "material": "leaf_litter_eucalyptus",
+      "materialId": "leaf_litter_eucalyptus",
+      "title": "Leaf litter \u2014 eucalyptus",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "leaf_litter_eucalyptus_orm",
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 27770,
+      "sha256": "d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832",
+      "material": "leaf_litter_eucalyptus",
+      "materialId": "leaf_litter_eucalyptus",
+      "title": "Leaf litter \u2014 eucalyptus",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "leaf_litter_mixed_albedo",
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 44026,
+      "sha256": "595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e",
+      "material": "leaf_litter_mixed",
+      "materialId": "leaf_litter_mixed",
+      "title": "Leaf litter \u2014 mixed broadleaf",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "leaf_litter_mixed_normal",
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 46242,
+      "sha256": "ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58",
+      "material": "leaf_litter_mixed",
+      "materialId": "leaf_litter_mixed",
+      "title": "Leaf litter \u2014 mixed broadleaf",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "leaf_litter_mixed_orm",
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.0,
+        2.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 28797,
+      "sha256": "53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9",
+      "material": "leaf_litter_mixed",
+      "materialId": "leaf_litter_mixed",
+      "title": "Leaf litter \u2014 mixed broadleaf",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "mud_puddled_albedo",
+      "path": "dev/groundsky/masters/ground/mud_puddled_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 26448,
+      "sha256": "1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977",
+      "material": "mud_puddled",
+      "materialId": "mud_puddled",
+      "title": "Mud \u2014 puddled depressions",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "mud_puddled_normal",
+      "path": "dev/groundsky/masters/ground/mud_puddled_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 15480,
+      "sha256": "6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05",
+      "material": "mud_puddled",
+      "materialId": "mud_puddled",
+      "title": "Mud \u2014 puddled depressions",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "mud_puddled_orm",
+      "path": "dev/groundsky/masters/ground/mud_puddled_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 12354,
+      "sha256": "8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16",
+      "material": "mud_puddled",
+      "materialId": "mud_puddled",
+      "title": "Mud \u2014 puddled depressions",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "mud_rutted_albedo",
+      "path": "dev/groundsky/masters/ground/mud_rutted_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 26232,
+      "sha256": "432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5",
+      "material": "mud_rutted",
+      "materialId": "mud_rutted",
+      "title": "Mud \u2014 shallow wheel ruts",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "mud_rutted_normal",
+      "path": "dev/groundsky/masters/ground/mud_rutted_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 22231,
+      "sha256": "f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4",
+      "material": "mud_rutted",
+      "materialId": "mud_rutted",
+      "title": "Mud \u2014 shallow wheel ruts",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "mud_rutted_orm",
+      "path": "dev/groundsky/masters/ground/mud_rutted_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 20171,
+      "sha256": "238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2",
+      "material": "mud_rutted",
+      "materialId": "mud_rutted",
+      "title": "Mud \u2014 shallow wheel ruts",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "packed_earth_footworn_albedo",
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 30937,
+      "sha256": "6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea",
+      "material": "packed_earth_footworn",
+      "materialId": "packed_earth_footworn",
+      "title": "Packed earth \u2014 footworn",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "packed_earth_footworn_normal",
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 24991,
+      "sha256": "696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78",
+      "material": "packed_earth_footworn",
+      "materialId": "packed_earth_footworn",
+      "title": "Packed earth \u2014 footworn",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "packed_earth_footworn_orm",
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 30031,
+      "sha256": "4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30",
+      "material": "packed_earth_footworn",
+      "materialId": "packed_earth_footworn",
+      "title": "Packed earth \u2014 footworn",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "packed_earth_tyres_albedo",
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 36151,
+      "sha256": "2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b",
+      "material": "packed_earth_tyres",
+      "materialId": "packed_earth_tyres",
+      "title": "Packed earth \u2014 tyre tracks",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "packed_earth_tyres_normal",
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 33653,
+      "sha256": "a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2",
+      "material": "packed_earth_tyres",
+      "materialId": "packed_earth_tyres",
+      "title": "Packed earth \u2014 tyre tracks",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "packed_earth_tyres_orm",
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 35554,
+      "sha256": "4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e",
+      "material": "packed_earth_tyres",
+      "materialId": "packed_earth_tyres",
+      "title": "Packed earth \u2014 tyre tracks",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "red_clay_dry_albedo",
+      "path": "dev/groundsky/masters/ground/red_clay_dry_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 34490,
+      "sha256": "8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c",
+      "material": "red_clay_dry",
+      "materialId": "red_clay_dry",
+      "title": "Red clay \u2014 dry fissures",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "red_clay_dry_normal",
+      "path": "dev/groundsky/masters/ground/red_clay_dry_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 41504,
+      "sha256": "4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93",
+      "material": "red_clay_dry",
+      "materialId": "red_clay_dry",
+      "title": "Red clay \u2014 dry fissures",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "red_clay_dry_orm",
+      "path": "dev/groundsky/masters/ground/red_clay_dry_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 40277,
+      "sha256": "1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52",
+      "material": "red_clay_dry",
+      "materialId": "red_clay_dry",
+      "title": "Red clay \u2014 dry fissures",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "red_clay_wet_albedo",
+      "path": "dev/groundsky/masters/ground/red_clay_wet_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 30914,
+      "sha256": "d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74",
+      "material": "red_clay_wet",
+      "materialId": "red_clay_wet",
+      "title": "Red clay \u2014 rain darkened",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "red_clay_wet_normal",
+      "path": "dev/groundsky/masters/ground/red_clay_wet_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 25345,
+      "sha256": "2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5",
+      "material": "red_clay_wet",
+      "materialId": "red_clay_wet",
+      "title": "Red clay \u2014 rain darkened",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "red_clay_wet_orm",
+      "path": "dev/groundsky/masters/ground/red_clay_wet_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        2.5,
+        2.5
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 31830,
+      "sha256": "2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486",
+      "material": "red_clay_wet",
+      "materialId": "red_clay_wet",
+      "title": "Red clay \u2014 rain darkened",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "sand_to_kikuyu_albedo",
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 89641,
+      "sha256": "1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946",
+      "material": "sand_to_kikuyu",
+      "materialId": "sand_to_kikuyu",
+      "title": "Sand to kikuyu \u2014 organic margin",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "sand_to_kikuyu_normal",
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 87464,
+      "sha256": "eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c",
+      "material": "sand_to_kikuyu",
+      "materialId": "sand_to_kikuyu",
+      "title": "Sand to kikuyu \u2014 organic margin",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "sand_to_kikuyu_orm",
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        4.0,
+        4.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 27274,
+      "sha256": "a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b",
+      "material": "sand_to_kikuyu",
+      "materialId": "sand_to_kikuyu",
+      "title": "Sand to kikuyu \u2014 organic margin",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "stone_scatter_dark_albedo",
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 39160,
+      "sha256": "f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb",
+      "material": "stone_scatter_dark",
+      "materialId": "stone_scatter_dark",
+      "title": "Stone scatter \u2014 dark soil",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "stone_scatter_dark_normal",
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 57620,
+      "sha256": "d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466",
+      "material": "stone_scatter_dark",
+      "materialId": "stone_scatter_dark",
+      "title": "Stone scatter \u2014 dark soil",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "stone_scatter_dark_orm",
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 48162,
+      "sha256": "c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98",
+      "material": "stone_scatter_dark",
+      "materialId": "stone_scatter_dark",
+      "title": "Stone scatter \u2014 dark soil",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "stone_scatter_pale_albedo",
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_albedo.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "albedo",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "srgb",
+      "colourSpaceNotes": "sRGB colour, alpha linear, straight/unassociated alpha",
+      "bytes": 37402,
+      "sha256": "bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250",
+      "material": "stone_scatter_pale",
+      "materialId": "stone_scatter_pale",
+      "title": "Stone scatter \u2014 pale soil",
+      "channelPacking": "RGB=sRGB base colour, A=opaque"
+    },
+    {
+      "id": "stone_scatter_pale_normal",
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_normal.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "normal",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 54299,
+      "sha256": "714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126",
+      "material": "stone_scatter_pale",
+      "materialId": "stone_scatter_pale",
+      "title": "Stone scatter \u2014 pale soil",
+      "channelPacking": "RGB=OpenGL tangent normal, +Y; A=opaque"
+    },
+    {
+      "id": "stone_scatter_pale_orm",
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_orm.png",
+      "format": "png",
+      "kind": "ground",
+      "role": "orm",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        3.0,
+        3.0
+      ],
+      "intendedUse": "Repeat on terrain with a matching tangent normal and packed ORM; dormant review master.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 45205,
+      "sha256": "967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36",
+      "material": "stone_scatter_pale",
+      "materialId": "stone_scatter_pale",
+      "title": "Stone scatter \u2014 pale soil",
+      "channelPacking": "R=ambient occlusion, G=perceptual roughness, B=metallic (zero), A=opaque"
+    },
+    {
+      "id": "terrain_blend_masks_01",
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_01.png",
+      "format": "png",
+      "kind": "blend-mask",
+      "role": "mask",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        8.0,
+        8.0
+      ],
+      "intendedUse": "Linear scalar splat weights in RGBA; each channel is a separate full-resolution tileable mask.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 189256,
+      "sha256": "cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b",
+      "channels": [
+        "broad_islands",
+        "fine_islands",
+        "meandering_ribbons",
+        "broken_rock_margin"
+      ],
+      "alphaMode": "data",
+      "channelPacking": "RGBA = four independent scalar splat masks; alpha is data, not opacity",
+      "atlasLayout": "channel-packed; each mask uses the entire 1024 by 1024 image"
+    },
+    {
+      "id": "terrain_blend_masks_02",
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_02.png",
+      "format": "png",
+      "kind": "blend-mask",
+      "role": "mask",
+      "width": 1024,
+      "height": 1024,
+      "tiling": {
+        "x": true,
+        "y": true
+      },
+      "worldSizeM": [
+        8.0,
+        8.0
+      ],
+      "intendedUse": "Linear scalar splat weights in RGBA; each channel is a separate full-resolution tileable mask.",
+      "colourSpace": "linear",
+      "colourSpaceNotes": "Linear data; never apply sRGB decoding",
+      "bytes": 294731,
+      "sha256": "a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb",
+      "channels": [
+        "damp_hollows",
+        "grass_tuft_islands",
+        "branching_paths",
+        "feathered_clay_patches"
+      ],
+      "alphaMode": "data",
+      "channelPacking": "RGBA = four independent scalar splat masks; alpha is data, not opacity",
+      "atlasLayout": "channel-packed; each mask uses the entire 1024 by 1024 image"
+    }
+  ]
+}

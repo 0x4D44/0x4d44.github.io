@@ -1,0 +1,60 @@
+[
+  {
+    "label": "independent complete validator",
+    "log": "post-rebase-validator.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tools/groundsky_validate.mjs",
+      "--complete",
+      "--json"
+    ],
+    "utc": "2026-11-03T05:36:40.859767+00:00",
+    "exitCode": 0
+  },
+  {
+    "label": "34 Node tests",
+    "log": "post-rebase-tests.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "la-ladera/tests/groundsky-assets.test.mjs"
+    ],
+    "utc": "2026-11-03T05:36:47.664470+00:00",
+    "exitCode": 0
+  },
+  {
+    "label": "34 per-test mutations",
+    "log": "post-rebase-mutations.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tests/groundsky-mutations.mjs",
+      "--out",
+      "la-ladera/dev/groundsky/verification/post-rebase"
+    ],
+    "utc": "2026-11-03T05:37:02.743498+00:00",
+    "exitCode": 0
+  },
+  {
+    "label": "unchanged payload gate",
+    "log": "post-rebase-payload.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tests/payload.mjs"
+    ],
+    "utc": "2026-11-03T05:37:28.637119+00:00",
+    "exitCode": 0
+  },
+  {
+    "label": "additive diff whitespace",
+    "log": "post-rebase-diff-check.log",
+    "command": [
+      "git",
+      "diff",
+      "origin/main",
+      "--check"
+    ],
+    "utc": "2026-11-03T05:37:28.709365+00:00",
+    "exitCode": 0
+  }
+]

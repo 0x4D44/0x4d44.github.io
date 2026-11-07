@@ -1,0 +1,65 @@
+Groundsky independent delivery fidelity audit
+2026-11-03T05:04:16.725634+00:00
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python la-ladera/tools/groundsky_fidelity.py --ktx /workspace/scratch/32e9192f94b1/ktx-runtime/KTX-Software-4.4.2-Linux-x86_64/bin/ktx --astcenc /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 --decoded /workspace/scratch/32e9192f94b1/decoded-delivery --only kikuyu_lush_albedo
+Fixed quality gates: {"maskRgbaRmseMax": 12.0, "metallicMax": 8, "normalMeanDegreesMax": 8.0, "opacityRmseMax": 8.0, "opaqueAlphaMin": 247, "rgbRmseMax": 12.0, "seamMaxMax": 80, "seamMeanMax": 8.0, "transparentGutterMax": 8}
+
+$ /workspace/scratch/32e9192f94b1/ktx-runtime/KTX-Software-4.4.2-Linux-x86_64/bin/ktx validate --warnings-as-errors /workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2
+Validation failed
+
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 10 byteOffset is 472 but based on the vkFormat, DFD and image sizes the expected value is 468.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 9 byteOffset is 496 but based on the vkFormat, DFD and image sizes the expected value is 493.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 8 byteOffset is 528 but based on the vkFormat, DFD and image sizes the expected value is 521.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 7 byteOffset is 560 but based on the vkFormat, DFD and image sizes the expected value is 553.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 6 byteOffset is 640 but based on the vkFormat, DFD and image sizes the expected value is 635.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 5 byteOffset is 800 but based on the vkFormat, DFD and image sizes the expected value is 795.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 4 byteOffset is 1392 but based on the vkFormat, DFD and image sizes the expected value is 1387.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 3 byteOffset is 3232 but based on the vkFormat, DFD and image sizes the expected value is 3230.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 2 byteOffset is 10176 but based on the vkFormat, DFD and image sizes the expected value is 10175.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 1 byteOffset is 34288 but based on the vkFormat, DFD and image sizes the expected value is 34282.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 0 byteOffset is 107792 but based on the vkFormat, DFD and image sizes the expected value is 107789.
+error-5004: Non-conformant texture file accepted by libktx.
+    KTX 2.0 file does not conform to the specification but it is currently accepted by libktx.
+[exit 3; 0.007 s]
+
+FAIL kikuyu_lush_albedo: Command exited 3: /workspace/scratch/32e9192f94b1/ktx-runtime/KTX-Software-4.4.2-Linux-x86_64/bin/ktx validate --warnings-as-errors /workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2
+Validation failed
+
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 10 byteOffset is 472 but based on the vkFormat, DFD and image sizes the expected value is 468.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 9 byteOffset is 496 but based on the vkFormat, DFD and image sizes the expected value is 493.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 8 byteOffset is 528 but based on the vkFormat, DFD and image sizes the expected value is 521.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 7 byteOffset is 560 but based on the vkFormat, DFD and image sizes the expected value is 553.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 6 byteOffset is 640 but based on the vkFormat, DFD and image sizes the expected value is 635.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 5 byteOffset is 800 but based on the vkFormat, DFD and image sizes the expected value is 795.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 4 byteOffset is 1392 but based on the vkFormat, DFD and image sizes the expected value is 1387.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 3 byteOffset is 3232 but based on the vkFormat, DFD and image sizes the expected value is 3230.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 2 byteOffset is 10176 but based on the vkFormat, DFD and image sizes the expected value is 10175.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 1 byteOffset is 34288 but based on the vkFormat, DFD and image sizes the expected value is 34282.
+error-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.
+    Level 0 byteOffset is 107792 but based on the vkFormat, DFD and image sizes the expected value is 107789.
+error-5004: Non-conformant texture file accepted by libktx.
+    KTX 2.0 file does not conform to the specification but it is currently accepted by libktx.
+
+
+FAIL 1/1 kikuyu_lush_albedo: 0 mips, RGB RMSE nan
+FIDELITY FAILED: 1 files, 0 mip levels, 1 failed

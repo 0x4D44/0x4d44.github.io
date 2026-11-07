@@ -1,0 +1,73 @@
+UTC 2026-11-03T05:36:04.305824+00:00
+$ git fetch origin main
+
+From https://github.com/0x4D44/0x4d44.github.io
+ * branch            main       -> FETCH_HEAD
+   6740a62..958d0ec  main       -> origin/main
+[exit 0]
+$ git rebase origin/main
+
+Rebasing (1/1)
+warning: The following paths were already present and thus not updated despite sparse patterns:
+	la-ladera/assets/models/manifest.groundsky.json
+	la-ladera/assets/textures/groundsky/city/city_far_day.ktx2
+	la-ladera/assets/textures/groundsky/city/city_far_dusk.ktx2
+	la-ladera/assets/textures/groundsky/city/city_far_night.ktx2
+	la-ladera/assets/textures/groundsky/city/city_middle_day.ktx2
+	la-ladera/assets/textures/groundsky/city/city_middle_dusk.ktx2
+	la-ladera/assets/textures/groundsky/city/city_middle_night.ktx2
+	la-ladera/assets/textures/groundsky/city/city_near_day.ktx2
+	la-ladera/assets/textures/groundsky/city/city_near_dusk.ktx2
+	la-ladera/assets/textures/groundsky/city/city_near_night.ktx2
+	la-ladera/assets/textures/groundsky/decals/dirt_clay_margin_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/dirt_footworn_spots_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/dirt_patch_soft_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/dirt_scuffed_path_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/grass_patch_dry_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/grass_patch_lush_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/grass_patch_moss_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/grass_patch_sparse_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/gravel_grass_intrusion_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/gravel_patch_coarse_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/gravel_patch_fine_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/gravel_spill_elongated_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/mud_patch_dark_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/mud_patch_puddle_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/mud_patch_rut_albedo.ktx2
+	la-ladera/assets/textures/groundsky/decals/mud_patch_splash_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_gravel_edge_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_gravel_edge_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_gravel_edge_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_repaired_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_repaired_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/asphalt_repaired_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/cobble_edge_moss_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/cobble_edge_moss_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/cobble_edge_moss_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_dark_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_dark_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_dark_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_light_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_light_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/cracked_concrete_light_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_brown_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_brown_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_brown_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_dry_pale_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_dry_pale_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/dirt_dry_pale_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_coarse_river_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_coarse_river_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_coarse_river_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_fine_grey_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_fine_grey_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/gravel_fine_grey_orm.ktx2
+	la-ladera/assets/textures/groundsky/ground/kikuyu_clover_edge_albedo.ktx2
+	la-ladera/assets/textures/groundsky/ground/kikuyu_clover_edge_normal.ktx2
+	la-ladera/assets/textures/groundsky/ground/kikuyu_clover_edge_orm.ktx2
+	la-ladera/asset
+After fixing the above paths, you may want to run `git sparse-checkout reapply`.
+Successfully rebased and updated refs/heads/codex/la-ladera-ground-sky.
+[exit 0]
+latest origin/main: 958d0ec69716d0588a7bb8d4534c336edd550f7e
+rebased local head: 98e91ddf04fcf04ca9d8fd5875751ba5d9497832

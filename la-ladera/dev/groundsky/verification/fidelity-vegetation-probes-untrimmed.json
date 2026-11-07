@@ -1,0 +1,481 @@
+[
+  {
+    "id": "vegetation_eucalyptus_stands_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 11.471217370586434,
+    "opacityRmse": 7.593483751440997,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 13
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter eucalyptus_stands_03 has alpha 13 >8"
+    ],
+    "zlibBytes": 18473
+  },
+  {
+    "id": "vegetation_eucalyptus_stands_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 4.480740778439259,
+    "opacityRmse": 2.587022997246304,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 34002
+  },
+  {
+    "id": "vegetation_eucalyptus_stands_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 4.081955132407075,
+    "opacityRmse": 3.034012312580591,
+    "gutters": [
+      {
+        "id": "eucalyptus_stands_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "eucalyptus_stands_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 33915
+  },
+  {
+    "id": "vegetation_kikuyu_slopes_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 11.556718306937501,
+    "opacityRmse": 5.227648429788364,
+    "gutters": [
+      {
+        "id": "kikuyu_slopes_01",
+        "maxAlpha": 28
+      },
+      {
+        "id": "kikuyu_slopes_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_03",
+        "maxAlpha": 24
+      },
+      {
+        "id": "kikuyu_slopes_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter kikuyu_slopes_01 has alpha 28 >8",
+      "Decoded vegetation gutter kikuyu_slopes_03 has alpha 24 >8"
+    ],
+    "zlibBytes": 7356
+  },
+  {
+    "id": "vegetation_kikuyu_slopes_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 4.149438250955864,
+    "opacityRmse": 4.224217016136134,
+    "gutters": [
+      {
+        "id": "kikuyu_slopes_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 13948
+  },
+  {
+    "id": "vegetation_kikuyu_slopes_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 3.8243426520055155,
+    "opacityRmse": 4.3297587592250375,
+    "gutters": [
+      {
+        "id": "kikuyu_slopes_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "kikuyu_slopes_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 13878
+  },
+  {
+    "id": "vegetation_banana_groves_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 9.368196452910302,
+    "opacityRmse": 6.680581765796463,
+    "gutters": [
+      {
+        "id": "banana_groves_01",
+        "maxAlpha": 23
+      },
+      {
+        "id": "banana_groves_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter banana_groves_01 has alpha 23 >8"
+    ],
+    "zlibBytes": 15170
+  },
+  {
+    "id": "vegetation_banana_groves_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 4.076189116736211,
+    "opacityRmse": 2.0265457846747044,
+    "gutters": [
+      {
+        "id": "banana_groves_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 25164
+  },
+  {
+    "id": "vegetation_banana_groves_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 3.8279529365434497,
+    "opacityRmse": 2.3386043775231227,
+    "gutters": [
+      {
+        "id": "banana_groves_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "banana_groves_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 25012
+  },
+  {
+    "id": "vegetation_cypress_hedges_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 4.796116044671381,
+    "opacityRmse": 3.9220306244023644,
+    "gutters": [
+      {
+        "id": "cypress_hedges_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 15502
+  },
+  {
+    "id": "vegetation_cypress_hedges_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 2.520651014200114,
+    "opacityRmse": 1.0545355793362012,
+    "gutters": [
+      {
+        "id": "cypress_hedges_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 25037
+  },
+  {
+    "id": "vegetation_cypress_hedges_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 2.2815827472814556,
+    "opacityRmse": 1.5247840603390574,
+    "gutters": [
+      {
+        "id": "cypress_hedges_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cypress_hedges_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 25073
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 7.818985790247165,
+    "opacityRmse": 5.939468218186183,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 7
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 25
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter cloud_forest_edge_02 has alpha 25 >8"
+    ],
+    "zlibBytes": 18907
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 3.7885320307196273,
+    "opacityRmse": 1.7405927398267236,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 36792
+  },
+  {
+    "id": "vegetation_cloud_forest_edge_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 3.5103541149181674,
+    "opacityRmse": 2.2687142193287313,
+    "gutters": [
+      {
+        "id": "cloud_forest_edge_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "cloud_forest_edge_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 36631
+  },
+  {
+    "id": "vegetation_rooftop_container_gardens_lod2",
+    "settings": "untrim6-alpha4",
+    "rgbRmse": 11.246150241514592,
+    "opacityRmse": 6.281558508437366,
+    "gutters": [
+      {
+        "id": "rooftop_container_gardens_01",
+        "maxAlpha": 23
+      },
+      {
+        "id": "rooftop_container_gardens_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [
+      "Decoded vegetation gutter rooftop_container_gardens_01 has alpha 23 >8"
+    ],
+    "zlibBytes": 10853
+  },
+  {
+    "id": "vegetation_rooftop_container_gardens_lod2",
+    "settings": "untrim4-alpha4",
+    "rgbRmse": 6.213050772158332,
+    "opacityRmse": 2.0490394388762536,
+    "gutters": [
+      {
+        "id": "rooftop_container_gardens_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 20062
+  },
+  {
+    "id": "vegetation_rooftop_container_gardens_lod2",
+    "settings": "untrim4-alpha2",
+    "rgbRmse": 5.639567531394214,
+    "opacityRmse": 2.6217573209958456,
+    "gutters": [
+      {
+        "id": "rooftop_container_gardens_01",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_02",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_03",
+        "maxAlpha": 0
+      },
+      {
+        "id": "rooftop_container_gardens_04",
+        "maxAlpha": 0
+      }
+    ],
+    "errors": [],
+    "zlibBytes": 20148
+  }
+]

@@ -1,0 +1,132 @@
+{
+  "files": [
+    {
+      "cameraPositionM": [
+        0,
+        -7,
+        1.6
+      ],
+      "cameraHeightM": 1.6,
+      "referenceHeightM": 1.8,
+      "purpose": "Soft ground patch edges and PBR at walking height",
+      "path": "dev/groundsky/eye-height-ground.png",
+      "kind": "eye-height",
+      "renderer": "Blender 5.2.3 LTS; Cycles CPU; two threads; 32 samples",
+      "scene": "Illustrative asset review; not the La Ladera runtime",
+      "pixelSource": "Arm astcenc decoding of delivered ASTC level zero",
+      "sceneSourceSha256": "4320a6d26513a0e21d1eb36c8bb5634a1efe124a0c581e3b52138adcfa13e5b9",
+      "sources": [
+        {
+          "path": "assets/textures/groundsky/city/city_far_day.ktx2",
+          "sha256": "2ece4217d8d6a39ae544ae4cec7330e65a6ca2d5961f07f3126eef73ff541062"
+        },
+        {
+          "path": "assets/textures/groundsky/city/city_middle_day.ktx2",
+          "sha256": "e44dce2a8d9d0b0b8522283fff2392317f5a95268a8217da39689943dc747a38"
+        },
+        {
+          "path": "assets/textures/groundsky/city/city_near_day.ktx2",
+          "sha256": "bd98677f3e53f85a49ad43b755237339a9be5ee6a93ab2aa584fdd79a4c80b5c"
+        },
+        {
+          "path": "assets/textures/groundsky/decals/dirt_patch_soft_albedo.ktx2",
+          "sha256": "6f2933023cfc1d6cc276f18705f150e843d618777e3d866594b5e2f14212fbae"
+        },
+        {
+          "path": "assets/textures/groundsky/decals/gravel_grass_intrusion_albedo.ktx2",
+          "sha256": "18074f3a3fd50ab9e56e2fb790ae02084625350873b64760e44a2b1e9e3f2c56"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_albedo.ktx2",
+          "sha256": "68e64f7720f492d8020fb41181ad9b4a86a44a555ef8d137f1afb471c5148ad7"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_normal.ktx2",
+          "sha256": "487060df68e3935f17272f048b8358557fd1683a9dbc2aecab731d4824d07b7c"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_orm.ktx2",
+          "sha256": "35b604290da3502b8bc7cb1c3e2606219ef9deca17d69d1a4a91c15448be0248"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2",
+          "sha256": "19448ab3859671dccb9fcb8acdc3fa29ece2bede32a28f8e986257a7f4a60eb8"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/kikuyu_lush_normal.ktx2",
+          "sha256": "398771c16f2411c890b3f17432fa196273ce84a2748b0d1ab64d722dc200b8a7"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/kikuyu_lush_orm.ktx2",
+          "sha256": "4941f398458e1eaf3cdc30fea5e6b16b8c455dcd2f6f57677a1adf2fe5873d16"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_banana_groves_lod0.ktx2",
+          "sha256": "633df3d62b5178565baee7995b36639032d1dda71555bc6da7f963b51e18e418"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod0.ktx2",
+          "sha256": "5e38563acda0a9cea327d6b6d0a06de3fababb9952f7b78756b2b81a0ddc9d8f"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod0.ktx2",
+          "sha256": "e3156f1b305d29742a2e8b1e145a41266d7751c8b23f542e5c40b2fb4c063e61"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod0.ktx2",
+          "sha256": "799b965b0a120e90e8f5cb30d53d1798fdd3e441ed4ec1276f06475386fadb5c"
+        }
+      ]
+    },
+    {
+      "cameraPositionM": [
+        0,
+        -5,
+        1.6
+      ],
+      "cameraHeightM": 1.6,
+      "referenceHeightM": 1.8,
+      "purpose": "Layered city and valley silhouettes beyond a mirador",
+      "path": "dev/groundsky/eye-height-mirador.png",
+      "kind": "eye-height",
+      "renderer": "Blender 5.2.3 LTS; Cycles CPU; two threads; 32 samples",
+      "scene": "Illustrative asset review; not the La Ladera runtime",
+      "pixelSource": "Arm astcenc decoding of delivered ASTC level zero",
+      "sceneSourceSha256": "4320a6d26513a0e21d1eb36c8bb5634a1efe124a0c581e3b52138adcfa13e5b9",
+      "sources": [
+        {
+          "path": "assets/textures/groundsky/city/city_far_dusk.ktx2",
+          "sha256": "09ccfb534d9f3c04da80003c8dff921473a4b98c8a82542b37b088022f78e661"
+        },
+        {
+          "path": "assets/textures/groundsky/city/city_middle_dusk.ktx2",
+          "sha256": "ee7acbaac3a040319a0e7f2e3c0783f17c0aafe7656034dda06a951978a215e3"
+        },
+        {
+          "path": "assets/textures/groundsky/city/city_near_dusk.ktx2",
+          "sha256": "19e54b5485942a0875d73108c9fadfdc6c55763d25c2fd6ce5dc7d21b2ddf5d8"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_albedo.ktx2",
+          "sha256": "68e64f7720f492d8020fb41181ad9b4a86a44a555ef8d137f1afb471c5148ad7"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_normal.ktx2",
+          "sha256": "487060df68e3935f17272f048b8358557fd1683a9dbc2aecab731d4824d07b7c"
+        },
+        {
+          "path": "assets/textures/groundsky/ground/cracked_concrete_dark_orm.ktx2",
+          "sha256": "35b604290da3502b8bc7cb1c3e2606219ef9deca17d69d1a4a91c15448be0248"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod0.ktx2",
+          "sha256": "799b965b0a120e90e8f5cb30d53d1798fdd3e441ed4ec1276f06475386fadb5c"
+        },
+        {
+          "path": "assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod0.ktx2",
+          "sha256": "6c75926440cf0a8c56dc53217517de951dc003b63b707b93e7f5281cb4a696a8"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+Sky and vegetation component build log
+2026-11-03 UTC
+
+$ read dev/beach-textures/README.md, tests/beach-textures.test.mjs, tests/beach-textures-mutations.mjs, tools/blender/SUBSTATION2.md, assets/models/manifest.beach_props.json
+PASS: read existing library, independent PNG tests and per-test mutation conventions.
+
+$ mkdir -p dev/groundsky/masters/{city,haze,vegetation} dev/groundsky/verification
+PASS
+
+$ nice -n 19 python la-ladera/tools/groundsky_sky.py
+Initial build: 32 PNGs, 1,120,962 bytes. Exit 0.
+
+$ Python/Pillow composite of three depth layers and six LOD0 atlases; inspect with view_image
+Visual review: valley-city content present; revise overly parallel ridge bands and angular banana leaves.
+
+$ nice -n 19 python la-ladera/tools/groundsky_sky.py
+Second build: 32 PNGs, 1,285,328 bytes. Exit 0.
+
+$ Python/Pillow/NumPy alpha and gutter assertions
+FAIL: vegetation_kikuyu_slopes_lod1 cell02 internal gutter received Lanczos lobe. Corrected all inner cell gutters after downsampling.
+
+$ nice -n 19 python la-ladera/tools/groundsky_sky.py
+Final build: exit 0. Fresh full output: sky-generation.log. Shorter banana pseudostems and drooping outer leaves also refined.
+
+$ Python/Pillow/NumPy assert dimensions, alpha-sharing, transparent atlas-cell gutters, monotone haze ramps, file bytes and SHA-256
+PASS: 32 files; full output sky-qa.log. These component checks supplement the independent Node validator.
+
+$ Python/Pillow recompose final three-time panorama and six vegetation atlas previews; inspect with view_image
+PASS: irregular hillside settlement, towers, church spire, stadium, masts and distinct botanical silhouettes visible.
+
+$ Update vegetation gutter metadata for ASTC4x4 delivery
+Promised gutterPx16/8/4; authoredClearancePx18/9/4 explicitly retained. All32sourcePNG SHA-256 values unchanged. No source pixels trimmed.

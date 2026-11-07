@@ -1,0 +1,3 @@
+UTC 2026-11-03T05:28:43Z
+$ la-ladera/tools/groundsky_build.py --manifest-only --log la-ladera/dev/groundsky/verification/manifest-refresh.log
+[package complete]
