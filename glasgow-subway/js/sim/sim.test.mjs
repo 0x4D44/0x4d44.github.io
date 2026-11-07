@@ -484,13 +484,13 @@ const SKIN_EXPORTED = {
   'people_lod.glb': { boy_kilt: 260, girl_school_kilt: 303, man_commuter: 69, man_kilt_casual: 304, man_student: 433, man_trews: 98, teen_boy: 305, teen_hood: 825, woman_midi: 133, ya_tube_heels: 32 },
 };
 const SKIN_BUDGET = {
-  'people.glb': { boy: 552, boy_kilt: 606, boy_small: 14, girl: 178, girl_school_kilt: 789, girl_small: 216, man_beard: 10, man_commuter: 78, man_elder: 10, man_highland: 413, man_hoodie: 1957, man_kilt_casual: 598, man_longcoat: 594, man_puffer: 281, man_student: 390, man_trews: 74, staff_hivis: 14, teen_boy: 174, teen_girl: 1157, teen_hippy: 1086, teen_hood: 1247, teen_runner: 56, teen_skater: 503, teen_skirt: 204, teen_tee: 201, teen_tube: 2002, woman_bob: 10, woman_coat: 397, woman_dress: 59, woman_elder: 978, woman_midi: 96, woman_mini: 148, woman_puffer: 203, woman_sash: 102, woman_scarf: 208, woman_student: 1085, ya_bootcut: 620, ya_fedora: 981, ya_knit: 2450, ya_shorts: 375, ya_spiky: 158, ya_tee_jeans: 450, ya_tube_heels: 10, ya_winter: 978 },
-  'people_lod.glb': { boy: 75, boy_kilt: 134, boy_small: 10, girl: 124, girl_school_kilt: 113, girl_small: 10, man_beard: 10, man_commuter: 56, man_elder: 10, man_highland: 13, man_hoodie: 879, man_kilt_casual: 134, man_longcoat: 323, man_puffer: 89, man_student: 86, man_trews: 74, staff_hivis: 16, teen_boy: 127, teen_girl: 733, teen_hippy: 679, teen_hood: 541, teen_runner: 40, teen_skater: 390, teen_skirt: 115, teen_tee: 220, teen_tube: 345, woman_bob: 10, woman_coat: 19, woman_dress: 13, woman_elder: 230, woman_midi: 71, woman_mini: 89, woman_puffer: 51, woman_sash: 44, woman_scarf: 106, woman_student: 821, ya_bootcut: 303, ya_fedora: 119, ya_knit: 124, ya_shorts: 137, ya_spiky: 228, ya_tee_jeans: 291, ya_tube_heels: 10, ya_winter: 575 },
+  'people.glb': { adult_baggy_knit: 308, adult_camo_cap: 50, adult_cap_baggy: 1554, adult_cap_shorts: 574, adult_cyclist: 427, adult_harem: 14, adult_leggings_knit: 10, adult_lusekofta: 316, adult_oxford_shirt: 318, adult_runner: 33, adult_suit_bun: 231, adult_tie_suit: 492, adult_tophat: 74, adult_vneck: 29, boy: 552, boy_kilt: 606, boy_small: 14, girl: 178, girl_school_kilt: 789, girl_small: 216, man_beard: 10, man_commuter: 78, man_elder: 10, man_highland: 413, man_hoodie: 1957, man_kilt_casual: 598, man_longcoat: 594, man_puffer: 281, man_student: 390, man_trews: 74, staff_hivis: 14, teen_boy: 174, teen_girl: 1157, teen_hippy: 1086, teen_hood: 1247, teen_runner: 56, teen_skater: 503, teen_skirt: 204, teen_tee: 201, teen_tube: 2002, woman_bob: 10, woman_coat: 397, woman_dress: 59, woman_elder: 978, woman_midi: 96, woman_mini: 148, woman_puffer: 203, woman_sash: 102, woman_scarf: 208, woman_student: 1085, ya_bootcut: 620, ya_fedora: 981, ya_knit: 2450, ya_shorts: 375, ya_spiky: 158, ya_tee_jeans: 450, ya_tube_heels: 10, ya_winter: 978 },
+  'people_lod.glb': { adult_baggy_knit: 194, adult_camo_cap: 62, adult_cap_baggy: 611, adult_cap_shorts: 171, adult_cyclist: 142, adult_harem: 39, adult_leggings_knit: 10, adult_lusekofta: 408, adult_oxford_shirt: 52, adult_runner: 37, adult_suit_bun: 33, adult_tie_suit: 52, adult_tophat: 10, adult_vneck: 148, boy: 75, boy_kilt: 134, boy_small: 10, girl: 124, girl_school_kilt: 113, girl_small: 10, man_beard: 10, man_commuter: 56, man_elder: 10, man_highland: 13, man_hoodie: 879, man_kilt_casual: 134, man_longcoat: 323, man_puffer: 89, man_student: 86, man_trews: 74, staff_hivis: 16, teen_boy: 127, teen_girl: 733, teen_hippy: 679, teen_hood: 541, teen_runner: 40, teen_skater: 390, teen_skirt: 115, teen_tee: 220, teen_tube: 345, woman_bob: 10, woman_coat: 19, woman_dress: 13, woman_elder: 230, woman_midi: 71, woman_mini: 89, woman_puffer: 51, woman_sash: 44, woman_scarf: 106, woman_student: 821, ya_bootcut: 303, ya_fedora: 119, ya_knit: 124, ya_shorts: 137, ya_spiky: 228, ya_tee_jeans: 291, ya_tube_heels: 10, ya_winter: 575 },
 };
 for (const [file, ratio] of [['people.glb', 0.6], ['people_lod.glb', 0.7]]) {
   test(`people: ${file} - the skin stays under the garments, and the repaired people carry the repair mark`, () => {
     const g = readGlb(fileURLToPath(new URL('../../models/' + file, import.meta.url))), ids = personIds(g);
-    assert.equal(ids.length, 44, '44 people in ' + file);
+    assert.equal(ids.length, 58, '58 people in ' + file);
     assert.deepEqual(Object.keys(SKIN_BUDGET[file]).sort(), ids, 'a budget for every person - add one for a new person');
     const showing = {}; for (const id of ids) showing[id] = skinThrough(g, id).showing;
     for (const id of ids) assert.ok(showing[id] <= SKIN_BUDGET[file][id], `${file} ${id}: ${showing[id]} skin samples show through a garment (budget ${SKIN_BUDGET[file][id]}) - rerun tools/people_skinfit.py --write`);
@@ -511,7 +511,7 @@ const LOD_HAIR_REPAIRED = ['girl', 'girl_school_kilt', 'teen_girl', 'woman_puffe
 test('people: people_lod.glb carries the full-detail hair of the ponytail people and the eyebrows of everybody', () => {
   const full = readGlb(fileURLToPath(new URL('../../models/people.glb', import.meta.url))), lod = readGlb(fileURLToPath(new URL('../../models/people_lod.glb', import.meta.url)));
   const ids = personIds(lod);
-  assert.equal(ids.length, 44);
+  assert.equal(ids.length, 58);
   const find = (g, id, prefix) => {
     const node = g.json.nodes.find((n) => n.name === `person_${id}_mesh`);
     return { node, prim: g.json.meshes[node.mesh].primitives.find((q) => (g.json.materials[q.material].name || '').startsWith(prefix)) };
@@ -680,6 +680,22 @@ test('people: with the whole roster in this crowd, the one least used in this cr
   for (const [i, n] of [[0, 1], [1, 1], [2, 1], [3, 2]]) for (let k = 0; k < n; k++) c.people.push({ char: roster[i], counted: true });
   for (const [i, n] of [[0, 5], [1, 5], [2, 5], [3, 2]]) charsInUse().set('p' + i, n);   // p3 is rarest globally but doubled here
   for (let seed = 1; seed <= 10; seed++) { c.rng = mulberry32(seed); assert.notEqual(c._pick().id, 'p3', 'seed ' + seed); }
+});
+
+test('people: a rare person (the top hat) turns up in few crowds, but is still taken when a crowd needs everyone', () => {
+  let rare = 0, plain = 0; const N = 400;
+  for (let seed = 1; seed <= N; seed++) {
+    resetCharsInUse(); const roster = mkRoster(30); roster[5].rare = 0.12; const c = mkCrowd(roster, seed);
+    for (let i = 0; i < 15; i++) addOne(c);   // half the roster: everyone else is in half the crowds
+    const ids = new Set(c.people.map((p) => p.char.id)); rare += ids.has('p5'); plain += ids.has('p4');
+  }
+  assert.ok(plain / N > 0.35 && plain / N < 0.65, 'an ordinary person is in ' + plain + ' of ' + N);
+  assert.ok(rare / N < 0.2 && rare > 0, 'the rare person is in ' + rare + ' of ' + N);
+  resetCharsInUse(); const roster = mkRoster(30); roster[5].rare = 0.12; const c = mkCrowd(roster, 3);
+  for (let i = 0; i < 30; i++) addOne(c);
+  assert.equal(new Set(c.people.map((p) => p.char.id)).size, 30, 'a crowd of the whole roster still has everybody');
+  const meta = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/people_meta.json', import.meta.url)), 'utf8'));
+  assert.deepEqual(meta.people.filter((q) => q.rare).map((q) => q.id), ['adult_tophat'], 'the one rare person is the top hat');
 });
 
 // ---- people: T-shirt chest prints (tees.js)
