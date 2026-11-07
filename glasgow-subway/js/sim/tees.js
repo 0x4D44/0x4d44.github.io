@@ -51,16 +51,30 @@ export function printAtlas(THREE) {
   return atlas;
 }
 
-const FRAG = `
-{ if (uPrintCell >= 0.0 && vPrint.z > 0.5 && all(greaterThan(vPrint.xy, vec2(0.0))) && all(lessThan(vPrint.xy, vec2(1.0)))) {
-    float col = mod(uPrintCell, ${PRINT_COLS}.0), row = floor(uPrintCell / ${PRINT_COLS}.0), g = ${PRINT_GUTTER.toFixed(6)};
-    vec4 pc = texture2D(uPrintMap, vec2((col + g + vPrint.x * (1.0 - 2.0 * g)) / ${PRINT_COLS}.0, (row + g + (1.0 - vPrint.y) * (1.0 - 2.0 * g)) / ${PRINT_ROWS}.0));
-    diffuseColor.rgb = mix(diffuseColor.rgb, pc.rgb, pc.a);
-  } }`;
+// T-shirt colours, sRGB, as often as listed: plain basics most, a few brights. The shirt texture keeps its weave; its colour becomes this one.
+export const TEE_COLOURS = ['#f1f0eb', '#f1f0eb', '#f1f0eb', '#262626', '#262626', '#262626', '#9b9b98', '#9b9b98', '#1f2a44', '#1f2a44',
+  '#a8262c', '#2f5d3a', '#d4a12a', '#86b3d6', '#6b1f2e', '#df7230', '#1f7373', '#a99cc9', '#c9b99a', '#4a5a2e'];
+export const teeColour = (rng) => TEE_COLOURS[Math.floor(rng() * TEE_COLOURS.length)];
 
-/** Put print `cell` on every T-shirt in obj (a person's clone): each T-shirt mesh gets its own copy of its material with the print uniforms; the shared
- *  original is left alone. Returns the number of T-shirt meshes dressed. Safe to call again on the same clone (it replaces the copies). */
-export function dressTee(THREE, obj, cell) {
+const FRAG = `
+#ifdef USE_MAP
+{ if (uTeeTint.r >= 0.0) {   // recolour: the texel over the texture's mean (its top mip level) keeps the weave, the tint sets the colour
+    vec3 tm = max(textureLod(map, vec2(0.5), 16.0).rgb, vec3(0.02));
+    diffuseColor.rgb = uTeeTint * clamp(texture2D(map, vMapUv).rgb / tm, 0.0, 2.0);
+} }
+#endif
+if (uPrintCell >= 0.0) {   // sampled outside any per-pixel branch (mip selection needs the UV's screen derivatives everywhere), then masked
+  vec2 pq = clamp(vPrint.xy, 0.0, 1.0);
+  float col = mod(uPrintCell, ${PRINT_COLS}.0), row = floor(uPrintCell / ${PRINT_COLS}.0), g = ${PRINT_GUTTER.toFixed(6)};
+  vec4 pc = texture2D(uPrintMap, vec2((col + g + pq.x * (1.0 - 2.0 * g)) / ${PRINT_COLS}.0, (row + g + (1.0 - pq.y) * (1.0 - 2.0 * g)) / ${PRINT_ROWS}.0));
+  float inside = step(0.5, vPrint.z) * step(0.0, vPrint.x) * step(vPrint.x, 1.0) * step(0.0, vPrint.y) * step(vPrint.y, 1.0);
+  diffuseColor.rgb = mix(diffuseColor.rgb, pc.rgb, pc.a * inside);
+}`;
+
+/** Put print `cell` on every T-shirt in obj (a person's clone), on a shirt of `colour` (sRGB hex; null keeps the texture's own): each T-shirt mesh
+ *  gets its own copy of its material with the print uniforms; the shared original is left alone. Returns the number of T-shirt meshes dressed.
+ *  Safe to call again on the same clone (it replaces the copies). */
+export function dressTee(THREE, obj, cell, colour = null) {
   const map = printAtlas(THREE); let n = 0;
   obj.traverse((m) => {
     if (!m.isMesh || !m.material || !m.geometry) return;
@@ -75,17 +89,17 @@ export function dressTee(THREE, obj, cell) {
     if (!g.userData.chestPrint || !map) return;
     if (m.material !== base) m.material.dispose();
     const mat = base.clone(); mat.userData = Object.assign({}, base.userData, { teeBase: base });
-    const U = { uPrintMap: { value: map }, uPrintCell: { value: cell } };
+    const U = { uPrintMap: { value: map }, uPrintCell: { value: cell }, uTeeTint: { value: colour ? new THREE.Color(colour) : new THREE.Vector3(-1, -1, -1) } };
     const prev = base.onBeforeCompile, prevKey = base.customProgramCacheKey ? base.customProgramCacheKey.bind(base) : () => '';
     mat.onBeforeCompile = (sh, r) => {
       if (prev) prev.call(base, sh, r);
       Object.assign(sh.uniforms, U);
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aPrint; varying vec3 vPrint;')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPrint = aPrint;');
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uPrintMap; uniform float uPrintCell; varying vec3 vPrint;')
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uPrintMap; uniform float uPrintCell; uniform vec3 uTeeTint; varying vec3 vPrint;')
         .replace('#include <map_fragment>', '#include <map_fragment>' + FRAG);
     };
-    mat.customProgramCacheKey = () => prevKey() + '|tee2';
+    mat.customProgramCacheKey = () => prevKey() + '|tee3';
     mat.userData.tee = U; m.material = mat; n++;
   });
   return n;
