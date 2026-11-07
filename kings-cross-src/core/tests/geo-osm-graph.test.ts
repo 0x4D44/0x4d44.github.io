@@ -87,6 +87,27 @@ test('osm: platforms and buildings become rings with the closing point dropped',
   assert.equal(d.buildings[0]?.kind, 'train_station');
 });
 
+test('osm: a platform keeps a non-zero layer and a tunnel tag, and nothing else, so the page can tell tube platforms apart', () => {
+  const sq: [number, number][] = [[L, O], [L, O + 0.0002], [L + 0.0002, O + 0.0002], [L + 0.0002, O], [L, O]];
+  const plat = (id: number, tags: Record<string, string>): RawElement => way(id, [id, id + 1, id + 2, id + 3, id], sq, { railway: 'platform', ref: '1', ...tags });
+  const d = compactOsm([
+    plat(1, {}), // ground level, untagged
+    plat(2, { layer: '0' }), // explicit zero: nothing to keep
+    plat(3, { layer: '1', level: '1' }), // St Pancras upper level
+    plat(4, { layer: '-3', tunnel: 'yes', subway: 'yes' }), // deep tube platform
+    plat(5, { tunnel: 'no' }), // not a tunnel
+  ]);
+  const by = (id: number) => d.platforms.find((p) => p.id === id);
+  assert.equal('layer' in (by(1) as object), false);
+  assert.equal('tunnel' in (by(1) as object), false);
+  assert.equal('layer' in (by(2) as object), false, 'layer 0 is not stored');
+  assert.equal(by(3)?.layer, 1);
+  assert.equal(by(3)?.tunnel, undefined);
+  assert.equal(by(4)?.layer, -3);
+  assert.equal(by(4)?.tunnel, true);
+  assert.equal(by(5)?.tunnel, undefined, 'tunnel=no is not a tunnel');
+});
+
 test('osm: signals, switches and buffers carry position and tags', () => {
   const d = compactOsm(sample);
   assert.deepEqual(d.signals[0]?.kinds, ['main', 'main:form']);

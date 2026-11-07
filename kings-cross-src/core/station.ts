@@ -31,11 +31,18 @@ const dot = (a: Pt, b: Pt): number => a[0] * b[0] + a[1] * b[1];
 const sub = (a: Pt, b: Pt): Pt => [a[0] - b[0], a[1] - b[1]];
 const len = (a: Pt): number => Math.hypot(a[0], a[1]);
 
+/**
+ * A platform you could stand on at ground level or above. Underground platforms (tube, deep
+ * level; OSM layer below 0 or tagged tunnel) sit under the station and share its numbers, so
+ * they are neither drawn nor counted as King's Cross platforms.
+ */
+export const isSurfacePlatform = (p: Pick<Platform, 'layer' | 'tunnel'>): boolean => p.tunnel !== true && (p.layer ?? 0) >= 0;
+
 /** The OSM platform polygon for each platform number inside the King's Cross zone. */
 export function stationPlatforms(data: Pick<KxData, 'platforms'>): Map<string, Platform> {
   const out = new Map<string, Platform>();
   for (const p of data.platforms) {
-    if (p.ref === undefined || p.pts.length < 3) continue;
+    if (p.ref === undefined || p.pts.length < 3 || !isSurfacePlatform(p)) continue;
     if (!inZone(KINGS_CROSS, centroid(p.pts))) continue;
     out.set(p.ref, p);
   }
@@ -238,6 +245,14 @@ export function shedLayout(data: Pick<KxData, 'platforms' | 'buildings'>): ShedL
     crown: SHED_CROWN_HEIGHT,
     springing: SHED_CROWN_HEIGHT - radius,
   };
+}
+
+/** The OSM buffer stops at the south end of the shed: one per terminating track of platforms 0-8. */
+export function shedBufferStops(data: Pick<KxData, 'buffers'>, shed: Pick<ShedLayout, 'origin' | 'heading' | 'width'>): { id: number; x: number; z: number }[] {
+  return data.buffers.filter((b) => {
+    const { u, v } = worldToShed(shed, [b.x, b.z]);
+    return u >= 0 && u <= shed.width && v >= 0 && v <= 40;
+  });
 }
 
 /** Is the point inside the polygon (even-odd rule)? */
