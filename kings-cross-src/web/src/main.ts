@@ -26,6 +26,7 @@ import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
+import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addWorld, GROUND_Y } from './world.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
@@ -121,6 +122,7 @@ function start(): void {
       const group = buildTrain(kind);
       const nose = standTrain(group, layout, stop, NOSE_TO_STOP);
       scene.add(group);
+      group.userData.id = sampleBoardTrains.length + 1; // the board's id for this sample, which the tooltip looks up
       samples.push(group);
       trains.push({ kind, group, noseWorld: nose, headingRad: layout.heading, trackIndex });
       // Match across the parallel shed tracks; longitudinal platform ends are staggered.
@@ -190,10 +192,20 @@ function start(): void {
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
   let sampleTimeMs = 0, lastBoardFrame = -Infinity;
+  const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? 0;
+  // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
+  const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
+    groups: () => trains.map((t) => t.group),
+    info: (group) => {
+      const t = trains.find((x) => x.group === group);
+      return t ? trainTip({ mode: mode === 'live' ? 'live' : mode === 'replay' ? 'replay' : 'sample', nowMs: simNow(), views: kx.motionState, rows: kx.boardRows,
+        services: timetable?.services() }, group.userData.id as number | undefined, t.kind) : null;
+    } });
+  Object.assign(kx, { tooltip }); // a script can read the card's state and time tooltip.frame() in the page
   const paintBoard = (): void => {
     if (!stationBoard) return;
     kx.boardRows = boardRows(mode === 'demo' ? sampleBoardTrains : kx.motionState, boardAnchors, {
-      mode: mode === 'demo' ? 'sample' : mode, nowMs: mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? 0,
+      mode: mode === 'demo' ? 'sample' : mode, nowMs: simNow(),
       previous: kx.boardRows ?? undefined, graph, arrivals: arrivalSets,
       services: timetable?.services(),
     });
@@ -210,6 +222,7 @@ function start(): void {
     controls.update();
     world.follow(camera);
     renderer.render(scene, camera);
+    tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
 
@@ -287,6 +300,6 @@ function start(): void {
   window.addEventListener('pagehide', (event) => {
     if (event.persisted) return;
     disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
-    feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose();
+    feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
   }, { once: true });
 }

@@ -16,7 +16,8 @@ replay data. Without a relay, the page uses its offline sample trains.
 Use `?trains=live`, `?trains=replay&date=20261107&speed=8`, `?trains=demo` (labelled
 samples) or `?trains=none`; the default probes once before choosing live or samples.
 `&signals=0` hides signals and `&board=0` hides the board. Missing timetable or undecoded
-signal bytes remain explicitly unknown.
+signal bytes remain explicitly unknown. Hover a train (or tap it on a touch screen) for a
+card with everything the page knows of it; `&tooltip=0` turns the card off.
 
 ## Relay
 
