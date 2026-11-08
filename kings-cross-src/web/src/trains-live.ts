@@ -11,12 +11,18 @@ import { buildTrain } from './train.ts';
 export const COUPLING_CLEARANCE = 0.35; // Per body end, inside the layout's coupling-inclusive length.
 export const kindForDescription = (description: string): TrainKind => description[0] === '1' ? 'lner9' : 'lner5';
 const layouts = new Map<TrainKind, TrainLayout>();
-export function layoutForDescription(description: string): TrainLayout {
-  const kind = kindForDescription(description);
+function layoutForKind(kind: TrainKind): TrainLayout {
   if (!layouts.has(kind)) layouts.set(kind, trainLayout(kind));
   return layouts.get(kind)!;
 }
+export const layoutForDescription = (description: string): TrainLayout => layoutForKind(kindForDescription(description));
 export const lengthForDescription = (description: string): number => layoutForDescription(description).length;
+
+/** Motion owns the consist length. Pick the nearest supported layout, including rounded lengths. */
+export function layoutForLength(lengthM: number): TrainLayout {
+  const short = layoutForKind('lner5'), long = layoutForKind('lner9');
+  return Math.abs(lengthM - long.length) <= Math.abs(lengthM - short.length) ? long : short;
+}
 
 export interface TrailSample { point: Pt; back: Pt }
 export interface CarPose {
@@ -47,7 +53,7 @@ export function sampleOccupied(graph: Graph, train: TrainView, behindM: number):
   return null;
 }
 
-export function carPoses(graph: Graph, train: TrainView, layout = layoutForDescription(train.description)): CarPose[] {
+export function carPoses(graph: Graph, train: TrainView, layout = layoutForLength(train.lengthM)): CarPose[] {
   const poses: CarPose[] = [];
   for (const car of layout.cars) {
     // A first observation at the model boundary may not have a full train's track behind it.
@@ -67,19 +73,21 @@ export function carPoses(graph: Graph, train: TrainView, layout = layoutForDescr
 }
 
 export interface DrawnTrain {
+  readonly id: number;
   description: string;
-  kind: TrainKind;
-  group: THREE.Group;
+  readonly kind: TrainKind;
+  readonly layout: TrainLayout;
+  readonly group: THREE.Group;
   noseWorld: [number, number, number];
   headingRad: number;
 }
 
 export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
   const templates = new Map<TrainKind, THREE.Group>();
-  const drawn = new Map<string, DrawnTrain>();
-  const ownedMaterials = new Map<string, THREE.Material[]>();
-  const build = (description: string): DrawnTrain => {
-    const kind = kindForDescription(description), layout = layoutForDescription(description);
+  const drawn = new Map<number, DrawnTrain>();
+  const ownedMaterials = new Map<number, THREE.Material[]>();
+  const build = (view: TrainView): DrawnTrain => {
+    const layout = layoutForLength(view.lengthM), kind = layout.spec.kind;
     if (!templates.has(kind)) templates.set(kind, buildTrain(kind));
     const group = templates.get(kind)!.clone(true);
     const copies = new Map<THREE.Material, THREE.Material>();
@@ -88,7 +96,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
       const copy = (m: THREE.Material): THREE.Material => { if (!copies.has(m)) copies.set(m, m.clone()); return copies.get(m)!; };
       o.material = Array.isArray(o.material) ? o.material.map(copy) : copy(o.material);
     });
-    ownedMaterials.set(description, [...copies.values()]);
+    ownedMaterials.set(view.id, [...copies.values()]);
     // Car lengths include couplings. Leave a visible clearance in the body meshes, while
     // preserving bogie positions, car pitch, the front nose and the train's full length.
     for (const car of layout.cars) {
@@ -101,13 +109,13 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
         mesh.position.z = car.start * (1 - mesh.scale.z) + front;
       }
     }
-    group.userData.description = description;
+    group.userData.id = view.id;
     parent.add(group);
-    const record: DrawnTrain = { description, kind, group, noseWorld: [0, 0, 0], headingRad: 0 };
-    drawn.set(description, record);
+    const record: DrawnTrain = { id: view.id, description: view.description, kind, layout, group, noseWorld: [0, 0, 0], headingRad: 0 };
+    drawn.set(view.id, record);
     return record;
   };
-  const remove = (id: string): void => {
+  const remove = (id: number): void => {
     const t = drawn.get(id);
     if (!t) return;
     parent.remove(t.group); drawn.delete(id);
@@ -115,12 +123,13 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
     ownedMaterials.delete(id);
   };
   const update = (views: readonly TrainView[]): void => {
-    const present = new Set(views.map((t) => t.description));
+    const present = new Set(views.map((t) => t.id));
     for (const id of drawn.keys()) if (!present.has(id)) remove(id);
     for (const view of views) {
-      const t = drawn.get(view.description) ?? build(view.description);
+      const t = drawn.get(view.id) ?? build(view);
+      t.description = view.description; t.group.userData.description = view.description;
       t.noseWorld = [view.leading.point[0], 0, view.leading.point[1]]; t.headingRad = view.heading;
-      const poses = carPoses(graph, view);
+      const poses = carPoses(graph, view, t.layout);
       for (const node of t.group.children) node.visible = false;
       for (const pose of poses) {
         const node = t.group.getObjectByName(`car-${pose.car.index}`)!;
@@ -132,7 +141,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
           bogie.rotation.y = Math.atan2(sample.back[0], sample.back[1]) - pose.rotationY;
         }
       }
-      for (const material of ownedMaterials.get(view.description) ?? []) {
+      for (const material of ownedMaterials.get(view.id) ?? []) {
         const transparent = view.opacity < 1;
         if (material.transparent !== transparent) { material.transparent = transparent; material.needsUpdate = true; }
         material.opacity = view.opacity; material.depthWrite = !transparent;

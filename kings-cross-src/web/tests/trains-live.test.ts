@@ -8,14 +8,14 @@ import type { TrainView } from '../../core/motion.ts';
 import { trainLayout } from '../../core/train.ts';
 import { carPoses, COUPLING_CLEARANCE, createLiveTrains, kindForDescription, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
 
-function fixture(curved = true): { graph: Graph; train: TrainView } {
+function fixture(curved = true, kind: 'lner5' | 'lner9' = 'lner9'): { graph: Graph; train: TrainView } {
   const nodes: [number, number, number][] = [];
   for (let i = 0; i <= 60; i++) {
     const s = i * 5, a = s / 180;
     nodes.push([i + 1, curved ? 180 * (1 - Math.cos(a)) : 0, curved ? 180 * Math.sin(a) : s]);
   }
   const graph = buildGraph({ nodes, rails: [{ id: 1, nodes: nodes.map(([id]) => id), service: 'main', tunnel: false, bridge: false, layer: 0 }] });
-  const length = trainLayout('lner9').length;
+  const length = trainLayout(kind).length;
   const occupied = [];
   let left = length;
   for (const edge of graph.edges) {
@@ -24,7 +24,7 @@ function fixture(curved = true): { graph: Graph; train: TrainView } {
     if (left <= 1e-8) break;
   }
   occupied.reverse();
-  const train: TrainView = { description: '1SYN', leading: { edge: graph.edges[0]!, t: 0, point: [0, 0] }, heading: Math.PI, speed: 5, lengthM: length, occupiedLengthM: length, occupied,
+  const train: TrainView = { id: 1, description: '1SYN', leading: { edge: graph.edges[0]!, t: 0, point: [0, 0] }, heading: Math.PI, speed: 5, lengthM: length, occupiedLengthM: length, occupied,
     state: 'moving', opacity: 1, targetBerth: 'SYNTHETIC', lastBerth: 'SYNTHETIC', blocked: false, distanceM: 0, reversals: 0 };
   return { graph, train };
 }
@@ -96,7 +96,7 @@ test('straight car placement preserves the layout length and leading nose withou
   assert.equal(sampleOccupied(graph, train, -1), null);
 });
 
-test('the headcode selects nine or five cars and supplies their real coupling-inclusive lengths', () => {
+test('the headcode supplies the initial motion length before a physical train is born', () => {
   assert.equal(kindForDescription('1SYN'), 'lner9');
   assert.equal(kindForDescription('2SYN'), 'lner5');
   close(lengthForDescription('1SYN'), 233.7); close(lengthForDescription('2SYN'), 129.7);
@@ -105,12 +105,12 @@ test('the headcode selects nine or five cars and supplies their real coupling-in
 test('fading one train leaves another opaque and disappearing trains release their groups', () => {
   const { graph, train } = fixture(false);
   const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
-  layer.update([{ ...train, opacity: 0.25 }, { ...train, description: '1OTHER' }]);
+  layer.update([{ ...train, opacity: 0.25 }, { ...train, id: 2, description: '1OTHER' }]);
   const [faded, solid] = layer.trains();
   for (const [record, opacity] of [[faded!, 0.25], [solid!, 1]] as const) record.group.traverse((o) => {
     if (o instanceof THREE.Mesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) close(m.opacity, opacity);
   });
-  layer.update([{ ...train, description: '1OTHER' }]);
+  layer.update([{ ...train, id: 2, description: '1OTHER' }]);
   assert.equal(layer.trains().length, 1); assert.equal(scene.children.length, 1);
   layer.dispose(); assert.equal(scene.children.length, 0);
 });
@@ -144,4 +144,54 @@ test('mixed train lengths share one collision core and a short train swaps its a
     close(long!.lengthM, 233.7); close(short!.lengthM, 129.7);
     close(overlapM(long!.occupied, short!.occupied), 0);
   }
+});
+
+test('a renamed train keeps its group and birth layout from two to one and back regardless of its headcode', () => {
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const { graph, train } = fixture(true, kind);
+    const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+    layer.update([{ ...train, description: '2SYN' }]);
+    const born = layer.trains()[0]!, group = born.group, layout = born.layout;
+    const count = kind === 'lner5' ? 5 : 9;
+    assert.equal(born.id, train.id); assert.equal(born.kind, kind);
+    assert.equal(layout.spec.kind, kind); close(layout.length, train.lengthM);
+    for (const description of ['1SYN', '2SYN']) {
+      layer.update([{ ...train, description }]);
+      const current = layer.trains()[0]!;
+      assert.ok(current.group === group, 'a rename must retain the same group');
+      assert.ok(current.layout === layout, 'a rename must retain the birth layout'); assert.equal(current.kind, kind);
+      assert.equal(current.description, description); assert.equal(group.userData.description, description);
+      assert.equal(layer.trains().length, 1); assert.equal(scene.children.length, 1);
+      const cars = group.children.filter((node) => /^car-\d+$/.test(node.name));
+      assert.equal(cars.length, count); assert.equal(cars.filter((node) => node.visible).length, count);
+      assert.equal(carPoses(graph, { ...train, description }).length, count);
+    }
+    layer.dispose();
+  }
+});
+
+test('a fresh physical train gets a new group when its description matches a faded train in the same update', () => {
+  const { graph, train } = fixture(false);
+  const replacement = { ...fixture(false, 'lner5').train, id: 2, description: train.description };
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  layer.update([{ ...train, state: 'fading', opacity: 0.25 }]);
+  const faded = layer.trains()[0]!.group;
+  const materials = new Set<THREE.Material>(), disposed = new Set<THREE.Material>();
+  faded.traverse((node) => {
+    if (node instanceof THREE.Mesh) for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
+  });
+  for (const material of materials) material.addEventListener('dispose', () => disposed.add(material));
+  layer.update([replacement]);
+  const fresh = layer.trains()[0]!;
+  assert.ok(fresh.group !== faded, 'a fresh physical id must receive a new group');
+  assert.ok(faded.parent === null, 'the faded group must be removed from the scene');
+  assert.equal(fresh.id, replacement.id); assert.equal(fresh.kind, 'lner5'); assert.equal(fresh.layout.cars.length, 5);
+  assert.equal(layer.trains().length, 1); assert.equal(scene.children.length, 1);
+  assert.equal(disposed.size, materials.size);
+  fresh.group.traverse((node) => {
+    if (node instanceof THREE.Mesh) for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
+      close(material.opacity, 1); assert.equal(material.transparent, false); assert.equal(materials.has(material), false);
+    }
+  });
+  layer.dispose();
 });

@@ -54,6 +54,14 @@ M = [
     ('vanished groups left in scene', T, 'parent.remove(t.group);', 't.group.visible = false;'),
     ('clipped trains extrapolate unseen cars', T, 'if (car.end > train.occupiedLengthM + 1e-7) continue;', 'if (false) continue;'),
     ('straight cars shifted off track', T, 'position: [frontBogie.point[0] - dx', 'position: [1 + frontBogie.point[0] - dx'),
+    ('birth layout follows the headcode instead of physical length', T, 'const layout = layoutForLength(view.lengthM), kind = layout.spec.kind;', 'const layout = layoutForDescription(view.description), kind = layout.spec.kind;'),
+    ('car poses change layout after a rename', T, 'carPoses(graph, view, t.layout)', 'carPoses(graph, view, layoutForDescription(view.description))'),
+    ('renames rebuild their physical group', T, 'drawn.get(view.id) ?? build(view)', 'drawn.get(view.id)?.description === view.description ? drawn.get(view.id)! : build(view)'),
+    ('renamed metadata keeps the old description', T, 't.description = view.description; t.group.userData.description = view.description;', 't.description = t.description;'),
+    ('reused headcodes retain the faded group', T, 'if (!present.has(id)) remove(id);', 'if (!present.has(id) && !views.some((v) => v.description === drawn.get(id)!.description)) remove(id);'),
+    ('material lookup uses the changing headcode', T, 'ownedMaterials.get(view.id)', 'ownedMaterials.get(view.description as unknown as number)'),
+    ('physical length chooses the opposite consist', T, '? long : short', '? short : long'),
+    ('group retention uses descriptions instead of physical ids', T, 'new Set(views.map((t) => t.id))', 'new Set(views.map((t) => t.description as unknown as number))'),
     ('configured anchor file ignored', R, 'file = anchorsFile;', "file = path.join(dataDir, 'missing-anchors.json');"),
     ('missing local files claim success', R, 'return { status: 404, body:', 'return { status: 200, body:'),
     ('recording date guard disabled', R, "dates.length !== 1 || !/^\\d{8}$/.test(dates[0])", 'false'),
@@ -65,7 +73,7 @@ M = [
 
 def run(work):
     return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=15000',
-                           '--test-name-pattern=^(relay files:|relay heartbeat:|the dev relay proxy|train URL|feed parses|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose)', 'web/tests/feed.test.ts',
+                           '--test-name-pattern=^(relay files:|relay heartbeat:|the dev relay proxy|train URL|feed parses|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose|a renamed train|a fresh physical train)', 'web/tests/feed.test.ts',
                            'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs'],
                           cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=45)
 
@@ -94,13 +102,16 @@ for label, rel, old, new in M:
             survivors.append(label)
             print(f'[INVALID] {label} (timeout)', flush=True)
             continue
-        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
+        # A crashed or timed-out test file is not an assertion killing the mutation.
+        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)) & names
         seen.update(failed)
         if result.returncode and failed:
             print(f'[KILLED ] {label} <- {sorted(failed)[0]}', flush=True)
         else:
             survivors.append(label)
-            print(f'[SURVIVED] {label}', flush=True)
+            log = scratch / f'mutation-{len(M) - len(survivors)}.log'
+            log.write_text(result.stdout + result.stderr)
+            print(f'[SURVIVED] {label} (exit {result.returncode}; {log})', flush=True)
 
 unproven = names - seen
 print(f'\n{len(M) - len(survivors)}/{len(M)} mutations caught')
