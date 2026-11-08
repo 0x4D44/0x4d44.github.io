@@ -1,16 +1,19 @@
 // Analyse S-class bytes in a TD recording and write a private evidence report.
 //   node tools/sclass.ts --recording <td.ndjson> --anchors <AnchorMap.json> --out ../.scratch/sclass
-import { lstat, mkdir, open, readFile, realpath, rename, writeFile } from 'node:fs/promises';
+//   node tools/sclass.ts --relearn --data-dir ~/kx-data
+import { copyFile, lstat, mkdir, open, readFile, readdir, realpath, rename, unlink, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import * as THREE from 'three';
 import { createSignals } from '../web/src/signals.ts';
 import { buildGraph } from '../core/graph.ts';
 import type { KxData } from '../core/osm.ts';
 import type { SignalOverlay } from '../web/src/signals.ts';
-import { analyseSclassRecordings, signalStates } from '../core/sclass.ts';
-import type { SclassAnalysis, TimedTdEvent } from '../core/sclass.ts';
+import { analyseSclassRecordings, qualifiesSignalEvidence, revalidateSignalHypotheses, signalStates } from '../core/sclass.ts';
+import type { SclassAnalysis, SignalHypothesis, TimedTdEvent } from '../core/sclass.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 
 interface CliArgs {
@@ -368,7 +371,211 @@ function printSummary(analysis: SclassAnalysis, currentStates: Record<string, st
   console.log(`outputs: ${path.join(outDir, 'sclass.json')}; ${path.join(outDir, 'sclass-report.md')}`);
 }
 
+function hypothesisKey(h: SignalHypothesis): string {
+  return JSON.stringify([h.address, h.bit, h.proceedValue, h.berth, h.kind ?? 'proceed', h.to ?? null]);
+}
+
+/** Compare fixed incumbent mappings and the candidate on exactly the same held-out day. */
+export function publicationDecision(candidate: SclassAnalysis, incumbent: SclassAnalysis | null,
+  headsBefore: number, headsAfter: number) {
+  const reasons: string[] = [];
+  const after = aggregate(candidate);
+  const before = incumbent ? aggregate(incumbent) : null;
+  if (!after.bits || after.precision === null || after.precision < .8 || after.recall === null || after.recall < .8 ||
+      candidate.hypotheses.some(h => h.status === 'decoded' && (!qualifiesSignalEvidence(h.training) || !qualifiesSignalEvidence(h.heldOut)))) {
+    reasons.push('Candidate lacks qualifying held-out evidence (3 supports, precision and recall >= 0.8 per decoded bit)');
+  }
+  if (before?.precision !== null && before?.precision !== undefined && after.precision !== null && after.precision < before.precision) {
+    reasons.push('Held-out micro precision regressed on the common validation day');
+  }
+  const oldProceed = incumbent ? aggregate(incumbent, 'proceed').precision : null;
+  const newProceed = aggregate(candidate, 'proceed').precision;
+  if (oldProceed !== null && (newProceed === null || newProceed < oldProceed)) reasons.push('Proceed precision regressed on the common validation day');
+  if (headsAfter < headsBefore) reasons.push('Decoded head count regressed');
+  const retained = new Set(candidate.hypotheses.filter(h => h.status === 'decoded').map(hypothesisKey));
+  const dropped = (incumbent?.hypotheses ?? []).filter(h => h.status === 'decoded' && !retained.has(hypothesisKey(h))).map(h => {
+    const replacement = candidate.hypotheses.find(c => hypothesisKey(c) === hypothesisKey(h));
+    const good = qualifiesSignalEvidence(h.heldOut);
+    return { id: h.id, address: h.address, bit: h.bit, goodHeldOut: good, heldOut: h.heldOut,
+      reason: replacement?.reason || 'No unique qualifying training association in the expanded training span' };
+  });
+  // Stronger than merely documenting a loss: a still-supported incumbent mapping is retained.
+  if (dropped.some(h => h.goodHeldOut)) reasons.push('Previously decoded mapping still has good held-out evidence but would be dropped');
+  return { publish: reasons.length === 0, reasons, dropped, before, after, headsBefore, headsAfter };
+}
+
+/** A complete day is a closed UTC file, never the recording currently being appended. */
+export function completedRecordingNames(names: readonly string[], area: string, nowMs: number): string[] {
+  if (!/^[A-Z0-9]+$/.test(area) || !Number.isFinite(nowMs)) throw new Error('Invalid area or clock');
+  const today = new Date(nowMs).toISOString().slice(0, 10).replaceAll('-', '');
+  const prefix = `td-${area}-`;
+  return names.filter(name => {
+    if (!name.startsWith(prefix) || !name.endsWith('.ndjson')) return false;
+    const date = name.slice(prefix.length, -7);
+    if (!/^\d{8}$/.test(date) || date >= today) return false;
+    const parsed = new Date(`${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10).replaceAll('-', '') === date;
+  }).sort();
+}
+
+async function atomicJson(file: string, value: unknown): Promise<void> {
+  await checkOutputFile(path.dirname(file), path.basename(file));
+  const temp = `${file}.${process.pid}.tmp`;
+  const handle = await open(temp, 'wx', 0o600);
+  try {
+    try { await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`); await handle.sync(); } finally { await handle.close(); }
+    await rename(temp, file);
+  } finally { await unlink(temp).catch(error => { if (!isMissing(error)) throw error; }); }
+}
+
+interface RelearnOptions {
+  dataDir: string;
+  area?: string;
+  anchorsFile?: string;
+  tableFile?: string;
+  now?: () => number;
+  assets?: { overlay: SignalOverlay; track: KxData };
+}
+
+async function relearnAssets(options: RelearnOptions) {
+  return options.assets ?? Promise.all(['kx-signals.json', 'kx-track.json'].map(name =>
+    readFile(path.join(packageRoot, 'web/src/data', name), 'utf8').then(JSON.parse)))
+    .then(([overlay, track]) => ({ overlay: overlay as SignalOverlay, track: track as KxData }));
+}
+
+/** Private, lock-protected daily job. Reports and history are written even on a safe refusal. */
+export async function relearnSclass(options: RelearnOptions) {
+  const dataDir = await realpath(options.dataDir);
+  if (isWithinOrEqual(repoRoot, dataDir) && !isWithinOrEqual(path.join(repoRoot, '.scratch'), dataDir)) {
+    throw new Error('Private S-class data must be outside the repository or under .scratch');
+  }
+  const area = options.area ?? 'Y9';
+  const nowMs = (options.now ?? Date.now)();
+  const date = new Date(nowMs).toISOString().slice(0, 10);
+  const stamp = `${new Date(nowMs).toISOString().replaceAll(':', '-')}-${randomUUID()}`;
+  const tableFile = path.resolve(options.tableFile ?? path.join(dataDir, 'sclass.json'));
+  const tableDir = await realpath(path.dirname(tableFile));
+  if (isWithinOrEqual(repoRoot, tableDir) && !isWithinOrEqual(path.join(repoRoot, '.scratch'), tableDir)) {
+    throw new Error('Private S-class table must be outside the repository or under .scratch');
+  }
+  const anchorsFile = path.resolve(options.anchorsFile ?? path.join(dataDir, 'anchors.json'));
+  const lockPath = path.join(dataDir, '.sclass-relearn.lock');
+  let lock;
+  try { lock = await open(lockPath, 'wx', 0o600); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new Error('S-class relearn already locked; inspect .sclass-relearn.lock before retrying');
+    throw error;
+  }
+  try {
+    await lock.writeFile(JSON.stringify({ pid: process.pid, startedAt: new Date(nowMs).toISOString() }));
+    const names = completedRecordingNames(await readdir(path.join(dataDir, 'recordings')), area, nowMs);
+    const validationDay = names.at(-1)?.slice(`td-${area}-`.length, -7) ?? null;
+    const report: Record<string, unknown> = { date, generatedAt: new Date(nowMs).toISOString(), validationDay, recordings: names,
+      published: false, reasons: [] as string[] };
+    let current: SclassAnalysis | null = null;
+    try {
+      current = JSON.parse(await readFile(tableFile, 'utf8')) as SclassAnalysis;
+      if (current.area !== area || !Array.isArray(current.hypotheses)) throw new Error('Current S-class table has the wrong area or schema');
+    } catch (error) { if (!isMissing(error)) throw error; }
+    let candidate: SclassAnalysis | undefined;
+    let table: unknown;
+    let decision: ReturnType<typeof publicationDecision> | undefined;
+    if (names.length < 2) {
+      report.reasons = ['Need at least two completed UTC recordings: earlier days for learning and latest completed day for validation'];
+      if (current) {
+        const [anchors, assets] = await Promise.all([readAnchors(anchorsFile), relearnAssets(options)]);
+        const available = Object.fromEntries(current.hypotheses.map(h => [h.address, 0]));
+        report.incumbent = { bits: aggregate(current).bits,
+          heads: countHeads(current, anchors, assets.overlay, assets.track, available).aspectCapable, precision: null, recall: null };
+      }
+    } else {
+      const paths = names.map(name => path.join(dataDir, 'recordings', name));
+      const [recordings, anchors, assets] = await Promise.all([
+        Promise.all(paths.map(readRecording)), readAnchors(anchorsFile),
+        relearnAssets(options),
+      ]);
+      if (anchors.area !== area) throw new Error('Anchor map has the wrong area');
+      for (const [i, rows] of recordings.entries()) {
+        const day = names[i]!.slice(`td-${area}-`.length, -7);
+        if (rows.some(row => new Date(row.t).toISOString().slice(0, 10).replaceAll('-', '') !== day)) {
+          throw new Error('Recording contains an event outside its named UTC day');
+        }
+      }
+      candidate = analyseSclassRecordings(recordings, anchors, { validation: 'last-recording' });
+      const validationRows = recordings.at(-1)!;
+      const incumbent = current ? { ...current, hypotheses: revalidateSignalHypotheses(validationRows, current.hypotheses,
+        { area, windows: candidate.windows }) } : null;
+      // Count aspect capability independently of which address last refreshed today.
+      const available = Object.fromEntries([...(current?.hypotheses ?? []), ...candidate.hypotheses].map(h => [h.address, 0]));
+      const headsBefore = current ? countHeads(current, anchors, assets.overlay, assets.track, available).aspectCapable : 0;
+      const headsAfter = countHeads(candidate, anchors, assets.overlay, assets.track, available).aspectCapable;
+      decision = publicationDecision(candidate, incumbent, headsBefore, headsAfter);
+      const fingerprints = await Promise.all([...paths, anchorsFile].map(async file => {
+        const bytes = await readFile(file);
+        return { file: path.basename(file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+      }));
+      const provenance = { generatedAt: report.generatedAt, validationDay, fingerprints, validation: 'last-recording',
+        windows: candidate.windows, baseline: tableFile, comparison: decision };
+      candidate = Object.assign(candidate, { provenance, currentStates: signalStates(candidate.trace.state, candidate.hypotheses, anchors) });
+      table = { area, generatedAt: report.generatedAt, provenance, folds: candidate.folds,
+        sources: [...names.map(name => `Recording: ${name}`), `Anchor map: ${path.basename(anchorsFile)}`],
+        summary: { all: aggregate(candidate), proceed: aggregate(candidate, 'proceed'), route: aggregate(candidate, 'route') },
+        bits: addressTable(candidate) };
+      Object.assign(report, { ...decision, candidate: { bits: decision.after.bits, heads: headsAfter, precision: decision.after.precision,
+        recall: decision.after.recall }, incumbent: current ? { bits: current.hypotheses.filter(h => h.status === 'decoded').length,
+        heads: headsBefore, precision: decision.before?.precision, recall: decision.before?.recall } : null, provenance });
+    }
+    const reportsDir = path.join(dataDir, 'sclass-reports');
+    await mkdir(reportsDir, { recursive: true });
+    const reportFile = path.join(reportsDir, `${stamp}-${process.pid}.json`);
+    // Persist the reasons (including every dropped mapping) before any publication.
+    await atomicJson(reportFile, report);
+    if (decision?.publish && candidate) {
+      const backups: string[] = [];
+      for (const file of [tableFile, path.join(dataDir, 'sclass-table.json')]) {
+        const backup = `${file}.${stamp}.bak`;
+        try { await copyFile(file, backup, constants.COPYFILE_EXCL); backups.push(backup); } catch (error) { if (!isMissing(error)) throw error; }
+      }
+      await atomicJson(path.join(dataDir, 'sclass-table.json'), table);
+      await atomicJson(tableFile, candidate);
+      Object.assign(report, { published: true, backups });
+      await atomicJson(reportFile, report);
+    }
+    const historyFile = path.join(dataDir, 'sclass-history.json');
+    let history: unknown[] = [];
+    try {
+      const previous: unknown = JSON.parse(await readFile(historyFile, 'utf8'));
+      if (!Array.isArray(previous)) throw new Error('S-class history must be an array');
+      history = previous;
+    } catch (error) { if (!isMissing(error)) throw error; }
+    const active = report.published ? candidate : current;
+    history.push({ date, validationDay, generatedAt: report.generatedAt, bits: active?.hypotheses.filter(h => h.status === 'decoded').length ?? 0,
+      heads: report.published ? decision!.headsAfter : decision?.headsBefore ?? (report.incumbent as { heads: number } | undefined)?.heads ?? null,
+      precision: report.published ? decision!.after.precision : decision?.before?.precision ?? null,
+      recall: report.published ? decision!.after.recall : decision?.before?.recall ?? null,
+      published: report.published, reasons: report.reasons, report: path.relative(dataDir, reportFile) });
+    await atomicJson(historyFile, history.slice(-730));
+    return report;
+  } finally { await lock.close(); await unlink(lockPath); }
+}
+
+async function relearnMain(argv: string[]): Promise<void> {
+  const values = new Map<string, string>();
+  for (let i = 0; i < argv.length; i += 2) {
+    const flag = argv[i]!, value = argv[i + 1];
+    if (!['--data-dir', '--area', '--anchors', '--table'].includes(flag) || !value || value.startsWith('--') || values.has(flag)) {
+      throw new Error('usage: sclass.ts --relearn [--data-dir <private-dir>] [--area Y9] [--anchors <path>] [--table <path>]');
+    }
+    values.set(flag, value);
+  }
+  const result = await relearnSclass({ dataDir: values.get('--data-dir') ?? process.env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data'),
+    area: values.get('--area') ?? process.env.KX_AREA ?? 'Y9', anchorsFile: values.get('--anchors') ?? process.env.KX_ANCHORS,
+    tableFile: values.get('--table') ?? process.env.KX_SCLASS });
+  console.log(JSON.stringify({ date: result.date, validationDay: result.validationDay, published: result.published,
+    candidate: result.candidate, incumbent: result.incumbent, reasons: result.reasons }));
+}
+
 async function main(): Promise<void> {
+  if (process.argv[2] === '--relearn') return relearnMain(process.argv.slice(3));
   const args = parseArgs(process.argv.slice(2));
   const [recordingPaths, anchorsPath] = await Promise.all([Promise.all(args.recording.map(inputPath)), inputPath(args.anchors)]);
   if (new Set(recordingPaths).size !== recordingPaths.length) throw new Error('duplicate recording input');
@@ -414,17 +621,11 @@ async function main(): Promise<void> {
   await writeFile(path.join(outDir, 'sclass-table.json'), `${JSON.stringify(table, null, 2)}\n`, { mode: 0o600 });
   await writeFile(path.join(outDir, 'sclass-report.md'), buildReport(analysis, anchors, states, generatedAt, sources, comparison, provenance), { mode: 0o600 });
   await writeFile(path.join(outDir, 'sclass-comparison.json'), `${JSON.stringify(comparison, null, 2)}\n`, { mode: 0o600 });
+  // Explicit analysis files remain useful, but publishing always uses all closed
+  // days and the common-day regression gate, including this older CLI spelling.
   if (args.dataDir) {
-    const dataDir = await inputPath(args.dataDir);
-    if (isWithinOrEqual(await realpath(repoRoot), dataDir)) throw new Error('private data directory must be outside the repository');
-    for (const [name, value] of [['sclass.json', runtime], ['sclass-table.json', table]] as const) {
-      await checkOutputFile(dataDir, name);
-      // Rename atomically so a relay fetch cannot observe a partially written table.
-      const temp = path.join(dataDir, `.${name}.${process.pid}.tmp`);
-      const handle = await open(temp, 'wx', 0o600);
-      try { await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`); } finally { await handle.close(); }
-      await rename(temp, path.join(dataDir, name));
-    }
+    const decision = await relearnSclass({ dataDir: args.dataDir, anchorsFile: anchorsPath });
+    console.log(JSON.stringify({ published: decision.published, reasons: decision.reasons }));
   }
   printSummary(analysis, states, outDir);
 }

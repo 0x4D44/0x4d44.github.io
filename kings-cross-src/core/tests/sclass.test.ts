@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyseSclass, analyseSclassRecordings, signalStates, trackSclass, updateBytes } from '../sclass.ts';
+import { analyseSclass, analyseSclassRecordings, revalidateSignalHypotheses, signalStates, trackSclass, updateBytes } from '../sclass.ts';
 import type { SignalHypothesis, TimedTdEvent } from '../sclass.ts';
 import type { AnchorMap } from '../anchors.ts';
 
@@ -135,6 +135,63 @@ function longFixture(reset = -1, address = '20'): TimedTdEvent[] {
   return [boundary(0), byte(0, 0, address), boundary(2400), ...longTimes.map(t => step(t)),
     ...longTimes.flatMap(t => [byte(t - 60, 1, address), byte(t + reset, 0, address)])];
 }
+
+test('sclass: rule revalidation scores a no-support day but preserves incumbent metadata', () => {
+  const incumbent = candidate(fixture());
+  const original = structuredClone(incumbent);
+  const noSignals = fixture().filter(row => row.e.kind !== 'sclass');
+  const [checked] = revalidateSignalHypotheses(noSignals, [incumbent], { area: 'SYN', windows });
+  assert.ok(checked);
+  assert.notEqual(checked, incumbent);
+  assert.notEqual(checked.heldOut, incumbent.heldOut);
+  assert.deepEqual(checked.heldOut, { trials: 6, support: 0, contradictions: 6, precision: null, recall: 0, unmatchedCycles: 0 });
+  assert.equal(checked.status, incumbent.status);
+  assert.equal(checked.status, 'decoded', 'the caller decides whether failed evidence changes status');
+  assert.equal(checked.id, incumbent.id);
+  assert.deepEqual(checked.training, incumbent.training);
+  assert.deepEqual(incumbent, original, 'revalidation leaves its inputs unchanged');
+});
+
+test('sclass: rule revalidation retains the fixed polarity of a complemented incumbent', () => {
+  const inverse = fixture().map(row => row.e.kind === 'sclass'
+    ? { ...row, e: { ...row.e, data: (255 - Number.parseInt(row.e.data!, 16)).toString(16).padStart(2, '0') } }
+    : row);
+  const incumbent = candidate(inverse);
+  assert.equal(incumbent.proceedValue, 0);
+  const [checked] = revalidateSignalHypotheses(inverse, [incumbent], { area: 'SYN', windows });
+  assert.ok(checked);
+  assert.equal(checked.proceedValue, 0);
+  assert.equal(checked.heldOut.support, 6);
+  assert.equal(checked.heldOut.precision, 1);
+  assert.equal(checked.heldOut.recall, 1);
+});
+
+test('sclass: rule revalidation scores proceed and route using the fixed route destination', () => {
+  const otherDestination: TimedTdEvent = { t: 2300, e: { kind: 'step', area: 'SYN', from: 'A', to: 'OTHER', descr: 'SYN1' } };
+  const rows = [...longFixture(), ...longFixture(20, '21').filter(row => row.e.kind === 'sclass'), otherDestination];
+  const learned = analyseSclass(rows, anchors, { windows: receiptWindows }).hypotheses;
+  const proceed = learned.find(h => h.address === '20' && h.kind === 'proceed');
+  const route = learned.find(h => h.address === '21' && h.kind === 'route');
+  assert.ok(proceed);
+  assert.ok(route);
+  assert.equal(route.to, 'EXIT');
+  const checked = revalidateSignalHypotheses(rows, [proceed, route], { area: 'SYN', windows: receiptWindows });
+  assert.deepEqual(checked.map(h => [h.address, h.kind, h.to, h.heldOut.trials, h.heldOut.support]), [
+    ['20', 'proceed', undefined, 7, 6], ['21', 'route', 'EXIT', 6, 6],
+  ]);
+  assert.deepEqual(checked.map(h => h.status), [proceed.status, route.status]);
+});
+
+test('sclass: rule revalidation excludes four-star, duplicate, incomplete and fold-edge steps', () => {
+  const rows = fixture();
+  rows.push(...times.map(t => step(t, 'A', '****')), step(50), step(9), step(991), step(100, 'A', ''));
+  const [checked] = revalidateSignalHypotheses(rows, [candidate(fixture())], { area: 'SYN', windows });
+  assert.ok(checked);
+  assert.equal(checked.heldOut.trials, 6);
+  assert.equal(checked.heldOut.support, 6);
+  assert.equal(checked.heldOut.precision, 1);
+  assert.equal(checked.heldOut.recall, 1);
+});
 
 test('sclass: rule proceed can clear well before passage and reset slightly before C receipt', () => {
   const result = analyseSclass(longFixture(), anchors, { windows: receiptWindows });

@@ -205,6 +205,15 @@ function inFold(t: number, fold: Fold): boolean {
   return t >= fold.start && (fold.inclusiveEnd ? t <= fold.end : t < fold.end);
 }
 
+function validatedWindows(value?: SignalWindows): SignalWindows {
+  const windows = { ...(value ?? SIGNAL_WINDOWS) };
+  if (!Number.isFinite(windows.beforeMs) || windows.beforeMs <= 0 ||
+      !Number.isFinite(windows.afterMs) || windows.afterMs <= 0 ||
+      windows.earlyMs !== undefined && (!Number.isFinite(windows.earlyMs) || windows.earlyMs < 0) ||
+      windows.routeAfterMs !== undefined && (!Number.isFinite(windows.routeAfterMs) || windows.routeAfterMs < windows.afterMs)) throw new Error('Signal windows must be positive finite durations');
+  return windows;
+}
+
 function cyclesFor(changes: readonly BitTransition[], proceed: BitValue, fold: Fold): Cycle[] {
   const cycles: Cycle[] = [];
   for (let i = 0; i + 1 < changes.length; i += 1) {
@@ -235,6 +244,23 @@ function score(passages: readonly Passage[], cycles: readonly Cycle[], windows: 
     unmatchedCycles: cycles.length - used.size };
 }
 
+function passagesInHeldOutDay(rows: readonly TimedTdEvent[], windows: SignalWindows, fold: Fold): Passage[] {
+  const passages: Passage[] = [];
+  const seenSteps = new Set<string>();
+  for (const row of rows) {
+    const e = row.e;
+    if (e.kind !== 'step') continue;
+    if (e.descr === NOT_A_TRAIN) continue;
+    if (!e.descr || !e.from || !e.to || e.from === e.to) continue;
+    const key = JSON.stringify([row.t, e.from, e.to, e.descr]);
+    if (seenSteps.has(key)) continue;
+    seenSteps.add(key);
+    if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold)) continue;
+    passages.push({ t: row.t, berth: e.from, to: e.to });
+  }
+  return passages;
+}
+
 function qualifies(evidence: SignalEvidence): boolean {
   return evidence.support >= MIN_SUPPORT && evidence.precision !== null && evidence.precision >= MIN_PRECISION &&
     // Require passage coverage too: a rare coincidence must not identify a busy signal.
@@ -260,11 +286,7 @@ export function analyseSclassRecordings(recordings: readonly (readonly TimedTdEv
   options: { windows?: SignalWindows; validation?: 'halves' | 'last-recording' } = {}): SclassAnalysis {
   const validation = options.validation ?? 'halves';
   if (validation !== 'halves' && validation !== 'last-recording') throw new Error('Unknown S-class validation scheme');
-  const windows = { ...(options.windows ?? SIGNAL_WINDOWS) };
-  if (!Number.isFinite(windows.beforeMs) || windows.beforeMs <= 0 ||
-      !Number.isFinite(windows.afterMs) || windows.afterMs <= 0 ||
-      windows.earlyMs !== undefined && (!Number.isFinite(windows.earlyMs) || windows.earlyMs < 0) ||
-      windows.routeAfterMs !== undefined && (!Number.isFinite(windows.routeAfterMs) || windows.routeAfterMs < windows.afterMs)) throw new Error('Signal windows must be positive finite durations');
+  const windows = validatedWindows(options.windows);
   const sessions = recordings.map(events => ordered(events).filter(row => row.e.area === anchors.area));
   if (validation === 'last-recording') {
     // Whole-day validation cannot leak a later training observation into an earlier test.
@@ -364,6 +386,35 @@ export function analyseSclassRecordings(recordings: readonly (readonly TimedTdEv
   });
   return { area: anchors.area, validation, startMs, endMs, splitMs, folds, windows, minimumSupport: MIN_SUPPORT, minimumPrecision: MIN_PRECISION,
     steps, trace, hypotheses, bits, berths };
+}
+
+/** Re-score fixed incumbent mappings on one day. Preserve status so bad former
+ * mappings still contribute false positives when comparing aggregate precision. */
+export function revalidateSignalHypotheses(events: readonly TimedTdEvent[], hypotheses: readonly SignalHypothesis[],
+  options: { area: string; windows?: SignalWindows }): SignalHypothesis[] {
+  const area = options.area;
+  const windows = validatedWindows(options.windows);
+  const rows = ordered(events).filter(row => row.e.area === area);
+  const start = rows[0]?.t ?? 0;
+  const end = rows.at(-1)?.t ?? start;
+  const fold: Fold = { start, end, inclusiveEnd: true };
+  const passages = passagesInHeldOutDay(rows, windows, fold);
+  const trace = trackSclass(rows, area);
+  const perBit = new Map<string, BitTransition[]>();
+  for (const change of trace.transitions) {
+    const key = `${change.address}:${change.bit}`;
+    if (!perBit.has(key)) perBit.set(key, []);
+    perBit.get(key)!.push(change);
+  }
+  return hypotheses.map(hypothesis => {
+    const kind = hypothesis.kind === 'route' ? 'route' : 'proceed';
+    const selectedPassages = passages.filter(passage => passage.berth === hypothesis.berth &&
+      (kind !== 'route' || passage.to === hypothesis.to));
+    const changes = perBit.get(`${hypothesis.address}:${hypothesis.bit}`) ?? [];
+    const cycles = cyclesFor(changes, hypothesis.proceedValue, fold);
+    const heldOut = score(selectedPassages, cycles, windows, kind);
+    return { ...hypothesis, training: { ...hypothesis.training }, heldOut };
+  });
 }
 
 /** Missing bytes, rejected hypotheses, and any contradictory lookup table stay unknown. */
