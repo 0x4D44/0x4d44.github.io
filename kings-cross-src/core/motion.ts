@@ -19,7 +19,7 @@ export interface TrackPosition { edge: Edge; t: number; point: Pt }
 export interface OccupiedTrack { edge: Edge; fromT: number; toT: number }
 export interface TrainView {
   /** Physical identity survives a TD description replacement. */
-  id?: number;
+  id: number;
   description: string;
   leading: TrackPosition;
   /** Radians clockwise from north (-z), as in station.ts. */
