@@ -184,6 +184,8 @@ function start(): void {
     motion: null as ReturnType<typeof createMotion> | null, motionState: [] as TrainView[],
     boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
+  // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
+  Object.assign(kx, { evidenceBuildTrain: buildTrain });
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
