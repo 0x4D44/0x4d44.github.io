@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import type { AnchorMap } from '../../core/anchors.ts';
 import type { KxData } from '../../core/osm.ts';
 import { boardRows } from '../../web/src/board.ts';
 import type { BoardService } from '../../web/src/board.ts';
 import type { RecordedEvent } from '../../web/src/feed.ts';
-import { agreementOptions, compareBoardToTrust, createBoardObserver, movementService, platformNumber, replayBoard, trustMovements } from '../board-vs-trust.ts';
+import { agreementOptions, compareBoardToTrust, createBoardObserver, hourlyAgreement, movementService, platformNumber, replayBoard, scheduleMatchRate, trustMovements } from '../board-vs-trust.ts';
 import type { BoardObservation, TrustMovement } from '../board-vs-trust.ts';
 
 // Hand-written synthetic services/events only; no recording data is a fixture.
@@ -84,4 +87,59 @@ test('agreement CLI requires private scratch output bounded steps and explicit t
   assert.equal(agreementOptions(args).withinMs,120000);
   for(const extra of [['--within-seconds','0'],['--step-seconds','2'],['--from','2026-11-09T10:00:00'],['--from','2026-11-09T11:00Z','--to','2026-11-09T10:00Z']])assert.throws(()=>agreementOptions([...args,...extra]));
   assert.throws(()=>agreementOptions([...args.slice(0,-1),'/tmp/public']));
+});
+
+test('hourly agreement counts boundary movements once and reports empty hours as unavailable',()=>{
+  const end=at+10800000;
+  const movements=[movement({actualMs:at+3599999}),movement({actualMs:at+3600000}),movement({actualMs:end})];
+  const hourly=hourlyAgreement(movements,[observation({startMs:at,endMs:end})],[service()],
+    {...options,fromMs:at,toMs:end,recordingStartMs:at-60000,recordingEndMs:end+60000});
+  assert.deepEqual(hourly.map(h=>h.summary.movements),[1,1,1]);
+  assert.equal(hourly.reduce((n,h)=>n+h.summary.movements,0),3);
+  const empty=hourlyAgreement([],[observation()],[service()],{...options,fromMs:at,toMs:at+3600000});
+  assert.equal(empty[0]!.summary.agreementPercent,null);
+});
+
+test('hourly agreement preserves board evidence across the hour and recording-boundary censoring',()=>{
+  const boundary=at+3600000;
+  const hourly=hourlyAgreement([movement({actualMs:boundary+1000}),movement({actualMs:at+1000})],
+    [observation({startMs:boundary-2000,endMs:boundary-1000})],[service()],
+    {...options,fromMs:at,toMs:at+7200000,recordingStartMs:at,recordingEndMs:at+7200000});
+  assert.equal(hourly[0]!.summary.censored,1);
+  assert.equal(hourly[0]!.summary.agreementPercent,null);
+  assert.equal(hourly[1]!.summary.boardAgreement,1);
+  assert.equal(hourly[1]!.summary.medianLagSeconds,-2);
+});
+
+test('schedule match rate counts distinct observed labels and exposes partial interval matching',()=>{
+  const rows=[observation(),observation({uid:undefined}),observation({headcode:'5Z99',uid:undefined}),
+    observation({headcode:'outside',startMs:at+20000,endMs:at+30000})];
+  const rate=scheduleMatchRate(rows,at,at+10000);
+  assert.equal(rate.observedHeadcodes,2);assert.equal(rate.matchedHeadcodes,1);assert.equal(rate.percent,50);
+  assert.deepEqual(rate.unmatchedHeadcodes,['5Z99']);
+  assert.equal(rate.observedIntervals,3);assert.equal(rate.matchedIntervals,1);assert.equal(rate.intervalPercent,100/3);
+  assert.equal(scheduleMatchRate([],at,at+10000).percent,null);
+  assert.equal(scheduleMatchRate([observation({startMs:at+10000,endMs:at+10000})],at,at+10000,true).observedHeadcodes,0);
+});
+
+test('hourly CLI freezes the whole recorded window and writes reproducible commands and match coverage',async()=>{
+  const root=fileURLToPath(new URL('../../../',import.meta.url)), dir=await mkdtemp(path.join(root,'.scratch/board16-tests-'));
+  try {
+    const recording=path.join(dir,'synthetic.ndjson'),schedule=path.join(dir,'schedule.json'),anchors=path.join(dir,'anchors.json'),out=path.join(dir,'out');
+    await writeFile(recording,[{t:at,e:{kind:'snapshot',area:'SYN',berths:{}}},{t:at+3600000,e:{kind:'snapshot',area:'SYN',berths:{}}}].map(r=>JSON.stringify(r)).join('\n')+'\n');
+    await writeFile(schedule,JSON.stringify({date:'2026-11-09',calls:[service()]}));
+    await writeFile(anchors,JSON.stringify({area:'SYN',sources:[],anchors:[],unmapped:[]}));
+    const child=spawnSync(process.execPath,['kings-cross-src/tools/board-vs-trust.ts','--recording',recording,'--schedule',schedule,'--anchors',anchors,'--out',out,'--hourly','--step-seconds','1'],{cwd:root,encoding:'utf8',timeout:15000,stdio:['ignore','pipe','pipe']});
+    assert.equal(child.status,0,child.stderr);
+    const report=JSON.parse(await readFile(path.join(out,'board-vs-trust.json'),'utf8'));
+    assert.equal(report.window.fromMs,at);assert.equal(report.window.toMs,at+3600000);
+    assert.equal(report.hourly.length,1);assert.equal(report.hourly[0].summary.agreementPercent,null);
+    assert.equal(report.scheduleMatch.percent,null);assert.equal(report.reproduce.cwd,root);
+    assert.ok(report.reproduce.args.includes(path.join(out,'inputs/recording.ndjson')));
+    assert.ok(report.reproduce.args.includes('--hourly'));
+    assert.match(await readFile(path.join(out,'board-vs-trust.md'),'utf8'),/Hourly agreement \(UTC\)/);
+    const args=['--recording',recording,'--schedule',schedule,'--anchors',anchors,'--out',out];
+    assert.equal(agreementOptions([...args,'--hourly']).hourly,true);
+    assert.throws(()=>agreementOptions([...args,'--hourly','--hourly']));
+  } finally {await rm(dir,{recursive:true,force:true});}
 });

@@ -12,7 +12,7 @@ import { planBuilding } from '../../core/city.ts';
 import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShed } from '../../core/station.ts';
 import { trainLayout } from '../../core/train.ts';
 import { WESTERN_RANGE } from '../../web/src/shed.ts';
-import { AXES, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, writePrivateFile, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { AXES, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -25,6 +25,175 @@ test('evidence options reject unsafe relay origins dates speeds and output paths
   const o = optionsFrom(['--gpu', '--date', '20261109', '--speed','8', '--out',scratch]);
   assert.equal(o.gpu,true); assert.equal(o.date,'20261109'); assert.equal(o.speed,8);
   assert.equal(optionsFrom([]).rawOsm,path.join(os.homedir(),'kx-data/osm/kx-osm.json'));
+});
+
+test('live-window options are bounded, integral, and require a relay', () => {
+  const relay='http://127.0.0.1:8787';
+  for(const value of ['0','-1','3601','1.5','NaN']) assert.throws(()=>optionsFrom(['--live-window',value,'--relay',relay]));
+  assert.throws(()=>optionsFrom(['--live-window','30']));
+  assert.throws(()=>optionsFrom(['--live-window','30','--relay',relay,'--live-report','capture.json']));
+  assert.equal(optionsFrom(['--live-window','1','--relay',relay]).liveWindow,1);
+  assert.equal(optionsFrom(['--live-window','3600','--relay',relay]).liveWindow,3600);
+  assert.equal(optionsFrom(['--live-report','capture.json']).liveReport,path.resolve('capture.json'));
+});
+
+function syntheticAxis04() {
+  return { axes: ['04','05','06','07'].map(id=>({id,artifacts:[],gaps:[]})), gaps:[], commands:[] };
+}
+function syntheticFetch({missingSchedule=false}={}) {
+  const calls=[];
+  const fetchImpl=async url=>{
+    const parsed=new URL(url); calls.push(parsed.href);
+    if(parsed.pathname==='/schedule') return missingSchedule
+      ? new Response('missing',{status:404})
+      : new Response(JSON.stringify({date:parsed.searchParams.get('date'),calls:[{uid:'svc-1',headcode:'1A23'}]}));
+    if(parsed.pathname==='/anchors') return new Response('{"area":"kx"}');
+    if(parsed.pathname==='/recording') return new Response('{"t":1794052800000,"e":{"kind":"snapshot","area":"kx","berths":{}}}\n');
+    if(parsed.pathname==='/sclass') return new Response('{}');
+    throw new Error(`unexpected synthetic endpoint ${parsed.pathname}`);
+  };
+  return {fetchImpl,calls};
+}
+function syntheticBoardReport() {
+  return {summary:{movements:1,fullyObserved:1,boardAgreement:0,agreementPercent:0,medianLagSeconds:null,medianAbsoluteLagSeconds:null,disagreements:1},
+    hourly:[{fromISO:'2026-11-07T12:00:00.000Z',toISO:'2026-11-07T13:00:00.000Z',summary:{movements:1,agreementPercent:0,medianLagSeconds:null},scheduleMatch:{matchedHeadcodes:1,observedHeadcodes:1}}],
+    scheduleMatch:{observedHeadcodes:1,matchedHeadcodes:1,percent:100,unmatchedHeadcodes:[],observedIntervals:1,matchedIntervals:1,intervalPercent:100},
+    results:[{actualMs:1794052800000,headcode:'1A23',eventType:'step',platform:'2',bookedPlatform:'3',fullyObserved:true,agreed:false,observation:null,reasons:['headcode absent from observed board sections within tolerance']}]};
+}
+function syntheticLiveReport(startMs=Date.parse('2026-11-07T12:00:00Z'),endMs=Date.parse('2026-11-07T12:00:30Z')) {
+  return {interval:{startMs,endMs,durationSeconds:(endMs-startMs)/1000,startMode:'checkpoint'},passed:true,samples:31,positionDifferenceM:{median:0,p95:1,max:2}};
+}
+function syntheticRunner(report, calls, {liveReport=syntheticLiveReport()}={}) {
+  return async (axis,name,command,args,timeoutMs=300000)=>{
+    calls.push({axis,name,command,args,timeoutMs});
+    const value=(key)=>args[args.indexOf(key)+1];
+    if(name==='live-vs-replay'||name==='live-vs-replay-summary') {
+      const dir=value('--out'); await mkdir(dir,{recursive:true});
+      await writeFile(path.join(dir,'live-vs-replay.json'),JSON.stringify(liveReport)+'\n');
+    }
+    if(name==='board-vs-trust') {
+      const dir=value('--out'); await mkdir(dir,{recursive:true});
+      await writeFile(path.join(dir,'board-vs-trust.json'),JSON.stringify(syntheticBoardReport())+'\n');
+      await writeFile(path.join(dir,'board-vs-trust.md'),'synthetic disagreement table\n');
+    }
+    if(name==='axis-04-summary') {
+      const dir=value('--out'); await mkdir(dir,{recursive:true});
+      await writeFile(path.join(dir,'axis-04-summary.json'),JSON.stringify({available:true})+'\n');
+      await writeFile(path.join(dir,'axis-04-summary.md'),'synthetic summary\n');
+    }
+    return {code:0,timedOut:false};
+  };
+}
+function syntheticGap(report) { return (axis,message)=>{report.axes.find(a=>a.id===axis).gaps.push(message);report.gaps.push(`${axis}: ${message}`);}; }
+
+test('axis 04 synthetic run fetches dated timetable, forwards live interval, and writes private reports and disagreement summary', async()=>{
+  const dir=await mkdtemp(path.join(scratch,'axis04-full-'));
+  try {
+    const out=path.join(dir,'pack'); await mkdir(out,{recursive:true});
+    const report=syntheticAxis04(),{fetchImpl,calls:fetches}=syntheticFetch(),calls=[];
+    const options={out,iso:'2026-11-07',date:'20261107',relay:relayUrl('http://127.0.0.1:8787'),liveWindow:30,liveReport:null};
+    await runAxis04Reports(options,report,{fetchImpl,run:syntheticRunner(report,calls),gap:syntheticGap(report),checkHost:async()=>403});
+    const requested=new URL(fetches.find(url=>new URL(url).pathname==='/schedule'));
+    assert.equal(requested.searchParams.get('date'),'2026-11-07');
+    const live=calls.find(call=>call.name==='live-vs-replay');
+    assert.deepEqual(live.args.slice(live.args.indexOf('--seconds'),live.args.indexOf('--seconds')+2),['--seconds','30']);
+    assert.ok(live.timeoutMs>=(30+610+45)*1000);
+    const board=calls.find(call=>call.name==='board-vs-trust');
+    assert.ok(board.args.includes('--hourly'));
+    assert.deepEqual(board.args.slice(board.args.indexOf('--from'),board.args.indexOf('--to')+2),['--from','2026-11-07T12:00:00.000Z','--to','2026-11-07T12:00:30.000Z']);
+    assert.ok(board.args.includes(path.join(out,'inputs','schedule-2026-11-07.json')));
+    assert.ok(calls.find(call=>call.name==='axis-04-summary').args.includes('--board-report'));
+    assert.ok(calls.find(call=>call.name==='axis-04-summary').args.includes('--live-report'));
+    const boardJson=JSON.parse(await readFile(path.join(out,'board-vs-trust','board-vs-trust.json'),'utf8'));
+    const schedule=JSON.parse(await readFile(path.join(out,'inputs','schedule-2026-11-07.json'),'utf8'));
+    assert.equal(schedule.date,'2026-11-07');
+    assert.deepEqual(report.axes.find(a=>a.id==='04').boardVsTrust.hourly,boardJson.hourly);
+    assert.deepEqual(report.axes.find(a=>a.id==='04').boardVsTrust.scheduleMatch,boardJson.scheduleMatch);
+    assert.deepEqual(report.axes.find(a=>a.id==='04').boardVsTrust.results,boardJson.results);
+    assert.match(await readFile(path.join(out,'axis-04.md'),'utf8'),/headcode absent from observed board sections/);
+    assert.match(await readFile(path.join(out,'axis-04.md'),'utf8'),/axis-04-summary\/axis-04-summary\.md/);
+    assert.deepEqual(report.axes.find(a=>a.id==='04').gaps,[]);
+  } finally { await rm(dir,{recursive:true,force:true}); }
+});
+
+test('missing dated timetable creates an axis 04 gap and still runs the summary generator', async()=>{
+  const dir=await mkdtemp(path.join(scratch,'axis04-gap-'));
+  try {
+    const out=path.join(dir,'pack'); await mkdir(out,{recursive:true});
+    const report=syntheticAxis04(),{fetchImpl}=syntheticFetch({missingSchedule:true}),calls=[];
+    const options={out,iso:'2026-11-07',date:'20261107',relay:relayUrl('http://127.0.0.1:8787'),liveWindow:null,liveReport:null};
+    await runAxis04Reports(options,report,{fetchImpl,run:syntheticRunner(report,calls),gap:syntheticGap(report),checkHost:async()=>403});
+    assert.match(report.gaps.join('\n'),/No timetable for recording date 2026-11-07/);
+    assert.equal(calls.some(call=>call.name==='board-vs-trust'),false);
+    const summary=calls.find(call=>call.name==='axis-04-summary');
+    assert.ok(summary); assert.equal(summary.args.includes('--board-report'),false);
+    assert.match(await readFile(path.join(out,'axis-04.md'),'utf8'),/Agreement: unavailable/);
+  } finally { await rm(dir,{recursive:true,force:true}); }
+});
+
+test('saved live reports are recomputed without capture and do not scope whole-date board agreement', async()=>{
+  const dir=await mkdtemp(path.join(scratch,'axis04-reuse-'));
+  try {
+    const out=path.join(dir,'pack'),sourceDir=path.join(dir,'saved-live'),source=path.join(sourceDir,'live-vs-replay.json'); await mkdir(out,{recursive:true}); await mkdir(sourceDir,{recursive:true});
+    const sample=[{atMs:1,trains:[{id:1,description:'1A23',edge:[1,2,3],t:.5,point:[0,0]}]}];
+    await writeFile(path.join(sourceDir,'live-samples.json'),JSON.stringify(sample));
+    await writeFile(path.join(sourceDir,'replay-samples.json'),JSON.stringify(sample));
+    await writeFile(source,JSON.stringify(syntheticLiveReport(Date.parse('2026-11-08T00:05:00Z'),Date.parse('2026-11-08T00:05:30Z'))));
+    const report=syntheticAxis04(),{fetchImpl}=syntheticFetch(),calls=[];
+    const options={out,iso:'2026-11-07',date:'20261107',relay:relayUrl('http://127.0.0.1:8787'),liveWindow:null,liveReport:source};
+    await runAxis04Reports(options,report,{fetchImpl,run:syntheticRunner(report,calls),gap:syntheticGap(report),checkHost:async()=>403});
+    assert.equal(calls.some(call=>call.name==='live-vs-replay'),false);
+    const summarize=calls.find(call=>call.name==='live-vs-replay-summary');
+    assert.ok(summarize); assert.ok(summarize.args.includes(sourceDir));
+    const board=calls.find(call=>call.name==='board-vs-trust');
+    assert.ok(board); assert.equal(board.args.includes('--from'),false); assert.equal(board.args.includes('--to'),false);
+    assert.ok(await readFile(path.join(out,'live-vs-replay','live-vs-replay.json'),'utf8'));
+    assert.equal(report.gaps.some(gap=>gap.includes('does not match recording date')),false);
+    assert.equal(report.axes.find(a=>a.id==='04').liveVsReplay.recomputable,true);
+  } finally { await rm(dir,{recursive:true,force:true}); }
+});
+
+test('non-recomputable saved live reports are linked with an explicit gap',async()=>{
+  const dir=await mkdtemp(path.join(scratch,'axis04-noreplay-'));
+  try {
+    const out=path.join(dir,'pack'),source=path.join(dir,'saved-live.json'); await mkdir(out,{recursive:true});
+    await writeFile(source,JSON.stringify(syntheticLiveReport()));
+    const report=syntheticAxis04(),{fetchImpl}=syntheticFetch(),calls=[];
+    const options={out,iso:'2026-11-07',date:'20261107',relay:relayUrl('http://127.0.0.1:8787'),liveWindow:null,liveReport:source};
+    await runAxis04Reports(options,report,{fetchImpl,run:syntheticRunner(report,calls),gap:syntheticGap(report),checkHost:async()=>403});
+    assert.match(report.gaps.join('\n'),/no live-samples\.json and replay-samples\.json/);
+    assert.equal(report.axes.find(a=>a.id==='04').liveVsReplay.recomputable,false);
+    assert.match(await readFile(path.join(out,'axis-04.md'),'utf8'),/JSON \(non-recomputable\)/);
+  } finally {await rm(dir,{recursive:true,force:true});}
+});
+
+test('failed child runs never promote stale board or live reports from a reused pack',async()=>{
+  const dir=await mkdtemp(path.join(scratch,'axis04-stale-'));
+  try {
+    const out=path.join(dir,'pack'),boardOut=path.join(out,'board-vs-trust'),liveOut=path.join(out,'live-vs-replay');
+    await mkdir(boardOut,{recursive:true}); await mkdir(liveOut,{recursive:true});
+    await writeFile(path.join(boardOut,'board-vs-trust.json'),JSON.stringify(syntheticBoardReport()));
+    await writeFile(path.join(liveOut,'live-vs-replay.json'),JSON.stringify(syntheticLiveReport()));
+    const report=syntheticAxis04(),{fetchImpl}=syntheticFetch(),calls=[];
+    const run=async(axis,name,command,args)=>{
+      calls.push({axis,name,command,args});
+      if(name==='live-vs-replay'||name==='board-vs-trust')return {code:2,timedOut:false};
+      if(name==='axis-04-summary'){
+        const destination=args[args.indexOf('--out')+1]; await mkdir(destination,{recursive:true});
+        await writeFile(path.join(destination,'axis-04-summary.md'),'unavailable metrics\n');
+        await writeFile(path.join(destination,'axis-04-summary.json'),'{}\n');
+      }
+      return {code:0,timedOut:false};
+    };
+    const options={out,iso:'2026-11-07',date:'20261107',relay:relayUrl('http://127.0.0.1:8787'),liveWindow:30,liveReport:null};
+    await runAxis04Reports(options,report,{fetchImpl,run,gap:syntheticGap(report),checkHost:async()=>403});
+    assert.equal(report.axes.find(a=>a.id==='04').liveVsReplay.json,null);
+    assert.equal(report.axes.find(a=>a.id==='04').boardVsTrust.json,null);
+    assert.equal(calls.find(call=>call.name==='axis-04-summary').args.includes('--board-report'),false);
+    assert.equal(calls.find(call=>call.name==='axis-04-summary').args.includes('--live-report'),false);
+    assert.match(report.gaps.join('\n'),/fresh valid live-vs-replay\/live-vs-replay\.json/);
+    assert.match(report.gaps.join('\n'),/readable board-vs-trust\.json/);
+  } finally {await rm(dir,{recursive:true,force:true});}
 });
 
 test('only an actual Metal renderer qualifies for hardware evidence', () => {
