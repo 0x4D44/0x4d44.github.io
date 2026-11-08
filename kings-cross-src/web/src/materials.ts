@@ -819,3 +819,387 @@ export function wallQuad(b: Batch, x0: number, z0: number, x1: number, z1: numbe
   b.quad([x0, y0, z0], [x1, y0, z1], [x1, y1, z1], [x0, y1, z0], [u0, y0], [u0 + len, y0], [u0 + len, y1], [u0, y1]);
   return u0 + len;
 }
+
+// =============================================================================================
+// CITY BLOCK (worker S4 "city"). Everything below belongs to web/src/city.ts: the six facade textures,
+// grass and water, and the city's materials. It only adds to this file; nothing above is changed. The tile
+// sizes come from core/city.ts (FACADE), so the rules that fit windows to walls and the textures that draw
+// them cannot drift apart; web/tests/city.test.ts holds every texture to its texel density.
+import { FACADE, FACADE_TEXELS_PER_M } from '../../core/city.ts';
+import type { FacadeKey } from '../../core/city.ts';
+
+export type CityTextureName = FacadeKey | 'grass' | 'water';
+
+const facadeSpec = (key: FacadeKey, average: number, source: string): TextureSpec => {
+  const tile = FACADE[key].tile;
+  return { tile: [tile[0], tile[1]], px: [Math.round(tile[0] * FACADE_TEXELS_PER_M), Math.round(tile[1] * FACADE_TEXELS_PER_M)], density: [FACADE_TEXELS_PER_M * 0.95, FACADE_TEXELS_PER_M * 1.05], average, repeat: true, source };
+};
+
+export const CITY_TEXTURES: Readonly<Record<CityTextureName, TextureSpec>> = {
+  // 12 stretchers of 225 mm (215 mm brick + 10 mm joint) across, 44 courses of 75 mm up: metric brick. The
+  // colours are London stock yellow-buff, the window a six-over-six sash; sizes and colours ASSUMED.
+  stock: facadeSpec('stock', 0xa8946a, 'metric brick 215 x 65 mm with 10 mm joints; window 1.05 x 1.75 m, sill 0.85 m: ASSUMED'),
+  red: facadeSpec('red', 0x93503a, 'brick as stock; round-headed window 1.2 x 2.15 m, sill 0.9 m, stone string course 0.15 m: ASSUMED'),
+  stone: facadeSpec('stone', 0xd2c9b0, 'ashlar blocks 0.6 x 0.3 m; window 1.1 x 2.3 m with surround: ASSUMED'),
+  panel: facadeSpec('panel', 0xb4afa2, 'cladding panels 1.5 m square; casement 1.9 x 1.45 m, sill 0.85 m: ASSUMED'),
+  glass: facadeSpec('glass', 0x56778b, 'curtain wall on a 1.5 m module, spandrel 0.9 m, floor to floor 3.9 m: ASSUMED'),
+  shop: facadeSpec('shop', 0x6d6a60, 'stall riser 0.55 m, plate glass to 3.15 m, fascia 0.7 m, cornice 0.15 m: ASSUMED'),
+  grass: { tile: [4, 4], px: [128, 128], density: [28, 36], average: 0x59753f, repeat: true, source: 'ASSUMED: mown grass drawn at 32 texels per metre' },
+  water: { tile: [8, 8], px: [128, 128], density: [14, 18], average: 0x2f4d55, repeat: true, source: 'ASSUMED: canal water, ripples drawn at 16 texels per metre' },
+};
+
+type CityCtx = CanvasRenderingContext2D;
+const cityPx = (m: number): number => m * FACADE_TEXELS_PER_M;
+const cityChan = (c: number): [number, number, number] => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+
+/** Mix two 0xRRGGBB colours (t = 0 gives a) and scale the lightness by k, as a CSS colour. */
+function cityMix(a: number, b: number, t: number, k = 1): string {
+  const [ar, ag, ab] = cityChan(a);
+  const [br, bg, bb] = cityChan(b);
+  const f = (x: number): number => Math.max(0, Math.min(255, Math.round(x)));
+  return `rgb(${f((ar + (br - ar) * t) * k)},${f((ag + (bg - ag) * t) * k)},${f((ab + (bb - ab) * t) * k)})`;
+}
+
+/**
+ * Brick in stretcher bond: courses of 75 mm, bricks 225 mm long with a joint, every other course shifted
+ * half a brick. The tile holds a whole number of courses and bricks, so it repeats without a seam.
+ */
+function cityCourses(g: CityCtx, w: number, h: number, seed: number, light: number, dark: number, mortar: string): void {
+  const r = rng(seed);
+  const across = Math.max(1, Math.round(w / cityPx(0.225)));
+  const bw = w / across;
+  const rows = Math.max(1, Math.round(h / cityPx(0.075)));
+  const ch = h / rows;
+  const joint = Math.max(1, ch * 0.18);
+  g.fillStyle = mortar;
+  g.fillRect(0, 0, w, h);
+  for (let row = 0; row < rows; row++) {
+    const y = row * ch;
+    const shift = (row % 2) * (bw / 2);
+    for (let k = -1; k <= across; k++) {
+      const x = k * bw + shift;
+      g.fillStyle = r() < 0.04 ? cityMix(0x4c4540, 0x5e5650, r()) : cityMix(light, dark, r(), 0.92 + r() * 0.16);
+      g.fillRect(x + joint / 2, y + joint / 2, bw - joint, ch - joint);
+      g.fillStyle = 'rgba(0,0,0,0.10)';
+      g.fillRect(x + joint / 2, y + ch - joint / 2 - 1, bw - joint, 1);
+    }
+  }
+}
+
+interface SashOptions {
+  ww: number;
+  wh: number;
+  sill: number;
+  cols: number;
+  rows: number;
+  surround: string;
+  frame: string;
+  hood?: number;
+}
+
+/** A rectangular sash window with a lintel (or hood) and cill, sill metres above the tile's bottom edge. All sizes in texels. */
+function citySash(g: CityCtx, cx: number, h: number, o: SashOptions): void {
+  const x0 = cx - o.ww / 2;
+  const yb = h - o.sill;
+  const yt = yb - o.wh;
+  g.fillStyle = '#23272c'; // the reveal
+  g.fillRect(x0 - 4, yt - 4, o.ww + 8, o.wh + 8);
+  const lg = g.createLinearGradient(0, yt, 0, yb);
+  lg.addColorStop(0, '#8aa3b6');
+  lg.addColorStop(1, '#3a4856');
+  g.fillStyle = lg;
+  g.fillRect(x0, yt, o.ww, o.wh);
+  g.fillStyle = 'rgba(0,0,0,0.30)'; // depth: the reveal shades the glass at the left and top
+  g.fillRect(x0, yt, 5, o.wh);
+  g.fillRect(x0, yt, o.ww, 5);
+  g.fillStyle = o.frame;
+  const bar = 2.4;
+  for (let i = 1; i < o.cols; i++) g.fillRect(x0 + (o.ww * i) / o.cols - bar / 2, yt, bar, o.wh);
+  for (let i = 1; i < o.rows; i++) g.fillRect(x0, yt + (o.wh * i) / o.rows - bar / 2, o.ww, bar);
+  g.fillRect(x0, yt + o.wh / 2 - 2.2, o.ww, 4.4); // the meeting rail of the two sashes
+  g.strokeStyle = o.frame;
+  g.lineWidth = 3;
+  g.strokeRect(x0 + 1.5, yt + 1.5, o.ww - 3, o.wh - 3);
+  g.fillStyle = o.surround;
+  const hood = o.hood ?? 10;
+  g.fillRect(x0 - 11, yt - hood - 3, o.ww + 22, hood); // lintel or hood
+  g.fillRect(x0 - 11, yb + 3, o.ww + 22, 8); // cill
+  g.fillStyle = 'rgba(0,0,0,0.28)';
+  g.fillRect(x0 - 11, yb + 11, o.ww + 22, 2);
+  g.fillRect(x0 - 11, yt - 3, o.ww + 22, 2); // the lintel's shadow on the glass
+}
+
+function paintCityStock(g: CityCtx, w: number, h: number): void {
+  cityCourses(g, w, h, 101, 0xbfa874, 0x9b8760, '#9a978a');
+  citySash(g, w / 2, h, { ww: 105, wh: 175, sill: 85, cols: 2, rows: 6, surround: '#d2cab4', frame: '#e8e5da' });
+  g.fillStyle = 'rgba(0,0,0,0.10)'; // the floor line
+  g.fillRect(0, h - 3, w, 3);
+}
+
+function paintCityRed(g: CityCtx, w: number, h: number): void {
+  cityCourses(g, w, h, 113, 0xa9573f, 0x873f2f, '#8c867a');
+  g.fillStyle = '#cfc7b3'; // a stone string course at the floor line
+  g.fillRect(0, h - 15, w, 15);
+  g.fillStyle = 'rgba(0,0,0,0.25)';
+  g.fillRect(0, h - 17, w, 2);
+  const cx = w / 2;
+  const ww = 120;
+  const wh = 215;
+  const yb = h - 90;
+  const yt = yb - wh;
+  const rise = ww * 0.2;
+  const arch = (inset: number): void => {
+    g.beginPath();
+    g.moveTo(cx - ww / 2 + inset, yb - inset);
+    g.lineTo(cx - ww / 2 + inset, yt + rise);
+    g.quadraticCurveTo(cx, yt - rise + inset * 2, cx + ww / 2 - inset, yt + rise);
+    g.lineTo(cx + ww / 2 - inset, yb - inset);
+    g.closePath();
+  };
+  g.fillStyle = '#d4cbb5'; // a stone arch ring and cill
+  arch(-9);
+  g.fill();
+  g.fillRect(cx - ww / 2 - 12, yb, ww + 24, 8);
+  g.fillStyle = '#1f2327';
+  arch(0);
+  g.fill();
+  const lg = g.createLinearGradient(0, yt, 0, yb);
+  lg.addColorStop(0, '#7f98ab');
+  lg.addColorStop(1, '#36424e');
+  g.save();
+  arch(3);
+  g.clip();
+  g.fillStyle = lg;
+  g.fillRect(cx - ww / 2, yt - rise, ww, wh + rise);
+  g.fillStyle = '#1d2226'; // steel glazing bars: two panes across, five rows up
+  g.fillRect(cx - 1.2, yt - rise, 2.4, wh + rise);
+  for (let i = 1; i < 6; i++) g.fillRect(cx - ww / 2, yt + (wh * i) / 6, ww, 2.2);
+  g.restore();
+}
+
+function paintCityStone(g: CityCtx, w: number, h: number): void {
+  const r = rng(127);
+  g.fillStyle = '#a8a392';
+  g.fillRect(0, 0, w, h);
+  const bw = w / 5;
+  const bh = h / 12;
+  for (let row = 0; row < 12; row++) {
+    for (let k = -1; k <= 5; k++) {
+      const x = k * bw + (row % 2) * (bw / 2);
+      g.fillStyle = cityMix(0xdcd4bd, 0xc9c0a6, r(), 0.95 + r() * 0.08);
+      g.fillRect(x + 1, row * bh + 1, bw - 2, bh - 2);
+    }
+  }
+  citySash(g, w / 2, h, { ww: 110, wh: 230, sill: 90, cols: 2, rows: 6, surround: '#efe9d8', frame: '#f1eee4', hood: 16 });
+  g.fillStyle = 'rgba(0,0,0,0.10)';
+  g.fillRect(0, h - 3, w, 3);
+}
+
+function paintCityPanel(g: CityCtx, w: number, h: number): void {
+  const r = rng(131);
+  g.fillStyle = '#8e8a80'; // panel joints
+  g.fillRect(0, 0, w, h);
+  const p = cityPx(1.5);
+  for (let y = 0; y < h; y += p) {
+    for (let x = 0; x < w; x += p) {
+      g.fillStyle = cityMix(0xbdb8aa, 0xaaa597, r(), 0.96 + r() * 0.07);
+      g.fillRect(x + 1, y + 1, p - 2, p - 2);
+    }
+  }
+  const cx = w / 2;
+  const ww = 190;
+  const wh = 145;
+  const yb = h - 85;
+  const yt = yb - wh;
+  g.fillStyle = '#2d3338'; // dark aluminium frame
+  g.fillRect(cx - ww / 2 - 5, yt - 5, ww + 10, wh + 10);
+  const lg = g.createLinearGradient(0, yt, 0, yb);
+  lg.addColorStop(0, '#7e9bb0');
+  lg.addColorStop(1, '#34495a');
+  g.fillStyle = lg;
+  g.fillRect(cx - ww / 2, yt, ww, wh);
+  g.fillStyle = '#2d3338';
+  g.fillRect(cx - 2, yt, 4, wh);
+  g.fillStyle = 'rgba(255,255,255,0.10)';
+  g.fillRect(cx - ww / 2, yt, ww, wh * 0.3);
+  g.fillStyle = '#d6d2c6'; // the floor slab's edge
+  g.fillRect(0, h - 11, w, 11);
+  g.fillStyle = 'rgba(0,0,0,0.22)';
+  g.fillRect(0, h - 13, w, 2);
+}
+
+function paintCityGlass(g: CityCtx, w: number, h: number): void {
+  g.fillStyle = '#46525c'; // the spandrel
+  g.fillRect(0, 0, w, h);
+  const lg = g.createLinearGradient(0, 0, 0, h);
+  lg.addColorStop(0, '#8fb4c8');
+  lg.addColorStop(1, '#3d6074');
+  g.fillStyle = lg;
+  g.fillRect(2, 10, w - 4, h - 100); // vision glass above the spandrel, which is at the bottom of the tile
+  g.fillStyle = 'rgba(255,255,255,0.12)'; // a sky reflection streak
+  g.beginPath();
+  g.moveTo(w * 0.15, 10);
+  g.lineTo(w * 0.65, 10);
+  g.lineTo(w * 0.35, h - 90);
+  g.lineTo(w * -0.15, h - 90);
+  g.closePath();
+  g.fill();
+  g.fillStyle = '#2b3238'; // mullions and the transom
+  g.fillRect(0, 0, 3, h);
+  g.fillRect(w - 3, 0, 3, h);
+  g.fillRect(0, 0, w, 10);
+  g.fillStyle = '#6b7a85'; // a lighter edge on the spandrel
+  g.fillRect(0, h - 92, w, 3);
+}
+
+function paintCityShop(g: CityCtx, w: number, h: number): void {
+  g.fillStyle = '#6d6a60'; // pilasters and the wall behind
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = '#d3ccb8'; // the cornice
+  g.fillRect(0, 0, w, 15);
+  g.fillStyle = 'rgba(0,0,0,0.25)';
+  g.fillRect(0, 15, w, 3);
+  g.fillStyle = '#3a4a43'; // the fascia board with a pale lettering strip
+  g.fillRect(14, 18, w - 28, 66);
+  g.fillStyle = '#d8d4c4';
+  g.fillRect(w * 0.22, 40, w * 0.56, 22);
+  const lg = g.createLinearGradient(0, 90, 0, h - 55);
+  lg.addColorStop(0, '#a9b9c4'); // sky reflected in the plate glass, then the lit shop behind
+  lg.addColorStop(0.45, '#b8a77c');
+  lg.addColorStop(1, '#6b5a3c');
+  g.fillStyle = lg;
+  g.fillRect(14, 90, w - 28, h - 90 - 55);
+  g.fillStyle = '#25292d'; // frames and the door
+  g.fillRect(14, 86, w - 28, 5);
+  g.fillRect(14 + (w - 28) * 0.62, 90, 4, h - 145);
+  g.fillRect(w - 14 - 3, 90, 3, h - 145);
+  g.fillRect(14, 90, 3, h - 145);
+  g.fillStyle = '#33383d'; // the stall riser
+  g.fillRect(14, h - 55, w - 28, 55);
+  g.fillStyle = '#4d535a';
+  g.fillRect(14, h - 55, w - 28, 3);
+}
+
+function paintCityGrass(g: CityCtx, w: number, h: number): void {
+  const r = rng(137);
+  g.fillStyle = '#587843';
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 900; i++) {
+    const x = r() * w;
+    const y = r() * h;
+    g.fillStyle = r() < 0.5 ? `rgba(${40 + r() * 30},${70 + r() * 40},${30 + r() * 20},0.45)` : `rgba(${110 + r() * 40},${140 + r() * 40},${70 + r() * 30},0.35)`;
+    for (const dx of x > w - 4 ? [-w, 0] : [0]) for (const dy of y > h - 4 ? [-h, 0] : [0]) g.fillRect(x + dx, y + dy, 1 + r() * 2, 1 + r() * 3);
+  }
+}
+
+function paintCityWater(g: CityCtx, w: number, h: number): void {
+  const r = rng(139);
+  g.fillStyle = '#2d4c54';
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 140; i++) {
+    const x = r() * w;
+    const y = r() * h;
+    const len = 6 + r() * 18;
+    g.fillStyle = r() < 0.6 ? 'rgba(170,200,205,0.10)' : 'rgba(10,25,30,0.18)';
+    for (const dx of x > w - len ? [-w, 0] : [0]) for (const dy of y > h - 2 ? [-h, 0] : [0]) g.fillRect(x + dx, y + dy, len, 1);
+  }
+}
+
+export const CITY_PAINTERS: Readonly<Record<CityTextureName, (g: CityCtx, w: number, h: number) => void>> = {
+  stock: paintCityStock,
+  red: paintCityRed,
+  stone: paintCityStone,
+  panel: paintCityPanel,
+  glass: paintCityGlass,
+  shop: paintCityShop,
+  grass: paintCityGrass,
+  water: paintCityWater,
+};
+
+const cityTextures = new Map<CityTextureName, THREE.CanvasTexture | null>();
+
+/** The canvas texture for a city surface, or null where there is no document (Node). Cached. */
+export function cityTexture(name: CityTextureName): THREE.CanvasTexture | null {
+  if (cityTextures.has(name)) return cityTextures.get(name) as THREE.CanvasTexture | null;
+  let t: THREE.CanvasTexture | null = null;
+  if (typeof document !== 'undefined') {
+    const spec = CITY_TEXTURES[name];
+    const c = document.createElement('canvas');
+    [c.width, c.height] = spec.px;
+    const g = c.getContext('2d');
+    if (g) {
+      CITY_PAINTERS[name](g, c.width, c.height);
+      t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 8;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(1 / spec.tile[0], 1 / spec.tile[1]);
+    }
+  }
+  cityTextures.set(name, t);
+  return t;
+}
+
+export type CityMaterialName = CityTextureName | 'roof' | 'paint' | 'asphalt' | 'pavement' | 'plaza';
+
+/** Polygon offset per flat layer, lowest first, so the flat layers never z-fight (see LAYER_LIFT in core/city.ts). */
+const CITY_LAYER_OFFSET: Partial<Record<CityMaterialName, number>> = { grass: -1, water: -2, plaza: -3, pavement: -4, asphalt: -5, paint: -6 };
+
+const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
+  stock: () => cityFacade('stock'),
+  red: () => cityFacade('red'),
+  stone: () => cityFacade('stone'),
+  panel: () => cityFacade('panel'),
+  shop: () => cityFacade('shop'),
+  // curtain walling catches the sun: a Phong sheen on top of the drawn glass
+  glass: () => {
+    const t = cityTexture('glass');
+    return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 });
+  },
+  roof: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
+  paint: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
+  grass: () => {
+    const t = cityTexture('grass');
+    return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.grass.average, vertexColors: true });
+  },
+  water: () => {
+    const t = cityTexture('water');
+    return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.water.average, vertexColors: true, specular: 0x27343a, shininess: 25 });
+  },
+  // roads and paving reuse the station's asphalt and slab textures (shared, not copied)
+  asphalt: () => cityFlat('asphalt', 0xffffff),
+  pavement: () => cityFlat('concourseFloor', 0xd2d0cb),
+  plaza: () => cityFlat('concourseFloor', 0xf3f0e8),
+};
+
+function cityFacade(key: FacadeKey): THREE.Material {
+  const t = cityTexture(key);
+  return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true });
+}
+
+function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Material {
+  const m = (material(from) as THREE.MeshLambertMaterial).clone();
+  m.vertexColors = true;
+  m.color.setHex(color);
+  return m;
+}
+
+const cityMaterials = new Map<CityMaterialName, THREE.Material>();
+
+/** A shared material for one city surface. Vertex colours tint every one of them; never mutate, clone first. */
+export function cityMaterial(name: CityMaterialName): THREE.Material {
+  let m = cityMaterials.get(name);
+  if (!m) {
+    m = cityMakers[name]();
+    m.name = `city-${name}`;
+    const offset = CITY_LAYER_OFFSET[name];
+    if (offset !== undefined) {
+      m.polygonOffset = true;
+      m.polygonOffsetFactor = offset;
+      m.polygonOffsetUnits = offset;
+    }
+    cityMaterials.set(name, m);
+  }
+  return m;
+}
+// ===== end of the city block =====

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { bounds, buildingPrisms, PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
-import type { Prism } from '../../core/scene.ts';
+import { bounds, PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
+import type { CityData } from '../../core/city.ts';
+import { addCity } from './city.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { buildFurniture, buildPlatforms } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
@@ -52,23 +52,6 @@ if (!webglOk()) {
   start();
 }
 
-/** Extrude a footprint upward from the ground (GROUND_Y, below the rail head) to its height:
- * shape in (x, -z) so that after rotateX(-90deg) it lies on the XZ plane. */
-function prismGeometry(p: Prism): THREE.BufferGeometry {
-  const shape = new THREE.Shape(p.outline.map(([x, z]) => new THREE.Vector2(x, -z)));
-  const g = new THREE.ExtrudeGeometry(shape, { depth: p.height - GROUND_Y, bevelEnabled: false });
-  g.rotateX(-Math.PI / 2);
-  g.translate(0, GROUND_Y, 0);
-  return g;
-}
-
-function mergedPrisms(prisms: Prism[], material: THREE.Material): THREE.Mesh | null {
-  const geos = prisms.map(prismGeometry);
-  const merged = mergeGeometries(geos, false);
-  for (const g of geos) g.dispose();
-  return merged ? new THREE.Mesh(merged, material) : null;
-}
-
 function start(): void {
   const params = new URLSearchParams(location.search);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -95,13 +78,20 @@ function start(): void {
   // The Great Northern Hotel, the Midland Grand and the Barlow shed are modelled (landmarks.ts),
   // so their OSM boxes go.
   for (const id of LANDMARK_OSM_IDS) hidden.add(id);
-  const buildings = mergedPrisms(buildingPrisms(data, hidden), new THREE.MeshLambertMaterial({ color: 0x56627a }));
-  // ?bare=1 hides the surrounding buildings, so the evidence shots can measure the shed and platforms.
-  if (buildings && !params.has('bare')) scene.add(buildings);
+  // The city (textured buildings, streets, paving, water, trees) is its own chunk: its data is
+  // ~240 kB of JSON, so the station draws first and the city follows. ?bare=1 leaves it out, so
+  // the evidence shots can measure the shed and platforms. Tools await kx.cityLoaded.
+  const parts: { shed: THREE.Object3D | null; buildings: THREE.Group | null } = { shed: null, buildings: null };
+  const cityLoaded: Promise<void> = params.has('bare')
+    ? Promise.resolve()
+    : import('./data/kx-city.json').then((m) => {
+      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden }).group;
+    }).catch((err: unknown) => { console.error('city failed to load', err); });
   if (!params.has('bare')) addLandmarks(scene, data);
   addPortals(scene, data); // Gasworks and Copenhagen tunnel mouths, with the earth bank over the bores
   const shed = buildShed(layout);
   scene.add(shed);
+  parts.shed = shed;
   if (station) scene.add(buildConcourse(canopy, station.pts, layout));
 
   scene.add(buildBufferStops(data, layout));
@@ -180,7 +170,7 @@ function start(): void {
   let boardAnchors: AnchorMap = { area: 'Y9', sources: [], anchors: [], unmapped: [] };
   let arrivalSets = approachPlatforms(boardAnchors);
   const stationBoard = params.get('board') === '0' ? null : createBoard(document.body, status);
-  const kx = { ready: true, scene, camera, controls, renderer, layout, trains, signals: signalLayer, parts: { shed, buildings }, firstFrameMs: 0,
+  const kx = { ready: true, scene, camera, controls, renderer, layout, trains, signals: signalLayer, parts, cityLoaded, firstFrameMs: 0,
     motion: null as ReturnType<typeof createMotion> | null, motionState: [] as TrainView[],
     boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
