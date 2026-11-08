@@ -134,13 +134,13 @@ test('a missed from berth never relocates an existing train', () => {
   close(finish(m).leading.point[0], 2800);
 });
 
-test('an unmapped destination keeps the previous authority and exposes the missing berth', () => {
-  const m = normal();
+test('an unmapped destination with a known anchored successor keeps that authority and exposes the missing berth', () => {
+  const m = normal({ observedSteps: [step('UNKNOWN', 'B')] });
   m.apply(step('B', 'UNKNOWN'), 0);
   assert.equal(one(m).unmappedBerth, 'UNKNOWN');
   assert.equal(one(m).targetBerth, 'B');
   close(finish(m).leading.point[0], 1500);
-  assert.equal(m.diagnostics().filter((i) => i.kind === 'unroutable').length, 1);
+  assert.equal(m.diagnostics().filter((i) => i.kind === 'unroutable').length, 0);
 });
 
 test('a follower stops short of the leading train and never overlaps it', () => {
@@ -185,9 +185,9 @@ test('opposing trains stop before touching with service braking', () => {
 });
 
 test('a conflicting first observation waits until its initial occupied track is free', () => {
-  const standing = createMotion(graph, anchors);
+  const standing = createMotion(graph, { ...anchors, anchors: [...anchors.anchors, anchor('ALIAS', 400)] });
   standing.apply(interpose('A'), 0);
-  standing.apply(interpose('A', 'SECOND'), 0);
+  standing.apply(interpose('ALIAS', 'SECOND'), 0);
   assert.equal(standing.trains().length, 1);
   assert.equal(standing.queuedCount(), 1);
   const m = normal();
@@ -324,4 +324,207 @@ test('invalid dt and invalid physical options are rejected', () => {
   assert.throws(() => m.apply(step('A', 'B'), NaN));
   assert.throws(() => createMotion(graph, anchors, { braking: 0 }));
   assert.throws(() => createMotion(graph, anchors, { gapM: -1 }));
+});
+
+test('an interpose renames the train held at exactly that berth without changing its physical body', () => {
+  const m = createMotion(graph, anchors, { lengthM: (d) => d === 'OLD' ? 130 : 260 });
+  m.apply(interpose('P', 'OLD'), 0);
+  const before = one(m);
+  m.apply(interpose('P', 'NEW'), 0);
+  const after = one(m);
+  assert.equal(after.description, 'NEW'); assert.equal(after.id, before.id);
+  assert.deepEqual(after.leading, before.leading); assert.deepEqual(after.occupied, before.occupied);
+  close(after.lengthM, 130); close(after.speed, 0); close(after.opacity, 1);
+  assert.equal(m.queuedCount(), 0);
+  m.apply({ kind: 'cancel', area: 'TEST', descr: 'OLD', from: 'P' }, 0);
+  assert.equal(one(m).state, 'held');
+  assert.equal(m.diagnostics().at(-1)!.kind, 'renamed');
+});
+
+test('a step into an occupied stop renames its standing train even when the new origin is unmapped', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(interpose('P', 'OLD'), 0); const before = one(m);
+  m.apply(step('UNMAPPED', 'P', 'NEW'), 0);
+  const after = one(m);
+  assert.equal(after.description, 'NEW'); assert.equal(after.id, before.id);
+  assert.deepEqual(after.occupied, before.occupied); close(after.opacity, 1);
+  assert.equal(m.diagnostics().at(-1)!.reason, 'step');
+});
+
+test('separate partner berths hold different trains and a pending rename waits until the arriving body stops', () => {
+  const a = { ...anchors, anchors: [...anchors.anchors, anchor('REAR', 2500, false, '1')] };
+  const m = createMotion(graph, a);
+  m.apply(interpose('P', 'FRONT'), 0); m.apply(interpose('REAR', 'REAR'), 0);
+  assert.equal(m.trains().length, 2); assert.notEqual(m.trains()[0]!.id, m.trains()[1]!.id);
+  const moving = createMotion(graph, anchors);
+  moving.apply(step('A', 'P', 'INCOMING'), 0); moving.advance(1);
+  moving.apply(interpose('P', 'STANDING'), 1000);
+  assert.equal(moving.trains().length, 1);
+  assert.equal(one(moving).description, 'INCOMING');
+  assert.equal(moving.diagnostics().filter((i) => i.kind === 'renamed').length, 0);
+  assert.equal(finish(moving).description, 'STANDING');
+});
+
+test('an unmapped departure without an anchored successor drives to the boundary under normal limits then fades', () => {
+  const m = normal(); finish(m); m.apply(step('B', 'OUTSIDE'), 0);
+  assert.equal(one(m).exiting, true);
+  let previous = one(m), reached = false;
+  for (let i = 0; i < 6000; i++) {
+    m.advance(0.1);
+    const t = one(m);
+    assert.ok(t.leading.point[0] >= previous.leading.point[0] - 1e-7);
+    assert.ok(t.speed <= 40 / 3.6 + 1e-7);
+    assert.ok(t.speed >= previous.speed - 0.0600001 && t.speed <= previous.speed + 0.0700001);
+    if (t.state === 'fading') { close(t.leading.point[0], 4000); reached = true; break; }
+    previous = t;
+  }
+  assert.ok(reached); m.advance(5.1); assert.deepEqual(m.trains(), []);
+});
+
+test('a later anchored step replaces an exit route before the boundary without a jump', () => {
+  const m = normal(); finish(m); m.apply(step('B', 'OUTSIDE'), 0); m.advance(10);
+  const before = one(m); m.apply(step('OUTSIDE', 'C'), 0);
+  assert.deepEqual(one(m).leading, before.leading); assert.equal(one(m).exiting, false);
+  close(finish(m).leading.point[0], 2800);
+});
+
+test('an early unmapped platform departure waits for the buffers and changes cab once before leaving', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(step('A', 'P'), 0); m.advance(10); m.apply(step('P', 'OUTSIDE'), 0);
+  assert.equal(one(m).reversals, 0);
+  let reversed = false;
+  for (let i = 0; i < 9000; i++) {
+    m.advance(0.1); const t = one(m);
+    if (t.reversals) { reversed = true; assert.equal(t.reversals, 1); assert.ok(t.leading.point[0] <= 2640 + 1e-6); }
+    if (t.state === 'fading') { close(t.leading.point[0], 0); break; }
+  }
+  assert.ok(reversed); assert.equal(one(m).state, 'fading');
+});
+
+test('an arrival first seen outside enters at the boundary and drives to its mapped anchor', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(step('OUTSIDE', 'B'), 0);
+  close(one(m).leading.point[0], 0); assert.equal(one(m).speed, 0);
+  assert.equal(m.diagnostics().at(-1)!.kind, 'entering');
+  close(finish(m).leading.point[0], 1500);
+});
+
+test('an outside arrival can use an anchored successor on an observed chain', () => {
+  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B')] });
+  m.apply(step('OUTSIDE', 'MIDDLE'), 0);
+  close(one(m).leading.point[0], 0); assert.equal(one(m).targetBerth, 'B');
+  close(finish(m).leading.point[0], 1500);
+});
+
+test('a departing train prefers a previously travelled turn from the same berth over the straight branch', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 500, -1000], [3, 1000, -1000], [4, 900, -1200], [5, 1300, -1400]], rails: [
+    { id: 1, nodes: [1, 2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    { id: 2, nodes: [2, 4, 5], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const as: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [
+    { ...anchor('START', 400), from: 1, to: 2, t: 0.8 }, { ...anchor('TURN', 1100), from: 4, to: 5, t: 0.5, point: [1100, -1300] },
+  ] };
+  const m = createMotion(g, as);
+  m.apply(step('START', 'TURN', 'FIRST'), 0); finish(m);
+  m.apply({ kind: 'cancel', area: 'TEST', descr: 'FIRST', from: 'TURN' }, 0); m.advance(5.1);
+  m.apply(interpose('START', 'SECOND'), 0); m.apply(step('START', 'UNMAPPED', 'SECOND'), 0);
+  for (let i = 0; i < 2000; i++) { m.advance(0.1); if (one(m).state === 'fading') break; }
+  close(one(m).leading.point[0], 1300); close(one(m).leading.point[1], -1400);
+});
+
+test('an arrival joins an already interposed departure body and the extra observation fades without jumping', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(interpose('P', 'DEPARTURE'), 0);
+  const standing = one(m);
+  m.apply(step('A', 'B', 'ARRIVAL'), 0); m.advance(10);
+  const arrival = m.trains().find((t) => t.description === 'ARRIVAL')!;
+  m.apply(step('B', 'P', 'ARRIVAL'), 10_000);
+  const kept = m.trains().find((t) => t.id === standing.id)!;
+  const retired = m.trains().find((t) => t.id === arrival.id)!;
+  assert.equal(kept.description, 'ARRIVAL'); assert.equal(kept.state, 'held');
+  assert.deepEqual(kept.leading, standing.leading); assert.deepEqual(kept.occupied, standing.occupied);
+  assert.equal(retired.state, 'fading'); assert.deepEqual(retired.leading, arrival.leading);
+  close(retired.speed, arrival.speed);
+  m.advance(5.1); assert.equal(one(m).id, standing.id);
+  assert.equal(m.diagnostics().filter((i) => i.kind === 'merged').length, 1);
+});
+
+test('an unmapped step after an early mapped departure still exits after reaching its last anchor', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(step('A', 'P'), 0); m.advance(5);
+  m.apply(step('P', 'EXIT'), 5000); m.apply(step('EXIT', 'OUTSIDE'), 5000);
+  let last = one(m), left = false;
+  for (let i = 0; i < 10_000; i++) {
+    m.advance(0.1); const t = one(m);
+    assert.equal(t.reversals <= 1, true);
+    if (t.reversals === last.reversals) assert.ok(Math.hypot(t.leading.point[0] - last.leading.point[0], t.leading.point[1] - last.leading.point[1]) <= 40 / 3.6 * 0.1 + 1e-6);
+    if (t.state === 'fading') { close(t.leading.point[0], 0); left = true; break; }
+    last = t;
+  }
+  assert.ok(left);
+});
+
+test('another description on a shared approach does not choose an unseen arrivals platform', () => {
+  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B', 'OTHER')] });
+  m.apply(step('OUTSIDE', 'MIDDLE'), 0);
+  assert.deepEqual(m.trains(), []);
+  m.apply(step('MIDDLE', 'C'), 0);
+  close(one(m).leading.point[0], 0); close(finish(m).leading.point[0], 2800);
+});
+
+test('ambiguous known successors wait for the arrivals own next anchor', () => {
+  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B'), step('MIDDLE', 'C')] });
+  m.apply(step('OUTSIDE', 'MIDDLE'), 0);
+  assert.deepEqual(m.trains(), []);
+  m.apply(step('MIDDLE', 'B'), 0); close(finish(m).leading.point[0], 1500);
+});
+
+test('a mapped route refuses a hairpin through different edges outside a platform', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 1000, -1000], [3, 100, -1010], [4, 0, -1010]], rails: [
+    { id: 1, nodes: [1, 2, 3, 4], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const a: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [anchor('START', 400), { ...anchor('END', 0), from: 3, to: 4, t: 0.5, point: [50, -1010] }] };
+  const m = createMotion(g, a);
+  m.apply(step('START', 'END'), 0); m.advance(60);
+  close(one(m).leading.point[0], 400); assert.equal(one(m).reversals, 0);
+  assert.ok(m.diagnostics().some((i) => i.reason === 'no forward graph path'));
+});
+
+test('exit continuation backtracks from a platform buffer to an external branch', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 1000, -1000], [3, 1200, -1000], [4, 2000, -1400]], rails: [
+    { id: 1, nodes: [1, 2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    { id: 2, nodes: [2, 4], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const a: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [anchor('START', 400), { ...anchor('BUFFER', 1200, false, '1'), from: 2, to: 3, t: 1, point: [1200, -1000] }] };
+  const m = createMotion(g, a);
+  m.apply(interpose('START'), 0); m.apply(step('START', 'OUTSIDE'), 0);
+  for (let i = 0; i < 3000; i++) { m.advance(0.1); if (one(m).state === 'fading') break; }
+  close(one(m).leading.point[0], 2000); close(one(m).leading.point[1], -1400);
+  assert.equal(one(m).state, 'fading');
+});
+
+test('a missing external continuation is diagnosed instead of fading at an internal stop', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 1000, -1000], [3, 100, -1010]], rails: [
+    { id: 1, nodes: [1, 2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const a: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [anchor('START', 400)] };
+  const m = createMotion(g, a);
+  m.apply(interpose('START'), 0); m.apply(step('START', 'OUTSIDE'), 0); m.advance(10);
+  assert.equal(one(m).exiting, false); assert.equal(one(m).state, 'held');
+  assert.ok(m.diagnostics().some((i) => i.reason === 'no forward external graph boundary'));
+});
+
+test('an early unmapped step finishes its established route to the last anchor before choosing an exit', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 500, -1000], [3, 1000, -1000], [4, 900, -1200], [5, 1300, -1400]], rails: [
+    { id: 1, nodes: [1, 2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    { id: 2, nodes: [2, 4, 5], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const a: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [
+    { ...anchor('START', 400), from: 1, to: 2, t: 0.8 }, { ...anchor('TURN', 1100), from: 4, to: 5, t: 0.5, point: [1100, -1300] },
+  ] };
+  const m = createMotion(g, a);
+  m.apply(step('START', 'TURN'), 0); m.advance(1);
+  m.apply(step('TURN', 'OUTSIDE'), 1000);
+  for (let i = 0; i < 2000; i++) { m.advance(0.1); if (one(m).state === 'fading') break; }
+  close(one(m).leading.point[0], 1300); close(one(m).leading.point[1], -1400);
 });
