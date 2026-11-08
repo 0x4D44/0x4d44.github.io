@@ -3,15 +3,45 @@ import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NOT_A_TRAIN } from '../core/anchors.ts';
-import type { AnchorMap } from '../core/anchors.ts';
+import type { AnchorMap, BerthAnchor } from '../core/anchors.ts';
 import { analyseSteps, buildAnchors } from '../core/berths.ts';
 import { buildGraph } from '../core/graph.ts';
-import { createMotion, overlapM } from '../core/motion.ts';
+import type { Edge, Graph } from '../core/graph.ts';
+import { createMotion, DEFAULT_BUFFER_CLEARANCE_M, overlapM } from '../core/motion.ts';
 import type { TrainView } from '../core/motion.ts';
 import type { KxData } from '../core/osm.ts';
 import { trainLayout } from '../core/train.ts';
 import { createTimeline, parseRecording } from '../web/src/feed.ts';
 import type { RecordedEvent, SnapshotEvent } from '../web/src/feed.ts';
+
+/** Locate the stopping cab independently of the replayed train, along its platform rail. */
+export function platformStoppingPoint(graph: Graph, anchor: BerthAnchor): { edge: Edge; t: number } | undefined {
+  const first = graph.edges.find((e) => e.a === anchor.from && e.b === anchor.to || e.a === anchor.to && e.b === anchor.from);
+  if (!first || !(anchor.t >= 0 && anchor.t <= 1)) return;
+  let edge: Edge = first;
+  let t = edge.a === anchor.from ? anchor.t : 1 - anchor.t;
+  if (anchor.platform === undefined) return { edge, t };
+  let direction = edge.a === anchor.from ? -1 : 1, left = DEFAULT_BUFFER_CLEARANCE_M;
+  const seen = new Set<Edge>();
+  while (edge.length > 0 && !seen.has(edge)) {
+    seen.add(edge);
+    const available = (direction > 0 ? 1 - t : t) * edge.length;
+    if (left <= available + 1e-8) return { edge, t: t + direction * Math.min(left, available) / edge.length };
+    left -= available;
+    const node: number = direction > 0 ? edge.b : edge.a;
+    const p = graph.pos.get(node)!, previous = graph.pos.get(direction > 0 ? edge.a : edge.b)!;
+    const score = (next: Edge): number => {
+      const q = graph.pos.get(next.a === node ? next.b : next.a)!;
+      return ((p[0] - previous[0]) * (q[0] - p[0]) + (p[1] - previous[1]) * (q[1] - p[1])) / next.length;
+    };
+    // A short terminal edge may end before the clearance. Keep following the same
+    // rail alignment rather than adding a world-coordinate offset across the track.
+    const next: Edge | undefined = (graph.adj.get(node) ?? []).filter((e) => e.length > 0 && !seen.has(e) && score(e) >= -1e-8)
+      .sort((a, b) => score(b) - score(a) || a.wayId - b.wayId || a.a - b.a || a.b - b.b)[0];
+    if (!next) return;
+    edge = next; t = edge.a === node ? 0 : 1; direction = edge.a === node ? 1 : -1;
+  }
+}
 
 export function berthInventory(rows: readonly RecordedEvent[], map: AnchorMap) {
   const seen = new Map<string, number>();
@@ -57,6 +87,12 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
   // Independently regenerate only the canonical platform stops from OSM polygons and terminal order.
   const expected = new Map(buildAnchors(data, [], [], { area: anchors.area, calibrate: false }).anchors
     .filter((a) => a.kind === 'platform' && /^10(?:0\d|10)$/.test(a.berth)).map((a) => [a.berth, a]));
+  const stops = new Map(anchors.anchors.map((a) => [a.berth, platformStoppingPoint(graph, a)]));
+  const expectedStops = new Map([...expected].map(([berth, a]) => [berth, platformStoppingPoint(graph, a)]));
+  const noseAtStop = (t: TrainView, stop: ReturnType<typeof platformStoppingPoint>): boolean =>
+    Boolean(stop && t.leading.edge === stop.edge && Math.abs(t.leading.t - stop.t) * stop.edge.length < 0.05);
+  const bodyAtStop = (t: TrainView, stop: ReturnType<typeof platformStoppingPoint>): boolean => Boolean(stop &&
+    (noseAtStop(t, stop) || t.occupied.some((part) => part.edge === stop.edge && stop.t >= Math.min(part.fromT, part.toT) - 1e-8 && stop.t <= Math.max(part.fromT, part.toT) + 1e-8)));
   const platforms = [...new Set(coverage.inventory.map((i) => i.berth).filter((b) => /^10(?:0\d|10)$/.test(b)))].map((berth) => {
     const n = String(Number(berth) - 1000), actual = byBerth.get(berth), correct = expected.get(berth);
     const sameTrack = Boolean(actual && correct && ((actual.from === correct.from && actual.to === correct.to) || (actual.from === correct.to && actual.to === correct.from)));
@@ -94,12 +130,7 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
       const t = step.physicalId === undefined ? trains.find((t) => t.description === step.description) : trains.find((t) => t.id === step.physicalId);
       if (!t) continue;
       step.physicalId = t.id; step.blocked = t.blocked; step.lastSeenState = t.state;
-      const correct = expected.get(step.to);
-      if (!correct || t.speed !== 0) continue;
-      const edge = graph.edges.find((e) => e.a === correct.from && e.b === correct.to || e.a === correct.to && e.b === correct.from);
-      const fraction = edge?.a === correct.from ? correct.t : 1 - correct.t;
-      if (edge && (t.leading.edge === edge && Math.abs(t.leading.t - fraction) * edge.length < 0.05 ||
-        t.occupied.some((part) => part.edge === edge && fraction >= Math.min(part.fromT, part.toT) - 1e-8 && fraction <= Math.max(part.fromT, part.toT) + 1e-8))) step.reachedAtMs = atMs;
+      if (t.speed === 0 && bodyAtStop(t, expectedStops.get(step.to))) step.reachedAtMs = atMs;
     }
   };
   let cursor = 0, samples = 0, anchoredSeconds = 0, estimatedSeconds = 0, fadingSeconds = 0;
@@ -142,11 +173,11 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
         if (dx * Math.sin(old.heading) - dz * Math.cos(old.heading) < -0.05) backwards++;
       }
       for (const p of platforms) if (t.targetBerth === p.berth) {
-        const stop = locate(p.berth), correct = expected.get(p.berth);
-        const reached = stop && t.speed === 0 && t.leading.edge === stop.edge && Math.abs(t.leading.t - stop.t) * stop.edge.length < 0.05;
+        const reached = t.speed === 0 && noseAtStop(t, stops.get(p.berth));
         if (reached) {
           p.reachedSamples++;
-          if (correct && !((t.leading.edge.a === correct.from && t.leading.edge.b === correct.to) || (t.leading.edge.a === correct.to && t.leading.edge.b === correct.from))) p.actuallyHeldWrongTrackSamples++;
+          const correctStop = expectedStops.get(p.berth);
+          if (correctStop && t.leading.edge !== correctStop.edge) p.actuallyHeldWrongTrackSamples++;
         } else if (t.blocked) p.blockedSamples++;
         else if (t.speed > 0) p.movingSamples++;
         else p.pendingSamples++;

@@ -18,6 +18,12 @@ scratch.mkdir(parents=True, exist_ok=True)
 
 # Each mutation is valid TypeScript and changes an observable motion rule.
 M = [
+    ('terminating trains touch the buffers', 'opts.bufferClearanceM ?? DEFAULT_BUFFER_CLEARANCE_M', 'opts.bufferClearanceM ?? 0'),
+    ('buffer clearance walks toward the buffers', 'continuation(pos, -dir, bufferClearance)', 'continuation(pos, dir, bufferClearance)'),
+    ('short buffer edge loses the arrival facing', 'dir: -direction(last)', 'dir: direction(last)'),
+    ('tail speed restriction is ignored', 'Math.min(cap, bodyCap, t.estimateSpeed ?? Infinity)', 'Math.min(cap, t.estimateSpeed ?? Infinity)'),
+    ('tail restriction ignores zone boundaries inside a long edge', 'const cuts = zoneCuts(s);', 'const cuts = [s.fromT, s.toT];'),
+    ('invalid buffer clearance accepted', '!Number.isFinite(bufferClearance) || bufferClearance < 0', 'false'),
     ('acceleration doubled', 'opts.acceleration ?? 0.7', 'opts.acceleration ?? 1.4'),
     ('braking doubled', 'opts.braking ?? 0.6', 'opts.braking ?? 1.2'),
     ('OSM limits ignored', 'maxspeedMps(opts.wayMaxspeed?.get(edge.wayId), defaultSpeed)', 'defaultSpeed'),
@@ -72,9 +78,28 @@ M = [
     ('shared inference chooses a platform endpoint', 'if (a.platform !== undefined) return;', 'if (false && a.platform !== undefined) return;'),
 ]
 
-def run(work):
+# Audit mutations check that bad output is detected, independently of the motion policy.
+A = [
+    ('audit loses maximum speed', 'counts.maxSpeedMps = Math.max(counts.maxSpeedMps, train.speed);', 'counts.maxSpeedMps = 0;'),
+    ('audit ignores acceleration violations', 'counts.accelerationViolationTicks++;', 'counts.accelerationViolationTicks += 0;'),
+    ('audit ignores deceleration violations', 'counts.decelerationViolationTicks++;', 'counts.decelerationViolationTicks += 0;'),
+    ('audit ignores occupied-track speed limits', 'if (train.speed > limit + DEFAULTS.speedToleranceMps)', 'if (false)'),
+    ('audit ignores drawn-point overspeed', 'counts.pointOverspeedTicks++;', 'counts.pointOverspeedTicks += 0;'),
+    ('audit ignores teleports', 'counts.teleportTicks++;', 'counts.teleportTicks += 0;'),
+    ('audit ignores backwards movement', 'counts.backwardTicks++;', 'counts.backwardTicks += 0;'),
+    ('audit ignores shared track occupancy', 'if (amount <= 0.01) continue;', 'if (true) continue;'),
+    ('audit drops alternate profile seconds', 'profileEverySeconds: 1,', 'profileEverySeconds: 2,'),
+    ('audit counts a platform cab change as a teleport', 'const cabReversal = reversal &&', 'const cabReversal = false &&'),
+    ('audit ignores reversals away from a platform', 'counts.reversalsOutsidePlatform++;', 'counts.reversalsOutsidePlatform += 0;'),
+    ('audit suppresses long unexplained holds', 'if (duration > heldBound &&', 'if (false && duration > heldBound &&'),
+    ('audit suppresses buffer contact', 'bufferClearance + 0.01 < bufferBound', 'false'),
+    ('audit suppresses platform overhang', 'bodyOutside > bodyTolerance', 'false'),
+]
+
+def run(work, audit=False):
     return subprocess.run(
-        ['node', '--test', '--test-reporter=tap', '--test-timeout=15000', 'core/tests/motion.test.ts'],
+        ['node', '--test', '--test-reporter=tap', '--test-timeout=15000',
+         'tools/tests/motion-audit.test.mjs' if audit else 'core/tests/motion.test.ts'],
         cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30,
     )
 
@@ -110,26 +135,43 @@ if baseline.returncode or baseline_tap is None or baseline_tap[1]:
     print(baseline.stdout, baseline.stderr)
     raise SystemExit('baseline must pass with complete TAP before mutation')
 test_names = baseline_tap[0]
+audit_baseline = run(src, True)
+audit_tap = tap_result(audit_baseline)
+if audit_baseline.returncode or audit_tap is None or audit_tap[1]:
+    print(audit_baseline.stdout, audit_baseline.stderr)
+    raise SystemExit('audit baseline must pass with complete TAP before mutation')
+test_names |= audit_tap[0]
 seen_failing = set()
 survivors = []
 killed = []
 invalid_runs = []
-original = (src / 'core/motion.ts').read_text()
+originals = {file: (src / file).read_text() for file in ('core/motion.ts', 'tools/motion-audit.ts')}
 report = []
 def note(message):
     report.append(message)
     print(message, flush=True)
 
-for label, old, new in M:
+cases = [('core/motion.ts', label, old, new) for label, old, new in M] + [('tools/motion-audit.ts', label, old, new) for label, old, new in A]
+for file, label, old, new in cases:
+    original = originals[file]
     if old not in original:
         raise SystemExit(f'mutation pattern missing: {label}')
     with tempfile.TemporaryDirectory(prefix='motion-', dir=scratch) as tmp:
         work = Path(tmp)
-        shutil.copytree(src / 'core', work / 'core')
+        audit = file.startswith('tools/')
+        if audit:
+            # The audit alone is mutated. Reuse read-only dependencies, including Three's
+            # package resolution through the real web directory's node_modules ancestor.
+            (work / 'core').symlink_to(src / 'core', target_is_directory=True)
+            (work / 'web').symlink_to(src / 'web', target_is_directory=True)
+            (work / 'tools/tests').mkdir(parents=True)
+            shutil.copy2(src / 'tools/tests/motion-audit.test.mjs', work / 'tools/tests/motion-audit.test.mjs')
+        else:
+            shutil.copytree(src / 'core', work / 'core')
         shutil.copy2(src / 'package.json', work / 'package.json')
-        (work / 'core/motion.ts').write_text(original.replace(old, new, 1))
+        (work / file).write_text(original.replace(old, new, 1))
         try:
-            result = run(work)
+            result = run(work, audit)
         except subprocess.TimeoutExpired:
             invalid_runs.append(f'{label}: timeout')
             note(f'[INVALID ] {label} (timeout; not counted as a kill)')
@@ -152,7 +194,7 @@ for label, old, new in M:
             note(f'[SURVIVED] {label}')
 
 unproven = test_names - seen_failing
-note(f'\n{len(killed)}/{len(M)} mutations caught by assertions')
+note(f'\n{len(killed)}/{len(cases)} mutations caught by assertions')
 note(f'{len(test_names) - len(unproven)}/{len(test_names)} tests observed failing at least once')
 for label in survivors:
     note('  NOT CAUGHT: ' + label)

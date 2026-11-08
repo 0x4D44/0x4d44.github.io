@@ -40,6 +40,8 @@ export interface TrainView {
   exiting?: boolean;
 }
 export interface MotionBirth { id: number; timeMs: number }
+/** Modelled cab-to-buffer gap; infrastructure anchors remain at the physical stop. */
+export const DEFAULT_BUFFER_CLEARANCE_M = 3;
 export interface MotionOptions {
   /** Resolve once per physical birth, including queued trains, never on a rename. */
   lengthM?: number | ((description: string, birth: MotionBirth) => number);
@@ -48,6 +50,8 @@ export interface MotionOptions {
   defaultSpeedMps?: number;
   stationSpeedMps?: number;
   gapM?: number;
+  /** Modelled nose clearance from a platform's buffer anchor; the tail follows lengthM. */
+  bufferClearanceM?: number;
   quietMs?: number;
   fadeSeconds?: number;
   /** Graph strips rail tags. Supply OSM maxspeed strings keyed by rail way id. */
@@ -111,6 +115,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const defaultSpeed = opts.defaultSpeedMps ?? 40 / 3.6;
   const stationSpeed = opts.stationSpeedMps ?? 25 / 3.6;
   const gap = opts.gapM ?? 5;
+  const bufferClearance = opts.bufferClearanceM ?? DEFAULT_BUFFER_CLEARANCE_M;
   const quietMs = opts.quietMs ?? 20 * 60_000;
   const fadeSeconds = opts.fadeSeconds ?? 5;
   const estimates = opts.estimatedMotion !== false;
@@ -118,6 +123,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     if (!Number.isFinite(n) || n <= 0) throw new Error('motion options must be finite and positive');
   }
   if (!Number.isFinite(gap) || gap < 0) throw new Error('motion gap must be finite and nonnegative');
+  if (!Number.isFinite(bufferClearance) || bufferClearance < 0) throw new Error('motion buffer clearance must be finite and nonnegative');
   let now = 0;
   let started = false;
   let lastAreaActivity = -Infinity;
@@ -207,10 +213,17 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const b = graph.pos.get(edge.b)!;
     return { edge, t, point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t] };
   };
-  const locate = (a: BerthAnchor): TrackPosition | undefined => {
+  const anchorPlacement = (a: BerthAnchor): { pos: TrackPosition; dir: number } | undefined => {
     const e = graph.edges.find((e) => (e.a === a.from && e.b === a.to) || (e.b === a.from && e.a === a.to));
-    return e && a.t >= 0 && a.t <= 1 && e.length > 0 ? point(e, e.a === a.from ? a.t : 1 - a.t) : undefined;
+    if (!e || !(a.t >= 0 && a.t <= 1) || e.length <= 0) return;
+    const pos = point(e, e.a === a.from ? a.t : 1 - a.t), dir = e.a === a.from ? 1 : -1;
+    if (a.platform === undefined || bufferClearance === 0) return { pos, dir };
+    // Buffer anchors locate the infrastructure, not the driver's stopping point.
+    // Walk back on rail: a short terminal edge may end before the full clearance.
+    const trail = continuation(pos, -dir, bufferClearance), last = trail.at(-1);
+    return last ? { pos: point(last.edge, last.toT), dir: -direction(last) } : { pos, dir };
   };
+  const locate = (a: BerthAnchor): TrackPosition | undefined => anchorPlacement(a)?.pos;
   const issue = (t: Train, berth: string, reason: string): void => {
     issues.push({ kind: 'unroutable', description: t.description, berth, reason });
   };
@@ -427,9 +440,9 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     return true;
   };
   const spawn = (description: string, a: BerthAnchor): Train | undefined => {
-    const pos = locate(a);
+    const placement = anchorPlacement(a), pos = placement?.pos;
     if (!pos) { issues.push({ kind: 'unroutable', description, berth: a.berth, reason: 'anchor has no valid graph edge' }); return; }
-    const dir = a.from === pos.edge.a ? 1 : -1;
+    const dir = placement!.dir;
     const id = nextId++;
     const lengthM = lengthFor(description, { id, timeMs: now });
     const t: Train = { description, lengthM, pos, dir, body: initialBody(pos, dir, lengthM), route: [], speed: 0, target: a, lastBerth: a.berth, lastSeen: now, departing: false, blocked: false, distanceM: 0, reversals: 0, authority: 0,
@@ -507,9 +520,9 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       const a = berth ? anchorMap.get(berth) : undefined;
       if (!a && (event.kind === 'step' || estimates)) {
         const arrival = destination ?? anchoredAhead(event.to ?? '', description);
-        const stop = arrival ? locate(arrival) : undefined;
+        const placement = arrival ? anchorPlacement(arrival) : undefined, stop = placement?.pos;
         if (arrival && stop) {
-          const arrivalDir = stop.edge.a === arrival.from ? 1 : -1;
+          const arrivalDir = placement!.dir;
           const trail = continuation(stop, -arrivalDir);
           const first = trail.at(-1);
           const at = first ? point(first.edge, first.toT) : undefined;
@@ -556,20 +569,30 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const cap = maxspeedMps(opts.wayMaxspeed?.get(edge.wayId), defaultSpeed);
     return inZone(KINGS_CROSS, point(edge, t).point) ? Math.min(cap, stationSpeed) : cap;
   };
+  const zoneCuts = (s: Segment): number[] => {
+    const a = graph.pos.get(s.edge.a)!, b = graph.pos.get(s.edge.b)!;
+    const cuts = [s.fromT, s.toT];
+    for (const [axis, bounds] of [[0, [KINGS_CROSS.minX, KINGS_CROSS.maxX]], [1, [KINGS_CROSS.minZ, KINGS_CROSS.maxZ]]] as const) {
+      for (const bound of bounds) {
+        const q = (bound - a[axis]) / (b[axis] - a[axis]);
+        if (q > Math.min(s.fromT, s.toT) && q < Math.max(s.fromT, s.toT)) cuts.push(q);
+      }
+    }
+    return cuts.sort((x, y) => direction(s) * (x - y));
+  };
   const limits = (t: Train, available: number): { cap: number; stop: number } => {
     let stop = available, along = 0, cap = defaultSpeed;
+    let bodyCap = Infinity;
+    // A restriction ends when the last coach clears it, not when the cab does.
+    for (const s of t.body) {
+      const cuts = zoneCuts(s);
+      for (let i = 0; i + 1 < cuts.length; i++) bodyCap = Math.min(bodyCap, speedOn(s.edge, (cuts[i]! + cuts[i + 1]!) / 2));
+    }
     let first = true;
     const approachStart = t.target.platform === undefined ? Infinity : Math.max(0, t.route.reduce((sum, s) => sum + size(s), 0) - 400);
     for (const s of t.route) {
-      const a = graph.pos.get(s.edge.a)!, b = graph.pos.get(s.edge.b)!;
-      const cuts = [s.fromT, s.toT];
+      const cuts = zoneCuts(s);
       if (approachStart > along && approachStart < along + size(s)) cuts.push(s.fromT + direction(s) * (approachStart - along) / s.edge.length);
-      for (const [axis, bounds] of [[0, [KINGS_CROSS.minX, KINGS_CROSS.maxX]], [1, [KINGS_CROSS.minZ, KINGS_CROSS.maxZ]]] as const) {
-        for (const bound of bounds) {
-          const q = (bound - a[axis]) / (b[axis] - a[axis]);
-          if (q > Math.min(s.fromT, s.toT) && q < Math.max(s.fromT, s.toT)) cuts.push(q);
-        }
-      }
       cuts.sort((x, y) => direction(s) * (x - y));
       for (let i = 0; i + 1 < cuts.length; i++) {
         const c = Math.min(speedOn(s.edge, (cuts[i]! + cuts[i + 1]!) / 2), along >= approachStart - EPS ? stationSpeed : Infinity);
@@ -578,7 +601,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
         along += Math.abs(cuts[i + 1]! - cuts[i]!) * s.edge.length;
       }
     }
-    return { cap: Math.min(cap, t.estimateSpeed ?? Infinity), stop };
+    return { cap: Math.min(cap, bodyCap, t.estimateSpeed ?? Infinity), stop };
   };
   const moveBody = (t: Train, distance: number): void => {
     let left = distance;

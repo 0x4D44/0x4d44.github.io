@@ -78,14 +78,29 @@ const locatedAnchors = anchors.anchors.flatMap((a) => {
   return [{ anchor: a, edge, t, point }];
 });
 const platformStops = locatedAnchors.filter((a) => a.anchor.platform !== undefined).map(({ edge, t }) => ({ edge, t }));
-// AnchorMap supplies stops, not platform polygons. A held train occupies a platform
-// when its body includes a platform stop (also true after a stationary cab change).
+// Buffer anchors locate infrastructure. The cab stops 3 m short; after changing
+// cabs that same end of the body must still count as occupying the platform.
+const nearStop = (edge: TrainView['leading']['edge'], t: number, stop: typeof platformStops[number], tolerance: number): boolean => {
+  if (edge === stop.edge && Math.abs(t - stop.t) * edge.length <= tolerance) return true;
+  const pending = [{ node: edge.a, distance: t * edge.length }, { node: edge.b, distance: (1 - t) * edge.length }];
+  const visited = new Map<number, number>();
+  for (let i = 0; i < pending.length; i++) {
+    const { node, distance } = pending[i]!;
+    if (distance > tolerance || distance >= (visited.get(node) ?? Infinity)) continue;
+    visited.set(node, distance);
+    if (node === stop.edge.a && distance + stop.t * stop.edge.length <= tolerance ||
+        node === stop.edge.b && distance + (1 - stop.t) * stop.edge.length <= tolerance) return true;
+    for (const next of graph.adj.get(node) ?? []) pending.push({ node: next.a === node ? next.b : next.a, distance: distance + next.length });
+  }
+  return false;
+};
 const holdsAtPlatform = (t: TrainView): boolean => platformStops.some((p) =>
-  t.leading.edge === p.edge && Math.abs(t.leading.t - p.t) * p.edge.length < 0.05 ||
-  t.occupied.some((s) => s.edge === p.edge && p.t >= Math.min(s.fromT, s.toT) - 1e-8 && p.t <= Math.max(s.fromT, s.toT) + 1e-8));
+  nearStop(t.leading.edge, t.leading.t, p, 3.05) || t.occupied.some((s) =>
+    nearStop(s.edge, s.fromT, p, 3.05) || nearStop(s.edge, s.toT, p, 3.05) ||
+    s.edge === p.edge && p.t >= Math.min(s.fromT, s.toT) - 1e-8 && p.t <= Math.max(s.fromT, s.toT) + 1e-8));
 const atAnchor = (t: TrainView, berth: string): boolean => {
   const stop = locatedAnchors.find((a) => a.anchor.berth === berth);
-  return Boolean(stop && t.leading.edge === stop.edge && Math.abs(t.leading.t - stop.t) * stop.edge.length < 0.05);
+  return Boolean(stop && nearStop(t.leading.edge, t.leading.t, stop, stop.anchor.platform === undefined ? 0.05 : 3.05));
 };
 const heldAtAnchor = (t: TrainView): boolean => t.speed === 0 && t.state !== 'fading' && t.targetBerth === t.lastBerth &&
   (t.state === 'held' || t.state === 'estimated') && atAnchor(t, t.lastBerth);

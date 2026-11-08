@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import type { AnchorMap } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
+import { buildGraph } from '../graph.ts';
+import { DEFAULT_BUFFER_CLEARANCE_M } from '../motion.ts';
+import { platformStoppingPoint } from '../../tools/replay-report.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const tool = process.env.REPLAY_REPORT_TEST_TOOL ?? resolve(root, 'kings-cross-src/tools/replay-report.ts');
@@ -61,6 +64,32 @@ test('CLI rejects platform metadata that assigns the correct number to the wrong
   assert.equal(status, 1);
   assert.equal(report.platforms[0].correctTargetTrack, false);
   assert.ok(report.platforms[0].actuallyHeldWrongTrackSamples > 0);
+});
+
+test('CLI recognizes a completed platform arrival at the cab clearance point', async () => {
+  const m = map(); m.anchors.push({ ...a('1000', 1), platform: '0', kind: 'platform' });
+  const { status, report } = await run('completed-platform', m, [
+    { t: 0, e: event('interpose', { to: 'B' }) },
+    { t: 20000, e: event('step', { from: 'B', to: '1000' }) },
+    { t: 200000, e: event('heartbeat') },
+  ]);
+  assert.equal(status, 0);
+  assert.equal(report.platforms[0].correctTargetTrack, true);
+  assert.ok(report.platforms[0].reachedSamples > 0);
+  assert.equal(report.platforms[0].actuallyHeldWrongTrackSamples, 0);
+  assert.equal(report.platformStepSummary.reachedCorrectTrack, 1);
+  assert.equal(report.platformSteps[0].resolution, 'reached-correct-track');
+});
+
+test('platform cab clearance follows the rail across a short reversed terminal edge', () => {
+  const graph = buildGraph({ nodes: [[1, 10, -300], [2, 10, -201], [3, 10, -200]],
+    rails: [{ id: 1, nodes: [3, 2, 1], tunnel: false, bridge: false, layer: 0, service: 'main' }] });
+  const anchor = { ...a('1000', 1), from: 2, to: 3, point: [10, -200] as [number, number], platform: '0', kind: 'platform' as const };
+  const stop = platformStoppingPoint(graph, anchor);
+  assert.ok(stop);
+  assert.equal(stop.edge, graph.edges[1]);
+  const from = graph.pos.get(stop.edge.a)!, to = graph.pos.get(stop.edge.b)!;
+  assert.ok(Math.abs(from[1] + (to[1] - from[1]) * stop.t - (anchor.point[1] - DEFAULT_BUFFER_CLEARANCE_M)) < 1e-8);
 });
 
 test('CLI distinguishes pending moving platform authority from a reached platform nose', async () => {
