@@ -1208,21 +1208,38 @@ export function cityMaterial(name: CityMaterialName): THREE.Material {
 // TERRAIN BLOCK (worker S10). The ground drawn from the Environment Agency DTM (core/terrain.ts, world.ts
 // addTerrain). The mesh is split by slope into three draws: level ground and grassed banks use the two
 // flat-coloured materials below; a face steeper than SLOPE.wallDeg is masonry (a retaining wall) and takes
-// `material('brick')` with UVs in metres, built in world.ts. The ground colour is the one the flat plane had.
+// the sooty brick below, with UVs in metres built in world.ts. The ground colour is the one the flat plane had.
 // The terrain is pushed back a little in depth (polygon offset +1) so the draped city layers (their offsets
 // are -1 to -6) win every depth tie, whatever the mesh's few centimetres of tolerance.
 // =====================================================================================================
 
-export type TerrainMaterialName = 'ground' | 'bank';
+export type TerrainMaterialName = 'ground' | 'bank' | 'wall';
 
-const TERRAIN_COLOUR: Readonly<Record<TerrainMaterialName, number>> = { ground: 0x3a4049, bank: 0x3f4a35 };
+const TERRAIN_COLOUR: Readonly<Record<'ground' | 'bank', number>> = { ground: 0x3a4049, bank: 0x3f4a35 };
+/**
+ * The retaining wall's tint over the shared London stock brick (average 0xa0895a): it takes the brick to a dark, sooty brown,
+ * about 0x57472a once mip-mapped (a century and a half of coal smoke; the shade is ASSUMED, no survey of these walls was found).
+ * The walls are runs of triangles of a 4 m terrain grid, so their outline is a saw-tooth along a cutting: in clean tan brick
+ * against the dark grass of the bank it read as ragged tan patches; in dark brick it settles into the bank.
+ */
+export const TERRAIN_WALL_TINT = 0x8f8a82;
 const terrainMaterials = new Map<TerrainMaterialName, THREE.Material>();
 
-/** A shared material for level ground ('ground') or a grassed bank ('bank'). Never mutate, clone first. */
+/** The shared brick under `TERRAIN_WALL_TINT`: the same texture (UVs in metres), its own colour. In Node, flat: the average times the tint. */
+function terrainWall(): THREE.Material {
+  const m = (material('brick') as THREE.MeshLambertMaterial).clone();
+  m.color.multiply(new THREE.Color(TERRAIN_WALL_TINT)); // white with the map, its average without: either way the product the shader draws
+  return m;
+}
+
+/** A shared material for level ground ('ground'), a grassed bank ('bank') or a retaining wall ('wall', brick, UVs in metres). Never mutate, clone first. */
 export function terrainMaterial(name: TerrainMaterialName): THREE.Material {
   let m = terrainMaterials.get(name);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color: TERRAIN_COLOUR[name], polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    m = name === 'wall' ? terrainWall() : new THREE.MeshLambertMaterial({ color: TERRAIN_COLOUR[name] });
+    m.polygonOffset = true;
+    m.polygonOffsetFactor = 1;
+    m.polygonOffsetUnits = 1;
     m.name = `terrain-${name}`;
     terrainMaterials.set(name, m);
   }

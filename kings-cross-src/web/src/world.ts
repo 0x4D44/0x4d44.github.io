@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { buildTerrainMesh, distanceField, overMesh, splitBySlope, toleranceNearRails } from '../../core/terrain.ts';
 import type { Extent, Terrain, TerrainMesh } from '../../core/terrain.ts';
-import { material, terrainMaterial } from './materials.ts';
+import { terrainMaterial } from './materials.ts';
 
 export const HORIZON = 0x35465e;
 const ZENITH = 0x0b1322;
@@ -18,6 +18,25 @@ const ZENITH = 0x0b1322;
  */
 export const GROUND_Y = -0.2;
 const GROUND_COLOUR = 0x3a4049;
+
+/**
+ * The scene's lights (exported so a test can light a surface the way the page does). The hemisphere is the dusk sky over the
+ * dark ground; the sun is the key, high in the south-west, so it lights what faces south and west and leaves the north and
+ * east faces to the blue sky alone. A train's front is such a face half the time (the railway runs north-south, and a train
+ * leaving King's Cross faces north): lit by the sky it is dim, and the sky's blue-heavy light turns a warning yellow olive
+ * (hue 52 degrees, a third of full brightness, on a flat north face). The two fills run along the railway, low and warm, and
+ * are weak beside the sun (the north one under half its strength, the south one under a fifth): they light the faces that
+ * look along the tracks, the fronts and backs of trains, and barely touch the ground or the roofs (a tenth of what those
+ * receive). Neither casts a shadow: nothing in the scene does.
+ */
+export const LIGHTS = {
+  hemisphere: { sky: 0xc4d6ff, ground: 0x3a3f48, intensity: 1.25 },
+  sun: { colour: 0xffe8c2, intensity: 1.7, position: [-320, 520, 260] as const },
+  fills: [
+    { name: 'fill-north', colour: 0xfff0d8, intensity: 0.8, position: [50, 95, -520] as const },
+    { name: 'fill-south', colour: 0xfff0d8, intensity: 0.3, position: [-30, 95, 520] as const },
+  ],
+} as const;
 const FLAT_SIZE = 9000;
 
 export interface World {
@@ -89,10 +108,16 @@ export function addWorld(scene: THREE.Scene, opts: { grid: boolean; bare?: boole
   const sky = skyDome();
   scene.add(sky);
 
-  scene.add(new THREE.HemisphereLight(0xc4d6ff, 0x3a3f48, 1.25));
-  const sun = new THREE.DirectionalLight(0xffe8c2, 1.7);
-  sun.position.set(-320, 520, 260);
+  scene.add(new THREE.HemisphereLight(LIGHTS.hemisphere.sky, LIGHTS.hemisphere.ground, LIGHTS.hemisphere.intensity));
+  const sun = new THREE.DirectionalLight(LIGHTS.sun.colour, LIGHTS.sun.intensity);
+  sun.position.set(...LIGHTS.sun.position);
   scene.add(sun);
+  for (const f of LIGHTS.fills) {
+    const fill = new THREE.DirectionalLight(f.colour, f.intensity);
+    fill.name = f.name;
+    fill.position.set(f.position[0], f.position[1], f.position[2]);
+    scene.add(fill);
+  }
 
   const flat = new THREE.MeshLambertMaterial({ color: GROUND_COLOUR });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(FLAT_SIZE, FLAT_SIZE).rotateX(-Math.PI / 2), flat);
@@ -124,15 +149,19 @@ export interface TerrainDraw {
   group: THREE.Group;
   /** the adaptive mesh, as built (positions and indices in world coordinates) */
   mesh: TerrainMesh;
-  /** the terrain with its ground read off the drawn mesh: seat everything that stands on the ground on this one */
+  /** the terrain with its ground read off the drawn mesh (and, in an `exclude` hole that has a `floorAt`, off that): seat everything that stands on the ground on this one */
   ground: Terrain;
   stats: { meshes: number; vertices: number; triangles: number; leaves: number; ground: number; bank: number; wall: number };
   dispose(): void;
 }
 
 export interface TerrainOptions {
-  /** leave out triangles whose centre is here (a portal's cliff strip, see portals.ts `portalHole`) */
-  exclude?: (x: number, z: number) => boolean;
+  /**
+   * Leave out triangles whose centre is here (a portal's cliff strip, see portals.ts `portalHole`). A predicate with a
+   * `floorAt` also says what stands in the hole instead: the drawn ground (`TerrainDraw.ground`) answers that height there,
+   * so what is laid over the ground does not climb the ramp the mesh would have drawn.
+   */
+  exclude?: ((x: number, z: number) => boolean) & { floorAt?: (x: number, z: number) => number };
   /**
    * The open rails (core/scene.ts `railSegments`: flat x, y, z, x, y, z per segment): the mesh then hugs the ground
    * within a few centimetres near them and relaxes with distance (core/terrain.ts `toleranceNearRails`).
@@ -230,12 +259,16 @@ export function addTerrain(scene: THREE.Scene, terrain: Terrain, opts: TerrainOp
   };
   add('terrain-ground', split.ground, terrainMaterial('ground'), false);
   add('terrain-bank', split.bank, terrainMaterial('bank'), false);
-  add('terrain-wall', split.wall, material('brick'), true);
+  add('terrain-wall', split.wall, terrainMaterial('wall'), true);
   scene.add(group);
+  // the mesh answers its own height inside a hole as if it were filled (the DTM's ramp); what is drawn there is the hole's own floor
+  const hole = opts.exclude;
+  const floorAt = hole?.floorAt;
+  const drawn: Pick<TerrainMesh, 'heightAt'> = hole && floorAt ? { heightAt: (x, z) => (hole(x, z) ? floorAt(x, z) : mesh.heightAt(x, z)) } : mesh;
   return {
     group,
     mesh,
-    ground: overMesh(terrain, mesh),
+    ground: overMesh(terrain, drawn),
     stats: { meshes: group.children.length, vertices: mesh.vertices, triangles: mesh.triangles, leaves: mesh.leaves, ground: split.ground.length / 3, bank: split.bank.length / 3, wall: split.wall.length / 3 },
     dispose() {
       scene.remove(group);
