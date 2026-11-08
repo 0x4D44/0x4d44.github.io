@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { carLength, DRIVING, FIGURES, roofHeight, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
+import { ALL_KINDS, carLength, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, roofHeight, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
 import type { CarType, TrainKind } from '../train.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -142,4 +142,107 @@ test('train: carLength agrees with the figures, and the layout is deterministic'
   for (const t of ['DPTS', 'DPTF'] as const) assert.equal(carLength(t), FIGURES.drivingCarLength.value);
   for (const t of ['MS', 'MC', 'TS', 'MF'] as const) assert.equal(carLength(t), FIGURES.intermediateCarLength.value);
   assert.deepEqual(trainLayout('lner9'), trainLayout('lner9'));
+});
+
+// --- the Great Northern commuter units (Class 387 Electrostar, Class 717 Desiro City) ----------------------
+
+test('train: the Great Northern units are the published lengths: 81.56 m a Class 387 (four cars), 121.674 m a Class 717', () => {
+  // loco-info.com (Class 387 data): unit length 81.56 m; Siemens datasheet (Class 717): "Unit length 121,674 mm"
+  near(trainLayout('gn387x4').length, 81.56, 1e-9, '387, one unit');
+  near(trainLayout('gn387x8').length, 163.12, 1e-9, '387, two units coupled');
+  near(trainLayout('gn387x12').length, 244.68, 1e-9, '387, three units coupled');
+  near(trainLayout('gn717x6').length, 121.674, 1e-9, '717');
+  for (const car of trainLayout('gn387x12').cars) assert.equal(car.length, 20.39, `387 car ${car.index} (Wikipedia: car length 20.39 m)`);
+  for (const car of trainLayout('gn717x6').cars) near(car.length, 121.674 / 6, 1e-9, `717 car ${car.index} (the unit length over six: an assumption)`);
+});
+
+test('train: the Great Northern formations are as published', () => {
+  const codes = (k: TrainKind): string => TRAIN_SPECS[k].cars.join('-');
+  assert.equal(codes('gn387x4'), 'DMSO-MSO-PTSO-DMSO');
+  assert.equal(codes('gn387x8'), 'DMSO-MSO-PTSO-DMSO-DMSO-MSO-PTSO-DMSO');
+  assert.equal(codes('gn387x12'), 'DMSO-MSO-PTSO-DMSO-DMSO-MSO-PTSO-DMSO-DMSO-MSO-PTSO-DMSO');
+  assert.equal(codes('gn717x6'), 'DMOS-TOS-TOSLW-MOS-PTOS-DMOS');
+  assert.deepEqual(EMU_KINDS.map((k) => TRAIN_SPECS[k].cars.length), [4, 8, 12, 6]);
+  assert.deepEqual(EMU_KINDS.map((k) => TRAIN_SPECS[k].livery), ['greatnorthern', 'greatnorthern', 'greatnorthern', 'greatnorthern']);
+  // the kind lists: the Azuma kinds are unchanged, and ALL_KINDS is every kind once
+  assert.deepEqual(TRAIN_KINDS, ['lner5', 'lner9', 'hull5', 'lumo5']);
+  assert.deepEqual([...ALL_KINDS].sort(), [...TRAIN_KINDS, ...EMU_KINDS].sort());
+});
+
+test('train: cabs are at the ends of each unit, so coupled 387s have two noses meeting, and the 717 has cabs at its two ends only', () => {
+  const cabs = (k: TrainKind): (string | null)[] => trainLayout(k).cars.map((c) => c.cab);
+  assert.deepEqual(cabs('gn387x4'), ['front', null, null, 'rear']);
+  assert.deepEqual(cabs('gn387x8'), ['front', null, null, 'rear', 'front', null, null, 'rear']);
+  assert.deepEqual(cabs('gn387x12'), ['front', null, null, 'rear', 'front', null, null, 'rear', 'front', null, null, 'rear']);
+  assert.deepEqual(cabs('gn717x6'), ['front', null, null, null, null, 'rear']);
+  for (const kind of EMU_KINDS) for (const car of trainLayout(kind).cars) assert.equal(car.cab !== null, DRIVING.has(car.type), `${kind} car ${car.index} ${car.type}`);
+});
+
+test('train: Great Northern cars abut, and each has two bogies the published or assumed distance in from its ends', () => {
+  for (const kind of EMU_KINDS) {
+    const { cars, length, spec } = trainLayout(kind);
+    const fig = EMU_FIGURES[spec.family as 'electrostar' | 'desiro'];
+    assert.equal(cars[0]?.start, 0);
+    for (let i = 1; i < cars.length; i++) near((cars[i] as { start: number }).start, (cars[i - 1] as { end: number }).end, 1e-9, `${kind} join ${i}`);
+    near((cars[cars.length - 1] as { end: number }).end, length, 1e-9, `${kind} length`);
+    for (const car of cars) {
+      near(car.bogies[0] - car.start, fig.bogieFromEnd.value, 1e-9, `${kind} car ${car.index} first bogie from its start`);
+      near(car.end - car.bogies[1], fig.bogieFromEnd.value, 1e-9, `${kind} car ${car.index} second bogie from its end`);
+    }
+  }
+  assert.equal(ELECTROSTAR.bogieFromEnd.value, 3.15);
+  assert.equal(DESIRO_CITY.bogieFromEnd.value, 3.1);
+});
+
+test('train: a Great Northern pantograph is on each PTSO / PTOS (pantograph trailer) and nowhere else, centred, 2.0 m long', () => {
+  const at = (k: TrainKind): number[] => trainLayout(k).cars.filter((c) => c.pantograph).map((c) => c.index);
+  assert.deepEqual(at('gn387x4'), [2]);
+  assert.deepEqual(at('gn387x8'), [2, 6]);
+  assert.deepEqual(at('gn387x12'), [2, 6, 10]);
+  assert.deepEqual(at('gn717x6'), [4]);
+  for (const kind of EMU_KINDS) {
+    for (const car of trainLayout(kind).cars) {
+      assert.equal(car.pantograph !== null, car.type === 'PTSO' || car.type === 'PTOS', `${kind} car ${car.index} ${car.type}`);
+      if (!car.pantograph) continue;
+      near(car.pantograph[1] - car.pantograph[0], 2.0, 1e-9, 'base length');
+      near((car.pantograph[0] + car.pantograph[1]) / 2, (car.start + car.end) / 2, 1e-9, 'centred on its car');
+    }
+  }
+});
+
+test('train: traction motors follow the published wheel arrangements (387: 2-B + 2-B + 2-2 + B-2; 717: Bo-Bo + 2-2 + 2-2 + Bo-Bo + 2-2 + Bo-Bo)', () => {
+  const m = (k: TrainKind): string => trainLayout(k).cars.map((c) => c.motor.map((x) => (x ? 'M' : 'T')).join('')).join(' ');
+  assert.equal(m('gn387x4'), 'TM TM TT MT');
+  assert.equal(m('gn387x8'), 'TM TM TT MT TM TM TT MT');
+  assert.equal(m('gn717x6'), 'MM TT TT MM TT MM');
+  // the Azuma model has motors on every bogie (an assumption, stated in the Car type)
+  for (const car of trainLayout('lner9').cars) assert.deepEqual(car.motor, [true, true]);
+});
+
+test('train: every commuter-EMU figure has a source; the published ones are pinned, and a guess says so', () => {
+  const published: string[] = [];
+  for (const [family, figures] of Object.entries(EMU_FIGURES)) {
+    for (const [name, f] of Object.entries(figures)) {
+      assert.ok(f.source.length > 20, `${family}.${name} has a real source`);
+      assert.ok(['published', 'drawn', 'assumed'].includes(f.basis), `${family}.${name} has a basis`);
+      assert.ok(Number.isFinite(f.value) && f.value > 0, `${family}.${name} is a positive number`);
+      if (f.basis === 'published') published.push(`${family}.${name}`);
+      if (f.basis === 'assumed') assert.match(f.source, /not published|assumed|to be replaced/i, `${family}.${name} says it is a guess`);
+    }
+  }
+  // adding a figure to this list needs a manufacturer or reference-work citation
+  assert.deepEqual(published.sort(), [
+    'desiro.bodyWidth', 'desiro.doorWidth', 'desiro.floorHeight', 'desiro.wheelDiameter', 'desiro.wheelbaseMotor', 'desiro.wheelbaseTrailer',
+    'electrostar.bodyWidth', 'electrostar.carLength', 'electrostar.height',
+  ]);
+  for (const kind of EMU_KINDS) assert.ok(TRAIN_SPECS[kind].source.length > 20, `${kind} formation is cited`);
+  assert.deepEqual([ELECTROSTAR.carLength.value, ELECTROSTAR.bodyWidth.value, ELECTROSTAR.height.value], [20.39, 2.8, 3.77]);
+  assert.deepEqual([DESIRO_CITY.bodyWidth.value, DESIRO_CITY.floorHeight.value, DESIRO_CITY.wheelDiameter.value, DESIRO_CITY.wheelbaseMotor.value, DESIRO_CITY.wheelbaseTrailer.value, DESIRO_CITY.doorWidth.value], [2.8, 1.1, 0.82, 2.2, 2.1, 1.5]);
+});
+
+test('train: carLength agrees with the commuter figures, and driving cars are exactly the cabs', () => {
+  for (const t of ['DMSO', 'MSO', 'PTSO'] as const) assert.equal(carLength(t), ELECTROSTAR.carLength.value);
+  for (const t of ['DMOS', 'TOS', 'TOSLW', 'MOS', 'PTOS'] as const) assert.equal(carLength(t), DESIRO_CITY.carLength.value);
+  assert.deepEqual([...DRIVING].sort(), ['DMOS', 'DMSO', 'DPTF', 'DPTS']);
+  assert.deepEqual(trainLayout('gn387x8'), trainLayout('gn387x8'));
 });

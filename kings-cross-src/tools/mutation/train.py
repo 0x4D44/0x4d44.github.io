@@ -39,11 +39,53 @@ M = [
     ("a figure with no source", "source: `${GBTRAINS}: 8 ft 6 in (2,600 mm), Beacon Rail's figure for the 803, which shares the bogie`", "source: 'x'"),
     ("a guess that does not say so", "source: 'not published; gbtrains.uk: \"no source gives the real wheel size\". A typical value for a UK EMU, to be replaced.'", "source: 'this is the wheel diameter used for the drawing of the bogie'"),
     ("driving cars counted as intermediate", "return DRIVING.has(type) ? FIGURES.drivingCarLength.value : FIGURES.intermediateCarLength.value;", "return FIGURES.intermediateCarLength.value;"),
+    # --- the Great Northern commuter units (Class 387 Electrostar, Class 717 Desiro City) --------------------------------
+    ("Electrostar car 20.0 m", "carLength: { value: 20.39,", "carLength: { value: 20.0,"),
+    ("Electrostar width 2.7 m", "bodyWidth: { value: 2.8, unit: 'm', basis: 'published', source: `${WIKI_387}", "bodyWidth: { value: 2.7, unit: 'm', basis: 'published', source: `${WIKI_387}"),
+    ("Electrostar height 3.9 m", "height: { value: 3.77, unit: 'm', basis: 'published',", "height: { value: 3.9, unit: 'm', basis: 'published',"),
+    ("Electrostar floor height called published", "floorHeight: { value: 1.1, unit: 'm', basis: 'assumed', source: 'Not published for the 387", "floorHeight: { value: 1.1, unit: 'm', basis: 'published', source: 'Not published for the 387"),
+    ("Electrostar bogies 4 m from the car end", "bogieFromEnd: { value: 3.15,", "bogieFromEnd: { value: 4.0,"),
+    ("Electrostar door width called published", "doorWidth: { value: 1.3, unit: 'm', basis: 'assumed',", "doorWidth: { value: 1.3, unit: 'm', basis: 'published',"),
+    ("a guess that does not say so (door width)", "source: 'Not published in any page read; a typical twin-leaf commuter opening, to be replaced.'", "source: 'a twin-leaf commuter opening'"),
+    ("Electrostar car length with no source", "carLength: { value: 20.39, unit: 'm', basis: 'published', source: `${WIKI_387}: \"Car length 20.39 metres (66 ft 11 in)\". ${LOCO_INFO}: unit length 81.56 m, which is exactly four times this.` }", "carLength: { value: 20.39, unit: 'm', basis: 'published', source: 'x' }"),
+    ("Desiro unit as 5 equal cars", "carLength: { value: 121.674 / 6,", "carLength: { value: 121.674 / 5,"),
+    ("Desiro car length called published", "carLength: { value: 121.674 / 6, unit: 'm', basis: 'assumed',", "carLength: { value: 121.674 / 6, unit: 'm', basis: 'published',"),
+    ("Desiro door 1.3 m", "doorWidth: { value: 1.5, unit: 'm', basis: 'published',", "doorWidth: { value: 1.3, unit: 'm', basis: 'published',"),
+    ("Desiro wheels 0.9 m", "wheelDiameter: { value: 0.82,", "wheelDiameter: { value: 0.9,"),
+    ("Desiro motor bogie wheelbase 2.6 m", "wheelbaseMotor: { value: 2.2,", "wheelbaseMotor: { value: 2.6,"),
+    ("Desiro trailer bogie wheelbase as the motor's", "wheelbaseTrailer: { value: 2.1,", "wheelbaseTrailer: { value: 2.2,"),
+    ("Desiro height called published", "height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published (the datasheet", "height: { value: 3.77, unit: 'm', basis: 'published', source: 'Not published (the datasheet"),
+    ("Desiro bogies 4 m from the car end", "bogieFromEnd: { value: 3.1,", "bogieFromEnd: { value: 4.0,"),
+    ("a commuter car counted as an Azuma car", "if (EMU_CAR_LENGTH_FIGURE[type]) return EMU_CAR_LENGTH_FIGURE[type].value;", "if (false) return 0;"),
+    ("DMOS not a driving car", "new Set(['DPTS', 'DPTF', 'DMSO', 'DMOS'])", "new Set(['DPTS', 'DPTF', 'DMSO'])"),
+    ("DMSO not a driving car", "new Set(['DPTS', 'DPTF', 'DMSO', 'DMOS'])", "new Set(['DPTS', 'DPTF', 'DMOS'])"),
+    ("387 formation loses a car", "const UNIT_387: readonly CarType[] = ['DMSO', 'MSO', 'PTSO', 'DMSO'];", "const UNIT_387: readonly CarType[] = ['DMSO', 'PTSO', 'DMSO'];"),
+    ("387 formation with the pantograph car swapped for a motor car", "const UNIT_387: readonly CarType[] = ['DMSO', 'MSO', 'PTSO', 'DMSO'];", "const UNIT_387: readonly CarType[] = ['DMSO', 'PTSO', 'MSO', 'DMSO'];"),
+    ("717 formation loses the wheelchair car", "cars: ['DMOS', 'TOS', 'TOSLW', 'MOS', 'PTOS', 'DMOS']", "cars: ['DMOS', 'TOS', 'MOS', 'PTOS', 'DMOS']"),
+    ("717 formation with the cabs not at the ends", "cars: ['DMOS', 'TOS', 'TOSLW', 'MOS', 'PTOS', 'DMOS']", "cars: ['DMOS', 'DMOS', 'TOSLW', 'MOS', 'PTOS', 'TOS']"),
+    ("387 a single unit when coupled (no cabs inside)", "const unitSize = spec.family === 'electrostar' ? UNIT_387.length : spec.cars.length;", "const unitSize = spec.cars.length;"),
+    ("only the front cab of a 387 unit", "const cab: Car['cab'] = type === 'DMSO' || type === 'DMOS' ? (inUnit === 0 ? 'front' : 'rear') : null;", "const cab: Car['cab'] = type === 'DMSO' || type === 'DMOS' ? (inUnit === 0 ? 'front' : null) : null;"),
+    ("a cab at the wrong end of a unit", "(inUnit === 0 ? 'front' : 'rear')", "(inUnit === 0 ? 'rear' : 'front')"),
+    ("EMU bogies 3.15 m from the front end only", "const bogies: [number, number] = [start + f.bogieFromEnd.value, end - f.bogieFromEnd.value];", "const bogies: [number, number] = [start + f.bogieFromEnd.value, end - 2 * f.bogieFromEnd.value];"),
+    ("MSO motors on both bogies", "MSO: 'TM'", "MSO: 'MM'"),
+    ("PTSO with motors", "PTSO: 'TT'", "PTSO: 'MM'"),
+    ("DMOS with no motors", "DMOS: 'MM'", "DMOS: 'TT'"),
+    ("DMSO motor bogie at the nose end", "(cab === 'front' ? 'TM' : 'MT')", "(cab === 'front' ? 'MT' : 'TM')"),
+    ("pantograph on the 387's motor car too", "new Set(['PTSO', 'PTOS'])", "new Set(['PTSO', 'PTOS', 'MSO'])"),
+    ("no pantograph on a 717", "new Set(['PTSO', 'PTOS'])", "new Set(['PTSO'])"),
+    ("EMU pantograph base off centre", "EMU_PANTOGRAPH_CARS.has(type) ? ([centre - half, centre + half] as const)", "EMU_PANTOGRAPH_CARS.has(type) ? ([centre, centre + 2 * half] as const)"),
+    ("EMU pantograph 2.5 m long", "pantographLength: { value: 2.0, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<string, Figure>;", "pantographLength: { value: 2.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<string, Figure>;"),
 ]
 survived = []
 
 def run_tests(work):
     return subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=8000", "core/tests/train.test.ts"], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
+
+# every test, from an unmutated run, so that at the end we can say which tests no mutation ever turned red
+base = run_tests(src)
+if base.returncode != 0: sys.exit("the unmutated tests fail:\n" + base.stdout[-3000:])
+all_tests = sorted(set(re.findall(r"^\s*✔ (.+?) \(", base.stdout, re.M)))
+seen_red = set()
 
 for i, (label, old, new) in enumerate(M):
     work = scratch / f"t{i:02d}"
@@ -58,6 +100,7 @@ for i, (label, old, new) in enumerate(M):
     except subprocess.TimeoutExpired:
         print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); continue
     failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
+    seen_red.update(failed)
     if r.returncode != 0:
         print(f"[KILLED  ] {label} <- {failed[0] if failed else '(non-zero exit)'}", flush=True)
     else:
@@ -66,3 +109,6 @@ for i, (label, old, new) in enumerate(M):
 
 print(f"\n{len(M) - len(survived)}/{len(M)} mutations caught")
 for s in survived: print("  NOT CAUGHT:", s)
+print(f"{len(seen_red)}/{len(all_tests)} tests turned red by at least one mutation")
+for t in all_tests:
+    if t not in seen_red: print("  NEVER RED:", t)
