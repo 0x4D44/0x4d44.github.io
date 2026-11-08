@@ -4,12 +4,15 @@ import { createServer } from 'node:http';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { planBuilding } from '../../core/city.ts';
 import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShed } from '../../core/station.ts';
-import { AXES, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, writePrivateFile, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { trainLayout } from '../../core/train.ts';
+import { WESTERN_RANGE } from '../../web/src/shed.ts';
+import { AXES, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, writePrivateFile, stationCameras, trainCameras, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -21,6 +24,7 @@ test('evidence options reject unsafe relay origins dates speeds and output paths
   for (const args of [['--date','20260230'], ['--date','2026010/'], ['--speed','0'], ['--speed','NaN'], ['--signal-at','25:00:00'], ['--out', root], ['--out', `${scratch}/../../../escape`], ['--dist'], ['--wat']]) assert.throws(()=>optionsFrom(args));
   const o = optionsFrom(['--gpu', '--date', '20261109', '--speed','8', '--out',scratch]);
   assert.equal(o.gpu,true); assert.equal(o.date,'20261109'); assert.equal(o.speed,8);
+  assert.equal(optionsFrom([]).rawOsm,path.join(os.homedir(),'kx-data/osm/kx-osm.json'));
 });
 
 test('only an actual Metal renderer qualifies for hardware evidence', () => {
@@ -57,6 +61,18 @@ test('station cameras cover every requested landmark using finite world position
   assert.equal(AXES.length,9); assert.equal(cameras['platform-eye'].pos[1],2.5);
 });
 
+test('Western Range camera frames the actual west brick facade at eye level', async () => {
+  const data=JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-track.json'),'utf8'));
+  const s=shedLayout(data), camera=stationCameras(data)['western-range'];
+  const local=worldToShed(s,[camera.pos[0],camera.pos[2]]), target=worldToShed(s,[camera.target[0],camera.target[2]]);
+  const facadeU=-WESTERN_RANGE.depth-.01, middleV=(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2;
+  assert.ok(local.u<facadeU && local.u-facadeU>-7,'camera sits within seven metres outside the western face');
+  assert.ok(local.v>=WESTERN_RANGE.v0&&local.v<=WESTERN_RANGE.v1,'camera stays alongside the OSM-length range');
+  assert.ok(Math.abs(local.v-middleV)<1e-8);
+  assert.ok(Math.abs(target.u-facadeU)<.2&&Math.abs(target.v-middleV)<1e-8,'aims at the brick west face');
+  assert.equal(camera.pos[1],1.6); assert.equal(camera.fov,35);
+});
+
 test('train closeups are three metres from the nose and coach side and include bogie gangway and 387', () => {
   const train = kind => ({kind,nose:[20,0,-10],h:0});
   const cameras = trainCameras(['lner9','lumo5','hull5','gn387x4'].map(train),{platforms:[]});
@@ -66,12 +82,58 @@ test('train closeups are three metres from the nose and coach side and include b
   assert.ok(!trainCameras([train('lner9')],{platforms:[]})['great-northern-387'],'missing 387 cannot be relabelled Azuma');
 });
 
+test('GC 180 and Thameslink 700 samples get nose three-quarter and whole-side views', () => {
+  const train=kind=>({kind,nose:[20,0,-10],h:0});
+  const cameras=trainCameras(['lner9','gc180x5','tl700x8'].map(train),{platforms:[]});
+  for(const kind of ['gc180x5','tl700x8']) {
+    const nose=cameras[`${kind}-nose-three-quarter`], side=cameras[`${kind}-whole-side`];
+    assert.ok(nose,`${kind} nose view`); assert.ok(side,`${kind} whole-side view`);
+    assert.equal(nose.pos[0]-20,3.5); assert.equal(nose.pos[2]+10,3);
+    assert.equal(nose.detail,`sample ${kind}; nose three-quarter`);
+    assert.equal(side.hideScenery,true); assert.equal(side.fov,7); assert.equal(side.near,100);
+    assert.equal(side.detail,`sample ${kind}; full side; cutaway: shed and generic blocks hidden`);
+    const distance=Math.hypot(side.pos[0]-side.target[0],side.pos[2]-side.target[2]);
+    assert.equal(distance,Math.max(950,trainLayout(kind).length*6));
+  }
+  assert.equal(trainCameras([train('lner9')],{platforms:[]})['gc180x5-whole-side'],undefined);
+  assert.equal(trainCameras([train('lner9')],{platforms:[]})['tl700x8-nose-three-quarter'],undefined);
+});
+
+test('signal state camera frames the OSM head face from nearby track level', () => {
+  const camera=signalStateCamera([10,0,20],{facing:[0,1],travel:[0,-1],side:'left'});
+  assert.deepEqual(camera.pos,[11.6,2.9,22.8]);
+  assert.deepEqual(camera.target,[10,4.1,20.32]);
+  assert.equal(camera.fov,30); assert.equal(camera.near,.1);
+  const distance=Math.hypot(camera.pos[0]-camera.target[0],camera.pos[2]-camera.target[2]);
+  assert.ok(distance>2.8&&distance<3.1,'camera is about three metres from the signal face');
+  assert.ok(camera.pos[1]<3.95&&camera.target[1]>3.95,'camera is below the lamp and tilts slightly upward');
+});
+
+test('signal detail board visibility restores its prior inline style', () => {
+  const values=new Map([['visibility',{value:'visible',priority:'important'}]]);
+  const board={style:{
+    getPropertyValue:key=>values.get(key)?.value??'',
+    getPropertyPriority:key=>values.get(key)?.priority??'',
+    setProperty:(key,value,priority='')=>values.set(key,{value,priority}),
+    removeProperty:key=>values.delete(key),
+  }};
+  const prior=setSignalDetailBoardVisibility(board,true);
+  assert.deepEqual(values.get('visibility'),{value:'hidden',priority:''});
+  setSignalDetailBoardVisibility(board,false,prior);
+  assert.deepEqual(values.get('visibility'),{value:'visible',priority:'important'});
+  const noInlineStyle={style:board.style};
+  values.delete('visibility');
+  const emptyPrior=setSignalDetailBoardVisibility(noInlineStyle,true);
+  setSignalDetailBoardVisibility(noInlineStyle,false,emptyPrior);
+  assert.equal(values.has('visibility'),false);
+});
+
 test('every named station and sample train camera clears the rendered city building roofs', async () => {
   const data = JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-track.json'),'utf8'));
   const city = JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-city.json'),'utf8'));
   assert.ok(city.extract && city.roads.length, 'check against the current city extract');
   const s=shedLayout(data), stops=shedBufferStops(data,s).sort((a,b)=>worldToShed(s,[a.x,a.z]).u-worldToShed(s,[b.x,b.z]).u);
-  const trains=[['lner9',1],['lner5',3],['hull5',5],['lumo5',7],['gn387x4',3]].map(([kind,i])=>{
+  const trains=[['lner9',1],['lner5',3],['hull5',5],['lumo5',7],['gn387x4',3],['gc180x5',3],['tl700x8',3]].map(([kind,i])=>{
     const pose=standingTrainPose(s,stops[i],1.5); return {kind,nose:[pose.nose[0],0,pose.nose[1]],h:s.heading};
   });
   const cameras={...stationCameras(data),...trainCameras(trains,data)}, buildings=cityBuildings(data);
@@ -79,7 +141,7 @@ test('every named station and sample train camera clears the rendered city build
   // Pin the requested clear positions; check the old footprints at street height too.
   const at=(u,v,y)=>{const [x,z]=shedToWorld(s,u,v);return [x,y,z];};
   assert.deepEqual(cameras['south-front'].pos,at(s.width/2,-70,26));
-  assert.deepEqual(cameras['western-range'].pos,at(-43,185,12));
+  assert.deepEqual(cameras['western-range'].pos,at(-WESTERN_RANGE.depth-6,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6));
   for (const [name,pos,id] of [['south-front',at(s.width/2,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
     assert.ok(cameraBuildingCollisions({[name]:{...cameras[name],pos}},buildings).some(c=>c.buildingId===id),name);
   }
