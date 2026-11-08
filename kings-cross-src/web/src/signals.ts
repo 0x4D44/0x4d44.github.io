@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { signalStates, updateBytes } from '../../core/sclass.ts';
+import { qualifiesSignalEvidence, signalStates, updateBytes } from '../../core/sclass.ts';
 import type { ByteState, SignalEvidence, SignalHypothesis, SignalState, TimedTdEvent } from '../../core/sclass.ts';
-import type { AnchorMap } from '../../core/anchors.ts';
+import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
+import type { Graph } from '../../core/graph.ts';
 
 export interface OverlaySignal {
   id: number;
@@ -19,7 +20,17 @@ export interface OverlaySignal {
 }
 export interface SignalOverlay { attribution: string; signals: OverlaySignal[] }
 export type SignalEvent = TimedTdEvent | { t: number; e: { kind: 'snapshot'; area: string; berths?: unknown; sclass?: unknown } };
-export interface DrawnSignal { signal: OverlaySignal; group: THREE.Group; state: SignalState }
+export interface DrawnSignal {
+  signal: OverlaySignal; group: THREE.Group; state: SignalState;
+  inferredPosition: boolean;
+  label: string;
+  mappingSource?: 'reference' | 'nearby' | 'private-topology' | 'td-anchor';
+}
+
+/** A suffix is a signal variant, not a different TD berth. Foreign area prefixes stay separate. */
+export function signalRefBerth(ref: string | undefined): string | undefined {
+  return ref?.match(/^(?:YA\s*)?(\d{4})[A-Z]?$/i)?.[1];
+}
 
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 const count = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
@@ -71,10 +82,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   const lamps = new Map<DrawnSignal, THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>();
   const questions = new Map<DrawnSignal, THREE.Group>();
   let bytes: ByteState = {}, table: SignalHypothesis[] = [], disposed = false, generation = 0;
+  let tableValue: unknown, privateAnchors: AnchorMap | undefined, anchorGraph: Pick<Graph, 'pos'> | undefined;
   const anchors: AnchorMap = { area, sources: [overlay.attribution], anchors: [], unmapped: [] };
   const directAnchors: AnchorMap['anchors'] = [];
   const directBerths = new Map<DrawnSignal, string>();
   const runtimeBerths = new Map<DrawnSignal, string>();
+  const inferredHeads = new Map<string, DrawnSignal>();
+  let nextInferredId = -1;
   const matches = new Map<string, number>();
   for (const s of overlay.signals) if (s.berth) matches.set(s.berth, (matches.get(s.berth) ?? 0) + 1);
   function mesh(geometry: THREE.BufferGeometry, color: number): THREE.Mesh {
@@ -82,13 +96,25 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     resources.add(geometry); resources.add(material);
     return new THREE.Mesh(geometry, material);
   }
-  for (const signal of overlay.signals) {
-    const group = new THREE.Group(); group.name = `signal-${signal.id}`;
+  function pose(signal: OverlaySignal, group: THREE.Group): void {
     const side = signal.side === 'left' ? 1 : -1;
     group.position.set(signal.edge.point[0] + side * 2 * signal.travel[1], 0,
       signal.edge.point[1] - side * 2 * signal.travel[0]);
     group.rotation.y = Math.atan2(signal.facing[0], signal.facing[1]);
-    const post = mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999); post.position.y = 1.85; group.add(post);
+  }
+  function makeHead(signal: OverlaySignal, inferred = false): DrawnSignal {
+    const group = new THREE.Group(); group.name = `signal-${signal.id}`;
+    pose(signal, group);
+    const post = mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999); post.name = 'post'; post.position.y = 1.85; group.add(post);
+    if (inferred) {
+      const material = post.material as THREE.MeshBasicMaterial; material.transparent = true; material.opacity = 0.45;
+      const ringGeometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 49 }, (_, i) => {
+        const angle = i / 48 * Math.PI * 2; return new THREE.Vector3(Math.cos(angle) * .8, .04, Math.sin(angle) * .8);
+      }));
+      const ringMaterial = new THREE.LineDashedMaterial({ color: 0xc3cbd4, dashSize: .18, gapSize: .12 });
+      resources.add(ringGeometry); resources.add(ringMaterial);
+      const ring = new THREE.Line(ringGeometry, ringMaterial); ring.name = 'inferred-position'; ring.computeLineDistances(); group.add(ring);
+    }
     const head = mesh(new THREE.BoxGeometry(0.65, 1.15, 0.28), 0x15191c); head.position.y = 3.8; group.add(head);
     const lamp = mesh(new THREE.SphereGeometry(0.19, 8, 6), 0x666666) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
     lamp.name = 'aspect'; lamp.position.set(0, 3.95, 0.18); group.add(lamp);
@@ -100,21 +126,52 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     question.add(new THREE.Line(lineGeometry, lineMaterial));
     const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff); dot.position.y = -0.22; question.add(dot);
     question.position.set(0, 3.48, 0.16); group.add(question);
-    const record: DrawnSignal = { signal, group, state: 'unknown' }; records.push(record); lamps.set(record, lamp); questions.set(record, question);
+    const label = inferred ? `Signal ${signal.berth} · position inferred from TD` : `Signal ${signal.ref ?? signal.id} · OSM position`;
+    if (inferred) group.name = label;
+    group.userData.label = label; group.userData.inferredPosition = inferred;
+    const record: DrawnSignal = { signal, group, state: 'unknown', inferredPosition: inferred, label };
+    records.push(record); lamps.set(record, lamp); questions.set(record, question); parent.add(group);
+    return record;
+  }
+  for (const signal of overlay.signals) {
+    const record = makeHead(signal);
     const osmBerth = signal.ref?.match(/^YA\s*(\d{4})$/i)?.[1];
     if (signal.kinds.includes('main') && osmBerth && signal.berth === osmBerth && matches.get(osmBerth) === 1) {
       anchors.anchors.push({ berth: osmBerth, kind: 'signal', from: signal.edge.from, to: signal.edge.to,
         t: signal.edge.t, point: [...signal.edge.point], errorM: 0, evidence: 'OSM signal overlay' });
       directBerths.set(record, osmBerth);
     }
-    parent.add(group);
   }
   directAnchors.push(...anchors.anchors);
   function install(value: unknown): void {
-    table = validated(value, area);
+    table = validated(value, area); tableValue = value;
+    reconcilePositions(); refresh();
+  }
+  function removeInferred(berth: string, record: DrawnSignal): void {
+    record.group.removeFromParent();
+    record.group.traverse(object => {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+        for (const resource of [object.geometry, ...(Array.isArray(object.material) ? object.material : [object.material])]) {
+          if (resources.delete(resource)) resource.dispose();
+        }
+      }
+    });
+    records.splice(records.indexOf(record), 1); lamps.delete(record); questions.delete(record); inferredHeads.delete(berth);
+  }
+  function bind(record: DrawnSignal, anchor: BerthAnchor, source: DrawnSignal['mappingSource']): void {
+    runtimeBerths.set(record, anchor.berth); record.mappingSource = source;
+    record.group.userData.berth = anchor.berth; record.group.userData.mappingSource = source;
+    record.group.userData.anchorKind = anchor.kind;
+    if (!anchors.anchors.some(a => a.berth === anchor.berth)) anchors.anchors.push(anchor);
+  }
+  function reconcilePositions(): void {
     anchors.anchors = [...directAnchors];
     runtimeBerths.clear();
-    for (const [record, berth] of directBerths) runtimeBerths.set(record, berth);
+    for (const record of records) if (!record.inferredPosition) { record.mappingSource = undefined; delete record.group.userData.mappingSource; delete record.group.userData.berth; }
+    for (const [record, berth] of directBerths) {
+      runtimeBerths.set(record, berth); record.mappingSource = 'reference'; record.group.userData.mappingSource = 'reference'; record.group.userData.berth = berth;
+    }
+    const value = tableValue;
     if (table.length && object(value) && Array.isArray(value.signalMappings)) {
       const mappings = value.signalMappings;
       const valid = mappings.every((m) => object(m) && Number.isSafeInteger(m.signalId) && typeof m.berth === 'string' && /^[A-Z0-9]{1,8}$/.test(m.berth) &&
@@ -125,12 +182,59 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
         const record = candidates[0];
         if (candidates.length !== 1 || !record || record.signal.ref || record.signal.berth || !record.signal.kinds.includes('main') ||
             mappings.filter((x) => x.signalId === mapping.signalId || x.berth === mapping.berth).length !== 1 || directAnchors.some((a) => a.berth === mapping.berth)) continue;
-        const signal = record.signal; runtimeBerths.set(record, mapping.berth);
-        anchors.anchors.push({ berth: mapping.berth, kind: 'signal', from: signal.edge.from, to: signal.edge.to, t: signal.edge.t,
-          point: [...signal.edge.point], errorM: 40, evidence: 'Private topology review' });
+        const signal = record.signal;
+        bind(record, { berth: mapping.berth, kind: 'signal', from: signal.edge.from, to: signal.edge.to, t: signal.edge.t,
+          point: [...signal.edge.point], errorM: 40, evidence: 'Private topology review' }, 'private-topology');
       }
     }
-    refresh();
+    const proceedBerths = new Set(table.filter(h => (h.kind ?? 'proceed') === 'proceed' && h.status === 'decoded' &&
+      qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut)).map(h => h.berth));
+    const eligible = (privateAnchors?.anchors ?? []).filter(a => {
+      if (!object(a) || typeof a.berth !== 'string' || !a.berth) return false;
+      const from = anchorGraph?.pos.get(a.from), to = anchorGraph?.pos.get(a.to);
+      return proceedBerths.has(a.berth) && privateAnchors!.anchors.filter(other => other?.berth === a.berth).length === 1 &&
+        Array.isArray(a.point) && a.point.length === 2 && a.point.every(Number.isFinite) &&
+        Number.isFinite(a.t) && a.t >= 0 && a.t <= 1 && from && to &&
+        [...from, ...to].every(Number.isFinite) && Math.hypot(to[0] - from[0], to[1] - from[1]) > 0;
+    });
+    const heading = (a: BerthAnchor): [number, number] => {
+      const from = anchorGraph!.pos.get(a.from)!, to = anchorGraph!.pos.get(a.to)!;
+      const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+      return [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+    };
+    const bound = (a: BerthAnchor): boolean => [...runtimeBerths.values()].includes(a.berth);
+    const osm = records.filter(r => !r.inferredPosition && r.signal.kinds.includes('main'));
+    for (const anchor of eligible.filter(a => !bound(a))) {
+      const matches = osm.filter(r => !runtimeBerths.has(r) && signalRefBerth(r.signal.ref) === anchor.berth);
+      if (matches.length === 1) bind(matches[0]!, anchor, 'reference');
+    }
+    const proposals = eligible.filter(a => !bound(a)).map(anchor => {
+      const direction = heading(anchor);
+      const candidates = osm.filter(record => {
+        const s = record.signal;
+        return !runtimeBerths.has(record) && (!s.ref || signalRefBerth(s.ref) === anchor.berth) &&
+          (s.direction === 'forward' || s.direction === 'backward') &&
+          ((s.edge.from === anchor.from && s.edge.to === anchor.to) || (s.edge.from === anchor.to && s.edge.to === anchor.from)) &&
+          Math.hypot(anchor.point[0] - s.edge.point[0], anchor.point[1] - s.edge.point[1]) <= 20 &&
+          direction[0] * s.travel[0] + direction[1] * s.travel[1] > .95;
+      });
+      return { anchor, candidates };
+    });
+    for (const proposal of proposals) {
+      const candidate = proposal.candidates[0];
+      if (proposal.candidates.length === 1 && proposals.filter(p => p.candidates.includes(candidate!)).length === 1)
+        bind(candidate!, proposal.anchor, 'nearby');
+    }
+    const inferred = eligible.filter(a => !bound(a));
+    for (const [berth, record] of inferredHeads) if (!inferred.some(a => a.berth === berth)) removeInferred(berth, record);
+    for (const anchor of inferred) {
+      const travel = heading(anchor), old = inferredHeads.get(anchor.berth);
+      const signal: OverlaySignal = { id: old?.signal.id ?? nextInferredId--, point: [...anchor.point], kinds: ['main'],
+        edge: { wayId: 0, from: anchor.from, to: anchor.to, t: anchor.t, point: [...anchor.point] },
+        travel, facing: [-travel[0], -travel[1]], side: 'left', sideSource: 'assumed-left', berth: anchor.berth, review: 'unreviewed' };
+      const record = old ?? makeHead(signal, true); record.signal = signal; pose(signal, record.group);
+      inferredHeads.set(anchor.berth, record); bind(record, anchor, 'td-anchor');
+    }
   }
   function refresh(): void {
     if (disposed) return;
@@ -168,14 +272,20 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       refresh();
     },
     reset(): void { bytes = {}; refresh(); },
-    setTable(value: unknown): void { generation += 1; install(value); },
+    setAnchors(map: AnchorMap, graph: Pick<Graph, 'pos'>): void {
+      if (disposed) return;
+      privateAnchors = map?.area === area && Array.isArray(map.anchors) ? structuredClone(map) : undefined;
+      anchorGraph = graph;
+      reconcilePositions(); refresh();
+    },
+    setTable(value: unknown): void { if (disposed) return; generation += 1; install(value); },
     async loadTable(): Promise<void> {
-      const request = ++generation; table = []; refresh();
+      const request = ++generation; table = []; reconcilePositions(); refresh();
       try {
         const response = await (options.fetchImpl ?? fetch)('/relay/sclass');
         const value: unknown = response.ok ? await response.json() : null;
         if (!disposed && request === generation) { install(value); }
-      } catch { if (!disposed && request === generation) { table = []; refresh(); } }
+      } catch { if (!disposed && request === generation) { table = []; reconcilePositions(); refresh(); } }
     },
     signals(): DrawnSignal[] { return [...records]; },
     counts(): { drawn: number; decoded: number } { return { drawn: records.length, decoded: records.filter((r) => r.state !== 'unknown').length }; },

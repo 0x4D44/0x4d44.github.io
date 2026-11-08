@@ -1,6 +1,6 @@
 """Synthetic renderer/controller mutations; only named TAP assertion failures count.
 Usage: python3 -I -u tools/mutation/signals.py <kings-cross-src> <worktree/.scratch>
-Copies only the signal module, synthetic tests and shared core; links node_modules.
+Copies the signal renderer, feed/board dependencies, synthetic tests and shared core; links node_modules.
 """
 import re
 import shutil
@@ -37,17 +37,36 @@ M = [
     ('competing candidates picked', [('return result.map((h) => result.some', "return result.filter((h) => h.id !== 'other').map((h) => result.some"), ('other !== h && (', "other.id !== 'other' && other !== h && (")]),
     ('proceed route candidates conflated', [('(other.berth === h.berth && kind(other) === kind(h) && other.to === h.to)', '(other.berth === h.berth)')]),
     ('route hypothesis becomes an aspect', [("const proceed = table.filter((h) => (h.kind ?? 'proceed') === 'proceed');", "const proceed = table.map((h) => ({ ...h, kind: 'proceed' as const }));")]),
-    ('foreign refs accepted', [("signal.ref?.match(/^YA\\s*(\\d{4})$/i)?.[1]", "signal.ref?.match(/^[A-Z]+\\s*(\\d{4})$/i)?.[1]")]),
+    ('foreign refs accepted', [(r'return ref?.match(/^(?:YA\s*)?(\d{4})[A-Z]?$/i)?.[1];', r'return ref?.match(/^(?:[A-Z]{2}\s*)?(\d{4})[A-Z]?$/i)?.[1];')]),
+    ('bare and suffix refs ignored', [(r'return ref?.match(/^(?:YA\s*)?(\d{4})[A-Z]?$/i)?.[1];', r'return ref?.match(/^YA\s*(\d{4})$/i)?.[1];')]),
+    ('nearby distance widened', [('Math.hypot(anchor.point[0] - s.edge.point[0], anchor.point[1] - s.edge.point[1]) <= 20', 'Math.hypot(anchor.point[0] - s.edge.point[0], anchor.point[1] - s.edge.point[1]) <= 21')]),
+    ('nearby direction omitted', [("(s.direction === 'forward' || s.direction === 'backward')", 'true')]),
+    ('nearby heading ignored', [('direction[0] * s.travel[0] + direction[1] * s.travel[1] > .95', 'true')]),
+    ('reverse edge order rejected', [('((s.edge.from === anchor.from && s.edge.to === anchor.to) || (s.edge.from === anchor.to && s.edge.to === anchor.from))', '(s.edge.from === anchor.from && s.edge.to === anchor.to)')]),
+    ('nearby refs ignored', [('!s.ref || signalRefBerth(s.ref) === anchor.berth', 'true')]),
+    ('nearby one-to-many reused', [('proposals.filter(p => p.candidates.includes(candidate!)).length === 1', 'true')]),
+    ('mapping source metadata omitted', [('runtimeBerths.set(record, anchor.berth); record.mappingSource = source;', 'runtimeBerths.set(record, anchor.berth); record.mappingSource = undefined;')]),
+    ('TD inferred candidates omitted', [('for (const anchor of inferred) {', 'for (const anchor of []) {')]),
+    ('TD inferred label omitted', [('position inferred from TD', 'position unavailable')]),
+    ('TD inferred post opaque', [('material.opacity = 0.45', 'material.opacity = 1')]),
+    ('TD inferred ring omitted', [("ring.name = 'inferred-position'", "ring.name = 'position'" )]),
+    ('TD route hypotheses create heads', [("const proceedBerths = new Set(table.filter(h => (h.kind ?? 'proceed') === 'proceed' && h.status === 'decoded' &&", "const proceedBerths = new Set(table.filter(h => true && h.status === 'decoded' &&")]),
+    ('TD unknown hypotheses create heads', [("h.status === 'decoded' &&\n      qualifiesSignalEvidence(h.training)", "true &&\n      qualifiesSignalEvidence(h.training)")]),
+    ('unqualified TD hypotheses create heads', [('qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut)).map(h => h.berth)', 'true).map(h => h.berth)')]),
+    ('duplicate TD anchors create heads', [('privateAnchors!.anchors.filter(other => other?.berth === a.berth).length === 1', 'true')]),
+    ('anchor replacement keeps stale head', [('for (const [berth, record] of inferredHeads) if (!inferred.some(a => a.berth === berth)) removeInferred(berth, record);', 'for (const [berth, record] of inferredHeads) if (false) removeInferred(berth, record);')]),
+    ('matching TD head is not reused', [('const record = old ?? makeHead(signal, true);', 'const record = makeHead(signal, true);')]),
     ('boards decoded', [("if (signal.kinds.includes('main')", 'if (true'), ("record.state = record.signal.kinds.includes('main')", 'record.state = true')]),
     ('topology mapping omitted', [('if (table.length && object(value)', 'if (false && object(value)')]),
     ('far topology mappings accepted', [('m.distanceM <= 40', 'm.distanceM <= 400')]),
     ('ambiguous private mappings accepted', [('mappings.filter((x) => x.signalId === mapping.signalId || x.berth === mapping.berth).length !== 1', 'false')]),
     ('OSM mapping overridden', [('record.signal.ref || record.signal.berth || ', '')]),
     ('404 body accepted', [('response.ok ? await response.json() : null', 'await response.json()')]),
-    ('fetch retains stale table', [('const request = ++generation; table = []; refresh();', 'const request = ++generation;')]),
+    ('fetch retains stale table', [('const request = ++generation; table = []; reconcilePositions(); refresh();', 'const request = ++generation;')]),
     ('stale request accepted', [('request === generation', 'true')]),
     ('disposed fetch revives state', [('!disposed && request === generation', 'request === generation'), ('if (disposed) return;', 'if (false) return;')]),
-    ('groups not detached', [('record.group.removeFromParent()', 'void record.group')]),
+    ('groups not detached', [('function removeInferred(berth: string, record: DrawnSignal): void {\n    record.group.removeFromParent();', 'function removeInferred(berth: string, record: DrawnSignal): void {\n    void record.group;')]),
+    ('dispose groups not detached', [('for (const record of records) record.group.removeFromParent();', 'for (const record of records) void record.group;')]),
     ('resources not disposed', [('resource.dispose()', 'void resource')]),
     ('builder topology signal anchors omitted', [("if (a.kind !== 'inferred' && !(a.kind === 'signal' && a.evidence.startsWith('Topology'))) return false;", "if (a.kind !== 'inferred') return false;")], B),
     ('builder backward side not flipped', [("(forward ? rawPosition : rawPosition === 'left' ? 'right' : 'left')", 'rawPosition')], B),

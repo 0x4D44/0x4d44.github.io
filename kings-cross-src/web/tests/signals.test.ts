@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { createReplayFeed, createTimeline } from '../src/feed.ts';
 import { buildSignalOverlay } from '../../tools/build-signals.ts';
 import type { KxData } from '../../core/osm.ts';
-import type { AnchorMap } from '../../core/anchors.ts';
+import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
+import type { Graph } from '../../core/graph.ts';
 import { createSignals } from '../src/signals.ts';
 import type { OverlaySignal, SignalEvent } from '../src/signals.ts';
 import type { TimedTdEvent } from '../../core/sclass.ts';
@@ -20,6 +21,21 @@ const table = () => ({ area: 'Y9', hypotheses: [hypothesis()] });
 function fixture(signals = [signal()], fetchImpl?: typeof fetch) {
   const scene = new THREE.Scene(); const layer = createSignals({ attribution: 'synthetic', signals }, scene, { fetchImpl });
   return { scene, layer, drawn: layer.signals()[0]! };
+}
+interface SignalRecordContract {
+  signal: OverlaySignal; group: THREE.Group; state: string; inferredPosition: boolean; label: string; mappingSource?: string;
+}
+const records = (layer: ReturnType<typeof createSignals>) => layer.signals() as unknown as SignalRecordContract[];
+const inferred = (layer: ReturnType<typeof createSignals>) => records(layer).filter((r) => r.inferredPosition);
+function tdAnchor(berth: string, extra: Partial<BerthAnchor> = {}): BerthAnchor {
+  return { berth, kind: 'inferred', from: 1, to: 2, t: 0.8, point: [8, 0], errorM: 5, evidence: 'synthetic TD anchor', ...extra };
+}
+function tdMap(items: BerthAnchor[]): AnchorMap { return { area: 'Y9', sources: ['synthetic TD'], anchors: items, unmapped: [] }; }
+function signalGraph(): Pick<Graph, 'pos'> { return { pos: new Map<number, [number, number]>([[1, [0, 0]], [2, [10, 0]]]) }; }
+const tableFor = (berth: string, extra: Record<string, unknown> = {}) => ({ area: 'Y9', hypotheses: [currentHypothesis({ berth, ...extra })] });
+function nearbySignal(extra: Partial<OverlaySignal> = {}): OverlaySignal {
+  return signal({ ref: undefined, berth: undefined, direction: 'forward', point: [8, 0], travel: [1, 0], facing: [-1, 0],
+    edge: { wayId: 9, from: 1, to: 2, t: 0.8, point: [28, 0] }, review: 'unreviewed', ...extra });
 }
 const row = (msgType = 'SF', data = '04', address = '10', area = 'Y9'): TimedTdEvent => ({ t: 1, e: { kind: 'sclass', area, msgType, data, address } });
 const aspect = (group: THREE.Group) => (group.getObjectByName('aspect') as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>).material.color.getHex();
@@ -150,6 +166,141 @@ test('OSM ref mapping takes precedence over private mappings', () => {
   const { layer, drawn } = fixture(); layer.apply(row());
   layer.setTable({ ...table(), signalMappings: [{ signalId: 1, berth: '2000', distanceM: 1, review: 'topology' }] });
   assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('anchored canonical refs bind YA, bare numeric and single-letter suffix forms only', () => {
+  for (const ref of ['YA    1004', '1004', '1004A', 'YA 1004B']) {
+    const f = fixture([signal({ ref, berth: undefined })]); f.layer.apply(row());
+    f.layer.setAnchors(tdMap([tdAnchor('1004')]), signalGraph()); f.layer.setTable(tableFor('1004'));
+    const drawn = records(f.layer)[0]!;
+    assert.equal(drawn.state, 'proceed', ref); assert.equal(drawn.mappingSource, 'reference', ref);
+    assert.equal(drawn.inferredPosition, false); assert.equal(inferred(f.layer).length, 0); f.layer.dispose();
+  }
+  for (const ref of ['NL 1004', '1004AB', 'YA 1004AB']) {
+    const f = fixture([signal({ ref, berth: undefined })]); f.layer.apply(row());
+    f.layer.setAnchors(tdMap([tdAnchor('1004')]), signalGraph()); f.layer.setTable(tableFor('1004'));
+    const drawn = records(f.layer)[0]!;
+    assert.equal(drawn.state, 'unknown', ref); assert.notEqual(drawn.mappingSource, 'reference', ref); f.layer.dispose();
+  }
+});
+
+test('nearby binding accepts directed same-edge candidates through 20m, including reverse edge order', () => {
+  for (const [candidate, berthAnchor] of [
+    [nearbySignal(), tdAnchor('1004')],
+    [nearbySignal({ direction: 'backward', travel: [-1, 0], facing: [1, 0], edge: { wayId: 9, from: 1, to: 2, t: 0.8, point: [8, 0] } }),
+      tdAnchor('1004', { from: 2, to: 1, t: 0.2 })],
+  ] as const) {
+    const f = fixture([candidate]); f.layer.apply(row()); f.layer.setTable(tableFor('1004'));
+    f.layer.setAnchors(tdMap([berthAnchor]), signalGraph());
+    const drawn = records(f.layer)[0]!;
+    assert.equal(drawn.state, 'proceed'); assert.equal(drawn.mappingSource, 'nearby');
+    assert.equal(drawn.inferredPosition, false); assert.equal(inferred(f.layer).length, 0); f.layer.dispose();
+  }
+});
+
+test('nearby binding rejects distance direction ref and one-to-many ambiguity then infers at the TD anchor', () => {
+  const rejected: Array<[OverlaySignal[], BerthAnchor[]]> = [
+    [[nearbySignal({ direction: undefined })], [tdAnchor('1004')]],
+    [[nearbySignal({ travel: [-1, 0], facing: [1, 0] })], [tdAnchor('1004')]],
+    [[nearbySignal({ edge: { wayId: 9, from: 1, to: 2, t: 0.8, point: [28.01, 0] } })], [tdAnchor('1004')]],
+    [[nearbySignal({ edge: { wayId: 9, from: 3, to: 4, t: 0.8, point: [8, 0] } })], [tdAnchor('1004')]],
+    [[nearbySignal({ ref: 'YA 2000' })], [tdAnchor('1004')]],
+    [[nearbySignal({ ref: 'NL 1004' })], [tdAnchor('1004')]],
+    [[nearbySignal(), nearbySignal({ id: 2 })], [tdAnchor('1004')]],
+  ];
+  for (const [candidates, berthAnchors] of rejected) {
+    const f = fixture(candidates); f.layer.apply(row());
+    f.layer.setTable(tableFor('1004')); f.layer.setAnchors(tdMap([...berthAnchors]), signalGraph());
+    assert.ok(records(f.layer).filter(r => !r.inferredPosition).every(r => r.state === 'unknown'));
+    assert.equal(inferred(f.layer).length, 1);
+    assert.equal(inferred(f.layer)[0]!.mappingSource, 'td-anchor'); f.layer.dispose();
+  }
+  const competingBerths = fixture([nearbySignal()]); competingBerths.layer.apply(row());
+  competingBerths.layer.setTable({ area: 'Y9', hypotheses: [currentHypothesis({ berth: '1004' }),
+    currentHypothesis({ id: 'other', berth: '1005', address: '11', bit: 3 })] });
+  competingBerths.layer.setAnchors(tdMap([tdAnchor('1004'), tdAnchor('1005', { t: 0.7, point: [9, 0] })]), signalGraph());
+  assert.equal(records(competingBerths.layer)[0]!.state, 'unknown'); assert.equal(inferred(competingBerths.layer).length, 2);
+  competingBerths.layer.dispose();
+});
+
+test('TD inferred heads use directed left offset and label a qualified proceed position', () => {
+  const { layer } = fixture([]); layer.apply(row());
+  layer.setAnchors(tdMap([tdAnchor('TD1'), tdAnchor('TD2', { t: 0.6, point: [6, 0] })]), signalGraph());
+  assert.equal(inferred(layer).length, 0);
+  layer.setTable({ area: 'Y9', hypotheses: [currentHypothesis({ berth: 'TD1' }),
+    currentHypothesis({ id: 'other', berth: 'TD2', address: '11', bit: 3 })] });
+  const heads = inferred(layer); assert.equal(heads.length, 2); assert.ok(heads.every(r => r.signal.berth));
+  const first = heads.find(r => r.signal.berth === 'TD1'); assert.ok(first);
+  assert.equal(first.state, 'proceed'); assert.equal(first.inferredPosition, true); assert.equal(first.mappingSource, 'td-anchor');
+  assert.match(first.label, /position inferred from TD/); assert.match(String(first.group.userData.label), /position inferred from TD/);
+  close(first.group.position.x, 8); close(first.group.position.z, -2);
+  const facing = new THREE.Vector3(0, 0, 1).applyEuler(first.group.rotation); close(facing.x, -1); close(facing.z, 0);
+  const post = first.group.children.find(o => o instanceof THREE.Mesh && o.geometry instanceof THREE.CylinderGeometry) as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>;
+  assert.equal(post.material.transparent, true); assert.ok(post.material.opacity < 1);
+  const ring = first.group.getObjectByName('inferred-position');
+  assert.ok(ring instanceof THREE.Line); assert.ok(ring.material instanceof THREE.LineDashedMaterial);
+  layer.dispose();
+
+  const reverse = fixture([]); reverse.layer.apply(row());
+  reverse.layer.setAnchors(tdMap([tdAnchor('TD-reverse', { from: 2, to: 1, t: 0.2 })]), signalGraph());
+  reverse.layer.setTable(tableFor('TD-reverse'));
+  assert.equal(inferred(reverse.layer).length, 1);
+  const reverseHead = inferred(reverse.layer)[0]!;
+  close(reverseHead.group.position.x, 8); close(reverseHead.group.position.z, 2);
+  const reverseFacing = new THREE.Vector3(0, 0, 1).applyEuler(reverseHead.group.rotation);
+  close(reverseFacing.x, 1); close(reverseFacing.z, 0); reverse.layer.dispose();
+});
+
+test('route unknown unanchored duplicate and invalid evidence create no inferred head', () => {
+  const cases = [
+    { value: tableFor('TD1', { kind: 'route', to: 'TD2' }), map: tdMap([tdAnchor('TD1')]) },
+    { value: tableFor('TD1', { status: 'unknown' }), map: tdMap([tdAnchor('TD1')]) },
+    { value: tableFor('TD1', { training: { ...currentEv(), precision: 1 } }), map: tdMap([tdAnchor('TD1')]) },
+    { value: tableFor('TD1', { training: { trials: 5, support: 2, contradictions: 3, precision: 0.4, unmatchedCycles: 3, recall: 0.4 } }), map: tdMap([tdAnchor('TD1')]) },
+    { value: tableFor('TD1'), map: tdMap([]) },
+    { value: tableFor('TD1'), map: tdMap([tdAnchor('TD1'), tdAnchor('TD1', { point: [7, 0], t: 0.7 })]) },
+    { value: tableFor('TD1'), map: tdMap([tdAnchor('TD1', { point: [NaN, 0] })]) },
+    { value: tableFor('TD1'), map: tdMap([tdAnchor('TD1', { from: 3, to: 4 })]) },
+  ];
+  for (const { value, map } of cases) {
+    const { layer } = fixture([]); layer.apply(row()); layer.setAnchors(map, signalGraph()); layer.setTable(value);
+    assert.equal(inferred(layer).length, 0); layer.dispose();
+  }
+});
+
+test('anchor and table replacement reuse matching heads and dispose stale geometry', () => {
+  const { layer } = fixture([]); layer.apply(row()); layer.setTable(tableFor('TD1'));
+  const firstMap = tdMap([tdAnchor('TD1')]); layer.setAnchors(firstMap, signalGraph());
+  assert.equal(inferred(layer).length, 1);
+  const first = inferred(layer)[0]!;
+  const firstResources = new Set<THREE.BufferGeometry | THREE.Material>();
+  first.group.traverse(node => {
+    if (node instanceof THREE.Mesh || node instanceof THREE.Line) {
+      firstResources.add(node.geometry); for (const material of Array.isArray(node.material) ? node.material : [node.material]) firstResources.add(material);
+    }
+  });
+  let firstDisposals = 0; for (const resource of firstResources) resource.addEventListener('dispose', () => { firstDisposals++; });
+  layer.setAnchors(tdMap([tdAnchor('TD1')]), signalGraph());
+  assert.equal(inferred(layer).length, 1); assert.equal(inferred(layer)[0]!.group, first.group); assert.equal(firstDisposals, 0);
+  layer.setAnchors(tdMap([tdAnchor('TD2')]), signalGraph());
+  assert.equal(first.group.parent === null, true, 'stale TD head detached');
+  assert.equal(firstDisposals, firstResources.size); assert.equal(inferred(layer).length, 0);
+  layer.setTable(tableFor('TD2')); assert.equal(inferred(layer).length, 1); const second = inferred(layer)[0]!;
+  let secondDisposals = 0;
+  second.group.traverse(node => {
+    if (node instanceof THREE.Mesh || node instanceof THREE.Line) {
+      for (const resource of [node.geometry, ...Array.isArray(node.material) ? node.material : [node.material]])
+        resource.addEventListener('dispose', () => { secondDisposals++; });
+    }
+  });
+  const secondResources = new Set<THREE.BufferGeometry | THREE.Material>();
+  second.group.traverse(node => {
+    if (node instanceof THREE.Mesh || node instanceof THREE.Line) {
+      secondResources.add(node.geometry); for (const material of Array.isArray(node.material) ? node.material : [node.material]) secondResources.add(material);
+    }
+  });
+  layer.setTable(null); assert.equal(second.group.parent, null); assert.equal(secondDisposals, secondResources.size);
+  assert.equal(inferred(layer).length, 0); layer.dispose();
 });
 
 test('explicit fetch uses the local endpoint while 404 JSON errors and invalid tables clear stale state', async () => {
