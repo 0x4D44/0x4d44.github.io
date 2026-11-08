@@ -51,12 +51,13 @@
 import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
 import { chainBays, polygonEdges } from './landmarks.ts';
-import type { BayPosition, Edge } from './landmarks.ts';
-import { area2, safeInset } from './landmarks.ts';
+import type { BayPosition, Edge, Seat } from './landmarks.ts';
+import { area2, safeInset, seatOf } from './landmarks.ts';
 import { fitCircle, longAxis, pointInPolygon, polygonArea } from './station.ts';
+import type { Terrain } from './terrain.ts';
 
 export { area2, pointInPolygon, polygonArea, polygonEdges, safeInset };
-export type { BayPosition, Edge };
+export type { BayPosition, Edge, Seat };
 
 // ---- identities ---------------------------------------------------------------------------------
 
@@ -1162,4 +1163,50 @@ export function landscraperPlan(data: Pick<KxData, 'buildings'>): LandscraperPla
     for (const p of (cands[i] as Pt[]).slice(0, take[i] as number)) trees.push({ x: p[0], y: z.height, z: p[1], size: 3.2 + r() * 2.8 });
   });
   return { outline, axis, zones, cuts, trees };
+}
+
+// ---- where they stand on the ground -------------------------------------------------------------
+
+/** A circle as a ring of `n` points (the footprint of a round structure). */
+export function circleRing(centre: Pt, radius: number, n = 48): Pt[] {
+  return Array.from({ length: n }, (_, i): Pt => [centre[0] + Math.cos((i / n) * Math.PI * 2) * radius, centre[1] + Math.sin((i / n) * Math.PI * 2) * radius]);
+}
+
+/** The plans a structure's seat is worked out from (`KxPlans` in web/src/kxcentral.ts has them all). */
+export interface SeatPlans {
+  coal: CoalDropsPlan;
+  granary: GranaryComplex;
+  gas: GasholderPlan;
+  crick: CrickPlan;
+  library: LibraryPlan;
+  gymnasium: GymnasiumPlan;
+  landscraper: LandscraperPlan;
+}
+
+/** The name a gasholder's seat goes by. */
+export const gasholderName = (g: Pick<Gasholder, 'id'>): string => `gasholder-${g.id}`;
+
+/**
+ * The rings that outline the base of each rigid structure, by name. Each stands on its own seat, except where the parts hold one another up:
+ * the two Coal Drops sheds whose roofs kiss at 25 m, the Granary and the three buildings tiled round it (shared walls are left out, and the
+ * walls above a lower neighbour start from its roof), and the Crick's two vaults (they meet in a valley). The four gasholders are apart.
+ */
+export function structureFootprints(p: SeatPlans): Record<string, Pt[][]> {
+  const out: Record<string, Pt[][]> = {
+    coalDrops: [p.coal.west.outline, p.coal.east.outline],
+    granary: [p.granary.granary.outline, p.granary.westShed.outline, p.granary.eastShed.outline, p.granary.street.outline],
+  };
+  for (const g of [...p.gas.triplet, p.gas.park]) out[gasholderName(g)] = [circleRing(g.centre, g.radius)];
+  out.crick = p.crick.parts.map((part) => part.outline);
+  out.library = [p.library.outline];
+  out.gymnasium = [p.gymnasium.outline];
+  out.landscraper = [p.landscraper.outline];
+  return out;
+}
+
+/** Where each structure of King's Cross Central stands: its base at the lowest ground under its footprint. */
+export function kxSeats(plans: SeatPlans, terrain: Pick<Terrain, 'rangeUnder'>): Record<string, Seat> {
+  const seats: Record<string, Seat> = {};
+  for (const [name, rings] of Object.entries(structureFootprints(plans))) seats[name] = seatOf(terrain, rings);
+  return seats;
 }

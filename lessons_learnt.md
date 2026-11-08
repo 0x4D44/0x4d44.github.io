@@ -11,6 +11,24 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-08 - flat city layers dip under the drawn ground between draped vertices; lift them (kings-cross-src core/city.ts:PAGE_DRAPE)
+  A layer draped at its own 2-9 cm lift is a chord across the mesh's facets, so where the ground bulges (a 16 m triangle is never tested) it shows through
+  as dark patches: 31% of the grass, 13% of the squares on the page's own mesh. A constant drape.lift of 10 cm plus polygons cut at 8 m / 3 cm cut that to
+  3.8% / 1.6%. web/tests/city.test.ts measures it (seven samples a triangle), and its control, the old drape, must still fail.
+- 2026-11-08 - one OSM canal polygon runs 2.5 km: laid level it hung 5 m over the low ground (kings-cross-src core/city.ts:POND_SPAN)
+  Water areas were all level at the median ground round their edge. Fine for a 20 m pond; the Regent's Canal is one polygon whose ground runs from -6 to
+  +8 m on the warped terrain, so the sheet floated over the west pound and sank 7 m into the east one (43% under the ground). Past POND_SPAN (60 m across)
+  a water area now follows the ground like a park. Shot p in .scratch/terrain shows it; a pond-sized test would never have.
+- 2026-11-08 - seat on the drawn mesh (addTerrain().ground), not the DTM grid (kings-cross-src web/src/world.ts:addTerrain)
+  The mesh strays from the grid by up to its tolerance (3 cm near the rails, to 1.5 m far off), so a wall seated on the grid hovers or sinks against what
+  is drawn. core/terrain.ts overMesh() reads heights off the mesh's own triangles; main.ts hands that to the portals, landmarks, KX Central and the city.
+- 2026-11-08 - warped terrain cannot keep the canal level; real rails differ ~10 m (kings-cross-src tools/build-terrain.ts:shiftAt)
+  Every rail is drawn at y=0 but the real St Pancras lines run ~10 m above the ECML. The warp (full within 50 m of a rail, nil at 200 m) moves the ground by
+  each nearby rail's offset, so water laid on it rises and falls up to 10 m along one pound (tools/terrain-audit.ts, part 4). A level canal needs a warp
+  source per pound, or real per-line rail levels: a decision for the lead, not a draping bug.
+- 2026-11-08 - terrain heights are Float32: -0.2 reads back -0.20000000298; compare to 1e-6 (kings-cross-src core/terrain.ts:terrainFromFunction)
+  A "nothing moved" test at 1e-9 fails on a flat terrain at GROUND_Y. Decoded grids (decodeGrid) and terrainFromFunction both hold Float32, so 1e-6 is the
+  floor for equality against a height.
 - 2026-11-07 - a hair_col tint can't make dark hair grey; use hair_lift=True (glasgow-subway tools/assets_people_mpfb.py:load_image)
   The tint multiplies the texture, and short01-04/bob01 are near black, so a grey tint stayed black (man_elder had black hair at 88). Renders are the
   check: people_holes and sim.test never look at hair colour. Also: toigo_flats on a Lycra person drove the rest-pose skin count to ~3400 whatever the

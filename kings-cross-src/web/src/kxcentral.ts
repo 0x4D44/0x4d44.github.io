@@ -10,8 +10,12 @@
 // worker's) at its end. They belong in materials.ts: KX_TEXTURES beside TEXTURES, KX_PAINTERS beside PAINTERS, the
 // five tiled materials beside the makers there.
 //
+// Everything is built standing on GROUND_Y. Given the terrain, each rigid structure is then raised as a whole (`liftParts`) onto its
+// seat, the lowest ground under its footprint (core/kxcentral.ts `kxSeats`): the Granary block, the Crick, a gasholder and so on stand
+// each on their own, and a structure's parts keep their heights relative to one another.
+//
 // Wiring (main.ts):
-//   const kx = params.has('bare') ? null : addKxCentral(scene, data);          // once, after the scene exists
+//   const kx = params.has('bare') ? null : addKxCentral(scene, data, { terrain });  // once, after the scene exists (`terrain` is optional)
 //   const hidden = new Set([...buildingsUnderStation(...), ...LANDMARK_OSM_IDS, ...KXCENTRAL_OSM_IDS]);  // before the city / buildingPrisms
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
@@ -21,19 +25,22 @@ import {
   distToPolyline,
   earClip,
   FIG,
+  gasholderName,
   gasholderPlan,
   granaryComplex,
   gymnasiumPlan,
   KXCENTRAL_OSM_IDS,
+  kxSeats,
   landscraperPlan,
   libraryPlan,
   meshPolygon,
   polygonEdges,
   surfaceNormal,
 } from '../../core/kxcentral.ts';
-import type { CoalDropsPlan, CrickPlan, Edge, Facet, Gasholder, GasholderPlan, GranaryComplex, GranaryPlan, GymnasiumPlan, LandscraperPlan, LibraryPlan, PolyMesh, RaisedWall, ShedPlan, Tree } from '../../core/kxcentral.ts';
+import type { CoalDropsPlan, CrickPlan, Edge, Facet, Gasholder, GasholderPlan, GranaryComplex, GranaryPlan, GymnasiumPlan, LandscraperPlan, LibraryPlan, PolyMesh, RaisedWall, Seat, ShedPlan, Tree } from '../../core/kxcentral.ts';
 import type { KxData } from '../../core/osm.ts';
-import { addBand, addFramedWindow, addSash, segmentsOutside } from './landmarks.ts';
+import type { Terrain } from '../../core/terrain.ts';
+import { addBand, addFramedWindow, addSash, liftParts, partMarks, segmentsOutside } from './landmarks.ts';
 import { Batch, material, mergeParts, part, rng } from './materials.ts';
 import type { PartMap, TextureSpec, V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
@@ -605,13 +612,19 @@ export function drumGeometry(cladding: Batch, garden: Batch, g: Gasholder, sides
   disc(garden, g.centre, d.court, GROUND_Y + 0.05, 24); // the courtyard lawn
 }
 
-/** The triplet's three frames with a drum inside each, and Gasholder Park's lone frame with its disc canopy. */
-export function gasholderGeometry(plan: GasholderPlan): PartMap<Key> {
+/**
+ * The triplet's three frames with a drum inside each, and Gasholder Park's lone frame with its disc canopy. `lift` is how far each
+ * gasholder is raised above where it was built (its frame, drum, courtyard lawn, canopy and posts go together); none by default.
+ */
+export function gasholderGeometry(plan: GasholderPlan, lift: (g: Gasholder) => number = () => 0): PartMap<Key> {
   const parts: PartMap<Key> = {};
   for (const g of plan.triplet) {
+    const from = partMarks(parts);
     frameGeometry(part(parts, 'iron'), g);
     drumGeometry(part(parts, 'drum'), part(parts, 'green'), g);
+    liftParts(parts, lift(g), from);
   }
+  const parkFrom = partMarks(parts);
   frameGeometry(part(parts, 'iron'), plan.park);
   // Gasholder Park's canopy: a thin stainless-steel disc [AM] on slim posts (the posts' number and the disc's thickness are ASSUMED)
   const canopy = part(parts, 'drum');
@@ -633,6 +646,7 @@ export function gasholderGeometry(plan: GasholderPlan): PartMap<Key> {
     const a = (i / 6) * Math.PI * 2;
     iron.box([c[0] + Math.cos(a) * r * 0.7, (h - 0.35 + GROUND_Y) / 2, c[1] + Math.sin(a) * r * 0.7], [0.3, h - 0.35 - GROUND_Y, 0.3], { skip: ['-y', '+y'] });
   }
+  liftParts(parts, lift(plan.park), parkFrom);
   return parts;
 }
 
@@ -832,16 +846,31 @@ export function kxPlans(data: Pick<KxData, 'buildings'>): KxPlans {
   };
 }
 
-/** Every landmark's parts, by landmark (the sets `addKxCentral` merges). */
-export function kxGeometry(plans: KxPlans): Record<string, PartMap<Key>[]> {
+/** How far a structure's seat is above GROUND_Y, where everything is built: nothing where there are no seats. */
+export function seatRise(seats: Readonly<Record<string, Seat>> | undefined, name: string): number {
+  if (!seats) return 0;
+  const s = seats[name];
+  if (!s) throw new Error(`no seat for ${name}`);
+  return s.y - GROUND_Y;
+}
+
+/**
+ * Every landmark's parts, by landmark (the sets `addKxCentral` merges). They are built standing on GROUND_Y; with `seats` (core's `kxSeats`)
+ * each structure is raised by its seat's height above that, so it stands on the lowest ground under its footprint.
+ */
+export function kxGeometry(plans: KxPlans, seats?: Readonly<Record<string, Seat>>): Record<string, PartMap<Key>[]> {
+  const raised = (name: string, sets: PartMap<Key>[]): PartMap<Key>[] => {
+    for (const s of sets) liftParts(s, seatRise(seats, name));
+    return sets;
+  };
   return {
-    coalDrops: [coalDropsGeometry(plans.coal)],
-    granary: granaryComplexGeometry(plans.granary),
-    gasholders: [gasholderGeometry(plans.gas)],
-    crick: [crickGeometry(plans.crick)],
-    library: [libraryGeometry(plans.library)],
-    gymnasium: [gymnasiumGeometry(plans.gymnasium)],
-    landscraper: [landscraperGeometry(plans.landscraper)],
+    coalDrops: raised('coalDrops', [coalDropsGeometry(plans.coal)]),
+    granary: raised('granary', granaryComplexGeometry(plans.granary)),
+    gasholders: [gasholderGeometry(plans.gas, (g) => seatRise(seats, gasholderName(g)))],
+    crick: raised('crick', [crickGeometry(plans.crick)]),
+    library: raised('library', [libraryGeometry(plans.library)]),
+    gymnasium: raised('gymnasium', [gymnasiumGeometry(plans.gymnasium)]),
+    landscraper: raised('landscraper', [landscraperGeometry(plans.landscraper)]),
   };
 }
 
@@ -850,7 +879,14 @@ export interface KxCentral {
   /** OSM building ids replaced: pass them to the city / buildingPrisms() as the exclusion set */
   excludeIds: readonly number[];
   stats: { meshes: number; triangles: number; materials: number; instances: number; byLandmark: Record<string, number> };
+  /** where each structure stands on the terrain, by name (core's `structureFootprints`); only when a `terrain` was given */
+  seats?: Record<string, Seat>;
   dispose(): void;
+}
+
+export interface KxCentralOptions {
+  /** the ground (core/terrain.ts): each structure stands with its base at the lowest ground under its footprint; without it they stand on GROUND_Y */
+  terrain?: Terrain;
 }
 
 const triangleCount = (sets: readonly PartMap<Key>[]): number => sets.reduce((n, s) => n + Object.values(s).reduce((m, b) => m + (b as Batch).triangles, 0), 0);
@@ -858,15 +894,18 @@ const triangleCount = (sets: readonly PartMap<Key>[]): number => sets.reduce((n,
 /**
  * Add the landmarks to the scene. In main.ts: call this once after building the scene, and add KXCENTRAL_OSM_IDS (or
  * `kx.excludeIds`) to the set the city / buildingPrisms() leaves out, so the generic boxes for these buildings are not drawn as well.
+ * With `opts.terrain` every structure is seated on it, the roof-garden trees with their terrace.
  */
-export function addKxCentral(scene: THREE.Scene, data: KxData): KxCentral {
+export function addKxCentral(scene: THREE.Scene, data: KxData, opts: KxCentralOptions = {}): KxCentral {
   const set = createMaterials();
   const plans = kxPlans(data);
-  const geometry = kxGeometry(plans);
+  const seats = opts.terrain ? kxSeats(plans, opts.terrain) : undefined;
+  const geometry = kxGeometry(plans, seats);
   const byLandmark: Record<string, number> = {};
   for (const [name, sets] of Object.entries(geometry)) byLandmark[name] = triangleCount(sets);
   const { group, triangles } = mergeParts<Key>(Object.values(geometry).flat(), set.table, 'kxcentral', { roofGlass: 2 });
-  const trees = treeMesh(plans.landscraper.trees);
+  const terrace = seatRise(seats, 'landscraper');
+  const trees = treeMesh(terrace === 0 ? plans.landscraper.trees : plans.landscraper.trees.map((t) => ({ ...t, y: t.y + terrace })));
   group.add(trees);
   scene.add(group);
   const geometries: THREE.BufferGeometry[] = [];
@@ -885,6 +924,7 @@ export function addKxCentral(scene: THREE.Scene, data: KxData): KxCentral {
       instances: trees.count,
       byLandmark: { ...byLandmark, trees: treeTriangles * trees.count },
     },
+    ...(seats ? { seats } : {}),
     dispose(): void {
       scene.remove(group);
       for (const g of geometries) g.dispose();
