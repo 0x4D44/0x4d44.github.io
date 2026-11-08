@@ -200,13 +200,16 @@ export function boardRows(trains: readonly BoardTrain[], anchors: AnchorMap, opt
   for (const row of [...platforms.flatMap(p => p.trains), ...approaching, ...leaving]) enrich(row);
   const due: BoardDue[] = [];
   for (const service of services) {
+    if (/^[035]/.test(service.headcode)) continue;
     for (const direction of ['arrival', 'departure'] as const) {
+      const publicTime = direction === 'arrival' ? service.publicArrival : service.publicDeparture;
+      if (!publicTime) continue;
       const bookedMs = direction === 'arrival' ? service.publicArrivalMs ?? service.arrivalMs : service.publicDepartureMs ?? service.departureMs;
       if (bookedMs !== null && bookedMs >= nowMs && bookedMs <= nowMs + 30 * 60_000) due.push({ service, direction, bookedMs });
     }
   }
   due.sort((a, b) => a.bookedMs - b.bookedMs || a.service.uid.localeCompare(b.service.uid) || a.direction.localeCompare(b.direction));
-  return { platforms, approaching, departed: leaving, due, timetable, timeMs: nowMs, mode };
+  return { platforms, approaching, departed: leaving, due: due.slice(0, 8), timetable, timeMs: nowMs, mode };
 }
 
 const sameCall = (a: ScheduleCall, b: ScheduleCall): boolean => a.uid === b.uid && a.serviceDate === b.serviceDate && a.date === b.date;
@@ -248,49 +251,53 @@ const platformLabel = (values: number[]): string => {
   const sorted = [...new Set(values)].sort((a, b) => a - b);
   return sorted.length > 1 && sorted.at(-1)! - sorted[0]! === sorted.length - 1 ? `plat ${sorted[0]}–${sorted.at(-1)}` : `plat ${sorted.join(', ')}`;
 };
-const clock = (ms: number): string => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(ms);
-const bookedLine = (service: BoardService, direction: 'arrival' | 'departure'): string | undefined => {
-  const arrival = direction === 'arrival';
-  const working = arrival ? service.arrival : service.departure;
-  const publicTime = arrival ? service.publicArrival : service.publicDeparture;
-  if (!working && !publicTime) return undefined;
-  const place = arrival ? service.originName || service.origin : service.destinationName || service.destination;
-  const times = publicTime === working ? `booked public/working ${publicTime}`
-    : `booked public ${publicTime ?? '—'} · working ${working ?? '—'}`;
-  return `${arrival ? 'Arrival from' : 'Departure to'} ${place} · ${times} · ${service.operator || 'operator unknown'}`;
-};
-const actualLine = (service: BoardService): string | undefined => {
+export function stationName(name: string): string {
+  return name.trim().toLocaleLowerCase('en-GB')
+    .replace(/(^|[\s(\-/])([a-z])/g, (_match, before: string, letter: string) => before + letter.toUpperCase())
+    .replace(/\b([OD])(['’])([a-z])/g, (_match, before: string, apostrophe: string, letter: string) => before + apostrophe + letter.toUpperCase());
+}
+export function operatorName(code: string): string {
+  return ({ GR: 'LNER', GN: 'Great Northern', HT: 'Hull Trains', LD: 'Lumo', GC: 'Grand Central', TL: 'Thameslink' } as Record<string, string>)[code] ?? (code || 'unknown');
+}
+type Direction = 'arrival' | 'departure';
+const clock = (ms: number): string => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);
+const rowDirection = (row: BoardRow): Direction => row.service?.departure && (row.state === 'departing' || row.state === 'leaving' || !row.service.arrival) ? 'departure' : 'arrival';
+const publicTime = (service: BoardService, direction: Direction): string | null => direction === 'arrival' ? service.publicArrival : service.publicDeparture;
+const bookedTime = (service: BoardService, direction: Direction): string =>
+  (publicTime(service, direction) ?? (direction === 'arrival' ? service.arrival : service.departure))?.slice(0, 5) ?? '';
+const stockCall = (service: BoardService, direction: Direction): boolean => /^[035]/.test(service.headcode) || !publicTime(service, direction);
+const placeFor = (service: BoardService, direction: Direction): string => stockCall(service, direction) ? 'empty stock'
+  : direction === 'arrival' ? `from ${stationName(service.originName || service.origin)}` : stationName(service.destinationName || service.destination);
+const timeFact = (service: BoardService, direction: Direction, nowMs: number): string => {
   const rt = service.realtime;
-  if (!rt) return undefined;
-  const facts: string[] = [];
-  if (typeof rt.actualArrivalMs === 'number' && Number.isFinite(rt.actualArrivalMs)) facts.push(`Actual arrival ${clock(rt.actualArrivalMs)}`);
-  if (typeof rt.actualDepartureMs === 'number' && Number.isFinite(rt.actualDepartureMs)) facts.push(`Actual departure ${clock(rt.actualDepartureMs)}`);
-  if (typeof rt.variationMinutes === 'number' && Number.isFinite(rt.variationMinutes)) facts.push(`Recorded variation ${rt.variationMinutes > 0 ? '+' : ''}${rt.variationMinutes} min`);
-  if (rt.platform && rt.platform !== service.platform) facts.push(`Recorded platform ${rt.platform}`);
-  return facts.length ? facts.join(' · ') : undefined;
+  const actual = direction === 'arrival' ? rt?.actualArrivalMs : rt?.actualDepartureMs;
+  const variation = rt && (!finite(actual) || actual <= nowMs) && (!rt.eventType || rt.eventType === direction.toUpperCase()) && finite(rt.variationMinutes)
+    ? rt.variationMinutes === 0 ? 'on time' : `(${rt.variationMinutes > 0 ? '+' : ''}${rt.variationMinutes})` : '';
+  return [bookedTime(service, direction), variation, finite(actual) && actual <= nowMs ? `actual ${clock(actual)}` : ''].filter(Boolean).join(' ');
 };
-const serviceLines = (service: BoardService): string[] => [bookedLine(service, 'arrival'), bookedLine(service, 'departure'), actualLine(service)]
-  .filter((line): line is string => !!line);
-const schedule = (row: BoardRow): string => (row.service ? serviceLines(row.service)
-  : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter((s): s is string => !!s))
-  .map(s => `<span>${escape(s)}</span>`).join('');
-const trainHtml = (row: BoardRow, detail: string): string => `<div class="kx-board-train"><strong>${escape(row.headcode)}</strong> <span>${detail}</span>${schedule(row)}</div>`;
+const trainHtml = (row: BoardRow, detail: string, nowMs: number): string => {
+  const direction = rowDirection(row), service = row.service;
+  const description = service ? `${placeFor(service, direction)} · ${direction === 'arrival' ? 'arr' : 'dep'} ${timeFact(service, direction, nowMs)}`
+    : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter(Boolean).join(' · ');
+  const operator = service ? operatorName(service.operator) : '';
+  const title = [row.headcode, description, operator, detail].filter(Boolean).join(' · ');
+  return `<div class="kx-board-train" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(detail)}</span></div>`;
+};
 
 /** Also usable by a later schedule adapter; all feed strings are escaped before insertion. */
 export function boardHtml(rows: BoardRows): string {
   const platformRows = rows.platforms.map((p) => `<div class="kx-board-platform"><b>${p.platform}</b><div>${p.trains.length
-    ? p.trains.map((r) => trainHtml(r, `${r.state} · ${duration(r.stoodMs ?? 0)}${r.sample ? ' · sample' : ''}`)).join('') : '<span class="kx-board-empty">empty</span>'}</div></div>`).join('');
-  const approaching = rows.approaching.map((r) => trainHtml(r, `${platformLabel(r.platforms ?? [])} · ${r.distanceM === undefined ? 'distance unknown' : `≈ ${Math.round(r.distanceM)} m to buffer`}`)).join('') || '<p class="kx-board-empty">None observed</p>';
-  const departed = rows.departed.map((r) => trainHtml(r, `from plat ${r.platform} · ${duration(Math.max(0, rows.timeMs - (r.leftAtMs ?? rows.timeMs)))} ago`)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
-  const due = rows.due.map(({ service, direction }) => {
+    ? p.trains.map((r) => trainHtml(r, `${r.state} ${duration(r.stoodMs ?? 0)}${r.sample ? ' · sample' : ''}`, rows.timeMs)).join('') : '<span class="kx-board-empty">empty</span>'}</div></div>`).join('');
+  const approaching = rows.approaching.map((r) => trainHtml(r, `${platformLabel(r.platforms ?? [])} · ${r.distanceM === undefined ? 'distance unknown' : `≈ ${Math.round(r.distanceM)} m to buffer`}`, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed</p>';
+  const departed = rows.departed.map((r) => trainHtml(r, `from plat ${r.platform} · ${duration(Math.max(0, rows.timeMs - (r.leftAtMs ?? rows.timeMs)))} ago`, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
+  const due = rows.due.slice(0, 8).map(({ service, direction }) => {
     const arrival = direction === 'arrival';
-    const place = arrival ? service.originName || service.origin : service.destinationName || service.destination;
-    const publicTime = arrival ? service.publicArrival : service.publicDeparture;
-    const working = arrival ? service.arrival : service.departure;
-    const times = publicTime === working ? `public/working ${publicTime}` : `public ${publicTime ?? '—'} · working ${working ?? '—'}`;
-    return `<div class="kx-board-train"><strong>${escape(service.headcode)}</strong> <span>${arrival ? 'Arr' : 'Dep'} ${escape(times)} · booked platform ${escape(service.platform ?? 'unknown')} · ${arrival ? 'from' : 'to'} ${escape(place)} · ${escape(service.operator || 'operator unknown')}</span>${actualLine(service) ? `<span>${escape(actualLine(service)!)}</span>` : ''}</div>`;
+    const place = placeFor(service, direction), operator = operatorName(service.operator), time = bookedTime(service, direction), platform = `P${service.platform ?? '?'}`;
+    const facts = timeFact(service, direction, rows.timeMs).slice(time.length);
+    const title = `${time} ${arrival ? 'arr' : 'dep'} ${service.headcode} ${place}${facts} ${platform} ${operator}`;
+    return `<div class="kx-board-due" title="${escape(title)}"><span>${escape(time)}</span><span>${arrival ? 'arr' : 'dep'}</span><strong>${escape(service.headcode)}</strong><span class="kx-board-description">${escape(place + facts)}</span><span>${escape(platform)}</span><span class="kx-board-operator">${escape(operator)}</span></div>`;
   }).join('') || '<p class="kx-board-empty">None booked in the next 30 minutes</p>';
-  return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · ${rows.timetable ? 'timetable available' : 'no timetable'}`}<br>Dwell measured since observed · simulation time</p>${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Platforms 0–10</h2>${platformRows}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
+  return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · ${rows.timetable ? 'timetable available' : 'no timetable'}`}<br>Dwell measured since observed · simulation time</p><h2>Platforms 0–10</h2>${platformRows}${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
 }
 
 export function createBoard(parent: HTMLElement, status?: HTMLElement) {
@@ -298,7 +305,13 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
   const root = doc.createElement('aside');
   root.className = 'kx-board'; root.setAttribute('aria-label', 'Station board');
   const style = doc.createElement('style');
-  style.textContent = `.kx-board{position:fixed;top:52px;left:16px;width:350px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 52px - var(--board-bottom,100px));box-sizing:border-box;display:flex;flex-direction:column;z-index:10;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:12px/1.45 system-ui,sans-serif;backdrop-filter:blur(8px)}.kx-board button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;border:0;border-radius:6px;background:transparent;color:inherit;padding:9px 12px;font:600 13px/1.4 system-ui,sans-serif;text-align:left;cursor:pointer}.kx-board button:focus-visible{outline:2px solid currentColor;outline-offset:2px}.kx-board-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 12px 10px;overflow-wrap:anywhere}.kx-board-body[hidden]{display:none}.kx-board h2{font-size:12px;margin:12px 0 4px;color:var(--fg)}.kx-board-note,.kx-board-empty{color:var(--muted);margin:4px 0}.kx-board-platform{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:4px 0}.kx-board-train{padding:2px 0}.kx-board-train strong{font-variant-numeric:tabular-nums}.kx-board-train span{color:var(--muted);margin-left:4px}.kx-board-train span:nth-of-type(n+2){display:block;margin-left:0}`;
+  // Eleven single-line platform entries take 275 px; long names retain their full tooltip.
+  style.textContent = `.kx-board{position:fixed;top:52px;left:16px;width:350px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 52px - var(--board-bottom,100px));box-sizing:border-box;display:flex;flex-direction:column;z-index:10;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:12px/20px system-ui,sans-serif;backdrop-filter:blur(8px)}
+.kx-board button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;border:0;border-radius:6px;background:transparent;color:inherit;padding:9px 12px;font:600 13px/1.4 system-ui,sans-serif;text-align:left;cursor:pointer}.kx-board button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.kx-board-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 12px 10px;line-height:20px}.kx-board-body[hidden]{display:none}.kx-board h2{font-size:12px;margin:8px 0 4px;color:var(--fg)}.kx-board-note,.kx-board-empty{color:var(--muted);margin:2px 0}
+.kx-board-platform{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:2px 0;min-height:20px}.kx-board-platform>div{min-width:0}
+.kx-board-train{display:flex;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap}.kx-board-train strong{flex:0 0 32px;font-size:12px;font-variant-numeric:tabular-nums}.kx-board-train span{color:var(--muted)}.kx-board-description{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-operator{flex:0 0 auto;max-width:78px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-state{flex:0 1 auto;max-width:84px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.kx-board-due{display:grid;grid-template-columns:34px 20px 32px minmax(0,1fr) 22px auto;gap:4px;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-due>span{color:var(--muted)}.kx-board-due strong{font-size:12px}`;
   const toggle = doc.createElement('button'); toggle.type = 'button';
   toggle.setAttribute('aria-controls', 'kx-board-content');
   const body = doc.createElement('div'); body.className = 'kx-board-body'; body.id = 'kx-board-content';

@@ -4,7 +4,7 @@ import { buildGraph } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import type { BoardRow, BoardTrain, BoardService } from '../src/board.ts';
-import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, createBoard } from '../src/board.ts';
+import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, createBoard, stationName, operatorName } from '../src/board.ts';
 
 import { createLiveFeed, createReplayFeed, createScheduleFeed, ukDate } from '../src/feed.ts';
 import type { EventStream } from '../src/feed.ts';
@@ -253,8 +253,9 @@ test('timetable enriches platform approach and departed rows and preserves match
   const later = boardRows([], map, { previous: departed, nowMs: bookedAt + 120_000, services });
   assert.equal(later.departed[0]!.uid, 'SYN001');
   const html = boardHtml(first);
-  assert.doesNotMatch(html, /UID SYN001/); assert.match(html, /· SYN/); assert.match(html, /Arrival from Synthetic Origin/);
-  assert.match(html, /Departure to Synthetic Destination/); assert.match(html, /booked public 10:01 · working 10:00/);
+  assert.doesNotMatch(html, /UID SYN001/); assert.match(html, /· SYN/); assert.match(html, /(?:from Synthetic Origin|to Synthetic Destination)/i);
+  assert.match(html.replace(/<[^>]*>/g, ''), /10:(?:01|09)/);
+  assert.equal(row(first, 1)?.service?.arrival, '10:00'); assert.equal(row(first, 1)?.service?.publicArrival, '10:01');
 });
 
 test('due lists next thirty minutes including unseen calls and booked platform without TD placement', () => {
@@ -267,7 +268,7 @@ test('due lists next thirty minutes including unseen calls and booked platform w
   assert.deepEqual(rows.due.map(d => [d.service.uid, d.direction, d.bookedMs]), [
     ['SYN002', 'arrival', bookedAt + 60_000], ['SYN002', 'departure', bookedAt + 9 * 60_000], ['SYN003', 'arrival', bookedAt + 30 * 60_000],
   ]);
-  assert.match(boardHtml(rows), /Due in next 30 minutes/); assert.match(boardHtml(rows), /2B02/); assert.match(boardHtml(rows), /booked platform 10/);
+  assert.match(boardHtml(rows), /Due in next 30 minutes/); assert.match(boardHtml(rows), /2B02/); assert.match(boardHtml(rows), /P10/);
 });
 
 test('timetable availability distinguishes empty data and stays hidden for sample and none', () => {
@@ -294,8 +295,8 @@ test('recorded TRUST links UID and date before repeated headcodes and projects o
   assert.equal('secret' in enriched[0]!.realtime!, false); assert.equal('expectedArrivalMs' in enriched[0]!.realtime!, false);
   const stale = applyBoardTrust(enriched, { ...event, actualMs: bookedAt + 1, receivedAtMs: bookedAt });
   assert.equal(stale[0]!.realtime?.actualArrivalMs, bookedAt + 120_000);
-  const html = boardHtml(boardRows([], anchors([]), { nowMs: bookedAt, services: enriched }));
-  assert.match(html, /Actual arrival 10:02:00/); assert.match(html, /Recorded variation \+2 min/); assert.match(html, /Recorded platform 5/);
+  const html = boardHtml(boardRows([train(1, { state: 'held', lastBerth: '1004' })], anchors([anchor('1004', 1, 2, 0.8, '4')]), { nowMs: bookedAt + 120_000, services: enriched.slice(0, 1) }));
+  assert.match(html, /actual 10:02/i); assert.match(html, /\(\+2\)/);
   assert.doesNotMatch(html, /expected|forecast|never-copy/);
 });
 
@@ -396,4 +397,76 @@ test('missing timetable retries after five seconds and reconnect refresh preserv
   available = true; await feed.refresh(); assert.equal(feed.services()?.length, 1);
   available = false; await feed.refresh(); assert.equal(feed.services()?.[0]?.uid, 'SYN001');
   assert.equal([...timers.jobs.values()][0]?.ms, 60_000); feed.dispose();
+});
+
+test('board names preserve station apostrophes and St while expanding known operators', () => {
+  assert.equal(stationName("LONDON KING'S CROSS"), "London King's Cross");
+  assert.equal(stationName('ST ALBANS CITY'), 'St Albans City');
+  assert.equal(stationName('YORK'), 'York');
+  assert.equal(stationName(''), '');
+  for (const [code, name] of Object.entries({ GR: 'LNER', GN: 'Great Northern', HT: 'Hull Trains', LD: 'Lumo', GC: 'Grand Central', TL: 'Thameslink', ZZ: 'ZZ' })) assert.equal(operatorName(code), name);
+});
+
+test('Due limits eight public passenger directions and excludes stock freight and nonpublic calls', () => {
+  const passenger = service({ headcode: '1A11', uid: 'PASS01', publicDeparture: null, publicDepartureMs: null });
+  const nonpublicArrival = service({ headcode: '2B22', uid: 'PASS02', publicArrival: null, publicArrivalMs: null });
+  const excluded = ['0A01', '3A01', '5A01'].map((headcode, i) => service({ headcode, uid: `EXCL0${i}` }));
+  const noPublic = service({ uid: 'HIDDEN', headcode: '1A33', publicArrival: null, publicArrivalMs: null, publicDeparture: null, publicDepartureMs: null });
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [passenger, nonpublicArrival, ...excluded, noPublic] });
+  assert.deepEqual(rows.due.map(d => [d.service.uid, d.direction]), [['PASS01', 'arrival'], ['PASS02', 'departure']]);
+  const many = Array.from({ length: 12 }, (_, i) => service({ uid: `MANY${String(i).padStart(2, '0')}`, headcode: `1C${String(i).padStart(2, '0')}`, publicDeparture: null, publicDepartureMs: null }));
+  const capped = boardRows([], anchors([]), { nowMs: bookedAt, services: many });
+  assert.equal(capped.due.length, 8);
+  capped.due = many.map(s => ({ service: s, direction: 'arrival' as const, bookedMs: s.publicArrivalMs! }));
+  const html = boardHtml(capped);
+  assert.match(html, /1C07/); assert.doesNotMatch(html, /1C08|1C09|1C10|1C11/);
+});
+
+test('platforms precede bounded Due with eleven compact single line rows', () => {
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [service()] });
+  const html = boardHtml(rows);
+  assert.equal((html.match(/class="kx-board-platform"/g) ?? []).length, 11);
+  assert.ok(html.indexOf('Platforms 0–10') < html.indexOf('Due in next 30 minutes'));
+  assert.ok(html.indexOf('Due in next 30 minutes') < html.indexOf('Approaching'));
+  assert.ok(html.indexOf('Approaching') < html.indexOf('Departed / leaving'));
+  const doc = new FakeDocument(), parent = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement);
+  const css = parent.children[0]!.children[0]!.textContent;
+  assert.match(css, /width:350px/); assert.match(css, /\.kx-board-body\{[^}]*line-height:20px/); assert.match(css, /\.kx-board-train\{[^}]*line-height:20px/);
+  assert.match(css, /white-space:nowrap/); assert.match(css, /text-overflow:ellipsis/);
+  assert.match(css, /grid-template-columns:24px minmax\(0,1fr\)/);
+  assert.doesNotMatch(css, /span:nth-of-type\(n\+2\)\{display:block/);
+  controller.dispose();
+});
+
+test('platform stock replaces depot route and booked labels select public then working without dashes', () => {
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  const stock = boardRows([train(1, { description: '5A01', state: 'held', lastBerth: '1004' })], map, { nowMs: bookedAt,
+    services: [service({ headcode: '5A01', category: 'EE', originName: 'SYN EMUD', destinationName: 'SYN EMUD', operator: 'GN',
+      arrival: '10:00', departure: '10:00', departureMs: bookedAt, publicArrival: null, publicArrivalMs: null, publicDeparture: null, publicDepartureMs: null })] });
+  const stockHtml = boardHtml(stock);
+  assert.match(stockHtml, /[Ee]mpty stock/); assert.doesNotMatch(stockHtml, /EMUD|public —|public—/);
+  assert.match(stockHtml, /10:00/); assert.match(stockHtml, /Great Northern/);
+  const passengerServices = [service({ originName: "LONDON KING'S CROSS", departure: null, departureMs: null, publicDeparture: null, publicDepartureMs: null }),
+    service({ uid: 'PASS02', headcode: '1A02', destinationName: 'ST ALBANS CITY', arrival: null, arrivalMs: null, publicArrival: null, publicArrivalMs: null })];
+  const passengerRows = boardRows([train(1, { state: 'held', lastBerth: '1004' }), train(2, { state: 'held', lastBerth: '1004' })], map, { nowMs: bookedAt, services: passengerServices });
+  const passengerHtml = boardHtml(passengerRows);
+  assert.match(passengerHtml, /London King&#39;s Cross/); assert.match(passengerHtml, /St Albans City/);
+  const visible = passengerHtml.replace(/<[^>]*>/g, '');
+  assert.match(visible, /10:01/); assert.match(visible, /10:09/); assert.doesNotMatch(visible, /10:00|10:10|public —/);
+});
+
+test('TRUST actual and signed variation appear only once actual time is reached', () => {
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  const held = train(1, { state: 'held', lastBerth: '1004' });
+  const render = (variationMinutes: number, actualArrivalMs: number, nowMs: number): string => boardHtml(boardRows([held], map, { nowMs,
+    services: [service({ departure: null, departureMs: null, publicDeparture: null, publicDepartureMs: null, realtime: { eventType: 'ARRIVAL', actualArrivalMs, variationMinutes } })] }));
+  const future = render(2, bookedAt + 120_000, bookedAt);
+  assert.doesNotMatch(future, /actual 10:02|\(\+2\)/i);
+  const late = render(2, bookedAt + 120_000, bookedAt + 120_000);
+  assert.match(late, /actual 10:02/i); assert.match(late, /\(\+2\)/); assert.doesNotMatch(late, /10:02:00/);
+  assert.match(render(-2, bookedAt - 120_000, bookedAt), /\(-2\)/);
+  assert.match(render(0, bookedAt, bookedAt), /\bon time\b/i);
+  const departure = boardHtml(boardRows([held], map, { nowMs: bookedAt + 12 * 60_000, services: [service({ arrival: null, arrivalMs: null, publicArrival: null, publicArrivalMs: null, realtime: { eventType: 'DEPARTURE', actualDepartureMs: bookedAt + 12 * 60_000, variationMinutes: 2 } })] }));
+  assert.match(departure, /actual 10:12/i);
 });
