@@ -118,6 +118,12 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   if (!Number.isFinite(gap) || gap < 0) throw new Error('motion gap must be finite and nonnegative');
   let now = 0;
   let started = false;
+  let lastAreaActivity = -Infinity;
+  const berthOwners = new Map<string, string>();
+  // A quiet description can still be standing at a red signal or boarding. Only an
+  // idle area (or loss of its recorded berth) makes the quiet timeout stale evidence.
+  const quietExpired = (t: Train): boolean => now - t.lastSeen >= quietMs &&
+    !(now - lastAreaActivity < quietMs && [...berthOwners.values()].includes(t.description));
   const active = new Map<string, Train>();
   const queued = new Map<string, Train>();
   const pendingNames = new Map<string, Train>();
@@ -454,6 +460,18 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const apply = (event: MotionEvent, nowMs: number): void => {
     if (!Number.isFinite(nowMs)) throw new Error('motion time must be finite');
     if (!started) { now = nowMs; started = true; } else now = Math.max(now, nowMs);
+    if (event.area === anchors.area && ['snapshot', 'sclass', 'step', 'interpose', 'cancel', 'heartbeat'].includes(event.kind)) {
+      lastAreaActivity = now;
+      // The shared feed validates complete snapshots before motion receives them.
+      const picture = (event as MotionEvent & { berths?: Readonly<Record<string, string>> }).berths;
+      if (event.kind === 'snapshot' && picture) {
+        berthOwners.clear();
+        for (const [berth, owner] of Object.entries(picture)) berthOwners.set(berth, owner);
+      }
+      if (event.kind === 'step' && event.from) berthOwners.delete(event.from);
+      if ((event.kind === 'step' || event.kind === 'interpose') && event.to && event.descr) berthOwners.set(event.to, event.descr);
+      if (event.kind === 'cancel' && event.descr) for (const [berth, owner] of berthOwners) if (owner === event.descr) berthOwners.delete(berth);
+    }
     if (event.area !== anchors.area || !event.descr || event.descr === NOT_A_TRAIN) return;
     const description = event.descr;
     let t = active.get(description) ?? queued.get(description) ?? pendingNames.get(description);
@@ -652,7 +670,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       now += h * 1000; started = true; left -= h;
       for (const t of [...active.values()]) {
         if (t.exiting && !t.route.length && t.fadeAt === undefined) t.fadeAt = now;
-        if (t.fadeAt === undefined && now - t.lastSeen >= quietMs) t.fadeAt = t.lastSeen + quietMs;
+        if (t.fadeAt === undefined && quietExpired(t)) t.fadeAt = now;
         tick(t, h);
         if (t.fadeAt !== undefined && now - t.fadeAt >= fadeSeconds * 1000) {
           active.delete(t.description);
@@ -663,7 +681,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
         }
       }
       for (const [id, t] of queued) {
-        if (now - t.lastSeen >= quietMs) queued.delete(id);
+        if (quietExpired(t)) queued.delete(id);
         else if (canSpawn(t)) { queued.delete(id); active.set(id, t); }
       }
     }
