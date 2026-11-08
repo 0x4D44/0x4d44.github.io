@@ -6,7 +6,10 @@ import { PassThrough } from 'node:stream';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AXES, cdpPipe, createEvidenceServer, commandResult, optionsFrom, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, writePrivateFile, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { runInNewContext } from 'node:vm';
+import { planBuilding } from '../../core/city.ts';
+import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShed } from '../../core/station.ts';
+import { AXES, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, writePrivateFile, stationCameras, trainCameras, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -61,6 +64,96 @@ test('train closeups are three metres from the nose and coach side and include b
   assert.ok(Math.abs(cameras['coach-side-3m'].pos[0]-20-1.35-3)<1e-9);
   for (const name of ['gangway','bogie','great-northern-387','lumo','hull-trains']) assert.ok(cameras[name],name);
   assert.ok(!trainCameras([train('lner9')],{platforms:[]})['great-northern-387'],'missing 387 cannot be relabelled Azuma');
+});
+
+test('every named station and sample train camera clears the rendered city building roofs', async () => {
+  const data = JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-track.json'),'utf8'));
+  const city = JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-city.json'),'utf8'));
+  assert.ok(city.extract && city.roads.length, 'check against the current city extract');
+  const s=shedLayout(data), stops=shedBufferStops(data,s).sort((a,b)=>worldToShed(s,[a.x,a.z]).u-worldToShed(s,[b.x,b.z]).u);
+  const trains=[['lner9',1],['lner5',3],['hull5',5],['lumo5',7],['gn387x4',3]].map(([kind,i])=>{
+    const pose=standingTrainPose(s,stops[i],1.5); return {kind,nose:[pose.nose[0],0,pose.nose[1]],h:s.heading};
+  });
+  const cameras={...stationCameras(data),...trainCameras(trains,data)}, buildings=cityBuildings(data);
+  assert.deepEqual(cameraBuildingCollisions(cameras,buildings),[]);
+  // Pin the requested clear positions; check the old footprints at street height too.
+  const at=(u,v,y)=>{const [x,z]=shedToWorld(s,u,v);return [x,y,z];};
+  assert.deepEqual(cameras['south-front'].pos,at(s.width/2,-70,26));
+  assert.deepEqual(cameras['western-range'].pos,at(-43,185,12));
+  for (const [name,pos,id] of [['south-front',at(s.width/2,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
+    assert.ok(cameraBuildingCollisions({[name]:{...cameras[name],pos}},buildings).some(c=>c.buildingId===id),name);
+  }
+});
+
+test('a camera moved inside a footprint is rejected below the fitted roof and allowed above it', () => {
+  const building=planBuilding({id:42,kind:'office',height:20,pts:[[0,0],[10,0],[10,10],[0,10]]});
+  assert.deepEqual(cameraBuildingCollisions({street:{pos:[-1,2,5]},above:{pos:[5,21,5]}},[building]),[]);
+  const hit=cameraBuildingCollisions({moved:{pos:[5,2,5]}},[building]);
+  assert.equal(hit.length,1); assert.equal(hit[0].camera,'moved'); assert.equal(hit[0].buildingId,42);
+  assert.ok(Math.abs(hit[0].roofY-19.35)<1e-9);
+});
+
+test('shots and scenery visibility wait for the lazy city and still support bare and older pages', async () => {
+  let arrive;
+  const shed={visible:true}, kx={parts:{shed,buildings:null},cityLoaded:new Promise(resolve=>{arrive=resolve;})};
+  // Exercise the same serialized function as CDP, with no hidden Node closures.
+  let shot=false;
+  const preparing=runInNewContext(`(${prepareEvidenceScene.toString()})(kx,true)`,{kx}).then(()=>{shot=true;});
+  await Promise.resolve(); assert.equal(shot,false); assert.equal(shed.visible,true);
+  kx.parts.buildings={visible:true}; arrive(); await preparing;
+  assert.equal(shot,true); assert.equal(shed.visible,false); assert.equal(kx.parts.buildings.visible,false);
+  await prepareEvidenceScene(kx,false); assert.equal(kx.parts.buildings.visible,true);
+  await prepareEvidenceScene({parts:{shed}},true);
+  await prepareEvidenceScene({cityLoaded:Promise.resolve(),parts:{}},undefined,true);
+  await assert.rejects(prepareEvidenceScene({cityLoaded:Promise.resolve(),parts:{}},false),/without the city/);
+});
+
+test('signal state targets exclude inferred and synthetic heads and require proof for unknown', () => {
+  for(const state of ['danger','proceed','unknown']) {
+    const rows=[{id:-1,inferred:true,state},{id:-2,inferred:false,state},{id:8,inferred:true,state},{id:9,inferred:false,state}];
+    assert.equal(signalStateTarget(rows,state,new Set([9])),rows[3]);
+  }
+  assert.equal(signalStateTarget([{id:9,inferred:false,state:'unknown'}],'unknown'),null);
+  assert.equal(signalStateTarget([{id:9,inferred:false,state:'proceed'}],'danger'),null);
+});
+
+test('state search starts at the requested time and finds other decoded heads farther into the replay', async () => {
+  const real=(id,state)=>({id,state,inferred:false});
+  const frames=[
+    {timeMs:900,signals:[real(11,'proceed')]},
+    {timeMs:1000,signals:[{id:-1,state:'danger',inferred:true},real(12,'unknown')]},
+    {timeMs:1100,signals:[real(11,'danger'),real(12,'proceed')]},
+    {timeMs:1200,signals:[real(11,'unknown')]},
+  ];
+  let cursor=0; const shots=[];
+  const result=await searchSignalStates({sample:async()=>frames[cursor++],capture:async(s,state)=>{shots.push([s.id,state]);return true;},
+    startMs:1000,endMs:2000,timeoutMs:1000,wait:async()=>{},now:()=>0});
+  assert.deepEqual(shots,[[11,'danger'],[12,'proceed'],[11,'unknown']]);
+  assert.deepEqual(result.missing,[]); assert.equal(result.scannedUntilMs,1200);
+});
+
+test('missing replay states return explicit gaps at the window end or recording end without timing out', async () => {
+  for(const ended of [false,true]) {
+    let timeMs=1000, calls=0;
+    const result=await searchSignalStates({sample:async()=>({timeMs,ended,signals:[{id:-1,inferred:true,state:'danger'}]}),
+      capture:async()=>{calls++;return true;},startMs:1000,endMs:1200,timeoutMs:1000,now:()=>0,wait:async()=>{timeMs+=100;}});
+    assert.deepEqual(result.missing,['danger','proceed','unknown']); assert.equal(calls,0);
+    assert.equal(result.reason,ended?'recording ended':'window ended');
+  }
+});
+
+test('a stale aspect capture is retried and a stalled replay returns a bounded gap', async () => {
+  let clock=0,attempts=0;
+  const result=await searchSignalStates({sample:async()=>({timeMs:1000,signals:[{id:11,inferred:false,state:'danger'}]}),
+    capture:async()=>++attempts>1,startMs:1000,endMs:2000,timeoutMs:20,now:()=>clock,wait:async()=>{clock+=10;}});
+  assert.equal(attempts,2); assert.deepEqual(result.captures.map(c=>c.state),['danger']);
+  assert.deepEqual(result.missing,['proceed','unknown']); assert.match(result.reason,/capture budget/);
+  assert.equal(clock,20);
+});
+
+test('signal windows use the recording date London time in winter and summer', () => {
+  assert.deepEqual(signalReplayWindow('2026-11-07','16:23:55'),{startMs:Date.parse('2026-11-07T16:23:55Z'),endMs:Date.parse('2026-11-07T16:33:55Z')});
+  assert.equal(signalReplayWindow('2026-07-07','16:23:55').startMs,Date.parse('2026-07-07T15:23:55Z'));
 });
 
 function fakeChrome() { const child = new EventEmitter(); child.stdio=[null,null,null,new PassThrough(),new PassThrough()]; return child; }
