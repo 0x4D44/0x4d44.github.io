@@ -3,6 +3,13 @@ import * as THREE from 'three';
 
 export const HORIZON = 0x35465e;
 const ZENITH = 0x0b1322;
+/**
+ * The ground plane, metres. The rail head top is y = 0 (the trains' wheels touch there), so the
+ * ground sits 0.2 m below it: that leaves room for a track bed (ballast, sleepers, a rail foot)
+ * that is visibly proud of the ground instead of buried under it. Anything built on the ground
+ * (platform walls, building walls) should start here, not at 0, or it floats 0.2 m clear.
+ */
+export const GROUND_Y = -0.2;
 
 export interface World {
   /** keep the dome centred on the camera so it never reaches an edge */
@@ -61,7 +68,7 @@ export function addWorld(scene: THREE.Scene, opts: { grid: boolean; bare?: boole
   scene.add(sun);
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x3a4049 }));
-  ground.position.y = -0.05;
+  ground.position.y = GROUND_Y;
   scene.add(ground);
 
   if (opts.grid) scene.add(measuringGrid());
