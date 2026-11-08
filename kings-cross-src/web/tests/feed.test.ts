@@ -122,6 +122,34 @@ class FakeStream implements EventStream {
   emit(type: string, data: unknown) { this.listeners.get(type)?.({ data: JSON.stringify(data) } as MessageEvent<string>); }
 }
 
+test('late and out-of-order source timestamps apply synchronously in receive order in live and replay', () => {
+  const stream = new FakeStream();
+  const liveApplied: { to?: string; at: number }[] = [], replayApplied: { to?: string; at: number }[] = [];
+  const sink = (applied: typeof liveApplied) => ({ advance: () => {}, apply: (e: MotionEvent, at: number) => applied.push({ to: e.to, at }) });
+  const burst = [1000, 900, 9999999].map((time, i) => ({ t: 2000,
+    e: { ...next, time, from: String.fromCharCode(65 + i), to: String.fromCharCode(66 + i) } }));
+  const recorded = [{ t: 0, e: first }, ...burst];
+  let pending = 0;
+  const live = createLiveFeed(sink(liveApplied), () => {}, { source: () => stream,
+    schedule: () => { pending++; return {}; }, unschedule: () => { pending--; }, now: () => 0 });
+  const replay = createReplayFeed(parseRecording(recorded.map(r => JSON.stringify(r)).join('\n')), 30, sink(replayApplied), () => {});
+  try {
+    stream.onopen?.({} as Event); stream.emit('td', recorded[0]);
+    live.advance(2);
+    const before = pending;
+    for (const [i, row] of burst.entries()) {
+      stream.emit('td', row);
+      assert.equal(liveApplied.length, i + 2, 'event applies before the EventSource listener returns');
+      assert.equal(pending, before, 'no source-time timer or extra queue delays an event');
+    }
+    replay.advance(2 / 30);
+    assert.deepEqual(liveApplied, [{ to: 'A', at: 0 }, { to: 'B', at: 2000 }, { to: 'C', at: 2000 }, { to: 'D', at: 2000 }]);
+    assert.deepEqual(replayApplied, liveApplied);
+    assert.equal(live.timeMs(), 2000); assert.equal(replay.timeMs(), 2000);
+  } finally { live.dispose(); replay.dispose(); }
+  assert.equal(pending, 0);
+});
+
 test('live and replay reconcile a cancel lost in a connection gap to identical moving and fading trains', () => {
   const graph = buildGraph({ nodes: [[1, 0, -1000], [2, 5000, -1000]], rails: [{ id: 7, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
   const anchors: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [

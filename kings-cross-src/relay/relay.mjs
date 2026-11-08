@@ -141,6 +141,7 @@ export async function startRelay({
   fetchImpl,
   log = () => {},
   now = Date.now,
+  createServer = http.createServer,
 }) {
   const state = new TdState(area);
   const recent = [];
@@ -201,7 +202,7 @@ export async function startRelay({
       })
     : null;
 
-  const server = http.createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
     try {
       const { port: boundPort } = server.address();
       const refusal = requestFailure(req.headers.host, boundPort, req.method, req.headers.origin);

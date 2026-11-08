@@ -1,5 +1,7 @@
 // Appends normalised events to one NDJSON file per UTC day: `<dir>/td-<AREA>-YYYYMMDD.ndjson`.
-// Each line is {"t": <receive time ms>, "e": <event>}. Snapshots bound gaps and start each
+// Each line is {"t": <local append-entry time ms>, "e": <event>}, before disk flush.
+// Appending runs synchronously in the feed callback; t is not raw TCP-receive telemetry.
+// Snapshots bound gaps and start each
 // file with a complete picture. Tests use invented events, never recording-derived fixtures.
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';

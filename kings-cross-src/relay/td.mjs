@@ -13,7 +13,9 @@
 //     at start, UTC-day rollover, each feed connect/reconnect and every ten minutes, and
 //     broadcast as an SSE snapshot too. Replay reconciles it instead of treating it as a step.
 //     Older {t,e} recordings without checkpoints remain valid; missing history cannot be
-//     reconstructed retrospectively. `t` is receive time; `time` below is the TD event time.
+//     reconstructed retrospectively. Recorded `t` is local recorder append-entry time,
+//     before disk flush; SSE `t` is the feed callback's batch-entry time. Neither is a
+//     raw socket-receive or browser-apply measurement. `time` below is the TD source time.
 //   {kind:'unknown',   area, msgType}
 //   {kind:'trust', area, type:'activation'|'movement', trainId, uid, headcode,
 //    serviceDate, date, eventType, plannedMs, actualMs, publicMs, variationMinutes,
