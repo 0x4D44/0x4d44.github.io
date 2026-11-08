@@ -249,13 +249,16 @@ test('train: a nine-car train draws in no more than 80 calls, with four material
     // (one atlas) each need their own: plain, shell, decals, glass
     assert.ok(materials.size <= 4, `${kind} uses ${materials.size} materials`);
   }
-  // the bogie mesh geometry is built once and shared
+  // the bogie mesh geometry is built once and shared: one for the near level of detail, one for the far (CHANGED from one in all: every
+  // bogie now carries both levels, and this test still counts them all among its meshes, as it did, though only one of the two is ever drawn)
   const g = built('lner9');
-  const geos = new Set<THREE.BufferGeometry>();
+  const near = new Set<THREE.BufferGeometry>();
+  const far = new Set<THREE.BufferGeometry>();
   g.traverse((o) => {
-    if (o.name === 'bogie-mesh') geos.add((o as THREE.Mesh).geometry);
+    if (o.name === 'bogie-mesh') (o.userData.lod === 'far' ? far : near).add((o as THREE.Mesh).geometry);
   });
-  assert.equal(geos.size, 1);
+  assert.equal(near.size, 1);
+  assert.equal(far.size, 1);
 });
 
 test('train: every livery says how good its colours are and cites its sources, and the Hull Trains door colour is flagged as unverified', () => {

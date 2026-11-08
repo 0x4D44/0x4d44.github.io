@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ALL_KINDS, carLength, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, roofHeight, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
+import { ADELANTE, ALL_KINDS, carLength, DESIRO_700, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, roofHeight, TL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
 import type { CarType, TrainKind } from '../train.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -166,7 +166,7 @@ test('train: the Great Northern formations are as published', () => {
   assert.deepEqual(EMU_KINDS.map((k) => TRAIN_SPECS[k].livery), ['greatnorthern', 'greatnorthern', 'greatnorthern', 'greatnorthern']);
   // the kind lists: the Azuma kinds are unchanged, and ALL_KINDS is every kind once
   assert.deepEqual(TRAIN_KINDS, ['lner5', 'lner9', 'hull5', 'lumo5']);
-  assert.deepEqual([...ALL_KINDS].sort(), [...TRAIN_KINDS, ...EMU_KINDS].sort());
+  assert.deepEqual([...ALL_KINDS].sort(), [...TRAIN_KINDS, ...EMU_KINDS, ...GC_KINDS, ...TL_KINDS].sort());
 });
 
 test('train: cabs are at the ends of each unit, so coupled 387s have two noses meeting, and the 717 has cabs at its two ends only', () => {
@@ -232,7 +232,11 @@ test('train: every commuter-EMU figure has a source; the published ones are pinn
   }
   // adding a figure to this list needs a manufacturer or reference-work citation
   assert.deepEqual(published.sort(), [
+    // the Grand Central 180: Wikipedia and Angel Trains for the car lengths and the width; nothing else of it is printed in a page read
+    'adelante.bodyWidth', 'adelante.carLength', 'adelante.drivingCarLength',
     'desiro.bodyWidth', 'desiro.doorWidth', 'desiro.floorHeight', 'desiro.wheelDiameter', 'desiro.wheelbaseMotor', 'desiro.wheelbaseTrailer',
+    // the Thameslink 700: the Siemens datasheet and Wikipedia; its car lengths are worked out from two published unit lengths, so ASSUMED
+    'desiro700.bodyWidth', 'desiro700.floorHeight', 'desiro700.wheelDiameter', 'desiro700.wheelbaseMotor', 'desiro700.wheelbaseTrailer',
     'electrostar.bodyWidth', 'electrostar.carLength', 'electrostar.height',
   ]);
   for (const kind of EMU_KINDS) assert.ok(TRAIN_SPECS[kind].source.length > 20, `${kind} formation is cited`);
@@ -243,6 +247,114 @@ test('train: every commuter-EMU figure has a source; the published ones are pinn
 test('train: carLength agrees with the commuter figures, and driving cars are exactly the cabs', () => {
   for (const t of ['DMSO', 'MSO', 'PTSO'] as const) assert.equal(carLength(t), ELECTROSTAR.carLength.value);
   for (const t of ['DMOS', 'TOS', 'TOSLW', 'MOS', 'PTOS'] as const) assert.equal(carLength(t), DESIRO_CITY.carLength.value);
-  assert.deepEqual([...DRIVING].sort(), ['DMOS', 'DMSO', 'DPTF', 'DPTS']);
+  // the Class 700 and the Class 180 add DMCO and DMSL, the cab cars of their formations
+  assert.deepEqual([...DRIVING].sort(), ['DMCO', 'DMOS', 'DMSL', 'DMSO', 'DPTF', 'DPTS']);
   assert.deepEqual(trainLayout('gn387x8'), trainLayout('gn387x8'));
+});
+
+// --- the Thameslink Class 700 and Grand Central's Class 180 -----------------------------------------------------
+
+test('train: the Grand Central Class 180 is five cars, DMSL-MFL-MSL-MSLRB-DMSL, 23.71 m at the cabs and 23.03 m between, 116.51 m (published: 116.52 m)', () => {
+  assert.deepEqual(GC_KINDS, ['gc180x5']);
+  const spec = TRAIN_SPECS.gc180x5;
+  assert.equal(spec.cars.join('-'), 'DMSL-MFL-MSL-MSLRB-DMSL');
+  assert.equal(spec.operator, 'Grand Central');
+  assert.equal(spec.classes, '180');
+  assert.equal(spec.family, 'adelante');
+  assert.equal(spec.livery, 'grandcentral');
+  const { cars, length } = trainLayout('gc180x5');
+  assert.deepEqual(cars.map((c) => c.length), [23.71, 23.03, 23.03, 23.03, 23.71]);
+  // Wikipedia and loco-info.com both give the train length as 116.52 m: the sum of the car lengths is within a centimetre of it
+  near(length, 116.52, 0.011, '180 train length');
+  // a cab at each end only, and no pantograph anywhere: it is a diesel unit
+  assert.deepEqual(cars.map((c) => c.cab), ['front', null, null, null, 'rear']);
+  assert.ok(cars.every((c) => c.pantograph === null), 'a diesel unit has no pantograph');
+  // one driven bogie a car (Wikipedia: 2'B' + B'2' + B'2' + B'2' + B'2'), the cab-end bogie of a cab car the trailing one
+  assert.equal(cars.map((c) => c.motor.map((x) => (x ? 'M' : 'T')).join('')).join(' '), 'TM MT MT MT MT');
+  for (const car of cars) {
+    near(car.bogies[0] - car.start, ADELANTE.bogieFromEnd.value, 1e-9, `car ${car.index} first bogie`);
+    near(car.end - car.bogies[1], ADELANTE.bogieFromEnd.value, 1e-9, `car ${car.index} second bogie`);
+  }
+  assert.ok(spec.source.includes('Wikipedia') && spec.source.includes('Angel Trains'), 'the formation names its sources');
+  assert.deepEqual([ADELANTE.carLength.value, ADELANTE.drivingCarLength.value, ADELANTE.bodyWidth.value], [23.03, 23.71, 2.73]);
+  assert.equal(ADELANTE.height.basis, 'assumed', 'no page read gives the 180 a height');
+  // the figures the model assumes are pinned too, so changing one is a deliberate edit with its source
+  assert.deepEqual([ADELANTE.bogieFromEnd.value, ADELANTE.wheelDiameter.value, ADELANTE.wheelbaseMotor.value, ADELANTE.doorWidth.value, ADELANTE.doorFromEnd.value, ADELANTE.floorHeight.value], [3.5, 0.84, 2.7, 0.9, 3.8, 1.1]);
+  assert.ok(!('pantographLength' in ADELANTE), 'no pantograph figure for a diesel unit');
+});
+
+test('train: the Thameslink Class 700 is 8 or 12 Desiro City cars: 162.0 m and 242.6 m (the datasheet), with the cars worked out from the two', () => {
+  assert.deepEqual(TL_KINDS, ['tl700x8', 'tl700x12']);
+  assert.equal(TRAIN_SPECS.tl700x8.cars.join('-'), 'DMCO-PTSO-MSO-TSOW-TSOLW-MSO-PTSO-DMCO');
+  assert.equal(TRAIN_SPECS.tl700x12.cars.join('-'), 'DMCO-PTSO-MSO-MSO-TSO-TSOW-TSOLW-TSO-MSO-MSO-PTSO-DMCO');
+  for (const kind of TL_KINDS) {
+    assert.equal(TRAIN_SPECS[kind].operator, 'Thameslink');
+    assert.equal(TRAIN_SPECS[kind].family, 'desiro700');
+    assert.equal(TRAIN_SPECS[kind].livery, 'thameslink');
+    assert.match(TRAIN_SPECS[kind].classes, /700/);
+  }
+  assert.equal(TRAIN_SPECS.tl700x8.classes, '700/0');
+  assert.equal(TRAIN_SPECS.tl700x12.classes, '700/1');
+  // the Siemens datasheet's unit lengths, "162,000 mm" and "242,600 mm", exact to 0.1 m
+  near(trainLayout('tl700x8').length, 162.0, 0.05, '8-car unit');
+  near(trainLayout('tl700x12').length, 242.6, 0.05, '12-car unit');
+  // how the cars were worked out: the 12-car unit is the 8-car unit and four intermediate cars; the end cars share what is left
+  near(DESIRO_700.carLength.value, (242.6 - 162.0) / 4, 1e-9, 'intermediate car');
+  near(DESIRO_700.drivingCarLength.value, (162.0 - 6 * DESIRO_700.carLength.value) / 2, 1e-9, 'end car');
+  assert.deepEqual([DESIRO_700.bodyWidth.value, DESIRO_700.floorHeight.value, DESIRO_700.wheelDiameter.value, DESIRO_700.wheelbaseMotor.value, DESIRO_700.wheelbaseTrailer.value, DESIRO_700.doorWidth.value, DESIRO_700.height.value], [2.8, 1.1, 0.82, 2.2, 2.1, 1.5, 3.77]);
+  assert.equal(DESIRO_700.carLength.basis, 'assumed');
+  assert.equal(DESIRO_700.drivingCarLength.basis, 'assumed');
+  // a check: the same car lengths give the Class 717's published 121.674 m within three centimetres
+  near(2 * DESIRO_700.drivingCarLength.value + 4 * DESIRO_700.carLength.value, 121.674, 0.03, 'the 717 from the 700 car lengths');
+  for (const kind of TL_KINDS) {
+    for (const car of trainLayout(kind).cars) assert.equal(car.length, car.cab ? DESIRO_700.drivingCarLength.value : DESIRO_700.carLength.value, `${kind} car ${car.index}`);
+  }
+});
+
+test('train: the Class 700 has a cab at each end and a pantograph on each PTSO, and its drive bogies follow the datasheet\'s axle arrangement', () => {
+  for (const kind of TL_KINDS) {
+    const { cars } = trainLayout(kind);
+    const cabs = cars.map((c) => c.cab);
+    assert.deepEqual([cabs[0], cabs[cabs.length - 1]], ['front', 'rear']);
+    assert.equal(cabs.filter((c) => c !== null).length, 2, `${kind}: cabs at the two ends only`);
+    for (const car of cars) {
+      assert.equal(car.pantograph !== null, car.type === 'PTSO', `${kind} car ${car.index} ${car.type}`);
+      if (car.pantograph) {
+        near((car.pantograph[0] + car.pantograph[1]) / 2, (car.start + car.end) / 2, 1e-9, 'centred on its car');
+        near(car.pantograph[1] - car.pantograph[0], 2.0, 1e-9, 'base length');
+      }
+      // the bogies sit the same distance in from each end of a car as the 717's (3.1 m: not published, ASSUMED)
+      near(car.bogies[0] - car.start, 3.1, 1e-9, `${kind} car ${car.index} first bogie`);
+      near(car.end - car.bogies[1], 3.1, 1e-9, `${kind} car ${car.index} second bogie`);
+    }
+  }
+  const m = (k: TrainKind): string => trainLayout(k).cars.map((c) => c.motor.map((x) => (x ? 'M' : 'T')).join('')).join(' ');
+  // Siemens, "Axle arrangement": 8 cars Bo'Bo' + 2'2' + Bo'Bo' + 2'2' + 2'2' + Bo'Bo' + 2'2' + Bo'Bo'; 12 cars ...
+  assert.equal(m('tl700x8'), 'MM TT MM TT TT MM TT MM');
+  assert.equal(m('tl700x12'), 'MM TT MM MM TT TT TT TT MM MM TT MM');
+});
+
+test('train: a PTSO is 20.39 m on a Class 387 and 20.15 m on a Class 700: the car code alone is not enough, so the family is named', () => {
+  assert.equal(carLength('PTSO', 'electrostar'), ELECTROSTAR.carLength.value);
+  assert.equal(carLength('PTSO', 'desiro700'), DESIRO_700.carLength.value);
+  assert.equal(carLength('MSO', 'desiro700'), DESIRO_700.carLength.value);
+  assert.equal(carLength('DMCO', 'desiro700'), DESIRO_700.drivingCarLength.value);
+  assert.equal(carLength('DMSL', 'adelante'), ADELANTE.drivingCarLength.value);
+  assert.equal(carLength('MFL', 'adelante'), ADELANTE.carLength.value);
+  // with no family, the one a code first belongs to is used (the 387 for PTSO, as before)
+  assert.equal(carLength('PTSO'), ELECTROSTAR.carLength.value);
+  assert.equal(carLength('TSOW'), DESIRO_700.carLength.value);
+  assert.equal(carLength('MSLRB'), ADELANTE.carLength.value);
+  // the 387's train is unchanged by sharing the codes
+  near(trainLayout('gn387x4').length, 81.56, 1e-9, '387');
+});
+
+test('train: every new unit figure names its source, and the sources are readable references, not bare names', () => {
+  for (const [family, figures] of [['adelante', ADELANTE], ['desiro700', DESIRO_700]] as const) {
+    for (const [name, f] of Object.entries(figures)) {
+      assert.ok(f.source.length > 40, `${family}.${name} cites a real source`);
+      if (f.basis === 'published') assert.match(f.source, /Wikipedia|Siemens|Angel|loco-info/, `${family}.${name} names who published it`);
+    }
+  }
+  for (const kind of [...GC_KINDS, ...TL_KINDS]) assert.ok(TRAIN_SPECS[kind].source.length > 40, `${kind} formation is cited`);
 });
