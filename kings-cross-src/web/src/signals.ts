@@ -110,7 +110,7 @@ function evidence(v: unknown): v is SignalEvidence {
     (v.trials === 0 ? v.precision === null : typeof v.precision === 'number' && Math.abs(v.precision - expectedRecall!) < 1e-12));
   return precisionValid && recallValid && legacyConsistent;
 }
-function validated(value: unknown, area: string): SignalHypothesis[] {
+export function validatedSignalHypotheses(value: unknown, area = 'Y9'): SignalHypothesis[] {
   if (!object(value) || value.area !== area || !Array.isArray(value.hypotheses)) return [];
   const result: SignalHypothesis[] = [];
   for (const h of value.hypotheses) {
@@ -209,7 +209,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   }
   directAnchors.push(...anchors.anchors);
   function install(value: unknown): void {
-    table = validated(value, area); tableValue = value;
+    table = validatedSignalHypotheses(value, area); tableValue = value;
     reconcilePositions(); refresh();
   }
   function removeInferred(berth: string, record: DrawnSignal): void {
