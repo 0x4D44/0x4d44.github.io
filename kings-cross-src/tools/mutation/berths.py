@@ -1,4 +1,4 @@
-"""Semantic boundary mutations for synthetic berth tests.
+"""Internal rule and semantic boundary mutations for synthetic berth tests.
 
 Usage: python3 -I -u tools/mutation/berths.py <kings-cross-src> <worktree/.scratch>
 Only core/ is copied. Each unique temporary tree is owned and removed by this run.
@@ -15,8 +15,8 @@ src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
 
-# Each wrapper introduces one observable domain fault at a public API boundary.
-# Keeping the original implementation intact makes mutations independent of refactors.
+# Boundary wrappers introduce observable domain faults. Source replacements also
+# exercise the internal inference, validation and routing rules directly.
 M = [
     ('platform buffers displaced', 'build', "for (const a of result.anchors) if (a.kind === 'platform') a.point[0] += 20;"),
     ('foreign signal prefixes accepted', 'before', "data.signals.forEach(s => { if (s.ref) s.ref = s.ref.replace(/^(NL|AF|WH)/, 'YA'); });"),
@@ -43,6 +43,18 @@ M = [
     ('disconnected inference downgraded to no evidence', 'build', "for(const u of result.unmapped)if(u.reason==='conflict')u.reason='no-evidence';"),
     ('fractional inference replaced by whole edge midpoint', 'build', "for(const a of result.anchors)if(a.kind==='inferred'){const p=data.nodes.find(n=>n[0]===a.from)!;const q=data.nodes.find(n=>n[0]===a.to)!;a.t=.5;a.point=[(p[1]+q[1])/2,(p[2]+q[2])/2];}"),
     ('platform dwell treated as travel time', 'source', '!platformBounded && '),
+    ('shared junction clearance omitted', 'source_replace', ('const SETBACK_M = 25;', 'const SETBACK_M = 0;')),
+    ('unreferenced main signal matching disabled', 'source_replace', ('if (signal.ref ||', 'if (true || signal.ref ||')),
+    ('protection boards accepted as main signals', 'source_replace', (" || !signal.kinds.includes('main')", '')),
+    ('foreign referenced signals accepted for topology', 'source_replace', ('if (signal.ref ||', 'if (')),
+    ('unreferenced signal direction ignored', 'source_replace', ("const forward = signal.direction !== 'backward';", 'const forward = true;')),
+    ('unbounded branches accepted', 'source_replace', ('adjacent.every((b) => visit(b, [start]))', 'adjacent.some((b) => visit(b, [start]))')),
+    ('branch agreement tolerance widened tenfold', 'source_replace', ('(routeBetween(g, a, b)?.length ?? Infinity) > 75', '(routeBetween(g, a, b)?.length ?? Infinity) > 750')),
+    ('nominal speed option ignored', 'source_replace', ('options.nominalSpeedMps ?? 15', '15')),
+    ('outside boundary proof disabled', 'source_replace', ('if (distance - error > path.length)', 'if (false)')),
+    ('held out signal only loses its ref', 'source_replace', ('data.signals.filter((s) => s.id !== signal.id)', 'data.signals.map((s) => s.id === signal.id ? {...s, ref: undefined} : s)')),
+    ('calibration withholding bypassed', 'source_replace', ('if (options.calibrate === false || references.length < 3)', 'if (true || options.calibrate === false || references.length < 3)')),
+    ('directed routes replaced with unconstrained shortest path', 'source_replace', ('function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null {', 'function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null { return routeBetween(g, a, b);')),
     ('all evidence discarded', 'build', "result.anchors=[];result.unmapped=[];"),
     ('step analysis discarded', 'analyse', "result=[];"),
 ]
@@ -65,7 +77,7 @@ export function analyseSteps(...args: Parameters<typeof originalAnalyse>): Retur
 '''
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-force-exit', '--test-timeout=8000', 'core/tests/berths.test.ts'],
+    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths.test.ts'],
                           cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30)
 
 killed = 0
@@ -80,6 +92,9 @@ with tempfile.TemporaryDirectory(prefix='berths-mutations-', dir=scratch) as tem
         print(baseline.stdout + baseline.stderr)
         sys.exit('Baseline must pass before mutation testing')
     expected = set(re.findall(r'^ok \d+ - (berths: .+)$', baseline.stdout, re.M))
+    total = re.search(r'^# tests (\d+)$', baseline.stdout, re.M)
+    if total is None or len(expected) != int(total[1]):
+        sys.exit('Baseline TAP output is incomplete; cannot prove every test red')
     renamed = original.replace('export function buildAnchors(', 'function originalBuild(', 1).replace('export function analyseSteps(', 'function originalAnalyse(', 1)
     if renamed == original or 'function originalBuild(' not in renamed or 'function originalAnalyse(' not in renamed:
         sys.exit('Cannot identify public function declarations')
@@ -92,6 +107,13 @@ with tempfile.TemporaryDirectory(prefix='berths-mutations-', dir=scratch) as tem
                 print(f'[INVALID] {label}: internal guard missing', flush=True)
                 continue
             changed = changed.replace(mutation, '', 1)
+        if phase == 'source_replace':
+            old, new = mutation
+            if old not in changed:
+                survivors.append(label)
+                print(f'[INVALID] {label}: internal source pattern missing', flush=True)
+                continue
+            changed = changed.replace(old, new, 1)
         (work / 'core/berths.ts').write_text(changed + wrapper)
         try:
             result = run(work)
