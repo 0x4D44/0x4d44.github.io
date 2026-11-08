@@ -8,6 +8,7 @@
     "test": "node --test relay/tests/*.test.mjs core/tests/*.test.ts web/tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "relay": "node relay/main.mjs",
+    "berths": "node tools/berths.ts",
     "build:data": "node tools/build-data.ts --raw ../.scratch/kx-osm.json",
     "fidelity": "node tools/fidelity.ts",
     "evidence": "node tools/evidence.mjs",
