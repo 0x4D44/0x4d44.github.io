@@ -82,10 +82,10 @@ test('a terminus departure swaps the leading end while preserving every occupied
   const m = createMotion(graph, anchors);
   m.apply(step('A', 'P'), 0);
   const arrived = finish(m);
-  close(arrived.leading.point[0], 2900);
+  close(arrived.leading.point[0], 2897);
   m.apply(step('P', 'EXIT'), 0); // advance owns the simulation clock between events.
   const swapped = one(m);
-  close(swapped.leading.point[0], 2640);
+  close(swapped.leading.point[0], 2637);
   close(overlapM(arrived.occupied, swapped.occupied), 260);
   close(swapped.distanceM, arrived.distanceM);
   close(Math.abs(swapped.heading - arrived.heading), Math.PI);
@@ -101,6 +101,74 @@ test('a terminus departure swaps the leading end while preserving every occupied
     if (t.state === 'held') break;
   }
   close(last.leading.point[0], 1800);
+});
+
+test('terminating noses leave three metres to the buffer and tails follow the actual train length', () => {
+  for (const lengthM of [80, 130, 260]) {
+    const m = createMotion(graph, anchors, { lengthM });
+    m.apply(step('A', 'P'), 0);
+    const arrived = finish(m);
+    close(2900 - arrived.leading.point[0], 3);
+    close(arrived.occupiedLengthM, lengthM);
+    close(arrived.occupied[0]!.fromT * 1000 + (arrived.occupied[0]!.edge.a - 1) * 1000, 2897 - lengthM);
+    m.apply(step('P', 'EXIT'), 0);
+    const departing = one(m);
+    close(departing.leading.point[0], 2897 - lengthM);
+    close(overlapM(arrived.occupied, departing.occupied), lengthM);
+    close(departing.speed, 0);
+  }
+});
+
+test('buffer clearance follows rail across a short terminal edge and preserves its facing', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 100, -1000], [3, 101, -1000]],
+    rails: [{ id: 1, nodes: [3, 2, 1], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const stop: BerthAnchor = { berth: 'STOP', kind: 'platform', platform: '1', from: 2, to: 3,
+    t: 1, point: [101, -1000], errorM: 1, evidence: 'synthetic' };
+  const m = createMotion(g, { area: 'TEST', anchors: [stop], sources: [], unmapped: [] }, { lengthM: 20 });
+  m.apply(interpose('STOP'), 0);
+  const t = one(m);
+  close(t.leading.point[0], 98);
+  close(t.occupiedLengthM, 20);
+  close(t.occupied[0]!.fromT, .22);
+  close(t.heading, Math.PI / 2);
+  const noClearance = createMotion(g, { area: 'TEST', anchors: [stop], sources: [], unmapped: [] }, { lengthM: 20, bufferClearanceM: 0 });
+  noClearance.apply(interpose('STOP'), 0);
+  close(one(noClearance).leading.point[0], 101);
+});
+
+test('a higher OSM limit is used only after the last coach clears the restricted edge', () => {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 200, -1000], [3, 1500, -1000]], rails: [
+    { id: 1, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    { id: 2, nodes: [2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const map: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [
+    { berth: 'START', kind: 'signal', from: 1, to: 2, t: .5, point: [100, -1000], errorM: 1, evidence: 'synthetic' },
+    { berth: 'END', kind: 'signal', from: 2, to: 3, t: 9 / 13, point: [1100, -1000], errorM: 1, evidence: 'synthetic' }] };
+  const m = createMotion(g, map, { lengthM: 100, wayMaxspeed: new Map([[1, '18'], [2, '72']]) });
+  m.apply(step('START', 'END'), 0);
+  let shared = false, accelerated = false;
+  for (let i = 0; i < 2000; i++) {
+    m.advance(.1); const t = one(m), x = t.leading.point[0];
+    if (x > 200 && x < 300) { shared = true; assert.ok(t.speed <= 5 + 1e-6, `tail still in 18 km/h at ${t.speed}`); }
+    if (x > 350 && t.speed > 5.1) accelerated = true;
+  }
+  assert.ok(shared && accelerated);
+});
+
+test('a higher line speed waits for the tail to clear the station zone inside a long edge', () => {
+  const g = buildGraph({ nodes: [[1, 0, -500], [2, 0, 500]], rails: [
+    { id: 1, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const map: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [
+    { berth: 'START', kind: 'signal', from: 1, to: 2, t: .1, point: [0, -400], errorM: 1, evidence: 'synthetic' },
+    { berth: 'END', kind: 'signal', from: 1, to: 2, t: .9, point: [0, 400], errorM: 1, evidence: 'synthetic' }] };
+  const m = createMotion(g, map, { lengthM: 100, wayMaxspeed: new Map([[1, '72']]) });
+  m.apply(step('START', 'END'), 0);
+  let shared = false, accelerated = false;
+  for (let i = 0; i < 2000; i++) {
+    m.advance(.1); const t = one(m), z = t.leading.point[1];
+    if (z > -170 && z < -70) { shared = true; assert.ok(t.speed <= 25 / 3.6 + 1e-6, `tail still in station at ${t.speed}`); }
+    if (z > 0 && t.speed > 7) accelerated = true;
+  }
+  assert.ok(shared && accelerated);
 });
 
 test('an early departure step waits for the platform and partner berth steps do not reverse twice', () => {
@@ -121,7 +189,7 @@ test('partner berths at the same buffer hold without attempting a cab change', (
   m.advance(5);
   m.apply(step('P', 'P2'), 5000);
   const t = finish(m);
-  close(t.leading.point[0], 2900);
+  close(t.leading.point[0], 2897);
   assert.equal(t.reversals, 0);
   assert.deepEqual(m.diagnostics(), []);
 });
@@ -338,7 +406,7 @@ test('the last 400 metres of a platform approach stay below 25 kmh even outside 
     if (t.leading.point[0] >= 2500) { entered = true; assert.ok(t.speed <= 25 / 3.6 + 1e-6); }
   }
   assert.ok(entered);
-  close(one(m).leading.point[0], 2900);
+  close(one(m).leading.point[0], 2897);
 });
 
 test('identical events and dt sequences produce identical states and diagnostics', () => {
@@ -358,6 +426,7 @@ test('invalid dt and invalid physical options are rejected', () => {
   assert.throws(() => m.apply(step('A', 'B'), NaN));
   assert.throws(() => createMotion(graph, anchors, { braking: 0 }));
   assert.throws(() => createMotion(graph, anchors, { gapM: -1 }));
+  for (const bufferClearanceM of [-1, NaN, Infinity]) assert.throws(() => createMotion(graph, anchors, { bufferClearanceM }));
 });
 
 test('an interpose renames the train held at exactly that berth without changing its physical body', () => {

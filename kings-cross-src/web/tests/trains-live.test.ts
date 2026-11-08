@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { buildGraph, snap } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
-import { createMotion, overlapM } from '../../core/motion.ts';
+import { createMotion, DEFAULT_BUFFER_CLEARANCE_M, overlapM } from '../../core/motion.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import { buildTrain } from '../src/train.ts';
@@ -393,8 +393,11 @@ test('mixed train lengths share one collision core and a short train swaps its a
   motion.apply({ kind: 'interpose', area: 'TEST', descr: '2SYN', to: 'P' }, 0);
   close(motion.trains()[0]!.occupiedLengthM, 233.7);
   close(motion.trains()[1]!.occupiedLengthM, 129.7);
+  const arrived = motion.trains()[1]!;
+  close(arrived.leading.point[0], anchors.anchors[1]!.point[0] - DEFAULT_BUFFER_CLEARANCE_M);
   motion.apply({ kind: 'step', area: 'TEST', descr: '2SYN', from: 'P', to: 'OUT' }, 0);
-  close(motion.trains()[1]!.leading.point[0], 1500 - 129.7);
+  close(motion.trains()[1]!.leading.point[0], anchors.anchors[1]!.point[0] - DEFAULT_BUFFER_CLEARANCE_M - arrived.lengthM);
+  close(overlapM(arrived.occupied, motion.trains()[1]!.occupied), arrived.lengthM);
   for (let i = 0; i < 2000; i++) {
     motion.advance(0.1);
     const [long, short] = motion.trains();
