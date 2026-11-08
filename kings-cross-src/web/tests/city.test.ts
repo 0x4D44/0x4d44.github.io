@@ -1,0 +1,429 @@
+// web/src/city.ts and the city block at the end of web/src/materials.ts: the facade textures, the city's
+// materials, the tree mesh and addCity (one mesh per material). Node has no canvas, so textures are null here
+// and the materials fall back to their average colour; what is tested is the specs (sizes, texel density),
+// the painters on a recording context (sizes and places of the windows, a whole number of bricks, repeatable),
+// and the scene graph addCity makes.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import * as THREE from 'three';
+import { buildCity, CITY_KEYS, FACADE, FACADE_TEXELS_PER_M, LAYER_LIFT } from '../../core/city.ts';
+import type { CityData, CityKey, FacadeKey, TreeSpot } from '../../core/city.ts';
+import type { KxData } from '../../core/osm.ts';
+import { addCity, geometryOf, treeGeometry, treeMesh } from '../src/city.ts';
+import { CITY_PAINTERS, CITY_TEXTURES, cityMaterial, cityTexture, material, texelsPerMetre } from '../src/materials.ts';
+import type { CityMaterialName, CityTextureName } from '../src/materials.ts';
+import { GROUND_Y } from '../src/world.ts';
+
+const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+const city: CityData = JSON.parse(readFileSync(new URL('../src/data/kx-city.json', import.meta.url), 'utf8'));
+const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
+const textureNames = Object.keys(CITY_TEXTURES) as CityTextureName[];
+const facadeKeys = Object.keys(FACADE) as FacadeKey[];
+const emptyCity: CityData = { attribution: '', origin: city.origin, extract: '', roads: [], canals: [], areas: [], trees: [] };
+const rect = (x0: number, z0: number, x1: number, z1: number): [number, number][] => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+
+// =============================================================================================
+// 1. the textures
+
+test('every city texture draws at a real-world scale: facades at 100 texels per metre both ways, grass and water in their ranges', () => {
+  assert.deepEqual(textureNames.slice().sort(), ['glass', 'grass', 'panel', 'red', 'shop', 'stock', 'stone', 'water']);
+  for (const name of textureNames) {
+    const spec = CITY_TEXTURES[name];
+    const [tx, ty] = texelsPerMetre(spec);
+    assert.ok(tx >= spec.density[0] && tx <= spec.density[1], `${name}: ${tx.toFixed(1)} texels/m across, allowed ${spec.density}`);
+    assert.ok(ty >= spec.density[0] && ty <= spec.density[1], `${name}: ${ty.toFixed(1)} texels/m along, allowed ${spec.density}`);
+    assert.ok(Math.abs(tx / ty - 1) <= 0.06, `${name}: texels are ${tx.toFixed(1)} x ${ty.toFixed(1)} per metre, not square`);
+    assert.ok(spec.px[0] * spec.px[1] <= 1_100_000, `${name}: ${spec.px} px is more than a megapixel`);
+    assert.ok(spec.source.length > 10, `${name}: says where its size comes from`);
+    assert.equal(spec.repeat, true, `${name} tiles`);
+  }
+  for (const key of facadeKeys) {
+    const spec = CITY_TEXTURES[key];
+    const [tx, ty] = texelsPerMetre(spec);
+    close(tx, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} across`);
+    close(ty, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} up`);
+    assert.ok(Number.isInteger(spec.px[0]) && Number.isInteger(spec.px[1]), `${key}: whole pixels`);
+    assert.match(spec.source, /ASSUMED/, `${key}: its sizes are marked ASSUMED, none is a survey`);
+  }
+});
+
+test('a facade texture tile is the core\'s tile (one window bay by one storey), so the rules that fit windows to walls and the drawing cannot drift apart', () => {
+  for (const key of facadeKeys) {
+    assert.deepEqual(CITY_TEXTURES[key].tile, FACADE[key].tile, key);
+    assert.deepEqual(CITY_TEXTURES[key].px, [Math.round(FACADE[key].tile[0] * FACADE_TEXELS_PER_M), Math.round(FACADE[key].tile[1] * FACADE_TEXELS_PER_M)], key);
+  }
+  assert.equal(FACADE_TEXELS_PER_M, 100);
+});
+
+test('the painters and the specs name the same textures', () => {
+  assert.deepEqual(Object.keys(CITY_PAINTERS).sort(), textureNames.slice().sort());
+});
+
+// A canvas context that records what is drawn instead of drawing it.
+interface Call {
+  op: string;
+  args: unknown[];
+  fillStyle: unknown;
+}
+interface GradientStub {
+  gradient: true;
+  stops: [number, string][];
+}
+function recorder(): { g: CanvasRenderingContext2D; calls: Call[] } {
+  const calls: Call[] = [];
+  const state: Record<string, unknown> = { fillStyle: '#000000', strokeStyle: '#000000', lineWidth: 1, globalAlpha: 1 };
+  const g = new Proxy({} as Record<string, unknown>, {
+    get(_t, prop: string) {
+      if (prop in state) return state[prop];
+      if (prop === 'createLinearGradient' || prop === 'createRadialGradient') {
+        return (): GradientStub => ({ gradient: true, stops: [], addColorStop(offset: number, color: string) { this.stops.push([offset, color]); } } as GradientStub);
+      }
+      return (...args: unknown[]): void => {
+        calls.push({ op: prop, args, fillStyle: state.fillStyle });
+      };
+    },
+    set(_t, prop: string, value: unknown) {
+      state[prop] = value;
+      return true;
+    },
+  });
+  return { g: g as unknown as CanvasRenderingContext2D, calls };
+}
+function paint(name: CityTextureName): Call[] {
+  const r = recorder();
+  const [w, h] = CITY_TEXTURES[name].px;
+  CITY_PAINTERS[name](r.g, w, h);
+  return r.calls;
+}
+const isGradient = (v: unknown): v is GradientStub => typeof v === 'object' && v !== null && 'gradient' in v;
+
+test('every painter runs, starts with an opaque fill of the whole tile and draws the same picture every time', () => {
+  for (const name of textureNames) {
+    const [w, h] = CITY_TEXTURES[name].px;
+    const calls = paint(name);
+    assert.ok(calls.length >= 8, `${name}: ${calls.length} drawing calls`);
+    const first = calls[0] as Call;
+    assert.equal(first.op, 'fillRect', `${name} starts with a fill`);
+    assert.deepEqual(first.args, [0, 0, w, h], `${name}: the whole tile, so there are no holes in it`);
+    assert.equal(JSON.stringify(paint(name)), JSON.stringify(calls), `${name}: repeatable, so screenshots compare`);
+  }
+  // the ground textures are the colour they are named for: grass is green and water blue-green, near the spec's average
+  for (const name of ['grass', 'water'] as const) {
+    const base = (paint(name)[0] as Call).fillStyle as string;
+    const got = [1, 3, 5].map((i) => Number.parseInt(base.slice(i, i + 2), 16));
+    const avg = [16, 8, 0].map((shift) => (CITY_TEXTURES[name].average >> shift) & 255);
+    got.forEach((c, k) => assert.ok(Math.abs(c - (avg[k] as number)) <= 12, `${name}: base colour ${base} against the average ${CITY_TEXTURES[name].average.toString(16)}`));
+  }
+});
+
+test('the painted windows are the sizes the specs say, in the middle of the bay and standing on a sill, with room for a lintel', () => {
+  const rect = (name: CityTextureName): { x: number; y: number; w: number; h: number } => {
+    const glass = paint(name).filter((c) => c.op === 'fillRect' && isGradient(c.fillStyle));
+    assert.ok(glass.length >= 1, `${name}: has a pane of glass`);
+    // the largest gradient-filled rectangle is the pane
+    const best = glass.reduce((a, b) => ((a.args[2] as number) * (a.args[3] as number) >= (b.args[2] as number) * (b.args[3] as number) ? a : b));
+    const [x, y, w, h] = best.args as number[];
+    return { x: x as number, y: y as number, w: w as number, h: h as number };
+  };
+  // [width, height, sill] in metres, from the `source` text of each spec
+  const want: Partial<Record<CityTextureName, [number, number, number]>> = {
+    stock: [1.05, 1.75, 0.85],
+    stone: [1.1, 2.3, 0.9],
+    panel: [1.9, 1.45, 0.85],
+  };
+  for (const [name, [ww, wh, sill]] of Object.entries(want) as [CityTextureName, [number, number, number]][]) {
+    const [tw, th] = CITY_TEXTURES[name].px;
+    const r = rect(name);
+    close(r.w / 100, ww, 0.011, `${name} window width`);
+    close(r.h / 100, wh, 0.011, `${name} window height`);
+    close((th - (r.y + r.h)) / 100, sill, 0.011, `${name} sill height`);
+    close(r.x + r.w / 2, tw / 2, 0.51, `${name} window is centred in its bay`);
+    assert.ok(th - r.y > 0 && r.y >= 0.2 * 100, `${name}: room above the window for a lintel`);
+    // a real storey: sill 0.85 to 0.9 m, head under the next floor
+    assert.ok(sill >= 0.8 && sill <= 0.95);
+    assert.ok(sill + wh <= CITY_TEXTURES[name].tile[1] - 0.3, `${name}: window head ${sill + wh} m in a ${CITY_TEXTURES[name].tile[1]} m storey`);
+  }
+  // curtain wall: vision glass over a 0.9 m spandrel (the spec's words), within a 3.9 m floor
+  const [gw, gh] = CITY_TEXTURES.glass.px;
+  const glass = rect('glass');
+  close((gh - (glass.y + glass.h)) / 100, 0.9, 0.011, 'spandrel height');
+  assert.ok(glass.x >= 0 && glass.x + glass.w <= gw, 'vision glass inside the module');
+  // shopfront: stall riser 0.55 m, plate glass up to about 3.1 m
+  const [, sh] = CITY_TEXTURES.shop.px;
+  const shop = rect('shop');
+  close((sh - (shop.y + shop.h)) / 100, 0.55, 0.011, 'stall riser');
+  close((sh - shop.y) / 100, 3.1, 0.06, 'plate glass top');
+  // round-headed windows: the arch is 1.2 m wide
+  const arch = paint('red').filter((c) => c.op === 'fillRect' && isGradient(c.fillStyle));
+  assert.ok(arch.length >= 1);
+  close((arch[0] as Call).args[2] as number, 120, 0.1, 'red-brick arch width in px');
+});
+
+test('brick is metric: courses of 75 mm and a whole number of 225 mm bricks across, so the tile repeats without a seam', () => {
+  for (const name of ['stock', 'red'] as const) {
+    const [w, h] = CITY_TEXTURES[name].px;
+    const rows = new Set<number>();
+    const firstRow = new Set<number>();
+    for (const c of paint(name)) {
+      if (c.op !== 'fillRect') continue;
+      const [x, y, bw, bh] = c.args as number[];
+      // a brick: a small filled rectangle, 'rgb(' colour, a few pixels tall
+      if (typeof c.fillStyle === 'string' && c.fillStyle.startsWith('rgb(') && (bh as number) < 8 && (bw as number) > 15 && (bw as number) < 30) {
+        rows.add(Math.round((y as number) * 100) / 100);
+        if ((y as number) < 3) firstRow.add(Math.round((x as number) * 100) / 100);
+      }
+    }
+    const course = h / rows.size;
+    close(course / 100, 0.075, 0.075 * 0.03, `${name}: course height in m`);
+    assert.equal(rows.size, Math.round(h / 7.5), `${name}: a whole number of courses in the tile`);
+    const brick = w / Math.round(w / 22.5);
+    close(brick / 100, 0.225, 0.225 * 0.04, `${name}: brick length in m`);
+    assert.ok(firstRow.size >= Math.round(w / 22.5), `${name}: bricks across the first course`);
+  }
+});
+
+// =============================================================================================
+// 2. the materials
+
+test('there is no document in Node: textures are null and every city material falls back to its average colour, with vertex colours on', () => {
+  for (const name of textureNames) assert.equal(cityTexture(name), null, name);
+  for (const name of ['stock', 'red', 'stone', 'panel', 'shop', 'grass'] as const) {
+    const m = cityMaterial(name) as THREE.MeshLambertMaterial;
+    assert.ok(m instanceof THREE.MeshLambertMaterial, `${name} is Lambert`);
+    assert.equal(m.map, null, name);
+    assert.equal(m.color.getHex(), CITY_TEXTURES[name].average, `${name}: the texture's average colour`);
+    assert.equal(m.vertexColors, true, `${name}: the per-building tint is a vertex colour`);
+  }
+  for (const name of ['glass', 'water'] as const) {
+    const m = cityMaterial(name) as THREE.MeshPhongMaterial;
+    assert.ok(m instanceof THREE.MeshPhongMaterial, `${name} has a sheen`);
+    assert.equal(m.vertexColors, true);
+    assert.equal(m.color.getHex(), CITY_TEXTURES[name].average);
+  }
+  for (const name of ['roof', 'paint'] as const) {
+    const m = cityMaterial(name) as THREE.MeshLambertMaterial;
+    assert.equal(m.color.getHex(), 0xffffff, name);
+    assert.equal(m.vertexColors, true, name);
+  }
+});
+
+test('city materials are shared, named, distinct from each other and from the station\'s; the roads and paving are clones, not the originals', () => {
+  const names: CityMaterialName[] = [...CITY_KEYS];
+  const seen = new Set<THREE.Material>();
+  for (const name of names) {
+    const m = cityMaterial(name);
+    assert.equal(cityMaterial(name), m, `${name}: shared`);
+    assert.equal(m.name, `city-${name}`);
+    assert.ok(!seen.has(m), `${name}: its own material`);
+    seen.add(m);
+  }
+  assert.equal(seen.size, 13);
+  for (const [name, from] of [['asphalt', 'asphalt'], ['pavement', 'concourseFloor'], ['plaza', 'concourseFloor']] as const) {
+    const m = cityMaterial(name);
+    assert.notEqual(m, material(from), `${name} is a clone`);
+    assert.equal((material(from) as THREE.MeshLambertMaterial).vertexColors, false, 'and the station\'s own material is untouched');
+    assert.equal((m as THREE.MeshLambertMaterial).vertexColors, true);
+  }
+  assert.equal((cityMaterial('pavement') as THREE.MeshLambertMaterial).color.getHex(), 0xd2d0cb);
+  assert.equal((cityMaterial('plaza') as THREE.MeshLambertMaterial).color.getHex(), 0xf3f0e8);
+});
+
+test('flat layers get a polygon offset in the order of their lift, so they never z-fight; facades get none', () => {
+  const flat = ['grass', 'water', 'plaza', 'pavement', 'asphalt', 'paint'] as const;
+  const byLift = flat.slice().sort((a, b) => LAYER_LIFT[a] - LAYER_LIFT[b]);
+  assert.deepEqual(byLift, [...flat], 'the lifts are in the order grass, water, plaza, pavement, asphalt, paint');
+  let last = 0;
+  for (const name of byLift) {
+    const m = cityMaterial(name);
+    assert.equal(m.polygonOffset, true, name);
+    assert.ok(m.polygonOffsetFactor < last, `${name}: ${m.polygonOffsetFactor} is nearer the camera than the layer under it (${last})`);
+    assert.ok(m.polygonOffsetUnits < 0);
+    last = m.polygonOffsetFactor;
+  }
+  for (const name of [...facadeKeys, 'roof'] as const) assert.equal(cityMaterial(name).polygonOffset, false, name);
+});
+
+test('the core\'s ground height is the page\'s ground height', () => {
+  assert.equal(GROUND_Y, -0.2);
+  // buildCity with no groundY puts the lowest layer at the default: the ground of web/src/world.ts
+  const out = buildCity([], { ...emptyCity, areas: [{ id: 1, kind: 'grass', pts: rect(0, 0, 10, 10) }] });
+  const y = out.meshes.grass.positions[1] as number;
+  close(y, GROUND_Y + LAYER_LIFT.grass, 1e-12);
+});
+
+// =============================================================================================
+// 3. geometry and trees
+
+test('geometryOf: a BufferGeometry whose attributes and index are the accumulator\'s', () => {
+  const out = buildCity([{ id: 1, kind: 'church', pts: rect(0, 0, 10, 6) }], emptyCity, { groundY: GROUND_Y });
+  const acc = out.meshes.stone;
+  const g = geometryOf(acc);
+  assert.equal(g.getAttribute('position').count, acc.vertexCount);
+  assert.equal(g.getAttribute('position').itemSize, 3);
+  assert.equal(g.getAttribute('normal').itemSize, 3);
+  assert.equal(g.getAttribute('uv').itemSize, 2);
+  assert.equal(g.getAttribute('color').itemSize, 3);
+  assert.equal(g.getAttribute('uv').count, acc.vertexCount);
+  assert.equal((g.index as THREE.BufferAttribute).count, acc.indices.length);
+  close(g.getAttribute('position').getY(0), acc.positions[1] as number, 1e-6, 'position y');
+  close(g.getAttribute('uv').getX(2), acc.uvs[4] as number, 1e-5, 'uv u');
+  g.computeBoundingBox();
+  const box = g.boundingBox as THREE.Box3;
+  close(box.min.y, GROUND_Y, 1e-6);
+  close(box.max.y, GROUND_Y + 10.8, 1e-5);
+  g.dispose();
+});
+
+test('treeGeometry: one tree 1 m tall, 30 triangles, a brown trunk and a green crown', () => {
+  const g = treeGeometry();
+  assert.equal(g.getAttribute('position').count, 90, 'thirty triangles, not indexed');
+  g.computeBoundingBox();
+  const box = g.boundingBox as THREE.Box3;
+  assert.ok(box.min.y >= -1e-6 && box.min.y < 0.01, `stands on the ground (${box.min.y})`);
+  assert.ok(box.max.y > 1.0 && box.max.y < 1.1, `1 m tall to the top of the crown (${box.max.y})`);
+  assert.ok(Math.max(box.max.x, box.max.z, -box.min.x, -box.min.z) <= 0.31, 'a crown 0.6 m across for each metre of height');
+  for (const name of ['position', 'normal', 'uv', 'color'] as const) assert.equal(g.getAttribute(name).count, 90, name);
+  const color = g.getAttribute('color');
+  for (let i = 0; i < 30; i++) assert.ok(color.getX(i) > color.getZ(i) && color.getX(i) > color.getY(i) * 0.9, `trunk vertex ${i} is brown`);
+  for (let i = 30; i < 90; i++) assert.ok(color.getY(i) > color.getX(i) && color.getY(i) > color.getZ(i), `crown vertex ${i} is green`);
+  const normal = g.getAttribute('normal');
+  for (let i = 0; i < 90; i++) close(Math.hypot(normal.getX(i), normal.getY(i), normal.getZ(i)), 1, 1e-4, 'unit normal');
+  g.dispose();
+});
+
+test('treeMesh: one instanced mesh, a matrix per tree (its place on the ground, its height as a uniform scale) and a tint per tree', () => {
+  const spots: TreeSpot[] = [
+    { x: 10, z: -20, height: 8, yaw: 0, tone: 0 },
+    { x: -5.5, z: 3, height: 11.5, yaw: 1.2, tone: 0.5 },
+    { x: 0, z: 0, height: 6, yaw: 6, tone: 0.999 },
+  ];
+  const mesh = treeMesh(spots);
+  assert.ok(mesh instanceof THREE.InstancedMesh);
+  assert.equal(mesh.count, 3);
+  assert.equal(mesh.name, 'city-trees');
+  assert.equal((mesh.material as THREE.MeshLambertMaterial).vertexColors, true);
+  const m = new THREE.Matrix4();
+  const p = new THREE.Vector3();
+  const q = new THREE.Quaternion();
+  const s = new THREE.Vector3();
+  spots.forEach((t, i) => {
+    mesh.getMatrixAt(i, m);
+    m.decompose(p, q, s);
+    // the matrices are Float32
+    close(p.x, t.x, 1e-6);
+    close(p.y, GROUND_Y, 1e-6);
+    close(p.z, t.z, 1e-6);
+    for (const k of [s.x, s.y, s.z]) close(k, t.height, 1e-6, 'uniform scale is the height in metres');
+    const yaw = new THREE.Euler().setFromQuaternion(q, 'YXZ').y;
+    close(Math.cos(yaw), Math.cos(t.yaw), 1e-6, 'yaw');
+    close(Math.sin(yaw), Math.sin(t.yaw), 1e-6, 'yaw');
+    const c = new THREE.Color();
+    (mesh.getColorAt as (i: number, c: THREE.Color) => void)(i, c);
+    assert.ok(c.r > 0.8 && c.r < 1.12 && c.g > 0.85 && c.g < 1.16 && c.b > 0.75 && c.b < 1.0, `tint ${c.r},${c.g},${c.b}`);
+  });
+  assert.equal(treeMesh(spots, 5).count, 3);
+  const high = new THREE.Matrix4();
+  treeMesh(spots, 5).getMatrixAt(0, high);
+  close(new THREE.Vector3().setFromMatrixPosition(high).y, 5, 1e-6, 'an explicit ground height');
+  // the tint varies with the tone
+  const lo = new THREE.Color();
+  const hi = new THREE.Color();
+  mesh.getColorAt(0, lo);
+  mesh.getColorAt(2, hi);
+  assert.ok(hi.r > lo.r && hi.g > lo.g, 'a greener-or-lighter tone gives a different tint');
+});
+
+// =============================================================================================
+// 4. addCity
+
+const hidden = new Set(data.buildings.slice(0, 5).map((b) => b.id));
+
+test('addCity: one named group, one mesh per material plus one instanced tree mesh, and the numbers it reports are the meshes\'', () => {
+  const scene = new THREE.Scene();
+  const c = addCity(scene, data, city, { hidden });
+  assert.ok(scene.children.includes(c.group));
+  assert.equal(c.group.name, 'city');
+  assert.equal(c.group.children.length, c.stats.drawCalls, 'a draw call per child');
+  assert.ok(c.stats.drawCalls >= 13 && c.stats.drawCalls <= 14, `${c.stats.drawCalls} draw calls`);
+  const built = buildCity(data.buildings, city, { hidden, exclude: data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts), groundY: GROUND_Y });
+  let triangles = 0;
+  const names: string[] = [];
+  for (const child of c.group.children) {
+    names.push(child.name);
+    if (child instanceof THREE.InstancedMesh) {
+      assert.equal(child.name, 'city-trees');
+      assert.equal(child.count, c.stats.trees);
+      triangles += child.count * (child.geometry.getAttribute('position').count / 3);
+      continue;
+    }
+    const mesh = child as THREE.Mesh;
+    assert.ok(mesh instanceof THREE.Mesh);
+    const key = mesh.name.replace('city-', '') as CityKey;
+    assert.ok(CITY_KEYS.includes(key), `${mesh.name} is a city surface`);
+    assert.equal(mesh.material, cityMaterial(key), `${mesh.name} uses the shared material`);
+    assert.equal((mesh.geometry.index as THREE.BufferAttribute).count / 3, built.meshes[key].triangleCount, `${mesh.name}: the triangles the core built`);
+    assert.equal(c.stats.byKey[key]?.vertices, mesh.geometry.getAttribute('position').count);
+    triangles += built.meshes[key].triangleCount;
+  }
+  assert.equal(new Set(names).size, names.length, 'no mesh twice');
+  assert.equal(c.stats.triangles, triangles);
+  assert.equal(c.stats.trees, built.trees.length);
+  assert.equal(c.stats.buildings.buildings, data.buildings.length - hidden.size);
+  assert.ok(names.includes('city-trees') && names.includes('city-asphalt') && names.includes('city-glass'));
+  c.dispose();
+});
+
+test('addCity: trees can be left out, and a hidden building is not drawn', () => {
+  const scene = new THREE.Scene();
+  const withTrees = addCity(scene, data, city, { hidden });
+  const bare = addCity(new THREE.Scene(), data, city, { hidden, trees: false });
+  assert.equal(bare.stats.drawCalls, withTrees.stats.drawCalls - 1);
+  assert.equal(bare.stats.trees, 0);
+  assert.equal(bare.group.children.some((o) => o.name === 'city-trees'), false);
+  const more = addCity(new THREE.Scene(), data, city, { hidden: new Set(data.buildings.slice(0, 200).map((b) => b.id)), trees: false });
+  assert.equal(more.stats.buildings.buildings, data.buildings.length - 200);
+  assert.ok(more.stats.triangles < bare.stats.triangles, 'fewer buildings, fewer triangles');
+  withTrees.dispose();
+  bare.dispose();
+  more.dispose();
+});
+
+test('addCity: a street whose middle is inside a hidden building (the station) is not drawn, and one that crosses a rail rides over it', () => {
+  const station = { id: 77, kind: 'train_station', pts: rect(0, -30, 100, 30) as [number, number][] };
+  const tiny: KxData = {
+    ...data,
+    nodes: [[1, 150, -50], [2, 150, 50]],
+    rails: [{ id: 5, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }],
+    switches: [], buffers: [], signals: [], platforms: [],
+    buildings: [station],
+  };
+  const through = { id: 1, cls: 'minor' as const, pts: [[-40, 0], [140, 0]] as [number, number][] };
+  const over = { id: 2, cls: 'minor' as const, pts: [[110, 0], [190, 0]] as [number, number][] };
+  const withCity: CityData = { ...emptyCity, roads: [through, over] };
+  const shown = addCity(new THREE.Scene(), tiny, withCity, {});
+  const hiddenStation = addCity(new THREE.Scene(), tiny, withCity, { hidden: new Set([77]) });
+  // street 1 runs 180 m: with the station on show it is drawn through the building; hidden, its stretch inside the station's outline is cut
+  assert.ok(shown.stats.byKey.asphalt && hiddenStation.stats.byKey.asphalt);
+  assert.ok((hiddenStation.stats.byKey.asphalt?.triangles as number) < (shown.stats.byKey.asphalt?.triangles as number) || (hiddenStation.stats.buildings.roadsSkipped as number) > 0, 'the station is a hole in the street map');
+  assert.equal(shown.stats.buildings.buildings, 1);
+  assert.equal(hiddenStation.stats.buildings.buildings, 0);
+  // street 2 crosses the rail at x = 150: it is lifted
+  assert.equal(shown.stats.buildings.liftedRuns, 1);
+  assert.equal(hiddenStation.stats.buildings.liftedRuns, 1);
+  shown.dispose();
+  hiddenStation.dispose();
+});
+
+test('addCity.dispose removes the group from the scene and disposes every geometry it made', () => {
+  const scene = new THREE.Scene();
+  const c = addCity(scene, data, city, { hidden });
+  const geometries = new Set<THREE.BufferGeometry>();
+  for (const child of c.group.children) geometries.add((child as THREE.Mesh).geometry);
+  assert.equal(geometries.size, c.group.children.length, 'a geometry per mesh');
+  let disposed = 0;
+  for (const g of geometries) g.addEventListener('dispose', () => disposed++);
+  c.dispose();
+  assert.equal(scene.children.includes(c.group), false);
+  assert.equal(disposed, geometries.size);
+});
