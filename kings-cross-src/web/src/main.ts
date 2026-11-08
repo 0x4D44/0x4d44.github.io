@@ -6,6 +6,8 @@ import type { Prism } from '../../core/scene.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { buildFurniture, buildPlatforms } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
+import { addLandmarks, LANDMARK_OSM_IDS } from './landmarks.ts';
+import { addPortals } from './portals.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { TrainKind } from '../../core/train.ts';
 import type { AnchorMap } from '../../core/anchors.ts';
@@ -89,9 +91,14 @@ function start(): void {
   const canopy = concourseCanopy(data);
   const hidden = new Set(buildingsUnderStation(data, layout, canopy));
   if (station) hidden.add(station.id);
+  // The Great Northern Hotel, the Midland Grand and the Barlow shed are modelled (landmarks.ts),
+  // so their OSM boxes go.
+  for (const id of LANDMARK_OSM_IDS) hidden.add(id);
   const buildings = mergedPrisms(buildingPrisms(data, hidden), new THREE.MeshLambertMaterial({ color: 0x56627a }));
   // ?bare=1 hides the surrounding buildings, so the evidence shots can measure the shed and platforms.
   if (buildings && !params.has('bare')) scene.add(buildings);
+  if (!params.has('bare')) addLandmarks(scene, data);
+  addPortals(scene, data); // Gasworks and Copenhagen tunnel mouths, with the earth bank over the bores
   const shed = buildShed(layout);
   scene.add(shed);
   if (station) scene.add(buildConcourse(canopy, station.pts, layout));
