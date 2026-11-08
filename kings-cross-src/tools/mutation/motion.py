@@ -45,7 +45,7 @@ M = [
     ('standing descriptions never renamed', 'if (standing) {', 'if (false && standing) {'),
     ('early interpose creates a second body', 'if (approaching) {', 'if (false && approaching) {'),
     ('existing descriptions cannot join a standing body', 'if (standing) {', 'if (standing && (!t || queued.has(description))) {'),
-    ('unknown departures never leave', 'else requestExit(t);', 'else {}'),
+    ('unknown departures never leave', 'else if (!t.awaitingAnchor) requestExit(t);', 'else if (!t.awaitingAnchor) {}'),
     ('mapped steps cannot interrupt an exit', 't.exiting = false; t.pendingExit = false;', 't.exiting = true; t.pendingExit = false;'),
     ('early exit lost at the last mapped departure anchor', 't.pendingExit = exitAfterAnchor;', 't.pendingExit = false;'),
     ('outside arrivals pop up at their anchor', 'const at = first ? point(first.edge, first.toT) : undefined;', 'const at = stop;'),
@@ -57,6 +57,19 @@ M = [
     ('station buffers count as external boundaries', '!onward.length && !stationBuffer', '!onward.length'),
     ('failed exits fade at internal stops', 'if (!onward.length && !(', 'if (false && !onward.length && !('),
     ('unmapped exits drop the established route to their last anchor', 'const prefix = platform ? [] : t.route.map((s) => ({ ...s }));', 'const prefix: Segment[] = [];'),
+    ('estimated approach skips its anchor margin', 'const reserve = Math.max(25, a.errorM);', 'const reserve = 0;'),
+    ('unknown interposes cannot enter from a known chain', "if (!a && (event.kind === 'step' || estimates))", "if (!a && event.kind === 'step')"),
+    ('estimated arrivals lose their confidence opacity', '(t.estimated ? 0.55 : 1) *', '1 *'),
+    ('estimated arrivals are reported as ordinary motion', "t.estimated ? 'estimated' :", "false ? 'estimated' :"),
+    ('unmapped departures are not marked estimated', 't.estimated = true; delete t.awaitingAnchor;', 't.estimated = false; delete t.awaitingAnchor;'),
+    ('legacy option still performs shared inference', 'const estimates = opts.estimatedMotion !== false;', 'const estimates = true;'),
+    ('estimated approaches clear before their mapped authority', 'if (!t.awaitingAnchor && !t.exiting) { t.estimated = false;', 'if (!t.exiting) { t.estimated = false;'),
+    ('estimated speed ignores observed median timing', 't.estimateSpeed ?? Infinity', 'Infinity'),
+    ('residence samples do not require successive berths', 'previous?.berth === event.from && at > previous.at && at - previous.at <= 600_000', 'previous !== undefined && at > previous.at && at - previous.at <= 600_000'),
+    ('outside-network chain authorizes shared inference', 'if (outside.has(next)) return;', 'if (false && outside.has(next)) return;'),
+    ('shared inference accepts one witness description', 'names.size < 2', 'names.size < 1'),
+    ('shared inference chooses the first ambiguous signal', 'return candidates.size === 1 ? candidates.values().next().value : undefined;', 'return candidates.size > 0 ? candidates.values().next().value : undefined;'),
+    ('shared inference chooses a platform endpoint', 'if (a.platform !== undefined) return;', 'if (false && a.platform !== undefined) return;'),
 ]
 
 def run(work):
@@ -65,14 +78,48 @@ def run(work):
         cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30,
     )
 
+def tap_result(result):
+    """Return (names, failures, assertion_only) only for a complete TAP run."""
+    output = result.stdout
+    plan = re.search(r'^1\.\.([0-9]+)$', output, re.M)
+    counts = {name: re.search(rf'^# {name} ([0-9]+)$', output, re.M) for name in ('tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo')}
+    if not plan or any(value is None for value in counts.values()):
+        return None
+    numbers = {name: int(value.group(1)) for name, value in counts.items() if value}
+    statuses = re.findall(r'^(ok|not ok) ([0-9]+) - (.+)$', output, re.M)
+    names = {name for status, _, name in statuses if status == 'ok'}
+    failures = {name for status, _, name in statuses if status == 'not ok'}
+    if int(plan.group(1)) != numbers['tests'] or len(statuses) != numbers['tests']:
+        return None
+    if len(names) != numbers['pass'] or len(failures) != numbers['fail']:
+        return None
+    if numbers['tests'] != numbers['pass'] + numbers['fail'] + numbers['cancelled'] + numbers['skipped'] + numbers['todo']:
+        return None
+    assertion_only = True
+    failed_headers = list(re.finditer(r'^not ok [0-9]+ - .+$', output, re.M))
+    for index, header in enumerate(failed_headers):
+        end = failed_headers[index + 1].start() if index + 1 < len(failed_headers) else output.find('\n1..', header.end())
+        block = output[header.start():end if end >= 0 else len(output)]
+        if "code: 'ERR_ASSERTION'" not in block and 'code: ERR_ASSERTION' not in block:
+            assertion_only = False
+    return names, failures, assertion_only
+
 baseline = run(src)
-if baseline.returncode:
+baseline_tap = tap_result(baseline)
+if baseline.returncode or baseline_tap is None or baseline_tap[1]:
     print(baseline.stdout, baseline.stderr)
-    raise SystemExit('baseline must pass before mutation')
-test_names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
+    raise SystemExit('baseline must pass with complete TAP before mutation')
+test_names = baseline_tap[0]
 seen_failing = set()
 survivors = []
+killed = []
+invalid_runs = []
 original = (src / 'core/motion.ts').read_text()
+report = []
+def note(message):
+    report.append(message)
+    print(message, flush=True)
+
 for label, old, new in M:
     if old not in original:
         raise SystemExit(f'mutation pattern missing: {label}')
@@ -84,21 +131,34 @@ for label, old, new in M:
         try:
             result = run(work)
         except subprocess.TimeoutExpired:
-            print(f'[KILLED ] {label} (timeout)', flush=True)
+            invalid_runs.append(f'{label}: timeout')
+            note(f'[INVALID ] {label} (timeout; not counted as a kill)')
             continue
-        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
-        seen_failing.update(failed)
-        if result.returncode and failed:
-            print(f'[KILLED ] {label} <- {sorted(failed)[0]}', flush=True)
+        parsed = tap_result(result)
+        if parsed is None:
+            invalid_runs.append(f'{label}: incomplete TAP or syntax/runtime failure')
+            note(f'[INVALID ] {label} (incomplete TAP or syntax/runtime failure)')
+            continue
+        _, failed, assertion_only = parsed
+        if result.returncode and failed and assertion_only:
+            killed.append(label)
+            seen_failing.update(failed)
+            note(f'[KILLED ] {label} <- {sorted(failed)[0]}')
+        elif result.returncode or failed:
+            invalid_runs.append(f'{label}: test failure was not an assertion')
+            note(f'[INVALID ] {label} (failure was not an assertion; not counted as a kill)')
         else:
             survivors.append(label)
-            print(f'[SURVIVED] {label}' + (' (no assertion failure)' if result.returncode else ''), flush=True)
+            note(f'[SURVIVED] {label}')
 
 unproven = test_names - seen_failing
-print(f'\n{len(M) - len(survivors)}/{len(M)} mutations caught')
-print(f'{len(test_names) - len(unproven)}/{len(test_names)} tests observed failing at least once')
+note(f'\n{len(killed)}/{len(M)} mutations caught by assertions')
+note(f'{len(test_names) - len(unproven)}/{len(test_names)} tests observed failing at least once')
 for label in survivors:
-    print('  NOT CAUGHT:', label)
+    note('  NOT CAUGHT: ' + label)
+for item in invalid_runs:
+    note('  INVALID RUN: ' + item)
 for name in sorted(unproven):
-    print('  NEVER FAILED:', name)
-raise SystemExit(1 if survivors or unproven else 0)
+    note('  NEVER FAILED: ' + name)
+(scratch / 'round9-mutation-report.txt').write_text('\n'.join(report) + '\n')
+raise SystemExit(1 if survivors or invalid_runs or unproven else 0)

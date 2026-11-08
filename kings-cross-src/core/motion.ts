@@ -28,7 +28,7 @@ export interface TrainView {
   lengthM: number;
   occupiedLengthM: number;
   occupied: OccupiedTrack[];
-  state: 'moving' | 'held' | 'departing' | 'fading';
+  state: 'moving' | 'held' | 'departing' | 'fading' | 'estimated';
   opacity: number;
   targetBerth: string;
   lastBerth: string;
@@ -50,8 +50,11 @@ export interface MotionOptions {
   fadeSeconds?: number;
   /** Graph strips rail tags. Supply OSM maxspeed strings keyed by rail way id. */
   wayMaxspeed?: ReadonlyMap<number, string>;
-  /** Optional previously observed chains. Live also learns these incrementally. */
-  observedSteps?: readonly Pick<MotionEvent, 'kind' | 'area' | 'from' | 'to' | 'descr'>[];
+  /** Previously observed chains, with optional millisecond times for residence medians.
+   * Live learns incrementally; callers must not preload a replay's future events. */
+  observedSteps?: readonly Pick<MotionEvent, 'kind' | 'area' | 'from' | 'to' | 'descr' | 'time'>[];
+  /** Disable only for comparison with the previous, anchor-only motion policy. */
+  estimatedMotion?: boolean;
 }
 export interface MotionIssue { kind: 'unroutable' | 'reversal' | 'vanished' | 'queued' | 'renamed' | 'exiting' | 'entering' | 'merged'; description: string; berth: string; reason: string; previousDescription?: string }
 interface Segment { edge: Edge; fromT: number; toT: number }
@@ -64,6 +67,7 @@ interface Train {
   authority: number;
   id: number; exiting: boolean; pendingExit: boolean; routeOrigin: string;
   pendingRename?: { description: string; berth: string; kind: string };
+  estimated?: boolean; estimateSpeed?: number; awaitingAnchor?: string;
 }
 interface Meeting { selfAuthority: number; otherAuthority: number; stop: number }
 const EPS = 1e-8;
@@ -107,6 +111,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const gap = opts.gapM ?? 5;
   const quietMs = opts.quietMs ?? 20 * 60_000;
   const fadeSeconds = opts.fadeSeconds ?? 5;
+  const estimates = opts.estimatedMotion !== false;
   for (const n of [typeof lengthOption === 'function' ? 260 : lengthOption, acceleration, braking, defaultSpeed, stationSpeed, quietMs, fadeSeconds]) {
     if (!Number.isFinite(n) || n <= 0) throw new Error('motion options must be finite and positive');
   }
@@ -121,14 +126,31 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const anchorMap = new Map(anchors.anchors.map((a) => [a.berth, a]));
   let nextId = 1;
   const chains = new Map<string, Map<string, Set<string>>>();
+  const witnesses = new Map<string, Map<string, Set<string>>>();
+  const residences = new Map<string, number[]>();
+  const lastObservation = new Map<string, { berth: string; at: number }>();
+  const outside = new Set(anchors.unmapped.filter((u) => u.reason === 'outside-network').map((u) => u.berth));
   const turns = new Map<string, Map<Edge, number>>();
-  const rememberStep = (event: Pick<MotionEvent, 'kind' | 'area' | 'from' | 'to' | 'descr'>): void => {
+  const rememberStep = (event: Pick<MotionEvent, 'kind' | 'area' | 'from' | 'to' | 'descr' | 'time'>, at = event.time): void => {
     if (event.kind !== 'step' || event.area !== anchors.area || event.descr === NOT_A_TRAIN || !event.from || !event.to) return;
     const name = event.descr ?? '';
     if (!chains.has(name)) chains.set(name, new Map());
     const chain = chains.get(name)!;
     if (!chain.has(event.from)) chain.set(event.from, new Set());
     chain.get(event.from)!.add(event.to);
+    if (!witnesses.has(event.from)) witnesses.set(event.from, new Map());
+    const pairs = witnesses.get(event.from)!;
+    if (!pairs.has(event.to)) pairs.set(event.to, new Set());
+    if (name) pairs.get(event.to)!.add(name);
+    const previous = lastObservation.get(name);
+    if (name && at !== undefined && at !== null && Number.isFinite(at)) {
+      if (previous?.berth === event.from && at > previous.at && at - previous.at <= 600_000) {
+        const key = `${event.from}\0${event.to}`;
+        if (!residences.has(key)) residences.set(key, []);
+        residences.get(key)!.push((at - previous.at) / 1000);
+      }
+      lastObservation.set(name, { berth: event.to, at });
+    }
   };
   for (const event of opts.observedSteps ?? []) rememberStep(event);
   const anchoredAhead = (berth: string, description: string): BerthAnchor | undefined => {
@@ -141,7 +163,36 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     }
     // A shared approach may lead to several platforms. An arbitrary first result would
     // commit an unseen arrival to the wrong track before its own next anchor is known.
-    return found.size === 1 ? found.values().next().value : undefined;
+    if (found.size) return found.size === 1 ? found.values().next().value : undefined;
+    if (!estimates || outside.has(berth)) return;
+    // Other trains establish a common running line, never a particular platform. Require
+    // two descriptions on every link and refuse unresolved branches, including dead ends.
+    const shared = [berth], visited = new Set(shared), candidates = new Map<string, BerthAnchor>();
+    for (let i = 0; i < shared.length; i++) {
+      const links = witnesses.get(shared[i]!);
+      if (!links?.size || [...links.values()].some((names) => names.size < 2)) return;
+      for (const next of links.keys()) {
+        if (outside.has(next)) return;
+        const a = anchorMap.get(next);
+        if (a) { if (a.platform !== undefined) return; candidates.set(next, a); }
+        else if (!visited.has(next)) { visited.add(next); shared.push(next); }
+      }
+    }
+    return candidates.size === 1 ? candidates.values().next().value : undefined;
+  };
+  const typicalSeconds = (berth: string, target: string): number | undefined => {
+    const queue = [{ berth, seconds: 0 }], seen = new Set([berth]);
+    for (let i = 0; i < queue.length; i++) {
+      const here = queue[i]!;
+      if (here.berth === target) return here.seconds > 0 ? here.seconds : undefined;
+      for (const next of witnesses.get(here.berth)?.keys() ?? []) {
+        const samples = residences.get(`${here.berth}\0${next}`);
+        if (!samples?.length || seen.has(next)) continue;
+        const sorted = [...samples].sort((a, b) => a - b), middle = Math.floor(sorted.length / 2);
+        const median = sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+        seen.add(next); queue.push({ berth: next, seconds: here.seconds + median });
+      }
+    }
   };
   const point = (edge: Edge, t: number): TrackPosition => {
     const a = graph.pos.get(edge.a)!;
@@ -278,7 +329,33 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       else reverseAtPlatform(t, a);
     } else if (sameStop && t.target.platform !== undefined) {
       if (a.platform !== undefined) t.target = a; // Keep platform evidence for unlabelled aliases.
-    } else setTarget(t, a);
+    } else if (setTarget(t, a)) { delete t.awaitingAnchor; delete t.estimateSpeed; }
+  };
+  const estimateToward = (t: Train, a: BerthAnchor, berth: string): void => {
+    // A late unplaced step must not shorten authority already granted by this train's
+    // earlier mapped step. Finish that arrival continuously, as with a deferred departure.
+    if (!t.awaitingAnchor && t.target.berth === a.berth) return;
+    const route = routeTo(t, a);
+    if (!route?.length) return;
+    const distance = route.reduce((n, s) => n + size(s), 0);
+    // This is movement on a known route, not a new berth placement. Keep at least 25 m
+    // (or the anchor's own error) in reserve until this train actually steps to the anchor.
+    const reserve = Math.max(25, a.errorM);
+    if (distance <= reserve) return;
+    let left = distance - reserve;
+    const shortened: Segment[] = [];
+    for (const s of route) {
+      const take = Math.min(left, size(s));
+      append(shortened, { ...s, toT: s.fromT + direction(s) * take / s.edge.length });
+      left -= take; if (left <= EPS) break;
+    }
+    const end = shortened.at(-1)!, dir = direction(end), pos = point(end.edge, end.toT);
+    const stop: BerthAnchor = { ...a, platform: undefined, kind: 'inferred', from: dir > 0 ? end.edge.a : end.edge.b, to: dir > 0 ? end.edge.b : end.edge.a,
+      t: dir > 0 ? pos.t : 1 - pos.t, point: pos.point, evidence: 'estimated approach: held short pending this train’s mapped step' };
+    if (!setTarget(t, stop)) return;
+    t.route = shortened; t.estimated = true; t.awaitingAnchor = a.berth; t.unmapped = berth;
+    const seconds = typicalSeconds(berth, a.berth);
+    if (seconds) t.estimateSpeed = distance / seconds;
   };
   const requestExit = (t: Train): void => {
     if (t.exiting || t.pendingExit) return;
@@ -308,6 +385,12 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     if (t.target === stop) {
       // Keep the chosen continuation, rather than taking a different shortest branch.
       t.route = route; t.exiting = true; t.departing = true; t.unmapped = missing;
+      if (estimates) {
+        t.estimated = true; delete t.awaitingAnchor;
+        // Platform residence is boarding time, not evidence of departure speed.
+        const seconds = anchorMap.get(t.routeOrigin)?.platform === undefined ? typicalSeconds(t.routeOrigin, t.lastBerth) : undefined;
+        if (seconds) t.estimateSpeed = route.reduce((n, s) => n + size(s), 0) / seconds;
+      }
       issues.push({ kind: 'exiting', description: t.description, berth: t.lastBerth, reason: 'no anchored successor on observed chain' });
     }
   };
@@ -375,12 +458,13 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const description = event.descr;
     let t = active.get(description) ?? queued.get(description) ?? pendingNames.get(description);
     if (event.kind === 'cancel') {
+      lastObservation.delete(description);
       if (queued.has(description)) queued.delete(description);
       else if (t && t.fadeAt === undefined) t.fadeAt = now;
       return;
     }
     if (event.kind !== 'step' && event.kind !== 'interpose') return;
-    rememberStep(event);
+    rememberStep(event, now);
     const destination = anchorMap.get(event.to ?? '');
     const destinationPos = destination ? locate(destination) : undefined;
     const standing = [...active.values()].find((old) => old !== t && old.description !== description && old.lastBerth === event.to && old.speed === 0 && old.route.length === 0 && old.fadeAt === undefined && destinationPos &&
@@ -400,7 +484,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const berth = event.kind === 'step' ? event.from : event.to;
     if (!t) {
       const a = berth ? anchorMap.get(berth) : undefined;
-      if (!a && event.kind === 'step') {
+      if (!a && (event.kind === 'step' || estimates)) {
         const arrival = destination ?? anchoredAhead(event.to ?? '', description);
         const stop = arrival ? locate(arrival) : undefined;
         if (arrival && stop) {
@@ -413,7 +497,12 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
           const boundary: BerthAnchor = { ...arrival, berth: berth ?? '', kind: 'inferred', platform: undefined, from: dir > 0 ? at.edge.a : at.edge.b, to: dir > 0 ? at.edge.b : at.edge.a,
             t: dir > 0 ? at.t : 1 - at.t, point: at.point, evidence: 'first observation: enter from graph boundary' };
           t = spawn(description, boundary);
-          if (t) { setTarget(t, arrival); issues.push({ kind: 'entering', description, berth: event.to ?? '', reason: 'unmapped origin with anchored successor' }); }
+          if (t) {
+            if (estimates) t.estimated = true;
+            if (estimates && !destination) estimateToward(t, arrival, event.to ?? '');
+            else setTarget(t, arrival);
+            issues.push({ kind: 'entering', description, berth: event.to ?? '', reason: 'unmapped origin with anchored successor' });
+          }
         }
       }
       if (!a && !t) { issues.push({ kind: 'unroutable', description, berth: berth ?? '', reason: 'first observation has no mapped origin' }); return; }
@@ -421,6 +510,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       if (!t) return;
     }
     t.lastSeen = now;
+    if (event.kind === 'interpose' && estimates && !destination) { t.lastBerth = event.to ?? ''; t.unmapped = event.to ?? ''; }
     delete t.fadeAt;
     if (event.kind === 'step') {
       t.routeOrigin = event.from ?? t.target.berth;
@@ -430,8 +520,12 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       else {
         t.unmapped = event.to ?? '';
         const ahead = anchoredAhead(t.unmapped, description);
-        if (ahead) { const missing = t.unmapped; requestTarget(t, ahead); t.unmapped = missing; }
-        else requestExit(t);
+        if (ahead) {
+          const missing = t.unmapped;
+          if (estimates) estimateToward(t, ahead, missing);
+          else requestTarget(t, ahead);
+          t.unmapped = missing;
+        } else if (!t.awaitingAnchor) requestExit(t);
       }
     }
     // Repeated interposes refresh liveness. They never relocate an existing train.
@@ -463,7 +557,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
         along += Math.abs(cuts[i + 1]! - cuts[i]!) * s.edge.length;
       }
     }
-    return { cap, stop };
+    return { cap: Math.min(cap, t.estimateSpeed ?? Infinity), stop };
   };
   const moveBody = (t: Train, distance: number): void => {
     let left = distance;
@@ -538,6 +632,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     t.speed = v < EPS ? 0 : v;
     if (!t.route.length) {
       t.speed = 0; t.departing = false;
+      if (!t.awaitingAnchor && !t.exiting) { t.estimated = false; delete t.estimateSpeed; }
       if (t.pendingRename) { const pending = t.pendingRename; rename(t, pending.description, pending.berth, pending.kind); }
       if (t.pendingTarget) {
         const a = t.pendingTarget, exitAfterAnchor = t.pendingExit;
@@ -578,8 +673,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     heading: (() => { const a = graph.pos.get(t.pos.edge.a)!, b = graph.pos.get(t.pos.edge.b)!; return Math.atan2((b[0] - a[0]) * t.dir, -(b[1] - a[1]) * t.dir); })(),
     speed: t.speed, lengthM: t.lengthM, occupiedLengthM: t.body.reduce((sum, s) => sum + size(s), 0),
     occupied: t.body.map((s) => ({ ...s })),
-    state: t.fadeAt !== undefined ? 'fading' : t.departing ? 'departing' : t.speed === 0 ? 'held' : 'moving',
-    opacity: t.fadeAt === undefined ? 1 : Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000)),
+    state: t.fadeAt !== undefined ? 'fading' : t.estimated ? 'estimated' : t.departing ? 'departing' : t.speed === 0 ? 'held' : 'moving',
+    opacity: (t.estimated ? 0.55 : 1) * (t.fadeAt === undefined ? 1 : Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000))),
     targetBerth: t.target.berth, lastBerth: t.lastBerth,
     ...(t.unmapped !== undefined ? { unmappedBerth: t.unmapped } : {}),
     blocked: t.blocked, distanceM: t.distanceM, reversals: t.reversals,

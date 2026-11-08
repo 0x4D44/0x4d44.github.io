@@ -48,28 +48,150 @@ const recording = (await readFile(resolve(values.get('--recording')!), 'utf8')).
 }).sort((a, b) => a.at - b.at || a.index - b.index);
 if (!recording.length) throw new Error('recording is empty');
 const lengths = { long: trainLayout('lner9').length, short: trainLayout('lner5').length };
-const motion = createMotion(graph, anchors, { lengthM: (d) => d[0] === '1' ? lengths.long : lengths.short, wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
+const motionOptions = { lengthM: (d: string) => d[0] === '1' ? lengths.long : lengths.short,
+  wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) };
+// No future observedSteps are supplied: both policies learn only from events already replayed.
+const motion = createMotion(graph, anchors, { ...motionOptions, estimatedMotion: true });
+const baselineMotion = createMotion(graph, anchors, { ...motionOptions, estimatedMotion: false });
 const reconcile = createEventReconciler((event, atMs) => motion.apply(event, atMs));
+const reconcileBaseline = createEventReconciler((event, atMs) => baselineMotion.apply(event, atMs));
 const snapshots = recording.filter((row) => row.event.kind === 'snapshot').length;
 const dt = 0.1, start = recording[0]!.at, end = recording.at(-1)!.at;
 let cursor = 0, ticks = 0, maxJump = 0, maxSpeed = 0, maxAccel = 0, maxDecel = 0;
 let interposeFailures = 0, snapshotPlacementFailures = 0;
 let maxPointJump = 0, pointOverspeed = 0, pointBackward = 0;
+let baselineMaxPointJump = 0, baselinePointOverspeed = 0, baselinePointBackward = 0;
 const backwardExamples: unknown[] = [];
 const doubleHeldExamples: unknown[] = [];
 let overlapTicks = 0, maxOverlap = 0, maxTrains = 0, maxQueued = 0, unexplainedDisappearances = 0, cabChanges = 0;
 let previous = new Map<string | number, TrainView>();
+let baselinePrevious = new Map<number, TrainView>();
+let baselineOverlapTicks = 0, baselineMaxOverlap = 0;
 const observed = new Set<string>();
 const anchorByBerth = new Map(anchors.anchors.map((a) => [a.berth, a]));
-const platformStops = anchors.anchors.filter((a) => a.platform !== undefined).flatMap((a) => {
+const locatedAnchors = anchors.anchors.flatMap((a) => {
   const edge = graph.edges.find((e) => e.a === a.from && e.b === a.to || e.a === a.to && e.b === a.from);
-  return edge ? [{ edge, t: edge.a === a.from ? a.t : 1 - a.t }] : [];
+  if (!edge) return [];
+  const t = edge.a === a.from ? a.t : 1 - a.t;
+  const from = graph.pos.get(edge.a)!, to = graph.pos.get(edge.b)!;
+  const point: TrainView['leading']['point'] = [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+  return [{ anchor: a, edge, t, point }];
 });
+const platformStops = locatedAnchors.filter((a) => a.anchor.platform !== undefined).map(({ edge, t }) => ({ edge, t }));
 // AnchorMap supplies stops, not platform polygons. A held train occupies a platform
 // when its body includes a platform stop (also true after a stationary cab change).
 const holdsAtPlatform = (t: TrainView): boolean => platformStops.some((p) =>
   t.leading.edge === p.edge && Math.abs(t.leading.t - p.t) * p.edge.length < 0.05 ||
   t.occupied.some((s) => s.edge === p.edge && p.t >= Math.min(s.fromT, s.toT) - 1e-8 && p.t <= Math.max(s.fromT, s.toT) + 1e-8));
+const atAnchor = (t: TrainView, berth: string): boolean => {
+  const stop = locatedAnchors.find((a) => a.anchor.berth === berth);
+  return Boolean(stop && t.leading.edge === stop.edge && Math.abs(t.leading.t - stop.t) * stop.edge.length < 0.05);
+};
+const heldAtAnchor = (t: TrainView): boolean => t.speed === 0 && t.state !== 'fading' && t.targetBerth === t.lastBerth &&
+  (t.state === 'held' || t.state === 'estimated') && atAnchor(t, t.lastBerth);
+const heldForPartnerPair = (t: TrainView): boolean => t.state === 'held' || t.state === 'estimated' && heldAtAnchor(t);
+type BirthLocation = 'externalLeaf' | 'nearAnchor' | 'other';
+interface MinuteMotionStats {
+  uniqueIds: Set<number>;
+  estimatedIds: Set<number>;
+  concurrentTotal: number;
+  estimatedConcurrentTotal: number;
+  samples: number;
+}
+interface ReplayMotionStats {
+  minutes: Map<number, MinuteMotionStats>;
+  seenIds: Set<number>;
+  estimatedIds: Set<number>;
+  estimatedStateById: Map<number, boolean>;
+  firstAppearanceByDescription: Map<string, number>;
+  births: Record<BirthLocation, number>;
+  estimatedBirths: Record<BirthLocation, number>;
+}
+const platformAnchorPoints = locatedAnchors.filter((a) => a.anchor.platform !== undefined).map((a) => a.point);
+// A degree-one node by a buffer stop is a platform end, not an outside boundary.
+const externalLeaves = [...graph.adj.entries()].filter(([id, edges]) => edges.length === 1 && !platformAnchorPoints.some((p) => {
+  const node = graph.pos.get(id)!;
+  return Math.hypot(node[0] - p[0], node[1] - p[1]) < 15;
+})).map(([id]) => id);
+const birthLocation = (train: TrainView): BirthLocation => {
+  const nearLeaf = externalLeaves.some((id) => {
+    const fromA = train.leading.edge.a === id ? train.leading.t * train.leading.edge.length : Infinity;
+    const fromB = train.leading.edge.b === id ? (1 - train.leading.t) * train.leading.edge.length : Infinity;
+    return Math.min(fromA, fromB) <= 1;
+  });
+  if (nearLeaf) return 'externalLeaf';
+  if (locatedAnchors.some((a) => Math.hypot(train.leading.point[0] - a.point[0], train.leading.point[1] - a.point[1]) <= Math.max(15, a.anchor.errorM) ||
+    train.occupied.some((s) => s.edge === a.edge && a.t >= Math.min(s.fromT, s.toT) - 1e-8 && a.t <= Math.max(s.fromT, s.toT) + 1e-8))) return 'nearAnchor';
+  return 'other';
+};
+const motionStats = (): ReplayMotionStats => ({ minutes: new Map(), seenIds: new Set(), estimatedIds: new Set(), estimatedStateById: new Map(), firstAppearanceByDescription: new Map(),
+  births: { externalLeaf: 0, nearAnchor: 0, other: 0 }, estimatedBirths: { externalLeaf: 0, nearAnchor: 0, other: 0 } });
+const enabledStats = motionStats(), baselineStats = motionStats();
+const isEstimated = (stats: ReplayMotionStats, train: TrainView): boolean => {
+  // Fading hides the state; carry the last non-fading estimate flag through its fade.
+  if (train.state === 'estimated') stats.estimatedStateById.set(train.id, true);
+  else if (train.state !== 'fading') stats.estimatedStateById.set(train.id, false);
+  return stats.estimatedStateById.get(train.id) ?? false;
+};
+const minuteStats = (stats: ReplayMotionStats, elapsedSeconds: number): MinuteMotionStats => {
+  const minute = Math.floor(elapsedSeconds / 60);
+  let value = stats.minutes.get(minute);
+  if (!value) {
+    value = { uniqueIds: new Set(), estimatedIds: new Set(), concurrentTotal: 0, estimatedConcurrentTotal: 0, samples: 0 };
+    stats.minutes.set(minute, value);
+  }
+  return value;
+};
+const observeDrawn = (stats: ReplayMotionStats, trains: TrainView[], elapsedSeconds: number): void => {
+  const minute = minuteStats(stats, elapsedSeconds);
+  for (const train of trains) {
+    const estimated = isEstimated(stats, train);
+    if (!stats.firstAppearanceByDescription.has(train.description)) stats.firstAppearanceByDescription.set(train.description, elapsedSeconds);
+    minute.uniqueIds.add(train.id);
+    if (estimated) {
+      minute.estimatedIds.add(train.id);
+      stats.estimatedIds.add(train.id);
+    }
+    if (!stats.seenIds.has(train.id)) {
+      stats.seenIds.add(train.id);
+      const location = birthLocation(train);
+      stats.births[location]++;
+      if (estimated) stats.estimatedBirths[location]++;
+    }
+  }
+};
+const sampleConcurrent = (stats: ReplayMotionStats, trains: TrainView[], elapsedSeconds: number): void => {
+  observeDrawn(stats, trains, elapsedSeconds);
+  const minute = minuteStats(stats, elapsedSeconds);
+  const estimatedCount = trains.filter((train) => isEstimated(stats, train)).length;
+  minute.concurrentTotal += trains.length;
+  minute.estimatedConcurrentTotal += estimatedCount;
+  minute.samples++;
+};
+const summarizeMotion = (stats: ReplayMotionStats) => {
+  const perMinute = [...stats.minutes].sort(([a], [b]) => a - b).map(([minute, value]) => ({
+    minute,
+    uniquePhysicalTrainsDrawn: value.uniqueIds.size,
+    meanConcurrentTrains: value.samples ? value.concurrentTotal / value.samples : 0,
+    estimatedPhysicalTrainsDrawn: value.estimatedIds.size,
+    meanEstimatedConcurrentTrains: value.samples ? value.estimatedConcurrentTotal / value.samples : 0,
+    samples: value.samples,
+  }));
+  const mean = (values: number[]): number => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+  return {
+    perMinute,
+    aggregate: {
+      minutes: perMinute.length,
+      meanUniquePhysicalTrainsDrawnPerMinute: mean(perMinute.map((row) => row.uniquePhysicalTrainsDrawn)),
+      meanConcurrentTrainsPerMinute: mean(perMinute.map((row) => row.meanConcurrentTrains)),
+      estimatedPhysicalTrainsDrawn: stats.estimatedIds.size,
+      meanEstimatedPhysicalTrainsDrawnPerMinute: mean(perMinute.map((row) => row.estimatedPhysicalTrainsDrawn)),
+      meanEstimatedConcurrentTrainsPerMinute: mean(perMinute.map((row) => row.meanEstimatedConcurrentTrains)),
+      firstAppearances: stats.births,
+      firstAppearancesInitiallyEstimated: stats.estimatedBirths,
+    },
+  };
+};
 const outside = new Set(anchors.unmapped.filter((a) => a.reason === 'outside-network').map((a) => a.berth));
 const berthOwner = new Map<string, string>();
 const placements = { standingInterposeCandidates: 0, standingStepCandidates: 0, wireSameBerthInterposes: 0, wireSameBerthSteps: 0,
@@ -112,7 +234,7 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
       if ((event.kind === 'interpose' || event.kind === 'step') && event.to) {
         const oldName = berthOwner.get(event.to);
         const at = anchorByBerth.get(event.to);
-        const standing = views.find((t) => t.description !== event.descr && t.lastBerth === event.to && t.speed === 0 && t.state === 'held' && at && Math.hypot(t.leading.point[0] - at.point[0], t.leading.point[1] - at.point[1]) < 0.05);
+        const standing = views.find((t) => t.description !== event.descr && t.lastBerth === event.to && heldAtAnchor(t) && atAnchor(t, event.to!));
         if (standing && !views.some((t) => t.description === event.descr)) placements[event.kind === 'interpose' ? 'standingInterposeCandidates' : 'standingStepCandidates']++;
         else if (oldName && oldName !== event.descr) {
           if (views.some((t) => t.description === oldName) && views.some((t) => t.description === event.descr)) placements.coexistingDescriptions++;
@@ -133,11 +255,19 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
     if (event.kind === 'step' && event.descr) lastStep.set(event.descr, { event, index: cursor });
     reconcile(event, start + time * 1000);
     consumeIssues({ event, index: cursor });
+    reconcileBaseline(event, start + time * 1000);
+    // Count bodies that become drawn directly on an event as well as after the tick.
+    observeDrawn(enabledStats, motion.trains(), time);
+    observeDrawn(baselineStats, baselineMotion.trains(), time);
     cursor++;
   }
   motion.advance(dt);
+  baselineMotion.advance(dt);
   consumeIssues();
   const trains = motion.trains();
+  const baselineTrains = baselineMotion.trains();
+  sampleConcurrent(enabledStats, trains, time + dt);
+  sampleConcurrent(baselineStats, baselineTrains, time + dt);
   const current = new Map(trains.map((t) => [t.id ?? t.description, t]));
   const heldBerths = new Set<string>();
   let doubleHeld = false;
@@ -168,7 +298,7 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
   for (let i = 0; i < trains.length; i++) for (const b of trains.slice(i + 1)) {
     const a = trains[i]!, platform = anchorByBerth.get(a.lastBerth)?.platform;
     if (platform !== undefined && a.lastBerth !== b.lastBerth && platform === anchorByBerth.get(b.lastBerth)?.platform &&
-      a.state === 'held' && b.state === 'held') {
+      heldForPartnerPair(a) && heldForPartnerPair(b)) {
       const key = [String(a.id ?? a.description), String(b.id ?? b.description)].sort().join(':');
       if (!heldPartnerPairs.has(key)) heldPartnerPairs.set(key, { descriptions: [a.description, b.description], berths: [a.lastBerth, b.lastBerth], firstHeldAtSeconds: time });
     }
@@ -199,6 +329,20 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
     cabChanges += t.reversals - old.reversals;
   }
   for (const old of previous.values()) if (!current.has(old.id ?? old.description) && old.state !== 'fading') unexplainedDisappearances++;
+  for (const t of baselineTrains) {
+    const old = baselinePrevious.get(t.id);
+    if (!old) continue;
+    if (t.reversals === old.reversals) {
+      const dx = t.leading.point[0] - old.leading.point[0];
+      const dz = t.leading.point[1] - old.leading.point[1];
+      const moved = Math.hypot(dx, dz);
+      baselineMaxPointJump = Math.max(baselineMaxPointJump, moved);
+      if (moved > Math.max(t.speed, old.speed) * dt + 0.05) baselinePointOverspeed++;
+      const along = dx * Math.sin(old.heading) - dz * Math.cos(old.heading);
+      if (along < -0.05) baselinePointBackward++;
+    }
+  }
+  baselinePrevious = new Map(baselineTrains.map((t) => [t.id, t]));
   let tickOverlap = false;
   for (let i = 0; i < trains.length; i++) for (let j = i + 1; j < trains.length; j++) {
     const overlap = overlapM(trains[i]!.occupied, trains[j]!.occupied);
@@ -206,6 +350,13 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
     if (overlap > 1e-6) tickOverlap = true;
   }
   if (tickOverlap) overlapTicks++;
+  let baselineTickOverlap = false;
+  for (let i = 0; i < baselineTrains.length; i++) for (let j = i + 1; j < baselineTrains.length; j++) {
+    const overlap = overlapM(baselineTrains[i]!.occupied, baselineTrains[j]!.occupied);
+    baselineMaxOverlap = Math.max(baselineMaxOverlap, overlap);
+    if (overlap > 1e-6) baselineTickOverlap = true;
+  }
+  if (baselineTickOverlap) baselineOverlapTicks++;
   previous = current;
 }
 const issues = motion.diagnostics();
@@ -225,6 +376,15 @@ for (const s of insideSteps) insideRoutingReasons.set(s.reason, (insideRoutingRe
 const pairs = new Map<string, number>();
 for (const s of insideSteps) { const pair = `${s.from} -> ${s.to}`; pairs.set(pair, (pairs.get(pair) ?? 0) + 1); }
 const topInsidePairs = [...pairs].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12).map(([pair, count]) => ({ pair, count }));
+const enabledMotionSummary = summarizeMotion(enabledStats);
+const baselineMotionSummary = summarizeMotion(baselineStats);
+const matchingFirstAppearanceDelays = [...enabledStats.firstAppearanceByDescription].flatMap(([description, enabledAt]) => {
+  const baselineAt = baselineStats.firstAppearanceByDescription.get(description);
+  return baselineAt !== undefined && enabledAt < baselineAt ? [baselineAt - enabledAt] : [];
+}).sort((a, b) => a - b);
+const median = (values: number[]): number => values.length % 2 ? values[Math.floor(values.length / 2)]! :
+  values.length ? (values[values.length / 2 - 1]! + values[values.length / 2]!) / 2 : 0;
+const matchingDescriptions = [...enabledStats.firstAppearanceByDescription.keys()].filter((description) => baselineStats.firstAppearanceByDescription.has(description)).length;
 const report = {
   anchorSources: anchors.sources, anchorCount: anchors.anchors.length, unmappedCount: anchors.unmapped.length,
   events: recording.length, snapshots, snapshotPlacementFailures, durationSeconds: (end - start) / 1000, stepSeconds: dt, playbackSpeed: speed,
@@ -239,6 +399,16 @@ const report = {
   placements, heldPartnerPairs: [...heldPartnerPairs.values()], appliedRenames, unattributedRoutingIssues, insideRoutingReasons: Object.fromEntries(insideRoutingReasons), doubleHeldBerthTicks, heldOutsidePlatformOverTenMinutes: longHolds.size,
   longHolds: [...longHolds.values()], unroutableOutsideNetworkSteps: outsideSteps.length,
   unroutableInsideNetworkSteps: insideSteps.length, topInsidePairs,
+  motionComparison: {
+    perMinuteBasis: 'elapsed replay minutes; unique IDs are physical train ids visible at any point; concurrent means sample post-advance at each 0.1 s tick',
+    firstAppearanceClassification: { externalLeafDistanceM: 1, nearAnchorDistanceM: 'max(15, anchor errorM)', occupiedBodyCoversLocatedAnchorStop: true, excludedPlatformBufferLeafDistanceM: 15 },
+    matchingDescriptionFirstAppearanceTiming: { matchingDescriptions, enabledEarlierCount: matchingFirstAppearanceDelays.length,
+      medianSecondsEarlier: median(matchingFirstAppearanceDelays), maxSecondsEarlier: matchingFirstAppearanceDelays.at(-1) ?? 0 },
+    estimatedMotionDisabled: { ...baselineMotionSummary, maxPointJumpM: baselineMaxPointJump, pointOverspeedTicks: baselinePointOverspeed,
+      pointBackwardTicks: baselinePointBackward, overlapTicks: baselineOverlapTicks, maxOverlapM: baselineMaxOverlap },
+    estimatedMotionEnabled: { ...enabledMotionSummary, maxPointJumpM: maxPointJump, pointOverspeedTicks: pointOverspeed,
+      pointBackwardTicks: pointBackward, overlapTicks, maxOverlapM: maxOverlap },
+  },
   backwardExamples, doubleHeldExamples,
 };
 const f = (n: number): string => n.toFixed(6);
@@ -266,6 +436,26 @@ ${anchors.anchors.length} anchors; ${recording.length} events over ${f(report.du
 | Trains stopped over 10 minutes without occupying a platform stop | ${longHolds.size} |
 | Unroutable steps: both outside / inside or uncertain | ${outsideSteps.length} / ${insideSteps.length} |
 
+## Estimated motion comparison
+
+Both runs consume events at the same 0.1 s boundaries, with no preloaded future step history. Per-minute unique counts use physical train ids visible at any point in that elapsed minute; concurrent means average the post-advance train count at each tick. A first appearance is an external leaf when it is within 1 m of a non-platform degree-one graph node, near-anchor when its nose is within max(15 m, anchor error) or its occupied body covers a located anchor stop, otherwise other. Platform buffer leaves within 15 m of a located platform anchor are excluded from the external-leaf class. Immediate first-step cab changes are classified by the occupied body, so swapping the nose does not hide the anchor birth.
+
+| Measure | Estimated motion disabled | Estimated motion enabled |
+| --- | ---: | ---: |
+| Mean unique physical trains drawn per minute | ${f(baselineMotionSummary.aggregate.meanUniquePhysicalTrainsDrawnPerMinute)} | ${f(enabledMotionSummary.aggregate.meanUniquePhysicalTrainsDrawnPerMinute)} |
+| Mean concurrent trains per minute | ${f(baselineMotionSummary.aggregate.meanConcurrentTrainsPerMinute)} | ${f(enabledMotionSummary.aggregate.meanConcurrentTrainsPerMinute)} |
+| Estimated physical trains drawn (unique ids) | ${baselineMotionSummary.aggregate.estimatedPhysicalTrainsDrawn} | ${enabledMotionSummary.aggregate.estimatedPhysicalTrainsDrawn} |
+| Mean estimated unique trains drawn per minute | ${f(baselineMotionSummary.aggregate.meanEstimatedPhysicalTrainsDrawnPerMinute)} | ${f(enabledMotionSummary.aggregate.meanEstimatedPhysicalTrainsDrawnPerMinute)} |
+| Mean concurrent estimated trains per minute | ${f(baselineMotionSummary.aggregate.meanEstimatedConcurrentTrainsPerMinute)} | ${f(enabledMotionSummary.aggregate.meanEstimatedConcurrentTrainsPerMinute)} |
+| First appearances: external leaf / near anchor / other | ${baselineMotionSummary.aggregate.firstAppearances.externalLeaf} / ${baselineMotionSummary.aggregate.firstAppearances.nearAnchor} / ${baselineMotionSummary.aggregate.firstAppearances.other} | ${enabledMotionSummary.aggregate.firstAppearances.externalLeaf} / ${enabledMotionSummary.aggregate.firstAppearances.nearAnchor} / ${enabledMotionSummary.aggregate.firstAppearances.other} |
+| First appearances initially estimated: external leaf / near anchor / other | ${baselineMotionSummary.aggregate.firstAppearancesInitiallyEstimated.externalLeaf} / ${baselineMotionSummary.aggregate.firstAppearancesInitiallyEstimated.nearAnchor} / ${baselineMotionSummary.aggregate.firstAppearancesInitiallyEstimated.other} | ${enabledMotionSummary.aggregate.firstAppearancesInitiallyEstimated.externalLeaf} / ${enabledMotionSummary.aggregate.firstAppearancesInitiallyEstimated.nearAnchor} / ${enabledMotionSummary.aggregate.firstAppearancesInitiallyEstimated.other} |
+| Matching descriptions first visible earlier with estimated motion; median / max lead (s) | — | ${matchingFirstAppearanceDelays.length}; ${f(median(matchingFirstAppearanceDelays))} / ${f(matchingFirstAppearanceDelays.at(-1) ?? 0)} |
+| Leading end max point jump (m) | ${f(baselineMaxPointJump)} | ${f(maxPointJump)} |
+| Point overspeed / backward ticks | ${baselinePointOverspeed} / ${baselinePointBackward} | ${pointOverspeed} / ${pointBackward} |
+| Overlap ticks / max overlap (m) | ${baselineOverlapTicks} / ${f(baselineMaxOverlap)} | ${overlapTicks} / ${f(maxOverlap)} |
+
+Per-minute physical-id counts and concurrent/estimated means are in the motionComparison object in the JSON report.
+
 Top inside-network unroutable pairs: ${topInsidePairs.map((p) => `${p.pair} (${p.count})`).join('; ') || 'none'}.
 
 Long holds: ${[...longHolds.values()].map((h) => `${h.description} at ${h.berth}, target ${h.target}, ${h.seconds.toFixed(1)} s, blocked=${h.blocked}; companions: ${h.companions.map((c) => `${c.description} in ${c.berth}`).join(', ') || 'none'}. ${h.explanation}`).join('; ') || 'none'}.
@@ -274,7 +464,7 @@ Wire replacements count a new description replacing the recorded owner of a mapp
 
 Body movement uses travelled distance: a stationary platform cab change moves the *leading-end label* to the other end without moving the train. Collision checks compare occupied graph intervals, including coaches across junctions. New overlapping observations are queued rather than drawn. Unroutable steps include first sightings without mapped origins, and individual reasons are in the JSON report. Completed fades include cancels and 20-minute quiet timeouts.
 
-Assumptions: the page's real layouts (${lengths.long} m for headcodes starting 1, ${lengths.short} m otherwise), acceleration 0.7 m/s², service braking 0.6 m/s², 40 km/h on untagged ways, at most 25 km/h inside KINGS_CROSS and over the last 400 m of a platform approach, and 5 m separation. OSM maxspeed is supplied by way id. Unmapped departures without a known anchored successor follow historical junction turns where available, otherwise the straightest forward continuation to an external graph leaf, then fade. Platform buffers are excluded as external leaves. Only the same description's chain (or explicit caller-supplied chains without descriptions) supplies successor authority; ambiguous successors wait for an actual mapped step. Outside arrivals enter from an external boundary once their next anchor is known. Targets behind the train or inside its service braking distance are refused. First sightings may have a clipped body at the network boundary. There is no signalling/interlocking model; graph routing and train occupancy determine movement authority. Cancelled trains remain solid during their five-second fade.
+Assumptions: the page's real layouts (${lengths.long} m for headcodes starting 1, ${lengths.short} m otherwise), acceleration 0.7 m/s², service braking 0.6 m/s², 40 km/h on untagged ways, at most 25 km/h inside KINGS_CROSS and over the last 400 m of a platform approach, and 5 m separation. OSM maxspeed is supplied by way id. Unmapped departures without a known anchored successor follow historical junction turns where available, otherwise the straightest forward continuation to an external graph leaf, then fade. Platform buffers are excluded as external leaves. Shared approach evidence warms up from the replay: every link needs at least two distinct train descriptions, all branches must resolve to one non-platform anchor, and outside-network branches prevent an estimate. Until enough evidence exists, cold arrivals wait for mapped steps; learned arrivals enter from the graph boundary and can be held max(25 m, anchor error) short of the anchor until their own mapped step confirms it. Matching step residence times are capped at their per-link median when available; otherwise the OSM way maxspeed or default speed limit applies. Platform dwell does not set a departure running-time estimate. Targets behind the train or inside its service braking distance are refused. First sightings may have a clipped body at the network boundary. There is no signalling/interlocking model; graph routing and train occupancy determine movement authority. Cancelled trains remain solid during their five-second fade.
 
 Playback speed ${speed} is metadata for an unpaced audit; fixed simulation steps keep physics identical at every playback rate. Events are applied at the next tick (at most 0.1 s late). The audit drains six seconds past the final event so final cancels can fade.
 
@@ -291,4 +481,7 @@ node kings-cross-src/tools/motion-check.ts --anchors .scratch/<run>/anchors.json
 await mkdir(out, { recursive: true });
 await writeFile(resolve(out, 'motion-report.json'), JSON.stringify(report, null, 2) + '\n');
 await writeFile(resolve(out, 'motion-report.md'), markdown);
-console.log(JSON.stringify({ ...report, anchorSources: undefined, routingIssues: undefined, invalidReversals: undefined, vanishedTrains: undefined, backwardExamples: undefined, doubleHeldExamples: undefined }, null, 2));
+console.log(JSON.stringify({ ...report, anchorSources: undefined, routingIssues: undefined, invalidReversals: undefined, vanishedTrains: undefined, backwardExamples: undefined, doubleHeldExamples: undefined,
+  motionComparison: { ...report.motionComparison,
+    estimatedMotionDisabled: { ...report.motionComparison.estimatedMotionDisabled, perMinute: undefined },
+    estimatedMotionEnabled: { ...report.motionComparison.estimatedMotionEnabled, perMinute: undefined } } }, null, 2));

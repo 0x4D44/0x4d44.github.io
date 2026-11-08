@@ -20,6 +20,7 @@ const anchors: AnchorMap = {
   anchors: [anchor('A', 400), anchor('B', 1500), anchor('C', 2800), anchor('P', 2900, false, '1'), anchor('P2', 2900, false, '1'), anchor('EXIT', 1800, true), anchor('TAIL', 100)],
 };
 const step = (from: string, to: string, descr = 'SYN1'): MotionEvent => ({ kind: 'step', area: 'TEST', descr, from, to, time: null });
+const timedStep = (from: string, to: string, descr: string, time: number): MotionEvent => ({ ...step(from, to, descr), time });
 const interpose = (to: string, descr = 'SYN1'): MotionEvent => ({ kind: 'interpose', area: 'TEST', descr, to });
 const one = (m: ReturnType<typeof createMotion>): TrainView => { assert.equal(m.trains().length, 1); return m.trains()[0]!; };
 const close = (a: number, b: number, tolerance = 1e-6): void => assert.ok(Math.abs(a - b) <= tolerance, `${a} differs from ${b}`);
@@ -30,6 +31,16 @@ function finish(m: ReturnType<typeof createMotion>, seconds = 800): TrainView {
     if (t.state === 'held' && t.distanceM > 0) return t;
   }
   assert.fail('train did not arrive');
+}
+function stopAfterMoving(m: ReturnType<typeof createMotion>, seconds = 800): TrainView {
+  let moved = false;
+  for (let i = 0; i < seconds * 10; i++) {
+    m.advance(0.1);
+    const t = one(m);
+    moved ||= t.distanceM > 0;
+    if (moved && t.speed === 0) return t;
+  }
+  assert.fail('train did not stop after moving');
 }
 function normal(opts: MotionOptions = {}) {
   const m = createMotion(graph, anchors, opts);
@@ -163,6 +174,29 @@ test('a follower stops short of the leading train and never overlaps it', () => 
   m.apply(step('B', 'C', 'LEAD'), 400_000);
   m.advance(60);
   assert.ok(m.trains()[1]!.leading.point[0] > 1235);
+});
+
+test('an estimated follower never passes or overlaps a placed train', () => {
+  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B', 'FOLLOW')] });
+  m.apply(interpose('B', 'LEAD'), 0);
+  m.apply(step('OUTSIDE', 'MIDDLE', 'FOLLOW'), 0);
+  const findFollow = (): TrainView => {
+    const t = m.trains().find((train) => train.description === 'FOLLOW');
+    assert.ok(t, 'the estimated follower should be in the active train list');
+    return t;
+  };
+  let follow = findFollow();
+  assert.equal(follow.state, 'estimated'); assert.equal(follow.targetBerth, 'B'); close(follow.opacity, 0.55);
+  for (let i = 0; i < 5000; i++) {
+    m.advance(0.1);
+    const [lead] = m.trains();
+    follow = findFollow();
+    assert.equal(overlapM(lead!.occupied, follow.occupied), 0);
+    assert.ok(follow.leading.point[0] <= 1235 + 1e-6);
+  }
+  close(follow.leading.point[0], 1235);
+  assert.equal(follow.speed, 0); assert.equal(follow.blocked, true);
+  assert.equal(follow.state, 'estimated'); close(follow.opacity, 0.55);
 });
 
 test('opposing trains stop before touching with service braking', () => {
@@ -366,16 +400,19 @@ test('separate partner berths hold different trains and a pending rename waits u
 });
 
 test('an unmapped departure without an anchored successor drives to the boundary under normal limits then fades', () => {
-  const m = normal(); finish(m); m.apply(step('B', 'OUTSIDE'), 0);
-  assert.equal(one(m).exiting, true);
+  const m = normal(); finish(m); const atAnchor = one(m).leading; m.apply(step('B', 'OUTSIDE'), 0);
+  assert.deepEqual(one(m).leading, atAnchor);
+  assert.equal(one(m).exiting, true); assert.equal(one(m).state, 'estimated'); close(one(m).opacity, 0.55);
   let previous = one(m), reached = false;
   for (let i = 0; i < 6000; i++) {
     m.advance(0.1);
     const t = one(m);
     assert.ok(t.leading.point[0] >= previous.leading.point[0] - 1e-7);
+    assert.ok(t.distanceM - previous.distanceM <= 40 / 3.6 * 0.1 + 1e-7);
     assert.ok(t.speed <= 40 / 3.6 + 1e-7);
     assert.ok(t.speed >= previous.speed - 0.0600001 && t.speed <= previous.speed + 0.0700001);
-    if (t.state === 'fading') { close(t.leading.point[0], 4000); reached = true; break; }
+    if (t.state === 'fading') { close(t.leading.point[0], 4000); close(t.opacity, 0.55); reached = true; break; }
+    assert.equal(t.state, 'estimated'); close(t.opacity, 0.55);
     previous = t;
   }
   assert.ok(reached); m.advance(5.1); assert.deepEqual(m.trains(), []);
@@ -410,10 +447,111 @@ test('an arrival first seen outside enters at the boundary and drives to its map
 });
 
 test('an outside arrival can use an anchored successor on an observed chain', () => {
-  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B')] });
-  m.apply(step('OUTSIDE', 'MIDDLE'), 0);
+  const m = createMotion(graph, anchors, { observedSteps: [step('MIDDLE', 'B', 'ARRIVAL')] });
+  m.apply(step('OUTSIDE', 'MIDDLE', 'ARRIVAL'), 0);
   close(one(m).leading.point[0], 0); assert.equal(one(m).targetBerth, 'B');
-  close(finish(m).leading.point[0], 1500);
+  assert.equal(one(m).state, 'estimated'); close(one(m).opacity, 0.55);
+  const estimatedStop = stopAfterMoving(m);
+  close(estimatedStop.leading.point[0], 1475);
+  assert.equal(estimatedStop.state, 'estimated'); assert.equal(estimatedStop.speed, 0);
+  close(estimatedStop.opacity, 0.55);
+  assert.ok(1500 - estimatedStop.leading.point[0] >= 25 - 1e-6, 'estimate must stay outside the mapped anchor margin');
+
+  m.apply(step('MIDDLE', 'B', 'ARRIVAL'), 0);
+  assert.deepEqual(one(m).leading, estimatedStop.leading);
+  const arrived = finish(m);
+  close(arrived.leading.point[0], 1500); assert.equal(arrived.state, 'held'); close(arrived.opacity, 1);
+});
+
+test('a cold unknown interpose follows its supplied chain onto the correct graph edge', () => {
+  const g = buildGraph({ nodes: [[11, 0, -2000], [12, 1000, -2000], [13, 2000, -2000], [14, 3000, -2000], [21, 0, -1000], [22, 3000, -1000]], rails: [
+    { id: 8, nodes: [11, 12, 13, 14], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    { id: 9, nodes: [21, 22], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const b: BerthAnchor = { berth: 'B', kind: 'signal', from: 13, to: 14, t: 0.5, point: [2500, -2000], errorM: 40, evidence: 'synthetic' };
+  const as: AnchorMap = { area: 'TEST', sources: [], unmapped: [], anchors: [b] };
+  const m = createMotion(g, as, { observedSteps: [step('MIDDLE', 'B', 'COLD')] });
+  m.apply(interpose('MIDDLE', 'COLD'), 0);
+  assert.equal(one(m).targetBerth, 'B'); assert.equal(one(m).state, 'estimated'); close(one(m).opacity, 0.55);
+  assert.equal(one(m).unmappedBerth, 'MIDDLE');
+  close(one(m).leading.point[0], 0); close(one(m).leading.point[1], -2000);
+  assert.equal(one(m).leading.edge.wayId, 8);
+
+  const estimatedStop = stopAfterMoving(m);
+  close(estimatedStop.leading.point[0], 2460);
+  close(estimatedStop.leading.point[1], -2000);
+  assert.equal(estimatedStop.state, 'estimated'); assert.equal(estimatedStop.targetBerth, 'B');
+  const beforeAuthority = estimatedStop.leading;
+  m.apply(step('MIDDLE', 'B', 'COLD'), 0);
+  assert.deepEqual(one(m).leading, beforeAuthority);
+  close(finish(m).leading.point[0], 2500);
+});
+
+test('two other descriptions establish a shared signal chain, while legacy mode does not infer it', () => {
+  const observedSteps = [
+    step('A', 'MIDDLE', 'OTHER1'), step('MIDDLE', 'B', 'OTHER1'),
+    step('A', 'MIDDLE', 'OTHER2'), step('MIDDLE', 'B', 'OTHER2'),
+  ];
+  const incoming = step('OUTSIDE', 'MIDDLE', 'INCOMING');
+  const inferred = createMotion(graph, anchors, { observedSteps });
+  inferred.apply(incoming, 0);
+  assert.equal(one(inferred).targetBerth, 'B');
+  assert.equal(one(inferred).state, 'estimated'); close(one(inferred).opacity, 0.55);
+
+  const legacy = createMotion(graph, anchors, { observedSteps, estimatedMotion: false });
+  legacy.apply(incoming, 0);
+  assert.deepEqual(legacy.trains(), []);
+  assert.ok(legacy.diagnostics().some((i) => i.kind === 'unroutable'));
+});
+
+test('shared descriptions refuse ambiguous, platform and outside-network chains', () => {
+  const as: AnchorMap = { ...anchors, unmapped: [{ berth: 'OUTSIDE', reason: 'outside-network', detail: 'synthetic outside branch', seen: 2 }] };
+  const observedSteps = [
+    step('A', 'MIDDLE', 'OTHER1'), step('MIDDLE', 'OUTSIDE', 'OTHER1'), step('OUTSIDE', 'B', 'OTHER1'),
+    step('A', 'MIDDLE', 'OTHER2'), step('MIDDLE', 'OUTSIDE', 'OTHER2'), step('OUTSIDE', 'B', 'OTHER2'),
+  ];
+  const m = createMotion(graph, as, { observedSteps });
+  m.apply(step('UNKNOWN', 'MIDDLE', 'INCOMING'), 0);
+  assert.deepEqual(m.trains(), []);
+  assert.ok(m.diagnostics().some((i) => i.kind === 'unroutable'));
+
+  const ambiguousEvidence = ['OTHER1', 'OTHER2'].flatMap((descr) => [
+    step('A', 'MIDDLE', descr), step('MIDDLE', 'B', descr), step('MIDDLE', 'C', descr),
+  ]);
+  const ambiguous = createMotion(graph, anchors, { observedSteps: ambiguousEvidence });
+  ambiguous.apply(step('UNKNOWN', 'MIDDLE', 'INCOMING'), 0);
+  assert.deepEqual(ambiguous.trains(), []);
+
+  const platformEvidence = ['OTHER1', 'OTHER2'].flatMap((descr) => [
+    step('A', 'MIDDLE', descr), step('MIDDLE', 'P', descr),
+  ]);
+  const platform = createMotion(graph, anchors, { observedSteps: platformEvidence });
+  platform.apply(step('UNKNOWN', 'MIDDLE', 'INCOMING'), 0);
+  assert.deepEqual(platform.trains(), []);
+});
+
+test('estimated arrival speed uses the median of matched successive-step times', () => {
+  const observedSteps = [
+    timedStep('A', 'MIDDLE', 'FAST', 0), timedStep('MIDDLE', 'B', 'FAST', 20_000),
+    timedStep('A', 'MIDDLE', 'MEDIAN', 0), timedStep('MIDDLE', 'B', 'MEDIAN', 200_000),
+    timedStep('A', 'MIDDLE', 'SLOW', 0), timedStep('MIDDLE', 'B', 'SLOW', 500_000),
+    // This description names the same signal link but does not make successive steps
+    // through it, so its unrelated elapsed times must not contaminate the median.
+    timedStep('A', 'MIDDLE', 'UNMATCHED', 0), timedStep('NOISE', 'NOISE2', 'UNMATCHED', 50_000),
+    timedStep('MIDDLE', 'B', 'UNMATCHED', 100_000),
+  ];
+  const m = createMotion(graph, anchors, { observedSteps, defaultSpeedMps: 30 });
+  m.apply(step('OUTSIDE', 'MIDDLE', 'INCOMING'), 0);
+  let maxSpeed = 0;
+  for (let i = 0; i < 8000; i++) {
+    m.advance(0.1);
+    const t = one(m);
+    maxSpeed = Math.max(maxSpeed, t.speed);
+    if (t.distanceM > 0 && t.speed === 0) break;
+  }
+  close(maxSpeed, 7.5, 0.02); // 1,500 m / median 200 s
+  close(one(m).leading.point[0], 1475);
+  assert.equal(one(m).state, 'estimated'); close(one(m).opacity, 0.55);
 });
 
 test('a departing train prefers a previously travelled turn from the same berth over the straight branch', () => {
