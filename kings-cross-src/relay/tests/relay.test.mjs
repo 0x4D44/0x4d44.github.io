@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { EventEmitter } from 'node:events';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { localFile, requestFailure, startRelay } from '../relay.mjs';
+import { localFile, requestFailure, startRelay, startEventHeartbeat } from '../relay.mjs';
 import { FrameParser, encodeFrame } from '../stomp.mjs';
 
 const SENTINEL = 'SENTINEL-PASSWORD-9f3a';
@@ -285,4 +286,76 @@ test('relay: a keychain failure is retried with backoff and logged without secre
   await relay.close();
   await broker.close();
   await rm(dataDir, { recursive: true, force: true });
+});
+
+
+function heartbeatFixture() {
+  const req = new EventEmitter();
+  const writes = []; const timers = []; const cleared = [];
+  let time = 123;
+  const stop = startEventHeartbeat(req, { write: (text) => writes.push(text) }, {
+    now: () => time,
+    schedule: (callback, milliseconds) => { const timer = { callback, milliseconds }; timers.push(timer); return timer; },
+    unschedule: (timer) => cleared.push(timer),
+  });
+  return { req, writes, timers, cleared, stop, setTime: (value) => { time = value; } };
+}
+
+test('relay heartbeat: schedules a ping every five seconds without waiting in real time', () => {
+  const f = heartbeatFixture();
+  assert.equal(f.timers.length, 1); assert.equal(f.timers[0].milliseconds, 5000);
+  assert.equal(f.writes.length, 0);
+  f.stop();
+});
+
+test('relay heartbeat: emits named SSE pings with the current injected timestamp', () => {
+  const f = heartbeatFixture();
+  f.timers[0].callback();
+  assert.equal(f.writes[0], 'event: ping\ndata: {"t":123}\n\n');
+  f.setTime(789); f.timers[0].callback();
+  assert.equal(f.writes[1], 'event: ping\ndata: {"t":789}\n\n');
+  f.stop();
+});
+
+test('relay heartbeat: request close clears the interval once and prevents queued writes', () => {
+  const f = heartbeatFixture();
+  assert.equal(f.req.listenerCount('close'), 1);
+  f.req.emit('close');
+  assert.deepEqual(f.cleared, [f.timers[0]]);
+  assert.equal(f.req.listenerCount('close'), 0);
+  f.req.emit('close'); f.stop(); f.timers[0].callback();
+  assert.equal(f.cleared.length, 1); assert.equal(f.writes.length, 0);
+});
+
+test('relay heartbeat: events endpoint wires the named heartbeat and request cleanup', async (t) => {
+  let handler;
+  const server = new EventEmitter();
+  server.listen = (_port, _host, callback) => callback();
+  server.address = () => ({ port: 43210, address: '127.0.0.1' });
+  server.closeAllConnections = () => {};
+  server.close = (callback) => callback();
+  t.mock.method(http, 'createServer', (callback) => { handler = callback; return server; });
+  const timers = []; const cleared = [];
+  t.mock.method(globalThis, 'setInterval', (callback, milliseconds) => {
+    const timer = { callback, milliseconds }; timers.push(timer); return timer;
+  });
+  t.mock.method(globalThis, 'clearInterval', (timer) => cleared.push(timer));
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'kx-heartbeat-wiring-'));
+  let relay;
+  t.after(async () => { await relay?.close(); await rm(dataDir, { recursive: true, force: true }); });
+  relay = await startRelay({ area: 'Y9', dataDir, feedEnabled: false, now: () => 321,
+    readCredentials: () => assert.fail('disabled feed must not read credentials') });
+  const req = new EventEmitter();
+  req.headers = { host: '127.0.0.1:43210' }; req.method = 'GET'; req.url = '/events';
+  const writes = []; const heads = [];
+  const res = { writeHead: (...args) => heads.push(args), write: (text) => writes.push(text) };
+  await handler(req, res);
+  assert.equal(heads[0][0], 200); assert.equal(heads[0][1]['content-type'], 'text/event-stream');
+  assert.match(writes[0], /^event: snapshot\ndata: /);
+  assert.equal(timers.length, 1); assert.equal(timers[0].milliseconds, 5000);
+  timers[0].callback();
+  assert.equal(writes[1], 'event: ping\ndata: {"t":321}\n\n');
+  req.emit('close');
+  assert.deepEqual(cleared, [timers[0]]);
+  timers[0].callback(); assert.equal(writes.length, 2);
 });

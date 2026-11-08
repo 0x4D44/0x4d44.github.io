@@ -29,6 +29,22 @@ M = [
     ('failed EventSource left connected', F, 'stream?.close(); stream = undefined;', 'stream = undefined;'),
     ('scheduled reconnect survives disposal', F, 'if (timer !== undefined) unschedule(timer);', 'if (false) unschedule(timer);'),
     ('failed default probe repeats its request', F, 'catch { return false; }', "catch { await fetchImpl('/relay/health').catch(() => {}); return false; }"),
+    ('silence watchdog waits too long', F, 'const silenceLimitMs = 15_000;', 'const silenceLimitMs = 150_000;'),
+    ('opening the stream does not start the watchdog', F, 'opened = true; received(current);', 'opened = true;'),
+    ('ping events do not refresh liveness', F, "current.addEventListener('ping',", "current.addEventListener('ignored-ping',"),
+    ('stale stream ping extends liveness', F, "if (disposed || stream !== current) return;\n      received(current);\n    });", "received(current);\n    });"),
+    ('snapshot does not refresh liveness', F, "current.addEventListener('snapshot', (event) => {\n      if (disposed || stream !== current) return;\n      received(current);", "current.addEventListener('snapshot', (event) => {\n      if (disposed || stream !== current) return;"),
+    ('TD does not refresh liveness', F, "current.addEventListener('td', (event) => {\n      if (disposed || stream !== current) return;\n      received(current);", "current.addEventListener('td', (event) => {\n      if (disposed || stream !== current) return;"),
+    ('dispose leaves the watchdog scheduled', F, 'disposed = true; stopWatchdog(); stream?.close();', 'disposed = true; stream?.close();'),
+    ('retry leaves the old watchdog scheduled', F, 'opened = false;\n    stopWatchdog();', 'opened = false;'),
+    ('cancelled watchdog callback replaces its successor', F, ' || generation !== watchdogGeneration', ''),
+    ('watchdog ignores the injected clock', F, 'const now = deps.now ?? (() => performance.now());', 'const now = () => performance.now();'),
+    ('relay heartbeat interval triples', R, '}, 5000);', '}, 15000);'),
+    ('relay heartbeat uses an invisible event name', R, 'event: ping', 'event: wrong'),
+    ('request close leaves heartbeat running', R, "req.once('close', stop);", "req.once('unused-close', stop);"),
+    ('heartbeat writes after request close', R, 'if (!stopped) res.write', 'if (true) res.write'),
+    ('heartbeat stop clears twice', R, 'if (stopped) return;', ''),
+    ('events endpoint omits its heartbeat', R, '          startEventHeartbeat(req, res, { now });', ''),
     ('trail sampled from tail instead of nose', T, 'let i = train.occupied.length - 1; i >= 0; i--', 'let i = 0; i < train.occupied.length; i++'),
     ('car chord compression ignored', T, 'const scaleZ = chord / (car.bogies[1] - car.bogies[0]);', 'const scaleZ = 1;'),
     ('all cars face the same direction', T, 'node.rotation.y = pose.rotationY;', 'node.rotation.y = 0;'),
@@ -49,7 +65,7 @@ M = [
 
 def run(work):
     return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=15000',
-                           '--test-name-pattern=^(relay files:|the dev relay proxy|train URL|feed parses|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose)', 'web/tests/feed.test.ts',
+                           '--test-name-pattern=^(relay files:|relay heartbeat:|the dev relay proxy|train URL|feed parses|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose)', 'web/tests/feed.test.ts',
                            'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs'],
                           cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=45)
 
@@ -75,7 +91,8 @@ for label, rel, old, new in M:
         try:
             result = run(work)
         except subprocess.TimeoutExpired:
-            print(f'[KILLED ] {label} (timeout)', flush=True)
+            survivors.append(label)
+            print(f'[INVALID] {label} (timeout)', flush=True)
             continue
         failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
         seen.update(failed)
