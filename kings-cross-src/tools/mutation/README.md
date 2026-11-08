@@ -13,7 +13,12 @@ python3 -I -u kings-cross-src/tools/mutation/scene.py   kings-cross-src       <s
 python3 -I -u kings-cross-src/tools/mutation/station.py kings-cross-src       <scratch> <raw OSM extract.json>
 python3 -I -u kings-cross-src/tools/mutation/train.py   kings-cross-src       <scratch>
 python3 -I -u kings-cross-src/tools/mutation/trainweb.py kings-cross-src      <scratch>
+python3 -I -u kings-cross-src/tools/mutation/replay-report.py kings-cross-src <scratch>
 ```
+
+`replay-report.py` mutates multi-recording argument handling, growing-file tail capture, and
+the preserved-anchor input to the replay audit. It runs the named synthetic replay assertions
+in isolated package copies.
 
 `station.py` also mutates the committed data and `tools/fidelity.ts`, so it needs the raw
 OpenStreetMap extract (not committed; `tools/build-data.ts` saves one).

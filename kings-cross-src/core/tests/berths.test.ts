@@ -85,6 +85,54 @@ function bent(): KxData {
   signal(d, 1, 'YA 2100', 0); signal(d, 3, 'YA 2102', 100, 100); return d;
 }
 
+test('berths: snapshots inventory every berth without manufacturing a track connection', () => {
+  const d = bent();
+  const recording: RecordingEvent[] = [{ t: 0, e: { kind: 'snapshot', area: 'Y9', berths: {
+    '2100': '1A01', '2101': '1A02', '2199': '****',
+  } } }];
+  const map = buildAnchors(d, [recording], []);
+  anchor(map, '2100');
+  reason(map, '2101', 'no-evidence');
+  reason(map, '2199', 'no-evidence');
+  assert.equal(analyseSteps(d, [recording], map).length, 0);
+});
+
+test('berths: a snapshot breaks residence timing across lost events without inventing entry times', () => {
+  const d = bent();
+  const recording: RecordingEvent[] = [event('interpose', undefined, '2100'), event('step', '2100', '2101', 10000),
+    { t: 50000, e: { kind: 'snapshot', area: 'Y9', berths: { '2101': '1A01' } } },
+    event('step', '2101', '2102', 100000)];
+  const map = buildAnchors(d, [recording], []);
+  assert.equal(analyseSteps(d, [recording], map).find((s) => s.from === '2101')?.timed, 0);
+  assert.deepEqual(anchor(map, '2101').point, [100, 0]);
+});
+
+test('berths: snapshots from another area neither inventory berths nor reset local timing', () => {
+  const d = bent();
+  const recording: RecordingEvent[] = [event('interpose', undefined, '2100'),
+    { t: 5000, e: { kind: 'snapshot', area: 'XX', berths: { '2999': '1A01' } } },
+    event('step', '2100', '2101', 10000), event('step', '2101', '2102', 30000)];
+  const map = buildAnchors(d, [recording], []);
+  assert.equal(map.unmapped.some((u) => u.berth === '2999'), false);
+  assert.equal(analyseSteps(d, [recording], map).find((s) => s.from === '2100')?.timed, 1);
+  assert.deepEqual(anchor(map, '2101').point, [200 / 3, 0]);
+});
+
+test('berths: unresolved audit exposes direct associations and actual observed paths without treating them as coordinates', () => {
+  const d = bent();
+  const recording = [[event('step', '2100', '2200'), event('step', '2200', '2299')]];
+  const smart = [{ TD: 'Y9', FROMBERTH: '2200', TOBERTH: '2299', STANME: 'Invented Junction', STANOX: '99999' }];
+  const map = buildAnchors(d, recording, smart);
+  const audit = auditBerths(d, recording, smart, map).find((a) => a.berth === '2200');
+  assert.ok(audit, 'the unresolved berth must have an evidence audit');
+  assert.deepEqual(audit.predecessors, ['2100']);
+  assert.deepEqual(audit.successors, ['2299']);
+  assert.deepEqual(audit.anchorPath, ['2200', '2100']);
+  assert.deepEqual(audit.smartAssociations, [{ name: 'Invented Junction', stanox: '99999' }]);
+  assert.match(audit.detail, /not a position estimate/);
+  reason(map, '2200', 'no-evidence');
+});
+
 test('berths: unique step chain interpolates along the bent graph rather than the chord', () => {
   const d = bent(); const map = buildAnchors(d, [[event('step', '2100', '2101'), event('step', '2101', '2102')]], []);
   assert.equal(anchor(map, '2101').kind, 'inferred'); assert.deepEqual(anchor(map, '2101').point, [100, 0]);

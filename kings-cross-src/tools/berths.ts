@@ -5,11 +5,14 @@
 //
 // Reports contain private evidence from local recordings; outputs stay inside .scratch or KX_DATA_DIR.
 import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { NOT_A_TRAIN } from '../core/anchors.ts';
+import { buildGraph } from '../core/graph.ts';
+import { unproject } from '../core/geo.ts';
 import { analyseSteps, auditBerths, buildAnchors, describeEvidence, leaveOneOut } from '../core/berths.ts';
 import type { BerthAudit, RecordingEvent, SignalTrial, SmartRow } from '../core/berths.ts';
 import type { AnchorKind, AnchorMap, UnmappedReason } from '../core/anchors.ts';
@@ -20,6 +23,8 @@ interface CliArgs {
   smart: string;
   out: string;
   previous?: string;
+  graph?: string;
+  preservePositions: boolean;
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -33,10 +38,17 @@ function parseArgs(argv: string[]): CliArgs {
   let smart: string | undefined;
   let out: string | undefined;
   let previous: string | undefined;
+  let graph: string | undefined;
+  let preservePositions = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
-    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous') {
+    if (flag === '--preserve-positions') {
+      if (preservePositions) throw new Error('--preserve-positions may be given once');
+      preservePositions = true;
+      continue;
+    }
+    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous' && flag !== '--graph') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -49,6 +61,9 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--previous') {
       if (previous !== undefined) throw new Error('--previous may be given once');
       previous = value;
+    } else if (flag === '--graph') {
+      if (graph !== undefined) throw new Error('--graph may be given once');
+      graph = value;
     } else {
       if (out !== undefined) throw new Error('--out may be given once');
       out = value;
@@ -56,11 +71,12 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   if (recordings.length === 0 || !smart || !out) throw new Error(usage());
-  return { recordings, smart, out, previous };
+  if (preservePositions && !previous) throw new Error('--preserve-positions requires --previous');
+  return { recordings, smart, out, previous, graph, preservePositions };
 }
 
 function usage(): string {
-  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>]';
+  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>] [--preserve-positions] [--graph <kx-track.json>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -263,8 +279,7 @@ async function readSmart(file: string): Promise<SmartRow[]> {
   return rows as SmartRow[];
 }
 
-async function readOsm(): Promise<KxData> {
-  const file = path.join(packageRoot, 'web', 'src', 'data', 'kx-track.json');
+async function readOsm(file: string): Promise<KxData> {
   const parsed: unknown = JSON.parse(await readFile(file, 'utf8'));
   if (!parsed || typeof parsed !== 'object') throw new Error('OSM model is not a JSON object');
   const data = parsed as KxData;
@@ -294,6 +309,185 @@ function counts<T extends string>(items: T[], keys: readonly T[]): Record<T, num
   return out;
 }
 
+interface MapCounts {
+  anchors: number;
+  anchorsByKind: Record<AnchorKind, number>;
+  unmapped: number;
+  unmappedByReason: Record<UnmappedReason, number>;
+  observedSteps: StepCoverage;
+}
+
+function mapCounts(map: AnchorMap, recordings: RecordingEvent[][]): MapCounts {
+  return {
+    anchors: map.anchors.length,
+    anchorsByKind: counts(map.anchors.map((anchor) => anchor.kind), KINDS),
+    unmapped: map.unmapped.length,
+    unmappedByReason: counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS),
+    observedSteps: observedStepCoverage(recordings, map),
+  };
+}
+
+interface AnchorGeometry {
+  from: number;
+  to: number;
+  t: number;
+  point: [number, number];
+  platform: string | null;
+  kind: AnchorKind;
+}
+
+function geometry(anchor: AnchorMap['anchors'][number]): AnchorGeometry {
+  return {
+    from: anchor.from,
+    to: anchor.to,
+    t: anchor.t,
+    point: [...anchor.point],
+    platform: anchor.platform ?? null,
+    kind: anchor.kind,
+  };
+}
+
+interface DrawnPositionDiff {
+  compared: boolean;
+  previous: string | null;
+  same: { berth: string; geometry: AnchorGeometry }[];
+  new: { berth: string; candidate: AnchorGeometry }[];
+  removed: { berth: string; previous: AnchorGeometry }[];
+  moved: { berth: string; previous: AnchorGeometry; candidate: AnchorGeometry; displacementM: number }[];
+}
+
+function drawnPositionDiff(candidate: AnchorMap, previous?: AnchorMap, previousName?: string): DrawnPositionDiff {
+  if (!previous) return { compared: false, previous: null, same: [], new: [], removed: [], moved: [] };
+  const before = new Map(previous.anchors.map((anchor) => [anchor.berth, geometry(anchor)]));
+  const after = new Map(candidate.anchors.map((anchor) => [anchor.berth, geometry(anchor)]));
+  const same: DrawnPositionDiff['same'] = [];
+  const added: DrawnPositionDiff['new'] = [];
+  const removed: DrawnPositionDiff['removed'] = [];
+  const moved: DrawnPositionDiff['moved'] = [];
+  for (const [berth, next] of [...after].sort(([a], [b]) => a.localeCompare(b))) {
+    const old = before.get(berth);
+    if (!old) added.push({ berth, candidate: next });
+    else if (JSON.stringify(old) === JSON.stringify(next)) same.push({ berth, geometry: next });
+    else moved.push({ berth, previous: old, candidate: next, displacementM: Math.hypot(next.point[0] - old.point[0], next.point[1] - old.point[1]) });
+  }
+  for (const [berth, old] of [...before].sort(([a], [b]) => a.localeCompare(b))) {
+    if (!after.has(berth)) removed.push({ berth, previous: old });
+  }
+  return { compared: true, previous: previousName ?? 'previous AnchorMap', same, new: added, removed, moved };
+}
+
+function preservePreviousAnchors(previous: AnchorMap, candidate: AnchorMap, recordings: RecordingEvent[][], previousName: string): AnchorMap {
+  const frozen = new Set(previous.anchors.map((anchor) => anchor.berth));
+  const newCandidates = candidate.anchors.filter((anchor) => !frozen.has(anchor.berth));
+  const seen = new Map<string, number>();
+  for (const recording of recordings) for (const { e } of recording) {
+    if (e.area !== candidate.area || e.kind !== 'step') continue;
+    for (const berth of new Set([e.from, e.to])) if (berth) seen.set(berth, (seen.get(berth) ?? 0) + 1);
+  }
+  const withheld = newCandidates.map((anchor) => ({
+    berth: anchor.berth,
+    reason: 'no-evidence' as const,
+    detail: `Candidate-pending-validation: the current builder produced a ${anchor.kind} placement (${anchor.evidence}), but no drawn-position review has approved it; it remains unmapped and is withheld from runtime anchors. See drawn-position-diff.json.`,
+    seen: seen.get(anchor.berth) ?? 0,
+  }));
+  const pendingBerths = new Set(withheld.map((item) => item.berth));
+  const currentUnmapped = candidate.unmapped.filter((item) => !frozen.has(item.berth) && !pendingBerths.has(item.berth));
+  const candidateInventory = new Set([...candidate.anchors, ...candidate.unmapped].map((item) => item.berth));
+  const priorUnmappedAbsentFromCurrent = previous.unmapped.filter((item) =>
+    !frozen.has(item.berth) && !candidateInventory.has(item.berth) && !pendingBerths.has(item.berth));
+  return {
+    ...previous,
+    sources: [...candidate.sources, `Previous anchor map: ${previousName}; its anchor geometries remain frozen`],
+    anchors: previous.anchors,
+    unmapped: [...currentUnmapped, ...priorUnmappedAbsentFromCurrent, ...withheld].sort((a, b) => a.berth.localeCompare(b.berth)),
+  };
+}
+
+function graphBounds(data: KxData): {
+  nodes: number;
+  edges: number;
+  origin: KxData['origin'];
+  local: { minX: number | null; maxX: number | null; minZ: number | null; maxZ: number | null };
+  geographic: { north: number; south: number; west: number; east: number } | null;
+} {
+  const xs = data.nodes.map((node) => node[1]).filter(Number.isFinite);
+  const zs = data.nodes.map((node) => node[2]).filter(Number.isFinite);
+  const graph = buildGraph(data);
+  const local = {
+    minX: xs.length ? Math.min(...xs) : null,
+    maxX: xs.length ? Math.max(...xs) : null,
+    minZ: zs.length ? Math.min(...zs) : null,
+    maxZ: zs.length ? Math.max(...zs) : null,
+  };
+  return {
+    nodes: data.nodes.length,
+    edges: graph.edges.length,
+    origin: data.origin,
+    local,
+    geographic: local.minX === null || local.maxX === null || local.minZ === null || local.maxZ === null ? null : {
+      north: unproject(0, local.minZ, data.origin).lat,
+      south: unproject(0, local.maxZ, data.origin).lat,
+      west: unproject(local.minX, 0, data.origin).lon,
+      east: unproject(local.maxX, 0, data.origin).lon,
+    },
+  };
+}
+
+async function sourceHash(file: string, role: string): Promise<{ role: string; file: string; bytes: number; sha256: string }> {
+  const bytes = await readFile(file);
+  return { role, file: path.basename(file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+}
+
+function candidatePlacementSummary(candidate: AnchorMap, previous?: AnchorMap): { status: 'not-preserving' | 'pending-validation'; berths: string[]; count: number } {
+  const previousBerths = new Set(previous?.anchors.map((anchor) => anchor.berth) ?? []);
+  const berths = candidate.anchors.map((anchor) => anchor.berth).filter((berth) => !previousBerths.has(berth)).sort();
+  return { status: previous ? 'pending-validation' : 'not-preserving', berths, count: berths.length };
+}
+
+interface ObservationKindCounts {
+  step: number;
+  interpose: number;
+  cancel: number;
+  snapshot: number;
+  placeholderEvents: number;
+  describedTrainEvents: number;
+}
+
+function observationInventory(recordings: RecordingEvent[][], area: string): { berth: string; observations: ObservationKindCounts }[] {
+  const inventory = new Map<string, ObservationKindCounts>();
+  const get = (berth: string): ObservationKindCounts => {
+    let counts = inventory.get(berth);
+    if (!counts) {
+      counts = { step: 0, interpose: 0, cancel: 0, snapshot: 0, placeholderEvents: 0, describedTrainEvents: 0 };
+      inventory.set(berth, counts);
+    }
+    return counts;
+  };
+  for (const recording of recordings) for (const { e } of recording) {
+    if (e.area !== area) continue;
+    if (e.kind === 'snapshot') {
+      const berths = (e as RecordingEvent['e'] & { berths?: Record<string, unknown> }).berths ?? {};
+      for (const [berth, descr] of Object.entries(berths)) {
+        const counts = get(berth);
+        counts.snapshot++;
+        if (descr === NOT_A_TRAIN) counts.placeholderEvents++;
+        else if (typeof descr === 'string' && descr) counts.describedTrainEvents++;
+      }
+      continue;
+    }
+    if (e.kind !== 'step' && e.kind !== 'interpose' && e.kind !== 'cancel') continue;
+    const berths = e.kind === 'step' ? [e.from, e.to] : [e.kind === 'cancel' ? e.from : e.to];
+    for (const berth of new Set(berths)) {
+      if (!berth) continue;
+      const counts = get(berth);
+      counts[e.kind]++;
+      if (e.descr === NOT_A_TRAIN) counts.placeholderEvents++;
+      else if (typeof e.descr === 'string' && e.descr) counts.describedTrainEvents++;
+    }
+  }
+  return [...inventory].sort(([a], [b]) => a.localeCompare(b)).map(([berth, observations]) => ({ berth, observations }));
+}
+
 function comparisonRow(label: string, map: AnchorMap, recordings: RecordingEvent[][]): string {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -318,13 +512,13 @@ function auditReportLines(audits: BerthAudit[]): string[] {
     '',
     'Only `no-evidence` and `conflict` berths receive chain analysis; nearby signal counts use YA reference signals within 250 m along the graph from the nearest anchor.',
     '',
-    '| Berth | Reason | Cause | SMART pairs | SMART locations | Observed steps | Timed steps | Nearest anchor | YA ref signals ≤250 m on graph | Detail |',
-    '| --- | --- | --- | ---: | --- | ---: | ---: | --- | ---: | --- |',
+    '| Berth | Reason | Cause | SMART pairs | SMART locations | SMART associations (name / STANOX) | Observed steps | Timed steps | Predecessors | Successors | Anchor path | Nearest anchor | YA ref signals ≤250 m on graph | Detail |',
+    '| --- | --- | --- | ---: | --- | --- | ---: | ---: | --- | --- | --- | --- | ---: | --- |',
     ...(audits.length
       ? audits.map((audit) =>
-        `| ${mdCell(audit.berth)} | ${mdCell(audit.reason)} | ${mdCell(audit.cause)} | ${audit.smartPairs} | ${mdCell(audit.smartLocations.join('; ') || '—')} | ${audit.observedSteps} | ${audit.timedSteps} | ${mdCell(audit.nearestAnchor ? `${audit.nearestAnchor.berth} (${audit.nearestAnchor.steps} steps)` : '—')} | ${audit.nearbySignals} | ${mdCell(audit.detail)} |`,
+        `| ${mdCell(audit.berth)} | ${mdCell(audit.reason)} | ${mdCell(audit.cause)} | ${audit.smartPairs} | ${mdCell(audit.smartLocations.join('; ') || '—')} | ${mdCell(audit.smartAssociations.map((association) => `${association.name || 'unnamed'} (STANOX ${association.stanox || 'unknown'})`).join('; ') || '—')} | ${audit.observedSteps} | ${audit.timedSteps} | ${mdCell(audit.predecessors.join(', ') || '—')} | ${mdCell(audit.successors.join(', ') || '—')} | ${mdCell(audit.anchorPath.join(' → ') || '—')} | ${mdCell(audit.nearestAnchor ? `${audit.nearestAnchor.berth} (${audit.nearestAnchor.steps} steps)` : '—')} | ${audit.nearbySignals} | ${mdCell(audit.detail)} |`,
         )
-      : ['| — | — | — | 0 | — | 0 | 0 | — | 0 | No unmapped berths |']),
+      : ['| — | — | — | 0 | — | — | 0 | 0 | — | — | — | — | 0 | No unmapped berths |']),
     '',
   ];
 }
@@ -343,6 +537,8 @@ function buildReport(
   recordings: RecordingEvent[][],
   previousMap?: AnchorMap,
   audits: BerthAudit[] = [],
+  preservePositions = false,
+  candidatePending = 0,
 ): string {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -388,6 +584,14 @@ function buildReport(
     '| --- | --- | --- | ---: | ---: | ---: |',
     ...(previousMap ? [comparisonRow('Previous', previousMap, recordings)] : []),
     comparisonRow('Current', map, recordings),
+    ...(previousMap ? [
+      '',
+      '## Drawn-position reconciliation',
+      '',
+      preservePositions
+        ? `Runtime anchors use the previous map’s anchors unchanged. ${candidatePending} newly proposed candidate anchor(s) remain unmapped pending drawn-position validation. See drawn-position-diff.json and berths-report.json.`
+        : 'The current candidate map is written to anchors.json. Review drawn-position-diff.json for any changed, new, or removed anchor geometry before using it as a runtime map.',
+    ] : []),
     '',
     '## Anchored berths',
     '',
@@ -449,6 +653,9 @@ function printSummary(
   recordings: RecordingEvent[][],
   previousMap?: AnchorMap,
   audits: BerthAudit[] = [],
+  outputMap: AnchorMap = map,
+  positionDiff?: DrawnPositionDiff,
+  preservePositions = false,
 ): void {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -459,7 +666,7 @@ function printSummary(
   const trialWarnings = signalTrialWarnings(signalTrials);
   const currentCoverage = observedStepCoverage(recordings, map);
 
-  console.log(`berths: wrote anchors.json and berths-report.md to ${outDir}`);
+  console.log(`berths: wrote anchors.json, anchors-candidate.json, berths-report.md, berths-report.json, and drawn-position-diff.json to ${outDir}`);
   console.log(`anchors by kind: ${KINDS.map((kind) => `${kind} ${anchorCounts[kind]}`).join(', ')}`);
   console.log(`unmapped by reason: ${UNMAPPED_REASONS.map((reason) => `${reason} ${unmappedCounts[reason]}`).join(', ')}`);
   console.log(`steps with both endpoints anchored: ${anchoredEvents} events, ${anchoredSteps.length} unique paths`);
@@ -473,6 +680,18 @@ function printSummary(
     console.log(`previous coverage: destination anchored ${coverageValue(previousCoverage.destinationAnchored, previousCoverage.valid)}; both ends anchored ${coverageValue(previousCoverage.bothEndsAnchored, previousCoverage.valid)}`);
   }
   console.log(`current coverage: destination anchored ${coverageValue(currentCoverage.destinationAnchored, currentCoverage.valid)}; both ends anchored ${coverageValue(currentCoverage.bothEndsAnchored, currentCoverage.valid)}`);
+  const outputCounts = mapCounts(outputMap, recordings);
+  console.log(`runtime output counts: anchors ${outputCounts.anchors}, unmapped ${outputCounts.unmapped}; destination coverage ${coverageValue(outputCounts.observedSteps.destinationAnchored, outputCounts.observedSteps.valid)}; both ends ${coverageValue(outputCounts.observedSteps.bothEndsAnchored, outputCounts.observedSteps.valid)}`);
+  if (preservePositions) {
+    console.log(`preserved runtime anchor positions exactly; ${candidatePlacementSummary(map, previousMap).count} candidate-only anchor(s) remain unmapped pending drawn-position validation`);
+  }
+  if (positionDiff?.compared) {
+    console.log(`drawn-position diff: same ${positionDiff.same.length}, new ${positionDiff.new.length}, removed ${positionDiff.removed.length}, moved ${positionDiff.moved.length}`);
+    const changed = positionDiff.new.length + positionDiff.removed.length + positionDiff.moved.length;
+    if (!preservePositions && changed > 0) {
+      console.warn(`WARNING: ${changed} candidate anchor geometry change(s) versus --previous (${positionDiff.new.length} new, ${positionDiff.removed.length} removed, ${positionDiff.moved.length} moved); review drawn-position-diff.json before adopting them.`);
+    }
+  }
   if (implausible.length === 0) console.log('implausible paths: none');
   else {
     console.log(`implausible paths: ${implausible.length}`);
@@ -515,30 +734,91 @@ async function main(): Promise<void> {
   const recordingPaths = await Promise.all(args.recordings.map(inputPath));
   const smartPath = await inputPath(args.smart);
   const previousPath = args.previous ? await inputPath(args.previous) : undefined;
+  const graphPath = args.graph
+    ? await inputPath(args.graph)
+    : await realpath(path.join(packageRoot, 'web', 'src', 'data', 'kx-track.json'));
   const recordings = await Promise.all(recordingPaths.map(readRecording));
   const smartRows = await readSmart(smartPath);
   const previousMap = previousPath ? await readPreviousMap(previousPath) : undefined;
-  const data = await readOsm();
+  const data = await readOsm(graphPath);
   const smartStat = await lstat(smartPath);
   const generatedAt = new Date().toISOString();
   const sources = [
     ...recordingPaths.map((file) => `Recording: ${path.basename(file)}`),
     `SMART: ${path.basename(smartPath)} (modified ${smartStat.mtime.toISOString()})`,
-    `OSM: ${data.attribution}`,
+    `OSM: ${data.attribution}; graph ${path.basename(graphPath)}`,
   ];
   const reportSources = [...sources, ...(previousPath ? [`Previous map: ${path.basename(previousPath)}`] : [])];
 
-  const map = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
-  const stepChecks = analyseSteps(data, recordings, map);
+  const candidateMap = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
+  const outputMap = args.preservePositions && previousMap
+    ? preservePreviousAnchors(previousMap, candidateMap, recordings, path.basename(previousPath!))
+    : candidateMap;
+  const positionDiff = drawnPositionDiff(candidateMap, previousMap, previousPath ? path.basename(previousPath) : undefined);
+  const candidatePending = candidatePlacementSummary(candidateMap, previousMap);
+  const stepChecks = analyseSteps(data, recordings, candidateMap);
   const signalTrials = leaveOneOut(data, recordings, smartRows, { area: 'Y9', sources });
-  const explanations = describeEvidence(data, recordings, smartRows, map);
-  const audits = auditBerths(data, recordings, smartRows, map);
+  const explanations = describeEvidence(data, recordings, smartRows, candidateMap);
+  const candidateAudits = auditBerths(data, recordings, smartRows, candidateMap);
+  const pendingCandidateSet = new Set(args.preservePositions ? candidatePending.berths : []);
+  const outputAudits = args.preservePositions
+    ? auditBerths(data, recordings, smartRows, outputMap).map((audit) => pendingCandidateSet.has(audit.berth)
+      ? { ...audit, cause: 'candidate-position-review', detail: `${audit.detail}. Candidate placement is withheld pending drawn-position approval; see drawn-position-diff.json.` }
+      : audit)
+    : candidateAudits;
+  const sourceHashes = await Promise.all([
+    ...recordingPaths.map((file) => sourceHash(file, 'recording')),
+    sourceHash(smartPath, 'smart'),
+    sourceHash(graphPath, 'graph'),
+    ...(previousPath ? [sourceHash(previousPath, 'previous-anchor-map')] : []),
+  ]);
+  const diffCounts = {
+    same: positionDiff.same.length,
+    new: positionDiff.new.length,
+    removed: positionDiff.removed.length,
+    moved: positionDiff.moved.length,
+  };
+  const reportJson = {
+    schemaVersion: 1,
+    generatedAt,
+    area: candidateMap.area,
+    summary: {
+      preservePositions: args.preservePositions,
+      counts: {
+        before: previousMap ? mapCounts(previousMap, recordings) : null,
+        candidate: mapCounts(candidateMap, recordings),
+        after: mapCounts(outputMap, recordings),
+      },
+      candidatePlacement: { ...candidatePending, status: args.preservePositions ? 'pending-validation' as const : 'not-preserving' as const },
+      drawnPositionDiff: diffCounts,
+      auditDecisionCounts: {
+        candidate: candidateAudits.length,
+        after: outputAudits.length,
+        noEvidence: outputAudits.filter((audit) => audit.reason === 'no-evidence').length,
+        conflict: outputAudits.filter((audit) => audit.reason === 'conflict').length,
+      },
+    },
+    anchors: outputMap.anchors,
+    unmapped: outputMap.unmapped,
+    candidateAnchors: candidateMap.anchors,
+    candidateUnmapped: candidateMap.unmapped,
+    auditDecisions: { candidate: candidateAudits, after: outputAudits },
+    leaveOneOut: signalTrials,
+    observationInventory: observationInventory(recordings, candidateMap.area),
+    graphBounds: graphBounds(data),
+    sourceHashes,
+  };
   const outDir = await ensureOutputDirectory(args.out);
-  await checkOutputFile(outDir, 'anchors.json');
-  await checkOutputFile(outDir, 'berths-report.md');
-  await writeFile(path.join(outDir, 'anchors.json'), `${JSON.stringify(map, null, 2)}\n`, { mode: 0o600 });
-  await writeFile(path.join(outDir, 'berths-report.md'), buildReport(map, stepChecks, signalTrials, explanations, reportSources, generatedAt, recordings, previousMap, audits), { mode: 0o600 });
-  printSummary(map, stepChecks, signalTrials, explanations, outDir, recordings, previousMap, audits);
+  const outputs = [
+    ['anchors.json', `${JSON.stringify(outputMap, null, 2)}\n`],
+    ['anchors-candidate.json', `${JSON.stringify(candidateMap, null, 2)}\n`],
+    ['berths-report.json', `${JSON.stringify(reportJson, null, 2)}\n`],
+    ['drawn-position-diff.json', `${JSON.stringify(positionDiff, null, 2)}\n`],
+    ['berths-report.md', buildReport(candidateMap, stepChecks, signalTrials, explanations, reportSources, generatedAt, recordings, previousMap, candidateAudits, args.preservePositions, candidatePending.count)],
+  ] as const;
+  await Promise.all(outputs.map(([name]) => checkOutputFile(outDir, name)));
+  await Promise.all(outputs.map(([name, body]) => writeFile(path.join(outDir, name), body, { mode: 0o600 })));
+  printSummary(candidateMap, stepChecks, signalTrials, explanations, outDir, recordings, previousMap, candidateAudits, outputMap, positionDiff, args.preservePositions);
 }
 
 main().catch((error: unknown) => {

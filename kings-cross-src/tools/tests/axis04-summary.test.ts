@@ -90,6 +90,33 @@ test('missing evidence produces explicit gaps and unavailable sections', () => {
   assert.match(md, /Evidence gaps/);
 });
 
+test('Axis 04 links a multi-recording berth report and carries its compact evidence summary', () => {
+  const out = path.join(scratch, 'axis04-berth-evidence'), replayPath = path.join(out, 'replay report #1', 'replay-report.json');
+  const replay = {
+    ok: true,
+    coverage: { seen: 5, anchored: 4, unmapped: 1, berths: [{ berth: 'OUT', classification: 'unmapped', reason: 'outside-network' }] },
+    unionInventory: { berths: [{ berth: 'OUT', classification: 'unmapped', reason: 'outside-network' }] },
+    stepSummary: { physicalStepEvents: 3, unmeasuredEndpointEvents: 1, mappedPairs: 2, disconnectedPairs: 0, reversalPairs: 0, impliedSpeedFlagPairs: 0 },
+    headcodeChurn: { physicalIds: 4, renames: 1, idsWithMultipleDescriptions: 1 },
+    platforms: [{ berth: '1000', correctTargetTrack: true, actuallyHeldWrongTrackSamples: 0 }],
+    motion: { starsDrawn: 0 },
+    recordings: [{ input: { path: '/private/td-20261107.ndjson', sha256: 'a'.repeat(64), capturedBytes: 100 }, metrics: {} },
+      { input: { path: '/private/td-20261108.ndjson', sha256: 'b'.repeat(64), capturedBytes: 200 }, metrics: {} }],
+    reproducibility: { inputHashes: { recordings: [] }, command: { cwd: repoRoot, command: process.execPath,
+      args: ['kings-cross-src/tools/replay-report.ts', '--recording', '/private/captured.ndjson', '--out', path.join(out, 'recomputed')] } },
+  };
+  const summary = summarizeAxis04({ out, replay, replayPath });
+  const md = renderAxis04Markdown(summary);
+  assert.equal(summary.sources.replay.loaded, true);
+  assert.ok(summary.reproductions.replay?.shellCommand.includes('kings-cross-src/tools/replay-report.ts'));
+  assert.equal(summary.berthEvidence?.recordingCount, 2);
+  assert.equal((summary.berthEvidence?.coverage as Record<string, unknown>).unmapped, 1);
+  assert.match(md, /\[Replay berth and motion report\]\(<replay%20report%20%231\/replay-report\.json>\)/);
+  assert.match(md, /outside-network 1/);
+  assert.match(md, /Placeholder draw check: \*\*PASS\*\*, 0 \*\*\*\* drawn samples/);
+  assert.match(md, /Recompute replay berth and motion report/);
+});
+
 test('CLI writes a compact private Markdown and JSON one-pager from synthetic reports', async () => {
   await mkdir(scratch, { recursive: true });
   const testRoot = await mkdtemp(path.join(scratch, 'axis04-summary-cli-'));

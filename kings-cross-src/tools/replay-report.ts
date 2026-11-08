@@ -1,6 +1,8 @@
 // Offline evidence only: recordings and all derived reports stay in worktree .scratch.
-import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { lstat, mkdir, open, readFile, realpath, writeFile } from 'node:fs/promises';
+import { basename, dirname, extname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NOT_A_TRAIN } from '../core/anchors.ts';
 import type { AnchorMap, BerthAnchor } from '../core/anchors.ts';
@@ -231,14 +233,223 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const inside = (a: string, b: string) => { const r = relative(a, b); return r !== '' && !r.startsWith('..') && !isAbsolute(r); };
+
+type ReplayMetrics = ReturnType<typeof replayReport>;
+interface RecordingInput {
+  path: string;
+  capturedPath: string;
+  sha256: string;
+  capturedBytes: number;
+  sourceBytesAtOpen: number;
+  sourceBytesAtReadEnd: number;
+  sourceModifiedAtOpen: string;
+  sourceModifiedAtReadEnd: string;
+  sourceChangedDuringCapture: boolean;
+  trailingBytesOmitted: number;
+  capturedAt: string;
+  events: number;
+  capturedBounds: { byteStart: number; byteEndExclusive: number; sourceByteEndExclusive: number; firstEventTimeMs: number | null; lastEventTimeMs: number | null };
+}
+interface ReplayEntry { input: RecordingInput; metrics: ReplayMetrics }
+interface InputFingerprint { path: string; capturedPath: string; bytes: number; sha256: string }
+interface ReplayOutput extends ReplayMetrics {
+  recordings?: ReplayEntry[];
+  unionInventory: { seen: number; anchored: number; unmapped: number; berths: ReplayMetrics['coverage']['berths'] };
+  berthsReconciliation?: Record<string, unknown>;
+  reproducibility: {
+    inputHashes: { recordings: RecordingInput[]; anchors: InputFingerprint; effectiveAnchors?: InputFingerprint; graph: InputFingerprint; smart?: InputFingerprint };
+    command: { cwd: string; command: string; executable: string; args: string[] };
+  };
+}
+
+function sha256(bytes: Buffer): string { return createHash('sha256').update(bytes).digest('hex'); }
+
+async function readBoundedRecording(path: string): Promise<{ bytes: Buffer; sourceBytesAtOpen: number; sourceBytesAtReadEnd: number;
+  sourceModifiedAtOpen: string; sourceModifiedAtReadEnd: string; sourceChangedDuringCapture: boolean }> {
+  const handle = await open(path, 'r');
+  try {
+    const before = await handle.stat();
+    if (!before.isFile()) throw new Error(`recording is not a regular file: ${path}`);
+    const bytes = Buffer.alloc(before.size);
+    let offset = 0;
+    while (offset < bytes.length) {
+      const read = await handle.read(bytes, offset, bytes.length - offset, offset);
+      if (!read.bytesRead) throw new Error(`recording shrank while capturing its initial ${before.size}-byte bound: ${path}`);
+      offset += read.bytesRead;
+    }
+    const after = await handle.stat();
+    return { bytes, sourceBytesAtOpen: before.size, sourceBytesAtReadEnd: after.size,
+      sourceModifiedAtOpen: new Date(before.mtimeMs).toISOString(), sourceModifiedAtReadEnd: new Date(after.mtimeMs).toISOString(),
+      sourceChangedDuringCapture: before.size !== after.size || before.mtimeMs !== after.mtimeMs };
+  } finally { await handle.close(); }
+}
+
+async function captureInput(out: string, scratchReal: string, name: string, bytes: Buffer, sourcePath: string): Promise<InputFingerprint> {
+  const directory = resolve(out, 'inputs');
+  await mkdir(directory, { recursive: true, mode: 0o700 });
+  const actualDirectory = await realpath(directory);
+  if (!inside(scratchReal, actualDirectory)) throw new Error('captured input directory escapes .scratch');
+  const digest = sha256(bytes), suffix = extname(name), stem = basename(name, suffix);
+  const capturedPath = resolve(directory, `${stem}-${digest.slice(0, 12)}${suffix}`);
+  try {
+    const prior = await open(capturedPath, 'wx', 0o600);
+    try { await prior.writeFile(bytes); } finally { await prior.close(); }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const info = await lstat(capturedPath);
+    if (!info.isFile() || info.isSymbolicLink() || sha256(await readFile(capturedPath)) !== digest) {
+      throw new Error(`captured input path already exists with different content: ${capturedPath}`);
+    }
+  }
+  const actualFile = await realpath(capturedPath);
+  if (!inside(scratchReal, actualFile)) throw new Error('captured input symlink escapes .scratch');
+  return { path: sourcePath, capturedPath, bytes: bytes.length, sha256: digest };
+}
+
+function sumField(reports: readonly ReplayMetrics[], group: keyof ReplayMetrics, field: string): number {
+  return reports.reduce((sum, report) => sum + Number((report[group] as Record<string, unknown>)[field] ?? 0), 0);
+}
+
+function combineReplayReports(entries: ReplayEntry[]): ReplayMetrics {
+  const reports = entries.map((entry) => entry.metrics), berthMap = new Map<string, ReplayMetrics['coverage']['berths'][number]>();
+  for (const report of reports) for (const berth of report.coverage.berths) {
+    const prior = berthMap.get(berth.berth);
+    if (prior) prior.observations += berth.observations;
+    else berthMap.set(berth.berth, { ...berth });
+  }
+  const berths = [...berthMap.values()].sort((a, b) => a.berth.localeCompare(b.berth));
+  const platformMap = new Map<string, ReplayMetrics['platforms'][number]>();
+  for (const report of reports) for (const platform of report.platforms) {
+    const prior = platformMap.get(platform.berth);
+    if (!prior) platformMap.set(platform.berth, { ...platform });
+    else {
+      prior.reachedSamples += platform.reachedSamples; prior.movingSamples += platform.movingSamples;
+      prior.blockedSamples += platform.blockedSamples; prior.pendingSamples += platform.pendingSamples;
+      prior.actuallyHeldWrongTrackSamples += platform.actuallyHeldWrongTrackSamples;
+    }
+  }
+  const platformSteps = entries.flatMap(({ input, metrics }) => metrics.platformSteps.map((step) => ({ ...step, recording: input.path })));
+  const stepJumps = entries.flatMap(({ input, metrics }) => metrics.stepJumps.map((jump) => ({ ...jump, recording: input.path })));
+  const byPhysicalId = entries.flatMap(({ input, metrics }) => metrics.headcodeChurn.byPhysicalId.map((item) => ({ ...item, recording: input.path })));
+  const outcomes = Object.fromEntries(['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body']
+    .map((state) => [state, reports.reduce((n, report) => n + report.platformStepSummary.outcomes[state as keyof typeof report.platformStepSummary.outcomes], 0)]));
+  const violations = entries.flatMap(({ input, metrics }) => metrics.violations.map((violation) => `${input.path}: ${violation}`));
+  const med = (values: number[]): number => {
+    const sorted = [...values].sort((a, b) => a - b), mid = Math.floor(sorted.length / 2);
+    return sorted.length ? sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2 : 0;
+  };
+  const durationSeconds = reports.reduce((n, report) => n + report.durationSeconds, 0);
+  const headcodeChurn = {
+    physicalIds: sumField(reports, 'headcodeChurn', 'physicalIds'),
+    idsWithMultipleDescriptions: sumField(reports, 'headcodeChurn', 'idsWithMultipleDescriptions'),
+    renames: sumField(reports, 'headcodeChurn', 'renames'),
+    unattributedRenames: sumField(reports, 'headcodeChurn', 'unattributedRenames'),
+    maxRenamesPerPhysicalId: Math.max(0, ...byPhysicalId.map((item) => item.renameCount)),
+    medianRenamesPerPhysicalId: med(byPhysicalId.map((item) => item.renameCount)),
+    maxDescriptionsPerPhysicalId: Math.max(0, ...byPhysicalId.map((item) => item.descriptionsCount)),
+    medianDescriptionsPerPhysicalId: med(byPhysicalId.map((item) => item.descriptionsCount)),
+    mergedObservations: sumField(reports, 'headcodeChurn', 'mergedObservations'), byPhysicalId,
+    aggregation: 'Counts sum independent recordings; physical ids are recording-local and do not carry across files.',
+  };
+  return {
+    ok: reports.every((report) => report.ok), violations, events: reports.reduce((n, report) => n + report.events, 0), area: reports[0]!.area,
+    samples: reports.reduce((n, report) => n + report.samples, 0), stepSeconds: reports[0]!.stepSeconds,
+    durationSeconds, drainSeconds: reports.reduce((n, report) => n + report.drainSeconds, 0),
+    coverage: { seen: berths.length, anchored: berths.filter((b) => b.classification === 'anchored').length,
+      unmapped: berths.filter((b) => b.classification === 'unmapped').length,
+      placeholderObservations: reports.reduce((n, report) => n + report.coverage.placeholderObservations, 0), berths },
+    platforms: [...platformMap.values()].sort((a, b) => a.berth.localeCompare(b.berth)), platformSteps,
+    platformStepSummary: { total: platformSteps.length, reachedCorrectTrack: outcomes['reached-correct-track'],
+      unresolved: platformSteps.length - outcomes['reached-correct-track'], outcomes },
+    stepJumps,
+    stepSummary: { physicalStepEvents: sumField(reports, 'stepSummary', 'physicalStepEvents'),
+      unmeasuredEndpointEvents: sumField(reports, 'stepSummary', 'unmeasuredEndpointEvents'),
+      mappedPairs: sumField(reports, 'stepSummary', 'mappedPairs'), disconnectedPairs: sumField(reports, 'stepSummary', 'disconnectedPairs'),
+      reversalPairs: sumField(reports, 'stepSummary', 'reversalPairs'), impliedSpeedFlagPairs: sumField(reports, 'stepSummary', 'impliedSpeedFlagPairs') },
+    headcodeChurn,
+    drawnTime: { anchoredTrainSeconds: sumField(reports, 'drawnTime', 'anchoredTrainSeconds'),
+      estimatedTrainSeconds: sumField(reports, 'drawnTime', 'estimatedTrainSeconds'), fadingTrainSeconds: sumField(reports, 'drawnTime', 'fadingTrainSeconds'),
+      basis: 'Per-recording post-advance fixed 0.1 s samples, including each initial sample and six-second drain; fades retain their preceding estimated classification and are additionally counted separately.' },
+    motion: { starsDrawn: sumField(reports, 'motion', 'starsDrawn'), overspeedSamples: sumField(reports, 'motion', 'overspeedSamples'),
+      backwardsSamples: sumField(reports, 'motion', 'backwardsSamples'), overlapPairSamples: sumField(reports, 'motion', 'overlapPairSamples'),
+      peakQueued: Math.max(0, ...reports.map((report) => report.motion.peakQueued)),
+      queuedAtEnd: Math.max(0, ...reports.map((report) => report.motion.queuedAtEnd)),
+      unroutable: sumField(reports, 'motion', 'unroutable') },
+    limitations: [...new Set(reports.flatMap((report) => report.limitations))],
+  } as ReplayMetrics;
+}
+
+function markdownCell(value: unknown): string { return String(value ?? '—').replaceAll('|', '\\|').replace(/[\r\n]+/g, ' '); }
+
+function replayMarkdown(report: ReplayOutput): string {
+  const entries = report.recordings ?? [];
+  if (entries.length <= 1) {
+    return `# Replay evidence report\n\n${report.ok ? 'PASS' : 'FAIL'}: ${report.coverage.seen} seen berths; ${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped. ${report.events} events, ${report.durationSeconds} seconds.\n\n${report.violations.map((v) => `- ${v}`).join('\n')}\n\n${report.headcodeChurn.physicalIds} physical ids; ${report.headcodeChurn.renames} renames; ${report.headcodeChurn.idsWithMultipleDescriptions} ids with multiple descriptions.\n\nDrawn train-seconds: ${report.drawnTime.anchoredTrainSeconds.toFixed(1)} anchored, ${report.drawnTime.estimatedTrainSeconds.toFixed(1)} estimated; ${report.drawnTime.fadingTrainSeconds.toFixed(1)} fading (also included).\n\n${report.platformStepSummary.total} incoming platform steps: ${report.platformStepSummary.reachedCorrectTrack} reached the correct track, ${report.platformStepSummary.unresolved} unresolved. Outcomes: ${JSON.stringify(report.platformStepSummary.outcomes)}.\n\n${report.motion.unroutable} unroutable motion diagnostics; peak queued ${report.motion.peakQueued}. These are limitations, not wrong-track arrivals.\n\n${report.stepSummary.physicalStepEvents} physical step events; ${report.stepSummary.unmeasuredEndpointEvents} have an unmapped endpoint. ${report.stepSummary.mappedPairs} mapped step pairs; ${report.stepSummary.disconnectedPairs} disconnected; ${report.stepSummary.impliedSpeedFlagPairs} implied-speed flags.\n\nPlaceholder draw check: ${report.motion.starsDrawn === 0 ? 'PASS' : 'FAIL'} — ${report.motion.starsDrawn} **** samples drawn.\n\n${report.limitations.join('\n\n')}\n\n${report.drawnTime.basis}\n\nFull berth inventory, platform arrival states, step paths and physical-id descriptions are in replay-report.json.\n`;
+  }
+  const lines = ['# Replay evidence report — multi-recording', '',
+    `${report.ok ? '**PASS**' : '**FAIL**'} across ${entries.length} recordings: ${report.events} events over ${report.durationSeconds} recording-seconds; ${report.coverage.seen} unique seen berths (${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped).`,
+    '', `**Placeholder draw check:** ${report.motion.starsDrawn === 0 ? 'PASS' : 'FAIL'} — ${report.motion.starsDrawn} **** samples drawn across all recordings.`, '',
+    '## Captured recording inputs', '', '| Input | Events | Captured bytes | SHA-256 | Captured event-time bounds (ms) | Grew / tail omitted |',
+    '| --- | ---: | ---: | --- | --- | --- |'];
+  for (const { input } of entries) lines.push(`| ${markdownCell(input.path)} | ${input.events} | ${input.capturedBytes} | ${input.sha256} | ${input.capturedBounds.firstEventTimeMs ?? '—'} to ${input.capturedBounds.lastEventTimeMs ?? '—'} | ${input.sourceChangedDuringCapture ? 'yes' : 'no'} / ${input.trailingBytesOmitted} bytes |`);
+  lines.push('', 'The captured byte bounds are `[0, byteEndExclusive)` from the file size observed at open, with a visibly incomplete final JSON line omitted only when the source changed during capture. Exact captured bytes, anchors and graph are retained under `inputs/` and fingerprinted in the JSON report.', '',
+    '## Union berth inventory', '', '| Berth | Observations | Classification | Reason | Detail |', '| --- | ---: | --- | --- | --- |');
+  for (const berth of report.coverage.berths) lines.push(`| ${markdownCell(berth.berth)} | ${berth.observations} | ${berth.classification} | ${markdownCell(berth.reason)} | ${markdownCell(berth.detail)} |`);
+  lines.push('', '## Per-recording measures', '', '| Input | Step pairs / unmapped endpoints | Physical ids / renames | Incoming platform steps / reached | `****` drawn |', '| --- | ---: | ---: | ---: | ---: |');
+  for (const { input, metrics } of entries) lines.push(`| ${markdownCell(input.path)} | ${metrics.stepSummary.mappedPairs} / ${metrics.stepSummary.unmeasuredEndpointEvents} | ${metrics.headcodeChurn.physicalIds} / ${metrics.headcodeChurn.renames} | ${metrics.platformStepSummary.total} / ${metrics.platformStepSummary.reachedCorrectTrack} | ${metrics.motion.starsDrawn} |`);
+  lines.push('', 'Headcode churn counts sum independent recording-local physical ids; ids do not carry across recording files.', '',
+    '## Platform assignment and arrivals', '', '| Berth | Platform N | Correct OSM target track | Reached samples | Wrong-track held samples |', '| --- | ---: | --- | ---: | ---: |');
+  for (const platform of report.platforms) lines.push(`| ${platform.berth} | ${platform.platform} | ${platform.correctTargetTrack ? 'yes' : 'no'} | ${platform.reachedSamples} | ${platform.actuallyHeldWrongTrackSamples} |`);
+  lines.push('', '## Step jumps', '', '| Input | From → to | Count | Median seconds | Graph metres | Implied m/s | Issues |', '| --- | --- | ---: | ---: | ---: | ---: | --- |');
+  for (const jump of report.stepJumps) lines.push(`| ${markdownCell((jump as typeof report.stepJumps[number] & { recording: string }).recording)} | ${jump.from} → ${jump.to} | ${jump.count} | ${jump.seconds ?? '—'} | ${jump.lengthM ?? 'unmapped'} | ${jump.speedMps?.toFixed(1) ?? '—'} | ${markdownCell(jump.issues.join('; '))} |`);
+  if (report.violations.length) lines.push('', '## Violations', '', ...report.violations.map((violation) => `- ${violation}`));
+  lines.push('', 'Exact recording byte snapshots, anchors and graph are retained beneath `inputs/`; hashes and reproduction argv are in `replay-report.json`.', '', ...report.limitations.map((limitation) => limitation), '');
+  return `${lines.join('\n')}\n`;
+}
+
+function hasIncompleteJsonPrefix(text: string): boolean {
+  const stack: string[] = [];
+  let inString = false, escape = false;
+  for (const char of text) {
+    if (inString) {
+      if (escape) escape = false;
+      else if (char === '\\') escape = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === '{' || char === '[') stack.push(char);
+    else if (char === '}' || char === ']') {
+      const expected = char === '}' ? '{' : '[';
+      if (stack.pop() !== expected) return false;
+    }
+  }
+  return inString || escape || stack.length > 0;
+}
+
+/** Drop only a visibly incomplete, unterminated tail when the source grew during capture. */
+export function completeRecordingPrefix(bytes: Buffer, sourceChangedDuringCapture: boolean): { bytes: Buffer; trailingBytesOmitted: number } {
+  if (!sourceChangedDuringCapture) return { bytes, trailingBytesOmitted: 0 };
+  const boundary = bytes.lastIndexOf(0x0a) + 1, tail = bytes.subarray(boundary).toString('utf8');
+  if (!tail.trim()) return { bytes, trailingBytesOmitted: 0 };
+  try { JSON.parse(tail); return { bytes, trailingBytesOmitted: 0 }; }
+  catch {
+    if (!hasIncompleteJsonPrefix(tail)) return { bytes, trailingBytesOmitted: 0 };
+    return { bytes: bytes.subarray(0, boundary), trailingBytesOmitted: bytes.length - boundary };
+  }
+}
+
 export async function runReplayReport(args: string[]) {
-  const values = new Map<string, string>();
+  const values = new Map<string, string>(), recordingPaths: string[] = [];
   for (let i = 0; i < args.length; i += 2) {
     const k = args[i]!, v = args[i + 1];
-    if (!['--recording', '--anchors', '--out', '--graph'].includes(k) || !v || v.startsWith('--') || values.has(k)) throw new Error('usage: replay-report.ts --recording <ndjson> --anchors <json> --out <.scratch/directory> [--graph <json>]');
-    values.set(k, v);
+    if (!['--recording', '--anchors', '--out', '--graph', '--smart'].includes(k) || !v || v.startsWith('--') || (k !== '--recording' && values.has(k))) {
+      throw new Error('usage: replay-report.ts --recording <ndjson> [--recording <ndjson> ...] --anchors <json> --out <.scratch/directory> [--graph <json>] [--smart <smart.json.gz>]');
+    }
+    if (k === '--recording') recordingPaths.push(v); else values.set(k, v);
   }
-  for (const k of ['--recording', '--anchors', '--out']) if (!values.has(k)) throw new Error(`missing ${k}`);
+  if (!recordingPaths.length) throw new Error('missing --recording');
+  for (const k of ['--anchors', '--out']) if (!values.has(k)) throw new Error(`missing ${k}`);
   const scratch = resolve(root, '.scratch'), out = resolve(values.get('--out')!);
   if (!inside(scratch, out)) throw new Error('--out must be beneath worktree .scratch');
   await mkdir(scratch, { recursive: true });
@@ -254,11 +465,102 @@ export async function runReplayReport(args: string[]) {
     try { if (!inside(scratchReal, await realpath(resolve(out, name)))) throw new Error('report symlink escapes .scratch'); }
     catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
   }
-  const anchors = JSON.parse(await readFile(resolve(values.get('--anchors')!), 'utf8')) as AnchorMap;
+  const anchorPath = resolve(values.get('--anchors')!), anchorBytes = await readFile(anchorPath);
+  const anchors = JSON.parse(anchorBytes.toString('utf8')) as AnchorMap;
   if (!anchors || typeof anchors.area !== 'string' || !Array.isArray(anchors.anchors) || !Array.isArray(anchors.unmapped)) throw new Error('invalid anchor map');
-  const data = JSON.parse(await readFile(values.has('--graph') ? resolve(values.get('--graph')!) : new URL('../web/src/data/kx-track.json', import.meta.url), 'utf8')) as KxData;
-  const report = replayReport(data, parseRecording(await readFile(resolve(values.get('--recording')!), 'utf8')), anchors);
-  const md = `# Replay evidence report\n\n${report.ok ? 'PASS' : 'FAIL'}: ${report.coverage.seen} seen berths; ${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped. ${report.events} events, ${report.durationSeconds} seconds.\n\n${report.violations.map((v) => `- ${v}`).join('\n')}\n\n${report.headcodeChurn.physicalIds} physical ids; ${report.headcodeChurn.renames} renames; ${report.headcodeChurn.idsWithMultipleDescriptions} ids with multiple descriptions.\n\nDrawn train-seconds: ${report.drawnTime.anchoredTrainSeconds.toFixed(1)} anchored, ${report.drawnTime.estimatedTrainSeconds.toFixed(1)} estimated; ${report.drawnTime.fadingTrainSeconds.toFixed(1)} fading (also included).\n\n${report.platformStepSummary.total} incoming platform steps: ${report.platformStepSummary.reachedCorrectTrack} reached the correct track, ${report.platformStepSummary.unresolved} unresolved. Outcomes: ${JSON.stringify(report.platformStepSummary.outcomes)}.\n\n${report.motion.unroutable} unroutable motion diagnostics; peak queued ${report.motion.peakQueued}. These are limitations, not wrong-track arrivals.\n\n${report.stepSummary.physicalStepEvents} physical step events; ${report.stepSummary.unmeasuredEndpointEvents} have an unmapped endpoint. ${report.stepSummary.mappedPairs} mapped step pairs; ${report.stepSummary.disconnectedPairs} disconnected; ${report.stepSummary.impliedSpeedFlagPairs} implied-speed flags.\n\n${report.limitations.join('\n\n')}\n\n${report.drawnTime.basis}\n\nFull berth inventory, platform arrival states, step paths and physical-id descriptions are in replay-report.json.\n`;
+  const graphPath = values.has('--graph') ? resolve(values.get('--graph')!) : fileURLToPath(new URL('../web/src/data/kx-track.json', import.meta.url));
+  const graphBytes = await readFile(graphPath), data = JSON.parse(graphBytes.toString('utf8')) as KxData;
+  const anchorFingerprint = await captureInput(out, scratchReal, 'anchors.json', anchorBytes, anchorPath);
+  const graphFingerprint = await captureInput(out, scratchReal, 'graph.json', graphBytes, graphPath);
+  let smartFingerprint: InputFingerprint | undefined;
+  if (values.has('--smart')) {
+    const smartPath = resolve(values.get('--smart')!), smartBytes = await readFile(smartPath);
+    smartFingerprint = await captureInput(out, scratchReal, 'smart.json.gz', smartBytes, smartPath);
+  }
+  const capturedRecordings: Array<{ input: RecordingInput; rows: ReturnType<typeof parseRecording> }> = [];
+  for (let index = 0; index < recordingPaths.length; index++) {
+    const sourcePath = resolve(recordingPaths[index]!);
+    const bounded = await readBoundedRecording(sourcePath);
+    const complete = completeRecordingPrefix(bounded.bytes, bounded.sourceChangedDuringCapture);
+    const captured = { ...bounded, bytes: complete.bytes }, rows = parseRecording(captured.bytes.toString('utf8'));
+    if (!rows.length) throw new Error(`recording is empty: ${sourcePath}`);
+    const capturedPath = await captureInput(out, scratchReal, `recording-${String(index + 1).padStart(2, '0')}.ndjson`, captured.bytes, sourcePath);
+    const input: RecordingInput = { path: sourcePath, capturedPath: capturedPath.capturedPath, sha256: capturedPath.sha256, capturedBytes: captured.bytes.length,
+      sourceBytesAtOpen: captured.sourceBytesAtOpen, sourceBytesAtReadEnd: captured.sourceBytesAtReadEnd,
+      sourceModifiedAtOpen: captured.sourceModifiedAtOpen, sourceModifiedAtReadEnd: captured.sourceModifiedAtReadEnd,
+      sourceChangedDuringCapture: captured.sourceChangedDuringCapture, trailingBytesOmitted: complete.trailingBytesOmitted,
+      capturedAt: new Date().toISOString(), events: rows.length,
+      capturedBounds: { byteStart: 0, byteEndExclusive: captured.bytes.length, sourceByteEndExclusive: bounded.bytes.length,
+        firstEventTimeMs: rows[0]!.t, lastEventTimeMs: rows.at(-1)!.t } };
+    capturedRecordings.push({ input, rows });
+  }
+  const berthsOut = resolve(out, 'berths-reconciliation');
+  let berthsReconciliation: Record<string, unknown> | undefined, effectiveAnchors = anchors;
+  let effectiveAnchorFingerprint: InputFingerprint | undefined;
+  if (smartFingerprint) {
+    const berthsTool = fileURLToPath(new URL('./berths.ts', import.meta.url));
+    const berthsArgs = [...capturedRecordings.flatMap(({ input }) => ['--recording', input.capturedPath]), '--smart', smartFingerprint.capturedPath,
+      '--previous', anchorFingerprint.capturedPath, '--preserve-positions', '--graph', graphFingerprint.capturedPath, '--out', berthsOut];
+    const child = spawnSync(process.execPath, [berthsTool, ...berthsArgs], { cwd: root, encoding: 'utf8', timeout: 600_000,
+      maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+    const readArtifact = async (name: string) => {
+      const path = resolve(berthsOut, name);
+      try { const bytes = await readFile(path); return { path, sha256: sha256(bytes), bytes: bytes.length }; }
+      catch { return null; }
+    };
+    const artifacts = {
+      report: await readArtifact('berths-report.json'), positionDiff: await readArtifact('drawn-position-diff.json'),
+      candidateAnchors: await readArtifact('anchors-candidate.json'), preservedAnchors: await readArtifact('anchors.json'),
+    };
+    let details: Record<string, unknown> = {};
+    if (artifacts.report) {
+      try { details = JSON.parse(await readFile(artifacts.report.path, 'utf8')) as Record<string, unknown>; } catch { /* artifact path remains available */ }
+    }
+    const status = child.error ? 'ERROR' : child.status === 0 && artifacts.report && artifacts.positionDiff && artifacts.candidateAnchors && artifacts.preservedAnchors ? 'COMPLETE' : 'ERROR';
+    const summaryDetails = details.summary && typeof details.summary === 'object' && !Array.isArray(details.summary)
+      ? details.summary as Record<string, unknown> : {};
+    berthsReconciliation = { status, mode: 'preserve-positions', summary: details.summary ?? null,
+      candidatePlacement: details.candidatePlacement ?? summaryDetails.candidatePlacement ?? null, artifacts,
+      command: { cwd: root, command: process.execPath, executable: process.execPath, args: [berthsTool, ...berthsArgs] },
+      ...(status === 'ERROR' ? { error: child.error?.message ?? child.stderr?.trim() ?? `berths.ts exited ${child.status}` } : {}) };
+    if (status === 'COMPLETE' && artifacts.preservedAnchors) {
+      try {
+        const bytes = await readFile(artifacts.preservedAnchors.path), parsed = JSON.parse(bytes.toString('utf8')) as AnchorMap;
+        if (parsed && typeof parsed.area === 'string' && Array.isArray(parsed.anchors) && Array.isArray(parsed.unmapped)) {
+          effectiveAnchors = parsed;
+          effectiveAnchorFingerprint = { path: artifacts.preservedAnchors.path, capturedPath: artifacts.preservedAnchors.path,
+            bytes: bytes.length, sha256: sha256(bytes) };
+        } else throw new Error('preserved anchor output is invalid');
+      } catch (error) {
+        berthsReconciliation.status = 'ERROR';
+        berthsReconciliation.error = error instanceof Error ? error.message : String(error);
+      }
+    }
+  }
+  const entries: ReplayEntry[] = capturedRecordings.map(({ input, rows }) => ({ input, metrics: replayReport(data, rows, effectiveAnchors) }));
+  const union = combineReplayReports(entries), unionInventory = { seen: union.coverage.seen, anchored: union.coverage.anchored,
+    unmapped: union.coverage.unmapped, berths: union.coverage.berths };
+  const rerunOut = resolve(scratch, `${out.split(/[\\/]/).at(-1) ?? 'replay-report'}-reproduced-${process.pid}`);
+  const reproduceArgs = [fileURLToPath(import.meta.url), ...entries.flatMap(({ input }) => ['--recording', input.capturedPath]),
+    '--anchors', anchorFingerprint.capturedPath, '--graph', graphFingerprint.capturedPath, '--out', rerunOut];
+  if (smartFingerprint) reproduceArgs.push('--smart', smartFingerprint.capturedPath);
+  const reproducibility = { inputHashes: { recordings: entries.map(({ input }) => input), anchors: anchorFingerprint,
+      ...(effectiveAnchorFingerprint ? { effectiveAnchors: effectiveAnchorFingerprint } : {}), graph: graphFingerprint,
+      ...(smartFingerprint ? { smart: smartFingerprint } : {}) },
+    command: { cwd: root, command: process.execPath, executable: process.execPath, args: reproduceArgs } };
+  const report = (entries.length === 1
+    ? { ...entries[0]!.metrics, recordingInput: entries[0]!.input, coverage: union.coverage }
+    : { ...union, recordings: entries }) as ReplayOutput;
+  report.unionInventory = unionInventory;
+  report.reproducibility = reproducibility;
+  if (berthsReconciliation) {
+    report.berthsReconciliation = berthsReconciliation;
+    if (berthsReconciliation.status === 'ERROR') {
+      report.ok = false;
+      report.violations.push(`position-preserving berth reconciliation failed: ${String(berthsReconciliation.error)}`);
+    }
+  }
+  const md = replayMarkdown(report);
   await writeFile(resolve(out, 'replay-report.json'), JSON.stringify(report, null, 2) + '\n');
   await writeFile(resolve(out, 'replay-report.md'), md);
   return report;
