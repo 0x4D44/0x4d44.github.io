@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { backoffMs, createLiveFeed, createReplayClock, createReplayFeed, createTimeline, parseRecording, probeRelay, relayReachable, snapshotEvents, trainSettings } from '../src/feed.ts';
-import type { EventStream } from '../src/feed.ts';
+import type { EventStream, SnapshotEvent } from '../src/feed.ts';
+import { createMotion } from '../../core/motion.ts';
 import type { MotionEvent } from '../../core/motion.ts';
+import { buildGraph } from '../../core/graph.ts';
+import type { AnchorMap } from '../../core/anchors.ts';
 import viteConfig from '../../vite.config.ts';
 
 const first: MotionEvent = { kind: 'interpose', area: 'TEST', descr: 'SYN1', to: 'A' };
@@ -35,6 +42,16 @@ test('feed parses NDJSON with blank lines and CRLF and preserves equal-time even
   for (const invalid of ['no json', JSON.stringify({ t: null, e: first }), JSON.stringify({ t: 1, e: { kind: 'step', area: 'TEST' } }), JSON.stringify({ t: 1, e: { ...next, to: 5 } })]) assert.throws(() => parseRecording(invalid), /line 1/);
 });
 
+test('feed parses recorded snapshots with berth and S-class pictures while keeping old recordings readable', () => {
+  const snapshot = { kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' }, sclass: { addresses: 1, data: { '01': 'ab' } }, counts: {}, lastEventTime: null };
+  assert.deepEqual(parseRecording(JSON.stringify({ t: 0, e: snapshot })), [{ t: 0, e: snapshot }]);
+  assert.deepEqual(parseRecording(JSON.stringify(rows[0])), [rows[0]]);
+  for (const invalid of [
+    { ...snapshot, berths: null }, { ...snapshot, berths: [] }, { ...snapshot, berths: { A: 42 } },
+    { ...snapshot, sclass: { addresses: -1, data: {} } }, { ...snapshot, sclass: { addresses: 1, data: { '01': 42 } } },
+  ]) assert.throws(() => parseRecording(JSON.stringify({ t: 0, e: invalid })), /line 1/);
+});
+
 test('replay clock scales simulation time once and never releases an event early', () => {
   const clock = createReplayClock(rows, 8);
   assert.deepEqual(clock.advance(0), [rows[0]]);
@@ -47,16 +64,21 @@ test('replay clock scales simulation time once and never releases an event early
 });
 
 test('live and replay deliver through one timeline and advance exactly to each event before applying it', () => {
-  const run = (speed: number) => {
-    let time = 1000;
+  const run = (speed: number, live = false) => {
+    let time = live ? 0 : 1000;
     const applied: { e: MotionEvent; at: number; physical: number }[] = [];
     const sink = { advance: (dt: number) => { time += dt * 1000; }, apply: (e: MotionEvent, at: number) => applied.push({ e, at, physical: time }) };
-    const feed = createReplayFeed(rows, speed, sink, () => {});
-    feed.advance(2 / speed); near(feed.timeMs(), 3000);
+    const stream = new FakeStream();
+    const feed = live ? createLiveFeed(sink, () => {}, { source: () => stream, schedule: () => ({}), unschedule: () => {} }) : createReplayFeed(rows, speed, sink, () => {});
+    if (live) { stream.onopen?.({} as Event); feed.advance(1); stream.emit('td', rows[0]); }
+    feed.advance(2 / speed);
+    if (live) stream.emit('td', rows[1]);
+    near(feed.timeMs(), 3000);
     feed.dispose(); feed.advance(1); near(feed.timeMs(), 3000);
     return applied;
   };
   assert.deepEqual(run(1), run(8));
+  assert.deepEqual(run(1, true), run(1));
   assert.deepEqual(run(1).map((r) => [r.at, r.physical]), [[1000, 1000], [3000, 3000]]);
   const calls: number[] = [];
   const timeline = createTimeline({ advance: () => {}, apply: (_e, at) => calls.push(at) }, 1000);
@@ -85,6 +107,82 @@ class FakeStream implements EventStream {
   emit(type: string, data: unknown) { this.listeners.get(type)?.({ data: JSON.stringify(data) } as MessageEvent<string>); }
 }
 
+test('live and replay reconcile a cancel lost in a connection gap to identical moving and fading trains', () => {
+  const graph = buildGraph({ nodes: [[1, 0, -1000], [2, 5000, -1000]], rails: [{ id: 7, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const anchors: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [
+    ['A', 400], ['B', 1800], ['C', 3000],
+  ].map(([berth, x]) => ({ berth: String(berth), kind: 'signal', from: 1, to: 2, t: Number(x) / 5000, point: [Number(x), -1000], errorM: 0, evidence: 'synthetic' })) };
+  const snapshot = (berths: Record<string, string>, data: Record<string, string>): SnapshotEvent => ({ kind: 'snapshot', area: 'TEST', berths, sclass: { addresses: Object.keys(data).length, data } });
+  const recorded = [
+    { t: 0, e: snapshot({ A: 'OLD', B: 'KEPT' }, { '01': 'ff' }) },
+    { t: 1000, e: { kind: 'step', area: 'TEST', descr: 'KEPT', from: 'B', to: 'C' } },
+    // OLD was cancelled while disconnected. Only the reconnect picture reveals that loss.
+    { t: 3000, e: snapshot({ C: 'KEPT' }, {}) },
+  ];
+  const liveMotion = createMotion(graph, anchors), replayMotion = createMotion(graph, anchors);
+  const liveApplied: MotionEvent[] = [], replayApplied: MotionEvent[] = [];
+  const sink = (motion: typeof liveMotion, applied: MotionEvent[]) => ({ advance: motion.advance, apply: (e: MotionEvent, at: number) => { applied.push(e); motion.apply(e, at); } });
+  const streams: FakeStream[] = [], jobs = new Map<object, { fn: () => void; ms: number }>();
+  const live = createLiveFeed(sink(liveMotion, liveApplied), () => {}, {
+    source: () => { const stream = new FakeStream(); streams.push(stream); return stream; }, now: () => 0,
+    schedule: (fn, ms) => { const token = {}; jobs.set(token, { fn, ms }); return token; }, unschedule: (token) => { jobs.delete(token as object); },
+  });
+  const replay = createReplayFeed(parseRecording(recorded.map((row) => JSON.stringify(row)).join('\n')), 8, sink(replayMotion, replayApplied), () => {});
+  const advance = (seconds: number) => { live.advance(seconds); replay.advance(seconds / 8); };
+  streams[0]!.onopen?.({} as Event); streams[0]!.emit('snapshot', recorded[0]!.e);
+  advance(1); streams[0]!.emit('td', recorded[1]);
+  const retained = liveMotion.trains().find((t) => t.description === 'KEPT')!;
+  streams[0]!.onerror?.({} as Event); assert.equal(streams[0]!.closed, true);
+  advance(1.5);
+  [...jobs.values()].find((job) => job.ms === 500)!.fn(); streams[1]!.onopen?.({} as Event);
+  advance(0.5);
+  const beforeSnapshot = liveMotion.trains().find((t) => t.description === 'KEPT')!;
+  streams[1]!.emit('snapshot', recorded[2]!.e);
+  assert.equal(liveMotion.trains().find((t) => t.description === 'OLD')!.state, 'fading');
+  assert.equal(liveMotion.trains().find((t) => t.description === 'KEPT')!.id, retained.id);
+  assert.deepEqual(liveMotion.trains().find((t) => t.description === 'KEPT')!.occupied, beforeSnapshot.occupied);
+  assert.deepEqual(liveMotion.trains(), replayMotion.trains());
+  advance(7);
+  assert.deepEqual(liveMotion.trains().map((t) => t.description), ['KEPT']);
+  assert.ok(liveMotion.trains()[0]!.distanceM > 0);
+  assert.deepEqual(liveMotion.trains(), replayMotion.trains());
+  assert.deepEqual(liveMotion.diagnostics(), replayMotion.diagnostics());
+  assert.deepEqual(liveApplied, replayApplied); // Includes both complete S-class pictures, including the empty reset.
+  assert.deepEqual(liveApplied.filter((event) => event.kind === 'snapshot'), [recorded[0]!.e, recorded[2]!.e]);
+  live.dispose(); replay.dispose();
+});
+
+test('feed snapshot reconciliation isolates areas and rejects an invalid picture before applying any part', () => {
+  const applied: MotionEvent[] = [];
+  const timeline = createTimeline({ advance: () => {}, apply: (event) => applied.push(event) });
+  timeline.deliver(first); timeline.deliver({ ...first, area: 'OTHER', descr: 'OTHER-TRAIN' });
+  timeline.deliver({ kind: 'snapshot', area: 'TEST', berths: {} } as SnapshotEvent);
+  assert.deepEqual(applied.slice(-2), [{ kind: 'snapshot', area: 'TEST', berths: {} }, { kind: 'cancel', area: 'TEST', descr: 'SYN1', from: '' }]);
+  const count = applied.length;
+  assert.throws(() => timeline.deliver({ kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1', B: 42 } } as unknown as SnapshotEvent));
+  assert.equal(applied.length, count);
+});
+
+test('feed audit uses the live reconciliation path for recorded snapshots', () => {
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  mkdirSync(join(root, '.scratch'), { recursive: true });
+  const dir = mkdtempSync(join(root, '.scratch/feed-audit-'));
+  try {
+    const graph = { nodes: [[1, 0, -1000], [2, 1000, -1000]], rails: [{ id: 7, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] };
+    const anchors: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [{ berth: 'A', kind: 'signal', from: 1, to: 2, t: 0.5, point: [500, -1000], errorM: 0, evidence: 'synthetic' }] };
+    writeFileSync(join(dir, 'graph.json'), JSON.stringify(graph));
+    writeFileSync(join(dir, 'anchors.json'), JSON.stringify(anchors));
+    writeFileSync(join(dir, 'events.ndjson'), [
+      { t: 0, e: { kind: 'snapshot', area: 'TEST', berths: { A: 'OLD' } } },
+      { t: 1000, e: { kind: 'snapshot', area: 'TEST', berths: {} } },
+    ].map((row) => JSON.stringify(row)).join('\n'));
+    execFileSync(process.execPath, [fileURLToPath(new URL('../../tools/motion-check.ts', import.meta.url)), '--anchors', join(dir, 'anchors.json'), '--recording', join(dir, 'events.ndjson'), '--graph', join(dir, 'graph.json'), '--out', join(dir, 'out')], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 });
+    const report = JSON.parse(readFileSync(join(dir, 'out/motion-report.json'), 'utf8'));
+    assert.equal(report.snapshots, 2); assert.equal(report.snapshotPlacementFailures, 0);
+    assert.equal(report.trainsObserved, 1); assert.equal(report.trainsVanishedAfterFade, 1); assert.equal(report.remainingTrains, 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('live SSE closes failed connections, retries with backoff and recovers without native duplicate reconnects', () => {
   const streams: FakeStream[] = [], states: string[] = [], applied: MotionEvent[] = [];
   const scheduled: { fn: () => void; ms: number }[] = [], cancelled: unknown[] = [];
@@ -98,7 +196,7 @@ test('live SSE closes failed connections, retries with backoff and recovers with
   streams[0]!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
   streams[0]!.emit('td', { t: 1000, e: next });
   feed.advance(2); assert.equal(feed.timeMs(), 2000);
-  assert.deepEqual(applied, [first, next]);
+  assert.deepEqual(applied, [{ kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' } }, first, next]);
   streams[0]!.onerror?.({} as Event);
   assert.equal(streams[0]!.closed, true); assert.equal(scheduled[0]!.ms, 500);
   assert.match(states.at(-1)!, /reconnecting/);
@@ -147,7 +245,7 @@ test('live SSE watchdog retries after more than fifteen seconds of silence on an
   h.streams[1]!.onerror?.({} as Event);
   assert.match(h.states.at(-1)!, /reconnecting; retry in 1s/);
   h.tick(1000); h.open(); h.streams[2]!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
-  assert.equal(h.states.at(-1), 'connected'); assert.deepEqual(h.applied, [first]);
+  assert.equal(h.states.at(-1), 'connected'); assert.deepEqual(h.applied, [{ kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' } }, first]);
   h.feed.dispose();
 });
 

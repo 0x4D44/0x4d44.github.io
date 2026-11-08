@@ -3,8 +3,10 @@
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/live-mutations
 Listener-free relay tests run here; the lead runs the socket integration suite outside the sandbox.
 """
+import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -23,7 +25,7 @@ M = [
     ('default mode never probes relay', F, "requested === null ? 'auto'", "requested === null ? 'demo'"),
     ('recording rows remain out of time order', F, 'return rows.sort((a, b) => a.t - b.t);', 'return rows;'),
     ('replay speed ignored', F, 'seconds * speed * 1000', 'seconds * 1000'),
-    ('event applied before advancing to its time', F, 'advanceTo(atMs); sink.apply(event, time);', 'sink.apply(event, time); advanceTo(atMs);'),
+    ('event applied before advancing to its time', F, 'advanceTo(atMs); reconcile(event, time);', 'reconcile(event, time); advanceTo(atMs);'),
     ('backoff never increases', F, '500 * 2 ** Math.min(16, Math.max(0, Math.floor(attempt)))', '500'),
     ('reconnect snapshot does not cancel missing descriptions', F, 'if (!present.has(descr))', 'if (false)'),
     ('failed EventSource left connected', F, 'stream?.close(); stream = undefined;', 'stream = undefined;'),
@@ -44,7 +46,7 @@ M = [
     ('request close leaves heartbeat running', R, "req.once('close', stop);", "req.once('unused-close', stop);"),
     ('heartbeat writes after request close', R, 'if (!stopped) res.write', 'if (true) res.write'),
     ('heartbeat stop clears twice', R, 'if (stopped) return;', ''),
-    ('events endpoint omits its heartbeat', R, '          startEventHeartbeat(req, res, { now });', ''),
+    ('events endpoint omits its heartbeat', R, 'const stopHeartbeat = startEventHeartbeat(req, res, { now });', 'const stopHeartbeat = () => {};'),
     ('trail sampled from tail instead of nose', T, 'let i = train.occupied.length - 1; i >= 0; i--', 'let i = 0; i < train.occupied.length; i++'),
     ('car chord compression ignored', T, 'const scaleZ = chord / (car.bogies[1] - car.bogies[0]);', 'const scaleZ = 1;'),
     ('all cars face the same direction', T, 'node.rotation.y = pose.rotationY;', 'node.rotation.y = 0;'),
@@ -69,52 +71,88 @@ M = [
     ('client can override recording path', R, "file = path.join(dataDir, 'recordings',", "file = url.searchParams.get('path') ?? path.join(dataDir, 'recordings',"),
     ('Host guard disabled', R, "if (!['127.0.0.1', 'localhost'].some((h) => host === `${h}:${port}`))", 'if (false)'),
     ('non-GET requests allowed', R, "return method === 'GET' ? null : 405;", 'return null;'),
+    ('recorded snapshots ignored by replay', F, 'timeline.deliver(row.e, row.t);', "{ if (row.e.kind !== 'snapshot') timeline.deliver(row.e, row.t); }"),
+    ('live snapshot messages ignored', F, "current.addEventListener('snapshot', (event)", "current.addEventListener('ignored-snapshot', (event)"),
+    ('live TD messages ignored', F, "current.addEventListener('td', (event)", "current.addEventListener('ignored-td', (event)"),
+    ('snapshots bypass shared reconciliation', F, "if (event.kind === 'snapshot') {", "if (false) {"),
+    ('snapshot validation skipped by recording parser', F, 'snapshotEvents(e);', '// snapshotEvents(e);'),
+    ('snapshot S-class validation disabled', F, 'if (e.sclass !== undefined)', 'if (false)'),
+    ('reconciliation loses full S-class snapshots', F, 'apply(event, atMs);\n      for (const change', 'for (const change'),
+    ('snapshot cancels descriptions in other areas', F, 'snapshotEvents(event, [...descriptions.get(event.area) ?? []])', 'snapshotEvents(event, [...descriptions.values()].flatMap((s) => [...s]))'),
+    ('invalid snapshot changes the world before validation', F, "if (event.kind === 'snapshot') {", "if (event.kind === 'snapshot') { apply(event, atMs);"),
+    ('audit omits snapshot reconciliation', 'tools/motion-check.ts', 'reconcile(event, start + time * 1000);', 'motion.apply(event, start + time * 1000);'),
+    ('configured S-class file ignored', R, 'file = sclassFile;', "file = path.join(dataDir, 'missing-sclass.json');"),
+    ('ping interval keeps the process alive', R, '  timer?.unref?.();', ''),
+    ('concurrent relay shutdowns close twice', R, 'if (closing) return closing;', ''),
+    ('relay shutdown leaves SSE heartbeats running', R, 'for (const stopHeartbeat of heartbeats) stopHeartbeat();', ''),
+    ('relay shutdown omits recorder close', R, 'const recorded = recorder.close();', 'const recorded = Promise.resolve();'),
+    ('relay shutdown errors disappear', R, 'server.close((error) => error ? reject(error) : resolve());', 'server.close(() => resolve());'),
 ]
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=15000',
-                           '--test-name-pattern=^(relay files:|relay heartbeat:|the dev relay proxy|train URL|feed parses|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose|a renamed train|a fresh physical train)', 'web/tests/feed.test.ts',
-                           'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs'],
-                          cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=45)
+    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
+               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|fading one train|cars whose|a renamed train|a fresh physical train)',
+               'web/tests/feed.test.ts', 'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs']
+    process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, stdin=subprocess.DEVNULL, start_new_session=True)
+    expired = False
+    try:
+        stdout, stderr = process.communicate(timeout=12)
+    except subprocess.TimeoutExpired:
+        expired = True
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        stdout, stderr = process.communicate(timeout=3)
+    result = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    return result, expired or 'testTimeoutFailure' in stdout
 
-baseline = run(src)
-if baseline.returncode:
+for label, rel, old, _ in M:
+    if old not in (src / rel).read_text():
+        raise SystemExit(f'mutation pattern missing: {label}')
+
+baseline, expired = run(src)
+if baseline.returncode or expired:
     print(baseline.stdout, baseline.stderr)
     raise SystemExit('baseline must pass')
 names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
 seen = set()
 survivors = []
-for label, rel, old, new in M:
+timeouts = []
+for i, (label, rel, old, new) in enumerate(M):
     original = (src / rel).read_text()
     if old not in original:
         raise SystemExit(f'mutation pattern missing: {label}')
     with tempfile.TemporaryDirectory(prefix='live-', dir=scratch) as tmp:
         work = Path(tmp)
-        for directory in ['core', 'web', 'relay']:
+        for directory in ['core', 'web', 'relay', 'tools']:
             shutil.copytree(src / directory, work / directory)
         for file in ['package.json', 'vite.config.ts']:
             shutil.copy2(src / file, work / file)
         (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
         (work / rel).write_text(original.replace(old, new, 1))
-        try:
-            result = run(work)
-        except subprocess.TimeoutExpired:
-            survivors.append(label)
-            print(f'[INVALID] {label} (timeout)', flush=True)
-            continue
-        # A crashed or timed-out test file is not an assertion killing the mutation.
+        result, expired = run(work)
         failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)) & names
         seen.update(failed)
+        if expired:
+            log = scratch / f'mutation-{i:02d}.log'
+            log.write_text(result.stdout + result.stderr)
+            timeouts.append(label)
+            print(f'[CAUGHT WITH TIMEOUT] {label} ({log})', flush=True)
+            continue
+        # A crashed or timed-out test file is not an assertion killing the mutation.
         if result.returncode and failed:
             print(f'[KILLED ] {label} <- {sorted(failed)[0]}', flush=True)
         else:
             survivors.append(label)
-            log = scratch / f'mutation-{len(M) - len(survivors)}.log'
+            log = scratch / f'mutation-{i:02d}.log'
             log.write_text(result.stdout + result.stderr)
             print(f'[SURVIVED] {label} (exit {result.returncode}; {log})', flush=True)
 
 unproven = names - seen
 print(f'\n{len(M) - len(survivors)}/{len(M)} mutations caught')
+print(f'{len(timeouts)} caught with timeout')
 print(f'{len(names) - len(unproven)}/{len(names)} new tests observed failing at least once')
 for label in survivors:
     print('  NOT CAUGHT:', label)

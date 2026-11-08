@@ -8,6 +8,8 @@
 //   KX_STOMP_TLS   "1" to use TLS                        (default plain TCP)
 //   KX_TD_TOPIC    TD topic                              (default /topic/TD_ALL_SIG_AREA)
 //   KX_DATA_DIR    SMART/CORPUS cache and recordings     (default ~/kx-data)
+//   KX_ANCHORS     anchor map JSON                      (default <KX_DATA_DIR>/anchors.json)
+//   KX_SCLASS      signal map JSON                      (default <KX_DATA_DIR>/sclass.json)
 //   KX_KEYCHAIN_SERVICE  keychain item name              (default kx-ntrod)
 //   KX_NO_FEED     "1" to serve static data only, no STOMP connection
 //

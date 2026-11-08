@@ -1,9 +1,42 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import net from 'node:net';
 import { test } from 'node:test';
 import { FrameParser, StompClient, encodeFrame } from '../stomp.mjs';
+import { runFeed } from '../feed.mjs';
 
 const frameText = (command, headers, body) => encodeFrame(command, headers, body).toString('utf8');
+
+class FakeSocket extends EventEmitter {
+  constructor(onWrite = () => {}) {
+    super();
+    this.parser = new FrameParser();
+    this.writes = [];
+    this.frames = [];
+    this.onWrite = onWrite;
+    this.closed = false;
+  }
+
+  write(chunk) {
+    this.writes.push(chunk);
+    for (const frame of this.parser.push(Buffer.from(chunk))) {
+      this.frames.push(frame);
+      this.onWrite(frame);
+    }
+    return true;
+  }
+
+  send(command, headers = {}, body = '') {
+    if (!this.closed) this.emit('data', encodeFrame(command, headers, body));
+  }
+
+  end() { this.destroy(); }
+  destroy() {
+    if (this.closed) return;
+    this.closed = true;
+    this.emit('close');
+  }
+}
 
 test('encode then parse round-trips a frame with a body', () => {
   const p = new FrameParser();
@@ -72,18 +105,43 @@ test('a frame over the size cap is rejected', () => {
 
 // ---- client against a loopback fake server -------------------------------------------
 
-function fakeServer(onConnection) {
-  return new Promise((resolve) => {
-    const server = net.createServer(onConnection);
-    server.listen(0, '127.0.0.1', () => resolve(server));
-  });
+function close(server) {
+  for (const socket of server.testClients) socket.destroy();
+  for (const socket of server.testAccepted) socket.destroy();
+  if (!server.listening) return Promise.resolve();
+  return new Promise((resolve) => server.close(resolve));
 }
 
-const close = (server) => new Promise((resolve) => server.close(resolve));
+async function fakeServer(t, onConnection) {
+  const server = net.createServer((socket) => {
+    server.testAccepted.add(socket);
+    socket.once('close', () => server.testAccepted.delete(socket));
+    onConnection(socket);
+  });
+  server.testClients = new Set();
+  server.testAccepted = new Set();
+  t.after(() => close(server));
+  await new Promise((resolve, reject) => {
+    const onError = (error) => reject(error);
+    server.once('error', onError);
+    server.listen(0, '127.0.0.1', () => {
+      server.removeListener('error', onError);
+      resolve();
+    });
+  });
+  return server;
+}
 
-test('client sends CONNECT with credentials, subscribes after CONNECTED, and emits messages', async () => {
+function clientSocket(server) {
+  const socket = net.connect(server.address().port, '127.0.0.1');
+  server.testClients.add(socket);
+  socket.once('close', () => server.testClients.delete(socket));
+  return socket;
+}
+
+test('client sends CONNECT with credentials, subscribes after CONNECTED, and emits messages', async (t) => {
   const seen = [];
-  const server = await fakeServer((sock) => {
+  const server = await fakeServer(t, (sock) => {
     const p = new FrameParser();
     sock.on('data', (d) => {
       for (const f of p.push(d)) {
@@ -95,7 +153,7 @@ test('client sends CONNECT with credentials, subscribes after CONNECTED, and emi
       }
     });
   });
-  const socket = net.connect(server.address().port, '127.0.0.1');
+  const socket = clientSocket(server);
   const client = new StompClient(socket, { login: 'me@example.test', passcode: 'S3CRET:x', heartbeat: [0, 0] });
   const message = new Promise((resolve) => client.on('message', resolve));
   client.subscribe('/topic/TD_ALL_SIG_AREA'); // queued until CONNECTED
@@ -112,10 +170,10 @@ test('client sends CONNECT with credentials, subscribes after CONNECTED, and emi
   await close(server);
 });
 
-test('SUBSCRIBE is held back until the server has answered CONNECT', async () => {
+test('SUBSCRIBE is held back until the server has answered CONNECT', async (t) => {
   let subscribedEarly = false;
   let connectedSent = false;
-  const server = await fakeServer((sock) => {
+  const server = await fakeServer(t, (sock) => {
     const p = new FrameParser();
     sock.on('data', (d) => {
       for (const f of p.push(d)) {
@@ -130,7 +188,7 @@ test('SUBSCRIBE is held back until the server has answered CONNECT', async () =>
       }
     });
   });
-  const socket = net.connect(server.address().port, '127.0.0.1');
+  const socket = clientSocket(server);
   const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 0] });
   const message = new Promise((resolve) => client.on('message', resolve));
   client.subscribe('/topic/x');
@@ -141,19 +199,20 @@ test('SUBSCRIBE is held back until the server has answered CONNECT', async () =>
   await close(server);
 });
 
-test('the client never emits or stringifies the passcode', async () => {
+test('the client never emits or stringifies the passcode', async (t) => {
   const sock = new net.Socket();
+  t.after(() => sock.destroy());
   sock.write = () => true;
   const client = new StompClient(sock, { login: 'l', passcode: 'SENTINEL-PASSCODE' });
   const dump = JSON.stringify(client) + String(Object.keys(client)) + JSON.stringify(Object.getOwnPropertyNames(client));
   assert.ok(!dump.includes('SENTINEL-PASSCODE'));
 });
 
-test('an ERROR frame becomes a fault carrying only the message header', async () => {
-  const server = await fakeServer((sock) => {
+test('an ERROR frame becomes a fault carrying only the message header', async (t) => {
+  const server = await fakeServer(t, (sock) => {
     sock.on('data', () => sock.write(encodeFrame('ERROR', { message: 'bad login' }, 'details')));
   });
-  const socket = net.connect(server.address().port, '127.0.0.1');
+  const socket = clientSocket(server);
   const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 0] });
   const fault = new Promise((resolve) => client.on('fault', resolve));
   const closed = new Promise((resolve) => client.on('close', resolve));
@@ -164,11 +223,11 @@ test('an ERROR frame becomes a fault carrying only the message header', async ()
   await close(server);
 });
 
-test('a silent server trips the heart-beat timeout', async () => {
-  const server = await fakeServer((sock) => {
+test('a silent server trips the heart-beat timeout', async (t) => {
+  const server = await fakeServer(t, (sock) => {
     sock.on('data', () => sock.write(encodeFrame('CONNECTED', { version: '1.2', 'heart-beat': '40,0' })));
   });
-  const socket = net.connect(server.address().port, '127.0.0.1');
+  const socket = clientSocket(server);
   const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 40] });
   const fault = new Promise((resolve) => client.on('fault', resolve));
   client.start();
@@ -177,14 +236,130 @@ test('a silent server trips the heart-beat timeout', async () => {
   await close(server);
 });
 
-test('a garbled stream is a fault, not a crash', async () => {
-  const server = await fakeServer((sock) => {
+test('a garbled stream is a fault, not a crash', async (t) => {
+  const server = await fakeServer(t, (sock) => {
     sock.on('data', () => sock.write('MESSAGE\ncontent-length:2\n\nabX'));
   });
-  const socket = net.connect(server.address().port, '127.0.0.1');
+  const socket = clientSocket(server);
   const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 0] });
   const fault = new Promise((resolve) => client.on('fault', resolve));
   client.start();
   assert.match((await fault).message, /not terminated/);
   await close(server);
+});
+
+test('stomp: fake transport gates subscriptions and delivers a message', (t) => {
+  const socket = new FakeSocket();
+  const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 0] });
+  t.after(() => client.disconnect());
+  let message;
+  client.on('message', (value) => { message = value; });
+  client.subscribe('/topic/x');
+  client.start();
+  assert.deepEqual(socket.frames.map((frame) => frame.command), ['CONNECT']);
+  socket.send('CONNECTED', { version: '1.2', 'heart-beat': '0,0' });
+  assert.deepEqual(socket.frames.map((frame) => frame.command), ['CONNECT', 'SUBSCRIBE']);
+  socket.send('MESSAGE', { destination: '/topic/x', subscription: 's' }, 'synthetic');
+  assert.deepEqual(message, {
+    destination: '/topic/x', subscription: 's',
+    headers: Object.assign(Object.create(null), { destination: '/topic/x', subscription: 's', 'content-length': '9' }),
+    body: 'synthetic',
+  });
+});
+
+test('stomp: fake transport detects server heart-beat timeout', (t) => {
+  let now = 1000;
+  const intervals = [];
+  t.mock.method(Date, 'now', () => now);
+  t.mock.method(globalThis, 'setInterval', (callback, milliseconds) => {
+    const timer = { callback, milliseconds, unref() {} };
+    intervals.push(timer);
+    return timer;
+  });
+  t.mock.method(globalThis, 'clearInterval', () => {});
+  const socket = new FakeSocket();
+  const client = new StompClient(socket, { login: 'l', passcode: 'p', heartbeat: [0, 20] });
+  t.after(() => client.disconnect());
+  const faults = [];
+  client.on('fault', (error) => faults.push(error));
+  client.start();
+  socket.send('CONNECTED', { version: '1.2', 'heart-beat': '20,0' });
+  assert.equal(intervals.length, 1);
+  assert.equal(intervals[0].milliseconds, 10);
+  now = 1051;
+  intervals[0].callback();
+  assert.equal(faults.length, 1);
+  assert.match(faults[0].message, /heart-beat timeout/);
+  assert.equal(socket.closed, true);
+});
+
+test('stomp: fake transport turns ERROR frames into safe faults', (t) => {
+  const socket = new FakeSocket();
+  const client = new StompClient(socket, { login: 'l', passcode: 'SENTINEL', heartbeat: [0, 0] });
+  t.after(() => client.disconnect());
+  const faults = [];
+  client.on('fault', (error) => faults.push(error));
+  client.start();
+  socket.send('ERROR', { message: 'bad login' }, 'SENTINEL details');
+  assert.equal(faults.length, 1);
+  assert.match(faults[0].message, /bad login/);
+  assert.ok(!faults[0].message.includes('SENTINEL'));
+  assert.equal(socket.closed, true);
+});
+
+test('feed: fake transport keeps credentials private, logs bad bodies, and reconnects', async (t) => {
+  const sockets = [];
+  const logs = [];
+  const events = [];
+  const timers = [];
+  const statuses = [];
+  let connectedCount = 0;
+  let readCount = 0;
+  const waiters = [];
+  const waitConnected = async (n) => {
+    if (connectedCount >= n) return;
+    await new Promise((resolve) => waiters.push({ n, resolve }));
+  };
+  const feed = runFeed({
+    connectSocket: () => {
+      const socket = new FakeSocket((frame) => {
+        if (frame.command === 'CONNECT') queueMicrotask(() => socket.send('CONNECTED', { version: '1.2', server: 'synthetic', 'heart-beat': '0,0' }));
+      });
+      sockets.push(socket);
+      return socket;
+    },
+    readCredentials: async () => { readCount += 1; return { account: 'synthetic', secret: 'SENTINEL-PASSCODE' }; },
+    topic: '/topic/TD_ALL_SIG_AREA', area: 'Y9',
+    onEvents: (batch) => events.push(...batch),
+    onStatus: (status) => {
+      statuses.push(status);
+      if (status.state === 'connected') {
+        connectedCount += 1;
+        for (const waiter of waiters.splice(0)) if (waiter.n <= connectedCount) waiter.resolve();
+      }
+    },
+    log: (line) => logs.push(line),
+    heartbeat: [0, 0], backoff: { minMs: 20, maxMs: 40 },
+    setTimer: (callback, milliseconds) => { const timer = { callback, milliseconds, unref() {} }; timers.push(timer); return timer; },
+    clearTimer: () => {},
+  });
+  t.after(() => feed.stop());
+  await waitConnected(1);
+  assert.ok(!logs.join('\n').includes('SENTINEL-PASSCODE'));
+  sockets[0].send('MESSAGE', { destination: '/topic/TD_ALL_SIG_AREA', subscription: 'sub-0' }, JSON.stringify([
+    { CA_MSG: { area_id: 'Y9', msg_type: 'CA', descr: '1A23', from: '2034', to: '1001', time: '1700000000000' } },
+  ]));
+  sockets[0].send('MESSAGE', { destination: '/topic/TD_ALL_SIG_AREA', subscription: 'sub-0' }, '{bad json');
+  assert.deepEqual(events.map((event) => event.descr), ['1A23']);
+  assert.ok(statuses.some((status) => status.badMessage));
+  assert.ok(logs.some((line) => /dropped a bad message/.test(line)));
+
+  sockets[0].destroy();
+  assert.equal(timers.length, 1, 'closing the connection schedules one retry');
+  assert.equal(timers[0].milliseconds, 20);
+  assert.ok(logs.some((line) => /reconnecting/.test(line)));
+  const secondConnected = waitConnected(2);
+  timers[0].callback();
+  await secondConnected;
+  assert.equal(readCount, 2);
 });

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm, utimes, writeFile } from 'node:fs/promises';
-import os from 'node:os';
+import { mkdir, mkdtemp, readFile, readdir, rm, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { parseAccount, readCredentials } from '../keychain.mjs';
 import { createRecorder } from '../recorder.mjs';
@@ -10,7 +10,16 @@ import { TdState } from '../state.mjs';
 import { createStaticStore } from '../static.mjs';
 import { inArea, parseTdBody } from '../td.mjs';
 
-const tmp = () => mkdtemp(path.join(os.tmpdir(), 'kx-test-'));
+const testScratch = process.env.KX_TEST_SCRATCH_DIR ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.scratch/replay-round5');
+const tmp = async (t, beforeRemove = async () => {}) => {
+  await mkdir(testScratch, { recursive: true });
+  const dir = await mkdtemp(path.join(testScratch, 'kx-test-'));
+  t.after(async () => {
+    try { await beforeRemove(); }
+    finally { await rm(dir, { recursive: true, force: true }); }
+  });
+  return dir;
+};
 
 // ---- td ------------------------------------------------------------------------------
 
@@ -118,8 +127,8 @@ test('keychain: refuses off macOS, and rejects an empty password or missing acco
 const smartDoc = { BERTHDATA: [{ TD: 'Y9', STANME: 'KINGS X' }, { TD: 'Y8', STANME: 'STEVENAGE' }] };
 const corpusDoc = { TIPLOCDATA: [{ STANOX: '54311', NLCDESC: 'KINGS CROSS' }, { STANOX: ' ', NLCDESC: 'X' }] };
 
-test('static: a fresh cached file is used with no network and no keychain call', async () => {
-  const dir = await tmp();
+test('static: a fresh cached file is used with no network and no keychain call', async (t) => {
+  const dir = await tmp(t);
   await writeFile(path.join(dir, 'smart.json.gz'), gzipSync(JSON.stringify(smartDoc)));
   const store = createStaticStore({
     dataDir: dir,
@@ -127,11 +136,10 @@ test('static: a fresh cached file is used with no network and no keychain call',
     fetchImpl: () => assert.fail('must not fetch'),
   });
   assert.deepEqual(await store.smartRows({ td: 'Y9' }), [smartDoc.BERTHDATA[0]]);
-  await rm(dir, { recursive: true });
 });
 
-test('static: a missing file is fetched with basic auth, cached as gzip, and filtered', async () => {
-  const dir = await tmp();
+test('static: a missing file is fetched with basic auth, cached as gzip, and filtered', async (t) => {
+  const dir = await tmp(t);
   let seen;
   const store = createStaticStore({
     dataDir: dir,
@@ -145,11 +153,10 @@ test('static: a missing file is fetched with basic auth, cached as gzip, and fil
   assert.match(seen.url, /type=CORPUS$/);
   assert.equal(seen.auth, `Basic ${Buffer.from('who@example.test:pw:1').toString('base64')}`);
   assert.ok((await readdir(dir)).includes('corpus.json.gz'));
-  await rm(dir, { recursive: true });
 });
 
-test('static: a stale file is refetched; an HTTP error is reported without credentials', async () => {
-  const dir = await tmp();
+test('static: a stale file is refetched; an HTTP error is reported without credentials', async (t) => {
+  const dir = await tmp(t);
   const file = path.join(dir, 'smart.json.gz');
   await writeFile(file, gzipSync(JSON.stringify({ BERTHDATA: [] })));
   const old = new Date(Date.now() - 30 * 24 * 3600 * 1000);
@@ -169,11 +176,10 @@ test('static: a stale file is refetched; an HTTP error is reported without crede
     return true;
   });
   assert.equal(fetched, 1);
-  await rm(dir, { recursive: true });
 });
 
-test('static: an already-decoded JSON response is accepted and cached as gzip', async () => {
-  const dir = await tmp();
+test('static: an already-decoded JSON response is accepted and cached as gzip', async (t) => {
+  const dir = await tmp(t);
   const store = createStaticStore({
     dataDir: dir,
     readCredentials: async () => ({ account: 'a', secret: 'b' }),
@@ -182,7 +188,6 @@ test('static: an already-decoded JSON response is accepted and cached as gzip', 
   assert.equal((await store.smartRows({ td: 'Y9' })).length, 1);
   const cached = await readFile(path.join(dir, 'smart.json.gz'));
   assert.equal(cached[0], 0x1f);
-  await rm(dir, { recursive: true });
 });
 
 test('static: an unknown file name is refused', async () => {
@@ -192,16 +197,88 @@ test('static: an unknown file name is refused', async () => {
 
 // ---- recorder ------------------------------------------------------------------------
 
-test('recorder: writes NDJSON lines, one file per UTC day', async () => {
-  const dir = await tmp();
+test('recorder: writes NDJSON lines, one file per UTC day', async (tctx) => {
+  let rec;
+  const dir = await tmp(tctx, async () => rec?.close());
   let t = Date.UTC(2026, 10, 7, 23, 59, 59);
-  const rec = await createRecorder({ dir, area: 'Y9', now: () => t });
+  rec = await createRecorder({ dir, area: 'Y9', now: () => t,
+    schedule: () => ({ unref() {} }), unschedule: () => {} });
   rec.append({ kind: 'heartbeat', area: 'Y9' });
   t = Date.UTC(2026, 10, 8, 0, 0, 1);
   rec.append({ kind: 'heartbeat', area: 'Y9' });
   await rec.close();
   assert.deepEqual((await readdir(dir)).sort(), ['td-Y9-20261107.ndjson', 'td-Y9-20261108.ndjson']);
-  const line = JSON.parse((await readFile(path.join(dir, 'td-Y9-20261108.ndjson'), 'utf8')).trim());
-  assert.deepEqual(line, { t, e: { kind: 'heartbeat', area: 'Y9' } });
-  await rm(dir, { recursive: true });
+  const lines = (await readFile(path.join(dir, 'td-Y9-20261108.ndjson'), 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.deepEqual(lines.map((line) => line.e.kind), ['snapshot', 'heartbeat']);
+  assert.equal(lines[0].e.area, 'Y9');
+  assert.deepEqual(lines[0].e.counts, { step: 0, cancel: 0, interpose: 0, heartbeat: 1, sclass: 0, unknown: 0 });
+  assert.deepEqual(lines[1], { t, e: { kind: 'heartbeat', area: 'Y9' } });
+});
+
+test('recorder: captures startup and 10-minute S-class snapshots across UTC rollover', async (tctx) => {
+  let rec;
+  const dir = await tmp(tctx, async () => rec?.close());
+  let t = Date.UTC(2026, 10, 7, 23, 40, 0);
+  const timers = [];
+  const cleared = [];
+  rec = await createRecorder({ dir, area: 'Y9', now: () => t,
+    schedule: (callback, milliseconds) => {
+      const timer = { callback, milliseconds, unref() {} };
+      timers.push(timer);
+      return timer;
+    },
+    unschedule: (timer) => cleared.push(timer),
+  });
+  assert.equal(timers.length, 1);
+  assert.equal(timers[0].milliseconds, 10 * 60_000);
+  rec.append({ kind: 'sclass', area: 'Y9', msgType: 'SF', address: '0A', data: '4B' });
+  t += 10 * 60_000;
+  timers[0].callback();
+  t = Date.UTC(2026, 10, 8, 0, 0, 1);
+  rec.append({ kind: 'interpose', area: 'Y9', to: '1001', descr: '1A23' });
+  await rec.close();
+  assert.equal(cleared.length, 1);
+  assert.deepEqual(cleared, [timers[0]]);
+
+  const day1 = (await readFile(path.join(dir, 'td-Y9-20261107.ndjson'), 'utf8')).trim().split('\n').map(JSON.parse);
+  const day2 = (await readFile(path.join(dir, 'td-Y9-20261108.ndjson'), 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.equal(day1[0].e.kind, 'snapshot', 'startup creates a replay anchor');
+  assert.deepEqual(day1[0].e.counts, { step: 0, cancel: 0, interpose: 0, heartbeat: 0, sclass: 0, unknown: 0 });
+  assert.equal(day1[1].e.kind, 'sclass');
+  assert.equal(day1.length, 3, 'the 10-minute timer writes a checkpoint');
+  const timed = day1[2].e;
+  assert.equal(timed.kind, 'snapshot');
+  assert.deepEqual(timed.sclass, { addresses: 1, data: { '0A': '4B' } });
+  assert.equal(timed.counts.sclass, 1);
+  assert.equal(day2[0].e.kind, 'snapshot', 'new UTC day starts with the current picture');
+  assert.deepEqual(day2[0].e.berths, {});
+  assert.deepEqual(day2[0].e.sclass, { addresses: 1, data: { '0A': '4B' } });
+  assert.deepEqual(day2[1].e, { kind: 'interpose', area: 'Y9', to: '1001', descr: '1A23' });
+});
+
+test('recorder: ignores other areas and writes stop after close', async (tctx) => {
+  let rec;
+  const dir = await tmp(tctx, async () => rec?.close());
+  let t = Date.UTC(2026, 10, 8, 12);
+  const timers = [];
+  const cleared = [];
+  let snapshots = 0;
+  rec = await createRecorder({ dir, area: 'Y9', now: () => t,
+    onSnapshot: () => { snapshots += 1; },
+    schedule: (callback) => { const timer = { callback, unref() {} }; timers.push(timer); return timer; },
+    unschedule: (timer) => cleared.push(timer),
+  });
+  assert.equal(snapshots, 1, 'recorder writes the startup snapshot');
+  rec.append({ kind: 'interpose', area: 'Y8', to: 'WRONG', descr: 'BAD' });
+  rec.append({ kind: 'interpose', area: 'Y9', to: '1001', descr: '1A23' });
+  await rec.close();
+  rec.append({ kind: 'interpose', area: 'Y9', to: '1002', descr: '2B45' });
+  rec.checkpoint();
+  timers[0].callback();
+  assert.equal(snapshots, 1, 'closed recorder emits no checkpoint callbacks');
+  assert.equal(cleared.length, 1);
+  assert.deepEqual(cleared, [timers[0]]);
+  const rows = (await readFile(path.join(dir, 'td-Y9-20261108.ndjson'), 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.deepEqual(rows.map((row) => row.e.kind), ['snapshot', 'interpose']);
+  assert.deepEqual(rows[1].e, { kind: 'interpose', area: 'Y9', to: '1001', descr: '1A23' });
 });
