@@ -121,22 +121,70 @@ export interface DrawnTrain {
   headingRad: number;
 }
 
+interface MaterialPalette {
+  opacity: number;
+  copies: Map<THREE.Material, THREE.Material>;
+}
+
 export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: (view: TrainView) => TrainKind | undefined) {
   const templates = new Map<TrainKind, THREE.Group>();
   const drawn = new Map<number, DrawnTrain>();
-  const ownedMaterials = new Map<number, THREE.Material[]>();
+  const palettes = new Map<TrainKind, Map<number, MaterialPalette>>();
+  const assigned = new Map<number, MaterialPalette>();
+  const originals = new WeakMap<THREE.Material, THREE.Material>();
+  const setOpacity = (material: THREE.Material, opacity: number): void => {
+    const transparent = opacity < 1;
+    if (material.transparent !== transparent) { material.transparent = transparent; material.needsUpdate = true; }
+    material.opacity = opacity; material.depthWrite = !transparent;
+  };
+  const paletteFor = (kind: TrainKind, opacity: number, needed: Set<number>, previous?: MaterialPalette): MaterialPalette => {
+    let buckets = palettes.get(kind);
+    if (!buckets) { buckets = new Map(); palettes.set(kind, buckets); }
+    const shared = buckets.get(opacity);
+    if (shared) return shared;
+    // A unique fading phase can keep its material objects. Reuse only when no
+    // train in this frame needs the old opacity; never quantize a physical fade.
+    if (previous && !needed.has(previous.opacity)) {
+      buckets.delete(previous.opacity);
+      previous.opacity = opacity;
+      for (const material of previous.copies.values()) setOpacity(material, opacity);
+      buckets.set(opacity, previous);
+      return previous;
+    }
+    const palette: MaterialPalette = { opacity, copies: new Map() };
+    buckets.set(opacity, palette);
+    return palette;
+  };
+  const bind = (train: DrawnTrain, palette: MaterialPalette): void => {
+    if (assigned.get(train.id) === palette) return;
+    const copy = (material: THREE.Material): THREE.Material => {
+      const original = originals.get(material) ?? material;
+      if (!palette.copies.has(original)) {
+        const shared = original.clone();
+        setOpacity(shared, palette.opacity);
+        palette.copies.set(original, shared); originals.set(shared, original);
+      }
+      return palette.copies.get(original)!;
+    };
+    train.group.traverse((node) => {
+      if (node instanceof THREE.Mesh) node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
+    });
+    assigned.set(train.id, palette);
+  };
+  const releaseUnused = (used: Set<MaterialPalette>): void => {
+    for (const [kind, buckets] of palettes) {
+      for (const [opacity, palette] of buckets) if (!used.has(palette)) {
+        for (const material of palette.copies.values()) material.dispose();
+        buckets.delete(opacity);
+      }
+      if (!buckets.size) palettes.delete(kind);
+    }
+  };
   const build = (view: TrainView): DrawnTrain => {
     const resolvedKind = kindFor?.(view);
     const layout = resolvedKind === undefined ? layoutForLength(view.lengthM) : layoutForKind(resolvedKind), kind = layout.spec.kind;
     if (!templates.has(kind)) templates.set(kind, buildTrain(kind));
     const group = templates.get(kind)!.clone(true);
-    const copies = new Map<THREE.Material, THREE.Material>();
-    group.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return;
-      const copy = (m: THREE.Material): THREE.Material => { if (!copies.has(m)) copies.set(m, m.clone()); return copies.get(m)!; };
-      o.material = Array.isArray(o.material) ? o.material.map(copy) : copy(o.material);
-    });
-    ownedMaterials.set(view.id, [...copies.values()]);
     // Car lengths include couplings. train.ts already stops each body END_GAP short of its car
     // end and fills the gap with gangway bellows and couplers, so no rescale here.
     group.userData.id = view.id;
@@ -149,14 +197,22 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     const t = drawn.get(id);
     if (!t) return;
     parent.remove(t.group); drawn.delete(id);
-    for (const material of ownedMaterials.get(id) ?? []) material.dispose();
-    ownedMaterials.delete(id);
+    assigned.delete(id);
   };
   const update = (views: readonly TrainView[]): void => {
     const present = new Set(views.map((t) => t.id));
     for (const id of drawn.keys()) if (!present.has(id)) remove(id);
+    const needed = new Map<TrainKind, Set<number>>();
     for (const view of views) {
       const t = drawn.get(view.id) ?? build(view);
+      if (!needed.has(t.kind)) needed.set(t.kind, new Set());
+      needed.get(t.kind)!.add(view.opacity);
+    }
+    const used = new Set<MaterialPalette>();
+    for (const view of views) {
+      const t = drawn.get(view.id)!;
+      const palette = paletteFor(t.kind, view.opacity, needed.get(t.kind)!, assigned.get(view.id));
+      bind(t, palette); used.add(palette);
       t.description = view.description; t.group.userData.description = view.description;
       t.noseWorld = [view.leading.point[0], 0, view.leading.point[1]]; t.headingRad = view.heading;
       const poses = carPoses(graph, view, t.layout);
@@ -171,15 +227,12 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
           bogie.rotation.y = Math.atan2(sample.back[0], sample.back[1]) - pose.rotationY;
         }
       }
-      for (const material of ownedMaterials.get(view.id) ?? []) {
-        const transparent = view.opacity < 1;
-        if (material.transparent !== transparent) { material.transparent = transparent; material.needsUpdate = true; }
-        material.opacity = view.opacity; material.depthWrite = !transparent;
-      }
     }
+    releaseUnused(used);
   };
   const dispose = (): void => {
     for (const id of [...drawn.keys()]) remove(id);
+    releaseUnused(new Set());
     const geometries = new Set<THREE.BufferGeometry>();
     for (const template of templates.values()) template.traverse((o) => {
       if (o instanceof THREE.Mesh && o.name !== 'bogie-mesh') geometries.add(o.geometry);
