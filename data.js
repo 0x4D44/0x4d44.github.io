@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "kings-cross",
+    title: "King's Cross in 3D",
+    tagline: "The station at true scale: the twin train-shed arches, the Western Concourse dome, platforms 0 to 10 and the buffer stops, with LNER, Hull Trains and Lumo Azumas standing at the buffers, all built from OpenStreetMap. Orbit and zoom. Live running is not connected yet. TypeScript + Three.js on a tested core.",
+    url: "https://0x4d44.github.io/kings-cross/",
+    illustration: "ill-kings-cross",
+    date: "2026-11-08T00:05:00",
+    year: 2026,
+    tags: ["simulation", "rail"],
+    real: true,
+  },
+  {
     slug: "bogle-castle",
     title: "Bogle Castle",
     tagline: "A Doom-like first-person shooter in a haunted Scottish castle: fight from the kirkyard through the forest, the distillery and the tower to the mad Laird's lab and free Ailsa. How fast you get there picks one of three endings. Written in mdhavers, a Scots programming language, compiled to WebAssembly.",
@@ -2186,7 +2197,7 @@ window.COLLECTIONS = [
     slugs: ["road-wear", "plan-to-build"] },
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
-    slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "ecml", "ecml-timeline", "br1955",
+    slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "kings-cross", "ecml", "ecml-timeline", "br1955",
       "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
