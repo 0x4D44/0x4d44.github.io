@@ -15,6 +15,7 @@ import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platfor
 import { barlowPlan, greatNorthernHotelPlan, midlandGrandPlan, REPLACED_BUILDING_IDS, tunnelMouths } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
+import { WESTERN_RANGE } from '../web/src/shed.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -58,7 +59,7 @@ export function optionsFrom(args) {
   const out = path.resolve(values.get('--out') ?? path.join(repoRoot, '.scratch/evidence'));
   if (!within(path.join(repoRoot, '.scratch'), out)) throw new Error('--out must be under this worktree .scratch (the pack contains private derived data)');
   return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out,
-    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(repoRoot, '.scratch/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt };
+    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt };
 }
 export async function safeOutputDirectory(root, directory) {
   if (!within(root, directory)) throw new Error('output escapes its root');
@@ -107,7 +108,9 @@ export function stationCameras(data) {
     'shed-interior': camera(at(s.width / 4, s.length - 7, 3.2), at(s.width / 4, s.length - 90, 9), 'shedLayout, platform north end'),
     'platform-eye': camera(at(s.width / 2, 100, PLATFORM_HEIGHT + 1.6), at(s.width / 2, 140, PLATFORM_HEIGHT + 1.6), 'shedLayout platform axis; eye 1.6 m above platform'),
     concourse: camera([concourse.centre[0] - concourse.radius * .6, PLATFORM_HEIGHT + 1.6, concourse.centre[1]], [concourse.centre[0], 12, concourse.centre[1]], 'concourseCanopy fitted OSM arc'),
-    'western-range': camera(at(-43, 185, 12), at(0, 185, 9), 'shedLayout west wall north of concourse, clear of city buildings'),
+    'western-range': camera(at(-WESTERN_RANGE.depth - 6, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 1.6),
+      at(-WESTERN_RANGE.depth - 0.1, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 3.5),
+      `WESTERN_RANGE west brick facade v${WESTERN_RANGE.v0}..${WESTERN_RANGE.v1}; eye-level west-side view`, { fov: 35, near: .1 }),
     'roof-above': camera(at(s.width / 2 + 45, 110, s.crown + 110), at(s.width / 2, 110, s.crown - 3), 'shedLayout roof'),
     'north-gable': camera(at(s.width / 2, s.length + 80, 18), at(s.width / 2, s.length, 12), 'shedLayout north gable'),
   };
@@ -159,6 +162,33 @@ export async function prepareEvidenceScene(kx, hideScenery, bare = false) {
 export function signalStateTarget(signals, state, decodedIds = new Set()) {
   return signals.find(s => Number.isSafeInteger(s.id) && s.id > 0 && !s.inferred && s.state === state &&
     (state !== 'unknown' || decodedIds.has(s.id))) ?? null;
+}
+
+/** A close view of the lamp face from the track side, below head height, with the OSM aspect kept visible. */
+export function signalStateCamera(position, signal, source = 'OSM signal face') {
+  const facingLength = Math.hypot(...signal.facing) || 1;
+  const fx = signal.facing[0] / facingLength, fz = signal.facing[1] / facingLength;
+  const mountSide = signal.side === 'left' ? 1 : -1;
+  // The signal post is offset from the rail by two metres; move partway back towards the track.
+  const trackX = -mountSide * signal.travel[1], trackZ = mountSide * signal.travel[0];
+  return {
+    pos: [position[0] + fx * 2.8 + trackX * 1.6, position[1] + 2.9, position[2] + fz * 2.8 + trackZ * 1.6],
+    target: [position[0] + fx * .32, position[1] + 4.1, position[2] + fz * .32],
+    near: .1, fov: 30, source,
+  };
+}
+
+/** Hide the station board only while a signal face is captured, then restore its exact inline visibility. */
+export function setSignalDetailBoardVisibility(board, hidden, previous = null) {
+  if (!board) return null;
+  if (hidden) {
+    const state = { value: board.style.getPropertyValue('visibility'), priority: board.style.getPropertyPriority('visibility') };
+    board.style.setProperty('visibility', 'hidden');
+    return state;
+  }
+  if (previous?.value) board.style.setProperty('visibility', previous.value, previous.priority);
+  else board.style.removeProperty('visibility');
+  return null;
 }
 
 /** Convert the requested London clock to an epoch window, including BST recordings. */
@@ -213,6 +243,14 @@ export function trainCameras(trains, data) {
   if (pantograph) { const s = (pantograph[0] + pantograph[1]) / 2; cams.pantograph = c(at(l9, s - 2, 5.5, 8), at(l9, s, 0, 3.8), 'roof pantograph'); }
   for (const [name, kind] of [['lumo', 'lumo5'], ['hull-trains', 'hull5'], ['great-northern-387', 'gn387x4']]) {
     const t = trains.find(t => t.kind === kind); if (t) cams[name] = c(stand(t, 6.5, 5, 1.6), at(t, 6.5, 0, 2), `sample ${kind}`);
+  }
+  for (const kind of ['gc180x5', 'tl700x8']) {
+    const t = trains.find(t => t.kind === kind); if (!t) continue;
+    const layout = trainLayout(kind);
+    cams[`${kind}-nose-three-quarter`] = c(stand(t, -3, 3.5, 1.6), at(t, 0, 0, 2), `sample ${kind}; nose three-quarter`);
+    const distance = Math.max(950, layout.length * 6);
+    cams[`${kind}-whole-side`] = { ...c(at(t, layout.length / 2, -distance, 8), at(t, layout.length / 2, 0, 2), `sample ${kind}; full side; cutaway: shed and generic blocks hidden`),
+      fov: 7, near: 100, hideScenery: true };
   }
   return cams;
 }
@@ -381,7 +419,14 @@ export async function main(args = process.argv.slice(2)) {
       if (options.gpu && !realMetal(metadata.renderer)) throw new Error(`real Metal required, observed renderer: ${metadata.renderer}`);
       if (extra.signalId !== undefined && metadata.signals?.find(s=>s.id===extra.signalId)?.state !== extra.observedState) throw new Error('signal changed state before capture; shot was not accepted');
       const file = `axis-${id}/${name}.png`; await mkdir(path.join(options.out, `axis-${id}`), { recursive: true });
-      const png = await S('Page.captureScreenshot', { format: 'png' });
+      const boardState = extra.signalId === undefined ? null : await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),true)`);
+      let png;
+      try {
+        if (extra.signalId !== undefined) await twoFrames();
+        png = await S('Page.captureScreenshot', { format: 'png' });
+      } finally {
+        if (extra.signalId !== undefined) await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),false,${JSON.stringify(boardState)})`);
+      }
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
       const record = { file, axis: id, scenario: currentScenario, ...metadata, source: c?.source ?? 'current page camera', ...extra };
@@ -408,12 +453,45 @@ export async function main(args = process.argv.slice(2)) {
     for (const [name, c] of Object.entries(cameras).filter(([, c]) => c.grid)) await shot('01', `${name}-10m-grid`, c);
 
     await navigate('?trains=demo&board=0', 'sample trains');
-    let trains = await evaluate('window.__kx.trains.map(t=>({kind:t.kind,nose:t.noseWorld,h:t.headingRad}))');
-    const staged = await evaluate(`(() => { const k=window.__kx; if(k.trains.some(t=>t.kind==='gn387x4'))return 'existing sample'; if(typeof k.evidenceBuildTrain!=='function')return null; const base=k.trains.find(t=>t.kind==='lner5'); if(!base)return null; const group=k.evidenceBuildTrain('gn387x4');group.position.copy(base.group.position);group.quaternion.copy(base.group.quaternion);k.scene.add(group);base.group.visible=false;k.trains[k.trains.indexOf(base)]={...base,kind:'gn387x4',group};return 'staged sample 387 replacing sample lner5 for evidence'; })()`);
-    if (staged) trains = await evaluate('window.__kx.trains.map(t=>({kind:t.kind,nose:t.noseWorld,h:t.headingRad}))');
+    const readTrainRows = () => evaluate('window.__kx.trains.map(t=>({kind:t.kind,nose:t.noseWorld,h:t.headingRad}))');
+    const stageSample = async kind => evaluate(`(() => {
+      const k=window.__kx;
+      if(k.trains.some(t=>t.kind===${JSON.stringify(kind)}))return 'existing sample';
+      if(typeof k.evidenceBuildTrain!=='function'||k.__evidenceActiveTrain)return null;
+      const base=k.trains.find(t=>t.kind==='lner5'); if(!base)return null;
+      const group=k.evidenceBuildTrain(${JSON.stringify(kind)});
+      group.position.copy(base.group.position);group.quaternion.copy(base.group.quaternion);k.scene.add(group);base.group.visible=false;
+      const active={...base,kind:${JSON.stringify(kind)},group};
+      k.__evidenceBaseTrain=base;k.__evidenceActiveTrain=active;k.trains[k.trains.indexOf(base)]=active;
+      return 'staged sample ${kind} replacing sample lner5 for evidence';
+    })()`);
+    const restoreSample = () => evaluate(`(() => {
+      const k=window.__kx, base=k.__evidenceBaseTrain, active=k.__evidenceActiveTrain;
+      if(!base||!active)return false;
+      const index=k.trains.indexOf(active); if(index<0)return false;
+      active.group.visible=false;active.group.removeFromParent();base.group.visible=true;k.trains[index]=base;
+      delete k.__evidenceBaseTrain;delete k.__evidenceActiveTrain;return true;
+    })()`);
+    const trainRows = () => readTrainRows();
+    let trains = await trainRows();
+    const staged = await stageSample('gn387x4');
+    if (staged) trains = await trainRows();
     else gap('03', `387 unavailable in built samples. After kx is created in main.ts add: ${TRAIN_FACTORY_HOOK} (existing web/dev/trains.ts is not in the normal dist).`);
     for (const [name, c] of Object.entries(trainCameras(trains, data)))
       await attempt('03', name, () => shot('03', name, c, { fixture: name === 'great-northern-387' ? staged : 'offline labelled sample' }));
+    if (staged?.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
+    for (const kind of ['gc180x5', 'tl700x8']) {
+      const fixture = await stageSample(kind);
+      if (!fixture) { gap('03', `${kind} unavailable in built samples; evidenceBuildTrain could not stage a labelled sample.`); continue; }
+      trains = await trainRows();
+      const cameras = trainCameras(trains, data);
+      for (const name of [`${kind}-nose-three-quarter`, `${kind}-whole-side`]) {
+        const c = cameras[name];
+        if (!c) { gap('03', `${kind} sample did not produce ${name}.`); continue; }
+        await attempt('03', name, () => shot('03', name, c, { fixture: fixture === 'existing sample' ? 'offline labelled sample' : fixture }));
+      }
+      if (fixture.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
+    }
 
     // Match the Pages hostname gate, not just a missing upstream on localhost.
     await navigate('', 'Pages-like public host, no relay', 'desktop', publicBase);
@@ -432,10 +510,11 @@ export async function main(args = process.argv.slice(2)) {
       const observedDecodedIds = new Set();
       const signalFrame = () => evaluate(`(() => {
         const k=window.__kx;
+        const camera=${signalStateCamera.toString()};
         return {timeMs:k.feed.timeMs,ended:k.feed.connection==='recording ended',signals:(k.signals?.signals()??[]).map(r=>{
           const p=r.group.position;
           return {id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,
-            pos:[p.x+r.signal.facing[0]*10,4.5,p.z+r.signal.facing[1]*10],target:[p.x,3.7,p.z],near:.1,fov:50,source:r.label};
+            ...camera([p.x,p.y,p.z],r.signal,r.label)};
         })};
       })()`);
       await attempt('04', 'replay and board', async () => {
