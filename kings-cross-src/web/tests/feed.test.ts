@@ -42,6 +42,21 @@ test('feed parses NDJSON with blank lines and CRLF and preserves equal-time even
   for (const invalid of ['no json', JSON.stringify({ t: null, e: first }), JSON.stringify({ t: 1, e: { kind: 'step', area: 'TEST' } }), JSON.stringify({ t: 1, e: { ...next, to: 5 } })]) assert.throws(() => parseRecording(invalid), /line 1/);
 });
 
+test('feed parses recordings with startup marks around parsing even when an input is invalid', () => {
+  const names = ['kx:recording-parse-start', 'kx:recording-parse-end'];
+  const clear = (): void => { for (const name of names) performance.clearMarks(name); };
+  try {
+    for (const input of [JSON.stringify(rows[0]), 'invalid']) {
+      clear();
+      if (input === 'invalid') assert.throws(() => parseRecording(input), /line 1/);
+      else assert.deepEqual(parseRecording(input), [rows[0]]);
+      const marks = performance.getEntriesByType('mark').filter(mark => names.includes(mark.name));
+      assert.deepEqual(marks.map(mark => mark.name), names);
+      assert.ok(marks[1]!.startTime >= marks[0]!.startTime);
+    }
+  } finally { clear(); }
+});
+
 test('feed parses recorded snapshots with berth and S-class pictures while keeping old recordings readable', () => {
   const snapshot = { kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' }, sclass: { addresses: 1, data: { '01': 'ab' } }, counts: {}, lastEventTime: null };
   assert.deepEqual(parseRecording(JSON.stringify({ t: 0, e: snapshot })), [{ t: 0, e: snapshot }]);

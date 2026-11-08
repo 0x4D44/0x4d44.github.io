@@ -24,6 +24,8 @@ M = [
     ('proxy preserves the wrong Host', 'vite.config.ts', 'changeOrigin: true', 'changeOrigin: false'),
     ('default mode never probes relay', F, "requested === null ? 'auto'", "requested === null ? 'demo'"),
     ('recording rows remain out of time order', F, 'return rows.sort((a, b) => a.t - b.t);', 'return rows;'),
+    ('recording parse start is not measured', F, "performance.mark('kx:recording-parse-start');", ''),
+    ('failed recording parse is not timed', F, "} finally { performance.mark('kx:recording-parse-end'); }", "} finally { if (false) performance.mark('kx:recording-parse-end'); }"),
     ('replay speed ignored', F, 'seconds * speed * 1000', 'seconds * 1000'),
     ('event applied before advancing to its time', F, 'advanceTo(atMs); reconcile(event, time);', 'reconcile(event, time); advanceTo(atMs);'),
     ('backoff never increases', F, '500 * 2 ** Math.min(16, Math.max(0, Math.floor(attempt)))', '500'),

@@ -1,5 +1,6 @@
 // Startup timing, source-mapped CPU profile, and two fixed replay cameras.
 // Build with --sourcemap; --self-test runs Node-only checks without Chrome or a build.
+// --startup-only captures cold/warm/profile startup without camera FPS measurements.
 // --check-build validates the actual bundle/maps and writes sizes without launching Chrome.
 //
 //   node tools/perf.mjs [--dist <built dir>] [--out <output dir>] [--seconds 60]
@@ -25,6 +26,38 @@ import { fileURLToPath } from 'node:url';
 // visibility/frustum checks and issued a draw; group.visible alone does not prove that.
 function startupObserver() {
   const observation = window.__kxStartup = { sceneRenderedMs: null, replayTrainsRenderedMs: null, trainDraws: 0 };
+  const first = (name) => { if (observation[name] == null) observation[name] = performance.now(); };
+  observation.fetches = [];
+  observation.resources = [];
+  if (typeof PerformanceObserver !== 'undefined') {
+    new PerformanceObserver((list) => {
+      for (const r of list.getEntries()) observation.resources.push({ url: r.name, initiatorType: r.initiatorType,
+        startMs: r.startTime, headersMs: r.responseStart, endMs: r.responseEnd,
+        transferBytes: r.transferSize, encodedBodyBytes: r.encodedBodySize, decodedBodyBytes: r.decodedBodySize,
+        status: r.responseStatus ?? null });
+    }).observe({ type: 'resource', buffered: true });
+  }
+  if (typeof window.fetch === 'function') {
+    const originalFetch = window.fetch;
+    window.fetch = async function (...args) {
+      const row = { url: String(args[0]?.url ?? args[0]), startMs: performance.now() };
+      observation.fetches.push(row);
+      try {
+        const response = await originalFetch.apply(this, args);
+        row.headersMs = performance.now(); row.status = response.status;
+        row.contentLengthBytes = Number(response.headers.get('content-length')) || null;
+        for (const method of ['text', 'json']) {
+          const originalBody = response[method];
+          response[method] = async function (...bodyArgs) {
+            row[`${method}StartMs`] = performance.now();
+            try { return await originalBody.apply(this, bodyArgs); }
+            finally { row[`${method}EndMs`] = performance.now(); }
+          };
+        }
+        return response;
+      } catch (error) { row.failedMs = performance.now(); row.error = error.name; throw error; }
+    };
+  }
   let current;
   Object.defineProperty(window, '__kx', {
     configurable: true,
@@ -32,11 +65,55 @@ function startupObserver() {
     set(k) {
       current = k;
       if (!k?.renderer) return;
+      first('sceneReadyMs');
+      observation.replaySpeed = k.feed?.speed;
+      let motion = k.motion;
+      Object.defineProperty(k, 'motion', { configurable: true, enumerable: true, get: () => motion, set(value) {
+        motion = value;
+        if (!value) return;
+        first('motionCreatedMs');
+        for (const method of ['apply', 'advance']) {
+          const originalMethod = value[method];
+          if (typeof originalMethod !== 'function') continue;
+          value[method] = function (...args) {
+            first(method === 'apply' ? 'firstMotionApplyMs' : 'firstMotionAdvanceMs');
+            // Initial dispatch runs before main assigns its feed variable, so its status
+            // publishes timeMs=0. The first applied replay event carries the exact origin.
+            if (method === 'apply' && k.feed?.mode === 'replay' && observation.replayTimeOriginMs == null && Number.isFinite(args[1])) observation.replayTimeOriginMs = args[1];
+            return originalMethod.apply(this, args);
+          };
+        }
+      } });
+      if (motion) k.motion = motion;
+      let connection = k.feed?.connection;
+      if (k.feed) Object.defineProperty(k.feed, 'connection', { configurable: true, enumerable: true,
+        get: () => connection, set(value) {
+          connection = value;
+          if (value === 'playing' || value === 'recording ended') first('replayClockStartedMs');
+        } });
+      let feedTime = k.feed?.timeMs;
+      if (k.feed) Object.defineProperty(k.feed, 'timeMs', { configurable: true, enumerable: true,
+        get: () => feedTime, set(value) {
+          feedTime = value;
+          if (observation.replayClockStartedMs != null && observation.replayTimeOriginMs == null && Number.isFinite(value) && value > 0) observation.replayTimeOriginMs = value;
+        } });
+      const milestone = (name) => {
+        if (observation[name] != null) return;
+        first(name);
+        observation[name.replace(/Ms$/, 'ClockMs')] = k.feed?.timeMs ?? null;
+      };
       const renderer = k.renderer, original = renderer.render;
       const hooked = new Map();
       let trainDraws = 0;
       renderer.render = function (...args) {
         trainDraws = 0;
+        if (k.motionState?.length) milestone('firstMotionViewMs');
+        if (observation.firstTrainGeometryReadyMs == null && k.feed?.mode === 'replay') {
+          for (const train of k.trains ?? []) train.group?.traverseVisible((object) => {
+            const materials = Array.isArray(object.material) ? object.material : [object.material];
+            if (object.isMesh && materials.some((material) => material && material.visible !== false && material.opacity > 0)) milestone('firstTrainGeometryReadyMs');
+          });
+        }
         if (observation.replayTrainsRenderedMs === null && k.feed?.mode === 'replay') {
           for (const train of k.trains ?? []) train.group?.traverse((object) => {
             if ((!object.isMesh && !object.isLine && !object.isPoints) || hooked.has(object)) return;
@@ -55,6 +132,7 @@ function startupObserver() {
         // Hooks survive frames where trains are hidden; reset their shared draw count each frame.
         if (k.feed?.mode === 'replay' && trainDraws > 0 && observation.replayTrainsRenderedMs === null) {
           observation.replayTrainsRenderedMs = now;
+          observation.firstTrainRenderClockMs = k.feed?.timeMs ?? null;
           observation.trainDraws = trainDraws;
           for (const [object, previous] of hooked) object.onAfterRender = previous;
           renderer.render = original;
@@ -69,6 +147,8 @@ const observerSource = `(${startupObserver.toString()})()`;
 function extractTiming(state) {
   const observed = state?.observation;
   if (!(observed?.sceneRenderedMs > 0) || !(observed?.replayTrainsRenderedMs >= observed.sceneRenderedMs) || !(observed.trainDraws > 0)) return null;
+  const simulationOffset = difference(observed.firstTrainRenderClockMs, observed.replayTimeOriginMs);
+  const contentDelay = simulationOffset != null && observed.replaySpeed > 0 ? simulationOffset / observed.replaySpeed : null;
   return {
     navigationStartToSceneRenderedMs: observed.sceneRenderedMs,
     navigationStartToReplayTrainsRenderedMs: observed.replayTrainsRenderedMs,
@@ -77,7 +157,94 @@ function extractTiming(state) {
     sceneWithin3s: observed.sceneRenderedMs < 3000,
     navigationType: state.navigation?.type ?? null,
     resources: state.resources ?? [],
+    phases: {
+      sceneReadyMs: observed.sceneReadyMs ?? null,
+      motionCreatedMs: observed.motionCreatedMs ?? null,
+      firstMotionApplyMs: observed.firstMotionApplyMs ?? null,
+      firstMotionAdvanceMs: observed.firstMotionAdvanceMs ?? null,
+      replayClockStartedMs: observed.replayClockStartedMs ?? null,
+      firstMotionViewMs: observed.firstMotionViewMs ?? null,
+      firstTrainRenderedMs: observed.replayTrainsRenderedMs,
+      firstTrainGeometryReadyMs: observed.firstTrainGeometryReadyMs ?? null,
+      replayTimeOriginMs: observed.replayTimeOriginMs ?? null,
+      firstMotionViewClockMs: observed.firstMotionViewClockMs ?? null,
+      firstTrainGeometryReadyClockMs: observed.firstTrainGeometryReadyClockMs ?? null,
+      firstTrainRenderClockMs: observed.firstTrainRenderClockMs ?? null,
+      firstMotionViewSimOffsetMs: difference(observed.firstMotionViewClockMs, observed.replayTimeOriginMs),
+      firstTrainGeometryReadySimOffsetMs: difference(observed.firstTrainGeometryReadyClockMs, observed.replayTimeOriginMs),
+      firstTrainRenderSimOffsetMs: difference(observed.firstTrainRenderClockMs, observed.replayTimeOriginMs),
+      firstTrainContentDelayMs: contentDelay,
+      nonReplayElapsedToFirstTrainMs: difference(observed.replayTrainsRenderedMs, contentDelay),
+      clockToViewMs: difference(observed.firstMotionViewMs, observed.replayClockStartedMs),
+      clockToGeometryMs: difference(observed.firstTrainGeometryReadyMs, observed.replayClockStartedMs),
+      geometryToFrustumDrawMs: difference(observed.replayTrainsRenderedMs, observed.firstTrainGeometryReadyMs),
+      recordingParseMs: markDuration(state.marks, 'kx:recording-parse-start', 'kx:recording-parse-end'),
+      sceneToFirstTrainMs: observed.replayTrainsRenderedMs - observed.sceneRenderedMs,
+      clockToFirstTrainMs: observed.replayClockStartedMs == null ? null : observed.replayTrainsRenderedMs - observed.replayClockStartedMs,
+    },
+    marks: state.marks ?? [],
+    fetches: (observed.fetches ?? []).map((row) => ({ ...row,
+      phase: requestPhase(row.url),
+      headersWaitMs: row.headersMs == null ? null : row.headersMs - row.startMs,
+      bodyReadMs: row.textEndMs != null ? row.textEndMs - row.textStartMs : row.jsonEndMs != null ? row.jsonEndMs - row.jsonStartMs : null,
+      measuredThrough: row.textEndMs != null || row.jsonEndMs != null ? 'body' : row.failedMs != null ? 'failure' : 'headers',
+      totalMs: difference(row.textEndMs ?? row.jsonEndMs ?? row.failedMs ?? row.headersMs, row.startMs),
+    })),
+    resourceTimings: observed.resources ?? [],
   };
+}
+
+function difference(end, start) { return end == null || start == null ? null : end - start; }
+
+function markDuration(marks = [], start, end) {
+  const a = marks.find((mark) => mark.name === start)?.startMs;
+  const b = marks.find((mark) => mark.name === end)?.startMs;
+  return a == null || b == null ? null : b - a;
+}
+
+// CDP request ids retain the URL even when loadingFailed has no response. No bodies/headers.
+function captureNetwork(message, requests, errors) {
+  const p = message.params;
+  if (message.method === 'Network.requestWillBeSent') {
+    requests.push({ requestId: p.requestId, url: p.request.url, startSeconds: p.timestamp, type: p.type });
+  } else if (['Network.responseReceived', 'Network.loadingFinished', 'Network.loadingFailed'].includes(message.method)) {
+    const row = requests.findLast((row) => row.requestId === p.requestId);
+    if (!row) return;
+    if (message.method === 'Network.responseReceived') Object.assign(row, { status: p.response.status, headersSeconds: p.timestamp,
+      fromDiskCache: p.response.fromDiskCache ?? false, fromServiceWorker: p.response.fromServiceWorker ?? false });
+    else Object.assign(row, { endSeconds: p.timestamp, encodedDataBytes: p.encodedDataLength ?? null,
+      ...(p.errorText ? { error: p.errorText, canceled: p.canceled ?? false } : {}) });
+  } else if (message.method === 'Log.entryAdded' && p.entry.level === 'error') {
+    errors.push(`log: ${p.entry.text}${p.entry.url ? ` URL: ${p.entry.url}` : ''}`);
+  }
+}
+function requestPhase(url) {
+  const pathname = new URL(url, 'http://perf.invalid').pathname;
+  return pathname.startsWith('/relay/') ? pathname.slice('/relay/'.length) : 'page/assets';
+}
+function requestSummary(requests) {
+  const failed = requests.filter((row) => row.status >= 400 || row.error);
+  return { count: requests.length, phaseCounts: requests.reduce((counts, row) => { const phase = requestPhase(row.url); counts[phase] = (counts[phase] ?? 0) + 1; return counts; }, {}), failedCount: failed.length, failedUrls: [...new Set(failed.map((row) => row.url))],
+    statusCounts: requests.reduce((counts, row) => { const status = row.status ?? (row.error ? 'failed' : 'pending'); counts[status] = (counts[status] ?? 0) + 1; return counts; }, {}) };
+}
+
+function startupPhaseMarkdown(startup) {
+  const cold = startup.coldFreshProfile, warm = startup.warmSecondLoadSameProfile;
+  const value = (n) => n == null ? 'unavailable' : Number(n.toFixed(2));
+  const phases = [
+    ['Scene ready', 'sceneReadyMs'], ['Replay clock started', 'replayClockStartedMs'],
+    ['Recording parse duration', 'recordingParseMs'], ['First motion view', 'firstMotionViewMs'],
+    ['First complete-car geometry ready (before frustum)', 'firstTrainGeometryReadyMs'],
+    ['First train frustum draw', 'firstTrainRenderedMs'], ['Clock → view duration', 'clockToViewMs'],
+    ['Clock → geometry duration', 'clockToGeometryMs'], ['Geometry → frustum draw duration', 'geometryToFrustumDrawMs'],
+    ['Motion view simulation offset', 'firstMotionViewSimOffsetMs'],
+    ['Geometry simulation offset', 'firstTrainGeometryReadySimOffsetMs'], ['Draw simulation offset', 'firstTrainRenderSimOffsetMs'],
+    ['Recorded travel at replay speed', 'firstTrainContentDelayMs'], ['Elapsed less recorded travel (includes rendering)', 'nonReplayElapsedToFirstTrainMs'],
+  ];
+  return ['| Phase (ms; navigation-relative unless duration/offset) | Cold | Warm |', '| --- | ---: | ---: |',
+    ...phases.map(([label, key]) => `| ${label} | ${value(cold.phases[key])} | ${value(warm.phases[key])} |`), '',
+    '| Fetch phase | Cold total ms | Warm total ms |', '| --- | ---: | ---: |',
+    ...['anchors', 'recording', 'schedule'].map((phase) => `| ${phase} | ${value(cold.fetches.find((row) => row.phase === phase)?.totalMs)} | ${value(warm.fetches.find((row) => row.phase === phase)?.totalMs)} |`)];
 }
 
 // Source Map v3 Base64 VLQ, no runtime dependency. Columns and lines are zero based.
@@ -137,7 +304,7 @@ function aggregateCpu(profile, maps) {
   return { sampledMs: sampledUs / 1000, mappedSelfMs: mappedUs / 1000, byOriginalSourceFile: rows(files, 'source'), byFunction: rows(functions, 'function') };
 }
 
-function selfTest() {
+async function selfTest() {
   assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: null, trainDraws: 0 } }), null);
   assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: 8, trainDraws: 2 }, firstFrameMs: 5 }).navigationStartToReplayTrainsRenderedMs, 8);
   assert.equal(extractTiming({ observation: { sceneRenderedMs: 2999, replayTrainsRenderedMs: 4000, trainDraws: 1 } }).sceneWithin3s, true);
@@ -160,26 +327,89 @@ function selfTest() {
   assert.equal(cpu.byFunction[0].function, 'materials.ts:1 texture');
   // Execute the exact injected script against a fake renderer. Invisible trains never
   // invoke onAfterRender; a later frame does, including an object hooked in an earlier frame.
-  const window = {}, context = { window, performance: { now: () => 12 }, WeakSet };
+  let now = 12;
+  const window = { fetch: async () => ({ status: 200, headers: { get: () => '4096' }, text: async () => { now = 20; return 'recording'; }, json: async () => ({ ok: true }) }) };
+  const context = { window, performance: { now: () => now }, WeakSet };
   vm.runInNewContext(observerSource, context);
   let draw = false, opacity = 0;
-  const mesh = { isMesh: true, onAfterRender() {} };
+  const mesh = { isMesh: true, material: { opacity: 0 }, onAfterRender() {} };
   const renderer = { info: { render: { frame: 0 } }, render() { this.info.render.frame++; if (draw) mesh.onAfterRender(null, null, null, null, { opacity }); } };
-  window.__kx = { renderer, feed: { mode: 'replay' }, trains: [{ group: { traverse(callback) { callback(mesh); } } }] };
+  window.__kx = { renderer, feed: { mode: 'replay', speed: 30, timeMs: 0 }, trains: [{ group: { traverse(callback) { callback(mesh); }, traverseVisible(callback) { callback(mesh); } } }] };
   renderer.render();
   assert.equal(window.__kxStartup.sceneRenderedMs, 12);
   assert.equal(window.__kxStartup.replayTrainsRenderedMs, null);
   draw = true; renderer.render();
   assert.equal(window.__kxStartup.replayTrainsRenderedMs, null, 'zero-alpha train draws are not visible trains');
-  opacity = 1; renderer.render();
-  assert.equal(window.__kxStartup.replayTrainsRenderedMs, 12);
+  const motion = { apply() { return 7; }, advance() { return 8; } };
+  window.__kx.motion = motion;
+  assert.equal(motion.apply({}, 100000), 7);
+  assert.equal(motion.advance(), 8);
+  window.__kx.feed.connection = 'playing';
+  window.__kx.motionState = [{ id: 'train' }];
+  window.__kx.feed.timeMs = 0;
+  assert.equal(window.__kxStartup.replayTimeOriginMs, 100000, 'initial status time zero must not replace first event origin');
+  window.__kx.feed.timeMs = 100000;
+  window.__kx.feed.timeMs = 100650;
+  renderer.render();
+  assert.equal(window.__kxStartup.firstMotionViewClockMs, 100650);
+  assert.equal(window.__kxStartup.firstTrainGeometryReadyMs, undefined, 'zero-alpha mesh is not geometry ready');
+  now = 14; draw = false; mesh.material.opacity = 1;
+  window.__kx.feed.timeMs = 100933;
+  renderer.render();
+  assert.equal(window.__kxStartup.firstTrainGeometryReadyMs, 14);
+  assert.equal(window.__kxStartup.replayTrainsRenderedMs, null, 'offscreen complete car is ready before a frustum draw');
+  now = 18; opacity = 1; draw = true; window.__kx.feed.timeMs = 104616;
+  renderer.render();
+  assert.equal(window.__kxStartup.replayTrainsRenderedMs, 18);
   assert.equal(window.__kxStartup.trainDraws, 1);
   assert.equal(renderer.render.name, 'render');
   assert.equal(mesh.onAfterRender.name, 'onAfterRender');
   assert.equal(originalLocation(decodeMappings({ ...map, sourceRoot: '/src' }), 0, 0).source, '/src/materials.ts');
-  console.log('perf self-test passed: timing, source-map boundaries, CPU self time, injected actual-train draw observer');
+  const response = await window.fetch('/relay/recording?date=20261107');
+  assert.equal(await response.text(), 'recording');
+  const fetchRow = window.__kxStartup.fetches[0];
+  assert.equal(fetchRow.url, '/relay/recording?date=20261107');
+  assert.equal(fetchRow.headersMs, 18);
+  assert.equal(fetchRow.textEndMs, 20);
+  assert.equal(fetchRow.contentLengthBytes, 4096);
+  const timing = extractTiming({ observation: window.__kxStartup, marks: [
+    { name: 'kx:recording-parse-start', startMs: 6 }, { name: 'kx:recording-parse-end', startMs: 9 } ] });
+  assert.equal(timing.phases.recordingParseMs, 3);
+  assert.equal(timing.fetches[0].phase, 'recording');
+  assert.equal(timing.fetches[0].bodyReadMs, 2);
+  assert.equal(timing.fetches[0].totalMs, 2);
+  const headersOnly = extractTiming({ observation: { ...window.__kxStartup, fetches: [{ url: '/relay/schedule', status: 404, startMs: 1, headersMs: 4 }] } });
+  assert.equal(headersOnly.fetches[0].totalMs, 3, 'an absent timetable finishes awaiting at headers even when its body is unused');
+  assert.equal(headersOnly.fetches[0].measuredThrough, 'headers');
+  assert.equal(timing.phases.geometryToFrustumDrawMs, 4);
+  assert.equal(timing.phases.firstTrainContentDelayMs, 4616 / 30);
+  assert.equal(timing.phases.nonReplayElapsedToFirstTrainMs, 18 - 4616 / 30);
+  assert.equal(timing.phases.firstMotionViewSimOffsetMs, 650);
+  assert.equal(timing.phases.firstTrainGeometryReadySimOffsetMs, 933);
+  assert.equal(timing.phases.firstTrainRenderSimOffsetMs, 4616);
+  assert.equal(timing.phases.firstMotionAdvanceMs, 12);
+  assert.equal(timing.phases.firstMotionApplyMs, 12);
+  assert.equal(timing.phases.firstMotionViewMs, 12);
+  assert.equal(timing.phases.replayClockStartedMs, 12);
+  const phaseMarkdown = startupPhaseMarkdown({ coldFreshProfile: timing, warmSecondLoadSameProfile: timing }).join('\n');
+  assert.match(phaseMarkdown, /Geometry → frustum draw duration \| 4 \| 4/);
+  assert.match(phaseMarkdown, /Draw simulation offset \| 4616 \| 4616/);
+  assert.equal(markDuration([], 'a', 'b'), null);
+  const requests = [], errors = [];
+  captureNetwork({ method: 'Network.requestWillBeSent', params: { requestId: 'a', timestamp: 1, request: { url: 'http://test/missing.svg' } } }, requests, errors);
+  captureNetwork({ method: 'Network.responseReceived', params: { requestId: 'a', timestamp: 2, response: { status: 404 } } }, requests, errors);
+  captureNetwork({ method: 'Network.loadingFinished', params: { requestId: 'a', timestamp: 3, encodedDataLength: 80 } }, requests, errors);
+  captureNetwork({ method: 'Network.requestWillBeSent', params: { requestId: 'b', timestamp: 4, request: { url: 'http://test/unreachable' } } }, requests, errors);
+  captureNetwork({ method: 'Network.loadingFailed', params: { requestId: 'b', timestamp: 5, errorText: 'net::ERR_FAILED' } }, requests, errors);
+  captureNetwork({ method: 'Log.entryAdded', params: { entry: { level: 'error', text: 'missing', url: 'http://test/missing.svg' } } }, requests, errors);
+  assert.deepEqual(requestSummary(requests).failedUrls, ['http://test/missing.svg', 'http://test/unreachable']);
+  assert.equal(requestSummary(requests).failedCount, 2);
+  assert.equal(requests[0].encodedDataBytes, 80);
+  assert.equal(requests[1].error, 'net::ERR_FAILED');
+  assert.equal(errors[0], 'log: missing URL: http://test/missing.svg');
+  console.log('perf self-test passed: timing phases, fetch body timing, request failure URLs, source-map boundaries, CPU self time, actual-train draw observer');
 }
-if (process.argv.includes('--self-test')) { selfTest(); process.exit(0); }
+if (process.argv.includes('--self-test')) { await selfTest(); process.exit(0); }
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -240,6 +470,8 @@ let cleanupPromise;
 let chromeStdout = '';
 let chromeStderr = '';
 const consoleErrors = [];
+const networkRequests = [];
+const serverRequests = [];
 const walk = async (dir) => {
   const files = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -281,7 +513,7 @@ const report = {
   viewport,
   frameBudgetMs: 1000 / 60,
   cameras: {},
-  consoleErrors,
+  consoleErrors, networkRequests, serverRequests,
 };
 report.build.gzipBundleWithinBudget = report.build.gzipBundleBytes < report.build.gzipBudgetBytes;
 report.build.newestFileTime = report.build.newestFileTime ? new Date(report.build.newestFileTime).toISOString() : null;
@@ -334,6 +566,9 @@ const rounded = (n, digits = 2) => n == null ? null : Number(n.toFixed(digits));
 try {
   staticServer = createServer(async (req, res) => {
     const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
+    const requestRow = { url: req.url ?? '/', startMs: Date.now() };
+    serverRequests.push(requestRow);
+    res.once('finish', () => Object.assign(requestRow, { endMs: Date.now(), status: res.statusCode }));
     if (requestUrl.pathname === '/relay' || requestUrl.pathname.startsWith('/relay/')) {
       const target = new URL(relayBase);
       target.pathname = `${target.pathname.replace(/\/$/, '')}${requestUrl.pathname.replace(/^\/relay(?=\/|$)/, '')}` || '/';
@@ -390,6 +625,7 @@ try {
   let nextId = 0;
   const pending = new Map();
   const onMessage = (message) => {
+    captureNetwork(message, networkRequests, consoleErrors);
     if (message.id && pending.has(message.id)) {
       const item = pending.get(message.id);
       pending.delete(message.id);
@@ -404,9 +640,6 @@ try {
     }
     if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
       consoleErrors.push(`console.error: ${message.params.args.map((a) => a.value ?? a.description ?? '').join(' ')}`);
-    }
-    if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
-      consoleErrors.push(`log: ${message.params.entry.text}`);
     }
   };
   let pipeBuffer = '';
@@ -485,7 +718,11 @@ try {
     await S('Page.navigate', { url });
   };
   const startupLoad = async (profileCpu = false) => {
-    await freshNavigation(startupUrl, async () => { if (profileCpu) await S('Profiler.start'); });
+    let networkStart, serverStart;
+    await freshNavigation(startupUrl, async () => {
+      networkStart = networkRequests.length; serverStart = serverRequests.length;
+      if (profileCpu) await S('Profiler.start');
+    });
     const deadline = Date.now() + 60_000;
     while (Date.now() < deadline) {
       const state = await evaluate(`(() => {
@@ -494,17 +731,24 @@ try {
         const nav = performance.getEntriesByType('navigation')[0];
         return { observation: window.__kxStartup, firstFrameMs: k.firstFrameMs,
           navigation: nav ? { type: nav.type } : null,
+          marks: performance.getEntriesByType('mark').filter(m => m.name.startsWith('kx:')).map(m => ({ name: m.name, startMs: m.startTime })),
           resources: performance.getEntriesByType('resource').filter(r => /\\.(js|css)(?:$|\\?)/.test(r.name)).map(r => ({
             path: new URL(r.name).pathname, transferSize: r.transferSize, encodedBodySize: r.encodedBodySize, durationMs: r.duration })) };
       })()`).catch(() => null);
       const timing = extractTiming(state);
-      if (timing) return timing;
+      if (timing) {
+        timing.networkRequests = networkRequests.slice(networkStart).map((row) => ({ ...row }));
+        timing.serverRequests = serverRequests.slice(serverStart).map((row) => ({ ...row }));
+        timing.requests = requestSummary(timing.networkRequests);
+        return timing;
+      }
       await delay(100);
     }
     throw new Error('Startup scene and actual replay train draws not observed within 60 seconds');
   };
   report.startup = {
     method: 'Three separate navigations: fresh Chrome profile cold load, same-profile second load with HTTP cache enabled, then an instrumented CPU profile load. Timings exclude the CPU profiler.',
+    phaseDefinition: 'Navigation-relative wall milliseconds. Fetch start/headers and text/json body consumption include async waiting; measuredThrough identifies body completion, failure, or headers when the body is unused. Recorded travel at speed is simulation offset divided by replay speed; the remaining elapsed time includes setup and rendering and is not a CPU duration. ResourceTiming supplies transferred bytes and response end. Replay clock start is the first playing/recording-ended status during initial dispatch; motion apply/advance are sink entry, first motion view is sampled immediately before render. Geometry-ready requires a mesh under visible train/car ancestors with a visible nonzero-alpha material, independent of camera frustum; cars become visible only when complete. Simulation offsets use the first applied replay event timestamp as origin (initial playing status occurs before main assigns the feed); positive status time is a fallback. Geometry-to-draw is a wall interval, including travel toward the initial camera. Parse duration uses optional kx:recording-parse-start/end marks; null means unavailable. CDP request timestamps are monotonic seconds; server timestamps are Unix milliseconds. No response bodies or headers saved.',
     timingDefinition: 'performance.now() after renderer.render returns; milliseconds since navigation start. First replay train requires a mesh onAfterRender callback in replay mode.',
     limitations: 'Draw submission completion, not GPU completion or display presentation. Browser/OS filesystem caches are not flushed. Cold and warm replay availability includes local relay latency. Observer callbacks add small overhead to both timing loads. No claim of equal replay snapshots across loads.',
   };
@@ -523,7 +767,7 @@ try {
   };
   // Raw CPU profiles deliberately omitted: only aggregate source/function costs are saved.
 
-  for (const [cameraName, camera] of Object.entries(cameras)) {
+  for (const [cameraName, camera] of (args.includes('--startup-only') ? [] : Object.entries(cameras))) {
     const url = `${base}/kings-cross/?trains=replay&date=${replayDate}&speed=${replaySpeed}`;
     await freshNavigation(url);
     const readyDeadline = Date.now() + 35_000;
@@ -657,6 +901,7 @@ try {
     console.log(JSON.stringify({ camera: cameraName, fps: normalized.fps, frameMs: normalized.frameMs, renderer: normalized.renderer, replayProgress: normalized.replayProgress, trainMotion: normalized.trainMotion }, null, 2));
   }
 
+  report.requests = requestSummary(networkRequests);
   report.consoleErrors = consoleErrors;
   report.success = true;
   const file = path.join(out, `perf-${stamp()}.json`);
@@ -666,6 +911,8 @@ try {
     `Cold scene: ${rounded(report.startup.coldFreshProfile.navigationStartToSceneRenderedMs)} ms; replay trains: ${rounded(report.startup.coldFreshProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
     `Warm second load scene: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToSceneRenderedMs)} ms (${report.startup.warmSecondLoadSameProfile.sceneWithin3s ? 'PASS' : 'FAIL'}, strict <3 s); replay trains: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
     `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
+    ...startupPhaseMarkdown(report.startup), '',
+    `Failed request URLs: ${report.requests.failedUrls.length ? report.requests.failedUrls.join(', ') : 'none'}.`, '',
     '| Original source / runtime | CPU self ms | Sample % |', '| --- | ---: | ---: |',
     ...report.startup.cpu.byOriginalSourceFile.slice(0, 15).map(row => `| ${row.source.replaceAll('|', '\\|')} | ${rounded(row.selfMs)} | ${rounded(row.percent)} |`), '',
     ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS, p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
@@ -675,6 +922,7 @@ try {
   await writeFile(markdownFile, markdown, { flag: 'wx' });
   console.log(JSON.stringify({ report: file, markdown: markdownFile, out, consoleErrors: report.consoleErrors }, null, 2));
 } catch (error) {
+  report.requests = requestSummary(networkRequests);
   report.consoleErrors = consoleErrors;
   report.success = false;
   report.failure = {
