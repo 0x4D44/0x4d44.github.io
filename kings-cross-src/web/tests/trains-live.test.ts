@@ -6,10 +6,12 @@ import type { Graph } from '../../core/graph.ts';
 import { createMotion, DEFAULT_BUFFER_CLEARANCE_M, overlapM } from '../../core/motion.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
+import { KINGS_CROSS_PLATFORM_LENGTHS_M } from '../../core/station.ts';
 import { buildTrain } from '../src/train.ts';
 import { carPoses, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
+import type { FormationView } from '../src/trains-live.ts';
 
-function fixture(curved = true, kind: 'lner5' | 'lner9' = 'lner9'): { graph: Graph; train: TrainView } {
+function fixture(curved = true, kind: (typeof ALL_KINDS)[number] = 'lner9'): { graph: Graph; train: TrainView } {
   const nodes: [number, number, number][] = [];
   for (let i = 0; i <= 60; i++) {
     const s = i * 5, a = s / 180;
@@ -122,6 +124,106 @@ test('the headcode supplies the initial motion length before a physical train is
 const service = (operator: string, origin = 'KNGX', destination = 'KNGX') => ({ operator, origin, destination });
 const nearestKind = (kinds: readonly (typeof ALL_KINDS)[number][], lengthM: number) => kinds.reduce((best, kind) =>
   Math.abs(trainLayout(kind).length - lengthM) < Math.abs(trainLayout(best).length - lengthM) ? kind : best);
+
+test('platform-capped births select the nearest fitting formation within the operator fleet', () => {
+  const limits = new Map([['1', 200], ['2', 90], ['3', 300]]);
+  for (const [operator, platform, expected] of [
+    ['GN', '1', 'gn387x8'], ['GN', '2', 'gn387x4'], ['GR', '1', 'lner5'], ['TL', '1', 'tl700x8'], ['ZZ', '1', 'lner5'],
+  ] as const) {
+    const kinds = createTrainKinds(() => ({ ...service(operator), platform }), { platformLimitsM: limits });
+    const length = kinds.lengthM('1SYN', { id: 1, timeMs: 0 });
+    assert.equal(length, trainLayout(expected).length);
+    const choice = kinds.formationFor({ id: 1 });
+    assert.equal(choice?.kind, expected);
+    assert.equal(choice?.platform, platform);
+    assert.equal(choice?.capped, true);
+    assert.equal(choice?.doesNotFit, false);
+    assert.match(choice?.note ?? '', /capped to platform length/);
+    assert.ok(length <= limits.get(platform)!);
+  }
+  const uncapped = createTrainKinds(() => ({ ...service('GN'), platform: '3' }), { platformLimitsM: limits });
+  assert.equal(uncapped.lengthM('2SYN', { id: 1, timeMs: 0 }), trainLayout('gn387x8').length);
+  assert.equal(uncapped.formationFor({ id: 1 })?.note, undefined, 'nearest choice remains when several kinds fit');
+});
+
+test('platform-capped births choose and flag the shortest operator formation when none fits', () => {
+  const kinds = createTrainKinds(() => ({ ...service('TL'), platform: '1' }), { platformLimitsM: new Map([['1', 100]]) });
+  assert.equal(kinds.lengthM('1SYN', { id: 1, timeMs: 0 }), trainLayout('tl700x8').length);
+  const choice = kinds.formationFor({ id: 1 });
+  assert.equal(choice?.doesNotFit, true);
+  assert.equal(choice?.capped, false);
+  assert.equal(choice?.limitM, 100);
+  assert.match(choice?.note ?? '', /shortest available.*exceeds platform length/);
+  assert.equal(kindForService({ ...service('TL'), platform: '1' }, trainLayout('tl700x12').length, 100), 'tl700x8');
+});
+
+test('platform-capped defaults read OSM and published lengths while missing platform evidence preserves birth choice', () => {
+  const gn9 = createTrainKinds(() => ({ ...service('GN'), platform: '9' }));
+  const gn10 = createTrainKinds(() => ({ ...service('GN'), platform: '10' }));
+  assert.equal(gn9.lengthM('1SYN', { id: 1, timeMs: 0 }), trainLayout('gn387x8').length);
+  assert.equal(gn10.lengthM('1SYN', { id: 1, timeMs: 0 }), trainLayout('gn387x8').length);
+  for (const platform of [undefined, null, '99']) {
+    const kinds = createTrainKinds(() => ({ ...service('GN'), platform }));
+    assert.equal(kinds.lengthM('1SYN', { id: 1, timeMs: 0 }), trainLayout('gn387x12').length);
+    assert.equal(kinds.formationFor({ id: 1 })?.note, undefined);
+  }
+});
+
+test('platform-capped suburban births admit eight cars and exclude twelve using published length', () => {
+  for (const platform of ['9', '10']) for (const [operator, eight, twelve] of [
+    ['GN', 'gn387x8', 'gn387x12'], ['TL', 'tl700x8', 'tl700x12'],
+  ] as const) {
+    const limit = KINGS_CROSS_PLATFORM_LENGTHS_M[platform]! - DEFAULT_BUFFER_CLEARANCE_M;
+    const kinds = createTrainKinds(() => ({ ...service(operator), platform }));
+    const birth = { id: 1, timeMs: 0 };
+    const length = kinds.lengthM('1SYN', birth);
+    assert.equal(length, trainLayout(eight).length);
+    assert.ok(length <= limit);
+    assert.ok(trainLayout(twelve).length > limit);
+    const choice = kinds.formationFor(birth)!;
+    assert.equal(choice.limitM, limit);
+    assert.equal(choice.doesNotFit, false);
+    assert.equal(choice.capped, true);
+    assert.match(choice.note ?? '', /capped to platform length/);
+  }
+});
+
+test('platform-capped birth choices and reasons stay fixed through late platforms and renames', () => {
+  let platform: string | undefined;
+  let reads = 0;
+  const kinds = createTrainKinds(() => { reads++; return { ...service('GN'), platform }; }, { platformLimitsM: new Map([['9', 100]]) });
+  const birth = { id: 1, timeMs: 0 };
+  const first = kinds.lengthM('1SYN', birth);
+  platform = '9';
+  assert.equal(kinds.lengthM('2RENAMED', birth), first);
+  assert.equal(kinds.formationFor(birth)?.platform, undefined);
+  assert.equal(reads, 1);
+  const next = { id: 2, timeMs: 1000 };
+  assert.equal(kinds.lengthM('1SYN', next), trainLayout('gn387x4').length);
+  const reason = kinds.formationFor(next);
+  platform = undefined;
+  assert.equal(kinds.lengthM('1NEWNAME', next), trainLayout('gn387x4').length);
+  assert.deepEqual(kinds.formationFor(next), reason);
+  assert.equal(reads, 2);
+});
+
+test('platform-capped rendering keeps core length and puts the frozen reason on each tooltip view', () => {
+  const kinds = createTrainKinds(() => ({ ...service('GN'), platform: '1' }), { platformLimitsM: new Map([['1', 100]]) });
+  const length = kinds.lengthM('1SYN', { id: 1, timeMs: 0 });
+  const { graph, train } = fixture(false, 'gn387x4');
+  const layer = createLiveTrains(graph, new THREE.Scene(), kinds.kindFor);
+  const first: FormationView = { ...train, description: '1SYN', lengthM: length };
+  layer.update([first]);
+  assert.equal(layer.trains()[0]!.layout.length, length);
+  assert.match(first.formationNote ?? '', /capped to platform length/);
+  const later: FormationView = { ...train, description: 'RENAMED', lengthM: length };
+  layer.update([later]);
+  assert.equal(later.formationNote, first.formationNote, 'the tooltip reads fresh motion views each frame');
+  const unknown: FormationView = { ...train, id: 2, formationNote: 'stale reason' };
+  layer.update([unknown]);
+  assert.equal(unknown.formationNote, undefined, 'unresolved physical ids never inherit another train\'s reason');
+  layer.dispose();
+});
 
 test('service kind matching separates operator fleets before comparing consist lengths', () => {
   const lner = ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'LNER');

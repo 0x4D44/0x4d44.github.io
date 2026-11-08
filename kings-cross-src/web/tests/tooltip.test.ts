@@ -25,6 +25,14 @@ const standing = (platform: number, extra: Partial<BoardRow> = {}): { row: Board
 const value = (model: TipModel, label: string): string | undefined => model.rows.find((r) => r.label === label)?.value;
 const row = (model: TipModel, label: string) => model.rows.find((r) => r.label === label);
 
+test('a capped formation tooltip preserves its birth reason and still calls the formation assumed', () => {
+  const capped = { ...view(), formationNote: 'capped to platform length: P9, 159 m usable' };
+  const model = describeTrain({ mode: 'live', nowMs: NOW, description: '1A01', kind: 'gn387x4', view: capped, services: [service({ operator: 'GN' })] });
+  assert.match(value(model, 'Drawn as')!, /formation assumed · capped to platform length: P9, 159 m usable$/);
+  const unfit = { ...view(), formationNote: 'shortest available; exceeds platform length: P9, 159 m usable' };
+  assert.match(value(describeTrain({ mode: 'replay', nowMs: NOW, description: '1A01', kind: 'tl700x8', view: unfit }), 'Drawn as')!, /all assumed · shortest available; exceeds platform length/);
+});
+
 test('a train standing at its booked platform shows service, booked times, platform, dwell and TRUST', () => {
   const s = service({ realtime: { eventType: 'ARRIVAL', actualArrivalMs: at(10, 14), variationMinutes: 1, platform: '5', trainId: '99A01SYN01' } });
   const model = describeTrain({ mode: 'live', nowMs: at(10, 20), description: '1A01', kind: 'lner9', view: view({ lastBerth: 'SYNB05' }),
