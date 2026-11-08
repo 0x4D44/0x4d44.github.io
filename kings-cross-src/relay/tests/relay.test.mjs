@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { startRelay } from '../relay.mjs';
+import { localFile, requestFailure, startRelay } from '../relay.mjs';
 import { FrameParser, encodeFrame } from '../stomp.mjs';
 
 const SENTINEL = 'SENTINEL-PASSWORD-9f3a';
@@ -151,7 +151,7 @@ test('relay: the login never appears in any response, log line or recording', as
   broker.push('{bad json');
   await until(async () => (await getJson(relay.port, '/health')).badMessages === 1, 'bad message counted');
   const bodies = [];
-  for (const p of ['/health', '/snapshot', '/recent', '/nope', '/static/smart', '/static/corpus']) bodies.push((await get(relay.port, p)).text);
+  for (const p of ['/health', '/snapshot', '/recent', '/nope', '/static/smart', '/static/corpus', '/anchors', '/recording?date=20010101', '/recording?date=..%2Fsecret']) bodies.push((await get(relay.port, p)).text);
   await relay.close();
   const recDir = path.join(dataDir, 'recordings');
   for (const f of await readdir(recDir)) bodies.push(await readFile(path.join(recDir, f), 'utf8'));
@@ -173,11 +173,62 @@ test('relay: a non-loopback Host header is refused, as is any method but GET', a
     assert.equal((await get(relay.port, '/health', { host })).status, 403, `Host ${host} must be refused`);
   }
   assert.equal((await get(relay.port, '/health', { method: 'POST' })).status, 405);
+  for (const endpoint of ['/anchors', '/recording?date=20010101']) {
+    assert.equal((await get(relay.port, endpoint, { host: 'evil.example' })).status, 403);
+    assert.equal((await get(relay.port, endpoint, { method: 'POST' })).status, 405);
+    assert.equal((await get(relay.port, endpoint)).headers['access-control-allow-origin'], undefined);
+  }
   assert.equal((await get(relay.port, '/nope')).status, 404);
   const ok = await get(relay.port, '/health');
   assert.equal(ok.headers['access-control-allow-origin'], undefined, 'no CORS headers');
   assert.equal((await getJson(relay.port, '/health')).feed, 'disabled');
   await cleanup();
+});
+
+test('relay files: anchors use only the configured file and missing files return JSON 404', async (t) => {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'kx-local-files-'));
+  t.after(() => rm(dataDir, { recursive: true, force: true }));
+  const opts = { dataDir, area: 'TEST', anchorsFile: path.join(dataDir, 'anchors.json') };
+  const url = (p) => new URL(p, 'http://127.0.0.1:8787');
+  const missing = await localFile(url('/anchors'), opts);
+  assert.equal(missing.status, 404);
+  assert.deepEqual(JSON.parse(missing.body), { error: 'not found' });
+  await writeFile(opts.anchorsFile, JSON.stringify({ area: 'TEST', anchors: [], unmapped: [], sources: ['synthetic'] }));
+  const hit = await localFile(url('/anchors?path=../../credentials'), opts);
+  assert.equal(hit.status, 200);
+  assert.equal(JSON.parse(hit.body).area, 'TEST');
+  assert.match(hit.type, /^application\/json/);
+  const alternate = path.join(dataDir, 'alternate.json');
+  await writeFile(alternate, JSON.stringify({ area: 'ALTERNATE' }));
+  assert.equal(JSON.parse((await localFile(url('/anchors'), { ...opts, anchorsFile: alternate })).body).area, 'ALTERNATE');
+  assert.equal(await localFile(url('/other'), opts), null);
+});
+
+test('relay files: recordings use the configured area and reject every client path or malformed date', async (t) => {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'kx-local-files-'));
+  t.after(() => rm(dataDir, { recursive: true, force: true }));
+  await mkdir(path.join(dataDir, 'recordings'));
+  const text = JSON.stringify({ t: 1000, e: { kind: 'interpose', area: 'TEST', descr: 'SYN1', to: 'A' } }) + '\n';
+  await writeFile(path.join(dataDir, 'recordings', 'td-TEST-20010101.ndjson'), text);
+  const opts = { dataDir, area: 'TEST' };
+  const url = (p) => new URL(p, 'http://127.0.0.1:8787');
+  const hit = await localFile(url('/recording?date=20010101&path=../../secret&area=OTHER'), opts);
+  assert.equal(hit.status, 200); assert.equal(hit.body, text); assert.match(hit.type, /ndjson/);
+  assert.equal((await localFile(url('/recording?date=20010102'), opts)).status, 404);
+  for (const date of ['', '2001010', '200101010', '2001-01-01', '../secret', '20010101/../../secret', '%2e%2e%2fsecret', '20010101\n', '1234567x']) {
+    assert.equal((await localFile(url('/recording?date=' + encodeURIComponent(date)), opts)).status, 400, `rejected ${JSON.stringify(date)}`);
+  }
+  assert.equal((await localFile(url('/recording'), opts)).status, 400);
+  assert.equal((await localFile(url('/recording?date=20010101&date=20010102'), opts)).status, 400);
+  for (const response of [hit, await localFile(url('/recording?date=missing'), opts)]) {
+    assert.ok(!response.body.includes(SENTINEL)); assert.ok(!response.body.includes(ACCOUNT));
+  }
+});
+
+test('relay files: every endpoint shares exact loopback Host and GET guards', () => {
+  for (const host of ['127.0.0.1:8787', 'localhost:8787']) assert.equal(requestFailure(host, 8787, 'GET'), null);
+  for (const host of [undefined, 'evil.example:8787', '127.0.0.1:87870', '127.0.0.1.evil:8787', 'localhost', '127.0.0.1:8786']) assert.equal(requestFailure(host, 8787, 'GET'), 403);
+  for (const method of ['POST', 'HEAD', 'OPTIONS', 'DELETE']) assert.equal(requestFailure('127.0.0.1:8787', 8787, method), 405);
 });
 
 test('relay: reconnects after the broker drops the connection', async () => {

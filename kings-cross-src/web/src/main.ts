@@ -6,10 +6,17 @@ import type { Prism } from '../../core/scene.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { TrainKind } from '../../core/train.ts';
+import type { AnchorMap } from '../../core/anchors.ts';
+import { buildGraph } from '../../core/graph.ts';
+import { createMotion } from '../../core/motion.ts';
+import type { TrainView } from '../../core/motion.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
 import { buildTrain, standTrain } from './train.ts';
+import { backoffMs, createLiveFeed, createReplayFeed, parseRecording, probeRelay, trainSettings } from './feed.ts';
+import type { TrainFeed } from './feed.ts';
+import { createLiveTrains, lengthForDescription } from './trains-live.ts';
 import { addWorld } from './world.ts';
 import trackData from './data/kx-track.json';
 
@@ -123,11 +130,16 @@ function start(): void {
 
   // Sample trains: four standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
   // from the west), so no two share a platform face and the evidence cameras can stand between them.
-  // They are not live: nothing feeds them yet. ?trains=none leaves them out (?trains=demo is the
-  // old spelling of the default and still works). The local frame has the nose at z = 0 and the body
+  // Explicit demo/none stay offline. The default draws samples immediately while one quiet
+  // health probe decides whether a local relay is present. The local frame has the nose at z = 0 and the body
   // running to +z; turning by (PI - heading) sends +z to the shed's north, along the tracks.
-  const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex: number }[] = [];
-  if (params.get('trains') !== 'none') {
+  let settings: ReturnType<typeof trainSettings>;
+  let settingsError = '';
+  try { settings = trainSettings(params); }
+  catch (error) { settings = { mode: 'none', date: '', speed: 1 }; settingsError = (error as Error).message; }
+  const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex?: number; description?: string }[] = [];
+  const samples: THREE.Group[] = [];
+  if (settings.mode === 'demo' || settings.mode === 'auto') {
     const stops = shedBufferStops(data, layout).sort((p, q) => worldToShed(layout, [p.x, p.z]).u - worldToShed(layout, [q.x, q.z]).u);
     const picks: [TrainKind, number][] = [['lner9', 1], ['lner5', 3], ['hull5', 5], ['lumo5', 7]];
     for (const [kind, trackIndex] of picks) {
@@ -136,6 +148,7 @@ function start(): void {
       const group = buildTrain(kind);
       const nose = standTrain(group, layout, stop, NOSE_TO_STOP);
       scene.add(group);
+      samples.push(group);
       trains.push({ kind, group, noseWorld: nose, headingRad: layout.heading, trackIndex });
     }
   }
@@ -171,15 +184,83 @@ function start(): void {
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
   // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
-  const kx = { ready: true, scene, camera, controls, renderer, layout, trains, parts: { shed, buildings }, firstFrameMs: 0 };
-  renderer.setAnimationLoop(() => {
+  const graph = buildGraph(data);
+  let motion: ReturnType<typeof createMotion> | null = null;
+  let liveTrains: ReturnType<typeof createLiveTrains> | null = null;
+  let feed: TrainFeed | null = null;
+  let mode: 'demo' | 'live' | 'replay' | 'none' = settings.mode === 'auto' ? 'demo' : settings.mode;
+  let connection = settingsError || (settings.mode === 'auto' ? 'checking local relay' : mode === 'demo' || mode === 'none' ? 'offline' : 'loading anchors');
+  let unmapped: number | null = null;
+  const kx = { ready: true, scene, camera, controls, renderer, layout, trains, parts: { shed, buildings }, firstFrameMs: 0,
+    motion: null as ReturnType<typeof createMotion> | null, motionState: [] as TrainView[],
+    feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
+  const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
+  const paintStatus = (): void => {
+    const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
+      : mode === 'live' ? 'live' : mode === 'demo' ? 'sample trains at the buffers, not live' : 'trains hidden';
+    const text = `${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'}`;
+    if (status.textContent !== text) status.textContent = text;
+    Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
+  };
+  let lastFrame: number | undefined;
+  renderer.setAnimationLoop((time) => {
+    const dt = lastFrame === undefined ? 0 : Math.max(0, (time - lastFrame) / 1000); lastFrame = time;
+    feed?.advance(dt);
+    if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
+    paintStatus();
     controls.update();
     world.follow(camera);
     renderer.render(scene, camera);
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
 
-  const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
-  status.textContent = trains.length > 0 ? `${counts} · sample trains at the buffers, not live` : counts;
   (window as unknown as { __kx: unknown }).__kx = kx;
+  paintStatus();
+
+  let disposed = false, bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
+  const setConnection = (value: string): void => { connection = value; paintStatus(); };
+  const begin = async (requested: 'live' | 'replay', attempt = 0): Promise<void> => {
+    if (disposed) return;
+    for (const sample of samples.splice(0)) {
+      scene.remove(sample);
+      sample.traverse((o) => { if (o instanceof THREE.Mesh && o.name !== 'bogie-mesh') o.geometry.dispose(); });
+    }
+    trains.splice(0);
+    mode = requested; setConnection(attempt ? 'reconnecting; loading anchors' : 'loading anchors');
+    try {
+      const response = await fetch('/relay/anchors', { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw new Error('anchors unavailable');
+      const anchors = await response.json() as AnchorMap;
+      if (!anchors || typeof anchors.area !== 'string' || !Array.isArray(anchors.anchors) || !Array.isArray(anchors.unmapped)) throw new Error('invalid anchors');
+      let recording: ReturnType<typeof parseRecording> | undefined;
+      if (requested === 'replay') {
+        setConnection('loading recording');
+        const replay = await fetch(`/relay/recording?date=${settings.date}`, { cache: 'no-store', signal: AbortSignal.timeout(30_000) });
+        if (!replay.ok) throw new Error('recording unavailable');
+        recording = parseRecording(await replay.text());
+        if (!recording.length) throw new Error('recording is empty');
+      }
+      if (disposed) return;
+      unmapped = anchors.unmapped.length;
+      // The model's coupling-inclusive length, rather than the core's approximate default.
+      motion = createMotion(graph, anchors, { lengthM: lengthForDescription,
+        wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
+      kx.motion = motion;
+      liveTrains = createLiveTrains(graph, scene);
+      feed = requested === 'replay' ? createReplayFeed(recording!, settings.speed, motion, setConnection) : createLiveFeed(motion, setConnection);
+    } catch (error) {
+      if (disposed) return;
+      const delay = backoffMs(attempt);
+      setConnection(`${(error as Error).message}; reconnecting in ${delay / 1000}s`);
+      bootstrapTimer = setTimeout(() => { void begin(requested, attempt + 1); }, delay);
+    }
+  };
+  if (settings.mode === 'auto') {
+    void probeRelay().then((present) => { if (!disposed) { if (present) void begin('live'); else setConnection('relay absent'); } });
+  } else if (settings.mode === 'live' || settings.mode === 'replay') void begin(settings.mode);
+  window.addEventListener('pagehide', (event) => {
+    if (event.persisted) return;
+    disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
+    feed?.dispose(); liveTrains?.dispose();
+  }, { once: true });
 }
