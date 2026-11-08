@@ -1,0 +1,2293 @@
+{
+  "attribution": "© OpenStreetMap contributors (ODbL)",
+  "signals": [
+    {
+      "id": 670127975,
+      "point": [
+        -364.6,
+        -760.5
+      ],
+      "ref": "AF018",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states",
+        "shunting",
+        "shunting:form",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 22597542,
+        "from": 670127975,
+        "to": 1242694471,
+        "t": 0,
+        "point": [
+          -364.6,
+          -760.5
+        ]
+      },
+      "travel": [
+        -0.06336447318277882,
+        0.9979904526288159
+      ],
+      "facing": [
+        0.06336447318277882,
+        -0.9979904526288159
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242427174,
+      "point": [
+        -112.5,
+        -1046
+      ],
+      "ref": "NL 1115",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position"
+      ],
+      "edge": {
+        "wayId": 17564095,
+        "from": 1242427174,
+        "to": 12379402610,
+        "t": 0,
+        "point": [
+          -112.5,
+          -1046
+        ]
+      },
+      "travel": [
+        -0.9498788186561306,
+        0.3126183453804875
+      ],
+      "facing": [
+        0.9498788186561306,
+        -0.3126183453804875
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242427186,
+      "point": [
+        -360,
+        -382.3
+      ],
+      "ref": "WH 5",
+      "direction": "forward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 312878296,
+        "from": 1242427186,
+        "to": 9126947111,
+        "t": 0,
+        "point": [
+          -360,
+          -382.3
+        ]
+      },
+      "travel": [
+        -0.36439934858051654,
+        -0.9312427797057518
+      ],
+      "facing": [
+        0.36439934858051654,
+        0.9312427797057518
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242427306,
+      "point": [
+        -97.6,
+        -1016.6
+      ],
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "shunting",
+        "shunting:form",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 108285826,
+        "from": 1242427306,
+        "to": 14096439857,
+        "t": 0,
+        "point": [
+          -97.6,
+          -1016.6
+        ]
+      },
+      "travel": [
+        -0.8658650732445485,
+        0.5002775978746324
+      ],
+      "facing": [
+        0.8658650732445485,
+        -0.5002775978746324
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242694189,
+      "point": [
+        -336.1,
+        -824.8
+      ],
+      "ref": "AF033BR",
+      "direction": "forward",
+      "kinds": [
+        "main_repeated",
+        "main_repeated:form",
+        "main_repeated:states",
+        "position"
+      ],
+      "edge": {
+        "wayId": 108285829,
+        "from": 1242694189,
+        "to": 1242427757,
+        "t": 0,
+        "point": [
+          -336.1,
+          -824.8
+        ]
+      },
+      "travel": [
+        0.37139067635410505,
+        -0.9284766908852589
+      ],
+      "facing": [
+        -0.37139067635410505,
+        0.9284766908852589
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242694453,
+      "point": [
+        88,
+        -1158.7
+      ],
+      "ref": "AF045",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form"
+      ],
+      "edge": {
+        "wayId": 13846093,
+        "from": 1242694453,
+        "to": 129734023,
+        "t": 0,
+        "point": [
+          88,
+          -1158.7
+        ]
+      },
+      "travel": [
+        0.8099421215430223,
+        -0.5865098121518413
+      ],
+      "facing": [
+        -0.8099421215430223,
+        0.5865098121518413
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1242694471,
+      "point": [
+        -365,
+        -754.2
+      ],
+      "ref": "AF019",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 22597542,
+        "from": 670127975,
+        "to": 1242694471,
+        "t": 1,
+        "point": [
+          -365,
+          -754.2
+        ]
+      },
+      "travel": [
+        0.06336447318277882,
+        -0.9979904526288159
+      ],
+      "facing": [
+        -0.06336447318277882,
+        0.9979904526288159
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1243292577,
+      "point": [
+        127.4,
+        -1186.5
+      ],
+      "direction": "forward",
+      "kinds": [
+        "position",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1379255238,
+        "from": 1243292577,
+        "to": 1790610589,
+        "t": 0,
+        "point": [
+          127.4,
+          -1186.5
+        ]
+      },
+      "travel": [
+        0.8513972064321563,
+        -0.5245214932483895
+      ],
+      "facing": [
+        -0.8513972064321563,
+        0.5245214932483895
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1243292707,
+      "point": [
+        132.7,
+        -1181.9
+      ],
+      "direction": "backward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1379255237,
+        "from": 12379402772,
+        "to": 1243292707,
+        "t": 1,
+        "point": [
+          132.7,
+          -1181.9
+        ]
+      },
+      "travel": [
+        0.8652018206350277,
+        -0.5014237824134724
+      ],
+      "facing": [
+        -0.8652018206350277,
+        0.5014237824134724
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1256318219,
+      "point": [
+        32.4,
+        -459.1
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1196414294,
+        "from": 8813738932,
+        "to": 1256318219,
+        "t": 1,
+        "point": [
+          32.4,
+          -459.1
+        ]
+      },
+      "travel": [
+        0.02765193947472632,
+        -0.9996176120113559
+      ],
+      "facing": [
+        -0.02765193947472632,
+        0.9996176120113559
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1256318245,
+      "point": [
+        38.7,
+        -458.8
+      ],
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 389490012,
+        "from": 1256318245,
+        "to": 8813738934,
+        "t": 0,
+        "point": [
+          38.7,
+          -458.8
+        ]
+      },
+      "travel": [
+        0.03224129401095801,
+        -0.9994801143396996
+      ],
+      "facing": [
+        -0.03224129401095801,
+        0.9994801143396996
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783504,
+      "point": [
+        29.3,
+        -458.1
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 15707293,
+        "from": 1752783504,
+        "to": 8813738931,
+        "t": 0,
+        "point": [
+          29.3,
+          -458.1
+        ]
+      },
+      "travel": [
+        0.03905812145059671,
+        -0.9992369404444327
+      ],
+      "facing": [
+        -0.03905812145059671,
+        0.9992369404444327
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783506,
+      "point": [
+        55.2,
+        -458.1
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1562776390,
+        "from": 14222438354,
+        "to": 1752783506,
+        "t": 1,
+        "point": [
+          55.2,
+          -458.1
+        ]
+      },
+      "travel": [
+        0.03843312210120438,
+        -0.9992611746313143
+      ],
+      "facing": [
+        -0.03843312210120438,
+        0.9992611746313143
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783510,
+      "point": [
+        42.6,
+        -458.6
+      ],
+      "ref": "YA1023",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1562776392,
+        "from": 8813738933,
+        "to": 1752783510,
+        "t": 1,
+        "point": [
+          42.6,
+          -458.6
+        ]
+      },
+      "travel": [
+        0.020403914662519375,
+        -0.9997918184634462
+      ],
+      "facing": [
+        -0.020403914662519375,
+        0.9997918184634462
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "berth": "1023",
+      "review": "osm-ref-match"
+    },
+    {
+      "id": 1752783519,
+      "point": [
+        76.1,
+        -940.2
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1467471978,
+        "from": 1752783519,
+        "to": 8813738937,
+        "t": 0,
+        "point": [
+          76.1,
+          -940.2
+        ]
+      },
+      "travel": [
+        -0.049651876115700336,
+        0.9987665849427437
+      ],
+      "facing": [
+        0.049651876115700336,
+        -0.9987665849427437
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783520,
+      "point": [
+        63.8,
+        -940.8
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 389490009,
+        "from": 1752783520,
+        "to": 8813738936,
+        "t": 0,
+        "point": [
+          63.8,
+          -940.8
+        ]
+      },
+      "travel": [
+        -0.060661559724206476,
+        0.9981583918255793
+      ],
+      "facing": [
+        0.060661559724206476,
+        -0.9981583918255793
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783527,
+      "point": [
+        60.3,
+        -941
+      ],
+      "direction": "backward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1562776393,
+        "from": 8813738935,
+        "to": 1752783527,
+        "t": 1,
+        "point": [
+          60.3,
+          -941
+        ]
+      },
+      "travel": [
+        -0.05320711313584437,
+        0.9985834983173661
+      ],
+      "facing": [
+        0.05320711313584437,
+        -0.9985834983173661
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783529,
+      "point": [
+        53.2,
+        -941.3
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 163611763,
+        "from": 1752783529,
+        "to": 13190936419,
+        "t": 0,
+        "point": [
+          53.2,
+          -941.3
+        ]
+      },
+      "travel": [
+        -0.04619341108087138,
+        0.9989325146238427
+      ],
+      "facing": [
+        0.04619341108087138,
+        -0.9989325146238427
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 1752783531,
+      "point": [
+        49.9,
+        -941.5
+      ],
+      "direction": "backward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 389490010,
+        "from": 13190936420,
+        "to": 1752783531,
+        "t": 1,
+        "point": [
+          49.9,
+          -941.5
+        ]
+      },
+      "travel": [
+        -0.04615537893249209,
+        0.9989342726103646
+      ],
+      "facing": [
+        0.04615537893249209,
+        -0.9989342726103646
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 2275818716,
+      "point": [
+        51.7,
+        -458.2
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1562776391,
+        "from": 5560417209,
+        "to": 2275818716,
+        "t": 1,
+        "point": [
+          51.7,
+          -458.2
+        ]
+      },
+      "travel": [
+        0.03487317386928654,
+        -0.9993917458856074
+      ],
+      "facing": [
+        -0.03487317386928654,
+        0.9993917458856074
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 2275818729,
+      "point": [
+        71.8,
+        -940.4
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 218331254,
+        "from": 2275818729,
+        "to": 8813738938,
+        "t": 0,
+        "point": [
+          71.8,
+          -940.4
+        ]
+      },
+      "travel": [
+        -0.04026037160494491,
+        0.9991892225590865
+      ],
+      "facing": [
+        0.04026037160494491,
+        -0.9991892225590865
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 3187971982,
+      "point": [
+        -347.9,
+        -385.9
+      ],
+      "ref": "WH 9",
+      "direction": "backward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 110558314,
+        "from": 1242694302,
+        "to": 3187971982,
+        "t": 1,
+        "point": [
+          -347.9,
+          -385.9
+        ]
+      },
+      "travel": [
+        -0.4148108477260788,
+        -0.9099076659797806
+      ],
+      "facing": [
+        0.4148108477260788,
+        0.9099076659797806
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 3187971983,
+      "point": [
+        -338.7,
+        -389.9
+      ],
+      "ref": "WH 11",
+      "direction": "forward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 15694743,
+        "from": 3187971983,
+        "to": 1242427775,
+        "t": 0,
+        "point": [
+          -338.7,
+          -389.9
+        ]
+      },
+      "travel": [
+        -0.4173163567605147,
+        -0.9087612768929643
+      ],
+      "facing": [
+        0.4173163567605147,
+        0.9087612768929643
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 6548541878,
+      "point": [
+        -350.3,
+        -384.9
+      ],
+      "ref": "WH 7",
+      "direction": "forward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 1390567880,
+        "from": 6548541878,
+        "to": 1242694413,
+        "t": 0,
+        "point": [
+          -350.3,
+          -384.9
+        ]
+      },
+      "travel": [
+        -0.5043004902259286,
+        -0.8635282366882325
+      ],
+      "facing": [
+        0.5043004902259286,
+        0.8635282366882325
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 7323450293,
+      "point": [
+        -116.7,
+        -1028.8
+      ],
+      "ref": "AF037",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 784009052,
+        "from": 7323450293,
+        "to": 14100644207,
+        "t": 0,
+        "point": [
+          -116.7,
+          -1028.8
+        ]
+      },
+      "travel": [
+        0.9133571925070608,
+        -0.407159230394719
+      ],
+      "facing": [
+        -0.9133571925070608,
+        0.407159230394719
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 7323450294,
+      "point": [
+        -350.9,
+        -757
+      ],
+      "ref": "AF021",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "shunting",
+        "shunting:form",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 108285829,
+        "from": 7323450294,
+        "to": 12783091154,
+        "t": 0,
+        "point": [
+          -350.9,
+          -757
+        ]
+      },
+      "travel": [
+        0.13158907310989398,
+        -0.9913043507611974
+      ],
+      "facing": [
+        -0.13158907310989398,
+        0.9913043507611974
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12006516967,
+      "point": [
+        45.7,
+        -339.8
+      ],
+      "ref": "YA 1004",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 1390691713,
+        "from": 8600105820,
+        "to": 12006516967,
+        "t": 1,
+        "point": [
+          45.7,
+          -339.8
+        ]
+      },
+      "travel": [
+        -0.044400613620721015,
+        -0.9990138064662087
+      ],
+      "facing": [
+        0.044400613620721015,
+        0.9990138064662087
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "berth": "1004",
+      "review": "osm-ref-match"
+    },
+    {
+      "id": 12006524069,
+      "point": [
+        54,
+        -821.6
+      ],
+      "ref": "YA 1039",
+      "direction": "forward",
+      "kinds": [],
+      "edge": {
+        "wayId": 1562776393,
+        "from": 12006524069,
+        "to": 8813738935,
+        "t": 0,
+        "point": [
+          54,
+          -821.6
+        ]
+      },
+      "travel": [
+        0.04889250576232549,
+        -0.9988040462874992
+      ],
+      "facing": [
+        -0.04889250576232549,
+        0.9988040462874992
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "berth": "1039",
+      "review": "osm-ref-match"
+    },
+    {
+      "id": 12006524070,
+      "point": [
+        116,
+        -1317.3
+      ],
+      "ref": "YA 1075",
+      "direction": "forward",
+      "kinds": [],
+      "edge": {
+        "wayId": 1178696697,
+        "from": 12006524070,
+        "to": 1752783584,
+        "t": 0,
+        "point": [
+          116,
+          -1317.3
+        ]
+      },
+      "travel": [
+        0.34358153126352203,
+        -0.9391228521203248
+      ],
+      "facing": [
+        -0.34358153126352203,
+        0.9391228521203248
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "berth": "1075",
+      "review": "osm-ref-match"
+    },
+    {
+      "id": 12379402610,
+      "point": [
+        -120.4,
+        -1043.4
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position"
+      ],
+      "edge": {
+        "wayId": 17564095,
+        "from": 1242427174,
+        "to": 12379402610,
+        "t": 1,
+        "point": [
+          -120.4,
+          -1043.4
+        ]
+      },
+      "travel": [
+        0.9498788186561306,
+        -0.3126183453804875
+      ],
+      "facing": [
+        -0.9498788186561306,
+        0.3126183453804875
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12379402715,
+      "point": [
+        -218.6,
+        -992.1
+      ],
+      "ref": "AF028",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:form"
+      ],
+      "edge": {
+        "wayId": 108285810,
+        "from": 12379402715,
+        "to": 5763221032,
+        "t": 0,
+        "point": [
+          -218.6,
+          -992.1
+        ]
+      },
+      "travel": [
+        -0.9042170539552232,
+        0.42707320137950255
+      ],
+      "facing": [
+        0.9042170539552232,
+        -0.42707320137950255
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12379402728,
+      "point": [
+        -372.5,
+        -796.9
+      ],
+      "ref": "AF015",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "shunting",
+        "shunting:form"
+      ],
+      "edge": {
+        "wayId": 784012410,
+        "from": 12379402728,
+        "to": 1242694501,
+        "t": 0,
+        "point": [
+          -372.5,
+          -796.9
+        ]
+      },
+      "travel": [
+        0.15482667621706792,
+        -0.9879416482422305
+      ],
+      "facing": [
+        -0.15482667621706792,
+        0.9879416482422305
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12775522499,
+      "point": [
+        99.8,
+        -1160.5
+      ],
+      "ref": "AF047",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states"
+      ],
+      "edge": {
+        "wayId": 22597358,
+        "from": 12775522499,
+        "to": 1242694527,
+        "t": 0,
+        "point": [
+          99.8,
+          -1160.5
+        ]
+      },
+      "travel": [
+        -0.817307479782085,
+        0.5762017732463662
+      ],
+      "facing": [
+        0.817307479782085,
+        -0.5762017732463662
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12775522500,
+      "point": [
+        -359,
+        -829.6
+      ],
+      "ref": "AF017",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "shunting",
+        "shunting:form"
+      ],
+      "edge": {
+        "wayId": 22597539,
+        "from": 12775522500,
+        "to": 1242694144,
+        "t": 0,
+        "point": [
+          -359,
+          -829.6
+        ]
+      },
+      "travel": [
+        0.24593811988225509,
+        -0.969285531300649
+      ],
+      "facing": [
+        -0.24593811988225509,
+        0.969285531300649
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12775548338,
+      "point": [
+        631,
+        -1413.4
+      ],
+      "direction": "backward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1379847814,
+        "from": 13453160243,
+        "to": 12775548338,
+        "t": 1,
+        "point": [
+          631,
+          -1413.4
+        ]
+      },
+      "travel": [
+        -0.9230769230769231,
+        0.38461538461538464
+      ],
+      "facing": [
+        0.9230769230769231,
+        -0.38461538461538464
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12775548339,
+      "point": [
+        548.2,
+        -1358.4
+      ],
+      "direction": "forward",
+      "kinds": [
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 1379847815,
+        "from": 12775548339,
+        "to": 13453160244,
+        "t": 0,
+        "point": [
+          548.2,
+          -1358.4
+        ]
+      },
+      "travel": [
+        -0.9363291775689845,
+        0.35112344158855213
+      ],
+      "facing": [
+        0.9363291775689845,
+        -0.35112344158855213
+      ],
+      "side": "left",
+      "sideSource": "assumed-left",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478081,
+      "point": [
+        -312.1,
+        -406.6
+      ],
+      "ref": "AF008",
+      "direction": "backward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 1390567885,
+        "from": 1242694280,
+        "to": 12776478081,
+        "t": 1,
+        "point": [
+          -312.1,
+          -406.6
+        ]
+      },
+      "travel": [
+        -0.445014642450302,
+        -0.8955232928320904
+      ],
+      "facing": [
+        0.445014642450302,
+        0.8955232928320904
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478082,
+      "point": [
+        -308.5,
+        -408
+      ],
+      "ref": "AF009",
+      "direction": "forward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 1390567890,
+        "from": 12776478082,
+        "to": 1242694190,
+        "t": 0,
+        "point": [
+          -308.5,
+          -408
+        ]
+      },
+      "travel": [
+        -0.4451419695718958,
+        -0.8954600085574194
+      ],
+      "facing": [
+        0.4451419695718958,
+        0.8954600085574194
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478083,
+      "point": [
+        -297.3,
+        -412.9
+      ],
+      "ref": "AF010",
+      "direction": "backward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 1390567886,
+        "from": 87510980,
+        "to": 12776478083,
+        "t": 1,
+        "point": [
+          -297.3,
+          -412.9
+        ]
+      },
+      "travel": [
+        -0.42111130645463063,
+        -0.907008967748431
+      ],
+      "facing": [
+        0.42111130645463063,
+        0.907008967748431
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478084,
+      "point": [
+        -312.4,
+        -455.2
+      ],
+      "ref": "AF011",
+      "direction": "backward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states"
+      ],
+      "edge": {
+        "wayId": 110558318,
+        "from": 1242694383,
+        "to": 12776478084,
+        "t": 1,
+        "point": [
+          -312.4,
+          -455.2
+        ]
+      },
+      "travel": [
+        -0.41905817746174606,
+        -0.907959384500452
+      ],
+      "facing": [
+        0.41905817746174606,
+        0.907959384500452
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478085,
+      "point": [
+        -302.3,
+        -460.2
+      ],
+      "ref": "AF012",
+      "direction": "forward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states"
+      ],
+      "edge": {
+        "wayId": 722371716,
+        "from": 12776478085,
+        "to": 87511262,
+        "t": 0,
+        "point": [
+          -302.3,
+          -460.2
+        ]
+      },
+      "travel": [
+        -0.4426676528313046,
+        -0.8966857582993184
+      ],
+      "facing": [
+        0.4426676528313046,
+        0.8966857582993184
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12776478086,
+      "point": [
+        -302.1,
+        -467.9
+      ],
+      "ref": "AF013",
+      "direction": "backward",
+      "kinds": [
+        "departure",
+        "departure:form",
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states"
+      ],
+      "edge": {
+        "wayId": 110558317,
+        "from": 1242694242,
+        "to": 12776478086,
+        "t": 1,
+        "point": [
+          -302.1,
+          -467.9
+        ]
+      },
+      "travel": [
+        -0.44721359549994666,
+        -0.8944271909999215
+      ],
+      "facing": [
+        0.44721359549994666,
+        0.8944271909999215
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 12783091154,
+      "point": [
+        -349.4,
+        -768.3
+      ],
+      "ref": "AF020",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "shunting",
+        "shunting:form",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed"
+      ],
+      "edge": {
+        "wayId": 108285829,
+        "from": 7323450294,
+        "to": 12783091154,
+        "t": 1,
+        "point": [
+          -349.4,
+          -768.3
+        ]
+      },
+      "travel": [
+        -0.13158907310989398,
+        0.9913043507611974
+      ],
+      "facing": [
+        0.13158907310989398,
+        -0.9913043507611974
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 13472176902,
+      "point": [
+        103,
+        -1322.8
+      ],
+      "ref": "YA 2070",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position",
+        "route",
+        "route:design",
+        "route:form",
+        "route:states"
+      ],
+      "edge": {
+        "wayId": 491380792,
+        "from": 13472176903,
+        "to": 13472176902,
+        "t": 1,
+        "point": [
+          103,
+          -1322.8
+        ]
+      },
+      "travel": [
+        -0.3217379289312397,
+        0.9468287622833584
+      ],
+      "facing": [
+        0.3217379289312397,
+        -0.9468287622833584
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "berth": "2070",
+      "review": "osm-ref-match"
+    },
+    {
+      "id": 13472176903,
+      "point": [
+        99.5,
+        -1312.5
+      ],
+      "direction": "backward",
+      "kinds": [
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "speed_limit:turn_direction"
+      ],
+      "edge": {
+        "wayId": 491380792,
+        "from": 87513153,
+        "to": 13472176903,
+        "t": 1,
+        "point": [
+          99.5,
+          -1312.5
+        ]
+      },
+      "travel": [
+        -0.2696299255199719,
+        0.9629640197141814
+      ],
+      "facing": [
+        0.2696299255199719,
+        -0.9629640197141814
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 13472176904,
+      "point": [
+        86.8,
+        -1261.3
+      ],
+      "direction": "backward",
+      "kinds": [
+        "position",
+        "speed_limit",
+        "speed_limit:form",
+        "speed_limit:speed",
+        "speed_limit:turn_direction"
+      ],
+      "edge": {
+        "wayId": 491380792,
+        "from": 1242694147,
+        "to": 13472176904,
+        "t": 1,
+        "point": [
+          86.8,
+          -1261.3
+        ]
+      },
+      "travel": [
+        -0.2026056040359596,
+        0.9792604195071012
+      ],
+      "facing": [
+        0.2026056040359596,
+        -0.9792604195071012
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 13472176905,
+      "point": [
+        -402,
+        -1083
+      ],
+      "ref": "NL 1113",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "main:states",
+        "position"
+      ],
+      "edge": {
+        "wayId": 22758715,
+        "from": 13472176905,
+        "to": 1243327269,
+        "t": 0,
+        "point": [
+          -402,
+          -1083
+        ]
+      },
+      "travel": [
+        -0.8213699656732975,
+        -0.5703958094953419
+      ],
+      "facing": [
+        0.8213699656732975,
+        0.5703958094953419
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14096439855,
+      "point": [
+        -100.5,
+        -1020.6
+      ],
+      "ref": "AF042",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "train_protection",
+        "train_protection:form",
+        "train_protection:type"
+      ],
+      "edge": {
+        "wayId": 607628025,
+        "from": 14096439855,
+        "to": 1243327201,
+        "t": 0,
+        "point": [
+          -100.5,
+          -1020.6
+        ]
+      },
+      "travel": [
+        -0.8598547438407307,
+        0.5105387541554426
+      ],
+      "facing": [
+        0.8598547438407307,
+        -0.5105387541554426
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14096439856,
+      "point": [
+        -108.7,
+        -1015.7
+      ],
+      "ref": "AF041",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 607628025,
+        "from": 1243327201,
+        "to": 14096439856,
+        "t": 1,
+        "point": [
+          -108.7,
+          -1015.7
+        ]
+      },
+      "travel": [
+        0.8532818336519779,
+        -0.5214500094539442
+      ],
+      "facing": [
+        -0.8532818336519779,
+        0.5214500094539442
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14096439857,
+      "point": [
+        -106.6,
+        -1011.4
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 108285826,
+        "from": 1242427306,
+        "to": 14096439857,
+        "t": 1,
+        "point": [
+          -106.6,
+          -1011.4
+        ]
+      },
+      "travel": [
+        0.8658650732445485,
+        -0.5002775978746324
+      ],
+      "facing": [
+        -0.8658650732445485,
+        0.5002775978746324
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100562306,
+      "point": [
+        -368.5,
+        -975
+      ],
+      "ref": "AF026",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 10340760,
+        "from": 1242694261,
+        "to": 14100562306,
+        "t": 1,
+        "point": [
+          -368.5,
+          -975
+        ]
+      },
+      "travel": [
+        0.37139067635410367,
+        0.9284766908852592
+      ],
+      "facing": [
+        -0.37139067635410367,
+        -0.9284766908852592
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100571512,
+      "point": [
+        -375.5,
+        -993.1
+      ],
+      "ref": "NL1119",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 10340760,
+        "from": 14100571512,
+        "to": 1242694274,
+        "t": 0,
+        "point": [
+          -375.5,
+          -993.1
+        ]
+      },
+      "travel": [
+        -0.3939192985791557,
+        -0.9191450300180631
+      ],
+      "facing": [
+        0.3939192985791557,
+        0.9191450300180631
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100571513,
+      "point": [
+        -394.3,
+        -1042
+      ],
+      "ref": "NL1117",
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 15692256,
+        "from": 14100571513,
+        "to": 1242694254,
+        "t": 0,
+        "point": [
+          -394.3,
+          -1042
+        ]
+      },
+      "travel": [
+        -0.8035571933447446,
+        -0.5952275506257393
+      ],
+      "facing": [
+        0.8035571933447446,
+        0.5952275506257393
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100644203,
+      "point": [
+        -273.9,
+        -928.8
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 22597371,
+        "from": 12379402762,
+        "to": 14100644203,
+        "t": 1,
+        "point": [
+          -273.9,
+          -928.8
+        ]
+      },
+      "travel": [
+        0.7700215609055524,
+        -0.6380178647503348
+      ],
+      "facing": [
+        -0.7700215609055524,
+        0.6380178647503348
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100644204,
+      "point": [
+        -265.4,
+        -935.4
+      ],
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 22597371,
+        "from": 14100644204,
+        "to": 12379402762,
+        "t": 0,
+        "point": [
+          -265.4,
+          -935.4
+        ]
+      },
+      "travel": [
+        -0.8038418992031061,
+        0.5948430054102876
+      ],
+      "facing": [
+        0.8038418992031061,
+        -0.5948430054102876
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100644205,
+      "point": [
+        -306.6,
+        -921.8
+      ],
+      "direction": "forward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 22597539,
+        "from": 14100644205,
+        "to": 1242694239,
+        "t": 0,
+        "point": [
+          -306.6,
+          -921.8
+        ]
+      },
+      "travel": [
+        0.6709133239691233,
+        -0.7415357791237737
+      ],
+      "facing": [
+        -0.6709133239691233,
+        0.7415357791237737
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100644206,
+      "point": [
+        -342.9,
+        -870.2
+      ],
+      "direction": "backward",
+      "kinds": [
+        "main_repeated",
+        "main_repeated:form",
+        "position"
+      ],
+      "edge": {
+        "wayId": 22597539,
+        "from": 87525202,
+        "to": 14100644206,
+        "t": 1,
+        "point": [
+          -342.9,
+          -870.2
+        ]
+      },
+      "travel": [
+        -0.48191874977215876,
+        0.8762159086766454
+      ],
+      "facing": [
+        0.48191874977215876,
+        -0.8762159086766454
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100644207,
+      "point": [
+        -108.4,
+        -1032.5
+      ],
+      "ref": "AF038",
+      "direction": "backward",
+      "kinds": [
+        "main",
+        "main:design",
+        "main:form",
+        "position",
+        "route",
+        "route:design",
+        "route:form"
+      ],
+      "edge": {
+        "wayId": 784009052,
+        "from": 7323450293,
+        "to": 14100644207,
+        "t": 1,
+        "point": [
+          -108.4,
+          -1032.5
+        ]
+      },
+      "travel": [
+        -0.9133571925070608,
+        0.407159230394719
+      ],
+      "facing": [
+        0.9133571925070608,
+        -0.407159230394719
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100729247,
+      "point": [
+        18.4,
+        -1109.2
+      ],
+      "direction": "forward",
+      "kinds": [
+        "position",
+        "train_protection",
+        "train_protection:form"
+      ],
+      "edge": {
+        "wayId": 607628022,
+        "from": 14100729247,
+        "to": 5976039010,
+        "t": 0,
+        "point": [
+          18.4,
+          -1109.2
+        ]
+      },
+      "travel": [
+        0.8682431421245331,
+        -0.4961389383567048
+      ],
+      "facing": [
+        -0.8682431421245331,
+        0.4961389383567048
+      ],
+      "side": "left",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    },
+    {
+      "id": 14100729248,
+      "point": [
+        21,
+        -1105
+      ],
+      "direction": "backward",
+      "kinds": [
+        "position",
+        "train_protection",
+        "train_protection:form"
+      ],
+      "edge": {
+        "wayId": 1549855333,
+        "from": 1242427561,
+        "to": 14100729248,
+        "t": 1,
+        "point": [
+          21,
+          -1105
+        ]
+      },
+      "travel": [
+        0.8320502943378821,
+        -0.5547001962251715
+      ],
+      "facing": [
+        -0.8320502943378821,
+        0.5547001962251715
+      ],
+      "side": "right",
+      "sideSource": "osm",
+      "review": "unreviewed"
+    }
+  ]
+}

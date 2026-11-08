@@ -67,8 +67,14 @@ M = [
     ('outside component seed distance starts at one', 'source_replace', ('{ ...source, steps: 0 }', '{ ...source, steps: 1 }')),
     ('outside component details invent seed identity', 'source_replace', ('${source.location} at berth ${source.berth}', 'Invented Town at berth XXXX')),
     ('outside component geography overrides conflicts', 'source_replace', ("if (!item || item.reason === 'conflict') continue;", 'if (!item) continue;')),
-    ('outside component processing omitted before calibration bypass', 'source_replace', ('if (options.calibrate === false || references.length < 3) return applyOutsideComponents(map, observed, smart);', 'if (options.calibrate === false || references.length < 3) return map;')),
-    ('outside component processing omitted after calibration', 'source_replace', ('return applyOutsideComponents(map, observed, smart);\n}\n\nfunction originalAnalyse', 'return map;\n}\n\nfunction originalAnalyse')),
+    ('outside component processing omitted before calibration bypass', 'source_replace', ('addNoEvidenceContext(map, observed, smart, new Map());\n    return applyOutsideComponents(map, observed, smart);', 'addNoEvidenceContext(map, observed, smart, new Map());\n    return map;')),
+    ('outside component processing omitted after calibration', 'source_replace', ('addNoEvidenceContext(map, observed, smart, withheld);\n  return applyOutsideComponents(map, observed, smart);', 'addNoEvidenceContext(map, observed, smart, withheld);\n  return map;')),
+    ('no-evidence observed-path distance is off by one', 'source_replace', ('steps: here.steps + 1', 'steps: here.steps + 2')),
+    ('no-evidence path ignores reverse observed connectivity', 'source_replace', ('links.get(step.to)!.add(step.from);\n  }\n  const reached = new Map<string, ObservedReach>', '}\n  const reached = new Map<string, ObservedReach>')),
+    ('unreachable SMART association outranks observed association', 'source_replacements', [
+        ('associations.filter((association) => reached.has(association.berth))', 'associations'),
+        ('steps: reached.get(association.berth)!.steps', 'steps: reached.get(association.berth)?.steps ?? -1'),
+    ]),
 ]
 
 PRELUDE = '''

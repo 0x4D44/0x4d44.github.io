@@ -395,3 +395,32 @@ test('berths: final component processing runs after calibration and preserves ge
   reason(map, '6700', 'conflict'); assert.match(map.unmapped.find((u) => u.berth === '6700')!.detail, /disagree/);
   reason(map, '6400', 'outside-network');
 });
+
+test('berths: no-evidence details report undirected graph distance and only reachable SMART associations', () => {
+  const d = data([[1, 0, 0], [2, 100, 0], [3, 200, 0], [4, 300, 0]]);
+  signal(d, 90, 'YA 6800', 20);
+  const recordings = [[event('step', '6800', '6801'), event('step', '6801', '6802'), event('step', '6802', '6803'),
+    event('step', '6801', '6804', 0, '****')]];
+  const smart = [
+    { TD: 'Y9', FROMBERTH: '6803', TOBERTH: '', STANOX: '77777', STANME: 'CONNECTED STATION' },
+    { TD: 'Y9', FROMBERTH: '6804', TOBERTH: '', STANOX: '54238', STANME: 'MORGAT' },
+    { TD: 'Y9', FROMBERTH: '9999', TOBERTH: '', STANOX: '99999', STANME: 'UNRELATED TOWN' },
+  ];
+  const noSmart = buildAnchors(d, recordings, [], { calibrate: false });
+  const map = buildAnchors(d, recordings, smart, { calibrate: false });
+  const earlyDefault = buildAnchors(d, recordings, smart); // Fewer than three references takes the same calibration bypass.
+  const unmapped = map.unmapped.find((u) => u.berth === '6801');
+  assert.ok(unmapped, 'expected berth 6801 to remain unplaced');
+  const detail = unmapped?.detail ?? '';
+
+  reason(map, '6801', 'no-evidence');
+  assert.match(detail, /Shortest observed undirected path to graph anchor 6800: 6801 ↔ 6800 \(1 observed steps\)/);
+  assert.match(detail, /Nearest SMART association: CONNECTED STATION \(STANOX 77777\) at berth 6803 in 2 observed steps/);
+  assert.match(detail, /no positive matched residence timing|No bounded, agreeing directed route/i);
+  assert.match(detail, /SMART offsets supply no metric point/);
+  assert.doesNotMatch(detail, /MORGAT|UNRELATED TOWN|99999|6804|no trusted continuation through/i);
+  assert.equal(map.unmapped.find((u) => u.berth === '6804')!.reason, 'outside-network');
+  assert.deepEqual(map.anchors, noSmart.anchors);
+  assert.equal(map.anchors.length, noSmart.anchors.length);
+  assert.equal(earlyDefault.unmapped.find((u) => u.berth === '6801')!.detail, detail);
+});
