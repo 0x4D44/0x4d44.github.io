@@ -18,7 +18,8 @@
 //                   neighbouring strips tile into each other and overlaps never flicker): a
 //                   trapezoid strip under every in-zone track, plus the cheap flat ribbon under
 //                   every track beyond the zone;
-//   track-sleepers  ONE InstancedMesh, the 'concrete' material, tops and four sides (no bottom);
+//   track-sleepers  ONE InstancedMesh, the 'concrete' material, the top and the two long sides (no
+//                   bottom, no ends: 6 triangles each, SLEEPER_TRIANGLES);
 //   track-rails     ONE merged mesh, two rails per track, vertex colours (light steel head top, rust
 //                   below), the 113A-like section in RAIL_PROFILE;
 //   track-lines     the old 1 px twin-rail lines in one LineSegments (vertex colours, main and siding):
@@ -39,10 +40,11 @@
 //   rail height 0.10 m, ballast top -0.14 m, sleeper 2.6 x 0.25 m: the brief for this module.
 //     (A real 113A rail is about 0.159 m tall, 70 mm head, 140 mm foot, 20 mm web: recalled, not
 //     re-checked. Here the height is compressed to fit the 0.2 m the ground leaves.)
-//   sleeper spacing 0.65 m: ASSUMED. The brief says about 0.6 m. A web search for a Network Rail
-//     figure found none (NR/SP/TRK/030 covers the sleepers; its spacing did not surface); one paper
-//     is said to give 600 mm as the commonest axis spacing in Europe and a general-knowledge site
-//     650-700 mm for conventional main line (search snippets only, neither opened), so 0.65 m stays a guess.
+//   sleeper spacing 0.65 m: SOURCED, second-hand. Rail Engineer, "Strategic sleepers" (Mungo Stacy, 16
+//     January 2014, https://www.railengineer.co.uk/strategic-sleepers/), counting Network Rail's sleepers
+//     on "a sleeper every 650mm". That is a magazine's working figure for the network, not the standard's
+//     clause (NR/L2/TRK/2102 and NR/SP/TRK/030 cover the sleepers; neither could be opened), and the brief
+//     said about 0.6 m, which the same search found as the commonest axis spacing in Europe (snippet only).
 //   ballast: top 3.4 m wide (sleeper 2.6 m plus a 0.4 m shoulder each side), shoulders sloping 1:2
 //     down to the ground: ASSUMED.
 //   sleeper thickness 0.05 m modelled (only the top 0.04 m shows above the ballast): ASSUMED.
@@ -59,7 +61,8 @@ import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { GAUGE, RAIL_HEAD_WIDTH, shedBufferStops, worldToShed } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { material, rng, TEXTURES } from './materials.ts';
+import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
+import type { Rgb, V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
 // ---------------------------------------------------------------------------------------------
@@ -82,7 +85,7 @@ export const SLEEPER_LENGTH = 2.6;
 export const SLEEPER_WIDTH = 0.25;
 /** Modelled thickness below the sleeper top (the ballast hides most of it). ASSUMED. */
 export const SLEEPER_THICKNESS = 0.05;
-/** Centre to centre along the track, metres. ASSUMED (the brief says about 0.6 m; 0.65 m is the usual UK figure). */
+/** Centre to centre along the track, metres: 650 mm, Rail Engineer's figure for Network Rail (see the header); the brief said about 0.6 m. */
 export const SLEEPER_SPACING = 0.65;
 /** A chain of segments is cut where the track turns by more than this at a node (radians). */
 const MAX_KINK = (30 * Math.PI) / 180;
@@ -262,66 +265,13 @@ export function sleeperPlacements(segments: number[], spacing = SLEEPER_SPACING)
 // ---------------------------------------------------------------------------------------------
 // mesh building
 
-type V3 = readonly [number, number, number];
+// Everything here is built on the shared `Batch` (materials.ts): flat shading, one normal per face, each
+// face wound to look along the normal given. The rails and the buffer stops carry a colour per vertex
+// (`colored`); only the ballast wears a texture, and its UVs are the planar world metres (x, z), so the
+// sleepers, rails and stops carry no UVs at all (`uv: false`).
 
-/** Plain arrays, turned into one BufferGeometry at the end. */
-interface Mesh3 {
-  positions: number[];
-  normals: number[];
-  colors: number[];
-  uvs: number[];
-  indices: number[];
-}
-const newMesh = (): Mesh3 => ({ positions: [], normals: [], colors: [], uvs: [], indices: [] });
-
-const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-
-/** A colour as the linear r, g, b triple a vertex colour attribute wants. */
-const rgb = (hex: number): V3 => {
-  const c = new THREE.Color(hex);
-  return [c.r, c.g, c.b];
-};
-
-interface VertexStyle {
-  color?: V3;
-  /** UVs are the planar world metres (x, z), the 'ballast' material's contract */
-  planarUV?: boolean;
-}
-
-function pushVertex(m: Mesh3, p: V3, n: V3, style: VertexStyle): void {
-  m.positions.push(p[0], p[1], p[2]);
-  m.normals.push(n[0], n[1], n[2]);
-  if (style.color) m.colors.push(style.color[0], style.color[1], style.color[2]);
-  if (style.planarUV) m.uvs.push(p[0], p[2]);
-}
-
-/** A triangle with its own vertices (flat shading) and the normal `n`; wound so its front faces along `n`. */
-function pushTriangle(m: Mesh3, a: V3, b: V3, c: V3, n: V3, style: VertexStyle = {}): void {
-  const base = m.positions.length / 3;
-  const flip = dot(cross(sub(b, a), sub(c, a)), n) < 0;
-  for (const p of flip ? [a, c, b] : [a, b, c]) pushVertex(m, p, n, style);
-  m.indices.push(base, base + 1, base + 2);
-}
-
-/** A quad a b c d (in order round its edge) as two triangles, wound so its front faces along `n`. */
-function pushQuad(m: Mesh3, a: V3, b: V3, c: V3, d: V3, n: V3, style: VertexStyle = {}): void {
-  const base = m.positions.length / 3;
-  const flip = dot(cross(sub(b, a), sub(c, a)), n) < 0;
-  for (const p of flip ? [a, d, c, b] : [a, b, c, d]) pushVertex(m, p, n, style);
-  m.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-}
-
-function toGeometry(m: Mesh3): THREE.BufferGeometry {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(m.positions, 3));
-  g.setAttribute('normal', new THREE.Float32BufferAttribute(m.normals, 3));
-  if (m.colors.length) g.setAttribute('color', new THREE.Float32BufferAttribute(m.colors, 3));
-  if (m.uvs.length) g.setAttribute('uv', new THREE.Float32BufferAttribute(m.uvs, 2));
-  g.setIndex(new THREE.BufferAttribute(new Uint32Array(m.indices), 1));
-  return g;
-}
+/** UVs that are the planar world metres (x, z): the 'ballast' material's contract. */
+const planar = (pts: readonly V3[]): V2[] => pts.map((p) => [p[0], p[2]]);
 
 /** The shared 'steel' material, cloned, to take its colour from the vertices of the mesh that wears it. */
 function vertexPainted(name: string): THREE.MeshLambertMaterial {
@@ -369,14 +319,14 @@ interface ProfileEdge {
   a: readonly [number, number];
   b: readonly [number, number];
   n: readonly [number, number];
-  color?: V3;
+  color?: Rgb;
 }
 
 /**
  * Extrude a cross-section along a chain: for every segment, one quad per profile edge. `centre` is
  * the lateral offset of the section's own origin from the centre line.
  */
-function extrude(m: Mesh3, chain: Pt[], profile: readonly ProfileEdge[], centre: number, planarUV = false): void {
+function extrude(m: Batch, chain: Pt[], profile: readonly ProfileEdge[], centre: number, planarUV = false): void {
   const { stations: st, sides } = stations(chain);
   for (let i = 0; i + 1 < st.length; i++) {
     const s0 = st[i] as Station;
@@ -385,7 +335,8 @@ function extrude(m: Mesh3, chain: Pt[], profile: readonly ProfileEdge[], centre:
     const at = (s: Station, edge: readonly [number, number]): V3 => [s.x + s.mx * (centre + edge[0]), edge[1], s.z + s.mz * (centre + edge[0])];
     for (const e of profile) {
       const normal: V3 = [side[0] * e.n[0], e.n[1], side[1] * e.n[0]];
-      pushQuad(m, at(s0, e.a), at(s0, e.b), at(s1, e.b), at(s1, e.a), normal, { ...(e.color ? { color: e.color } : {}), planarUV });
+      const corners = [at(s0, e.a), at(s0, e.b), at(s1, e.b), at(s1, e.a)];
+      m.poly(corners, planarUV ? planar(corners) : undefined, { normal, ...(e.color ? { color: e.color } : {}) });
     }
   }
 }
@@ -410,11 +361,11 @@ const BED_PROFILE: readonly ProfileEdge[] = (() => {
 })();
 
 /** The cheap bed beyond the zone: main.ts's flat ribbons, lifted to BALLAST_TOP, wound to face up (the old ones faced down and were culled). */
-function addFarBallast(m: Mesh3, segments: number[], width: number): void {
+function addFarBallast(m: Batch, segments: number[], width: number): void {
   const t = ribbonTriangles(segments, width, BALLAST_TOP);
   for (let i = 0; i + 8 < t.length; i += 9) {
     const p = (k: number): V3 => [t[i + 3 * k] as number, t[i + 3 * k + 1] as number, t[i + 3 * k + 2] as number];
-    pushTriangle(m, p(0), p(1), p(2), [0, 1, 0], { planarUV: true });
+    m.poly([p(0), p(1), p(2)], planar([p(0), p(1), p(2)]), { normal: [0, 1, 0] });
   }
 }
 
@@ -468,19 +419,25 @@ const RAIL_CENTRE = GAUGE / 2 + RAIL_HEAD_WIDTH / 2;
 // ---------------------------------------------------------------------------------------------
 // sleepers
 
-/** One concrete sleeper: top and four sides, no bottom; long axis along x, short along z, top at SLEEPER_TOP. */
+/** Triangles in one sleeper: the top and the two long sides, two each. */
+export const SLEEPER_TRIANGLES = 6;
+
+/**
+ * One concrete sleeper: the top and the two long sides, no bottom and no ends; long axis along x, short
+ * along z, top at SLEEPER_TOP. The ends were dropped (10 triangles became 6): each is 0.25 m wide and shows
+ * at most 0.04 m above the ballast, 1.3 m either side of the centre line, so nothing visible is lost, and
+ * the sleepers are the biggest triangle bill in the group (one every 0.65 m along 4.5 km, always drawn).
+ */
 function sleeperGeometry(): THREE.BufferGeometry {
   const hx = SLEEPER_LENGTH / 2;
   const hz = SLEEPER_WIDTH / 2;
   const top = SLEEPER_TOP;
   const low = SLEEPER_TOP - SLEEPER_THICKNESS;
-  const m = newMesh();
-  pushQuad(m, [-hx, top, -hz], [hx, top, -hz], [hx, top, hz], [-hx, top, hz], [0, 1, 0]);
-  pushQuad(m, [-hx, low, hz], [hx, low, hz], [hx, top, hz], [-hx, top, hz], [0, 0, 1]);
-  pushQuad(m, [hx, low, -hz], [-hx, low, -hz], [-hx, top, -hz], [hx, top, -hz], [0, 0, -1]);
-  pushQuad(m, [hx, low, hz], [hx, low, -hz], [hx, top, -hz], [hx, top, hz], [1, 0, 0]);
-  pushQuad(m, [-hx, low, -hz], [-hx, low, hz], [-hx, top, hz], [-hx, top, -hz], [-1, 0, 0]);
-  return toGeometry(m);
+  const m = new Batch({ uv: false });
+  m.poly([[-hx, top, -hz], [hx, top, -hz], [hx, top, hz], [-hx, top, hz]], undefined, { normal: [0, 1, 0] });
+  m.poly([[-hx, low, hz], [hx, low, hz], [hx, top, hz], [-hx, top, hz]], undefined, { normal: [0, 0, 1] });
+  m.poly([[hx, low, -hz], [-hx, low, -hz], [-hx, top, -hz], [hx, top, -hz]], undefined, { normal: [0, 0, -1] });
+  return m.build();
 }
 
 /** The shared 'concrete' material, cloned, with its base colour fading into the ballast's average with distance. */
@@ -580,8 +537,8 @@ export function buildTrack(data: Pick<KxData, 'nodes' | 'rails'>, layout: TrackL
   const main = splitByZone(rails.main, layout);
   const siding = splitByZone(rails.siding, layout);
 
-  const bed = newMesh();
-  const steel = newMesh();
+  const bed = new Batch();
+  const steel = new Batch({ colored: true, uv: false });
   const placements: SleeperPlacement[] = [];
   let chains = 0;
   for (const near of [main.near, siding.near]) {
@@ -597,14 +554,14 @@ export function buildTrack(data: Pick<KxData, 'nodes' | 'rails'>, layout: TrackL
 
   const group = new THREE.Group();
   group.name = 'track';
-  if (bed.indices.length) {
-    const mesh = new THREE.Mesh(toGeometry(bed), material('ballast'));
+  if (bed.triangles) {
+    const mesh = new THREE.Mesh(bed.build(), material('ballast'));
     mesh.name = 'track-ballast';
     group.add(mesh);
   }
   if (placements.length) group.add(sleeperMesh(placements));
-  if (steel.indices.length) {
-    const mesh = new THREE.Mesh(toGeometry(steel), vertexPainted('rail'));
+  if (steel.triangles) {
+    const mesh = new THREE.Mesh(steel.build(), vertexPainted('rail'));
     mesh.name = 'track-rails';
     group.add(mesh);
   }
@@ -720,43 +677,32 @@ export function polygonArea(poly: readonly (readonly [number, number])[]): numbe
 }
 
 /** A box of axis-aligned limits, flat-coloured: four sides and the top (or not); the bottom is never drawn. */
-function pushBox(m: Mesh3, [x0, x1]: readonly [number, number], [y0, y1]: readonly [number, number], [z0, z1]: readonly [number, number], color: V3, top = true): void {
-  const style = { color };
-  if (top) pushQuad(m, [x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1], [0, 1, 0], style);
-  pushQuad(m, [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], style);
-  pushQuad(m, [x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [0, 0, -1], style);
-  pushQuad(m, [x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [1, 0, 0], style);
-  pushQuad(m, [x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], style);
+function pushBox(m: Batch, [x0, x1]: readonly [number, number], [y0, y1]: readonly [number, number], [z0, z1]: readonly [number, number], color: Rgb, top = true): void {
+  m.box([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], [x1 - x0, y1 - y0, z1 - z0], { color, skip: top ? ['-y'] : ['-y', '+y'] });
 }
 
 /**
  * A cylinder along z from zBack to zFront (zFront is nearer the trains, so smaller z), smooth-shaded
  * round its side, with the end caps asked for. Its centre line is (cx, cy).
  */
-function pushCylinderZ(m: Mesh3, cx: number, cy: number, zBack: number, zFront: number, radius: number, color: V3, caps: { back: boolean; front: boolean }, sides = 12): void {
-  const style = { color };
+function pushCylinderZ(m: Batch, cx: number, cy: number, zBack: number, zFront: number, radius: number, color: Rgb, caps: { back: boolean; front: boolean }, sides = 12): void {
   for (let i = 0; i < sides; i++) {
     const a0 = (i / sides) * 2 * Math.PI;
     const a1 = ((i + 1) / sides) * 2 * Math.PI;
     const ring = (a: number, z: number): V3 => [cx + radius * Math.cos(a), cy + radius * Math.sin(a), z];
     const n0: V3 = [Math.cos(a0), Math.sin(a0), 0];
     const n1: V3 = [Math.cos(a1), Math.sin(a1), 0];
-    const corners = [ring(a0, zBack), ring(a1, zBack), ring(a1, zFront), ring(a0, zFront)];
-    const normals = [n0, n1, n1, n0];
-    const outward: V3 = [n0[0] + n1[0], n0[1] + n1[1], 0];
-    const flip = dot(cross(sub(corners[1] as V3, corners[0] as V3), sub(corners[2] as V3, corners[0] as V3)), outward) < 0;
-    const base = m.positions.length / 3;
-    for (const k of flip ? [0, 3, 2, 1] : [0, 1, 2, 3]) pushVertex(m, corners[k] as V3, normals[k] as V3, style);
-    m.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    if (caps.front) pushTriangle(m, [cx, cy, zFront], ring(a0, zFront), ring(a1, zFront), [0, 0, -1], style);
-    if (caps.back) pushTriangle(m, [cx, cy, zBack], ring(a0, zBack), ring(a1, zBack), [0, 0, 1], style);
+    // the side is smooth-shaded: a normal per corner, and the winding turns to face outward
+    m.poly([ring(a0, zBack), ring(a1, zBack), ring(a1, zFront), ring(a0, zFront)], undefined, { normals: [n0, n1, n1, n0], color });
+    if (caps.front) m.poly([[cx, cy, zFront], ring(a0, zFront), ring(a1, zFront)], undefined, { normal: [0, 0, -1], color });
+    if (caps.back) m.poly([[cx, cy, zBack], ring(a0, zBack), ring(a1, zBack)], undefined, { normal: [0, 0, 1], color });
   }
 }
 
 /** One buffer stop in its own frame, flat-coloured vertices: foundation, two posts, the red beam with its chevrons, two buffers. */
 function bufferStopGeometry(): THREE.BufferGeometry {
   const B = BUFFER_STOP;
-  const m = newMesh();
+  const m = new Batch({ colored: true, uv: false });
   const half = B.beamWidth / 2;
   const beamTop = B.beamCentre + B.beamHeight / 2;
   const beamBottom = B.beamCentre - B.beamHeight / 2;
@@ -767,16 +713,17 @@ function bufferStopGeometry(): THREE.BufferGeometry {
   for (const x of [-post, post]) pushBox(m, [x - B.postSize / 2, x + B.postSize / 2], [B.baseTop, beamBottom], [(B.beamDepth - B.postSize) / 2, (B.beamDepth + B.postSize) / 2], STOP_DARK, false);
   // the beam: red top, back, ends and underside; its north face is the chevron bands
   const red = { color: STOP_RED };
-  pushQuad(m, [-half, beamTop, 0], [half, beamTop, 0], [half, beamTop, B.beamDepth], [-half, beamTop, B.beamDepth], [0, 1, 0], red);
-  pushQuad(m, [-half, beamBottom, 0], [half, beamBottom, 0], [half, beamBottom, B.beamDepth], [-half, beamBottom, B.beamDepth], [0, -1, 0], red);
-  pushQuad(m, [-half, beamBottom, B.beamDepth], [half, beamBottom, B.beamDepth], [half, beamTop, B.beamDepth], [-half, beamTop, B.beamDepth], [0, 0, 1], red);
-  pushQuad(m, [half, beamBottom, 0], [half, beamBottom, B.beamDepth], [half, beamTop, B.beamDepth], [half, beamTop, 0], [1, 0, 0], red);
-  pushQuad(m, [-half, beamBottom, 0], [-half, beamBottom, B.beamDepth], [-half, beamTop, B.beamDepth], [-half, beamTop, 0], [-1, 0, 0], red);
+  m.poly([[-half, beamTop, 0], [half, beamTop, 0], [half, beamTop, B.beamDepth], [-half, beamTop, B.beamDepth]], undefined, { normal: [0, 1, 0], ...red });
+  m.poly([[-half, beamBottom, 0], [half, beamBottom, 0], [half, beamBottom, B.beamDepth], [-half, beamBottom, B.beamDepth]], undefined, { normal: [0, -1, 0], ...red });
+  m.poly([[-half, beamBottom, B.beamDepth], [half, beamBottom, B.beamDepth], [half, beamTop, B.beamDepth], [-half, beamTop, B.beamDepth]], undefined, { normal: [0, 0, 1], ...red });
+  m.poly([[half, beamBottom, 0], [half, beamBottom, B.beamDepth], [half, beamTop, B.beamDepth], [half, beamTop, 0]], undefined, { normal: [1, 0, 0], ...red });
+  m.poly([[-half, beamBottom, 0], [-half, beamBottom, B.beamDepth], [-half, beamTop, B.beamDepth], [-half, beamTop, 0]], undefined, { normal: [-1, 0, 0], ...red });
   for (const band of beamFaceBands()) {
-    const style = { color: band.white ? STOP_WHITE : STOP_RED };
+    const color = band.white ? STOP_WHITE : STOP_RED;
     for (const sign of [1, -1]) {
       const at = (p: [number, number]): V3 => [sign * p[0], p[1], 0];
-      for (let i = 1; i + 1 < band.poly.length; i++) pushTriangle(m, at(band.poly[0] as [number, number]), at(band.poly[i] as [number, number]), at(band.poly[i + 1] as [number, number]), [0, 0, -1], style);
+      // a triangle at a time, as before (the fan of a band, one normal: the beam's north face)
+      for (let i = 1; i + 1 < band.poly.length; i++) m.poly([at(band.poly[0] as [number, number]), at(band.poly[i] as [number, number]), at(band.poly[i + 1] as [number, number])], undefined, { normal: [0, 0, -1], color });
     }
   }
   // the buffers: a barrel out of the beam's face, a thinner ram, a round head
@@ -787,7 +734,7 @@ function bufferStopGeometry(): THREE.BufferGeometry {
     pushCylinderZ(m, x, B.beamCentre, barrelEnd, ramEnd, B.ramRadius, STOP_RAM, { back: false, front: false });
     pushCylinderZ(m, x, B.beamCentre, ramEnd, ramEnd - B.headThickness, B.headRadius, STOP_DARK, { back: true, front: true });
   }
-  return toGeometry(m);
+  return m.build();
 }
 
 /**

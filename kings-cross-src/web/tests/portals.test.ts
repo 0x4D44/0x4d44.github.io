@@ -7,8 +7,8 @@ import type { Pt } from '../../core/geo.ts';
 import { approachEnvelope, archOpening, area2, FIGURES, ringSelfIntersects, tunnelCover, tunnelMouths, tunnelRuns } from '../../core/landmarks.ts';
 import type { Cover, Mouth } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
-import { Mesh3 } from '../src/landmarks.ts';
-import type { V3 } from '../src/landmarks.ts';
+import { Batch } from '../src/materials.ts';
+import type { V3 } from '../src/materials.ts';
 import { addBox, addPortals, coverParts, faceOutline, mouthParts, openingsIn, PORTAL, wingPath } from '../src/portals.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -21,11 +21,11 @@ const envelope = (m: Mouth) => approachEnvelope(data, m, PORTAL.wing.reach, PORT
 interface Tri {
   p: [V3, V3, V3];
 }
-function triangles(m: Mesh3 | undefined): Tri[] {
+function triangles(m: Batch | undefined): Tri[] {
   const out: Tri[] = [];
   if (!m) return out;
-  const v = (k: number): V3 => [m.pos[k * 3] as number, m.pos[k * 3 + 1] as number, m.pos[k * 3 + 2] as number];
-  for (let i = 0; i < m.idx.length; i += 3) out.push({ p: [v(m.idx[i] as number), v(m.idx[i + 1] as number), v(m.idx[i + 2] as number)] });
+  const v = (k: number): V3 => [m.positions[k * 3] as number, m.positions[k * 3 + 1] as number, m.positions[k * 3 + 2] as number];
+  for (let i = 0; i < m.indices.length; i += 3) out.push({ p: [v(m.indices[i] as number), v(m.indices[i + 1] as number), v(m.indices[i + 2] as number)] });
   return out;
 }
 const triArea = (t: Tri): number => {
@@ -77,14 +77,14 @@ function approachSamples(m: Mouth): { u: number; d: number }[] {
 // ---- the face ----------------------------------------------------------------------------------
 
 test('addBox: a box has six outward faces and the right surface area', () => {
-  const m = new Mesh3();
+  const m = new Batch();
   addBox(m, [1, 2, 3], [2, 0, 0], [0, 3, 0], [0, 0, 4]);
   const ts = triangles(m);
   assert.equal(ts.length, 12);
   close(ts.reduce((s, t) => s + triArea(t), 0), 2 * (2 * 3 + 2 * 4 + 3 * 4), 1e-9, 'surface');
-  for (let i = 0; i < m.nor.length; i += 3) {
+  for (let i = 0; i < m.normals.length; i += 3) {
     // every stored normal points away from the box's centre (2, 3.5, 5)
-    const out = ((m.pos[i] as number) - 2) * (m.nor[i] as number) + ((m.pos[i + 1] as number) - 3.5) * (m.nor[i + 1] as number) + ((m.pos[i + 2] as number) - 5) * (m.nor[i + 2] as number);
+    const out = ((m.positions[i] as number) - 2) * (m.normals[i] as number) + ((m.positions[i + 1] as number) - 3.5) * (m.normals[i + 1] as number) + ((m.positions[i + 2] as number) - 5) * (m.normals[i + 2] as number);
     assert.ok(out > 0, 'normal faces out');
   }
 });
@@ -213,7 +213,7 @@ test('the retaining walls never cross a rail: every open rail on the approach is
 // ---- the earth bank ----------------------------------------------------------------------------
 
 function bankMesh(c: Cover): THREE.Mesh {
-  const mesh = new THREE.Mesh(coverParts(c).earth?.toGeometry() as THREE.BufferGeometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  const mesh = new THREE.Mesh(coverParts(c).earth?.build() as THREE.BufferGeometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
   mesh.updateMatrixWorld(true);
   return mesh;
 }
@@ -244,7 +244,7 @@ test('the earth bank buries every tunnel node deeper than a train is tall', () =
 
 test('the earth bank stays close to its tunnel: its foot is within 12 m of the strip, and no open rail runs alongside that close', () => {
   for (const c of covers) {
-    const pos = (coverParts(c).earth?.toGeometry() as THREE.BufferGeometry).getAttribute('position');
+    const pos = (coverParts(c).earth?.build() as THREE.BufferGeometry).getAttribute('position');
     let beyond = 0;
     for (let i = 0; i < pos.count; i++) {
       const { u, w } = inCover(c, [pos.getX(i), pos.getZ(i)]);

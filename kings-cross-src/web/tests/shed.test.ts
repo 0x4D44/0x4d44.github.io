@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
-import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, lunetteBars, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, XRAY_OPACITY } from '../src/shed.ts';
+import { material } from '../src/materials.ts';
+import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -162,6 +163,112 @@ test('roofOpacity: solid inside the shed, thinning to the x-ray value as the cam
   }
   assert.equal(roofOpacity([900, 600, 500], l, 'solid'), 1);
   assert.equal(roofOpacity([36, 8, -100], l, 'xray'), XRAY_OPACITY);
+});
+
+test('glazingOpacity: a bright panel under a solid roof, the see-through tint at the x-ray roof, rising between, clamped outside', () => {
+  close(glazingOpacity(1), GLASS_OPACITY.near, 1e-12);
+  close(glazingOpacity(XRAY_OPACITY), GLASS_OPACITY.far, 1e-12);
+  assert.ok(GLASS_OPACITY.near > 0.9, 'inside, the glazing reads as a daylit panel');
+  assert.ok(GLASS_OPACITY.far < 0.5, 'from far off the trains and platforms show through it');
+  let last = -1;
+  for (let o = XRAY_OPACITY; o <= 1 + 1e-9; o += 0.05) {
+    const g = glazingOpacity(o);
+    assert.ok(g >= last - 1e-12, `glazing opacity fell at roof opacity ${o}`);
+    last = g;
+  }
+  assert.equal(glazingOpacity(0), GLASS_OPACITY.far);
+  assert.equal(glazingOpacity(2), GLASS_OPACITY.near);
+});
+
+test('the roof glazing follows the roof cladding: bright from inside the shed, the see-through tint from far off', () => {
+  const group = buildShed(layout);
+  group.updateMatrixWorld(true);
+  const clad = byName(group, 'shed-roof-cladding');
+  const glass = byName(group, 'shed-roof-glass');
+  const mat = glass.material as THREE.Material;
+  assert.equal(mat.transparent, true);
+  assert.equal(mat.depthWrite, false, 'glazing must not hide what is behind it');
+  assert.notEqual(mat, material('shedGlass'), 'its opacity is its own: the shared material is only the template');
+  const look = (p: [number, number, number]): number => {
+    const cam = new THREE.PerspectiveCamera();
+    cam.position.set(...p);
+    clad.onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
+    return mat.opacity;
+  };
+  close(look([layout.width / 2, 8, -100]), GLASS_OPACITY.near, 1e-9);
+  close(look([900, 600, 500]), GLASS_OPACITY.far, 1e-9);
+  assert.equal(material('shedGlass').opacity, 1, 'the shared material is never changed');
+});
+
+test('ribMembers: slender sections, as the restored shed has (the first build\'s 0.38 x 0.30 booms read as heavy girders)', () => {
+  const ms = ribMembers(5.6388);
+  for (const m of ms) {
+    const [depth, across] = m.kind === 'boom' ? MEMBER_SIZE.boom : MEMBER_SIZE.web;
+    close(m.s[1], depth, 1e-12);
+    close(m.s[2], across, 1e-12);
+  }
+  assert.ok(MEMBER_SIZE.boom[0] <= 0.3 && MEMBER_SIZE.boom[1] <= 0.25, 'booms are no more than 0.30 x 0.25 m');
+  assert.ok(MEMBER_SIZE.web[0] <= 0.12 && MEMBER_SIZE.web[1] <= 0.1, 'webs are no more than 0.12 x 0.10 m');
+});
+
+test('the ironwork is painted light and the roof is lined with pale boarding, both far lighter than the first build\'s near-black steel and dark lining', () => {
+  const group = buildShed(layout);
+  const luminance = (m: THREE.Material): number => {
+    const c = (m as THREE.MeshLambertMaterial).color;
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  };
+  const oldSteel = luminance(material('steel'));
+  for (const name of ['shed-ribs', 'shed-front-bars', 'shed-gable-bars', 'shed-valley-frame']) {
+    const m = byName(group, name).material as THREE.Material;
+    assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
+    assert.ok(luminance(m) > 0.5 && luminance(m) > 6 * oldSteel, `${name}: luminance ${luminance(m).toFixed(2)}`);
+  }
+  for (const [name, key] of [['shed-roof-lining', 'lining'], ['shed-valley-girder', 'valleyLining']] as const) {
+    const m = byName(group, name).material as THREE.MeshLambertMaterial;
+    assert.equal(m, material(key), name);
+    assert.ok(luminance(m) > 0.6, `${name}: luminance ${luminance(m).toFixed(2)}`);
+    assert.ok(m.emissive.r + m.emissive.g + m.emissive.b > 0.5, `${name} glows a little (the light comes from above, so an underside would be black)`);
+  }
+  assert.equal((byName(group, 'shed-roof-lining').material as THREE.Material).side, THREE.BackSide, 'the lining is seen from inside');
+});
+
+test('buildShed: the valley is a thin board-lined fascia, not a slab: its faces look along the shed or down, and a frame stands at every rib', () => {
+  const group = buildShed(layout);
+  const valley = layout.aisle + 2 * R;
+  const fascia = byName(group, 'shed-valley-girder');
+  const b = bbox(fascia);
+  close(b.min.x, valley - VALLEY_HALF, EPS);
+  close(b.max.x, valley + VALLEY_HALF, EPS);
+  assert.ok(2 * VALLEY_HALF <= 0.5, 'no thicker than the slab it replaces');
+  assert.equal((fascia.geometry.index as THREE.BufferAttribute).count / 3, 6, 'two vertical faces and a soffit, two triangles each');
+  const nor = fascia.geometry.getAttribute('normal');
+  let sides = 0;
+  let soffits = 0;
+  for (let i = 0; i < nor.count; i++) {
+    assert.ok(nor.getY(i) < 0.5, 'nothing faces up: the top is the roof skins');
+    if (Math.abs(nor.getX(i)) > 0.99) sides++;
+    else if (nor.getY(i) < -0.99) soffits++;
+  }
+  assert.equal(sides, 8, 'a quad on each side');
+  assert.equal(soffits, 4, 'and a soffit under it');
+  // the boards run along the shed: on the vertical faces UV u is the height and v the distance north, so
+  // the texture's long axis (the boards) follows the length, not the 3 m of height
+  const uv = fascia.geometry.getAttribute('uv');
+  let umax = 0;
+  let vmax = 0;
+  for (let i = 0; i < uv.count; i++) {
+    if (Math.abs(nor.getX(i)) < 0.99) continue;
+    umax = Math.max(umax, uv.getX(i));
+    vmax = Math.max(vmax, uv.getY(i));
+  }
+  close(vmax, layout.length, 1e-3);
+  close(umax, layout.springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN)), 1e-3);
+  // a pilaster at every rib on both sides, and a rail along each foot (4 faces of 2 triangles each)
+  const frame = byName(group, 'shed-valley-frame');
+  assert.equal((frame.geometry.index as THREE.BufferAttribute).count / 3, 2 * (ribPositions(layout.length).length * 8 + 8));
+  const fb = bbox(frame);
+  assert.ok(fb.min.x < valley - VALLEY_HALF && fb.max.x > valley + VALLEY_HALF, 'the frame stands proud of the fascia on both sides');
+  assert.ok(fb.min.y >= layout.springing - EPS && fb.max.y <= layout.springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN)) + EPS, 'and within its height');
 });
 
 test('the Western Range runs between the two OSM footprint corners that bound it', () => {

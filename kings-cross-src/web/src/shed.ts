@@ -37,13 +37,19 @@ export const GABLE_GLASS_FROM = 9.5;
 const ARC_STEPS = 12;
 /** The roof skin (slate, glass, lining) stands this far outside the nominal arch radius: on top of the ribs' top boom. */
 export const ROOF_SKIN = 0.3;
+/** Half the thickness of the board-lined valley fascia between the vaults, metres: ASSUMED (the first build's slab was 0.5 m thick). */
+export const VALLEY_HALF = 0.25;
 
 /**
  * The Western Range: Cubitt's 1850s brick range along the west side of the shed, between the shed
  * wall and the Western Concourse. Its footprint is read off the OSM station building (260720558):
  * the concourse arc ends at v = 141.5 in the shed frame (the Range ends with it) and the footprint's
- * southern edge beside the front is at v = 8.1 to 8.9. Depth, storey height and bay width are
- * ASSUMED (three storeys, no published survey was found). Tests pin v0 and v1 to the OSM numbers.
+ * southern edge beside the front is at v = 8.1 to 8.9. The storey count is sourced: the Historic
+ * England list entry (1078328) describes the Western range as a 3 storey block, and Camden's Listed
+ * Building Consent LB09 submissions for the Main Train Shed (section 2.3; see the valley comment in
+ * buildShed) say the shed's side walls ARE the Western and Eastern Range walls. Depth, storey height
+ * and bay width are ASSUMED (no published survey was found; the storey height in metres is in no
+ * listing). Tests pin v0 and v1 to the OSM numbers.
  */
 export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0 } as const;
 
@@ -108,6 +114,13 @@ export interface Member {
 }
 
 /**
+ * Cross-sections of the rib members, [depth in the truss plane, thickness across it], metres. The
+ * restored shed's ribs are slender latticed trusses; these are ASSUMED (the first build had 0.38 x 0.30
+ * booms and 0.16 x 0.14 webs, which read as heavy girders).
+ */
+export const MEMBER_SIZE = { boom: [0.26, 0.2], web: [0.1, 0.09] } as const;
+
+/**
  * One roof rib as a Warren truss in the plane z = 0, centred on the vault axis (u = 0): a top and
  * a bottom boom of `n` straight members each, joined by radial and diagonal webs. The depth of the
  * truss (top boom to bottom boom) is ASSUMED 1.4 m; the lattice is drawn from photographs of the
@@ -122,7 +135,7 @@ export function ribMembers(springing: number, r = R, n = 16): Member[] {
     const du = q[0] - p[0];
     const dy = q[1] - p[1];
     const len = Math.hypot(du, dy) + (kind === 'boom' ? 0.08 : 0.04);
-    out.push({ c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, 0], s: kind === 'boom' ? [len, 0.38, 0.3] : [len, 0.16, 0.14], rotZ: Math.atan2(dy, du), kind });
+    out.push({ c: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, 0], s: kind === 'boom' ? [len, MEMBER_SIZE.boom[0], MEMBER_SIZE.boom[1]] : [len, MEMBER_SIZE.web[0], MEMBER_SIZE.web[1]], rotZ: Math.atan2(dy, du), kind });
   };
   for (let i = 0; i < n; i++) {
     add(node(rt, i), node(rt, i + 1), 'boom');
@@ -217,6 +230,15 @@ export function roofOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length'
   return 1 - (1 - XRAY_OPACITY) * smoothstep(60, 220, d);
 }
 
+/** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
+export const GLASS_OPACITY = { near: 0.95, far: 0.36 } as const;
+
+/** The glazing's opacity for a roof opacity `roof` (from roofOpacity): `near` at 1 (solid roof), `far` at XRAY_OPACITY, linear between. */
+export function glazingOpacity(roof: number): number {
+  const k = Math.min(1, Math.max(0, (roof - XRAY_OPACITY) / (1 - XRAY_OPACITY)));
+  return GLASS_OPACITY.far + (GLASS_OPACITY.near - GLASS_OPACITY.far) * k;
+}
+
 /** A window decal quad, `w` x `h` metres, its foot at height y0 and centred at `centre` along the wall, facing `facing`. */
 function windowQuad(batch: Batch, at: V3, facing: '+x' | '-x' | '+z' | '-z', w = 1.4, h = 2.6): void {
   const [x, y0, z] = at;
@@ -292,15 +314,6 @@ function mesh(g: THREE.BufferGeometry, m: THREE.Material, name: string): THREE.M
   return o;
 }
 
-/** A decal material: the shared one, nudged forward in depth so it does not fight the wall behind it. */
-function decal(name: 'window' | 'windowArch'): THREE.Material {
-  const m = material(name).clone();
-  m.polygonOffset = true;
-  m.polygonOffsetFactor = -2;
-  m.polygonOffsetUnits = -2;
-  return m;
-}
-
 function addBars(batch: Batch, bars: BarSpec[], dz: number, z0 = 0): void {
   for (const b of bars) batch.box([b.c[0], b.c[1], z0 + b.c[2] + dz], b.s, { rotZ: b.rotZ, skip: ['+x', '-x'] });
 }
@@ -352,16 +365,20 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const roofMode = opts.roof ?? 'auto';
   const local = new THREE.Vector3();
   const inverse = new THREE.Matrix4();
+  // the glazing follows the cladding: a bright daylit panel from inside or close up, a see-through tint from far off
+  const glassMat = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
+  glassMat.opacity = glazingOpacity(1);
   cladding.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
     const o = roofOpacity([local.x, local.y, local.z], layout, roofMode);
     cladMat.opacity = o;
     cladMat.depthWrite = o > 0.98;
+    glassMat.opacity = glazingOpacity(o);
   };
   cladding.renderOrder = 2;
   group.add(cladding);
-  const glassMesh = mesh(mergeGeometries(glass, false), material('roofGlass'), 'shed-roof-glass');
+  const glassMesh = mesh(mergeGeometries(glass, false), glassMat, 'shed-roof-glass');
   glassMesh.renderOrder = 3;
   group.add(glassMesh);
   group.add(mesh(mergeGeometries(lining, false), material('lining'), 'shed-roof-lining'));
@@ -371,19 +388,44 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const rib = new Batch();
   for (const m of ribMembers(sp)) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
   const ribPos = ribPositions(L);
-  const ribs = new THREE.InstancedMesh(rib.build(), material('steel'), ribPos.length * centres.length);
+  const ribs = new THREE.InstancedMesh(rib.build(), material('ribPaint'), ribPos.length * centres.length);
   const mat = new THREE.Matrix4();
   let k = 0;
   for (const uc of centres) for (const v of ribPos) ribs.setMatrixAt(k++, mat.makeTranslation(uc, 0, -v));
   ribs.name = 'shed-ribs';
   ribs.instanceMatrix.needsUpdate = true;
   group.add(ribs);
-  // the valley girder: where the two roofs meet it carries them from the springing up to the cut skins.
-  // No columns under it: the OSM tracks run along this line (a buffer stop stands at u = 36.1), so the valley stays open below.
+  // the valley: where the two roofs meet, a board-lined fascia closes the gap from the springing up to the
+  // cut skins, so each vault's soffit reads as running down to the springing (the first build's grey concrete
+  // slab was the large dark plane that filled the left of the view from the platforms). The real central
+  // support is a brick spine wall, a two-storey round-arched arcade, carrying the ribs at the springing
+  // [CAM-LB09: Camden's Listed Building Consent 2008/2860 condition LB09 submissions for the Main Train Shed
+  // (camdocs.camden.gov.uk records 3355818 and 3357544), section 2.2: "The Spine Wall separating the two Train
+  // Sheds is a two Storey round arched arcade, with stepped flat arches"; HE-KX: Historic England list entry 1078328,
+  // "round-arched brick colonnade" (text read on britishlistedbuildings.co.uk/101078328); RKG: RKG Partnership's
+  // King's Cross roof case study, "brick central spine wall"]. The OSM tracks run along this line (a buffer stop
+  // stands at u = 36.1), so the wall is not drawn and the valley stays open below the springing. The colour of
+  // the restored 2012 ironwork and lining is in none of these: the paint colours are ASSUMED (see materials.ts).
   const valleyTop = sp + (R + ROOF_SKIN) * Math.sin(cut);
-  const girder = new Batch();
-  girder.box([layout.aisle + 2 * R, (sp + valleyTop) / 2, -L / 2], [0.5, valleyTop - sp, L]);
-  group.add(mesh(girder.build(), material('concrete'), 'shed-valley-girder'));
+  const valleyX = layout.aisle + 2 * R;
+  const valley = new Batch();
+  for (const [side, x] of [[-1, valleyX - VALLEY_HALF], [1, valleyX + VALLEY_HALF]] as [number, number][]) {
+    // boards run along the shed: texture u across them (here the height), v along (metres north)
+    const near: V3[] = [[x, sp, 0], [x, sp, -L], [x, valleyTop, -L], [x, valleyTop, 0]];
+    const pts = side > 0 ? near : [near[1], near[0], near[3], near[2]] as V3[];
+    valley.poly(pts, pts.map((p): [number, number] => [p[1], -p[2]]));
+  }
+  const soffit: V3[] = [[valleyX - VALLEY_HALF, sp, -L], [valleyX + VALLEY_HALF, sp, -L], [valleyX + VALLEY_HALF, sp, 0], [valleyX - VALLEY_HALF, sp, 0]];
+  valley.poly(soffit, soffit.map((p): [number, number] => [p[0], -p[2]]));
+  group.add(mesh(valley.build(), material('valleyLining'), 'shed-valley-girder'));
+  // a pilaster at every rib and a rail along the foot, painted like the ribs, so the fascia reads as framed panels in the ribs' rhythm
+  const frame = new Batch();
+  for (const side of [-1, 1]) {
+    const x = valleyX + side * (VALLEY_HALF + 0.05);
+    for (const v of ribPos) frame.box([x, (sp + valleyTop) / 2, -v], [0.1, valleyTop - sp, 0.22], { skip: ['+y', '-y'] });
+    frame.box([x, sp + 0.11, -L / 2], [0.1, 0.22, L], { skip: ['+z', '-z'] });
+  }
+  group.add(mesh(frame.build(), material('ribPaint'), 'shed-valley-frame'));
 
   // ---- brick: flank walls with piers and windows, the aisle roofs, the north aisle ends --------
   const brick = new Batch();
@@ -444,7 +486,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const lunMesh = mesh(mergeGeometries(lunGlass, false), material('glass'), 'shed-front-glass');
   lunMesh.renderOrder = 3;
-  group.add(lunMesh, mesh(bars.build(), material('steel'), 'shed-front-bars'));
+  group.add(lunMesh, mesh(bars.build(), material('ribPaint'), 'shed-front-bars'));
 
   // ---- the north gables: glass above the trains' height, in bars, framed in stone --------------
   const gableGeos: THREE.BufferGeometry[] = [];
@@ -466,7 +508,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const gableGlass = mesh(mergeGeometries(gableGeos, false), material('glass'), 'shed-gable-glass');
   gableGlass.renderOrder = 3;
-  group.add(gableGlass, mesh(gBars.build(), material('steel'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('stone'), 'shed-arch-rings'));
+  group.add(gableGlass, mesh(gBars.build(), material('ribPaint'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('stone'), 'shed-arch-rings'));
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 
   // ---- the clock tower, centred on the spine, standing just in front of the south front --------
@@ -478,8 +520,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(mesh(brick.build(), material('brick'), 'shed-brick'));
   group.add(mesh(stone.build(), material('stone'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
-  group.add(mesh(windows.build(), decal('window'), 'shed-windows'));
-  group.add(mesh(windowsArch.build(), decal('windowArch'), 'shed-front-windows'));
+  group.add(mesh(windows.build(), material('sash'), 'shed-windows'));
+  group.add(mesh(windowsArch.build(), material('sashArch'), 'shed-front-windows'));
   for (const g of disposables) g.dispose();
   group.rotation.y = -layout.heading;
   group.position.set(layout.origin[0], 0, layout.origin[1]);
@@ -532,7 +574,7 @@ export function buildTower(x: number): THREE.Group {
     const out = tw / 2 - 0.3 + 0.05;
     windowQuad(openings, [nx * out, shaftTop + 1.4, nz * out], nx === 0 ? (nz > 0 ? '+z' : '-z') : nx > 0 ? '+x' : '-x', 1.8, 2.4);
   }
-  tower.add(mesh(tb.build(), material('brick'), 'tower-brick'), mesh(ts.build(), material('stone'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(openings.build(), decal('windowArch'), 'tower-openings'));
+  tower.add(mesh(tb.build(), material('brick'), 'tower-brick'), mesh(ts.build(), material('stone'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(openings.build(), material('sashArch'), 'tower-openings'));
   tower.position.set(x, 0, tw / 2 + 0.15);
   return tower;
 }
@@ -591,7 +633,7 @@ export function buildWesternRange(): THREE.Group {
   g.add(mesh(brick.build(), material('brick'), 'range-brick'));
   g.add(mesh(stone.build(), material('stone'), 'range-stone'));
   g.add(mesh(slate.build(), material('slate'), 'range-roof'));
-  g.add(mesh(win.build(), decal('window'), 'range-windows'));
-  g.add(mesh(winArch.build(), decal('windowArch'), 'range-windows-arched'));
+  g.add(mesh(win.build(), material('sash'), 'range-windows'));
+  g.add(mesh(winArch.build(), material('sashArch'), 'range-windows-arched'));
   return g;
 }
