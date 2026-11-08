@@ -374,7 +374,7 @@ function validBoardService(value: unknown): value is BoardService {
     if (!object(value.realtime)) return false;
     for (const [key, field] of Object.entries(value.realtime)) {
       if (field == null) continue;
-      if (['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs'].includes(key) ? !epoch(field)
+      if (['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs', 'cancellationUpdatedAtMs'].includes(key) ? !epoch(field)
         : key === 'variationMinutes' ? typeof field !== 'number' || !Number.isFinite(field)
           : key === 'cancelled' ? typeof field !== 'boolean'
           : !text(field)) return false;

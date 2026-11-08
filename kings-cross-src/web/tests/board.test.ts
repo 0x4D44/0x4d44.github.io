@@ -721,3 +721,52 @@ test('schedule feed accepts boolean cancellations buffers them across refresh an
     } finally { feed.dispose(); }
   }
 });
+
+test('cancellation ordering is independent of later movements and only a newer reinstatement clears it', () => {
+  const initial = service({ realtime: { actualArrivalMs: bookedAt, eventType: 'ARRIVAL', updatedAtMs: bookedAt + 1_000 } });
+  const cancellation = { kind: 'trust', type: 'cancellation', uid: initial.uid, date: initial.date,
+    serviceDate: initial.serviceDate, cancelled: true, receivedAtMs: bookedAt };
+  const [cancelled] = applyBoardTrust([initial], cancellation);
+  assert.equal(cancelled!.realtime!.cancelled, true, 'a movement does not supersede a cancellation fact');
+  assert.equal(cancelled!.realtime!.cancellationUpdatedAtMs, bookedAt);
+  assert.equal(cancelled!.realtime!.updatedAtMs, bookedAt + 1_000);
+  const moved = applyBoardTrust([cancelled!], { ...cancellation, type: 'movement', eventType: 'DEPARTURE',
+    actualMs: bookedAt + 2_000, receivedAtMs: bookedAt + 2_000 });
+  assert.equal(moved[0]!.realtime!.cancelled, true);
+  assert.equal(moved[0]!.realtime!.actualArrivalMs, bookedAt);
+  assert.equal(moved[0]!.realtime!.actualDepartureMs, bookedAt + 2_000);
+  assert.deepEqual(applyBoardTrust(moved, { ...cancellation, cancelled: false, receivedAtMs: bookedAt - 1 }), moved);
+  const [reinstated] = applyBoardTrust(moved, { ...cancellation, cancelled: false, receivedAtMs: bookedAt + 500 });
+  assert.equal(reinstated!.realtime!.cancelled, false);
+  assert.equal(reinstated!.realtime!.cancellationUpdatedAtMs, bookedAt + 500);
+  assert.equal(reinstated!.realtime!.updatedAtMs, bookedAt + 2_000);
+});
+
+test('HTTP cancellation metadata is readable and live SSE and recording replay agree after reinstatement', async () => {
+  const call = service({ realtime: { cancelled: true, cancellationUpdatedAtMs: bookedAt, updatedAtMs: bookedAt } });
+  const events = [
+    { t: bookedAt, e: { kind: 'trust', area: 'SYN', type: 'cancellation', uid: call.uid, date: call.date,
+      serviceDate: call.serviceDate, cancelled: true, receivedAtMs: bookedAt } },
+    { t: bookedAt + 1_000, e: { kind: 'trust', area: 'SYN', type: 'cancellation', uid: call.uid, date: call.date,
+      serviceDate: call.serviceDate, cancelled: false, receivedAtMs: bookedAt + 1_000 } },
+  ];
+  const timetable = (mode: 'live' | 'replay') => createScheduleFeed({ mode, date: call.date, hostname: 'localhost',
+    relayPresent: true, now: () => bookedAt, schedule: () => 0, unschedule() {},
+    fetchImpl: (async () => jsonResponse({ date: call.date, calls: [call] })) as typeof fetch });
+  const live = timetable('live'), replay = timetable('replay');
+  const source = new BoardStream();
+  const liveFeed = createLiveFeed({ advance() {}, apply: (e, t) => live.apply(e, t) }, () => {},
+    { source: () => source, now: () => 0, schedule: () => 0, unschedule() {} });
+  const replayFeed = createReplayFeed(events, 1, { advance() {}, apply: (e, t) => replay.apply(e, t) }, () => {});
+  try {
+    await live.refresh(); await replay.refresh();
+    assert.equal(live.services()?.[0]?.realtime?.cancelled, true);
+    assert.equal(replay.services()?.[0]?.realtime?.cancelled, true, 'the first recorded cancellation has already been delivered');
+    for (const row of events) source.emit('trust', row);
+    replayFeed.advance(1);
+    assert.deepEqual(live.services(), replay.services());
+    assert.equal(live.services()?.[0]?.realtime?.cancelled, false);
+    await live.refresh(); await replay.refresh();
+    assert.deepEqual(live.services(), replay.services(), 'refresh cannot reimport a stale live cancellation');
+  } finally { liveFeed.dispose(); replayFeed.dispose(); live.dispose(); replay.dispose(); }
+});

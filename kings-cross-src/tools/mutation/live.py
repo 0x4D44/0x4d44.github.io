@@ -46,18 +46,18 @@ M = [
     ('legacy heartbeat no longer connects consumers', F, "upstream = 'connected';\n        }", "upstream = undefined;\n        }"),
     ('legacy heartbeat overrides explicit upstream state', F, " && upstream === undefined", ""),
     ('legacy heartbeat erases stale data age', F, "        paintConnection();\n      } catch { report('invalid relay heartbeat'); }", "        lastDataAt = now(); paintConnection();\n      } catch { report('invalid relay heartbeat'); }"),
-    ('public TRUST arrival timestamp falls through to text validation', F, "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs']", "['actualArrivalMs', 'actualDepartureMs', 'publicDepartureMs', 'updatedAtMs']"),
-    ('public TRUST departure timestamp falls through to text validation', F, "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs']", "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'updatedAtMs']"),
+    ('public TRUST arrival timestamp falls through to text validation', F, "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs', 'cancellationUpdatedAtMs']", "['actualArrivalMs', 'actualDepartureMs', 'publicDepartureMs', 'updatedAtMs', 'cancellationUpdatedAtMs']"),
+    ('public TRUST departure timestamp falls through to text validation', F, "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs', 'cancellationUpdatedAtMs']", "['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'updatedAtMs', 'cancellationUpdatedAtMs']"),
     ('public TRUST timestamp accepts numeric strings', F, "].includes(key) ? !epoch(field)", "].includes(key) ? !(epoch(field) || typeof field === 'string')"),
     ('legacy cache requires nonexistent realtime metadata', F, "doc.calls.some(call => !validBoardService(call))", "doc.calls.some(call => !validBoardService(call) || !call.realtime)"),
     ('malformed calls bypass schedule validation', F, "doc.calls.some(call => !validBoardService(call))", "false"),
     ('malformed schedule discards last accepted bookings', F, "})().catch(() => { misses++;", "})().catch(() => { calls = undefined; misses++;"),
-    ('relay heartbeat interval triples', R, '}, 5000);', '}, 15000);'),
+    ('relay heartbeat interval triples', R, 'schedule(ping, 5000)', 'schedule(ping, 15000)'),
     ('relay heartbeat uses an invisible event name', R, 'event: ping', 'event: wrong'),
     ('request close leaves heartbeat running', R, "req.once('close', stop);", "req.once('unused-close', stop);"),
     ('heartbeat writes after request close', R, 'if (!stopped) {', 'if (true) {'),
     ('heartbeat stop clears twice', R, 'if (stopped) return;', ''),
-    ('events endpoint omits its heartbeat', R, 'const stopHeartbeat = startEventHeartbeat(req, res, { now, metadata: () => ({ feed: status.state, lastEventAt: status.lastEventAt }) });', 'const stopHeartbeat = () => {};'),
+    ('events endpoint omits its heartbeat', R, 'const stopHeartbeat = startEventHeartbeat(req, res, { now, immediate: true, metadata: () => ({ feed: status.state, lastEventAt: status.lastEventAt }) });', 'const stopHeartbeat = () => {};'),
     ('trail sampled from tail instead of nose', T, 'let i = train.occupied.length - 1; i >= 0; i--', 'let i = 0; i < train.occupied.length; i++'),
     ('car chord compression ignored', T, 'const scaleZ = chord / (car.bogies[1] - car.bogies[0]);', 'const scaleZ = 1;'),
     ('all cars face the same direction', T, 'node.rotation.y = pose.rotationY;', 'node.rotation.y = 0;'),
@@ -85,8 +85,24 @@ M = [
     ('TL class matching ignores the 700 catalogue entry', T, "case 'TL': return spec.operator === 'Thameslink' && /700/.test(spec.classes);", "case 'TL': return spec.operator === 'Thameslink' && /701/.test(spec.classes);"),
     ('GC class matching ignores the 180 catalogue entry', T, "case 'GC': return spec.operator === 'Grand Central' && /180/.test(spec.classes);", "case 'GC': return spec.operator === 'Grand Central' && /181/.test(spec.classes);"),
     ('unsupported operators fall back to an Azuma kind', T, '? kind : best, undefined);', "? kind : best, 'lner5');"),
-    ('new physical births skip timetable resolution', T, 'kindForService(serviceFor(description, birth.timeMs), lengthForDescription(description)) ?? kindForDescription(description)', 'kindForDescription(description)'),
-    ('physical kind follows the renamed headcode', T, 'kindFor(view: TrainView): TrainKind | undefined { return born.get(view.id); }', 'kindFor(view: TrainView): TrainKind | undefined { return kindForDescription(view.description); }'),
+    ('new physical births skip timetable resolution', T, 'const service = serviceFor(description, birth.timeMs), platform = service?.platform ?? undefined;', 'const service = undefined, platform = undefined;'),
+    ('physical kind follows the renamed headcode', T, 'born.get(view.id)?.kind, { formationFor }', 'kindForDescription(view.description), { formationFor }'),
+    ('known platform does not restrict operator formations', T, 'maxLengthM === undefined || layoutForKind(kind).length <= maxLengthM + 1e-8', 'true'),
+    ('non-fitting fleet chooses its longest formation', T, 'layoutForKind(kind).length < layoutForKind(best).length ? kind : best, undefined);', 'layoutForKind(kind).length > layoutForKind(best).length ? kind : best, undefined);'),
+    ('default platform capacities are never loaded', T, 'options.platformLimitsM ?? defaultPlatformLimits', 'options.platformLimitsM ?? new Map<string, number>()'),
+    ('matched platform capacity is discarded', T, 'platform === undefined ? undefined : limits.get(platform)', 'undefined'),
+    ('birth formation changes with late platform evidence', T, 'if (previous) return layoutForKind(previous.kind).length;', 'if (false && previous) return layoutForKind(previous.kind).length;'),
+    ('oversized shortest formation loses its flag', T, 'const doesNotFit = limitM !== undefined && layoutForKind(kind).length > limitM + 1e-8;', 'const doesNotFit = false;'),
+    ('capped formation loses its flag', T, 'const capped = !doesNotFit && kind !== preferred;', 'const capped = false;'),
+    ('fresh motion views lose the capped birth reason', T, 'view.formationNote = kindFor?.formationFor?.(view)?.note;', 'view.formationNote = undefined;'),
+    ('tooltip hides capped formation reasons', 'web/src/tooltip.ts', "(view as TrainView & { formationNote?: string })?.formationNote ?", 'false ?'),
+    ('platform limits prefer the polygon over the published authority', 'core/station.ts', 'publishedLengthsM[ref] ?? polygons.get(ref)', 'polygons.get(ref) ?? publishedLengthsM[ref]'),
+    ('platform limits omit the polygon fallback', 'core/station.ts', 'publishedLengthsM[ref] ?? polygons.get(ref)', 'publishedLengthsM[ref]'),
+    ('platform limits lose published lengths without a polygon', 'core/station.ts', 'if (lengthM !== undefined) limits.set', 'if (lengthM !== undefined && polygons.has(ref)) limits.set'),
+    ('platform limits omit the stop clearance', 'core/station.ts', 'Math.max(0, lengthM - stopClearanceM)', 'Math.max(0, lengthM)'),
+    ('platform limits accept invalid clearance', 'core/station.ts', '!Number.isFinite(stopClearanceM) || stopClearanceM < 0', 'false'),
+    ('platform limits permit negative capacity', 'core/station.ts', 'Math.max(0, lengthM - stopClearanceM)', 'lengthM - stopClearanceM'),
+    ('published suburban platform length is inflated', 'core/station.ts', "'9': 176, '10': 176", "'9': 276, '10': 276"),
     ('motion birth resolver loses its physical id', 'core/motion.ts', 'lengthFor(description, { id, timeMs: now });', 'lengthFor(description, { id: nextId, timeMs: now });'),
     ('motion birth resolver loses its event time', 'core/motion.ts', 'lengthFor(description, { id, timeMs: now });', 'lengthFor(description, { id, timeMs: 0 });'),
     ('car poses change layout after a rename', T, 'carPoses(graph, view, t.layout)', 'carPoses(graph, view, layoutForDescription(view.description))'),
@@ -120,15 +136,28 @@ M = [
     ('relay shutdown errors disappear', R, 'server.close((error) => error ? reject(error) : resolve());', 'server.close(() => resolve());'),
 ]
 
-def run(work):
+def run(work, rel=None):
+    # Renderer geometry tests are expensive; a feed/relay mutation cannot affect them.
+    # Keep the full baseline, then run the owning tests and their direct consumers.
+    files = {
+        F: ['web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts'],
+        R: ['relay/tests/relay.test.mjs'],
+        T: ['web/tests/trains-live.test.ts', 'web/tests/tooltip.test.ts'],
+        'core/station.ts': ['core/tests/station.test.ts', 'web/tests/trains-live.test.ts'],
+        'web/src/tooltip.ts': ['web/tests/tooltip.test.ts'],
+        'core/motion.ts': ['web/tests/trains-live.test.ts'],
+        'vite.config.ts': ['web/tests/feed.test.ts'],
+        'tools/motion-check.ts': ['web/tests/feed.test.ts'],
+    }.get(rel, ['web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts', 'web/tests/trains-live.test.ts',
+                'web/tests/tooltip.test.ts', 'core/tests/station.test.ts', 'relay/tests/relay.test.mjs'])
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
-               'web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts', 'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs']
+               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
+               *files]
     process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, stdin=subprocess.DEVNULL, start_new_session=True)
     expired = False
     try:
-        stdout, stderr = process.communicate(timeout=12)
+        stdout, stderr = process.communicate(timeout=30)
     except subprocess.TimeoutExpired:
         expired = True
         try:
@@ -163,7 +192,7 @@ for i, (label, rel, old, new) in enumerate(M):
             shutil.copy2(src / file, work / file)
         (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
         (work / rel).write_text(original.replace(old, new, 1))
-        result, expired = run(work)
+        result, expired = run(work, rel)
         failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)) & names
         seen.update(failed)
         if expired:

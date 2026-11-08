@@ -126,6 +126,16 @@ MUTATIONS = [
     ("trust: activate a nonstation uid", "trust.mjs", "if (service?.uid !== activation.uid) return false;", ""),
     ("trust: corrections merge backwards", "trust.mjs", "for (const event of [...realtime].reverse())", "for (const event of realtime)"),
     ("trust: arrival corrections roll backward", "trust.mjs", "if (previousActual !== null && (event.actualMs ?? -Infinity) < previousActual) continue;", "if (false) continue;"),
+    ("relay: events endpoint delays its first health ping", "relay.mjs", "if (immediate) ping();", "if (false) ping();"),
+    ("trust: reinstatements are ignored", "trust.mjs", "} else if (type === '0002' || type === '0005') {", "} else if (type === '0002') {"),
+    ("trust: controls received before activation are dropped", "trust.mjs", "putRecent(pendingCancellations, key, control, MAX_PENDING_CANCELLATIONS);", "void key;"),
+    ("trust: old cancellation source time overrides newer status", "trust.mjs", "control.sourceMs < previous.sourceMs ||", "false ||"),
+    ("trust: later remote control point changes KX cancellation status", "trust.mjs", "control.departureMs > lastCall", "false"),
+    ("trust: remote-origin cancellations are dropped", "trust.mjs", "const linked = activationFor(control.currentTrainId, control.originalTrainId);", "const linked = control.location === KX_STANOX ? activationFor(control.currentTrainId, control.originalTrainId) : null;"),
+    ("trust: negative cancellation timestamps are accepted", "trust.mjs", "parsed > 0 && parsed <= 8_640_000_000_000_000", "parsed <= 8_640_000_000_000_000"),
+    ("trust: pending cancellations exceed their cap", "trust.mjs", "const MAX_PENDING_CANCELLATIONS = 5_000;", "const MAX_PENDING_CANCELLATIONS = 50_000;"),
+    ("trust: retained cancellations exceed their cap", "trust.mjs", "const MAX_CANCELLATIONS = 2_000;", "const MAX_CANCELLATIONS = 20_000;"),
+    ("trust: cancellation status never expires", "trust.mjs", "if (at - value.event.receivedAtMs >= DAY_MS) cancellations.delete(key);", "if (false) cancellations.delete(key);"),
     ("schedule: malformed corpus container is read as rows", "schedule.mjs", "const rows = Array.isArray(candidate) ? candidate : [];", "const rows = candidate;"),
 ]
 
@@ -194,6 +204,7 @@ new_names = {name for name in names if name.startswith((
     'round17 ', 'parser properties:', 'TD properties:',
     'Origin guard', 'SSE heartbeat reports', 'recording and cache symlinks',
     'recordings stream', 'reference downloads reject', 'HTTP errors and logs never echo',
+    'relay heartbeat: a connected SSE client', 'trust:',
 ))}
 seen, survived, timeouts = set(), [], []
 for i, (label, fname, old, new) in enumerate(MUTATIONS):

@@ -222,6 +222,19 @@ async function checkScheduleIntegration(t, offline = false) {
   const live = await request('/schedule');
   assert.equal(live.body.calls[0].realtime.actualDepartureMs, instant + 120000);
   assert.ok(sse.includes('event: td'));
+  socket.push('/topic/TRUST', [{ header: { msg_type: '0002' }, body: { train_id: '001Z01AA08',
+    loc_stanox: '54311', dep_timestamp: String(instant), canx_timestamp: String(instant),
+    user_id: 'SYNTHETIC-PRIVATE-CANCELLATION' } }], 'trust');
+  const cancelled = await request('/schedule');
+  assert.equal(cancelled.body.calls[0].realtime.cancelled, true);
+  assert.equal(cancelled.body.calls[0].realtime.cancellationUpdatedAtMs, instant);
+  await until(() => sse.includes('"type":"cancellation","cancelled":true'));
+  assert.ok(sse.includes('"type":"cancellation","cancelled":true'));
+  socket.push('/topic/TRUST', [{ header: { msg_type: '0005' }, body: { train_id: '001Z01AA08',
+    loc_stanox: '54311', reinstatement_timestamp: String(instant + 1000) } }], 'trust');
+  assert.equal((await request('/schedule')).body.calls[0].realtime.cancelled, false);
+  await until(() => sse.includes('"type":"cancellation","cancelled":false'));
+  assert.ok(sse.includes('"type":"cancellation","cancelled":false'));
   // A feed reconnect is a new transport/CONNECT, not a second CONNECTED on one session.
   socket.destroy();
   await until(() => connections === 2 && sockets[1].subscriptions.length === 2);
@@ -232,9 +245,12 @@ async function checkScheduleIntegration(t, offline = false) {
   const rows = (await readFile(path.join(dataDir, 'recordings/td-Y9-20261108.ndjson'), 'utf8')).trim().split('\n').map(JSON.parse);
   assert.equal(rows.filter(r => r.e.kind === 'trust' && r.e.type === 'movement').length, 1);
   assert.equal(rows.filter(r => r.e.kind === 'trust' && r.e.type === 'activation').length, 1);
+  assert.deepEqual(rows.filter(r => r.e.kind === 'trust' && r.e.type === 'cancellation').map(r => [r.e.uid, r.e.cancelled]),
+    [['SYN001', true], ['SYN001', false]]);
   assert.equal(rows.at(-1).e.counts.interpose, 1);
   assert.equal(rows.at(-1).e.counts.trust, undefined);
   assert.ok(!JSON.stringify(rows).includes('synthetic-secret'));
+  assert.ok(!JSON.stringify(rows).includes('SYNTHETIC-PRIVATE-CANCELLATION'));
 }
 test('schedule integration: one STOMP connection routes TD and TRUST into SSE, schedule actuals and the recording', t => checkScheduleIntegration(t));
 test('schedule integration offline: TD TRUST SSE schedule and recording share the live handler', t => checkScheduleIntegration(t, true));
