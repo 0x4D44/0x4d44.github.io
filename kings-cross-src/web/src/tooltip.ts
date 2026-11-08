@@ -183,7 +183,7 @@ export function describeTrain(f: TipFacts): TipModel {
   }
   const spec = TRAIN_SPECS[f.kind];
   rows.push({ label: 'Drawn as', muted: true,
-    value: `${spec.operator} ${spec.classes.replace(' x', ' ×')} · ${spec.cars.length} cars · ${Math.round(lengthOf(f.kind))} m · ${service ? 'formation' : 'all'} assumed` });
+    value: `${spec.operator} ${spec.classes.replace(' x', ' ×')} · ${spec.cars.length} cars · ${Math.round(lengthOf(f.kind))} m · ${service ? 'formation' : 'all'} assumed${(view as TrainView & { formationNote?: string })?.formationNote ? ` · ${(view as TrainView & { formationNote?: string }).formationNote}` : ''}` });
   if (view?.state === 'fading') model.badge = { text: 'fading' };
   else if (view?.state === 'estimated') {
     model.badge = { text: 'estimated', warn: true };

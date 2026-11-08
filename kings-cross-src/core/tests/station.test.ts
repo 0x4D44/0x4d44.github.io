@@ -3,16 +3,19 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { Pt } from '../geo.ts';
 import type { KxData } from '../osm.ts';
+import { DEFAULT_BUFFER_CLEARANCE_M } from '../motion.ts';
 import {
   concourseCanopy,
   concourseHeight,
   fitCircle,
   GAUGE,
   isSurfacePlatform,
+  KINGS_CROSS_PLATFORM_LENGTHS_M,
   longAxis,
   PLATFORM_REFS,
   platformHeading,
   platformReport,
+  platformFormationLimits,
   platformSouthEnd,
   pointInPolygon,
   polygonArea,
@@ -53,6 +56,29 @@ test('station: polygon area, long axis, length and mean width of a tilted slab',
   // the axis is a unit vector along the slab, up to its sign
   assert.ok(Math.abs(Math.hypot(a.axis[0], a.axis[1]) - 1) < 1e-9);
   assert.ok(Math.abs(Math.abs(a.axis[0]) - Math.sin((2 * Math.PI) / 180)) < 1e-6);
+});
+
+test('station: formation limits prefer published operating lengths and reserve stop clearance', () => {
+  const data = { platforms: [
+    { id: 1, ref: '0', pts: slab(40, -60, 400, 4, 0) },
+    { id: 2, ref: '9', pts: slab(0, -180, 150, 4, 0) },
+  ] };
+  const clearance = DEFAULT_BUFFER_CLEARANCE_M;
+  const limits = platformFormationLimits(data, clearance);
+  for (const ref of ['0', '9', '10']) assert.equal(limits.get(ref), KINGS_CROSS_PLATFORM_LENGTHS_M[ref]! - clearance,
+    'published operating length is authoritative even with a shorter or missing polygon');
+  const longer = { platforms: [{ id: 3, ref: '9', pts: slab(0, -180, 200, 4, 0) }] };
+  assert.equal(platformFormationLimits(longer, clearance).get('9'), KINGS_CROSS_PLATFORM_LENGTHS_M['9']! - clearance);
+  assert.equal(platformFormationLimits(longer, 200).get('9'), 0);
+  for (const clearance of [-1, NaN, Infinity]) assert.throws(() => platformFormationLimits(data, clearance));
+});
+
+test('station: formation limits fall back to polygon length only without a published length', () => {
+  const length = 150, clearance = DEFAULT_BUFFER_CLEARANCE_M;
+  const data = { platforms: [{ id: 1, ref: '9', pts: slab(0, -180, length, 4, 0) }] };
+  const limits = platformFormationLimits(data, clearance, {});
+  assert.equal(limits.get('9'), length - clearance);
+  assert.equal(limits.has('10'), false, 'no measured or published length stays unknown');
 });
 
 test('station: xRangeAtZ gives the crossings of the outline, or null off the polygon', () => {

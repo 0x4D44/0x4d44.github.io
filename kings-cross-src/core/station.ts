@@ -27,6 +27,15 @@ export const PLATFORM_REFS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
 /** Platforms under the main train shed (the suburban 9 and 10 sit west of it). */
 export const SHED_PLATFORM_REFS = ['0', '1', '2', '3', '4', '5', '6', '7', '8'] as const;
 
+/** Published operational lengths, not full polygon extents. Network Rail LNE (NCS)
+ * Sectional Appendix, September 2026, PDF p.110 / printed p.44 (table dated February 2021):
+ * https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=110
+ * Stopping clearance is reserved separately; these figures do not locate the buffers. */
+export const KINGS_CROSS_PLATFORM_LENGTHS_M: Readonly<Record<string, number>> = Object.freeze({
+  '0': 305, '1': 304, '2': 285, '3': 288, '4': 290, '5': 278,
+  '6': 289, '7': 289, '8': 291, '9': 176, '10': 176,
+});
+
 const dot = (a: Pt, b: Pt): number => a[0] * b[0] + a[1] * b[1];
 const sub = (a: Pt, b: Pt): Pt => [a[0] - b[0], a[1] - b[1]];
 const len = (a: Pt): number => Math.hypot(a[0], a[1]);
@@ -123,6 +132,20 @@ export function platformReport(data: Pick<KxData, 'platforms'>): PlatformInfo[] 
     out.push({ ref, osmId: p.id, lengthM: length, meanWidthM: width, areaM2: polygonArea(p.pts) });
   }
   return out;
+}
+
+/** Published operating lengths outrank hand-drawn OSM polygons. Use the polygon only
+ * without a published figure, then reserve the caller's stopping clearance. */
+export function platformFormationLimits(data: Pick<KxData, 'platforms'>, stopClearanceM: number,
+  publishedLengthsM: Readonly<Record<string, number>> = KINGS_CROSS_PLATFORM_LENGTHS_M): Map<string, number> {
+  if (!Number.isFinite(stopClearanceM) || stopClearanceM < 0) throw new Error('invalid platform stop clearance');
+  const polygons = new Map(platformReport(data).map(p => [p.ref, p.lengthM]));
+  const limits = new Map<string, number>();
+  for (const ref of PLATFORM_REFS) {
+    const lengthM = publishedLengthsM[ref] ?? polygons.get(ref);
+    if (lengthM !== undefined) limits.set(ref, Math.max(0, lengthM - stopClearanceM));
+  }
+  return limits;
 }
 
 /** The middle of a platform's south end (the buffer-stop end): the mean of its two southmost vertices. */

@@ -4,10 +4,14 @@ import * as THREE from 'three';
 import type { Graph } from '../../core/graph.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
+import { DEFAULT_BUFFER_CLEARANCE_M } from '../../core/motion.ts';
+import type { KxData } from '../../core/osm.ts';
+import { platformFormationLimits } from '../../core/station.ts';
 import type { ScheduleCall } from '../../core/schedule.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { Car, TrainKind, TrainLayout } from '../../core/train.ts';
 import { buildTrain, END_GAP } from './train.ts';
+import trackData from './data/kx-track.json' with { type: 'json' };
 
 /** Per body end, inside the layout's coupling-inclusive length: train.ts insets each body by this. */
 export const COUPLING_CLEARANCE = END_GAP;
@@ -20,10 +24,10 @@ function layoutForKind(kind: TrainKind): TrainLayout {
 export const layoutForDescription = (description: string): TrainLayout => layoutForKind(kindForDescription(description));
 export const lengthForDescription = (description: string): number => layoutForDescription(description).length;
 
-type OperatorService = Pick<ScheduleCall, 'operator' | 'origin' | 'destination'>;
+type OperatorService = Pick<ScheduleCall, 'operator' | 'origin' | 'destination'> & Partial<Pick<ScheduleCall, 'platform'>>;
 /** Formation length is evidence only within an operator's fleet: a 717 is almost
  * the length of a five-car Azuma. Read the catalogue so new 700/180 kinds slot in. */
-export function kindForService(service: OperatorService | undefined, lengthM: number): TrainKind | undefined {
+export function kindForService(service: OperatorService | undefined, lengthM: number, maxLengthM?: number): TrainKind | undefined {
   if (!service) return undefined;
   const moorgate = [service.origin, service.destination].some(s => /^(?:MORGATE|MOORGATE)$/i.test(s.trim()));
   const candidates = ALL_KINDS.filter(kind => {
@@ -38,22 +42,58 @@ export function kindForService(service: OperatorService | undefined, lengthM: nu
       default: return false;
     }
   });
-  // Unsupported fleets retain the legacy headcode fallback until their kind exists.
-  return candidates.reduce<TrainKind | undefined>((best, kind) => best === undefined ||
+  const fitting = candidates.filter(kind => maxLengthM === undefined || layoutForKind(kind).length <= maxLengthM + 1e-8);
+  // An unsupported fleet remains unresolved. If none of a known fleet fits, retain
+  // its shortest actual kind; the birth choice below flags that unresolved mismatch.
+  if (!fitting.length) return candidates.reduce<TrainKind | undefined>((best, kind) => best === undefined ||
+    layoutForKind(kind).length < layoutForKind(best).length ? kind : best, undefined);
+  return fitting.reduce<TrainKind | undefined>((best, kind) => best === undefined ||
     Math.abs(layoutForKind(kind).length - lengthM) < Math.abs(layoutForKind(best).length - lengthM) ? kind : best, undefined);
 }
 
+export interface FormationChoice {
+  readonly kind: TrainKind;
+  readonly platform?: string;
+  readonly limitM?: number;
+  readonly capped: boolean;
+  readonly doesNotFit: boolean;
+  readonly note?: string;
+}
+/** UI enrichment of the ephemeral motion view. The tooltip already consumes this
+ * same object after rendering; the motion core continues to own length and position. */
+export interface FormationView extends TrainView { formationNote?: string }
+type KindResolver = ((view: TrainView) => TrainKind | undefined) & {
+  formationFor?: (view: Pick<TrainView, 'id'>) => FormationChoice | undefined;
+};
+export interface TrainKindOptions { platformLimitsM?: ReadonlyMap<string, number> }
+const defaultPlatformLimits = platformFormationLimits(trackData as unknown as KxData, DEFAULT_BUFFER_CLEARANCE_M);
+
 /** One resolver per motion instance: both motion and drawing consume its birth choice. Late timetable loads apply
  * to future physical trains; renaming or updating a visible train cannot resize it. */
-export function createTrainKinds(serviceFor: (description: string, atTime: number) => OperatorService | undefined) {
-  const born = new Map<number, TrainKind>();
+export function createTrainKinds(serviceFor: (description: string, atTime: number) => OperatorService | undefined, options: TrainKindOptions = {}) {
+  const born = new Map<number, FormationChoice>();
+  const limits = options.platformLimitsM ?? defaultPlatformLimits;
+  const formationFor = (view: Pick<TrainView, 'id'>): FormationChoice | undefined => born.get(view.id);
+  const kindFor = Object.assign((view: TrainView): TrainKind | undefined => born.get(view.id)?.kind, { formationFor });
   return {
     lengthM(description: string, birth: MotionBirth): number {
-      const kind = born.get(birth.id) ?? kindForService(serviceFor(description, birth.timeMs), lengthForDescription(description)) ?? kindForDescription(description);
-      born.set(birth.id, kind);
+      const previous = born.get(birth.id);
+      if (previous) return layoutForKind(previous.kind).length;
+      const service = serviceFor(description, birth.timeMs), platform = service?.platform ?? undefined;
+      const limitM = platform === undefined ? undefined : limits.get(platform);
+      const length = lengthForDescription(description);
+      const preferred = kindForService(service, length) ?? kindForDescription(description);
+      // Unknown fleets keep the explicitly assumed LNER fallback, capped within
+      // those two legacy choices when a platform is known, never across operators.
+      const kind = kindForService(service, length, limitM) ?? kindForService({ operator: 'GR', origin: '', destination: '' }, length, limitM)!;
+      const doesNotFit = limitM !== undefined && layoutForKind(kind).length > limitM + 1e-8;
+      const capped = !doesNotFit && kind !== preferred;
+      const where = `P${platform}, ${Math.floor(limitM ?? 0)} m usable`;
+      const note = doesNotFit ? `shortest available; exceeds platform length: ${where}` : capped ? `capped to platform length: ${where}` : undefined;
+      born.set(birth.id, Object.freeze({ kind, platform, limitM, capped, doesNotFit, note }));
       return layoutForKind(kind).length;
     },
-    kindFor(view: TrainView): TrainKind | undefined { return born.get(view.id); },
+    kindFor, formationFor,
   };
 }
 
@@ -126,7 +166,7 @@ interface MaterialPalette {
   copies: Map<THREE.Material, THREE.Material>;
 }
 
-export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: (view: TrainView) => TrainKind | undefined) {
+export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: KindResolver) {
   const templates = new Map<TrainKind, THREE.Group>();
   const drawn = new Map<number, DrawnTrain>();
   const palettes = new Map<TrainKind, Map<number, MaterialPalette>>();
@@ -199,7 +239,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     parent.remove(t.group); drawn.delete(id);
     assigned.delete(id);
   };
-  const update = (views: readonly TrainView[]): void => {
+  const update = (views: readonly FormationView[]): void => {
     const present = new Set(views.map((t) => t.id));
     for (const id of drawn.keys()) if (!present.has(id)) remove(id);
     const needed = new Map<TrainKind, Set<number>>();
@@ -211,6 +251,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     const used = new Set<MaterialPalette>();
     for (const view of views) {
       const t = drawn.get(view.id)!;
+      view.formationNote = kindFor?.formationFor?.(view)?.note;
       const palette = paletteFor(t.kind, view.opacity, needed.get(t.kind)!, assigned.get(view.id));
       bind(t, palette); used.add(palette);
       t.description = view.description; t.group.userData.description = view.description;
