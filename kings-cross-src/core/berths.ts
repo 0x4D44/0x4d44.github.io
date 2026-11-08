@@ -648,6 +648,63 @@ export function leaveOneOut(data: KxData, recordings: RecordingEvent[][], smart:
   return trials;
 }
 
+/**
+ * An entire observed component can be external even when some of its berths have
+ * no SMART row (or only a station event association, which is not a coordinate).
+ * Run after calibration so this cannot change a placement or its leave-one-out oracle.
+ */
+function applyOutsideComponents(map: AnchorMap, observed: Observations, smart: SmartRow[]): AnchorMap {
+  const links = new Map<string, Set<string>>([...observed.seen.keys()].map((b) => [b, new Set<string>()]));
+  for (const step of observed.steps.values()) {
+    links.get(step.from)!.add(step.to);
+    links.get(step.to)!.add(step.from);
+  }
+  const seeds = new Map<string, Set<string>>();
+  for (const row of smart) {
+    if (text(row, 'TD') !== map.area || !isOutside(row)) continue;
+    const location = `${text(row, 'STANME') || 'Finsbury Park'} (STANOX ${text(row, 'STANOX')})`;
+    for (const berth of [text(row, 'FROMBERTH'), text(row, 'TOBERTH')]) {
+      if (!links.has(berth)) continue;
+      const locations = seeds.get(berth) ?? new Set<string>();
+      locations.add(location); seeds.set(berth, locations);
+    }
+  }
+  const anchored = new Set(map.anchors.map((a) => a.berth));
+  const unmapped = new Map(map.unmapped.map((u) => [u.berth, u]));
+  const visited = new Set<string>();
+  for (const root of links.keys()) {
+    if (visited.has(root)) continue;
+    const component = [root]; visited.add(root);
+    for (let i = 0; i < component.length; i++) for (const next of links.get(component[i]!)!) {
+      if (!visited.has(next)) { visited.add(next); component.push(next); }
+    }
+    // Neither the old SMART-boundary policy nor an anchor-connected piece is widened.
+    if (component.some((b) => anchored.has(b))) continue;
+    const sources = component.filter((b) => seeds.has(b)).map((berth) => ({ berth, location: [...seeds.get(berth)!].sort()[0]! }))
+      .sort((a, b) => a.location.localeCompare(b.location) || a.berth.localeCompare(b.berth));
+    if (!sources.length) continue;
+    const reached = new Map(sources.map((source) => [source.berth, { ...source, steps: 0 }]));
+    const queue = sources.map((s) => s.berth);
+    // Multi-source BFS gives the nearest outside location in observed step hops.
+    for (let i = 0; i < queue.length; i++) {
+      const current = reached.get(queue[i]!)!;
+      for (const next of links.get(queue[i]!)!) {
+        if (reached.has(next)) continue;
+        reached.set(next, { ...current, steps: current.steps + 1 }); queue.push(next);
+      }
+    }
+    for (const berth of component) {
+      const item = unmapped.get(berth);
+      // A geographic inference must not erase contradictory placement or calibration evidence.
+      if (!item || item.reason === 'conflict') continue;
+      const source = reached.get(berth)!;
+      item.reason = 'outside-network';
+      item.detail = `Observed step component has no anchored berth; reaches SMART outside location ${source.location} at berth ${source.berth} in ${source.steps} step hops (shortest undirected path). Station event association alone does not establish a position inside the extract`;
+    }
+  }
+  return map;
+}
+
 export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}): AnchorMap {
   const map = buildMap(data, recordings, smart, options);
   // One or two toy signals cannot calibrate multiple inference families. The real extract has three.
@@ -656,9 +713,9 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     const berth = /^YA\s*(\d{4})$/i.exec(s.ref ?? '')?.[1];
     return berth && observed.seen.has(berth) && map.anchors.find((a) => a.berth === berth)?.kind !== 'platform';
   });
-  if (options.calibrate === false || references.length < 3) return map;
+  if (options.calibrate === false || references.length < 3) return applyOutsideComponents(map, observed, smart);
   const failed = leaveOneOut(data, recordings, smart, options).filter((t) => !t.trusted && t.method !== 'starter');
-  if (!failed.length) return map;
+  if (!failed.length) return applyOutsideComponents(map, observed, smart);
   const failures = new Map<SignalTrial['method'], string>();
   for (const trial of failed) failures.set(trial.method,
     `Leave-one-out ${trial.berth}: ${trial.placed ? `${trial.distanceM?.toFixed(1) ?? 'disconnected'} m graph error, direction ${trial.directionOk ? 'compatible' : 'wrong'}` : 'no defensible prediction'} exceeds the 60 m trust criterion`);
@@ -692,7 +749,7 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     }
   }
   map.unmapped.sort((a, b) => a.berth.localeCompare(b.berth));
-  return map;
+  return applyOutsideComponents(map, observed, smart);
 }
 
 export function analyseSteps(data: KxData, recordings: RecordingEvent[][], map: AnchorMap): StepCheck[] {
@@ -730,7 +787,7 @@ export function describeEvidence(data: KxData, recordings: RecordingEvent[][], s
     `Inventory: ${observed.seen.size} berths in step/interpose/cancel events, including placeholder-only berths; ${observed.ignored} ${NOT_A_TRAIN} events ignored for all track and timing evidence. Anchors may also include unobserved canonical platforms.`,
     `SMART fact: ${rows.length} ${map.area} rows; ${offsetRows.length} carry BERTHOFFSET. It is an event/route-dependent signed offset, not a coordinate. Assumption: seconds correcting the reporting time toward a station event (large positive arrival offsets and negative departure offsets). No unit or distance conversion is established; no metric SMART anchors are manufactured. STANOX 54311 proves station association only.`,
     `Partner-berth fact: ${partnerSteps} non-placeholder steps touch B-prefixed platform partners. This sample does not establish front/rear or buffer-end semantics. Assumption: co-locate a SMART/naming-associated partner at its platform terminal, with 100–150 m uncertainty; never use placeholder hopping to infer track.`,
-    `Outside-network policy: SMART names for Finsbury Park, Hornsey, Harringay, Ferme Park and the Moorgate branch are known outside the King's Cross extract; Finsbury Park STANOX 54238 is also recognised. Other STANOX values are not automatically outside. Reachability stops at known internal and external boundaries. Ambiguous branches remain no-evidence.`,
+    `Outside-network policy: SMART names for Finsbury Park, Hornsey, Harringay, Ferme Park and the Moorgate branch are known outside the King's Cross extract; Finsbury Park STANOX 54238 is also recognised. Other STANOX values are not automatically outside. Existing reachability stops at known internal and external boundaries. Additionally, an entire observed undirected step component with no final anchor and an outside SMART seed is classified outside; details name the nearest seed location and shortest step-hop distance. Placeholder steps never connect components. Components touching an anchor retain their existing classification; components with neither anchors nor outside seeds stay no-evidence, and conflicts are preserved. SMART station event association alone is not a metric inside position.`,
     `Platform policy: one-to-one east-to-west terminal-track matching against station platform polygons, maximum 40 m from their south ends. Tagged OSM buffers take 5 m error; untagged degree-one terminals take 15 m. The existing KINGS_CROSS rectangle selects platform polygons by centroid; the real buffers of platforms 0–8 lie south of that rectangle. Physical terminal positions are retained; the centroid-selection zone is deliberately unchanged; buffer stops need not lie inside it.`,
     `Signals: only YA refs match ${map.area}; NL, AF and WH are excluded. Direction tags follow OSM way order. Missing/both directions assume way-forward with 30 m error. Platform 1004 retains the arrival buffer position and records its namesake starter as separate evidence, not a second anchor. Signal snap tolerance 25 m; conflicting duplicate matches over 75 m remain unmapped.`,
     `Topology: nearest common northern junction over all feasible platform routes, not an intersection of independently chosen shortest paths to a distant root. A 25 m set-back provides assumed signal clearance before arrival splits and after departure merges. An unreferenced main signal must be on the shared track, face the right way and be within 40 m; train-protection/speed-only objects do not count. Topology error 75 m, reduced to 15 m for a unique signal snap.`,
