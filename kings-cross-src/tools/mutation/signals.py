@@ -29,10 +29,15 @@ M = [
     ('SG SH ignored', [('bytes = updateBytes(bytes, row as TimedTdEvent, area).state;', "if (row.e.msgType === 'SF') bytes = updateBytes(bytes, row as TimedTdEvent, area).state;")]),
     ('wrong area accepted', [('updateBytes(bytes, row as TimedTdEvent, area)', 'updateBytes(bytes, row as TimedTdEvent, row.e.area)')]),
     ('table area ignored', [('value.area !== area', 'false')]),
-    ('invented precision accepted', [('Math.abs(v.precision - v.support / v.trials) < 1e-12', 'true')]),
+    ('new evidence checks ignored', [('return precisionValid && recallValid && legacyConsistent;', 'return true;')]),
+    ('unknown evidence rejects whole table', [('return precisionValid && recallValid && legacyConsistent;', "return precisionValid && recallValid && legacyConsistent && v.support >= 3 && typeof v.precision === 'number' && v.precision >= 0.8;")]),
+    ('legacy precision mismatch accepted', [('const legacyConsistent = !legacy || (v.unmatchedCycles === v.contradictions &&', 'const legacyConsistent = true || (v.unmatchedCycles === v.contradictions &&')]),
+    ('recall mismatch accepted', [('const recallValid = legacy || raw.recall === expectedRecall ||', 'const recallValid = true || raw.recall === expectedRecall ||')]),
     ('held out evidence ignored', [('!evidence(h.heldOut)', 'false'), ('structuredClone(h) as unknown as SignalHypothesis', '({...structuredClone(h), heldOut: h.training}) as unknown as SignalHypothesis')]),
-    ('competing candidates picked', [('return result.map((h) => result.some', "return result.filter((h) => h.id !== 'other').map((h) => result.some"), ('other !== h && (other.berth', "other.id !== 'other' && other !== h && (other.berth")]),
-    ('foreign refs accepted', [("/^YA\\s*\\d+$/i.test(signal.ref ?? '')", "true"), ("(signal.ref ?? '').replace(/^YA\\s*/i, '') === signal.berth", "true")]),
+    ('competing candidates picked', [('return result.map((h) => result.some', "return result.filter((h) => h.id !== 'other').map((h) => result.some"), ('other !== h && (', "other.id !== 'other' && other !== h && (")]),
+    ('proceed route candidates conflated', [('(other.berth === h.berth && kind(other) === kind(h) && other.to === h.to)', '(other.berth === h.berth)')]),
+    ('route hypothesis becomes an aspect', [("const proceed = table.filter((h) => (h.kind ?? 'proceed') === 'proceed');", "const proceed = table.map((h) => ({ ...h, kind: 'proceed' as const }));")]),
+    ('foreign refs accepted', [("signal.ref?.match(/^YA\\s*(\\d{4})$/i)?.[1]", "signal.ref?.match(/^[A-Z]+\\s*(\\d{4})$/i)?.[1]")]),
     ('boards decoded', [("if (signal.kinds.includes('main')", 'if (true'), ("record.state = record.signal.kinds.includes('main')", 'record.state = true')]),
     ('topology mapping omitted', [('if (table.length && object(value)', 'if (false && object(value)')]),
     ('far topology mappings accepted', [('m.distanceM <= 40', 'm.distanceM <= 400')]),
@@ -81,6 +86,7 @@ try:
     shutil.copytree(src / 'core', root / 'core')
     (root / 'web/src').mkdir(parents=True)
     (root / 'web/tests').mkdir(parents=True)
+    shutil.copy2(src / 'web/src/board.ts', root / 'web/src/board.ts')
     shutil.copy2(src / 'web/src/feed.ts', root / 'web/src/feed.ts')
     shutil.copy2(src / 'web/tests/signals.test.ts', root / 'web/tests/signals.test.ts')
     (root / 'tools').mkdir()

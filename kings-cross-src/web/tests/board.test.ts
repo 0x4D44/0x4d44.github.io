@@ -407,6 +407,21 @@ test('board names preserve station apostrophes and St while expanding known oper
   for (const [code, name] of Object.entries({ GR: 'LNER', GN: 'Great Northern', HT: 'Hull Trains', LD: 'Lumo', GC: 'Grand Central', TL: 'Thameslink', ZZ: 'ZZ' })) assert.equal(operatorName(code), name);
 });
 
+test('Great Northern and Grand Central fit the 350px board operator column', () => {
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  const services = [service({ operator: 'GN' }), service({ uid: 'SYN002', headcode: '1A02', operator: 'GC' })];
+  const rows = boardRows([train(1, { state: 'held', lastBerth: '1004' }), train(2, { description: '1A02', state: 'held', lastBerth: '1004' })],
+    map, { nowMs: bookedAt, services });
+  const html = boardHtml(rows);
+  assert.match(html, /class="kx-board-operator">Great Northern<\/span>/);
+  assert.match(html, /class="kx-board-operator">Grand Central<\/span>/);
+  const doc = new FakeDocument(), parent = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement);
+  assert.match(parent.children[0]!.children[0]!.textContent, /\.kx-board\{[^}]*width:350px/);
+  assert.match(parent.children[0]!.children[0]!.textContent, /\.kx-board-operator\{[^}]*max-width:92px/);
+  controller.dispose();
+});
+
 test('Due limits eight public passenger directions and excludes stock freight and nonpublic calls', () => {
   const passenger = service({ headcode: '1A11', uid: 'PASS01', publicDeparture: null, publicDepartureMs: null });
   const nonpublicArrival = service({ headcode: '2B22', uid: 'PASS02', publicArrival: null, publicArrivalMs: null });

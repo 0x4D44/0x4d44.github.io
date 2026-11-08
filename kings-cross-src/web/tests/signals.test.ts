@@ -12,8 +12,10 @@ import type { TimedTdEvent } from '../../core/sclass.ts';
 const signal = (extra: Partial<OverlaySignal> = {}): OverlaySignal => ({ id: 1, point: [11, 21], ref: 'YA 1004', kinds: ['main'],
   edge: { wayId: 9, from: 1, to: 2, t: 0.8, point: [10, 20] }, travel: [0.6, 0.8], facing: [-0.6, -0.8],
   side: 'left', sideSource: 'assumed-left', berth: '1004', review: 'osm-ref-match', ...extra });
-const ev = () => ({ trials: 5, support: 4, contradictions: 1, precision: 0.8, unmatchedCycles: 0 });
+const ev = () => ({ trials: 5, support: 4, contradictions: 1, precision: 0.8, unmatchedCycles: 1 });
 const hypothesis = () => ({ id: 'synthetic', address: '10', bit: 2, berth: '1004', proceedValue: 1, training: ev(), heldOut: ev(), status: 'decoded', reason: 'synthetic only' });
+const currentEv = () => ({ trials: 5, support: 4, contradictions: 1, precision: 0.8, unmatchedCycles: 1, recall: 0.8 });
+const currentHypothesis = (extra: Record<string, unknown> = {}) => ({ ...hypothesis(), kind: 'proceed', training: currentEv(), heldOut: currentEv(), ...extra });
 const table = () => ({ area: 'Y9', hypotheses: [hypothesis()] });
 function fixture(signals = [signal()], fetchImpl?: typeof fetch) {
   const scene = new THREE.Scene(); const layer = createSignals({ attribution: 'synthetic', signals }, scene, { fetchImpl });
@@ -47,6 +49,43 @@ test('validated evidence drives green proceed and red danger and reset forgets b
   assert.equal(drawn.group.getObjectByName('unknown')!.visible, false); assert.deepEqual(layer.counts(), { drawn: 1, decoded: 1 });
   layer.apply(row('SF', '00')); assert.equal(drawn.state, 'danger'); assert.equal(aspect(drawn.group), 0xff2929);
   layer.reset(); assert.equal(drawn.state, 'unknown'); layer.dispose();
+});
+
+test('numeric OSM YA berth decodes only a valid proceed hypothesis, never a route aspect', () => {
+  const { layer, drawn } = fixture(); layer.apply(row());
+  const proceed = currentHypothesis();
+  layer.setTable({ area: 'Y9', hypotheses: [proceed] }); assert.equal(drawn.state, 'proceed');
+  // A route may share the berth with a proceed candidate; it neither drives nor vetoes the aspect.
+  layer.setTable({ area: 'Y9', hypotheses: [proceed, currentHypothesis({ id: 'route', kind: 'route', bit: 3, to: '2000' })] });
+  assert.equal(drawn.state, 'proceed');
+  layer.setTable({ area: 'Y9', hypotheses: [currentHypothesis({ kind: 'route' })] }); assert.equal(drawn.state, 'unknown');
+  layer.dispose();
+});
+
+test('new evidence uses conventional precision and recall while compatible legacy evidence remains accepted', () => {
+  const invalid = [
+    currentHypothesis({ training: { ...currentEv(), precision: 1 } }),
+    currentHypothesis({ heldOut: { ...currentEv(), recall: 1 } }),
+    currentHypothesis({ training: { ...currentEv(), support: 2, contradictions: 3, recall: 0.4, precision: 2 / 3 } }),
+    currentHypothesis({ heldOut: { ...currentEv(), unmatchedCycles: 2, precision: 2 / 3 } }),
+    currentHypothesis({ kind: 'bogus' }),
+    currentHypothesis({ kind: 'route', to: 7 }),
+  ];
+  const { layer, drawn } = fixture(); layer.apply(row());
+  for (const value of invalid) { layer.setTable({ area: 'Y9', hypotheses: [currentHypothesis()] }); assert.equal(drawn.state, 'proceed');
+    layer.setTable({ area: 'Y9', hypotheses: [value] }); assert.equal(drawn.state, 'unknown'); }
+  // Legacy tables omit recall and kind; their old precision is accepted only where it agrees with the new formula.
+  layer.setTable(table()); assert.equal(drawn.state, 'proceed');
+  const incompatibleLegacy = { area: 'Y9', hypotheses: [{ ...hypothesis(), training: { ...ev(), unmatchedCycles: 0, precision: 1 } }] };
+  layer.setTable(incompatibleLegacy); assert.equal(drawn.state, 'unknown'); layer.dispose();
+});
+
+test('unknown held-out candidates do not invalidate a decoded proceed table', () => {
+  const { layer, drawn } = fixture(); layer.apply(row());
+  const weak = currentHypothesis({ id: 'weak', berth: '9999', bit: 3, status: 'unknown',
+    heldOut: { trials: 2, support: 0, contradictions: 2, precision: null, unmatchedCycles: 0, recall: 0 } });
+  layer.setTable({ area: 'Y9', hypotheses: [currentHypothesis(), weak] });
+  assert.equal(drawn.state, 'proceed'); layer.dispose();
 });
 
 test('SF SG SH all update the requested byte in ascending order and foreign areas cannot change it', () => {
