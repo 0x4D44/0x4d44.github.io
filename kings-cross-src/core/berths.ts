@@ -16,6 +16,8 @@ export interface SmartRow { [key: string]: unknown }
 export interface AnchorOptions { area?: string; sources?: string[]; nominalSpeedMps?: number; calibrate?: boolean }
 export interface SignalTrial {
   berth: string; signalId: number; role: 'berth' | 'starter'; placed: boolean;
+  /** Only an OSM YA ref establishes identity independently of this placement algorithm. */
+  independent: boolean;
   distanceM: number | null; directionOk: boolean; trusted: boolean; detail: string;
   method: 'topology' | 'chain' | 'boundary' | 'starter';
 }
@@ -23,6 +25,19 @@ export interface StepCheck {
   from: string; to: string; count: number; timed: number;
   seconds: number | null; lengthM: number | null; speedMps: number | null;
   reversal: boolean; issues: string[];
+}
+export interface BerthAudit {
+  berth: string;
+  reason: UnmappedBerth['reason'];
+  cause: string;
+  smartPairs: number;
+  smartLocations: string[];
+  observedSteps: number;
+  timedSteps: number;
+  nearestAnchor?: { berth: string; steps: number };
+  /** YA refs within 250 graph metres of the nearest anchor, not an unknown berth position. */
+  nearbySignals: number;
+  detail: string;
 }
 interface Step { from: string; to: string; count: number; seconds: number[] }
 interface Observations { seen: Map<string, number>; steps: Map<string, Step>; ignored: number }
@@ -319,6 +334,8 @@ function fanAnchor(data: KxData, g: Graph, berth: string, targets: BerthAnchor[]
     let placed = onPath(g, north, SETBACK_M, berth, `Topology ${unique.every((a) => a.kind === 'platform') ? 'platform' : 'junction'} ${arrival ? 'fan-out to' : 'fan-in from'} ${unique.map((a) => a.berth).join(', ')}; nearest shared northern junction ${node}; ${SETBACK_M} m set-back on its shared track (signal clearance assumption)`);
     if (!placed) continue;
     if (arrival) placed = { ...placed, from: placed.to, to: placed.from, t: 1 - placed.t };
+    // Three 25 m clearance lengths allow for an unsurveyed signal setback. This is a
+    // modelling allowance, not a confidence interval fitted to a held-out signal.
     placed.errorM = 75;
     if (!unique.every((target) => directedRoute(g, arrival ? placed! : target, arrival ? target : placed!) !== null)) continue;
     const matches: { a: BerthAnchor; distance: number }[] = [];
@@ -611,7 +628,8 @@ function routeReverses(g: Graph, route: TrackPath, a: BerthAnchor, b: BerthAncho
 }
 
 function inferenceMethod(a: BerthAnchor): SignalTrial['method'] {
-  return a.evidence.startsWith('Topology platform') ? 'topology' : a.evidence.startsWith('Boundary') ? 'boundary' : 'chain';
+  // Junction fan-outs use the same shared-junction search as platform fans, not timing.
+  return a.evidence.startsWith('Topology ') ? 'topology' : a.evidence.startsWith('Boundary') ? 'boundary' : 'chain';
 }
 
 /** A held-out signal is removed entirely, not merely stripped of its ref. */
@@ -620,9 +638,23 @@ export function leaveOneOut(data: KxData, recordings: RecordingEvent[][], smart:
   const observed = observe(recordings, area);
   const g = buildGraph(data);
   const trials: SignalTrial[] = [];
+  const identities = new Map<number, { berth: string; independent: boolean }>();
   for (const signal of data.signals) {
     const berth = /^YA\s*(\d{4})$/i.exec(signal.ref ?? '')?.[1];
     if (!berth || !observed.seen.has(berth)) continue;
+    identities.set(signal.id, { berth, independent: true });
+  }
+  // A topology-assigned identity is useful as a sensitivity check, not fresh ground truth.
+  // Report these too, without allowing a circular identity to calibrate another placement.
+  const full = buildMap(data, recordings, smart, options);
+  for (const a of full.anchors) {
+    if (a.kind !== 'signal' || !a.evidence.startsWith('Topology ')) continue;
+    const id = Number(/\(node (\d+)\)/.exec(a.evidence)?.[1]);
+    if (Number.isFinite(id) && !identities.has(id)) identities.set(id, { berth: a.berth, independent: false });
+  }
+  for (const signal of data.signals) {
+    const identity = identities.get(signal.id); if (!identity) continue;
+    const { berth, independent } = identity;
     const expected = signalPoint(data, g, signal, berth); if (!expected) continue;
     const hidden = { ...data, signals: data.signals.filter((s) => s.id !== signal.id) };
     const proposals = new Map<string, BerthAnchor[]>();
@@ -635,15 +667,15 @@ export function leaveOneOut(data: KxData, recordings: RecordingEvent[][], smart:
     const actualHeading = actual ? vector(g.pos.get(actual.from)!, g.pos.get(actual.to)!) : [0, 0] as Pt;
     const expectedHeading = vector(g.pos.get(expected.from)!, g.pos.get(expected.to)!);
     const directionOk = !!actual && actualHeading[0] * expectedHeading[0] + actualHeading[1] * expectedHeading[1] > .5 * Math.hypot(...actualHeading) * Math.hypot(...expectedHeading);
-    const trusted = distanceM !== null && distanceM <= 60 && directionOk;
+    const trusted = distanceM !== null && distanceM <= 15 && directionOk;
     const rejectedErrors = (proposals.get(berth) ?? []).map((a) => routeBetween(g, a, expected)?.length).filter((n): n is number => n !== undefined);
     const rejection = map.unmapped.find((u) => u.berth === berth)?.detail ?? 'No prediction with the signal removed';
     const platformIds = new Set(map.anchors.filter((a) => a.kind === 'platform').map((a) => a.berth));
     const platformFan = [...observed.steps.values()].some((s) => (s.to === berth && platformIds.has(s.from)) || (s.from === berth && platformIds.has(s.to)));
     const missingMethod = platformFan ? 'topology' : rejection.includes('Boundary continuation') ? 'boundary' : 'chain';
-    trials.push({ berth, signalId: signal.id, role: starter ? 'starter' : 'berth', placed: !!actual,
+    trials.push({ berth, signalId: signal.id, role: starter ? 'starter' : 'berth', independent, placed: !!actual,
       distanceM, directionOk, trusted, method: starter ? 'starter' : actual ? inferenceMethod(actual) : missingMethod,
-      detail: actual ? `${actual.evidence}; ${trusted ? 'within' : 'fails'} 60 m validation tolerance` : `${rejection}${rejectedErrors.length ? `; rejected candidate graph errors: ${rejectedErrors.map((n) => n.toFixed(1)).join(', ')} m` : ''}` });
+      detail: `${independent ? 'Independent OSM YA reference' : 'Inferred signal identity: sensitivity check only, not an independent oracle'}. ${actual ? `${actual.evidence}; ${trusted ? 'within' : 'fails'} 15 m validation tolerance` : `${rejection}${rejectedErrors.length ? `; rejected candidate graph errors: ${rejectedErrors.map((n) => n.toFixed(1)).join(', ')} m` : ''}`}` });
   }
   return trials;
 }
@@ -729,6 +761,40 @@ function observedReach(start: string, observed: Observations): Map<string, Obser
   return reached;
 }
 
+/** Evidence inventory, kept separate from placement: station associations are not coordinates. */
+export function auditBerths(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], map: AnchorMap): BerthAudit[] {
+  const observed = observe(recordings, map.area), g = buildGraph(data);
+  const rows = smart.filter((r) => text(r, 'TD') === map.area);
+  const references = data.signals.filter((s) => /^YA\s*\d{4}$/i.test(s.ref ?? ''))
+    .map((s) => ({ point: signalPoint(data, g, s, ''), ref: s.ref! }));
+  return map.unmapped.filter((u) => u.reason !== 'outside-network').map((item) => {
+    const touches = rows.filter((r) => text(r, 'FROMBERTH') === item.berth || text(r, 'TOBERTH') === item.berth);
+    const smartPairs = new Set(touches.filter((r) => text(r, 'FROMBERTH') && text(r, 'TOBERTH'))
+      .map((r) => key(text(r, 'FROMBERTH'), text(r, 'TOBERTH')))).size;
+    const smartLocations = [...new Set(touches.map((r) => text(r, 'STANME')).filter(Boolean))].sort();
+    const steps = [...observed.steps.values()].filter((s) => s.from === item.berth || s.to === item.berth);
+    const observedSteps = steps.reduce((n, s) => n + s.count, 0);
+    const timedSteps = steps.reduce((n, s) => n + s.seconds.length, 0);
+    const incoming = steps.some((s) => s.to === item.berth && s.from !== item.berth);
+    const outgoing = steps.some((s) => s.from === item.berth && s.to !== item.berth);
+    const reached = observedReach(item.berth, observed);
+    const nearest = map.anchors.filter((a) => reached.has(a.berth)).map((a) => ({ a, steps: reached.get(a.berth)!.steps }))
+      .sort((a, b) => a.steps - b.steps || a.a.berth.localeCompare(b.a.berth))[0];
+    let cause: string;
+    if (item.reason === 'conflict') {
+      cause = /boundary placement withheld/i.test(item.detail) ? 'timing-calibration'
+        : /chain placement withheld/i.test(item.detail) ? 'chain-calibration'
+          : /topology placement withheld/i.test(item.detail) ? 'topology-calibration'
+            : /(?:no graph route|disconnected|revers|headings)/i.test(item.detail) ? 'heading-conflict' : 'signal-conflict';
+    } else cause = !observedSteps ? 'no-train-steps' : !incoming || !outgoing ? 'one-sided-chain' : 'unbounded-or-ambiguous-chain';
+    const nearby = nearest ? references.filter((s) => s.point && (routeBetween(g, nearest.a, s.point)?.length ?? Infinity) <= 250) : [];
+    const nearbySignals = nearby.length;
+    return { berth: item.berth, reason: item.reason, cause, smartPairs, smartLocations, observedSteps, timedSteps,
+      nearestAnchor: nearest ? { berth: nearest.a.berth, steps: nearest.steps } : undefined, nearbySignals,
+      detail: `${item.detail}. Evidence audit: ${smartPairs} distinct SMART directed pairs, ${observedSteps} real-train steps (${timedSteps} timed residences). ${nearbySignals} OSM YA references within 250 graph metres of the nearest anchor (${nearby.map((s) => s.ref).join(', ') || 'none'}); this is not a position estimate for this berth. SMART offsets and step durations alone do not establish a metric point` };
+  });
+}
+
 /** Add observed connectivity facts without changing any berth classification or anchor. */
 function addNoEvidenceContext(map: AnchorMap, observed: Observations, smart: SmartRow[], withheld: Map<string, WithheldPlacement>): void {
   const anchors = new Map(map.anchors.map((a) => [a.berth, a]));
@@ -783,14 +849,14 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     addNoEvidenceContext(map, observed, smart, new Map());
     return applyOutsideComponents(map, observed, smart);
   }
-  const failed = leaveOneOut(data, recordings, smart, options).filter((t) => !t.trusted && t.method !== 'starter');
+  const failed = leaveOneOut(data, recordings, smart, options).filter((t) => t.independent && !t.trusted && t.method !== 'starter');
   if (!failed.length) {
     addNoEvidenceContext(map, observed, smart, new Map());
     return applyOutsideComponents(map, observed, smart);
   }
   const failures = new Map<SignalTrial['method'], string>();
   for (const trial of failed) failures.set(trial.method,
-    `Leave-one-out ${trial.berth}: ${trial.placed ? `${trial.distanceM?.toFixed(1) ?? 'disconnected'} m graph error, direction ${trial.directionOk ? 'compatible' : 'wrong'}` : 'no defensible prediction'} exceeds the 60 m trust criterion`);
+    `Leave-one-out ${trial.berth}: ${trial.placed ? `${trial.distanceM?.toFixed(1) ?? 'disconnected'} m graph error, direction ${trial.directionOk ? 'compatible' : 'wrong'}` : 'no defensible prediction'} exceeds the 15 m trust criterion`);
   const withheld = new Map<string, WithheldPlacement>();
   map.anchors = map.anchors.filter((a) => {
     if (a.kind !== 'inferred' && !a.evidence.startsWith('Topology')) return true;
@@ -850,7 +916,7 @@ export function describeEvidence(data: KxData, recordings: RecordingEvent[][], s
     `Topology: nearest common northern junction over all feasible platform routes, not an intersection of independently chosen shortest paths to a distant root. A 25 m set-back provides assumed signal clearance before arrival splits and after departure merges. An unreferenced main signal must be on the shared track, face the right way and be within 40 m; train-protection/speed-only objects do not count. Topology error 75 m, reduced to 15 m for a unique signal snap.`,
     `Branching inference: every predecessor/successor branch must reach an anchor within eight observed steps; every directed route estimate must agree within 75 m along the graph. Median residence timings weight non-platform chains; platform dwell or incomplete timings use equal intervals. Inference error is at least 50 m or one-third of the bounding path. A merge of running lines alone does not locate their next stop signal.`,
     `North boundary: degree-one northern terminals reachable from station platforms, restricted to OSM ECM1 when refs are available. Continue along the graph at assumed nominal 15 m/s unless overridden, using median residence times; error is max(100 m, inherited error + 40% of distance). Beyond-boundary status requires the whole estimated distance interval to lie past the cut. A straddling interval stays unmapped.`,
-    `Validation: leave-one-out removes each signal object entirely, including its position as a signal hint. The graph geometry remains. The platform namesake is evaluated as a starter 10 m north of its polygon's north end, not at the buffer. At least three non-platform YA references activate method-family calibration: any family with an unplaced prediction, graph error over 60 m or wrong direction is withheld from the AnchorMap. Failed predictions are retained only in the private validation report.`,
+    `Validation: leave-one-out removes each signal object entirely, including its position as a signal hint. The graph geometry remains. The platform namesake is evaluated as a starter 10 m north of its polygon's north end, not at the buffer. At least three non-platform YA references activate method-family calibration: any family with an unplaced independent prediction, graph error over 15 m or wrong direction is withheld from the AnchorMap. Topology-identified unreferenced signal anchors are also hidden and reported as sensitivity checks, but their algorithm-inferred identities cannot supply independent ground truth. Failed predictions are retained only in the private validation report. Topology junction fan-outs share the topology family with platform fans; they do not use step-time interpolation.`,
     `Step checks report median matched train/berth residence per recording; unmeasured time stays unknown. Every measured event is checked for speed and zero-time movement, including outliers hidden by the median. The route search retains incoming-edge direction and finds a compatible alternative when the unconstrained shortest path reverses. A platform permits reversal at its endpoint. Turns over about 96 degrees or opposing anchor headings are rejected. Speed flags use 50 m/s; timings and coarse inferred stops can cause false positives. OSM source: ${data.attribution}.`,
   ];
 }

@@ -48,11 +48,15 @@ M = [
     ('protection boards accepted as main signals', 'source_replace', (" || !signal.kinds.includes('main')", '')),
     ('foreign referenced signals accepted for topology', 'source_replace', ('if (signal.ref ||', 'if (')),
     ('unreferenced signal direction ignored', 'source_replace', ("const forward = signal.direction !== 'backward';", 'const forward = true;')),
+    ('topology junction predictions misclassified as chain', 'source_replace', ("return a.evidence.startsWith('Topology ') ? 'topology' : a.evidence.startsWith('Boundary')", "return a.evidence.startsWith('Topology platform') ? 'topology' : a.evidence.startsWith('Boundary')")),
     ('unbounded branches accepted', 'source_replace', ('adjacent.every((b) => visit(b, [start]))', 'adjacent.some((b) => visit(b, [start]))')),
     ('branch agreement tolerance widened tenfold', 'source_replace', ('(routeBetween(g, a, b)?.length ?? Infinity) > 75', '(routeBetween(g, a, b)?.length ?? Infinity) > 750')),
     ('nominal speed option ignored', 'source_replace', ('options.nominalSpeedMps ?? 15', '15')),
     ('outside boundary proof disabled', 'source_replace', ('if (distance - error > path.length)', 'if (false)')),
     ('held out signal only loses its ref', 'source_replace', ('data.signals.filter((s) => s.id !== signal.id)', 'data.signals.map((s) => s.id === signal.id ? {...s, ref: undefined} : s)')),
+    ('topology-inferred signal identities treated as independent oracles', 'source_replace', ('if (Number.isFinite(id) && !identities.has(id)) identities.set(id, { berth: a.berth, independent: false });', 'if (Number.isFinite(id) && !identities.has(id)) identities.set(id, { berth: a.berth, independent: true });')),
+    ('failed inferred-identity trials calibrate their own topology', 'source_replace', ('filter((t) => t.independent && !t.trusted && t.method !== \'starter\')', 'filter((t) => !t.trusted && t.method !== \'starter\')')),
+    ('leave-one-out trust tolerance widened to sixty metres', 'source_replace', ('const trusted = distanceM !== null && distanceM <= 15 && directionOk;', 'const trusted = distanceM !== null && distanceM <= 60 && directionOk;')),
     ('calibration withholding bypassed', 'source_replace', ('if (options.calibrate === false || references.length < 3)', 'if (true || options.calibrate === false || references.length < 3)')),
     ('directed routes replaced with unconstrained shortest path', 'source_replace', ('function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null {', 'function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null { return routeBetween(g, a, b);')),
     ('all evidence discarded', 'build', "result.anchors=[];result.unmapped=[];"),
@@ -75,6 +79,21 @@ M = [
         ('associations.filter((association) => reached.has(association.berth))', 'associations'),
         ('steps: reached.get(association.berth)!.steps', 'steps: reached.get(association.berth)?.steps ?? -1'),
     ]),
+    ('foreign SMART rows leak into the berth audit', 'source_replace', (
+        "export function auditBerths(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], map: AnchorMap): BerthAudit[] {\n  const observed = observe(recordings, map.area), g = buildGraph(data);\n  const rows = smart.filter((r) => text(r, 'TD') === map.area);",
+        "export function auditBerths(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], map: AnchorMap): BerthAudit[] {\n  const observed = observe(recordings, map.area), g = buildGraph(data);\n  const rows = smart;")),
+    ('duplicate SMART directed pairs inflate the audit counter', 'source_replace', (
+        "const smartPairs = new Set(touches.filter((r) => text(r, 'FROMBERTH') && text(r, 'TOBERTH'))\n      .map((r) => key(text(r, 'FROMBERTH'), text(r, 'TOBERTH')))).size;",
+        'const smartPairs = touches.length;')),
+    ('audit collapses one-sided evidence into an ambiguous chain', 'source_replace', (
+        "else cause = !observedSteps ? 'no-train-steps' : !incoming || !outgoing ? 'one-sided-chain' : 'unbounded-or-ambiguous-chain';",
+        "else cause = !observedSteps ? 'no-train-steps' : 'unbounded-or-ambiguous-chain';")),
+    ('audit nearest-anchor path distance is off by one', 'source_replace', (
+        "map((a) => ({ a, steps: reached.get(a.berth)!.steps }))",
+        "map((a) => ({ a, steps: reached.get(a.berth)!.steps + 1 }))")),
+    ('audit nearby-signal radius ignores the 250-metre limit', 'source_replace', (
+        "routeBetween(g, nearest.a, s.point)?.length ?? Infinity) <= 250",
+        "routeBetween(g, nearest.a, s.point)?.length ?? Infinity) <= 150")),
 ]
 
 PRELUDE = '''
