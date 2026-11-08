@@ -39,8 +39,10 @@ export interface TrainView {
   reversals: number;
   exiting?: boolean;
 }
+export interface MotionBirth { id: number; timeMs: number }
 export interface MotionOptions {
-  lengthM?: number | ((description: string) => number);
+  /** Resolve once per physical birth, including queued trains, never on a rename. */
+  lengthM?: number | ((description: string, birth: MotionBirth) => number);
   acceleration?: number;
   braking?: number;
   defaultSpeedMps?: number;
@@ -99,8 +101,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   // Modelling defaults, not a timetable inference: 9-car length, restrained approach speed,
   // and service rather than emergency braking. Short consists can pass lengthM: 130.
   const lengthOption = opts.lengthM ?? 260;
-  const lengthFor = (description: string): number => {
-    const length = typeof lengthOption === 'function' ? lengthOption(description) : lengthOption;
+  const lengthFor = (description: string, birth: MotionBirth): number => {
+    const length = typeof lengthOption === 'function' ? lengthOption(description, birth) : lengthOption;
     if (!Number.isFinite(length) || length <= 0) throw new Error('motion train length must be finite and positive');
     return length;
   };
@@ -428,9 +430,10 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const pos = locate(a);
     if (!pos) { issues.push({ kind: 'unroutable', description, berth: a.berth, reason: 'anchor has no valid graph edge' }); return; }
     const dir = a.from === pos.edge.a ? 1 : -1;
-    const lengthM = lengthFor(description);
+    const id = nextId++;
+    const lengthM = lengthFor(description, { id, timeMs: now });
     const t: Train = { description, lengthM, pos, dir, body: initialBody(pos, dir, lengthM), route: [], speed: 0, target: a, lastBerth: a.berth, lastSeen: now, departing: false, blocked: false, distanceM: 0, reversals: 0, authority: 0,
-      id: nextId++, exiting: false, pendingExit: false, routeOrigin: a.berth };
+      id, exiting: false, pendingExit: false, routeOrigin: a.berth };
     if (canSpawn(t)) active.set(description, t);
     else {
       queued.set(description, t);

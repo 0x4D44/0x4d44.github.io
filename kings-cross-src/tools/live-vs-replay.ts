@@ -9,14 +9,20 @@ import { createMotion } from '../core/motion.ts';
 import type { TrainView } from '../core/motion.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData } from '../core/osm.ts';
-import { trainLayout } from '../core/train.ts';
-import { createLiveFeed, createReplayFeed, parseRecording } from '../web/src/feed.ts';
+import { matchService } from '../core/schedule.ts';
+import type { ScheduleCall } from '../core/schedule.ts';
+import { createTrainKinds } from '../web/src/trains-live.ts';
+import { createLiveFeed, createReplayFeed, parseRecording, ukDate } from '../web/src/feed.ts';
 import type { EventStream, RecordedEvent, SnapshotEvent, TrainFeed } from '../web/src/feed.ts';
 
 export interface SampleTrain {
   id: number; description: string; edge: [number, number, number]; t: number; point: [number, number];
 }
 export interface MotionSample { atMs: number; trains: SampleTrain[] }
+/** Live motion uses elapsed milliseconds; replay motion uses recorder epoch milliseconds. */
+export function comparisonServiceFor(calls: readonly ScheduleCall[], epochBaseMs = 0) {
+  return (description: string, timeMs: number): ScheduleCall | undefined => matchService(description, epochBaseMs + timeMs, calls);
+}
 const quantile = (values: number[], p: number): number | null => {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -132,9 +138,16 @@ async function main(): Promise<void> {
   const anchors = await fetch(new URL('/anchors', relay), { signal: AbortSignal.timeout(10_000) }).then(async (r) => { if (!r.ok) throw new Error(`anchors HTTP ${r.status}`); return await r.json() as AnchorMap; });
   await writeFile(resolve(out, 'anchors-used.json'), JSON.stringify(anchors) + '\n', { mode: 0o600 });
   const data = JSON.parse(await readFile(new URL('../web/src/data/kx-track.json', import.meta.url), 'utf8')) as KxData;
-  const graph = buildGraph(data), long = trainLayout('lner9').length, short = trainLayout('lner5').length;
-  const options = { lengthM: (d: string) => d[0] === '1' ? long : short,
-    wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) };
+  const scheduleDate = ukDate(Date.now());
+  const scheduleResponse = await fetch(new URL(`/schedule?date=${scheduleDate}`, relay), { signal: AbortSignal.timeout(10_000) });
+  if (!scheduleResponse.ok) throw new Error(`schedule HTTP ${scheduleResponse.status}`);
+  const schedule = await scheduleResponse.json() as { date: string; calls: ScheduleCall[] };
+  if (schedule.date !== scheduleDate || !Array.isArray(schedule.calls) || schedule.calls.some((call) => !call || typeof call.uid !== 'string' || typeof call.headcode !== 'string')) throw new Error('invalid timetable');
+  await writeFile(resolve(out, 'schedule-used.json'), JSON.stringify(schedule) + '\n', { mode: 0o600 });
+  const graph = buildGraph(data);
+  const wayMaxspeed = new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!]));
+  // Each world has its own physical-id cache, using the same immutable timetable cohort.
+  const optionsFor = (epochBaseMs = 0) => ({ lengthM: createTrainKinds(comparisonServiceFor(schedule.calls, epochBaseMs)).lengthM, wayMaxspeed });
   const controller = new AbortController();
   const received: { type: string; receivedAtMs: number; elapsedMs: number | null; data: unknown }[] = [];
   const samples: MotionSample[] = [];
@@ -147,7 +160,7 @@ async function main(): Promise<void> {
   const completion = new Promise<void>((res, rej) => { finish = res; fail = rej; });
   const start = (payload: string): void => {
     startWall = Date.now(); startMono = performance.now(); initialSnapshot = JSON.parse(payload);
-    motion = createMotion(graph, anchors, options);
+    motion = createMotion(graph, anchors, optionsFor(startWall));
     feed = createLiveFeed(motion, (state) => { statuses.push({ atMs: Date.now(), state }); }, {
       source: () => { source = new ObservedSource(); return source; }, now: () => performance.now(),
     });
@@ -217,7 +230,7 @@ async function main(): Promise<void> {
   }
   rows.sort((a, b) => a.t - b.t);
   const window = snapshotWindow(rows, startWall, endWall);
-  const replayMotion = createMotion(graph, anchors, options), replay = createReplayFeed(window, 1, replayMotion, () => {});
+  const replayMotion = createMotion(graph, anchors, optionsFor()), replay = createReplayFeed(window, 1, replayMotion, () => {});
   const replaySamples = samples.map(({ atMs }) => {
     replay.advance(Math.max(0, atMs - replay.timeMs()) / 1000);
     return { atMs, trains: sampleTrains(replayMotion.trains()) };
@@ -230,7 +243,7 @@ async function main(): Promise<void> {
   // snapshot, explicitly labelled here rather than passed off as a recording row.
   const seed = { ...initialSnapshot as object, kind: 'snapshot' } as RecordedEvent['e'];
   const alignedRows = [{ t: startWall, e: seed }, ...rows.filter((r) => r.t > startWall && r.t <= endWall)];
-  const alignedMotion = createMotion(graph, anchors, options), alignedFeed = createReplayFeed(alignedRows, 1, alignedMotion, () => {});
+  const alignedMotion = createMotion(graph, anchors, optionsFor()), alignedFeed = createReplayFeed(alignedRows, 1, alignedMotion, () => {});
   const alignedSamples = samples.map(({ atMs }) => {
     alignedFeed.advance(Math.max(0, atMs - alignedFeed.timeMs()) / 1000);
     return { atMs, trains: sampleTrains(alignedMotion.trains()) };
@@ -256,6 +269,7 @@ async function main(): Promise<void> {
   const report = { interval: { startMs: startWall, endMs: endWall, durationSeconds: duration, connectionStartedAt, startMode,
     recordedCheckpointMs: window[0]!.t, checkpointToLiveStartMs: startWall - window[0]!.t, sameInitialBerths },
     received: { messages: received.length, snapshots, pings, recordedEventsInReplay: window.length },
+    timetable: { date: scheduleDate, calls: schedule.calls.length, policy: 'One timetable fetched before checkpoint wait, fixed for all worlds; independent birth-kind caches. Page refresh timing is not reproduced.' },
     receiptMinusRecordedMs: { median: quantile(jitter, 0.5), p95: quantile(jitter, 0.95), max: jitter.length ? Math.max(...jitter) : null },
     initialization, initializationExplanation, statuses, ...comparison, sameInitialSnapshotControl,
     explanation: 'Both modes use the page feed factories and identical graph, anchors, lengths and speed tags. Live advances on a 60 Hz Node timer and applies SSE messages at the latest frame, as the page does; replay uses recorder timestamps and the real nearest-prior recorded checkpoint. Sampling splits frame advances at exact one-second wall-clock offsets. Acceptance requires identical description sets at every sampled second and position p95 below 5 m; numeric physical ids and edges are reported separately without remapping. Node timer/receipt jitter and recorder-to-SSE timestamp differences remain measurable. The separately labelled sameInitialSnapshotControl uses the actual live connection snapshot plus the recording events after connection; that diagnostic seed is not claimed to be a recorded checkpoint.',
@@ -264,7 +278,7 @@ async function main(): Promise<void> {
   await writeFile(resolve(out, 'same-initial-snapshot-samples.json'), JSON.stringify(alignedSamples) + '\n', { mode: 0o600 });
   await writeFile(resolve(out, 'live-vs-replay.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
   const markdown = `# Live versus replay\n\n${duration} seconds; ${samples.length} samples. Start mode: ${startMode}; recorded checkpoint ${startWall - window[0]!.t} ms before live initialization; same initial berth picture: ${sameInitialBerths}.\n\n| Measure | Recorded checkpoint (primary) | Same live snapshot (diagnostic) |\n| --- | ---: | ---: |\n| Seconds with the same trains | ${comparison.sameTrainSetSeconds}/${comparison.samples} | ${sameInitialSnapshotControl.sameTrainSetSeconds}/${comparison.samples} |\n| Live-only / replay-only train samples | ${comparison.liveOnlyTrainSamples} / ${comparison.replayOnlyTrainSamples} | ${sameInitialSnapshotControl.liveOnlyTrainSamples} / ${sameInitialSnapshotControl.replayOnlyTrainSamples} |\n| Matching physical ids / paired descriptions | ${comparison.matchingPhysicalIds} / ${comparison.matchedTrainSamples} | ${sameInitialSnapshotControl.matchingPhysicalIds} / ${sameInitialSnapshotControl.matchedTrainSamples} |\n| Description agreement for common ids | ${comparison.descriptionByIdAgreement}/${comparison.commonIdSamples} | ${sameInitialSnapshotControl.descriptionByIdAgreement}/${sameInitialSnapshotControl.commonIdSamples} |\n| Position difference median / p95 / max (m) | ${comparison.positionDifferenceM.median} / ${comparison.positionDifferenceM.p95} / ${comparison.positionDifferenceM.max} | ${sameInitialSnapshotControl.positionDifferenceM.median} / ${sameInitialSnapshotControl.positionDifferenceM.p95} / ${sameInitialSnapshotControl.positionDifferenceM.max} |\n| Acceptance | ${comparison.passed ? 'PASS' : 'FAIL'} | ${sameInitialSnapshotControl.passed ? 'PASS' : 'FAIL'} |\n\nReceipt minus recorder timestamp median / p95 / max: ${report.receiptMinusRecordedMs.median} / ${report.receiptMinusRecordedMs.p95} / ${report.receiptMinusRecordedMs.max} ms.\n\n${report.explanation}\n`;
-  await writeFile(resolve(out, 'live-vs-replay.md'), markdown + `\n${initializationExplanation}\n`);
+  await writeFile(resolve(out, 'live-vs-replay.md'), markdown + `\nTimetable: ${scheduleDate}, ${schedule.calls.length} calls. ${report.timetable.policy}\n\n${initializationExplanation}\n`);
   console.log(JSON.stringify({ ...report, seconds: undefined, statuses: undefined, sameInitialSnapshotControl: { ...sameInitialSnapshotControl, seconds: undefined } }, null, 2));
   if (!comparison.passed) process.exitCode = 1;
 }

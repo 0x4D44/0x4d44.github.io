@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import { buildGraph, snap } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import { createMotion, overlapM } from '../../core/motion.ts';
-import type { TrainView } from '../../core/motion.ts';
-import { trainLayout } from '../../core/train.ts';
-import { carPoses, COUPLING_CLEARANCE, createLiveTrains, kindForDescription, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
+import type { MotionBirth, TrainView } from '../../core/motion.ts';
+import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
+import { carPoses, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
 
 function fixture(curved = true, kind: 'lner5' | 'lner9' = 'lner9'): { graph: Graph; train: TrainView } {
   const nodes: [number, number, number][] = [];
@@ -100,6 +100,118 @@ test('the headcode supplies the initial motion length before a physical train is
   assert.equal(kindForDescription('1SYN'), 'lner9');
   assert.equal(kindForDescription('2SYN'), 'lner5');
   close(lengthForDescription('1SYN'), 233.7); close(lengthForDescription('2SYN'), 129.7);
+});
+
+const service = (operator: string, origin = 'KNGX', destination = 'KNGX') => ({ operator, origin, destination });
+const nearestKind = (kinds: readonly (typeof ALL_KINDS)[number][], lengthM: number) => kinds.reduce((best, kind) =>
+  Math.abs(trainLayout(kind).length - lengthM) < Math.abs(trainLayout(best).length - lengthM) ? kind : best);
+
+test('service kind matching separates operator fleets before comparing consist lengths', () => {
+  const lner = ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'LNER');
+  const gn387 = ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'Great Northern' && /387/.test(TRAIN_SPECS[kind].classes));
+  assert.equal(kindForService(service('GR'), trainLayout('lner5').length), 'lner5');
+  assert.equal(kindForService(service('GR'), trainLayout('lner9').length), 'lner9');
+  assert.equal(kindForService(service('HT'), trainLayout('lner5').length), 'hull5');
+  assert.equal(kindForService(service('LD'), trainLayout('lner5').length), 'lumo5');
+  assert.equal(kindForService(service('GN'), trainLayout('lner5').length), nearestKind(gn387, trainLayout('lner5').length));
+  assert.notEqual(kindForService(service('GN'), trainLayout('lner5').length), 'lner5');
+  assert.equal(kindForService(service('XX'), trainLayout('lner5').length), undefined);
+  assert.equal(kindForService(undefined, trainLayout('lner5').length), undefined);
+  assert.ok(lner.includes('lner5') && lner.includes('lner9'));
+});
+
+test('Great Northern formation matching uses its nearest 387 size and Moorgate endpoints select 717', () => {
+  const gn387 = ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'Great Northern' && /387/.test(TRAIN_SPECS[kind].classes));
+  const gn717 = ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'Great Northern' && /717/.test(TRAIN_SPECS[kind].classes));
+  assert.ok(gn387.length > 0, 'the model catalogue needs at least one 387 kind');
+  assert.equal(gn717.length, 1, 'the model catalogue needs one 717 kind');
+  for (const kind of gn387) assert.equal(kindForService(service('GN'), trainLayout(kind).length), kind);
+  assert.equal(kindForService(service('GN', 'MORGATE', 'KNGX'), trainLayout('lner5').length), gn717[0]);
+  assert.equal(kindForService(service('GN', 'KNGX', 'MOORGATE'), trainLayout('lner5').length), gn717[0]);
+  assert.notEqual(gn717[0], kindForService(service('GR'), trainLayout('lner5').length));
+});
+
+test('Thameslink and Grand Central match classes advertised by ALL_KINDS', () => {
+  const cases = [
+    ['TL', ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'Thameslink' && /700/.test(TRAIN_SPECS[kind].classes))],
+    ['GC', ALL_KINDS.filter((kind) => TRAIN_SPECS[kind].operator === 'Grand Central' && /180/.test(TRAIN_SPECS[kind].classes))],
+  ] as const;
+  for (const [operator, kinds] of cases) {
+    if (!kinds.length) assert.equal(kindForService(service(operator), 100), undefined);
+    else for (const kind of kinds) assert.equal(kindForService(service(operator), trainLayout(kind).length), kind);
+  }
+});
+
+test('unknown service evidence leaves kind unresolved and length uses the legacy headcode', () => {
+  const resolver = createTrainKinds(() => undefined);
+  const birth: MotionBirth = { id: 71, timeMs: 1234 };
+  const length = resolver.lengthM('1UNKNOWN', birth);
+  assert.equal(kindForService(service('ZZ'), length), undefined);
+  assert.equal(length, lengthForDescription('1UNKNOWN'));
+  const train = { ...fixture().train, id: birth.id, description: '1UNKNOWN', lengthM: length };
+  assert.equal(resolver.kindFor(train), 'lner9');
+  assert.equal(resolver.lengthM('2UNKNOWN', { id: 72, timeMs: 1234 }), lengthForDescription('2UNKNOWN'));
+});
+
+test('a physical birth freezes its schedule kind through late tables and renames while a new birth resolves it', () => {
+  const graph = buildGraph({ nodes: [[1, 0, -1000], [2, 2000, -1000]], rails: [{ id: 1, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const anchor = (berth: string, x: number) => ({ berth, kind: 'signal' as const, from: 1, to: 2, t: x / 2000, point: [x, -1000] as [number, number], errorM: 1, evidence: 'synthetic' });
+  const anchors = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [anchor('NEW', 400), anchor('OLD', 1500)] };
+  const table = new Map<string, ReturnType<typeof service>>();
+  const tableReads: { description: string; atTime: number }[] = [];
+  const kinds = createTrainKinds((description, atTime) => {
+    tableReads.push({ description, atTime });
+    return table.get(description);
+  });
+  const motionBirths: { description: string; birth: MotionBirth }[] = [];
+  const motion = createMotion(graph, anchors, { lengthM: (description, birth) => {
+    motionBirths.push({ description, birth: { ...birth } });
+    return kinds.lengthM(description, birth);
+  } });
+
+  motion.apply({ kind: 'interpose', area: 'TEST', descr: '2OLD', to: 'OLD' }, 1234);
+  const first = motion.trains()[0]!;
+  assert.equal(first.id, 1); assert.equal(first.lengthM, trainLayout('lner5').length);
+  assert.equal(kinds.kindFor(first), 'lner5');
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene, kinds.kindFor);
+  layer.update([first]);
+  const originalDrawn = layer.trains()[0]!;
+  assert.equal(originalDrawn.kind, 'lner5');
+  close(first.lengthM, originalDrawn.layout.length);
+
+  table.set('2OLD', service('GN', 'MORGATE', 'KNGX'));
+  table.set('1RENAMED', service('GR'));
+  motion.apply({ kind: 'interpose', area: 'TEST', descr: '1RENAMED', to: 'OLD' }, 9876);
+  const renamed = motion.trains()[0]!;
+  assert.equal(renamed.id, first.id); assert.equal(renamed.description, '1RENAMED');
+  assert.equal(renamed.lengthM, first.lengthM); assert.equal(kinds.kindFor(renamed), 'lner5');
+  layer.update([renamed]);
+  const afterRename = layer.trains()[0]!;
+  assert.ok(afterRename.group === originalDrawn.group, 'a rename must retain the original render group');
+  assert.equal(afterRename.kind, 'lner5');
+  assert.ok(afterRename.layout === originalDrawn.layout, 'a rename must retain the original layout');
+  close(renamed.lengthM, afterRename.layout.length);
+
+  table.set('1NEW', service('GN', 'KNGX', 'MOORGATE'));
+  motion.apply({ kind: 'interpose', area: 'TEST', descr: '1NEW', to: 'NEW' }, 10_500);
+  const views = motion.trains(), newcomer = views.find((view) => view.description === '1NEW')!;
+  const gn717 = ALL_KINDS.find((kind) => TRAIN_SPECS[kind].operator === 'Great Northern' && /717/.test(TRAIN_SPECS[kind].classes));
+  assert.ok(gn717);
+  assert.equal(newcomer.id, 2); assert.equal(newcomer.lengthM, trainLayout(gn717).length);
+  assert.equal(kinds.kindFor(newcomer), gn717);
+  layer.update(views);
+  const drawnNewcomer = layer.trains().find((record) => record.id === newcomer.id)!;
+  assert.equal(drawnNewcomer.kind, gn717); assert.equal(drawnNewcomer.layout.spec.kind, gn717);
+  close(newcomer.lengthM, drawnNewcomer.layout.length);
+  assert.deepEqual(motionBirths, [
+    { description: '2OLD', birth: { id: 1, timeMs: 1234 } },
+    { description: '1NEW', birth: { id: 2, timeMs: 10_500 } },
+  ]);
+  assert.deepEqual(tableReads, [
+    { description: '2OLD', atTime: 1234 },
+    { description: '1NEW', atTime: 10_500 },
+  ]);
+  layer.dispose();
 });
 
 test('fading one train leaves another opaque and disappearing trains release their groups', () => {
