@@ -3,13 +3,29 @@ import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import { shortestPath } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import type { TrainView } from '../../core/motion.ts';
+import { matchService } from '../../core/schedule.ts';
+import type { ScheduleCall } from '../../core/schedule.ts';
 
 export type BoardMode = 'sample' | 'live' | 'replay' | 'none';
 export type BoardTrain = Pick<TrainView, 'id' | 'description'> & Partial<Omit<TrainView, 'id' | 'description'>> & { samplePlatform?: number };
-/** Schedule seam: a later source can enrich these rows without changing the TD projection. */
+export interface BoardService extends ScheduleCall {
+  originName?: string;
+  destinationName?: string;
+  realtime?: {
+    actualArrivalMs?: number | null; actualDepartureMs?: number | null;
+    variationMinutes?: number | null; eventType?: string | null; platform?: string | null;
+    trainId?: string | null; matchMethod?: string | null; updatedAtMs?: number | null;
+  } | null;
+}
+export interface BoardDue { service: BoardService; direction: 'arrival' | 'departure'; bookedMs: number }
+/** TD placement remains observational; timetable data only enriches its labels. */
 export interface BoardRow {
   trainId: number;
   headcode: string;
+  service?: BoardService;
+  uid?: string;
+  operator?: string;
+  origin?: string;
   platform?: number;
   platforms?: number[];
   state: 'standing' | 'departing' | 'approaching' | 'leaving';
@@ -23,6 +39,8 @@ export interface BoardRow {
   destination?: string;
 }
 export interface BoardRows {
+  timetable: boolean;
+  due: BoardDue[];
   platforms: { platform: number; trains: BoardRow[] }[];
   approaching: BoardRow[];
   departed: BoardRow[];
@@ -30,6 +48,7 @@ export interface BoardRows {
   mode: BoardMode;
 }
 export interface BoardOptions {
+  services?: readonly BoardService[];
   nowMs?: number;
   previous?: BoardRows;
   mode?: BoardMode;
@@ -165,7 +184,62 @@ export function boardRows(trains: readonly BoardTrain[], anchors: AnchorMap, opt
   const retentionMs = options.retentionMs ?? 180_000;
   const leaving = [...departed.values()].filter((r) => !atPlatform.has(r.trainId) && nowMs - r.leftAtMs! <= retentionMs)
     .sort((a, b) => b.leftAtMs! - a.leftAtMs! || a.trainId - b.trainId);
-  return { platforms, approaching, departed: leaving, timeMs: nowMs, mode };
+  const timetable = (mode === 'live' || mode === 'replay') && options.services !== undefined;
+  const services = timetable ? options.services! : [];
+  const priorRows = [...prior, ...(previous?.approaching ?? []), ...(previous?.departed ?? [])];
+  const enrich = (row: BoardRow): void => {
+    if (!timetable) { row.service = undefined; row.uid = undefined; row.operator = undefined; row.origin = undefined; row.destination = undefined; return; }
+    const old = priorRows.find(r => r.trainId === row.trainId && r.headcode === row.headcode)?.service;
+    // Once associated, retain this call's identity even when a repeated headcode is closer later.
+    const service = old ? services.find(s => sameCall(s, old)) ?? old
+      : matchService(row.headcode, nowMs, services) as BoardService | undefined;
+    if (!service) return;
+    row.service = service; row.uid = service.uid; row.operator = service.operator;
+    row.origin = service.originName || service.origin; row.destination = service.destinationName || service.destination;
+  };
+  for (const row of [...platforms.flatMap(p => p.trains), ...approaching, ...leaving]) enrich(row);
+  const due: BoardDue[] = [];
+  for (const service of services) {
+    for (const direction of ['arrival', 'departure'] as const) {
+      const bookedMs = direction === 'arrival' ? service.publicArrivalMs ?? service.arrivalMs : service.publicDepartureMs ?? service.departureMs;
+      if (bookedMs !== null && bookedMs >= nowMs && bookedMs <= nowMs + 30 * 60_000) due.push({ service, direction, bookedMs });
+    }
+  }
+  due.sort((a, b) => a.bookedMs - b.bookedMs || a.service.uid.localeCompare(b.service.uid) || a.direction.localeCompare(b.direction));
+  return { platforms, approaching, departed: leaving, due, timetable, timeMs: nowMs, mode };
+}
+
+const sameCall = (a: ScheduleCall, b: ScheduleCall): boolean => a.uid === b.uid && a.serviceDate === b.serviceDate && a.date === b.date;
+const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+/** Project only recorded movement facts. Never derive expected times from a variation. */
+export function applyBoardTrust(services: readonly BoardService[], event: unknown): BoardService[] {
+  const object = (v: unknown): Record<string, unknown> => v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
+  const envelope = object(event), e = object(envelope.e ?? event);
+  if (e.kind !== 'trust' || e.type !== 'movement' || !['ARRIVAL', 'DEPARTURE'].includes(String(e.eventType))) return [...services];
+  let service: BoardService | undefined;
+  if (typeof e.uid === 'string' && e.uid) {
+    const matches = services.filter(s => s.uid === e.uid && (!e.serviceDate || s.serviceDate === e.serviceDate) && (!e.date || s.date === e.date));
+    if (matches.length === 1) service = matches[0];
+  } else if (typeof e.headcode === 'string' && finite(e.plannedMs)) {
+    const candidates = services.filter(s => (!e.serviceDate || s.serviceDate === e.serviceDate) && (!e.date || s.date === e.date));
+    service = matchService(e.headcode, e.plannedMs, candidates) as BoardService | undefined;
+  }
+  if (!service) return [...services];
+  return services.map(s => {
+    if (s !== service) return s;
+    if (finite(e.receivedAtMs) && finite(s.realtime?.updatedAtMs) && e.receivedAtMs < s.realtime.updatedAtMs) return s;
+    const realtime = { ...s.realtime, eventType: String(e.eventType) };
+    if (finite(e.actualMs)) {
+      if (e.eventType === 'ARRIVAL') realtime.actualArrivalMs = e.actualMs;
+      else realtime.actualDepartureMs = e.actualMs;
+    }
+    if (finite(e.variationMinutes)) realtime.variationMinutes = e.variationMinutes;
+    if (typeof e.platform === 'string' && /^(?:[0-9]|10)$/.test(e.platform)) realtime.platform = e.platform;
+    if (typeof e.trainId === 'string') realtime.trainId = e.trainId;
+    if (typeof e.matchMethod === 'string') realtime.matchMethod = e.matchMethod;
+    if (finite(e.receivedAtMs)) realtime.updatedAtMs = e.receivedAtMs;
+    return { ...s, realtime };
+  });
 }
 
 const escape = (value: string): string => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -174,8 +248,32 @@ const platformLabel = (values: number[]): string => {
   const sorted = [...new Set(values)].sort((a, b) => a - b);
   return sorted.length > 1 && sorted.at(-1)! - sorted[0]! === sorted.length - 1 ? `plat ${sorted[0]}–${sorted.at(-1)}` : `plat ${sorted.join(', ')}`;
 };
-const schedule = (row: BoardRow): string => [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination]
-  .filter((s): s is string => !!s).map((s) => `<span>${escape(s)}</span>`).join('');
+const clock = (ms: number): string => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(ms);
+const bookedLine = (service: BoardService, direction: 'arrival' | 'departure'): string | undefined => {
+  const arrival = direction === 'arrival';
+  const working = arrival ? service.arrival : service.departure;
+  const publicTime = arrival ? service.publicArrival : service.publicDeparture;
+  if (!working && !publicTime) return undefined;
+  const place = arrival ? service.originName || service.origin : service.destinationName || service.destination;
+  const times = publicTime === working ? `booked public/working ${publicTime}`
+    : `booked public ${publicTime ?? '—'} · working ${working ?? '—'}`;
+  return `${arrival ? 'Arrival from' : 'Departure to'} ${place} · ${times} · ${service.operator || 'operator unknown'}`;
+};
+const actualLine = (service: BoardService): string | undefined => {
+  const rt = service.realtime;
+  if (!rt) return undefined;
+  const facts: string[] = [];
+  if (typeof rt.actualArrivalMs === 'number' && Number.isFinite(rt.actualArrivalMs)) facts.push(`Actual arrival ${clock(rt.actualArrivalMs)}`);
+  if (typeof rt.actualDepartureMs === 'number' && Number.isFinite(rt.actualDepartureMs)) facts.push(`Actual departure ${clock(rt.actualDepartureMs)}`);
+  if (typeof rt.variationMinutes === 'number' && Number.isFinite(rt.variationMinutes)) facts.push(`Recorded variation ${rt.variationMinutes > 0 ? '+' : ''}${rt.variationMinutes} min`);
+  if (rt.platform && rt.platform !== service.platform) facts.push(`Recorded platform ${rt.platform}`);
+  return facts.length ? facts.join(' · ') : undefined;
+};
+const serviceLines = (service: BoardService): string[] => [bookedLine(service, 'arrival'), bookedLine(service, 'departure'), actualLine(service)]
+  .filter((line): line is string => !!line);
+const schedule = (row: BoardRow): string => (row.service ? serviceLines(row.service)
+  : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter((s): s is string => !!s))
+  .map(s => `<span>${escape(s)}</span>`).join('');
 const trainHtml = (row: BoardRow, detail: string): string => `<div class="kx-board-train"><strong>${escape(row.headcode)}</strong> <span>${detail}</span>${schedule(row)}</div>`;
 
 /** Also usable by a later schedule adapter; all feed strings are escaped before insertion. */
@@ -184,7 +282,15 @@ export function boardHtml(rows: BoardRows): string {
     ? p.trains.map((r) => trainHtml(r, `${r.state} · ${duration(r.stoodMs ?? 0)}${r.sample ? ' · sample' : ''}`)).join('') : '<span class="kx-board-empty">empty</span>'}</div></div>`).join('');
   const approaching = rows.approaching.map((r) => trainHtml(r, `${platformLabel(r.platforms ?? [])} · ${r.distanceM === undefined ? 'distance unknown' : `≈ ${Math.round(r.distanceM)} m to buffer`}`)).join('') || '<p class="kx-board-empty">None observed</p>';
   const departed = rows.departed.map((r) => trainHtml(r, `from plat ${r.platform} · ${duration(Math.max(0, rows.timeMs - (r.leftAtMs ?? rows.timeMs)))} ago`)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
-  return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · no timetable`}<br>Dwell measured since observed · simulation time</p><h2>Platforms 0–10</h2>${platformRows}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
+  const due = rows.due.map(({ service, direction }) => {
+    const arrival = direction === 'arrival';
+    const place = arrival ? service.originName || service.origin : service.destinationName || service.destination;
+    const publicTime = arrival ? service.publicArrival : service.publicDeparture;
+    const working = arrival ? service.arrival : service.departure;
+    const times = publicTime === working ? `public/working ${publicTime}` : `public ${publicTime ?? '—'} · working ${working ?? '—'}`;
+    return `<div class="kx-board-train"><strong>${escape(service.headcode)}</strong> <span>${arrival ? 'Arr' : 'Dep'} ${escape(times)} · booked platform ${escape(service.platform ?? 'unknown')} · ${arrival ? 'from' : 'to'} ${escape(place)} · ${escape(service.operator || 'operator unknown')}</span>${actualLine(service) ? `<span>${escape(actualLine(service)!)}</span>` : ''}</div>`;
+  }).join('') || '<p class="kx-board-empty">None booked in the next 30 minutes</p>';
+  return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · ${rows.timetable ? 'timetable available' : 'no timetable'}`}<br>Dwell measured since observed · simulation time</p>${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Platforms 0–10</h2>${platformRows}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
 }
 
 export function createBoard(parent: HTMLElement, status?: HTMLElement) {

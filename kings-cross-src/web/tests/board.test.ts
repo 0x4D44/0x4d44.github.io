@@ -3,8 +3,11 @@ import test from 'node:test';
 import { buildGraph } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
-import type { BoardRow, BoardTrain } from '../src/board.ts';
-import { approachPlatforms, boardHtml, boardRows, createBoard } from '../src/board.ts';
+import type { BoardRow, BoardTrain, BoardService } from '../src/board.ts';
+import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, createBoard } from '../src/board.ts';
+
+import { createLiveFeed, createReplayFeed, createScheduleFeed, ukDate } from '../src/feed.ts';
+import type { EventStream } from '../src/feed.ts';
 
 // Every berth, route and train below is synthetic; no station inventory or recording is a fixture.
 function network(nodes: readonly [number, number, number][], ways: readonly number[][]): Graph {
@@ -225,4 +228,172 @@ test('controller collapses on narrow view, clears HUD, toggles accessibly and di
   assert.equal(doc.defaultView.listeners.has('resize'), false);
   assert.equal(doc.defaultView.media.listeners.has('change'), false);
   assert.equal(toggle.listeners.has('click'), false);
+});
+
+const bookedAt = Date.parse('2026-11-09T10:00Z');
+function service(extra: Partial<BoardService> = {}): BoardService {
+  return { uid: 'SYN001', headcode: '1A01', operator: 'SYN', category: 'XX', date: '2026-11-09', serviceDate: '2026-11-09', stp: 'P',
+    startDate: '2026-11-09', endDate: '2026-11-09', platform: '4', origin: 'SYNORIG', destination: 'SYNDEST',
+    originName: 'Synthetic Origin', destinationName: 'Synthetic Destination',
+    arrival: '10:00', departure: '10:10', publicArrival: '10:01', publicDeparture: '10:09',
+    arrivalMs: bookedAt, departureMs: bookedAt + 10 * 60_000, publicArrivalMs: bookedAt + 60_000, publicDepartureMs: bookedAt + 9 * 60_000,
+    ...extra };
+}
+
+test('timetable enriches platform approach and departed rows and preserves matched call identity', () => {
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  const services = [service(), service({ uid: 'SYN002', arrivalMs: bookedAt + 60_000, departureMs: null, publicDepartureMs: null })];
+  const held = train(1, { state: 'held', speed: 0, lastBerth: '1004' });
+  const first = boardRows([held], map, { nowMs: bookedAt, services });
+  assert.equal(row(first, 1)!.uid, 'SYN001'); assert.equal(row(first, 1)!.operator, 'SYN');
+  const approaching = boardRows([train(2, { description: '1A01', state: 'moving', speed: 8, targetBerth: '1004' })], map, { nowMs: bookedAt, services });
+  assert.equal(row(approaching, 2)?.service?.uid, 'SYN001');
+  const departed = boardRows([train(1, { state: 'departing', speed: 8 })], map, { previous: first, nowMs: bookedAt + 60_000, services });
+  assert.equal(departed.departed[0]!.uid, 'SYN001');
+  const later = boardRows([], map, { previous: departed, nowMs: bookedAt + 120_000, services });
+  assert.equal(later.departed[0]!.uid, 'SYN001');
+  const html = boardHtml(first);
+  assert.doesNotMatch(html, /UID SYN001/); assert.match(html, /· SYN/); assert.match(html, /Arrival from Synthetic Origin/);
+  assert.match(html, /Departure to Synthetic Destination/); assert.match(html, /booked public 10:01 · working 10:00/);
+});
+
+test('due lists next thirty minutes including unseen calls and booked platform without TD placement', () => {
+  const unseen = service({ headcode: '2B02', uid: 'SYN002', platform: '10' });
+  const boundary = service({ uid: 'SYN003', publicArrivalMs: bookedAt + 30 * 60_000, arrivalMs: bookedAt + 31 * 60_000, departureMs: null, publicDepartureMs: null });
+  const outside = service({ uid: 'SYN004', arrivalMs: bookedAt + 31 * 60_000, publicArrivalMs: bookedAt + 31 * 60_000, departureMs: null, publicDepartureMs: null });
+  const past = service({ uid: 'SYN005', arrivalMs: bookedAt - 1, publicArrivalMs: bookedAt - 1, departureMs: null, publicDepartureMs: null });
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [outside, boundary, past, unseen] });
+  assert.equal(rows.timetable, true); assert.equal(rows.platforms.flatMap(p => p.trains).length, 0);
+  assert.deepEqual(rows.due.map(d => [d.service.uid, d.direction, d.bookedMs]), [
+    ['SYN002', 'arrival', bookedAt + 60_000], ['SYN002', 'departure', bookedAt + 9 * 60_000], ['SYN003', 'arrival', bookedAt + 30 * 60_000],
+  ]);
+  assert.match(boardHtml(rows), /Due in next 30 minutes/); assert.match(boardHtml(rows), /2B02/); assert.match(boardHtml(rows), /booked platform 10/);
+});
+
+test('timetable availability distinguishes empty data and stays hidden for sample and none', () => {
+  const map = anchors([]);
+  assert.equal(boardRows([], map).timetable, false);
+  assert.equal(boardRows([], map, { services: [] }).timetable, true);
+  assert.match(boardHtml(boardRows([], map, { services: [] })), /None booked in the next 30 minutes/);
+  for (const mode of ['sample', 'none'] as const) {
+    const rows = boardRows([train(1, { samplePlatform: 4 })], map, { mode, nowMs: bookedAt, services: [service()] });
+    assert.equal(rows.timetable, false); assert.equal(rows.due.length, 0);
+    assert.doesNotMatch(boardHtml(rows), /UID SYN|Due in next/);
+  }
+});
+
+test('recorded TRUST links UID and date before repeated headcodes and projects only actual facts', () => {
+  const services = [service(), service({ uid: 'SYN002', headcode: '1A01', arrivalMs: bookedAt + 60_000 })];
+  const event = { kind: 'trust', type: 'movement', uid: 'SYN001', date: '2026-11-09', serviceDate: '2026-11-09',
+    headcode: '1A01', plannedMs: bookedAt + 60_000, actualMs: bookedAt + 120_000, eventType: 'ARRIVAL', variationMinutes: 2,
+    platform: '5', receivedAtMs: bookedAt + 120_000, secret: 'never-copy', expectedArrivalMs: bookedAt + 180_000 };
+  const enriched = applyBoardTrust(services, { t: bookedAt, e: event });
+  assert.equal(enriched[0]!.realtime?.actualArrivalMs, bookedAt + 120_000);
+  assert.equal(enriched[0]!.realtime?.variationMinutes, 2); assert.equal(enriched[0]!.realtime?.platform, '5');
+  assert.equal(enriched[1]!.realtime, undefined); assert.equal(services[0]!.realtime, undefined);
+  assert.equal('secret' in enriched[0]!.realtime!, false); assert.equal('expectedArrivalMs' in enriched[0]!.realtime!, false);
+  const stale = applyBoardTrust(enriched, { ...event, actualMs: bookedAt + 1, receivedAtMs: bookedAt });
+  assert.equal(stale[0]!.realtime?.actualArrivalMs, bookedAt + 120_000);
+  const html = boardHtml(boardRows([], anchors([]), { nowMs: bookedAt, services: enriched }));
+  assert.match(html, /Actual arrival 10:02:00/); assert.match(html, /Recorded variation \+2 min/); assert.match(html, /Recorded platform 5/);
+  assert.doesNotMatch(html, /expected|forecast|never-copy/);
+});
+
+test('recorded TRUST headcode fallback uses planned time and refuses unknown identities and invalid values', () => {
+  const services = [service(), service({ uid: 'SYN002', arrivalMs: bookedAt + 60 * 60_000, departureMs: null })];
+  const base = { kind: 'trust', type: 'movement', headcode: '1A01', plannedMs: bookedAt + 60 * 60_000, actualMs: bookedAt, eventType: 'DEPARTURE', variationMinutes: -2 };
+  const enriched = applyBoardTrust(services, base);
+  assert.equal(enriched[1]!.realtime?.actualDepartureMs, bookedAt); assert.equal(enriched[0]!.realtime, undefined);
+  assert.deepEqual(applyBoardTrust(services, { ...base, uid: 'missing' }), services);
+  assert.deepEqual(applyBoardTrust(services, { ...base, plannedMs: NaN }), services);
+  assert.deepEqual(applyBoardTrust(services, { ...base, type: 'activation' }), services);
+  assert.deepEqual(applyBoardTrust(services, { ...base, eventType: 'PASS' }), services);
+  const invalid = applyBoardTrust(services, { ...base, actualMs: '123', variationMinutes: Infinity, platform: '<bad>' });
+  assert.equal(invalid[1]!.realtime?.actualDepartureMs, undefined); assert.equal(invalid[1]!.realtime?.variationMinutes, undefined);
+  assert.equal(invalid[1]!.realtime?.platform, undefined);
+});
+
+class BoardStream implements EventStream {
+  onopen: ((event: Event) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  listeners = new Map<string, (event: MessageEvent<string>) => void>();
+  addEventListener(type: string, fn: (event: MessageEvent<string>) => void): void { this.listeners.set(type, fn); }
+  close(): void {}
+  emit(type: string, payload: unknown): void { this.listeners.get(type)?.({ data: JSON.stringify(payload) } as MessageEvent<string>); }
+}
+function boardTimers() {
+  const jobs = new Map<number, { fn: () => void; ms: number }>();
+  let serial = 0;
+  return { jobs, schedule: (fn: () => void, ms: number): number => { jobs.set(++serial, { fn, ms }); return serial; },
+    unschedule: (id: unknown): void => { jobs.delete(id as number); } };
+}
+const jsonResponse = (value: unknown, status = 200): Response => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
+
+test('live TRUST SSE and replay recording deliver identical actuals into timetable state', async () => {
+  const options = { hostname: 'localhost', relayPresent: true, now: () => bookedAt,
+    fetchImpl: (async () => jsonResponse({ date: '2026-11-09', calls: [service()] })) as typeof fetch,
+    schedule: () => 1, unschedule: () => {} };
+  const liveBoard = createScheduleFeed({ ...options, mode: 'live' });
+  const replayBoard = createScheduleFeed({ ...options, mode: 'replay', date: '2026-11-09' });
+  await Promise.all([liveBoard.refresh(), replayBoard.refresh()]);
+  const event = { kind: 'trust', area: 'SYN', type: 'movement', uid: 'SYN001', serviceDate: '2026-11-09', date: '2026-11-09',
+    eventType: 'ARRIVAL', actualMs: bookedAt + 120_000, variationMinutes: 2 };
+  const stream = new BoardStream();
+  const live = createLiveFeed({ apply: (e, t) => liveBoard.apply(e, t), advance: () => {} }, () => {}, { source: () => stream, schedule: () => 1, unschedule: () => {} });
+  stream.emit('trust', { t: bookedAt, e: event });
+  const replay = createReplayFeed([{ t: bookedAt, e: event }] as Parameters<typeof createReplayFeed>[0], 1,
+    { apply: (e, t) => replayBoard.apply(e, t), advance: () => {} }, () => {});
+  assert.equal(liveBoard.services()?.[0]?.realtime?.actualArrivalMs, bookedAt + 120_000);
+  assert.equal(liveBoard.services()?.[0]?.realtime?.updatedAtMs, bookedAt);
+  assert.deepEqual(liveBoard.services()?.[0]?.realtime, replayBoard.services()?.[0]?.realtime);
+  live.dispose(); replay.dispose(); liveBoard.dispose(); replayBoard.dispose();
+});
+
+test('schedule fetch gates on local relay and refreshes London date with cancellable timers', async () => {
+  let now = Date.parse('2026-07-01T23:30Z');
+  assert.equal(ukDate(now), '2026-07-02');
+  const requests: string[] = [];
+  const fetchImpl = (async (input: RequestInfo | URL) => {
+    const url = String(input); requests.push(url);
+    if (url === '/relay/health') return jsonResponse({ ok: true });
+    const date = new URL(url, 'http://localhost').searchParams.get('date');
+    return jsonResponse({ date, calls: [] });
+  }) as typeof fetch;
+  const gated = createScheduleFeed({ mode: 'live', hostname: 'example.invalid', fetchImpl, schedule: () => 1, unschedule: () => {} });
+  await gated.refresh(); assert.equal(requests.length, 0); gated.dispose();
+  const timers = boardTimers();
+  const feed = createScheduleFeed({ mode: 'live', hostname: 'localhost', fetchImpl, now: () => now, ...timers });
+  await feed.refresh();
+  assert.deepEqual(requests, ['/relay/health', '/relay/schedule?date=2026-07-02']);
+  assert.equal([...timers.jobs.values()][0]?.ms, 60_000);
+  now = Date.parse('2026-07-02T23:30Z');
+  const [id, job] = [...timers.jobs][0]!; timers.jobs.delete(id); job.fn(); await feed.refresh();
+  assert.equal(requests.at(-1), '/relay/schedule?date=2026-07-03');
+  await feed.refresh(); assert.equal(requests.filter(p => p.includes('2026-07-03')).length, 2);
+  feed.dispose(); assert.equal(timers.jobs.size, 0);
+  const count = requests.length; await feed.refresh(); assert.equal(requests.length, count);
+});
+
+test('replay timetable fixes recording date strips live actuals and replays buffered TRUST only', async () => {
+  const timers = boardTimers(); let requests = 0;
+  const feed = createScheduleFeed({ mode: 'replay', hostname: 'localhost', relayPresent: true, date: '2026-11-09',
+    now: () => Date.parse('2026-12-01T12:00Z'), ...timers,
+    fetchImpl: (async (input: RequestInfo | URL) => { requests++; assert.equal(String(input), '/relay/schedule?date=2026-11-09');
+      return jsonResponse({ date: '2026-11-09', calls: [service({ realtime: { actualArrivalMs: bookedAt + 600_000, actualDepartureMs: bookedAt + 900_000 } })] }); }) as typeof fetch });
+  feed.apply({ kind: 'trust', type: 'movement', uid: 'SYN001', serviceDate: '2026-11-09', date: '2026-11-09', eventType: 'ARRIVAL', actualMs: bookedAt + 120_000 }, bookedAt);
+  await feed.refresh();
+  assert.equal(requests, 1); assert.equal(feed.services()?.[0]?.realtime?.actualArrivalMs, bookedAt + 120_000);
+  assert.equal(feed.services()?.[0]?.realtime?.actualDepartureMs, undefined);
+  await feed.refresh(); assert.equal(feed.services()?.[0]?.realtime?.actualArrivalMs, bookedAt + 120_000);
+  feed.dispose();
+});
+
+test('missing timetable retries after five seconds and reconnect refresh preserves bookings', async () => {
+  const timers = boardTimers(); let available = false;
+  const feed = createScheduleFeed({ mode: 'live', hostname: 'localhost', relayPresent: true, now: () => bookedAt, ...timers,
+    fetchImpl: (async () => available ? jsonResponse({ date: '2026-11-09', calls: [service()] }) : jsonResponse({ error: 'missing' }, 404)) as typeof fetch });
+  await feed.refresh(); assert.equal(feed.services(), undefined); assert.equal([...timers.jobs.values()][0]?.ms, 5_000);
+  available = true; await feed.refresh(); assert.equal(feed.services()?.length, 1);
+  available = false; await feed.refresh(); assert.equal(feed.services()?.[0]?.uid, 'SYN001');
+  assert.equal([...timers.jobs.values()][0]?.ms, 60_000); feed.dispose();
 });

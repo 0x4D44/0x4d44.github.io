@@ -1,6 +1,9 @@
 // Browser I/O lives here; parsing, replay time and event delivery also run in Node tests.
 // Live and replay both deliver normalised TD events through the same simulation timeline.
 import type { MotionEvent } from '../../core/motion.ts';
+import { validDate } from '../../core/schedule.ts';
+import { applyBoardTrust } from './board.ts';
+import type { BoardService } from './board.ts';
 
 export interface SnapshotEvent extends MotionEvent {
   kind: 'snapshot';
@@ -211,6 +214,12 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
       try { deliver(parseEvent((JSON.parse(event.data) as { e: unknown }).e)); }
       catch { status('invalid relay event'); }
     });
+    current.addEventListener('trust', (event) => {
+      if (disposed || stream !== current) return;
+      received(current);
+      try { deliver(parseEvent((JSON.parse(event.data) as { e: unknown }).e)); }
+      catch { status('invalid TRUST event'); }
+    });
     current.addEventListener('ping', () => {
       if (disposed || stream !== current) return;
       received(current);
@@ -242,4 +251,74 @@ export async function probeRelay(fetchImpl: typeof fetch = fetch): Promise<boole
     const value = await res.json() as { ok?: unknown };
     return value.ok === true;
   } catch { return false; }
+}
+
+/** Calendar dates for the station, including the hour when London is ahead of UTC. */
+export function ukDate(ms: number): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(ms);
+}
+
+export interface ScheduleFeedOptions {
+  mode: 'live' | 'replay';
+  hostname: string;
+  date?: string;
+  relayPresent?: boolean;
+  fetchImpl?: typeof fetch;
+  now?: () => number;
+  schedule?: (fn: () => void, ms: number) => unknown;
+  unschedule?: (timer: unknown) => void;
+  onChange?: (calls: readonly BoardService[] | undefined) => void;
+}
+
+/** Bookings refresh independently of TD. Replays use their own recorded TRUST history,
+ * never actuals from a live relay response, even when replaying the current day. */
+export function createScheduleFeed(options: ScheduleFeedOptions) {
+  const fetchImpl = options.fetchImpl ?? fetch, now = options.now ?? Date.now;
+  const schedule = options.schedule ?? ((fn, ms) => setTimeout(fn, ms));
+  const unschedule = options.unschedule ?? (timer => clearTimeout(timer as ReturnType<typeof setTimeout>));
+  const abort = new AbortController();
+  let disposed = false, pending: Promise<void> | undefined, timer: unknown;
+  let present = options.relayPresent === true, currentDate = '';
+  let calls: readonly BoardService[] | undefined;
+  const observed: { event: unknown; atMs: number }[] = [];
+  const changed = (): void => options.onChange?.(calls);
+  const refresh = (): Promise<void> => {
+    if (disposed || !relayReachable(options.hostname)) return Promise.resolve();
+    if (pending) return pending;
+    if (timer !== undefined) { unschedule(timer); timer = undefined; }
+    pending = (async () => {
+      if (!present) present = await probeRelay(fetchImpl);
+      if (!present || disposed) return;
+      const date = options.mode === 'replay' ? options.date ?? '' : ukDate(now());
+      if (!validDate(date)) return;
+      if (currentDate !== date) { currentDate = date; calls = undefined; changed(); }
+      const response = await fetchImpl(`/relay/schedule?date=${date}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+      if (!response.ok) { if (!calls) changed(); return; }
+      const doc = await response.json() as { date: string; calls: BoardService[] };
+      if (disposed) return;
+      if (doc.date !== date || !Array.isArray(doc.calls) || doc.calls.some(call => !call || typeof call.uid !== 'string' || typeof call.headcode !== 'string')) throw new Error('invalid timetable');
+      calls = options.mode === 'replay' ? doc.calls.map(call => ({ ...call, realtime: null })) : doc.calls;
+      for (const row of observed) calls = applyBoardTrust(calls, row.event);
+      changed();
+    })().catch(() => { /* Keep known bookings during a dropped connection. */ }).finally(() => {
+      pending = undefined;
+      if (!disposed && present) timer = schedule(() => { timer = undefined; void refresh(); }, calls ? 60_000 : 5_000);
+    });
+    return pending;
+  };
+  void refresh();
+  return {
+    refresh,
+    services: (): readonly BoardService[] | undefined => calls,
+    apply(event: unknown, atMs: number): void {
+      if (disposed || !event || typeof event !== 'object' || (event as { kind?: unknown }).kind !== 'trust') return;
+      const input = event as Record<string, unknown>;
+      const fact = typeof input.receivedAtMs === 'number' && Number.isFinite(input.receivedAtMs) ? input
+        : { ...input, receivedAtMs: options.mode === 'replay' ? atMs : now() };
+      observed.push({ event: fact, atMs });
+      if (observed.length > 10_000) observed.shift();
+      if (calls) { calls = applyBoardTrust(calls, fact); changed(); }
+    },
+    dispose(): void { disposed = true; abort.abort(); if (timer !== undefined) unschedule(timer); },
+  };
 }

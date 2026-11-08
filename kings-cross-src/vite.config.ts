@@ -33,7 +33,7 @@ export default defineConfig({
     host: '127.0.0.1',
     proxy: {
       '/relay': {
-        target: 'http://127.0.0.1:8787',
+        target: process.env.KX_RELAY_TARGET ?? 'http://127.0.0.1:8787',
         changeOrigin: true, // The relay checks Host; preserve its loopback-only guard.
         rewrite: (path) => path.replace(/^\/relay(?=\/|$)/, ''),
       },

@@ -14,7 +14,7 @@ import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
 import { buildTrain, standTrain } from './train.ts';
-import { backoffMs, createLiveFeed, createReplayFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
+import { backoffMs, createLiveFeed, createReplayFeed, createScheduleFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { MotionSink, TrainFeed } from './feed.ts';
 import { createSignals } from './signals.ts';
 import type { SignalOverlay } from './signals.ts';
@@ -201,6 +201,7 @@ function start(): void {
   let motion: ReturnType<typeof createMotion> | null = null;
   let liveTrains: ReturnType<typeof createLiveTrains> | null = null;
   let feed: TrainFeed | null = null;
+  let timetable: ReturnType<typeof createScheduleFeed> | null = null;
   let mode: 'demo' | 'live' | 'replay' | 'none' = settings.mode === 'auto' ? 'demo' : settings.mode;
   let connection = settingsError || (settings.mode === 'auto' ? 'checking local relay' : mode === 'demo' || mode === 'none' ? 'offline' : 'loading anchors');
   let unmapped: number | null = null;
@@ -224,8 +225,9 @@ function start(): void {
   const paintBoard = (): void => {
     if (!stationBoard) return;
     kx.boardRows = boardRows(mode === 'demo' ? sampleBoardTrains : kx.motionState, boardAnchors, {
-      mode: mode === 'demo' ? 'sample' : mode, nowMs: mode === 'demo' ? sampleTimeMs : feed?.timeMs() ?? 0,
+      mode: mode === 'demo' ? 'sample' : mode, nowMs: mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? 0,
       previous: kx.boardRows ?? undefined, graph, arrivals: arrivalSets,
+      services: timetable?.services(),
     });
     stationBoard.update(kx.boardRows);
   };
@@ -251,6 +253,7 @@ function start(): void {
   let disposed = false, bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
   const setConnection = (value: string): void => {
     connection = value;
+    if (value === 'connected') void timetable?.refresh();
     // A disconnected or invalid live stream cannot support a current aspect.
     if (!['connected', 'playing', 'recording ended'].includes(value)) signalLayer?.reset();
     paintStatus();
@@ -285,9 +288,16 @@ function start(): void {
         wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
       kx.motion = motion;
       liveTrains = createLiveTrains(graph, scene);
+      timetable?.dispose();
+      timetable = createScheduleFeed({ mode: requested, hostname: location.hostname,
+        date: requested === 'replay' ? `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}` : undefined,
+        onChange: () => paintBoard() });
       const sink: MotionSink = {
         advance: (seconds) => motion!.advance(seconds),
-        apply: (event, nowMs) => { motion!.apply(event, nowMs); signalLayer?.apply({ t: nowMs, e: event }); },
+        apply: (event, nowMs) => {
+          motion!.apply(event, nowMs); signalLayer?.apply({ t: nowMs, e: event });
+          if (event.kind === 'trust') timetable?.apply(event, nowMs);
+        },
       };
       feed = requested === 'replay' ? createReplayFeed(recording!, settings.speed, sink, setConnection) : createLiveFeed(sink, setConnection);
     } catch (error) {
@@ -304,6 +314,6 @@ function start(): void {
   window.addEventListener('pagehide', (event) => {
     if (event.persisted) return;
     disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
-    feed?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose();
+    feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose();
   }, { once: true });
 }
