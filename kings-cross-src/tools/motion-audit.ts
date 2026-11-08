@@ -24,6 +24,7 @@ import { createTrainKinds } from '../web/src/trains-live.ts';
 export interface MotionAuditOptions {
   /** An alternate policy module's createMotion export (e.g. a frozen baseline). */
   createMotion?: MotionFactory;
+  onSample?: (sample: MotionAuditSample) => void;
   lengthM?: MotionOptions['lengthM'];
   lengthPolicy?: string;
   dtSeconds?: number;
@@ -33,6 +34,16 @@ export interface MotionAuditOptions {
   minimumBufferClearanceM?: number;
   platformEndToleranceM?: number;
   maxProfileSamplesPerTrain?: number;
+}
+
+export interface MotionAuditSample {
+  atMs: number;
+  train: TrainView;
+  zone: 'platform' | 'throat' | 'approach';
+  speedLimitMps: number;
+  accelerationMps2: number;
+  decelerationMps2: number;
+  heldPlatform?: string;
 }
 
 export interface MotionAuditMotion {
@@ -284,6 +295,8 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
     const elapsed = (atMs - startMs) / 1000, trains = motion.trains();
     const current = new Map(trains.map((t) => [t.id, t]));
     const zoneFor = new Map<number, ZoneName>();
+    const observations: MotionAuditSample[] = [];
+    const heldPlatforms = new Map<number, string>();
     for (const train of trains) {
       const zone = classifyZone(graph, train, shapes, platformAnchors, throatHull);
       zoneFor.set(train.id, zone);
@@ -338,6 +351,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
         }
       }
       const limit = speedLimitFor(graph, railSpeed, train);
+      observations.push({ atMs, train, zone, speedLimitMps: limit, accelerationMps2: acceleration, decelerationMps2: deceleration });
       if (train.speed > limit + DEFAULTS.speedToleranceMps) {
         counts.speedLimitViolationTicks++; profile.speedLimitViolationTicks++;
       }
@@ -386,6 +400,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
           platformStops.set(key, stop);
         }
         stop.heldSamples++;
+        if (train.state === 'held') heldPlatforms.set(train.id, stop.platform);
         if (atBuffer && bufferClearance !== undefined) stop.minimumBufferClearanceM = Math.min(stop.minimumBufferClearanceM ?? Infinity, bufferClearance);
         if (bodyInPlatform && bodyOutside !== undefined) stop.maximumBodyOutsidePlatformM = Math.max(stop.maximumBodyOutsidePlatformM ?? 0, bodyOutside);
         if (atBuffer && bufferClearance !== undefined && bufferClearance + 0.01 < bufferBound) stop.bufferClearanceViolation = true;
@@ -430,6 +445,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
           details: { targetBerth: stop.targetBerth, platform: stop.platform, maximumOutsideM: stop.maximumBodyOutsidePlatformM, toleranceM: bodyTolerance } });
       }
     }
+    for (const observation of observations) options.onSample?.({ ...observation, heldPlatform: heldPlatforms.get(observation.train.id) });
     previous = current;
     counts.ticks++;
   };
