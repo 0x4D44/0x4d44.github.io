@@ -2,6 +2,7 @@
 // Build with --sourcemap; --self-test runs Node-only checks without Chrome or a build.
 // --startup-only captures cold/warm/profile startup without camera FPS measurements.
 // --check-build validates the actual bundle/maps and writes sizes without launching Chrome.
+// --scene-ready also waits for cityLoaded, terrain/city geometry and their next submitted render.
 //
 //   node tools/perf.mjs [--dist <built dir>] [--out <output dir>] [--seconds 60]
 //                       [--chrome <path>] [--relay http://127.0.0.1:8787]
@@ -24,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 // Install before any app module runs. onAfterRender proves a train mesh passed renderer
 // visibility/frustum checks and issued a draw; group.visible alone does not prove that.
-function startupObserver() {
+export function startupObserver() {
   const observation = window.__kxStartup = { sceneRenderedMs: null, replayTrainsRenderedMs: null, trainDraws: 0 };
   const first = (name) => { if (observation[name] == null) observation[name] = performance.now(); };
   observation.fetches = [];
@@ -66,6 +67,8 @@ function startupObserver() {
       current = k;
       if (!k?.renderer) return;
       first('sceneReadyMs');
+      let cityComplete = false;
+      k.cityLoaded?.then(() => { cityComplete = true; }, () => {});
       observation.replaySpeed = k.feed?.speed;
       let motion = k.motion;
       Object.defineProperty(k, 'motion', { configurable: true, enumerable: true, get: () => motion, set(value) {
@@ -128,6 +131,7 @@ function startupObserver() {
         }
         const result = original.apply(this, args);
         const now = performance.now();
+        if (cityComplete && k.parts?.terrain && k.parts?.buildings && observation.fullSceneRenderedMs == null) observation.fullSceneRenderedMs = now;
         if (observation.sceneRenderedMs === null && renderer.info.render.frame > 0) observation.sceneRenderedMs = now;
         // Hooks survive frames where trains are hidden; reset their shared draw count each frame.
         if (k.feed?.mode === 'replay' && trainDraws > 0 && observation.replayTrainsRenderedMs === null) {
@@ -135,8 +139,8 @@ function startupObserver() {
           observation.firstTrainRenderClockMs = k.feed?.timeMs ?? null;
           observation.trainDraws = trainDraws;
           for (const [object, previous] of hooked) object.onAfterRender = previous;
-          renderer.render = original;
         }
+        if (observation.replayTrainsRenderedMs != null && (!k.cityLoaded || observation.fullSceneRenderedMs != null)) renderer.render = original;
         return result;
       };
     },
@@ -144,13 +148,14 @@ function startupObserver() {
 }
 const observerSource = `(${startupObserver.toString()})()`;
 
-function extractTiming(state) {
+export function extractTiming(state) {
   const observed = state?.observation;
   if (!(observed?.sceneRenderedMs > 0) || !(observed?.replayTrainsRenderedMs >= observed.sceneRenderedMs) || !(observed.trainDraws > 0)) return null;
   const simulationOffset = difference(observed.firstTrainRenderClockMs, observed.replayTimeOriginMs);
   const contentDelay = simulationOffset != null && observed.replaySpeed > 0 ? simulationOffset / observed.replaySpeed : null;
   return {
     navigationStartToSceneRenderedMs: observed.sceneRenderedMs,
+    navigationStartToFullSceneRenderedMs: observed.fullSceneRenderedMs ?? null,
     navigationStartToReplayTrainsRenderedMs: observed.replayTrainsRenderedMs,
     appFirstFrameMs: state.firstFrameMs,
     replayTrainDrawsAtFirstRender: observed.trainDraws,
@@ -765,7 +770,7 @@ try {
             path: new URL(r.name).pathname, transferSize: r.transferSize, encodedBodySize: r.encodedBodySize, durationMs: r.duration })) };
       })()`).catch(() => null);
       const timing = extractTiming(state);
-      if (timing) {
+      if (timing && (!args.includes('--scene-ready') || timing.navigationStartToFullSceneRenderedMs > 0)) {
         timing.networkRequests = networkRequests.slice(networkStart).map((row) => ({ ...row }));
         timing.serverRequests = serverRequests.slice(serverStart).map((row) => ({ ...row }));
         timing.requests = requestSummary(timing.networkRequests);
