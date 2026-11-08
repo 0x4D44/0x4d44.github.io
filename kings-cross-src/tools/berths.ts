@@ -3,37 +3,40 @@
 //   node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...]
 //     --smart <smart.json.gz> --out ../.scratch/berths
 //
-// The output directory is restricted to this worktree's .scratch tree because the report
-// contains evidence derived from local recordings.
+// Reports contain private evidence from local recordings; outputs stay inside .scratch or KX_DATA_DIR.
 import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { analyseSteps, buildAnchors, describeEvidence, leaveOneOut } from '../core/berths.ts';
-import type { RecordingEvent, SignalTrial, SmartRow } from '../core/berths.ts';
-import type { AnchorKind, AnchorMap } from '../core/anchors.ts';
+import { NOT_A_TRAIN } from '../core/anchors.ts';
+import { analyseSteps, auditBerths, buildAnchors, describeEvidence, leaveOneOut } from '../core/berths.ts';
+import type { BerthAudit, RecordingEvent, SignalTrial, SmartRow } from '../core/berths.ts';
+import type { AnchorKind, AnchorMap, UnmappedReason } from '../core/anchors.ts';
 import type { KxData } from '../core/osm.ts';
 
 interface CliArgs {
   recordings: string[];
   smart: string;
   out: string;
+  previous?: string;
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(here, '..');
 const repoRoot = path.resolve(packageRoot, '..');
 const KINDS: AnchorKind[] = ['platform', 'signal', 'smart', 'inferred'];
-const UNMAPPED_REASONS = ['outside-network', 'no-evidence', 'conflict'] as const;
+const UNMAPPED_REASONS: UnmappedReason[] = ['outside-network', 'no-evidence', 'conflict'];
 
 function parseArgs(argv: string[]): CliArgs {
   const recordings: string[] = [];
   let smart: string | undefined;
   let out: string | undefined;
+  let previous: string | undefined;
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
-    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out') {
+    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -43,6 +46,9 @@ function parseArgs(argv: string[]): CliArgs {
     else if (flag === '--smart') {
       if (smart !== undefined) throw new Error('--smart may be given once');
       smart = value;
+    } else if (flag === '--previous') {
+      if (previous !== undefined) throw new Error('--previous may be given once');
+      previous = value;
     } else {
       if (out !== undefined) throw new Error('--out may be given once');
       out = value;
@@ -50,11 +56,11 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   if (recordings.length === 0 || !smart || !out) throw new Error(usage());
-  return { recordings, smart, out };
+  return { recordings, smart, out, previous };
 }
 
 function usage(): string {
-  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch>';
+  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -82,14 +88,35 @@ async function ensureOutputDirectory(outArg: string): Promise<string> {
   const scratchReal = await realpath(scratchPath);
   if (!isWithinOrEqual(physicalRepoRoot, scratchReal)) throw new Error('worktree .scratch resolves outside the worktree');
 
-  const physicalCwd = await realpath(process.cwd());
-  const outPath = path.resolve(path.isAbsolute(outArg) ? outArg : path.join(physicalCwd, outArg));
-  if (!isWithinOrEqual(scratchReal, outPath)) {
-    throw new Error(`output directory must be inside ${scratchReal}`);
+  const configuredDataRoot = process.env.KX_DATA_DIR;
+  if (configuredDataRoot !== undefined && configuredDataRoot.trim() === '') throw new Error('KX_DATA_DIR must name a directory');
+  const dataRootPath = path.resolve(configuredDataRoot ?? path.join(homedir(), 'kx-data'));
+  let dataRootReal: string | undefined;
+  try {
+    const dataRootStat = await lstat(dataRootPath);
+    if (dataRootStat.isSymbolicLink()) throw new Error('KX_DATA_DIR must not be a symlink');
+    if (!dataRootStat.isDirectory()) throw new Error('KX_DATA_DIR is not a directory');
+    dataRootReal = await realpath(dataRootPath);
+    if (isWithinOrEqual(physicalRepoRoot, dataRootReal) && !isWithinOrEqual(scratchReal, dataRootReal)) {
+      throw new Error('KX_DATA_DIR must be outside the worktree or inside its .scratch directory');
+    }
+  } catch (error) {
+    if (!isMissing(error)) throw error;
+    if (isWithinOrEqual(physicalRepoRoot, dataRootPath) && !isWithinOrEqual(scratchReal, dataRootPath)) {
+      throw new Error('KX_DATA_DIR must be outside the worktree or inside its .scratch directory');
+    }
   }
 
-  const relative = path.relative(scratchReal, outPath);
-  let current = scratchReal;
+  const physicalCwd = await realpath(process.cwd());
+  const outPath = path.resolve(path.isAbsolute(outArg) ? outArg : path.join(physicalCwd, outArg));
+  const allowedRoots = [scratchReal, ...(dataRootReal ? [dataRootReal] : [])];
+  const allowedRoot = allowedRoots
+    .filter((root) => isWithinOrEqual(root, outPath))
+    .sort((a, b) => b.length - a.length)[0];
+  if (!allowedRoot) throw new Error(`output directory must be inside ${allowedRoots.join(' or ')}`);
+
+  const relative = path.relative(allowedRoot, outPath);
+  let current = allowedRoot;
   for (const segment of relative.split(path.sep).filter(Boolean)) {
     current = path.join(current, segment);
     try {
@@ -101,7 +128,7 @@ async function ensureOutputDirectory(outArg: string): Promise<string> {
       await mkdir(current);
     }
     const actual = await realpath(current);
-    if (!isWithinOrEqual(scratchReal, actual)) throw new Error('output path resolves outside worktree .scratch');
+    if (!isWithinOrEqual(allowedRoot, actual)) throw new Error(`output path resolves outside allowed root ${allowedRoot}`);
   }
 
   return await realpath(outPath);
@@ -122,6 +149,65 @@ async function checkOutputFile(outDir: string, name: string): Promise<void> {
 async function inputPath(value: string): Promise<string> {
   const absolute = path.resolve(value);
   return await realpath(absolute);
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function validatePreviousMap(value: unknown, source: string): AnchorMap {
+  if (!isObject(value) || value.area !== 'Y9' || !Array.isArray(value.anchors) || !Array.isArray(value.unmapped)) {
+    throw new Error(`${source} must contain a Y9 AnchorMap`);
+  }
+  for (const anchor of value.anchors) {
+    if (!isObject(anchor) || typeof anchor.berth !== 'string' || !KINDS.includes(anchor.kind as AnchorKind)) {
+      throw new Error(`${source} has an invalid anchors entry`);
+    }
+  }
+  for (const unmapped of value.unmapped) {
+    if (!isObject(unmapped) || typeof unmapped.berth !== 'string' || !UNMAPPED_REASONS.includes(unmapped.reason as UnmappedReason)) {
+      throw new Error(`${source} has an invalid unmapped entry`);
+    }
+  }
+  return value as unknown as AnchorMap;
+}
+
+async function readPreviousMap(file: string): Promise<AnchorMap> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    throw new Error(`${path.basename(file)} is not readable JSON`);
+  }
+  return validatePreviousMap(parsed, path.basename(file));
+}
+
+interface StepCoverage {
+  valid: number;
+  destinationAnchored: number;
+  bothEndsAnchored: number;
+}
+
+function observedStepCoverage(recordings: RecordingEvent[][], map: AnchorMap): StepCoverage {
+  const anchored = new Set(map.anchors.map((anchor) => anchor.berth));
+  const coverage = { valid: 0, destinationAnchored: 0, bothEndsAnchored: 0 };
+  for (const recording of recordings) {
+    for (const { e } of recording) {
+      if (e.area !== map.area || e.kind !== 'step' || !e.from || !e.to || !e.descr || e.descr === NOT_A_TRAIN) continue;
+      coverage.valid += 1;
+      if (anchored.has(e.to)) coverage.destinationAnchored += 1;
+      if (anchored.has(e.from) && anchored.has(e.to)) coverage.bothEndsAnchored += 1;
+    }
+  }
+  return coverage;
+}
+
+function percentage(part: number, total: number): string {
+  return total === 0 ? '—' : `${(part * 100 / total).toFixed(2)}%`;
+}
+
+function coverageValue(part: number, total: number): string {
+  return `${part}/${total} (${percentage(part, total)})`;
 }
 
 function validateEvent(value: unknown, source: string, line: number): RecordingEvent {
@@ -198,7 +284,7 @@ function number(value: number | null | undefined, digits = 1): string {
 
 function signalTrialWarnings(trials: SignalTrial[]): SignalTrial[] {
   return trials.filter((trial) =>
-    !trial.placed || trial.distanceM === null || !Number.isFinite(trial.distanceM) || trial.distanceM > 60 || !trial.directionOk || !trial.trusted,
+    !trial.placed || trial.distanceM === null || !Number.isFinite(trial.distanceM) || trial.distanceM > 15 || !trial.directionOk || !trial.trusted,
   );
 }
 
@@ -208,6 +294,45 @@ function counts<T extends string>(items: T[], keys: readonly T[]): Record<T, num
   return out;
 }
 
+function comparisonRow(label: string, map: AnchorMap, recordings: RecordingEvent[][]): string {
+  const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
+  const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
+  const coverage = observedStepCoverage(recordings, map);
+  return `| ${label} | ${map.anchors.length} (${KINDS.map((kind) => `${kind} ${anchorCounts[kind]}`).join(', ')}) | ${map.unmapped.length} (${UNMAPPED_REASONS.map((reason) => `${reason} ${unmappedCounts[reason]}`).join(', ')}) | ${coverage.valid} | ${coverageValue(coverage.destinationAnchored, coverage.valid)} | ${coverageValue(coverage.bothEndsAnchored, coverage.valid)} |`;
+}
+
+function auditCauseCounts(audits: BerthAudit[]): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const audit of audits) result.set(audit.cause, (result.get(audit.cause) ?? 0) + 1);
+  return result;
+}
+
+function auditReportLines(audits: BerthAudit[]): string[] {
+  const causes = auditCauseCounts(audits);
+  return [
+    '## Unmapped evidence audit',
+    '',
+    ...(causes.size
+      ? [...causes].sort(([a], [b]) => a.localeCompare(b)).map(([cause, count]) => `- ${mdCell(cause)}: ${count} berths.`)
+      : ['No unmapped berths to audit.']),
+    '',
+    'Only `no-evidence` and `conflict` berths receive chain analysis; nearby signal counts use YA reference signals within 250 m along the graph from the nearest anchor.',
+    '',
+    '| Berth | Reason | Cause | SMART pairs | SMART locations | Observed steps | Timed steps | Nearest anchor | YA ref signals ≤250 m on graph | Detail |',
+    '| --- | --- | --- | ---: | --- | ---: | ---: | --- | ---: | --- |',
+    ...(audits.length
+      ? audits.map((audit) =>
+        `| ${mdCell(audit.berth)} | ${mdCell(audit.reason)} | ${mdCell(audit.cause)} | ${audit.smartPairs} | ${mdCell(audit.smartLocations.join('; ') || '—')} | ${audit.observedSteps} | ${audit.timedSteps} | ${mdCell(audit.nearestAnchor ? `${audit.nearestAnchor.berth} (${audit.nearestAnchor.steps} steps)` : '—')} | ${audit.nearbySignals} | ${mdCell(audit.detail)} |`,
+        )
+      : ['| — | — | — | 0 | — | 0 | 0 | — | 0 | No unmapped berths |']),
+    '',
+  ];
+}
+
+function signalIdentitySource(trial: SignalTrial): string {
+  return trial.independent ? 'OSM YA reference' : 'topology-inferred signal identity (diagnostic only)';
+}
+
 function buildReport(
   map: AnchorMap,
   stepChecks: ReturnType<typeof analyseSteps>,
@@ -215,6 +340,9 @@ function buildReport(
   explanations: string[],
   sourceNames: string[],
   generatedAt: string,
+  recordings: RecordingEvent[][],
+  previousMap?: AnchorMap,
+  audits: BerthAudit[] = [],
 ): string {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -224,11 +352,12 @@ function buildReport(
   const anchoredEvents = anchoredSteps.reduce((sum, step) => sum + step.count, 0);
   const implausible = stepChecks.filter((step) => step.issues.length > 0);
   const trialWarnings = signalTrialWarnings(signalTrials);
+  const currentCoverage = observedStepCoverage(recordings, map);
   const signalWarning = signalTrials.length === 0
     ? 'WARNING: no leave-one-out signal trials were produced; signal placement and direction have no leave-one-out check.'
     : trialWarnings.length > 0
-      ? `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 60 m, had a direction mismatch, or were not trusted. Review every flagged trial below.`
-      : `No leave-one-out signal warnings: all ${signalTrials.length} trials were placed, within 60 m, direction-correct, and trusted.`;
+      ? `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 15 m, had a direction mismatch, or were not trusted. Review every flagged trial below.`
+      : `No leave-one-out signal warnings: all ${signalTrials.length} trials were placed, within 15 m, direction-correct, and trusted.`;
 
   const lines = [
     '# King’s Cross berth anchor evidence',
@@ -245,11 +374,21 @@ function buildReport(
     `- Unmapped berths: ${map.unmapped.length} (${UNMAPPED_REASONS.map((reason) => `${reason} ${unmappedCounts[reason]}`).join(', ')}).`,
     `- Transitions with both endpoints anchored: ${anchoredEvents} events across ${anchoredSteps.length} unique paths.`,
     `- Implausible paths: ${implausible.length}.`,
-    `- Leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 60 m.`,
+    `- Leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 15 m.`,
+    `- Observed TD step coverage: ${coverageValue(currentCoverage.destinationAnchored, currentCoverage.valid)} destination anchored; ${coverageValue(currentCoverage.bothEndsAnchored, currentCoverage.valid)} both ends anchored.`,
     '',
     '## Evidence notes',
     '',
     ...(explanations.length ? explanations.flatMap((paragraph) => [paragraph, '']) : ['No additional evidence notes were returned.', '']),
+    '## Anchor map and observed step comparison',
+    '',
+    'Coverage counts Y9 step events with both berth ids and a train description; placeholder `****` events are excluded.',
+    '',
+    '| Map | Anchors by kind | Unmapped by reason | Valid TD steps | Destination anchored | Both ends anchored |',
+    '| --- | --- | --- | ---: | ---: | ---: |',
+    ...(previousMap ? [comparisonRow('Previous', previousMap, recordings)] : []),
+    comparisonRow('Current', map, recordings),
+    '',
     '## Anchored berths',
     '',
     '| Berth | Kind | Track direction | Fraction | Point (m) | Error (m) | Platform | Evidence |',
@@ -266,6 +405,7 @@ function buildReport(
       ? map.unmapped.map((item) => `| ${mdCell(item.berth)} | ${mdCell(item.reason)} | ${mdCell(item.detail)} | ${item.seen} |`)
       : ['| — | — | No unmapped berths | 0 |']),
     '',
+    ...auditReportLines(audits),
     '## Step analysis',
     '',
     '| Path | Events | Timed | Seconds | Length (m) | Speed (m/s) | Reversal | Issues |',
@@ -288,13 +428,13 @@ function buildReport(
     '',
     signalWarning,
     '',
-    '| Berth | Signal node | Role | Placed | Error (m) | Direction correct | Trusted (≤60 m) | Detail |',
-    '| --- | ---: | --- | --- | ---: | --- | --- | --- |',
+    '| Berth | Signal node | Role | Placement method | Independent oracle? | Identity source | Placed | Error (m) | Direction correct | Trusted (≤15 m) | Detail |',
+    '| --- | ---: | --- | --- | --- | --- | --- | ---: | --- | --- | --- |',
     ...(signalTrials.length
       ? signalTrials.map((trial) =>
-        `| ${mdCell(trial.berth)} | ${trial.signalId} | ${trial.role} | ${trial.placed ? 'yes' : 'no'} | ${number(trial.distanceM)} | ${trial.placed ? trial.directionOk ? 'yes' : 'no' : '—'} | ${trial.trusted ? 'yes' : 'no'} | ${mdCell(trial.detail)} |`,
+        `| ${mdCell(trial.berth)} | ${trial.signalId} | ${trial.role} | ${mdCell(trial.method)} | ${trial.independent ? 'yes' : 'no'} | ${mdCell(signalIdentitySource(trial))} | ${trial.placed ? 'yes' : 'no'} | ${number(trial.distanceM)} | ${trial.placed ? trial.directionOk ? 'yes' : 'no' : '—'} | ${trial.trusted ? 'yes' : 'no'} | ${mdCell(trial.detail)} |`,
         )
-      : ['| — | — | — | no | — | — | no | No signal trials were returned |']),
+      : ['| — | — | — | — | no | — | no | — | — | no | No signal trials were returned |']),
     '',
   ];
   return lines.join('\n');
@@ -306,6 +446,9 @@ function printSummary(
   signalTrials: SignalTrial[],
   explanations: string[],
   outDir: string,
+  recordings: RecordingEvent[][],
+  previousMap?: AnchorMap,
+  audits: BerthAudit[] = [],
 ): void {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -314,11 +457,22 @@ function printSummary(
   const anchoredEvents = anchoredSteps.reduce((sum, step) => sum + step.count, 0);
   const implausible = stepChecks.filter((step) => step.issues.length > 0);
   const trialWarnings = signalTrialWarnings(signalTrials);
+  const currentCoverage = observedStepCoverage(recordings, map);
 
   console.log(`berths: wrote anchors.json and berths-report.md to ${outDir}`);
   console.log(`anchors by kind: ${KINDS.map((kind) => `${kind} ${anchorCounts[kind]}`).join(', ')}`);
   console.log(`unmapped by reason: ${UNMAPPED_REASONS.map((reason) => `${reason} ${unmappedCounts[reason]}`).join(', ')}`);
   console.log(`steps with both endpoints anchored: ${anchoredEvents} events, ${anchoredSteps.length} unique paths`);
+  console.log(`observed TD step coverage (valid events exclude ****): ${currentCoverage.valid} valid events`);
+  if (previousMap) {
+    const previousCoverage = observedStepCoverage(recordings, previousMap);
+    const previousAnchorCounts = counts(previousMap.anchors.map((anchor) => anchor.kind), KINDS);
+    const previousUnmappedCounts = counts(previousMap.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
+    console.log(`previous anchors by kind: ${KINDS.map((kind) => `${kind} ${previousAnchorCounts[kind]}`).join(', ')}`);
+    console.log(`previous unmapped by reason: ${UNMAPPED_REASONS.map((reason) => `${reason} ${previousUnmappedCounts[reason]}`).join(', ')}`);
+    console.log(`previous coverage: destination anchored ${coverageValue(previousCoverage.destinationAnchored, previousCoverage.valid)}; both ends anchored ${coverageValue(previousCoverage.bothEndsAnchored, previousCoverage.valid)}`);
+  }
+  console.log(`current coverage: destination anchored ${coverageValue(currentCoverage.destinationAnchored, currentCoverage.valid)}; both ends anchored ${coverageValue(currentCoverage.bothEndsAnchored, currentCoverage.valid)}`);
   if (implausible.length === 0) console.log('implausible paths: none');
   else {
     console.log(`implausible paths: ${implausible.length}`);
@@ -328,20 +482,27 @@ function printSummary(
       );
     }
   }
-  console.log(`leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 60 m`);
+  console.log(`leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 15 m`);
   if (signalTrials.length === 0) {
     console.warn('WARNING: no leave-one-out signal trials were produced; signal placement and direction have no leave-one-out check.');
   } else if (trialWarnings.length > 0) {
     console.warn(
-      `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 60 m, had a direction mismatch, or were not trusted. Review the report table.`,
+      `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 15 m, had a direction mismatch, or were not trusted. Review the report table.`,
     );
     for (const trial of trialWarnings) {
       console.warn(
-        `- berth ${trial.berth}, signal ${trial.signalId} (${trial.role}): placed ${trial.placed ? 'yes' : 'no'}, error ${number(trial.distanceM)} m, direction ${trial.placed ? trial.directionOk ? 'ok' : 'mismatch' : 'unknown (unplaced)'}, trusted ${trial.trusted ? 'yes' : 'no'}; ${trial.detail}`,
+        `- berth ${trial.berth}, signal ${trial.signalId} (${trial.role}, ${trial.method}, ${signalIdentitySource(trial)}): placed ${trial.placed ? 'yes' : 'no'}, error ${number(trial.distanceM)} m, direction ${trial.placed ? trial.directionOk ? 'ok' : 'mismatch' : 'unknown (unplaced)'}, trusted ${trial.trusted ? 'yes' : 'no'}; ${trial.detail}`,
       );
     }
   } else {
-    console.log(`leave-one-out signal warnings: none; all ${signalTrials.length} trials were placed, within 60 m, direction-correct, and trusted`);
+    console.log(`leave-one-out signal warnings: none; all ${signalTrials.length} trials were placed, within 15 m, direction-correct, and trusted`);
+  }
+  const causes = auditCauseCounts(audits);
+  console.log(`unmapped evidence audit (no-evidence/conflict): ${audits.length} berths${causes.size ? `; ${[...causes].sort(([a], [b]) => a.localeCompare(b)).map(([cause, count]) => `${cause} ${count}`).join(', ')}` : ''}`);
+  console.log('| Berth | Reason | Cause | Observed steps | Timed steps | SMART pairs | Nearest anchor | YA refs ≤250 graph m |');
+  for (const audit of audits) {
+    const nearest = audit.nearestAnchor ? `${audit.nearestAnchor.berth} (${audit.nearestAnchor.steps} steps)` : '—';
+    console.log(`| ${audit.berth} | ${audit.reason} | ${audit.cause} | ${audit.observedSteps} | ${audit.timedSteps} | ${audit.smartPairs} | ${nearest} | ${audit.nearbySignals} |`);
   }
   if (explanations.length) {
     console.log('why:');
@@ -353,8 +514,10 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const recordingPaths = await Promise.all(args.recordings.map(inputPath));
   const smartPath = await inputPath(args.smart);
+  const previousPath = args.previous ? await inputPath(args.previous) : undefined;
   const recordings = await Promise.all(recordingPaths.map(readRecording));
   const smartRows = await readSmart(smartPath);
+  const previousMap = previousPath ? await readPreviousMap(previousPath) : undefined;
   const data = await readOsm();
   const smartStat = await lstat(smartPath);
   const generatedAt = new Date().toISOString();
@@ -363,17 +526,19 @@ async function main(): Promise<void> {
     `SMART: ${path.basename(smartPath)} (modified ${smartStat.mtime.toISOString()})`,
     `OSM: ${data.attribution}`,
   ];
+  const reportSources = [...sources, ...(previousPath ? [`Previous map: ${path.basename(previousPath)}`] : [])];
 
   const map = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
   const stepChecks = analyseSteps(data, recordings, map);
   const signalTrials = leaveOneOut(data, recordings, smartRows, { area: 'Y9', sources });
   const explanations = describeEvidence(data, recordings, smartRows, map);
+  const audits = auditBerths(data, recordings, smartRows, map);
   const outDir = await ensureOutputDirectory(args.out);
   await checkOutputFile(outDir, 'anchors.json');
   await checkOutputFile(outDir, 'berths-report.md');
   await writeFile(path.join(outDir, 'anchors.json'), `${JSON.stringify(map, null, 2)}\n`, { mode: 0o600 });
-  await writeFile(path.join(outDir, 'berths-report.md'), buildReport(map, stepChecks, signalTrials, explanations, sources, generatedAt), { mode: 0o600 });
-  printSummary(map, stepChecks, signalTrials, explanations, outDir);
+  await writeFile(path.join(outDir, 'berths-report.md'), buildReport(map, stepChecks, signalTrials, explanations, reportSources, generatedAt, recordings, previousMap, audits), { mode: 0o600 });
+  printSummary(map, stepChecks, signalTrials, explanations, outDir, recordings, previousMap, audits);
 }
 
 main().catch((error: unknown) => {

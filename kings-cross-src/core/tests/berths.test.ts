@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildAnchors, analyseSteps, leaveOneOut } from '../berths.ts';
+import { auditBerths, buildAnchors, analyseSteps, leaveOneOut } from '../berths.ts';
 import type { RecordingEvent } from '../berths.ts';
 import type { AnchorMap, BerthAnchor } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
@@ -275,6 +275,94 @@ test('berths: topology rejects unclassified, protection-only, foreign-referenced
   }
 });
 
+function junctionFan(): { d: KxData; recordings: RecordingEvent[][] } {
+  const d = throat();
+  // The two referenced signals bound distinct approach tracks that share the northern junction.
+  signal(d, 80, 'YA 3200', 30, -300);
+  signal(d, 81, 'YA 3201', 10, -300);
+  // Topology may identify this signal, but that inferred identity is only a sensitivity check.
+  d.signals.push({ id: 90, x: 20, z: -450, direction: 'forward', kinds: ['main'] });
+  const recordings = [[event('step', '2900', '3200'), event('step', '2900', '3201'), event('interpose', undefined, '3202')]];
+  signal(d, 82, 'YA 3202', 20, -800);
+  return { d, recordings };
+}
+
+test('berths: topology junction fan-out stays in its family when chain calibration fails', () => {
+  const { d, recordings } = junctionFan();
+  const trials = leaveOneOut(d, recordings, []);
+  const independentFailures = trials.filter((t) => t.independent && !t.trusted);
+  assert.ok(independentFailures.length > 0, 'the referenced target signals provide a chain-family calibration failure');
+  assert.ok(independentFailures.some((t) => t.method === 'chain'));
+
+  const sensitivity = trials.find((t) => t.signalId === 90);
+  assert.ok(sensitivity, 'the topology-identified signal gets a held-out sensitivity trial');
+  assert.equal(sensitivity.independent, false);
+  assert.equal(sensitivity.placed, true);
+  assert.equal(sensitivity.method, 'topology');
+  near(sensitivity.distanceM!, 25);
+  assert.equal(sensitivity.trusted, false);
+  assert.match(sensitivity.detail, /sensitivity check only, not an independent oracle/);
+
+  const calibrated = buildAnchors(d, recordings, []);
+  const junction = anchor(calibrated, '2900');
+  assert.equal(junction.kind, 'signal');
+  assert.match(junction.evidence, /Topology junction fan-out/);
+});
+
+test('berths: a leave-one-out error of twenty metres exceeds the fifteen-metre trust boundary', () => {
+  const d = throat(); signal(d, 90, 'YA 2900', 20, -445);
+  const trial = leaveOneOut(d, [arrivals()[0]!], []).find((t) => t.signalId === 90);
+  assert.ok(trial, 'the referenced signal gets a held-out trial');
+  assert.equal(trial.independent, true);
+  assert.equal(trial.placed, true);
+  near(trial.distanceM!, 20);
+  assert.equal(trial.directionOk, true);
+  assert.equal(trial.trusted, false);
+});
+
+test('berths: audit counts only same-area SMART evidence and reports the nearest observed anchor path', () => {
+  const d = data([[1, 0, 0], [2, 100, 0], [3, 200, 0], [4, 300, 0], [5, 400, 0]], [[1, 2, 3, 4, 5]]);
+  signal(d, 90, 'YA 6800', 20);
+  signal(d, 91, 'YA 6891', 220);
+  signal(d, 92, 'YA 6892', 400);
+  const recordings = [
+    [event('interpose', undefined, '6800', 0), event('step', '6800', '6801', 1000),
+      event('step', '6801', '6802', 3000), event('step', '6802', '6803', 4000, '****'), event('interpose', undefined, '6804')],
+    [event('interpose', undefined, '6800', 0), event('step', '6800', '6801', 1000),
+      event('step', '6801', '6802', 3000), event('step', '6802', '6803', 4000, '****')],
+  ];
+  const smart = [
+    { TD: 'Y9', FROMBERTH: '6801', TOBERTH: '6802', STANME: 'LOCAL STATION' },
+    { TD: 'Y9', FROMBERTH: '6801', TOBERTH: '6802', STANME: 'LOCAL STATION' },
+    { TD: 'Y9', FROMBERTH: '6802', TOBERTH: '6801', STANME: 'REVERSE ASSOCIATION' },
+    { TD: 'Y9', FROMBERTH: '6802', TOBERTH: '', STANME: 'ONE-SIDED ASSOCIATION' },
+    { TD: 'XX', FROMBERTH: '6801', TOBERTH: '6802', STANME: 'FOREIGN STATION' },
+  ];
+  const map = buildAnchors(d, recordings, smart, { calibrate: false });
+  const audits = auditBerths(d, recordings, smart, map);
+  const audit = audits.find((a) => a.berth === '6802');
+  assert.ok(audit, 'the non-outside unplaced berth appears in the audit');
+  assert.equal(audit.reason, 'no-evidence');
+  assert.equal(audit.cause, 'one-sided-chain');
+  assert.equal(audit.smartPairs, 2, 'duplicate directed pairs count once while the reverse pair remains distinct');
+  assert.deepEqual(audit.smartLocations, ['LOCAL STATION', 'ONE-SIDED ASSOCIATION', 'REVERSE ASSOCIATION']);
+  assert.equal(audit.observedSteps, 2, 'placeholder steps do not count as train movement');
+  assert.equal(audit.timedSteps, 2);
+  assert.deepEqual(audit.nearestAnchor, { berth: '6800', steps: 2 });
+  assert.equal(audit.nearbySignals, 2, 'YA refs within 250 graph metres of the nearest anchor count');
+  assert.match(audit.detail, /not a position estimate for this berth/);
+  assert.match(audit.detail, /YA 6800, YA 6891/);
+  assert.doesNotMatch(audit.detail, /YA 6892/);
+  assert.doesNotMatch(audit.detail, /FOREIGN STATION/);
+
+  const noSteps = audits.find((a) => a.berth === '6804');
+  assert.ok(noSteps, 'an interposed but unstepped berth appears in the audit');
+  assert.equal(noSteps.cause, 'no-train-steps');
+  assert.equal(noSteps.observedSteps, 0);
+  assert.equal(noSteps.nearestAnchor, undefined);
+  assert.equal(noSteps.nearbySignals, 0);
+});
+
 function branchFixture(second = 30): { d: KxData; recordings: RecordingEvent[][] } {
   const d = data([[1, 0, 0], [2, 1000, 0]]);
   signal(d, 11, 'YA 3000', 10); signal(d, 12, 'YA 3001', second); signal(d, 13, 'YA 3003', 200);
@@ -306,13 +394,16 @@ test('berths: boundary continuation uses explicit nominal speed and marks travel
   reason(map, '3102', 'outside-network'); assert.match(map.unmapped.find((u) => u.berth === '3102')!.detail, /north boundary node/);
 });
 
-test('berths: leave-one-out removes the complete held-out signal and predicts within sixty metres', () => {
+test('berths: leave-one-out removes the complete held-out signal and predicts within fifteen metres', () => {
   const d = throat(); signal(d, 90, 'YA 2900', 20, -440); signal(d, 91, 'YA 2999', 20, -800);
   const trials = leaveOneOut(d, [arrivals()[0]!.concat(event('interpose', undefined, '2999'))], []);
-  const trial = trials.find((t) => t.berth === '2900')!;
+  const trial = trials.find((t) => t.berth === '2900');
+  assert.ok(trial, 'the referenced berth gets a held-out trial');
   assert.equal(trial.signalId, 90); assert.equal(trial.role, 'berth'); assert.equal(trial.method, 'topology');
   assert.equal(trial.placed, true); near(trial.distanceM!, 15); assert.equal(trial.directionOk, true); assert.equal(trial.trusted, true);
-  const orphan = trials.find((t) => t.berth === '2999')!; assert.equal(orphan.placed, false); assert.equal(orphan.trusted, false); assert.equal(orphan.distanceM, null);
+  const orphan = trials.find((t) => t.berth === '2999');
+  assert.ok(orphan, 'the other referenced berth gets a held-out trial');
+  assert.equal(orphan.placed, false); assert.equal(orphan.trusted, false); assert.equal(orphan.distanceM, null);
   assert.equal(d.signals.length, 2); assert.equal(d.signals[0]!.ref, 'YA 2900');
 });
 
