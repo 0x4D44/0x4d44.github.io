@@ -18,8 +18,9 @@ const repoRoot = path.resolve(packageRoot, '..');
 const scratchRoot = path.join(repoRoot, '.scratch');
 const PHASES = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const freshDiagnostics = (phase, proxyEnabled) => ({ phase, proxyEnabled, consoleErrorCount: 0, cspErrorCount: 0, cspInvalidSourceCount: 0,
-  expectedRelayFailures: [], unexpectedNetworkFailures: [], relayRequestCounts: {}, expectedRelayConsoleErrorCount: 0, messages: [] });
+export const freshDiagnostics = (phase, proxyEnabled) => ({ phase, proxyEnabled, consoleErrorCount: 0, cspErrorCount: 0, cspInvalidSourceCount: 0,
+  failedRequests: [], expectedRelayFailures: [], unexpectedNetworkFailures: [], relayRequestCounts: {}, expectedRelayConsoleErrorCount: 0,
+  consoleErrors: [], messages: [] });
 function relayPath(value) {
   try { const pathname = new URL(value).pathname; return pathname.startsWith('/relay/') ? pathname : null; }
   catch { return null; }
@@ -27,21 +28,73 @@ function relayPath(value) {
 function expectedRelayFault(diagnostics, url, { status = null, failed = false, canceled = false } = {}) {
   const pathname = relayPath(url);
   if (!pathname) return false;
-  if (pathname === '/relay/schedule' && status === 404) return true;
   if (diagnostics?.proxyEnabled === false && ['no-relay', 'stopped'].includes(diagnostics.phase) && (status === 503 || failed || canceled)) return true;
   return pathname === '/relay/events' && ['stopped', 'sse-drop'].includes(diagnostics?.phase) &&
-    (canceled || (failed && status === null));
+    (canceled || (failed && (status === null || status === 200)));
 }
 function recordNetworkFailure(diagnostics, url, detail) {
-  const pathname = relayPath(url);
-  const row = { path: pathname ?? 'unknown', ...detail };
+  const fullUrl = typeof url === 'string' && url.trim() ? url.trim() : null;
+  const pathname = relayPath(fullUrl);
+  const canceled = detail.canceled === true;
+  const expected = expectedRelayFault(diagnostics, fullUrl, detail);
+  const row = {
+    requestId: detail.requestId ?? null,
+    url: fullUrl,
+    path: pathname ?? 'unknown',
+    status: detail.status ?? null,
+    errorText: detail.errorText ?? null,
+    event: detail.event ?? 'network failure',
+    canceled,
+    classification: expected ? 'expected-relay' : canceled ? 'ignored-cancelled' : 'unexpected',
+  };
+  diagnostics.failedRequests.push(row);
   if (expectedRelayFault(diagnostics, url, detail)) {
     diagnostics.expectedRelayFailures.push(row);
-    if (detail.status !== undefined && detail.status !== null) expectedRelayConsoleFaults.add(`${pathname}:${detail.status}`);
   }
-  else if (!detail.canceled) diagnostics.unexpectedNetworkFailures.push({ ...row, path: pathname ?? url ?? 'unknown' });
+  else if (!canceled) diagnostics.unexpectedNetworkFailures.push(row);
 }
-const expectedRelayConsoleFaults = new Set();
+function usableUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try { new URL(value); return value; } catch { return null; }
+}
+
+/** Record one CDP Network event and retain its request URL for later console correlation. */
+export function recordCdpNetworkEvent(message, diagnostics, requestInfo) {
+  const { method, params = {} } = message ?? {};
+  if (method === 'Network.requestWillBeSent') {
+    const { requestId, request } = params;
+    requestInfo.set(requestId, { url: request?.url ?? null, status: null, diagnostics });
+    const pathname = relayPath(request?.url);
+    if (pathname) diagnostics.relayRequestCounts[pathname] = (diagnostics.relayRequestCounts[pathname] ?? 0) + 1;
+    return true;
+  }
+  if (method === 'Network.responseReceived') {
+    const { requestId, response } = params;
+    const info = requestInfo.get(requestId), url = usableUrl(response?.url) ?? usableUrl(info?.url);
+    if (info) info.status = response?.status ?? null;
+    const pathname = relayPath(url), faultPhase = pathname && ['stopped', 'sse-drop'].includes(diagnostics.phase);
+    const target = (faultPhase ? diagnostics : info?.diagnostics) ?? diagnostics;
+    if (response?.status >= 400) recordNetworkFailure(target, url, {
+      event: method, requestId, status: response.status,
+    });
+    return true;
+  }
+  if (method === 'Network.loadingFailed') {
+    const { requestId, errorText, canceled } = params, info = requestInfo.get(requestId);
+    const url = usableUrl(info?.url), pathname = relayPath(url);
+    const faultPhase = pathname && ['stopped', 'sse-drop'].includes(diagnostics.phase);
+    const target = (faultPhase ? diagnostics : info?.diagnostics) ?? diagnostics;
+    recordNetworkFailure(target, url, {
+      event: method, requestId, status: info?.status ?? null, failed: true, errorText, canceled: canceled === true,
+    });
+    return true;
+  }
+  return method === 'Network.loadingFinished';
+}
+
+export function resolveLogEntryUrl(entry, requestInfo) {
+  return usableUrl(entry?.url) ?? usableUrl(requestInfo.get(entry?.networkRequestId)?.url);
+}
 const within = (root, file) => {
   const rel = path.relative(root, file);
   return rel === '' || (!rel.startsWith(`..${path.sep}`) && rel !== '..' && !path.isAbsolute(rel));
@@ -151,7 +204,9 @@ export function createSyntheticRelay(trackData) {
     if (url.pathname === '/snapshot') return sendJson(res, 200, syntheticSnapshot());
     if (url.pathname === '/sclass') return sendJson(res, 200, fixture.sclass);
     if (url.pathname === '/recent') return sendJson(res, 200, []);
-    if (url.pathname === '/schedule') return sendJson(res, 404, { error: 'synthetic timetable unavailable' });
+    if (url.pathname === '/schedule') return sendJson(res, 200, {
+      date: url.searchParams.get('date') ?? '', available: false, reason: 'no timetable',
+    });
     if (url.pathname !== '/events') return sendJson(res, 404, { error: 'synthetic endpoint unavailable' });
     if (streamsDropped) { res.destroy(); return; }
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
@@ -215,8 +270,18 @@ export function phaseIsComplete(report) {
 
 export function finalizeStatus(report) {
   if (report.error) return 'ERROR';
+  if (report.networkDiagnostics?.some(d => d.consoleErrorCount || d.cspErrorCount || d.unexpectedNetworkFailures.length)) return 'GAP';
   if (!report.validGpu || report.gaps?.length || !phaseIsComplete(report)) return 'GAP';
   return 'PASS';
+}
+
+export function syncDiagnostics(report) {
+  for (const phase of report.phases) {
+    const diagnostics = report.networkDiagnostics?.find(d => d.phase === phase.name);
+    if (diagnostics) Object.assign(phase, diagnostics, {
+      validCsp: diagnostics.cspErrorCount === 0 && diagnostics.cspInvalidSourceCount === 0,
+    });
+  }
 }
 
 async function writeArtifact(file, body) {
@@ -282,12 +347,32 @@ function phaseMarkdown(report) {
     '|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|',
   ];
   for (const phase of report.phases) lines.push(`| ${phase.name} | ${phase.conditionObserved ? 'observed' : 'gap'} | ${phase.proxyEnabled === null ? 'unknown' : phase.proxyEnabled ? 'enabled' : 'disabled'} | ${phase.connection ?? 'unavailable'} | ${phase.trainCount ?? 'unavailable'} | ${phase.board?.platformTrainCount ?? 'unavailable'} | ${phase.attribution?.present?.osm && phase.attribution?.present?.environmentAgency && phase.attribution?.present?.openGovernmentLicence ? 'present' : 'gap'} | ${phase.cspErrorCount ?? 'unavailable'} | ${phase.cspInvalidSourceCount ?? 'unavailable'} | ${phase.consoleErrorCount ?? 'unavailable'} | ${phase.expectedRelayFailures?.length ?? 'unavailable'} | ${phase.unexpectedNetworkFailures?.length ?? 'unavailable'} | ${phase.screenshot ? `[${path.basename(phase.screenshot)}](${path.basename(phase.screenshot)})` : 'unavailable'} |`);
+  const transitions = (report.networkDiagnostics ?? []).filter(d => !report.phases.some(p => p.name === d.phase)).map(d => ({ ...d, name: d.phase }));
+  for (const phase of [...report.phases, ...transitions]) {
+    const details = [
+      ['Expected relay failures', phase.expectedRelayFailures ?? []],
+      ['Unexpected network failures', phase.unexpectedNetworkFailures ?? []],
+      ['Recorded canceled requests (not counted as phase failures)', (phase.failedRequests ?? []).filter(row => row.classification === 'ignored-cancelled')],
+    ];
+    if (details.some(([, rows]) => rows.length) || phase.consoleErrors?.length) {
+      lines.push('', `## ${phase.name} diagnostics`);
+      for (const [title, rows] of details) {
+        lines.push('', `### ${title}`);
+        if (!rows.length) lines.push('', '- None.');
+        else for (const row of rows) lines.push('', `- request ${row.requestId ?? 'unavailable'} · ${row.url ? `URL \`${row.url.replaceAll('`', '\\`')}\`` : 'URL unresolved (CDP supplied no usable URL)'} · ${row.status === null || row.status === undefined ? 'no HTTP status' : `HTTP ${row.status}`} · ${row.errorText ?? row.event ?? 'no failure reason supplied'}`);
+      }
+      lines.push('', '### Console errors');
+      if (!phase.consoleErrors?.length) lines.push('', '- None.');
+      else for (const error of phase.consoleErrors) lines.push('', `- ${error.expectedRelayFault ? 'Expected relay error' : 'Error'} · request ${error.requestId ?? 'unavailable'} · ${error.url ? `URL \`${error.url.replaceAll('`', '\\`')}\`` : 'URL unresolved (CDP supplied no usable URL)'} · ${error.text}`);
+    }
+  }
   if (report.gaps.length) lines.push('', '## Gaps', '', ...report.gaps.map(gap => `- ${gap}`));
   if (report.error) lines.push('', '## Error', '', report.error);
   return `${lines.join('\n')}\n`;
 }
 
 async function persistReport(report) {
+  syncDiagnostics(report);
   report.status = finalizeStatus(report);
   report.validCsp = report.phases.length === PHASES.length && report.phases.every(phase => phase.validCsp === true && phase.cspErrorCount === 0 && phase.cspInvalidSourceCount === 0);
   await writeArtifact(path.join(report.out, 'axis07-browser.md'), phaseMarkdown(report));
@@ -304,7 +389,12 @@ export async function main(args = process.argv.slice(2)) {
   }
 
   const report = { schema: 1, when: new Date().toISOString(), out: options.out, dist: options.dist,
-    renderer: null, genuineMetalGpu: false, validGpu: false, validCsp: false, phases: [], gaps: [], error: null };
+    renderer: null, genuineMetalGpu: false, validGpu: false, validCsp: false, phases: [], networkDiagnostics: [], gaps: [], error: null };
+  const diagnosticsFor = (phase, proxyEnabled) => {
+    const diagnostics = freshDiagnostics(phase, proxyEnabled);
+    report.networkDiagnostics.push(diagnostics);
+    return diagnostics;
+  };
   let chrome, profile, cdp, relay, serverControl, cleanupPromise, outputReady = false;
   let activeDiagnostics = null, activePhase = null;
   const requestInfo = new Map();
@@ -343,33 +433,8 @@ export async function main(args = process.argv.slice(2)) {
     { detached: true, stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
     cdp = cdpPipe(chrome, message => {
       if (!activeDiagnostics) return;
-      if (message.method === 'Network.requestWillBeSent') {
-        const url = message.params.request.url;
-        const diag = activeDiagnostics;
-        requestInfo.set(message.params.requestId, { url, diag });
-        const pathname = relayPath(url);
-        if (pathname) diag.relayRequestCounts[pathname] = (diag.relayRequestCounts[pathname] ?? 0) + 1;
-        return;
-      }
-      if (message.method === 'Network.responseReceived') {
-        const { requestId, response } = message.params;
-        const info = requestInfo.get(requestId), pathname = relayPath(response.url ?? info?.url);
-        const faultPhase = pathname && activeDiagnostics && (activeDiagnostics.phase === 'stopped' || activeDiagnostics.phase === 'sse-drop');
-        const diag = (faultPhase ? activeDiagnostics : info?.diag) ?? activeDiagnostics;
-        if (response.status >= 400) recordNetworkFailure(diag, response.url ?? info?.url, { status: response.status });
-        return;
-      }
-      if (message.method === 'Network.loadingFailed') {
-        const { requestId, errorText, canceled } = message.params;
-        const info = requestInfo.get(requestId), pathname = relayPath(info?.url);
-        const faultPhase = pathname && activeDiagnostics && (activeDiagnostics.phase === 'stopped' || activeDiagnostics.phase === 'sse-drop');
-        const diag = (faultPhase ? activeDiagnostics : info?.diag) ?? activeDiagnostics;
-        recordNetworkFailure(diag, info?.url, { failed: true, errorText, canceled: canceled === true });
-        requestInfo.delete(requestId);
-        return;
-      }
-      if (message.method === 'Network.loadingFinished') { requestInfo.delete(message.params.requestId); return; }
-      let text = '', error = false, url = '';
+      if (recordCdpNetworkEvent(message, activeDiagnostics, requestInfo)) return;
+      let text = '', error = false, url = '', requestId = null, urlResolution = 'unresolved';
       if (message.method === 'Runtime.exceptionThrown') {
         const details = message.params.exceptionDetails;
         text = `${details.text} ${details.exception?.description ?? ''}`.trim(); error = true;
@@ -377,23 +442,35 @@ export async function main(args = process.argv.slice(2)) {
         text = message.params.args.map(arg => arg.value ?? arg.description ?? '').join(' ');
         error = message.params.type === 'error';
       } else if (message.method === 'Log.entryAdded') {
-        text = message.params.entry.text ?? ''; url = message.params.entry.url ?? '';
+        const entry = message.params.entry;
+        text = entry.text ?? ''; requestId = entry.networkRequestId ?? null;
+        const directUrl = usableUrl(entry.url);
+        url = resolveLogEntryUrl(entry, requestInfo) ?? '';
+        urlResolution = url ? (directUrl ? 'entry' : 'networkRequestId') : 'unresolved';
         error = message.params.entry.level === 'error';
       }
       if (!text) return;
+      const info = requestId === null ? null : requestInfo.get(requestId);
+      const pathname = relayPath(url), faultPhase = pathname && ['stopped', 'sse-drop'].includes(activeDiagnostics.phase);
+      const diagnostics = (faultPhase ? activeDiagnostics : info?.diagnostics) ?? activeDiagnostics;
       const cspMessage = /content security policy/i.test(text);
       const cspInvalid = cspMessage && /invalid source/i.test(text);
-      if (cspMessage) activeDiagnostics.cspErrorCount++;
-      if (cspInvalid) activeDiagnostics.cspInvalidSourceCount++;
-      const status = Number(/(?:status of|HTTP\s+)(\d{3})/i.exec(text)?.[1]);
-      if (error && message.method === 'Log.entryAdded' && relayPath(url) && !cspInvalid &&
-          (expectedRelayFault(activeDiagnostics, url, { status: Number.isFinite(status) ? status : null, failed: true }) ||
-            expectedRelayConsoleFaults.has(`${relayPath(url)}:${status}`))) {
-        activeDiagnostics.expectedRelayConsoleErrorCount++;
+      if (cspMessage) diagnostics.cspErrorCount++;
+      if (cspInvalid) diagnostics.cspInvalidSourceCount++;
+      const parsedStatus = Number(/(?:status of|HTTP\s+)(\d{3})/i.exec(text)?.[1]);
+      const status = Number.isFinite(parsedStatus) ? parsedStatus : info?.status ?? null;
+      const expectedRelay = error && message.method === 'Log.entryAdded' && relayPath(url) && !cspInvalid &&
+        expectedRelayFault(diagnostics, url, { status, failed: true });
+      if (error && diagnostics.consoleErrors.length < 20) diagnostics.consoleErrors.push({
+        text: text.slice(0, 800), url: url || null, requestId, status,
+        expectedRelayFault: !!expectedRelay, urlResolution,
+      });
+      if (expectedRelay) {
+        diagnostics.expectedRelayConsoleErrorCount++;
         error = false;
       }
-      if (error) activeDiagnostics.consoleErrorCount++;
-      if (error && activeDiagnostics.messages.length < 20) activeDiagnostics.messages.push(text.slice(0, 800));
+      if (error) diagnostics.consoleErrorCount++;
+      if (error && diagnostics.messages.length < 20) diagnostics.messages.push(text.slice(0, 800));
     });
     let spawnError;
     chrome.once('error', error => { spawnError = error; });
@@ -431,10 +508,12 @@ export async function main(args = process.argv.slice(2)) {
         cspInvalidSourceCount: activeDiagnostics?.cspInvalidSourceCount ?? 0,
         consoleErrorCount: activeDiagnostics?.consoleErrorCount ?? 0,
         expectedRelayConsoleErrorCount: activeDiagnostics?.expectedRelayConsoleErrorCount ?? 0,
+        failedRequests: activeDiagnostics?.failedRequests ?? [],
         expectedRelayFailures: activeDiagnostics?.expectedRelayFailures ?? [],
         unexpectedNetworkFailures: activeDiagnostics?.unexpectedNetworkFailures ?? [],
         relayRequestCounts: activeDiagnostics?.relayRequestCounts ?? {},
-        consoleErrors: activeDiagnostics?.messages ?? [],
+        consoleErrors: activeDiagnostics?.consoleErrors ?? [],
+        consoleErrorMessages: activeDiagnostics?.messages ?? [],
         validCsp: (activeDiagnostics?.cspErrorCount ?? 0) === 0 && (activeDiagnostics?.cspInvalidSourceCount ?? 0) === 0,
         conditionObserved, screenshot: await stat(screenshot).then(() => screenshot, () => null) };
       if (page.pageError) phase.pageError = page.pageError;
@@ -447,7 +526,7 @@ export async function main(args = process.argv.slice(2)) {
     };
     const navigate = async (name, url, expected, milliseconds = 25000) => {
       activePhase = name;
-      activeDiagnostics = freshDiagnostics(name, name === 'connected');
+      activeDiagnostics = diagnosticsFor(name, name === 'connected');
       await send('Page.navigate', { url });
       await until('!!window.__kx?.ready || document.body.classList.contains("no-webgl")', 60000);
       const conditionObserved = await until(expected, milliseconds);
@@ -459,22 +538,22 @@ export async function main(args = process.argv.slice(2)) {
     serverControl.setProxy(true);
     await navigate('connected', pageBase, "window.__kx?.feed?.connection === 'connected' && window.__kx?.feed?.mode === 'live' && window.__kx?.trains?.length > 0", 45000);
     activePhase = 'stopped';
-    activeDiagnostics = freshDiagnostics('stopped', false);
+    activeDiagnostics = diagnosticsFor('stopped', false);
     serverControl.setProxy(false);
     const stoppedObserved = await until("window.__kx?.feed?.connection?.includes('reconnecting')", 20000);
     await takePhase('stopped', stoppedObserved, "this pack's relay proxy is disabled and the live feed is reconnecting", false);
     activePhase = 'proxy-restored';
-    activeDiagnostics = freshDiagnostics('proxy-restored', true);
+    activeDiagnostics = diagnosticsFor('proxy-restored', true);
     serverControl.setProxy(true);
     const proxyRecovered = await until("window.__kx?.feed?.connection === 'connected' && window.__kx?.feed?.mode === 'live' && window.__kx?.trains?.length > 0", 45000);
     if (!proxyRecovered) report.gaps.push('proxy restore: synthetic live feed did not reconnect before the separate SSE-drop phase');
     activePhase = 'sse-drop';
-    activeDiagnostics = freshDiagnostics('sse-drop', true);
+    activeDiagnostics = diagnosticsFor('sse-drop', true);
     const droppedStreams = relay.dropStreams();
     const droppedObserved = droppedStreams > 0 && await until("window.__kx?.feed?.connection?.includes('reconnecting')", 20000);
     await takePhase('sse-drop', droppedObserved, `synthetic upstream drops ${droppedStreams} SSE stream(s) while the loopback proxy remains enabled`, true);
     activePhase = 'recovered';
-    activeDiagnostics = freshDiagnostics('recovered', true);
+    activeDiagnostics = diagnosticsFor('recovered', true);
     relay.resumeStreams();
     const recoveredObserved = await until("window.__kx?.feed?.connection === 'connected' && window.__kx?.feed?.mode === 'live' && window.__kx?.trains?.length > 0", 45000);
     await takePhase('recovered', recoveredObserved, "healthy synthetic SSE feed and at least one synthetic train are restored", true);

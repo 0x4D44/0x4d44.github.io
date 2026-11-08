@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { buildGraph } from '../../core/graph.ts';
 import { createMotion } from '../../core/motion.ts';
 import { createEventReconciler, parseEvent } from '../../web/src/feed.ts';
-import { createSyntheticRelay, finalizeStatus, hardwareRenderer, parseOptions, phaseIsComplete, syntheticRelayFixture, syntheticSseFrame } from '../axis07-browser.mjs';
+import { createSyntheticRelay, finalizeStatus, freshDiagnostics, hardwareRenderer, parseOptions, phaseIsComplete,
+  recordCdpNetworkEvent, resolveLogEntryUrl, syncDiagnostics, syntheticRelayFixture, syntheticSseFrame } from '../axis07-browser.mjs';
 
 const fixtureTrack = {
   nodes: [[101, 0, 0], [102, 100, 0], [103, 200, 0], [104, 300, 0], [105, 400, 0], [106, 500, 0]],
@@ -86,6 +87,14 @@ test('browser report completeness requires all phases, attribution, status, boar
   const repeatedProbe = structuredClone(report);
   repeatedProbe.phases[0].relayRequestCounts['/relay/health'] = 2;
   assert.equal(phaseIsComplete(repeatedProbe), false);
+  const transition = freshDiagnostics('proxy-restored', true);
+  transition.unexpectedNetworkFailures.push({ url: 'http://127.0.0.1:43210/missing', status: 404 });
+  assert.equal(finalizeStatus({ ...report, networkDiagnostics: [transition] }), 'GAP', 'errors between screenshots are retained');
+  const late = freshDiagnostics('connected', true), lateReport = structuredClone(report);
+  late.consoleErrorCount = 1;
+  lateReport.networkDiagnostics = [late];
+  syncDiagnostics(lateReport);
+  assert.equal(lateReport.phases[1].consoleErrorCount, 1, 'late failures update their phase rather than disappearing');
 });
 
 test('synthetic SSE stays dropped until the failure screenshot has been captured', async (t) => {
@@ -113,4 +122,56 @@ test('synthetic SSE stays dropped until the failure screenshot has been captured
   const recovered = request('/events');
   assert.equal(recovered.status, 200);
   assert.ok(recovered.chunks.some((chunk) => chunk.startsWith('event: snapshot')));
+});
+
+test('browser fixture reports an unavailable timetable as data and preserves genuine missing routes', async (t) => {
+  const relay = createSyntheticRelay(fixtureTrack);
+  t.after(() => relay.close());
+  const request = url => {
+    let status, text;
+    relay.server.emit('request', { method: 'GET', url }, {
+      writeHead(code) { status = code; }, end(body) { text = body; },
+    });
+    return { status, body: JSON.parse(text) };
+  };
+  assert.deepEqual(request('/schedule?date=2026-11-07'), {
+    status: 200, body: { date: '2026-11-07', available: false, reason: 'no timetable' },
+  });
+  assert.equal(request('/unknown').status, 404);
+});
+
+test('CDP failures retain full URLs and request IDs while genuine 404s fail and injected SSE drops are expected', () => {
+  const info = new Map(), connected = freshDiagnostics('connected', true);
+  const url = 'http://127.0.0.1:43210/relay/schedule?date=2026-11-07';
+  recordCdpNetworkEvent({ method: 'Network.requestWillBeSent', params: { requestId: 'missing', request: { url } } }, connected, info);
+  recordCdpNetworkEvent({ method: 'Network.responseReceived', params: { requestId: 'missing', response: { status: 404 } } }, connected, info);
+  assert.equal(connected.failedRequests.length, 1);
+  assert.equal(connected.failedRequests[0].url, url);
+  assert.equal(connected.failedRequests[0].requestId, 'missing');
+  assert.equal(connected.failedRequests[0].status, 404);
+  assert.equal(connected.unexpectedNetworkFailures.length, 1, 'a schedule 404 is a real HTTP error');
+  const events = 'http://127.0.0.1:43210/relay/events';
+  recordCdpNetworkEvent({ method: 'Network.requestWillBeSent', params: { requestId: 'stream', request: { url: events } } }, connected, info);
+  recordCdpNetworkEvent({ method: 'Network.responseReceived', params: { requestId: 'stream', response: { status: 200, url: events } } }, connected, info);
+  const dropped = freshDiagnostics('sse-drop', true);
+  recordCdpNetworkEvent({ method: 'Network.loadingFailed', params: { requestId: 'stream', errorText: 'net::ERR_INCOMPLETE_CHUNKED_ENCODING' } }, dropped, info);
+  assert.equal(dropped.failedRequests.length, 1);
+  assert.equal(dropped.failedRequests[0].url, events);
+  assert.equal(dropped.failedRequests[0].status, 200);
+  assert.equal(dropped.failedRequests[0].errorText, 'net::ERR_INCOMPLETE_CHUNKED_ENCODING');
+  assert.equal(dropped.expectedRelayFailures.length, 1);
+  assert.equal(dropped.unexpectedNetworkFailures.length, 0);
+});
+
+test('a console error with no URL resolves its CDP request ID after the request finishes', () => {
+  const info = new Map(), diagnostics = freshDiagnostics('connected', true);
+  const url = 'http://127.0.0.1:43210/missing-texture.png?synthetic=1';
+  recordCdpNetworkEvent({ method: 'Network.requestWillBeSent', params: { requestId: 'texture', request: { url } } }, diagnostics, info);
+  recordCdpNetworkEvent({ method: 'Network.responseReceived', params: { requestId: 'texture', response: { status: 404, url } } }, diagnostics, info);
+  recordCdpNetworkEvent({ method: 'Network.loadingFinished', params: { requestId: 'texture' } }, diagnostics, info);
+  assert.equal(diagnostics.failedRequests[0].url, url);
+  assert.equal(resolveLogEntryUrl({ networkRequestId: 'texture' }, info), url);
+  assert.equal(resolveLogEntryUrl({ networkRequestId: 'texture', url: 'not a URL' }, info), url);
+  assert.equal(resolveLogEntryUrl({ networkRequestId: 'texture', url: 'http://127.0.0.1:43210/other' }, info), 'http://127.0.0.1:43210/other');
+  assert.equal(resolveLogEntryUrl({ networkRequestId: 'unknown' }, info), null);
 });
