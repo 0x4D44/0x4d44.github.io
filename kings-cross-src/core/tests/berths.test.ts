@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildAnchors, analyseSteps } from '../berths.ts';
+import { buildAnchors, analyseSteps, leaveOneOut } from '../berths.ts';
 import type { RecordingEvent } from '../berths.ts';
 import type { AnchorMap, BerthAnchor } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
@@ -229,4 +229,106 @@ test('berths: platform dwell does not weight inferred travel distances', () => {
   const a = anchor(buildAnchors(d, recordings, []), '2901');
   assert.equal(a.kind, 'inferred'); assert.deepEqual(a.point, [0, -300]);
   assert.match(a.evidence, /platform dwell/i);
+});
+
+function throat(): KxData {
+  const d = data([[1, 20, -1200], [2, 20, -400], [3, 40, -200], [4, 0, -200]], [[1, 2, 3], [2, 4]]);
+  d.buffers = [{ id: 3, x: 40, z: -200 }, { id: 4, x: 0, z: -200 }];
+  d.platforms = [
+    { id: 11, ref: '0', pts: [[42, -310], [47, -310], [47, -200], [42, -200]] },
+    { id: 12, ref: '1', pts: [[2, -310], [7, -310], [7, -200], [2, -200]] },
+  ];
+  return d;
+}
+function arrivals(berth = '2900'): RecordingEvent[][] { return [[event('step', berth, '1000'), event('step', berth, '1001')]]; }
+
+test('berths: platform fan-out arrival uses the shared northern track with clearance and faces south', () => {
+  const a = anchor(buildAnchors(throat(), arrivals(), [], { calibrate: false }), '2900');
+  assert.deepEqual(a.point, [20, -425]); assert.deepEqual([a.from, a.to], [1, 2]);
+  assert.match(a.evidence, /Topology platform fan-out/); assert.match(a.evidence, /25 m set-back/);
+});
+
+test('berths: platform fan-in departure uses the shared northern track and faces north', () => {
+  const a = anchor(buildAnchors(throat(), [[event('step', '1000', '2901'), event('step', '1001', '2901')]], [], { calibrate: false }), '2901');
+  assert.deepEqual(a.point, [20, -425]); assert.deepEqual([a.from, a.to], [2, 1]);
+  assert.match(a.evidence, /Topology platform fan-in/);
+});
+
+test('berths: topology snaps to an unreferenced main signal facing along the arrival route', () => {
+  const d = throat(); d.signals.push({ id: 90, x: 20, z: -440, direction: 'forward', kinds: ['main'] });
+  const a = anchor(buildAnchors(d, arrivals(), [], { calibrate: false }), '2900');
+  assert.deepEqual(a.point, [20, -440]); assert.deepEqual([a.from, a.to], [1, 2]);
+  assert.equal(a.errorM, 15); assert.match(a.evidence, /matched unreferenced main signal/);
+});
+
+test('berths: topology rejects unclassified, protection-only, foreign-referenced and wrongly facing signals', () => {
+  for (const candidate of [
+    { id: 90, x: 20, z: -430, direction: 'forward', kinds: [] },
+    { id: 90, x: 20, z: -430, direction: 'forward', kinds: ['train_protection'] },
+    { id: 90, x: 20, z: -430, direction: 'forward', kinds: ['main'], ref: 'NL 9998' },
+    { id: 90, x: 20, z: -430, direction: 'backward', kinds: ['main'] },
+  ]) {
+    const d = throat(); d.signals.push(candidate);
+    const a = anchor(buildAnchors(d, arrivals(), [], { calibrate: false }), '2900');
+    assert.deepEqual(a.point, [20, -425], JSON.stringify(candidate)); assert.equal(a.kind, 'inferred');
+  }
+});
+
+function branchFixture(second = 30): { d: KxData; recordings: RecordingEvent[][] } {
+  const d = data([[1, 0, 0], [2, 1000, 0]]);
+  signal(d, 11, 'YA 3000', 10); signal(d, 12, 'YA 3001', second); signal(d, 13, 'YA 3003', 200);
+  return { d, recordings: [[event('step', '3000', '3002'), event('step', '3001', '3002'), event('step', '3002', '3003')]] };
+}
+
+test('berths: bounded branching chains place a berth only when directed graph estimates agree', () => {
+  const { d, recordings } = branchFixture();
+  const a = anchor(buildAnchors(d, recordings, [], { calibrate: false }), '3002');
+  near(a.point[0], 115); near(a.point[1], 0); assert.match(a.evidence, /2 bounding route estimates agree/);
+});
+
+test('berths: an unbounded observed branch prevents branching placement', () => {
+  const { d, recordings } = branchFixture(); recordings[0]!.push(event('step', '3002', '3099'));
+  const map = buildAnchors(d, recordings, [], { calibrate: false }); reason(map, '3002', 'no-evidence');
+});
+
+test('berths: incompatible directed branches produce conflict instead of an average', () => {
+  const { d, recordings } = branchFixture(300); d.signals[2]!.x = 1000;
+  const map = buildAnchors(d, recordings, [], { calibrate: false }); reason(map, '3002', 'conflict');
+});
+
+test('berths: boundary continuation uses explicit nominal speed and marks travel beyond the graph outside', () => {
+  const d = throat(); signal(d, 90, 'YA 3100', 20, -450, 'backward');
+  const recordings = [[event('interpose', undefined, '3100'), event('step', '3100', '3101', 10000), event('step', '3101', '3102', 210000)]];
+  const map = buildAnchors(d, recordings, [], { nominalSpeedMps: 10, calibrate: false });
+  const a = anchor(map, '3101'); assert.deepEqual(a.point, [20, -550]); assert.deepEqual([a.from, a.to], [2, 1]);
+  assert.match(a.evidence, /Boundary continuation/); assert.match(a.evidence, /nominal 10 m\/s/);
+  reason(map, '3102', 'outside-network'); assert.match(map.unmapped.find((u) => u.berth === '3102')!.detail, /north boundary node/);
+});
+
+test('berths: leave-one-out removes the complete held-out signal and predicts within sixty metres', () => {
+  const d = throat(); signal(d, 90, 'YA 2900', 20, -440); signal(d, 91, 'YA 2999', 20, -800);
+  const trials = leaveOneOut(d, [arrivals()[0]!.concat(event('interpose', undefined, '2999'))], []);
+  const trial = trials.find((t) => t.berth === '2900')!;
+  assert.equal(trial.signalId, 90); assert.equal(trial.role, 'berth'); assert.equal(trial.method, 'topology');
+  assert.equal(trial.placed, true); near(trial.distanceM!, 15); assert.equal(trial.directionOk, true); assert.equal(trial.trusted, true);
+  const orphan = trials.find((t) => t.berth === '2999')!; assert.equal(orphan.placed, false); assert.equal(orphan.trusted, false); assert.equal(orphan.distanceM, null);
+  assert.equal(d.signals.length, 2); assert.equal(d.signals[0]!.ref, 'YA 2900');
+});
+
+test('berths: failed leave-one-out calibration withholds the affected inference method', () => {
+  const { d, recordings } = branchFixture();
+  const unchecked = buildAnchors(d, recordings, [], { calibrate: false }); assert.equal(anchor(unchecked, '3002').kind, 'inferred');
+  const checked = buildAnchors(d, recordings, []); reason(checked, '3002', 'conflict');
+  assert.match(checked.unmapped.find((u) => u.berth === '3002')!.detail, /Leave-one-out.*placement withheld/);
+  assert.equal(anchor(checked, '3000').kind, 'signal');
+});
+
+test('berths: directed routing finds a longer compatible route when the shortest route reverses', () => {
+  // Start points east at node 2. The short westward chord to node 7 opposes it.
+  // The six-sided route turns at sixty degrees each time and arrives westbound.
+  const d = data([[1, -10, 0], [2, 0, 0], [3, 100, 0], [4, 150, 86.6025403784], [5, 100, 173.2050807568], [6, 0, 173.2050807568], [7, -50, 86.6025403784], [8, -100, 86.6025403784]], [[1, 2, 3, 4, 5, 6, 7, 8], [2, 7]]);
+  const map = manual([at('A', 1, 2, 1, [0, 0]), at('B', 7, 8, 0, [-50, 86.6025403784])]);
+  const c = analyseSteps(d, [[event('step', 'A', 'B')]], map)[0]!;
+  assert.equal(c.reversal, false); assert.equal(c.issues.some((s) => /revers/i.test(s)), false);
+  near(c.lengthM!, 500);
 });

@@ -9,8 +9,8 @@ import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { analyseSteps, buildAnchors, describeEvidence } from '../core/berths.ts';
-import type { RecordingEvent, SmartRow } from '../core/berths.ts';
+import { analyseSteps, buildAnchors, describeEvidence, leaveOneOut } from '../core/berths.ts';
+import type { RecordingEvent, SignalTrial, SmartRow } from '../core/berths.ts';
 import type { AnchorKind, AnchorMap } from '../core/anchors.ts';
 import type { KxData } from '../core/osm.ts';
 
@@ -196,6 +196,12 @@ function number(value: number | null | undefined, digits = 1): string {
   return value === null || value === undefined || !Number.isFinite(value) ? '—' : value.toFixed(digits);
 }
 
+function signalTrialWarnings(trials: SignalTrial[]): SignalTrial[] {
+  return trials.filter((trial) =>
+    !trial.placed || trial.distanceM === null || !Number.isFinite(trial.distanceM) || trial.distanceM > 60 || !trial.directionOk || !trial.trusted,
+  );
+}
+
 function counts<T extends string>(items: T[], keys: readonly T[]): Record<T, number> {
   const out = Object.fromEntries(keys.map((key) => [key, 0])) as Record<T, number>;
   for (const item of items) out[item] = (out[item] ?? 0) + 1;
@@ -205,6 +211,7 @@ function counts<T extends string>(items: T[], keys: readonly T[]): Record<T, num
 function buildReport(
   map: AnchorMap,
   stepChecks: ReturnType<typeof analyseSteps>,
+  signalTrials: SignalTrial[],
   explanations: string[],
   sourceNames: string[],
   generatedAt: string,
@@ -216,6 +223,12 @@ function buildReport(
   );
   const anchoredEvents = anchoredSteps.reduce((sum, step) => sum + step.count, 0);
   const implausible = stepChecks.filter((step) => step.issues.length > 0);
+  const trialWarnings = signalTrialWarnings(signalTrials);
+  const signalWarning = signalTrials.length === 0
+    ? 'WARNING: no leave-one-out signal trials were produced; signal placement and direction have no leave-one-out check.'
+    : trialWarnings.length > 0
+      ? `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 60 m, had a direction mismatch, or were not trusted. Review every flagged trial below.`
+      : `No leave-one-out signal warnings: all ${signalTrials.length} trials were placed, within 60 m, direction-correct, and trusted.`;
 
   const lines = [
     '# King’s Cross berth anchor evidence',
@@ -232,6 +245,7 @@ function buildReport(
     `- Unmapped berths: ${map.unmapped.length} (${UNMAPPED_REASONS.map((reason) => `${reason} ${unmappedCounts[reason]}`).join(', ')}).`,
     `- Transitions with both endpoints anchored: ${anchoredEvents} events across ${anchoredSteps.length} unique paths.`,
     `- Implausible paths: ${implausible.length}.`,
+    `- Leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 60 m.`,
     '',
     '## Evidence notes',
     '',
@@ -270,17 +284,36 @@ function buildReport(
         )
       : ['No implausible paths were reported.']),
     '',
+    '## Leave-one-out signal checks',
+    '',
+    signalWarning,
+    '',
+    '| Berth | Signal node | Role | Placed | Error (m) | Direction correct | Trusted (≤60 m) | Detail |',
+    '| --- | ---: | --- | --- | ---: | --- | --- | --- |',
+    ...(signalTrials.length
+      ? signalTrials.map((trial) =>
+        `| ${mdCell(trial.berth)} | ${trial.signalId} | ${trial.role} | ${trial.placed ? 'yes' : 'no'} | ${number(trial.distanceM)} | ${trial.placed ? trial.directionOk ? 'yes' : 'no' : '—'} | ${trial.trusted ? 'yes' : 'no'} | ${mdCell(trial.detail)} |`,
+        )
+      : ['| — | — | — | no | — | — | no | No signal trials were returned |']),
+    '',
   ];
   return lines.join('\n');
 }
 
-function printSummary(map: AnchorMap, stepChecks: ReturnType<typeof analyseSteps>, explanations: string[], outDir: string): void {
+function printSummary(
+  map: AnchorMap,
+  stepChecks: ReturnType<typeof analyseSteps>,
+  signalTrials: SignalTrial[],
+  explanations: string[],
+  outDir: string,
+): void {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
   const anchorIds = new Set(map.anchors.map((anchor) => anchor.berth));
   const anchoredSteps = stepChecks.filter((step) => anchorIds.has(step.from) && anchorIds.has(step.to));
   const anchoredEvents = anchoredSteps.reduce((sum, step) => sum + step.count, 0);
   const implausible = stepChecks.filter((step) => step.issues.length > 0);
+  const trialWarnings = signalTrialWarnings(signalTrials);
 
   console.log(`berths: wrote anchors.json and berths-report.md to ${outDir}`);
   console.log(`anchors by kind: ${KINDS.map((kind) => `${kind} ${anchorCounts[kind]}`).join(', ')}`);
@@ -294,6 +327,21 @@ function printSummary(map: AnchorMap, stepChecks: ReturnType<typeof analyseSteps
         `- ${step.from} → ${step.to}: ${step.count} events, ${number(step.speedMps, 2)} m/s, reversal ${step.reversal ? 'yes' : 'no'}; ${step.issues.join('; ')}`,
       );
     }
+  }
+  console.log(`leave-one-out signals: ${signalTrials.filter((trial) => trial.trusted).length}/${signalTrials.length} trusted within 60 m`);
+  if (signalTrials.length === 0) {
+    console.warn('WARNING: no leave-one-out signal trials were produced; signal placement and direction have no leave-one-out check.');
+  } else if (trialWarnings.length > 0) {
+    console.warn(
+      `WARNING: ${trialWarnings.length} of ${signalTrials.length} leave-one-out signal trials missed placement, were unplaced, exceeded 60 m, had a direction mismatch, or were not trusted. Review the report table.`,
+    );
+    for (const trial of trialWarnings) {
+      console.warn(
+        `- berth ${trial.berth}, signal ${trial.signalId} (${trial.role}): placed ${trial.placed ? 'yes' : 'no'}, error ${number(trial.distanceM)} m, direction ${trial.placed ? trial.directionOk ? 'ok' : 'mismatch' : 'unknown (unplaced)'}, trusted ${trial.trusted ? 'yes' : 'no'}; ${trial.detail}`,
+      );
+    }
+  } else {
+    console.log(`leave-one-out signal warnings: none; all ${signalTrials.length} trials were placed, within 60 m, direction-correct, and trusted`);
   }
   if (explanations.length) {
     console.log('why:');
@@ -318,13 +366,14 @@ async function main(): Promise<void> {
 
   const map = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
   const stepChecks = analyseSteps(data, recordings, map);
+  const signalTrials = leaveOneOut(data, recordings, smartRows, { area: 'Y9', sources });
   const explanations = describeEvidence(data, recordings, smartRows, map);
   const outDir = await ensureOutputDirectory(args.out);
   await checkOutputFile(outDir, 'anchors.json');
   await checkOutputFile(outDir, 'berths-report.md');
   await writeFile(path.join(outDir, 'anchors.json'), `${JSON.stringify(map, null, 2)}\n`, { mode: 0o600 });
-  await writeFile(path.join(outDir, 'berths-report.md'), buildReport(map, stepChecks, explanations, sources, generatedAt), { mode: 0o600 });
-  printSummary(map, stepChecks, explanations, outDir);
+  await writeFile(path.join(outDir, 'berths-report.md'), buildReport(map, stepChecks, signalTrials, explanations, sources, generatedAt), { mode: 0o600 });
+  printSummary(map, stepChecks, signalTrials, explanations, outDir);
 }
 
 main().catch((error: unknown) => {

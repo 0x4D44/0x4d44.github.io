@@ -13,7 +13,12 @@ export interface RecordingEvent {
   e: { kind: string; area: string; descr?: string; from?: string; to?: string; time?: number | null };
 }
 export interface SmartRow { [key: string]: unknown }
-export interface AnchorOptions { area?: string; sources?: string[] }
+export interface AnchorOptions { area?: string; sources?: string[]; nominalSpeedMps?: number; calibrate?: boolean }
+export interface SignalTrial {
+  berth: string; signalId: number; role: 'berth' | 'starter'; placed: boolean;
+  distanceM: number | null; directionOk: boolean; trusted: boolean; detail: string;
+  method: 'topology' | 'chain' | 'boundary' | 'starter';
+}
 export interface StepCheck {
   from: string; to: string; count: number; timed: number;
   seconds: number | null; lengthM: number | null; speedMps: number | null;
@@ -151,19 +156,206 @@ function routeBetween(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | nul
   return best;
 }
 
+/** Dijkstra on incoming edges: a junction cannot reset the train's heading. */
+function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null {
+  const direct = routeBetween(g, a, b);
+  if (!direct || !routeReverses(g, direct, a, b)) return direct;
+  type State = { node: number; incoming: Pt; distance: number; segments: Segment[]; id: string };
+  const open: State[] = [];
+  const best = new Map<string, number>();
+  const push = (s: State): void => {
+    if ((best.get(s.id) ?? Infinity) <= s.distance) return;
+    best.set(s.id, s.distance); open.push(s);
+    let i = open.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (open[p]!.distance <= s.distance) break; open[i] = open[p]!; i = p; }
+    open[i] = s;
+  };
+  const pop = (): State => {
+    const top = open[0]!; const last = open.pop()!;
+    if (open.length) {
+      let i = 0;
+      for (;;) { let c = i * 2 + 1; if (c >= open.length) break; if (c + 1 < open.length && open[c + 1]!.distance < open[c]!.distance) c++;
+        if (last.distance <= open[c]!.distance) break; open[i] = open[c]!; i = c; }
+      open[i] = last;
+    }
+    return top;
+  };
+  const heading = vector(g.pos.get(a.from)!, g.pos.get(a.to)!);
+  for (const node of [a.from, a.to]) {
+    const end = g.pos.get(node)!; const v = vector(a.point, end); const length = dist(a.point, end);
+    if (length > 1e-7 && a.kind !== 'platform' && opposed(heading, v)) continue;
+    const s = fraction(g, a, node); s.from = node === a.from ? a.to : a.from;
+    push({ node, incoming: length ? v : heading, distance: length, segments: length ? [s] : [], id: `start:${node}` });
+  }
+  let result: TrackPath | null = null;
+  while (open.length) {
+    const s = pop();
+    if (s.distance > (best.get(s.id) ?? Infinity)) continue;
+    if (result && s.distance >= result.length) break;
+    if (s.node === b.from || s.node === b.to) {
+      const v = vector(g.pos.get(s.node)!, b.point); const length = dist(g.pos.get(s.node)!, b.point);
+      const finalHeading = length ? v : s.incoming;
+      if ((!length || !opposed(s.incoming, v)) && (b.kind === 'platform' || !opposed(finalHeading, vector(g.pos.get(b.from)!, g.pos.get(b.to)!)))) {
+        const last: Segment = { from: s.node, to: s.node === b.from ? b.to : b.from, start: g.pos.get(s.node)!, end: b.point, length };
+        const candidate = { length: s.distance + length, segments: length ? [...s.segments, last] : s.segments };
+        if (!result || candidate.length < result.length) result = candidate;
+      }
+    }
+    for (const e of g.adj.get(s.node) ?? []) {
+      const to = e.a === s.node ? e.b : e.a; const v = vector(g.pos.get(s.node)!, g.pos.get(to)!);
+      if (opposed(s.incoming, v)) continue;
+      push({ node: to, incoming: v, distance: s.distance + e.length, id: key(String(s.node), String(to)),
+        segments: [...s.segments, { from: s.node, to, start: g.pos.get(s.node)!, end: g.pos.get(to)!, length: e.length }] });
+    }
+  }
+  return result;
+}
+
+/** Northward routes form a DAG here; keep every feasible branch instead of one remote-root tree. */
+function northReach(g: Graph, start: number): Map<number, { distance: number; nodes: number[] }> {
+  const out = new Map<number, { distance: number; nodes: number[] }>([[start, { distance: 0, nodes: [start] }]]);
+  const nodes = [...g.pos.keys()].sort((a, b) => g.pos.get(b)![1] - g.pos.get(a)![1]);
+  for (const node of nodes) {
+    const current = out.get(node); if (!current) continue;
+    for (const edge of g.adj.get(node) ?? []) {
+      const to = edge.a === node ? edge.b : edge.a;
+      if (g.pos.get(to)![1] >= g.pos.get(node)![1] - 1e-5) continue;
+      const distance = current.distance + edge.length;
+      if (distance < (out.get(to)?.distance ?? Infinity)) out.set(to, { distance, nodes: [...current.nodes, to] });
+    }
+  }
+  return out;
+}
+
+function pathNodes(g: Graph, nodes: number[]): TrackPath {
+  const segments = nodes.slice(1).map((to, i): Segment => ({ from: nodes[i]!, to, start: g.pos.get(nodes[i]!)!, end: g.pos.get(to)!, length: dist(g.pos.get(nodes[i]!)!, g.pos.get(to)!) }));
+  return { segments, length: segments.reduce((sum, s) => sum + s.length, 0) };
+}
+
+function reversePath(path: TrackPath): TrackPath {
+  return { length: path.length, segments: [...path.segments].reverse().map((s) => ({ ...s, from: s.to, to: s.from, start: s.end, end: s.start })) };
+}
+
 function onPath(g: Graph, route: TrackPath, distance: number, berth: string, evidence: string): BerthAnchor | null {
   let remaining = Math.max(0, Math.min(distance, route.length));
   for (const s of route.segments) {
     if (remaining <= s.length + 1e-7) {
       const edge = g.adj.get(s.from)?.find((e) => e.a === s.to || e.b === s.to);
       if (!edge) return null;
-      const ratio = remaining / s.length;
+      const ratio = Math.min(1, remaining / s.length);
       const point: Pt = [s.start[0] + (s.end[0] - s.start[0]) * ratio, s.start[1] + (s.end[1] - s.start[1]) * ratio];
       const ea = g.pos.get(edge.a)!;
-      const t = edge.length ? dist(ea, point) / edge.length : 0;
+      const t = edge.length ? Math.min(1, dist(ea, point) / edge.length) : 0;
       return anchor(berth, 'inferred', g, edge, t, edge.b === s.to, Math.max(50, route.length / 3), evidence);
     }
     remaining -= s.length;
+  }
+  return null;
+}
+
+const SETBACK_M = 25;
+const SIGNAL_TOLERANCE_M = 40;
+
+function signalPoint(data: KxData, g: Graph, signal: KxData['signals'][number], berth: string): BerthAnchor | null {
+  const forward = signal.direction !== 'backward';
+  const incident = g.edges.filter((e) => e.a === signal.id || e.b === signal.id);
+  const chosen = incident.find((e) => forward ? e.a === signal.id : e.b === signal.id) ?? incident[0];
+  const snapped = snap(chosen ? { ...g, edges: [chosen] } : g, [signal.x, signal.z]);
+  if (!snapped || snapped.distance > 25) return null;
+  return anchor(berth, 'signal', g, snapped.edge, snapped.t, forward,
+    signal.direction === 'forward' || signal.direction === 'backward' ? 5 : 30,
+    `OSM signal ${JSON.stringify(signal.ref ?? 'unreferenced')} (node ${signal.id}), snapped ${snapped.distance.toFixed(1)} m; direction ${signal.direction ?? 'missing (way-forward assumed)'}`);
+}
+
+function northBoundaries(data: KxData, g: Graph, platforms: BerthAnchor[]): number[] {
+  const ecml = new Set(data.rails.filter((r) => r.ref === 'ECM1').flatMap((r) => r.nodes));
+  const reachable = new Set<number>();
+  for (const p of platforms) for (const n of northReach(g, p.to).keys()) reachable.add(n);
+  const candidates = [...g.adj].filter(([n, edges]) => edges.length === 1 && reachable.has(n) && (!ecml.size || ecml.has(n)) &&
+    platforms.some((p) => g.pos.get(n)![1] < p.point[1] - 100)).map(([n]) => n);
+  if (!candidates.length) return [];
+  const north = Math.min(...candidates.map((n) => g.pos.get(n)![1]));
+  return candidates.filter((n) => g.pos.get(n)![1] <= north + 100);
+}
+
+function northPath(g: Graph, a: BerthAnchor, boundaries: number[]): TrackPath | null {
+  const node = g.pos.get(a.from)![1] < g.pos.get(a.to)![1] ? a.from : a.to;
+  const first: Segment = { from: node === a.from ? a.to : a.from, to: node, start: a.point, end: g.pos.get(node)!, length: dist(a.point, g.pos.get(node)!) };
+  const reach = northReach(g, node);
+  let best: TrackPath | null = null;
+  for (const boundary of boundaries) {
+    const r = reach.get(boundary); if (!r) continue;
+    const tail = pathNodes(g, r.nodes);
+    const route = { length: first.length + tail.length, segments: first.length > 1e-7 ? [first, ...tail.segments] : tail.segments };
+    const heading = vector(g.pos.get(a.from)!, g.pos.get(a.to)!);
+    const northHeading: Pt = heading[1] > 0 ? [-heading[0], -heading[1]] : heading;
+    if (!route.segments.length || (a.kind !== 'platform' && opposed(northHeading, vector(route.segments[0]!.start, route.segments[0]!.end))) ||
+      route.segments.slice(1).some((s, i) => opposed(vector(route.segments[i]!.start, route.segments[i]!.end), vector(s.start, s.end)))) continue;
+    if (!best || route.length < best.length) best = route;
+  }
+  return best;
+}
+
+/** Find the nearest common northern junction, retaining alternate paths to each platform. */
+function fanAnchor(data: KxData, g: Graph, berth: string, targets: BerthAnchor[], arrival: boolean, boundaries: number[]): BerthAnchor | null {
+  const unique = [...new Map(targets.map((a) => [a.platform ?? a.berth, a])).values()];
+  if (!unique.length) return null;
+  const trees = unique.map((a) => northReach(g, a.to));
+  const platformMap = stationPlatforms(data);
+  const northLimit = Math.min(...unique.map((a) => a.platform ? Math.min(...platformMap.get(a.platform)!.pts.map((p) => p[1])) : a.point[1]));
+  const candidates: { node: number; score: number }[] = [];
+  for (const [node, edges] of g.adj) {
+    if (edges.length < 3 || g.pos.get(node)![1] >= northLimit - 1) continue;
+    const paths = trees.map((tree) => tree.get(node));
+    if (paths.some((r) => !r)) continue;
+    candidates.push({ node, score: Math.max(...paths.map((r, i) => r!.distance - dist(unique[i]!.point, g.pos.get(unique[i]!.to)!))) });
+  }
+  candidates.sort((a, b) => a.score - b.score || a.node - b.node);
+  for (const { node } of candidates) {
+    const south = trees[0]!.get(node)!.nodes.at(-2); if (south === undefined) continue;
+    const edge = g.adj.get(node)!.find((e) => e.a === south || e.b === south)!;
+    const start = anchor(berth, 'inferred', g, edge, edge.a === node ? 0 : 1, edge.a === node, 75, '');
+    const north = northPath(g, start, boundaries); if (!north || north.length < SETBACK_M) continue;
+    let placed = onPath(g, north, SETBACK_M, berth, `Topology ${unique.every((a) => a.kind === 'platform') ? 'platform' : 'junction'} ${arrival ? 'fan-out to' : 'fan-in from'} ${unique.map((a) => a.berth).join(', ')}; nearest shared northern junction ${node}; ${SETBACK_M} m set-back on its shared track (signal clearance assumption)`);
+    if (!placed) continue;
+    if (arrival) placed = { ...placed, from: placed.to, to: placed.from, t: 1 - placed.t };
+    placed.errorM = 75;
+    if (!unique.every((target) => directedRoute(g, arrival ? placed! : target, arrival ? target : placed!) !== null)) continue;
+    const matches: { a: BerthAnchor; distance: number }[] = [];
+    for (const signal of data.signals) {
+      // Protection/speed boards are not stop signals, even though OSM calls them railway=signal.
+      if (signal.ref || !['forward', 'backward'].includes(signal.direction ?? '') || !signal.kinds.includes('main')) continue;
+      const a = signalPoint(data, g, signal, berth); if (!a) continue;
+      const onSharedTrack = north.segments.some((s) => (s.from === a.from && s.to === a.to) || (s.to === a.from && s.from === a.to));
+      if (!onSharedTrack || opposed(vector(g.pos.get(placed.from)!, g.pos.get(placed.to)!), vector(g.pos.get(a.from)!, g.pos.get(a.to)!))) continue;
+      const distance = routeBetween(g, placed, a)?.length ?? Infinity;
+      if (distance <= SIGNAL_TOLERANCE_M && unique.every((target) => directedRoute(g, arrival ? a : target, arrival ? target : a) !== null)) matches.push({ a, distance });
+    }
+    matches.sort((a, b) => a.distance - b.distance);
+    if (matches.length && (matches.length === 1 || matches[1]!.distance - matches[0]!.distance > 5)) {
+      const match = matches[0]!;
+      return { ...match.a, errorM: 15, evidence: `${placed.evidence}; matched unreferenced main signal within ${match.distance.toFixed(1)} m: ${match.a.evidence}; identity inferred from topology` };
+    }
+    return placed;
+  }
+  return null;
+}
+
+function starterAnchor(data: KxData, g: Graph, platform: BerthAnchor): BerthAnchor | null {
+  const polygon = stationPlatforms(data).get(platform.platform ?? '');
+  if (!polygon) return null;
+  const boundary = Math.min(...polygon.pts.map((p) => p[1]));
+  const north = northPath(g, platform, northBoundaries(data, g, [platform]));
+  if (!north) return null;
+  let distance = 0;
+  for (const segment of north.segments) {
+    if (segment.end[1] <= boundary && segment.start[1] >= boundary) {
+      distance += segment.length * (segment.start[1] - boundary) / (segment.start[1] - segment.end[1]);
+      const a = onPath(g, north, distance + 10, platform.berth, 'Starter estimate: 10 m north of platform polygon end, on the terminal track; not the arrival buffer anchor');
+      if (a) a.errorM = 40;
+      return a;
+    }
+    distance += segment.length;
   }
   return null;
 }
@@ -173,7 +365,7 @@ function isOutside(row: SmartRow): boolean {
   return /^(?:FINS|HORN|HRNS|HRGY|HARGY|HARR|FERME|MORGAT|DRAYTON|HIGH&IS|HIGHBY|ESSEX|OLDST)/i.test(text(row, 'STANME')) || text(row, 'STANOX') === '54238';
 }
 
-export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}): AnchorMap {
+function buildMap(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}, keepRejected = false, proposals?: Map<string, BerthAnchor[]>): AnchorMap {
   const area = options.area ?? 'Y9';
   const g = buildGraph(data);
   const observed = observe(recordings, area);
@@ -214,18 +406,8 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
       platform.evidence += `; also OSM starter ${JSON.stringify(signal.ref)} (node ${signal.id}), not a second berth or the arrival stop`;
       continue;
     }
-    const incident = g.edges.filter((e) => e.a === signal.id || e.b === signal.id);
-    // A node's direction tag is relative to its containing OSM way, not geographic north.
-    const forward = signal.direction !== 'backward';
-    const chosen = incident.find((e) => forward ? e.a === signal.id : e.b === signal.id) ?? incident[0];
-    const local: Graph = chosen ? { ...g, edges: [chosen] } : g;
-    const snapped = snap(local, [signal.x, signal.z]);
-    if (!snapped || snapped.distance > 25) {
-      conflicts.set(berth, `YA signal cannot be snapped within 25 m of a rail`);
-      continue;
-    }
-    const a = anchor(berth, 'signal', g, snapped.edge, snapped.t, forward, signal.direction === 'forward' || signal.direction === 'backward' ? 5 : 30,
-      `OSM signal ${JSON.stringify(signal.ref)} (node ${signal.id}), snapped ${snapped.distance.toFixed(1)} m; direction ${signal.direction ?? 'missing (way-forward assumed)'}`);
+    const a = signalPoint(data, g, signal, berth);
+    if (!a) { conflicts.set(berth, 'YA signal cannot be snapped within 25 m of a rail'); continue; }
     const previous = anchors.get(berth);
     if (previous && dist(previous.point, a.point) > 75) conflicts.set(berth, 'YA signal matches disagree by more than 75 m');
     else anchors.set(berth, a);
@@ -243,6 +425,31 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     add(next, s.from, s.to); add(prev, s.to, s.from);
     add(neighbours, s.from, s.to); add(neighbours, s.to, s.from);
   }
+  const details = new Map<string, string>();
+  const boundaries = northBoundaries(data, g, [...anchors.values()].filter((a) => a.kind === 'platform' && !a.berth.startsWith('B')));
+  // Build the throat outward: a new junction can bound the next fan farther north.
+  for (let pass = 0; pass < 8; pass++) {
+    let changed = false;
+    for (const berth of observed.seen.keys()) {
+      if (anchors.has(berth) || outside.has(berth) || conflicts.has(berth)) continue;
+      const successors = [...(next.get(berth) ?? [])];
+      const predecessors = [...(prev.get(berth) ?? [])];
+      const groups: { ids: string[]; arrival: boolean }[] = [{ ids: successors, arrival: true }, { ids: predecessors, arrival: false }];
+      for (const { ids, arrival } of groups) {
+        if (!ids.length || !ids.every((b) => anchors.has(b))) continue;
+        const targets = ids.map((b) => anchors.get(b)!);
+        if (targets.some((a) => a.kind !== 'platform' && (g.pos.get(a.to)![1] > g.pos.get(a.from)![1]) !== arrival)) continue;
+        // One platform still constrains its track's first northern junction; a lone signal does not.
+        if (targets.length < 2 && targets[0]!.kind !== 'platform') continue;
+        // A merge of already-running lines does not imply the next stop signal is right at it.
+        if (!arrival && targets.some((a) => a.kind !== 'platform')) continue;
+        const candidate = fanAnchor(data, g, berth, targets, arrival, boundaries);
+        if (candidate) { anchors.set(berth, candidate); changed = true; break; }
+        details.set(berth, `No shared directed northern junction for ${arrival ? 'successors' : 'predecessors'} ${ids.join(', ')} with a ${SETBACK_M} m shared-track set-back`);
+      }
+    }
+    if (!changed) break;
+  }
   // Do not infer through a junction of competing berth chains or beyond an outside boundary.
   const fixed = new Map(anchors);
   for (const [start, a] of fixed) for (const first of next.get(start) ?? []) {
@@ -255,7 +462,7 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     const b = fixed.get(at);
     if (!b || at === start || chain.length < 2) continue;
     chain.push(at);
-    const route = routeBetween(g, a, b);
+    const route = directedRoute(g, a, b);
     if (!route || routeReverses(g, route, a, b)) {
       for (const berth of chain.slice(1, -1)) conflicts.set(berth,
         `Observed chain ${chain.join(' -> ')} has ${route ? 'incompatible anchor headings on its shortest path' : 'disconnected graph anchors'}; no defensible interpolated position`);
@@ -276,6 +483,94 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
         `Unique observed chain ${chain.join(' -> ')}; graph shortest path ${route.length.toFixed(1)} m; ${timed ? 'median residence-time ratio' : platformBounded ? 'equal intervals (platform dwell is not travel time)' : 'equal intervals (incomplete timings)'}; no straight-line interpolation`);
       if (inferred) anchors.set(berth, inferred);
     }
+  }
+  // Branches are usable when every branch is bounded and its directed position agrees.
+  const bounds = (start: string, links: Map<string, Set<string>>, reverse: boolean): string[][] | null => {
+    const found: string[][] = [];
+    const visit = (at: string, chain: string[]): boolean => {
+      if (chain.includes(at) || chain.length > 8 || outside.has(at) || conflicts.has(at)) return false;
+      const path = [...chain, at];
+      if (anchors.has(at)) { found.push(reverse ? path.reverse() : path); return true; }
+      const adjacent = [...(links.get(at) ?? [])];
+      return adjacent.length > 0 && adjacent.every((b) => visit(b, path));
+    };
+    const adjacent = [...(links.get(start) ?? [])];
+    return adjacent.length && adjacent.every((b) => visit(b, [start])) ? found : null;
+  };
+  for (const berth of observed.seen.keys()) {
+    if (anchors.has(berth) || outside.has(berth) || conflicts.has(berth)) continue;
+    const before = bounds(berth, prev, true); const after = bounds(berth, next, false);
+    if (!before || !after) continue;
+    const candidates: BerthAnchor[] = [];
+    let invalid = false;
+    for (const left of before) for (const right of after) {
+      const a = anchors.get(left[0]!)!; const b = anchors.get(right.at(-1)!)!;
+      const route = directedRoute(g, a, b);
+      if (!route || route.length < 1) { invalid = true; continue; }
+      const chain = [...left, ...right.slice(1)];
+      const times = chain.slice(1).map((to, i) => observed.steps.get(key(chain[i]!, to))?.seconds ?? []);
+      const timed = a.kind !== 'platform' && b.kind !== 'platform' && times.every((t) => t.length && median(t) > 0);
+      const weights = times.map((t) => timed ? median(t) : 1);
+      const ratio = weights.slice(0, left.length - 1).reduce((n, w) => n + w, 0) / weights.reduce((n, w) => n + w, 0);
+      const candidate = onPath(g, route, route.length * ratio, berth,
+        `Branching chain ${chain.join(' -> ')}; heading-compatible graph route; ${timed ? 'median residence-time ratio' : 'equal intervals (platform dwell or incomplete timings)'}`);
+      if (candidate) candidates.push(candidate);
+    }
+    proposals?.set(berth, candidates);
+    const disagree = invalid || candidates.some((a) => candidates.some((b) => (routeBetween(g, a, b)?.length ?? Infinity) > 75 || opposed(vector(g.pos.get(a.from)!, g.pos.get(a.to)!), vector(g.pos.get(b.from)!, g.pos.get(b.to)!))));
+    if (candidates.length && !disagree) {
+      candidates.sort((a, b) => a.errorM - b.errorM);
+      anchors.set(berth, { ...candidates[0]!, evidence: `${candidates[0]!.evidence}; ${candidates.length} bounding route estimates agree within 75 m along graph` });
+    } else if (candidates.length || invalid) conflicts.set(berth, `Directed branch estimates for ${berth} disagree by more than 75 m, or one bounding route is disconnected/reversing`);
+  }
+  const nominalSpeed = options.nominalSpeedMps ?? 15;
+  if (!(nominalSpeed > 0 && nominalSpeed <= 50)) throw new Error('nominalSpeedMps must be in (0, 50]');
+  // Only continue a station-connected line north. External SMART seeds remain barriers.
+  for (let pass = 0; pass < 12; pass++) {
+    let changed = false;
+    for (const step of observed.steps.values()) {
+      for (const backwards of [false, true]) {
+        const source = backwards ? step.to : step.from; const berth = backwards ? step.from : step.to;
+        const a = anchors.get(source);
+        if (!a || a.kind === 'platform' || anchors.has(berth) || outside.has(berth) || conflicts.has(berth)) continue;
+        const southbound = g.pos.get(a.to)![1] > g.pos.get(a.from)![1];
+        if (southbound !== backwards) continue;
+        if (!step.seconds.length || median(step.seconds) <= 0) { details.set(berth, `Northward continuation from ${source} has no positive matched residence timing; cannot space it on a line`); continue; }
+        const path = northPath(g, a, boundaries);
+        if (!path) { details.set(berth, `No heading-compatible northern boundary continuation from ${source}`); continue; }
+        const seconds = median(step.seconds); const distance = nominalSpeed * seconds;
+        const error = Math.max(100, a.errorM + distance * .4);
+        if (distance > path.length) {
+          const terminal = path.segments.at(-1)!.to;
+          if (distance - error > path.length) {
+            outside.set(berth, new Set([`north boundary node ${terminal}; ${source} has ${path.length.toFixed(1)} m remaining, ${seconds.toFixed(1)} s at nominal ${nominalSpeed} m/s needs ${distance.toFixed(1)} +/- ${error.toFixed(1)} m`]));
+          } else details.set(berth, `Nominal continuation from ${source}: ${distance.toFixed(1)} +/- ${error.toFixed(1)} m straddles north extract boundary ${path.length.toFixed(1)} m away; cannot decide inside versus outside`);
+          continue;
+        }
+        let candidate = onPath(g, path, distance, berth,
+          `Boundary continuation north from ${source}: median ${seconds.toFixed(1)} s at nominal ${nominalSpeed} m/s, ${distance.toFixed(1)} m on the graph; boundary node ${path.segments.at(-1)!.to} at ${path.length.toFixed(1)} m; speed/residence assumption`);
+        if (!candidate) continue;
+        if (backwards) candidate = { ...candidate, from: candidate.to, to: candidate.from, t: 1 - candidate.t };
+        candidate.errorM = error;
+        anchors.set(berth, candidate); changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  // Never retain a generated anchor when an observed neighbouring step has no directed route.
+  for (let pass = 0; !keepRejected && pass < anchors.size; pass++) {
+    let changed = false;
+    for (const step of observed.steps.values()) {
+      const a = anchors.get(step.from); const b = anchors.get(step.to);
+      if (!a || !b || directedRoute(g, a, b)) continue;
+      const generated = [a, b].filter((a) => a.kind === 'inferred' || a.evidence.startsWith('Topology')).sort((a, b) => b.errorM - a.errorM);
+      if (!generated.length) continue;
+      const removed = generated[0]!;
+      anchors.delete(removed.berth);
+      conflicts.set(removed.berth, `Step ${step.from} -> ${step.to} has no graph route respecting both headings without reversal; rejected candidate: ${removed.evidence}`);
+      changed = true;
+    }
+    if (!changed) break;
   }
   const unmapped = new Map<string, UnmappedBerth>();
   for (const [berth, seen] of observed.seen) {
@@ -298,7 +593,7 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     const external = locations.size > 0 && !reachesInside;
     unmapped.set(berth, { berth, seen, reason: external ? 'outside-network' : 'no-evidence',
       detail: external ? `Observed chains reach only known locations outside the extract, stopping at ${[...locations].sort().join(', ')}; no route to an internal anchor without crossing that boundary`
-        : 'No unambiguous graph placement: absent signal/platform evidence or branching/incomplete chain; SMART timing offsets are not metric coordinates' });
+        : `Berth ${berth}: predecessors [${[...(prev.get(berth) ?? [])].join(', ')}], successors [${[...(next.get(berth) ?? [])].join(', ')}]. ${details.get(berth) ?? 'No bounded, agreeing directed route or common northern junction; no positive timed continuation from an anchored station line'}. SMART offsets supply no metric point` });
   }
   const order = <T extends { berth: string }>(items: T[]): T[] => items.sort((a, b) => a.berth.localeCompare(b.berth));
   return { area, sources: options.sources ?? [data.attribution], anchors: order([...anchors.values()]), unmapped: order([...unmapped.values()]) };
@@ -315,6 +610,91 @@ function routeReverses(g: Graph, route: TrackPath, a: BerthAnchor, b: BerthAncho
   return wrongStart || wrongEnd || vectors.slice(1).some((v, i) => opposed(vectors[i]!, v));
 }
 
+function inferenceMethod(a: BerthAnchor): SignalTrial['method'] {
+  return a.evidence.startsWith('Topology platform') ? 'topology' : a.evidence.startsWith('Boundary') ? 'boundary' : 'chain';
+}
+
+/** A held-out signal is removed entirely, not merely stripped of its ref. */
+export function leaveOneOut(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}): SignalTrial[] {
+  const area = options.area ?? 'Y9';
+  const observed = observe(recordings, area);
+  const g = buildGraph(data);
+  const trials: SignalTrial[] = [];
+  for (const signal of data.signals) {
+    const berth = /^YA\s*(\d{4})$/i.exec(signal.ref ?? '')?.[1];
+    if (!berth || !observed.seen.has(berth)) continue;
+    const expected = signalPoint(data, g, signal, berth); if (!expected) continue;
+    const hidden = { ...data, signals: data.signals.filter((s) => s.id !== signal.id) };
+    const proposals = new Map<string, BerthAnchor[]>();
+    const map = buildMap(hidden, recordings, smart, options, true, proposals);
+    let actual = map.anchors.find((a) => a.berth === berth);
+    const starter = actual?.kind === 'platform';
+    if (starter) actual = starterAnchor(hidden, g, actual!) ?? undefined;
+    const path = actual ? routeBetween(g, actual, expected) : null;
+    const distanceM = path?.length ?? null;
+    const actualHeading = actual ? vector(g.pos.get(actual.from)!, g.pos.get(actual.to)!) : [0, 0] as Pt;
+    const expectedHeading = vector(g.pos.get(expected.from)!, g.pos.get(expected.to)!);
+    const directionOk = !!actual && actualHeading[0] * expectedHeading[0] + actualHeading[1] * expectedHeading[1] > .5 * Math.hypot(...actualHeading) * Math.hypot(...expectedHeading);
+    const trusted = distanceM !== null && distanceM <= 60 && directionOk;
+    const rejectedErrors = (proposals.get(berth) ?? []).map((a) => routeBetween(g, a, expected)?.length).filter((n): n is number => n !== undefined);
+    const rejection = map.unmapped.find((u) => u.berth === berth)?.detail ?? 'No prediction with the signal removed';
+    const platformIds = new Set(map.anchors.filter((a) => a.kind === 'platform').map((a) => a.berth));
+    const platformFan = [...observed.steps.values()].some((s) => (s.to === berth && platformIds.has(s.from)) || (s.from === berth && platformIds.has(s.to)));
+    const missingMethod = platformFan ? 'topology' : rejection.includes('Boundary continuation') ? 'boundary' : 'chain';
+    trials.push({ berth, signalId: signal.id, role: starter ? 'starter' : 'berth', placed: !!actual,
+      distanceM, directionOk, trusted, method: starter ? 'starter' : actual ? inferenceMethod(actual) : missingMethod,
+      detail: actual ? `${actual.evidence}; ${trusted ? 'within' : 'fails'} 60 m validation tolerance` : `${rejection}${rejectedErrors.length ? `; rejected candidate graph errors: ${rejectedErrors.map((n) => n.toFixed(1)).join(', ')} m` : ''}` });
+  }
+  return trials;
+}
+
+export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}): AnchorMap {
+  const map = buildMap(data, recordings, smart, options);
+  // One or two toy signals cannot calibrate multiple inference families. The real extract has three.
+  const observed = observe(recordings, map.area);
+  const references = data.signals.filter((s) => {
+    const berth = /^YA\s*(\d{4})$/i.exec(s.ref ?? '')?.[1];
+    return berth && observed.seen.has(berth) && map.anchors.find((a) => a.berth === berth)?.kind !== 'platform';
+  });
+  if (options.calibrate === false || references.length < 3) return map;
+  const failed = leaveOneOut(data, recordings, smart, options).filter((t) => !t.trusted && t.method !== 'starter');
+  if (!failed.length) return map;
+  const failures = new Map<SignalTrial['method'], string>();
+  for (const trial of failed) failures.set(trial.method,
+    `Leave-one-out ${trial.berth}: ${trial.placed ? `${trial.distanceM?.toFixed(1) ?? 'disconnected'} m graph error, direction ${trial.directionOk ? 'compatible' : 'wrong'}` : 'no defensible prediction'} exceeds the 60 m trust criterion`);
+  map.anchors = map.anchors.filter((a) => {
+    if (a.kind !== 'inferred' && !a.evidence.startsWith('Topology')) return true;
+    const failure = failures.get(inferenceMethod(a)); if (!failure) return true;
+    map.unmapped.push({ berth: a.berth, reason: 'conflict', seen: observed.seen.get(a.berth) ?? 0,
+      detail: `${failure}; ${inferenceMethod(a)} placement withheld. Candidate evidence: ${a.evidence}` });
+    return false;
+  });
+  if (failures.has('boundary')) for (const u of map.unmapped) if (u.reason === 'outside-network' && u.detail.includes('north boundary node')) {
+    u.reason = 'no-evidence'; u.detail = `${failures.get('boundary')}; boundary extrapolation cannot establish outside status. ${u.detail}`;
+  }
+  const withheld = new Map(map.unmapped.filter((u) => u.detail.includes('placement withheld')).map((u) => [u.berth, u.detail.split(';')[0]!]));
+  const links = new Map<string, Set<string>>();
+  for (const step of observe(recordings, map.area).steps.values()) for (const [a, b] of [[step.from, step.to], [step.to, step.from]]) {
+    const adjacent = links.get(a!) ?? new Set<string>(); adjacent.add(b!); links.set(a!, adjacent);
+  }
+  const mapped = new Set(map.anchors.map((a) => a.berth));
+  const external = new Set(map.unmapped.filter((u) => u.reason === 'outside-network').map((u) => u.berth));
+  for (const u of map.unmapped) {
+    if (u.reason !== 'no-evidence' || u.detail.startsWith('Leave-one-out')) continue;
+    const stack = [u.berth]; const visited = new Set<string>();
+    while (stack.length) {
+      const at = stack.pop()!;
+      if (visited.has(at) || mapped.has(at) || external.has(at)) continue;
+      visited.add(at);
+      const failure = withheld.get(at);
+      if (failure) { u.detail = `${failure}; no trusted continuation through ${at}. ${u.detail}`; break; }
+      for (const neighbour of links.get(at) ?? []) stack.push(neighbour);
+    }
+  }
+  map.unmapped.sort((a, b) => a.berth.localeCompare(b.berth));
+  return map;
+}
+
 export function analyseSteps(data: KxData, recordings: RecordingEvent[][], map: AnchorMap): StepCheck[] {
   const g = buildGraph(data);
   const anchors = new Map(map.anchors.map((a) => [a.berth, a]));
@@ -323,7 +703,7 @@ export function analyseSteps(data: KxData, recordings: RecordingEvent[][], map: 
     const a = anchors.get(s.from);
     const b = anchors.get(s.to);
     if (!a || !b) continue;
-    const route = routeBetween(g, a, b);
+    const route = directedRoute(g, a, b) ?? routeBetween(g, a, b);
     const issues: string[] = [];
     let reversal = false;
     if (!route) issues.push('disconnected: no graph path; anchor evidence or OSM connectivity needs review');
@@ -351,9 +731,12 @@ export function describeEvidence(data: KxData, recordings: RecordingEvent[][], s
     `SMART fact: ${rows.length} ${map.area} rows; ${offsetRows.length} carry BERTHOFFSET. It is an event/route-dependent signed offset, not a coordinate. Assumption: seconds correcting the reporting time toward a station event (large positive arrival offsets and negative departure offsets). No unit or distance conversion is established; no metric SMART anchors are manufactured. STANOX 54311 proves station association only.`,
     `Partner-berth fact: ${partnerSteps} non-placeholder steps touch B-prefixed platform partners. This sample does not establish front/rear or buffer-end semantics. Assumption: co-locate a SMART/naming-associated partner at its platform terminal, with 100–150 m uncertainty; never use placeholder hopping to infer track.`,
     `Outside-network policy: SMART names for Finsbury Park, Hornsey, Harringay, Ferme Park and the Moorgate branch are known outside the King's Cross extract; Finsbury Park STANOX 54238 is also recognised. Other STANOX values are not automatically outside. Reachability stops at known internal and external boundaries. Ambiguous branches remain no-evidence.`,
-    `Platform policy: one-to-one east-to-west terminal-track matching against station platform polygons, maximum 40 m from their south ends. Tagged OSM buffers take 5 m error; untagged degree-one terminals take 15 m. The existing KINGS_CROSS rectangle selects platform polygons by centroid; the real buffers of platforms 0–8 lie south of that rectangle. Physical terminal positions are retained; the zone must be widened separately to include them.`,
+    `Platform policy: one-to-one east-to-west terminal-track matching against station platform polygons, maximum 40 m from their south ends. Tagged OSM buffers take 5 m error; untagged degree-one terminals take 15 m. The existing KINGS_CROSS rectangle selects platform polygons by centroid; the real buffers of platforms 0–8 lie south of that rectangle. Physical terminal positions are retained; the centroid-selection zone is deliberately unchanged; buffer stops need not lie inside it.`,
     `Signals: only YA refs match ${map.area}; NL, AF and WH are excluded. Direction tags follow OSM way order. Missing/both directions assume way-forward with 30 m error. Platform 1004 retains the arrival buffer position and records its namesake starter as separate evidence, not a second anchor. Signal snap tolerance 25 m; conflicting duplicate matches over 75 m remain unmapped.`,
-    `Inference: only unique directed, non-branching observed chains bounded by strong anchors, without outside boundaries. Shortest paths use metric graph edges including fractional endpoints. Complete median residence timings weight distance for non-platform chains; platform residence includes dwell and is not travel time, so platform-bounded or incompletely timed chains use equal intervals. Inference error is at least 50 m or one-third of the bounding path.`,
-    `Step checks report median matched train/berth residence per recording; unmeasured time stays unknown. Every measured event is checked for speed and zero-time movement, including outliers hidden by the median. A platform permits reversal at its endpoint. Turns over about 96 degrees at a graph node or travel opposing a non-platform anchor are flagged. A shortest-path reversal does not prove every alternative route reverses. Speed flags use 50 m/s; timings and coarse inferred stops can cause false positives. OSM source: ${data.attribution}.`,
+    `Topology: nearest common northern junction over all feasible platform routes, not an intersection of independently chosen shortest paths to a distant root. A 25 m set-back provides assumed signal clearance before arrival splits and after departure merges. An unreferenced main signal must be on the shared track, face the right way and be within 40 m; train-protection/speed-only objects do not count. Topology error 75 m, reduced to 15 m for a unique signal snap.`,
+    `Branching inference: every predecessor/successor branch must reach an anchor within eight observed steps; every directed route estimate must agree within 75 m along the graph. Median residence timings weight non-platform chains; platform dwell or incomplete timings use equal intervals. Inference error is at least 50 m or one-third of the bounding path. A merge of running lines alone does not locate their next stop signal.`,
+    `North boundary: degree-one northern terminals reachable from station platforms, restricted to OSM ECM1 when refs are available. Continue along the graph at assumed nominal 15 m/s unless overridden, using median residence times; error is max(100 m, inherited error + 40% of distance). Beyond-boundary status requires the whole estimated distance interval to lie past the cut. A straddling interval stays unmapped.`,
+    `Validation: leave-one-out removes each signal object entirely, including its position as a signal hint. The graph geometry remains. The platform namesake is evaluated as a starter 10 m north of its polygon's north end, not at the buffer. At least three non-platform YA references activate method-family calibration: any family with an unplaced prediction, graph error over 60 m or wrong direction is withheld from the AnchorMap. Failed predictions are retained only in the private validation report.`,
+    `Step checks report median matched train/berth residence per recording; unmeasured time stays unknown. Every measured event is checked for speed and zero-time movement, including outliers hidden by the median. The route search retains incoming-edge direction and finds a compatible alternative when the unconstrained shortest path reverses. A platform permits reversal at its endpoint. Turns over about 96 degrees or opposing anchor headings are rejected. Speed flags use 50 m/s; timings and coarse inferred stops can cause false positives. OSM source: ${data.attribution}.`,
   ];
 }
