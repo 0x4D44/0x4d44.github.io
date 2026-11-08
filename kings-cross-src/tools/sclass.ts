@@ -3,6 +3,12 @@
 import { lstat, mkdir, open, readFile, realpath, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import * as THREE from 'three';
+import { createSignals } from '../web/src/signals.ts';
+import { buildGraph } from '../core/graph.ts';
+import type { KxData } from '../core/osm.ts';
+import type { SignalOverlay } from '../web/src/signals.ts';
 import { analyseSclassRecordings, signalStates } from '../core/sclass.ts';
 import type { SclassAnalysis, TimedTdEvent } from '../core/sclass.ts';
 import type { AnchorMap } from '../core/anchors.ts';
@@ -12,6 +18,8 @@ interface CliArgs {
   anchors: string;
   out: string;
   dataDir?: string;
+  baseline?: string;
+  validation: 'halves' | 'last-recording';
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -23,9 +31,12 @@ function parseArgs(argv: string[]): CliArgs {
   let anchors: string | undefined;
   let out: string | undefined;
   let dataDir: string | undefined;
+  let baseline: string | undefined;
+  let validation: CliArgs['validation'] = 'halves';
+  let validationSeen = false;
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
-    if (flag !== '--recording' && flag !== '--anchors' && flag !== '--out' && flag !== '--data-dir') {
+    if (flag !== '--recording' && flag !== '--anchors' && flag !== '--out' && flag !== '--data-dir' && flag !== '--baseline' && flag !== '--validation') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -39,17 +50,24 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--out') {
       if (out !== undefined) throw new Error('--out may be given once');
       out = value;
+    } else if (flag === '--baseline') {
+      if (baseline !== undefined) throw new Error('--baseline may be given once');
+      baseline = value;
+    } else if (flag === '--validation') {
+      if (validationSeen) throw new Error('--validation may be given once');
+      if (value !== 'halves' && value !== 'last-recording') throw new Error('--validation must be halves or last-recording');
+      validation = value; validationSeen = true;
     } else {
       if (dataDir !== undefined) throw new Error('--data-dir may be given once');
       dataDir = value;
     }
   }
   if (!recording.length || !anchors || !out) throw new Error(usage());
-  return { recording, anchors, out, dataDir };
+  return { recording, anchors, out, dataDir, baseline, validation };
 }
 
 function usage(): string {
-  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>]';
+  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>] [--baseline <prior-sclass.json>] [--validation <halves|last-recording>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -198,7 +216,7 @@ function addressTable(analysis: SclassAnalysis) {
   });
 }
 
-function aggregate(analysis: SclassAnalysis, kind?: 'proceed' | 'route') {
+export function aggregate(analysis: SclassAnalysis, kind?: 'proceed' | 'route') {
   const hypotheses = analysis.hypotheses.filter(h => h.status === 'decoded' && (!kind || h.kind === kind));
   const support = hypotheses.reduce((n, h) => n + h.heldOut.support, 0);
   const cycles = hypotheses.reduce((n, h) => n + h.heldOut.support + h.heldOut.unmatchedCycles, 0);
@@ -206,7 +224,48 @@ function aggregate(analysis: SclassAnalysis, kind?: 'proceed' | 'route') {
   return { bits: hypotheses.length, support, cycles, trials, precision: cycles ? support / cycles : null, recall: trials ? support / trials : null };
 }
 
-function buildReport(analysis: SclassAnalysis, anchors: AnchorMap, currentStates: Record<string, string>, generatedAt: string, sources: string[]): string {
+export function countHeads(analysis: Pick<SclassAnalysis, 'area' | 'hypotheses'>, anchors: AnchorMap,
+  overlay: SignalOverlay, track: KxData, bytes: SclassAnalysis['trace']['state']) {
+  const layer = createSignals(overlay, new THREE.Group(), { area: analysis.area, platforms: track.platforms });
+  try {
+    layer.setAnchors(anchors, buildGraph(track));
+    layer.setTable(analysis);
+    const data = Object.fromEntries(Object.entries(bytes).map(([address, value]) => [address, value.toString(16).padStart(2, '0')]));
+    layer.apply({ t: 0, e: { kind: 'snapshot', area: analysis.area, berths: {}, sclass: { addresses: Object.keys(data).length, data } } });
+    const heads = layer.signals();
+    return { drawn: heads.length, aspectCapable: layer.counts().decoded,
+      proceed: heads.filter(h => h.state === 'proceed').length, danger: heads.filter(h => h.state === 'danger').length,
+      unknown: heads.filter(h => h.state === 'unknown').length };
+  } finally { layer.dispose(); }
+}
+
+export function metrics(analysis: SclassAnalysis, heads: ReturnType<typeof countHeads>) {
+  return { heads, all: aggregate(analysis), proceed: aggregate(analysis, 'proceed'), route: aggregate(analysis, 'route') };
+}
+interface Comparison {
+  validation: CliArgs['validation'];
+  baselineValidation: CliArgs['validation'] | null;
+  baselineFolds: SclassAnalysis['folds'] | null;
+  before: ReturnType<typeof metrics> | null;
+  after: ReturnType<typeof metrics>;
+  semantics: string;
+}
+function comparisonMarkdown(comparison: Comparison): string[] {
+  const rows: [string, number | null | undefined, number | null][] = [
+    ['Heads drawn', comparison.before?.heads.drawn, comparison.after.heads.drawn],
+    ['Heads with validated proceed evidence and available byte', comparison.before?.heads.aspectCapable, comparison.after.heads.aspectCapable],
+    ...(['all', 'proceed', 'route'] as const).flatMap(kind => [
+      [`${kind}: decoded bits`, comparison.before?.[kind].bits, comparison.after[kind].bits],
+      [`${kind}: held-out micro precision`, comparison.before?.[kind].precision, comparison.after[kind].precision],
+      [`${kind}: held-out micro recall`, comparison.before?.[kind].recall, comparison.after[kind].recall],
+    ] as [string, number | null | undefined, number | null][]),
+  ];
+  return ['## Baseline comparison', '', comparison.semantics, '',
+    `Validation before: ${comparison.baselineValidation ?? 'no baseline'}; after: ${comparison.validation}. Scores describe each model’s own held-out folds; changing folds changes the evaluation population.`, '', '| Metric | Before | After |', '| --- | ---: | ---: |',
+    ...rows.map(([name, before, after]) => `| ${name} | ${before == null ? '—' : before} | ${after == null ? '—' : after} |`), ''];
+}
+
+function buildReport(analysis: SclassAnalysis, anchors: AnchorMap, currentStates: Record<string, string>, generatedAt: string, sources: string[], comparison: Comparison, provenance: unknown): string {
   const decodedBits = analysis.bits.filter((bit) => bit.status === 'decoded').length;
   const unknownBits = analysis.bits.length - decodedBits;
   const decodedHypotheses = analysis.hypotheses.filter((hypothesis) => hypothesis.status === 'decoded').length;
@@ -233,19 +292,22 @@ function buildReport(analysis: SclassAnalysis, anchors: AnchorMap, currentStates
     `- S-class messages: ${analysis.trace.acceptedMessages} accepted, ${analysis.trace.rejectedMessages} rejected.`,
     `- Expanded bytes and bits: ${Object.keys(analysis.trace.state).length} bytes, ${analysis.bits.length} observed bits (${analysis.bits.filter((bit) => bit.changes === 0).length} constant, ${analysis.bits.filter((bit) => bit.changes > 0).length} changing).`,
     `- Bit hypotheses: ${decodedBits} decoded, ${unknownBits} unknown; ${decodedHypotheses} hypotheses passed the held-out oracle.`,
-    ...(['proceed', 'route'] as const).map(kind => {
-      const s = aggregate(analysis, kind);
-      return `- ${kind === 'route' ? 'Route-like' : 'Proceed'} bits: ${s.bits}; held-out supports ${s.support}, precision ${precision(s.precision)}, recall ${precision(s.recall)} (micro-average).`;
+    ...(['all', 'proceed', 'route'] as const).map(kind => {
+      const s = aggregate(analysis, kind === 'all' ? undefined : kind);
+      return `- ${kind === 'all' ? 'All decoded' : kind === 'route' ? 'Route-like' : 'Proceed'} bits: ${s.bits}; held-out supports ${s.support}, precision ${precision(s.precision)}, recall ${precision(s.recall)} (micro-average).`;
     }),
     `- Berths: ${decodedBerths} decoded, ${analysis.berths.length - decodedBerths} unknown; among ${anchoredBerths} anchored berths, ${decodedAnchoredBerths} decoded and ${anchoredBerths - decodedAnchoredBerths} unknown.`,
     `- Current anchored signal states: ${stateCounts.proceed} proceed, ${stateCounts.danger} danger, ${stateCounts.unknown} unknown.`,
     '',
     'These are temporal correlations in this recording. They do not identify signal positions, track circuits, or routes, and they are not an authoritative signalling diagram. A weekday peak can add repeated passages and route diversity, but correlation still cannot establish circuit or route identity.',
     '',
+    ...comparisonMarkdown(comparison),
+    '## Reproducibility', '', 'Source fingerprints, exact byte lengths, timing cutoffs, and renderer inputs:', '', '```json', JSON.stringify(provenance, null, 2), '```', '',
     '## Recording window and split',
     '',
     `- Recording: ${timestamp(analysis.startMs)} to ${timestamp(analysis.endMs)}.`,
-    ...analysis.folds.map((fold, i) => `- Recording ${i + 1}: ${timestamp(fold.startMs)} to ${timestamp(fold.endMs)}; first-half learning / second-half hold-out split ${timestamp(fold.splitMs)}.`),
+    `- Validation scheme: ${comparison.validation}. State resets between recordings.`,
+    ...analysis.folds.map((fold, i) => `- Recording ${i + 1}: ${timestamp(fold.startMs)} to ${timestamp(fold.endMs)}; ${fold.splitMs === fold.startMs ? 'whole recording held out' : fold.splitMs === fold.endMs ? 'whole recording for learning' : `learning before / hold-out after ${timestamp(fold.splitMs)}`}.`),
     `- Proceed: set within ${number(analysis.windows.beforeMs / 1000, 1)} s before the TD step; reset from ${number((analysis.windows.earlyMs ?? 0) / 1000, 1)} s before to ${number(analysis.windows.afterMs / 1000, 1)} s after it. Route-like: set before, reset later, by ${number((analysis.windows.routeAfterMs ?? analysis.windows.afterMs) / 1000, 1)} s after. These windows are fixed for all bits; held-out data never selects timings.`,
     `- Deduplicated valid steps: ${analysis.steps.total}; training ${analysis.steps.training}, held-out ${analysis.steps.heldOut}, excluded at fold edges ${analysis.steps.excludedAtEdges}.`,
     `- Excluded from step analysis: ${analysis.steps.ignoredNotATrain} non-train placeholder steps, ${analysis.steps.ignoredIncomplete} incomplete steps, ${analysis.steps.duplicates} duplicate steps.`,
@@ -311,20 +373,47 @@ async function main(): Promise<void> {
   const [recordingPaths, anchorsPath] = await Promise.all([Promise.all(args.recording.map(inputPath)), inputPath(args.anchors)]);
   if (new Set(recordingPaths).size !== recordingPaths.length) throw new Error('duplicate recording input');
   const [events, anchors] = await Promise.all([Promise.all(recordingPaths.map(readRecording)), readAnchors(anchorsPath)]);
-  const analysis = analyseSclassRecordings(events, anchors);
+  const analysis = analyseSclassRecordings(events, anchors, { validation: args.validation });
   const states = signalStates(analysis.trace.state, analysis.hypotheses, anchors);
   const generatedAt = new Date().toISOString();
   const sources = [...recordingPaths.map(p => `Recording: ${path.basename(p)}`), `Anchor map: ${path.basename(anchorsPath)}`];
+  const overlayPath = path.join(packageRoot, 'web/src/data/kx-signals.json');
+  const trackPath = path.join(packageRoot, 'web/src/data/kx-track.json');
+  const [overlay, track, baseline] = await Promise.all([
+    readFile(overlayPath, 'utf8').then(s => JSON.parse(s) as SignalOverlay),
+    readFile(trackPath, 'utf8').then(s => JSON.parse(s) as KxData),
+    args.baseline ? readFile(await inputPath(args.baseline), 'utf8').then(s => JSON.parse(s) as SclassAnalysis) : undefined,
+  ]);
+  if (baseline && (baseline.area !== analysis.area || !Array.isArray(baseline.hypotheses))) throw new Error('baseline must be an S-class analysis for the same area');
+  const after = metrics(analysis, countHeads(analysis, anchors, overlay, track, analysis.trace.state));
+  const before = baseline ? metrics(baseline, countHeads(baseline, anchors, overlay, track, analysis.trace.state)) : null;
+  const comparison: Comparison = { validation: analysis.validation, baselineValidation: baseline ? baseline.validation ?? 'halves' : null,
+    baselineFolds: baseline?.folds ?? null, before, after,
+    semantics: 'Both head counts use this renderer, committed OSM overlay, selected anchors, and the same final available bytes. Route-only evidence never lights an aspect.' };
+  const fingerprintPaths = [...recordingPaths, anchorsPath, overlayPath, trackPath,
+    ...['core/sclass.ts', 'core/graph.ts', 'core/geo.ts', 'core/station.ts', 'core/zones.ts', 'web/src/signals.ts', 'package-lock.json'].map(file => path.join(packageRoot, file)), fileURLToPath(import.meta.url),
+    ...(args.baseline ? [await inputPath(args.baseline)] : [])];
+  const fingerprints = await Promise.all(fingerprintPaths.map(async file => {
+    const bytes = await readFile(file);
+    return { source: path.relative(repoRoot, file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+  }));
+  const provenance = { generatedAt, sources, fingerprints, node: process.version, validation: analysis.validation,
+    baseline: baseline ? { validation: baseline.validation ?? 'halves', folds: baseline.folds, windows: baseline.windows,
+      minimumSupport: baseline.minimumSupport, minimumPrecision: baseline.minimumPrecision } : null, folds: analysis.folds,
+    windows: analysis.windows, minimumSupport: analysis.minimumSupport, minimumPrecision: analysis.minimumPrecision,
+    finalByteState: analysis.trace.state };
   const outDir = await ensureOutputDirectory(args.out);
   await checkOutputFile(outDir, 'sclass.json');
   await checkOutputFile(outDir, 'sclass-report.md');
   await checkOutputFile(outDir, 'sclass-table.json');
+  await checkOutputFile(outDir, 'sclass-comparison.json');
   const table = { area: analysis.area, generatedAt, sources, folds: analysis.folds,
-    summary: { all: aggregate(analysis), proceed: aggregate(analysis, 'proceed'), route: aggregate(analysis, 'route') }, bits: addressTable(analysis) };
-  const runtime = { ...analysis, currentStates: states, provenance: { generatedAt, sources } };
+    comparison, provenance, summary: { all: aggregate(analysis), proceed: aggregate(analysis, 'proceed'), route: aggregate(analysis, 'route') }, bits: addressTable(analysis) };
+  const runtime = { ...analysis, currentStates: states, comparison, provenance };
   await writeFile(path.join(outDir, 'sclass.json'), `${JSON.stringify(runtime, null, 2)}\n`, { mode: 0o600 });
   await writeFile(path.join(outDir, 'sclass-table.json'), `${JSON.stringify(table, null, 2)}\n`, { mode: 0o600 });
-  await writeFile(path.join(outDir, 'sclass-report.md'), buildReport(analysis, anchors, states, generatedAt, sources), { mode: 0o600 });
+  await writeFile(path.join(outDir, 'sclass-report.md'), buildReport(analysis, anchors, states, generatedAt, sources, comparison, provenance), { mode: 0o600 });
+  await writeFile(path.join(outDir, 'sclass-comparison.json'), `${JSON.stringify(comparison, null, 2)}\n`, { mode: 0o600 });
   if (args.dataDir) {
     const dataDir = await inputPath(args.dataDir);
     if (isWithinOrEqual(await realpath(repoRoot), dataDir)) throw new Error('private data directory must be outside the repository');
@@ -340,7 +429,7 @@ async function main(): Promise<void> {
   printSummary(analysis, states, outDir);
 }
 
-main().catch((error: unknown) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : 'unknown failure';
   console.error(`sclass: ${message}`);
   process.exitCode = 1;

@@ -57,7 +57,7 @@ export interface SignalWindows {
 
 // Fixed before seeing held-out results. Broad enough for approach/TD receipt jitter,
 // short enough that a different train's clearing should not explain a passage.
-export const SIGNAL_WINDOWS: Readonly<SignalWindows> = { beforeMs: 180_000, afterMs: 1_500, earlyMs: 1_500, routeAfterMs: 30_000 };
+export const SIGNAL_WINDOWS: Readonly<SignalWindows> = { beforeMs: 240_000, afterMs: 1_500, earlyMs: 1_500, routeAfterMs: 30_000 };
 export const MIN_SUPPORT = 3;
 export const MIN_PRECISION = 0.8;
 
@@ -106,6 +106,7 @@ export interface BerthSignalSummary {
 
 export interface SclassAnalysis {
   area: string;
+  validation: 'halves' | 'last-recording';
   startMs: number;
   endMs: number;
   splitMs: number;
@@ -168,7 +169,9 @@ export function trackSclass(events: readonly TimedTdEvent[], area = 'Y9'): Sclas
   for (const row of ordered(events)) {
     if (row.e.area !== area) continue;
     if (row.e.kind === 'snapshot') {
-      // A checkpoint/reconnect establishes a fresh picture, never a change in aspect.
+      // Matching checkpoint bits add no transition. Corrections establish unknown
+      // history, so a reset seen only in a snapshot cannot support a passage.
+      const previous = result.state;
       result.state = {};
       const picture = row.e.sclass as { addresses?: unknown; data?: unknown } | undefined;
       if (!picture || !picture.data || typeof picture.data !== 'object' || Array.isArray(picture.data)) continue;
@@ -178,7 +181,9 @@ export function trackSclass(events: readonly TimedTdEvent[], area = 'Y9'): Sclas
         new Set(entries.map(([address]) => addressKey(Number.parseInt(address, 16)))).size !== entries.length) continue;
       for (const [address, data] of entries) {
         const restored = updateBytes(result.state, { t: row.t, e: { kind: 'sclass', area, msgType: 'SF', address, data: data as string } }, area);
-        result.state = restored.state; result.transitions.push(...restored.transitions);
+        result.state = restored.state;
+        result.transitions.push(...restored.transitions.filter(change => previous[change.address] === undefined ||
+          bitValue(previous[change.address]!, change.bit) !== change.to));
       }
       continue;
     }
@@ -240,32 +245,40 @@ function qualifies(evidence: SignalEvidence): boolean {
 export { qualifies as qualifiesSignalEvidence };
 
 /**
- * Learn only first-half candidates; use the second half only to accept/reject them.
+ * Learn only training-fold candidates; held-out events only accept/reject them.
  * A supporting passage needs an observed clearing before it and a reset near passage.
  * One cycle cannot support two passages of the same berth. Missing state is a failure,
  * not an omitted trial. Full windows must fit inside their fold to prevent leakage.
  */
 export function analyseSclass(events: readonly TimedTdEvent[], anchors: AnchorMap,
-  options: { windows?: SignalWindows } = {}): SclassAnalysis {
+  options: { windows?: SignalWindows; validation?: 'halves' | 'last-recording' } = {}): SclassAnalysis {
   return analyseSclassRecordings([events], anchors, options);
 }
 
-/** Each recording contributes its first half to learning and its second half to validation. */
+/** Default: split each recording in half. Whole-recording mode holds out the latest day. */
 export function analyseSclassRecordings(recordings: readonly (readonly TimedTdEvent[])[], anchors: AnchorMap,
-  options: { windows?: SignalWindows } = {}): SclassAnalysis {
+  options: { windows?: SignalWindows; validation?: 'halves' | 'last-recording' } = {}): SclassAnalysis {
+  const validation = options.validation ?? 'halves';
+  if (validation !== 'halves' && validation !== 'last-recording') throw new Error('Unknown S-class validation scheme');
   const windows = { ...(options.windows ?? SIGNAL_WINDOWS) };
   if (!Number.isFinite(windows.beforeMs) || windows.beforeMs <= 0 ||
       !Number.isFinite(windows.afterMs) || windows.afterMs <= 0 ||
       windows.earlyMs !== undefined && (!Number.isFinite(windows.earlyMs) || windows.earlyMs < 0) ||
       windows.routeAfterMs !== undefined && (!Number.isFinite(windows.routeAfterMs) || windows.routeAfterMs < windows.afterMs)) throw new Error('Signal windows must be positive finite durations');
   const sessions = recordings.map(events => ordered(events).filter(row => row.e.area === anchors.area));
+  if (validation === 'last-recording') {
+    // Whole-day validation cannot leak a later training observation into an earlier test.
+    if (sessions.length < 2 || sessions.some(rows => rows.length === 0)) throw new Error('Last-recording validation needs at least two nonempty recordings');
+    sessions.sort((a, b) => a[0]!.t - b[0]!.t);
+    if (sessions.some((rows, i) => i > 0 && sessions[i - 1]!.at(-1)!.t >= rows[0]!.t)) throw new Error('Last-recording validation needs disjoint recording spans');
+  }
   const rows = ordered(sessions.flat());
   const startMs = rows[0]?.t ?? 0;
   const endMs = rows.at(-1)?.t ?? startMs;
-  const splitMs = startMs + (endMs - startMs) / 2;
-  const folds = sessions.map(rows => {
+  const splitMs = validation === 'last-recording' ? sessions.at(-1)![0]!.t : startMs + (endMs - startMs) / 2;
+  const folds = sessions.map((rows, i) => {
     const startMs = rows[0]?.t ?? 0, endMs = rows.at(-1)?.t ?? startMs;
-    return { startMs, endMs, splitMs: startMs + (endMs - startMs) / 2 };
+    return { startMs, endMs, splitMs: validation === 'last-recording' ? i === sessions.length - 1 ? startMs : endMs : startMs + (endMs - startMs) / 2 };
   });
   // A fresh recording establishes byte state anew; overnight gaps are not bit cycles.
   const traces = sessions.map(rows => trackSclass(rows, anchors.area));
@@ -349,7 +362,7 @@ export function analyseSclassRecordings(recordings: readonly (readonly TimedTdEv
     return { berth, anchored: anchored.has(berth), status: candidates.some((h) => h.status === 'decoded') ? 'decoded' : 'unknown',
       hypothesisIds: candidates.map((h) => h.id) };
   });
-  return { area: anchors.area, startMs, endMs, splitMs, folds, windows, minimumSupport: MIN_SUPPORT, minimumPrecision: MIN_PRECISION,
+  return { area: anchors.area, validation, startMs, endMs, splitMs, folds, windows, minimumSupport: MIN_SUPPORT, minimumPrecision: MIN_PRECISION,
     steps, trace, hypotheses, bits, berths };
 }
 

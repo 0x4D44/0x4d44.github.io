@@ -150,8 +150,12 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   const runtimeBerths = new Map<DrawnSignal, string>();
   const inferredHeads = new Map<string, DrawnSignal>();
   let nextInferredId = -1;
+  // OSM reference identity does not depend on TD having located the berth.
   const matches = new Map<string, number>();
-  for (const s of overlay.signals) if (s.berth) matches.set(s.berth, (matches.get(s.berth) ?? 0) + 1);
+  for (const s of overlay.signals) {
+    const berth = signalRefBerth(s.ref);
+    if (berth) matches.set(berth, (matches.get(berth) ?? 0) + 1);
+  }
   function mesh(geometry: THREE.BufferGeometry, color: number): THREE.Mesh {
     const material = new THREE.MeshBasicMaterial({ color });
     resources.add(geometry); resources.add(material);
@@ -196,8 +200,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   }
   for (const signal of overlay.signals) {
     const record = makeHead(signal);
-    const osmBerth = signal.ref?.match(/^YA\s*(\d{4})$/i)?.[1];
-    if (signal.kinds.includes('main') && osmBerth && signal.berth === osmBerth && matches.get(osmBerth) === 1) {
+    const osmBerth = signalRefBerth(signal.ref);
+    if (signal.kinds.includes('main') && osmBerth && (signal.berth === undefined || signal.berth === osmBerth) && matches.get(osmBerth) === 1) {
       anchors.anchors.push({ berth: osmBerth, kind: 'signal', from: signal.edge.from, to: signal.edge.to,
         t: signal.edge.t, point: [...signal.edge.point], errorM: 0, evidence: 'OSM signal overlay' });
       directBerths.set(record, osmBerth);
@@ -250,6 +254,14 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     }
     const proceedBerths = new Set(table.filter(h => (h.kind ?? 'proceed') === 'proceed' && h.status === 'decoded' &&
       qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut)).map(h => h.berth));
+    // Missing OSM type tags do not erase an exact YA identity proven by the private decoder.
+    for (const record of records.filter(r => !r.inferredPosition)) {
+      const signal = record.signal, berth = signalRefBerth(signal.ref);
+      if (signal.kinds.length === 0 && /^YA\s*\d{4}[A-Z]?$/i.test(signal.ref ?? '') && berth &&
+          (signal.berth === undefined || signal.berth === berth) && matches.get(berth) === 1 && proceedBerths.has(berth))
+        bind(record, { berth, kind: 'signal', from: signal.edge.from, to: signal.edge.to, t: signal.edge.t,
+          point: [...signal.edge.point], errorM: 0, evidence: 'OSM YA reference with validated proceed evidence' }, 'reference');
+    }
     const eligible = (privateAnchors?.anchors ?? []).filter(a => {
       if (!object(a) || typeof a.berth !== 'string' || !a.berth) return false;
       const from = anchorGraph?.pos.get(a.from), to = anchorGraph?.pos.get(a.to);
@@ -265,10 +277,6 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     };
     const bound = (a: BerthAnchor): boolean => [...runtimeBerths.values()].includes(a.berth);
     const osm = records.filter(r => !r.inferredPosition && r.signal.kinds.includes('main'));
-    for (const anchor of eligible.filter(a => !bound(a))) {
-      const matches = osm.filter(r => !runtimeBerths.has(r) && signalRefBerth(r.signal.ref) === anchor.berth);
-      if (matches.length === 1) bind(matches[0]!, anchor, 'reference');
-    }
     const located = eligible.filter(a => !bound(a)).flatMap(anchor => {
       if (anchor.kind !== 'platform') return [anchor];
       const ref = anchor.platform ?? (/^10\d{2}$/.test(anchor.berth) ? String(Number(anchor.berth) - 1000) : undefined);
@@ -280,6 +288,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       const candidates = osm.filter(record => {
         const s = record.signal;
         return !runtimeBerths.has(record) && (!s.ref || signalRefBerth(s.ref) === anchor.berth) &&
+          (s.berth === undefined || s.berth === anchor.berth) &&
           (s.direction === 'forward' || s.direction === 'backward') &&
           ((s.edge.from === anchor.from && s.edge.to === anchor.to) || (s.edge.from === anchor.to && s.edge.to === anchor.from)) &&
           Math.hypot(anchor.point[0] - s.edge.point[0], anchor.point[1] - s.edge.point[1]) <= 20 &&
@@ -311,7 +320,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const proceed = table.filter((h) => (h.kind ?? 'proceed') === 'proceed');
     const states = signalStates(bytes, proceed, anchors);
     for (const record of records) {
-      record.state = record.signal.kinds.includes('main') ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
+      record.state = (record.signal.kinds.includes('main') || (record.signal.kinds.length === 0 && record.mappingSource === 'reference')) ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
       lamps.get(record)!.material.color.setHex(record.state === 'proceed' ? 0x35ff69 : record.state === 'danger' ? 0xff2929 : 0x666666);
       questions.get(record)!.visible = record.state === 'unknown';
     }
