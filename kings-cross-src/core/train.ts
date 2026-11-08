@@ -29,8 +29,11 @@ export const FIGURES = {
   intermediateCarLength: { value: 26.0, unit: 'm', basis: 'published', source: `${HITACHI}: "Intermediate vehicles: 26.000 m"` },
   /** Body width. The same on 800, 801, 802 and 803 (one bodyshell). */
   bodyWidth: { value: 2.7, unit: 'm', basis: 'published', source: 'Wikipedia infoboxes for Class 800 and 801: "Width 2.7 m (8 ft 10 in)"; Angel Trains gives the 802 as 8 ft 10 in' },
-  /** Height of the body's roof edge above the rail head. No printed height exists. */
-  roofEdgeHeight: { value: 3.725, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: "12 ft 3 in (3.725 m), to the body's roof edge". Not settled: the same site also reads 3.62 m (Hitachi, undefined) and about 3.85 m (photographs).` },
+  /**
+   * Height of the body's roof edge above the rail head. No printed height exists.
+   * The top of the roof covers (the highest point of the body) is this plus roofCoverHeight.
+   */
+  roofEdgeHeight: { value: 3.35, unit: 'm', basis: 'assumed', source: `Not published. ${GBTRAINS} reads 3.62 m (attributed to Hitachi, with no definition), 12 ft 3 in (3.725 m) "to the body's roof edge", and about 3.85 m from photographs. Reading 3.725 m as the roof edge put the top of the covers at 3.995 m, nearly 4 m, which is too tall for a UK train (Arthur, 2026-11-08: "3.725m seems high"). Taken here: Hitachi's 3.62 m is the top of the roof covers, so the roof edge is 3.62 - 0.27 = 3.35 m. To be replaced by a printed figure.` },
   /** The grey roof covers stand this far above the roof edge. */
   roofCoverHeight: { value: 0.27, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: "the roof covers stand about 11 in (0.27 m) higher" (0.27 to 0.3 m)` },
   /** Axle spacing inside one bogie. */

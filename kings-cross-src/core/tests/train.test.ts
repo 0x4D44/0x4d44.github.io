@@ -30,9 +30,17 @@ test('train: per car, length 25.85 m for the cab cars and 26.00 m for the rest, 
     }
   }
   assert.equal(FIGURES.bodyWidth.value, 2.7);
-  assert.equal(FIGURES.roofEdgeHeight.value, 3.725);
-  near(roofHeight(), 3.995, 1e-9, 'roof covers on top of the roof edge');
+  assert.equal(FIGURES.roofEdgeHeight.value, 3.35);
+  near(roofHeight(), 3.62, 1e-9, 'roof covers on top of the roof edge');
   assert.equal(FIGURES.gauge.value, 1.435);
+});
+
+test('train: the highest point is a believable height for a UK train, well under 3.9 m and over 3.4 m', () => {
+  // Sanity bounds, not sourced figures. The first version stacked the 0.27 m roof covers on a
+  // 3.725 m roof edge and stood 3.995 m tall, nearly 4 m; Arthur flagged it as too tall.
+  assert.ok(roofHeight() < 3.9, `highest point ${roofHeight()} m is as tall as the tallest UK stock`);
+  assert.ok(roofHeight() > 3.4, `highest point ${roofHeight()} m is too low for a 2.7 m wide express`);
+  assert.equal(FIGURES.roofEdgeHeight.basis, 'assumed', 'no printed height exists, so the roof edge must say it is assumed');
 });
 
 test('train: cars abut from the front nose at 0 to the rear, with no gap and no overlap', () => {

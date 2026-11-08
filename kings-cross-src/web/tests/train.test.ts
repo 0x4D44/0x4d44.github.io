@@ -80,6 +80,33 @@ test('train: the roof covers reach the published roof height and nothing goes ab
   }
 });
 
+test('train: a through car\'s cross-section rises from the top of the side wall to a crown on the centre line at the roof edge, with no dent', () => {
+  const g = built('lner5');
+  const car = trainLayout('lner5').cars[1];
+  assert.ok(car && car.cab === null, 'car 1 is a through car');
+  const group = named(g, `car-${car.index}`);
+  // the vertices of the section at the car's start, the right half from the wall up: the side
+  // is in body-shell and the roof in body-detail
+  const seen = new Map<string, [number, number]>();
+  for (const part of ['body-shell', 'body-detail']) {
+    for (const v of worldVertices(named(group, part) as THREE.Mesh)) {
+      if (Math.abs(v.z - car.start) > 1e-6 || v.x < -1e-6 || v.y < 2.9 - 1e-6) continue;
+      seen.set(`${v.x.toFixed(6)},${v.y.toFixed(6)}`, [v.x, v.y]);
+    }
+  }
+  const profile = [...seen.values()].sort((a, b) => a[1] - b[1]);
+  assert.ok(profile.length >= 5, `only ${profile.length} points between the wall top and the crown`);
+  for (let i = 1; i < profile.length; i++) {
+    const [x0, y0] = profile[i - 1] as [number, number];
+    const [x1, y1] = profile[i] as [number, number];
+    assert.ok(y1 > y0 + 1e-6 && x1 < x0 - 1e-6, `the roof curve dents between (${x0.toFixed(3)}, ${y0.toFixed(3)}) and (${x1.toFixed(3)}, ${y1.toFixed(3)})`);
+  }
+  const crown = profile[profile.length - 1] as [number, number];
+  near(crown[0], 0, 1e-6, 'the crown is on the centre line');
+  near(crown[1], FIGURES.roofEdgeHeight.value, 1e-6, 'the crown is at the roof edge');
+  near((profile[0] as [number, number])[1], 2.9, 1e-6, 'the curve starts at the top of the side wall');
+});
+
 test('train: every bogie is at its layout position with four wheels of the right size on the rail head', () => {
   const radius = FIGURES.wheelDiameter.value / 2;
   for (const kind of TRAIN_KINDS) {
