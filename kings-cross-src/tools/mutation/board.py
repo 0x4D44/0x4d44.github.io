@@ -76,6 +76,32 @@ M = [
 
 ]
 
+M.extend([('station names keep screaming capitals', [("name.trim().toLocaleLowerCase('en-GB')", 'name.trim()')]),
+ ('operator names remain codes', [("GR: 'LNER'", "GR: 'GR'")]),
+ ('Due includes excluded train classes',
+  [('if (/^[035]/.test(service.headcode)) continue;', 'if (false) continue;')]),
+ ('Due includes nonpublic directions', [('if (!publicTime) continue;', 'if (false) continue;')]),
+ ('Due state ignores eight call cap', [('due: due.slice(0, 8)', 'due')]),
+ ('Due HTML ignores eight call cap', [('rows.due.slice(0, 8).map', 'rows.due.map')]),
+ ('booked public time ignored',
+  [("(publicTime(service, direction) ?? (direction === 'arrival' ? service.arrival : "
+    'service.departure))',
+    "(direction === 'arrival' ? service.arrival : service.departure)")]),
+ ('empty stock leaks depot name',
+  [("stockCall(service, direction) ? 'empty stock'",
+    'stockCall(service, direction) ? (service.destinationName || service.destination)')]),
+ ('future actual exposed early', [('finite(actual) && actual <= nowMs ?', 'finite(actual) ?')]),
+ ('positive variation lacks plus',
+  [("rt.variationMinutes > 0 ? '+' : ''", "rt.variationMinutes > 0 ? '' : ''")]),
+ ('on time zero variation hidden',
+  [("rt.variationMinutes === 0 ? 'on time'", "rt.variationMinutes === 0 ? ''")]),
+ ('compact board rows become tall', [('line-height:20px', 'line-height:40px')]),
+ ('Due shown before platforms',
+  [('<h2>Platforms 0–10</h2>${platformRows}${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : '
+    "''}",
+    "${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Platforms "
+    '0–10</h2>${platformRows}')])])
+
 FM = [
     ('missing TRUST receive time ignores the replay clock', [("receivedAtMs: options.mode === 'replay' ? atMs : now()", 'receivedAtMs: 0')]),
     ('live TRUST SSE listener omitted', [("current.addEventListener('trust', (event) => {", "current.addEventListener('ignored-trust', (event) => {")]),
