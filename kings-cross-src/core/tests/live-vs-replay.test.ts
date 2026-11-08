@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compareSamples, recordedPictureAt, sampleTrains, snapshotWindow } from '../../tools/live-vs-replay.ts';
+import { compareSamples, comparisonServiceFor, recordedPictureAt, sampleTrains, snapshotWindow } from '../../tools/live-vs-replay.ts';
+import type { ScheduleCall } from '../schedule.ts';
 import type { MotionSample, SampleTrain } from '../../tools/live-vs-replay.ts';
 import type { TrainView } from '../motion.ts';
 
@@ -9,6 +10,19 @@ const sampleTrain = (id: number, description: string, point: [number, number] = 
 });
 
 const sample = (atMs: number, trains: SampleTrain[]): MotionSample => ({ atMs, trains });
+
+test('comparison service matching aligns live elapsed births with replay epoch births', () => {
+  const epoch = Date.parse('2026-11-08T18:40:00Z');
+  const calls = [
+    { uid: 'SYN-LATE', serviceDate: '2026-11-08', headcode: '1SYN', arrivalMs: epoch + 300_000, departureMs: null, operator: 'GR' },
+    { uid: 'SYN-EARLY', serviceDate: '2026-11-08', headcode: '1SYN', arrivalMs: epoch, departureMs: null, operator: 'GN' },
+  ] as ScheduleCall[];
+  const live = comparisonServiceFor(calls, epoch), replay = comparisonServiceFor(calls);
+  assert.equal(live('1SYN', 0), calls[1]);
+  assert.equal(live('1SYN', 300_000), calls[0]);
+  assert.equal(live('1SYN', 300_000), replay('1SYN', epoch + 300_000));
+  assert.equal(replay('1SYN', epoch + 10_000_000), undefined);
+});
 
 test('sampleTrains copies physical identity and leading position, sorted by id', () => {
   const views = [

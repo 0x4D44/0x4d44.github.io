@@ -13,6 +13,7 @@ import type { TrainKind } from '../../core/train.ts';
 import type { AnchorMap } from '../../core/anchors.ts';
 import { buildGraph } from '../../core/graph.ts';
 import { createMotion } from '../../core/motion.ts';
+import { matchService } from '../../core/schedule.ts';
 import type { TrainView } from '../../core/motion.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
@@ -24,7 +25,7 @@ import { createSignals } from './signals.ts';
 import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
-import { createLiveTrains, lengthForDescription } from './trains-live.ts';
+import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { addWorld, GROUND_Y } from './world.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
@@ -254,15 +255,20 @@ function start(): void {
       if (disposed) return;
       unmapped = anchors.unmapped.length;
       boardAnchors = anchors; arrivalSets = approachPlatforms(anchors);
+      // Decoded berths with no OSM signal get a head at their anchor, marked inferred.
+      signalLayer?.setAnchors(anchors, graph);
       // The model's coupling-inclusive length, rather than the core's approximate default.
-      motion = createMotion(graph, anchors, { lengthM: lengthForDescription,
+      const trainKinds = createTrainKinds((description, atTime) => matchService(description, requested === 'live' ? Date.now() : atTime, timetable?.services() ?? []));
+      motion = createMotion(graph, anchors, { lengthM: trainKinds.lengthM,
         wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
       kx.motion = motion;
-      liveTrains = createLiveTrains(graph, scene);
+      liveTrains = createLiveTrains(graph, scene, trainKinds.kindFor);
       timetable?.dispose();
       timetable = createScheduleFeed({ mode: requested, hostname: location.hostname,
         date: requested === 'replay' ? `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}` : undefined,
         onChange: () => paintBoard() });
+      await timetable.refresh();
+      if (disposed) return;
       const sink: MotionSink = {
         advance: (seconds) => motion!.advance(seconds),
         apply: (event, nowMs) => {
