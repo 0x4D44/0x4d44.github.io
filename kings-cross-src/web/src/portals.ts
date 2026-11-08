@@ -17,9 +17,8 @@ import * as THREE from 'three';
 import { approachEnvelope, archOpening, FIGURES, tunnelCover, tunnelMouths } from '../../core/landmarks.ts';
 import type { ArchOpening, Cover, EnvelopeStation, Mouth } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
-import { mergeParts, Mesh3, part } from './landmarks.ts';
-import type { PartMap, UV, V3 } from './landmarks.ts';
-import { material } from './materials.ts';
+import { material, mergeParts, part } from './materials.ts';
+import type { Batch, PartMap, V2, V3 } from './materials.ts';
 
 export type PortalKey = 'brick' | 'stone' | 'earth' | 'tube';
 
@@ -50,12 +49,12 @@ const neg = (v: V3): V3 => [-v[0], -v[1], -v[2]];
 const length = (v: V3): number => Math.hypot(v[0], v[1], v[2]);
 
 /** An oriented box from corner `o` with edge vectors U, V, W; UVs in metres on each face. */
-export function addBox(m: Mesh3, o: V3, U: V3, V: V3, W: V3): void {
+export function addBox(m: Batch, o: V3, U: V3, V: V3, W: V3): void {
   const face = (p: V3, a: V3, b: V3, out: V3): void => {
     const p1 = plus(p, a);
     const p2 = plus(p1, b);
     const p3 = plus(p, b);
-    m.quad(p, p1, p2, p3, [[0, 0], [length(a), 0], [length(a), length(b)], [0, length(b)]], out);
+    m.quadUV(p, p1, p2, p3, [[0, 0], [length(a), 0], [length(a), length(b)], [0, length(b)]], out);
   };
   face(o, U, V, neg(W));
   face(plus(o, W), U, V, W);
@@ -141,14 +140,14 @@ export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): 
       const p = (a: number, r: number): V3 => at(f, o.lateral + r * Math.cos(a), w, o.spring + r * Math.sin(a));
       const ri = o.halfWidth;
       const ro = o.halfWidth + PORTAL.voussoir;
-      const uv = (a: number, r: number): UV => [o.lateral + r * Math.cos(a) + H, o.spring + r * Math.sin(a)];
-      stone.quad(p(a0, ri), p(a1, ri), p(a1, ro), p(a0, ro), [uv(a0, ri), uv(a1, ri), uv(a1, ro), uv(a0, ro)], toward);
+      const uv = (a: number, r: number): V2 => [o.lateral + r * Math.cos(a) + H, o.spring + r * Math.sin(a)];
+      stone.quadUV(p(a0, ri), p(a1, ri), p(a1, ro), p(a0, ro), [uv(a0, ri), uv(a1, ri), uv(a1, ro), uv(a0, ro)], toward);
     };
     for (let k = 0; k < PORTAL.arcSteps; k++) ring(Math.PI - (Math.PI * k) / PORTAL.arcSteps, Math.PI - (Math.PI * (k + 1)) / PORTAL.arcSteps);
     for (const side of [-1, 1]) {
       const u0 = o.lateral + side * o.halfWidth;
       const u1 = u0 + side * PORTAL.voussoir;
-      stone.quad(at(f, u0, w, 0), at(f, u1, w, 0), at(f, u1, w, o.spring), at(f, u0, w, o.spring), [[u0 + H, 0], [u1 + H, 0], [u1 + H, o.spring], [u0 + H, o.spring]], toward);
+      stone.quadUV(at(f, u0, w, 0), at(f, u1, w, 0), at(f, u1, w, o.spring), at(f, u0, w, o.spring), [[u0 + H, 0], [u1 + H, 0], [u1 + H, o.spring], [u0 + H, o.spring]], toward);
     }
 
     // the recess: the arch's own outline run back PORTAL.recess metres, faces turned in, and a dark end
@@ -163,11 +162,11 @@ export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): 
       const b = prof[i + 1] as [number, number];
       const mid: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
       const inward = dir(f, o.lateral - mid[0], 0, o.spring - mid[1]); // toward the bore's centre line
-      tube.quad(at(f, a[0], 0, a[1]), at(f, b[0], 0, b[1]), at(f, b[0], PORTAL.recess, b[1]), at(f, a[0], PORTAL.recess, a[1]), undefined, inward);
+      tube.quadUV(at(f, a[0], 0, a[1]), at(f, b[0], 0, b[1]), at(f, b[0], PORTAL.recess, b[1]), at(f, a[0], PORTAL.recess, a[1]), undefined, inward);
     }
     const first = prof[0] as [number, number];
     const last = prof[prof.length - 1] as [number, number];
-    tube.quad(at(f, first[0], 0, 0.01), at(f, last[0], 0, 0.01), at(f, last[0], PORTAL.recess, 0.01), at(f, first[0], PORTAL.recess, 0.01), undefined, [0, 1, 0]);
+    tube.quadUV(at(f, first[0], 0, 0.01), at(f, last[0], 0, 0.01), at(f, last[0], PORTAL.recess, 0.01), at(f, first[0], PORTAL.recess, 0.01), undefined, [0, 1, 0]);
     tube.fan(prof.map(([u, y]) => at(f, u, PORTAL.recess, y)), toward);
   }
 
@@ -186,14 +185,14 @@ export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): 
       const ua = a.u + sign * t;
       const ub = b.u + sign * t;
       // inner face (toward the tracks), outer face, and the sloping top
-      brick.quad(at(f, a.u, -a.d, 0), at(f, b.u, -b.d, 0), at(f, b.u, -b.d, b.h), at(f, a.u, -a.d, a.h), [[s0, 0], [s1, 0], [s1, b.h], [s0, a.h]], inner);
-      brick.quad(at(f, ua, -a.d, 0), at(f, ub, -b.d, 0), at(f, ub, -b.d, b.h), at(f, ua, -a.d, a.h), [[s0, 0], [s1, 0], [s1, b.h], [s0, a.h]], outer);
-      stone.quad(at(f, a.u, -a.d, a.h), at(f, b.u, -b.d, b.h), at(f, ub, -b.d, b.h), at(f, ua, -a.d, a.h), [[s0, 0], [s1, 0], [s1, t], [s0, t]], [0, 1, 0]);
+      brick.quadUV(at(f, a.u, -a.d, 0), at(f, b.u, -b.d, 0), at(f, b.u, -b.d, b.h), at(f, a.u, -a.d, a.h), [[s0, 0], [s1, 0], [s1, b.h], [s0, a.h]], inner);
+      brick.quadUV(at(f, ua, -a.d, 0), at(f, ub, -b.d, 0), at(f, ub, -b.d, b.h), at(f, ua, -a.d, a.h), [[s0, 0], [s1, 0], [s1, b.h], [s0, a.h]], outer);
+      stone.quadUV(at(f, a.u, -a.d, a.h), at(f, b.u, -b.d, b.h), at(f, ub, -b.d, b.h), at(f, ua, -a.d, a.h), [[s0, 0], [s1, 0], [s1, t], [s0, t]], [0, 1, 0]);
     }
     const end = path[path.length - 1] as { u: number; d: number; h: number };
-    brick.quad(at(f, end.u, -end.d, 0), at(f, end.u + sign * PORTAL.wallThickness, -end.d, 0), at(f, end.u + sign * PORTAL.wallThickness, -end.d, end.h), at(f, end.u, -end.d, end.h), [[0, 0], [PORTAL.wallThickness, 0], [PORTAL.wallThickness, end.h], [0, end.h]], toward);
+    brick.quadUV(at(f, end.u, -end.d, 0), at(f, end.u + sign * PORTAL.wallThickness, -end.d, 0), at(f, end.u + sign * PORTAL.wallThickness, -end.d, end.h), at(f, end.u, -end.d, end.h), [[0, 0], [PORTAL.wallThickness, 0], [PORTAL.wallThickness, end.h], [0, end.h]], toward);
     // and the end of the wall at the face: closed by the face wall's own end
-    brick.quad(at(f, sign * H, 0, 0), at(f, sign * H + sign * PORTAL.wallThickness, 0, 0), at(f, sign * H + sign * PORTAL.wallThickness, 0, top), at(f, sign * H, 0, top), [[0, 0], [PORTAL.wallThickness, 0], [PORTAL.wallThickness, top], [0, top]], dir(f, 0, 1, 0));
+    brick.quadUV(at(f, sign * H, 0, 0), at(f, sign * H + sign * PORTAL.wallThickness, 0, 0), at(f, sign * H + sign * PORTAL.wallThickness, 0, top), at(f, sign * H, 0, top), [[0, 0], [PORTAL.wallThickness, 0], [PORTAL.wallThickness, top], [0, top]], dir(f, 0, 1, 0));
   };
   side(-1);
   side(1);
@@ -230,7 +229,7 @@ export function coverParts(cover: Cover): PartMap<PortalKey> {
       const b1 = B[k + 1] as [number, number];
       // outward: the left slope faces -across, the top faces up, the right slope faces +across
       const out: V3 = k === 0 ? dir(f, -1, 0, 1) : k === 1 ? [0, 1, 0] : dir(f, 1, 0, 1);
-      earth.quad(at(f, a0[0], sa, a0[1]), at(f, a1[0], sa, a1[1]), at(f, b1[0], sb, b1[1]), at(f, b0[0], sb, b0[1]), undefined, out);
+      earth.quadUV(at(f, a0[0], sa, a0[1]), at(f, a1[0], sa, a1[1]), at(f, b1[0], sb, b1[1]), at(f, b0[0], sb, b0[1]), undefined, out);
     }
   }
   // end caps behind each face wall: the section with a notch for every arch, so the dark recess shows through

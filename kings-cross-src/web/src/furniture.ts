@@ -43,7 +43,8 @@ import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, stationPlatforms, worldToShed } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { material, rng, TEXTURES } from './materials.ts';
+import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
+import type { Rgb, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
 /** The parts of the shed layout this module reads. */
@@ -153,23 +154,14 @@ const SHED_REFS: ReadonlySet<string> = new Set(SHED_PLATFORM_REFS);
 // ---------------------------------------------------------------------------------------------
 // small vector helpers
 
-type V3 = [number, number, number];
-type Rgb = [number, number, number];
 const WHITE: Rgb = [1, 1, 1];
-const ZERO2: [number, number] = [0, 0];
 const sub3 = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const cross3 = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const dot3 = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const norm3 = (a: V3): V3 => {
   const l = Math.hypot(a[0], a[1], a[2]) || 1;
   return [a[0] / l, a[1] / l, a[2] / l];
 };
 const dot2 = (a: Pt, b: Pt): number => a[0] * b[0] + a[1] * b[1];
-/** A 0xRRGGBB colour as the linear triple a vertex colour wants. */
-const rgb = (hex: number): Rgb => {
-  const c = new THREE.Color(hex);
-  return [c.r, c.g, c.b];
-};
 
 function signedArea(pts: readonly Pt[]): number {
   let s = 0;
@@ -191,95 +183,46 @@ function segmentDistance(p: Pt, a: Pt, b: Pt): number {
 }
 
 // ---------------------------------------------------------------------------------------------
-// a small flat-shaded mesh builder (positions, normals, uvs, vertex colours)
+// shapes on the shared mesh builder (a coloured Batch from materials.ts: positions, normals, UVs, a colour per vertex)
 
-class MeshBuilder {
-  readonly position: number[] = [];
-  readonly normal: number[] = [];
-  readonly uv: number[] = [];
-  readonly color: number[] = [];
+/** A batch for the furniture: a colour per vertex, white unless a shape says otherwise. */
+const newBatch = (): Batch => new Batch({ colored: true });
 
-  /** A convex polygon as a triangle fan, wound so that its front faces along `n`. */
-  face(vs: readonly V3[], n: V3, uvs?: readonly [number, number][], c: Rgb = WHITE): void {
-    const g = cross3(sub3(vs[1] as V3, vs[0] as V3), sub3(vs[2] as V3, vs[0] as V3));
-    const order = vs.map((_, i) => i);
-    if (dot3(g, n) < 0) order.reverse();
-    for (let k = 1; k + 1 < order.length; k++) {
-      for (const i of [order[0], order[k], order[k + 1]] as number[]) {
-        const v = vs[i] as V3;
-        this.position.push(v[0], v[1], v[2]);
-        this.normal.push(n[0], n[1], n[2]);
-        const t = uvs?.[i] ?? ZERO2;
-        this.uv.push(t[0], t[1]);
-        this.color.push(c[0], c[1], c[2]);
-      }
-    }
+/** A vertical prism with `sides` flat faces and a flat top. */
+function addPrism(b: Batch, cx: number, cz: number, r: number, y0: number, y1: number, sides: number, c: Rgb): void {
+  const cap: V3[] = [];
+  for (let i = 0; i < sides; i++) {
+    const a0 = ((i + 0.5) / sides) * Math.PI * 2;
+    const a1 = ((i + 1.5) / sides) * Math.PI * 2;
+    const p0: [number, number] = [cx + r * Math.cos(a0), cz + r * Math.sin(a0)];
+    const p1: [number, number] = [cx + r * Math.cos(a1), cz + r * Math.sin(a1)];
+    const m = (a0 + a1) / 2;
+    b.poly([[p0[0], y0, p0[1]], [p1[0], y0, p1[1]], [p1[0], y1, p1[1]], [p0[0], y1, p0[1]]], undefined, { normal: [Math.cos(m), 0, Math.sin(m)], color: c });
+    cap.push([p0[0], y1, p0[1]]);
   }
+  b.poly(cap, undefined, { normal: [0, 1, 0], color: c });
+}
 
-  /** An axis-aligned box from (x0,y0,z0) to (x1,y1,z1). */
-  box(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, c: Rgb, skipBottom = false): void {
-    const P = (x: number, y: number, z: number): V3 => [x, y, z];
-    this.face([P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1)], [1, 0, 0], undefined, c);
-    this.face([P(x0, y0, z0), P(x0, y0, z1), P(x0, y1, z1), P(x0, y1, z0)], [-1, 0, 0], undefined, c);
-    this.face([P(x0, y1, z0), P(x0, y1, z1), P(x1, y1, z1), P(x1, y1, z0)], [0, 1, 0], undefined, c);
-    if (!skipBottom) this.face([P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1)], [0, -1, 0], undefined, c);
-    this.face([P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)], [0, 0, 1], undefined, c);
-    this.face([P(x0, y0, z0), P(x0, y1, z0), P(x1, y1, z0), P(x1, y0, z0)], [0, 0, -1], undefined, c);
-  }
-
-  /** A vertical prism with `sides` flat faces and a flat top. */
-  prism(cx: number, cz: number, r: number, y0: number, y1: number, sides: number, c: Rgb): void {
-    const cap: V3[] = [];
-    for (let i = 0; i < sides; i++) {
-      const a0 = ((i + 0.5) / sides) * Math.PI * 2;
-      const a1 = ((i + 1.5) / sides) * Math.PI * 2;
-      const p0: [number, number] = [cx + r * Math.cos(a0), cz + r * Math.sin(a0)];
-      const p1: [number, number] = [cx + r * Math.cos(a1), cz + r * Math.sin(a1)];
-      const m = (a0 + a1) / 2;
-      this.face([[p0[0], y0, p0[1]], [p1[0], y0, p1[1]], [p1[0], y1, p1[1]], [p0[0], y1, p0[1]]], [Math.cos(m), 0, Math.sin(m)], undefined, c);
-      cap.push([p0[0], y1, p0[1]]);
-    }
-    this.face(cap, [0, 1, 0], undefined, c);
-  }
-
-  /** A beam along a-b with a horizontal width `w` and a depth `h`, closed at both ends. */
-  beam(a: V3, b: V3, w: number, h: number, c: Rgb): void {
-    const d = norm3(sub3(b, a));
-    let side = cross3([0, 1, 0], d);
-    if (Math.hypot(side[0], side[1], side[2]) < 1e-6) side = [1, 0, 0];
-    side = norm3(side);
-    const up = cross3(d, side);
-    const corner = (e: V3, sx: number, sy: number): V3 => [
-      e[0] + side[0] * sx * (w / 2) + up[0] * sy * (h / 2),
-      e[1] + side[1] * sx * (w / 2) + up[1] * sy * (h / 2),
-      e[2] + side[2] * sx * (w / 2) + up[2] * sy * (h / 2),
-    ];
-    const neg = (v: V3): V3 => [-v[0], -v[1], -v[2]];
-    this.face([corner(b, -1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(b, -1, 1)], d, undefined, c);
-    this.face([corner(a, -1, -1), corner(a, 1, -1), corner(a, 1, 1), corner(a, -1, 1)], neg(d), undefined, c);
-    this.face([corner(a, 1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(a, 1, 1)], side, undefined, c);
-    this.face([corner(a, -1, -1), corner(b, -1, -1), corner(b, -1, 1), corner(a, -1, 1)], neg(side), undefined, c);
-    this.face([corner(a, -1, 1), corner(b, -1, 1), corner(b, 1, 1), corner(a, 1, 1)], up, undefined, c);
-    this.face([corner(a, -1, -1), corner(b, -1, -1), corner(b, 1, -1), corner(a, 1, -1)], neg(up), undefined, c);
-  }
-
-  /** Add everything another builder holds. A loop, not a spread: these arrays can be long. */
-  append(other: MeshBuilder): void {
-    for (const key of ['position', 'normal', 'uv', 'color'] as const) {
-      const from = other[key];
-      const to = this[key];
-      for (let i = 0; i < from.length; i++) to.push(from[i] as number);
-    }
-  }
-
-  geometry(): THREE.BufferGeometry {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.position, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.normal, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.color, 3));
-    return g;
-  }
+/** A beam along a-b with a horizontal width `w` and a depth `h`, closed at both ends. */
+function addBeam(batch: Batch, a: V3, b: V3, w: number, h: number, c: Rgb): void {
+  const d = norm3(sub3(b, a));
+  let side = cross3([0, 1, 0], d);
+  if (Math.hypot(side[0], side[1], side[2]) < 1e-6) side = [1, 0, 0];
+  side = norm3(side);
+  const up = cross3(d, side);
+  const corner = (e: V3, sx: number, sy: number): V3 => [
+    e[0] + side[0] * sx * (w / 2) + up[0] * sy * (h / 2),
+    e[1] + side[1] * sx * (w / 2) + up[1] * sy * (h / 2),
+    e[2] + side[2] * sx * (w / 2) + up[2] * sy * (h / 2),
+  ];
+  const neg = (v: V3): V3 => [-v[0], -v[1], -v[2]];
+  const face = (pts: V3[], normal: V3): void => batch.poly(pts, undefined, { normal, color: c });
+  face([corner(b, -1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(b, -1, 1)], d);
+  face([corner(a, -1, -1), corner(a, 1, -1), corner(a, 1, 1), corner(a, -1, 1)], neg(d));
+  face([corner(a, 1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(a, 1, 1)], side);
+  face([corner(a, -1, -1), corner(b, -1, -1), corner(b, -1, 1), corner(a, -1, 1)], neg(side));
+  face([corner(a, -1, 1), corner(b, -1, 1), corner(b, 1, 1), corner(a, 1, 1)], up);
+  face([corner(a, -1, -1), corner(b, -1, -1), corner(b, 1, -1), corner(a, 1, -1)], neg(up));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -508,34 +451,34 @@ export function stripChains(edges: readonly PlatformEdge[]): StripChain[] {
 // ---------------------------------------------------------------------------------------------
 // the platform meshes
 
-function addTop(b: MeshBuilder, pts: readonly Pt[]): void {
+function addTop(b: Batch, pts: readonly Pt[]): void {
   const contour = pts.map((p) => new THREE.Vector2(p[0], p[1]));
   const tris = THREE.ShapeUtils.triangulateShape(contour, []) as number[][];
   const at = (i: number): V3 => [(pts[i] as Pt)[0], PLATFORM_HEIGHT, (pts[i] as Pt)[1]];
   const uv = (i: number): [number, number] => [(pts[i] as Pt)[0], -(pts[i] as Pt)[1]];
   for (const t of tris) {
     const [i, j, k] = t as [number, number, number];
-    b.face([at(i), at(j), at(k)], [0, 1, 0], [uv(i), uv(j), uv(k)]);
+    b.poly([at(i), at(j), at(k)], [uv(i), uv(j), uv(k)], { normal: [0, 1, 0] });
   }
 }
 
-function addWalls(b: MeshBuilder, edges: readonly PlatformEdge[]): void {
+function addWalls(b: Batch, edges: readonly PlatformEdge[]): void {
   let run = 0;
   for (const e of edges) {
     // a seam between two polygons is inside one slab of platform: no wall there
     if (e.kind !== 'shared' && e.length > 1e-6) {
       const out: V3 = [-e.inward[0], 0, -e.inward[1]];
-      b.face(
+      b.poly(
         [[e.a[0], GROUND_Y, e.a[1]], [e.b[0], GROUND_Y, e.b[1]], [e.b[0], PLATFORM_HEIGHT, e.b[1]], [e.a[0], PLATFORM_HEIGHT, e.a[1]]],
-        out,
         [[run, GROUND_Y], [run + e.length, GROUND_Y], [run + e.length, PLATFORM_HEIGHT], [run, PLATFORM_HEIGHT]],
+        { normal: out },
       );
     }
     run += e.length;
   }
 }
 
-function addStrip(b: MeshBuilder, chain: StripChain, edges: readonly PlatformEdge[]): void {
+function addStrip(b: Batch, chain: StripChain, edges: readonly PlatformEdge[]): void {
   const y = PLATFORM_HEIGHT + FIGURES.stripLift;
   for (let k = 0; k + 1 < chain.outer.length; k++) {
     const e = edges[chain.edges[k] as number] as PlatformEdge;
@@ -547,21 +490,8 @@ function addStrip(b: MeshBuilder, chain: StripChain, edges: readonly PlatformEdg
       return { at: [p[0], y, p[1]], uv: [dot2(rel, e.inward), s0 + dot2(rel, e.dir)] };
     };
     const quad = [chain.outer[k], chain.outer[k + 1], chain.inner[k + 1], chain.inner[k]].map((p) => corner(p as Pt));
-    b.face(quad.map((q) => q.at), [0, 1, 0], quad.map((q) => q.uv));
+    b.poly(quad.map((q) => q.at), quad.map((q) => q.uv), { normal: [0, 1, 0] });
   }
-}
-
-let edgeStripMaterial: THREE.Material | null = null;
-/** The shared platform-edge material, cloned so its polygon offset (which keeps the strip clear of the surface at any range) stays ours. */
-function stripMaterial(): THREE.Material {
-  if (!edgeStripMaterial) {
-    edgeStripMaterial = material('platformEdge').clone();
-    edgeStripMaterial.name = 'platformEdgeStrip';
-    edgeStripMaterial.polygonOffset = true;
-    edgeStripMaterial.polygonOffsetFactor = -2;
-    edgeStripMaterial.polygonOffsetUnits = -2;
-  }
-  return edgeStripMaterial;
 }
 
 /**
@@ -575,9 +505,9 @@ export function buildPlatforms(data: FurnitureData, layout: Pick<ShedLayout, 'or
   const polys = surfacePlatforms(data);
   const outlines = polys.map((p) => p.pts);
   const tracks = trackSegments(data);
-  const tops = new MeshBuilder();
-  const walls = new MeshBuilder();
-  const strips = new MeshBuilder();
+  const tops = newBatch();
+  const walls = newBatch();
+  const strips = newBatch();
   let stripRuns = 0;
   for (const [i, p] of polys.entries()) {
     const edges = classifyEdges(p.pts, outlines.filter((_, j) => j !== i), layout, tracks);
@@ -588,14 +518,14 @@ export function buildPlatforms(data: FurnitureData, layout: Pick<ShedLayout, 'or
       stripRuns++;
     }
   }
-  const parts: [string, MeshBuilder, THREE.Material][] = [
+  const parts: [string, Batch, THREE.Material][] = [
     ['platform-tops', tops, material('asphalt')],
     ['platform-walls', walls, material('concrete')],
-    ['platform-edges', strips, stripMaterial()],
+    ['platform-edges', strips, material('platformEdgeStrip')],
   ];
   for (const [name, builder, mat] of parts) {
-    if (builder.position.length === 0) continue;
-    const mesh = new THREE.Mesh(builder.geometry(), mat);
+    if (builder.count === 0) continue;
+    const mesh = new THREE.Mesh(builder.build(), mat);
     mesh.name = name;
     group.add(mesh);
   }
@@ -958,40 +888,40 @@ const HELP_BUTTON = rgb(0xd13a30);
 
 /** A lamp standard: base, pole and a short arm carrying a small lantern, leaning toward local +z. */
 function lampGeometry(): THREE.BufferGeometry {
-  const b = new MeshBuilder();
+  const b = newBatch();
   const h = FIGURES.lampHeight;
-  b.prism(0, 0, 0.13, 0, 0.4, 8, IRON);
-  b.prism(0, 0, 0.055, 0.4, h, 6, IRON);
-  b.box(-0.03, h - 0.1, 0, 0.03, h - 0.04, 0.5, IRON);
-  b.box(-0.15, h - 0.2, 0.3, 0.15, h - 0.08, 0.68, LAMP_GLASS, true);
-  b.box(-0.17, h - 0.08, 0.28, 0.17, h - 0.04, 0.7, IRON, true);
-  return b.geometry();
+  addPrism(b, 0, 0, 0.13, 0, 0.4, 8, IRON);
+  addPrism(b, 0, 0, 0.055, 0.4, h, 6, IRON);
+  b.aabb(-0.03, h - 0.1, 0, 0.03, h - 0.04, 0.5, IRON);
+  b.aabb(-0.15, h - 0.2, 0.3, 0.15, h - 0.08, 0.68, LAMP_GLASS, true);
+  b.aabb(-0.17, h - 0.08, 0.28, 0.17, h - 0.04, 0.7, IRON, true);
+  return b.build();
 }
 
 /** A slatted bench with a back on four legs; the sitter faces +z. Three seat slats, two back slats. */
 function benchGeometry(): THREE.BufferGeometry {
-  const b = new MeshBuilder();
+  const b = newBatch();
   const hl = FIGURES.benchLength / 2;
   const hd = FIGURES.benchDepth / 2;
   const seat = FIGURES.benchSeat;
-  for (const z of [-0.17, 0, 0.17]) b.box(-hl, seat - 0.04, z - 0.07, hl, seat, z + 0.07, TIMBER, true);
-  for (const y of [seat + 0.2, seat + 0.38]) b.box(-hl, y, -hd, hl, y + 0.12, -hd + 0.03, TIMBER, true);
+  for (const z of [-0.17, 0, 0.17]) b.aabb(-hl, seat - 0.04, z - 0.07, hl, seat, z + 0.07, TIMBER, true);
+  for (const y of [seat + 0.2, seat + 0.38]) b.aabb(-hl, y, -hd, hl, y + 0.12, -hd + 0.03, TIMBER, true);
   for (const x of [-hl + 0.04, hl - 0.04]) {
-    b.box(x - 0.025, 0, -hd, x + 0.025, FIGURES.benchBack, -hd + 0.05, IRON, true); // the rear leg runs up to the top of the back
-    b.box(x - 0.025, 0, hd - 0.05, x + 0.025, seat - 0.04, hd, IRON, true); // the front leg stops under the seat
+    b.aabb(x - 0.025, 0, -hd, x + 0.025, FIGURES.benchBack, -hd + 0.05, IRON, true); // the rear leg runs up to the top of the back
+    b.aabb(x - 0.025, 0, hd - 0.05, x + 0.025, seat - 0.04, hd, IRON, true); // the front leg stops under the seat
   }
-  return b.geometry();
+  return b.build();
 }
 
 /** A help point: a yellow post carrying a dark panel with a red button, the same on both faces. */
 function helpPointGeometry(): THREE.BufferGeometry {
-  const b = new MeshBuilder();
+  const b = newBatch();
   const top = FIGURES.helpHeight;
-  b.box(-0.05, 0, -0.05, 0.05, top - 0.7, 0.05, HELP_YELLOW);
-  b.box(-0.17, top - 0.7, -0.04, 0.17, top, 0.04, HELP_PANEL, true);
-  b.box(-0.17, top - 0.16, -0.045, 0.17, top, 0.045, HELP_YELLOW, true);
-  for (const z of [-1, 1]) b.box(-0.045, top - 0.42, z * 0.04, 0.045, top - 0.33, z * 0.065, HELP_BUTTON, true);
-  return b.geometry();
+  b.aabb(-0.05, 0, -0.05, 0.05, top - 0.7, 0.05, HELP_YELLOW);
+  b.aabb(-0.17, top - 0.7, -0.04, 0.17, top, 0.04, HELP_PANEL, true);
+  b.aabb(-0.17, top - 0.16, -0.045, 0.17, top, 0.045, HELP_YELLOW, true);
+  for (const z of [-1, 1]) b.aabb(-0.045, top - 0.42, z * 0.04, 0.045, top - 0.33, z * 0.065, HELP_BUTTON, true);
+  return b.build();
 }
 
 /** The screen's four edges, a frame with open faces, as group 0, and the two faces as group 1. */
@@ -999,19 +929,19 @@ function screenGeometry(): THREE.BufferGeometry {
   const hw = FIGURES.screenWidth / 2;
   const hh = FIGURES.screenHeight / 2;
   const hd = FIGURES.screenDepth / 2;
-  const frame = new MeshBuilder();
+  const frame = newBatch();
   const dark = rgb(0x0d1014);
-  frame.face([[-hw, hh, -hd], [hw, hh, -hd], [hw, hh, hd], [-hw, hh, hd]], [0, 1, 0], undefined, dark);
-  frame.face([[-hw, -hh, -hd], [hw, -hh, -hd], [hw, -hh, hd], [-hw, -hh, hd]], [0, -1, 0], undefined, dark);
-  frame.face([[-hw, -hh, -hd], [-hw, hh, -hd], [-hw, hh, hd], [-hw, -hh, hd]], [-1, 0, 0], undefined, dark);
-  frame.face([[hw, -hh, -hd], [hw, hh, -hd], [hw, hh, hd], [hw, -hh, hd]], [1, 0, 0], undefined, dark);
-  const faces = new MeshBuilder();
+  frame.poly([[-hw, hh, -hd], [hw, hh, -hd], [hw, hh, hd], [-hw, hh, hd]], undefined, { normal: [0, 1, 0], color: dark });
+  frame.poly([[-hw, -hh, -hd], [hw, -hh, -hd], [hw, -hh, hd], [-hw, -hh, hd]], undefined, { normal: [0, -1, 0], color: dark });
+  frame.poly([[-hw, -hh, -hd], [-hw, hh, -hd], [-hw, hh, hd], [-hw, -hh, hd]], undefined, { normal: [-1, 0, 0], color: dark });
+  frame.poly([[hw, -hh, -hd], [hw, hh, -hd], [hw, hh, hd], [hw, -hh, hd]], undefined, { normal: [1, 0, 0], color: dark });
+  const faces = newBatch();
   const e = 0.002;
   // seen from +z the image reads left to right along +x; seen from -z, along -x: the same picture on both sides
-  faces.face([[-hw, -hh, hd + e], [hw, -hh, hd + e], [hw, hh, hd + e], [-hw, hh, hd + e]], [0, 0, 1], [[0, 0], [1, 0], [1, 1], [0, 1]]);
-  faces.face([[hw, -hh, -hd - e], [-hw, -hh, -hd - e], [-hw, hh, -hd - e], [hw, hh, -hd - e]], [0, 0, -1], [[0, 0], [1, 0], [1, 1], [0, 1]]);
-  const a = frame.geometry();
-  const b = faces.geometry();
+  faces.poly([[-hw, -hh, hd + e], [hw, -hh, hd + e], [hw, hh, hd + e], [-hw, hh, hd + e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, 1] });
+  faces.poly([[hw, -hh, -hd - e], [-hw, -hh, -hd - e], [-hw, hh, -hd - e], [hw, hh, -hd - e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, -1] });
+  const a = frame.build();
+  const b = faces.build();
   const merged = mergeGeometries([a, b], true) as THREE.BufferGeometry;
   a.dispose();
   b.dispose();
@@ -1020,9 +950,9 @@ function screenGeometry(): THREE.BufferGeometry {
 
 /** A unit-long vertical rod from y = 0 to 1; each instance scales y to its own length. */
 function rodGeometry(): THREE.BufferGeometry {
-  const b = new MeshBuilder();
-  b.prism(0, 0, FIGURES.rodRadius, 0, 1, 6, rgb(0x2a3036));
-  return b.geometry();
+  const b = newBatch();
+  addPrism(b, 0, 0, FIGURES.rodRadius, 0, 1, 6, rgb(0x2a3036));
+  return b.build();
 }
 
 /** A drawing of rows of amber blocks on black: abstract on purpose, no readable times or destinations. Null where there is no document. */
@@ -1101,16 +1031,16 @@ function canopyGlass(): THREE.Material {
 }
 
 /** The canopy of one platform: a flat translucent roof between two edge beams, cross beams, and the columns' steel. */
-function canopyMeshes(c: CanopyPlan): { glass: MeshBuilder; steel: MeshBuilder } {
-  const glass = new MeshBuilder();
-  const steel = new MeshBuilder();
+function canopyMeshes(c: CanopyPlan): { glass: Batch; steel: Batch } {
+  const glass = newBatch();
+  const steel = newBatch();
   const y = c.roofY;
   for (let i = 0; i + 1 < c.left.length; i++) {
     const l0 = c.left[i] as Pt;
     const l1 = c.left[i + 1] as Pt;
     const r0 = c.right[i] as Pt;
     const r1 = c.right[i + 1] as Pt;
-    glass.face([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], [0, 1, 0]);
+    glass.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0] });
   }
   const bw = FIGURES.beamWidth;
   const bd = FIGURES.beamDepth;
@@ -1118,12 +1048,12 @@ function canopyMeshes(c: CanopyPlan): { glass: MeshBuilder; steel: MeshBuilder }
     for (let i = 0; i + 1 < side.length; i++) {
       const a = side[i] as Pt;
       const b = side[i + 1] as Pt;
-      steel.beam([a[0], y - bd / 2, a[1]], [b[0], y - bd / 2, b[1]], bw, bd, WHITE);
+      addBeam(steel, [a[0], y - bd / 2, a[1]], [b[0], y - bd / 2, b[1]], bw, bd, WHITE);
     }
   }
-  for (const [a, b] of c.crossBeams) steel.beam([a[0], y - FIGURES.crossDepth / 2, a[1]], [b[0], y - FIGURES.crossDepth / 2, b[1]], bw, FIGURES.crossDepth, WHITE);
+  for (const [a, b] of c.crossBeams) addBeam(steel, [a[0], y - FIGURES.crossDepth / 2, a[1]], [b[0], y - FIGURES.crossDepth / 2, b[1]], bw, FIGURES.crossDepth, WHITE);
   const half = FIGURES.columnSize / 2;
-  for (const col of c.columns) steel.box(col.x - half, PLATFORM_HEIGHT, col.z - half, col.x + half, y - FIGURES.crossDepth, col.z + half, WHITE, true);
+  for (const col of c.columns) steel.aabb(col.x - half, PLATFORM_HEIGHT, col.z - half, col.x + half, y - FIGURES.crossDepth, col.z + half, WHITE, true);
   return { glass, steel };
 }
 
@@ -1180,18 +1110,18 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
   }
 
   if (plan.canopies.length > 0) {
-    const glass = new MeshBuilder();
-    const steel = new MeshBuilder();
+    const glass = newBatch();
+    const steel = newBatch();
     for (const c of plan.canopies) {
       const m = canopyMeshes(c);
       glass.append(m.glass);
       steel.append(m.steel);
     }
-    const roof = new THREE.Mesh(glass.geometry(), canopyGlass());
+    const roof = new THREE.Mesh(glass.build(), canopyGlass());
     roof.name = 'canopy-glass';
     roof.renderOrder = 2;
     add(roof);
-    const frame = new THREE.Mesh(steel.geometry(), material('whiteSteel'));
+    const frame = new THREE.Mesh(steel.build(), material('whiteSteel'));
     frame.name = 'canopy-steel';
     add(frame);
   }

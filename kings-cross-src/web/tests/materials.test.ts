@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { Batch, boxProjectUV, IN, material, PAINTERS, rng, TEXTURES, texelsPerMetre, texture, wallQuad } from '../src/materials.ts';
-import type { TextureName } from '../src/materials.ts';
+import { Batch, boxProjectUV, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, texelsPerMetre, texture, wallQuad } from '../src/materials.ts';
+import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 
 const names = Object.keys(TEXTURES) as TextureName[];
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
@@ -133,4 +133,181 @@ test('boxProjectUV: a box of 2 x 3 x 4 m gets UVs in metres on every face', () =
     const world2 = new THREE.Vector3().crossVectors(q[1]!.clone().sub(q[0]!), q[2]!.clone().sub(q[0]!)).length();
     close(area2, world2, 1e-6); // UV area (metres squared, doubled) equals the triangle's real area: nothing is stretched
   }
+});
+
+// ---- the one mesh builder: every station module builds on Batch -----------------------------------
+
+/** One triangle of a batch: its corners, the normal stored on its first corner, the normal its winding gives. */
+function triOf(b: Batch, t: number): { p: V3[]; stored: V3; geometric: V3 } {
+  const ix = [0, 1, 2].map((k) => b.indices[t * 3 + k] as number);
+  const p = ix.map((i): V3 => [b.positions[i * 3] as number, b.positions[i * 3 + 1] as number, b.positions[i * 3 + 2] as number]);
+  const [a, c, d] = p as [V3, V3, V3];
+  const u: V3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+  const w: V3 = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+  const g: V3 = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+  const l = Math.hypot(...g) || 1;
+  const i0 = ix[0] as number;
+  return { p, stored: [b.normals[i0 * 3] as number, b.normals[i0 * 3 + 1] as number, b.normals[i0 * 3 + 2] as number], geometric: [g[0] / l, g[1] / l, g[2] / l] };
+}
+const trisOf = (b: Batch): ReturnType<typeof triOf>[] => Array.from({ length: b.triangles }, (_, t) => triOf(b, t));
+/** A unit square in the z = 0 plane, counter-clockwise seen from +z. */
+const SQUARE: V3[] = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]];
+
+test('Batch.poly: facing turns the winding and the stored normal to face the viewer; normal stores the one given and turns the winding to match', () => {
+  for (const sign of [1, -1]) {
+    for (const opts of [{ facing: [0, 0, sign] as V3 }, { normal: [0, 0, sign] as V3 }]) {
+      const b = new Batch();
+      b.poly(SQUARE, undefined, opts);
+      const ts = trisOf(b);
+      assert.equal(ts.length, 2, 'a quad is two triangles');
+      for (const t of ts) {
+        assert.ok(t.geometric[2] * sign > 0.999, `winding faces ${sign} (${Object.keys(opts)[0]})`);
+        t.stored.forEach((v, k) => close(v, [0, 0, sign][k] as number, 1e-12)); // the stored normal (a turned one may be -0, which is fine)
+        assert.deepEqual(t.p[0], SQUARE[0], 'the fan starts at the first corner whichever way it is turned');
+      }
+    }
+  }
+  // with neither, the winding is kept and the normal is the one it gives
+  const plain = new Batch();
+  plain.poly(SQUARE);
+  for (const t of trisOf(plain)) assert.ok(t.geometric[2] > 0.999 && t.stored[2] > 0.999);
+  // a normal is stored exactly as given, not re-derived (a hair off the face's own is kept)
+  const tilt = new Batch();
+  tilt.poly(SQUARE, undefined, { normal: [0, 0.6, 0.8] });
+  assert.deepEqual(triOf(tilt, 0).stored, [0, 0.6, 0.8]);
+});
+
+test('Batch.poly: per-corner normals are kept for smooth shading, and the winding turns to face their sum', () => {
+  const b = new Batch();
+  const normals: V3[] = [[-0.6, 0, -0.8], [0.6, 0, -0.8], [0.6, 0, -0.8], [-0.6, 0, -0.8]];
+  b.poly(SQUARE, undefined, { normals });
+  for (const t of trisOf(b)) assert.ok(t.geometric[2] < -0.999, 'turned to face -z, where the normals point');
+  // each vertex still carries the normal of the corner it came from
+  for (let i = 0; i < b.count; i++) {
+    const at = [b.positions[i * 3], b.positions[i * 3 + 1], b.positions[i * 3 + 2]];
+    const k = SQUARE.findIndex((q) => q[0] === at[0] && q[1] === at[1] && q[2] === at[2]);
+    assert.deepEqual([b.normals[i * 3], b.normals[i * 3 + 1], b.normals[i * 3 + 2]], normals[k], `corner ${k}`);
+  }
+});
+
+test('Batch.tri and Batch.fan: a sliver with no area is dropped, a fan is one triangle per corner past the second with a normal each', () => {
+  const b = new Batch();
+  b.tri([0, 0, 0], [1, 0, 0], [2, 0, 0]);
+  assert.equal(b.triangles, 0, 'three points in a line draw nothing');
+  b.tri([0, 0, 0], [1, 0, 0], [0, 1, 0], undefined, [0, 0, -1]);
+  assert.equal(b.triangles, 1);
+  assert.ok(triOf(b, 0).geometric[2] < -0.999, 'turned to face the hint');
+  const f = new Batch();
+  f.fan([[0, 0, 0], [2, 0, 0], [2, 2, 0], [0, 2, 0], [-1, 1, 0]], [0, 0, -1], (p) => [p[0], p[1]]);
+  assert.equal(f.triangles, 3, 'a pentagon');
+  for (const t of trisOf(f)) assert.ok(t.geometric[2] < -0.999 && t.stored[2] < -0.999);
+  for (let i = 0; i < f.count; i++) assert.deepEqual([f.uvs[i * 2], f.uvs[i * 2 + 1]], [f.positions[i * 3], f.positions[i * 3 + 1]], 'uvOf gives each corner its UV');
+  // a fan with a repeated corner loses the sliver it makes and keeps the rest
+  const g = new Batch();
+  g.fan([[0, 0, 0], [1, 0, 0], [1, 0, 0], [1, 1, 0]]);
+  assert.equal(g.triangles, 1);
+});
+
+test('Batch options: a coloured batch keeps a colour per vertex (white unless a face says otherwise), the others none; uv false builds no UVs', () => {
+  const plain = new Batch();
+  plain.poly(SQUARE, SQUARE.map((p): [number, number] => [p[0], p[1]]), { color: [1, 0, 0] });
+  const g = plain.build();
+  assert.ok(g.getAttribute('uv'), 'UVs by default');
+  assert.equal(g.getAttribute('color'), undefined, 'no colour attribute unless the batch is coloured');
+  const col = new Batch({ colored: true });
+  col.poly(SQUARE, undefined, { color: [1, 0, 0] });
+  col.poly(SQUARE);
+  const cg = col.build();
+  assert.equal(cg.getAttribute('color').count, 8);
+  assert.deepEqual([...cg.getAttribute('color').array], [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  const bare = new Batch({ uv: false, colored: true });
+  bare.box([0, 0, 0], [1, 1, 1], { color: [0, 1, 0] });
+  const bg = bare.build();
+  assert.equal(bg.getAttribute('uv'), undefined, 'no UV attribute');
+  assert.equal(bare.uvs.length, 0);
+  assert.ok([...bg.getAttribute('color').array].every((v, i) => v === (i % 3 === 1 ? 1 : 0)), 'a box takes one colour on every face');
+});
+
+test('Batch.aabb: corners in either order make the same box, the underside can be left out, a colour goes on every corner', () => {
+  const a = new Batch({ colored: true });
+  a.aabb(0, 0, 0, 1, 2, 3, [0.5, 0.25, 0.125]);
+  const b = new Batch({ colored: true });
+  b.aabb(1, 2, 3, 0, 0, 0, [0.5, 0.25, 0.125]); // opposite corner first: still outward faces
+  for (const m of [a, b]) {
+    assert.equal(m.count, 24);
+    for (const t of trisOf(m)) {
+      const c = [0, 1, 2].map((k) => t.p.reduce((s, q) => s + (q[k] as number), 0) / 3);
+      assert.ok(t.geometric[0] * ((c[0] as number) - 0.5) + t.geometric[1] * ((c[1] as number) - 1) + t.geometric[2] * ((c[2] as number) - 1.5) > 0, 'faces outward');
+    }
+    assert.deepEqual([...m.colors.slice(0, 3)], [0.5, 0.25, 0.125]);
+  }
+  const open = new Batch();
+  open.aabb(0, 0, 0, 1, 1, 1, undefined, true);
+  assert.equal(open.count, 20);
+  assert.ok(trisOf(open).every((t) => t.stored[1] > -0.5), 'no face looks down');
+});
+
+test('Batch.append: the other batch follows, re-indexed; colour and UVs follow the receiving batch', () => {
+  const a = new Batch({ colored: true });
+  a.poly(SQUARE, undefined, { color: [1, 0, 0] });
+  const b = new Batch();
+  b.poly(SQUARE.map((p): V3 => [p[0] + 5, p[1], p[2]]), SQUARE.map((p): [number, number] => [p[0], p[1]]));
+  a.append(b);
+  assert.equal(a.count, 8);
+  assert.equal(a.triangles, 4);
+  assert.deepEqual(a.indices.slice(6), [4, 5, 6, 4, 6, 7], 're-indexed past the first batch');
+  assert.deepEqual([...a.colors.slice(12, 15)], [1, 1, 1], 'an uncoloured batch comes in white');
+  assert.equal(a.positions[12], 5);
+  assert.deepEqual([a.uvs[8], a.uvs[9]], [0, 0]);
+  assert.deepEqual([a.uvs[10], a.uvs[11]], [1, 0], 'its UVs came across');
+  const plain = new Batch();
+  plain.append(a);
+  assert.equal(plain.colors.length, 0, 'a batch that is not coloured takes no colours');
+  assert.equal(plain.triangles, 4);
+});
+
+test('part and mergeParts: one mesh per material, merged across buildings, empty parts left out, triangles totalled, render order kept', () => {
+  type K = 'brick' | 'stone' | 'glass';
+  const one: PartMap<K> = {};
+  const two: PartMap<K> = {};
+  part(one, 'brick').poly(SQUARE);
+  assert.equal(part(one, 'brick'), part(one, 'brick'), 'the same batch each time');
+  part(two, 'brick').poly(SQUARE);
+  part(two, 'stone').poly(SQUARE);
+  part(one, 'stone'); // started, never drawn in
+  const mats: Record<K, THREE.Material> = { brick: new THREE.MeshBasicMaterial(), stone: new THREE.MeshBasicMaterial(), glass: new THREE.MeshBasicMaterial() };
+  const { group, triangles } = mergeParts([one, two], mats, 'hotels', { stone: 3 });
+  assert.equal(group.name, 'hotels');
+  assert.deepEqual(group.children.map((c) => c.name), ['hotels-brick', 'hotels-stone'], 'glass has no triangles: no mesh');
+  assert.equal(triangles, 6, 'two bricks and one stone, two triangles each');
+  const [brick, stone] = group.children as THREE.Mesh[];
+  assert.equal(((brick as THREE.Mesh).geometry.index?.count ?? 0) / 3, 4, 'both buildings brick in one mesh');
+  assert.equal((brick as THREE.Mesh).material, mats.brick);
+  assert.equal((stone as THREE.Mesh).renderOrder, 3);
+  assert.equal((brick as THREE.Mesh).renderOrder, 0);
+});
+
+test('the decal and strip materials are pulled toward the camera, the plain ones are not; red brick is the tinted brick, the two-sided slate is two-sided', () => {
+  for (const name of ['sash', 'sashArch', 'pane', 'platformEdgeStrip'] as const) {
+    const m = material(name);
+    assert.equal(m.polygonOffset, true, name);
+    assert.equal(m.polygonOffsetFactor, -2, name);
+    assert.equal(m.polygonOffsetUnits, -2, name);
+    assert.equal(m.name, name);
+    assert.equal(material(name), m, `${name} is shared`);
+  }
+  for (const name of ['window', 'windowArch', 'platformEdge', 'brick'] as const) assert.equal(material(name).polygonOffset, false, name);
+  assert.equal(material('sash').transparent, true);
+  assert.equal((material('sash') as THREE.MeshLambertMaterial).alphaTest, 0.05);
+  assert.equal(material('slateBothSides').side, THREE.DoubleSide);
+  assert.equal(material('slate').side, THREE.FrontSide);
+  assert.equal((material('brickRed') as THREE.MeshLambertMaterial).color.getHex(), 0xe3707d);
+  assert.notEqual(material('brickRed'), material('brick'));
+});
+
+test('rgb: the linear triple a vertex colour wants (sRGB hex in, linear out)', () => {
+  assert.deepEqual(rgb(0xffffff), [1, 1, 1]);
+  assert.deepEqual(rgb(0x000000), [0, 0, 0]);
+  const [r, g, b] = rgb(0x808080);
+  assert.ok(r > 0.2 && r < 0.23 && r === g && g === b, `mid grey is about 0.216 linear, not 0.5: ${r}`);
 });

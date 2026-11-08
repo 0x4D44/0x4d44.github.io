@@ -14,140 +14,25 @@
 //   const landmarks = addLandmarks(scene, data);                       // once, after the scene exists
 //   const hidden = new Set([...buildingsUnderStation(...), ...LANDMARK_OSM_IDS]);  // before buildingPrisms(data, hidden)
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { Pt } from '../../core/geo.ts';
 import { barlowPlan, barlowSection, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { BarlowPlan, BayPosition, Edge, HotelPlan, MidlandPlan, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
-import { material, TEXTURES } from './materials.ts';
+import { mergeParts, material, part, TEXTURES } from './materials.ts';
+import type { Batch, PartMap, V2, V3 } from './materials.ts';
 
 /** The OSM building ids this module replaces: leave them out of buildingPrisms(). */
 export const LANDMARK_OSM_IDS: readonly number[] = REPLACED_BUILDING_IDS;
 
-// ---- a small mesh accumulator ------------------------------------------------------------------
+// ---- the mesh builder --------------------------------------------------------------------------
+// Every wall, roof and band below goes into a `Batch` from materials.ts (the one mesh builder of the
+// station modules), one per material per building (`part`), merged across buildings by `mergeParts`.
 
-export type V3 = [number, number, number];
-export type UV = [number, number];
-const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const len = (a: V3): number => Math.hypot(a[0], a[1], a[2]);
-const unit = (a: V3): V3 => {
-  const l = len(a) || 1;
-  return [a[0] / l, a[1] / l, a[2] / l];
-};
 const UP: V3 = [0, 1, 0];
-const NO_UV: UV = [0, 0];
-
-/** Flat-shaded triangles with positions, normals and UVs (metres), turned into one BufferGeometry at the end. */
-export class Mesh3 {
-  readonly pos: number[] = [];
-  readonly nor: number[] = [];
-  readonly uv: number[] = [];
-  readonly idx: number[] = [];
-
-  get triangles(): number {
-    return this.idx.length / 3;
-  }
-
-  private push(p: V3[], uvs: UV[], n: V3, order: number[]): void {
-    const base = this.pos.length / 3;
-    for (const k of order) {
-      const v = p[k] as V3;
-      const t = uvs[k] as UV;
-      this.pos.push(v[0], v[1], v[2]);
-      this.nor.push(n[0], n[1], n[2]);
-      this.uv.push(t[0], t[1]);
-    }
-    for (let i = 1; i + 1 < order.length; i++) this.idx.push(base, base + i, base + i + 1);
-  }
-
-  /** A planar quad a-b-c-d. `hint` is the side that must face the viewer; the winding is flipped to suit. */
-  quad(a: V3, b: V3, c: V3, d: V3, uvs: [UV, UV, UV, UV] = [NO_UV, NO_UV, NO_UV, NO_UV], hint?: V3): void {
-    const g1 = cross(sub(b, a), sub(c, a));
-    const g2 = cross(sub(c, a), sub(d, a));
-    let n = unit(len(g1) >= len(g2) ? g1 : g2);
-    let order = [0, 1, 2, 3];
-    if (hint && dot(n, hint) < 0) {
-      n = [-n[0], -n[1], -n[2]];
-      order = [0, 3, 2, 1];
-    }
-    this.push([a, b, c, d], uvs, n, order);
-  }
-
-  tri(a: V3, b: V3, c: V3, uvs: [UV, UV, UV] = [NO_UV, NO_UV, NO_UV], hint?: V3): void {
-    if (len(cross(sub(b, a), sub(c, a))) < 1e-12) return; // a sliver with no area: nothing to draw
-    let n = unit(cross(sub(b, a), sub(c, a)));
-    let order = [0, 1, 2];
-    if (hint && dot(n, hint) < 0) {
-      n = [-n[0], -n[1], -n[2]];
-      order = [0, 2, 1];
-    }
-    this.push([a, b, c], uvs, n, order);
-  }
-
-  /** A convex polygon as a fan; `hint` as for quad; `uvOf` gives each corner's UV. */
-  fan(points: readonly V3[], hint?: V3, uvOf?: (p: V3) => UV): void {
-    for (let i = 1; i + 1 < points.length; i++) {
-      const a = points[0] as V3;
-      const b = points[i] as V3;
-      const c = points[i + 1] as V3;
-      this.tri(a, b, c, uvOf ? [uvOf(a), uvOf(b), uvOf(c)] : undefined, hint);
-    }
-  }
-
-  toGeometry(): THREE.BufferGeometry {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
-    g.setIndex(this.idx);
-    return g;
-  }
-}
-
-/** The parts of one building: one mesh accumulator per material. */
-export type PartMap<K extends string> = Partial<Record<K, Mesh3>>;
-export function part<K extends string>(parts: PartMap<K>, key: K): Mesh3 {
-  return (parts[key] ??= new Mesh3());
-}
-
-/** Merge the parts that share a material, across buildings, into one mesh each: fewer draw calls. */
-export function mergeParts<K extends string>(sets: readonly PartMap<K>[], materials: Record<K, THREE.Material>, name: string, renderOrder: Partial<Record<K, number>> = {}): { group: THREE.Group; triangles: number } {
-  const group = new THREE.Group();
-  group.name = name;
-  let triangles = 0;
-  for (const key of Object.keys(materials) as K[]) {
-    const geos = sets.map((s) => s[key]).filter((m): m is Mesh3 => !!m && m.triangles > 0).map((m) => m.toGeometry());
-    if (!geos.length) continue;
-    let merged: THREE.BufferGeometry;
-    if (geos.length === 1) merged = geos[0] as THREE.BufferGeometry;
-    else {
-      merged = mergeGeometries(geos, false) as THREE.BufferGeometry;
-      for (const g of geos) g.dispose();
-    }
-    const mesh = new THREE.Mesh(merged, materials[key]);
-    mesh.name = `${name}-${key}`;
-    const order = renderOrder[key];
-    if (order !== undefined) mesh.renderOrder = order;
-    triangles += (merged.index as THREE.BufferAttribute).count / 3;
-    group.add(mesh);
-  }
-  return { group, triangles };
-}
 
 // ---- materials ---------------------------------------------------------------------------------
 
 export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'steel' | 'clock';
-
-const lambert = (m: THREE.Material): THREE.MeshLambertMaterial => m as THREE.MeshLambertMaterial;
-const nearer = (m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial => {
-  // flat things stood a few centimetres off a wall: pull them toward the camera so they never z-fight at range
-  m.polygonOffset = true;
-  m.polygonOffsetFactor = -2;
-  m.polygonOffsetUnits = -2;
-  return m;
-};
 
 export interface MaterialSet {
   table: Record<Key, THREE.Material>;
@@ -161,16 +46,7 @@ export function createMaterials(): MaterialSet {
     owned.push(x);
     return x;
   };
-  // Midland Grand: red brick. The shared brick is London stock, yellow-buff (average 0xa0895a); this
-  // colour multiplies it to a deep brick red (about 0x8e3c2c once mip-mapped). The shade is ASSUMED.
-  const brickRed = own(lambert(material('brick')).clone());
-  brickRed.color.setHex(0xe3707d);
-  // the slate seen from inside the shed: the shared material culls back faces, so make a two-sided copy
-  const slate = own(lambert(material('slate')).clone());
-  slate.side = THREE.DoubleSide;
-  const sash = own(nearer(lambert(material('window')).clone()));
-  const sashArch = own(nearer(lambert(material('windowArch')).clone()));
-  const pane = own(nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })));
+  // The only material of its own is the clock face: a canvas picture of a dial, drawn here (nothing else uses it).
   let clockMap: THREE.CanvasTexture | null = null;
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
@@ -205,7 +81,18 @@ export function createMaterials(): MaterialSet {
   }
   const clock = own(new THREE.MeshBasicMaterial({ map: clockMap, color: clockMap ? 0xffffff : 0xe9e2cc, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   return {
-    table: { brick: material('brick'), brickRed, stone: material('stone'), slate, sash, sashArch, pane, roofGlass: material('roofGlass'), steel: material('steel'), clock },
+    table: {
+      brick: material('brick'),
+      brickRed: material('brickRed'),
+      stone: material('stone'),
+      slate: material('slateBothSides'),
+      sash: material('sash'),
+      sashArch: material('sashArch'),
+      pane: material('pane'),
+      roofGlass: material('roofGlass'),
+      steel: material('steel'),
+      clock,
+    },
     owned,
   };
 }
@@ -213,13 +100,13 @@ export function createMaterials(): MaterialSet {
 // ---- facade building blocks --------------------------------------------------------------------
 
 /** Vertical wall strips around an outline, outward normals; u runs along the perimeter and v up, in metres. */
-export function addWalls(m: Mesh3, outline: readonly Pt[], y0: number, y1: number): void {
+export function addWalls(m: Batch, outline: readonly Pt[], y0: number, y1: number): void {
   let s = 0;
   for (const e of polygonEdges(outline)) {
     const s0 = s;
     const s1 = s + e.length;
     s = s1;
-    m.quad([e.a[0], y0, e.a[1]], [e.b[0], y0, e.b[1]], [e.b[0], y1, e.b[1]], [e.a[0], y1, e.a[1]], [[s0, y0], [s1, y0], [s1, y1], [s0, y1]], [e.normal[0], 0, e.normal[1]]);
+    m.quadUV([e.a[0], y0, e.a[1]], [e.b[0], y0, e.b[1]], [e.b[0], y1, e.b[1]], [e.a[0], y1, e.a[1]], [[s0, y0], [s1, y0], [s1, y1], [s0, y1]], [e.normal[0], 0, e.normal[1]]);
   }
 }
 
@@ -227,7 +114,7 @@ export function addWalls(m: Mesh3, outline: readonly Pt[], y0: number, y1: numbe
  * A sloped roof from the eaves outline (at y0) up to a ring (at y1), and a flat cap on the ring. u runs
  * along the eaves and v up the slope, in metres. A ring of one repeated point makes a pyramid (no cap).
  */
-export function addRoof(m: Mesh3, outline: readonly Pt[], ring: readonly Pt[], y0: number, y1: number, cap = true): void {
+export function addRoof(m: Batch, outline: readonly Pt[], ring: readonly Pt[], y0: number, y1: number, cap = true): void {
   const n = outline.length;
   const rise = y1 - y0;
   const slope = (i: number): number => Math.hypot((ring[i] as Pt)[0] - (outline[i] as Pt)[0], (ring[i] as Pt)[1] - (outline[i] as Pt)[1], rise);
@@ -241,13 +128,13 @@ export function addRoof(m: Mesh3, outline: readonly Pt[], ring: readonly Pt[], y
     const b = outline[j] as Pt;
     const ra = ring[e.i] as Pt;
     const rb = ring[j] as Pt;
-    m.quad([a[0], y0, a[1]], [b[0], y0, b[1]], [rb[0], y1, rb[1]], [ra[0], y1, ra[1]], [[s0, 0], [s1, 0], [s1, slope(j)], [s0, slope(e.i)]], [e.normal[0], 1, e.normal[1]]);
+    m.quadUV([a[0], y0, a[1]], [b[0], y0, b[1]], [rb[0], y1, rb[1]], [ra[0], y1, ra[1]], [[s0, 0], [s1, 0], [s1, slope(j)], [s0, slope(e.i)]], [e.normal[0], 1, e.normal[1]]);
   }
   if (!cap) return;
   const tris = THREE.ShapeUtils.triangulateShape(ring.map(([x, z]) => new THREE.Vector2(x, z)), []);
   for (const [a, b, c] of tris as [number, number, number][]) {
     const p = (k: number): V3 => [(ring[k] as Pt)[0], y1, (ring[k] as Pt)[1]];
-    const uv = (k: number): UV => [(ring[k] as Pt)[0], (ring[k] as Pt)[1]];
+    const uv = (k: number): V2 => [(ring[k] as Pt)[0], (ring[k] as Pt)[1]];
     m.tri(p(a), p(b), p(c), [uv(a), uv(b), uv(c)], UP);
   }
 }
@@ -318,7 +205,7 @@ export function segmentsOutside(edges: readonly Edge[], cutters: readonly (reado
 }
 
 /** A band (string course or cornice) standing `out` metres proud of the wall, `h` tall, from y. Stone UVs in metres. */
-export function addBand(m: Mesh3, segs: readonly Seg[], y: number, h: number, out: number): void {
+export function addBand(m: Batch, segs: readonly Seg[], y: number, h: number, out: number): void {
   for (const sg of segs) {
     const l = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
     const n3: V3 = [sg.normal[0], 0, sg.normal[1]];
@@ -327,9 +214,9 @@ export function addBand(m: Mesh3, segs: readonly Seg[], y: number, h: number, ou
     const up = (v: V3, dy: number): V3 => [v[0], v[1] + dy, v[2]];
     const s0 = sg.s0;
     const s1 = sg.s0 + l;
-    m.quad(ao, bo, up(bo, h), up(ao, h), [[s0, y], [s1, y], [s1, y + h], [s0, y + h]], n3);
-    m.quad(up(ao, h), up(bo, h), [sg.b[0], y + h, sg.b[1]], [sg.a[0], y + h, sg.a[1]], [[s0, 0], [s1, 0], [s1, out], [s0, out]], UP);
-    m.quad([sg.a[0], y, sg.a[1]], [sg.b[0], y, sg.b[1]], bo, ao, [[s0, 0], [s1, 0], [s1, out], [s0, out]], [0, -1, 0]);
+    m.quadUV(ao, bo, up(bo, h), up(ao, h), [[s0, y], [s1, y], [s1, y + h], [s0, y + h]], n3);
+    m.quadUV(up(ao, h), up(bo, h), [sg.b[0], y + h, sg.b[1]], [sg.a[0], y + h, sg.a[1]], [[s0, 0], [s1, 0], [s1, out], [s0, out]], UP);
+    m.quadUV([sg.a[0], y, sg.a[1]], [sg.b[0], y, sg.b[1]], bo, ao, [[s0, 0], [s1, 0], [s1, out], [s0, out]], [0, -1, 0]);
   }
 }
 
@@ -371,7 +258,7 @@ interface Placed {
 }
 
 /** A flat window shape stood `lift` metres off the wall at `at` (bottom centre), facing `normal`; `textured` gives it stone UVs in metres. */
-export function addWindow(m: Mesh3, p: Placed, y: number, w: number, h: number, head: Head, lift: number, textured = false): void {
+export function addWindow(m: Batch, p: Placed, y: number, w: number, h: number, head: Head, lift: number, textured = false): void {
   const pts = windowOutline(w, h, head).map(([x, yy]): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * lift, y + yy, p.at[1] + p.dir[1] * x + p.normal[1] * lift]);
   const along = (q: V3): number => (q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1];
   m.fan(pts, [p.normal[0], 0, p.normal[1]], textured ? (q) => [along(q), q[1]] : undefined);
@@ -388,7 +275,7 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
   const [tw, th] = TEXTURES[key === 'sash' ? 'window' : 'windowArch'].tile;
   const hw = w / 2;
   const q = (x: number, yy: number): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * lift, y + yy, p.at[1] + p.dir[1] * x + p.normal[1] * lift];
-  part(parts, key).quad(q(-hw, 0), q(hw, 0), q(hw, h), q(-hw, h), [[0, 0], [tw, 0], [tw, th], [0, th]], [p.normal[0], 0, p.normal[1]]);
+  part(parts, key).quadUV(q(-hw, 0), q(hw, 0), q(hw, h), q(-hw, h), [[0, 0], [tw, 0], [tw, th], [0, th]], [p.normal[0], 0, p.normal[1]]);
 }
 
 // ---- the Great Northern Hotel ------------------------------------------------------------------
@@ -475,7 +362,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan): void {
       const half = 2.1;
       const off = 0.27;
       const q = (x: number, y: number): V3 => [f.at[0] + f.dir[0] * x + f.normal[0] * off, y, f.at[1] + f.dir[1] * x + f.normal[1] * off];
-      part(parts, 'clock').quad(q(half, cy - half), q(-half, cy - half), q(-half, cy + half), q(half, cy + half), [[0, 0], [1, 0], [1, 1], [0, 1]], [f.normal[0], 0, f.normal[1]]);
+      part(parts, 'clock').quadUV(q(half, cy - half), q(-half, cy - half), q(-half, cy + half), q(half, cy + half), [[0, 0], [1, 0], [1, 1], [0, 1]], [f.normal[0], 0, f.normal[1]]);
     }
     for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
       const [px, pz] = corner(a, b, 0.1);
@@ -586,8 +473,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
       const a0 = arc[k] as number;
       const a1 = arc[k + 1] as number;
       // glass: u across the strip (panes 0.9 m wide), v along it; slate: u along the shed, v up the slope
-      if (g) glass.quad(a, b, d, e, [[a0, v0], [a1, v0], [a1, v1], [a0, v1]], hint);
-      else slate.quad(a, b, d, e, [[v0, a0], [v0, a1], [v1, a1], [v1, a0]], hint);
+      if (g) glass.quadUV(a, b, d, e, [[a0, v0], [a1, v0], [a1, v1], [a0, v1]], hint);
+      else slate.quadUV(a, b, d, e, [[v0, a0], [v0, a1], [v1, a1], [v1, a0]], hint);
     }
   }
   // ribs: a steel ribbon 0.5 m wide following the arch, 1.4 m deep, at each rib position
@@ -603,9 +490,9 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
       const inward = (pt: typeof p): [number, number] => [pt.x - (nu / nl) * depth, pt.y - (ny / nl) * depth];
       const pi = inward(p);
       const qi = inward(q);
-      steel.quad(at(p.x, v - rib, p.y), at(q.x, v - rib, q.y), at(qi[0], v - rib, qi[1]), at(pi[0], v - rib, pi[1]));
-      steel.quad(at(p.x, v + rib, p.y), at(q.x, v + rib, q.y), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
-      steel.quad(at(pi[0], v - rib, pi[1]), at(qi[0], v - rib, qi[1]), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
+      steel.quadUV(at(p.x, v - rib, p.y), at(q.x, v - rib, q.y), at(qi[0], v - rib, qi[1]), at(pi[0], v - rib, pi[1]));
+      steel.quadUV(at(p.x, v + rib, p.y), at(q.x, v + rib, q.y), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
+      steel.quadUV(at(pi[0], v - rib, pi[1]), at(qi[0], v - rib, qi[1]), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
     }
   }
   // the south wall: the shed's end, brick, behind the hotel; u across the wall from its west foot, v up

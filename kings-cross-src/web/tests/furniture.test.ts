@@ -51,10 +51,14 @@ function tris(mesh: THREE.Mesh): Tri[] {
   const pos = mesh.geometry.getAttribute('position');
   const uv = mesh.geometry.getAttribute('uv');
   const nor = mesh.geometry.getAttribute('normal');
+  // the shared builder (materials.ts Batch) makes indexed geometry: the corners of triangle t are index[3t..3t+2]
+  const index = mesh.geometry.index;
+  const count = index ? index.count : pos.count;
   const out: Tri[] = [];
-  for (let i = 0; i + 2 < pos.count; i += 3) {
-    const at = (k: number): V3 => [pos.getX(i + k), pos.getY(i + k), pos.getZ(i + k)];
-    out.push({ p: [at(0), at(1), at(2)], uv: [0, 1, 2].map((k) => [uv.getX(i + k), uv.getY(i + k)] as [number, number]), n: [nor.getX(i), nor.getY(i), nor.getZ(i)] });
+  for (let i = 0; i + 2 < count; i += 3) {
+    const v = (k: number): number => (index ? index.getX(i + k) : i + k);
+    const at = (k: number): V3 => [pos.getX(v(k)), pos.getY(v(k)), pos.getZ(v(k))];
+    out.push({ p: [at(0), at(1), at(2)], uv: [0, 1, 2].map((k) => [uv.getX(v(k)), uv.getY(v(k))] as [number, number]), n: [nor.getX(v(0)), nor.getY(v(0)), nor.getZ(v(0))] });
   }
   return out;
 }
@@ -602,6 +606,22 @@ test('furniture: runs with the platforms alone as well (no rails: every long edg
     const pts = outline(piece.ref);
     const d = distanceToEdges([piece.x, piece.z], classifyEdges(pts, outlines.filter((o) => o !== pts), layout, undefined));
     assert.ok(d >= FIGURES.safetyLine, `platform ${piece.ref}: ${d} m from a track edge`);
+  }
+});
+
+test('colour: every furniture mesh carries a colour per vertex (the shared builder is told so), and the lamps, benches and help points are more than one colour', () => {
+  for (const name of ['lamps', 'benches', 'help-points', 'screens', 'screen-rods', 'canopy-glass', 'canopy-steel']) {
+    const geometry = part(furniture, name).geometry;
+    const color = geometry.getAttribute('color');
+    assert.ok(color, `${name} has vertex colours`);
+    assert.equal(color.count, geometry.getAttribute('position').count, `${name}: one colour per vertex`);
+    for (let i = 0; i < color.count * 3; i++) assert.ok(color.array[i] as number >= 0 && (color.array[i] as number) <= 1, `${name}: colour channel in range`);
+  }
+  for (const name of ['lamps', 'benches', 'help-points']) {
+    const color = part(furniture, name).geometry.getAttribute('color');
+    const seen = new Set<string>();
+    for (let i = 0; i < color.count; i++) seen.add(`${color.getX(i).toFixed(3)},${color.getY(i).toFixed(3)},${color.getZ(i).toFixed(3)}`);
+    assert.ok(seen.size >= 2, `${name} is painted in at least two colours, not all white`);
   }
 });
 

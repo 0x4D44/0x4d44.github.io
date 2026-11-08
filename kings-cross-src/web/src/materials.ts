@@ -17,11 +17,15 @@
 // Using it:
 //   import { material } from './materials.ts';
 //   mesh.material = material('brick');   // shared, cached; never mutate it, clone first
+//
+// The mesh builder every station module uses is `Batch` below (one per material, merged into one draw call;
+// `part` and `mergeParts` keep one per material across buildings). Nothing else builds flat-shaded meshes.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const IN = 0.0254; // metres per inch
 
-export type TextureName = 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab';
+export type TextureName = 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
 
 export interface TextureSpec {
   /** metres one tile covers: [along u, along v] */
@@ -71,6 +75,15 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // The concourse floor: pale grey stone paving in slabs 1.2 m square (two by two to a tile). ASSUMED slab size.
   floorSlab: { tile: [2.4, 2.4], px: [288, 288], density: [100, 140], average: 0x9ea2a8, repeat: true,
     source: 'ASSUMED: 1.2 m square paving slabs' },
+  // The underside of the shed roof between the ribs: painted tongue-and-groove boarding, boards running
+  // along the shed (UV v) and 150 mm wide across it (UV u). Neither the board width nor the pale cream
+  // paint has a source (the 2012 restoration's paint scheme was not found): both ASSUMED.
+  lining: { tile: [1.2, 1.2], px: [192, 192], density: [140, 180], average: 0xe0dccf, repeat: true,
+    source: 'ASSUMED: painted boarding 150 mm wide, butt joints every 1.2 m at most' },
+  // The shed's own roof glazing: the same panes as roofGlass, but a milky sky-blue that reads as daylight
+  // from inside (the Barlow shed keeps the darker roofGlass) and light-painted astragal bars.
+  shedGlass: { tile: [0.9, 1.8], px: [90, 180], density: [80, 120], average: 0xaec3d3, repeat: true,
+    source: 'ASSUMED pane size 0.9 x 1.8 m; bar colour ASSUMED' },
 };
 
 /** Texels per metre on each axis. */
@@ -349,6 +362,42 @@ function paintFloorSlab(g: Ctx, w: number, h: number): void {
   }
 }
 
+/** Painted boarding: 8 boards of 150 mm across the tile, a vee-joint between boards, grain along them, a butt joint in each. */
+function paintLining(g: Ctx, w: number, h: number): void {
+  const r = rng(83);
+  const boards = 8;
+  const bw = w / boards;
+  g.fillStyle = '#d9d5c8';
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < boards; i++) {
+    const x = i * bw;
+    g.fillStyle = tone(0xf2eee3, 0xe6e1d3, r(), 0.98 + r() * 0.04);
+    g.fillRect(x + 1.5, 0, bw - 3, h);
+    for (let s = 0; s < 10; s++) { // grain: faint streaks along the board
+      g.fillStyle = r() < 0.5 ? 'rgba(120,104,76,0.05)' : 'rgba(255,252,240,0.10)';
+      g.fillRect(x + 2 + r() * (bw - 5), r() * h, 1, 8 + r() * 40);
+    }
+    const jy = r() * h; // the butt joint of this board (staggered from its neighbours)
+    g.fillStyle = 'rgba(80,68,50,0.22)';
+    g.fillRect(x + 1.5, jy, bw - 3, 1.2);
+  }
+  g.fillStyle = 'rgba(70,60,44,0.32)'; // the vee-joints between boards
+  for (let i = 0; i < boards; i++) g.fillRect(i * bw - 0.75, 0, 1.5, h);
+  g.fillRect(w - 0.75, 0, 0.75, h);
+}
+
+/** The shed's glazing: a milky sky-blue pane (mostly opaque, the material's opacity does the see-through) between pale painted bars. */
+function paintShedGlass(g: Ctx, w: number, h: number): void {
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(178,208,230,0.88)';
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(244,250,255,0.28)'; // a sheen across each pane
+  g.fillRect(0, 0, w, h * 0.35);
+  g.fillStyle = 'rgba(226,230,232,1)'; // astragal bars, painted light like the ribs
+  g.fillRect(0, 0, 3, h);
+  g.fillRect(0, 0, w, 4);
+}
+
 const PAINTERS: Readonly<Record<TextureName, (g: Ctx, w: number, h: number) => void>> = {
   brick: paintBrick,
   stone: paintStone,
@@ -360,6 +409,8 @@ const PAINTERS: Readonly<Record<TextureName, (g: Ctx, w: number, h: number) => v
   window: (g, w, h) => paintWindow(g, w, h, false),
   windowArch: (g, w, h) => paintWindow(g, w, h, true),
   floorSlab: paintFloorSlab,
+  lining: paintLining,
+  shedGlass: paintShedGlass,
 };
 export { PAINTERS };
 
@@ -398,11 +449,20 @@ export function texture(name: TextureName): THREE.CanvasTexture | null {
 export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
-  | 'concrete' | 'steel' | 'whiteSteel' | 'lining' | 'panel' | 'concourseFloor';
+  | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip';
 
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
   return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : TEXTURES[name].average, ...extra });
+}
+
+/** Flat things stood a few centimetres off a wall: pulled toward the camera so they never z-fight at range. */
+function nearer<T extends THREE.Material>(m: T): T {
+  m.polygonOffset = true;
+  m.polygonOffsetFactor = -2;
+  m.polygonOffsetUnits = -2;
+  return m;
 }
 
 const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
@@ -422,13 +482,36 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   concrete: () => new THREE.MeshLambertMaterial({ color: 0x8e8e8a }),
   steel: () => new THREE.MeshLambertMaterial({ color: 0x3d4650 }),
   whiteSteel: () => new THREE.MeshLambertMaterial({ color: 0xe6eaee }),
-  // The underside of a roof seen from inside: pale painted boarding. The scene's lights shine from
-  // above, so an underside would come out black; the emissive term stands in for the light that
-  // really comes down through the glazing and off the platforms.
-  lining: () => new THREE.MeshLambertMaterial({ color: 0xb8bec6, emissive: 0x424850, side: THREE.BackSide }),
+  // The restored shed's ironwork: slender ribs and bars painted light. The colour is ASSUMED (a pale
+  // grey-white); the 2012 paint scheme was not found. The emissive term lifts the undersides the same
+  // way as for the lining, below.
+  ribPaint: () => new THREE.MeshLambertMaterial({ color: 0xdadee1, emissive: 0x555b61 }),
+  // The underside of a roof seen from inside: pale painted boarding (the 'lining' texture). The scene's
+  // lights shine from above, so an underside would come out black; the emissive term (which takes the
+  // texture too, so the boards still show) stands in for the light that really comes down through the
+  // glazing and off the platforms.
+  lining: () => tiled('lining', { side: THREE.BackSide, emissive: 0x8d897f, emissiveMap: texture('lining') }),
+  // The same boarding on the valley's vertical faces, seen from the front.
+  valleyLining: () => tiled('lining', { emissive: 0x8d897f, emissiveMap: texture('lining') }),
+  // The shed's roof glazing. It glows a little (emissive) so it reads as daylight from inside; shed.ts clones
+  // it and sets the opacity by camera distance (see glazingOpacity there).
+  shedGlass: () => tiled('shedGlass', { transparent: true, side: THREE.DoubleSide, depthWrite: false, emissive: 0x73879a, emissiveMap: texture('shedGlass') }),
   // Solid pale roof panels (the outer part of the Western Concourse roof), slightly see-through.
   panel: () => new THREE.MeshLambertMaterial({ color: 0xe3e8ee, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false }),
   concourseFloor: () => tiled('floorSlab'),
+  // The Midland Grand's red brick. The shared brick is London stock, yellow-buff (average 0xa0895a); this
+  // colour multiplies it to a deep brick red (about 0x8e3c2c once mip-mapped). The shade is ASSUMED.
+  brickRed: () => tiled('brick', { color: 0xe3707d }),
+  // The slate seen from inside the shed: the shared slate culls back faces, so this is a two-sided one.
+  slateBothSides: () => tiled('slate', { side: THREE.DoubleSide }),
+  // Window decals: flat quads stood a hair off a wall, so they are pulled toward the camera (see `nearer`).
+  sash: () => nearer(tiled('window', { transparent: true, alphaTest: 0.05 })),
+  sashArch: () => nearer(tiled('windowArch', { transparent: true, alphaTest: 0.05 })),
+  // A dark pane set in a bar or a frame (the Barlow shed's roof lights, tower openings).
+  pane: () => nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })),
+  // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
+  // polygon offset that keeps it clear of the surface at any range.
+  platformEdgeStrip: () => nearer(tiled('platformEdge')),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();
@@ -488,58 +571,154 @@ export function boxProjectUV(geometry: THREE.BufferGeometry): THREE.BufferGeomet
 
 export type V3 = [number, number, number];
 export type V2 = [number, number];
+/** A colour as the linear r, g, b triple a vertex colour attribute wants. */
+export type Rgb = [number, number, number];
+
+/** A 0xRRGGBB colour as the linear triple a vertex colour wants. */
+export const rgb = (hex: number): Rgb => {
+  const c = new THREE.Color(hex);
+  return [c.r, c.g, c.b];
+};
+
+export interface FaceOptions {
+  /** The normal to store; the winding is turned to face along it. Default: the normal the winding gives. */
+  normal?: V3;
+  /** A normal for each corner (smooth shading, as round a cylinder); the winding is turned to face their sum. */
+  normals?: readonly V3[];
+  /** The side that must face the viewer: the winding, and the stored normal with it, is turned to suit. */
+  facing?: V3;
+  /** A vertex colour for every corner (white if left out); only a batch made `colored` keeps it. */
+  color?: Rgb;
+}
+
+export interface BatchOptions {
+  /** Keep a colour per vertex and build a `color` attribute (for materials with `vertexColors`). */
+  colored?: boolean;
+  /** Keep UVs (the default); `false` for geometry that wears no texture, so the attribute is not even built. */
+  uv?: boolean;
+}
+
+const WHITE: Rgb = [1, 1, 1];
 
 /**
- * A growing indexed mesh with UVs in metres: the tool the station modules build their static
- * geometry with, so thousands of boxes become one draw call. Faces are counter-clockwise seen
- * from the front; normals come from the winding (flat shading, hard edges).
+ * THE mesh builder of the station modules: a growing indexed mesh with flat-shaded faces, UVs in
+ * metres and, if asked, a colour per vertex, so thousands of boxes become one draw call. Faces are
+ * counter-clockwise seen from the front; each face carries one normal (hard edges), taken from its
+ * winding unless the caller says which way it must look.
  *
  *   const b = new Batch();
- *   b.box([x, y, z], [sx, sy, sz]);       // an axis-aligned box centred on (x, y, z)
- *   b.quad(p0, p1, p2, p3, uv0, uv1, uv2, uv3);
+ *   b.box([x, y, z], [sx, sy, sz]);                  // an axis-aligned box centred on (x, y, z)
+ *   b.quad(p0, p1, p2, p3, uv0, uv1, uv2, uv3);      // a quad, the winding as given
+ *   b.quadUV(p0, p1, p2, p3, uvs, facing);           // a quad turned to face `facing`
+ *   b.poly(pts, uvs, { normal, color });             // any convex polygon
  *   mesh.geometry = b.build();
+ *
+ * The buildings keep one Batch per material (`part`) and merge them across buildings (`mergeParts`).
  */
 export class Batch {
   readonly positions: number[] = [];
   readonly normals: number[] = [];
   readonly uvs: number[] = [];
   readonly indices: number[] = [];
+  /** one r, g, b per vertex; empty unless the batch is `colored` */
+  readonly colors: number[] = [];
+  readonly colored: boolean;
+  readonly textured: boolean;
+
+  constructor(opts: BatchOptions = {}) {
+    this.colored = opts.colored ?? false;
+    this.textured = opts.uv ?? true;
+  }
 
   /** Vertices added so far. */
   get count(): number {
     return this.positions.length / 3;
   }
 
-  /** A flat polygon (a fan from its first corner), all corners sharing one normal taken from the first three. */
-  poly(pts: V3[], uv: V2[]): void {
-    const [a, b, c] = pts as [V3, V3, V3];
-    const e1: V3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    const e2: V3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    let nx = e1[1] * e2[2] - e1[2] * e2[1];
-    let ny = e1[2] * e2[0] - e1[0] * e2[2];
-    let nz = e1[0] * e2[1] - e1[1] * e2[0];
-    const l = Math.hypot(nx, ny, nz) || 1;
-    nx /= l; ny /= l; nz /= l;
-    const base = this.count;
-    pts.forEach((p, i) => {
-      this.positions.push(p[0], p[1], p[2]);
-      this.normals.push(nx, ny, nz);
-      const t = uv[i] as V2;
-      this.uvs.push(t[0], t[1]);
-    });
-    for (let i = 1; i + 1 < pts.length; i++) this.indices.push(base, base + i, base + i + 1);
+  /** Triangles added so far. */
+  get triangles(): number {
+    return this.indices.length / 3;
   }
 
-  quad(a: V3, b: V3, c: V3, d: V3, ua: V2, ub: V2, uc: V2, ud: V2): void {
-    this.poly([a, b, c, d], [ua, ub, uc, ud]);
+  /**
+   * A flat convex polygon as a fan from its first corner, all corners sharing one normal. The normal is
+   * the one the winding gives (Newell's sum, so a quad with a repeated corner is fine), or `opts.normal`;
+   * `opts.normal` and `opts.facing` turn the winding to look that way (the fan then still starts at the
+   * first corner). UVs default to (0, 0).
+   */
+  poly(pts: readonly V3[], uv?: readonly V2[], opts: FaceOptions = {}): void {
+    const n = pts.length;
+    let gx = 0;
+    let gy = 0;
+    let gz = 0;
+    for (let i = 0; i < n; i++) {
+      const p = pts[i] as V3;
+      const q = pts[(i + 1) % n] as V3;
+      gx += (p[1] - q[1]) * (p[2] + q[2]);
+      gy += (p[2] - q[2]) * (p[0] + q[0]);
+      gz += (p[0] - q[0]) * (p[1] + q[1]);
+    }
+    const l = Math.hypot(gx, gy, gz) || 1;
+    let normal: V3 = [gx / l, gy / l, gz / l];
+    let order = pts.map((_, i) => i);
+    const smooth = opts.normals;
+    const want = opts.normal ?? opts.facing ?? (smooth ? (smooth.reduce((s, q) => [s[0] + q[0], s[1] + q[1], s[2] + q[2]], [0, 0, 0]) as V3) : undefined);
+    if (want && gx * want[0] + gy * want[1] + gz * want[2] < 0) {
+      order = [0, ...order.slice(1).reverse()];
+      normal = [-normal[0], -normal[1], -normal[2]];
+    }
+    if (opts.normal) normal = opts.normal;
+    const color = opts.color ?? WHITE;
+    const base = this.count;
+    for (const k of order) {
+      const p = pts[k] as V3;
+      const q = smooth ? (smooth[k] as V3) : normal;
+      this.positions.push(p[0], p[1], p[2]);
+      this.normals.push(q[0], q[1], q[2]);
+      if (this.textured) {
+        const t = uv?.[k];
+        this.uvs.push(t ? t[0] : 0, t ? t[1] : 0);
+      }
+      if (this.colored) this.colors.push(color[0], color[1], color[2]);
+    }
+    for (let i = 1; i + 1 < n; i++) this.indices.push(base, base + i, base + i + 1);
+  }
+
+  /** A quad a-b-c-d with a UV for each corner, the winding as given. */
+  quad(a: V3, b: V3, c: V3, d: V3, ua: V2, ub: V2, uc: V2, ud: V2, opts: FaceOptions = {}): void {
+    this.poly([a, b, c, d], [ua, ub, uc, ud], opts);
+  }
+
+  /** A quad a-b-c-d with its four UVs in one array; `facing` is the side that must face the viewer (the winding is flipped to suit). */
+  quadUV(a: V3, b: V3, c: V3, d: V3, uvs?: readonly [V2, V2, V2, V2], facing?: V3): void {
+    this.poly([a, b, c, d], uvs, facing ? { facing } : {});
+  }
+
+  /** A triangle; a sliver with no area is left out. `facing` as for `quadUV`. */
+  tri(a: V3, b: V3, c: V3, uvs?: readonly [V2, V2, V2], facing?: V3): void {
+    const x = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    const y = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    const z = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    if (Math.hypot(x, y, z) < 1e-12) return;
+    this.poly([a, b, c], uvs, facing ? { facing } : {});
+  }
+
+  /** A convex polygon as triangles from its first corner, each with its own normal; `uvOf` gives each corner's UV. `facing` as for `quadUV`. */
+  fan(points: readonly V3[], facing?: V3, uvOf?: (p: V3) => V2): void {
+    for (let i = 1; i + 1 < points.length; i++) {
+      const a = points[0] as V3;
+      const b = points[i] as V3;
+      const c = points[i + 1] as V3;
+      this.tri(a, b, c, uvOf ? [uvOf(a), uvOf(b), uvOf(c)] : undefined, facing);
+    }
   }
 
   /**
    * An oriented box centred on `c` with full sizes `s` (x, y, z before turning), turned about
    * z by `rotZ` and then about y by `rotY` (radians). UVs are metres on each face, from the
-   * face's own corner. `skip` lists faces to leave out: '+x' '-x' '+y' '-y' '+z' '-z'.
+   * face's own corner. `skip` lists faces to leave out: '+x' '-x' '+y' '-y' '+z' '-z'. `color` paints every face.
    */
-  box(c: V3, s: V3, opts: { rotY?: number; rotZ?: number; skip?: string[] } = {}): void {
+  box(c: V3, s: V3, opts: { rotY?: number; rotZ?: number; skip?: string[]; color?: Rgb } = {}): void {
     const hx = s[0] / 2;
     const hy = s[1] / 2;
     const hz = s[2] / 2;
@@ -560,17 +739,73 @@ export class Batch {
       ['+y', at(-hx, hy, hz), at(hx, hy, hz), at(hx, hy, -hz), at(-hx, hy, -hz), [0, 0], [s[0], 0], [s[0], s[2]], [0, s[2]]],
       ['-y', at(-hx, -hy, -hz), at(hx, -hy, -hz), at(hx, -hy, hz), at(-hx, -hy, hz), [0, 0], [s[0], 0], [s[0], s[2]], [0, s[2]]],
     ];
-    for (const [name, a, b, cc, d, ua, ub, uc, ud] of faces) if (!opts.skip?.includes(name)) this.quad(a, b, cc, d, ua, ub, uc, ud);
+    const face = opts.color ? { color: opts.color } : {};
+    for (const [name, a, b, cc, d, ua, ub, uc, ud] of faces) if (!opts.skip?.includes(name)) this.quad(a, b, cc, d, ua, ub, uc, ud, face);
+  }
+
+  /** An axis-aligned box from corner (x0, y0, z0) to (x1, y1, z1), in either order; `skipBottom` leaves its underside out. */
+  aabb(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, color?: Rgb, skipBottom = false): void {
+    this.box([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], [Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0)], { ...(color ? { color } : {}), ...(skipBottom ? { skip: ['-y'] } : {}) });
+  }
+
+  /** Add everything another batch holds (a loop, not a spread: these arrays can be long). Colour and UVs follow this batch's own settings. */
+  append(other: Batch): void {
+    const base = this.count;
+    const copy = (from: readonly number[], to: number[]): void => {
+      for (let i = 0; i < from.length; i++) to.push(from[i] as number);
+    };
+    copy(other.positions, this.positions);
+    copy(other.normals, this.normals);
+    if (this.textured) {
+      if (other.textured) copy(other.uvs, this.uvs);
+      else for (let i = 0; i < other.count; i++) this.uvs.push(0, 0);
+    }
+    if (this.colored) {
+      if (other.colored) copy(other.colors, this.colors);
+      else for (let i = 0; i < other.count; i++) this.colors.push(1, 1, 1);
+    }
+    for (let i = 0; i < other.indices.length; i++) this.indices.push((other.indices[i] as number) + base);
   }
 
   build(): THREE.BufferGeometry {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.positions, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.normals, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
+    if (this.textured) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
+    if (this.colored) g.setAttribute('color', new THREE.Float32BufferAttribute(this.colors, 3));
     g.setIndex(this.indices);
     return g;
   }
+}
+
+/** The parts of one building: one Batch per material. */
+export type PartMap<K extends string> = Partial<Record<K, Batch>>;
+export function part<K extends string>(parts: PartMap<K>, key: K): Batch {
+  return (parts[key] ??= new Batch());
+}
+
+/** Merge the parts that share a material, across buildings, into one mesh each: fewer draw calls. */
+export function mergeParts<K extends string>(sets: readonly PartMap<K>[], materials: Record<K, THREE.Material>, name: string, renderOrder: Partial<Record<K, number>> = {}): { group: THREE.Group; triangles: number } {
+  const group = new THREE.Group();
+  group.name = name;
+  let triangles = 0;
+  for (const key of Object.keys(materials) as K[]) {
+    const geos = sets.map((s) => s[key]).filter((m): m is Batch => !!m && m.triangles > 0).map((m) => m.build());
+    if (!geos.length) continue;
+    let merged: THREE.BufferGeometry;
+    if (geos.length === 1) merged = geos[0] as THREE.BufferGeometry;
+    else {
+      merged = mergeGeometries(geos, false) as THREE.BufferGeometry;
+      for (const g of geos) g.dispose();
+    }
+    const mesh = new THREE.Mesh(merged, materials[key]);
+    mesh.name = `${name}-${key}`;
+    const order = renderOrder[key];
+    if (order !== undefined) mesh.renderOrder = order;
+    triangles += (merged.index as THREE.BufferAttribute).count / 3;
+    group.add(mesh);
+  }
+  return { group, triangles };
 }
 
 /**

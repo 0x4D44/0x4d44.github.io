@@ -8,9 +8,10 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowPlan, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addBand, addLandmarks, addWalls, barlowGeometry, createMaterials, hotelGeometry, LANDMARK_OSM_IDS, Mesh3, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, windowOutline } from '../src/landmarks.ts';
-import type { Key, PartMap, V3 } from '../src/landmarks.ts';
-import { material } from '../src/materials.ts';
+import { addBand, addLandmarks, addWalls, barlowGeometry, createMaterials, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, windowOutline } from '../src/landmarks.ts';
+import type { Key } from '../src/landmarks.ts';
+import { Batch, material } from '../src/materials.ts';
+import type { PartMap, V3 } from '../src/materials.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
@@ -21,13 +22,13 @@ interface Tri {
   n: V3;
 }
 /** The triangles of a mesh, with their stored normals. */
-function triangles(m: Mesh3): Tri[] {
+function triangles(m: Batch): Tri[] {
   const out: Tri[] = [];
-  for (let i = 0; i < m.idx.length; i += 3) {
-    const k = [m.idx[i], m.idx[i + 1], m.idx[i + 2]] as [number, number, number];
-    const v = (j: number): V3 => [m.pos[j * 3] as number, m.pos[j * 3 + 1] as number, m.pos[j * 3 + 2] as number];
-    const t = (j: number): [number, number] => [m.uv[j * 2] as number, m.uv[j * 2 + 1] as number];
-    out.push({ p: [v(k[0]), v(k[1]), v(k[2])], uv: [t(k[0]), t(k[1]), t(k[2])], n: [m.nor[k[0] * 3] as number, m.nor[k[0] * 3 + 1] as number, m.nor[k[0] * 3 + 2] as number] });
+  for (let i = 0; i < m.indices.length; i += 3) {
+    const k = [m.indices[i], m.indices[i + 1], m.indices[i + 2]] as [number, number, number];
+    const v = (j: number): V3 => [m.positions[j * 3] as number, m.positions[j * 3 + 1] as number, m.positions[j * 3 + 2] as number];
+    const t = (j: number): [number, number] => [m.uvs[j * 2] as number, m.uvs[j * 2 + 1] as number];
+    out.push({ p: [v(k[0]), v(k[1]), v(k[2])], uv: [t(k[0]), t(k[1]), t(k[2])], n: [m.normals[k[0] * 3] as number, m.normals[k[0] * 3 + 1] as number, m.normals[k[0] * 3 + 2] as number] });
   }
   return out;
 }
@@ -41,18 +42,10 @@ const geoNormal = (t: Tri): V3 => {
 };
 const worldArea = (t: Tri): number => Math.hypot(...geoNormal(t)) / 2;
 const uvArea = (t: Tri): number => Math.abs((t.uv[1][0] - t.uv[0][0]) * (t.uv[2][1] - t.uv[0][1]) - (t.uv[2][0] - t.uv[0][0]) * (t.uv[1][1] - t.uv[0][1])) / 2;
-const allVertices = (parts: PartMap<Key>): V3[] => Object.values(parts).flatMap((m) => triangles(m as Mesh3).flatMap((t) => t.p));
+const allVertices = (parts: PartMap<Key>): V3[] => Object.values(parts).flatMap((m) => triangles(m as Batch).flatMap((t) => t.p));
 const merged = (...sets: PartMap<Key>[]): PartMap<Key> => {
   const out: PartMap<Key> = {};
-  for (const s of sets) for (const [k, m] of Object.entries(s)) {
-    const into = (out[k as Key] ??= new Mesh3());
-    const from = m as Mesh3;
-    const base = into.pos.length / 3;
-    into.pos.push(...from.pos);
-    into.nor.push(...from.nor);
-    into.uv.push(...from.uv);
-    into.idx.push(...from.idx.map((i) => i + base));
-  }
+  for (const s of sets) for (const [k, m] of Object.entries(s)) (out[k as Key] ??= new Batch()).append(m as Batch);
   return out;
 };
 
@@ -60,12 +53,12 @@ const hotel = greatNorthernHotelPlan(data);
 const midland = midlandGrandPlan(data);
 const barlow = barlowPlan(data);
 
-// ---- Mesh3 and the wall builders ---------------------------------------------------------------
+// ---- Batch and the wall builders ---------------------------------------------------------------
 
-test('Mesh3.quad: the winding and the stored normal turn toward the hint', () => {
+test('Batch.quadUV: the winding and the stored normal turn toward the hint', () => {
   for (const hint of [[0, 0, 1], [0, 0, -1]] as V3[]) {
-    const m = new Mesh3();
-    m.quad([0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], undefined, hint);
+    const m = new Batch();
+    m.quadUV([0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], undefined, hint);
     const ts = triangles(m);
     assert.equal(ts.length, 2);
     for (const t of ts) {
@@ -79,7 +72,7 @@ test('Mesh3.quad: the winding and the stored normal turn toward the hint', () =>
 });
 
 test('addWalls: UVs are metres, so brick is brick-sized: a 12 x 6 m wall carries u 0..12 and v 0..6', () => {
-  const m = new Mesh3();
+  const m = new Batch();
   addWalls(m, [[0, 0], [12, 0], [12, 4], [0, 4]], 0, 6);
   const ts = triangles(m);
   assert.equal(ts.length, 8);
@@ -98,7 +91,7 @@ test('addWalls: UVs are metres, so brick is brick-sized: a 12 x 6 m wall carries
 test('brick is never stretched: every wall triangle of the hotels, towers and the shed\'s end wall has texel area = wall area', () => {
   const parts = merged(hotelGeometry(hotel), midlandGeometry(midland), barlowGeometry(barlow));
   for (const key of ['brick', 'brickRed'] as const) {
-    const ts = triangles(parts[key] as Mesh3);
+    const ts = triangles(parts[key] as Batch);
     assert.ok(ts.length > 30, `${key} has walls`);
     let worst = 0;
     for (const t of ts) worst = Math.max(worst, Math.abs(uvArea(t) / worldArea(t) - 1));
@@ -163,7 +156,7 @@ test('segmentsOutside: an edge crossing a tower is cut where the tower stands, a
 
 test('Midland Grand: no band stands in front of a tower\'s face', () => {
   const cutters = midland.towers.map((t) => towerSquare(t, 0.45));
-  const m = new Mesh3();
+  const m = new Batch();
   addBand(m, segmentsOutside(polygonEdges(midland.outline), cutters), 6, 0.35, 0.6);
   const verts = triangles(m).flatMap((t) => t.p);
   assert.ok(verts.length > 100);
@@ -172,14 +165,14 @@ test('Midland Grand: no band stands in front of a tower\'s face', () => {
     for (const v of verts) assert.equal(pointInQuad([v[0], v[2]], sq), false, `a band vertex at (${v[0].toFixed(1)}, ${v[2].toFixed(1)}) is inside the ${t.name} tower`);
   }
   // and without cutting there would be: the test can fail
-  const whole = new Mesh3();
+  const whole = new Batch();
   addBand(whole, segmentsOutside(polygonEdges(midland.outline), []), 6, 0.35, 0.6);
   const poking = triangles(whole).flatMap((t) => t.p).filter((v) => midland.towers.some((t) => pointInQuad([v[0], v[2]], towerSquare(t, 0))));
   assert.ok(poking.length > 0, 'uncut bands do poke into the towers');
 });
 
 test('Midland Grand: the building itself cuts its eaves cornice where the towers stand', () => {
-  const stone = midlandGeometry(midland).stone as Mesh3;
+  const stone = midlandGeometry(midland).stone as Batch;
   // the cornice is the only stone between 1 m under the eaves and the eaves: the towers' own bands and windows are at other heights
   const cornice = triangles(stone).filter((t) => t.p.every((v) => v[1] >= midland.eaves - 1 - 1e-6 && v[1] <= midland.eaves + 1e-6));
   assert.ok(cornice.length > 100, `${cornice.length} cornice triangles`);
@@ -192,9 +185,9 @@ test('Great Northern Hotel: a round-headed window on the ground floor and four s
   const parts = hotelGeometry(hotel);
   const bays = hotel.faces.reduce((s, f) => s + f.bays.length, 0);
   assert.equal(bays, 50);
-  assert.equal(triangles(parts.sashArch as Mesh3).length, 2 * bays);
+  assert.equal(triangles(parts.sashArch as Batch).length, 2 * bays);
   // 4 upper storeys per bay; the sixth and thirteenth bays of the main front are tripartite: two more lights per storey
-  assert.equal(triangles(parts.sash as Mesh3).length, 2 * (4 * bays + 2 * 2 * 4));
+  assert.equal(triangles(parts.sash as Batch).length, 2 * (4 * bays + 2 * 2 * 4));
 });
 
 test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth proud, and faces out', () => {
@@ -205,7 +198,7 @@ test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth pro
     return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
   }));
   for (const key of ['sash', 'sashArch'] as const) {
-    for (const t of triangles(parts[key] as Mesh3)) {
+    for (const t of triangles(parts[key] as Batch)) {
       for (const v of t.p) {
         assert.equal(pointInPolygon([v[0], v[2]], hotel.outline), false, `${key} vertex outside the walls`);
         assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
@@ -218,16 +211,16 @@ test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth pro
 
 test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and no window is hidden by the cornice', () => {
   const parts = hotelGeometry(hotel);
-  close(Math.max(...triangles(parts.brick as Mesh3).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick to the eaves');
+  close(Math.max(...triangles(parts.brick as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick to the eaves');
   close(Math.max(...allVertices(parts).map((v) => v[1])), hotel.ridge, 1e-9, 'the highest point is the ridge');
   close(Math.min(...allVertices(parts).map((v) => v[1])), 0, 1e-9, 'walls stand on the ground');
   // the cornice is the highest stone band: windows end below its underside
-  const stoneYs = triangles(parts.stone as Mesh3).flatMap((t) => t.p.map((v) => v[1]));
+  const stoneYs = triangles(parts.stone as Batch).flatMap((t) => t.p.map((v) => v[1]));
   const corniceBottom = Math.min(...stoneYs.filter((y) => y > hotel.eaves - 1.0 && y < hotel.eaves - 0.3));
-  const sashTop = Math.max(...triangles(parts.sash as Mesh3).flatMap((t) => t.p.map((v) => v[1])));
+  const sashTop = Math.max(...triangles(parts.sash as Batch).flatMap((t) => t.p.map((v) => v[1])));
   assert.ok(sashTop < corniceBottom, `window tops reach ${sashTop}, the cornice starts at ${corniceBottom}`);
   // the slate roof stands on the walls: its lowest edge is the eaves
-  close(Math.min(...triangles(parts.slate as Mesh3).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'roof eaves');
+  close(Math.min(...triangles(parts.slate as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'roof eaves');
 });
 
 // ---- the Midland Grand -------------------------------------------------------------------------
@@ -238,7 +231,7 @@ test('Midland Grand: the clock tower reaches 76 m [WP-MGH], the entrance tower i
   assert.ok(ys.some((y) => Math.abs(y - FIGURES.midland.westTowerHeight) < 1e-6), 'the west tower\'s spire is there');
   close(Math.min(...ys), 0, 1e-9, 'on the ground');
   // the slate runs from the eaves to the spires, and the main roof's ridge is among its heights
-  const slate = triangles(midlandGeometry(midland).slate as Mesh3).flatMap((t) => t.p.map((v) => v[1]));
+  const slate = triangles(midlandGeometry(midland).slate as Batch).flatMap((t) => t.p.map((v) => v[1]));
   close(Math.min(...slate), midland.eaves, 1e-9, 'roof eaves');
   assert.ok(slate.some((y) => Math.abs(y - midland.ridge) < 1e-9), 'the ridge height is there');
   assert.ok(midland.ridge < FIGURES.midland.westTowerHeight, 'both towers rise above the roof');
@@ -246,7 +239,7 @@ test('Midland Grand: the clock tower reaches 76 m [WP-MGH], the entrance tower i
 
 test('Midland Grand: four faces of windows on the front bays, none behind a tower, a clock on each clock-tower face', () => {
   const parts = midlandGeometry(midland);
-  const clocks = triangles(parts.clock as Mesh3);
+  const clocks = triangles(parts.clock as Batch);
   assert.equal(clocks.length, 8, 'a square panel on each of four faces');
   for (const t of clocks) assert.ok(Math.abs(geoNormal(t)[1]) < 1e-9, 'vertical');
   // the clock sits above the belfry, below the spire: 0.5 .. 0.8 of the tower
@@ -256,7 +249,7 @@ test('Midland Grand: four faces of windows on the front bays, none behind a towe
   const covered = (p: Pt): boolean => midland.towers.some((t) => pointInQuad(p, towerSquare(t, 0.45)));
   const open = [...midland.front.bays, ...midland.wing.bays].filter((b) => !covered(b.at)).length;
   assert.ok(open >= 28 && open <= 33, `${open} front and wing bays are open`);
-  const panes = triangles(parts.pane as Mesh3).length;
+  const panes = triangles(parts.pane as Batch).length;
   assert.ok(panes > open * 4 * 2, `at least a window per bay per storey, got ${panes} pane triangles`);
 });
 
@@ -267,7 +260,7 @@ const inVault = (p: V3): { u: number; v: number; y: number } => ({ ...worldToShe
 
 test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springings, inside the 245 ft 6 in walls', () => {
   const parts = barlowGeometry(barlow);
-  const roof = [...triangles(parts.slate as Mesh3), ...triangles(parts.roofGlass as Mesh3)].flatMap((t) => t.p).map(inVault);
+  const roof = [...triangles(parts.slate as Batch), ...triangles(parts.roofGlass as Batch)].flatMap((t) => t.p).map(inVault);
   close(Math.max(...roof.map((p) => p.y)), FIGURES.barlow.rise, 1e-3, 'crown');
   close(Math.min(...roof.map((p) => p.y)), 0, 1e-9, 'springings');
   const margin = (barlow.width - barlow.span) / 2;
@@ -281,8 +274,8 @@ test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springing
 
 test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the outer quarters, to 210 m; glass alone beyond', () => {
   const parts = barlowGeometry(barlow);
-  const glassAll = triangles(parts.roofGlass as Mesh3);
-  const slate = triangles(parts.slate as Mesh3);
+  const glassAll = triangles(parts.roofGlass as Batch);
+  const slate = triangles(parts.slate as Batch);
   // the glass strips that start at the south wall (the middle of the arch): glass u is the distance along the arch, slate v likewise
   const glass = glassAll.filter((t) => t.p.some((p) => inVault(p).v < 1e-6));
   const glassFrom = Math.min(...glass.flatMap((t) => t.uv.map((q) => q[0])));
@@ -299,8 +292,8 @@ test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the
 
 test('Barlow vault: a rib of 24 segments at every rib position, each along the arch; the south wall closes the end', () => {
   const parts = barlowGeometry(barlow);
-  assert.equal(triangles(parts.steel as Mesh3).length, barlow.ribs.length * 24 * 3 * 2);
-  const wall = triangles(parts.brickRed as Mesh3);
+  assert.equal(triangles(parts.steel as Batch).length, barlow.ribs.length * 24 * 3 * 2);
+  const wall = triangles(parts.brickRed as Batch);
   assert.equal(wall.length, 24, 'one triangle per arch segment, fanned from the middle of the sill');
   for (const t of wall) for (const p of t.p) close(inVault(p).v, 0.15, 1e-6, 'the wall stands on the south end');
   close(Math.max(...wall.flatMap((t) => t.p.map((p) => inVault(p).y))), FIGURES.barlow.rise, 1e-3, 'wall rises to the crown');
@@ -312,20 +305,28 @@ test('Barlow vault: a rib of 24 segments at every rib position, each along the a
 
 // ---- assembly ----------------------------------------------------------------------------------
 
-test('materials: shared ones are reused, the red brick is a tinted copy, and nothing shared is changed', () => {
+test('materials: every look but the clock is the library\'s shared one (red brick, two-sided slate, sashes, panes now live in materials.ts), and nothing shared is changed', () => {
   const before = (material('brick') as THREE.MeshLambertMaterial).color.getHex();
   const set = createMaterials();
   assert.equal(set.table.brick, material('brick'));
   assert.equal(set.table.stone, material('stone'));
   assert.equal(set.table.roofGlass, material('roofGlass'));
+  assert.equal(set.table.steel, material('steel'));
+  assert.equal(set.table.brickRed, material('brickRed'), 'the Midland Grand\'s brick is the library\'s tinted one');
   assert.notEqual(set.table.brickRed, material('brick'));
-  assert.notEqual(set.table.slate, material('slate'), 'the shed\'s slate is seen from inside: a two-sided copy');
+  assert.equal(set.table.slate, material('slateBothSides'));
+  assert.notEqual(set.table.slate, material('slate'), 'the shed\'s slate is seen from inside: a two-sided one');
   assert.equal((set.table.slate as THREE.MeshLambertMaterial).side, THREE.DoubleSide);
   assert.equal((material('slate') as THREE.MeshLambertMaterial).side, THREE.FrontSide, 'the shared one is untouched');
+  assert.equal(set.table.sash, material('sash'));
+  assert.equal(set.table.sashArch, material('sashArch'));
+  assert.equal(set.table.pane, material('pane'));
+  for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
+  assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
   assert.equal((material('brick') as THREE.MeshLambertMaterial).color.getHex(), before, 'the shared brick keeps its colour');
   assert.ok((set.table.brickRed as THREE.MeshLambertMaterial).color.r > (set.table.brickRed as THREE.MeshLambertMaterial).color.g, 'red brick');
-  assert.ok(set.owned.length >= 5);
-  assert.ok(!set.owned.includes(material('brick')), 'we never dispose a shared material');
+  assert.deepEqual(set.owned, [set.table.clock], 'the clock face is all this set makes (no document here, so no texture)');
+  for (const key of ['brick', 'brickRed', 'slate', 'sash', 'sashArch', 'pane'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {

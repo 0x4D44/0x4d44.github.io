@@ -26,6 +26,7 @@ import {
   SLEEPER_LENGTH,
   SLEEPER_SPACING,
   SLEEPER_TOP,
+  SLEEPER_TRIANGLES,
   SLEEPER_WIDTH,
   sleeperPlacements,
   splitByZone,
@@ -231,7 +232,7 @@ test('sleepers: each is square to the line and on it, in the placements and in t
   }
 });
 
-test('sleepers: a sleeper is 2.6 x 0.25 m, its top at SLEEPER_TOP, with a top and four sides and no bottom', () => {
+test('sleepers: a sleeper is 2.6 x 0.25 m, its top at SLEEPER_TOP, with a top and two long sides, no bottom and no ends (6 triangles, not 10)', () => {
   const sleepers = mesh(buildTrack(waysOf([[10, -20], [10, -60]]), FLAT), 'track-sleepers');
   const box = boxOf(sleepers.geometry);
   near(box.max.x - box.min.x, SLEEPER_LENGTH, 1e-6, 'length');
@@ -239,8 +240,12 @@ test('sleepers: a sleeper is 2.6 x 0.25 m, its top at SLEEPER_TOP, with a top an
   near(box.max.y, SLEEPER_TOP, 1e-6, 'top');
   assert.ok(box.min.y >= GROUND_Y, 'does not reach below the ground');
   const t = triangles(sleepers.geometry);
-  assert.equal(t.length, 10, 'five faces of two triangles');
+  assert.equal(t.length, SLEEPER_TRIANGLES, 'three faces of two triangles');
+  assert.equal(SLEEPER_TRIANGLES, 6);
   assert.ok(t.every((x) => x.stored.y >= -1e-9), 'no face looks down');
+  assert.ok(t.every((x) => Math.abs(x.stored.x) < 1e-9), 'no end face: nothing looks along the sleeper');
+  assert.equal(t.filter((x) => x.stored.y > 0.999).length, 2, 'the top is one quad');
+  assert.equal(t.filter((x) => x.stored.z > 0.999).length + t.filter((x) => x.stored.z < -0.999).length, 4, 'the two long sides, a quad each');
   assert.ok(t.every((x) => x.geometric.dot(x.stored) > 0.999), 'wound outward');
 });
 
@@ -327,13 +332,29 @@ test('buildTrack: builds from the real data in Node as five meshes, one sleeper 
   assert.equal(g.userData.chains, chains.length);
   assert.ok(Math.abs(sleepers.count - length / SLEEPER_SPACING) <= chains.length / 2 + 1, `${sleepers.count} sleepers for ${length.toFixed(0)} m (${(length / SLEEPER_SPACING).toFixed(0)} expected)`);
   assert.ok(sleepers.count > 6000 && sleepers.count < 8000, `${sleepers.count} sleepers`);
-  let tris = sleepers.count * 10;
+  let tris = sleepers.count * ((sleepers.geometry.index?.count ?? 0) / 3);
+  assert.equal(tris, sleepers.count * SLEEPER_TRIANGLES, 'a sleeper is SLEEPER_TRIANGLES triangles');
   for (const name of ['track-ballast', 'track-rails']) tris += (mesh(g, name).geometry.index?.count ?? 0) / 3;
-  assert.ok(tris < 120_000, `${tris} triangles`);
+  // measured on the 2026 extract: 6978 sleepers; 78,554 triangles with 10-triangle sleepers, 50,642 with 6
+  assert.ok(tris < 60_000, `${tris} triangles`);
   // the library's materials: the ballast itself, the sleepers its concrete (tinted per instance, fading with distance)
   assert.equal((mesh(g, 'track-ballast').material as THREE.Material).name, 'ballast');
   assert.equal((sleepers.material as THREE.MeshLambertMaterial).color.getHex(), 0x8e8e8a);
   assert.ok(sleepers.instanceColor, 'sleepers are tinted per instance');
+});
+
+test('attributes: only the ballast carries UVs (the planar metres), only the rails and the buffer stops carry vertex colours', () => {
+  const g = buildTrack(waysOf([[10, -20], [10, -60]]), FLAT);
+  const ballast = mesh(g, 'track-ballast').geometry;
+  assert.ok(ballast.getAttribute('uv'), 'the ballast is textured');
+  assert.equal(ballast.getAttribute('color'), undefined);
+  for (const name of ['track-rails', 'track-sleepers']) assert.equal(mesh(g, name).geometry.getAttribute('uv'), undefined, `${name} wears no texture, so builds no UVs`);
+  assert.ok(mesh(g, 'track-rails').geometry.getAttribute('color'), 'rails are painted per vertex');
+  assert.equal(mesh(g, 'track-sleepers').geometry.getAttribute('color'), undefined, 'sleepers are tinted per instance');
+  const stops = buildBufferStops(data, layout);
+  const stop = (stops.children[0] as THREE.Mesh).geometry;
+  assert.ok(stop.getAttribute('color'), 'the buffer stop is painted per vertex');
+  assert.equal(stop.getAttribute('uv'), undefined, 'and wears no texture');
 });
 
 test('rails: the inner faces are one GAUGE apart, measured on the built geometry, and the head top is RAIL_TOP', () => {
