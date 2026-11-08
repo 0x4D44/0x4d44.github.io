@@ -7,6 +7,8 @@ const DAY_MS = 24 * 60 * 60_000;
 const MAX_ACTIVATIONS = 2_000;
 const MAX_MOVEMENTS = 3_000;
 const MAX_PENDING_ACTIVATIONS = 5_000;
+const MAX_CANCELLATIONS = 2_000;
+const MAX_PENDING_CANCELLATIONS = 5_000;
 const londonDateParts = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
 });
@@ -125,6 +127,8 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
   const activations = new Map();
   const pendingActivations = new Map();
   const movements = new Map();
+  const cancellations = new Map();
+  const pendingCancellations = new Map();
 
   function currentTime() {
     const value = Number(now());
@@ -140,6 +144,12 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
     }
     for (const [key, value] of movements) {
       if (at - value.receivedAtMs >= DAY_MS) { movements.delete(key); expiredMovements += 1; }
+    }
+    for (const [key, value] of cancellations) {
+      if (at - value.event.receivedAtMs >= DAY_MS) cancellations.delete(key);
+    }
+    for (const [key, value] of pendingCancellations) {
+      if (at - value.receivedAtMs >= DAY_MS) pendingCancellations.delete(key);
     }
   }
 
@@ -216,7 +226,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
       if (service) emitted.push(activate(activation, service));
       else rejectedActivations += 1;
     }
-    return emitted;
+    return [...emitted, ...resolvePendingCancellations(rows)];
   }
 
   function activationFor(trainId, originalTrainId) {
@@ -278,6 +288,48 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
     return matchMovement(base, originalTrainId, currentTrainId, rows);
   }
 
+  function readCancellation(body, type, receivedAtMs) {
+    const originalTrainId = text(body.train_id), currentTrainId = text(body.current_train_id);
+    const sourceMs = timestamp(type === '0002' ? body.canx_timestamp : body.reinstatement_timestamp);
+    if (sourceMs === null || (!currentTrainId && !originalTrainId) ||
+        (currentTrainId && !headcodeFrom(currentTrainId)) || (originalTrainId && !headcodeFrom(originalTrainId))) return null;
+    return { originalTrainId, currentTrainId, sourceMs, cancelled: type === '0002',
+      departureMs: timestamp(body.dep_timestamp), location: text(body.loc_stanox), receivedAtMs };
+  }
+
+  function applyCancellation(control, rows) {
+    const linked = activationFor(control.currentTrainId, control.originalTrainId);
+    if (!linked) return null;
+    const service = rows.find(row => row.uid === linked.uid && row.serviceDate === linked.serviceDate && row.date === linked.date);
+    if (!service) return null;
+    // A cancellation may be entered at a remote origin. A later cancellation point,
+    // however, is not evidence that an earlier King's Cross call was cancelled.
+    const lastCall = Math.max(...[service.arrivalMs, service.departureMs].filter(Number.isFinite));
+    if (control.location !== KX_STANOX && control.departureMs !== null &&
+        Number.isFinite(lastCall) && control.departureMs > lastCall) return null;
+    const key = stableKey([service.uid, service.serviceDate, service.date]);
+    const previous = cancellations.get(key);
+    if (previous && (control.sourceMs < previous.sourceMs ||
+        control.sourceMs === previous.sourceMs && control.cancelled === previous.event.cancelled)) return null;
+    const event = { kind: 'trust', area, type: 'cancellation', cancelled: control.cancelled,
+      trainId: control.currentTrainId || control.originalTrainId, uid: service.uid, headcode: service.headcode,
+      date: service.date, serviceDate: service.serviceDate, matchMethod: 'activation', receivedAtMs: control.receivedAtMs };
+    putRecent(cancellations, key, { sourceMs: control.sourceMs, event }, MAX_CANCELLATIONS);
+    accepted += 1;
+    return event;
+  }
+
+  function resolvePendingCancellations(rows) {
+    const events = [];
+    for (const [key, control] of pendingCancellations) {
+      if (!activationFor(control.currentTrainId, control.originalTrainId)) continue;
+      pendingCancellations.delete(key);
+      const event = applyCancellation(control, rows);
+      if (event) events.push(event);
+    }
+    return events;
+  }
+
   function apply(raw) {
     const at = currentTime();
     prune(at);
@@ -323,9 +375,19 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
         }, MAX_MOVEMENTS);
         accepted += 1;
         output.push(normalized);
+      } else if (type === '0002' || type === '0005') {
+        const control = readCancellation(object(item?.body) ?? {}, type, at);
+        if (!control) continue;
+        if (!activationFor(control.currentTrainId, control.originalTrainId)) {
+          const key = stableKey([control.originalTrainId, control.currentTrainId, control.sourceMs, control.cancelled]);
+          putRecent(pendingCancellations, key, control, MAX_PENDING_CANCELLATIONS);
+        } else {
+          const event = applyCancellation(control, rows);
+          if (event) output.push(event);
+        }
       }
     }
-    return output;
+    return [...output, ...resolvePendingCancellations(rows)];
   }
 
   function setServices(next) {
@@ -344,6 +406,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
       const result = matchMovement(stored.base, stored.originalTrainId, stored.currentTrainId, rows);
       if (result) realtime.push(result.normalized);
     }
+    for (const stored of cancellations.values()) realtime.push(stored.event);
     realtime.sort((a, b) => b.receivedAtMs - a.receivedAtMs || a.trainId.localeCompare(b.trainId));
 
     const byCall = new Map();
@@ -365,6 +428,13 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
         matchMethod: event.matchMethod,
         updatedAtMs: event.receivedAtMs,
       };
+      if (event.type === 'cancellation') {
+        existing.cancelled = event.cancelled;
+        existing.cancellationUpdatedAtMs = event.receivedAtMs;
+        existing.updatedAtMs = Math.max(existing.updatedAtMs, event.receivedAtMs);
+        byCall.set(key, existing);
+        continue;
+      }
       const previousActual = event.eventType === 'ARRIVAL' ? existing.actualArrivalMs : event.eventType === 'DEPARTURE' ? existing.actualDepartureMs : null;
       if (previousActual !== null && (event.actualMs ?? -Infinity) < previousActual) continue;
       existing.trainId = event.trainId;
@@ -397,6 +467,8 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
       accepted,
       activations: activations.size,
       movements: movements.size,
+      cancellations: cancellations.size,
+      pendingCancellations: pendingCancellations.size,
       unmatchedMovements: [...movements.values()].filter((row) => matchMovement(row.base, row.originalTrainId, row.currentTrainId, serviceRows).normalized.uid === null).length,
       pendingActivations: pendingActivations.size,
       rejectedActivations,

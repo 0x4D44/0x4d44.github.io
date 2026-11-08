@@ -43,15 +43,16 @@ function writeEvent(res, text) {
 }
 
 /** Named SSE traffic lets the browser detect an idle or broken relay connection. */
-export function startEventHeartbeat(req, res, { now = Date.now, metadata, schedule = setInterval, unschedule = clearInterval } = {}) {
+export function startEventHeartbeat(req, res, { now = Date.now, metadata, immediate = false, schedule = setInterval, unschedule = clearInterval } = {}) {
   let stopped = false;
-  const timer = schedule(() => {
+  const ping = () => {
     if (!stopped) {
       const info = metadata?.();
       const data = { t: now(), ...(info ? { feed: info.feed, lastEventAt: info.lastEventAt } : {}) };
       if (!writeEvent(res, `event: ping\ndata: ${JSON.stringify(data)}\n\n`)) stop();
     }
-  }, 5000);
+  };
+  const timer = schedule(ping, 5000);
   timer?.unref?.();
   const stop = () => {
     if (stopped) return;
@@ -59,6 +60,7 @@ export function startEventHeartbeat(req, res, { now = Date.now, metadata, schedu
     unschedule(timer);
   };
   req.once('close', stop);
+  if (immediate) ping();
   return stop;
 }
 
@@ -252,7 +254,7 @@ export async function startRelay({
             else if (!writeEvent(res, `event: td\ndata: ${JSON.stringify(row)}\n\n`)) listeners.delete(send);
           };
           listeners.add(send);
-          const stopHeartbeat = startEventHeartbeat(req, res, { now, metadata: () => ({ feed: status.state, lastEventAt: status.lastEventAt }) });
+          const stopHeartbeat = startEventHeartbeat(req, res, { now, immediate: true, metadata: () => ({ feed: status.state, lastEventAt: status.lastEventAt }) });
           heartbeats.add(stopHeartbeat);
           req.once('close', () => {
             listeners.delete(send);

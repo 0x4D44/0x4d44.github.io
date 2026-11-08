@@ -18,6 +18,7 @@ export interface BoardService extends ScheduleCall {
     variationMinutes?: number | null; eventType?: string | null; platform?: string | null;
     trainId?: string | null; matchMethod?: string | null; updatedAtMs?: number | null;
     cancelled?: boolean;
+    cancellationUpdatedAtMs?: number | null;
   } | null;
 }
 export interface BoardDue { service: BoardService; direction: 'arrival' | 'departure'; bookedMs: number }
@@ -234,9 +235,14 @@ export function applyBoardTrust(services: readonly BoardService[], event: unknow
   if (!service) return [...services];
   return services.map(s => {
     if (s !== service) return s;
+    if (cancellation) {
+      const previous = s.realtime?.cancellationUpdatedAtMs ?? (typeof s.realtime?.cancelled === 'boolean' ? s.realtime.updatedAtMs : undefined);
+      if (finite(e.receivedAtMs) && finite(previous) && e.receivedAtMs < previous) return s;
+      return { ...s, realtime: { ...s.realtime, cancelled: e.cancelled as boolean,
+        ...(finite(e.receivedAtMs) ? { cancellationUpdatedAtMs: e.receivedAtMs,
+          updatedAtMs: Math.max(s.realtime?.updatedAtMs ?? 0, e.receivedAtMs) } : {}) } };
+    }
     if (finite(e.receivedAtMs) && finite(s.realtime?.updatedAtMs) && e.receivedAtMs < s.realtime.updatedAtMs) return s;
-    if (cancellation) return { ...s, realtime: { ...s.realtime, cancelled: e.cancelled as boolean,
-      ...(finite(e.receivedAtMs) ? { updatedAtMs: e.receivedAtMs } : {}) } };
     const realtime = { ...s.realtime, eventType: String(e.eventType) };
     if (finite(e.actualMs)) {
       if (e.eventType === 'ARRIVAL') realtime.actualArrivalMs = e.actualMs;

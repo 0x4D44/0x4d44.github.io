@@ -50,7 +50,7 @@ M = [
          'options.previous?.mode === mode ? options.previous : undefined'),
     ]),
     ('narrow board does not start collapsed', [
-        ('let collapsed = narrow.matches, chosen = false, html = \'\';', "let collapsed = false, chosen = false, html = '';"),
+        ('let collapsed = narrow.matches, chosen = false, html = \'\', disposed = false;', "let collapsed = false, chosen = false, html = '', disposed = false;"),
     ]),
     ('board top overlaps the page controls', [
         ('.kx-board{position:fixed;top:52px;left:16px;', '.kx-board{position:fixed;top:0px;left:16px;'),
@@ -88,8 +88,8 @@ M.extend([('station names keep screaming capitals', [("name.trim().toLocaleLower
     'service.departure))',
     "(direction === 'arrival' ? service.arrival : service.departure)")]),
  ('empty stock leaks depot name',
-  [("stockCall(service, direction) ? 'empty stock'",
-    'stockCall(service, direction) ? (service.destinationName || service.destination)')]),
+  [("const placeFor = (service: BoardService, direction: Direction): string => stockCall(service, direction) ? stockLabel",
+    "const placeFor = (service: BoardService, direction: Direction): string => false ? stockLabel")]),
  ('future actual exposed early', [('finite(actual) && actual <= nowMs ?', 'finite(actual) ?')]),
  ('positive variation lacks plus',
   [("rt.variationMinutes > 0 ? '+' : ''", "rt.variationMinutes > 0 ? '' : ''")]),
@@ -111,24 +111,40 @@ FM = [
     ('missing timetable retry too slow', [('calls ? 60_000 : Math.min(5_000 * 2 ** Math.max(0, misses - 1), 300_000)', '60_000')]),
     ('schedule host gate omitted', [('disposed || !relayReachable(options.hostname)', 'disposed')]),
     ('schedule dispose leaves timer', [('dispose(): void { disposed = true; abort.abort(); if (timer !== undefined) unschedule(timer); }', 'dispose(): void { disposed = true; abort.abort(); }')]),
+    ('buffered cancellation omitted', [("'receivedAtMs', 'cancelled'];", "'receivedAtMs'];")]),
+    ('cancellation validator omitted', [(": key === 'cancelled' ? typeof field !== 'boolean'", '')]),
+    ('cancellation timestamp validator omitted', [("'actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs', 'cancellationUpdatedAtMs'", "'actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs'")]),
 ]
 M.append(('stale TRUST overwrites newer fact', [('e.receivedAtMs < s.realtime.updatedAtMs', 'false')]))
+M.append(('cancellation ordering shares movement timestamp',
+          [('const previous = s.realtime?.cancellationUpdatedAtMs ?? (typeof s.realtime?.cancelled === \'boolean\' ? s.realtime.updatedAtMs : undefined);',
+            'const previous = s.realtime?.updatedAtMs;')]))
 M.extend([
     ('operator column truncates names', [('max-width:92px', 'max-width:60px')]),
     ('approach uses platform row renderer', [('rows.approaching.map(approachHtml)', "rows.approaching.map(r => trainHtml(r, '', rows.timeMs))")]),
     ('approach distance rounds to whole kilometres', [('(distanceM / 1000).toFixed(1)', '(distanceM / 1000).toFixed(0)')]),
     ('approach origin becomes destination', [('stationName(row.service.originName || row.service.origin)', 'stationName(row.service.destinationName || row.service.destination)')]),
-    ('approach fabricates unknown platform', [("if (!sorted.length) return 'P?';", "if (!sorted.length) return 'P0';")]),
-    ('approach stock exposes depot', [("stockCall(row.service, 'arrival') ? 'empty stock'", "stockCall(row.service, 'arrival') ? row.service.originName || row.service.origin")]),
+    ('unannounced platform invents P0', [("return sorted.length === 1 ? `P${sorted[0]}` : 'TBC';", "return sorted.length === 1 ? `P${sorted[0]}` : 'P0';")]),
+    ('approach stock exposes depot', [("stockCall(row.service, 'arrival') ? stockLabel", "stockCall(row.service, 'arrival') ? stationName(row.service.originName || row.service.origin)")]),
     ('approach route tooltip unescaped', [('<div class="kx-board-approach" title="${escape(title)}">', '<div class="kx-board-approach" title="${title}">')]),
     ('approach facts lose fixed columns', [('grid-template-columns:32px 12px 56px 56px minmax(0,1fr)', 'grid-template-columns:32px 12px minmax(0,1fr)')]),
-    ('approach platform candidates overflow cell', [('full.length > 10', 'full.length > 100')]),
-    ('approach tooltip hides full platform candidates', [('platformTooltip = platformRangeLabel(candidates)', 'platformTooltip = platformLabel(candidates)')]),
+    ('approach platform candidates overflow cell', [('const candidates = row.platforms ?? [], platform = platformLabel(candidates);', 'const candidates = row.platforms ?? [], platform = platformRangeLabel(candidates);')]),
+    ('approach tooltip hides full platform candidates', [('const platformTooltip = platform === \'TBC\' && candidates.length ? `TBC (possible ${platformRangeLabel(candidates)})` : platform;', 'const platformTooltip = platform;')]),
     ('approach direction arrow omitted', [('<span class="kx-board-arrow">→</span>', '<span class="kx-board-arrow"></span>')]),
     ('departure uses platform row renderer', [('departureHtml(r, rows.timeMs)', "trainHtml(r, '', rows.timeMs)")]),
     ('departure facts lose fixed columns', [('grid-template-columns:32px 28px 12px 42px minmax(0,1fr)', 'grid-template-columns:32px 28px minmax(0,1fr)')]),
     ('departure clock creeps with current time', [('validClock(row.leftAtMs) ? clock(row.leftAtMs)', 'validClock(row.leftAtMs) ? clock(nowMs)')]),
     ('departure exposes future actual', [('validClock(actual) && actual <= nowMs ?', 'validClock(actual) ?')]),
+])
+# Round18 adds eight named regressions across these nine board/feed recipes.
+# The unannounced-platform recipe above refreshes its former stale target.
+M.extend([
+    ('footer clearance removed', [('const bottom = Math.max(24, height - footerTop + 12);', 'const bottom = 24;')]),
+    ('HUD observer omitted', [('if (hud) observer?.observe(hud);', 'if (false) observer?.observe(hud);')]),
+    ('scrolling board body disabled', [('flex:1 1 auto;overflow:auto', 'flex:0 0 auto;overflow:visible')]),
+    ('stock wording removed', [("const stockLabel = 'Not in service (empty stock)';", "const stockLabel = 'empty stock';")]),
+    ('cancellation labels omitted', [("const cancelled = (service?: BoardService): boolean => !!service && (service.stp === 'C' || (service.realtime?.cancelled ?? service.cancelled) === true);", "const cancelled = (service?: BoardService): boolean => false;")]),
+    ('cancellation facts are not applied', [('if (cancellation) {', 'if (false && cancellation) {')]),
 ])
 MUTATIONS = [(F, label, changes) for label, changes in M] + [('web/src/feed.ts', label, changes) for label, changes in FM]
 

@@ -42,6 +42,15 @@ function movement(overrides = {}) {
   };
 }
 
+function cancellation(overrides = {}, type = '0002') {
+  return { header: { msg_type: type, source_system_id: 'TRUST' }, body: {
+    train_id: 'AA1A23M008', loc_stanox: '54311', dep_timestamp: String(baseTime),
+    ...(type === '0002' ? { canx_timestamp: String(baseTime), canx_type: 'ON CALL' }
+      : { reinstatement_timestamp: String(baseTime + 1_000), current_train_id: '' }),
+    user_id: 'SYNTHETIC-PRIVATE-CONTROL', ...overrides,
+  } };
+}
+
 test('trust: activation links only to a King’s Cross schedule and emits safe fields', () => {
   const kx = service();
   const other = service({ uid: 'B54321', headcode: '9Z99', date: '2026-11-08', serviceDate: '2026-11-08' });
@@ -217,4 +226,94 @@ test('trust: origin epoch determines London service date through summer midnight
   assert.ok(event, 'the London origin date must link this activation');
   assert.equal(event.serviceDate, '2026-07-02');
   assert.equal(event.date, '2026-07-02');
+});
+
+test('trust: cancellation at an origin elsewhere is linked only to an activated King’s Cross service', () => {
+  const state = createTrustState({ services: () => [service()], now: () => baseTime });
+  state.apply([activation(), activation({ train_id: 'BB9Z99M008', train_uid: 'OUTSIDE' })]);
+  const events = state.apply([cancellation({ loc_stanox: '00001', dep_timestamp: String(baseTime - 3_600_000) }),
+    cancellation({ train_id: 'BB9Z99M008' })]);
+  assert.deepEqual(events, [{ kind: 'trust', area: 'Y9', type: 'cancellation', cancelled: true,
+    trainId: 'AA1A23M008', uid: 'A12345', headcode: '1A23', date: '2026-11-08', serviceDate: '2026-11-08',
+    matchMethod: 'activation', receivedAtMs: baseTime }]);
+  assert.equal(state.enrich().calls[0].realtime.cancelled, true);
+  assert.equal(state.enrich().calls[0].realtime.cancellationUpdatedAtMs, baseTime);
+  assert.ok(!JSON.stringify(state.enrich()).includes('SYNTHETIC-PRIVATE-CONTROL'));
+});
+
+test('trust: reinstatement clears cancellation while movement facts alone never reinstate a service', () => {
+  let now = baseTime;
+  const state = createTrustState({ services: () => [service()], now: () => now });
+  state.apply([activation(), movement(), cancellation()]);
+  now += 1_000;
+  state.apply([movement({ event_type: 'DEPARTURE', planned_timestamp: String(baseTime + 180_000),
+    actual_timestamp: String(baseTime + 240_000) })]);
+  assert.equal(state.enrich().calls[0].realtime.cancelled, true);
+  now += 1_000;
+  const [event] = state.apply([cancellation({ current_train_id: 'BB1A23M008' }, '0005')]);
+  assert.equal(event.cancelled, false); assert.equal(event.trainId, 'BB1A23M008');
+  const { calls, realtime } = state.enrich();
+  assert.equal(calls[0].realtime.cancelled, false);
+  assert.equal(calls[0].realtime.actualArrivalMs, baseTime + 60_000);
+  assert.equal(calls[0].realtime.actualDepartureMs, baseTime + 240_000);
+  assert.equal(calls[0].realtime.cancellationUpdatedAtMs, now);
+  assert.equal(realtime.filter(e => e.type === 'cancellation').length, 1, 'the latest status is retained');
+});
+
+test('trust: controls received before activation and schedule loading resolve in order when identity is known', () => {
+  let now = baseTime;
+  const state = createTrustState({ services: () => [], now: () => now });
+  assert.deepEqual(state.apply([cancellation(), activation()]), []);
+  now += 1_000;
+  assert.deepEqual(state.apply([cancellation({}, '0005'), cancellation({ train_id: 'BB9Z99M008' })]), []);
+  const resolved = state.setServices([service()]);
+  assert.deepEqual(resolved.map(e => [e.type, e.cancelled]), [['activation', undefined], ['cancellation', true], ['cancellation', false]]);
+  assert.deepEqual(resolved.slice(1).map(e => e.receivedAtMs), [baseTime, baseTime + 1_000]);
+  assert.equal(state.enrich().calls[0].realtime.cancelled, false);
+  assert.deepEqual(state.setServices([service()]), [], 'resolved controls are not replayed twice');
+});
+
+test('trust: duplicate and out of order cancellation inputs cannot undo a newer reinstatement', () => {
+  let now = baseTime;
+  const state = createTrustState({ services: () => [service()], now: () => now });
+  state.apply([activation(), cancellation()]);
+  assert.deepEqual(state.apply([cancellation()]), [], 'an exact duplicate emits no second event');
+  now += 2_000; state.apply([cancellation({}, '0005')]);
+  now += 2_000;
+  assert.deepEqual(state.apply([cancellation()]), [], 'old source time must lose even when received later');
+  assert.equal(state.enrich().calls[0].realtime.cancelled, false);
+  const withoutCall = createTrustState({ services: () => [service({ uid: 'UNRELATED' })], now: () => now });
+  assert.deepEqual(withoutCall.apply([cancellation()]), [], 'headcode coincidence cannot replace an activation');
+});
+
+test('trust: malformed controls and cancellations starting after the King’s Cross call do not cancel it', () => {
+  const state = createTrustState({ services: () => [service()], now: () => baseTime });
+  state.apply([activation()]);
+  for (const body of [{ train_id: '*' }, { train_id: 'A'.repeat(33) }, { canx_timestamp: [] },
+    { canx_timestamp: null }, { canx_timestamp: 'Infinity' }, { canx_timestamp: -1 },
+    { canx_timestamp: 8.64e15 + 1 }, { loc_stanox: '00001', dep_timestamp: String(baseTime + 600_000) }]) {
+    assert.deepEqual(state.apply([cancellation(body)]), [], JSON.stringify(body));
+  }
+  assert.equal(state.enrich().calls[0].realtime, null);
+  state.apply([cancellation()]);
+  assert.deepEqual(state.apply([cancellation({ loc_stanox: '00001', dep_timestamp: String(baseTime + 600_000) }, '0005')]), [],
+    'reinstating only a later section is not evidence that the King’s Cross call will run');
+  assert.equal(state.enrich().calls[0].realtime.cancelled, true);
+});
+
+test('trust: pending controls and retained cancellation status have caps and expire after a day', () => {
+  let now = baseTime;
+  const pending = createTrustState({ services: () => [], now: () => now });
+  pending.apply(Array.from({ length: 5_001 }, (_, i) => cancellation({ train_id: `AA1A23M${i.toString(36).toUpperCase().padStart(4, '0')}` })));
+  assert.equal(pending.stats().pendingCancellations, 5_000);
+  const calls = Array.from({ length: 2_001 }, (_, i) => service({ uid: `CALL${i}` }));
+  const state = createTrustState({ services: () => calls, now: () => now });
+  for (let i = 0; i < calls.length; i++) {
+    const train_id = `AA1A23M${i.toString(36).toUpperCase().padStart(4, '0')}`;
+    state.apply([activation({ train_id, train_uid: calls[i].uid }), cancellation({ train_id })]);
+  }
+  assert.equal(state.stats().cancellations, 2_000);
+  now += 24 * 60 * 60_000 + 1;
+  assert.equal(state.stats().cancellations, 0);
+  assert.equal(pending.stats().pendingCancellations, 0);
 });

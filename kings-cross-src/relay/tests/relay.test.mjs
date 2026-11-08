@@ -577,6 +577,26 @@ test('relay offline: keychain retries keep their diagnostic category without pri
   assert.doesNotMatch(logs.join('\n'), /SYNTHETIC-PRIVATE|Users|exit 44|SENTINEL-PASSWORD|who@example/);
 });
 
+test('relay heartbeat: a connected SSE client gets snapshot then current health without waiting for an interval', async (t) => {
+  const fake = captureHttp(t), intervals = captureIntervals(t), broker = syntheticBroker();
+  const dataDir = await newTmp('kx-immediate-health-');
+  const at = Date.UTC(2026, 10, 8, 12);
+  let relay;
+  t.after(async () => { try { await relay?.close(); } finally { await rm(dataDir, { recursive: true, force: true }); } });
+  relay = await startRelay({ area: 'Y9', topic: 'synthetic', dataDir, now: () => at,
+    readCredentials: async () => ({ account: ACCOUNT, secret: SENTINEL }),
+    connectSocket: () => broker.connectSocket(), heartbeat: [0, 0] });
+  await until(() => broker.subscribes.length === 1, 'synthetic feed connected');
+  const stream = await fakeRequest(fake.handler, { url: '/events' });
+  assert.equal(stream.writes.length, 2, 'no periodic callback has run');
+  assert.match(stream.writes[0], /^event: snapshot\n/);
+  assert.equal(stream.writes[1], `event: ping\ndata: ${JSON.stringify({ t: at, feed: 'connected', lastEventAt: null })}\n\n`);
+  const periodic = intervals.timers.find(timer => timer.milliseconds === 5000);
+  assert.ok(periodic);
+  periodic.callback(); assert.equal(stream.writes.length, 3, 'periodic heartbeats still follow the initial health');
+  stream.req.emit('close'); periodic.callback(); assert.equal(stream.writes.length, 3);
+});
+
 
 function heartbeatFixture() {
   const req = new EventEmitter();
@@ -651,6 +671,7 @@ test('relay heartbeat: events endpoint wires the named heartbeat and request cle
   await handler(req, res);
   assert.equal(heads[0][0], 200); assert.equal(heads[0][1]['content-type'], 'text/event-stream');
   assert.match(writes[0], /^event: snapshot\ndata: /);
+  assert.equal(writes[1], 'event: ping\ndata: {"t":321,"feed":"disabled","lastEventAt":null}\n\n');
   assert.deepEqual(timers.map((timer) => timer.milliseconds).sort((a, b) => a - b), [5000, 600000]);
   const pingTimer = timers.find((timer) => timer.milliseconds === 5000);
   const recorderTimer = timers.find((timer) => timer.milliseconds === 600000);
@@ -658,10 +679,10 @@ test('relay heartbeat: events endpoint wires the named heartbeat and request cle
   assert.equal(pingTimer.unrefs, 1);
   assert.equal(recorderTimer.unrefs, 1);
   pingTimer.callback();
-  assert.equal(writes[1], 'event: ping\ndata: {"t":321,"feed":"disabled","lastEventAt":null}\n\n');
+  assert.equal(writes[2], 'event: ping\ndata: {"t":321,"feed":"disabled","lastEventAt":null}\n\n');
   req.emit('close');
   assert.deepEqual(cleared, [pingTimer]);
-  pingTimer.callback(); assert.equal(writes.length, 2);
+  pingTimer.callback(); assert.equal(writes.length, 3);
 });
 
 test('relay shutdown: concurrent close stops SSE and clears ping and recorder timers once', async (t) => {
