@@ -240,7 +240,7 @@ try {
     for (const mode of vpName === 'desktop' ? ['plain', 'grid', 'trains'] : ['plain']) {
       const grid = mode === 'grid';
       const trainsMode = mode === 'trains';
-      await S('Page.navigate', { url: `${base}/kings-cross/${grid ? '?grid=1&bare=1' : trainsMode ? '?trains=demo' : ''}` });
+      await S('Page.navigate', { url: `${base}/kings-cross/${grid ? '?grid=1&bare=1&trains=none' : trainsMode ? '?trains=demo' : '?trains=none'}` });
       let ready = false;
       for (let i = 0; i < 300 && !ready; i++) {
         await delay(100);

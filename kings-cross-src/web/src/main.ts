@@ -121,12 +121,13 @@ function start(): void {
     scene.add(stop);
   }
 
-  // ?trains=demo: four trains standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
+  // Sample trains: four standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
   // from the west), so no two share a platform face and the evidence cameras can stand between them.
-  // The local frame has the nose at z = 0 and the body running to +z; turning by (PI - heading) sends
-  // +z to the shed's north, along the tracks.
+  // They are not live: nothing feeds them yet. ?trains=none leaves them out (?trains=demo is the
+  // old spelling of the default and still works). The local frame has the nose at z = 0 and the body
+  // running to +z; turning by (PI - heading) sends +z to the shed's north, along the tracks.
   const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex: number }[] = [];
-  if (params.get('trains') === 'demo') {
+  if (params.get('trains') !== 'none') {
     const stops = shedBufferStops(data, layout).sort((p, q) => worldToShed(layout, [p.x, p.z]).u - worldToShed(layout, [q.x, q.z]).u);
     const picks: [TrainKind, number][] = [['lner9', 1], ['lner5', 3], ['hull5', 5], ['lumo5', 7]];
     for (const [kind, trackIndex] of picks) {
@@ -178,6 +179,7 @@ function start(): void {
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
 
-  status.textContent = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
+  const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
+  status.textContent = trains.length > 0 ? `${counts} · sample trains at the buffers, not live` : counts;
   (window as unknown as { __kx: unknown }).__kx = kx;
 }
