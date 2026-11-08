@@ -168,16 +168,28 @@ const ROOF_EDGE = FIGURES.roofEdgeHeight.value;
 const W = BW / 2 - DOOR_RELIEF;
 const FLOOR = ASSUMED.floorHeight;
 
+/**
+ * The roof and nose profiles below were drawn against a roof edge of 3.725 m, the first reading,
+ * which put the top of the covers at nearly 4 m. They are scaled into the roof edge now in use
+ * (FIGURES.roofEdgeHeight), so the shape holds while the height follows the figure.
+ */
+const DRAWN_ROOF_EDGE = 3.725;
+/** Top of the vertical side wall: the doors, windows and livery bands all sit below it and are not scaled. */
+const WALL_TOP = 2.9;
+const roofY = (drawn: number): number => WALL_TOP + (drawn - WALL_TOP) * ((ROOF_EDGE - WALL_TOP) / (DRAWN_ROOF_EDGE - WALL_TOP));
+/** A height above the floor, scaled with the roof edge (the nose rings). */
+const noseY = (drawn: number): number => FLOOR + (drawn - FLOOR) * ((ROOF_EDGE - FLOOR) / (DRAWN_ROOF_EDGE - FLOOR));
+
 /** Right half of the section, from the bottom corner up to the roof centre: slight tumblehome above the doors, rounded shoulders. */
 const HALF: [number, number][] = [
   [W - 0.15, FLOOR],
   [W - 0.03, FLOOR + 0.07],
   [W, FLOOR + 0.25],
-  [W, 2.9],
-  [W - 0.05, 3.22],
-  [W - 0.16, 3.47],
-  [W - 0.33, 3.63],
-  [W - 0.52, 3.7],
+  [W, WALL_TOP],
+  [W - 0.05, roofY(3.22)],
+  [W - 0.16, roofY(3.47)],
+  [W - 0.33, roofY(3.63)],
+  [W - 0.52, roofY(3.7)],
   [0, ROOF_EDGE],
 ];
 /** The closed section: up the right, down the left; the last point joins the first along the floor. */
@@ -195,14 +207,14 @@ interface Ring {
 function noseRings(): Ring[] {
   const n = ASSUMED.noseLength;
   return [
-    { s: 0.02, ws: 0.5, top: 1.9, bottom: 0.8 },
-    { s: 0.5, ws: 0.56, top: 1.95, bottom: 0.8 },
-    { s: 1.0, ws: 0.64, top: 2.15, bottom: 0.82 },
-    { s: 1.6, ws: 0.74, top: 2.62, bottom: 0.85 },
-    { s: 2.2, ws: 0.83, top: 3.1, bottom: 0.88 },
-    { s: 2.8, ws: 0.9, top: 3.42, bottom: 0.9 },
-    { s: 3.5, ws: 0.95, top: 3.55, bottom: 0.93 },
-    { s: 4.4, ws: 0.98, top: 3.65, bottom: 0.95 },
+    { s: 0.02, ws: 0.5, top: noseY(1.9), bottom: 0.8 },
+    { s: 0.5, ws: 0.56, top: noseY(1.95), bottom: 0.8 },
+    { s: 1.0, ws: 0.64, top: noseY(2.15), bottom: 0.82 },
+    { s: 1.6, ws: 0.74, top: noseY(2.62), bottom: 0.85 },
+    { s: 2.2, ws: 0.83, top: noseY(3.1), bottom: 0.88 },
+    { s: 2.8, ws: 0.9, top: noseY(3.42), bottom: 0.9 },
+    { s: 3.5, ws: 0.95, top: noseY(3.55), bottom: 0.93 },
+    { s: 4.4, ws: 0.98, top: noseY(3.65), bottom: 0.95 },
     { s: n, ws: 1, top: ROOF_EDGE, bottom: FLOOR },
   ];
 }

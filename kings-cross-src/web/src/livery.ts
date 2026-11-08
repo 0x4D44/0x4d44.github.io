@@ -8,7 +8,7 @@
 //   approximate: the colour name is sourced, the exact shade is eyeballed;
 //   placeholder: NO source; stands in until someone reads it from a photograph.
 import * as THREE from 'three';
-import type { Livery } from '../../core/train.ts';
+import { FIGURES, type Livery } from '../../core/train.ts';
 
 /** What a car needs to tell the painter about itself. All distances in metres along the car from
  * its cab end (driving cars) or from its start (the rest). */
@@ -109,7 +109,7 @@ export const LIGHT_GAIN = 1.5;
 
 /** The texture covers the side of the body from TEX_Y0 to TEX_Y1 (metres above the rail head). */
 export const TEX_Y0 = 0.7;
-export const TEX_Y1 = 3.725;
+export const TEX_Y1 = FIGURES.roofEdgeHeight.value;
 const TEX_W = 2048;
 const TEX_H = 512;
 
