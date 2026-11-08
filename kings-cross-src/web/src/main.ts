@@ -7,7 +7,10 @@ import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferSto
 import { buildFurniture, buildPlatforms } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
 import { addLandmarks, LANDMARK_OSM_IDS } from './landmarks.ts';
-import { addPortals } from './portals.ts';
+import { addPortals, portalHole } from './portals.ts';
+import { tunnelMouths } from '../../core/landmarks.ts';
+import { createTerrain } from '../../core/terrain.ts';
+import type { Terrain, TerrainFile } from '../../core/terrain.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { TrainKind } from '../../core/train.ts';
 import type { AnchorMap } from '../../core/anchors.ts';
@@ -27,7 +30,7 @@ import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
-import { addWorld, GROUND_Y } from './world.ts';
+import { addTerrain, addWorld, GROUND_Y } from './world.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 
@@ -79,21 +82,35 @@ function start(): void {
   // The Great Northern Hotel, the Midland Grand and the Barlow shed are modelled (landmarks.ts),
   // so their OSM boxes go.
   for (const id of LANDMARK_OSM_IDS) hidden.add(id);
-  // The city (textured buildings, streets, paving, water, trees) is its own chunk: its data is
-  // ~240 kB of JSON, so the station draws first and the city follows. ?bare=1 leaves it out, so
-  // the evidence shots can measure the shed and platforms. Tools await kx.cityLoaded.
-  const parts: { shed: THREE.Object3D | null; buildings: THREE.Group | null } = { shed: null, buildings: null };
-  const cityLoaded: Promise<void> = params.has('bare')
-    ? Promise.resolve()
-    // King's Cross Central (Coal Drops, Granary, gasholders, Crick, Library, Platform 37) rides in
-    // the same lazy load: its OSM boxes must be hidden before the city is built.
-    : Promise.all([import('./data/kx-city.json'), import('./kxcentral.ts')]).then(([m, central]) => {
+  // The terrain (Environment Agency DTM, ~120 kB) and the city (textured buildings, streets, paving, water,
+  // trees: ~240 kB of JSON) are their own chunks, so the station draws first and they follow. The terrain is
+  // drawn over its extent with the tunnel mouths cut into it, then the landmarks follow. ?bare=1 and ?terrain=0
+  // keep the flat plane (and ?bare leaves the city out, so the evidence shots can measure the shed and
+  // platforms). Tools await kx.cityLoaded, which is everything: terrain, portals, landmarks, city.
+  const bare = params.has('bare');
+  const parts: { shed: THREE.Object3D | null; buildings: THREE.Group | null; terrain: Terrain | null } = { shed: null, buildings: null, terrain: null };
+  const terrainLoaded: Promise<Terrain | null> = bare || params.get('terrain') === '0'
+    ? Promise.resolve(null)
+    : import('./data/kx-terrain.json').then((m) => createTerrain(m.default as unknown as TerrainFile)).catch((err: unknown) => { console.error('terrain failed to load', err); return null; });
+  const groundLoaded: Promise<Terrain | null> = terrainLoaded.then((field) => {
+    // everything that stands on the ground is seated on the surface as drawn (the mesh), not on the DTM it approximates
+    const terrain = field ? addTerrain(scene, field, { exclude: portalHole(tunnelMouths(data)), rails }).ground : null;
+    parts.terrain = terrain;
+    if (field) world.carve(field.extent);
+    addPortals(scene, data, terrain ? { terrain } : {}); // Gasworks and Copenhagen tunnel mouths: cutting ends on the terrain, else wing walls and an earth bank on the flat plane
+    if (!bare) addLandmarks(scene, data, terrain ? { terrain } : {}); // each building's base on the lowest ground under it
+    return terrain;
+  });
+  // King's Cross Central (Coal Drops, Granary, gasholders, Crick, Library, Platform 37) rides in
+  // the city's lazy load: its OSM boxes must be hidden before the city is built.
+  const cityLoaded: Promise<void> = (bare ? groundLoaded.then(() => undefined)
+    : Promise.all([groundLoaded, import('./data/kx-city.json'), import('./kxcentral.ts')]).then(([terrain, m, central]) => {
       for (const id of central.KXCENTRAL_OSM_IDS) hidden.add(id);
-      central.addKxCentral(scene, data);
-      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden }).group;
-    }).catch((err: unknown) => { console.error('city failed to load', err); });
-  if (!params.has('bare')) addLandmarks(scene, data);
-  addPortals(scene, data); // Gasworks and Copenhagen tunnel mouths, with the earth bank over the bores
+      // buildings, streets, paving, water and trees stand on the terrain as drawn; without one (?terrain=0, or it failed to load) on the flat plane
+      const ground = terrain ? { terrain } : {};
+      central.addKxCentral(scene, data, ground);
+      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden, ...ground }).group;
+    })).catch((err: unknown) => { console.error('city failed to load', err); });
   const shed = buildShed(layout);
   scene.add(shed);
   parts.shed = shed;

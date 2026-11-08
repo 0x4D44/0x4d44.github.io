@@ -9,13 +9,15 @@
 //
 // Wiring (main.ts), replacing `mergedPrisms(buildingPrisms(data, hidden), ...)` and its `scene.add`:
 //   import cityData from './data/kx-city.json';
-//   const city = params.has('bare') ? null : addCity(scene, data, cityData as unknown as CityData, { hidden });
+//   const city = params.has('bare') ? null : addCity(scene, data, cityData as unknown as CityData, { hidden, terrain });
 //   ... and `parts: { shed, buildings: city?.group ?? null }` in the __kx handle.
+// With a `terrain` (core/terrain.ts) the city stands on that ground; without one it stands on the flat plane at GROUND_Y.
 import * as THREE from 'three';
-import { buildCity, CITY_KEYS } from '../../core/city.ts';
+import { buildCity, CITY_KEYS, PAGE_DRAPE } from '../../core/city.ts';
 import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
 import type { KxData } from '../../core/osm.ts';
+import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -26,6 +28,14 @@ export interface CityOptions {
   exclude?: readonly (readonly [number, number][])[];
   /** draw the trees (default true) */
   trees?: boolean;
+  /** the ground the city stands on: buildings, streets, squares, parks, water and trees follow it. Without it, everything stands on the flat plane at GROUND_Y */
+  terrain?: Terrain;
+  /**
+   * how the flat layers follow `terrain` (see core/city.ts STRIP_TOLERANCE): more detail costs triangles. What is given here is laid
+   * over core/city.ts PAGE_DRAPE, which a page with a terrain draws by default (layers 10 cm clear of the ground, so it does not show
+   * through them); `{ lift: 0 }` puts every layer back on its own lift. Ignored without a `terrain`.
+   */
+  drape?: CityBuildOptions['drape'];
 }
 
 export interface CityStats {
@@ -94,7 +104,7 @@ export function treeGeometry(): THREE.BufferGeometry {
   return geometry;
 }
 
-/** The trees as one InstancedMesh: position, yaw and height from the core's spots, a small per-tree tint. */
+/** The trees as one InstancedMesh: position, yaw and height from the core's spots, a small per-tree tint. A spot with a `y` stands there; the rest stand at `groundY`. */
 export function treeMesh(spots: readonly TreeSpot[], groundY = GROUND_Y): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(treeGeometry(), new THREE.MeshLambertMaterial({ vertexColors: true }), spots.length);
   mesh.name = 'city-trees';
@@ -104,7 +114,7 @@ export function treeMesh(spots: readonly TreeSpot[], groundY = GROUND_Y): THREE.
   const c = new THREE.Color();
   spots.forEach((t, i) => {
     q.setFromAxisAngle(up, t.yaw);
-    m.compose(new THREE.Vector3(t.x, groundY, t.z), q, new THREE.Vector3(t.height, t.height, t.height));
+    m.compose(new THREE.Vector3(t.x, t.y ?? groundY, t.z), q, new THREE.Vector3(t.height, t.height, t.height));
     mesh.setMatrixAt(i, m);
     c.setRGB(0.88 + 0.2 * t.tone, 0.92 + 0.14 * t.tone, 0.82 + 0.12 * (1 - t.tone));
     mesh.setColorAt(i, c);
@@ -119,7 +129,8 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const hidden = opts.hidden ?? new Set<number>();
   const exclude = [...(opts.exclude ?? []), ...data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts)];
   const rails = railSegments(data); // surface track only: a street that crosses it rides over it
-  const build: CityBuildOptions = { hidden, exclude, groundY: GROUND_Y, trees: opts.trees !== false, rails: [...rails.main, ...rails.siding] };
+  const drape = opts.terrain ? { ...PAGE_DRAPE, ...opts.drape } : undefined;
+  const build: CityBuildOptions = { hidden, exclude, groundY: GROUND_Y, trees: opts.trees !== false, rails: [...rails.main, ...rails.siding], terrain: opts.terrain, drape };
   const built = buildCity(data.buildings, city, build);
   const group = new THREE.Group();
   group.name = 'city';

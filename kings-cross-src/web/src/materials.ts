@@ -1203,3 +1203,29 @@ export function cityMaterial(name: CityMaterialName): THREE.Material {
   return m;
 }
 // ===== end of the city block =====
+
+// =====================================================================================================
+// TERRAIN BLOCK (worker S10). The ground drawn from the Environment Agency DTM (core/terrain.ts, world.ts
+// addTerrain). The mesh is split by slope into three draws: level ground and grassed banks use the two
+// flat-coloured materials below; a face steeper than SLOPE.wallDeg is masonry (a retaining wall) and takes
+// `material('brick')` with UVs in metres, built in world.ts. The ground colour is the one the flat plane had.
+// The terrain is pushed back a little in depth (polygon offset +1) so the draped city layers (their offsets
+// are -1 to -6) win every depth tie, whatever the mesh's few centimetres of tolerance.
+// =====================================================================================================
+
+export type TerrainMaterialName = 'ground' | 'bank';
+
+const TERRAIN_COLOUR: Readonly<Record<TerrainMaterialName, number>> = { ground: 0x3a4049, bank: 0x3f4a35 };
+const terrainMaterials = new Map<TerrainMaterialName, THREE.Material>();
+
+/** A shared material for level ground ('ground') or a grassed bank ('bank'). Never mutate, clone first. */
+export function terrainMaterial(name: TerrainMaterialName): THREE.Material {
+  let m = terrainMaterials.get(name);
+  if (!m) {
+    m = new THREE.MeshLambertMaterial({ color: TERRAIN_COLOUR[name], polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    m.name = `terrain-${name}`;
+    terrainMaterials.set(name, m);
+  }
+  return m;
+}
+// ===== end of the terrain block =====

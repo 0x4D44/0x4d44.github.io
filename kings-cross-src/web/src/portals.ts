@@ -12,13 +12,19 @@
 //
 // Geometry is built in world coordinates and merged per material (four meshes in all).
 //
+// With the terrain (core/terrain.ts) the mouths are cutting ends instead: see "on the real ground" below. The
+// flat-ground build (wing walls, earth bank) stays for ?terrain=0 and for when the terrain fails to load.
+//
 // Wiring (main.ts):   const portals = addPortals(scene, data);   // once; `addPortals(scene, data, { cover: false })` leaves out the earth bank
+//                     on the real ground: `addTerrain(scene, terrain, { exclude: portalHole(tunnelMouths(data)) })`, then `addPortals(scene, data, { terrain })`
 import * as THREE from 'three';
 import { approachEnvelope, archOpening, FIGURES, tunnelCover, tunnelMouths } from '../../core/landmarks.ts';
 import type { ArchOpening, Cover, EnvelopeStation, Mouth } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
-import { material, mergeParts, part } from './materials.ts';
+import type { Terrain } from '../../core/terrain.ts';
+import { material, mergeParts, part, terrainMaterial } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
+import { GROUND_Y } from './world.ts';
 
 export type PortalKey = 'brick' | 'stone' | 'earth' | 'tube';
 
@@ -110,12 +116,12 @@ export function wingPath(sign: -1 | 1, halfWidth: number, top: number, envelope:
   return path;
 }
 
-/** The brick face, stone dressings, dark recesses and retaining walls of one mouth. */
-export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): PartMap<PortalKey> {
-  const parts: PartMap<PortalKey> = {};
+/**
+ * The face wall, its cornice, the voussoir rings and the dark recesses behind the arches. `H` is half the width of the
+ * wall; `top` the height of its parapet. Shared by the flat-ground portal (mouthParts) and the terrain one (mouthPartsTerrain).
+ */
+function faceParts(parts: PartMap<PortalKey>, mouth: Mouth, top: number, H: number): void {
   const f: Frame = { origin: mouth.origin, axis: mouth.axis, across: mouth.across };
-  const H = mouth.halfWidth;
-  const top = FIGURES.tunnel.parapet;
   const openings = mouth.bores.map(archOpening);
   const toward: V3 = dir(f, 0, -1, 0); // out of the tunnel, toward a viewer on the approach
   const brick = part(parts, 'brick');
@@ -169,6 +175,18 @@ export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): 
     tube.quadUV(at(f, first[0], 0, 0.01), at(f, last[0], 0, 0.01), at(f, last[0], PORTAL.recess, 0.01), at(f, first[0], PORTAL.recess, 0.01), undefined, [0, 1, 0]);
     tube.fan(prof.map(([u, y]) => at(f, u, PORTAL.recess, y)), toward);
   }
+}
+
+/** The brick face, stone dressings, dark recesses and retaining walls of one mouth, on flat ground. */
+export function mouthParts(mouth: Mouth, envelope: readonly EnvelopeStation[]): PartMap<PortalKey> {
+  const parts: PartMap<PortalKey> = {};
+  const f: Frame = { origin: mouth.origin, axis: mouth.axis, across: mouth.across };
+  const H = mouth.halfWidth;
+  const top = FIGURES.tunnel.parapet;
+  const toward: V3 = dir(f, 0, -1, 0);
+  const brick = part(parts, 'brick');
+  const stone = part(parts, 'stone');
+  faceParts(parts, mouth, top, H);
 
   // retaining walls
   const side = (sign: -1 | 1): void => {
@@ -266,29 +284,119 @@ export function openingsIn(cover: Pick<Cover, 'from' | 'across'>, mouth: Mouth |
   });
 }
 
+// ---- on the real ground ------------------------------------------------------------------------------
+//
+// With the terrain (core/terrain.ts) a tunnel mouth is a cutting end: the ground is the track bed in front of the
+// face and earth well over the bores behind it (tools/build-terrain.ts lifts it to at least FIGURES.tunnel.crown + 1.2
+// from `lift` metres behind the face), so there is no earth bank to build and no wing walls: the cutting's sides are the
+// terrain's own steep faces, drawn in brick where they are steeper than SLOPE.wallDeg.
+//
+// A heightfield cannot be hollow, and the DTM blurs the real cliff into a ramp a few metres deep right behind the face,
+// inside the bores. So over each face the terrain mesh gets a hole (`portalHole`, the strip BLOCK.hole metres behind the
+// face) and the "block" fills it: the face wall (with its arches), a flat earth lid at the wall's top, and a brick
+// flank at each end. The dark recess runs under the lid.
+
+/** Sizes of the masonry block behind each face (metres). ASSUMED: nothing published gives them. */
+export const BLOCK = {
+  /** how far behind the face the lid reaches: past the hole by more than a mesh triangle */
+  depth: 4.6,
+  /** the terrain triangles whose centre is within these distances behind the face are left out, [from, to] */
+  hole: [-0.2, 3.2] as [number, number],
+  /** the block is this much wider than the face's arches' frame on each side, to cover the hole's edge */
+  flank: 0.6,
+} as const;
+
+type MouthFrame = Pick<Mouth, 'origin' | 'axis' | 'across' | 'halfWidth'>;
+
+/** Position of a world point in a mouth's frame: u across the face, w along the axis into the tunnel. */
+export function inMouthFrame(m: Pick<Mouth, 'origin' | 'axis' | 'across'>, x: number, z: number): { u: number; w: number } {
+  const dx = x - m.origin[0];
+  const dz = z - m.origin[1];
+  return { u: dx * m.across[0] + dz * m.across[1], w: dx * m.axis[0] + dz * m.axis[1] };
+}
+
+/** True for a terrain triangle centre that the portal block replaces (pass to buildTerrainMesh's `exclude`). */
+export function portalHole(mouths: readonly MouthFrame[]): (x: number, z: number) => boolean {
+  return (x, z) => {
+    for (const m of mouths) {
+      const { u, w } = inMouthFrame(m, x, z);
+      if (w >= BLOCK.hole[0] && w <= BLOCK.hole[1] && Math.abs(u) <= m.halfWidth + 0.1) return true;
+    }
+    return false;
+  };
+}
+
+/** The wall's and lid's height: the parapet, or the ground behind the block if that is higher (so the lid meets the earth, never sinks under it). */
+export function blockTop(mouth: MouthFrame, terrain: Pick<Terrain, 'heightAt'>): number {
+  const f: Frame = { origin: mouth.origin, axis: mouth.axis, across: mouth.across };
+  const H = mouth.halfWidth + BLOCK.flank;
+  let top: number = FIGURES.tunnel.parapet;
+  for (let u = -H; u <= H + 1e-9; u += 1) {
+    const p = at(f, u, BLOCK.depth, 0);
+    top = Math.max(top, terrain.heightAt(p[0], p[2]) + 0.05);
+  }
+  return top;
+}
+
+/** The face wall with its arches and dressings, an earth lid over the hole, and a brick flank at each end of the block. */
+export function mouthPartsTerrain(mouth: Mouth, terrain: Pick<Terrain, 'heightAt'>): PartMap<PortalKey> {
+  const parts: PartMap<PortalKey> = {};
+  const f: Frame = { origin: mouth.origin, axis: mouth.axis, across: mouth.across };
+  const top = blockTop(mouth, terrain);
+  const Hb = mouth.halfWidth + BLOCK.flank;
+  faceParts(parts, mouth, top, Hb);
+  const brick = part(parts, 'brick');
+  const earth = part(parts, 'earth');
+  const D = BLOCK.depth;
+  const toward: V3 = dir(f, 0, -1, 0);
+  // the face wall starts at rail head height; a plinth carries it down to the ground
+  brick.quadUV(at(f, -Hb, 0, GROUND_Y), at(f, Hb, 0, GROUND_Y), at(f, Hb, 0, 0), at(f, -Hb, 0, 0), [[0, GROUND_Y], [2 * Hb, GROUND_Y], [2 * Hb, 0], [0, 0]], toward);
+  // the lid
+  earth.quadUV(at(f, -Hb, 0, top), at(f, -Hb, D, top), at(f, Hb, D, top), at(f, Hb, 0, top), undefined, [0, 1, 0]);
+  // the flanks, from the ground to the lid, facing outward
+  for (const sign of [-1, 1] as const) {
+    const a = at(f, sign * Hb, 0, GROUND_Y);
+    const b = at(f, sign * Hb, D, GROUND_Y);
+    const c = at(f, sign * Hb, D, top);
+    const d = at(f, sign * Hb, 0, top);
+    const uv: [V2, V2, V2, V2] = [[0, GROUND_Y], [D, GROUND_Y], [D, top], [0, top]];
+    const out = dir(f, sign, 0, 0);
+    if (sign < 0) brick.quadUV(a, b, c, d, uv, out);
+    else brick.quadUV(b, a, d, c, [[D, GROUND_Y], [0, GROUND_Y], [0, top], [D, top]], out);
+  }
+  return parts;
+}
+
 export interface Portals {
   group: THREE.Group;
   /** the mouths drawn, from core/landmarks.ts tunnelMouths */
   mouths: Mouth[];
   covers: Cover[];
+  /** leaves out the terrain triangles the blocks replace (terrain mode); always false on flat ground */
+  hole: (x: number, z: number) => boolean;
   stats: { meshes: number; triangles: number; mouths: number };
   dispose(): void;
 }
 
 export interface PortalOptions {
-  /** the earth bank over each tunnel (default true) */
+  /** the earth bank over each tunnel (default true; flat ground only) */
   cover?: boolean;
+  /** build the mouths on the real ground (cutting ends); without it they stand on the flat plane with wing walls and an earth bank */
+  terrain?: Pick<Terrain, 'heightAt'>;
 }
 
 export function addPortals(scene: THREE.Scene, data: KxData, opts: PortalOptions = {}): Portals {
   const mouths = tunnelMouths(data);
-  const covers = tunnelCover(data);
-  const sets: PartMap<PortalKey>[] = mouths.map((m) => mouthParts(m, approachEnvelope(data, m, PORTAL.wing.reach, PORTAL.wing.step)));
-  if (opts.cover !== false) for (const c of covers) sets.push(coverParts(c));
+  const terrain = opts.terrain;
+  const covers = terrain ? [] : tunnelCover(data);
+  const sets: PartMap<PortalKey>[] = terrain ? mouths.map((m) => mouthPartsTerrain(m, terrain)) : mouths.map((m) => mouthParts(m, approachEnvelope(data, m, PORTAL.wing.reach, PORTAL.wing.step)));
+  if (!terrain && opts.cover !== false) for (const c of covers) sets.push(coverParts(c));
   const owned: THREE.Material[] = [];
-  const earth = new THREE.MeshLambertMaterial({ color: 0x3f4a35 }); // ASSUMED: grass-grown embankment, dark under the night sky
+  // ASSUMED: a grass-grown embankment, dark under the night sky (flat ground); the terrain's own ground colour under the lid
+  const earth = terrain ? terrainMaterial('ground') : new THREE.MeshLambertMaterial({ color: 0x3f4a35 });
   const tube = new THREE.MeshBasicMaterial({ color: 0x090b0e });
-  owned.push(earth, tube);
+  if (!terrain) owned.push(earth);
+  owned.push(tube);
   const table: Record<PortalKey, THREE.Material> = { brick: material('brick'), stone: material('stone'), earth, tube };
   const { group, triangles } = mergeParts<PortalKey>(sets, table, 'portals');
   scene.add(group);
@@ -300,6 +408,7 @@ export function addPortals(scene: THREE.Scene, data: KxData, opts: PortalOptions
     group,
     mouths,
     covers,
+    hole: terrain ? portalHole(mouths) : () => false,
     stats: { meshes: group.children.length, triangles, mouths: mouths.length },
     dispose(): void {
       scene.remove(group);

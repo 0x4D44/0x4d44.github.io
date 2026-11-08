@@ -7,13 +7,18 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { buildCity, CITY_KEYS, FACADE, FACADE_TEXELS_PER_M, LAYER_LIFT } from '../../core/city.ts';
+import { buildCity, CITY_KEYS, FACADE, FACADE_TEXELS_PER_M, LAYER_LIFT, PAGE_DRAPE } from '../../core/city.ts';
 import type { CityData, CityKey, FacadeKey, TreeSpot } from '../../core/city.ts';
 import type { KxData } from '../../core/osm.ts';
+import { railSegments } from '../../core/scene.ts';
+import { tunnelMouths } from '../../core/landmarks.ts';
+import { createTerrain, terrainFromFunction } from '../../core/terrain.ts';
 import { addCity, geometryOf, treeGeometry, treeMesh } from '../src/city.ts';
+import type { CityOptions } from '../src/city.ts';
 import { CITY_PAINTERS, CITY_TEXTURES, cityMaterial, cityTexture, material, texelsPerMetre } from '../src/materials.ts';
 import type { CityMaterialName, CityTextureName } from '../src/materials.ts';
-import { GROUND_Y } from '../src/world.ts';
+import { portalHole } from '../src/portals.ts';
+import { addTerrain, GROUND_Y } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const city: CityData = JSON.parse(readFileSync(new URL('../src/data/kx-city.json', import.meta.url), 'utf8'));
@@ -426,4 +431,149 @@ test('addCity.dispose removes the group from the scene and disposes every geomet
   c.dispose();
   assert.equal(scene.children.includes(c.group), false);
   assert.equal(disposed, geometries.size);
+});
+
+// =============================================================================================
+// 5. the city on uneven ground
+
+const terrain = createTerrain(JSON.parse(readFileSync(new URL('../src/data/kx-terrain.json', import.meta.url), 'utf8')));
+
+test('treeMesh: a spot with a height of its own stands there, the others on the ground height given (the page\'s by default)', () => {
+  const spots: TreeSpot[] = [
+    { x: 10, z: -20, y: 7.25, height: 8, yaw: 0, tone: 0 },
+    { x: -5.5, z: 3, height: 11.5, yaw: 1.2, tone: 0.5 },
+    { x: 0, z: 0, y: -3, height: 6, yaw: 6, tone: 0.999 },
+  ];
+  const m = new THREE.Matrix4();
+  const heightOf = (mesh: THREE.InstancedMesh, i: number): number => {
+    mesh.getMatrixAt(i, m);
+    return new THREE.Vector3().setFromMatrixPosition(m).y;
+  };
+  const mesh = treeMesh(spots);
+  close(heightOf(mesh, 0), 7.25, 1e-6, 'its own height');
+  close(heightOf(mesh, 1), GROUND_Y, 1e-6, 'no height of its own: the page\'s ground');
+  close(heightOf(mesh, 2), -3, 1e-6, 'below the flat ground is allowed');
+  const high = treeMesh(spots, 5);
+  close(heightOf(high, 0), 7.25, 1e-6, 'an explicit ground height does not move a spot that has its own');
+  close(heightOf(high, 1), 5, 1e-6, 'but is the ground of one that has none');
+});
+
+test('addCity with a terrain: the same draw calls, buildings and trees, on the real ground, for not many more triangles', () => {
+  const exclude = data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts);
+  const rails = railSegments(data); // a street over the railway is a deck on a terrain, so the rails matter to the count
+  const flat = addCity(new THREE.Scene(), data, city, { hidden });
+  const hilly = addCity(new THREE.Scene(), data, city, { hidden, terrain });
+  const built = buildCity(data.buildings, city, { hidden, exclude, groundY: GROUND_Y, rails: [...rails.main, ...rails.siding], terrain, drape: PAGE_DRAPE });
+  assert.equal(hilly.stats.drawCalls, flat.stats.drawCalls, 'a terrain adds no draw call');
+  assert.ok(hilly.stats.drawCalls >= 13 && hilly.stats.drawCalls <= 14, `${hilly.stats.drawCalls} draw calls`);
+  assert.deepEqual(hilly.stats.buildings, flat.stats.buildings, 'the same buildings, streets and areas');
+  assert.equal(hilly.stats.trees, flat.stats.trees);
+  const ratio = hilly.stats.triangles / flat.stats.triangles;
+  // x1.58 with the page's drape (PAGE_DRAPE: polygons cut at 8 m where the ground bulges), x1.37 with the core's defaults
+  assert.ok(ratio > 1.05 && ratio < 1.65, `${hilly.stats.triangles} triangles against ${flat.stats.triangles}: x${ratio.toFixed(3)}`);
+  // what the page draws is what the core built on that terrain
+  for (const child of hilly.group.children) {
+    if (child instanceof THREE.InstancedMesh) continue;
+    const mesh = child as THREE.Mesh;
+    const key = mesh.name.replace('city-', '') as CityKey;
+    assert.equal((mesh.geometry.index as THREE.BufferAttribute).count / 3, built.meshes[key].triangleCount, `${mesh.name}: the triangles the core built on the terrain`);
+  }
+  const bounds = (c: ReturnType<typeof addCity>, name: string): THREE.Box3 => {
+    const g = (c.group.getObjectByName(name) as THREE.Mesh).geometry;
+    g.computeBoundingBox();
+    return g.boundingBox as THREE.Box3;
+  };
+  const low = built.meshes.roof.positions.filter((_, i) => i % 3 === 1).reduce((a, v) => Math.min(a, v), Infinity);
+  close(bounds(hilly, 'city-roof').min.y, low, 1e-3, 'the roofs are where the core put them');
+  const lowestWall = (c: ReturnType<typeof addCity>): number => Math.min(...facadeKeys.map((k) => bounds(c, `city-${k}`).min.y));
+  close(lowestWall(flat), GROUND_Y, 1e-3, 'on the flat plane every wall starts at the ground');
+  assert.ok(lowestWall(hilly) < GROUND_Y - 5, `a building in the low ground (the lowest is ${lowestWall(hilly).toFixed(2)} m) starts well below the flat plane`);
+  // the trees stand on the ground, one matrix each
+  const trees = hilly.group.getObjectByName('city-trees') as THREE.InstancedMesh;
+  assert.equal(trees.count, built.trees.length);
+  const m = new THREE.Matrix4();
+  const p = new THREE.Vector3();
+  built.trees.forEach((t, i) => {
+    if (i % 7) return;
+    trees.getMatrixAt(i, m);
+    p.setFromMatrixPosition(m);
+    close(p.y, terrain.heightAt(t.x, t.z), 1e-3, `tree ${i} stands on the terrain`);
+  });
+  // the draping options reach the core: a street cut every 4 m is more triangles than one cut where the ground bends
+  const capped = addCity(new THREE.Scene(), data, city, { hidden, terrain, drape: { maxSpacing: 4 } });
+  assert.ok(capped.stats.triangles > hilly.stats.triangles * 1.3, `${capped.stats.triangles} against ${hilly.stats.triangles}`);
+  for (const c of [flat, hilly, capped]) c.dispose();
+});
+
+/** The heights of every vertex of a city layer, to a tenth of a millimetre. */
+function layerHeights(c: ReturnType<typeof addCity>, key: CityKey): number[] {
+  const p = (c.group.getObjectByName(`city-${key}`) as THREE.Mesh).geometry.getAttribute('position') as THREE.BufferAttribute;
+  const out = new Set<number>();
+  for (let i = 0; i < p.count; i++) out.add(Math.round(p.getY(i) * 1e4) / 1e4);
+  return [...out].sort((a, b) => a - b);
+}
+
+test('addCity with a terrain draws PAGE_DRAPE (layers clear of the ground) and what is given is laid over it; without a terrain nothing is lifted', () => {
+  // flat at 3 m, well past the edge of the city: every polygon is one plane, so each layer is one height
+  const level = terrainFromFunction(() => 3, { x0: -8000, z0: -8000, x1: 8000, z1: 8000 }, 1000);
+  const heightsOf = (opts: Parameters<typeof addCity>[3]): Record<'grass' | 'plaza' | 'water', number[]> => {
+    const c = addCity(new THREE.Scene(), data, city, { hidden, ...opts });
+    const out = { grass: layerHeights(c, 'grass'), plaza: layerHeights(c, 'plaza'), water: layerHeights(c, 'water') };
+    c.dispose();
+    return out;
+  };
+  const lift = PAGE_DRAPE.lift;
+  assert.ok(lift > 0.05 && lift < 0.2, `the page's lift is ${lift} m`);
+  const r4 = (v: number): number => Math.round(v * 1e4) / 1e4;
+  /** what each layer's height is on ground at `ground` with `extra` on top of its own lift */
+  const expected = (ground: number, extra: number) => ({ grass: [r4(ground + LAYER_LIFT.grass + extra)], plaza: [r4(ground + LAYER_LIFT.plaza + extra)], water: [r4(ground + LAYER_LIFT.water + extra)] });
+  assert.deepEqual(heightsOf({ terrain: level }), expected(3, lift), 'the default');
+  assert.deepEqual(heightsOf({ terrain: level, drape: { lift: 0 } }), expected(3, 0), 'a lift of 0 given');
+  assert.deepEqual(heightsOf({ terrain: level, drape: { lift: 0.3 } }), expected(3, 0.3), 'another lift given');
+  assert.deepEqual(heightsOf({ terrain: level, drape: { maxSpacing: 4 } }), expected(3, lift), 'an option that is not the lift leaves it alone');
+  assert.deepEqual(heightsOf({}), expected(GROUND_Y, 0), 'no terrain: the flat plane, as ever');
+});
+
+/** The share of a flat layer's area, seen from above, that lies under the ground: seven samples in each triangle, weighted by its area. */
+function buriedShare(mesh: THREE.Mesh, ground: { heightAt(x: number, z: number): number }): number {
+  const p = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const index = mesh.geometry.index as THREE.BufferAttribute;
+  const samples = [[1 / 3, 1 / 3, 1 / 3], [0.5, 0.5, 0], [0, 0.5, 0.5], [0.5, 0, 0.5], [0.6, 0.2, 0.2], [0.2, 0.6, 0.2], [0.2, 0.2, 0.6]] as const;
+  let area = 0;
+  let under = 0;
+  for (let i = 0; i < index.count; i += 3) {
+    const a = index.getX(i);
+    const b = index.getX(i + 1);
+    const c = index.getX(i + 2);
+    const plan = Math.abs((p.getX(b) - p.getX(a)) * (p.getZ(c) - p.getZ(a)) - (p.getX(c) - p.getX(a)) * (p.getZ(b) - p.getZ(a))) / 2;
+    for (const [u, v, w] of samples) {
+      const x = p.getX(a) * u + p.getX(b) * v + p.getX(c) * w;
+      const z = p.getZ(a) * u + p.getZ(b) * v + p.getZ(c) * w;
+      const y = p.getY(a) * u + p.getY(b) * v + p.getY(c) * w;
+      area += plan / samples.length;
+      if (y - ground.heightAt(x, z) < 0.004) under += plan / samples.length;
+    }
+  }
+  return under / area;
+}
+
+test('on the ground the page draws, the city\'s flat layers are almost never under it: the lawns and squares do not show it through, the canal follows its channel', () => {
+  // the ground exactly as main.ts builds it (an adaptive mesh, coarse far from the rails, the portal strips left out), and the city draped on that
+  const rails = railSegments(data);
+  const drawn = addTerrain(new THREE.Scene(), terrain, { exclude: portalHole(tunnelMouths(data)), rails });
+  const onIt = (drape?: CityOptions['drape']): ReturnType<typeof addCity> => addCity(new THREE.Scene(), data, city, { hidden, terrain: drawn.ground, drape });
+  const page = onIt();
+  // the most each layer may lie under the ground, percent (measured 3.8 grass, 1.6 plaza, 3.3 water, 0.7 pavement, 1.5 asphalt, 1.9 paint; the core's defaults 31, 13, 43, 2.8, 4.3, 5.3)
+  const limit: Record<string, number> = { grass: 6, plaza: 3, water: 6, pavement: 1.5, asphalt: 3, paint: 4 };
+  for (const [key, most] of Object.entries(limit)) {
+    const share = (100 * buriedShare(page.group.getObjectByName(`city-${key}`) as THREE.Mesh, drawn.ground));
+    assert.ok(share <= most, `${key}: ${share.toFixed(1)}% of it is under the ground, at most ${most}% allowed`);
+  }
+  // the same city with the core's own drape: far more of the lawns and squares are under the ground, so the measure sees what it is for
+  const plain = onIt({ lift: 0, maxEdge: 16, planar: 0.02 });
+  const grassPlain = 100 * buriedShare(plain.group.getObjectByName('city-grass') as THREE.Mesh, drawn.ground);
+  const plazaPlain = 100 * buriedShare(plain.group.getObjectByName('city-plaza') as THREE.Mesh, drawn.ground);
+  assert.ok(grassPlain > 15 && plazaPlain > 6, `without the lift ${grassPlain.toFixed(1)}% of the grass and ${plazaPlain.toFixed(1)}% of the squares are under the ground`);
+  for (const c of [page, plain]) c.dispose();
+  drawn.dispose();
 });

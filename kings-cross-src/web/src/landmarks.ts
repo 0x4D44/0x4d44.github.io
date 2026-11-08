@@ -4,22 +4,27 @@
 // the shared ones in materials.ts (drawn into a canvas at runtime; no image assets, nothing to license).
 //
 // All geometry is built in world coordinates (x east, y up, z south), so nothing here is turned or
-// moved after the fact. UVs are in METRES, which is what materials.ts asks for (it sets the texture
-// repeat to 1 / tile), so brick comes out brick-sized on any wall at any angle.
+// moved after the fact, but for one thing: given the terrain, each building is built standing on y = 0 and
+// then raised as a whole (`liftParts`) onto its seat, the lowest ground under its footprint
+// (core/landmarks.ts `landmarkSeats`). UVs are in METRES, which is what materials.ts asks for (it sets the
+// texture repeat to 1 / tile), so brick comes out brick-sized on any wall at any angle.
 //
 // The geometry builders (`hotelGeometry`, `midlandGeometry`, `barlowGeometry`) need no DOM and are
 // tested in web/tests/landmarks.test.ts; only `createMaterials` and `addLandmarks` touch materials.
 //
 // Wiring (main.ts):
-//   const landmarks = addLandmarks(scene, data);                       // once, after the scene exists
+//   const landmarks = addLandmarks(scene, data, { terrain });          // once, after the scene exists (`terrain` is optional)
 //   const hidden = new Set([...buildingsUnderStation(...), ...LANDMARK_OSM_IDS]);  // before buildingPrisms(data, hidden)
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
-import { barlowPlan, barlowSection, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
-import type { BarlowPlan, BayPosition, Edge, HotelPlan, MidlandPlan, TowerPlan } from '../../core/landmarks.ts';
+import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, polygonEdges, REPLACED_BUILDING_IDS, towerSquare } from '../../core/landmarks.ts';
+import type { BarlowPlan, BayPosition, Edge, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
+import type { Terrain } from '../../core/terrain.ts';
 import { mergeParts, material, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
+
+export { towerSquare };
 
 /** The OSM building ids this module replaces: leave them out of buildingPrisms(). */
 export const LANDMARK_OSM_IDS: readonly number[] = REPLACED_BUILDING_IDS;
@@ -315,13 +320,6 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
 
 // ---- the St Pancras Renaissance (Midland Grand) Hotel ------------------------------------------
 
-/** The four corners of a tower's footprint, grown by `grow` metres. */
-export function towerSquare(t: TowerPlan, grow = 0): Pt[] {
-  const h = t.side / 2 + grow;
-  const c = (a: number, b: number): Pt => [t.centre[0] + t.along[0] * a * h + t.out[0] * b * h, t.centre[1] + t.along[1] * a * h + t.out[1] * b * h];
-  return [c(-1, -1), c(1, -1), c(1, 1), c(-1, 1)];
-}
-
 /** A tower on a square plan: brick shaft with lancets, a belfry stage, then (clock tower) a gabled clock stage and a slate spire, or (west tower) an arcaded stage and a pyramid roof. */
 function addTower(parts: PartMap<Key>, t: TowerPlan): void {
   const h = t.side / 2;
@@ -505,6 +503,39 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   return parts;
 }
 
+// ---- standing on the ground --------------------------------------------------------------------
+
+/** How many vertices each part of a structure holds at this moment: where `liftParts` starts from, to raise only what was added since. */
+export function partMarks<K extends string>(parts: PartMap<K>): Partial<Record<K, number>> {
+  const marks: Partial<Record<K, number>> = {};
+  for (const k of Object.keys(parts) as K[]) marks[k] = parts[k]?.positions.length ?? 0;
+  return marks;
+}
+
+/**
+ * Raise a structure by `dy` metres: the y of every vertex its parts hold (past `from`, if given), and nothing else. The normals and the UVs
+ * stay as built, so the brick courses and the shading are what they were; the parts keep their heights relative to one another. A shift
+ * of nothing leaves the vertices alone, so a structure with no terrain under it comes out byte for byte as it was built.
+ */
+export function liftParts<K extends string>(parts: PartMap<K>, dy: number, from: Partial<Record<K, number>> = {}): void {
+  if (dy === 0) return;
+  for (const k of Object.keys(parts) as K[]) {
+    const p = parts[k]?.positions;
+    if (!p) continue;
+    for (let i = (from[k] ?? 0) + 1; i < p.length; i += 3) p[i] = (p[i] as number) + dy;
+  }
+}
+
+/**
+ * The parts of the three buildings: the hotel, the Midland Grand, the Barlow shed. They are built standing on y = 0; with `seats` each is
+ * raised to its own (`landmarkSeats`), so its lowest wall vertex is on the lowest ground under it.
+ */
+export function landmarkGeometry(plans: LandmarkPlans, seats?: Readonly<Record<LandmarkName, Seat>>): PartMap<Key>[] {
+  const built: Record<LandmarkName, PartMap<Key>> = { hotel: hotelGeometry(plans.hotel), midland: midlandGeometry(plans.midland), barlow: barlowGeometry(plans.barlow) };
+  if (seats) for (const name of Object.keys(built) as LandmarkName[]) liftParts(built[name], seats[name].y);
+  return [built.hotel, built.midland, built.barlow];
+}
+
 // ---- assembly ----------------------------------------------------------------------------------
 
 export interface Landmarks {
@@ -512,17 +543,26 @@ export interface Landmarks {
   /** OSM building ids replaced: pass to buildingPrisms() as the exclusion set */
   excludeIds: readonly number[];
   stats: { meshes: number; triangles: number; materials: number };
+  /** where each building stands on the terrain; only when a `terrain` was given */
+  seats?: Record<LandmarkName, Seat>;
   dispose(): void;
+}
+
+export interface LandmarkOptions {
+  /** the ground (core/terrain.ts): each building stands with its base at the lowest ground under its footprint; without it they stand on y = 0 */
+  terrain?: Terrain;
 }
 
 /**
  * Add the landmark buildings to the scene. In main.ts: call this once after building the scene, and add
  * LANDMARK_OSM_IDS (or `landmarks.excludeIds`) to the set passed to buildingPrisms(), so the generic OSM
- * boxes for these three buildings are not drawn as well.
+ * boxes for these three buildings are not drawn as well. With `opts.terrain` the buildings are seated on it.
  */
-export function addLandmarks(scene: THREE.Scene, data: KxData): Landmarks {
+export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOptions = {}): Landmarks {
   const set = createMaterials();
-  const { group, triangles } = mergeParts<Key>([hotelGeometry(greatNorthernHotelPlan(data)), midlandGeometry(midlandGrandPlan(data)), barlowGeometry(barlowPlan(data))], set.table, 'landmarks', { roofGlass: 2 });
+  const plans = landmarkPlans(data);
+  const seats = opts.terrain ? landmarkSeats(plans, opts.terrain) : undefined;
+  const { group, triangles } = mergeParts<Key>(landmarkGeometry(plans, seats), set.table, 'landmarks', { roofGlass: 2 });
   scene.add(group);
   const geometries: THREE.BufferGeometry[] = [];
   group.traverse((o) => {
@@ -532,6 +572,7 @@ export function addLandmarks(scene: THREE.Scene, data: KxData): Landmarks {
     group,
     excludeIds: LANDMARK_OSM_IDS,
     stats: { meshes: group.children.length, triangles, materials: Object.keys(set.table).length },
+    ...(seats ? { seats } : {}),
     dispose(): void {
       scene.remove(group);
       for (const g of geometries) g.dispose();

@@ -37,6 +37,8 @@
 import type { Pt } from './geo.ts';
 import type { KxData, Rail } from './osm.ts';
 import { FT, pointInPolygon } from './station.ts';
+import { seatY } from './terrain.ts';
+import type { Terrain } from './terrain.ts';
 
 export { pointInPolygon };
 
@@ -575,6 +577,88 @@ export function barlowSection(steps: number, span = FIGURES.barlow.span, rise = 
   for (let k = 1; k < pts.length; k++) s.push((s[k - 1] as number) + Math.hypot((pts[k] as { x: number }).x - (pts[k - 1] as { x: number }).x, (pts[k] as { y: number }).y - (pts[k - 1] as { y: number }).y));
   const total = s[s.length - 1] as number;
   return pts.map((p, k) => ({ x: p.x + span / 2, y: p.y, t: (s[k] as number) / total }));
+}
+
+// ---- where they stand on the ground ------------------------------------------------------------
+
+/** Metres between the ground samples taken inside a footprint: `seatY`'s own default, so the lowest and the highest are found the same way. */
+const SEAT_SPACING = 2;
+
+/** Where one structure stands on the terrain (core/terrain.ts). */
+export interface Seat {
+  /** y of the structure's base: the lowest ground under its footprint, held up to the `floor` where one was given */
+  y: number;
+  /** the lowest and the highest ground under the footprint: `max - min` is how deep the uphill side goes into the ground */
+  min: number;
+  max: number;
+}
+
+/**
+ * Where a structure's base goes: the lowest ground under its footprint (`seatY`), so no wall floats and on a slope the uphill side
+ * is in the ground. A footprint of several rings (a building and its towers, a block of joined buildings) is one rigid structure: it
+ * takes the lowest of them, so its parts keep their heights relative to one another. `floor` stops a deep cutting under part of the
+ * footprint from sinking the base with it.
+ */
+export function seatOf(terrain: Pick<Terrain, 'rangeUnder'>, rings: readonly (readonly Pt[])[], floor = -Infinity): Seat {
+  let y = Infinity;
+  let min = Infinity;
+  let max = -Infinity;
+  for (const ring of rings) {
+    y = Math.min(y, seatY(terrain, ring, SEAT_SPACING));
+    const r = terrain.rangeUnder(ring, SEAT_SPACING);
+    min = Math.min(min, r.min);
+    max = Math.max(max, r.max);
+  }
+  return { y: Math.max(y, floor), min, max };
+}
+
+/** The base of a tower: its square plan, grown by `grow` metres all round. */
+export function towerSquare(t: TowerPlan, grow = 0): Pt[] {
+  const h = t.side / 2 + grow;
+  const c = (a: number, b: number): Pt => [t.centre[0] + t.along[0] * a * h + t.out[0] * b * h, t.centre[1] + t.along[1] * a * h + t.out[1] * b * h];
+  return [c(-1, -1), c(1, -1), c(1, 1), c(-1, 1)];
+}
+
+/** The footprint of the Barlow vault: the rectangle from the south wall to the end of the outline, wall to wall. */
+export function barlowFootprint(plan: BarlowPlan): Pt[] {
+  const frame = { origin: plan.origin, heading: plan.heading };
+  return [frameToWorld(frame, 0, 0), frameToWorld(frame, plan.width, 0), frameToWorld(frame, plan.width, plan.length), frameToWorld(frame, 0, plan.length)];
+}
+
+export type LandmarkName = 'hotel' | 'midland' | 'barlow';
+export interface LandmarkPlans {
+  hotel: HotelPlan;
+  midland: MidlandPlan;
+  barlow: BarlowPlan;
+}
+
+export function landmarkPlans(data: Pick<KxData, 'buildings' | 'platforms'>): LandmarkPlans {
+  return { hotel: greatNorthernHotelPlan(data), midland: midlandGrandPlan(data), barlow: barlowPlan(data) };
+}
+
+/** The rings that outline the base of each building: the Midland Grand's own and its two towers' (which stand 0.3 m proud of the front). */
+export function landmarkFootprints(p: LandmarkPlans): Record<LandmarkName, Pt[][]> {
+  return {
+    hotel: [p.hotel.outline],
+    midland: [p.midland.outline, ...p.midland.towers.map((t) => towerSquare(t))],
+    barlow: [barlowFootprint(p.barlow)],
+  };
+}
+
+/**
+ * How far below the ground of a railway (`terrain.groundY`) the Barlow shed's springings may go. Its floor is the track level, which the
+ * terrain has levelled along the platforms; this stops the cutting that runs past the shed's edge from pulling the vault down with it.
+ */
+export const BARLOW_SINK = 0.3;
+
+/** Where each building stands: its base at the lowest ground under its footprint (the Barlow shed no lower than `BARLOW_SINK` under the railway's ground). */
+export function landmarkSeats(plans: LandmarkPlans, terrain: Pick<Terrain, 'rangeUnder' | 'groundY'>): Record<LandmarkName, Seat> {
+  const rings = landmarkFootprints(plans);
+  return {
+    hotel: seatOf(terrain, rings.hotel),
+    midland: seatOf(terrain, rings.midland),
+    barlow: seatOf(terrain, rings.barlow, terrain.groundY - BARLOW_SINK),
+  };
 }
 
 // ---- tunnel mouths -----------------------------------------------------------------------------

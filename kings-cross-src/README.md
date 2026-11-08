@@ -55,6 +55,17 @@ committed. The page credits © OpenStreetMap contributors under the
 [ODbL](https://www.openstreetmap.org/copyright); preserve that attribution when using the
 data.
 
+The ground (`web/src/data/kx-terrain.json`) is the Environment Agency LIDAR Composite DTM
+1m, reduced by `tools/build-terrain.ts` to height grids re-levelled to the model's rail datum
+(the WCS tile and the OSTN15 grid it is placed with stay outside git in `~/kx-data/terrain/`).
+`node tools/build-terrain.ts --profile` rebuilds it byte for byte and prints the real rail
+profile every 25 m; the header of the tool explains the datum and the re-levelling. `?terrain=0`
+loads the page on the flat plane instead. The data are published under the
+[Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
+The page credits "Contains Environment Agency information © Environment Agency and/or
+database right 2026" beside the OpenStreetMap credit (`web/index.html`, and in the file's own
+`attribution` field); preserve that attribution when using the data.
+
 ### Settings
 
 All relay settings are optional. Defaults shown are from the relay modules.
