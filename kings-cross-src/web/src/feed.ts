@@ -279,6 +279,9 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
   const abort = new AbortController();
   let disposed = false, pending: Promise<void> | undefined, timer: unknown;
   let present = options.relayPresent === true, currentDate = '';
+  // Unanswered timetable requests in a row. A live relay may cache the day later, so back off;
+  // a replay day that is missing now will not appear later, so stop asking.
+  let misses = 0, settled = false;
   let calls: readonly BoardService[] | undefined;
   const observed: { event: unknown; atMs: number }[] = [];
   const changed = (): void => options.onChange?.(calls);
@@ -293,7 +296,11 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
       if (!validDate(date)) return;
       if (currentDate !== date) { currentDate = date; calls = undefined; changed(); }
       const response = await fetchImpl(`/relay/schedule?date=${date}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
-      if (!response.ok) { if (!calls) changed(); return; }
+      if (!response.ok) {
+        misses++; if (options.mode === 'replay' && response.status === 404) settled = true;
+        if (!calls) changed(); return;
+      }
+      misses = 0;
       const doc = await response.json() as { date: string; calls: BoardService[] };
       if (disposed) return;
       if (doc.date !== date || !Array.isArray(doc.calls) || doc.calls.some(call => !call || typeof call.uid !== 'string' || typeof call.headcode !== 'string')) throw new Error('invalid timetable');
@@ -302,7 +309,9 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
       changed();
     })().catch(() => { /* Keep known bookings during a dropped connection. */ }).finally(() => {
       pending = undefined;
-      if (!disposed && present) timer = schedule(() => { timer = undefined; void refresh(); }, calls ? 60_000 : 5_000);
+      if (disposed || !present || settled) return;
+      const delay = calls ? 60_000 : Math.min(5_000 * 2 ** Math.max(0, misses - 1), 300_000);
+      timer = schedule(() => { timer = undefined; void refresh(); }, delay);
     });
     return pending;
   };

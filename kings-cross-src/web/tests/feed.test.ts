@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { backoffMs, createLiveFeed, createReplayClock, createReplayFeed, createTimeline, parseRecording, probeRelay, relayReachable, snapshotEvents, trainSettings } from '../src/feed.ts';
+import { backoffMs, createLiveFeed, createReplayClock, createReplayFeed, createScheduleFeed, createTimeline, parseRecording, probeRelay, relayReachable, snapshotEvents, trainSettings } from '../src/feed.ts';
 import type { EventStream, SnapshotEvent } from '../src/feed.ts';
 import { createMotion } from '../../core/motion.ts';
 import type { MotionEvent } from '../../core/motion.ts';
@@ -304,4 +304,29 @@ test('the default relay probe makes exactly one quiet request and handles absent
 test('feed: the relay is probed only from a loopback host, never from the published site', () => {
   for (const host of ['127.0.0.1', 'localhost', '[::1]']) assert.equal(relayReachable(host), true, host);
   for (const host of ['0x4d44.github.io', 'example.com', '127.0.0.1.example.com', '192.168.1.5', '']) assert.equal(relayReachable(host), false, host);
+});
+
+// A relay without /schedule (older code) or a replay day whose timetable was never cached answers
+// 404. Polling that every 5 s logs a console error each time, forever.
+test('a missing timetable backs off in live mode and is not re-asked in replay', async () => {
+  const jobs: { fn: () => void; ms: number }[] = [];
+  const timers = { schedule: (fn: () => void, ms: number) => { jobs.push({ fn, ms }); return jobs.length; }, unschedule: () => {} };
+  let asked = 0;
+  const fetchImpl = (async (url: string) => {
+    if (String(url).includes('/schedule')) asked++;
+    return new Response('{"error":"not found"}', { status: 404 });
+  }) as typeof fetch;
+  const live = createScheduleFeed({ mode: 'live', hostname: 'localhost', relayPresent: true, fetchImpl, now: () => Date.parse('2026-11-08T12:00Z'), ...timers });
+  await live.refresh();
+  const delays: number[] = [];
+  for (let i = 0; i < 6; i++) { const job = jobs.shift()!; delays.push(job.ms); job.fn(); await live.refresh(); }
+  live.dispose();
+  assert.ok(delays.every((ms, i) => i === 0 || ms >= delays[i - 1]!), `delays never shrink: ${delays}`);
+  assert.ok(delays.at(-1)! >= 60_000, `live backs off to at least a minute: ${delays}`);
+  assert.ok(delays.at(-1)! <= 600_000, `live keeps asking at least every 10 min: ${delays}`);
+  jobs.length = 0; asked = 0;
+  const replay = createScheduleFeed({ mode: 'replay', hostname: 'localhost', relayPresent: true, date: '2026-11-07', fetchImpl, ...timers });
+  await replay.refresh();
+  assert.equal(asked, 1); assert.equal(jobs.length, 0, 'a past day that is missing will not appear later');
+  replay.dispose();
 });
