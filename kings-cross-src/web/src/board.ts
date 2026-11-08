@@ -247,10 +247,26 @@ export function applyBoardTrust(services: readonly BoardService[], event: unknow
 
 const escape = (value: string): string => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 const duration = (ms: number): string => `${Math.floor(ms / 60_000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
-const platformLabel = (values: number[]): string => {
-  const sorted = [...new Set(values)].sort((a, b) => a - b);
-  return sorted.length > 1 && sorted.at(-1)! - sorted[0]! === sorted.length - 1 ? `plat ${sorted[0]}–${sorted.at(-1)}` : `plat ${sorted.join(', ')}`;
+const platformRangeLabel = (values: number[]): string => {
+  const sorted = [...new Set(values.filter(validPlatform))].sort((a, b) => a - b);
+  if (!sorted.length) return 'P?';
+  const labels: string[] = [];
+  let first = sorted[0]!, last = first;
+  for (const value of sorted.slice(1)) {
+    if (value === last + 1) { last = value; continue; }
+    labels.push(first === last ? `P${first}` : `P${first}–P${last}`);
+    first = last = value;
+  }
+  labels.push(first === last ? `P${first}` : `P${first}–P${last}`);
+  return labels.join(', ');
 };
+const platformLabel = (values: number[]): string => {
+  const sorted = [...new Set(values.filter(validPlatform))].sort((a, b) => a - b);
+  const full = platformRangeLabel(sorted);
+  return sorted.length > 0 && full.length > 10 ? `P${sorted[0]} +${sorted.length - 1}` : full;
+};
+const distanceLabel = (distanceM?: number): string => typeof distanceM === 'number' && Number.isFinite(distanceM) && distanceM >= 0
+  ? `${(distanceM / 1000).toFixed(1)} km` : '—';
 export function stationName(name: string): string {
   return name.trim().toLocaleLowerCase('en-GB')
     .replace(/(^|[\s(\-/])([a-z])/g, (_match, before: string, letter: string) => before + letter.toUpperCase())
@@ -268,6 +284,12 @@ const bookedTime = (service: BoardService, direction: Direction): string =>
 const stockCall = (service: BoardService, direction: Direction): boolean => /^[035]/.test(service.headcode) || !publicTime(service, direction);
 const placeFor = (service: BoardService, direction: Direction): string => stockCall(service, direction) ? 'empty stock'
   : direction === 'arrival' ? `from ${stationName(service.originName || service.origin)}` : stationName(service.destinationName || service.destination);
+const approachPlace = (row: BoardRow): string => row.service
+  ? stockCall(row.service, 'arrival') ? 'empty stock' : stationName(row.service.originName || row.service.origin) || '—'
+  : stationName(row.origin ?? '') || '—';
+const departurePlace = (row: BoardRow): string => row.service
+  ? stockCall(row.service, 'departure') ? 'empty stock' : stationName(row.service.destinationName || row.service.destination) || '—'
+  : stationName(row.destination ?? '') || '—';
 const timeFact = (service: BoardService, direction: Direction, nowMs: number): string => {
   const rt = service.realtime;
   const actual = direction === 'arrival' ? rt?.actualArrivalMs : rt?.actualDepartureMs;
@@ -283,13 +305,31 @@ const trainHtml = (row: BoardRow, detail: string, nowMs: number): string => {
   const title = [row.headcode, description, operator, detail].filter(Boolean).join(' · ');
   return `<div class="kx-board-train" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(detail)}</span></div>`;
 };
+const approachHtml = (row: BoardRow): string => {
+  const candidates = row.platforms ?? [], platform = platformLabel(candidates), platformTooltip = platformRangeLabel(candidates);
+  const distance = distanceLabel(row.distanceM), place = approachPlace(row);
+  const legacy = row.service ? [] : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination];
+  const title = [`${row.headcode} → ${platformTooltip}`, distance, place, ...legacy].filter(Boolean).join(' · ');
+  return `<div class="kx-board-approach" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-arrow">→</span><span>${escape(platform)}</span><span>${escape(distance)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
+};
+const validClock = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 8.64e15;
+const departureClock = (row: BoardRow, nowMs: number): { value: string; source: string } => {
+  const actual = row.service?.realtime?.actualDepartureMs;
+  return validClock(actual) && actual <= nowMs ? { value: clock(actual), source: 'TRUST actual' }
+    : { value: validClock(row.leftAtMs) ? clock(row.leftAtMs) : '—', source: 'Observed' };
+};
+const departureHtml = (row: BoardRow, nowMs: number): string => {
+  const platform = platformLabel(row.platform === undefined ? [] : [row.platform]), time = departureClock(row, nowMs), place = departurePlace(row);
+  const title = [`${row.headcode} ${platform} →`, `${time.source} ${time.value}`, place].join(' · ');
+  return `<div class="kx-board-departure" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span>${escape(platform)}</span><span class="kx-board-arrow">→</span><span>${escape(time.value)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
+};
 
 /** Also usable by a later schedule adapter; all feed strings are escaped before insertion. */
 export function boardHtml(rows: BoardRows): string {
   const platformRows = rows.platforms.map((p) => `<div class="kx-board-platform"><b>${p.platform}</b><div>${p.trains.length
     ? p.trains.map((r) => trainHtml(r, `${r.state} ${duration(r.stoodMs ?? 0)}${r.sample ? ' · sample' : ''}`, rows.timeMs)).join('') : '<span class="kx-board-empty">empty</span>'}</div></div>`).join('');
-  const approaching = rows.approaching.map((r) => trainHtml(r, `${platformLabel(r.platforms ?? [])} · ${r.distanceM === undefined ? 'distance unknown' : `≈ ${Math.round(r.distanceM)} m to buffer`}`, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed</p>';
-  const departed = rows.departed.map((r) => trainHtml(r, `from plat ${r.platform} · ${duration(Math.max(0, rows.timeMs - (r.leftAtMs ?? rows.timeMs)))} ago`, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
+  const approaching = rows.approaching.map(approachHtml).join('') || '<p class="kx-board-empty">None observed</p>';
+  const departed = rows.departed.map((r) => departureHtml(r, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
   const due = rows.due.slice(0, 8).map(({ service, direction }) => {
     const arrival = direction === 'arrival';
     const place = placeFor(service, direction), operator = operatorName(service.operator), time = bookedTime(service, direction), platform = `P${service.platform ?? '?'}`;
@@ -311,6 +351,7 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
 .kx-board-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 12px 10px;line-height:20px}.kx-board-body[hidden]{display:none}.kx-board h2{font-size:12px;margin:8px 0 4px;color:var(--fg)}.kx-board-note,.kx-board-empty{color:var(--muted);margin:2px 0}
 .kx-board-platform{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:2px 0;min-height:20px}.kx-board-platform>div{min-width:0}
 .kx-board-train{display:flex;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap}.kx-board-train strong{flex:0 0 32px;font-size:12px;font-variant-numeric:tabular-nums}.kx-board-train span{color:var(--muted)}.kx-board-description{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-operator{flex:0 0 auto;max-width:92px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-state{flex:0 1 auto;max-width:84px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.kx-board-approach,.kx-board-departure{display:grid;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-approach{grid-template-columns:32px 12px 56px 56px minmax(0,1fr)}.kx-board-departure{grid-template-columns:32px 28px 12px 42px minmax(0,1fr)}.kx-board-approach strong,.kx-board-departure strong{font-size:12px}.kx-board-approach>span,.kx-board-departure>span{color:var(--muted)}.kx-board-approach .kx-board-arrow,.kx-board-departure .kx-board-arrow{color:var(--fg)}.kx-board-route{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .kx-board-due{display:grid;grid-template-columns:34px 20px 32px minmax(0,1fr) 22px auto;gap:4px;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-due>span{color:var(--muted)}.kx-board-due strong{font-size:12px}`;
   const toggle = doc.createElement('button'); toggle.type = 'button';
   toggle.setAttribute('aria-controls', 'kx-board-content');
