@@ -29,5 +29,14 @@ export default defineConfig({
     // The size budget that matters is the gzipped total (2 MB, see the scoring rubric).
     chunkSizeWarningLimit: 1200,
   },
-  server: { host: '127.0.0.1' },
+  server: {
+    host: '127.0.0.1',
+    proxy: {
+      '/relay': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true, // The relay checks Host; preserve its loopback-only guard.
+        rewrite: (path) => path.replace(/^\/relay(?=\/|$)/, ''),
+      },
+    },
+  },
 });

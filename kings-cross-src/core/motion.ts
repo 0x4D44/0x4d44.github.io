@@ -38,7 +38,7 @@ export interface TrainView {
   reversals: number;
 }
 export interface MotionOptions {
-  lengthM?: number;
+  lengthM?: number | ((description: string) => number);
   acceleration?: number;
   braking?: number;
   defaultSpeedMps?: number;
@@ -52,6 +52,7 @@ export interface MotionOptions {
 export interface MotionIssue { kind: 'unroutable' | 'reversal' | 'vanished' | 'queued'; description: string; berth: string; reason: string }
 interface Segment { edge: Edge; fromT: number; toT: number }
 interface Train {
+  lengthM: number;
   description: string; pos: TrackPosition; dir: number; body: Segment[]; route: Segment[];
   speed: number; target: BerthAnchor; lastBerth: string; lastSeen: number;
   unmapped?: string; pendingTarget?: BerthAnchor; fadeAt?: number;
@@ -87,7 +88,12 @@ export function overlapM(a: OccupiedTrack[], b: OccupiedTrack[]): number {
 export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptions = {}) {
   // Modelling defaults, not a timetable inference: 9-car length, restrained approach speed,
   // and service rather than emergency braking. Short consists can pass lengthM: 130.
-  const lengthM = opts.lengthM ?? 260;
+  const lengthOption = opts.lengthM ?? 260;
+  const lengthFor = (description: string): number => {
+    const length = typeof lengthOption === 'function' ? lengthOption(description) : lengthOption;
+    if (!Number.isFinite(length) || length <= 0) throw new Error('motion train length must be finite and positive');
+    return length;
+  };
   const acceleration = opts.acceleration ?? 0.7;
   const braking = opts.braking ?? 0.6;
   const defaultSpeed = opts.defaultSpeedMps ?? 40 / 3.6;
@@ -95,7 +101,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const gap = opts.gapM ?? 5;
   const quietMs = opts.quietMs ?? 20 * 60_000;
   const fadeSeconds = opts.fadeSeconds ?? 5;
-  for (const n of [lengthM, acceleration, braking, defaultSpeed, stationSpeed, quietMs, fadeSeconds]) {
+  for (const n of [typeof lengthOption === 'function' ? 260 : lengthOption, acceleration, braking, defaultSpeed, stationSpeed, quietMs, fadeSeconds]) {
     if (!Number.isFinite(n) || n <= 0) throw new Error('motion options must be finite and positive');
   }
   if (!Number.isFinite(gap) || gap < 0) throw new Error('motion gap must be finite and nonnegative');
@@ -126,7 +132,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   };
   // Choose the straightest continuation behind a newly observed train. The TD feed has
   // no tail location. Clip at a graph boundary rather than inventing off-track coaches.
-  const initialBody = (pos: TrackPosition, dir: number): Segment[] => {
+  const initialBody = (pos: TrackPosition, dir: number, lengthM: number): Segment[] => {
     const backwards: Segment[] = [];
     let edge = pos.edge, at = pos.t, d = -dir, left = lengthM;
     const used = new Set<Edge>();
@@ -250,7 +256,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const pos = locate(a);
     if (!pos) { issues.push({ kind: 'unroutable', description, berth: a.berth, reason: 'anchor has no valid graph edge' }); return; }
     const dir = a.from === pos.edge.a ? 1 : -1;
-    const t: Train = { description, pos, dir, body: initialBody(pos, dir), route: [], speed: 0, target: a, lastBerth: a.berth, lastSeen: now, departing: false, blocked: false, distanceM: 0, reversals: 0, authority: 0 };
+    const lengthM = lengthFor(description);
+    const t: Train = { description, lengthM, pos, dir, body: initialBody(pos, dir, lengthM), route: [], speed: 0, target: a, lastBerth: a.berth, lastSeen: now, departing: false, blocked: false, distanceM: 0, reversals: 0, authority: 0 };
     if (canSpawn(t)) active.set(description, t);
     else {
       queued.set(description, t);
@@ -327,7 +334,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       t.distanceM += take; left -= take;
       if (size(s) < EPS) { t.pos = point(s.edge, s.toT); t.route.shift(); }
     }
-    let excess = t.body.reduce((sum, s) => sum + size(s), 0) - lengthM;
+    let excess = t.body.reduce((sum, s) => sum + size(s), 0) - t.lengthM;
     while (excess > EPS && t.body.length) {
       const s = t.body[0]!, take = Math.min(excess, size(s));
       s.fromT += direction(s) * take / s.edge.length; excess -= take;
@@ -412,7 +419,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const trains = (): TrainView[] => [...active.values()].map((t) => ({
     description: t.description, leading: { ...t.pos, point: [...t.pos.point] as Pt },
     heading: (() => { const a = graph.pos.get(t.pos.edge.a)!, b = graph.pos.get(t.pos.edge.b)!; return Math.atan2((b[0] - a[0]) * t.dir, -(b[1] - a[1]) * t.dir); })(),
-    speed: t.speed, lengthM, occupiedLengthM: t.body.reduce((sum, s) => sum + size(s), 0),
+    speed: t.speed, lengthM: t.lengthM, occupiedLengthM: t.body.reduce((sum, s) => sum + size(s), 0),
     occupied: t.body.map((s) => ({ ...s })),
     state: t.fadeAt !== undefined ? 'fading' : t.departing ? 'departing' : t.speed === 0 ? 'held' : 'moving',
     opacity: t.fadeAt === undefined ? 1 : Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000)),
