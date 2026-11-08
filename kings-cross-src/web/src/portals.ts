@@ -6,9 +6,10 @@
 // (which the model draws at ground level even underground) disappear into it instead of running on over
 // the top of the tunnel.
 //
-// The numbers come from core/landmarks.ts (mouth positions are OSM nodes, so a portal stands exactly where
-// OSM's rails change from open to `tunnel`). Sizes of the arches and walls are ASSUMED (see FIGURES.tunnel
-// and the constants below); nothing in OSM gives them.
+// The numbers come from core/landmarks.ts (mouth positions are OSM nodes: where OSM's rails change from open
+// to `tunnel`). The face stands PORTAL.setback metres inside that node, because OSM's signals stand at the
+// node and up to half a metre inside it, and they are the better authority (see PORTAL.setback). Sizes of the
+// arches and walls are ASSUMED (see FIGURES.tunnel and the constants below); nothing in OSM gives them.
 //
 // Geometry is built in world coordinates and merged per material (four meshes in all).
 //
@@ -39,6 +40,15 @@ export const PORTAL = {
   // earth bank: the ridge is higher than a train (up to about 3.9 m), flat across the tunnel's nodes plus `pad` each side
   cover: { ridge: 4.6, pad: 3, ramp: [8, 24] as [number, number], taper: 40 },
   arcSteps: 14,
+  /**
+   * How far inside the OSM node (where the rails change from open to tunnel) each face stands. OSM's signals stand beside the
+   * outermost rails at the node: 0.33 m behind it for the deepest, their heads reaching 0.47 m behind it. A face on the node
+   * cut through them (at Gasworks south the stone covered the upper post of signal YA1023 and the recess lining ran through two
+   * posts at the jambs). The signals are the authority and the face is our construction, so it stands back: 1.2 m leaves more
+   * than half a metre between the stone (which stands 0.12 m proud of the face) and the rearmost part of any signal. See
+   * `faceMouth`; web/tests/terrain-world.test.ts holds every drawn signal clear of every portal.
+   */
+  setback: 1.2,
 } as const;
 
 type Pt = [number, number];
@@ -53,6 +63,30 @@ const dir = (f: Frame, u: number, w: number, y: number): V3 => [f.across[0] * u 
 const plus = (p: V3, v: V3): V3 => [p[0] + v[0], p[1] + v[1], p[2] + v[2]];
 const neg = (v: V3): V3 => [-v[0], -v[1], -v[2]];
 const length = (v: V3): number => Math.hypot(v[0], v[1], v[2]);
+
+/**
+ * A mouth with its face line moved `setback` metres into the tunnel (PORTAL.setback): what every part of a portal is built on,
+ * so the face, the stone, the recess, the walls and the block all stand behind the signals at the OSM node. Everything else
+ * about the mouth (axis, bores, width) is the OSM mouth's. The building blocks below (`mouthParts`, `mouthPartsTerrain`,
+ * `blockTop`) build on the face line of the mouth they are given; `addPortals` hands them these.
+ */
+export function faceMouth(mouth: Mouth, setback: number = PORTAL.setback): Mouth {
+  return {
+    ...mouth,
+    origin: [mouth.origin[0] + mouth.axis[0] * setback, mouth.origin[1] + mouth.axis[1] * setback],
+    bores: mouth.bores.map((b) => ({ ...b, tracks: b.tracks.map((t) => ({ ...t, along: t.along - setback })) })),
+  };
+}
+
+/** A tunnel run's cover with the face line of each end moved in by `setback`, so the bank's end caps stay just behind the faces. */
+export function faceCover(cover: Cover, setback: number = PORTAL.setback): Cover {
+  return {
+    ...cover,
+    from: [cover.from[0] + cover.axis[0] * setback, cover.from[1] + cover.axis[1] * setback],
+    length: cover.length - setback * (cover.openEnded ? 1 : 2),
+    mouths: cover.mouths.map((m) => faceMouth(m, setback)),
+  };
+}
 
 /** An oriented box from corner `o` with edge vectors U, V, W; UVs in metres on each face. */
 export function addBox(m: Batch, o: V3, U: V3, V: V3, W: V3): void {
@@ -291,19 +325,32 @@ export function openingsIn(cover: Pick<Cover, 'from' | 'across'>, mouth: Mouth |
 // from `lift` metres behind the face), so there is no earth bank to build and no wing walls: the cutting's sides are the
 // terrain's own steep faces, drawn in brick where they are steeper than SLOPE.wallDeg.
 //
-// A heightfield cannot be hollow, and the DTM blurs the real cliff into a ramp a few metres deep right behind the face,
-// inside the bores. So over each face the terrain mesh gets a hole (`portalHole`, the strip BLOCK.hole metres behind the
-// face) and the "block" fills it: the face wall (with its arches), a flat earth lid at the wall's top, and a brick
-// flank at each end. The dark recess runs under the lid.
+// A heightfield cannot be hollow, and the DTM blurs the real cliff into a ramp a few metres deep right behind the OSM node,
+// inside the bores. So over each mouth the terrain mesh gets a hole (`portalHole`, the strip BLOCK.hole metres behind the
+// node) and the "block" fills it: the face wall (with its arches, PORTAL.setback behind the node), a flat earth lid at the
+// wall's top, and a brick flank at each end. The dark recess runs under the lid. The strip of the hole in front of the face
+// (the setback and the hole's front margin) is level ground at the foot of the plinth, the "forecourt", with the flanks
+// running on forward along its sides, following the ground, so the face stands in a short walled apron.
 
 /** Sizes of the masonry block behind each face (metres). ASSUMED: nothing published gives them. */
 export const BLOCK = {
   /** how far behind the face the lid reaches: past the hole by more than a mesh triangle */
   depth: 4.6,
-  /** the terrain triangles whose centre is within these distances behind the face are left out, [from, to] */
-  hole: [-0.2, 3.2] as [number, number],
+  /**
+   * the terrain triangles whose centre is within these distances behind the OSM NODE (not the face, which stands PORTAL.setback
+   * further in) are left out, [from, to]. The front edge is well in front of the node: the DTM's ramp starts there, and a triangle
+   * that is left in at the edge reaches 0.7 m past its centre, so with the face standing back a lip of ground (0.4 to 1.2 m across
+   * the face, 3 m at its ends) would stand between the node and the face, hiding the arches' feet.
+   */
+  hole: [-1.5, 3.2] as [number, number],
+  /** the hole is this much wider than the face's half width on each side */
+  holeSide: 0.1,
   /** the block is this much wider than the face's arches' frame on each side, to cover the hole's edge */
   flank: 0.6,
+  /** the forecourt reaches this far in front of the hole's front edge, over the terrain's own triangles, so no crack shows between them */
+  forecourtOverlap: 0.3,
+  /** the flanks along the forecourt stand this much above the ground beside them (a coping), and are left out where the ground is no higher than that */
+  flankCoping: 0.15,
 } as const;
 
 type MouthFrame = Pick<Mouth, 'origin' | 'axis' | 'across' | 'halfWidth'>;
@@ -315,15 +362,29 @@ export function inMouthFrame(m: Pick<Mouth, 'origin' | 'axis' | 'across'>, x: nu
   return { u: dx * m.across[0] + dz * m.across[1], w: dx * m.axis[0] + dz * m.axis[1] };
 }
 
-/** True for a terrain triangle centre that the portal block replaces (pass to buildTerrainMesh's `exclude`). */
-export function portalHole(mouths: readonly MouthFrame[]): (x: number, z: number) => boolean {
-  return (x, z) => {
+/** What `portalHole` returns: the predicate for the terrain's `exclude`, which also says what the block puts in the hole's place. */
+export interface PortalHole {
+  /** true for a terrain triangle centre that the portal block replaces */
+  (x: number, z: number): boolean;
+  /**
+   * The height of the drawn ground in the hole: the forecourt's, level with the foot of the plinth. The DTM runs up through the
+   * hole (the ramp it blurs the cliff into), and the terrain mesh answers that height there, so a layer laid over the ground
+   * (the city's grass, paving) would climb it: in front of a face it would stand 5 m up the arches. `addTerrain` gives the
+   * drawn ground this answer inside the hole, which the portal block fills.
+   */
+  floorAt(x: number, z: number): number;
+}
+
+/** The strip the portal block replaces (pass to buildTerrainMesh's or addTerrain's `exclude`). Takes the OSM mouths: the strip is measured from the node. */
+export function portalHole(mouths: readonly MouthFrame[]): PortalHole {
+  const inside = (x: number, z: number): boolean => {
     for (const m of mouths) {
       const { u, w } = inMouthFrame(m, x, z);
-      if (w >= BLOCK.hole[0] && w <= BLOCK.hole[1] && Math.abs(u) <= m.halfWidth + 0.1) return true;
+      if (w >= BLOCK.hole[0] && w <= BLOCK.hole[1] && Math.abs(u) <= m.halfWidth + BLOCK.holeSide) return true;
     }
     return false;
   };
+  return Object.assign(inside, { floorAt: (): number => GROUND_Y });
 }
 
 /** The wall's and lid's height: the parapet, or the ground behind the block if that is higher (so the lid meets the earth, never sinks under it). */
@@ -338,8 +399,13 @@ export function blockTop(mouth: MouthFrame, terrain: Pick<Terrain, 'heightAt'>):
   return top;
 }
 
-/** The face wall with its arches and dressings, an earth lid over the hole, and a brick flank at each end of the block. */
-export function mouthPartsTerrain(mouth: Mouth, terrain: Pick<Terrain, 'heightAt'>): PartMap<PortalKey> {
+/**
+ * The face wall with its arches and dressings, an earth lid over the hole, and a brick flank at each end of the block.
+ * `forecourt` is how far in front of the face to lay level ground (metres, 0 for none): where the face stands back from the
+ * hole's front edge (addPortals passes the setback and the hole's margin), that strip would otherwise be open to the sky. The
+ * flanks run on along its sides, as high as the ground beside them (`BLOCK.flankCoping` above it).
+ */
+export function mouthPartsTerrain(mouth: Mouth, terrain: Pick<Terrain, 'heightAt'>, forecourt = 0): PartMap<PortalKey> {
   const parts: PartMap<PortalKey> = {};
   const f: Frame = { origin: mouth.origin, axis: mouth.axis, across: mouth.across };
   const top = blockTop(mouth, terrain);
@@ -353,6 +419,8 @@ export function mouthPartsTerrain(mouth: Mouth, terrain: Pick<Terrain, 'heightAt
   brick.quadUV(at(f, -Hb, 0, GROUND_Y), at(f, Hb, 0, GROUND_Y), at(f, Hb, 0, 0), at(f, -Hb, 0, 0), [[0, GROUND_Y], [2 * Hb, GROUND_Y], [2 * Hb, 0], [0, 0]], toward);
   // the lid
   earth.quadUV(at(f, -Hb, 0, top), at(f, -Hb, D, top), at(f, Hb, D, top), at(f, Hb, 0, top), undefined, [0, 1, 0]);
+  // the forecourt: level with the plinth's foot, as wide as the block, so it runs under the ground's cut edge to the flanks' feet
+  if (forecourt > 0) earth.quadUV(at(f, -Hb, -forecourt, GROUND_Y), at(f, -Hb, 0, GROUND_Y), at(f, Hb, 0, GROUND_Y), at(f, Hb, -forecourt, GROUND_Y), undefined, [0, 1, 0]);
   // the flanks, from the ground to the lid, facing outward
   for (const sign of [-1, 1] as const) {
     const a = at(f, sign * Hb, 0, GROUND_Y);
@@ -364,13 +432,43 @@ export function mouthPartsTerrain(mouth: Mouth, terrain: Pick<Terrain, 'heightAt
     if (sign < 0) brick.quadUV(a, b, c, d, uv, out);
     else brick.quadUV(b, a, d, c, [[D, GROUND_Y], [0, GROUND_Y], [0, top], [D, top]], out);
   }
+  // the flanks run on forward along the forecourt's sides, facing in, and follow the ground beside them: that ground (the cutting's
+  // bank, rising towards the node) ends in the hole's cut edge, so the wall keeps the forecourt from looking out under it
+  if (forecourt > 0) {
+    const steps = Math.ceil(forecourt);
+    const height = (u: number, w: number): number => {
+      const p = at(f, u, w, 0);
+      return terrain.heightAt(p[0], p[2]) + BLOCK.flankCoping;
+    };
+    for (const sign of [-1, 1] as const) {
+      const inward = dir(f, -sign, 0, 0);
+      for (let k = 0; k < steps; k++) {
+        const w0 = -forecourt + (forecourt * k) / steps;
+        const w1 = -forecourt + (forecourt * (k + 1)) / steps;
+        const h0 = height(sign * Hb, w0);
+        const h1 = height(sign * Hb, w1);
+        if (h0 <= GROUND_Y + BLOCK.flankCoping + 1e-6 && h1 <= GROUND_Y + BLOCK.flankCoping + 1e-6) continue; // no ground to hold back here
+        brick.quadUV(
+          at(f, sign * Hb, w0, GROUND_Y),
+          at(f, sign * Hb, w1, GROUND_Y),
+          at(f, sign * Hb, w1, Math.max(h1, GROUND_Y)),
+          at(f, sign * Hb, w0, Math.max(h0, GROUND_Y)),
+          [[w0, GROUND_Y], [w1, GROUND_Y], [w1, Math.max(h1, GROUND_Y)], [w0, Math.max(h0, GROUND_Y)]],
+          inward,
+        );
+      }
+    }
+  }
   return parts;
 }
 
 export interface Portals {
   group: THREE.Group;
-  /** the mouths drawn, from core/landmarks.ts tunnelMouths */
+  /** the mouths, from core/landmarks.ts tunnelMouths: at the OSM nodes. The faces drawn stand PORTAL.setback inside them (see `faces`) */
   mouths: Mouth[];
+  /** the mouths with their face lines where the faces are drawn (`faceMouth` of each) */
+  faces: Mouth[];
+  /** the covers of the OSM mouths (flat ground only); the bank is drawn behind the faces (`faceCover`) */
   covers: Cover[];
   /** leaves out the terrain triangles the blocks replace (terrain mode); always false on flat ground */
   hole: (x: number, z: number) => boolean;
@@ -387,10 +485,13 @@ export interface PortalOptions {
 
 export function addPortals(scene: THREE.Scene, data: KxData, opts: PortalOptions = {}): Portals {
   const mouths = tunnelMouths(data);
+  const faces = mouths.map((m) => faceMouth(m));
   const terrain = opts.terrain;
   const covers = terrain ? [] : tunnelCover(data);
-  const sets: PartMap<PortalKey>[] = terrain ? mouths.map((m) => mouthPartsTerrain(m, terrain)) : mouths.map((m) => mouthParts(m, approachEnvelope(data, m, PORTAL.wing.reach, PORTAL.wing.step)));
-  if (!terrain && opts.cover !== false) for (const c of covers) sets.push(coverParts(c));
+  // the ground the hole leaves open in front of each face: from the hole's front edge (a little in front, over the terrain's triangles) to the face
+  const forecourt = PORTAL.setback - BLOCK.hole[0] + BLOCK.forecourtOverlap;
+  const sets: PartMap<PortalKey>[] = terrain ? faces.map((m) => mouthPartsTerrain(m, terrain, forecourt)) : faces.map((m) => mouthParts(m, approachEnvelope(data, m, PORTAL.wing.reach, PORTAL.wing.step)));
+  if (!terrain && opts.cover !== false) for (const c of covers) sets.push(coverParts(faceCover(c)));
   const owned: THREE.Material[] = [];
   // ASSUMED: a grass-grown embankment, dark under the night sky (flat ground); the terrain's own ground colour under the lid
   const earth = terrain ? terrainMaterial('ground') : new THREE.MeshLambertMaterial({ color: 0x3f4a35 });
@@ -407,6 +508,7 @@ export function addPortals(scene: THREE.Scene, data: KxData, opts: PortalOptions
   return {
     group,
     mouths,
+    faces,
     covers,
     hole: terrain ? portalHole(mouths) : () => false,
     stats: { meshes: group.children.length, triangles, mouths: mouths.length },
