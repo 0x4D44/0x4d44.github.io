@@ -18,6 +18,8 @@ import { backoffMs, createLiveFeed, createReplayFeed, parseRecording, probeRelay
 import type { MotionSink, TrainFeed } from './feed.ts';
 import { createSignals } from './signals.ts';
 import type { SignalOverlay } from './signals.ts';
+import { approachPlatforms, boardRows, createBoard } from './board.ts';
+import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, lengthForDescription } from './trains-live.ts';
 import { addWorld } from './world.ts';
 import trackData from './data/kx-track.json';
@@ -143,6 +145,7 @@ function start(): void {
   catch (error) { settings = { mode: 'none', date: '', speed: 1 }; settingsError = (error as Error).message; }
   const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex?: number; description?: string }[] = [];
   const samples: THREE.Group[] = [];
+  const sampleBoardTrains: BoardTrain[] = [];
   if (settings.mode === 'demo' || settings.mode === 'auto') {
     const stops = shedBufferStops(data, layout).sort((p, q) => worldToShed(layout, [p.x, p.z]).u - worldToShed(layout, [q.x, q.z]).u);
     const picks: [TrainKind, number][] = [['lner9', 1], ['lner5', 3], ['hull5', 5], ['lumo5', 7]];
@@ -154,6 +157,12 @@ function start(): void {
       scene.add(group);
       samples.push(group);
       trains.push({ kind, group, noseWorld: nose, headingRad: layout.heading, trackIndex });
+      // Match across the parallel shed tracks; longitudinal platform ends are staggered.
+      const u = worldToShed(layout, [stop.x, stop.z]).u;
+      const platform = [...stationPlatforms(data)].sort(([, p], [, q]) =>
+        Math.abs(worldToShed(layout, platformSouthEnd(p.pts)).u - u) - Math.abs(worldToShed(layout, platformSouthEnd(q.pts)).u - u))[0]?.[0];
+      // Hand-written sample descriptions, never presented as real train identities.
+      sampleBoardTrains.push({ id: sampleBoardTrains.length + 1, description: `1S0${sampleBoardTrains.length + 1}`, samplePlatform: Number(platform) });
     }
   }
 
@@ -195,8 +204,12 @@ function start(): void {
   let mode: 'demo' | 'live' | 'replay' | 'none' = settings.mode === 'auto' ? 'demo' : settings.mode;
   let connection = settingsError || (settings.mode === 'auto' ? 'checking local relay' : mode === 'demo' || mode === 'none' ? 'offline' : 'loading anchors');
   let unmapped: number | null = null;
+  let boardAnchors: AnchorMap = { area: 'Y9', sources: [], anchors: [], unmapped: [] };
+  let arrivalSets = approachPlatforms(boardAnchors);
+  const stationBoard = params.get('board') === '0' ? null : createBoard(document.body, status);
   const kx = { ready: true, scene, camera, controls, renderer, layout, trains, signals: signalLayer, parts: { shed, buildings }, firstFrameMs: 0,
     motion: null as ReturnType<typeof createMotion> | null, motionState: [] as TrainView[],
+    boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
@@ -207,12 +220,23 @@ function start(): void {
     if (status.textContent !== text) status.textContent = text;
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
+  let sampleTimeMs = 0, lastBoardFrame = -Infinity;
+  const paintBoard = (): void => {
+    if (!stationBoard) return;
+    kx.boardRows = boardRows(mode === 'demo' ? sampleBoardTrains : kx.motionState, boardAnchors, {
+      mode: mode === 'demo' ? 'sample' : mode, nowMs: mode === 'demo' ? sampleTimeMs : feed?.timeMs() ?? 0,
+      previous: kx.boardRows ?? undefined, graph, arrivals: arrivalSets,
+    });
+    stationBoard.update(kx.boardRows);
+  };
   let lastFrame: number | undefined;
   renderer.setAnimationLoop((time) => {
     const dt = lastFrame === undefined ? 0 : Math.max(0, (time - lastFrame) / 1000); lastFrame = time;
     feed?.advance(dt);
+    if (mode === 'demo') sampleTimeMs += dt * 1000;
     if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
     paintStatus();
+    if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     controls.update();
     world.follow(camera);
     renderer.render(scene, camera);
@@ -221,6 +245,7 @@ function start(): void {
 
   (window as unknown as { __kx: unknown }).__kx = kx;
   paintStatus();
+  paintBoard();
   if (signalLayer && relayReachable(location.hostname)) void signalLayer.loadTable().then(paintStatus);
 
   let disposed = false, bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
@@ -237,6 +262,7 @@ function start(): void {
       sample.traverse((o) => { if (o instanceof THREE.Mesh && o.name !== 'bogie-mesh') o.geometry.dispose(); });
     }
     trains.splice(0);
+    kx.boardRows = null;
     mode = requested; setConnection(attempt ? 'reconnecting; loading anchors' : 'loading anchors');
     try {
       const response = await fetch('/relay/anchors', { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
@@ -253,6 +279,7 @@ function start(): void {
       }
       if (disposed) return;
       unmapped = anchors.unmapped.length;
+      boardAnchors = anchors; arrivalSets = approachPlatforms(anchors);
       // The model's coupling-inclusive length, rather than the core's approximate default.
       motion = createMotion(graph, anchors, { lengthM: lengthForDescription,
         wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
@@ -277,6 +304,6 @@ function start(): void {
   window.addEventListener('pagehide', (event) => {
     if (event.persisted) return;
     disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
-    feed?.dispose(); liveTrains?.dispose(); signalLayer?.dispose();
+    feed?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose();
   }, { once: true });
 }
