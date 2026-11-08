@@ -11,13 +11,13 @@ const londonDateParts = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
 });
 
-const text = (value) => typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+const text = (value) => (typeof value === 'string' && value.length <= 128) || (typeof value === 'number' && Number.isFinite(value)) ? String(value).trim() : '';
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : null;
 
 function timestamp(value) {
-  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d{1,16}$/.test(value))) return null;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 8_640_000_000_000_000 ? parsed : null;
 }
 
 function dateString(value) {
@@ -37,13 +37,13 @@ function dateAt(ms) {
 }
 
 function headcodeFrom(trainId) {
-  return trainId.length >= 6 ? trainId.slice(2, 6) : '';
+  return /^[A-Z0-9]{6,32}$/.test(trainId) && /^[0-9][A-Z][0-9]{2}$/.test(trainId.slice(2, 6)) ? trainId.slice(2, 6) : '';
 }
 
 function signedVariation(body) {
-  if (body.timetable_variation === null || body.timetable_variation === undefined || body.timetable_variation === '') return null;
+  if (typeof body.timetable_variation !== 'number' && (typeof body.timetable_variation !== 'string' || !/^-?\d{1,5}$/.test(body.timetable_variation))) return null;
   const variation = Number(body.timetable_variation);
-  if (!Number.isFinite(variation)) return null;
+  if (!Number.isSafeInteger(variation) || Math.abs(variation) > 10_080) return null;
   const value = Math.abs(variation);
   switch (text(body.variation_status).toUpperCase()) {
     case 'EARLY': return -value;
@@ -80,8 +80,13 @@ function activationService(activation, services) {
     ?? candidates[0];
 }
 
+const validServices = (rows) => Array.isArray(rows) ? rows.filter(row => object(row) && typeof row.uid === 'string' && typeof row.headcode === 'string' && typeof row.serviceDate === 'string' && typeof row.date === 'string') : [];
+
 function parseMessages(raw) {
-  const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  let value = raw;
+  if (typeof raw === 'string') {
+    try { value = JSON.parse(raw); } catch { throw new Error('trust: invalid JSON'); }
+  }
   if (!Array.isArray(value)) throw new Error('trust: body is not an array');
   return value;
 }
@@ -143,7 +148,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
     let result;
     try { result = configuredServices(); } catch { result = []; }
     if (Array.isArray(result)) {
-      serviceRows = result;
+      serviceRows = validServices(result);
       if (result.length) servicesLoaded = true;
     }
     return serviceRows;
@@ -154,7 +159,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
     if (!body) return null;
     const trainId = text(body.train_id);
     const uid = text(body.train_uid);
-    if (!trainId || !uid) return null;
+    if (!trainId || !/^[A-Z0-9]{1,16}$/.test(uid)) return null;
     const headcode = headcodeFrom(trainId);
     if (!headcode) return null;
     return {
@@ -259,7 +264,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
     if (text(body.loc_stanox) !== KX_STANOX) return null;
     const originalTrainId = text(body.train_id);
     const currentTrainId = text(body.current_train_id);
-    if (!currentTrainId && !originalTrainId) return null;
+    if ((!currentTrainId && !originalTrainId) || (currentTrainId && !headcodeFrom(currentTrainId)) || (originalTrainId && !headcodeFrom(originalTrainId))) return null;
     const base = {
       kind: 'trust', area, type: 'movement',
       eventType: text(body.event_type).toUpperCase() || null,
@@ -297,6 +302,8 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
         if (!result) continue;
         const { normalized, originalTrainId, currentTrainId } = result;
         const key = stableKey([normalized.trainId, normalized.eventType, normalized.plannedMs, normalized.date]);
+        const previous = movements.get(key);
+        if (previous?.base.actualMs !== null && previous?.base.actualMs > (normalized.actualMs ?? -Infinity)) continue;
         putRecent(movements, key, {
           base: {
             kind: normalized.kind,
@@ -322,7 +329,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
   }
 
   function setServices(next) {
-    serviceRows = Array.isArray(next) ? next : [];
+    serviceRows = validServices(next);
     servicesLoaded = true;
     servicesPinned = true;
     prune();
@@ -331,7 +338,7 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
 
   function enrich(suppliedServices) {
     prune();
-    const rows = Array.isArray(suppliedServices) ? suppliedServices : readServices();
+    const rows = Array.isArray(suppliedServices) ? validServices(suppliedServices) : readServices();
     const realtime = [];
     for (const stored of movements.values()) {
       const result = matchMovement(stored.base, stored.originalTrainId, stored.currentTrainId, rows);
@@ -358,6 +365,8 @@ export function createTrustState({ area = 'Y9', services = () => [], now = Date.
         matchMethod: event.matchMethod,
         updatedAtMs: event.receivedAtMs,
       };
+      const previousActual = event.eventType === 'ARRIVAL' ? existing.actualArrivalMs : event.eventType === 'DEPARTURE' ? existing.actualDepartureMs : null;
+      if (previousActual !== null && (event.actualMs ?? -Infinity) < previousActual) continue;
       existing.trainId = event.trainId;
       existing.headcode = event.headcode;
       existing.eventType = event.eventType;

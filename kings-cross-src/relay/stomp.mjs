@@ -14,7 +14,16 @@ function escapeHeader(s) {
 }
 
 function unescapeHeader(s) {
-  return s.replace(/\\([rnc\\])/g, (_, c) => ({ r: '\r', n: '\n', c: ':', '\\': '\\' })[c]);
+  return s.replace(/\\([\s\S])|\\$/g, (_, c) => {
+    if (!['r', 'n', 'c', '\\'].includes(c)) throw new Error('stomp: invalid header escape');
+    return ({ r: '\r', n: '\n', c: ':', '\\': '\\' })[c];
+  });
+}
+
+const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+function decode(bytes) {
+  try { return utf8.decode(bytes); }
+  catch { throw new Error('stomp: invalid UTF8'); }
 }
 
 export function encodeFrame(command, headers = {}, body = '') {
@@ -57,12 +66,14 @@ export class FrameParser {
         this.#guard();
         break;
       }
-      const [command, ...lines] = this.#buf.subarray(0, head.at).toString('utf8').split(/\r?\n/);
+      if (head.at + head.len + 1 > MAX_FRAME_BYTES) throw new Error('stomp: frame too large');
+      const [command, ...lines] = decode(this.#buf.subarray(0, head.at)).split(/\r?\n/);
+      if (!/^[A-Z]+$/.test(command)) throw new Error('stomp: invalid command');
       const noEscape = NO_ESCAPE.has(command);
       const headers = Object.create(null);
       for (const line of lines) {
         const i = line.indexOf(':');
-        if (i < 0) continue;
+        if (i <= 0 || /[\r\0]/.test(line)) throw new Error('stomp: invalid header');
         const key = noEscape ? line.slice(0, i) : unescapeHeader(line.slice(0, i));
         if (!(key in headers)) headers[key] = noEscape ? line.slice(i + 1) : unescapeHeader(line.slice(i + 1));
       }
@@ -70,9 +81,10 @@ export class FrameParser {
       const start = head.at + head.len;
       let end;
       const cl = headers['content-length'];
-      if (cl !== undefined && /^\d+$/.test(cl)) {
+      if (cl !== undefined) {
+        if (!/^\d+$/.test(cl)) throw new Error('stomp: invalid content-length');
         const n = Number(cl);
-        if (n > MAX_FRAME_BYTES) throw new Error('stomp: frame too large');
+        if (!Number.isSafeInteger(n) || start + n + 1 > MAX_FRAME_BYTES) throw new Error('stomp: frame too large');
         if (this.#buf.length < start + n + 1) {
           this.#guard();
           break;
@@ -86,7 +98,8 @@ export class FrameParser {
           break;
         }
       }
-      frames.push({ command, headers, body: this.#buf.subarray(start, end).toString('utf8') });
+      if (end + 1 > MAX_FRAME_BYTES) throw new Error('stomp: frame too large');
+      frames.push({ command, headers, body: decode(this.#buf.subarray(start, end)) });
       this.#buf = this.#buf.subarray(end + 1);
     }
     return frames;
@@ -107,6 +120,7 @@ export class StompClient extends EventEmitter {
   #pending = [];
   #connected = false;
   #closed = false;
+  #faulted = false;
   #lastIn = Date.now();
 
   constructor(socket, { login, passcode, vhost = 'localhost', heartbeat = [15000, 15000] }) {
@@ -121,7 +135,7 @@ export class StompClient extends EventEmitter {
   start() {
     const socket = this.#socket;
     socket.on('data', (chunk) => this.#onData(chunk));
-    socket.on('error', (err) => this.#fault(new Error(`stomp: socket error: ${err.code ?? err.message}`)));
+    socket.on('error', () => this.#fault(new Error('stomp: socket error')));
     socket.on('close', () => this.#onClose());
     const [cx, cy] = this.#heartbeat;
     socket.write(
@@ -151,6 +165,7 @@ export class StompClient extends EventEmitter {
   }
 
   #onData(chunk) {
+    if (this.#closed || this.#faulted) return;
     this.#lastIn = Date.now();
     let frames;
     try {
@@ -159,16 +174,21 @@ export class StompClient extends EventEmitter {
       this.#fault(err);
       return;
     }
-    for (const frame of frames) this.#onFrame(frame);
+    for (const frame of frames) {
+      if (this.#closed || this.#faulted) break;
+      this.#onFrame(frame);
+    }
   }
 
   #onFrame(frame) {
     switch (frame.command) {
       case 'CONNECTED': {
+        if (this.#connected) { this.#fault(new Error('stomp: repeated CONNECTED')); break; }
+        if (!this.#startHeartbeats(frame.headers['heart-beat'])) break;
         this.#connected = true;
-        this.#startHeartbeats(frame.headers['heart-beat']);
         for (const f of this.#pending.splice(0)) this.#socket.write(f);
-        this.emit('connected', { server: frame.headers.server ?? '' });
+        // This value reaches feed logs. Server text is untrusted and may echo credentials.
+        this.emit('connected', { server: '' });
         break;
       }
       case 'MESSAGE':
@@ -180,7 +200,7 @@ export class StompClient extends EventEmitter {
         });
         break;
       case 'ERROR':
-        this.#fault(new Error(`stomp: ERROR frame: ${frame.headers.message ?? 'no message'}`));
+        this.#fault(new Error('stomp: ERROR frame'));
         break;
       default:
         break; // RECEIPT and anything unknown
@@ -189,7 +209,15 @@ export class StompClient extends EventEmitter {
 
   #startHeartbeats(serverValue) {
     const [cx, cy] = this.#heartbeat;
-    const [sx, sy] = String(serverValue ?? '0,0').split(',').map((n) => Number(n) || 0);
+    const value = serverValue ?? '0,0';
+    const parts = /^(\d{1,10}),(\d{1,10})$/.exec(value);
+    // setInterval silently clamps overflow/Infinity to 1 ms. Reject hostile negotiation
+    // before scheduling, and accept CONNECTED once so repeated frames cannot add timers.
+    if (!parts || parts.slice(1).some(n => Number(n) > 2_147_483_647)) {
+      this.#fault(new Error('stomp: invalid heart-beat'));
+      return false;
+    }
+    const [sx, sy] = parts.slice(1).map(Number);
     if (cx > 0 && sy > 0) {
       this.#timers.push(setInterval(() => this.#socket.write('\n'), Math.max(cx, sy)));
     }
@@ -202,10 +230,12 @@ export class StompClient extends EventEmitter {
       );
     }
     for (const t of this.#timers) t.unref();
+    return true;
   }
 
   #fault(err) {
-    if (this.#closed) return;
+    if (this.#closed || this.#faulted) return;
+    this.#faulted = true;
     this.emit('fault', err);
     this.#socket.destroy();
   }

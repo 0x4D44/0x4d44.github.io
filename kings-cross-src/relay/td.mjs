@@ -24,25 +24,46 @@
 // `time` is milliseconds since the epoch (or null if absent or unparseable).
 
 function ms(value) {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
   const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return Number.isSafeInteger(n) && n > 0 && n <= 8640000000000000 ? n : null;
+}
+
+const matches = (value, pattern) => typeof value === 'string' && pattern.test(value);
+const berth = (value) => matches(value, /^[A-Z0-9]{4}$/);
+const descr = (value) => matches(value, /^[\x20-\x7e]{4}$/);
+
+// Also guard direct callers (recordings and state callers need not use the wire parser).
+export function validTdEvent(e) {
+  if (!e || typeof e !== 'object' || Array.isArray(e) || !matches(e.area, /^[A-Z0-9]{2}$/)) return false;
+  if (e.time != null && ms(e.time) !== e.time) return false;
+  switch (e.kind) {
+    case 'step': return berth(e.from) && berth(e.to) && descr(e.descr);
+    case 'cancel': return berth(e.from) && descr(e.descr);
+    case 'interpose': return berth(e.to) && descr(e.descr);
+    case 'heartbeat': return true;
+    case 'sclass': return (e.msgType === undefined || ['SF', 'SG', 'SH'].includes(e.msgType)) &&
+      matches(e.address, /^[\dA-F]{1,4}$/i) && matches(e.data, /^(?:[\dA-F]{2}){1,4}$/i);
+    case 'unknown': return matches(e.msgType, /^[A-Z]{2}$/);
+    default: return false;
+  }
 }
 
 function normalise(msgType, m) {
-  const area = String(m.area_id ?? '');
+  const area = m.area_id;
   switch (msgType) {
     case 'CA':
-      return { kind: 'step', area, descr: String(m.descr ?? ''), from: String(m.from ?? ''), to: String(m.to ?? ''), time: ms(m.time) };
+      return { kind: 'step', area, descr: m.descr, from: m.from, to: m.to, time: ms(m.time) };
     case 'CB':
-      return { kind: 'cancel', area, from: String(m.from ?? ''), descr: String(m.descr ?? '') };
+      return { kind: 'cancel', area, from: m.from, descr: m.descr };
     case 'CC':
-      return { kind: 'interpose', area, to: String(m.to ?? ''), descr: String(m.descr ?? '') };
+      return { kind: 'interpose', area, to: m.to, descr: m.descr };
     case 'CT':
       return { kind: 'heartbeat', area, time: ms(m.report_time ?? m.time) };
     case 'SF':
     case 'SG':
     case 'SH':
-      return { kind: 'sclass', area, msgType, address: String(m.address ?? ''), data: String(m.data ?? '') };
+      return { kind: 'sclass', area, msgType, address: m.address, data: m.data };
     default:
       return { kind: 'unknown', area, msgType };
   }
@@ -57,7 +78,10 @@ export function parseTdBody(text) {
     if (!item || typeof item !== 'object') continue;
     for (const [key, value] of Object.entries(item)) {
       const m = /^([A-Z]{2})_MSG$/.exec(key);
-      if (m && value && typeof value === 'object') events.push(normalise(m[1], value));
+      if (m && value && typeof value === 'object' && !Array.isArray(value)) {
+        const event = normalise(m[1], value);
+        if (validTdEvent(event)) events.push(event);
+      }
     }
   }
   return events;

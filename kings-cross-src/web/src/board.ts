@@ -13,6 +13,7 @@ export interface BoardService extends ScheduleCall {
   destinationName?: string;
   realtime?: {
     actualArrivalMs?: number | null; actualDepartureMs?: number | null;
+    publicArrivalMs?: number | null; publicDepartureMs?: number | null;
     variationMinutes?: number | null; eventType?: string | null; platform?: string | null;
     trainId?: string | null; matchMethod?: string | null; updatedAtMs?: number | null;
   } | null;
@@ -374,7 +375,7 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
   root.append(style, toggle, body); parent.append(root); paintToggle(); resize();
   view.addEventListener('resize', resize);
   return {
-    update(rows: BoardRows): void { const next = boardHtml(rows); if (next !== html) { body.innerHTML = next; html = next; } resize(); },
+    update(rows: BoardRows): void { const connection = /(?:relay connected|reconnecting|connecting|invalid relay|invalid TRUST)[^·]*/.exec(status?.textContent ?? '')?.[0]?.trim() ?? ''; const next = boardHtml(rows) + (connection ? `<p class="kx-board-note kx-board-connection">${escape(connection)}</p>` : ''); if (next !== html) { body.innerHTML = next; html = next; } resize(); },
     dispose(): void { toggle.removeEventListener('click', onToggle); narrow.removeEventListener('change', onWidth); view.removeEventListener('resize', resize); root.remove(); },
   };
 }

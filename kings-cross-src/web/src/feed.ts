@@ -23,18 +23,43 @@ export function trainSettings(params: URLSearchParams): { mode: 'auto' | 'live' 
   return { mode, date, speed };
 }
 
+const MAX_EVENT_CHARS = 1_048_576;
+const MAX_SNAPSHOT_BERTHS = 10_000;
+const MAX_SCLASS_ADDRESSES = 4096;
+const identifier = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(v);
+const description = (v: unknown): v is string => identifier(v) || v === '****';
+const epoch = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 8.64e15;
+const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+function parseMessage(text: string): unknown {
+  if (text.length > MAX_EVENT_CHARS) throw new Error('relay event too large');
+  return JSON.parse(text);
+}
+
 export function parseEvent(value: unknown): MotionEvent {
-  if (!value || typeof value !== 'object') throw new Error('invalid TD event');
-  const e = value as Record<string, unknown>;
-  if (typeof e.kind !== 'string' || typeof e.area !== 'string') throw new Error('invalid TD event');
-  if (['step', 'interpose', 'cancel'].includes(e.kind) && typeof e.descr !== 'string') throw new Error('missing train description');
-  if (['step', 'cancel'].includes(e.kind) && typeof e.from !== 'string') throw new Error('missing from berth');
-  if (['step', 'interpose'].includes(e.kind) && typeof e.to !== 'string') throw new Error('missing to berth');
+  if (!object(value)) throw new Error('invalid TD event');
+  const e = value;
+  if (!identifier(e.kind) || !identifier(e.area)) throw new Error('invalid TD event');
+  if (['step', 'interpose', 'cancel'].includes(e.kind) && !description(e.descr) && !(e.kind === 'cancel' && e.descr === '')) throw new Error('invalid train description');
+  if (['step', 'cancel'].includes(e.kind) && !identifier(e.from) && !(e.kind === 'cancel' && e.from === '')) throw new Error('invalid from berth');
+  if (['step', 'interpose'].includes(e.kind) && !identifier(e.to)) throw new Error('invalid to berth');
+  for (const key of ['time', 'lastEventTime', 'plannedMs', 'actualMs', 'publicMs', 'receivedAtMs']) {
+    if (e[key] !== undefined && e[key] !== null && !epoch(e[key])) throw new Error('invalid event timestamp');
+  }
+  if (e.kind === 'sclass' && (typeof e.address !== 'string' || !/^[0-9a-f]{1,4}$/i.test(e.address) || typeof e.data !== 'string' || !/^(?:[0-9a-f]{2}){1,256}$/i.test(e.data))) throw new Error('invalid S-class bytes');
+  if (e.kind === 'trust') {
+    for (const key of ['uid', 'headcode', 'trainId', 'type', 'eventType', 'platform', 'matchMethod', 'date', 'serviceDate']) {
+      const v = e[key];
+      if (v != null && (typeof v !== 'string' || v.length > 64 || /[^\x20-\x7e]/.test(v))) throw new Error('invalid TRUST field');
+    }
+    if (e.variationMinutes != null && (typeof e.variationMinutes !== 'number' || !Number.isFinite(e.variationMinutes))) throw new Error('invalid TRUST variation');
+  }
   if (e.kind === 'snapshot') {
     snapshotEvents(e); // Reject incomplete pictures before any part can change the world.
     if (e.sclass !== undefined) {
-      const s = e.sclass as SnapshotEvent['sclass'];
-      if (!s || !Number.isInteger(s.addresses) || s.addresses < 0 || !s.data || typeof s.data !== 'object' || Array.isArray(s.data) || Object.values(s.data).some((v) => typeof v !== 'string')) throw new Error('invalid snapshot S-class bytes');
+      const s = e.sclass;
+      if (!object(s) || !Number.isInteger(s.addresses) || (s.addresses as number) < 0 || (s.addresses as number) > MAX_SCLASS_ADDRESSES || !object(s.data)) throw new Error('invalid snapshot S-class bytes');
+      const bytes = Object.entries(s.data);
+      if (bytes.length > MAX_SCLASS_ADDRESSES || bytes.some(([address, data]) => !/^[0-9a-f]{1,4}$/i.test(address) || typeof data !== 'string' || !/^(?:[0-9a-f]{2}){1,256}$/i.test(data))) throw new Error('invalid snapshot S-class bytes');
     }
   }
   return e as unknown as MotionEvent;
@@ -48,8 +73,8 @@ export function parseRecording(text: string): RecordedEvent[] {
     for (const [index, line] of text.split(/\r?\n/).entries()) {
       if (!line.trim()) continue;
       try {
-        const row = JSON.parse(line) as { t: unknown; e: unknown };
-        if (!row || typeof row.t !== 'number' || !Number.isFinite(row.t)) throw new Error('invalid timestamp');
+        const row = parseMessage(line) as { t: unknown; e: unknown };
+        if (!row || !epoch(row.t)) throw new Error('invalid timestamp');
         rows.push({ t: row.t, e: parseEvent(row.e) });
       } catch { throw new Error(`invalid recording line ${index + 1}`); }
     }
@@ -66,11 +91,11 @@ export function backoffMs(attempt: number): number {
 export function snapshotEvents(value: unknown, previous: readonly string[] = []): MotionEvent[] {
   if (!value || typeof value !== 'object') throw new Error('invalid snapshot');
   const s = value as { area?: unknown; berths?: unknown };
-  if (typeof s.area !== 'string' || !s.berths || typeof s.berths !== 'object' || Array.isArray(s.berths)) throw new Error('invalid snapshot');
+  if (!identifier(s.area) || !object(s.berths) || Object.keys(s.berths).length > MAX_SNAPSHOT_BERTHS) throw new Error('invalid snapshot');
   const events: MotionEvent[] = [];
   const present = new Set<string>();
   for (const [to, descr] of Object.entries(s.berths).sort(([a], [b]) => a.localeCompare(b))) {
-    if (typeof descr !== 'string') throw new Error('invalid snapshot description');
+    if (!identifier(to) || !description(descr)) throw new Error('invalid snapshot description');
     present.add(descr);
     events.push({ kind: 'interpose', area: s.area, descr, to });
   }
@@ -82,11 +107,18 @@ export function snapshotEvents(value: unknown, previous: readonly string[] = [])
 export function createEventReconciler(apply: MotionSink['apply']) {
   const descriptions = new Map<string, Set<string>>();
   const applyOne = (event: MotionEvent, atMs: number): void => {
-    if (!descriptions.has(event.area)) descriptions.set(event.area, new Set());
+    if (!['step', 'interpose', 'cancel'].includes(event.kind)) { apply(event, atMs); return; }
+    if (!descriptions.has(event.area)) {
+      if (descriptions.size >= 256) throw new Error('too many TD areas');
+      descriptions.set(event.area, new Set());
+    }
     const present = descriptions.get(event.area)!;
     if (event.descr) {
       if (event.kind === 'cancel') present.delete(event.descr);
-      else if (event.kind === 'step' || event.kind === 'interpose') present.add(event.descr);
+      else if (event.kind === 'step' || event.kind === 'interpose') {
+        if (!present.has(event.descr) && present.size >= MAX_SNAPSHOT_BERTHS) throw new Error('too many TD descriptions');
+        present.add(event.descr);
+      }
     }
     apply(event, atMs);
   };
@@ -95,8 +127,10 @@ export function createEventReconciler(apply: MotionSink['apply']) {
       const changes = snapshotEvents(event, [...descriptions.get(event.area) ?? []]);
       // Preserve the complete S-class picture for consumers alongside motion. Motion
       // ignores the raw snapshot and receives the same interposes/cancels in both modes.
+      if (!descriptions.has(event.area) && descriptions.size >= 256) throw new Error('too many TD areas');
+      descriptions.set(event.area, new Set(Object.values((event as SnapshotEvent).berths)));
       apply(event, atMs);
-      for (const change of changes) applyOne(change, atMs);
+      for (const change of changes) apply(change, atMs);
     } else applyOne(event, atMs);
   };
 }
@@ -168,6 +202,17 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
   const now = deps.now ?? (() => performance.now());
   let stream: EventStream | undefined, timer: unknown, disposed = false, attempt = 0;
   let watchdog: unknown, watchdogGeneration = 0, opened = false, lastMessageAt = 0;
+  let lastDataAt: number | undefined, upstream: string | undefined;
+  let lastStatus: string | undefined;
+  const report = (value: string): void => {
+    // main refreshes the timetable and resets stale signals on connection transitions.
+    if (lastStatus !== value) { lastStatus = value; status(value); }
+  };
+  const paintConnection = (): void => {
+    const age = lastDataAt === undefined ? undefined : Math.max(0, Math.floor((now() - lastDataAt) / 1000));
+    const stale = age !== undefined && age > 15 ? `; stale data ${age}s old` : '';
+    report(upstream === 'connected' && !stale ? 'connected' : `relay connected; upstream ${upstream ?? 'unconfirmed'}${stale}`);
+  };
   const silenceLimitMs = 15_000;
   const stopWatchdog = (): void => {
     watchdogGeneration++;
@@ -189,44 +234,62 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     lastMessageAt = now();
     if (opened) watch(current);
   };
-  const deliver = (e: MotionEvent): void => timeline.deliver(e);
+  const deliver = (e: MotionEvent): void => { timeline.deliver(e); lastDataAt = now(); paintConnection(); };
   const retry = (): void => {
     opened = false;
     stopWatchdog();
     stream?.close(); stream = undefined;
     if (disposed || timer !== undefined) return;
     const delay = backoffMs(attempt++);
-    status(`reconnecting; retry in ${delay / 1000}s`);
+    report(`reconnecting; retry in ${delay / 1000}s${lastDataAt === undefined ? '' : `; last data ${Math.max(0, Math.floor((now() - lastDataAt) / 1000))}s old`}`);
     timer = schedule(() => { timer = undefined; connect(); }, delay);
   };
   const connect = (): void => {
     if (disposed) return;
-    status(attempt ? 'reconnecting' : 'connecting');
+    report(attempt ? 'reconnecting' : 'connecting');
     try { stream = source('/relay/events'); } catch { retry(); return; }
     const current = stream;
-    current.onopen = () => { if (!disposed && stream === current) { opened = true; received(current); attempt = 0; status('connected'); } };
+    // An HTTP/SSE handshake can stall before onopen, just as an open stream can go quiet.
+    lastMessageAt = now();
+    watch(current);
+    current.onopen = () => { if (!disposed && stream === current) { opened = true; received(current); attempt = 0; upstream = undefined; paintConnection(); } };
     current.onerror = () => { if (stream === current) retry(); };
     current.addEventListener('snapshot', (event) => {
       if (disposed || stream !== current) return;
       received(current);
-      try { deliver(parseEvent({ ...JSON.parse(event.data), kind: 'snapshot' })); }
-      catch { status('invalid relay snapshot'); }
+      try { deliver(parseEvent({ ...(parseMessage(event.data) as Record<string, unknown>), kind: 'snapshot' })); }
+      catch { report('invalid relay snapshot'); }
     });
     current.addEventListener('td', (event) => {
       if (disposed || stream !== current) return;
       received(current);
-      try { deliver(parseEvent((JSON.parse(event.data) as { e: unknown }).e)); }
-      catch { status('invalid relay event'); }
+      try { deliver(parseEvent((parseMessage(event.data) as { e: unknown }).e)); }
+      catch { report('invalid relay event'); }
     });
     current.addEventListener('trust', (event) => {
       if (disposed || stream !== current) return;
       received(current);
-      try { deliver(parseEvent((JSON.parse(event.data) as { e: unknown }).e)); }
-      catch { status('invalid TRUST event'); }
+      try { deliver(parseEvent((parseMessage(event.data) as { e: unknown }).e)); }
+      catch { report('invalid TRUST event'); }
     });
-    current.addEventListener('ping', () => {
+    current.addEventListener('ping', (event) => {
       if (disposed || stream !== current) return;
       received(current);
+      try {
+        const ping = parseMessage(event.data);
+        if (object(ping) && ['connecting', 'connected', 'disconnected', 'disabled'].includes(String(ping.feed))) {
+          upstream = String(ping.feed);
+          // Remote receive time establishes age even before this browser sees a TD event.
+          if (epoch(ping.lastEventAt) && epoch(ping.t)) {
+            lastDataAt = now() - Math.max(0, ping.t - ping.lastEventAt);
+          }
+        } else if (object(ping) && !Object.hasOwn(ping, 'feed') && epoch(ping.t) && upstream === undefined) {
+          // Older relays report only their heartbeat time. Preserve their connected API,
+          // without overriding explicit upstream metadata or resetting the data age.
+          upstream = 'connected';
+        }
+        paintConnection();
+      } catch { report('invalid relay heartbeat'); }
     });
   };
   connect();
@@ -272,6 +335,49 @@ export interface ScheduleFeedOptions {
   schedule?: (fn: () => void, ms: number) => unknown;
   unschedule?: (timer: unknown) => void;
   onChange?: (calls: readonly BoardService[] | undefined) => void;
+  timeoutSignal?: (ms: number) => AbortSignal;
+}
+
+/** Bound transferred JSON before decoding, including chunked bodies without Content-Length. */
+async function boundedJson(response: Response): Promise<unknown> {
+  const maximum = 4 * 1024 * 1024;
+  if (Number(response.headers.get('content-length')) > maximum) throw new Error('timetable too large');
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('missing timetable');
+  let size = 0;
+  const chunks: Uint8Array[] = [];
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maximum) throw new Error('timetable too large');
+      chunks.push(value);
+    }
+  } catch (error) { await reader.cancel().catch(() => {}); throw error; }
+  finally { reader.releaseLock(); }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function validBoardService(value: unknown): value is BoardService {
+  if (!object(value)) return false;
+  const text = (v: unknown): boolean => typeof v === 'string' && v.length <= 256 && !/[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]/.test(v);
+  for (const key of ['uid', 'headcode', 'operator', 'category', 'origin', 'destination', 'date', 'serviceDate', 'startDate', 'endDate', 'stp']) if (!text(value[key])) return false;
+  for (const key of ['arrival', 'departure', 'publicArrival', 'publicDeparture', 'platform', 'originName', 'destinationName']) if (value[key] != null && !text(value[key])) return false;
+  for (const key of ['arrivalMs', 'departureMs', 'publicArrivalMs', 'publicDepartureMs']) if (value[key] !== null && !epoch(value[key])) return false;
+  if (value.realtime != null) {
+    if (!object(value.realtime)) return false;
+    for (const [key, field] of Object.entries(value.realtime)) {
+      if (field == null) continue;
+      if (['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs'].includes(key) ? !epoch(field)
+        : key === 'variationMinutes' ? typeof field !== 'number' || !Number.isFinite(field)
+          : !text(field)) return false;
+    }
+  }
+  return true;
 }
 
 /** Bookings refresh independently of TD. Replays use their own recorded TRUST history,
@@ -295,25 +401,27 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
     if (timer !== undefined) { unschedule(timer); timer = undefined; }
     pending = (async () => {
       if (!present) present = await probeRelay(fetchImpl);
-      if (!present || disposed) return;
+      if (!present || disposed) { if (!present) misses++; return; }
       const date = options.mode === 'replay' ? options.date ?? '' : ukDate(now());
       if (!validDate(date)) return;
       if (currentDate !== date) { currentDate = date; calls = undefined; changed(); }
-      const response = await fetchImpl(`/relay/schedule?date=${date}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+      const signal = AbortSignal.any([abort.signal, (options.timeoutSignal ?? AbortSignal.timeout)(10_000)]);
+      const response = await fetchImpl(`/relay/schedule?date=${date}`, { cache: 'no-store', signal });
+      if (signal.aborted) throw new Error('timetable request expired');
       if (!response.ok) {
         misses++; if (options.mode === 'replay' && response.status === 404) settled = true;
         if (!calls) changed(); return;
       }
+      const doc = await boundedJson(response) as { date: string; calls: BoardService[] };
+      if (disposed || signal.aborted) return;
+      if (!doc || doc.date !== date || !Array.isArray(doc.calls) || doc.calls.length > 10_000 || doc.calls.some(call => !validBoardService(call))) throw new Error('invalid timetable');
       misses = 0;
-      const doc = await response.json() as { date: string; calls: BoardService[] };
-      if (disposed) return;
-      if (doc.date !== date || !Array.isArray(doc.calls) || doc.calls.some(call => !call || typeof call.uid !== 'string' || typeof call.headcode !== 'string')) throw new Error('invalid timetable');
       calls = options.mode === 'replay' ? doc.calls.map(call => ({ ...call, realtime: null })) : doc.calls;
       for (const row of observed) calls = applyBoardTrust(calls, row.event);
       changed();
-    })().catch(() => { /* Keep known bookings during a dropped connection. */ }).finally(() => {
+    })().catch(() => { misses++; /* Keep known bookings during a dropped connection. */ }).finally(() => {
       pending = undefined;
-      if (disposed || !present || settled) return;
+      if (disposed || settled) return;
       const delay = calls ? 60_000 : Math.min(5_000 * 2 ** Math.max(0, misses - 1), 300_000);
       timer = schedule(() => { timer = undefined; void refresh(); }, delay);
     });
@@ -325,10 +433,13 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
     services: (): readonly BoardService[] | undefined => calls,
     apply(event: unknown, atMs: number): void {
       if (disposed || !event || typeof event !== 'object' || (event as { kind?: unknown }).kind !== 'trust') return;
-      const input = event as Record<string, unknown>;
+      let input: Record<string, unknown>;
+      try { input = parseEvent({ ...(event as Record<string, unknown>), area: (event as Record<string, unknown>).area ?? 'TRUST' }) as unknown as Record<string, unknown>; if (JSON.stringify(input).length > MAX_EVENT_CHARS) return; } catch { return; }
       const fact = typeof input.receivedAtMs === 'number' && Number.isFinite(input.receivedAtMs) ? input
         : { ...input, receivedAtMs: options.mode === 'replay' ? atMs : now() };
-      observed.push({ event: fact, atMs });
+      const keys = ['kind', 'area', 'type', 'uid', 'headcode', 'trainId', 'serviceDate', 'date', 'eventType', 'plannedMs', 'actualMs', 'publicMs', 'variationMinutes', 'platform', 'matchMethod', 'receivedAtMs'];
+      const compact = Object.fromEntries(keys.filter(key => fact[key] !== undefined).map(key => [key, fact[key]]));
+      observed.push({ event: compact, atMs });
       if (observed.length > 10_000) observed.shift();
       if (calls) { calls = applyBoardTrust(calls, fact); changed(); }
     },
