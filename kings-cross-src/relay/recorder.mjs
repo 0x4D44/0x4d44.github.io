@@ -35,7 +35,7 @@ export async function createRecorder({ dir, area, now = Date.now, onSnapshot = (
     append(event) {
       if (closed || event.area !== area) return;
       write(event);
-      state.apply(event);
+      if (event.kind !== 'trust') state.apply(event);
     },
     close() {
       if (closing) return closing;

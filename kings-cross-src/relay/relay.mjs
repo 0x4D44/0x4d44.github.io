@@ -5,6 +5,7 @@
 //   GET /recent?n=200     the last n normalised events {t, e}
 //   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
 //   GET /sclass           local signal mapping: KX_SCLASS or <KX_DATA_DIR>/sclass.json
+//   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
 //
@@ -17,6 +18,9 @@ import { runFeed } from './feed.mjs';
 import { createRecorder } from './recorder.mjs';
 import { createStaticStore } from './static.mjs';
 import { TdState } from './state.mjs';
+import { createScheduleStore, scheduleDate } from './schedule.mjs';
+import { createTrustState } from './trust.mjs';
+import { validDate } from '../core/schedule.ts';
 
 const RECENT_MAX = 2000;
 
@@ -74,11 +78,13 @@ function json(res, status, body) {
 export async function startRelay({
   area,
   topic,
+  trustTopic,
   port = 0,
   dataDir,
   anchorsFile,
   sclassFile,
   feedEnabled = true,
+  scheduleEnabled = false,
   readCredentials,
   connectSocket,
   heartbeat,
@@ -96,16 +102,34 @@ export async function startRelay({
   const recorder = await createRecorder({ dir: path.join(dataDir, 'recordings'), area, now,
     onSnapshot: (row) => { for (const send of listeners) send(row); } });
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
+  let services = [];
+  const trust = createTrustState({ area, services: () => services, now });
+  const publishTrust = (events) => {
+    for (const e of events) {
+      recorder.append(e);
+      const row = { t: now(), e };
+      for (const send of listeners) send(row);
+    }
+  };
+  const schedules = createScheduleStore({ dataDir, readCredentials, fetchImpl, now,
+    enabled: scheduleEnabled, corpus: () => store.get('corpus'), log,
+    onReady: (doc) => {
+      services = doc.calls;
+      publishTrust(trust.setServices(doc.calls));
+    } });
+  schedules.start();
 
   const feed = feedEnabled
     ? runFeed({
         connectSocket,
         readCredentials,
         topic,
+        trustTopic,
         area,
         heartbeat,
         backoff,
         log,
+        onTrust: (body) => publishTrust(trust.apply(body)),
         onStatus: (s) => {
           if (s.badMessage) status.badMessages += 1;
           else status.state = s.state;
@@ -149,7 +173,18 @@ export async function startRelay({
             lastEventAgeMs: status.lastEventAt ? now() - status.lastEventAt : null,
             badMessages: status.badMessages,
             counts: state.snapshot().counts,
+            schedule: schedules.stats(),
+            trust: trust.stats(),
           });
+        case '/schedule': {
+          const dates = url.searchParams.getAll('date');
+          const date = dates[0] ?? scheduleDate(now());
+          if (dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date'))
+            return json(res, 400, { error: 'date must be YYYY-MM-DD' });
+          const doc = await schedules.get(date);
+          if (!doc) return json(res, 404, { error: 'schedule not available yet' });
+          return json(res, 200, { ...doc, ...trust.enrich(doc.calls) });
+        }
         case '/snapshot':
           return json(res, 200, state.snapshot());
         case '/recent': {
@@ -163,7 +198,8 @@ export async function startRelay({
             if (row.e.kind === 'snapshot') {
               const { kind, ...snapshot } = row.e;
               res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);
-            } else res.write(`event: td\ndata: ${JSON.stringify(row)}\n\n`);
+            } else if (row.e.kind === 'trust') res.write(`event: trust\ndata: ${JSON.stringify(row)}\n\n`);
+            else res.write(`event: td\ndata: ${JSON.stringify(row)}\n\n`);
           };
           listeners.add(send);
           const stopHeartbeat = startEventHeartbeat(req, res, { now });
@@ -198,7 +234,7 @@ export async function startRelay({
       server.once('error', reject);
       server.listen(port, '127.0.0.1', resolve);
     });
-  } catch (error) { feed?.stop(); await recorder.close(); throw error; }
+  } catch (error) { feed?.stop(); await schedules.close(); await recorder.close(); throw error; }
 
   return {
     host: server.address().address,
@@ -214,12 +250,13 @@ export async function startRelay({
         // Stop periodic writes before waiting for sockets. A server-close error must
         // still finish the recording, and callers may share the same close promise.
         const recorded = recorder.close();
+        const scheduled = schedules.close();
         try {
           await new Promise((resolve, reject) => {
             server.close((error) => error ? reject(error) : resolve());
             server.closeAllConnections();
           });
-        } finally { await recorded; }
+        } finally { await Promise.all([recorded, scheduled]); }
       })();
     },
   };

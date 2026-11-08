@@ -7,8 +7,10 @@ export function runFeed({
   connectSocket, // () => socket
   readCredentials, // () => Promise<{account, secret}>
   topic,
+  trustTopic,
   area,
   onEvents, // (events: normalised[]) => void
+  onTrust = () => {}, // raw TRUST body; filtered before recording or serving
   onStatus = () => {},
   log = () => {},
   heartbeat = [15000, 15000],
@@ -39,7 +41,12 @@ export function runFeed({
       onStatus({ state: 'connected', server });
       log(`feed: connected${server ? ` to ${server}` : ''}, subscribed to ${topic}`);
     });
-    client.on('message', ({ body }) => {
+    client.on('message', ({ body, destination, subscription }) => {
+      if (trustTopic && (destination === trustTopic || subscription === 'trust')) {
+        try { onTrust(body); }
+        catch { log('feed: dropped a bad TRUST message'); }
+        return;
+      }
       let events;
       try {
         events = inArea(parseTdBody(body), area);
@@ -57,6 +64,7 @@ export function runFeed({
       schedule();
     });
     client.subscribe(topic);
+    if (trustTopic) client.subscribe(trustTopic, { id: 'trust' });
     client.start();
   }
 

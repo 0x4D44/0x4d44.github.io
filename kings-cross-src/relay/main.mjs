@@ -7,6 +7,8 @@
 //   KX_STOMP_PORT  Network Rail STOMP port               (default 61618)
 //   KX_STOMP_TLS   "1" to use TLS                        (default plain TCP)
 //   KX_TD_TOPIC    TD topic                              (default /topic/TD_ALL_SIG_AREA)
+//   KX_TRUST_TOPIC TRUST train movements                  (default /topic/TRAIN_MVT_ALL_TOC)
+//   KX_NO_SCHEDULE "1" to disable background SCHEDULE download
 //   KX_DATA_DIR    SMART/CORPUS cache and recordings     (default ~/kx-data)
 //   KX_ANCHORS     anchor map JSON                      (default <KX_DATA_DIR>/anchors.json)
 //   KX_SCLASS      signal map JSON                      (default <KX_DATA_DIR>/sclass.json)
@@ -33,9 +35,11 @@ const log = (line) => console.error(`${new Date().toISOString()} ${line}`);
 const relay = await startRelay({
   area: env.KX_AREA ?? 'Y9',
   topic: env.KX_TD_TOPIC ?? '/topic/TD_ALL_SIG_AREA',
+  trustTopic: env.KX_TRUST_TOPIC ?? '/topic/TRAIN_MVT_ALL_TOC',
   port: Number(env.KX_RELAY_PORT ?? 8787),
   dataDir: env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data'),
   feedEnabled: env.KX_NO_FEED !== '1',
+  scheduleEnabled: env.KX_NO_SCHEDULE !== '1' && env.KX_NO_FEED !== '1',
   readCredentials: () => readCredentials({ service }),
   connectSocket: () => (useTls ? tls.connect({ host, port: stompPort, servername: host }) : net.connect({ host, port: stompPort })),
   log,
