@@ -7,7 +7,8 @@ import { worldToShed } from '../../core/station.ts';
 import { FIGURES, roofHeight, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIVERIES } from '../src/livery.ts';
-import { ASSUMED, buildTrain, carPlan, standTrain } from '../src/train.ts';
+import { ASSUMED, buildTrain, carPlan, END_GAP, standTrain } from '../src/train.ts';
+import { FLANGE_HEIGHT } from '../src/train-parts.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
 
@@ -71,12 +72,14 @@ test('train: each car sits at its place in the layout, is exactly body-wide, and
   }
 });
 
-test('train: the roof covers reach the published roof height and nothing goes above it or below the rail head', () => {
+test('train: the roof covers reach the published roof height and nothing goes above it or below the rail head but a wheel flange', () => {
   for (const kind of TRAIN_KINDS) {
     const b = boxOf(built(kind));
     near(b.max.y, roofHeight(), 0.02, `${kind} highest point`);
     assert.ok(b.max.y >= roofHeight() - 0.1, `${kind} highest point ${b.max.y} is below the covers`);
-    near(b.min.y, 0, 0.01, `${kind} wheel treads on the rail head`);
+    // CHANGED with the flanged wheels (it was `near(b.min.y, 0, 0.01)`): the treads still sit on the rail head (the bogie test pins
+    // that), but a flange stands FLANGE_HEIGHT below the running surface, in the gap beside the rail
+    near(b.min.y, -FLANGE_HEIGHT, 0.005, `${kind} lowest point: the wheel flanges`);
   }
 });
 
@@ -85,12 +88,12 @@ test('train: a through car\'s cross-section rises from the top of the side wall 
   const car = trainLayout('lner5').cars[1];
   assert.ok(car && car.cab === null, 'car 1 is a through car');
   const group = named(g, `car-${car.index}`);
-  // the vertices of the section at the car's start, the right half from the wall up: the side
-  // is in body-shell and the roof in body-detail
+  // the vertices of the section at the body's end (it stands END_GAP inside the car's start now, with the gangway in the gap;
+  // it was `car.start` before the gangways), the right half from the wall up: the side is in body-shell and the roof in body-detail
   const seen = new Map<string, [number, number]>();
   for (const part of ['body-shell', 'body-detail']) {
     for (const v of worldVertices(named(group, part) as THREE.Mesh)) {
-      if (Math.abs(v.z - car.start) > 1e-6 || v.x < -1e-6 || v.y < 2.9 - 1e-6) continue;
+      if (Math.abs(v.z - (car.start + END_GAP)) > 1e-6 || v.x < -1e-6 || v.y < 2.9 - 1e-6) continue;
       seen.set(`${v.x.toFixed(6)},${v.y.toFixed(6)}`, [v.x, v.y]);
     }
   }
@@ -137,8 +140,10 @@ test('train: every bogie is at its layout position with four wheels of the right
           );
         }
         const bb = boxOf(mesh);
-        near(bb.min.y, 0, 0.01, 'bogie bottom');
-        near(bb.max.z - bb.min.z, FIGURES.bogieWheelbase.value + FIGURES.wheelDiameter.value, 0.05, 'bogie length is the wheelbase plus a wheel');
+        // CHANGED with the flanged wheels (it was 0): the flange dips FLANGE_HEIGHT below the treads, which the vertex check above pins at 0
+        near(bb.min.y, -FLANGE_HEIGHT, 0.005, 'bogie bottom: the flanges');
+        // CHANGED with the flanges (it was wheelbase + wheel, within 0.05): the flange is the widest part of a wheel, FLANGE_HEIGHT outside the tread
+        near(bb.max.z - bb.min.z, FIGURES.bogieWheelbase.value + FIGURES.wheelDiameter.value + 2 * FLANGE_HEIGHT, 0.02, 'bogie length is the wheelbase plus a flanged wheel');
         assert.ok(bb.max.y < 1.0, 'the bogie fits under the floor');
       });
     }
@@ -226,7 +231,7 @@ test('train: a cab narrows in plan and slopes in elevation toward the end of the
   }
 });
 
-test('train: a nine-car train draws in no more than 80 calls, and the side shell is the only textured mesh', () => {
+test('train: a nine-car train draws in no more than 80 calls, with four materials in all', () => {
   for (const kind of TRAIN_KINDS) {
     const g = built(kind);
     let meshes = 0;
@@ -239,8 +244,10 @@ test('train: a nine-car train draws in no more than 80 calls, and the side shell
       }
     });
     assert.ok(meshes <= 80, `${kind} has ${meshes} meshes`);
-    // one shared vertex-colour material plus at most one shell material per role (driving, middle)
-    assert.ok(materials.size <= 3, `${kind} uses ${materials.size} materials`);
+    // CHANGED from 3 (the shared vertex-colour material and a shell material for each of the two roles): the shell is now one
+    // material per livery (a through car reads the texture's last column), and the cab glass (reflective) and the lettering
+    // (one atlas) each need their own: plain, shell, decals, glass
+    assert.ok(materials.size <= 4, `${kind} uses ${materials.size} materials`);
   }
   // the bogie mesh geometry is built once and shared
   const g = built('lner9');
@@ -251,9 +258,15 @@ test('train: a nine-car train draws in no more than 80 calls, and the side shell
   assert.equal(geos.size, 1);
 });
 
-test('train: every livery says how good its colours are, and the Hull Trains one is a flagged placeholder', () => {
-  for (const [name, def] of Object.entries(LIVERIES)) assert.ok(def.basis.length > 10, `${name} has no basis note`);
-  assert.match(LIVERIES.hulltrains.basis, /PLACEHOLDER/);
+test('train: every livery says how good its colours are and cites its sources, and the Hull Trains door colour is flagged as unverified', () => {
+  for (const [name, def] of Object.entries(LIVERIES)) {
+    assert.ok(def.basis.length > 10, `${name} has no basis note`);
+    assert.ok(def.sources.length >= 1 && def.sources.every((x) => x.length > 20), `${name} cites no source`);
+  }
+  // CHANGED (it asserted the whole Hull Trains livery was a PLACEHOLDER): the body and nose cone are now sourced from two articles;
+  // the door colour is from one snippet that could not be opened, and the basis says so
+  assert.doesNotMatch(LIVERIES.hulltrains.basis, /PLACEHOLDER/);
+  assert.match(LIVERIES.hulltrains.basis, /door colour .*single unopened snippet/);
   assert.doesNotMatch(LIVERIES.lner.basis, /PLACEHOLDER/);
 });
 
@@ -308,7 +321,7 @@ test('train: windows sit between the doors, about 2 m apart: nine on a through c
   }
 });
 
-test('train: the liveries are what they are named for: LNER white with a red sweep, Lumo blue, Hull Trains an unsourced placeholder', () => {
+test('train: the liveries are what they are named for: LNER white with a red sweep, Lumo blue, Hull Trains dark blue with a dark nose cone', () => {
   const rgb = (c: number): [number, number, number] => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
   const [lr, lg, lb] = rgb(LIVERIES.lner.body);
   assert.ok(lr > 225 && lg > 225 && lb > 220, 'LNER body is white');
@@ -321,7 +334,12 @@ test('train: the liveries are what they are named for: LNER white with a red swe
   assert.ok(yr > 220 && yg > 170 && yb < 40, 'the LNER nose front is yellow');
   const [br, bg, bb] = rgb(LIVERIES.lumo.body);
   assert.ok(bb > 170 && br < 60 && bg < 110, 'the Lumo body is blue');
-  assert.match(LIVERIES.hulltrains.basis, /^PLACEHOLDER/);
+  // CHANGED (it asserted the Hull Trains livery was an unsourced PLACEHOLDER): dark blue body and a dark grey/black nose cone, from two articles
+  const [hr, hg, hb] = rgb(LIVERIES.hulltrains.body);
+  assert.ok(hb > hr + 30 && hb > hg + 20 && hb < 140, 'the Hull Trains body is dark blue');
+  assert.notEqual(LIVERIES.hulltrains.noseCone, null, 'the Hull Trains nose cone is its own colour');
+  const [nr, ng, nb] = rgb(LIVERIES.hulltrains.noseCone as number);
+  assert.ok(nr < 70 && ng < 70 && nb < 70, 'the Hull Trains nose cone is dark grey or black');
   assert.match(LIVERIES.lner.basis, /sourced/);
   assert.match(LIVERIES.lumo.basis, /blue sourced/);
 });

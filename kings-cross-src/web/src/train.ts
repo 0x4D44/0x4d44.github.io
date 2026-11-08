@@ -1,33 +1,46 @@
-// The Hitachi AT300 trains (LNER Azuma 800/801, Hull Trains 802, Lumo 803) as three.js models,
-// built only from the figures in core/train.ts. Procedural: no image assets.
+// The trains as three.js models: the Hitachi AT300 family (LNER Azuma 800/801, Hull Trains 802, Lumo 803)
+// and the Great Northern commuter units (Class 387 Electrostar, Class 717 Desiro City), built only from the
+// figures in core/train.ts and the assumptions named below. Procedural: no image assets.
 //
 // Local frame of a train: x across, y up with y = 0 at the rail head, the FRONT nose at z = 0 and
 // the train running to z = +length. Forward travel is -z, which is north in the world (see
 // core/geo.ts), so the group is turned by (PI - heading) to stand along the shed's tracks.
 //
 // Structure (the test relies on these names):
-//   car-<i>           one per car: the body meshes, the doors, the bogies, and on each driving car the pantograph
-//     body-shell      the sides and lower shoulders, textured with the livery
-//     body-detail     roof, covers, nose front, windscreen, skirts, door leaves (vertex colours)
+//   car-<i>           one per car
+//     body-shell      the sides and lower shoulders, textured with the livery (the cab-end texture)
+//     body-detail     roof, covers, nose, gangway bellows, skirts, doors, windows (vertex colours)
+//     livery-decals   lettering and solid patches, one atlas, laid per side so the words read the right way
+//     cab-glass       a cab car's windscreen and cab side windows: dark, tinted, reflective
 //     door            a marker per door leaf (4 per car: 2 per side)
-//     bogie-<i>-<k>   a group at z = car.bogies[k]: one merged mesh and four `wheel` markers
-//     pantograph      a group over the pantograph base (one per driving car)
+//     headlight       a marker per front lamp cluster (cab cars)
+//     coupler-cover   a marker for the cover over the nose coupler (the train's two ends)
+//     coupler         a marker for each coupler at an inner end (hidden nose couplers are not drawn)
+//     gangway         a marker for each gangway bellows (inner ends of a through car)
+//     bogie-<i>-<k>   a group at z = car.bogies[k]: one shared merged mesh and four `wheel` markers
+//     pantograph      a group over the pantograph base
 //
-// Doors and wheels are named marker nodes whose geometry is merged into a few meshes, so a nine-car
-// train draws in about forty calls rather than two hundred. The marker is the source: the merged
-// geometry is generated from it.
+// Each body stops END_GAP short of its car's end, so two bodies stand 0.7 m apart; the gangway bellows
+// and the couplers fill the gap and reach to the car boundary, so every car group still spans exactly its
+// own [start, end].
 import * as THREE from 'three';
 import { standingTrainPose } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { FIGURES, roofHeight, trainLayout } from '../../core/train.ts';
-import type { Car, Livery, TrainKind } from '../../core/train.ts';
-import { LIGHT_GAIN, LIVERIES, shellMaterial, TEX_Y0, TEX_Y1 } from './livery.ts';
-import type { CarPlan, LiveryDef } from './livery.ts';
+import { EMU_FIGURES, FIGURES, trainLayout } from '../../core/train.ts';
+import type { Car, EmuFamily, Family, Livery, TrainKind, TrainLayout } from '../../core/train.ts';
+import { atlasRect, BAND_Y, decalMaterial, LIVERIES, shellMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
+import type { DecalItem, LiveryDef } from './livery.ts';
+import { col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
+import type { V3 } from './train-geom.ts';
+import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
+import type { NoseSpec, Section } from './train-nose.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, WHEEL_WIDTH } from './train-parts.ts';
 
 /**
- * Everything the published figures do not give. Each is a guess chosen so the model reads as an
- * Azuma, to be replaced when a drawing turns up. They are kept here, apart from FIGURES, so the
- * difference stays visible.
+ * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
+ * to be replaced when a drawing turns up. They are kept here, apart from FIGURES, so the difference stays
+ * visible. (The commuter EMUs' own guesses are in EMU_FIGURES in core/train.ts, marked 'assumed', and in
+ * the specs below.)
  */
 export const ASSUMED = {
   /** Underside of the body (floor level). Nobody publishes it; chosen so the roof edge sits about 2.7 m above it. */
@@ -44,130 +57,86 @@ export const ASSUMED = {
   /** Half-length of the skirt cut-out round each bogie. Assumed. */
   bogieCutout: 1.95,
   /** Wheel tread width. Assumed. */
-  wheelWidth: 0.13,
+  wheelWidth: WHEEL_WIDTH,
+  /** Each body ends this far inside its car's end, so two bodies stand twice this far apart (the lead's COUPLING_CLEARANCE, 0.35 m). Assumed. */
+  endGap: 0.35,
+  /** Height of the centre of an inner coupler above the rail head. Assumed. */
+  couplerHeight: 0.85,
+  /** Size of the gangway bellows opening (the frame the bellows hang from): width, height, and the height of its underside. Assumed: a rounded rectangle a little narrower than the body, as on every British EMU. */
+  gangwayWidth: 2.3,
+  gangwayHeight: 2.0,
+  gangwayBottom: 1.15,
 } as const;
+
+/** Half the gap between two bodies, metres. */
+export const END_GAP = ASSUMED.endGap;
 
 /** How far the doors stand proud of the shell, so they, not the shell, set the body width. */
 const DOOR_RELIEF = 0.02;
+/** The gangway bellows start this far outside the end wall. */
+const BELLOWS_SEAT = 0.002;
+/** The nose face stands this far behind the train's end, so the details laid on it stay inside the car's length. */
+export const NOSE_RECESS = 0.01;
+/** The colour of the nose: the front panel wraps this far back from the tip, and the crescent below the windscreen ends this far back. Both snap to the next ring. */
+const FRONT_ZONE = 0.5;
+const CRESCENT_ZONE = 1.25;
+/** Columns of the car section (counted from the bottom, 0..12) that carry the livery texture: the wall and the lower shoulder. Above them, and below, vertex colours. */
+const SHELL_K0 = 1;
+const SHELL_K1 = 7;
 
-type V3 = [number, number, number];
-const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const unit = (a: V3): V3 => {
-  const l = Math.hypot(a[0], a[1], a[2]) || 1;
-  return [a[0] / l, a[1] / l, a[2] / l];
-};
-const mean = (ps: V3[]): V3 => {
-  const s = ps.reduce((a, p) => add(a, p), [0, 0, 0] as V3);
-  return [s[0] / ps.length, s[1] / ps.length, s[2] / ps.length];
-};
-
-const colours = new Map<number, THREE.Color>();
-const col = (hex: number): THREE.Color => {
-  let c = colours.get(hex);
-  if (!c) colours.set(hex, (c = new THREE.Color(hex).multiplyScalar(LIGHT_GAIN)));
-  return c;
-};
-
-type UV = [number, number];
-
-/** A bag of triangles. Winding is fixed at insertion so it agrees with the normals given. */
-class Soup {
-  readonly pos: number[] = [];
-  readonly nrm: number[] = [];
-  readonly clr: number[] = [];
-  readonly uvs: number[] = [];
-
-  tri(p: [V3, V3, V3], n: [V3, V3, V3], c: THREE.Color | null, uv?: [UV, UV, UV]): void {
-    const f = cross(sub(p[1], p[0]), sub(p[2], p[0]));
-    const want = add(add(n[0], n[1]), n[2]);
-    const order = dot(f, want) < 0 ? [0, 2, 1] : [0, 1, 2];
-    for (const i of order) {
-      const v = p[i] as V3;
-      const nn = n[i] as V3;
-      this.pos.push(v[0], v[1], v[2]);
-      this.nrm.push(nn[0], nn[1], nn[2]);
-      if (c) this.clr.push(c.r, c.g, c.b);
-      if (uv) this.uvs.push((uv[i] as UV)[0], (uv[i] as UV)[1]);
-    }
-  }
-
-  quad(p: [V3, V3, V3, V3], n: [V3, V3, V3, V3], c: THREE.Color | null, uv?: [UV, UV, UV, UV]): void {
-    this.tri([p[0], p[1], p[2]], [n[0], n[1], n[2]], c, uv && [uv[0], uv[1], uv[2]]);
-    this.tri([p[0], p[2], p[3]], [n[0], n[2], n[3]], c, uv && [uv[0], uv[2], uv[3]]);
-  }
-
-  /** A flat quad of a convex solid, facing away from the solid's centre. */
-  face(p: [V3, V3, V3, V3], centre: V3, c: THREE.Color): void {
-    let n = unit(cross(sub(p[1], p[0]), sub(p[3], p[0])));
-    if (dot(n, sub(mean(p), centre)) < 0) n = [-n[0], -n[1], -n[2]];
-    this.quad(p, [n, n, n, n], c);
-  }
-
-  /** An axis-aligned box. `skip` lists faces to leave out ('+x', '-y', ...); `faceColours` recolours some. */
-  box(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, c: THREE.Color, skip = '', faceColours: Record<string, THREE.Color> = {}): void {
-    const centre: V3 = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2];
-    const faces: Record<string, [V3, V3, V3, V3]> = {
-      '+x': [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]],
-      '-x': [[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]],
-      '+y': [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]],
-      '-y': [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
-      '+z': [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
-      '-z': [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]],
-    };
-    for (const [k, p] of Object.entries(faces)) if (!skip.includes(k)) this.face(p, centre, faceColours[k] ?? c);
-  }
-
-  /** A square bar between two points in the y-z plane, `w` wide in x and `h` thick across its axis. */
-  bar(a: [number, number], b: [number, number], w: number, h: number, c: THREE.Color): void {
-    const d = unit([0, b[0] - a[0], b[1] - a[1]]);
-    const nx: V3 = [0, -d[2], d[1]];
-    const corner = (p: [number, number], sx: number, sn: number): V3 => [(sx * w) / 2, p[0] + (sn * h * nx[1]) / 2, p[1] + (sn * h * nx[2]) / 2];
-    const ps = [corner(a, -1, -1), corner(a, 1, -1), corner(a, 1, 1), corner(a, -1, 1), corner(b, -1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(b, -1, 1)] as V3[];
-    const centre = mean(ps);
-    const at = (...i: number[]): [V3, V3, V3, V3] => i.map((k) => ps[k]) as [V3, V3, V3, V3];
-    for (const f of [at(0, 1, 2, 3), at(4, 5, 6, 7), at(0, 1, 5, 4), at(2, 3, 7, 6), at(0, 3, 7, 4), at(1, 2, 6, 5)]) this.face(f, centre, c);
-  }
-
-  /** Triangles of a three.js geometry, moved by `m`. */
-  geometry(g: THREE.BufferGeometry, m: THREE.Matrix4, c: THREE.Color): void {
-    const flat = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(m);
-    const p = flat.getAttribute('position');
-    const n = flat.getAttribute('normal');
-    const at = (a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, i: number): V3 => [a.getX(i), a.getY(i), a.getZ(i)];
-    for (let i = 0; i + 2 < p.count; i += 3) this.tri([at(p, i), at(p, i + 1), at(p, i + 2)], [at(n, i), at(n, i + 1), at(n, i + 2)], c);
-    flat.dispose();
-  }
-
-  build(): THREE.BufferGeometry {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
-    if (this.clr.length) g.setAttribute('color', new THREE.Float32BufferAttribute(this.clr, 3));
-    if (this.uvs.length) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
-    g.computeBoundingBox();
-    g.computeBoundingSphere();
-    return g;
-  }
+/** What a car needs to tell the painter and the decals about itself, all in metres from its cab end (cab cars) or from its start. */
+export interface CarPlan {
+  length: number;
+  /** length of the raked nose, 0 for a car with no cab */
+  nose: number;
+  doors: number[];
+  /** [from, to] of each passenger window */
+  windows: [number, number][];
 }
 
-let plainMaterial: THREE.MeshLambertMaterial | null = null;
-/** The one material for everything that carries its colour in the vertices; shared by every train. */
-const plain = (): THREE.MeshLambertMaterial => {
-  plainMaterial ??= new THREE.MeshLambertMaterial({ vertexColors: true });
-  return plainMaterial;
-};
+// --- one family's body -----------------------------------------------------------------------------
 
-// --- the body section --------------------------------------------------------------------------
+/** The cab glass: a windscreen patch on the nose's roof, and a cab side window on each side. All in distances from the nose tip. */
+interface GlassSpec {
+  /** windscreen: from `s0` (the bonnet end) to `s1` (the roof end), half-width as a fraction of the ring's, corner radii at the top and bottom edges */
+  screen: { s0: number; s1: number; fraction: number; topRadius: number; bottomRadius: number };
+  /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
+  side: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number };
+}
+
+interface BodySpec {
+  family: Family;
+  /** half the body width: the door panes are the widest points */
+  half: number;
+  floor: number;
+  /** top of the vertical side wall */
+  wallTop: number;
+  /** the roof's centre line */
+  crown: number;
+  /** the roof fairings stand this far above the crown (0: none) */
+  coverHeight: number;
+  coverBw: number;
+  coverTw: number;
+  skirtBottom: number;
+  cutout: number;
+  doorWidth: number;
+  doorY: [number, number];
+  doorLeaves: 1 | 2;
+  windowY: [number, number];
+  nose: NoseSpec;
+  glass: GlassSpec;
+  /** the two seams of the gangway bellows */
+  gangway: { width: number; height: number; bottom: number };
+  /** distance from the rail head of the folded pantograph's top */
+  pantographTop: number;
+  /** half-width of the underframe slab */
+  underframe: number;
+  plan(car: Car, interior: boolean): CarPlan;
+}
 
 const BW = FIGURES.bodyWidth.value;
 const ROOF_EDGE = FIGURES.roofEdgeHeight.value;
-/** Half-width of the shell. The door windows (BW / 2) are the widest points, so the body is exactly bodyWidth. */
-const W = BW / 2 - DOOR_RELIEF;
 const FLOOR = ASSUMED.floorHeight;
-
 /**
  * The roof and nose profiles below were drawn against a roof edge of 3.725 m, the first reading,
  * which put the top of the covers at nearly 4 m. They are scaled into the roof edge now in use
@@ -176,63 +145,8 @@ const FLOOR = ASSUMED.floorHeight;
 const DRAWN_ROOF_EDGE = 3.725;
 /** Top of the vertical side wall: the doors, windows and livery bands all sit below it and are not scaled. */
 const WALL_TOP = 2.9;
-const roofY = (drawn: number): number => WALL_TOP + (drawn - WALL_TOP) * ((ROOF_EDGE - WALL_TOP) / (DRAWN_ROOF_EDGE - WALL_TOP));
 /** A height above the floor, scaled with the roof edge (the nose rings). */
 const noseY = (drawn: number): number => FLOOR + (drawn - FLOOR) * ((ROOF_EDGE - FLOOR) / (DRAWN_ROOF_EDGE - FLOOR));
-
-/** Right half of the section, from the bottom corner up to the roof centre: slight tumblehome above the doors, rounded shoulders. */
-const HALF: [number, number][] = [
-  [W - 0.15, FLOOR],
-  [W - 0.03, FLOOR + 0.07],
-  [W, FLOOR + 0.25],
-  [W, WALL_TOP],
-  [W - 0.05, roofY(3.22)],
-  [W - 0.16, roofY(3.47)],
-  [W - 0.33, roofY(3.63)],
-  [W - 0.52, roofY(3.7)],
-  [0, ROOF_EDGE],
-];
-/** The closed section: up the right, down the left; the last point joins the first along the floor. */
-const SECTION: [number, number][] = [...HALF, ...HALF.slice(0, -1).reverse().map(([x, y]): [number, number] => [-x, y])];
-
-interface Ring {
-  s: number;
-  /** width scale, roof height, floor height at this distance from the nose tip */
-  ws: number;
-  top: number;
-  bottom: number;
-}
-
-/** The raked nose, tip to full section: a long low bonnet, a windscreen rising at about 35 degrees, then the roof. */
-function noseRings(): Ring[] {
-  const n = ASSUMED.noseLength;
-  return [
-    { s: 0.02, ws: 0.5, top: noseY(1.9), bottom: 0.8 },
-    { s: 0.5, ws: 0.56, top: noseY(1.95), bottom: 0.8 },
-    { s: 1.0, ws: 0.64, top: noseY(2.15), bottom: 0.82 },
-    { s: 1.6, ws: 0.74, top: noseY(2.62), bottom: 0.85 },
-    { s: 2.2, ws: 0.83, top: noseY(3.1), bottom: 0.88 },
-    { s: 2.8, ws: 0.9, top: noseY(3.42), bottom: 0.9 },
-    { s: 3.5, ws: 0.95, top: noseY(3.55), bottom: 0.93 },
-    { s: 4.4, ws: 0.98, top: noseY(3.65), bottom: 0.95 },
-    { s: n, ws: 1, top: ROOF_EDGE, bottom: FLOOR },
-  ];
-}
-
-function clipY(poly: V3[], yCut: number, above: boolean): V3[] {
-  const out: V3[] = [];
-  const inside = (p: V3): boolean => (above ? p[1] >= yCut : p[1] <= yCut);
-  for (let i = 0; i < poly.length; i++) {
-    const a = poly[i] as V3;
-    const b = poly[(i + 1) % poly.length] as V3;
-    if (inside(a)) out.push(a);
-    if (inside(a) !== inside(b)) {
-      const t = (yCut - a[1]) / (b[1] - a[1]);
-      out.push([a[0] + (b[0] - a[0]) * t, yCut, a[2] + (b[2] - a[2]) * t]);
-    }
-  }
-  return out;
-}
 
 /** Split the cars' intervals: remove [a, b] from each of them. */
 function without(spans: [number, number][], a: number, b: number): [number, number][] {
@@ -247,7 +161,61 @@ function without(spans: [number, number][], a: number, b: number): [number, numb
   return out;
 }
 
-export function carPlan(car: Car): CarPlan {
+/** `n` windows evenly spaced in [from, to], pier `pier` between neighbours. */
+function windowsIn(from: number, to: number, pitch: number, pier: number, atLeast = 0): [number, number][] {
+  const n = Math.max(atLeast, Math.round((to - from) / pitch));
+  if (n === 0 || to - from < 0.8) return [];
+  const p = (to - from) / n;
+  return Array.from({ length: n }, (_, k): [number, number] => [from + k * p + pier / 2, from + (k + 1) * p - pier / 2]);
+}
+
+const AT300: BodySpec = {
+  family: 'at300',
+  half: BW / 2,
+  floor: FLOOR,
+  wallTop: WALL_TOP,
+  crown: ROOF_EDGE,
+  coverHeight: FIGURES.roofCoverHeight.value,
+  coverBw: 0.85,
+  coverTw: 0.62,
+  skirtBottom: ASSUMED.skirtBottom,
+  cutout: ASSUMED.bogieCutout,
+  doorWidth: ASSUMED.doorWidth,
+  doorY: [1.15, 2.86],
+  doorLeaves: 1,
+  windowY: WINDOW_Y,
+  // the raked nose: a long low bonnet, a windscreen rising at about 30 degrees, then the roof
+  nose: {
+    length: ASSUMED.noseLength,
+    knots: [
+      { s: 0, top: noseY(1.9), ws: 0.5, bottom: 0.8 },
+      { s: 0.5, top: noseY(1.95), ws: 0.56, bottom: 0.8 },
+      { s: 1.0, top: noseY(2.15), ws: 0.64, bottom: 0.82 },
+      { s: 1.6, top: noseY(2.62), ws: 0.74, bottom: 0.85 },
+      { s: 2.2, top: noseY(3.1), ws: 0.83, bottom: 0.88 },
+      { s: 2.8, top: noseY(3.42), ws: 0.9, bottom: 0.9 },
+      { s: 3.5, top: noseY(3.55), ws: 0.95, bottom: 0.93 },
+      { s: 4.4, top: noseY(3.65), ws: 0.98, bottom: 0.95 },
+      { s: ASSUMED.noseLength, top: ROOF_EDGE, ws: 1, bottom: FLOOR },
+    ],
+    fillet: 0.32,
+    filletLoss: 0.26,
+    roundLen: 4.3,
+    widest: 0.42,
+    boxiness: 2.6,
+  },
+  glass: {
+    screen: { s0: 1.2, s1: 3.35, fraction: 0.8, topRadius: 0.32, bottomRadius: 0.12 },
+    side: { sBack: 4.95, sFront0: 3.5, sFront1: 2.75, v0: 0.5, v1: 0.78 },
+  },
+  gangway: { width: ASSUMED.gangwayWidth, height: ASSUMED.gangwayHeight, bottom: ASSUMED.gangwayBottom },
+  pantographTop: FIGURES.pantographFoldedHeight.value,
+  underframe: 0.95,
+  plan: (car) => at300Plan(car),
+};
+
+/** Doors at 3 m from the inner end and 2.6 m behind the nose of a driving car; windows (six on a driving car, nine on a through car) between them. */
+export function at300Plan(car: Car): CarPlan {
   const L = car.length;
   const nose = car.cab ? ASSUMED.noseLength : 0;
   const doors = [car.cab ? nose + ASSUMED.doorFromNose : ASSUMED.doorFromEnd, L - ASSUMED.doorFromEnd];
@@ -260,89 +228,477 @@ export function carPlan(car: Car): CarPlan {
   return { length: L, nose, doors, windows };
 }
 
+/** A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them. */
+function emuPlan(f: EmuFamily, noseLength: number): (car: Car) => CarPlan {
+  const fig = EMU_FIGURES[f];
+  return (car) => {
+    const L = car.length;
+    const dw = fig.doorWidth.value;
+    const d = fig.doorFromEnd.value;
+    const doors = [d, L - d];
+    const windows: [number, number][] = [];
+    // beyond the inner door, between the doors, and (through cars only) beyond the other door; a cab car's nose end is the cab
+    const innerZone: [number, number] = [(doors[1] as number) + dw / 2 + 0.35, L - END_GAP - 0.45];
+    windows.push(...windowsIn((doors[0] as number) + dw / 2 + 0.35, (doors[1] as number) - dw / 2 - 0.35, 2.0, 0.4, 1));
+    windows.push(...windowsIn(innerZone[0], innerZone[1], 2.0, 0.4));
+    if (!car.cab) windows.unshift(...windowsIn(END_GAP + 0.45, (doors[0] as number) - dw / 2 - 0.35, 2.0, 0.4));
+    return { length: L, nose: car.cab ? noseLength : 0, doors, windows };
+  };
+}
+
+const ELECTROSTAR_BODY = ((): BodySpec => {
+  const fig = EMU_FIGURES.electrostar;
+  const floor = fig.floorHeight.value - 0.12;
+  const cover = 0.14;
+  const crown = fig.height.value - cover;
+  const length = 1.9;
+  return {
+    family: 'electrostar',
+    half: fig.bodyWidth.value / 2,
+    floor,
+    wallTop: 3.02,
+    crown,
+    coverHeight: cover,
+    coverBw: 0.95,
+    coverTw: 0.75,
+    skirtBottom: 0.55,
+    cutout: 1.9,
+    doorWidth: fig.doorWidth.value,
+    doorY: [fig.floorHeight.value + 0.02, 2.95],
+    doorLeaves: 2,
+    windowY: [1.62, 2.72],
+    nose: {
+      length,
+      knots: [
+        // a steeply raked windscreen over a near-vertical front: the lower edge of the glass is about 2 m up, the roof reached 1.4 m back (ASSUMED: from photographs, not drawn)
+        { s: 0, top: 2.0, ws: 0.8, bottom: 0.55 },
+        { s: 0.25, top: 2.12, ws: 0.86, bottom: 0.62 },
+        { s: 0.6, top: 2.7, ws: 0.92, bottom: 0.78 },
+        { s: 1.0, top: 3.2, ws: 0.96, bottom: 0.9 },
+        { s: 1.4, top: 3.48, ws: 0.99, bottom: floor - 0.02 },
+        { s: length, top: crown, ws: 1, bottom: floor },
+      ],
+      fillet: 0.26,
+      filletLoss: 0.2,
+      roundLen: 1.7,
+      widest: 0.45,
+      boxiness: 3.0,
+    },
+    glass: {
+      screen: { s0: 0.2, s1: 1.5, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.14 },
+      side: { sBack: 1.85, sFront0: 1.3, sFront1: 0.95, v0: 0.55, v1: 0.8 },
+    },
+    gangway: { width: 1.9, height: 2.15, bottom: 1.15 },
+    // folded, level with the roof covers, so the highest point stays the published 3.77 m
+    pantographTop: 0.14,
+    underframe: 1.0,
+    plan: emuPlan('electrostar', length),
+  };
+})();
+
+const DESIRO_BODY = ((): BodySpec => {
+  const fig = EMU_FIGURES.desiro;
+  const floor = fig.floorHeight.value - 0.12;
+  const cover = 0.14;
+  const crown = fig.height.value - cover;
+  const length = 1.7;
+  return {
+    family: 'desiro',
+    half: fig.bodyWidth.value / 2,
+    floor,
+    wallTop: 3.02,
+    crown,
+    coverHeight: cover,
+    coverBw: 0.95,
+    coverTw: 0.75,
+    skirtBottom: 0.55,
+    cutout: 1.85,
+    doorWidth: fig.doorWidth.value,
+    doorY: [fig.floorHeight.value + 0.02, 2.95],
+    doorLeaves: 2,
+    windowY: [1.62, 2.72],
+    nose: {
+      length,
+      knots: [
+        // ASSUMED: a rounder, deeper front than the Electrostar's; from photographs, not drawn
+        { s: 0, top: 2.1, ws: 0.82, bottom: 0.6 },
+        { s: 0.22, top: 2.22, ws: 0.88, bottom: 0.66 },
+        { s: 0.55, top: 2.75, ws: 0.93, bottom: 0.8 },
+        { s: 0.9, top: 3.22, ws: 0.97, bottom: 0.9 },
+        { s: 1.25, top: 3.5, ws: 0.99, bottom: floor - 0.02 },
+        { s: length, top: crown, ws: 1, bottom: floor },
+      ],
+      fillet: 0.24,
+      filletLoss: 0.2,
+      roundLen: 1.5,
+      widest: 0.45,
+      boxiness: 3.2,
+    },
+    glass: {
+      screen: { s0: 0.2, s1: 1.35, fraction: 0.9, topRadius: 0.28, bottomRadius: 0.14 },
+      side: { sBack: 1.65, sFront0: 1.15, sFront1: 0.9, v0: 0.55, v1: 0.8 },
+    },
+    // the Desiro City's gangways are open and "full width"
+    gangway: { width: 2.45, height: 2.2, bottom: 1.12 },
+    // folded, level with the roof covers, so the highest point stays the published 3.77 m
+    pantographTop: 0.14,
+    underframe: 1.0,
+    plan: emuPlan('desiro', length),
+  };
+})();
+
+const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: ELECTROSTAR_BODY, desiro: DESIRO_BODY };
+
+/** The plan (doors and windows) of a car of any family. The Azuma's is the one the tests pin. */
+export function carPlan(car: Car, family: Family = 'at300'): CarPlan {
+  return BODIES[family].plan(car, false);
+}
+
+// --- the car section -----------------------------------------------------------------------------
+
+/** Right half of the section, from the bottom corner up to the roof centre: slight corners, a vertical wall, a quarter-ellipse shoulder, a nearly flat crown. */
+export function carSection(b: Pick<BodySpec, 'floor' | 'wallTop' | 'crown'> & { half: number }): Section {
+  const W = b.half - DOOR_RELIEF;
+  const half: [number, number][] = [[W - 0.15, b.floor], [W - 0.03, b.floor + 0.07]];
+  const w0 = b.floor + 0.25;
+  for (let i = 0; i < 4; i++) half.push([W, lerp(w0, b.wallTop, i / 3)]);
+  const rx = 0.55;
+  const ry = b.crown - b.wallTop - 0.012;
+  const n = 5;
+  for (let j = 1; j <= n; j++) {
+    const phi = (j / n) * (Math.PI / 2);
+    half.push([W - rx + rx * Math.cos(phi), b.wallTop + ry * Math.sin(phi)]);
+  }
+  half.push([(W - rx) * 0.5, b.crown - 0.004], [0, b.crown]);
+  return { half, width: W, floor: b.floor, crown: b.crown };
+}
+
 // --- one car -----------------------------------------------------------------------------------
 
-function buildCar(car: Car, def: LiveryDef, livery: Livery): THREE.Group {
+interface CarContext {
+  spec: BodySpec;
+  def: LiveryDef;
+  livery: Livery;
+  layout: TrainLayout;
+}
+
+/** Is the cab end of this car at an inner coupling (two coupled units meet there), rather than the train's end? */
+function cabIsInterior(car: Car, layout: TrainLayout): boolean {
+  if (car.cab === 'front') return car.start > 1e-9;
+  if (car.cab === 'rear') return car.end < layout.length - 1e-9;
+  return false;
+}
+
+function buildCar(car: Car, ctx: CarContext): THREE.Group {
+  const { spec, def, layout } = ctx;
   const group = new THREE.Group();
   group.name = `car-${car.index}`;
-  const plan = carPlan(car);
   const L = car.length;
+  const sec = carSection(spec);
+  const W = sec.width;
+  const half = spec.half;
+  const norm = normalised(sec);
+  const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
+  const M = sec.half.length * 2 - 1;
+  const plan = spec.plan(car, false);
   // distance along the car (s) to z: from the cab end for a driving car, from the start otherwise
   const dir = car.cab === 'rear' ? -1 : 1;
   const base = car.cab === 'rear' ? car.end : car.start;
   const Z = (s: number): number => base + dir * s;
+  const interiorCab = cabIsInterior(car, layout);
+  // where the body begins and ends along the car: a train-end nose starts NOSE_RECESS behind the car end (so the lamps and
+  // the seam, laid a few millimetres proud of the face, stay inside the car), anything else stands END_GAP in
+  const tip = car.cab ? (interiorCab ? END_GAP : NOSE_RECESS) : END_GAP;
+  const bodyEnd = L - END_GAP;
+  const noseLen = car.cab ? spec.nose.length : 0;
 
   const shell = new Soup();
   const detail = new Soup();
+  const decals = new Soup();
+  const glass = new Soup();
   const vUv = (y: number): number => (y - TEX_Y0) / (TEX_Y1 - TEX_Y0);
-
-  // rings of the lofted body, in the car's own frame (x, y, s)
-  const rings: Ring[] = [...(car.cab ? noseRings() : [{ s: 0, ws: 1, top: ROOF_EDGE, bottom: FLOOR }]), { s: L, ws: 1, top: ROOF_EDGE, bottom: FLOOR }];
-  const M = SECTION.length;
-  const P: V3[][] = rings.map((r) => SECTION.map(([x, y]): V3 => [x * r.ws, r.bottom + ((y - FLOOR) / (ROOF_EDGE - FLOOR)) * (r.top - r.bottom), r.s]));
-  const R = rings.length - 1;
-  const N: V3[][] = P.map((ring, i) =>
-    ring.map((p, j): V3 => {
-      const a = (P[Math.min(i + 1, R)] as V3[])[j] as V3;
-      const b = (P[Math.max(i - 1, 0)] as V3[])[j] as V3;
-      const c = ring[(j + 1) % M] as V3;
-      const d = ring[(j + M - 1) % M] as V3;
-      const n = unit(cross(sub(a, b), sub(c, d)));
-      const r = rings[i] as Ring;
-      const out: V3 = [p[0], p[1] - (r.top + r.bottom) / 2, 0];
-      return dot(n, out) < 0 ? [-n[0], -n[1], -n[2]] : n;
-    }),
-  );
   const world = (p: V3): V3 => [p[0], p[1], Z(p[2])];
   const wn = (n: V3): V3 => [n[0], n[1], n[2] * dir];
-  const noseTip = def.swoosh ?? def.noseFront;
+
+  // rings of the lofted body, in the car's own frame (x, y, s). A through car is two rings; a cab car is the nose rings and the far end.
+  const rings: { s: number; pts: [number, number][]; round: number }[] = [];
+  if (car.cab) {
+    for (const sn of ringStations(spec.nose)) {
+      const r = ringAt(spec.nose, sn);
+      rings.push({ s: tip + sn, pts: loopFromHalf(halfAt(sec, norm, egg, r)), round: r.round });
+    }
+  } else {
+    rings.push({ s: tip, pts: loopFromHalf(sec.half as [number, number][]), round: 0 });
+  }
+  rings.push({ s: bodyEnd, pts: loopFromHalf(sec.half as [number, number][]), round: 0 });
+  const P: V3[][] = rings.map((r) => r.pts.map(([x, y]): V3 => [x, y, r.s]));
+  const centre = (i: number): V3 => {
+    const ys = (rings[i] as { pts: [number, number][] }).pts.map((p) => p[1]);
+    return [0, (Math.max(...ys) + Math.min(...ys)) / 2, (rings[i] as { s: number }).s];
+  };
+  const N = gridNormals(P, true, centre);
+  const R = rings.length - 1;
+  const colourOf = (c: number): THREE.Color => col(c);
+  const glassHalf = (s: number): [number, number][] => halfAt(sec, norm, egg, ringAt(spec.nose, s));
+  const screen = spec.glass.screen;
+  // the windscreen outline, a rounded rectangle laid on the nose: half-width at nose distance s, for the glass (margin 0) or a frame
+  // `margin` wider all round (its corners concentric with the glass's)
+  const screenHalfWidth = (s: number, margin: number): number => {
+    const s0 = screen.s0 - margin;
+    const s1 = screen.s1 + margin;
+    const hw0 = screen.fraction * ringAt(spec.nose, s).ws * W + margin;
+    const inset = (d: number, r: number): number => (d >= r ? 0 : r - Math.sqrt(Math.max(0, r * r - (r - d) * (r - d))));
+    return Math.max(0.01, hw0 - Math.max(inset(s1 - s, screen.topRadius + margin), inset(s - s0, screen.bottomRadius + margin)));
+  };
+  // The loft's columns: the loop goes up the right side (columns 0..K-1, the last the crown), then down the left. A quad's colour and
+  // material follow its columns, not its normal, so every colour boundary runs along a column or a ring: a clean curve, not a stair.
+  const K = sec.half.length;
+  const kOf = (m: number): number => (m < K ? m : M - 1 - m);
+  // the cab's front panel is the face above column J0 (below it is the coupler cover): the split runs along that one column
+  let J0 = 1;
+  let yCut = 0;
+  const stations = car.cab ? ringStations(spec.nose) : [];
+  if (car.cab) {
+    const r0 = ringAt(spec.nose, 0);
+    const h0 = halfAt(sec, norm, egg, r0);
+    const target = r0.bottom + 0.4 * (r0.top - r0.bottom);
+    let best = Infinity;
+    for (let k = 1; k < K - 1; k++) {
+      const d = Math.abs((h0[k] as [number, number])[1] - target);
+      if (d < best) {
+        best = d;
+        J0 = k;
+      }
+    }
+    yCut = (h0[J0] as [number, number])[1];
+  }
+  const snap = (s: number): number => stations.find((x) => x >= s - 1e-9) ?? spec.nose.length;
+  const frontEnd = snap(FRONT_ZONE);
+  const crescentEnd = snap(CRESCENT_ZONE);
   for (let i = 0; i < R; i++) {
-    const r0 = rings[i] as Ring;
-    const r1 = rings[i + 1] as Ring;
+    const nearS = (rings[i] as { s: number }).s - tip;
+    const farS = (rings[i + 1] as { s: number }).s - tip;
+    const onNose = car.cab !== null && nearS < noseLen - 1e-9;
+    // the front panel and the cover below it are vertex colours; everything else on the side carries the texture
+    const frontBand = onNose && def.noseCone === null && farS <= frontEnd + 1e-9;
     for (let j = 0; j < M; j++) {
       const j1 = (j + 1) % M;
+      const kmin = Math.min(kOf(j), kOf(j1));
+      const kmax = Math.max(kOf(j), kOf(j1));
       const idx: [number, number][] = [[i, j], [i, j1], [i + 1, j1], [i + 1, j]];
       const ps = idx.map(([a, b]) => (P[a] as V3[])[b] as V3) as [V3, V3, V3, V3];
       const ns = idx.map(([a, b]) => (N[a] as V3[])[b] as V3) as [V3, V3, V3, V3];
-      const nAvg = unit(ns.reduce((a, n) => add(a, n), [0, 0, 0] as V3));
-      const c = mean(ps);
-      const onNose = car.cab !== null && r1.s <= ASSUMED.noseLength + 1e-9;
-      if (Math.abs(nAvg[0]) >= 0.55) {
-        // the side: the livery texture, projected along x
-        shell.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], null, ps.map((p): UV => [p[2] / L, vUv(p[1])]) as [UV, UV, UV, UV]);
+      if (!frontBand && kmin >= SHELL_K0 && kmax <= SHELL_K1) {
+        // the side: the livery texture, projected along x. A through car reads the texture's last column.
+        const uv = ps.map((p): [number, number] => [car.cab ? texU(p[2]) : 1, vUv(p[1])]) as [[number, number], [number, number], [number, number], [number, number]];
+        shell.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], null, uv);
         continue;
       }
       let colour = def.roof;
-      if (nAvg[1] < -0.5) colour = def.skirt;
-      else if (onNose) {
-        const yRel = (c[1] - (r0.bottom + r1.bottom) / 2) / ((r0.top + r1.top) / 2 - (r0.bottom + r1.bottom) / 2);
-        if (c[2] < 0.55) colour = yRel < 0.4 ? noseTip : def.noseFront;
-        else if (nAvg[1] >= 0.2 && c[2] < 1.0) colour = def.noseBand;
-        else if (nAvg[1] >= 0.2 && c[2] < 2.9 && Math.abs(c[0]) < 0.9 * W * ((r0.ws + r1.ws) / 2)) colour = def.glass;
-        else if (nAvg[1] < 0.2) colour = def.body;
-      }
-      detail.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], col(colour));
+      if (kmax <= 1) colour = def.skirt;
+      else if (frontBand) colour = kmin >= J0 ? def.noseFront : (def.swoosh ?? def.noseFront);
+      else if (onNose) colour = def.noseCone ?? (kmax > SHELL_K1 && farS <= crescentEnd + 1e-9 ? def.noseBand : def.roof);
+      detail.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], colourOf(colour));
     }
   }
+
+  // the end walls: a flat dark cap where the body stops short of the car's end (the gangway hangs from it)
+  const wallColour = col(0x2d3035);
+  const capLoop = (ringIndex: number, outward: 1 | -1): void => {
+    const pts = (rings[ringIndex] as { pts: [number, number][] }).pts;
+    const s = (rings[ringIndex] as { s: number }).s;
+    const poly = pts.map(([x, y]): V3 => world([x, y, s]));
+    detail.fan(poly, [0, 0, outward * dir], wallColour);
+  };
   if (car.cab) {
-    // the front of the nose: red below, the warning panel above; a head lamp each side
-    const front = (P[0] as V3[]).map(world);
-    const r = rings[0] as Ring;
-    const yCut = r.bottom + 0.4 * (r.top - r.bottom);
-    const cap = (poly: V3[], colour: number): void => {
-      if (poly.length < 3) return;
-      const c0 = mean(poly);
-      const n: V3 = [0, 0, -dir];
-      for (let k = 0; k < poly.length; k++) detail.tri([c0, poly[k] as V3, poly[(k + 1) % poly.length] as V3], [n, n, n], col(colour));
+    // the nose's front face
+    const r0 = ringAt(spec.nose, 0);
+    const tipHalf = halfAt(sec, norm, egg, r0);
+    const face = loopFromHalf(tipHalf).map(([x, y]): V3 => world([x, y, tip]));
+    // the face splits where the loft's column J0 meets it (yCut), so the panel's edge continues, unbroken, round the fillet
+    const coverTop = yCut - 0.03;
+    const lowerColour = def.noseCone ?? def.swoosh ?? def.noseFront;
+    const upperColour = def.noseCone ?? def.noseFront;
+    // two flat caps, split at yCut
+    const clip = (poly: V3[], y: number, above: boolean): V3[] => {
+      const out: V3[] = [];
+      const inside = (p: V3): boolean => (above ? p[1] >= y : p[1] <= y);
+      for (let k = 0; k < poly.length; k++) {
+        const a = poly[k] as V3;
+        const b = poly[(k + 1) % poly.length] as V3;
+        if (inside(a)) out.push(a);
+        // where the cut passes exactly through a vertex, that vertex is already in the polygon: a second copy would be a zero-area triangle
+        if (inside(a) !== inside(b) && a[1] !== y && b[1] !== y) {
+          const t = (y - a[1]) / (b[1] - a[1]);
+          out.push([a[0] + (b[0] - a[0]) * t, y, a[2] + (b[2] - a[2]) * t]);
+        }
+      }
+      return out;
     };
-    cap(clipY(front, yCut, false), noseTip);
-    cap(clipY(front, yCut, true), def.noseFront);
-    for (const sx of [-1, 1]) detail.box(sx * 0.4 - 0.1, sx * 0.4 + 0.1, 1.35, 1.47, Math.min(Z(0), Z(0.02)), Math.max(Z(0), Z(0.02)), col(0xfff3c4));
+    const faceN: V3 = [0, 0, -dir];
+    detail.fan(clip(face, yCut, false), faceN, colourOf(lowerColour));
+    detail.fan(clip(face, yCut, true), faceN, colourOf(upperColour));
+    // the coupler cover: the lower part of the face, a dark seam across its top, and two latches
+    const seam = col(0x1b1d21);
+    const a = xAtY(tipHalf, coverTop);
+    const seamPoly = roundedRect(-a * 0.92, a * 0.92, coverTop - 0.012, coverTop + 0.012, 0.01, 1).map(([x, y]): V3 => world([x, y, tip - 0.004]));
+    detail.fan(seamPoly, faceN, seam);
+    for (const sx of [-1, 1]) {
+      const latch = roundedRect(sx * a * 0.45 - 0.05, sx * a * 0.45 + 0.05, coverTop - 0.1, coverTop - 0.03, 0.01, 1).map(([x, y]): V3 => world([x, y, tip - 0.004]));
+      detail.fan(latch, faceN, seam);
+    }
+    const cover = new THREE.Object3D();
+    cover.name = 'coupler-cover';
+    cover.position.set(0, (r0.bottom + coverTop) / 2, Z(tip));
+    cover.userData = { y0: r0.bottom, y1: coverTop, hidesCoupler: !interiorCab };
+    if (!interiorCab) group.add(cover);
+    // lamps: a headlight and a marker light at each lower corner of the face
+    for (const sx of [-1, 1]) {
+      const yh = r0.bottom + 0.56 * (r0.top - r0.bottom);
+      const xh = xAtY(tipHalf, yh) * 0.6;
+      const lamp = roundedRect(sx * xh - 0.13, sx * xh + 0.13, yh - 0.06, yh + 0.06, 0.03, 2).map(([x, y]): V3 => world([x, y, tip - 0.006]));
+      detail.fan(lamp, faceN, col(0xfff3c4));
+      const ym = yh - 0.14;
+      const mark = roundedRect(sx * xh - 0.07, sx * xh + 0.07, ym - 0.035, ym + 0.035, 0.02, 2).map(([x, y]): V3 => world([x, y, tip - 0.006]));
+      detail.fan(mark, faceN, col(0xd02020));
+      const m = new THREE.Object3D();
+      m.name = 'headlight';
+      m.position.set(sx * xh, yh, Z(tip));
+      m.userData = { side: sx > 0 ? 'right' : 'left' };
+      group.add(m);
+    }
+    // an interior nose (two coupled units): the Dellner coupler is out, in the gap between the two noses
+    if (interiorCab) {
+      couplerHalf(detail, Z(tip), (dir * -1) as 1 | -1, END_GAP, ASSUMED.couplerHeight);
+      const m = new THREE.Object3D();
+      m.name = 'coupler';
+      m.position.set(0, ASSUMED.couplerHeight, Z(tip));
+      m.userData = { end: car.cab, nose: true };
+      group.add(m);
+    }
+    // the windscreen: a curved patch on the nose's roof, glass over a black frame
+    const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number): void => {
+      const rows = 30;
+      const cols = 20;
+      const grid: V3[][] = [];
+      const s0 = screen.s0 - margin;
+      const s1 = screen.s1 + margin;
+      const pts: { s: number; hw: number }[] = [];
+      // rows crowd toward the two edges, where the corners curve
+      for (let p = 0; p <= rows; p++) {
+        const s = lerp(s0, s1, 0.5 - 0.5 * Math.cos((Math.PI * p) / rows));
+        pts.push({ s, hw: screenHalfWidth(s, margin) });
+      }
+      for (const { s, hw } of pts) {
+        const h = glassHalf(s);
+        const row: V3[] = [];
+        for (let q = 0; q <= cols; q++) {
+          const x = hw * (2 * (q / cols) - 1);
+          row.push([x, yAtX(h, Math.abs(x)), tip + s]);
+        }
+        grid.push(row);
+      }
+      // The nose's own normal at each point, from its height field y(x, s), pointing up and forward. (The grid's differences do not give it:
+      // at the two lower corners of the outline both the rows and the columns run along x, and the normal they give is noise, with its
+      // z component of either sign.) The steps are wide enough to smooth the polyline of the section, narrow enough to follow the rake.
+      const hx = 0.06;
+      const hs = 0.04;
+      const heightAt = (x: number, s: number): number => yAtX(glassHalf(Math.max(0, s)), Math.abs(x));
+      const Ng = grid.map((row) => row.map((p): V3 => {
+        const s = p[2] - tip;
+        return unit([-(heightAt(p[0] + hx, s) - heightAt(p[0] - hx, s)) / (2 * hx), 1, -(heightAt(p[0], s + hs) - heightAt(p[0], s - hs)) / (2 * hs)]);
+      }));
+      const lifted = grid.map((row, i) => row.map((p, j): V3 => [p[0] + (Ng[i] as V3[])[j]![0] * lift, p[1] + (Ng[i] as V3[])[j]![1] * lift, p[2] + (Ng[i] as V3[])[j]![2] * lift]));
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const at = (a: number, b: number): V3 => (lifted[a] as V3[])[b] as V3;
+          const nn = (a: number, b: number): V3 => (Ng[a] as V3[])[b] as V3;
+          target.quad([world(at(i, j)), world(at(i, j + 1)), world(at(i + 1, j + 1)), world(at(i + 1, j))], [wn(nn(i, j)), wn(nn(i, j + 1)), wn(nn(i + 1, j + 1)), wn(nn(i + 1, j))], colour);
+        }
+      }
+    };
+    // the frame and the glass stand clear of the loft by more than its facets sag between rings (about 2 mm), so neither shows through the other
+    patch(0.07, detail, colourOf(def.glass), 0.008);
+    patch(0, glass, null, 0.016);
+    // the cab side windows, one each side, following the nose's slope
+    const sw = spec.glass.side;
+    for (const side of [-1, 1]) {
+      const rows = 8;
+      const cols = 12;
+      const grid: V3[][] = [];
+      for (let q = 0; q <= rows; q++) {
+        const v = lerp(sw.v0, sw.v1, q / rows);
+        const sF = lerp(sw.sFront0, sw.sFront1, q / rows);
+        const row: V3[] = [];
+        for (let p = 0; p <= cols; p++) {
+          const s = lerp(sF, sw.sBack, p / cols);
+          const rr = ringAt(spec.nose, s);
+          const hh = halfAt(sec, norm, egg, rr);
+          const y = rr.bottom + v * (rr.top - rr.bottom);
+          row.push([side * xAtY(hh, y), y, tip + s]);
+        }
+        grid.push(row);
+      }
+      const inside = (i: number): V3 => [0, ((grid[i] as V3[])[0] as V3)[1], tip + sw.sFront1];
+      const Ng = gridNormals(grid, false, inside);
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const lift = (a: number, b: number): V3 => {
+            const p = (grid[a] as V3[])[b] as V3;
+            const n = (Ng[a] as V3[])[b] as V3;
+            return [p[0] + n[0] * 0.008, p[1] + n[1] * 0.008, p[2] + n[2] * 0.008];
+          };
+          const nn = (a: number, b: number): V3 => (Ng[a] as V3[])[b] as V3;
+          glass.quad([world(lift(i, j)), world(lift(i, j + 1)), world(lift(i + 1, j + 1)), world(lift(i + 1, j))], [wn(nn(i, j)), wn(nn(i, j + 1)), wn(nn(i + 1, j + 1)), wn(nn(i + 1, j))], null);
+        }
+      }
+    }
+  }
+  // an end wall at every inner end of the body, and the gangway bellows and coupler in the gap beyond it
+  const innerEnds: { ring: number; s: number; sign: 1 | -1 }[] = [];
+  if (!car.cab) innerEnds.push({ ring: 0, s: tip, sign: -1 });
+  innerEnds.push({ ring: R, s: bodyEnd, sign: 1 });
+  for (const e of innerEnds) {
+    capLoop(e.ring, e.sign);
+    const zWall = Z(e.s);
+    const zOut = Z(e.s + e.sign * END_GAP);
+    const g = spec.gangway;
+    const outline = (k: number): [number, number][] => roundedRect(-g.width / 2 * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
+    const rs = bellowsRings(outline, 0, END_GAP, 1, 0.05);
+    // the bellows are seated a hair outside the end wall, so no vertex of theirs lies in the wall's plane (the section of the body is that plane's)
+    const zSeat = zWall + Math.sign(zOut - zWall) * BELLOWS_SEAT;
+    const pts3: V3[][] = rs.map((r) => r.pts.map(([x, y]): V3 => [x, y, zSeat + (zOut - zSeat) * (r.z / END_GAP)]));
+    const mid = (i: number): V3 => [0, g.bottom + g.height / 2, (pts3[i] as V3[])[0]![2]];
+    const Nb = gridNormals(pts3, true, mid);
+    const bellows = col(0x2a2c31);
+    for (let i = 0; i + 1 < pts3.length; i++) {
+      const row = pts3[i] as V3[];
+      for (let j = 0; j < row.length; j++) {
+        const j1 = (j + 1) % row.length;
+        const a = row[j] as V3;
+        const b = row[j1] as V3;
+        const c2 = (pts3[i + 1] as V3[])[j1] as V3;
+        const d = (pts3[i + 1] as V3[])[j] as V3;
+        detail.quad([a, b, c2, d], [(Nb[i] as V3[])[j] as V3, (Nb[i] as V3[])[j1] as V3, (Nb[i + 1] as V3[])[j1] as V3, (Nb[i + 1] as V3[])[j] as V3], bellows);
+      }
+    }
+    const marker = new THREE.Object3D();
+    marker.name = 'gangway';
+    marker.position.set(0, g.bottom + g.height / 2, (zWall + zOut) / 2);
+    marker.userData = { end: e.sign > 0 ? (car.cab === 'rear' ? 'front' : 'rear') : 'front', width: g.width, height: g.height, depth: END_GAP };
+    group.add(marker);
+    // the coupler: a barrel and head from the end wall, meeting its neighbour's in the middle of the gap
+    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, END_GAP, ASSUMED.couplerHeight);
+    const cm = new THREE.Object3D();
+    cm.name = 'coupler';
+    cm.position.set(0, ASSUMED.couplerHeight, (zWall + zOut) / 2);
+    cm.userData = { end: marker.userData.end, nose: false };
+    group.add(cm);
   }
 
   // roof covers: grey fairings along the roof, split in short runs, left off over the pantograph
-  const carFrom = car.cab === 'front' ? car.start + ASSUMED.noseLength + 0.4 : car.start + 0.6;
-  const carTo = car.cab === 'rear' ? car.end - ASSUMED.noseLength - 0.4 : car.end - 0.6;
+  const carFrom = car.cab === 'front' ? car.start + tip + noseLen + 0.4 : car.start + END_GAP + 0.6;
+  const carTo = car.cab === 'rear' ? car.end - tip - noseLen - 0.4 : car.end - END_GAP - 0.6;
   const runs = Math.max(1, Math.ceil((carTo - carFrom) / 7.5));
   const gap = 0.8;
   const runLen = (carTo - carFrom - gap * (runs - 1)) / runs;
@@ -352,151 +708,155 @@ function buildCar(car: Car, def: LiveryDef, livery: Livery): THREE.Group {
   const coverColour = col(0xb4b8be);
   for (const [z0, z1] of covers) {
     if (z1 - z0 < 0.8) continue;
-    const yb = ROOF_EDGE - 0.04;
-    const yt = roofHeight();
-    const bw = 0.85;
-    const tw = 0.62;
+    const yb = spec.crown - 0.04;
+    const yt = spec.crown + spec.coverHeight;
+    const bw = spec.coverBw;
+    const tw = spec.coverTw;
     const ez = 0.3;
     const lo: V3[] = [[-bw, yb, z0], [bw, yb, z0], [bw, yb, z1], [-bw, yb, z1]];
     const hi: V3[] = [[-tw, yt, z0 + ez], [tw, yt, z0 + ez], [tw, yt, z1 - ez], [-tw, yt, z1 - ez]];
-    const centre = mean([...lo, ...hi]);
-    const f = (a: V3, b: V3, c: V3, d: V3): void => detail.face([a, b, c, d], centre, coverColour);
+    const mean8: V3 = [0, (yb + yt) / 2, (z0 + z1) / 2];
+    const f = (a: V3, b: V3, c3: V3, d: V3): void => detail.face([a, b, c3, d], mean8, coverColour);
     f(hi[0] as V3, hi[1] as V3, hi[2] as V3, hi[3] as V3);
     for (let k = 0; k < 4; k++) f(lo[k] as V3, lo[(k + 1) % 4] as V3, hi[(k + 1) % 4] as V3, hi[k] as V3);
   }
 
   // skirts between the bogie cut-outs, and the dark underframe seen through the cut-outs
-  const noseZone: [number, number] | null = car.cab === 'front' ? [car.start, car.start + ASSUMED.noseLength] : car.cab === 'rear' ? [car.end - ASSUMED.noseLength, car.end] : null;
-  let free: [number, number][] = [[car.start + 0.25, car.end - 0.25]];
+  const noseZone: [number, number] | null = car.cab === 'front' ? [car.start, car.start + tip + noseLen] : car.cab === 'rear' ? [car.end - tip - noseLen, car.end] : null;
+  let free: [number, number][] = [[car.start + END_GAP + 0.1, car.end - END_GAP - 0.1]];
   if (noseZone) free = without(free, noseZone[0], noseZone[1]);
   const underframe = free.map((s) => [...s] as [number, number]);
-  for (const z of car.bogies) free = without(free, z - ASSUMED.bogieCutout, z + ASSUMED.bogieCutout);
-  for (const [z0, z1] of underframe) detail.box(-0.95, 0.95, 0.62, FLOOR + 0.05, z0, z1, col(def.skirt), '+y');
-  for (const [z0, z1] of free) for (const sx of [-1, 1]) detail.box(sx > 0 ? W - 0.06 : -(W - 0.03), sx > 0 ? W - 0.03 : -(W - 0.06), ASSUMED.skirtBottom, FLOOR + 0.1, z0, z1, col(def.skirt));
+  for (const z of car.bogies) free = without(free, z - spec.cutout, z + spec.cutout);
+  for (const [z0, z1] of underframe) detail.box(-spec.underframe, spec.underframe, spec.skirtBottom + 0.17, spec.floor + 0.05, z0, z1, col(def.skirt), '+y');
+  for (const [z0, z1] of free) for (const sx of [-1, 1]) detail.box(sx > 0 ? W - 0.06 : -(W - 0.03), sx > 0 ? W - 0.03 : -(W - 0.06), spec.skirtBottom, spec.floor + 0.1, z0, z1, col(def.skirt));
 
-  // doors: a dark frame, the leaf, and a window in the leaf; one marker per leaf
-  const half = BW / 2;
+  // doors: a dark frame, the leaf (or two leaves), and a window in each leaf; one marker per opening
   const frameC = col(0x24272b);
   const leafC = col(def.door);
   const paneC = col(def.window);
+  const [dy0, dy1] = spec.doorY;
   plan.doors.forEach((s, di) => {
     const z = Z(s);
     for (const sx of [-1, 1]) {
-      const dw = ASSUMED.doorWidth;
+      const dw = spec.doorWidth;
       const side = sx > 0 ? 'right' : 'left';
       const x = (a: number): number => sx * a;
       const lo = (a: number, b: number): [number, number] => [Math.min(x(a), x(b)), Math.max(x(a), x(b))];
       const [fx0, fx1] = lo(W - 0.005, half - DOOR_RELIEF / 2);
-      detail.box(fx0, fx1, 1.1, 2.9, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
+      detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
-      detail.box(lx0, lx1, 1.15, 2.86, z - dw / 2, z + dw / 2, leafC);
       const [px0, px1] = lo(W - 0.005, half);
-      detail.box(px0, px1, 1.95, 2.65, z - 0.27, z + 0.27, paneC);
+      if (spec.doorLeaves === 1) {
+        detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
+        detail.box(px0, px1, dy1 - 0.91, dy1 - 0.21, z - 0.27, z + 0.27, paneC);
+      } else {
+        // two sliding leaves with a seam between them, each with its own window
+        const leaf = (dw - 0.04) / 2;
+        for (const k of [-1, 1]) {
+          const zc = z + (k * (leaf + 0.04)) / 2;
+          detail.box(lx0, lx1, dy0, dy1, zc - leaf / 2, zc + leaf / 2, leafC);
+          detail.box(px0, px1, dy1 - 0.95, dy1 - 0.18, zc - leaf * 0.34, zc + leaf * 0.34, paneC);
+        }
+      }
       const marker = new THREE.Object3D();
       marker.name = 'door';
-      marker.position.set(x(half), (1.15 + 2.86) / 2, z);
-      marker.userData = { side, index: di, width: dw, height: 2.86 - 1.15 };
+      marker.position.set(x(half), (dy0 + dy1) / 2, z);
+      marker.userData = { side, index: di, width: dw, height: dy1 - dy0 };
       group.add(marker);
     }
   });
 
-  const shellMesh = new THREE.Mesh(shell.build(), shellMaterial(livery, car.cab ? 'driving' : 'mid', plan));
+  // passenger windows: a dark gasket, the glass, and a pale reflection along its top
+  const [wy0, wy1] = spec.windowY;
+  const gasket = col(0x0d0e10);
+  const sky = col(blend(def.window, 0xa9bdd6, 0.3));
+  for (const [s0, s1] of plan.windows) {
+    const za = Math.min(Z(s0), Z(s1));
+    const zb = Math.max(Z(s0), Z(s1));
+    for (const sx of [-1, 1]) {
+      const outer = (rel: number): number => sx * (half - rel);
+      detail.prismX(roundedRect(za - 0.03, zb + 0.03, wy0 - 0.03, wy1 + 0.03, 0.1, 2), sx * (W - 0.005), outer(0.016), gasket);
+      detail.prismX(roundedRect(za, zb, wy0, wy1, 0.08, 2), sx * (W - 0.005), outer(0.012), paneC, false);
+      detail.prismX(roundedRect(za + 0.04, zb - 0.04, wy1 - 0.26, wy1 - 0.03, 0.05, 2), outer(0.0125), outer(0.0115), sky, false);
+    }
+  }
+
+  // decals: lettering and solid patches, laid on each side so the words read left to right from outside
+  const carInfo = { index: car.index, count: layout.cars.length, cab: car.cab !== null, length: L, nose: noseLen, doors: plan.doors };
+  for (const item of def.decals(carInfo)) pushDecal(decals, item, W, Z, dir, plan);
+  // `plan` is only used to keep the door list in one place
+  void BAND_Y;
+
+  // one shell material per livery and family: a through car reads only the texture's last column, so the nose length does not matter to it
+  const shellMesh = new THREE.Mesh(shell.build(), shellMaterial(ctx.livery, spec.nose.length));
   shellMesh.name = 'body-shell';
   const detailMesh = new THREE.Mesh(detail.build(), plain());
   detailMesh.name = 'body-detail';
   group.add(shellMesh, detailMesh);
+  if (decals.pos.length) {
+    const m = new THREE.Mesh(decals.build(), decalMaterial());
+    m.name = 'livery-decals';
+    group.add(m);
+  }
+  if (glass.pos.length) {
+    const m = new THREE.Mesh(glass.build(), glassMaterial());
+    m.name = 'cab-glass';
+    group.add(m);
+  }
 
+  const fig = spec.family === 'at300' ? null : EMU_FIGURES[spec.family as EmuFamily];
   car.bogies.forEach((z, k) => {
-    const b = buildBogie();
+    const radius = fig ? fig.wheelDiameter.value / 2 : FIGURES.wheelDiameter.value / 2;
+    const motor = (car.motor as readonly boolean[])[k] as boolean;
+    const wheelbase = fig ? (motor ? fig.wheelbaseMotor.value : fig.wheelbaseTrailer.value) : FIGURES.bogieWheelbase.value;
+    const b = buildBogie({ radius, wheelbase, track: FIGURES.gauge.value, motor });
     b.name = `bogie-${car.index}-${k}`;
     b.position.set(0, 0, z);
     group.add(b);
   });
   if (car.pantograph) {
-    const p = buildPantograph();
-    p.position.set(0, ROOF_EDGE, (car.pantograph[0] + car.pantograph[1]) / 2);
+    const len = fig ? fig.pantographLength.value : FIGURES.pantographLength.value;
+    const p = buildPantograph(len, spec.pantographTop);
+    p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);
     group.add(p);
   }
   return group;
 }
 
-// --- bogie and pantograph ----------------------------------------------------------------------
-
-let bogieGeometry: THREE.BufferGeometry | null = null;
-
-/** A bogie centred on the rail head: four wheels, axles, motors, side frames and air springs. The geometry is shared by every bogie. */
-function buildBogie(): THREE.Group {
-  const radius = FIGURES.wheelDiameter.value / 2;
-  const wb = FIGURES.bogieWheelbase.value;
-  const track = FIGURES.gauge.value;
-  const group = new THREE.Group();
-  const spots: V3[] = [];
-  for (const az of [-wb / 2, wb / 2]) for (const sx of [-1, 1]) spots.push([(sx * track) / 2, radius, az]);
-  for (const p of spots) {
-    const w = new THREE.Object3D();
-    w.name = 'wheel';
-    w.position.set(p[0], p[1], p[2]);
-    w.userData = { radius, width: ASSUMED.wheelWidth };
-    group.add(w);
-  }
-  if (!bogieGeometry) {
-    const soup = new Soup();
-    const steel = col(0x70757d);
-    const dark = col(0x2a2d32);
-    const motor = col(0x3d4147);
-    const toX = new THREE.Matrix4().makeRotationZ(Math.PI / 2);
-    for (const w of group.children) {
-      // 20 segments: a multiple of four puts a vertex at the bottom, so the tread touches y = 0 exactly
-      const wheel = new THREE.CylinderGeometry(radius, radius, ASSUMED.wheelWidth, 20, 1);
-      soup.geometry(wheel, new THREE.Matrix4().makeTranslation(w.position.x, w.position.y, w.position.z).multiply(toX), steel);
-      wheel.dispose();
-    }
-    for (const az of [-wb / 2, wb / 2]) {
-      const axle = new THREE.CylinderGeometry(0.065, 0.065, track, 10, 1);
-      soup.geometry(axle, new THREE.Matrix4().makeTranslation(0, radius, az).multiply(toX), dark);
-      axle.dispose();
-      soup.box(-0.34, 0.34, 0.3, 0.64, az - 0.28, az + 0.28, motor);
-    }
-    for (const sx of [-1, 1]) {
-      const x0 = Math.min(sx * 0.88, sx * 1.02);
-      const x1 = Math.max(sx * 0.88, sx * 1.02);
-      soup.box(x0, x1, 0.52, 0.78, -1.5, 1.5, dark);
-      const spring = new THREE.CylinderGeometry(0.12, 0.12, 0.2, 10, 1);
-      for (const z of [-0.8, 0.8]) soup.geometry(spring, new THREE.Matrix4().makeTranslation(sx * 0.95, 0.88, z), motor);
-      spring.dispose();
-    }
-    for (const z of [-0.5, 0.5]) soup.box(-1.0, 1.0, 0.55, 0.75, z - 0.1, z + 0.1, dark);
-    bogieGeometry = soup.build();
-  }
-  const mesh = new THREE.Mesh(bogieGeometry, plain());
-  mesh.name = 'bogie-mesh';
-  group.add(mesh);
-  return group;
+/** Mix two colours, `t` of the second. */
+function blend(a: number, b: number, t: number): number {
+  const ch = (n: number, sh: number): number => (n >> sh) & 255;
+  const m = (sh: number): number => Math.round(lerp(ch(a, sh), ch(b, sh), t));
+  return (m(16) << 16) | (m(8) << 8) | m(0);
 }
 
-/** A single-arm pantograph, folded: base frame on four insulators, the arms lying down, the collector head on top. */
-function buildPantograph(): THREE.Group {
-  const group = new THREE.Group();
-  group.name = 'pantograph';
-  const len = FIGURES.pantographLength.value;
-  const top = FIGURES.pantographFoldedHeight.value;
-  const soup = new Soup();
-  const frame = col(0x2d3035);
-  const head = col(0x8a8f96);
+/**
+ * One decal on both sides of the car. `s` is along the car from its cab end (cab car) or start; the shell stands at
+ * x = +-W, and the decal a few millimetres out from it. Words are laid so they read left to right from outside:
+ * on the left side (x < 0) the viewer's right is +z, on the right side it is -z.
+ */
+function pushDecal(soup: Soup, item: DecalItem, W: number, Z: (s: number) => number, dir: number, _plan: CarPlan): void {
+  const [s0, y0, s1raw, y1] = item.rect;
+  const em = y1 - y0;
+  const s1 = item.text ? s0 + textEms(item.text) * em : s1raw;
+  const skew = item.skew ?? 0;
+  const a = atlasRect(item.text);
+  const c = col(item.colour);
   for (const sx of [-1, 1]) {
-    soup.box(sx * 0.55 - 0.06, sx * 0.55 + 0.06, 0.08, 0.14, -len / 2, len / 2, frame);
-    for (const z of [-len / 2 + 0.15, len / 2 - 0.15]) soup.box(sx * 0.55 - 0.05, sx * 0.55 + 0.05, -0.02, 0.08, z - 0.05, z + 0.05, col(0xd8d2c4));
+    const x = sx * (W + 0.004);
+    // corners in car-s, bottom then top; the top row is shifted by the skew
+    const pts: [number, number, number][] = [[s0, y0, 0], [s1, y0, 1], [s1 + skew, y1, 1], [s0 + skew, y1, 0]];
+    const verts = pts.map(([s, y]): V3 => [x, y, Z(s)]);
+    // texture u runs with the lettering; it increases toward the viewer's right
+    const rightIsPlusZ = sx < 0;
+    const uvs = pts.map(([, y, t], k): [number, number] => {
+      const alongZ = (dir > 0 ? t : 1 - t) * (rightIsPlusZ ? 1 : -1) + (rightIsPlusZ ? 0 : 1);
+      void k;
+      return [lerp(a.u0, a.u1, alongZ), y === y0 ? a.v0 : a.v1];
+    }) as [[number, number], [number, number], [number, number], [number, number]];
+    const n: V3 = [sx, 0, 0];
+    soup.quad(verts as [V3, V3, V3, V3], [n, n, n, n], c, uvs);
   }
-  soup.box(-0.55, 0.55, 0.08, 0.14, -0.06, 0.06, frame);
-  // lower arm up from the rear of the base to the knee, upper arm folded back to the head
-  const knee = top - 0.045;
-  soup.bar([0.14, 0.9], [knee, -0.1], 0.1, 0.07, frame);
-  soup.bar([knee, -0.1], [top - 0.1, 0.72], 0.08, 0.06, frame);
-  soup.box(-0.8, 0.8, top - 0.07, top, 0.64, 0.82, head);
-  const mesh = new THREE.Mesh(soup.build(), plain());
-  mesh.name = 'pantograph-mesh';
-  group.add(mesh);
-  return group;
 }
 
 // --- the train ---------------------------------------------------------------------------------
@@ -504,11 +864,12 @@ function buildPantograph(): THREE.Group {
 export function buildTrain(kind: TrainKind): THREE.Group {
   const layout = trainLayout(kind);
   const livery = layout.spec.livery;
+  const spec = BODIES[layout.spec.family];
   const def = LIVERIES[livery];
   const root = new THREE.Group();
   root.name = `train-${kind}`;
-  root.userData = { kind, length: layout.length, cars: layout.cars.length };
-  for (const car of layout.cars) root.add(buildCar(car, def, livery));
+  root.userData = { kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family };
+  for (const car of layout.cars) root.add(buildCar(car, { spec, def, livery, layout }));
   return root;
 }
 
@@ -520,3 +881,6 @@ export function standTrain(group: THREE.Group, shed: Pick<ShedLayout, 'heading'>
   group.updateMatrixWorld(true);
   return [pose.nose[0], 0, pose.nose[1]];
 }
+
+/** The body spec of a family, for tests and the dev page. */
+export const bodySpec = (family: Family): Readonly<BodySpec> => BODIES[family];

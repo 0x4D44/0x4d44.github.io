@@ -6,9 +6,10 @@ import type { Pt } from '../../core/geo.ts';
 import type { TrainView } from '../../core/motion.ts';
 import { trainLayout } from '../../core/train.ts';
 import type { Car, TrainKind, TrainLayout } from '../../core/train.ts';
-import { buildTrain } from './train.ts';
+import { buildTrain, END_GAP } from './train.ts';
 
-export const COUPLING_CLEARANCE = 0.35; // Per body end, inside the layout's coupling-inclusive length.
+/** Per body end, inside the layout's coupling-inclusive length: train.ts insets each body by this. */
+export const COUPLING_CLEARANCE = END_GAP;
 export const kindForDescription = (description: string): TrainKind => description[0] === '1' ? 'lner9' : 'lner5';
 const layouts = new Map<TrainKind, TrainLayout>();
 function layoutForKind(kind: TrainKind): TrainLayout {
@@ -97,18 +98,8 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D) {
       o.material = Array.isArray(o.material) ? o.material.map(copy) : copy(o.material);
     });
     ownedMaterials.set(view.id, [...copies.values()]);
-    // Car lengths include couplings. Leave a visible clearance in the body meshes, while
-    // preserving bogie positions, car pitch, the front nose and the train's full length.
-    for (const car of layout.cars) {
-      const node = group.getObjectByName(`car-${car.index}`)!;
-      const front = car.index === 0 ? 0 : COUPLING_CLEARANCE;
-      const rear = car.index === layout.cars.length - 1 ? 0 : COUPLING_CLEARANCE;
-      for (const name of ['body-shell', 'body-detail']) {
-        const mesh = node.getObjectByName(name)!;
-        mesh.scale.z = (car.length - front - rear) / car.length;
-        mesh.position.z = car.start * (1 - mesh.scale.z) + front;
-      }
-    }
+    // Car lengths include couplings. train.ts already stops each body END_GAP short of its car
+    // end and fills the gap with gangway bellows and couplers, so no rescale here.
     group.userData.id = view.id;
     parent.add(group);
     const record: DrawnTrain = { id: view.id, description: view.description, kind, layout, group, noseWorld: [0, 0, 0], headingRad: 0 };
