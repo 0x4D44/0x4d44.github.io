@@ -1,0 +1,225 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import * as THREE from 'three';
+import { createReplayFeed, createTimeline } from '../src/feed.ts';
+import { buildSignalOverlay } from '../../tools/build-signals.ts';
+import type { KxData } from '../../core/osm.ts';
+import type { AnchorMap } from '../../core/anchors.ts';
+import { createSignals } from '../src/signals.ts';
+import type { OverlaySignal, SignalEvent } from '../src/signals.ts';
+import type { TimedTdEvent } from '../../core/sclass.ts';
+
+const signal = (extra: Partial<OverlaySignal> = {}): OverlaySignal => ({ id: 1, point: [11, 21], ref: 'YA 1004', kinds: ['main'],
+  edge: { wayId: 9, from: 1, to: 2, t: 0.8, point: [10, 20] }, travel: [0.6, 0.8], facing: [-0.6, -0.8],
+  side: 'left', sideSource: 'assumed-left', berth: '1004', review: 'osm-ref-match', ...extra });
+const ev = () => ({ trials: 5, support: 4, contradictions: 1, precision: 0.8, unmatchedCycles: 0 });
+const hypothesis = () => ({ id: 'synthetic', address: '10', bit: 2, berth: '1004', proceedValue: 1, training: ev(), heldOut: ev(), status: 'decoded', reason: 'synthetic only' });
+const table = () => ({ area: 'Y9', hypotheses: [hypothesis()] });
+function fixture(signals = [signal()], fetchImpl?: typeof fetch) {
+  const scene = new THREE.Scene(); const layer = createSignals({ attribution: 'synthetic', signals }, scene, { fetchImpl });
+  return { scene, layer, drawn: layer.signals()[0]! };
+}
+const row = (msgType = 'SF', data = '04', address = '10', area = 'Y9'): TimedTdEvent => ({ t: 1, e: { kind: 'sclass', area, msgType, data, address } });
+const aspect = (group: THREE.Group) => (group.getObjectByName('aspect') as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>).material.color.getHex();
+const close = (x: number, y: number) => assert.ok(Math.abs(x - y) < 1e-9, `${x} != ${y}`);
+
+test('posts sit two metres to their side of travel and the head faces oncoming traffic', () => {
+  const { layer } = fixture([signal(), signal({ id: 2, side: 'right' })]);
+  for (const [i, r] of layer.signals().entries()) {
+    close(r.group.position.x, 10 + (i ? -1 : 1) * 1.6); close(r.group.position.z, 20 - (i ? -1 : 1) * 1.2);
+    const facing = new THREE.Vector3(0, 0, 1).applyEuler(r.group.rotation); close(facing.x, -0.6); close(facing.z, -0.8);
+  }
+  layer.dispose();
+});
+
+test('without a table a byte remains grey unknown with a white vector question mark', () => {
+  const { layer, drawn } = fixture(); layer.apply(row());
+  assert.equal(drawn.state, 'unknown'); assert.equal(aspect(drawn.group), 0x666666);
+  assert.equal(drawn.group.getObjectByName('unknown')!.visible, true);
+  const line = drawn.group.getObjectByName('unknown')!.children.find((o) => o instanceof THREE.Line) as THREE.Line;
+  assert.ok(line.geometry.getAttribute('position').count >= 6); assert.equal((line.material as THREE.LineBasicMaterial).color.getHex(), 0xffffff);
+  assert.deepEqual(layer.counts(), { drawn: 1, decoded: 0 }); layer.dispose();
+});
+
+test('validated evidence drives green proceed and red danger and reset forgets bytes', () => {
+  const { layer, drawn } = fixture(); layer.setTable(table()); assert.equal(drawn.state, 'unknown');
+  layer.apply(row()); assert.equal(drawn.state, 'proceed'); assert.equal(aspect(drawn.group), 0x35ff69);
+  assert.equal(drawn.group.getObjectByName('unknown')!.visible, false); assert.deepEqual(layer.counts(), { drawn: 1, decoded: 1 });
+  layer.apply(row('SF', '00')); assert.equal(drawn.state, 'danger'); assert.equal(aspect(drawn.group), 0xff2929);
+  layer.reset(); assert.equal(drawn.state, 'unknown'); layer.dispose();
+});
+
+test('SF SG SH all update the requested byte in ascending order and foreign areas cannot change it', () => {
+  const { layer, drawn } = fixture(); layer.setTable(table());
+  for (const msgType of ['SG', 'SH']) {
+    layer.apply(row(msgType, '00000400', '0E')); assert.equal(drawn.state, 'proceed');
+    layer.apply(row(msgType, '00000000', '0E')); assert.equal(drawn.state, 'danger');
+  }
+  layer.apply(row('SF')); assert.equal(drawn.state, 'proceed');
+  layer.apply(row('SF', '00', '10', 'OTHER')); assert.equal(drawn.state, 'proceed');
+  layer.apply(row('SF', 'zz')); assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('arbitrary invalid tables fail closed and cannot retain an earlier decode', () => {
+  const invalid: unknown[] = [null, [], {}, { ...table(), area: 'OTHER' }, { area: 'Y9', hypotheses: {} }];
+  for (const key of ['bit', 'proceedValue', 'address', 'status', 'id', 'berth', 'reason']) {
+    for (const value of [null, {}, -1, 8, 0.5, ...(['id', 'reason'].includes(key) ? [] : ['bogus'])]) invalid.push({ area: 'Y9', hypotheses: [{ ...hypothesis(), [key]: value }] });
+  }
+  for (const fold of ['training', 'heldOut']) for (const patch of [
+    { support: 2, trials: 3, contradictions: 1, precision: 2 / 3 }, { precision: 1 }, { trials: 0, support: 0, contradictions: 0, precision: null },
+    { support: 4.5 }, { contradictions: -1 }, { precision: NaN }, { unmatchedCycles: -1 }, { trials: '5' },
+  ]) invalid.push({ area: 'Y9', hypotheses: [{ ...hypothesis(), [fold]: { ...ev(), ...patch } }] });
+  const { layer, drawn } = fixture(); layer.apply(row());
+  for (const value of invalid) { layer.setTable(table()); assert.equal(drawn.state, 'proceed'); layer.setTable(value); assert.equal(drawn.state, 'unknown', JSON.stringify(value)); }
+  layer.dispose();
+});
+
+test('competing bits berths polarities and unknown candidates cannot choose a decode', () => {
+  const { layer, drawn } = fixture(); layer.apply(row());
+  for (const patch of [{ bit: 3 }, { berth: '2000' }, { proceedValue: 0 }, { status: 'unknown' }, {}]) {
+    layer.setTable({ area: 'Y9', hypotheses: [hypothesis(), { ...hypothesis(), id: 'other', ...patch }] });
+    assert.equal(drawn.state, 'unknown');
+  }
+  const zero = table(); zero.hypotheses[0]!.proceedValue = 0; layer.setTable(zero); assert.equal(drawn.state, 'danger');
+  layer.apply(row('SF', '00')); assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('boards foreign refs duplicate refs and nonmatching berth claims remain unknown', () => {
+  for (const s of [signal({ kinds: ['stop'] }), signal({ ref: 'NL 1004' }), signal({ berth: '2000' }), signal({ ref: undefined })]) {
+    const { layer, drawn } = fixture([s]); layer.apply(row()); layer.setTable(table()); assert.equal(drawn.state, 'unknown'); layer.dispose();
+  }
+  const { layer } = fixture([signal(), signal({ id: 2 })]); layer.setTable(table()); layer.apply(row());
+  assert.ok(layer.signals().every((r) => r.state === 'unknown')); layer.dispose();
+});
+
+test('private reviewed topology mappings only map unique nearby unreferenced main signals', () => {
+  const s = signal({ ref: undefined, berth: undefined, review: 'unreviewed' });
+  const { layer, drawn } = fixture([s]); layer.apply(row());
+  const mapping = { signalId: 1, berth: '1004', distanceM: 40, review: 'topology' };
+  layer.setTable({ ...table(), signalMappings: [mapping] }); assert.equal(drawn.state, 'proceed');
+  for (const mappings of [[{ ...mapping, distanceM: 40.01 }], [{ ...mapping, distanceM: -1 }], [{ ...mapping, distanceM: NaN }],
+    [{ ...mapping, review: 'unreviewed' }], [{ ...mapping, signalId: '1' }], [mapping, mapping], [mapping, { ...mapping, signalId: 2 }]]) {
+    layer.setTable({ ...table(), signalMappings: mappings }); assert.equal(drawn.state, 'unknown');
+  }
+  layer.setTable(table()); assert.equal(drawn.state, 'unknown'); layer.dispose();
+  for (const other of [signal({ ref: 'NL 1004', berth: undefined }), signal({ kinds: ['stop'], ref: undefined, berth: undefined })]) {
+    const f = fixture([other]); f.layer.apply(row()); f.layer.setTable({ ...table(), signalMappings: [mapping] }); assert.equal(f.drawn.state, 'unknown'); f.layer.dispose();
+  }
+});
+
+test('OSM ref mapping takes precedence over private mappings', () => {
+  const { layer, drawn } = fixture(); layer.apply(row());
+  layer.setTable({ ...table(), signalMappings: [{ signalId: 1, berth: '2000', distanceM: 1, review: 'topology' }] });
+  assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('explicit fetch uses the local endpoint while 404 JSON errors and invalid tables clear stale state', async () => {
+  for (const fetchImpl of [async (url: unknown) => { assert.equal(url, '/relay/sclass'); return new Response(JSON.stringify(table()), { status: 404 }); },
+    async () => { throw new Error('offline'); }, async () => new Response('not json'), async () => new Response('{}')]) {
+    const { layer, drawn } = fixture(undefined, fetchImpl as typeof fetch); layer.apply(row()); layer.setTable(table());
+    const pending = layer.loadTable(); assert.equal(drawn.state, 'unknown'); await pending; assert.equal(drawn.state, 'unknown'); layer.dispose();
+  }
+  const { layer, drawn } = fixture(undefined, (async () => new Response(JSON.stringify(table()))) as typeof fetch);
+  layer.apply(row()); await layer.loadTable(); assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('late fetch responses cannot replace a newer table or revive a disposed layer', async () => {
+  let resolve!: (value: Response) => void;
+  const { layer, drawn, scene } = fixture(undefined, (() => new Promise<Response>((r) => { resolve = r; })) as typeof fetch);
+  layer.apply(row()); const first = layer.loadTable(); layer.setTable(null); resolve(new Response(JSON.stringify(table()))); await first;
+  assert.equal(drawn.state, 'unknown');
+  const second = layer.loadTable(); layer.dispose(); resolve(new Response(JSON.stringify(table()))); await second;
+  layer.apply(row()); layer.setTable(table()); assert.equal(drawn.state, 'unknown'); assert.equal(scene.children.length, 0);
+});
+
+test('dispose detaches groups and releases every geometry and material exactly once', () => {
+  const { layer, drawn, scene } = fixture(); const resources = new Set<THREE.BufferGeometry | THREE.Material>();
+  drawn.group.traverse((node) => {
+    if (node instanceof THREE.Mesh || node instanceof THREE.Line) { resources.add(node.geometry); for (const m of Array.isArray(node.material) ? node.material : [node.material]) resources.add(m); }
+  });
+  let disposals = 0; for (const resource of resources) resource.addEventListener('dispose', () => { disposals++; });
+  layer.dispose(); layer.dispose(); assert.equal(scene.children.length, 0); assert.equal(drawn.group.parent, null); assert.equal(disposals, resources.size);
+});
+
+
+function builderData(): KxData {
+  return { attribution: 'synthetic OSM only', origin: { lat: 0, lon: 0 },
+    nodes: [[1, 0, -200], [2, 0, -250], [3, 0, -300], [4, 0, -400]],
+    rails: [{ id: 9, nodes: [1, 2, 3, 4], service: 'main', tunnel: false, bridge: false, layer: 0 }],
+    switches: [], buffers: [{ id: 1, x: 0, z: -200 }], buildings: [],
+    platforms: [{ id: 100, ref: '4', pts: [[2, -200], [4, -200], [4, -290], [2, -290]] }],
+    signals: [{ id: 2, x: 0, z: -250, ref: 'YA 1004', direction: 'backward', kinds: ['main'] },
+      { id: 3, x: 0, z: -300, direction: 'forward', kinds: ['main'] },
+      { id: 99, x: 0, z: -270, ref: 'NL 2000', direction: 'forward', kinds: ['train_protection'] }] };
+}
+function privateAnchors(z = -320, reverse = false): AnchorMap {
+  return { area: 'Y9', sources: ['synthetic private'], unmapped: [], anchors: [{ berth: 'PRIVATE', kind: 'inferred',
+    from: reverse ? 4 : 3, to: reverse ? 3 : 4, t: (-300 - z) / 100, point: [0, z], errorM: 5, evidence: 'synthetic only' }] };
+}
+
+test('OSM builder follows way direction raw side tags and strict YA reference prefixes', () => {
+  const result = buildSignalOverlay(builderData(), { raw: [{ type: 'node', id: 2, tags: { 'railway:signal:position': 'right' } }] });
+  assert.equal(result.overlay.signals.length, 3);
+  const [backward, forward, foreign] = result.overlay.signals;
+  assert.equal(backward!.edge.from, 1); assert.equal(backward!.edge.to, 2);
+  close(backward!.travel[0], 0); close(backward!.travel[1], 1); close(backward!.facing[1], -1);
+  assert.equal(backward!.side, 'left'); assert.equal(backward!.sideSource, 'osm'); assert.equal(backward!.berth, '1004');
+  assert.equal(backward!.review, 'osm-ref-match'); assert.equal(forward!.edge.from, 3); assert.equal(forward!.edge.to, 4);
+  close(forward!.travel[1], -1); assert.equal(forward!.side, 'left'); assert.equal(forward!.sideSource, 'assumed-left');
+  assert.equal(foreign!.ref, 'NL 2000'); assert.equal(foreign!.berth, undefined); assert.equal(foreign!.review, 'unreviewed');
+});
+
+test('private builder inputs never alter public overlay JSON or promote public review', () => {
+  const data = builderData(); const plain = buildSignalOverlay(data); const reviewed = buildSignalOverlay(data, { anchors: privateAnchors() });
+  assert.equal(JSON.stringify(reviewed.overlay), JSON.stringify(plain.overlay));
+  assert.equal(JSON.stringify(reviewed.overlay).includes('PRIVATE'), false);
+  const mapped = reviewed.privateReview.signalMappings;
+  assert.equal(mapped.length, 1); assert.equal(mapped[0]!.signalId, 3); assert.equal(mapped[0]!.berth, 'PRIVATE');
+  assert.equal(mapped[0]!.distanceM, 20); assert.equal(mapped[0]!.review, 'topology');
+  assert.equal(reviewed.overlay.signals.find((s) => s.id === 3)!.review, 'unreviewed');
+  const topology = privateAnchors(); topology.anchors[0]!.kind = 'signal'; topology.anchors[0]!.evidence = 'Topology: synthetic directed route';
+  const topologyReview = buildSignalOverlay(data, { anchors: topology });
+  assert.deepEqual(topologyReview.privateReview.signalMappings, mapped);
+  assert.equal(JSON.stringify(topologyReview.overlay), JSON.stringify(plain.overlay));
+  topology.anchors[0]!.evidence = 'OSM signal ref: synthetic';
+  assert.equal(buildSignalOverlay(data, { anchors: topology }).privateReview.signalMappings.length, 0);
+
+});
+
+test('private builder topology requires compatible direction distance and one-to-one identity', () => {
+  const data = builderData();
+  assert.equal(buildSignalOverlay(data, { anchors: privateAnchors(-340) }).privateReview.signalMappings.length, 1);
+  assert.equal(buildSignalOverlay(data, { anchors: privateAnchors(-340.01) }).privateReview.signalMappings.length, 0);
+  assert.equal(buildSignalOverlay(data, { anchors: privateAnchors(-320, true) }).privateReview.signalMappings.length, 0);
+  const extra = structuredClone(data); extra.signals.push({ id: 5, x: 0, z: -310, direction: 'forward', kinds: ['main'] });
+  assert.equal(buildSignalOverlay(extra, { anchors: privateAnchors() }).privateReview.signalMappings.length, 0);
+  const anchors = privateAnchors(); anchors.anchors.push({ ...anchors.anchors[0]!, berth: 'OTHER' });
+  assert.equal(buildSignalOverlay(data, { anchors }).privateReview.signalMappings.length, 0);
+});
+
+
+const snapshot = (data?: Record<string, string>, extra: Record<string, unknown> = {}): SignalEvent => ({ t: 10,
+  e: { kind: 'snapshot', area: 'Y9', berths: {}, ...(data ? { sclass: { addresses: Object.keys(data).length, data } } : {}), ...extra } });
+
+test('live and replay snapshots replace byte state and subsequent SF SG SH continue identically', () => {
+  const live = fixture(), replay = fixture(); live.layer.setTable(table()); replay.layer.setTable(table());
+  const sequence = [row('SF', '00'), snapshot({ '10': '04', '11': '00' }), row('SF', '00'),
+    snapshot({ '10': '04' }), row('SG', '00000000', '0E'), row('SH', '00000400', '0E')].map((event, i) => ({ ...event, t: i * 1000 }));
+  const states = ['danger', 'proceed', 'danger', 'proceed', 'danger', 'proceed'];
+  const timeline = createTimeline({ apply: (e, t) => live.layer.apply({ t, e }), advance: () => {} });
+  const replayFeed = createReplayFeed(sequence as Parameters<typeof createReplayFeed>[0], 1, { apply: (e, t) => replay.layer.apply({ t, e }), advance: () => {} }, () => {});
+  sequence.forEach((event, i) => { timeline.deliver(event.e, event.t); if (i) replayFeed.advance(1);
+    assert.equal(live.drawn.state, states[i]); assert.equal(replay.drawn.state, live.drawn.state); });
+  live.layer.apply(snapshot({ '11': '04' })); assert.equal(live.drawn.state, 'unknown');
+  replayFeed.dispose(); live.layer.dispose(); replay.layer.dispose();
+});
+
+test('empty missing invalid and overlapping snapshots clear stale bytes atomically and foreign snapshots are ignored', () => {
+  const { layer, drawn } = fixture(); layer.setTable(table());
+  const invalid = [snapshot(), snapshot({}), snapshot({ '10': '04', '11': 'bad' }), snapshot({ '10': '04000000' }),
+    snapshot({ '10': '04' }, { sclass: { addresses: 2, data: { '10': '04' } } }),
+    snapshot({ 'A': '04', '0a': '00' }), snapshot({ '10000': '04' }), snapshot({ '10': '04' }, { berths: [] }),
+    snapshot({ '10': '04' }, { sclass: { addresses: 1, data: [] } })];
+  for (const event of invalid) { layer.apply(row()); assert.equal(drawn.state, 'proceed'); layer.apply(event); assert.equal(drawn.state, 'unknown'); }
+  layer.apply(row()); layer.apply(snapshot({}, { area: 'OTHER' })); assert.equal(drawn.state, 'proceed'); layer.dispose();
+});

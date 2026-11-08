@@ -705,6 +705,72 @@ function applyOutsideComponents(map: AnchorMap, observed: Observations, smart: S
   return map;
 }
 
+interface ObservedReach { steps: number; path: string[] }
+interface WithheldPlacement { method: SignalTrial['method']; failure: string }
+
+/** Berth transitions are undirected connectivity evidence here, never a directed route claim. */
+function observedReach(start: string, observed: Observations): Map<string, ObservedReach> {
+  const links = new Map<string, Set<string>>([...observed.seen.keys()].map((berth) => [berth, new Set<string>()]));
+  for (const step of observed.steps.values()) {
+    links.get(step.from)!.add(step.to);
+    links.get(step.to)!.add(step.from);
+  }
+  const reached = new Map<string, ObservedReach>([[start, { steps: 0, path: [start] }]]);
+  const queue = [start];
+  for (let i = 0; i < queue.length; i++) {
+    const berth = queue[i]!;
+    const here = reached.get(berth)!;
+    for (const next of [...(links.get(berth) ?? [])].sort()) {
+      if (reached.has(next)) continue;
+      reached.set(next, { steps: here.steps + 1, path: [...here.path, next] });
+      queue.push(next);
+    }
+  }
+  return reached;
+}
+
+/** Add observed connectivity facts without changing any berth classification or anchor. */
+function addNoEvidenceContext(map: AnchorMap, observed: Observations, smart: SmartRow[], withheld: Map<string, WithheldPlacement>): void {
+  const anchors = new Map(map.anchors.map((a) => [a.berth, a]));
+  const associations = smart.filter((row) => text(row, 'TD') === map.area).flatMap((row) => {
+    const name = text(row, 'STANME');
+    const stanox = text(row, 'STANOX');
+    if (!name && !stanox) return [];
+    return [text(row, 'FROMBERTH'), text(row, 'TOBERTH')].filter(Boolean).map((berth) => ({
+      berth, name: name || 'unnamed station', stanox: stanox || 'unknown',
+    }));
+  });
+
+  for (const item of map.unmapped) {
+    if (item.reason !== 'no-evidence') continue;
+    const reached = observedReach(item.berth, observed);
+    const nearestAnchor = [...anchors.keys()].filter((berth) => reached.has(berth))
+      .map((berth) => ({ berth, ...reached.get(berth)! }))
+      .sort((a, b) => a.steps - b.steps || a.berth.localeCompare(b.berth))[0];
+    const nearestAssociation = associations.filter((association) => reached.has(association.berth))
+      .map((association) => ({ ...association, steps: reached.get(association.berth)!.steps }))
+      .sort((a, b) => a.steps - b.steps || a.name.localeCompare(b.name) || a.stanox.localeCompare(b.stanox) || a.berth.localeCompare(b.berth))[0];
+
+    const facts = nearestAnchor
+      ? [`Shortest observed undirected path to graph anchor ${nearestAnchor.berth}: ${nearestAnchor.path.join(' ↔ ')} (${nearestAnchor.steps} observed steps)`]
+      : ['No observed step path reaches a currently anchored graph berth'];
+    facts.push(nearestAssociation
+      ? `Nearest SMART association: ${nearestAssociation.name} (STANOX ${nearestAssociation.stanox}) at berth ${nearestAssociation.berth} in ${nearestAssociation.steps} observed steps`
+      : 'No SMART station association connects in the observed step graph');
+
+    // Mention a withheld method only when its berth lies on the shortest observed path
+    // to a surviving anchor. Connectivity remains a fact; calibration does not prove a break.
+    if (nearestAnchor) {
+      const relevant = [...new Set(nearestAnchor.path.filter((berth) => withheld.has(berth)))];
+      for (const berth of relevant) {
+        const result = withheld.get(berth)!;
+        facts.push(`Leave-one-out calibration withheld the ${result.method} placement at berth ${berth}: ${result.failure}; this does not establish a break in observed connectivity`);
+      }
+    }
+    item.detail = `${facts.join('. ')}. Unplaced: ${item.detail}`;
+  }
+}
+
 export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart: SmartRow[], options: AnchorOptions = {}): AnchorMap {
   const map = buildMap(data, recordings, smart, options);
   // One or two toy signals cannot calibrate multiple inference families. The real extract has three.
@@ -713,42 +779,33 @@ export function buildAnchors(data: KxData, recordings: RecordingEvent[][], smart
     const berth = /^YA\s*(\d{4})$/i.exec(s.ref ?? '')?.[1];
     return berth && observed.seen.has(berth) && map.anchors.find((a) => a.berth === berth)?.kind !== 'platform';
   });
-  if (options.calibrate === false || references.length < 3) return applyOutsideComponents(map, observed, smart);
+  if (options.calibrate === false || references.length < 3) {
+    addNoEvidenceContext(map, observed, smart, new Map());
+    return applyOutsideComponents(map, observed, smart);
+  }
   const failed = leaveOneOut(data, recordings, smart, options).filter((t) => !t.trusted && t.method !== 'starter');
-  if (!failed.length) return applyOutsideComponents(map, observed, smart);
+  if (!failed.length) {
+    addNoEvidenceContext(map, observed, smart, new Map());
+    return applyOutsideComponents(map, observed, smart);
+  }
   const failures = new Map<SignalTrial['method'], string>();
   for (const trial of failed) failures.set(trial.method,
     `Leave-one-out ${trial.berth}: ${trial.placed ? `${trial.distanceM?.toFixed(1) ?? 'disconnected'} m graph error, direction ${trial.directionOk ? 'compatible' : 'wrong'}` : 'no defensible prediction'} exceeds the 60 m trust criterion`);
+  const withheld = new Map<string, WithheldPlacement>();
   map.anchors = map.anchors.filter((a) => {
     if (a.kind !== 'inferred' && !a.evidence.startsWith('Topology')) return true;
-    const failure = failures.get(inferenceMethod(a)); if (!failure) return true;
+    const method = inferenceMethod(a);
+    const failure = failures.get(method); if (!failure) return true;
+    withheld.set(a.berth, { method, failure });
     map.unmapped.push({ berth: a.berth, reason: 'conflict', seen: observed.seen.get(a.berth) ?? 0,
-      detail: `${failure}; ${inferenceMethod(a)} placement withheld. Candidate evidence: ${a.evidence}` });
+      detail: `${failure}; ${method} placement withheld. Candidate evidence: ${a.evidence}` });
     return false;
   });
   if (failures.has('boundary')) for (const u of map.unmapped) if (u.reason === 'outside-network' && u.detail.includes('north boundary node')) {
     u.reason = 'no-evidence'; u.detail = `${failures.get('boundary')}; boundary extrapolation cannot establish outside status. ${u.detail}`;
   }
-  const withheld = new Map(map.unmapped.filter((u) => u.detail.includes('placement withheld')).map((u) => [u.berth, u.detail.split(';')[0]!]));
-  const links = new Map<string, Set<string>>();
-  for (const step of observe(recordings, map.area).steps.values()) for (const [a, b] of [[step.from, step.to], [step.to, step.from]]) {
-    const adjacent = links.get(a!) ?? new Set<string>(); adjacent.add(b!); links.set(a!, adjacent);
-  }
-  const mapped = new Set(map.anchors.map((a) => a.berth));
-  const external = new Set(map.unmapped.filter((u) => u.reason === 'outside-network').map((u) => u.berth));
-  for (const u of map.unmapped) {
-    if (u.reason !== 'no-evidence' || u.detail.startsWith('Leave-one-out')) continue;
-    const stack = [u.berth]; const visited = new Set<string>();
-    while (stack.length) {
-      const at = stack.pop()!;
-      if (visited.has(at) || mapped.has(at) || external.has(at)) continue;
-      visited.add(at);
-      const failure = withheld.get(at);
-      if (failure) { u.detail = `${failure}; no trusted continuation through ${at}. ${u.detail}`; break; }
-      for (const neighbour of links.get(at) ?? []) stack.push(neighbour);
-    }
-  }
   map.unmapped.sort((a, b) => a.berth.localeCompare(b.berth));
+  addNoEvidenceContext(map, observed, smart, withheld);
   return applyOutsideComponents(map, observed, smart);
 }
 
