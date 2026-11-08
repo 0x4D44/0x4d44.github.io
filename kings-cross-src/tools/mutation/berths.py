@@ -56,7 +56,19 @@ M = [
     ('calibration withholding bypassed', 'source_replace', ('if (options.calibrate === false || references.length < 3)', 'if (true || options.calibrate === false || references.length < 3)')),
     ('directed routes replaced with unconstrained shortest path', 'source_replace', ('function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null {', 'function directedRoute(g: Graph, a: BerthAnchor, b: BerthAnchor): TrackPath | null { return routeBetween(g, a, b);')),
     ('all evidence discarded', 'build', "result.anchors=[];result.unmapped=[];"),
-    ('step analysis discarded', 'analyse', "result=[];"),
+    ('step analysis discarded', 'analyse', "result=result.map(c=>({...c,lengthM:0,seconds:0,speedMps:0,count:0,timed:0,reversal:false,issues:[]}));"),
+    ('outside component anchor guard removed', 'source_replace', ('if (component.some((b) => anchored.has(b))) continue;', '')),
+    ('unknown SMART seeds outside components', 'source_replace', ("text(row, 'TD') !== map.area || !isOutside(row)", "text(row, 'TD') !== map.area")),
+    ('outside components use directed links', 'source_replacements', [
+        ('links.get(step.to)!.add(step.from);', ''),
+        ('const source = reached.get(berth)!;', 'const source = reached.get(berth); if (!source) continue;'),
+    ]),
+    ('outside component hop distance doubled', 'source_replace', ('steps: current.steps + 1', 'steps: current.steps + 2')),
+    ('outside component seed distance starts at one', 'source_replace', ('{ ...source, steps: 0 }', '{ ...source, steps: 1 }')),
+    ('outside component details invent seed identity', 'source_replace', ('${source.location} at berth ${source.berth}', 'Invented Town at berth XXXX')),
+    ('outside component geography overrides conflicts', 'source_replace', ("if (!item || item.reason === 'conflict') continue;", 'if (!item) continue;')),
+    ('outside component processing omitted before calibration bypass', 'source_replace', ('if (options.calibrate === false || references.length < 3) return applyOutsideComponents(map, observed, smart);', 'if (options.calibrate === false || references.length < 3) return map;')),
+    ('outside component processing omitted after calibration', 'source_replace', ('return applyOutsideComponents(map, observed, smart);\n}\n\nfunction originalAnalyse', 'return map;\n}\n\nfunction originalAnalyse')),
 ]
 
 PRELUDE = '''
@@ -79,6 +91,15 @@ export function analyseSteps(...args: Parameters<typeof originalAnalyse>): Retur
 def run(work):
     return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths.test.ts'],
                           cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30)
+
+def assertion_failures(output):
+    failures = set()
+    for block in re.split(r'(?=^not ok \d+ - )', output, flags=re.M)[1:]:
+        block = re.split(r'^(?:ok \d+ - |# Subtest:|1\.\.)', block, maxsplit=1, flags=re.M)[0]
+        name = re.match(r'not ok \d+ - (berths: [^\n]+)', block)
+        if name and re.search(r"^\s+code: ['\"]?ERR_ASSERTION", block, re.M):
+            failures.add(name[1])
+    return failures
 
 killed = 0
 observed = set()
@@ -107,13 +128,14 @@ with tempfile.TemporaryDirectory(prefix='berths-mutations-', dir=scratch) as tem
                 print(f'[INVALID] {label}: internal guard missing', flush=True)
                 continue
             changed = changed.replace(mutation, '', 1)
-        if phase == 'source_replace':
-            old, new = mutation
-            if old not in changed:
+        if phase in ('source_replace', 'source_replacements'):
+            replacements = [mutation] if phase == 'source_replace' else mutation
+            if any(old not in changed for old, _ in replacements):
                 survivors.append(label)
                 print(f'[INVALID] {label}: internal source pattern missing', flush=True)
                 continue
-            changed = changed.replace(old, new, 1)
+            for old, new in replacements:
+                changed = changed.replace(old, new, 1)
         (work / 'core/berths.ts').write_text(changed + wrapper)
         try:
             result = run(work)
@@ -121,8 +143,10 @@ with tempfile.TemporaryDirectory(prefix='berths-mutations-', dir=scratch) as tem
             survivors.append(label)
             print(f'[INVALID] {label}: timed out', flush=True)
             continue
-        failed = set(re.findall(r'^not ok \d+ - (berths: .+)$', result.stdout, re.M))
-        if failed:
+        failed = assertion_failures(result.stdout)
+        named_failures = set(re.findall(r'^not ok \d+ - (berths: .+)$', result.stdout, re.M))
+        complete = re.search(r'^# tests (\d+)$', result.stdout, re.M)
+        if failed and failed == named_failures and complete and int(complete[1]) == len(expected) and not result.stderr:
             killed += 1
             observed.update(failed)
             print(f'[KILLED] {label}', flush=True)

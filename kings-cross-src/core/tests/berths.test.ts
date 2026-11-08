@@ -103,7 +103,7 @@ test('berths: branched observed chains remain unplaced', () => {
   reason(map, '2101', 'no-evidence');
 });
 
-test('berths: outside SMART endpoints propagate only until strong or in-network evidence', () => {
+test('berths: outside SMART endpoints retain anchored boundaries while station-only components become outside', () => {
   const d = data(); signal(d, 10, 'YA 2202', 50);
   const rows = [{ TD: 'Y9', FROMBERTH: '2200', TOBERTH: '2201', STANOX: '54238' },
     { TD: 'Y9', FROMBERTH: '2204', TOBERTH: '2205', STANOX: '54311', PLATFORM: '' }];
@@ -111,7 +111,8 @@ test('berths: outside SMART endpoints propagate only until strong or in-network 
   reason(map, '2200', 'outside-network'); reason(map, '2201', 'outside-network');
   assert.equal(anchor(map, '2202').kind, 'signal');
   assert.notEqual(map.unmapped.find((u) => u.berth === '2203')?.reason, 'outside-network');
-  assert.notEqual(map.unmapped.find((u) => u.berth === '2206')?.reason, 'outside-network');
+  reason(map, '2206', 'outside-network');
+  assert.match(map.unmapped.find((u) => u.berth === '2206')!.detail, /observed.*component/i);
 });
 
 test('berths: missing or unknown SMART location is no evidence of outside geography', () => {
@@ -331,4 +332,66 @@ test('berths: directed routing finds a longer compatible route when the shortest
   const c = analyseSteps(d, [[event('step', 'A', 'B')]], map)[0]!;
   assert.equal(c.reversal, false); assert.equal(c.issues.some((s) => /revers/i.test(s)), false);
   near(c.lengthM!, 500);
+});
+
+function outsideComponentRows() {
+  return [
+    { TD: 'Y9', FROMBERTH: '6400', TOBERTH: '', STANOX: '54311', STANME: 'KINGS CROSS' },
+    { TD: 'Y9', FROMBERTH: '6402', TOBERTH: '', STANOX: '', STANME: 'MORGAT' },
+    { TD: 'Y9', FROMBERTH: '6405', TOBERTH: '', STANOX: '54238', STANME: 'FINSBURY PARK' },
+  ];
+}
+function outsideComponentSteps(): RecordingEvent[] {
+  // Both seeds are reachable only against one arrow; the longer branch is listed first.
+  return [event('step', '6400', '6403'), event('step', '6403', '6404'), event('step', '6405', '6404'),
+    event('step', '6400', '6401'), event('step', '6402', '6401')];
+}
+
+test('berths: unanchored observed component overrides station association and reports the nearest actual outside seed', () => {
+  for (const options of [{}, { calibrate: false }]) {
+    const map = buildAnchors(data(), [outsideComponentSteps()], outsideComponentRows(), options);
+    for (const b of ['6400', '6401', '6402', '6403', '6404', '6405']) reason(map, b, 'outside-network');
+    const detail = map.unmapped.find((u) => u.berth === '6400')!.detail;
+    assert.match(detail, /observed.*component/i); assert.match(detail, /MORGAT/);
+    assert.match(detail, /6402/); assert.match(detail, /2 (?:observed steps|(?:step )?hops?)/i);
+    assert.doesNotMatch(detail, /FINSBURY PARK/);
+    const seed = map.unmapped.find((u) => u.berth === '6402')!.detail;
+    assert.match(seed, /6402/); assert.match(seed, /0 (?:observed steps|(?:step )?hops?)/i);
+  }
+});
+
+test('berths: component outside rule preserves anchors and never floods around an anchor into another branch', () => {
+  const d = data(); signal(d, 1, 'YA 6500', 30);
+  const base = anchor(buildAnchors(d, seen('6500'), []), '6500');
+  const rows = outsideComponentRows().concat({ TD: 'Y9', FROMBERTH: '6501', TOBERTH: '', STANOX: '', STANME: 'MORGAT' });
+  const steps = outsideComponentSteps().concat(event('step', '6500', '6501'), event('step', '6500', '6502'), event('step', '6501', '6503'), event('step', '6503', '6502'));
+  const map = buildAnchors(d, [steps], rows);
+  assert.deepEqual(anchor(map, '6500'), base);
+  reason(map, '6502', 'no-evidence'); // An alternate path avoids the anchor but is in its component.
+  reason(map, '6400', 'outside-network');
+});
+
+test('berths: unknown SMART locations and placeholder links cannot seed or join outside components', () => {
+  const d = data(); signal(d, 1, 'YA 6500', 30);
+  const rows = outsideComponentRows().concat(
+    { TD: 'Y9', FROMBERTH: '6600', TOBERTH: '', STANOX: '99999', STANME: 'INVENTED TOWN' },
+    { TD: 'Y9', FROMBERTH: '6601', TOBERTH: '', STANOX: '54311', STANME: 'KINGS CROSS' },
+    { TD: 'XX', FROMBERTH: '6601', TOBERTH: '', STANOX: '', STANME: 'MORGAT' });
+  const steps = outsideComponentSteps().concat(event('step', '6600', '6601'),
+    event('step', '6402', '6601', 0, '****'), event('step', '6400', '6500', 0, '****'));
+  const map = buildAnchors(d, [steps], rows);
+  reason(map, '6600', 'no-evidence'); reason(map, '6601', 'no-evidence');
+  reason(map, '6400', 'outside-network'); // Placeholder connection to an anchor does not protect this component.
+  assert.equal(anchor(map, '6500').kind, 'signal');
+});
+
+test('berths: final component processing runs after calibration and preserves geographic and withheld conflicts', () => {
+  const { d, recordings } = branchFixture();
+  signal(d, 20, 'YA 6700', 0); signal(d, 21, 'YA6700', 1000);
+  const rows = outsideComponentRows().concat({ TD: 'Y9', FROMBERTH: '6700', TOBERTH: '', STANOX: '', STANME: 'MORGAT' });
+  recordings[0]!.push(...outsideComponentSteps(), event('step', '6700', '6400'));
+  const map = buildAnchors(d, recordings, rows);
+  reason(map, '3002', 'conflict'); assert.match(map.unmapped.find((u) => u.berth === '3002')!.detail, /placement withheld/);
+  reason(map, '6700', 'conflict'); assert.match(map.unmapped.find((u) => u.berth === '6700')!.detail, /disagree/);
+  reason(map, '6400', 'outside-network');
 });
