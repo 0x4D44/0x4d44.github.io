@@ -3,10 +3,10 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createReplayFeed, createTimeline } from '../src/feed.ts';
 import { buildSignalOverlay } from '../../tools/build-signals.ts';
-import type { KxData } from '../../core/osm.ts';
+import type { KxData, Platform } from '../../core/osm.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import type { Graph } from '../../core/graph.ts';
-import { createSignals } from '../src/signals.ts';
+import { createSignals, platformStarter } from '../src/signals.ts';
 import type { OverlaySignal, SignalEvent } from '../src/signals.ts';
 import type { TimedTdEvent } from '../../core/sclass.ts';
 
@@ -40,6 +40,63 @@ function nearbySignal(extra: Partial<OverlaySignal> = {}): OverlaySignal {
 const row = (msgType = 'SF', data = '04', address = '10', area = 'Y9'): TimedTdEvent => ({ t: 1, e: { kind: 'sclass', area, msgType, data, address } });
 const aspect = (group: THREE.Group) => (group.getObjectByName('aspect') as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>).material.color.getHex();
 const close = (x: number, y: number) => assert.ok(Math.abs(x - y) < 1e-9, `${x} != ${y}`);
+
+const starterPlatform: Platform = { id: 77, ref: '4', pts: [[2, -180], [12, -180], [12, -300], [2, -300]] };
+const bufferAnchor = (): BerthAnchor => tdAnchor('TD1', { kind: 'platform', platform: '4', from: 1, to: 2, t: 1, point: [0, -180] });
+function starterGraph(): Pick<Graph, 'pos' | 'edges'> {
+  const pos = new Map<number, [number, number]>([[1, [0, -230]], [2, [0, -180]], [3, [4, -280]], [4, [8, -340]]]);
+  const edges = [[1, 2], [1, 3], [3, 4]].map(([a, b]) => ({ a: a!, b: b!, length: Math.hypot(pos.get(a!)![0] - pos.get(b!)![0], pos.get(a!)![1] - pos.get(b!)![1]), wayId: 7, tunnel: false, service: 'main' as const }));
+  return { pos, edges };
+}
+
+test('platform starters follow their own rail to the north end and face departing drivers', () => {
+  const graph = starterGraph(), anchor = bufferAnchor();
+  const starter = platformStarter(anchor, graph, starterPlatform);
+  assert.ok(starter); close(starter.point[0], 4 + 4 / 3); close(starter.point[1], -300);
+  assert.equal(starter.from, 3); assert.equal(starter.to, 4); close(starter.t, 1 / 3);
+  assert.deepEqual(anchor.point, [0, -180]);
+  const scene = new THREE.Scene(), layer = createSignals({ attribution: 'synthetic', signals: [] }, scene, { platforms: [starterPlatform] });
+  layer.setAnchors(tdMap([anchor]), graph); layer.setTable(tableFor('TD1')); layer.apply(row());
+  const head = inferred(layer)[0]; assert.ok(head); assert.equal(head.state, 'proceed');
+  close(head.signal.edge.point[0], starter.point[0]); close(head.signal.edge.point[1], starter.point[1]);
+  assert.ok(head.signal.travel[1] < 0, 'departure runs north instead of into the buffers');
+  const facing = new THREE.Vector3(0, 0, 1).applyEuler(head.group.rotation);
+  close(facing.x, -head.signal.travel[0]); close(facing.z, -head.signal.travel[1]);
+  close(head.group.position.x, starter.point[0] + 2 * head.signal.travel[1]);
+  close(head.group.position.z, starter.point[1] - 2 * head.signal.travel[0]);
+  assert.match(head.label, /platform departure end.*position inferred from TD/); layer.dispose();
+  const long = starterGraph(); long.pos.set(1, [0, -580]); long.edges = [long.edges[0]!];
+  const alongOneLongEdge = platformStarter(anchor, long, starterPlatform);
+  assert.ok(alongOneLongEdge); close(alongOneLongEdge.point[1], -300);
+});
+
+test('platform starters without trustworthy north-end geometry are omitted instead of using buffers', () => {
+  const graph = starterGraph(), anchor = bufferAnchor();
+  assert.equal(platformStarter(anchor, graph, undefined), undefined);
+  assert.equal(platformStarter(anchor, { pos: graph.pos }, starterPlatform), undefined);
+  assert.equal(platformStarter(anchor, { ...graph, edges: [graph.edges[0]!] }, starterPlatform), undefined);
+  assert.equal(platformStarter(anchor, graph, { ...starterPlatform, tunnel: true }), undefined);
+  const displaced: Platform = { ...starterPlatform, pts: starterPlatform.pts.map(([x, z]) => [x, z - 40]) };
+  assert.equal(platformStarter(anchor, graph, displaced), undefined);
+  const fork = starterGraph(); fork.pos.set(5, [-4, -280]);
+  fork.edges.push({ ...fork.edges[1]!, b: 5 });
+  assert.equal(platformStarter(anchor, fork, starterPlatform), undefined);
+  const sideways = starterGraph(); sideways.pos.set(3, [50, -280]); sideways.pos.set(4, [80, -340]);
+  assert.equal(platformStarter(anchor, sideways, starterPlatform), undefined);
+  const layer = createSignals({ attribution: 'synthetic', signals: [] }, new THREE.Scene(), { platforms: [] });
+  layer.setAnchors(tdMap([anchor]), graph); layer.setTable(tableFor('TD1')); layer.apply(row());
+  assert.equal(inferred(layer).length, 0); layer.dispose();
+});
+
+test('platform starters reuse an OSM head beside their north-end track', () => {
+  const graph = starterGraph(), direction: [number, number] = [4 / Math.hypot(4, 60), -60 / Math.hypot(4, 60)];
+  const candidate = signal({ ref: undefined, berth: undefined, direction: 'forward', travel: direction, facing: [-direction[0], -direction[1]],
+    edge: { wayId: 7, from: 3, to: 4, t: 1 / 3, point: [4 + 4 / 3, -300] } });
+  const layer = createSignals({ attribution: 'synthetic', signals: [candidate] }, new THREE.Scene(), { platforms: [starterPlatform] });
+  layer.setTable(tableFor('TD1')); layer.setAnchors(tdMap([bufferAnchor()]), graph); layer.apply(row());
+  assert.equal(records(layer)[0]!.state, 'proceed'); assert.equal(records(layer)[0]!.mappingSource, 'nearby');
+  assert.equal(inferred(layer).length, 0); layer.dispose();
+});
 
 test('posts sit two metres to their side of travel and the head faces oncoming traffic', () => {
   const { layer } = fixture([signal(), signal({ id: 2, side: 'right' })]);

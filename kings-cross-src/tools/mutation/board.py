@@ -108,11 +108,28 @@ FM = [
     ('London schedule date uses UTC', [("timeZone: 'Europe/London'", "timeZone: 'UTC'")]),
     ('replay imports live actuals', [("doc.calls.map(call => ({ ...call, realtime: null }))", 'doc.calls')]),
     ('buffered TRUST replay omitted', [('for (const row of observed) calls = applyBoardTrust(calls, row.event);', 'for (const row of []) calls = calls;')]),
-    ('missing timetable retry too slow', [('calls ? 60_000 : 5_000', '60_000')]),
+    ('missing timetable retry too slow', [('calls ? 60_000 : Math.min(5_000 * 2 ** Math.max(0, misses - 1), 300_000)', '60_000')]),
     ('schedule host gate omitted', [('disposed || !relayReachable(options.hostname)', 'disposed')]),
     ('schedule dispose leaves timer', [('dispose(): void { disposed = true; abort.abort(); if (timer !== undefined) unschedule(timer); }', 'dispose(): void { disposed = true; abort.abort(); }')]),
 ]
 M.append(('stale TRUST overwrites newer fact', [('e.receivedAtMs < s.realtime.updatedAtMs', 'false')]))
+M.extend([
+    ('operator column truncates names', [('max-width:92px', 'max-width:60px')]),
+    ('approach uses platform row renderer', [('rows.approaching.map(approachHtml)', "rows.approaching.map(r => trainHtml(r, '', rows.timeMs))")]),
+    ('approach distance rounds to whole kilometres', [('(distanceM / 1000).toFixed(1)', '(distanceM / 1000).toFixed(0)')]),
+    ('approach origin becomes destination', [('stationName(row.service.originName || row.service.origin)', 'stationName(row.service.destinationName || row.service.destination)')]),
+    ('approach fabricates unknown platform', [("if (!sorted.length) return 'P?';", "if (!sorted.length) return 'P0';")]),
+    ('approach stock exposes depot', [("stockCall(row.service, 'arrival') ? 'empty stock'", "stockCall(row.service, 'arrival') ? row.service.originName || row.service.origin")]),
+    ('approach route tooltip unescaped', [('<div class="kx-board-approach" title="${escape(title)}">', '<div class="kx-board-approach" title="${title}">')]),
+    ('approach facts lose fixed columns', [('grid-template-columns:32px 12px 56px 56px minmax(0,1fr)', 'grid-template-columns:32px 12px minmax(0,1fr)')]),
+    ('approach platform candidates overflow cell', [('full.length > 10', 'full.length > 100')]),
+    ('approach tooltip hides full platform candidates', [('platformTooltip = platformRangeLabel(candidates)', 'platformTooltip = platformLabel(candidates)')]),
+    ('approach direction arrow omitted', [('<span class="kx-board-arrow">→</span>', '<span class="kx-board-arrow"></span>')]),
+    ('departure uses platform row renderer', [('departureHtml(r, rows.timeMs)', "trainHtml(r, '', rows.timeMs)")]),
+    ('departure facts lose fixed columns', [('grid-template-columns:32px 28px 12px 42px minmax(0,1fr)', 'grid-template-columns:32px 28px minmax(0,1fr)')]),
+    ('departure clock creeps with current time', [('validClock(row.leftAtMs) ? clock(row.leftAtMs)', 'validClock(row.leftAtMs) ? clock(nowMs)')]),
+    ('departure exposes future actual', [('validClock(actual) && actual <= nowMs ?', 'validClock(actual) ?')]),
+])
 MUTATIONS = [(F, label, changes) for label, changes in M] + [('web/src/feed.ts', label, changes) for label, changes in FM]
 
 

@@ -3,6 +3,66 @@ import { qualifiesSignalEvidence, signalStates, updateBytes } from '../../core/s
 import type { ByteState, SignalEvidence, SignalHypothesis, SignalState, TimedTdEvent } from '../../core/sclass.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import type { Graph } from '../../core/graph.ts';
+import { isSurfacePlatform, longAxis, platformSouthEnd, stationPlatforms } from '../../core/station.ts';
+import type { KxData, Platform } from '../../core/osm.ts';
+import type { Pt } from '../../core/geo.ts';
+import trackData from './data/kx-track.json' with { type: 'json' };
+
+type SignalGraph = Pick<Graph, 'pos'> & Partial<Pick<Graph, 'edges'>>;
+
+/** Follow the buffer's own rail to the OSM platform's north-end plane, not a nearby line. */
+export function platformStarter(anchor: BerthAnchor, graph: SignalGraph, platform: Platform | undefined): BerthAnchor | undefined {
+  if (!platform || !isSurfacePlatform(platform) || platform.pts.length < 3 || platform.pts.some(p => p.length !== 2 || !p.every(Number.isFinite))) return;
+  const shape = longAxis(platform.pts);
+  if (!Number.isFinite(shape.length) || shape.length < 30 || shape.length <= shape.width * 2) return;
+  const axis: Pt = shape.axis[1] > 0 ? [-shape.axis[0], -shape.axis[1]] : shape.axis;
+  if (axis[1] > -.5) return;
+  const dot = (point: Pt): number => point[0] * axis[0] + point[1] * axis[1];
+  const north = Math.max(...platform.pts.map(dot));
+  const south = platformSouthEnd(platform.pts);
+  if (Math.hypot(anchor.point[0] - south[0], anchor.point[1] - south[1]) > 30 || north - dot(anchor.point) < 30) return;
+  const edges = graph.edges ?? [];
+  const first = edges.find(e => !e.tunnel && ((e.a === anchor.from && e.b === anchor.to) || (e.a === anchor.to && e.b === anchor.from)));
+  if (!first) return;
+  const from = graph.pos.get(anchor.from), to = graph.pos.get(anchor.to);
+  if (!from || !to) return;
+  let edge = first, point = anchor.point;
+  let node = dot(from) > dot(to) ? anchor.from : anchor.to;
+  let behind = node === anchor.from ? anchor.to : anchor.from;
+  let distance = 0;
+  const visited = new Set<typeof first>();
+  while (!visited.has(edge)) {
+    visited.add(edge);
+    const next = graph.pos.get(node), start = graph.pos.get(behind);
+    if (!next || !start) return;
+    const advance = dot(next) - dot(point), length = Math.hypot(next[0] - point[0], next[1] - point[1]);
+    if (advance < -1e-6 || distance > shape.length + 60) return;
+    if (advance > 0 && dot(next) >= north) {
+      const fraction = (north - dot(point)) / advance;
+      if (distance + length * fraction > shape.length + 60) return;
+      const stop: Pt = [point[0] + (next[0] - point[0]) * fraction, point[1] + (next[1] - point[1]) * fraction];
+      const across = (p: Pt): number => p[0] * -axis[1] + p[1] * axis[0];
+      const sides = platform.pts.map(across), lateral = across(stop);
+      if (lateral < Math.min(...sides) - 10 || lateral > Math.max(...sides) + 10 || next[1] >= start[1]) return;
+      const length2 = (next[0] - start[0]) ** 2 + (next[1] - start[1]) ** 2;
+      const t = ((stop[0] - start[0]) * (next[0] - start[0]) + (stop[1] - start[1]) * (next[1] - start[1])) / length2;
+      return { ...anchor, from: behind, to: node, t, point: stop, evidence: `${anchor.evidence}; starter inferred at OSM platform north end` };
+    }
+    distance += length;
+    const incoming: Pt = [next[0] - start[0], next[1] - start[1]];
+    const norm = Math.hypot(...incoming);
+    const onward = edges.filter(e => e !== edge && !e.tunnel && !visited.has(e) && (e.a === node || e.b === node)).flatMap(e => {
+      const other = e.a === node ? e.b : e.a, target = graph.pos.get(other);
+      if (!target || dot(target) <= dot(next) || target[1] >= next[1]) return [];
+      const dx = target[0] - next[0], dz = target[1] - next[1];
+      const alignment = (incoming[0] * dx + incoming[1] * dz) / (norm * Math.hypot(dx, dz));
+      return alignment >= .7 ? [{ edge: e, other, alignment }] : [];
+    }).sort((a, b) => b.alignment - a.alignment);
+    // A fork without a clearly straighter continuation cannot identify this platform's rail.
+    if (!onward.length || onward[1] && onward[0]!.alignment - onward[1].alignment < .1) return;
+    point = next; behind = node; node = onward[0]!.other; edge = onward[0]!.edge;
+  }
+}
 
 export interface OverlaySignal {
   id: number;
@@ -75,14 +135,15 @@ function validated(value: unknown, area: string): SignalHypothesis[] {
 
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
 export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
-  options: { fetchImpl?: typeof fetch; area?: string } = {}) {
+  options: { fetchImpl?: typeof fetch; area?: string; platforms?: readonly Platform[] } = {}) {
   const area = options.area ?? 'Y9';
   const records: DrawnSignal[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const lamps = new Map<DrawnSignal, THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>();
   const questions = new Map<DrawnSignal, THREE.Group>();
   let bytes: ByteState = {}, table: SignalHypothesis[] = [], disposed = false, generation = 0;
-  let tableValue: unknown, privateAnchors: AnchorMap | undefined, anchorGraph: Pick<Graph, 'pos'> | undefined;
+  let tableValue: unknown, privateAnchors: AnchorMap | undefined, anchorGraph: SignalGraph | undefined;
+  const platforms = stationPlatforms({ platforms: [...(options.platforms ?? (trackData as unknown as KxData).platforms)] });
   const anchors: AnchorMap = { area, sources: [overlay.attribution], anchors: [], unmapped: [] };
   const directAnchors: AnchorMap['anchors'] = [];
   const directBerths = new Map<DrawnSignal, string>();
@@ -208,7 +269,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       const matches = osm.filter(r => !runtimeBerths.has(r) && signalRefBerth(r.signal.ref) === anchor.berth);
       if (matches.length === 1) bind(matches[0]!, anchor, 'reference');
     }
-    const proposals = eligible.filter(a => !bound(a)).map(anchor => {
+    const located = eligible.filter(a => !bound(a)).flatMap(anchor => {
+      if (anchor.kind !== 'platform') return [anchor];
+      const ref = anchor.platform ?? (/^10\d{2}$/.test(anchor.berth) ? String(Number(anchor.berth) - 1000) : undefined);
+      const starter = platformStarter(anchor, anchorGraph!, ref === undefined ? undefined : platforms.get(ref));
+      return starter ? [starter] : [];
+    });
+    const proposals = located.map(anchor => {
       const direction = heading(anchor);
       const candidates = osm.filter(record => {
         const s = record.signal;
@@ -225,7 +292,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       if (proposal.candidates.length === 1 && proposals.filter(p => p.candidates.includes(candidate!)).length === 1)
         bind(candidate!, proposal.anchor, 'nearby');
     }
-    const inferred = eligible.filter(a => !bound(a));
+    const inferred = located.filter(a => !bound(a));
     for (const [berth, record] of inferredHeads) if (!inferred.some(a => a.berth === berth)) removeInferred(berth, record);
     for (const anchor of inferred) {
       const travel = heading(anchor), old = inferredHeads.get(anchor.berth);
@@ -233,6 +300,9 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
         edge: { wayId: 0, from: anchor.from, to: anchor.to, t: anchor.t, point: [...anchor.point] },
         travel, facing: [-travel[0], -travel[1]], side: 'left', sideSource: 'assumed-left', berth: anchor.berth, review: 'unreviewed' };
       const record = old ?? makeHead(signal, true); record.signal = signal; pose(signal, record.group);
+      record.label = `Signal ${anchor.berth} · ${anchor.kind === 'platform' ? 'platform departure end · ' : ''}position inferred from TD`;
+      record.group.userData.label = record.label; record.group.name = record.label;
+      record.group.userData.platformStarter = anchor.kind === 'platform';
       inferredHeads.set(anchor.berth, record); bind(record, anchor, 'td-anchor');
     }
   }
@@ -272,7 +342,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       refresh();
     },
     reset(): void { bytes = {}; refresh(); },
-    setAnchors(map: AnchorMap, graph: Pick<Graph, 'pos'>): void {
+    setAnchors(map: AnchorMap, graph: SignalGraph): void {
       if (disposed) return;
       privateAnchors = map?.area === area && Array.isArray(map.anchors) ? structuredClone(map) : undefined;
       anchorGraph = graph;

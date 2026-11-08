@@ -50,6 +50,15 @@ M = [
     ('TD inferred label omitted', [('position inferred from TD', 'position unavailable')]),
     ('TD inferred post opaque', [('material.opacity = 0.45', 'material.opacity = 1')]),
     ('TD inferred ring omitted', [("ring.name = 'inferred-position'", "ring.name = 'position'" )]),
+    ('platform starter left at buffers', [('const starter = platformStarter(anchor, anchorGraph!, ref === undefined ? undefined : platforms.get(ref));', 'const starter = anchor;')]),
+    ('missing platform geometry falls back to buffers', [('return starter ? [starter] : [];', 'return starter ? [starter] : [anchor];')]),
+    ('platform starter uses south end', [('const north = Math.max(...platform.pts.map(dot));', 'const north = Math.min(...platform.pts.map(dot));')]),
+    ('platform starter faces into buffers', [('return { ...anchor, from: behind, to: node, t, point: stop,', 'return { ...anchor, from: node, to: behind, t: 1 - t, point: stop,')]),
+    ('platform starter chooses ambiguous fork', [('!onward.length || onward[1] && onward[0]!.alignment - onward[1].alignment < .1', '!onward.length')]),
+    ('platform starter accepts underground platform', [('!isSurfacePlatform(platform) || ', '')]),
+    ('platform starter rejects long containing edge', [('distance + length * fraction > shape.length + 60', 'distance + length > shape.length + 60')]),
+    ('platform starter uses unrelated platform', [('Math.hypot(anchor.point[0] - south[0], anchor.point[1] - south[1]) > 30 || ', '')]),
+    ('platform starter ignores lateral divergence', [('lateral < Math.min(...sides) - 10 || lateral > Math.max(...sides) + 10 || ', '')]),
     ('TD route hypotheses create heads', [("const proceedBerths = new Set(table.filter(h => (h.kind ?? 'proceed') === 'proceed' && h.status === 'decoded' &&", "const proceedBerths = new Set(table.filter(h => true && h.status === 'decoded' &&")]),
     ('TD unknown hypotheses create heads', [("h.status === 'decoded' &&\n      qualifiesSignalEvidence(h.training)", "true &&\n      qualifiesSignalEvidence(h.training)")]),
     ('unqualified TD hypotheses create heads', [('qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut)).map(h => h.berth)', 'true).map(h => h.berth)')]),
@@ -104,6 +113,8 @@ survivors = []
 try:
     shutil.copytree(src / 'core', root / 'core')
     (root / 'web/src').mkdir(parents=True)
+    (root / 'web/src/data').mkdir()
+    shutil.copy2(src / 'web/src/data/kx-track.json', root / 'web/src/data/kx-track.json')
     (root / 'web/tests').mkdir(parents=True)
     shutil.copy2(src / 'web/src/board.ts', root / 'web/src/board.ts')
     shutil.copy2(src / 'web/src/feed.ts', root / 'web/src/feed.ts')

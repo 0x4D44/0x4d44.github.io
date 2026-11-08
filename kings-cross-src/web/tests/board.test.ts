@@ -485,3 +485,65 @@ test('TRUST actual and signed variation appear only once actual time is reached'
   const departure = boardHtml(boardRows([held], map, { nowMs: bookedAt + 12 * 60_000, services: [service({ arrival: null, arrivalMs: null, publicArrival: null, publicArrivalMs: null, realtime: { eventType: 'DEPARTURE', actualDepartureMs: bookedAt + 12 * 60_000, variationMinutes: 2 } })] }));
   assert.match(departure, /actual 10:12/i);
 });
+
+test('approaching rows keep headcode platform distance and origin in compact columns', () => {
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [] });
+  rows.approaching.push({ trainId: 41, headcode: '2Z41', state: 'approaching', platforms: [9], distanceM: 1100,
+    service: service({ headcode: '2Z41', originName: 'Cambridge', destinationName: "King's Cross" }) });
+  rows.approaching.push({ trainId: 42, headcode: '1Z42', state: 'approaching', platforms: [0, 1, 2, 3, 4, 5, 6, 7, 8], distanceM: 640,
+    service: service({ headcode: '1Z42', originName: 'Peterborough' }) });
+  rows.approaching.push({ trainId: 43, headcode: '1Z43', state: 'approaching', platforms: [0, 2, 4, 6, 8], distanceM: 300,
+    service: service({ headcode: '1Z43', originName: 'Ely' }) });
+  const html = boardHtml(rows);
+  assert.match(html, /class="kx-board-approach" title="2Z41 → P9 · 1\.1 km · Cambridge"/);
+  assert.match(html, /<strong>2Z41<\/strong><span class="kx-board-arrow">→<\/span><span>P9<\/span><span>1\.1 km<\/span><span class="kx-board-route">Cambridge<\/span>/);
+  assert.match(html, /class="kx-board-approach" title="1Z42 → P0–P8 · 0\.6 km · Peterborough"/);
+  assert.match(html, /class="kx-board-approach" title="1Z43 → P0, P2, P4, P6, P8 · 0\.3 km · Ely"/);
+  assert.match(html, /<strong>1Z43<\/strong><span class="kx-board-arrow">→<\/span><span>P0 \+4<\/span><span>0\.3 km<\/span><span class="kx-board-route">Ely<\/span>/);
+  const doc = new FakeDocument(), parent = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement);
+  const css = parent.children[0]!.children[0]!.textContent;
+  assert.match(css, /\.kx-board-approach\{[^}]*grid-template-columns:[^;]*32px 12px 56px 56px minmax\(0,1fr\)/);
+  controller.dispose();
+});
+
+test('unknown approach facts use placeholders and stock calls hide depot routes', () => {
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [] });
+  rows.approaching.push({ trainId: 50, headcode: '5Z50', state: 'approaching',
+    service: service({ headcode: '5Z50', originName: 'SYN DEPOT', destinationName: 'SYN DEPOT', publicArrival: null, publicArrivalMs: null }) });
+  rows.approaching.push({ trainId: 51, headcode: '2Z51', state: 'approaching' });
+  const html = boardHtml(rows);
+  assert.match(html, /class="kx-board-approach" title="5Z50 → P\? · — · empty stock"/);
+  assert.match(html, /class="kx-board-approach" title="2Z51 → P\? · — · —"/);
+  assert.doesNotMatch(html, /SYN DEPOT/);
+});
+
+test('departed rows show the observed clock unless a past TRUST actual departure is available', () => {
+  const observed = Date.parse('2026-11-09T18:02:00Z');
+  const nowMs = Date.parse('2026-11-09T18:05:00Z');
+  const rows = boardRows([], anchors([]), { nowMs, services: [] });
+  rows.departed.push({ trainId: 90, headcode: '1Z90', state: 'leaving', platform: 3, leftAtMs: observed,
+    service: service({ headcode: '1Z90', destinationName: 'Newcastle', realtime: { eventType: 'DEPARTURE', actualDepartureMs: Date.parse('2026-11-09T18:01:00Z') } }) });
+  rows.departed.push({ trainId: 91, headcode: '1Z91', state: 'leaving', platform: 4, leftAtMs: observed,
+    service: service({ headcode: '1Z91', destinationName: 'York', realtime: { eventType: 'DEPARTURE', actualDepartureMs: nowMs + 60_000 } }) });
+  rows.departed.push({ trainId: 92, headcode: '1Z92', state: 'leaving' });
+  const html = boardHtml(rows);
+  assert.match(html, /class="kx-board-departure" title="1Z90 P3 → · TRUST actual 18:01 · Newcastle"/);
+  assert.match(html, /<strong>1Z90<\/strong><span>P3<\/span><span class="kx-board-arrow">→<\/span><span>18:01<\/span><span class="kx-board-route">Newcastle<\/span>/);
+  assert.match(html, /class="kx-board-departure" title="1Z91 P4 → · Observed 18:02 · York"/);
+  assert.match(html, /class="kx-board-departure" title="1Z92 P\? → · Observed — · —"/);
+  const doc = new FakeDocument(), parent = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement);
+  assert.match(parent.children[0]!.children[0]!.textContent,
+    /\.kx-board-departure\{[^}]*grid-template-columns:32px 28px 12px 42px minmax\(0,1fr\)/);
+  controller.dispose();
+});
+
+test('compact route tooltips escape full station names', () => {
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [] });
+  rows.approaching.push({ trainId: 61, headcode: '2Z61', state: 'approaching', platforms: [4], distanceM: 100,
+    service: service({ headcode: '2Z61', originName: '<Cambridge & "North">' }) });
+  const html = boardHtml(rows);
+  assert.match(html, /title="2Z61 → P4 · 0\.1 km · &lt;cambridge &amp; &quot;north&quot;&gt;"/);
+  assert.doesNotMatch(html, /<Cambridge|<\/Cambridge>/);
+});
