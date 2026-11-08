@@ -4,7 +4,7 @@ import { buildGraph } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import type { BoardRow, BoardTrain, BoardService } from '../src/board.ts';
-import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, createBoard, stationName, operatorName } from '../src/board.ts';
+import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, boardLayout, createBoard, stationName, operatorName } from '../src/board.ts';
 
 import { createLiveFeed, createReplayFeed, createScheduleFeed, ukDate } from '../src/feed.ts';
 import type { EventStream } from '../src/feed.ts';
@@ -160,8 +160,25 @@ class FakeMediaQuery {
   removeEventListener(name: string, listener: () => void): void { if (this.listeners.get(name) === listener) this.listeners.delete(name); }
 }
 
+class FakeResizeObserver {
+  static instances: FakeResizeObserver[] = [];
+  targets = new Set<unknown>();
+  readonly callback: () => void;
+  constructor(callback: () => void) { this.callback = callback; FakeResizeObserver.instances.push(this); }
+  observe(target: unknown): void { this.targets.add(target); }
+  disconnect(): void { this.targets.clear(); }
+}
+class FakeViewport {
+  width = 390; height = 700;
+  listeners = new Map<string, () => void>();
+  addEventListener(name: string, listener: () => void): void { this.listeners.set(name, listener); }
+  removeEventListener(name: string, listener: () => void): void { if (this.listeners.get(name) === listener) this.listeners.delete(name); }
+}
 class FakeView {
+  innerWidth = 390;
   innerHeight = 800;
+  visualViewport?: FakeViewport;
+  ResizeObserver = FakeResizeObserver;
   listeners = new Map<string, () => void>();
   media = new FakeMediaQuery();
   matchMedia(query: string): FakeMediaQuery { assert.equal(query, '(max-width: 600px)'); return this.media; }
@@ -171,7 +188,9 @@ class FakeView {
 
 class FakeDocument {
   defaultView = new FakeView();
+  hud: FakeElement | null = null;
   createElement(_tag: string): FakeElement { return new FakeElement(this); }
+  querySelector(selector: string): FakeElement | null { assert.equal(selector, '.hud'); return this.hud; }
 }
 
 class FakeElement {
@@ -497,9 +516,9 @@ test('approaching rows keep headcode platform distance and origin in compact col
   const html = boardHtml(rows);
   assert.match(html, /class="kx-board-approach" title="2Z41 → P9 · 1\.1 km · Cambridge"/);
   assert.match(html, /<strong>2Z41<\/strong><span class="kx-board-arrow">→<\/span><span>P9<\/span><span>1\.1 km<\/span><span class="kx-board-route">Cambridge<\/span>/);
-  assert.match(html, /class="kx-board-approach" title="1Z42 → P0–P8 · 0\.6 km · Peterborough"/);
-  assert.match(html, /class="kx-board-approach" title="1Z43 → P0, P2, P4, P6, P8 · 0\.3 km · Ely"/);
-  assert.match(html, /<strong>1Z43<\/strong><span class="kx-board-arrow">→<\/span><span>P0 \+4<\/span><span>0\.3 km<\/span><span class="kx-board-route">Ely<\/span>/);
+  assert.match(html, /class="kx-board-approach" title="1Z42 → TBC \(possible P0–P8\) · 0\.6 km · Peterborough"/);
+  assert.match(html, /class="kx-board-approach" title="1Z43 → TBC \(possible P0, P2, P4, P6, P8\) · 0\.3 km · Ely"/);
+  assert.match(html, /<strong>1Z43<\/strong><span class="kx-board-arrow">→<\/span><span>TBC<\/span><span>0\.3 km<\/span><span class="kx-board-route">Ely<\/span>/);
   const doc = new FakeDocument(), parent = new FakeElement(doc);
   const controller = createBoard(parent as unknown as HTMLElement);
   const css = parent.children[0]!.children[0]!.textContent;
@@ -513,8 +532,8 @@ test('unknown approach facts use placeholders and stock calls hide depot routes'
     service: service({ headcode: '5Z50', originName: 'SYN DEPOT', destinationName: 'SYN DEPOT', publicArrival: null, publicArrivalMs: null }) });
   rows.approaching.push({ trainId: 51, headcode: '2Z51', state: 'approaching' });
   const html = boardHtml(rows);
-  assert.match(html, /class="kx-board-approach" title="5Z50 → P\? · — · empty stock"/);
-  assert.match(html, /class="kx-board-approach" title="2Z51 → P\? · — · —"/);
+  assert.match(html, /class="kx-board-approach" title="5Z50 → TBC · — · Not in service \(empty stock\)"/);
+  assert.match(html, /class="kx-board-approach" title="2Z51 → TBC · — · —"/);
   assert.doesNotMatch(html, /SYN DEPOT/);
 });
 
@@ -531,7 +550,7 @@ test('departed rows show the observed clock unless a past TRUST actual departure
   assert.match(html, /class="kx-board-departure" title="1Z90 P3 → · TRUST actual 18:01 · Newcastle"/);
   assert.match(html, /<strong>1Z90<\/strong><span>P3<\/span><span class="kx-board-arrow">→<\/span><span>18:01<\/span><span class="kx-board-route">Newcastle<\/span>/);
   assert.match(html, /class="kx-board-departure" title="1Z91 P4 → · Observed 18:02 · York"/);
-  assert.match(html, /class="kx-board-departure" title="1Z92 P\? → · Observed — · —"/);
+  assert.match(html, /class="kx-board-departure" title="1Z92 TBC → · Observed — · —"/);
   const doc = new FakeDocument(), parent = new FakeElement(doc);
   const controller = createBoard(parent as unknown as HTMLElement);
   assert.match(parent.children[0]!.children[0]!.textContent,
@@ -559,4 +578,146 @@ test('board repeats the current escaped connection and stale age alongside retai
   assert.match(parent.children[0]!.children[2]!.innerHTML, /upstream connected/);
   assert.doesNotMatch(parent.children[0]!.children[2]!.innerHTML, /stale data/);
   controller.dispose();
+});
+
+test('board geometry clears the pill status and attribution at all five evidence viewports', () => {
+  for (const [width, height] of [[390, 844], [768, 1024], [1280, 800], [1920, 1080], [844, 390]]) {
+    // Wrapped status and attribution may occupy several lines, especially in landscape.
+    for (const footerHeight of [48, 120, 200]) {
+      const footerTop = height! - footerHeight;
+      const box = boardLayout(width!, height!, footerTop);
+      assert.equal(box.top, 52);
+      assert.ok(box.top >= 41 + 8, 'the Almanac pill stays clear');
+      assert.ok(box.top + box.maxHeight <= footerTop - 12, `${width}x${height}: HUD clearance`);
+      assert.ok(box.left >= 0 && box.left + box.width <= width! - 16, 'no horizontal page scroll');
+      assert.ok(box.maxHeight > 36, 'the toggle remains usable');
+      assert.equal(box.width, Math.min(350, width! - 32));
+    }
+  }
+});
+
+test('HUD wrapping and visual viewport changes resize the board without a render update', () => {
+  const doc = new FakeDocument(), parent = new FakeElement(doc), hud = new FakeElement(doc), status = new FakeElement(doc);
+  doc.defaultView.innerWidth = 768; doc.defaultView.innerHeight = 1024;
+  hud.top = 900; status.top = 920; status.hud = hud;
+  const controller = createBoard(parent as unknown as HTMLElement, status as unknown as HTMLElement);
+  const root = parent.children[0]!, observer = FakeResizeObserver.instances.at(-1)!;
+  assert.ok(observer.targets.has(hud), 'observe the entire HUD, including attribution above the status');
+  assert.equal(root.style.values.get('--board-height'), '836px');
+  hud.top = 800; observer.callback();
+  assert.equal(root.style.values.get('--board-height'), '736px');
+  // Use a second controller to exercise installation of the mobile viewport listener.
+  controller.dispose();
+  const viewport = new FakeViewport(); doc.defaultView.visualViewport = viewport;
+  const mobile = createBoard(parent as unknown as HTMLElement, status as unknown as HTMLElement);
+  const mobileRoot = parent.children[0]!;
+  viewport.height = 500; viewport.width = 360; viewport.listeners.get('resize')!();
+  assert.equal(mobileRoot.style.values.get('--board-height'), '424px');
+  assert.equal(mobileRoot.style.values.get('max-width'), '328px');
+  const queued = FakeResizeObserver.instances.at(-1)!.callback;
+  mobile.dispose();
+  assert.equal(viewport.listeners.size, 0);
+  assert.equal(FakeResizeObserver.instances.at(-1)!.targets.size, 0);
+  const oldHeight = mobileRoot.style.values.get('--board-height');
+  viewport.height = 300; queued();
+  assert.equal(mobileRoot.style.values.get('--board-height'), oldHeight);
+});
+
+test('board CSS shrinks its scrolling body while preserving the toggle and viewport bound', () => {
+  const doc = new FakeDocument(), parent = new FakeElement(doc), hud = new FakeElement(doc);
+  doc.hud = hud; hud.top = 600;
+  const controller = createBoard(parent as unknown as HTMLElement);
+  const root = parent.children[0]!, css = root.children[0]!.textContent;
+  assert.equal(root.style.values.get('--board-height'), '536px', 'attribution is reserved even without a status argument');
+  assert.match(css, /\.kx-board\{[^}]*max-height:var\(--board-height/);
+  assert.match(css, /\.kx-board\{[^}]*overflow:hidden/);
+  assert.match(css, /\.kx-board button\{[^}]*flex-shrink:0/);
+  assert.match(css, /\.kx-board-body\{[^}]*flex:1 1 auto;overflow:auto/);
+  assert.match(css, /\.kx-board-body\{[^}]*min-height:0/);
+  controller.dispose();
+});
+
+test('unannounced platforms say TBC without inventing zero while known platforms retain their numbers', () => {
+  for (const platform of [null, '', ' ', '?', '99', '4A']) {
+    const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [service({ platform })] });
+    const html = boardHtml(rows);
+    assert.match(html, /<span>TBC<\/span>/);
+    assert.doesNotMatch(html, /P\?|<span>P0<\/span>/);
+    assert.equal(rows.due[0]!.service.platform, platform, 'the unknown source value is preserved');
+  }
+  for (const platform of ['0', '10']) assert.match(boardHtml(boardRows([], anchors([]), { nowMs: bookedAt,
+    services: [service({ platform })] })), new RegExp(`<span>P${platform}</span>`));
+});
+
+test('stock is labelled not in service in platforms approaching and departed even without a timetable', () => {
+  for (const headcode of ['0Z01', '3Z01', '5Z01']) {
+    const rows = boardRows([], anchors([]));
+    rows.platforms[4]!.trains.push({ trainId: 1, headcode, state: 'standing' });
+    rows.approaching.push({ trainId: 2, headcode, state: 'approaching', platforms: [4] });
+    rows.departed.push({ trainId: 3, headcode, state: 'leaving', platform: 4 });
+    assert.equal((boardHtml(rows).match(/>Not in service \(empty stock\)<\/span>/g) ?? []).length, 3);
+  }
+  const stock = service({ publicArrival: null, publicDeparture: null, publicArrivalMs: null, publicDepartureMs: null });
+  const rows = boardRows([train(1, { state: 'held', lastBerth: '1004' })], anchors([anchor('1004', 1, 2, 0.8, '4')]),
+    { nowMs: bookedAt, services: [stock] });
+  assert.match(boardHtml(rows), /Not in service \(empty stock\)/);
+  assert.equal(rows.due.length, 0);
+});
+
+test('explicit schedule and TRUST cancellations are visible in every board section', () => {
+  for (const cancellation of [{ stp: 'C' as const }, { cancelled: true }, { realtime: { cancelled: true } }]) {
+    const call = service(cancellation);
+    const rows = boardRows([], anchors([]), { nowMs: bookedAt, services: [call] });
+    rows.platforms[4]!.trains.push({ trainId: 1, headcode: call.headcode, state: 'standing', service: call });
+    rows.approaching.push({ trainId: 2, headcode: call.headcode, state: 'approaching', platforms: [4], service: call });
+    rows.departed.push({ trainId: 3, headcode: call.headcode, state: 'leaving', platform: 4, service: call });
+    const html = boardHtml(rows);
+    assert.match(html, /class="kx-board-state">Cancelled<\/span>/);
+    assert.match(html, /class="kx-board-description">Cancelled · from Synthetic Origin<\/span>/);
+    assert.equal((html.match(/class="kx-board-route">Cancelled · /g) ?? []).length, 2);
+    assert.doesNotMatch(html, /\bon time\b/);
+    assert.ok(rows.due.length, 'booked cancelled calls remain visible');
+  }
+});
+
+test('cancellation facts match one service and respect ordering without treating TD cancels as passenger cancellations', () => {
+  const initial = [service(), service({ uid: 'OTHER1', serviceDate: '2026-11-08' })];
+  const event = { kind: 'trust', area: 'SYN', type: 'cancellation', uid: 'SYN001', serviceDate: '2026-11-09',
+    date: '2026-11-09', cancelled: true, receivedAtMs: bookedAt };
+  const calls = applyBoardTrust(initial, event);
+  assert.equal(calls[0]!.realtime?.cancelled, true); assert.equal(calls[1], initial[1]);
+  assert.equal(initial[0]!.realtime, undefined);
+  assert.deepEqual(applyBoardTrust(calls, { ...event, cancelled: false, receivedAtMs: bookedAt - 1 }), calls);
+  const reinstated = applyBoardTrust(calls, { ...event, cancelled: false, receivedAtMs: bookedAt + 1 });
+  assert.equal(reinstated[0]!.realtime?.cancelled, false);
+  const cached = [service({ cancelled: true })];
+  const cleared = applyBoardTrust(cached, { ...event, cancelled: false });
+  const clearedRows = boardRows([], anchors([]), { nowMs: bookedAt, services: cleared });
+  assert.doesNotMatch(boardHtml(clearedRows), /Cancelled/);
+  for (const invalid of [{ kind: 'cancel', descr: '1A01', from: 'SYN' }, { ...event, cancelled: 'false' },
+    { ...event, uid: 'UNKNOWN' }, { ...event, date: '2026-11-08' }]) assert.deepEqual(applyBoardTrust(initial, invalid), initial);
+});
+
+test('schedule feed accepts boolean cancellations buffers them across refresh and isolates replay from live cancellation', async () => {
+  const cancellation = { kind: 'trust', area: 'SYN', type: 'cancellation', uid: 'SYN001', date: '2026-11-09',
+    serviceDate: '2026-11-09', cancelled: true, receivedAtMs: bookedAt };
+  for (const mode of ['live', 'replay'] as const) {
+    let document: unknown = { date: '2026-11-09', calls: [service({ cancelled: false, realtime: { cancelled: true } })] };
+    const feed = createScheduleFeed({ mode, date: '2026-11-09', hostname: 'localhost', relayPresent: true, now: () => bookedAt,
+      schedule: () => 0, unschedule() {}, fetchImpl: (async () => jsonResponse(document)) as typeof fetch });
+    try {
+      await feed.refresh(); assert.ok(feed.services());
+      assert.equal(feed.services()![0]!.realtime?.cancelled, mode === 'live' ? true : undefined);
+      feed.apply(cancellation, bookedAt);
+      assert.equal(feed.services()![0]!.realtime?.cancelled, true);
+      await feed.refresh(); assert.equal(feed.services()![0]!.realtime?.cancelled, true);
+      const good = feed.services();
+      for (const calls of [[service({ cancelled: 'false' as unknown as boolean })],
+        [service({ realtime: { cancelled: 'false' as unknown as boolean } })]]) {
+        document = { date: '2026-11-09', calls }; await feed.refresh(); assert.deepEqual(feed.services(), good);
+      }
+      feed.apply({ ...cancellation, cancelled: 'false' }, bookedAt + 1);
+      assert.deepEqual(feed.services(), good);
+    } finally { feed.dispose(); }
+  }
 });
