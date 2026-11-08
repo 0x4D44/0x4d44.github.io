@@ -41,17 +41,21 @@ export function parseEvent(value: unknown): MotionEvent {
 }
 
 export function parseRecording(text: string): RecordedEvent[] {
-  const rows: RecordedEvent[] = [];
-  for (const [index, line] of text.split(/\r?\n/).entries()) {
-    if (!line.trim()) continue;
-    try {
-      const row = JSON.parse(line) as { t: unknown; e: unknown };
-      if (!row || typeof row.t !== 'number' || !Number.isFinite(row.t)) throw new Error('invalid timestamp');
-      rows.push({ t: row.t, e: parseEvent(row.e) });
-    } catch { throw new Error(`invalid recording line ${index + 1}`); }
-  }
-  // Stable sort preserves the recorder's order for events received in the same batch.
-  return rows.sort((a, b) => a.t - b.t);
+  // Keep parsing separate from body transfer and later graph setup in startup profiles.
+  performance.mark('kx:recording-parse-start');
+  try {
+    const rows: RecordedEvent[] = [];
+    for (const [index, line] of text.split(/\r?\n/).entries()) {
+      if (!line.trim()) continue;
+      try {
+        const row = JSON.parse(line) as { t: unknown; e: unknown };
+        if (!row || typeof row.t !== 'number' || !Number.isFinite(row.t)) throw new Error('invalid timestamp');
+        rows.push({ t: row.t, e: parseEvent(row.e) });
+      } catch { throw new Error(`invalid recording line ${index + 1}`); }
+    }
+    // Stable sort preserves the recorder's order for events received in the same batch.
+    return rows.sort((a, b) => a.t - b.t);
+  } finally { performance.mark('kx:recording-parse-end'); }
 }
 
 export function backoffMs(attempt: number): number {
