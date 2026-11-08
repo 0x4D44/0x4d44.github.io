@@ -1,4 +1,6 @@
-// Round 9 replay performance capture: two fixed cameras, 60 seconds each by default.
+// Startup timing, source-mapped CPU profile, and two fixed replay cameras.
+// Build with --sourcemap; --self-test runs Node-only checks without Chrome or a build.
+// --check-build validates the actual bundle/maps and writes sizes without launching Chrome.
 //
 //   node tools/perf.mjs [--dist <built dir>] [--out <output dir>] [--seconds 60]
 //                       [--chrome <path>] [--relay http://127.0.0.1:8787]
@@ -8,6 +10,9 @@
 // already-running relay. The local server serves the almanac back button, the built page, and a
 // same-origin /relay proxy. No recording data or screenshots are copied out of the browser.
 import { spawn } from 'node:child_process';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { createServer, request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
@@ -15,6 +20,166 @@ import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Install before any app module runs. onAfterRender proves a train mesh passed renderer
+// visibility/frustum checks and issued a draw; group.visible alone does not prove that.
+function startupObserver() {
+  const observation = window.__kxStartup = { sceneRenderedMs: null, replayTrainsRenderedMs: null, trainDraws: 0 };
+  let current;
+  Object.defineProperty(window, '__kx', {
+    configurable: true,
+    get: () => current,
+    set(k) {
+      current = k;
+      if (!k?.renderer) return;
+      const renderer = k.renderer, original = renderer.render;
+      const hooked = new Map();
+      let trainDraws = 0;
+      renderer.render = function (...args) {
+        trainDraws = 0;
+        if (observation.replayTrainsRenderedMs === null && k.feed?.mode === 'replay') {
+          for (const train of k.trains ?? []) train.group?.traverse((object) => {
+            if ((!object.isMesh && !object.isLine && !object.isPoints) || hooked.has(object)) return;
+            const previous = object.onAfterRender;
+            hooked.set(object, previous);
+            object.onAfterRender = function (...drawArgs) {
+              const material = drawArgs[4];
+              if (!material || material.opacity > 0) trainDraws++;
+              return previous?.apply(this, drawArgs);
+            };
+          });
+        }
+        const result = original.apply(this, args);
+        const now = performance.now();
+        if (observation.sceneRenderedMs === null && renderer.info.render.frame > 0) observation.sceneRenderedMs = now;
+        // Hooks survive frames where trains are hidden; reset their shared draw count each frame.
+        if (k.feed?.mode === 'replay' && trainDraws > 0 && observation.replayTrainsRenderedMs === null) {
+          observation.replayTrainsRenderedMs = now;
+          observation.trainDraws = trainDraws;
+          for (const [object, previous] of hooked) object.onAfterRender = previous;
+          renderer.render = original;
+        }
+        return result;
+      };
+    },
+  });
+}
+const observerSource = `(${startupObserver.toString()})()`;
+
+function extractTiming(state) {
+  const observed = state?.observation;
+  if (!(observed?.sceneRenderedMs > 0) || !(observed?.replayTrainsRenderedMs >= observed.sceneRenderedMs) || !(observed.trainDraws > 0)) return null;
+  return {
+    navigationStartToSceneRenderedMs: observed.sceneRenderedMs,
+    navigationStartToReplayTrainsRenderedMs: observed.replayTrainsRenderedMs,
+    appFirstFrameMs: state.firstFrameMs,
+    replayTrainDrawsAtFirstRender: observed.trainDraws,
+    sceneWithin3s: observed.sceneRenderedMs < 3000,
+    navigationType: state.navigation?.type ?? null,
+    resources: state.resources ?? [],
+  };
+}
+
+// Source Map v3 Base64 VLQ, no runtime dependency. Columns and lines are zero based.
+function decodeMappings(map) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let source = 0, originalLine = 0, originalColumn = 0, name = 0;
+  return map.mappings.split(';').map((line) => {
+    let generatedColumn = 0;
+    return line.split(',').filter(Boolean).map((segment) => {
+      const fields = []; let value = 0, shift = 0;
+      for (const char of segment) {
+        const digit = alphabet.indexOf(char);
+        if (digit < 0) throw new Error('Invalid source map VLQ');
+        value += (digit & 31) * 2 ** shift;
+        if (digit & 32) shift += 5;
+        else { fields.push(value & 1 ? -(value >> 1) : value >> 1); value = 0; shift = 0; }
+      }
+      if (shift || ![1, 4, 5].includes(fields.length)) throw new Error('Invalid source map segment');
+      generatedColumn += fields[0];
+      if (fields.length === 1) return { generatedColumn };
+      source += fields[1]; originalLine += fields[2]; originalColumn += fields[3];
+      if (fields.length === 5) name += fields[4];
+      if (!map.sources[source] || originalLine < 0 || originalColumn < 0) throw new Error('Invalid source map location');
+      return { generatedColumn, source: `${map.sourceRoot ? `${map.sourceRoot.replace(/\/$/, '')}/` : ''}${map.sources[source]}`, originalLine, originalColumn, name: fields.length === 5 ? map.names?.[name] : undefined };
+    });
+  });
+}
+function originalLocation(rows, line, column) {
+  const segments = rows?.[line] ?? [];
+  let low = 0, high = segments.length - 1, found;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (segments[mid].generatedColumn <= column) { found = segments[mid]; low = mid + 1; }
+    else high = mid - 1;
+  }
+  return found?.source ? found : null;
+}
+function aggregateCpu(profile, maps) {
+  const nodes = new Map(profile.nodes.map((node) => [node.id, node]));
+  const files = new Map(), functions = new Map();
+  let sampledUs = 0, mappedUs = 0;
+  for (let i = 0; i < (profile.samples?.length ?? 0); i++) {
+    const node = nodes.get(profile.samples[i]);
+    if (!node) throw new Error('CPU sample refers to unknown node');
+    const us = profile.timeDeltas?.[i];
+    if (!Number.isFinite(us) || us < 0) throw new Error('CPU profile lacks sample time deltas');
+    const frame = node.callFrame;
+    const location = originalLocation(maps.get(frame.url), frame.lineNumber, frame.columnNumber);
+    const source = location?.source ?? (frame.url ? `[unmapped] ${frame.url}` : `[runtime] ${frame.functionName || '(anonymous)'}`);
+    if (location) mappedUs += us;
+    sampledUs += us;
+    files.set(source, (files.get(source) ?? 0) + us);
+    const key = `${source}:${location ? location.originalLine + 1 : frame.lineNumber + 1} ${location?.name ?? frame.functionName ?? '(anonymous)'}`;
+    functions.set(key, (functions.get(key) ?? 0) + us);
+  }
+  const rows = (entries, label) => [...entries].map(([key, us]) => ({ [label]: key, selfMs: us / 1000, percent: sampledUs ? us / sampledUs * 100 : 0 })).sort((a, b) => b.selfMs - a.selfMs);
+  return { sampledMs: sampledUs / 1000, mappedSelfMs: mappedUs / 1000, byOriginalSourceFile: rows(files, 'source'), byFunction: rows(functions, 'function') };
+}
+
+function selfTest() {
+  assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: null, trainDraws: 0 } }), null);
+  assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: 8, trainDraws: 2 }, firstFrameMs: 5 }).navigationStartToReplayTrainsRenderedMs, 8);
+  assert.equal(extractTiming({ observation: { sceneRenderedMs: 2999, replayTrainsRenderedMs: 4000, trainDraws: 1 } }).sceneWithin3s, true);
+  assert.equal(extractTiming({ observation: { sceneRenderedMs: 3000, replayTrainsRenderedMs: 4000, trainDraws: 1 } }).sceneWithin3s, false);
+  const map = { sources: ['materials.ts', 'merge.ts'], names: ['texture'], mappings: 'AAAAA,UCAA;AACA' };
+  const rows = decodeMappings(map);
+  assert.equal(originalLocation(rows, 0, 9).source, 'materials.ts');
+  assert.equal(originalLocation(rows, 0, 10).source, 'merge.ts');
+  assert.equal(originalLocation(rows, 1, 0).originalLine, 1);
+  assert.equal(originalLocation(decodeMappings({ ...map, mappings: 'AAAA,K' }), 0, 6), null);
+  assert.throws(() => decodeMappings({ ...map, mappings: '!' }), /VLQ/);
+  const profile = { nodes: [
+    { id: 1, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 0, functionName: 'a' } },
+    { id: 2, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 10, functionName: 'b' } },
+    { id: 3, callFrame: { url: '', lineNumber: -1, columnNumber: -1, functionName: 'JSON.parse' } },
+  ], samples: [1, 2, 1, 3], timeDeltas: [1000, 2000, 3000, 500] };
+  const cpu = aggregateCpu(profile, new Map([['bundle.js', rows]]));
+  assert.equal(cpu.sampledMs, 6.5);
+  assert.deepEqual(cpu.byOriginalSourceFile.map((row) => [row.source, row.selfMs]), [['materials.ts', 4], ['merge.ts', 2], ['[runtime] JSON.parse', 0.5]]);
+  assert.equal(cpu.byFunction[0].function, 'materials.ts:1 texture');
+  // Execute the exact injected script against a fake renderer. Invisible trains never
+  // invoke onAfterRender; a later frame does, including an object hooked in an earlier frame.
+  const window = {}, context = { window, performance: { now: () => 12 }, WeakSet };
+  vm.runInNewContext(observerSource, context);
+  let draw = false, opacity = 0;
+  const mesh = { isMesh: true, onAfterRender() {} };
+  const renderer = { info: { render: { frame: 0 } }, render() { this.info.render.frame++; if (draw) mesh.onAfterRender(null, null, null, null, { opacity }); } };
+  window.__kx = { renderer, feed: { mode: 'replay' }, trains: [{ group: { traverse(callback) { callback(mesh); } } }] };
+  renderer.render();
+  assert.equal(window.__kxStartup.sceneRenderedMs, 12);
+  assert.equal(window.__kxStartup.replayTrainsRenderedMs, null);
+  draw = true; renderer.render();
+  assert.equal(window.__kxStartup.replayTrainsRenderedMs, null, 'zero-alpha train draws are not visible trains');
+  opacity = 1; renderer.render();
+  assert.equal(window.__kxStartup.replayTrainsRenderedMs, 12);
+  assert.equal(window.__kxStartup.trainDraws, 1);
+  assert.equal(renderer.render.name, 'render');
+  assert.equal(mesh.onAfterRender.name, 'onAfterRender');
+  assert.equal(originalLocation(decodeMappings({ ...map, sourceRoot: '/src' }), 0, 0).source, '/src/materials.ts');
+  console.log('perf self-test passed: timing, source-map boundaries, CPU self time, injected actual-train draw observer');
+}
+if (process.argv.includes('--self-test')) { selfTest(); process.exit(0); }
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -24,7 +189,7 @@ const flag = (name, fallback) => {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
 const dist = path.resolve(flag('--dist', path.join(repoRoot, '.scratch', 'perf-dist')));
-const out = path.resolve(flag('--out', path.join(repoRoot, '.scratch', 'perf-round9')));
+const out = path.resolve(flag('--out', path.join(repoRoot, '.scratch', 'round12-perf')));
 const seconds = Number(flag('--seconds', '60'));
 const relayBase = new URL(flag('--relay', 'http://127.0.0.1:8787'));
 const replayDate = '20261107';
@@ -52,7 +217,7 @@ let chromeBin;
 for (const candidate of chromeCandidates) {
   try { await stat(candidate); chromeBin = candidate; break; } catch { /* try next candidate */ }
 }
-if (!chromeBin) throw new Error('no Chrome found; pass --chrome or set CHROME_PATH');
+if (!chromeBin && !args.includes('--check-build')) throw new Error('no Chrome found; pass --chrome or set CHROME_PATH');
 
 const MIME = {
   '.css': 'text/css', '.html': 'text/html', '.ico': 'image/x-icon', '.jpeg': 'image/jpeg',
@@ -87,8 +252,16 @@ const walk = async (dir) => {
 const buildFiles = (await walk(dist)).sort();
 const buildEntries = await Promise.all(buildFiles.map(async (file) => {
   const [body, info] = await Promise.all([readFile(file), stat(file)]);
-  return { file: path.relative(dist, file), bytes: body.length, sha256: createHash('sha256').update(body).digest('hex'), modifiedAt: info.mtime.toISOString() };
+  return { file: path.relative(dist, file), bytes: body.length, gzipBytes: gzipSync(body).length, sha256: createHash('sha256').update(body).digest('hex'), modifiedAt: info.mtime.toISOString() };
 }));
+const decodedBuildMaps = new Map();
+for (const entry of buildEntries.filter((entry) => entry.file.endsWith('.js'))) {
+  const mapPath = path.join(dist, `${entry.file}.map`);
+  let map;
+  try { map = JSON.parse(await readFile(mapPath, 'utf8')); }
+  catch { throw new Error(`CPU profiling requires source maps: rebuild with --sourcemap (missing/invalid ${mapPath})`); }
+  decodedBuildMaps.set(entry.file.split(path.sep).join('/'), decodeMappings(map));
+}
 const report = {
   when: new Date().toISOString(),
   machine: `${os.type()} ${os.release()}, ${os.cpus()[0]?.model ?? 'unknown cpu'} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GB`,
@@ -100,6 +273,9 @@ const report = {
     newestFileTime: buildEntries.reduce((newest, file) => Math.max(newest, Date.parse(file.modifiedAt)), 0),
     totalBytes: buildEntries.reduce((sum, file) => sum + file.bytes, 0),
     files: buildEntries,
+    gzipBundleBytes: buildEntries.filter((file) => /\.(js|css)$/.test(file.file)).reduce((sum, file) => sum + file.gzipBytes, 0),
+    gzipShippedBytes: buildEntries.filter((file) => !file.file.endsWith('.map')).reduce((sum, file) => sum + file.gzipBytes, 0),
+    gzipBudgetBytes: 2_000_000,
   },
   replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds },
   viewport,
@@ -107,8 +283,20 @@ const report = {
   cameras: {},
   consoleErrors,
 };
+report.build.gzipBundleWithinBudget = report.build.gzipBundleBytes < report.build.gzipBudgetBytes;
 report.build.newestFileTime = report.build.newestFileTime ? new Date(report.build.newestFileTime).toISOString() : null;
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
+if (args.includes('--check-build')) {
+  const sourceFiles = new Set();
+  for (const rows of decodedBuildMaps.values()) for (const row of rows) for (const segment of row) if (segment.source) sourceFiles.add(segment.source);
+  const result = { mode: 'Node build preflight; Chrome not launched', build: report.build,
+    sourceMaps: { files: decodedBuildMaps.size, originalSourceFiles: sourceFiles.size },
+    startup: 'Not measured; run without --check-build on the GPU host.' };
+  await writeFile(path.join(out, 'build-preflight.json'), `${JSON.stringify(result, null, 2)}\n`);
+  await writeFile(path.join(out, 'build-preflight.md'), `# Performance build preflight\n\nJS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}).\n\n${decodedBuildMaps.size} source maps decoded; ${sourceFiles.size} original source files. First-render, CPU and FPS measurements require the Chrome run.\n`);
+  console.log(JSON.stringify({ ...result, build: { ...report.build, files: undefined } }, null, 2));
+  process.exit(report.build.gzipBundleWithinBudget ? 0 : 1);
+}
 const cleanup = () => {
   if (cleanupPromise) return cleanupPromise;
   cleanupPromise = (async () => {
@@ -174,7 +362,7 @@ try {
       }
     } catch { /* malformed path */ }
     if (!hit) { res.writeHead(404).end(); return; }
-    res.writeHead(200, { 'content-type': hit.type, 'content-length': hit.body.length }).end(hit.body);
+    res.writeHead(200, { 'content-type': hit.type, 'content-length': hit.body.length, 'cache-control': 'public, max-age=3600' }).end(hit.body);
   });
   await new Promise((resolve, reject) => {
     staticServer.once('error', reject);
@@ -256,6 +444,9 @@ try {
   await S('Page.enable');
   await S('Runtime.enable');
   await S('Log.enable');
+  await S('Network.enable');
+  await S('Network.setCacheDisabled', { cacheDisabled: false });
+  await S('Page.addScriptToEvaluateOnNewDocument', { source: observerSource });
   await S('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1, mobile: false });
   await S('Page.bringToFront');
   const evaluate = async (expression, timeoutMs = 10_000) => {
@@ -281,9 +472,60 @@ try {
     requestAnimationFrame(frame);
   })`, 8000);
 
+  const startupUrl = `${base}/kings-cross/?trains=replay&date=${replayDate}&speed=${replaySpeed}`;
+  const freshNavigation = async (url, beforeNavigate = async () => {}) => {
+    await S('Page.navigate', { url: 'about:blank' });
+    // Wait for the blank document to commit before requesting a fresh navigation.
+    const blankDeadline = Date.now() + 5000;
+    while (await evaluate('location.href').catch(() => null) !== 'about:blank') {
+      if (Date.now() > blankDeadline) throw new Error('about:blank did not commit');
+      await delay(25);
+    }
+    await beforeNavigate();
+    await S('Page.navigate', { url });
+  };
+  const startupLoad = async (profileCpu = false) => {
+    await freshNavigation(startupUrl, async () => { if (profileCpu) await S('Profiler.start'); });
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+      const state = await evaluate(`(() => {
+        const k = window.__kx;
+        if (!k) return null;
+        const nav = performance.getEntriesByType('navigation')[0];
+        return { observation: window.__kxStartup, firstFrameMs: k.firstFrameMs,
+          navigation: nav ? { type: nav.type } : null,
+          resources: performance.getEntriesByType('resource').filter(r => /\\.(js|css)(?:$|\\?)/.test(r.name)).map(r => ({
+            path: new URL(r.name).pathname, transferSize: r.transferSize, encodedBodySize: r.encodedBodySize, durationMs: r.duration })) };
+      })()`).catch(() => null);
+      const timing = extractTiming(state);
+      if (timing) return timing;
+      await delay(100);
+    }
+    throw new Error('Startup scene and actual replay train draws not observed within 60 seconds');
+  };
+  report.startup = {
+    method: 'Three separate navigations: fresh Chrome profile cold load, same-profile second load with HTTP cache enabled, then an instrumented CPU profile load. Timings exclude the CPU profiler.',
+    timingDefinition: 'performance.now() after renderer.render returns; milliseconds since navigation start. First replay train requires a mesh onAfterRender callback in replay mode.',
+    limitations: 'Draw submission completion, not GPU completion or display presentation. Browser/OS filesystem caches are not flushed. Cold and warm replay availability includes local relay latency. Observer callbacks add small overhead to both timing loads. No claim of equal replay snapshots across loads.',
+  };
+  report.startup.coldFreshProfile = await startupLoad();
+  report.startup.warmSecondLoadSameProfile = await startupLoad();
+  await S('Profiler.enable');
+  await S('Profiler.setSamplingInterval', { interval: 1000 });
+  let cpuProfile;
+  try { report.startup.profileLoad = await startupLoad(true); }
+  finally { ({ profile: cpuProfile } = await S('Profiler.stop')); }
+  const sourceMaps = new Map([...decodedBuildMaps].map(([file, map]) => [`${base}/kings-cross/${file}`, map]));
+  report.startup.cpu = {
+    ...aggregateCpu(cpuProfile, sourceMaps),
+    samplingIntervalUs: 1000,
+    caveat: 'Sampled leaf self time, not inclusive time or wall time. Separate warm third load with profiler overhead; ends after first replay train render is observed. Native/runtime samples remain named runtime buckets (including JSON.parse when exposed by V8); no guessed source attribution. Long uninterruptible native operations may be under-sampled. Source-map locations are function entry positions supplied by V8.',
+  };
+  // Raw CPU profiles deliberately omitted: only aggregate source/function costs are saved.
+
   for (const [cameraName, camera] of Object.entries(cameras)) {
     const url = `${base}/kings-cross/?trains=replay&date=${replayDate}&speed=${replaySpeed}`;
-    await S('Page.navigate', { url });
+    await freshNavigation(url);
     const readyDeadline = Date.now() + 35_000;
     let pageState;
     while (Date.now() < readyDeadline) {
@@ -419,7 +661,19 @@ try {
   report.success = true;
   const file = path.join(out, `perf-${stamp()}.json`);
   await writeFile(file, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
-  console.log(JSON.stringify({ report: file, out, consoleErrors: report.consoleErrors }, null, 2));
+  const markdown = [
+    '# King’s Cross performance', '',
+    `Cold scene: ${rounded(report.startup.coldFreshProfile.navigationStartToSceneRenderedMs)} ms; replay trains: ${rounded(report.startup.coldFreshProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
+    `Warm second load scene: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToSceneRenderedMs)} ms (${report.startup.warmSecondLoadSameProfile.sceneWithin3s ? 'PASS' : 'FAIL'}, strict <3 s); replay trains: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
+    `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
+    '| Original source / runtime | CPU self ms | Sample % |', '| --- | ---: | ---: |',
+    ...report.startup.cpu.byOriginalSourceFile.slice(0, 15).map(row => `| ${row.source.replaceAll('|', '\\|')} | ${rounded(row.selfMs)} | ${rounded(row.percent)} |`), '',
+    ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS, p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
+    report.startup.limitations, '', report.startup.cpu.caveat, '',
+  ].join('\n');
+  const markdownFile = file.replace(/\.json$/, '.md');
+  await writeFile(markdownFile, markdown, { flag: 'wx' });
+  console.log(JSON.stringify({ report: file, markdown: markdownFile, out, consoleErrors: report.consoleErrors }, null, 2));
 } catch (error) {
   report.consoleErrors = consoleErrors;
   report.success = false;

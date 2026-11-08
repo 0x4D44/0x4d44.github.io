@@ -52,7 +52,18 @@ M = [
     ('all cars face the same direction', T, 'node.rotation.y = pose.rotationY;', 'node.rotation.y = 0;'),
     ('body clearances removed', T, 'export const COUPLING_CLEARANCE = END_GAP;', 'export const COUPLING_CLEARANCE = 0;'),
     ('all headcodes use five cars', T, "description[0] === '1'", "description[0] === '9'"),
-    ('opacity changes shared materials', T, 'copies.set(m, m.clone())', 'copies.set(m, m)'),
+    ('same-opacity trains do not share a palette', T, 'const shared = buckets.get(opacity);', 'const shared = undefined;'),
+    ('exact opacity is quantized in a palette copy', T, 'setOpacity(shared, palette.opacity);', 'setOpacity(shared, Math.round(palette.opacity * 100) / 100);'),
+    ('fading opacity never enables material transparency', T, 'const transparent = opacity < 1;', 'const transparent = false;'),
+    ('fading opacity keeps depth writes enabled', T, 'material.opacity = opacity; material.depthWrite = !transparent;', 'material.opacity = opacity; material.depthWrite = true;'),
+    ('palette lookup ignores train kind', T, 'const shared = buckets.get(opacity);', "const shared = palettes.get('lner9')?.get(opacity);"),
+    ('fade palettes churn instead of reusing their materials', T, 'if (previous && !needed.has(previous.opacity)) {', 'if (false && previous && !needed.has(previous.opacity)) {'),
+    ('palette lookup follows the changing headcode', T, 'assigned.get(view.id)', 'assigned.get(view.description as unknown as number)'),
+    ('live layer mutates cached template materials', T, 'const shared = original.clone();', 'const shared = original;'),
+    ('palette copies clone their shared textures', T, 'const shared = original.clone();', 'const shared = original.clone(); if (shared instanceof THREE.MeshStandardMaterial) shared.map = shared.map?.clone() ?? null;'),
+    ('live palette disposal disposes cached template materials', T, 'for (const material of palette.copies.values()) material.dispose();', 'for (const material of palette.copies.keys()) material.dispose();'),
+    ('shared palette is disposed before its last user leaves', T, 'if (!used.has(palette)) {', 'if (used.has(palette)) {'),
+    ('empty update leaves unused palettes cached', T, 'releaseUnused(used);', 'if (views.length) releaseUnused(used);'),
     ('vanished groups left in scene', T, 'parent.remove(t.group);', 't.group.visible = false;'),
     ('clipped trains extrapolate unseen cars', T, 'if (car.end > train.occupiedLengthM + 1e-7) continue;', 'if (false) continue;'),
     ('straight cars shifted off track', T, 'position: [frontBogie.point[0] - dx', 'position: [1 + frontBogie.point[0] - dx'),
@@ -71,7 +82,6 @@ M = [
     ('renames rebuild their physical group', T, 'drawn.get(view.id) ?? build(view)', 'drawn.get(view.id)?.description === view.description ? drawn.get(view.id)! : build(view)'),
     ('renamed metadata keeps the old description', T, 't.description = view.description; t.group.userData.description = view.description;', 't.description = t.description;'),
     ('reused headcodes retain the faded group', T, 'if (!present.has(id)) remove(id);', 'if (!present.has(id) && !views.some((v) => v.description === drawn.get(id)!.description)) remove(id);'),
-    ('material lookup uses the changing headcode', T, 'ownedMaterials.get(view.id)', 'ownedMaterials.get(view.description as unknown as number)'),
     ('physical length chooses the opposite consist', T, '? long : short', '? short : long'),
     ('group retention uses descriptions instead of physical ids', T, 'new Set(views.map((t) => t.id))', 'new Set(views.map((t) => t.description as unknown as number))'),
     ('configured anchor file ignored', R, 'file = anchorsFile;', "file = path.join(dataDir, 'missing-anchors.json');"),
@@ -101,7 +111,7 @@ M = [
 
 def run(work):
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|fading one train|cars whose|a renamed train|a fresh physical train)',
+               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|the default relay probe|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
                'web/tests/feed.test.ts', 'web/tests/trains-live.test.ts', 'relay/tests/relay.test.mjs']
     process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, stdin=subprocess.DEVNULL, start_new_session=True)

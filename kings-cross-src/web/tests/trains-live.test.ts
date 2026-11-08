@@ -6,6 +6,7 @@ import type { Graph } from '../../core/graph.ts';
 import { createMotion, overlapM } from '../../core/motion.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
+import { buildTrain } from '../src/train.ts';
 import { carPoses, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
 
 function fixture(curved = true, kind: 'lner5' | 'lner9' = 'lner9'): { graph: Graph; train: TrainView } {
@@ -30,6 +31,22 @@ function fixture(curved = true, kind: 'lner5' | 'lner9' = 'lner9'): { graph: Gra
 }
 const close = (a: number, b: number, tolerance = 1e-7): void => assert.ok(Math.abs(a - b) <= tolerance, `${a} != ${b}`);
 const world = (node: THREE.Object3D): THREE.Vector3 => node.getWorldPosition(new THREE.Vector3());
+const materialsOf = (root: THREE.Object3D): Set<THREE.Material> => {
+  const materials = new Set<THREE.Material>();
+  root.traverse((node) => {
+    if (node instanceof THREE.Mesh) for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
+  });
+  return materials;
+};
+const sameMembers = <T>(a: Set<T>, b: Set<T>): boolean => a.size === b.size && [...a].every((value) => b.has(value));
+const sharedCount = <T>(a: Set<T>, b: Set<T>): number => [...a].filter((value) => b.has(value)).length;
+const assertMaterialOpacity = (root: THREE.Object3D, opacity: number): void => {
+  for (const material of materialsOf(root)) {
+    close(material.opacity, opacity, 0);
+    assert.equal(material.transparent, opacity < 1);
+    assert.equal(material.depthWrite, opacity >= 1);
+  }
+};
 
 test('live car bogie centres stay on a curved track and retain their distances behind the leading end', () => {
   const { graph, train } = fixture();
@@ -225,6 +242,134 @@ test('fading one train leaves another opaque and disappearing trains release the
   layer.update([{ ...train, id: 2, description: '1OTHER' }]);
   assert.equal(layer.trains().length, 1); assert.equal(scene.children.length, 1);
   layer.dispose(); assert.equal(scene.children.length, 0);
+});
+
+test('eight same-kind trains at the same opacity share one material palette', () => {
+  const { graph, train } = fixture(false);
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  layer.update(Array.from({ length: 8 }, (_, index) => ({ ...train, id: index + 1 })));
+  const groups = layer.trains().map((record) => record.group);
+  const templateMaterials = materialsOf(buildTrain('lner9'));
+  const palette = materialsOf(groups[0]!);
+  assert.equal(groups.length, 8);
+  assert.equal(palette.size, templateMaterials.size, 'one palette copy per original template material');
+  for (const group of groups.slice(1)) assert.ok(sameMembers(palette, materialsOf(group)), 'every same-kind train must use the same material objects');
+  assertMaterialOpacity(groups[0]!, 1);
+  layer.dispose();
+});
+
+test('exact fading opacity stays isolated through palette splits and simultaneous swaps', () => {
+  const { graph, train } = fixture(false);
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  const first = { ...train, id: 1, opacity: 0.5500000003 };
+  const second = { ...train, id: 2, opacity: 0.5500000003 };
+  const steady = { ...train, id: 3, opacity: 1 };
+  layer.update([first, second, steady]);
+  let [a, b, c] = layer.trains();
+  assert.ok(sameMembers(materialsOf(a!.group), materialsOf(b!.group)), 'same kind and exact opacity share their palette');
+  assertMaterialOpacity(a!.group, first.opacity);
+  assertMaterialOpacity(c!.group, 1);
+
+  const splitA = { ...first, opacity: 0.287654321 };
+  const splitB = { ...second, opacity: 0.413579246 };
+  layer.update([splitA, splitB, steady]);
+  [a, b, c] = layer.trains();
+  assert.equal(sharedCount(materialsOf(a!.group), materialsOf(b!.group)), 0, 'different opacities must not share mutable material objects');
+  assert.ok(!sameMembers(materialsOf(a!.group), materialsOf(b!.group)), 'different opacity palettes must use distinct material objects');
+  assertMaterialOpacity(a!.group, splitA.opacity);
+  assertMaterialOpacity(b!.group, splitB.opacity);
+  assertMaterialOpacity(c!.group, 1);
+
+  const swapA = { ...splitA, opacity: splitB.opacity };
+  const swapB = { ...splitB, opacity: splitA.opacity };
+  layer.update([swapA, swapB, steady]);
+  [a, b, c] = layer.trains();
+  assert.ok(sameMembers(materialsOf(a!.group), materialsOf(b!.group)) === false, 'swapped opacity palettes stay separate');
+  assertMaterialOpacity(a!.group, swapA.opacity);
+  assertMaterialOpacity(b!.group, swapB.opacity);
+  assertMaterialOpacity(c!.group, 1);
+  layer.dispose();
+});
+
+test('a unique fading palette reuses its materials across frames and releases them after its last user', () => {
+  const { graph, train } = fixture(false);
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  const first = { ...train, id: 1, state: 'fading' as const, opacity: 0.1234567 };
+  const second = { ...train, id: 2, state: 'fading' as const, opacity: 0.1234567 };
+  layer.update([first, second]);
+  const [a, b] = layer.trains();
+  const palette = materialsOf(a!.group);
+  const disposed = new Set<THREE.Material>();
+  for (const material of palette) material.addEventListener('dispose', () => disposed.add(material));
+  assert.ok(sameMembers(palette, materialsOf(b!.group)));
+  assertMaterialOpacity(a!.group, first.opacity);
+
+  let currentOpacity = first.opacity;
+  for (let frame = 1; frame <= 12; frame++) {
+    currentOpacity = 0.543210987 - frame * 0.031234567;
+    const fadingA = { ...first, opacity: currentOpacity };
+    const fadingB = { ...second, opacity: currentOpacity };
+    layer.update([fadingA, fadingB]);
+    const [nextA, nextB] = layer.trains();
+    assert.ok(sameMembers(palette, materialsOf(nextA!.group)), `fade frame ${frame} reuses the palette materials`);
+    assert.ok(sameMembers(palette, materialsOf(nextB!.group)));
+    assertMaterialOpacity(nextA!.group, currentOpacity);
+    assert.equal(disposed.size, 0);
+  }
+
+  const lastA = { ...first, opacity: currentOpacity };
+  layer.update([lastA]);
+  assert.equal(disposed.size, 0, 'one remaining train keeps the shared palette alive');
+  layer.update([]);
+  assert.equal(disposed.size, palette.size, 'an empty update disposes the palette after its last user leaves');
+  assert.equal(layer.trains().length, 0);
+  layer.dispose();
+});
+
+test('different train kinds keep separate palettes and layer disposal preserves cached sample materials and textures', () => {
+  const sample = buildTrain('lner9');
+  const originals = materialsOf(sample);
+  const textureOriginal = [...originals].find((material): material is THREE.MeshStandardMaterial => material instanceof THREE.MeshStandardMaterial);
+  assert.ok(textureOriginal, 'the sample train has a standard material for the shared texture check');
+  const previousMap = textureOriginal.map;
+  const sharedTexture = new THREE.Texture();
+  textureOriginal.map = sharedTexture;
+  const snapshots = new Map([...originals].map((material) => [material, {
+    opacity: material.opacity, transparent: material.transparent, depthWrite: material.depthWrite,
+    map: material instanceof THREE.MeshStandardMaterial ? material.map : undefined,
+    envMap: material instanceof THREE.MeshStandardMaterial ? material.envMap : undefined,
+  }]));
+  const disposedOriginals = new Set<THREE.Material>();
+  let textureDisposed = false;
+  sharedTexture.addEventListener('dispose', () => { textureDisposed = true; });
+  for (const material of originals) material.addEventListener('dispose', () => disposedOriginals.add(material));
+
+  try {
+    const { graph, train } = fixture(false);
+    const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+    layer.update([train, { ...fixture(false, 'lner5').train, id: 2, opacity: 1 }]);
+    const [long, short] = layer.trains();
+    const longMaterials = materialsOf(long!.group), shortMaterials = materialsOf(short!.group);
+    assert.equal(sharedCount(longMaterials, shortMaterials), 0, 'palette material copies are scoped by train kind');
+    assert.ok([...longMaterials].some((material) => material instanceof THREE.MeshStandardMaterial && material.map === sharedTexture), 'palette copies retain the shared texture object');
+    assert.ok([...shortMaterials].every((material) => !originals.has(material)), 'live groups must not bind the cached template materials');
+    layer.dispose();
+
+    assert.equal(disposedOriginals.size, 0, 'disposing the live layer must not dispose template or sample materials');
+    for (const [material, before] of snapshots) {
+      assert.equal(material.opacity, before.opacity);
+      assert.equal(material.transparent, before.transparent);
+      assert.equal(material.depthWrite, before.depthWrite);
+      if (material instanceof THREE.MeshStandardMaterial) {
+        assert.equal(material.map, before.map);
+        assert.equal(material.envMap, before.envMap);
+      }
+    }
+    assert.equal(textureDisposed, false, 'disposing a material palette must not dispose its shared texture');
+  } finally {
+    textureOriginal.map = previousMap;
+    sharedTexture.dispose();
+  }
 });
 
 test('cars whose track is outside the observed occupied trail stay hidden rather than extrapolating', () => {
