@@ -208,7 +208,7 @@ test('the client never emits or stringifies the passcode', async (t) => {
   assert.ok(!dump.includes('SENTINEL-PASSCODE'));
 });
 
-test('an ERROR frame becomes a fault carrying only the message header', async (t) => {
+test('an ERROR frame becomes a fault without upstream text', async (t) => {
   const server = await fakeServer(t, (sock) => {
     sock.on('data', () => sock.write(encodeFrame('ERROR', { message: 'bad login' }, 'details')));
   });
@@ -218,7 +218,7 @@ test('an ERROR frame becomes a fault carrying only the message header', async (t
   const closed = new Promise((resolve) => client.on('close', resolve));
   client.start();
   const err = await fault;
-  assert.match(err.message, /bad login/);
+  assert.equal(err.message, 'stomp: ERROR frame');
   await closed;
   await close(server);
 });
@@ -302,7 +302,7 @@ test('stomp: fake transport turns ERROR frames into safe faults', (t) => {
   client.start();
   socket.send('ERROR', { message: 'bad login' }, 'SENTINEL details');
   assert.equal(faults.length, 1);
-  assert.match(faults[0].message, /bad login/);
+  assert.equal(faults[0].message, 'stomp: ERROR frame');
   assert.ok(!faults[0].message.includes('SENTINEL'));
   assert.equal(socket.closed, true);
 });

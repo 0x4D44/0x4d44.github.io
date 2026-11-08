@@ -48,7 +48,7 @@ test('trust: activation links only to a King’s Cross schedule and emits safe f
   const state = createTrustState({ services: () => [kx, other], now: () => baseTime });
   const events = state.apply([
     activation(),
-    activation({ train_id: 'CC9Z99M008', train_uid: 'NOT-KX', user_id: 'SHOULD-NOT-LEAK' }),
+    activation({ train_id: 'CC9Z99M008', train_uid: 'NOTKX', user_id: 'SHOULD-NOT-LEAK' }),
     { header: { msg_type: '0008' }, body: { user_id: 'IGNORED' } },
   ]);
   assert.equal(events.length, 1);
@@ -189,6 +189,21 @@ test('trust: newer corrections replace realtime values without inventing forecas
   assert.equal(calls[0].realtime.actualArrivalMs, correctedActual);
   assert.equal(calls[0].realtime.variationMinutes, 2);
   assert.ok(!Object.hasOwn(calls[0].realtime, 'expectedArrivalMs'));
+
+  let crossKindTime = baseTime;
+  const crossKind = createTrustState({ services: () => [call], now: () => crossKindTime });
+  crossKind.apply([movement({ event_type: 'DEPARTURE', actual_timestamp: String(baseTime + 240_000),
+    variation_status: 'LATE', timetable_variation: '3', platform: '5' })]);
+  crossKindTime += 1_000;
+  crossKind.apply([movement({ event_type: 'ARRIVAL', actual_timestamp: String(baseTime + 120_000),
+    variation_status: 'EARLY', timetable_variation: '2', platform: '2' })]);
+  const merged = crossKind.enrich().calls[0].realtime;
+  assert.equal(merged.eventType, 'ARRIVAL', 'latest received event controls merged metadata across event types');
+  assert.equal(merged.variationMinutes, -2);
+  assert.equal(merged.platform, '2');
+  assert.equal(merged.updatedAtMs, crossKindTime);
+  assert.equal(merged.actualArrivalMs, baseTime + 120_000);
+  assert.equal(merged.actualDepartureMs, baseTime + 240_000);
 });
 
 test('trust: origin epoch determines London service date through summer midnight', () => {

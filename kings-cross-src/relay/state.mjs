@@ -1,6 +1,9 @@
 // Current picture of one TD area: which description sits in which berth, plus the latest
 // signalling bytes if the area sends S-class. Pure, no I/O, so it is easy to test and to
 // drive from a recording.
+import { validTdEvent } from './td.mjs';
+
+const MAX_BERTHS = 65536;
 
 export class TdState {
   #area;
@@ -18,7 +21,10 @@ export class TdState {
   }
 
   apply(e) {
-    if (e.area !== this.#area) return false;
+    if (!validTdEvent(e) || e.area !== this.#area) return false;
+    // Keep existing entries usable at capacity; malformed/flood input cannot grow memory forever.
+    if (['step', 'interpose'].includes(e.kind) && !this.#berths.has(e.to) &&
+        this.#berths.size >= MAX_BERTHS && !(e.kind === 'step' && this.#berths.has(e.from))) return false;
     this.#counts[e.kind] = (this.#counts[e.kind] ?? 0) + 1;
     switch (e.kind) {
       case 'step':
@@ -32,7 +38,8 @@ export class TdState {
         this.#berths.set(e.to, e.descr);
         break;
       case 'sclass':
-        this.#sclass.set(e.address, e.data);
+        // One canonical key per 16-bit wire address, including differently padded/cased aliases.
+        this.#sclass.set(Number.parseInt(e.address, 16).toString(16).toUpperCase().padStart(2, '0'), e.data.toUpperCase());
         break;
       default:
         break;

@@ -56,7 +56,7 @@ test('td: invalid JSON and non-array bodies throw', () => {
 });
 
 test('td: inArea keeps only the wanted area', () => {
-  const events = parseTdBody(body([{ CA_MSG: { area_id: 'Y9' } }, { CA_MSG: { area_id: 'Y8' } }]));
+  const events = parseTdBody(body([{ CT_MSG: { area_id: 'Y9' } }, { CT_MSG: { area_id: 'Y8' } }]));
   assert.equal(inArea(events, 'Y9').length, 1);
 });
 
@@ -76,6 +76,7 @@ test('state: interpose, step and cancel move descriptions between berths', () =>
 test('state: other areas are ignored and counts track kinds', () => {
   const s = new TdState('Y9');
   assert.equal(s.apply({ kind: 'step', area: 'Y8', descr: 'x', from: 'a', to: 'b' }), false);
+  assert.equal(s.apply({ kind: 'interpose', area: 'Y8', descr: '3C45', to: '2035' }), false);
   s.apply({ kind: 'heartbeat', area: 'Y9' });
   s.apply({ kind: 'sclass', area: 'Y9', address: '0A', data: '4B' });
   const snap = s.snapshot();

@@ -547,3 +547,16 @@ test('compact route tooltips escape full station names', () => {
   assert.match(html, /title="2Z61 → P4 · 0\.1 km · &lt;cambridge &amp; &quot;north&quot;&gt;"/);
   assert.doesNotMatch(html, /<Cambridge|<\/Cambridge>/);
 });
+
+test('board repeats the current escaped connection and stale age alongside retained rows', () => {
+  const doc = new FakeDocument(), parent = new FakeElement(doc), status = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement, status as unknown as HTMLElement);
+  const rows = boardRows([], anchors([]), { nowMs: bookedAt });
+  status.textContent = 'live · reconnecting; stale data 60s old <offline>';
+  controller.update(rows);
+  assert.match(parent.children[0]!.children[2]!.innerHTML, /reconnecting; stale data 60s old &lt;offline&gt;/);
+  status.textContent = 'live · relay connected; upstream connected'; controller.update(rows);
+  assert.match(parent.children[0]!.children[2]!.innerHTML, /upstream connected/);
+  assert.doesNotMatch(parent.children[0]!.children[2]!.innerHTML, /stale data/);
+  controller.dispose();
+});

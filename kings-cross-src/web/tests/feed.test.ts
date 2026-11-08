@@ -218,7 +218,7 @@ test('live SSE closes failed connections, retries with backoff and recovers with
   scheduled.shift()!.fn(); streams[1]!.onerror?.({} as Event);
   assert.equal(scheduled[0]!.ms, 1000);
   scheduled.shift()!.fn(); streams[2]!.onopen?.({} as Event);
-  assert.equal(states.at(-1), 'connected');
+  assert.match(states.at(-1)!, /^relay connected/);
   streams[2]!.emit('snapshot', { area: 'TEST', berths: {} });
   assert.equal(applied.at(-1)!.kind, 'cancel');
   streams[2]!.onerror?.({} as Event); assert.equal(scheduled[0]!.ms, 500);
@@ -252,24 +252,24 @@ function liveHarness() {
 
 test('live SSE watchdog retries after more than fifteen seconds of silence on an open stream', () => {
   const h = liveHarness();
-  h.tick(30_000); assert.equal(h.streams.length, 1); assert.equal(h.states.at(-1), 'connecting');
-  h.open(); h.tick(15_000); assert.equal(h.states.at(-1), 'connected');
+  h.tick(10_000); assert.equal(h.streams.length, 1); assert.equal(h.states.at(-1), 'connecting');
+  h.open(); h.tick(15_000); assert.match(h.states.at(-1)!, /^relay connected/);
   h.tick(1); assert.equal(h.streams[0]!.closed, true); assert.match(h.states.at(-1)!, /reconnecting; retry in 0.5s/);
   h.tick(499); assert.equal(h.streams.length, 1);
   h.tick(1); assert.equal(h.streams.length, 2);
   h.streams[1]!.onerror?.({} as Event);
   assert.match(h.states.at(-1)!, /reconnecting; retry in 1s/);
   h.tick(1000); h.open(); h.streams[2]!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
-  assert.equal(h.states.at(-1), 'connected'); assert.deepEqual(h.applied, [{ kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' } }, first]);
+  assert.match(h.states.at(-1)!, /^relay connected/); assert.deepEqual(h.applied, [{ kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' } }, first]);
   h.feed.dispose();
 });
 
 test('live SSE pings keep a quiet stream alive without advancing simulation or adding trains', () => {
   const h = liveHarness(); h.open();
   for (let i = 0; i < 12; i++) { h.tick(5000); h.streams[0]!.emit('ping', { t: -999 }); }
-  assert.equal(h.streams.length, 1); assert.equal(h.streams[0]!.closed, false); assert.equal(h.states.at(-1), 'connected');
+  assert.equal(h.streams.length, 1); assert.equal(h.streams[0]!.closed, false); assert.match(h.states.at(-1)!, /^relay connected/);
   assert.deepEqual(h.applied, []); assert.equal(h.feed.timeMs(), 0);
-  h.tick(15_000); assert.equal(h.states.at(-1), 'connected');
+  h.tick(15_000); assert.match(h.states.at(-1)!, /^relay connected/);
   h.tick(1); assert.match(h.states.at(-1)!, /reconnecting/);
   h.feed.dispose();
 });
@@ -278,7 +278,7 @@ test('live SSE snapshot and TD messages both refresh the watchdog deadline', () 
   for (const type of ['snapshot', 'td']) {
     const h = liveHarness(); h.open(); h.tick(14_999);
     h.streams[0]!.emit(type, type === 'snapshot' ? { area: 'TEST', berths: { A: 'SYN1' } } : { t: 1, e: first });
-    h.tick(15_000); assert.equal(h.states.at(-1), 'connected', type);
+    h.tick(15_000); assert.match(h.states.at(-1)!, /^relay connected/, type);
     h.tick(1); assert.match(h.states.at(-1)!, /reconnecting/, type);
     h.feed.dispose();
   }

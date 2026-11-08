@@ -550,6 +550,33 @@ test('relay: a keychain failure is retried with backoff and logged without secre
   await relay.close();
 });
 
+test('relay offline: keychain retries keep their diagnostic category without private exception text', async (t) => {
+  const dataDir = await newTmp('kx-keychain-offline-');
+  const fake = captureHttp(t);
+  const broker = syntheticBroker(), logs = [];
+  let calls = 0, relay;
+  t.after(async () => {
+    try { await relay?.close(); }
+    finally { await rm(dataDir, { recursive: true, force: true }); }
+  });
+  relay = await startRelay({
+    area: 'Y9', topic: 't', dataDir, heartbeat: [0, 0],
+    backoff: { minMs: 10, maxMs: 20 },
+    readCredentials: async () => {
+      if (++calls < 3) throw new Error('keychain: lookup failed (exit 44) SYNTHETIC-PRIVATE /Users/synthetic/private');
+      return { account: ACCOUNT, secret: SENTINEL };
+    },
+    connectSocket: () => broker.connectSocket(), log: line => logs.push(line),
+  });
+  await until(() => broker.subscribes.length === 1, 'connected after two keychain failures');
+  const health = JSON.parse((await fakeRequest(fake.handler)).body);
+  assert.equal(health.feed, 'connected');
+  assert.equal(calls, 3);
+  assert.equal(logs.filter(line => /keychain: lookup failed/.test(line)).length, 2);
+  assert.equal(logs.filter(line => /reconnecting/.test(line)).length, 2);
+  assert.doesNotMatch(logs.join('\n'), /SYNTHETIC-PRIVATE|Users|exit 44|SENTINEL-PASSWORD|who@example/);
+});
+
 
 function heartbeatFixture() {
   const req = new EventEmitter();
@@ -631,7 +658,7 @@ test('relay heartbeat: events endpoint wires the named heartbeat and request cle
   assert.equal(pingTimer.unrefs, 1);
   assert.equal(recorderTimer.unrefs, 1);
   pingTimer.callback();
-  assert.equal(writes[1], 'event: ping\ndata: {"t":321}\n\n');
+  assert.equal(writes[1], 'event: ping\ndata: {"t":321,"feed":"disabled","lastEventAt":null}\n\n');
   req.emit('close');
   assert.deepEqual(cleared, [pingTimer]);
   pingTimer.callback(); assert.equal(writes.length, 2);
