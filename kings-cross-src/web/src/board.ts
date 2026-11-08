@@ -11,11 +11,13 @@ export type BoardTrain = Pick<TrainView, 'id' | 'description'> & Partial<Omit<Tr
 export interface BoardService extends ScheduleCall {
   originName?: string;
   destinationName?: string;
+  cancelled?: boolean; // Explicit schedule information, never inferred from a missing TD label.
   realtime?: {
     actualArrivalMs?: number | null; actualDepartureMs?: number | null;
     publicArrivalMs?: number | null; publicDepartureMs?: number | null;
     variationMinutes?: number | null; eventType?: string | null; platform?: string | null;
     trainId?: string | null; matchMethod?: string | null; updatedAtMs?: number | null;
+    cancelled?: boolean;
   } | null;
 }
 export interface BoardDue { service: BoardService; direction: 'arrival' | 'departure'; bookedMs: number }
@@ -215,11 +217,12 @@ export function boardRows(trains: readonly BoardTrain[], anchors: AnchorMap, opt
 
 const sameCall = (a: ScheduleCall, b: ScheduleCall): boolean => a.uid === b.uid && a.serviceDate === b.serviceDate && a.date === b.date;
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
-/** Project only recorded movement facts. Never derive expected times from a variation. */
+/** Project explicit TRUST facts; a TD cancel does not cancel a passenger service. */
 export function applyBoardTrust(services: readonly BoardService[], event: unknown): BoardService[] {
   const object = (v: unknown): Record<string, unknown> => v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
   const envelope = object(event), e = object(envelope.e ?? event);
-  if (e.kind !== 'trust' || e.type !== 'movement' || !['ARRIVAL', 'DEPARTURE'].includes(String(e.eventType))) return [...services];
+  const cancellation = e.type === 'cancellation' && typeof e.cancelled === 'boolean';
+  if (e.kind !== 'trust' || !cancellation && (e.type !== 'movement' || !['ARRIVAL', 'DEPARTURE'].includes(String(e.eventType)))) return [...services];
   let service: BoardService | undefined;
   if (typeof e.uid === 'string' && e.uid) {
     const matches = services.filter(s => s.uid === e.uid && (!e.serviceDate || s.serviceDate === e.serviceDate) && (!e.date || s.date === e.date));
@@ -232,6 +235,8 @@ export function applyBoardTrust(services: readonly BoardService[], event: unknow
   return services.map(s => {
     if (s !== service) return s;
     if (finite(e.receivedAtMs) && finite(s.realtime?.updatedAtMs) && e.receivedAtMs < s.realtime.updatedAtMs) return s;
+    if (cancellation) return { ...s, realtime: { ...s.realtime, cancelled: e.cancelled as boolean,
+      ...(finite(e.receivedAtMs) ? { updatedAtMs: e.receivedAtMs } : {}) } };
     const realtime = { ...s.realtime, eventType: String(e.eventType) };
     if (finite(e.actualMs)) {
       if (e.eventType === 'ARRIVAL') realtime.actualArrivalMs = e.actualMs;
@@ -250,7 +255,7 @@ const escape = (value: string): string => value.replace(/[&<>"']/g, (c) => ({ '&
 const duration = (ms: number): string => `${Math.floor(ms / 60_000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 const platformRangeLabel = (values: number[]): string => {
   const sorted = [...new Set(values.filter(validPlatform))].sort((a, b) => a - b);
-  if (!sorted.length) return 'P?';
+  if (!sorted.length) return 'TBC';
   const labels: string[] = [];
   let first = sorted[0]!, last = first;
   for (const value of sorted.slice(1)) {
@@ -263,8 +268,8 @@ const platformRangeLabel = (values: number[]): string => {
 };
 const platformLabel = (values: number[]): string => {
   const sorted = [...new Set(values.filter(validPlatform))].sort((a, b) => a - b);
-  const full = platformRangeLabel(sorted);
-  return sorted.length > 0 && full.length > 10 ? `P${sorted[0]} +${sorted.length - 1}` : full;
+  // A fan-out identifies possible routes, not an assigned passenger platform.
+  return sorted.length === 1 ? `P${sorted[0]}` : 'TBC';
 };
 const distanceLabel = (distanceM?: number): string => typeof distanceM === 'number' && Number.isFinite(distanceM) && distanceM >= 0
   ? `${(distanceM / 1000).toFixed(1)} km` : '—';
@@ -283,15 +288,18 @@ const publicTime = (service: BoardService, direction: Direction): string | null 
 const bookedTime = (service: BoardService, direction: Direction): string =>
   (publicTime(service, direction) ?? (direction === 'arrival' ? service.arrival : service.departure))?.slice(0, 5) ?? '';
 const stockCall = (service: BoardService, direction: Direction): boolean => /^[035]/.test(service.headcode) || !publicTime(service, direction);
-const placeFor = (service: BoardService, direction: Direction): string => stockCall(service, direction) ? 'empty stock'
+const stockLabel = 'Not in service (empty stock)';
+const cancelled = (service?: BoardService): boolean => !!service && (service.stp === 'C' || (service.realtime?.cancelled ?? service.cancelled) === true);
+const placeFor = (service: BoardService, direction: Direction): string => stockCall(service, direction) ? stockLabel
   : direction === 'arrival' ? `from ${stationName(service.originName || service.origin)}` : stationName(service.destinationName || service.destination);
 const approachPlace = (row: BoardRow): string => row.service
-  ? stockCall(row.service, 'arrival') ? 'empty stock' : stationName(row.service.originName || row.service.origin) || '—'
-  : stationName(row.origin ?? '') || '—';
+  ? stockCall(row.service, 'arrival') ? stockLabel : stationName(row.service.originName || row.service.origin) || '—'
+  : /^[035]/.test(row.headcode) ? stockLabel : stationName(row.origin ?? '') || '—';
 const departurePlace = (row: BoardRow): string => row.service
-  ? stockCall(row.service, 'departure') ? 'empty stock' : stationName(row.service.destinationName || row.service.destination) || '—'
-  : stationName(row.destination ?? '') || '—';
+  ? stockCall(row.service, 'departure') ? stockLabel : stationName(row.service.destinationName || row.service.destination) || '—'
+  : /^[035]/.test(row.headcode) ? stockLabel : stationName(row.destination ?? '') || '—';
 const timeFact = (service: BoardService, direction: Direction, nowMs: number): string => {
+  if (cancelled(service)) return `${bookedTime(service, direction)} Cancelled`.trim();
   const rt = service.realtime;
   const actual = direction === 'arrival' ? rt?.actualArrivalMs : rt?.actualDepartureMs;
   const variation = rt && (!finite(actual) || actual <= nowMs) && (!rt.eventType || rt.eventType === direction.toUpperCase()) && finite(rt.variationMinutes)
@@ -301,14 +309,15 @@ const timeFact = (service: BoardService, direction: Direction, nowMs: number): s
 const trainHtml = (row: BoardRow, detail: string, nowMs: number): string => {
   const direction = rowDirection(row), service = row.service;
   const description = service ? `${placeFor(service, direction)} · ${direction === 'arrival' ? 'arr' : 'dep'} ${timeFact(service, direction, nowMs)}`
-    : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter(Boolean).join(' · ');
+    : /^[035]/.test(row.headcode) ? stockLabel : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter(Boolean).join(' · ');
   const operator = service ? operatorName(service.operator) : '';
   const title = [row.headcode, description, operator, detail].filter(Boolean).join(' · ');
-  return `<div class="kx-board-train" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(detail)}</span></div>`;
+  return `<div class="kx-board-train" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(cancelled(service) ? 'Cancelled' : detail)}</span></div>`;
 };
 const approachHtml = (row: BoardRow): string => {
-  const candidates = row.platforms ?? [], platform = platformLabel(candidates), platformTooltip = platformRangeLabel(candidates);
-  const distance = distanceLabel(row.distanceM), place = approachPlace(row);
+  const candidates = row.platforms ?? [], platform = platformLabel(candidates);
+  const platformTooltip = platform === 'TBC' && candidates.length ? `TBC (possible ${platformRangeLabel(candidates)})` : platform;
+  const distance = distanceLabel(row.distanceM), place = `${cancelled(row.service) ? 'Cancelled · ' : ''}${approachPlace(row)}`;
   const legacy = row.service ? [] : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination];
   const title = [`${row.headcode} → ${platformTooltip}`, distance, place, ...legacy].filter(Boolean).join(' · ');
   return `<div class="kx-board-approach" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-arrow">→</span><span>${escape(platform)}</span><span>${escape(distance)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
@@ -320,7 +329,8 @@ const departureClock = (row: BoardRow, nowMs: number): { value: string; source: 
     : { value: validClock(row.leftAtMs) ? clock(row.leftAtMs) : '—', source: 'Observed' };
 };
 const departureHtml = (row: BoardRow, nowMs: number): string => {
-  const platform = platformLabel(row.platform === undefined ? [] : [row.platform]), time = departureClock(row, nowMs), place = departurePlace(row);
+  const platform = platformLabel(row.platform === undefined ? [] : [row.platform]), time = departureClock(row, nowMs);
+  const place = `${cancelled(row.service) ? 'Cancelled · ' : ''}${departurePlace(row)}`;
   const title = [`${row.headcode} ${platform} →`, `${time.source} ${time.value}`, place].join(' · ');
   return `<div class="kx-board-departure" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span>${escape(platform)}</span><span class="kx-board-arrow">→</span><span>${escape(time.value)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
 };
@@ -333,12 +343,21 @@ export function boardHtml(rows: BoardRows): string {
   const departed = rows.departed.map((r) => departureHtml(r, rows.timeMs)).join('') || '<p class="kx-board-empty">None observed in the last 3 minutes</p>';
   const due = rows.due.slice(0, 8).map(({ service, direction }) => {
     const arrival = direction === 'arrival';
-    const place = placeFor(service, direction), operator = operatorName(service.operator), time = bookedTime(service, direction), platform = `P${service.platform ?? '?'}`;
+    const place = placeFor(service, direction), operator = operatorName(service.operator), time = bookedTime(service, direction);
+    const platform = platformLabel(service.platform != null && /^(?:[0-9]|10)$/.test(service.platform.trim()) ? [Number(service.platform)] : []);
     const facts = timeFact(service, direction, rows.timeMs).slice(time.length);
+    const description = cancelled(service) ? `Cancelled · ${place}` : place + facts;
     const title = `${time} ${arrival ? 'arr' : 'dep'} ${service.headcode} ${place}${facts} ${platform} ${operator}`;
-    return `<div class="kx-board-due" title="${escape(title)}"><span>${escape(time)}</span><span>${arrival ? 'arr' : 'dep'}</span><strong>${escape(service.headcode)}</strong><span class="kx-board-description">${escape(place + facts)}</span><span>${escape(platform)}</span><span class="kx-board-operator">${escape(operator)}</span></div>`;
+    return `<div class="kx-board-due" title="${escape(title)}"><span>${escape(time)}</span><span>${arrival ? 'arr' : 'dep'}</span><strong>${escape(service.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span>${escape(platform)}</span><span class="kx-board-operator">${escape(operator)}</span></div>`;
   }).join('') || '<p class="kx-board-empty">None booked in the next 30 minutes</p>';
   return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · ${rows.timetable ? 'timetable available' : 'no timetable'}`}<br>Dwell measured since observed · simulation time</p><h2>Platforms 0–10</h2>${platformRows}${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
+}
+
+/** Fixed overlays share one viewport: reserve the whole HUD, including its attribution. */
+export function boardLayout(width: number, height: number, footerTop = height - 88) {
+  const top = 52, left = 16;
+  const bottom = Math.max(24, height - footerTop + 12);
+  return { top, left, width: Math.max(0, Math.min(350, width - 32)), maxHeight: Math.max(0, height - top - bottom), bottom };
 }
 
 export function createBoard(parent: HTMLElement, status?: HTMLElement) {
@@ -347,9 +366,9 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
   root.className = 'kx-board'; root.setAttribute('aria-label', 'Station board');
   const style = doc.createElement('style');
   // Eleven single-line platform entries take 275 px; long names retain their full tooltip.
-  style.textContent = `.kx-board{position:fixed;top:52px;left:16px;width:350px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 52px - var(--board-bottom,100px));box-sizing:border-box;display:flex;flex-direction:column;z-index:10;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:12px/20px system-ui,sans-serif;backdrop-filter:blur(8px)}
-.kx-board button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;border:0;border-radius:6px;background:transparent;color:inherit;padding:9px 12px;font:600 13px/1.4 system-ui,sans-serif;text-align:left;cursor:pointer}.kx-board button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-.kx-board-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 12px 10px;line-height:20px}.kx-board-body[hidden]{display:none}.kx-board h2{font-size:12px;margin:8px 0 4px;color:var(--fg)}.kx-board-note,.kx-board-empty{color:var(--muted);margin:2px 0}
+  style.textContent = `.kx-board{position:fixed;top:52px;left:16px;width:350px;max-width:calc(100vw - 32px);max-height:var(--board-height,calc(100dvh - 52px - var(--board-bottom,100px)));min-height:0;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column;z-index:10;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:12px/20px system-ui,sans-serif;backdrop-filter:blur(8px)}
+.kx-board button{display:flex;flex-shrink:0;justify-content:space-between;align-items:center;gap:12px;width:100%;border:0;border-radius:6px;background:transparent;color:inherit;padding:9px 12px;font:600 13px/1.4 system-ui,sans-serif;text-align:left;cursor:pointer}.kx-board button:focus-visible{outline:2px solid currentColor;outline-offset:-2px}
+.kx-board-body{flex:1 1 auto;overflow:auto;overscroll-behavior:contain;min-height:0;min-width:0;box-sizing:border-box;padding:0 12px 10px;line-height:20px}.kx-board-body[hidden]{display:none}.kx-board h2{font-size:12px;margin:8px 0 4px;color:var(--fg)}.kx-board-note,.kx-board-empty{color:var(--muted);margin:2px 0}
 .kx-board-platform{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:2px 0;min-height:20px}.kx-board-platform>div{min-width:0}
 .kx-board-train{display:flex;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap}.kx-board-train strong{flex:0 0 32px;font-size:12px;font-variant-numeric:tabular-nums}.kx-board-train span{color:var(--muted)}.kx-board-description{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-operator{flex:0 0 auto;max-width:92px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-state{flex:0 1 auto;max-width:84px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .kx-board-approach,.kx-board-departure{display:grid;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-approach{grid-template-columns:32px 12px 56px 56px minmax(0,1fr)}.kx-board-departure{grid-template-columns:32px 28px 12px 42px minmax(0,1fr)}.kx-board-approach strong,.kx-board-departure strong{font-size:12px}.kx-board-approach>span,.kx-board-departure>span{color:var(--muted)}.kx-board-approach .kx-board-arrow,.kx-board-departure .kx-board-arrow{color:var(--fg)}.kx-board-route{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -358,7 +377,7 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
   toggle.setAttribute('aria-controls', 'kx-board-content');
   const body = doc.createElement('div'); body.className = 'kx-board-body'; body.id = 'kx-board-content';
   const narrow = view.matchMedia('(max-width: 600px)');
-  let collapsed = narrow.matches, chosen = false, html = '';
+  let collapsed = narrow.matches, chosen = false, html = '', disposed = false;
   const paintToggle = (): void => {
     body.hidden = collapsed;
     toggle.setAttribute('aria-expanded', String(!collapsed));
@@ -366,16 +385,25 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
   };
   const onToggle = (): void => { chosen = true; collapsed = !collapsed; paintToggle(); };
   const onWidth = (): void => { if (!chosen) { collapsed = narrow.matches; paintToggle(); } };
+  const hud = status?.closest('.hud') ?? status ?? doc.querySelector('.hud');
   const resize = (): void => {
-    const hud = status?.closest('.hud') ?? status;
-    const bottom = hud ? Math.max(24, view.innerHeight - hud.getBoundingClientRect().top + 12) : 100;
-    root.style.setProperty('--board-bottom', `${bottom}px`);
+    if (disposed) return;
+    const viewport = view.visualViewport;
+    const bounds = boardLayout(Math.min(view.innerWidth, viewport?.width ?? Infinity),
+      Math.min(view.innerHeight, viewport?.height ?? Infinity), hud?.getBoundingClientRect().top);
+    root.style.setProperty('--board-bottom', `${bounds.bottom}px`);
+    root.style.setProperty('--board-height', `${bounds.maxHeight}px`);
+    root.style.setProperty('max-width', `${bounds.width}px`);
   };
+  // HUD wrapping and mobile browser chrome can change without a window resize.
+  const observer = view.ResizeObserver ? new view.ResizeObserver(resize) : undefined;
+  if (hud) observer?.observe(hud);
   toggle.addEventListener('click', onToggle); narrow.addEventListener('change', onWidth);
   root.append(style, toggle, body); parent.append(root); paintToggle(); resize();
   view.addEventListener('resize', resize);
+  view.visualViewport?.addEventListener('resize', resize);
   return {
     update(rows: BoardRows): void { const connection = /(?:relay connected|reconnecting|connecting|invalid relay|invalid TRUST)[^·]*/.exec(status?.textContent ?? '')?.[0]?.trim() ?? ''; const next = boardHtml(rows) + (connection ? `<p class="kx-board-note kx-board-connection">${escape(connection)}</p>` : ''); if (next !== html) { body.innerHTML = next; html = next; } resize(); },
-    dispose(): void { toggle.removeEventListener('click', onToggle); narrow.removeEventListener('change', onWidth); view.removeEventListener('resize', resize); root.remove(); },
+    dispose(): void { disposed = true; observer?.disconnect(); toggle.removeEventListener('click', onToggle); narrow.removeEventListener('change', onWidth); view.removeEventListener('resize', resize); view.visualViewport?.removeEventListener('resize', resize); root.remove(); },
   };
 }

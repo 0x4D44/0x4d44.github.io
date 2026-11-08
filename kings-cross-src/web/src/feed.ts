@@ -47,6 +47,7 @@ export function parseEvent(value: unknown): MotionEvent {
   }
   if (e.kind === 'sclass' && (typeof e.address !== 'string' || !/^[0-9a-f]{1,4}$/i.test(e.address) || typeof e.data !== 'string' || !/^(?:[0-9a-f]{2}){1,256}$/i.test(e.data))) throw new Error('invalid S-class bytes');
   if (e.kind === 'trust') {
+    if (e.cancelled !== undefined && typeof e.cancelled !== 'boolean') throw new Error('invalid TRUST cancellation');
     for (const key of ['uid', 'headcode', 'trainId', 'type', 'eventType', 'platform', 'matchMethod', 'date', 'serviceDate']) {
       const v = e[key];
       if (v != null && (typeof v !== 'string' || v.length > 64 || /[^\x20-\x7e]/.test(v))) throw new Error('invalid TRUST field');
@@ -364,6 +365,7 @@ async function boundedJson(response: Response): Promise<unknown> {
 
 function validBoardService(value: unknown): value is BoardService {
   if (!object(value)) return false;
+  if (value.cancelled !== undefined && typeof value.cancelled !== 'boolean') return false;
   const text = (v: unknown): boolean => typeof v === 'string' && v.length <= 256 && !/[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]/.test(v);
   for (const key of ['uid', 'headcode', 'operator', 'category', 'origin', 'destination', 'date', 'serviceDate', 'startDate', 'endDate', 'stp']) if (!text(value[key])) return false;
   for (const key of ['arrival', 'departure', 'publicArrival', 'publicDeparture', 'platform', 'originName', 'destinationName']) if (value[key] != null && !text(value[key])) return false;
@@ -374,6 +376,7 @@ function validBoardService(value: unknown): value is BoardService {
       if (field == null) continue;
       if (['actualArrivalMs', 'actualDepartureMs', 'publicArrivalMs', 'publicDepartureMs', 'updatedAtMs'].includes(key) ? !epoch(field)
         : key === 'variationMinutes' ? typeof field !== 'number' || !Number.isFinite(field)
+          : key === 'cancelled' ? typeof field !== 'boolean'
           : !text(field)) return false;
     }
   }
@@ -437,7 +440,7 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
       try { input = parseEvent({ ...(event as Record<string, unknown>), area: (event as Record<string, unknown>).area ?? 'TRUST' }) as unknown as Record<string, unknown>; if (JSON.stringify(input).length > MAX_EVENT_CHARS) return; } catch { return; }
       const fact = typeof input.receivedAtMs === 'number' && Number.isFinite(input.receivedAtMs) ? input
         : { ...input, receivedAtMs: options.mode === 'replay' ? atMs : now() };
-      const keys = ['kind', 'area', 'type', 'uid', 'headcode', 'trainId', 'serviceDate', 'date', 'eventType', 'plannedMs', 'actualMs', 'publicMs', 'variationMinutes', 'platform', 'matchMethod', 'receivedAtMs'];
+      const keys = ['kind', 'area', 'type', 'uid', 'headcode', 'trainId', 'serviceDate', 'date', 'eventType', 'plannedMs', 'actualMs', 'publicMs', 'variationMinutes', 'platform', 'matchMethod', 'receivedAtMs', 'cancelled'];
       const compact = Object.fromEntries(keys.filter(key => fact[key] !== undefined).map(key => [key, fact[key]]));
       observed.push({ event: compact, atMs });
       if (observed.length > 10_000) observed.shift();
