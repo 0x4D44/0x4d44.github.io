@@ -24,6 +24,30 @@ MUTATIONS = [
     ('provenance digest fabricated', "createHash('sha256').update(bytes).digest('hex')", "'0'.repeat(64)"),
     ('provenance byte length wrong', 'bytes: bytes.length, sha256:', 'bytes: bytes.length + 1, sha256:'),
     ('runtime hypotheses omitted', 'const runtime = { ...analysis, currentStates: states, comparison, provenance };', 'const runtime = { ...analysis, hypotheses: undefined, currentStates: states, comparison, provenance };'),
+    ('publication always refused', 'publish: reasons.length === 0', 'publish: false'),
+    ('precision regression allowed', 'after.precision < before.precision', 'false'),
+    ('decoded head regression allowed', 'if (headsAfter < headsBefore)', 'if (false)'),
+    ('supported mapping loss allowed', 'if (dropped.some(h => h.goodHeldOut))', 'if (false)'),
+    ('loss explanation omitted', "replacement?.reason || 'No unique qualifying training association in the expanded training span'", "replacement?.reason || ''"),
+    ('unsupported mapping falsely retained', 'goodHeldOut: good', 'goodHeldOut: true'),
+    ('weak held-out candidate allowed', '!qualifiesSignalEvidence(h.heldOut)', 'false'),
+    ('route gains hide proceed precision regression', 'if (oldProceed !== null && (newProceed === null || newProceed < oldProceed))', 'if (false)'),
+    ('open current day used', 'date >= today', 'date > today'),
+    ('closed files unsorted', '}).sort();', '});'),
+    ('foreign area selected', '!name.startsWith(prefix)', 'false'),
+    ('invalid calendar day selected', "return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10).replaceAll('-', '') === date;", 'return true;'),
+    ('latest complete day wrongly named', "const validationDay = names.at(-1)?.slice(`td-${area}-`.length, -7) ?? null;", "const validationDay = names[0]?.slice(`td-${area}-`.length, -7) ?? null;"),
+    ('relearn skips publication', 'if (decision?.publish && candidate)', 'if (false)'),
+    ('baseline kept with stale stored held-out score', 'hypotheses: revalidateSignalHypotheses(validationRows, current.hypotheses,\n        { area, windows: candidate.windows })', 'hypotheses: current.hypotheses'),
+    ('backup stores candidate instead of incumbent', 'await copyFile(file, backup, constants.COPYFILE_EXCL);', 'await atomicJson(backup, candidate);'),
+    ('history forgets decoded bits', "bits: active?.hypotheses.filter(h => h.status === 'decoded').length ?? 0", 'bits: 0'),
+    ('history forgets decoded heads', 'heads: report.published ? decision!.headsAfter : decision?.headsBefore ?? (report.incumbent as { heads: number } | undefined)?.heads ?? null', 'heads: 0'),
+    ('history marks publication as refused', 'published: report.published, reasons: report.reasons', 'published: false, reasons: report.reasons'),
+    ('insufficient completed day refusal omitted', "report.reasons = ['Need at least two completed UTC recordings: earlier days for learning and latest completed day for validation'];", 'report.reasons = [];'),
+    ('lock refusal unexplained', "throw new Error('S-class relearn already locked; inspect .sclass-relearn.lock before retrying')", "throw new Error('failed')"),
+    ('failed daily candidate published anyway', 'if (decision?.publish && candidate)', 'if (candidate)'),
+    ('events outside closed UTC filename accepted', "if (rows.some(row => new Date(row.t).toISOString().slice(0, 10).replaceAll('-', '') !== day))", 'if (false)'),
+    ('on demand dispatch bypassed', "if (process.argv[2] === '--relearn')", 'if (false)'),
 ]
 
 
@@ -71,11 +95,12 @@ with tempfile.TemporaryDirectory(prefix='sclass-cli-mutation-', dir=scratch) as 
         sys.exit('Incomplete or duplicate baseline TAP')
     print(f'Baseline: {len(expected)} tests passed', flush=True)
     for label, old, new in MUTATIONS:
-        if original.count(old) != 1:
+        expected_count = 2 if label in ['provenance digest fabricated', 'provenance byte length wrong'] else 1
+        if original.count(old) != expected_count:
             survivors.append(label)
             print(f'[INVALID] {label}: source pattern count {original.count(old)}', flush=True)
             continue
-        target.write_text(original.replace(old, new, 1))
+        target.write_text(original.replace(old, new))
         try:
             result = run(work)
         except subprocess.TimeoutExpired:

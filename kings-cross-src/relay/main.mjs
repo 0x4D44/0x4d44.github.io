@@ -9,6 +9,7 @@
 //   KX_TD_TOPIC    TD topic                              (default /topic/TD_ALL_SIG_AREA)
 //   KX_TRUST_TOPIC TRUST train movements                  (default /topic/TRAIN_MVT_ALL_TOC)
 //   KX_NO_SCHEDULE "1" to disable background SCHEDULE download
+//   KX_NO_SCLASS_RELEARN "1" to disable the daily private sclass relearn
 //   KX_DATA_DIR    SMART/CORPUS cache and recordings     (default ~/kx-data)
 //   KX_ANCHORS     anchor map JSON                      (default <KX_DATA_DIR>/anchors.json)
 //   KX_SCLASS      signal map JSON                      (default <KX_DATA_DIR>/sclass.json)
@@ -23,21 +24,24 @@ import path from 'node:path';
 import tls from 'node:tls';
 import { DEFAULT_SERVICE, readCredentials } from './keychain.mjs';
 import { startRelay } from './relay.mjs';
+import { createSclassJob } from './sclass-job.mjs';
 
 const env = process.env;
 const host = env.KX_STOMP_HOST ?? 'publicdatafeeds.networkrail.co.uk';
 const stompPort = Number(env.KX_STOMP_PORT ?? 61618);
 const useTls = env.KX_STOMP_TLS === '1';
 const service = env.KX_KEYCHAIN_SERVICE ?? DEFAULT_SERVICE;
+const area = env.KX_AREA ?? 'Y9';
+const dataDir = env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data');
 
 const log = (line) => console.error(`${new Date().toISOString()} ${line}`);
 
 const relay = await startRelay({
-  area: env.KX_AREA ?? 'Y9',
+  area,
   topic: env.KX_TD_TOPIC ?? '/topic/TD_ALL_SIG_AREA',
   trustTopic: env.KX_TRUST_TOPIC ?? '/topic/TRAIN_MVT_ALL_TOC',
   port: Number(env.KX_RELAY_PORT ?? 8787),
-  dataDir: env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data'),
+  dataDir,
   feedEnabled: env.KX_NO_FEED !== '1',
   scheduleEnabled: env.KX_NO_SCHEDULE !== '1' && env.KX_NO_FEED !== '1',
   readCredentials: () => readCredentials({ service }),
@@ -45,10 +49,20 @@ const relay = await startRelay({
   log,
 });
 
+const sclassJob = env.KX_NO_SCLASS_RELEARN === '1' ? null : createSclassJob({
+  dataDir,
+  area,
+  anchorsPath: env.KX_ANCHORS,
+  tablePath: env.KX_SCLASS,
+  log,
+});
+sclassJob?.start();
+
 log(`relay: listening on http://127.0.0.1:${relay.port}  (area ${env.KX_AREA ?? 'Y9'}, feed ${env.KX_NO_FEED === '1' ? 'off' : `${host}:${stompPort}`})`);
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
+    await sclassJob?.stop();
     await relay.close();
     process.exit(0);
   });
