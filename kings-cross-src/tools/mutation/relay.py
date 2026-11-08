@@ -55,7 +55,7 @@ MUTATIONS = [
     ("recorder: no startup snapshot", "recorder.mjs", "  checkpoint();\n  const timer", "  const timer"),
     ("recorder: checkpoint interval is one hour", "recorder.mjs", "10 * 60_000", "60 * 60_000"),
     ("recorder: interval never checkpoints", "recorder.mjs", "schedule(checkpoint,", "schedule(() => {},"),
-    ("recorder: snapshots forget observed state", "recorder.mjs", "state.apply(event);", ""),
+    ("recorder: snapshots forget observed state", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);", "void event;"),
     ("recorder: rollover lacks initial snapshot", "recorder.mjs", "if (event.kind !== 'snapshot') write({ kind: 'snapshot', ...state.snapshot() }, t);", ""),
     ("recorder: accepts other TD areas", "recorder.mjs", "closed || event.area !== area", "closed"),
     ("recorder: close leaves periodic timer running", "recorder.mjs", "unschedule(timer);", ""),
@@ -72,6 +72,36 @@ MUTATIONS = [
     ("relay: shutdown leaves SSE heartbeats running", "relay.mjs", "for (const stopHeartbeat of heartbeats) stopHeartbeat();", ""),
     ("relay: shutdown omits recorder close", "relay.mjs", "const recorded = recorder.close();", "const recorded = Promise.resolve();"),
     ("relay: server shutdown errors disappear", "relay.mjs", "server.close((error) => error ? reject(error) : resolve());", "server.close(() => resolve());"),
+    ("schedule: discard all station calls", "schedule.mjs", "selector.apply(record);", ""),
+    ("schedule: accept an empty extract", "schedule.mjs", "if (!records) throw new Error('schedule: no schedule records');", ""),
+    ("schedule: accept malformed schedules", "schedule.mjs", "if (value.JsonScheduleV1) throw new Error('schedule: invalid schedule record');", ""),
+    ("schedule: auth omits password", "schedule.mjs", "`${account}:${secret}`", "`${account}:`"),
+    ("schedule: choose an incomplete update", "schedule.mjs", "type=CIF_ALL_FULL_DAILY", "type=CIF_ALL_UPDATE_DAILY"),
+    ("schedule: lose station names", "schedule.mjs", "names.get(call.destination) || call.destination", "call.destination"),
+    ("schedule: ignore cached data", "schedule.mjs", "if (cached) {", "if (false) {"),
+    ("schedule: expose download exception", "schedule.mjs", "'schedule: refresh failed'", "error.message"),
+    ("schedule: timer keeps process alive", "schedule.mjs", "timer?.unref?.();", ""),
+    ("schedule: close leaves timer running", "schedule.mjs", "if (timer) unschedule(timer);", ""),
+    ("schedule: daily timer never refreshes", "schedule.mjs", "void refresh(date);", "void 0;"),
+    ("schedule: accepts arbitrary cache paths", "schedule.mjs", "if (!validDate(date)) throw new Error('invalid schedule date');", ""),
+    ("schedule: missing HTTP validation", "relay.mjs", "dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date')", "false"),
+    ("schedule: all requests use today", "relay.mjs", "const date = dates[0] ?? scheduleDate(now());", "const date = scheduleDate(now());"),
+    ("feed: TRUST subscription missing", "feed.mjs", "if (trustTopic) client.subscribe(trustTopic, { id: 'trust' });", ""),
+    ("feed: TRUST routed into TD parser", "feed.mjs", "trustTopic && (destination === trustTopic || subscription === 'trust')", "false"),
+    ("relay: TRUST not broadcast", "relay.mjs", "else if (row.e.kind === 'trust')", "else if (false)"),
+    ("relay: TRUST not recorded", "relay.mjs", "recorder.append(e);\n      const row", "\n      const row"),
+    ("recorder: TRUST changes TD snapshot counts", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);", "state.apply(event);"),
+    ("schedule: HTTP errors treated as extract", "schedule.mjs", "if (!res.ok) {", "if (false) {"),
+    ("trust: activate a nonstation uid", "trust.mjs", "if (service?.uid !== activation.uid) return false;", ""),
+    ("trust: startup activations lost", "trust.mjs", "return resolvePending(serviceRows);", "return [];"),
+    ("trust: early variation sign wrong", "trust.mjs", "case 'EARLY': return -value;", "case 'EARLY': return value;"),
+    ("trust: no headcode-time fallback", "trust.mjs", "else if (headcode && matchTime !== null)", "else if (false)"),
+    ("trust: retain movements at other stations", "trust.mjs", "if (text(body.loc_stanox) !== KX_STANOX) return null;", ""),
+    ("trust: train identities never expire", "trust.mjs", "at - value.receivedAtMs >= DAY_MS", "false"),
+    ("trust: pending activations unbounded", "trust.mjs", "const MAX_PENDING_ACTIVATIONS = 5_000;", "const MAX_PENDING_ACTIVATIONS = 50_000;"),
+    ("trust: recent movements unbounded", "trust.mjs", "const MAX_MOVEMENTS = 3_000;", "const MAX_MOVEMENTS = 30_000;"),
+    ("trust: corrections merge backwards", "trust.mjs", "for (const event of [...realtime].reverse())", "for (const event of realtime)"),
+    ("trust: origin day uses UTC", "trust.mjs", "timeZone: 'Europe/London'", "timeZone: 'UTC'"),
 ]
 
 def run(work):
@@ -103,12 +133,13 @@ if baseline.returncode or expired:
     print(baseline.stdout, baseline.stderr)
     raise SystemExit('baseline must pass and exit with loopback listeners enabled')
 names = {m.group(1) for m in re.finditer(r'^ok \d+ - (.+)$', baseline.stdout, re.M) if '# SKIP' not in m.group(1)}
-new_names = {name for name in names if name.startswith(('recorder: captures', 'recorder: ignores', 'relay snapshot:', 'relay shutdown:', 'relay files: sclass', 'stomp: fake', 'feed: fake'))}
+new_names = {name for name in names if name.startswith(('recorder: captures', 'recorder: ignores', 'relay snapshot:', 'relay shutdown:', 'relay files: sclass', 'stomp: fake', 'feed: fake', 'schedule ', 'trust:'))}
 seen, survived, timeouts = set(), [], []
 for i, (label, fname, old, new) in enumerate(MUTATIONS):
     with tempfile.TemporaryDirectory(prefix='relay-', dir=scratch) as tmp:
         work = Path(tmp)
         shutil.copytree(src, work / 'relay')
+        shutil.copytree(src.parent / 'core', work / 'core')
         f = work / 'relay' / fname
         f.write_text(f.read_text().replace(old, new, 1))
         result, expired = run(work)

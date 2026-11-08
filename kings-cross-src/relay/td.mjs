@@ -15,6 +15,12 @@
 //     Older {t,e} recordings without checkpoints remain valid; missing history cannot be
 //     reconstructed retrospectively. `t` is receive time; `time` below is the TD event time.
 //   {kind:'unknown',   area, msgType}
+//   {kind:'trust', area, type:'activation'|'movement', trainId, uid, headcode,
+//    serviceDate, date, eventType, plannedMs, actualMs, publicMs, variationMinutes,
+//    platform, matchMethod, receivedAtMs} TRUST projection (see trust.mjs): uid is null
+//     when no service is matched. Only KNGX activations and STANOX 54311 movements are
+//     retained; SSE uses `trust` and recordings use the same {t,e} envelope. Timestamp
+//     fields are explicit TRUST epochs; these historical actuals are not forecasts.
 // `time` is milliseconds since the epoch (or null if absent or unparseable).
 
 function ms(value) {
