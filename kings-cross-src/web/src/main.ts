@@ -84,7 +84,11 @@ function start(): void {
   const parts: { shed: THREE.Object3D | null; buildings: THREE.Group | null } = { shed: null, buildings: null };
   const cityLoaded: Promise<void> = params.has('bare')
     ? Promise.resolve()
-    : import('./data/kx-city.json').then((m) => {
+    // King's Cross Central (Coal Drops, Granary, gasholders, Crick, Library, Platform 37) rides in
+    // the same lazy load: its OSM boxes must be hidden before the city is built.
+    : Promise.all([import('./data/kx-city.json'), import('./kxcentral.ts')]).then(([m, central]) => {
+      for (const id of central.KXCENTRAL_OSM_IDS) hidden.add(id);
+      central.addKxCentral(scene, data);
       parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden }).group;
     }).catch((err: unknown) => { console.error('city failed to load', err); });
   if (!params.has('bare')) addLandmarks(scene, data);
