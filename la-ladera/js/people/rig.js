@@ -188,6 +188,7 @@ export class CharacterLibrary {
       mesh.boundingBox = new THREE.Box3(new THREE.Vector3(-1, -0.1, -1), new THREE.Vector3(1, 2.1, 1));
       mesh.castShadow = true; mesh.receiveShadow = true;
       if (variant && Object.keys(variant).length) { const g = this.geometry(id, 0, variant); if (g) mesh.geometry = g; }
+      inst.nearGeometry = mesh.geometry; // Optional wardrobe identity borrows this exact existing variant, including its colour buffer.
     }
     inst.mixer = new THREE.AnimationMixer(obj);
     return inst;
@@ -195,6 +196,9 @@ export class CharacterLibrary {
 
   /** In-place LOD swap (same skeleton): 0 = full, 1 = decimated. Returns true if changed. */
   setLod(inst, lod) {
+    // Wearables are explicitly installed by WearLibrary; the ordinary character path
+    // stays inert and makes no wardrobe requests. Keep every installed layer in step.
+    if (inst.wear) return inst.wear.library.setLod(inst, lod);
     if (!inst.mesh || inst.lod === lod) return false;
     const g = this.geometry(inst.id, lod, inst.variant); if (!g) return false;
     inst.mesh.geometry = g; inst.mesh.castShadow = lod === 0; inst.lod = lod; return true;

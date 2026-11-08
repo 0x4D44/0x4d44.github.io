@@ -1,0 +1,19 @@
+# Wear source and generated text are fingerprinted as LF bytes. Keep these
+# task-owned paths stable even when the rest of this checkout uses autocrlf.
+/js/people/wear*.js text eol=lf
+/tools/blender/people_wear*.py text eol=lf
+/tools/blender/people_wear*.mjs text eol=lf
+/tools/blender/people_wear*.json text eol=lf
+/tools/blender/PEOPLE-WEAR.md text eol=lf
+/tools/people_wear*.mjs text eol=lf
+/tools/people_wear*.py text eol=lf
+/tools/people_wear*.json text eol=lf
+/tests/people-wear*.mjs text eol=lf
+/tests/people-wear*.html text eol=lf
+/assets/models/manifest.people-wear.json text eol=lf
+/assets/models/wear/*.json text eol=lf
+/dev/wear/**/*.json text eol=lf
+/dev/wear/**/*.md text eol=lf
+/dev/wear/**/*.txt text eol=lf
+/dev/wear/**/*.log text eol=lf
+/dev/wear/**/*.tap text eol=lf
