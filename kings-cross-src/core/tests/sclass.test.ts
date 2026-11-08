@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyseSclass, signalStates, trackSclass, updateBytes } from '../sclass.ts';
+import { analyseSclass, analyseSclassRecordings, signalStates, trackSclass, updateBytes } from '../sclass.ts';
 import type { SignalHypothesis, TimedTdEvent } from '../sclass.ts';
 import type { AnchorMap } from '../anchors.ts';
 
@@ -102,11 +102,84 @@ test('sclass: rule held out support minimum and precision are conjunctive at exa
   assert.equal(two.status, 'unknown');
   const held = [610, 670, 730, 790, 850];
   const at = candidate(fixture([...times.slice(0, 3), ...held], [...times.slice(0, 3), ...held.slice(0, 4)]));
-  assert.equal(at.heldOut.precision, .8);
+  assert.equal(at.heldOut.precision, 1);
+  assert.equal(at.heldOut.recall, .8);
   assert.equal(at.status, 'decoded');
   const below = candidate(fixture([...times.slice(0, 3), ...held], [...times.slice(0, 3), ...held.slice(0, 3)]));
   assert.equal(below.heldOut.support, 3);
   assert.equal(below.status, 'unknown');
+});
+
+test('sclass: rule precision counts false clearings while recall counts missed passages', () => {
+  const held = [610, 670, 730, 790, 850];
+  const rows = fixture([...times.slice(0, 3), ...held], [...times.slice(0, 3), ...held.slice(0, 4), 930]);
+  const at = candidate(rows);
+  assert.equal(at.heldOut.precision, .8);
+  assert.equal(at.heldOut.recall, .8);
+  assert.equal(at.heldOut.unmatchedCycles, 1);
+  assert.equal(at.status, 'decoded');
+  const below = candidate([...rows, byte(960, 1), byte(963, 0)]);
+  assert.equal(below.heldOut.precision, 4 / 6);
+  assert.equal(below.heldOut.recall, .8);
+  assert.equal(below.status, 'unknown');
+});
+
+const longTimes = [250, 550, 850, 1450, 1750, 2050];
+const receiptWindows = { beforeMs: 200, afterMs: 2, earlyMs: 2, routeAfterMs: 30 };
+function longFixture(reset = -1, address = '20'): TimedTdEvent[] {
+  return [boundary(0), byte(0, 0, address), boundary(2400), ...longTimes.map(t => step(t)),
+    ...longTimes.flatMap(t => [byte(t - 60, 1, address), byte(t + reset, 0, address)])];
+}
+
+test('sclass: rule proceed can clear well before passage and reset slightly before C receipt', () => {
+  const result = analyseSclass(longFixture(), anchors, { windows: receiptWindows });
+  const h = result.hypotheses.find(h => h.status === 'decoded');
+  assert.ok(h);
+  assert.equal(h.kind, 'proceed');
+  assert.equal(h.heldOut.support, 3);
+  assert.equal(h.heldOut.precision, 1);
+  assert.equal(h.heldOut.recall, 1);
+  assert.equal(analyseSclass(longFixture(-3), anchors, { windows: receiptWindows }).hypotheses.length, 0);
+  assert.equal(analyseSclass(longFixture(), anchors, { windows: { ...receiptWindows, beforeMs: 50 } }).hypotheses.length, 0);
+});
+
+test('sclass: rule later route release is separate from proceed and cannot light a lamp', () => {
+  const rows = [...longFixture(), ...longFixture(20, '21').filter(r => r.e.kind === 'sclass')];
+  const result = analyseSclass(rows, anchors, { windows: receiptWindows });
+  const hs = result.hypotheses.filter(h => h.status === 'decoded');
+  assert.deepEqual(hs.map(h => [h.address, h.kind, h.to]).sort(), [['20', 'proceed', undefined], ['21', 'route', 'EXIT']]);
+  assert.equal(signalStates({ '20': 1, '21': 0 }, hs, anchors).A, 'proceed');
+  assert.equal(signalStates({ '21': 1 }, hs.filter(h => h.kind === 'route'), anchors).A, 'unknown');
+  const late = analyseSclass(longFixture(31), anchors, { windows: receiptWindows });
+  assert.equal(late.hypotheses.length, 0);
+});
+
+test('sclass: rule occupancy transitions that only follow passage cannot be proceed evidence', () => {
+  const rows = longFixture().filter(r => r.e.kind !== 'sclass');
+  rows.push(byte(0, 0), ...longTimes.flatMap(t => [byte(t + 5, 1), byte(t + 20, 0)]));
+  assert.deepEqual(analyseSclass(rows, anchors, { windows: receiptWindows }).hypotheses, []);
+});
+
+test('sclass: rule each recording learns its first half and validates its second half without gap cycles', () => {
+  const first = fixture(), second = fixture().map(row => ({ ...row, t: row.t + 5000 }));
+  const result = analyseSclassRecordings([first, second], anchors, { windows });
+  assert.deepEqual(result.folds, [{ startMs: 0, splitMs: 500, endMs: 1000 }, { startMs: 5000, splitMs: 5500, endMs: 6000 }]);
+  assert.equal(result.hypotheses[0]?.training.support, 6);
+  assert.equal(result.hypotheses[0]?.heldOut.support, 6);
+  assert.equal(result.hypotheses[0]?.status, 'decoded');
+  assert.equal(result.trace.transitions.find(c => c.t === 5000 && c.bit === 0)?.from, null);
+});
+
+test('sclass: rule snapshots establish bytes atomically without counting a clearing or reset', () => {
+  const snapshot = (t: number, data: unknown, addresses = 1): TimedTdEvent => ({ t, e: { kind: 'snapshot', area: 'SYN', sclass: { addresses, data } } });
+  const trace = trackSclass([byte(0, 0), byte(1, 1), snapshot(2, { '20': '00' }), byte(3, 1)], 'SYN');
+  assert.equal(trace.transitions.find(c => c.t === 2 && c.bit === 0)?.from, null);
+  assert.equal(trace.transitions.find(c => c.t === 3 && c.bit === 0)?.from, 0);
+  for (const [data, count] of [[{ '20': '00', '21': 'GG' }, 2], [{ '20': '00000000' }, 1], [{ '20': '00' }, 2], [{ 'a': '01', '0A': '02' }, 2]] as const) {
+    assert.deepEqual(trackSclass([byte(0, 1), snapshot(1, data, count)], 'SYN').state, {});
+  }
+  const rows = fixture().map(r => r.e.kind === 'sclass' && r.e.data === '00' && r.t > 0 ? snapshot(r.t, { '20': '00' }) : r);
+  assert.deepEqual(analyse(rows).hypotheses, []);
 });
 
 test('sclass: rule split uses elapsed time and excludes full windows crossing either fold edge', () => {

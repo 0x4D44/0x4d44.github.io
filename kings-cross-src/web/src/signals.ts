@@ -26,14 +26,26 @@ const count = (v: unknown): v is number => Number.isSafeInteger(v) && (v as numb
 function evidence(v: unknown): v is SignalEvidence {
   if (!object(v) || !count(v.trials) || !count(v.support) || !count(v.contradictions) || !count(v.unmatchedCycles) ||
       v.support + v.contradictions !== v.trials) return false;
-  return v.trials === 0 ? v.precision === null : typeof v.precision === 'number' && Number.isFinite(v.precision) &&
-    Math.abs(v.precision - v.support / v.trials) < 1e-12;
+  const raw = v as Record<string, unknown>;
+  const legacy = raw.recall === undefined;
+  const denominator = v.support + v.unmatchedCycles;
+  const expectedPrecision = denominator === 0 ? null : v.support / denominator;
+  const expectedRecall = v.trials === 0 ? null : v.support / v.trials;
+  const precisionValid = v.precision === expectedPrecision || (typeof v.precision === 'number' && typeof expectedPrecision === 'number' &&
+    Number.isFinite(v.precision) && Math.abs(v.precision - expectedPrecision) < 1e-12);
+  const recallValid = legacy || raw.recall === expectedRecall || (typeof raw.recall === 'number' && typeof expectedRecall === 'number' &&
+    Number.isFinite(raw.recall) && Math.abs(raw.recall - expectedRecall) < 1e-12);
+  const legacyConsistent = !legacy || (v.unmatchedCycles === v.contradictions &&
+    (v.trials === 0 ? v.precision === null : typeof v.precision === 'number' && Math.abs(v.precision - expectedRecall!) < 1e-12));
+  return precisionValid && recallValid && legacyConsistent;
 }
 function validated(value: unknown, area: string): SignalHypothesis[] {
   if (!object(value) || value.area !== area || !Array.isArray(value.hypotheses)) return [];
   const result: SignalHypothesis[] = [];
   for (const h of value.hypotheses) {
     if (!object(h) || typeof h.id !== 'string' || !h.id || typeof h.berth !== 'string' || !h.berth ||
+        (h.kind !== undefined && h.kind !== 'proceed' && h.kind !== 'route') ||
+        (h.to !== undefined && (typeof h.to !== 'string' || !h.to)) ||
         typeof h.address !== 'string' || !/^[\dA-F]{2,4}$/.test(h.address) ||
         h.address !== Number.parseInt(h.address, 16).toString(16).toUpperCase().padStart(2, '0') ||
         !Number.isInteger(h.bit) || (h.bit as number) < 0 || (h.bit as number) > 7 ||
@@ -41,9 +53,13 @@ function validated(value: unknown, area: string): SignalHypothesis[] {
         typeof h.reason !== 'string' || !evidence(h.training) || !evidence(h.heldOut)) return [];
     result.push(structuredClone(h) as unknown as SignalHypothesis);
   }
-  // A JSON status cannot resolve competing training associations.
-  return result.map((h) => result.some((other) => other !== h && (other.berth === h.berth ||
-    (other.address === h.address && other.bit === h.bit))) ? { ...h, status: 'unknown' } : h);
+  // A JSON status cannot resolve competing training associations. Proceed and route
+  // candidates for one berth are distinct; route candidates are keyed by destination.
+  const kind = (h: SignalHypothesis): 'proceed' | 'route' => h.kind ?? 'proceed';
+  return result.map((h) => result.some((other) => other !== h && (
+    (other.berth === h.berth && kind(other) === kind(h) && other.to === h.to) ||
+    (other.address === h.address && other.bit === h.bit)
+  )) ? { ...h, status: 'unknown' } : h);
 }
 
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
@@ -57,6 +73,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   let bytes: ByteState = {}, table: SignalHypothesis[] = [], disposed = false, generation = 0;
   const anchors: AnchorMap = { area, sources: [overlay.attribution], anchors: [], unmapped: [] };
   const directAnchors: AnchorMap['anchors'] = [];
+  const directBerths = new Map<DrawnSignal, string>();
   const runtimeBerths = new Map<DrawnSignal, string>();
   const matches = new Map<string, number>();
   for (const s of overlay.signals) if (s.berth) matches.set(s.berth, (matches.get(s.berth) ?? 0) + 1);
@@ -84,12 +101,12 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff); dot.position.y = -0.22; question.add(dot);
     question.position.set(0, 3.48, 0.16); group.add(question);
     const record: DrawnSignal = { signal, group, state: 'unknown' }; records.push(record); lamps.set(record, lamp); questions.set(record, question);
-    if (signal.kinds.includes('main') && signal.berth && /^\d+$/.test(signal.berth) &&
-        /^YA\s*\d+$/i.test(signal.ref ?? '') && (signal.ref ?? '').replace(/^YA\s*/i, '') === signal.berth && matches.get(signal.berth) === 1) {
-      anchors.anchors.push({ berth: signal.berth, kind: 'signal', from: signal.edge.from, to: signal.edge.to,
+    const osmBerth = signal.ref?.match(/^YA\s*(\d{4})$/i)?.[1];
+    if (signal.kinds.includes('main') && osmBerth && signal.berth === osmBerth && matches.get(osmBerth) === 1) {
+      anchors.anchors.push({ berth: osmBerth, kind: 'signal', from: signal.edge.from, to: signal.edge.to,
         t: signal.edge.t, point: [...signal.edge.point], errorM: 0, evidence: 'OSM signal overlay' });
+      directBerths.set(record, osmBerth);
     }
-    if (anchors.anchors.at(-1)?.berth === signal.berth) runtimeBerths.set(record, signal.berth!);
     parent.add(group);
   }
   directAnchors.push(...anchors.anchors);
@@ -97,7 +114,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     table = validated(value, area);
     anchors.anchors = [...directAnchors];
     runtimeBerths.clear();
-    for (const record of records) if (directAnchors.some((a) => a.berth === record.signal.berth)) runtimeBerths.set(record, record.signal.berth!);
+    for (const [record, berth] of directBerths) runtimeBerths.set(record, berth);
     if (table.length && object(value) && Array.isArray(value.signalMappings)) {
       const mappings = value.signalMappings;
       const valid = mappings.every((m) => object(m) && Number.isSafeInteger(m.signalId) && typeof m.berth === 'string' && /^[A-Z0-9]{1,8}$/.test(m.berth) &&
@@ -117,7 +134,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   }
   function refresh(): void {
     if (disposed) return;
-    const states = signalStates(bytes, table, anchors);
+    const proceed = table.filter((h) => (h.kind ?? 'proceed') === 'proceed');
+    const states = signalStates(bytes, proceed, anchors);
     for (const record of records) {
       record.state = record.signal.kinds.includes('main') ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
       lamps.get(record)!.material.color.setHex(record.state === 'proceed' ? 0x35ff69 : record.state === 'danger' ? 0xff2929 : 0x666666);
