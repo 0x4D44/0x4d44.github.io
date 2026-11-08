@@ -114,6 +114,7 @@ export interface LiveDependencies {
   source?: (url: string) => EventStream;
   schedule?: (fn: () => void, ms: number) => unknown;
   unschedule?: (timer: unknown) => void;
+  now?: () => number;
 }
 
 export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveDependencies = {}): TrainFeed {
@@ -121,7 +122,30 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
   const source = deps.source ?? ((url) => new EventSource(url));
   const schedule = deps.schedule ?? ((fn, ms) => setTimeout(fn, ms));
   const unschedule = deps.unschedule ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>));
+  const now = deps.now ?? (() => performance.now());
   let stream: EventStream | undefined, timer: unknown, disposed = false, attempt = 0;
+  let watchdog: unknown, watchdogGeneration = 0, opened = false, lastMessageAt = 0;
+  const silenceLimitMs = 15_000;
+  const stopWatchdog = (): void => {
+    watchdogGeneration++;
+    if (watchdog !== undefined) unschedule(watchdog);
+    watchdog = undefined;
+  };
+  const watch = (current: EventStream): void => {
+    stopWatchdog();
+    const generation = watchdogGeneration;
+    // The extra millisecond preserves "more than 15 s" without polling or a zero-delay loop.
+    watchdog = schedule(() => {
+      if (disposed || stream !== current || generation !== watchdogGeneration) return;
+      watchdog = undefined;
+      if (now() - lastMessageAt > silenceLimitMs) retry();
+      else watch(current);
+    }, Math.max(1, silenceLimitMs + 1 - (now() - lastMessageAt)));
+  };
+  const received = (current: EventStream): void => {
+    lastMessageAt = now();
+    if (opened) watch(current);
+  };
   const descriptions = new Set<string>();
   const deliver = (e: MotionEvent): void => {
     if (e.descr) {
@@ -131,6 +155,8 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     timeline.deliver(e);
   };
   const retry = (): void => {
+    opened = false;
+    stopWatchdog();
     stream?.close(); stream = undefined;
     if (disposed || timer !== undefined) return;
     const delay = backoffMs(attempt++);
@@ -142,17 +168,23 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     status(attempt ? 'reconnecting' : 'connecting');
     try { stream = source('/relay/events'); } catch { retry(); return; }
     const current = stream;
-    current.onopen = () => { if (!disposed && stream === current) { attempt = 0; status('connected'); } };
+    current.onopen = () => { if (!disposed && stream === current) { opened = true; received(current); attempt = 0; status('connected'); } };
     current.onerror = () => { if (stream === current) retry(); };
     current.addEventListener('snapshot', (event) => {
       if (disposed || stream !== current) return;
+      received(current);
       try { for (const e of snapshotEvents(JSON.parse(event.data), [...descriptions])) deliver(e); }
       catch { status('invalid relay snapshot'); }
     });
     current.addEventListener('td', (event) => {
       if (disposed || stream !== current) return;
+      received(current);
       try { deliver(parseEvent((JSON.parse(event.data) as { e: unknown }).e)); }
       catch { status('invalid relay event'); }
+    });
+    current.addEventListener('ping', () => {
+      if (disposed || stream !== current) return;
+      received(current);
     });
   };
   connect();
@@ -161,9 +193,17 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
       if (!Number.isFinite(dt) || dt < 0) throw new Error('elapsed time must be nonnegative');
       if (!disposed) timeline.advanceTo(timeline.timeMs() + dt * 1000);
     },
-    dispose(): void { disposed = true; stream?.close(); if (timer !== undefined) unschedule(timer); },
+    dispose(): void { disposed = true; stopWatchdog(); stream?.close(); if (timer !== undefined) unschedule(timer); },
     timeMs: timeline.timeMs,
   };
+}
+
+/**
+ * The relay listens on loopback only, so only a page served from this machine can reach it.
+ * Anywhere else (GitHub Pages) a probe could only 404 and log a console error.
+ */
+export function relayReachable(hostname: string): boolean {
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '[::1]';
 }
 
 export async function probeRelay(fetchImpl: typeof fetch = fetch): Promise<boolean> {

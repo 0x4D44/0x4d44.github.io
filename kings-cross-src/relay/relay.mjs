@@ -3,7 +3,7 @@
 //   GET /health           connection state and counters
 //   GET /snapshot         current berth occupancy for the area (plus S-class bytes if any)
 //   GET /recent?n=200     the last n normalised events {t, e}
-//   GET /events           Server-Sent Events: `snapshot` first, then one `td` per event
+//   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
 //
@@ -18,6 +18,21 @@ import { createStaticStore } from './static.mjs';
 import { TdState } from './state.mjs';
 
 const RECENT_MAX = 2000;
+
+/** Named SSE traffic lets the browser detect an idle or broken relay connection. */
+export function startEventHeartbeat(req, res, { now = Date.now, schedule = setInterval, unschedule = clearInterval } = {}) {
+  let stopped = false;
+  const timer = schedule(() => {
+    if (!stopped) res.write(`event: ping\ndata: ${JSON.stringify({ t: now() })}\n\n`);
+  }, 5000);
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    unschedule(timer);
+  };
+  req.once('close', stop);
+  return stop;
+}
 
 /** Shared by all endpoints, including disk files. No client-supplied path is accepted. */
 export function requestFailure(host, port, method) {
@@ -137,9 +152,8 @@ export async function startRelay({
           res.write(`event: snapshot\ndata: ${JSON.stringify(state.snapshot())}\n\n`);
           const send = (row) => res.write(`event: td\ndata: ${JSON.stringify(row)}\n\n`);
           listeners.add(send);
-          const ping = setInterval(() => res.write(': keep-alive\n\n'), 15_000);
-          req.on('close', () => {
-            clearInterval(ping);
+          startEventHeartbeat(req, res, { now });
+          req.once('close', () => {
             listeners.delete(send);
           });
           return undefined;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { backoffMs, createLiveFeed, createReplayClock, createReplayFeed, createTimeline, parseRecording, probeRelay, snapshotEvents, trainSettings } from '../src/feed.ts';
+import { backoffMs, createLiveFeed, createReplayClock, createReplayFeed, createTimeline, parseRecording, probeRelay, relayReachable, snapshotEvents, trainSettings } from '../src/feed.ts';
 import type { EventStream } from '../src/feed.ts';
 import type { MotionEvent } from '../../core/motion.ts';
 import viteConfig from '../../vite.config.ts';
@@ -90,7 +90,9 @@ test('live SSE closes failed connections, retries with backoff and recovers with
   const scheduled: { fn: () => void; ms: number }[] = [], cancelled: unknown[] = [];
   const feed = createLiveFeed({ apply: (e) => applied.push(e), advance: () => {} }, (s) => states.push(s), {
     source: (url) => { assert.equal(url, '/relay/events'); const s = new FakeStream(); streams.push(s); return s; },
-    schedule: (fn, ms) => { const entry = { fn, ms }; scheduled.push(entry); return entry; }, unschedule: (timer) => cancelled.push(timer),
+    now: () => 0,
+    schedule: (fn, ms) => { const entry = { fn, ms }; scheduled.push(entry); return entry; },
+    unschedule: (timer) => { cancelled.push(timer); const index = scheduled.indexOf(timer as typeof scheduled[number]); if (index >= 0) scheduled.splice(index, 1); },
   });
   streams[0]!.onopen?.({} as Event);
   streams[0]!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
@@ -107,8 +109,90 @@ test('live SSE closes failed connections, retries with backoff and recovers with
   streams[2]!.emit('snapshot', { area: 'TEST', berths: {} });
   assert.equal(applied.at(-1)!.kind, 'cancel');
   streams[2]!.onerror?.({} as Event); assert.equal(scheduled[0]!.ms, 500);
-  feed.dispose(); assert.equal(cancelled.length, 1);
-  scheduled[0]!.fn(); assert.equal(streams.length, 3);
+  const pending = scheduled[0]!;
+  feed.dispose(); assert.ok(cancelled.includes(pending)); assert.equal(scheduled.length, 0);
+  pending.fn(); assert.equal(streams.length, 3);
+});
+
+function liveHarness() {
+  let clock = 0;
+  const streams: FakeStream[] = [], states: string[] = [], applied: MotionEvent[] = [];
+  const jobs = new Map<object, { at: number; fn: () => void }>();
+  const feed = createLiveFeed({ apply: (e) => applied.push(e), advance: () => {} }, (state) => states.push(state), {
+    source: () => { const stream = new FakeStream(); streams.push(stream); return stream; },
+    now: () => clock,
+    schedule: (fn, ms) => { const token = {}; jobs.set(token, { at: clock + ms, fn }); return token; },
+    unschedule: (token) => { jobs.delete(token as object); },
+  });
+  const tick = (ms: number): void => {
+    const end = clock + ms;
+    for (let count = 0; ; count++) {
+      assert.ok(count < 1000, 'timer loop must make progress');
+      const next = [...jobs].sort((a, b) => a[1].at - b[1].at)[0];
+      if (!next || next[1].at > end) break;
+      clock = next[1].at; jobs.delete(next[0]); next[1].fn();
+    }
+    clock = end;
+  };
+  return { feed, streams, states, applied, jobs, tick, open: () => streams.at(-1)!.onopen?.({} as Event) };
+}
+
+test('live SSE watchdog retries after more than fifteen seconds of silence on an open stream', () => {
+  const h = liveHarness();
+  h.tick(30_000); assert.equal(h.streams.length, 1); assert.equal(h.states.at(-1), 'connecting');
+  h.open(); h.tick(15_000); assert.equal(h.states.at(-1), 'connected');
+  h.tick(1); assert.equal(h.streams[0]!.closed, true); assert.match(h.states.at(-1)!, /reconnecting; retry in 0.5s/);
+  h.tick(499); assert.equal(h.streams.length, 1);
+  h.tick(1); assert.equal(h.streams.length, 2);
+  h.streams[1]!.onerror?.({} as Event);
+  assert.match(h.states.at(-1)!, /reconnecting; retry in 1s/);
+  h.tick(1000); h.open(); h.streams[2]!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
+  assert.equal(h.states.at(-1), 'connected'); assert.deepEqual(h.applied, [first]);
+  h.feed.dispose();
+});
+
+test('live SSE pings keep a quiet stream alive without advancing simulation or adding trains', () => {
+  const h = liveHarness(); h.open();
+  for (let i = 0; i < 12; i++) { h.tick(5000); h.streams[0]!.emit('ping', { t: -999 }); }
+  assert.equal(h.streams.length, 1); assert.equal(h.streams[0]!.closed, false); assert.equal(h.states.at(-1), 'connected');
+  assert.deepEqual(h.applied, []); assert.equal(h.feed.timeMs(), 0);
+  h.tick(15_000); assert.equal(h.states.at(-1), 'connected');
+  h.tick(1); assert.match(h.states.at(-1)!, /reconnecting/);
+  h.feed.dispose();
+});
+
+test('live SSE snapshot and TD messages both refresh the watchdog deadline', () => {
+  for (const type of ['snapshot', 'td']) {
+    const h = liveHarness(); h.open(); h.tick(14_999);
+    h.streams[0]!.emit(type, type === 'snapshot' ? { area: 'TEST', berths: { A: 'SYN1' } } : { t: 1, e: first });
+    h.tick(15_000); assert.equal(h.states.at(-1), 'connected', type);
+    h.tick(1); assert.match(h.states.at(-1)!, /reconnecting/, type);
+    h.feed.dispose();
+  }
+});
+
+test('live SSE pings from a replaced stream cannot extend the current stream deadline', () => {
+  const h = liveHarness(); h.open(); h.tick(1000);
+  const stale = h.streams[0]!; stale.onerror?.({} as Event); h.tick(500); h.open();
+  h.tick(14_999); stale.emit('ping', { t: 123 });
+  h.tick(2); assert.equal(h.streams[1]!.closed, true); assert.match(h.states.at(-1)!, /reconnecting/);
+  h.feed.dispose();
+});
+
+test('live SSE dispose cancels its watchdog and ignores an already queued watchdog callback', () => {
+  const h = liveHarness(); h.open(); const queued = [...h.jobs.values()][0]!.fn;
+  const states = [...h.states];
+  h.feed.dispose(); assert.equal(h.jobs.size, 0); assert.equal(h.streams[0]!.closed, true);
+  h.tick(100_000); queued(); h.streams[0]!.emit('ping', { t: 1 });
+  assert.equal(h.jobs.size, 0); assert.equal(h.streams.length, 1); assert.deepEqual(h.states, states);
+});
+
+test('live SSE a cancelled watchdog callback cannot replace the current deadline', () => {
+  const h = liveHarness(); h.open(); const queued = [...h.jobs.values()][0]!.fn;
+  h.tick(5000); h.streams[0]!.emit('ping', { t: 0 });
+  queued(); assert.equal(h.jobs.size, 1);
+  h.tick(15_001); assert.match(h.states.at(-1)!, /reconnecting/); assert.equal(h.jobs.size, 1);
+  h.feed.dispose(); assert.equal(h.jobs.size, 0);
 });
 
 test('the default relay probe makes exactly one quiet request and handles absent or non-relay servers', async () => {
@@ -117,4 +201,9 @@ test('the default relay probe makes exactly one quiet request and handles absent
   assert.equal(await probeRelay(fake), false); assert.equal(calls, 1);
   assert.equal(await probeRelay((async () => new Response(JSON.stringify({ ok: true }))) as typeof fetch), true);
   assert.equal(await probeRelay((async () => new Response('<html>not a relay</html>')) as typeof fetch), false);
+});
+
+test('feed: the relay is probed only from a loopback host, never from the published site', () => {
+  for (const host of ['127.0.0.1', 'localhost', '[::1]']) assert.equal(relayReachable(host), true, host);
+  for (const host of ['0x4d44.github.io', 'example.com', '127.0.0.1.example.com', '192.168.1.5', '']) assert.equal(relayReachable(host), false, host);
 });

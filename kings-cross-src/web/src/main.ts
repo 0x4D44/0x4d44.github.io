@@ -14,7 +14,7 @@ import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
 import { buildTrain, standTrain } from './train.ts';
-import { backoffMs, createLiveFeed, createReplayFeed, parseRecording, probeRelay, trainSettings } from './feed.ts';
+import { backoffMs, createLiveFeed, createReplayFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { TrainFeed } from './feed.ts';
 import { createLiveTrains, lengthForDescription } from './trains-live.ts';
 import { addWorld } from './world.ts';
@@ -255,7 +255,8 @@ function start(): void {
       bootstrapTimer = setTimeout(() => { void begin(requested, attempt + 1); }, delay);
     }
   };
-  if (settings.mode === 'auto') {
+  if (settings.mode === 'auto' && !relayReachable(location.hostname)) setConnection('relay absent');
+  else if (settings.mode === 'auto') {
     void probeRelay().then((present) => { if (!disposed) { if (present) void begin('live'); else setConnection('relay absent'); } });
   } else if (settings.mode === 'live' || settings.mode === 'replay') void begin(settings.mode);
   window.addEventListener('pagehide', (event) => {
