@@ -127,14 +127,19 @@ in `web/src/main.ts`. The existing `__kx` camera handle needs no URL-camera hook
 
 ## Checks
 
-Run a focused test by naming only the relevant test files. The package test covers relay,
-core and web tests; typecheck covers the TypeScript source. Use the mutation script for the
-same area after changing a rule; it runs its tests against isolated scratch copies.
+Run commands below from the repository root. `npm run test:kings-cross` delegates to the
+package test: relay (`*.test.mjs`), core and web (`*.test.ts`), and tools
+(`tools/tests/*.test.mjs` and `tools/tests/*.test.ts`). Tests use synthetic inputs or
+committed OSM geometry, fake credentials and browser transports; socket tests use loopback
+only. No real recordings, keychain access, upstream feed or Chrome is required. Sandboxes
+that deny loopback cannot run the socket cases. Typecheck covers the TypeScript source.
+Use the area's mutation driver after changing a rule; it tests isolated scratch copies.
 
 ```sh
 timeout 120 node --test kings-cross-src/relay/tests/relay.test.mjs kings-cross-src/relay/tests/schedule.test.mjs </dev/null
 timeout 60 node --test --test-timeout=10000 kings-cross-src/tools/tests/evidence.test.mjs </dev/null
 timeout 300 npm --prefix kings-cross-src test </dev/null
+timeout 300 npm run test:kings-cross </dev/null
 timeout 120 npm --prefix kings-cross-src run typecheck </dev/null
 timeout 300 python3 -I -u kings-cross-src/tools/mutation/relay.py kings-cross-src/relay .scratch/kx-relay-mutation </dev/null
 timeout 300 python3 -I -u kings-cross-src/tools/mutation/schedule.py kings-cross-src .scratch/kx-schedule-mutation </dev/null
@@ -142,3 +147,5 @@ timeout 300 python3 -I -u kings-cross-src/tools/mutation/schedule.py kings-cross
 
 Mutation scripts and their required inputs are listed in
 [`tools/mutation/README.md`](tools/mutation/README.md).
+The GPU evidence/performance tools and real-data audits remain separate manual commands
+under [Local tools](#local-tools); importing their helpers in tests never launches Chrome.

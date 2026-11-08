@@ -1,10 +1,10 @@
-"""Private synthetic mutations: python3 -I -u tools/axis08-evidence.mutation.py (from kings-cross-src)."""
+"""Private synthetic mutations: python3 -I -u kings-cross-src/tools/mutation/axis08-evidence.py (from repo root)."""
 import re
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-src = Path(__file__).resolve().parent
+src = Path(__file__).resolve().parent.parent
 scratch = src.parent.parent / '.scratch' / 'axis08-mutations'
 scratch.mkdir(parents=True, exist_ok=True)
 mutations = [
@@ -23,7 +23,7 @@ mutations = [
  ('allow one startup pair', 'axis08-evidence.mjs', 'runs < 2', 'runs < 1'),
 ]
 def run(work):
- return subprocess.run(['node', '--test', '--test-reporter=tap', 'tools/axis08-evidence.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+ return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=10000', 'tools/tests/axis08-evidence.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
 baseline = run(src.parent)
 if baseline.returncode: raise SystemExit(baseline.stdout + baseline.stderr)
 names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
@@ -31,8 +31,9 @@ failed = set()
 for label, file, old, new in mutations:
  with tempfile.TemporaryDirectory(prefix='case-', dir=scratch) as tmp:
   work = Path(tmp)
-  (work / 'tools').mkdir()
-  for name in ['axis08-evidence.mjs', 'axis08-evidence.test.mjs', 'perf.mjs']: shutil.copy2(src / name, work / 'tools' / name)
+  (work / 'tools/tests').mkdir(parents=True)
+  for name in ['axis08-evidence.mjs', 'perf.mjs']: shutil.copy2(src / name, work / 'tools' / name)
+  shutil.copy2(src / 'tests/axis08-evidence.test.mjs', work / 'tools/tests/axis08-evidence.test.mjs')
   target = work / 'tools' / file
   source = target.read_text()
   if old not in source: raise SystemExit(f'missing pattern: {label}')
