@@ -236,6 +236,9 @@ function qualifies(evidence: SignalEvidence): boolean {
     (evidence.recall ?? evidence.precision) !== null && (evidence.recall ?? evidence.precision)! >= MIN_PRECISION;
 }
 
+// Geometry layers need the same admission rule before creating an inferred head.
+export { qualifies as qualifiesSignalEvidence };
+
 /**
  * Learn only first-half candidates; use the second half only to accept/reject them.
  * A supporting passage needs an observed clearing before it and a reset near passage.
