@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { bounds, buildingPrisms, PLATFORM_HEIGHT, platformPrisms, railSegments, ribbonTriangles, twinRails } from '../../core/scene.ts';
+import { bounds, buildingPrisms, PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
 import type { Prism } from '../../core/scene.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { buildFurniture, buildPlatforms } from './furniture.ts';
+import { buildBufferStops, buildTrack } from './track.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { TrainKind } from '../../core/train.ts';
 import type { AnchorMap } from '../../core/anchors.ts';
@@ -21,7 +23,7 @@ import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, lengthForDescription } from './trains-live.ts';
-import { addWorld } from './world.ts';
+import { addWorld, GROUND_Y } from './world.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 
@@ -47,11 +49,13 @@ if (!webglOk()) {
   start();
 }
 
-/** Extrude a footprint upward: shape in (x, -z) so that after rotateX(-90deg) it lies on the XZ plane. */
+/** Extrude a footprint upward from the ground (GROUND_Y, below the rail head) to its height:
+ * shape in (x, -z) so that after rotateX(-90deg) it lies on the XZ plane. */
 function prismGeometry(p: Prism): THREE.BufferGeometry {
   const shape = new THREE.Shape(p.outline.map(([x, z]) => new THREE.Vector2(x, -z)));
-  const g = new THREE.ExtrudeGeometry(shape, { depth: p.height, bevelEnabled: false });
+  const g = new THREE.ExtrudeGeometry(shape, { depth: p.height - GROUND_Y, bevelEnabled: false });
   g.rotateX(-Math.PI / 2);
+  g.translate(0, GROUND_Y, 0);
   return g;
 }
 
@@ -60,32 +64,6 @@ function mergedPrisms(prisms: Prism[], material: THREE.Material): THREE.Mesh | n
   const merged = mergeGeometries(geos, false);
   for (const g of geos) g.dispose();
   return merged ? new THREE.Mesh(merged, material) : null;
-}
-
-function lines(positions: number[], color: number, opacity = 1): THREE.LineSegments {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity }));
-}
-
-function triangles(positions: number[], material: THREE.Material): THREE.Mesh {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  g.computeVertexNormals();
-  return new THREE.Mesh(g, material);
-}
-
-/** The outline of each footprint as line segments at height y (the yellow platform edge). */
-function outlineSegments(prisms: Prism[], y: number): number[] {
-  const out: number[] = [];
-  for (const p of prisms) {
-    for (let i = 0; i < p.outline.length; i++) {
-      const a = p.outline[i] as [number, number];
-      const b = p.outline[(i + 1) % p.outline.length] as [number, number];
-      out.push(a[0], y, a[1], b[0], y, b[1]);
-    }
-  }
-  return out;
 }
 
 function start(): void {
@@ -98,23 +76,16 @@ function start(): void {
   const world = addWorld(scene, { grid: params.has('grid') || params.has('bare'), bare: params.has('bare') });
   const signalLayer = params.get('signals') === '0' ? null : createSignals(signalData as SignalOverlay, scene);
 
-  const rails = railSegments(data);
-  const ballast = new THREE.MeshLambertMaterial({ color: 0x4b463f });
-  scene.add(triangles(ribbonTriangles(rails.main, 3.2, 0.03), ballast));
-  scene.add(triangles(ribbonTriangles(rails.siding, 3.0, 0.03), ballast));
-  scene.add(lines(twinRails(rails.main), 0xd5dae2));
-  scene.add(lines(twinRails(rails.siding), 0x9a9486));
-  scene.add(lines(rails.tunnel, 0x5b6b86, 0.7));
-
-  const platPrisms = platformPrisms(data);
-  const platforms = mergedPrisms(platPrisms, new THREE.MeshLambertMaterial({ color: 0xa7b0be }));
-  if (platforms) scene.add(platforms);
-  scene.add(lines(outlineSegments(platPrisms, PLATFORM_HEIGHT + 0.02), 0xe9d25a));
+  const rails = railSegments(data); // camera bounds
+  const layout = shedLayout(data);
+  // Ballast, sleepers and rail heads (track.ts); textured platforms with edge strips and furniture.
+  scene.add(buildTrack(data, layout));
+  scene.add(buildPlatforms(data, layout));
+  scene.add(buildFurniture(data, layout));
 
   // The station footprint is a roof, not a block: skip it as a building and build the shed. So are
   // the blocks that would stand inside the concourse dome or against the south front.
   const station = stationBuilding(data);
-  const layout = shedLayout(data);
   const canopy = concourseCanopy(data);
   const hidden = new Set(buildingsUnderStation(data, layout, canopy));
   if (station) hidden.add(station.id);
@@ -125,14 +96,7 @@ function start(): void {
   scene.add(shed);
   if (station) scene.add(buildConcourse(canopy, station.pts, layout));
 
-  // buffer stops: a red block across each terminating track, turned with the platforms
-  const stopMaterial = new THREE.MeshLambertMaterial({ color: 0xa83232 });
-  for (const b of shedBufferStops(data, layout)) {
-    const stop = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 0.7), stopMaterial);
-    stop.position.set(b.x, 0.58, b.z);
-    stop.rotation.y = -layout.heading;
-    scene.add(stop);
-  }
+  scene.add(buildBufferStops(data, layout));
 
   // Sample trains: four standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
   // from the west), so no two share a platform face and the evidence cameras can stand between them.
