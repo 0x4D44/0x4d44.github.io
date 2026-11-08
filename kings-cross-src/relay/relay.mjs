@@ -4,6 +4,7 @@
 //   GET /snapshot         current berth occupancy for the area (plus S-class bytes if any)
 //   GET /recent?n=200     the last n normalised events {t, e}
 //   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
+//   GET /sclass           local signal mapping: KX_SCLASS or <KX_DATA_DIR>/sclass.json
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
 //
@@ -25,6 +26,7 @@ export function startEventHeartbeat(req, res, { now = Date.now, schedule = setIn
   const timer = schedule(() => {
     if (!stopped) res.write(`event: ping\ndata: ${JSON.stringify({ t: now() })}\n\n`);
   }, 5000);
+  timer?.unref?.();
   const stop = () => {
     if (stopped) return;
     stopped = true;
@@ -40,10 +42,13 @@ export function requestFailure(host, port, method) {
   return method === 'GET' ? null : 405;
 }
 
-export async function localFile(url, { dataDir, area, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json') }) {
+export async function localFile(url, { dataDir, area, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json'), sclassFile = process.env.KX_SCLASS ?? path.join(dataDir, 'sclass.json') }) {
   let file, type;
   if (url.pathname === '/anchors') {
     file = anchorsFile;
+    type = 'application/json; charset=utf-8';
+  } else if (url.pathname === '/sclass') {
+    file = sclassFile;
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/recording') {
     const dates = url.searchParams.getAll('date');
@@ -72,6 +77,7 @@ export async function startRelay({
   port = 0,
   dataDir,
   anchorsFile,
+  sclassFile,
   feedEnabled = true,
   readCredentials,
   connectSocket,
@@ -84,8 +90,11 @@ export async function startRelay({
   const state = new TdState(area);
   const recent = [];
   const listeners = new Set();
+  const heartbeats = new Set();
+  let closing;
   const status = { state: feedEnabled ? 'connecting' : 'disabled', connectedAt: null, lastEventAt: null, badMessages: 0 };
-  const recorder = await createRecorder({ dir: path.join(dataDir, 'recordings'), area, now });
+  const recorder = await createRecorder({ dir: path.join(dataDir, 'recordings'), area, now,
+    onSnapshot: (row) => { for (const send of listeners) send(row); } });
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
 
   const feed = feedEnabled
@@ -100,7 +109,7 @@ export async function startRelay({
         onStatus: (s) => {
           if (s.badMessage) status.badMessages += 1;
           else status.state = s.state;
-          if (s.state === 'connected' && !s.badMessage) status.connectedAt = now();
+          if (s.state === 'connected' && !s.badMessage) { status.connectedAt = now(); recorder.checkpoint(); }
         },
         onEvents: (events) => {
           const t = now();
@@ -124,7 +133,7 @@ export async function startRelay({
       if (refusal) return json(res, refusal, { error: refusal === 403 ? 'host not allowed' : 'GET only' });
       const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
 
-      const file = await localFile(url, { dataDir, area, anchorsFile });
+      const file = await localFile(url, { dataDir, area, anchorsFile, sclassFile });
       if (file) {
         res.writeHead(file.status, { 'content-type': file.type, 'cache-control': 'no-store' });
         return res.end(file.body);
@@ -150,11 +159,18 @@ export async function startRelay({
         case '/events': {
           res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
           res.write(`event: snapshot\ndata: ${JSON.stringify(state.snapshot())}\n\n`);
-          const send = (row) => res.write(`event: td\ndata: ${JSON.stringify(row)}\n\n`);
+          const send = (row) => {
+            if (row.e.kind === 'snapshot') {
+              const { kind, ...snapshot } = row.e;
+              res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`);
+            } else res.write(`event: td\ndata: ${JSON.stringify(row)}\n\n`);
+          };
           listeners.add(send);
-          startEventHeartbeat(req, res, { now });
+          const stopHeartbeat = startEventHeartbeat(req, res, { now });
+          heartbeats.add(stopHeartbeat);
           req.once('close', () => {
             listeners.delete(send);
+            heartbeats.delete(stopHeartbeat);
           });
           return undefined;
         }
@@ -177,20 +193,34 @@ export async function startRelay({
     }
   });
 
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port, '127.0.0.1', resolve);
-  });
+  try {
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(port, '127.0.0.1', resolve);
+    });
+  } catch (error) { feed?.stop(); await recorder.close(); throw error; }
 
   return {
     host: server.address().address,
     port: server.address().port,
     state,
-    async close() {
-      feed?.stop();
-      server.closeAllConnections();
-      await new Promise((resolve) => server.close(resolve));
-      await recorder.close();
+    close() {
+      if (closing) return closing;
+      return closing = (async () => {
+        feed?.stop();
+        for (const stopHeartbeat of heartbeats) stopHeartbeat();
+        heartbeats.clear();
+        listeners.clear();
+        // Stop periodic writes before waiting for sockets. A server-close error must
+        // still finish the recording, and callers may share the same close promise.
+        const recorded = recorder.close();
+        try {
+          await new Promise((resolve, reject) => {
+            server.close((error) => error ? reject(error) : resolve());
+            server.closeAllConnections();
+          });
+        } finally { await recorded; }
+      })();
     },
   };
 }

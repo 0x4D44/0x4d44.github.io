@@ -7,6 +7,13 @@
 //   {kind:'interpose', area, to, descr}                CC: description placed in a berth
 //   {kind:'heartbeat', area, time}                     CT
 //   {kind:'sclass',    area, msgType, address, data}   SF/SG/SH: signalling-state bytes
+//   {kind:'snapshot', area, berths, sclass, counts, lastEventTime} recorder checkpoint:
+//     berths is {berth: description}; sclass is {addresses: count, data: {address: hex}}.
+//     The remaining fields have the same shape as GET /snapshot. A checkpoint is recorded
+//     at start, UTC-day rollover, each feed connect/reconnect and every ten minutes, and
+//     broadcast as an SSE snapshot too. Replay reconciles it instead of treating it as a step.
+//     Older {t,e} recordings without checkpoints remain valid; missing history cannot be
+//     reconstructed retrospectively. `t` is receive time; `time` below is the TD event time.
 //   {kind:'unknown',   area, msgType}
 // `time` is milliseconds since the epoch (or null if absent or unparseable).
 

@@ -10,6 +10,8 @@ import type { MotionEvent, TrainView } from '../core/motion.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData } from '../core/osm.ts';
 import { trainLayout } from '../core/train.ts';
+import { createEventReconciler, parseEvent } from '../web/src/feed.ts';
+import type { SnapshotEvent } from '../web/src/feed.ts';
 
 const args = process.argv.slice(2);
 const values = new Map<string, string>();
@@ -42,14 +44,16 @@ const recording = (await readFile(resolve(values.get('--recording')!), 'utf8')).
   const row = JSON.parse(line) as { t: number | string; e: MotionEvent };
   const at = typeof row.t === 'number' ? row.t : Date.parse(row.t);
   if (!Number.isFinite(at) || !row.e || typeof row.e.kind !== 'string') throw new Error(`invalid recording row ${index + 1}`);
-  return { at, event: row.e, index };
+  return { at, event: parseEvent(row.e), index };
 }).sort((a, b) => a.at - b.at || a.index - b.index);
 if (!recording.length) throw new Error('recording is empty');
 const lengths = { long: trainLayout('lner9').length, short: trainLayout('lner5').length };
 const motion = createMotion(graph, anchors, { lengthM: (d) => d[0] === '1' ? lengths.long : lengths.short, wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
+const reconcile = createEventReconciler((event, atMs) => motion.apply(event, atMs));
+const snapshots = recording.filter((row) => row.event.kind === 'snapshot').length;
 const dt = 0.1, start = recording[0]!.at, end = recording.at(-1)!.at;
 let cursor = 0, ticks = 0, maxJump = 0, maxSpeed = 0, maxAccel = 0, maxDecel = 0;
-let interposeFailures = 0;
+let interposeFailures = 0, snapshotPlacementFailures = 0;
 let maxPointJump = 0, pointOverspeed = 0, pointBackward = 0;
 const backwardExamples: unknown[] = [];
 const doubleHeldExamples: unknown[] = [];
@@ -88,6 +92,7 @@ const consumeIssues = (context?: { event: MotionEvent; index: number }): void =>
     if (i.kind !== 'unroutable') continue;
     const source = context ?? lastStep.get(i.description);
     if (!source) { unattributedRoutingIssues++; continue; }
+    if (source.event.kind === 'snapshot') snapshotPlacementFailures++;
     if (source.event.kind === 'interpose') failedInterposes.add(source.index);
     if (source.event.kind === 'step') failedSteps.set(source.index, { from: source.event.from ?? '', to: source.event.to ?? '', reason: i.reason });
   }
@@ -98,6 +103,10 @@ const consumeIssues = (context?: { event: MotionEvent; index: number }): void =>
 for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt) {
   while (cursor < recording.length && recording[cursor]!.at <= start + time * 1000 + 1e-4) {
     const event = recording[cursor]!.event;
+    if (event.kind === 'snapshot' && event.area === anchors.area) {
+      berthOwner.clear();
+      for (const [berth, description] of Object.entries((event as SnapshotEvent).berths)) berthOwner.set(berth, description);
+    }
     const views = motion.trains();
     if (event.area === anchors.area && event.descr && event.descr !== '****') {
       if ((event.kind === 'interpose' || event.kind === 'step') && event.to) {
@@ -122,7 +131,7 @@ for (let time = 0; time <= (end - start) / 1000 + 6 + 1e-7; time = ++ticks * dt)
       } else if (event.kind === 'cancel' && berthOwner.get(event.from ?? '') === event.descr) berthOwner.delete(event.from!);
     }
     if (event.kind === 'step' && event.descr) lastStep.set(event.descr, { event, index: cursor });
-    motion.apply(event, start + time * 1000);
+    reconcile(event, start + time * 1000);
     consumeIssues({ event, index: cursor });
     cursor++;
   }
@@ -218,7 +227,7 @@ for (const s of insideSteps) { const pair = `${s.from} -> ${s.to}`; pairs.set(pa
 const topInsidePairs = [...pairs].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12).map(([pair, count]) => ({ pair, count }));
 const report = {
   anchorSources: anchors.sources, anchorCount: anchors.anchors.length, unmappedCount: anchors.unmapped.length,
-  events: recording.length, durationSeconds: (end - start) / 1000, stepSeconds: dt, playbackSpeed: speed,
+  events: recording.length, snapshots, snapshotPlacementFailures, durationSeconds: (end - start) / 1000, stepSeconds: dt, playbackSpeed: speed,
   ticks, trainsObserved: observed.size, peakTrains: maxTrains, peakQueued: maxQueued,
   maxPerTickJumpM: maxJump, maxPointJumpM: maxPointJump, pointOverspeedTicks: pointOverspeed, pointBackwardTicks: pointBackward, maxSpeedMps: maxSpeed, maxSpeedKmh: maxSpeed * 3.6,
   maxAccelerationMps2: maxAccel, maxDecelerationMps2: maxDecel,
@@ -240,6 +249,7 @@ ${anchors.anchors.length} anchors; ${recording.length} events over ${f(report.du
 | Measure | Observed |
 | --- | ---: |
 | Trains observed / peak visible / peak queued | ${observed.size} / ${maxTrains} / ${maxQueued} |
+| Recorded snapshots / snapshot placement failures | ${snapshots} / ${snapshotPlacementFailures} |
 | Maximum body movement per tick (m) | ${f(maxJump)} |
 | Drawn leading end: max per-tick move (m); ticks faster than speed allows; ticks moving backward | ${f(maxPointJump)}; ${pointOverspeed}; ${pointBackward} |
 | Maximum speed (m/s; km/h) | ${f(maxSpeed)}; ${f(maxSpeed * 3.6)} |
@@ -267,6 +277,8 @@ Body movement uses travelled distance: a stationary platform cab change moves th
 Assumptions: the page's real layouts (${lengths.long} m for headcodes starting 1, ${lengths.short} m otherwise), acceleration 0.7 m/s², service braking 0.6 m/s², 40 km/h on untagged ways, at most 25 km/h inside KINGS_CROSS and over the last 400 m of a platform approach, and 5 m separation. OSM maxspeed is supplied by way id. Unmapped departures without a known anchored successor follow historical junction turns where available, otherwise the straightest forward continuation to an external graph leaf, then fade. Platform buffers are excluded as external leaves. Only the same description's chain (or explicit caller-supplied chains without descriptions) supplies successor authority; ambiguous successors wait for an actual mapped step. Outside arrivals enter from an external boundary once their next anchor is known. Targets behind the train or inside its service braking distance are refused. First sightings may have a clipped body at the network boundary. There is no signalling/interlocking model; graph routing and train occupancy determine movement authority. Cancelled trains remain solid during their five-second fade.
 
 Playback speed ${speed} is metadata for an unpaced audit; fixed simulation steps keep physics identical at every playback rate. Events are applied at the next tick (at most 0.1 s late). The audit drains six seconds past the final event so final cancels can fade.
+
+Snapshots use the same area-scoped reconciliation as live reconnects and replay: absent descriptions fade and current descriptions are interposed without relocating retained bodies. ${snapshots === 0 ? 'This legacy recording contains no snapshots. Missing events across relay restarts cannot be recovered; these results preserve the legacy empty-world replay.' : 'Snapshot placement failures count missing anchors in checkpoint pictures separately from original TD steps and interposes.'}
 
 Anchor sources: ${anchors.sources.map((s) => JSON.stringify(s)).join(', ')}. A hand-made anchor map only validates those anchors, not the real berth geography.
 

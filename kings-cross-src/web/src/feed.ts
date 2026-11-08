@@ -2,7 +2,12 @@
 // Live and replay both deliver normalised TD events through the same simulation timeline.
 import type { MotionEvent } from '../../core/motion.ts';
 
-export interface RecordedEvent { t: number; e: MotionEvent }
+export interface SnapshotEvent extends MotionEvent {
+  kind: 'snapshot';
+  berths: Record<string, string>;
+  sclass?: { addresses: number; data: Record<string, string> };
+}
+export interface RecordedEvent { t: number; e: MotionEvent | SnapshotEvent }
 export interface MotionSink { apply(event: MotionEvent, nowMs: number): void; advance(seconds: number): void }
 export interface TrainFeed { advance(realSeconds: number): void; dispose(): void; timeMs(): number }
 export type FeedStatus = (state: string) => void;
@@ -22,6 +27,13 @@ export function parseEvent(value: unknown): MotionEvent {
   if (['step', 'interpose', 'cancel'].includes(e.kind) && typeof e.descr !== 'string') throw new Error('missing train description');
   if (['step', 'cancel'].includes(e.kind) && typeof e.from !== 'string') throw new Error('missing from berth');
   if (['step', 'interpose'].includes(e.kind) && typeof e.to !== 'string') throw new Error('missing to berth');
+  if (e.kind === 'snapshot') {
+    snapshotEvents(e); // Reject incomplete pictures before any part can change the world.
+    if (e.sclass !== undefined) {
+      const s = e.sclass as SnapshotEvent['sclass'];
+      if (!s || !Number.isInteger(s.addresses) || s.addresses < 0 || !s.data || typeof s.data !== 'object' || Array.isArray(s.data) || Object.values(s.data).some((v) => typeof v !== 'string')) throw new Error('invalid snapshot S-class bytes');
+    }
+  }
   return e as unknown as MotionEvent;
 }
 
@@ -59,6 +71,29 @@ export function snapshotEvents(value: unknown, previous: readonly string[] = [])
   return events;
 }
 
+/** One reconciliation path for live reconnects, recorded checkpoints and the offline audit. */
+export function createEventReconciler(apply: MotionSink['apply']) {
+  const descriptions = new Map<string, Set<string>>();
+  const applyOne = (event: MotionEvent, atMs: number): void => {
+    if (!descriptions.has(event.area)) descriptions.set(event.area, new Set());
+    const present = descriptions.get(event.area)!;
+    if (event.descr) {
+      if (event.kind === 'cancel') present.delete(event.descr);
+      else if (event.kind === 'step' || event.kind === 'interpose') present.add(event.descr);
+    }
+    apply(event, atMs);
+  };
+  return (event: MotionEvent, atMs: number): void => {
+    if (event.kind === 'snapshot') {
+      const changes = snapshotEvents(event, [...descriptions.get(event.area) ?? []]);
+      // Preserve the complete S-class picture for consumers alongside motion. Motion
+      // ignores the raw snapshot and receives the same interposes/cancels in both modes.
+      apply(event, atMs);
+      for (const change of changes) applyOne(change, atMs);
+    } else applyOne(event, atMs);
+  };
+}
+
 /** No wall clock here: callers supply elapsed time, scaled once by replay speed. */
 export function createReplayClock(rows: readonly RecordedEvent[], speed = 1) {
   if (!Number.isFinite(speed) || speed <= 0) throw new Error('replay speed must be positive');
@@ -78,6 +113,7 @@ export function createReplayClock(rows: readonly RecordedEvent[], speed = 1) {
 
 export function createTimeline(sink: MotionSink, startMs = 0) {
   let time = startMs;
+  const reconcile = createEventReconciler((event, atMs) => sink.apply(event, atMs));
   const advanceTo = (nextMs: number): void => {
     if (!Number.isFinite(nextMs)) throw new Error('timeline time must be finite');
     const next = Math.max(time, nextMs);
@@ -87,7 +123,7 @@ export function createTimeline(sink: MotionSink, startMs = 0) {
   return {
     timeMs: (): number => time,
     advanceTo,
-    deliver(event: MotionEvent, atMs = time): void { advanceTo(atMs); sink.apply(event, time); },
+    deliver(event: MotionEvent, atMs = time): void { advanceTo(atMs); reconcile(event, time); },
   };
 }
 
@@ -146,14 +182,7 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     lastMessageAt = now();
     if (opened) watch(current);
   };
-  const descriptions = new Set<string>();
-  const deliver = (e: MotionEvent): void => {
-    if (e.descr) {
-      if (e.kind === 'cancel') descriptions.delete(e.descr);
-      else if (e.kind === 'step' || e.kind === 'interpose') descriptions.add(e.descr);
-    }
-    timeline.deliver(e);
-  };
+  const deliver = (e: MotionEvent): void => timeline.deliver(e);
   const retry = (): void => {
     opened = false;
     stopWatchdog();
@@ -173,7 +202,7 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     current.addEventListener('snapshot', (event) => {
       if (disposed || stream !== current) return;
       received(current);
-      try { for (const e of snapshotEvents(JSON.parse(event.data), [...descriptions])) deliver(e); }
+      try { deliver(parseEvent({ ...JSON.parse(event.data), kind: 'snapshot' })); }
       catch { status('invalid relay snapshot'); }
     });
     current.addEventListener('td', (event) => {
