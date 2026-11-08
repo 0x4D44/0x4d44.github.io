@@ -61,6 +61,8 @@ export interface LiveryDef {
   noseBand: number;
   /** the whole nose cone in one colour, over the sweep and the front (null: the sweep and the front panels decide) */
   noseCone: number | null;
+  /** how far back from the tip the cone's colour covers the nose's sides, metres (default: the whole nose; the roof and face stay the cone's colour): beyond it the body shows */
+  noseConeLength?: number;
   /** the body colour under the windscreen glass */
   glass: number;
   /** the black window surround (null: the windows stand alone on the body) */
@@ -164,6 +166,9 @@ export const LIVERIES: Readonly<Record<Livery, LiveryDef>> = {
     noseFront: 0x2d3138,
     noseBand: 0x2d3138,
     noseCone: 0x2d3138,
+    // ASSUMED: in photographs (Wikimedia Commons, "802303 at Doncaster") the dull grey cone is only the beak, a bullet from the tip to about
+    // a third of the way along the nose; the cheeks behind it are the body's blue. The face and the roof round the glass stay dark.
+    noseConeLength: 1.6,
     glass: 0x0e1014,
     surround: null,
     window: 0x2a3a4c,
@@ -186,21 +191,24 @@ export const LIVERIES: Readonly<Record<Livery, LiveryDef>> = {
   // Great Northern: the Class 717 is "the same light grey livery with pastel blue doors and a white
   // diagonal flash at the carriage ends" as the Thameslink units (a 2018 article, seen as a search
   // snippet); the 387s came "in a white livery, with Southern green doors" (Wikipedia) and the 387/3s
-  // later had dark blue doors. One scheme is used for both, on the 717's description. The dark cab
-  // front is a guess (no source describes it). The shades are approximate.
+  // later had dark blue doors. One scheme is used for both, on the 717's description. The cab front
+  // is read from photographs, not from a text: pale like the body, with a dark top and glass surround
+  // (Wikimedia Commons, "Great Northern Class 717 Desiro City at Palmers Green June 2019" and "Class 387 at Luton");
+  // the first version drew it dark all over, a guess. The shades are approximate.
   greatnorthern: {
-    basis: 'light grey body, pastel blue doors and white end flash from one 2018 article seen as a snippet (Class 717) and Wikipedia (Class 387: white, coloured doors); dark cab front and every shade approximate',
+    basis: 'light grey body, pastel blue doors and white end flash from one 2018 article seen as a snippet (Class 717) and Wikipedia (Class 387: white, coloured doors); the pale cab front with a dark top and glass surround from two photographs; every shade approximate',
     sources: [
       'GTR Class 717 article, 2018, as a search snippet: "the same light grey livery with pastel blue doors and a white diagonal flash at the carriage ends"',
       'Wikipedia, British Rail Class 387: "delivered in a white livery, with Southern green doors"; a mirror of the page: the Great Northern 387/3s "very similar, but with dark-blue coloured doors instead of green"',
+      'Wikimedia Commons photographs, "Great Northern Class 717 Desiro City at Palmers Green June 2019" (a white face under a black windscreen with a dark top) and "Class 387 at Luton" (a white front with a yellow panel)',
     ],
     body: 0xc9cdd3,
     roof: 0xb4b9c0,
     skirt: 0x30343a,
     door: 0x9cc3ee,
-    noseFront: 0x2f3844,
+    noseFront: 0xd9dce1,
     noseBand: 0x2f3844,
-    noseCone: 0x2f3844,
+    noseCone: null,
     glass: 0x0e1014,
     surround: null,
     window: 0x26364a,
@@ -369,7 +377,7 @@ function paint(def: LiveryDef, nose: number): HTMLCanvasElement {
   }
   if (def.noseCone !== null && nose > 0) {
     g.fillStyle = hex(def.noseCone);
-    rect(0, nose, TEX_Y0, TEX_Y1);
+    rect(0, Math.min(nose, def.noseConeLength ?? nose), TEX_Y0, TEX_Y1);
   }
   return c;
 }
