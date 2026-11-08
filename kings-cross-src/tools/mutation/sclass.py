@@ -32,7 +32,7 @@ MUTATIONS = [
     ('minimum support reduced', 'const MIN_SUPPORT = 3;', 'const MIN_SUPPORT = 2;'),
     ('precision threshold reduced', 'const MIN_PRECISION = 0.8;', 'const MIN_PRECISION = 0.6;'),
     ('precision exact threshold rejected', 'evidence.precision >= MIN_PRECISION', 'evidence.precision > MIN_PRECISION'),
-    ('time split replaced by row-count split', 'splitMs: startMs + (endMs - startMs) / 2', 'splitMs: (rows[Math.floor(rows.length / 2)]?.t ?? startMs)'),
+    ('time split replaced by row-count split', ': startMs + (endMs - startMs) / 2 };', ': (rows[Math.floor(rows.length / 2)]?.t ?? startMs) };'),
     ('fold guard bands bypassed', 'if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold))', 'if (false)'),
     ('training upper fold edge inclusive', 'end: bounds.splitMs, inclusiveEnd: false', 'end: bounds.splitMs, inclusiveEnd: true'),
     ('clearing may occur outside approach window', 'cycle.clear >= passage.t - windows.beforeMs && ', ''),
@@ -62,6 +62,15 @@ MUTATIONS = [
     ('snapshot resets become changes', 'danger.from !== null && ', ''),
     ('snapshot malformed state accepted', "!/^[\\da-f]{2}$/i.test(value)", 'false'),
     ('window validation disabled', "throw new Error('Signal windows must be positive finite durations')", 'void 0'),
+    ('whole day validation silently uses halves', "const validation = options.validation ?? 'halves';", "const validation = 'halves';"),
+    ('whole day input chronology ignored', 'sessions.sort((a, b) => a[0]!.t - b[0]!.t);', ''),
+    ('whole day overlap validation omitted', "if (sessions.some((rows, i) => i > 0 && sessions[i - 1]!.at(-1)!.t >= rows[0]!.t))", 'if (false)'),
+    ('unknown validation scheme accepted', "if (validation !== 'halves' && validation !== 'last-recording')", 'if (false)'),
+    ('held out day introduces candidates', 'const train = to === undefined ? passages.training : passages.training.filter(p => p.to === to);', 'const train = to === undefined ? [...passages.training, ...passages.heldOut] : passages.training.filter(p => p.to === to);'),
+    ('unchanged checkpoint becomes a new bit observation', 'previous[change.address] === undefined ||', 'true ||'),
+    ('checkpoint corrections keep stale cycle history', 'bitValue(previous[change.address]!, change.bit) !== change.to', 'false'),
+    ('default clearing window truncates a long approach', 'beforeMs: 240_000', 'beforeMs: 180_000'),
+    ('default clearing window admits unbounded history', 'beforeMs: 240_000', 'beforeMs: 600_000'),
 ]
 
 def run(work):

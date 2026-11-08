@@ -241,6 +241,58 @@ test('anchored canonical refs bind YA, bare numeric and single-letter suffix for
   }
 });
 
+test('unique canonical OSM refs decode without a TD anchor and ambiguous refs stay unknown', () => {
+  for (const ref of ['YA 1004', '1004', '1004A', 'YA 1004B']) {
+    const f = fixture([signal({ ref, berth: undefined })]);
+    f.layer.setTable(tableFor('1004')); f.layer.apply(row());
+    assert.equal(f.drawn.state, 'proceed', ref); assert.equal(f.drawn.mappingSource, 'reference');
+    f.layer.apply(row('SF', '00')); assert.equal(f.drawn.state, 'danger');
+    f.layer.setAnchors(tdMap([]), signalGraph()); assert.equal(f.drawn.state, 'danger');
+    assert.equal(inferred(f.layer).length, 0); f.layer.dispose();
+  }
+  for (const others of [
+    [signal({ ref: '1004A', berth: undefined }), signal({ id: 2, ref: 'YA 1004B', berth: undefined })],
+    [nearbySignal({ ref: '1004', berth: '2000' })],
+  ]) {
+    const f = fixture(others); f.layer.setTable(tableFor('1004')); f.layer.apply(row());
+    assert.ok(records(f.layer).every(r => r.state === 'unknown'));
+    f.layer.setAnchors(tdMap([tdAnchor('1004')]), signalGraph());
+    assert.ok(records(f.layer).filter(r => !r.inferredPosition).every(r => r.state === 'unknown')); f.layer.dispose();
+  }
+});
+
+test('qualified proceed reuses a unique YA head with unspecified kinds without changing its OSM type', () => {
+  const f = fixture([signal({ kinds: [] })]); f.layer.setAnchors(tdMap([tdAnchor('1004')]), signalGraph());
+  f.layer.setTable(tableFor('1004')); f.layer.apply(row());
+  assert.equal(f.drawn.state, 'proceed'); assert.equal(f.drawn.mappingSource, 'reference');
+  assert.equal(f.layer.counts().drawn, 1); assert.equal(inferred(f.layer).length, 0);
+  assert.deepEqual(f.drawn.signal.kinds, []); assert.equal(f.drawn.inferredPosition, false);
+  f.layer.setTable(tableFor('1004', { kind: 'route' })); assert.equal(f.drawn.state, 'unknown');
+  assert.equal(aspect(f.drawn.group), 0x666666); assert.equal(f.drawn.mappingSource, undefined);
+  f.layer.setTable(tableFor('1004', { status: 'unknown' })); assert.equal(f.drawn.state, 'unknown'); f.layer.dispose();
+  for (const s of [signal({ kinds: [], ref: '1004' }), signal({ kinds: [], ref: 'NL 1004' }),
+    signal({ kinds: ['stop'] }), signal({ kinds: [], berth: '2000' })]) {
+    const x = fixture([s]); x.layer.setTable(tableFor('1004')); x.layer.apply(row());
+    assert.equal(x.drawn.state, 'unknown'); x.layer.dispose();
+  }
+  const x = fixture([signal({ kinds: [] }), signal({ id: 2, kinds: [], ref: 'YA 1004A' })]);
+  x.layer.setTable(tableFor('1004')); x.layer.apply(row()); assert.ok(records(x.layer).every(r=>r.state==='unknown')); x.layer.dispose();
+});
+
+test('available bytes never light a head without a decoded proceed hypothesis', () => {
+  const f = fixture();
+  for (const hypotheses of [[], [currentHypothesis({ kind: 'route' })], [currentHypothesis({ status: 'unknown' })],
+    [currentHypothesis({ kind: 'route' }), currentHypothesis({ status: 'unknown', id: 'unknown', bit: 3 })]]) {
+    f.layer.setTable({ area: 'Y9', hypotheses });
+    for (const data of ['00', '04', 'FF']) {
+      f.layer.apply(row('SF', data)); assert.equal(f.drawn.state, 'unknown');
+      assert.equal(aspect(f.drawn.group), 0x666666);
+      assert.equal(f.drawn.group.getObjectByName('unknown')!.visible, true);
+    }
+  }
+  f.layer.dispose();
+});
+
 test('nearby binding accepts directed same-edge candidates through 20m, including reverse edge order', () => {
   for (const [candidate, berthAnchor] of [
     [nearbySignal(), tdAnchor('1004')],

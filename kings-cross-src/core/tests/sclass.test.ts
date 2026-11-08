@@ -17,6 +17,11 @@ function fixture(passages = times, signalTimes = passages, address = '20'): Time
 }
 const analyse = (rows: TimedTdEvent[]) => analyseSclass(rows, anchors, { windows });
 const candidate = (rows: TimedTdEvent[]): SignalHypothesis => { const h = analyse(rows).hypotheses.find(h => h.berth === 'A' && h.address === '20' && h.bit === 0); assert.ok(h); return h; };
+const analyseDays = (rows: TimedTdEvent[][]) => {
+  let result!: ReturnType<typeof analyseSclassRecordings>;
+  assert.doesNotThrow(() => { result = analyseSclassRecordings(rows, anchors, { windows, validation: 'last-recording' }); });
+  return result;
+};
 
 test('sclass: rule byte refresh expands SF SG SH in ascending address and least significant bit order', () => {
   const sg = { t: 0, e: { kind: 'sclass', area: 'SYN', msgType: 'SG', address: 'a', data: '0180FF00' } };
@@ -143,6 +148,18 @@ test('sclass: rule proceed can clear well before passage and reset slightly befo
   assert.equal(analyseSclass(longFixture(), anchors, { windows: { ...receiptWindows, beforeMs: 50 } }).hypotheses.length, 0);
 });
 
+test('sclass: rule default approach window covers a clearing three and a half minutes before passage but remains bounded', () => {
+  const session = (offset: number, leadMs: number): TimedTdEvent[] => [boundary(offset), byte(offset, 0), boundary(offset + 2_800_000),
+    ...[900_000, 1_500_000, 2_100_000].flatMap(t => [byte(offset + t - leadMs, 1), byte(offset + t - 200, 0), step(offset + t)])];
+  const recordings = [session(0, 210_000), session(4_000_000, 210_000)];
+  assert.doesNotThrow(() => analyseSclassRecordings(recordings, anchors, { validation: 'last-recording' }));
+  const result = analyseSclassRecordings(recordings, anchors, { validation: 'last-recording' });
+  const h = result.hypotheses.find(h => h.status === 'decoded'); assert.ok(h);
+  assert.equal(h.training.support, 3); assert.equal(h.heldOut.support, 3);
+  assert.equal(h.heldOut.precision, 1); assert.equal(h.heldOut.recall, 1);
+  assert.deepEqual(analyseSclassRecordings([session(0, 260_000), session(4_000_000, 260_000)], anchors, { validation: 'last-recording' }).hypotheses, []);
+});
+
 test('sclass: rule later route release is separate from proceed and cannot light a lamp', () => {
   const rows = [...longFixture(), ...longFixture(20, '21').filter(r => r.e.kind === 'sclass')];
   const result = analyseSclass(rows, anchors, { windows: receiptWindows });
@@ -168,6 +185,48 @@ test('sclass: rule each recording learns its first half and validates its second
   assert.equal(result.hypotheses[0]?.heldOut.support, 6);
   assert.equal(result.hypotheses[0]?.status, 'decoded');
   assert.equal(result.trace.transitions.find(c => c.t === 5000 && c.bit === 0)?.from, null);
+});
+
+test('sclass: rule whole recordings learn earlier days and hold out the complete latest day', () => {
+  const first = fixture(), second = fixture().map(row => ({ ...row, t: row.t + 5000 }));
+  const result = analyseDays([first, second]);
+  assert.equal(result.validation, 'last-recording');
+  assert.equal(result.splitMs, 5000);
+  assert.deepEqual(result.folds, [{ startMs: 0, splitMs: 1000, endMs: 1000 }, { startMs: 5000, splitMs: 5000, endMs: 6000 }]);
+  const h = result.hypotheses[0]; assert.ok(h);
+  assert.equal(h.status, 'decoded');
+  assert.equal(h.training.support, 6);
+  assert.equal(h.heldOut.support, 6);
+  assert.deepEqual(analyseDays([second, first]), result);
+});
+
+test('sclass: rule a held out day cannot introduce candidates or rescue an unsupported training identity', () => {
+  const first = fixture(), second = fixture().map(row => ({ ...row, t: row.t + 5000 }));
+  second.push(...fixture().filter(r => r.e.kind === 'sclass').map(row => ({ ...row, t: row.t + 5000, e: { ...row.e, address: '21' } })));
+  const hs = analyseDays([first, second]).hypotheses;
+  assert.equal(hs.length, 1); assert.equal(hs[0]!.address, '20'); assert.equal(hs[0]!.status, 'decoded');
+  const noCycles = second.filter(r => r.e.kind !== 'sclass');
+  const rejected = analyseDays([first, noCycles]).hypotheses[0]; assert.ok(rejected);
+  assert.equal(rejected.training.support, 6); assert.equal(rejected.heldOut.support, 0); assert.equal(rejected.status, 'unknown');
+});
+
+test('sclass: rule whole recording validation rejects empty overlapping and unsupported fold specifications', () => {
+  const options = { windows, validation: 'last-recording' as const };
+  for (const rows of [[], [fixture()], [fixture(), []], [fixture(), fixture()], [fixture(), fixture().map(row => ({ ...row, t: row.t + 1000 }))]]) {
+    assert.throws(() => analyseSclassRecordings(rows, anchors, options), /recording/i);
+  }
+  assert.throws(() => analyseSclassRecordings([], anchors, { validation: 'bogus' as never }), /validation scheme/);
+});
+
+test('sclass: rule unchanged checkpoints preserve observed cycles without inventing transitions', () => {
+  const rows = fixture();
+  rows.push(...times.map(t => ({ t: t - 1, e: { kind: 'snapshot', area: 'SYN', sclass: { addresses: 1, data: { '20': '01' } } } })));
+  const trace = trackSclass(rows, 'SYN');
+  assert.ok(trace.transitions.every(c => !times.some(t => c.t === t - 1)), 'an unchanged bit has no transition at a checkpoint');
+  const h = candidate(rows);
+  assert.equal(h.status, 'decoded'); assert.equal(h.training.support, 3); assert.equal(h.heldOut.support, 3);
+  const corrected = rows.map(row => row.e.kind === 'snapshot' ? { ...row, e: { ...row.e, sclass: { addresses: 1, data: { '20': '00' } } } } : row);
+  assert.deepEqual(analyse(corrected).hypotheses, [], 'a reset supplied only by a checkpoint is still unobserved');
 });
 
 test('sclass: rule snapshots establish bytes atomically without counting a clearing or reset', () => {
