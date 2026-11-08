@@ -39,6 +39,8 @@ M = [
     ('output follows symlink outside scratch', 'axis07-evidence.mjs', "if (actual !== base && !inside(base, actual)) throw new Error('output symlink escapes .scratch');", ''),
     ('probe response and log artifacts missed', 'axis07-evidence.mjs', 'path: relayProbe.paths.evidenceDir ?? relayProbe.paths.dataDir', 'path: relayProbe.paths.dataDir'),
     ('unavailable NIC probe claims complete coverage', 'axis07-evidence.mjs', "&& !unavailableProbes.length ? 'PASS'", "? 'PASS'"),
+    ('combined pack drops browser failure URLs', 'axis07-evidence.mjs', 'failedRequests: p.failedRequests,', ''),
+    ('combined pack drops transition diagnostics', 'axis07-evidence.mjs', 'networkDiagnostics: value.networkDiagnostics,', ''),
 ]
 
 def run(work):

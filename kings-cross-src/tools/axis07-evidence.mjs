@@ -139,7 +139,8 @@ export async function browserEvidence(path) {
         typeof p.statusLine === 'string' && Number.isInteger(p.trainCount) && p.trainCount >= 0 && p.validCsp === true && p.attribution?.present?.osm === true);
     return { status: valid ? 'PASS' : 'FAIL', renderer: typeof value.renderer === 'string' ? value.renderer : null,
       validGpu: value.validGpu === true, phases: phases.map((p) => ({ name: p.name, statusLine: p.statusLine, trainCount: p.trainCount,
-        attribution: p.attribution, validCsp: p.validCsp, screenshot: p.screenshot })), source: path };
+        attribution: p.attribution, validCsp: p.validCsp, screenshot: p.screenshot,
+        failedRequests: p.failedRequests, consoleErrors: p.consoleErrors })), networkDiagnostics: value.networkDiagnostics, source: path };
   } catch { return { status: 'FAIL', reason: 'browser result could not be read' }; }
 }
 

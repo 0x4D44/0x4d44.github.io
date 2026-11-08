@@ -52,6 +52,9 @@ M = [
     ('legacy cache requires nonexistent realtime metadata', F, "doc.calls.some(call => !validBoardService(call))", "doc.calls.some(call => !validBoardService(call) || !call.realtime)"),
     ('malformed calls bypass schedule validation', F, "doc.calls.some(call => !validBoardService(call))", "false"),
     ('malformed schedule discards last accepted bookings', F, "})().catch(() => { misses++;", "})().catch(() => { calls = undefined; misses++;"),
+    ('unavailable timetable fact is ignored', F, 'if (doc.available === false) {', 'if (false) {'),
+    ('unavailable timetable is presented as available empty bookings', F, 'if (doc.available === false) {', 'if (doc.available === false) { calls = [];'),
+    ('unavailable replay timetable is polled forever', F, "if (options.mode === 'replay') settled = true;", 'if (false) settled = true;'),
     ('relay heartbeat interval triples', R, 'schedule(ping, 5000)', 'schedule(ping, 15000)'),
     ('relay heartbeat uses an invisible event name', R, 'event: ping', 'event: wrong'),
     ('request close leaves heartbeat running', R, "req.once('close', stop);", "req.once('unused-close', stop);"),
@@ -151,7 +154,7 @@ def run(work, rel=None):
     }.get(rel, ['web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts', 'web/tests/trains-live.test.ts',
                 'web/tests/tooltip.test.ts', 'core/tests/station.test.ts', 'relay/tests/relay.test.mjs'])
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
+               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|an explicit unavailable timetable|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
                *files]
     process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, stdin=subprocess.DEVNULL, start_new_session=True)

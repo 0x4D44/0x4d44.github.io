@@ -103,9 +103,15 @@ test('axis07 evidence: absent relay logs and incomplete GPU phases prevent a cle
   const result = await runAxis07(noLogs, injected());
   assert.equal(result.report.status, 'FAIL'); assert.equal(result.report.secretScan.files.status, 'FAIL');
   const file = resolve(dir, 'browser.json');
-  const phase = (name) => ({ name, statusLine: 'synthetic status', trainCount: 2, validCsp: true, attribution: { present: { osm: true } } });
-  const good = { status: 'PASS', validGpu: true, renderer: 'ANGLE Apple Metal', phases: ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'].map(phase) };
-  await writeFile(file, JSON.stringify(good)); assert.equal((await browserEvidence(file)).status, 'PASS');
+  const phase = (name) => ({ name, statusLine: 'synthetic status', trainCount: 2, validCsp: true, attribution: { present: { osm: true } },
+    failedRequests: name === 'no-relay' ? [{ url: 'http://127.0.0.1:43210/relay/health', requestId: 'synthetic-request', status: 503 }] : [] });
+  const good = { status: 'PASS', validGpu: true, renderer: 'ANGLE Apple Metal', networkDiagnostics: [],
+    phases: ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'].map(phase) };
+  await writeFile(file, JSON.stringify(good));
+  const imported = await browserEvidence(file);
+  assert.equal(imported.status, 'PASS');
+  assert.deepEqual(imported.phases[0].failedRequests, good.phases[0].failedRequests, 'the combined pack keeps failed request URLs');
+  assert.deepEqual(imported.networkDiagnostics, good.networkDiagnostics, 'transition diagnostics remain available in the combined pack');
   for (const bad of [{ ...good, renderer: 'SwiftShader' }, { ...good, phases: [phase('connected')] },
     { ...good, phases: good.phases.map((p) => ({ ...p, validCsp: false })) },
     { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { osm: false } } })) }]) {

@@ -321,8 +321,7 @@ test('feed: the relay is probed only from a loopback host, never from the publis
   for (const host of ['0x4d44.github.io', 'example.com', '127.0.0.1.example.com', '192.168.1.5', '']) assert.equal(relayReachable(host), false, host);
 });
 
-// A relay without /schedule (older code) or a replay day whose timetable was never cached answers
-// 404. Polling that every 5 s logs a console error each time, forever.
+// Older relays answer 404 for unavailable timetables; retain their backoff policy.
 test('a missing timetable backs off in live mode and is not re-asked in replay', async () => {
   const jobs: { fn: () => void; ms: number }[] = [];
   const timers = { schedule: (fn: () => void, ms: number) => { jobs.push({ fn, ms }); return jobs.length; }, unschedule: () => {} };
@@ -344,4 +343,35 @@ test('a missing timetable backs off in live mode and is not re-asked in replay',
   await replay.refresh();
   assert.equal(asked, 1); assert.equal(jobs.length, 0, 'a past day that is missing will not appear later');
   replay.dispose();
+});
+
+test('an explicit unavailable timetable stops replay polling and live retries until bookings arrive', async () => {
+  const date = '2026-11-09';
+  for (const mode of ['live', 'replay'] as const) {
+    let available = false;
+    const jobs: { fn: () => void; ms: number }[] = [];
+    const changes: (readonly unknown[] | undefined)[] = [];
+    const feed = createScheduleFeed({ mode, date, hostname: 'localhost', relayPresent: true,
+      now: () => Date.parse(`${date}T12:00Z`), onChange: calls => { changes.push(calls); },
+      schedule: (fn, ms) => { jobs.push({ fn, ms }); return jobs.length; }, unschedule: () => {},
+      fetchImpl: (async () => new Response(JSON.stringify(available ? { date, calls: [] }
+        : { date, available: false, reason: 'no timetable' }), { status: 200 })) as typeof fetch,
+    });
+    try {
+      await feed.refresh();
+      assert.equal(feed.services(), undefined, 'unavailable never means an empty but available timetable');
+      assert.equal(changes.at(-1), undefined);
+      if (mode === 'replay') {
+        assert.equal(jobs.length, 0, 'an explicitly unavailable replay day is settled');
+      } else {
+        assert.equal(jobs.shift()!.ms, 5000);
+        await feed.refresh();
+        assert.equal(jobs.shift()!.ms, 10_000, 'missing live bookings back off');
+        available = true;
+        await feed.refresh();
+        assert.deepEqual(feed.services(), [], 'a later available empty timetable is accepted');
+        assert.equal(jobs.shift()!.ms, 60_000);
+      }
+    } finally { feed.dispose(); }
+  }
 });

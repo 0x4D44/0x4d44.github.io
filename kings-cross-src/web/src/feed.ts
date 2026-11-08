@@ -415,9 +415,14 @@ export function createScheduleFeed(options: ScheduleFeedOptions) {
         misses++; if (options.mode === 'replay' && response.status === 404) settled = true;
         if (!calls) changed(); return;
       }
-      const doc = await boundedJson(response) as { date: string; calls: BoardService[] };
+      const doc = await boundedJson(response) as { date: string; available?: boolean; calls: BoardService[] };
       if (disposed || signal.aborted) return;
-      if (!doc || doc.date !== date || !Array.isArray(doc.calls) || doc.calls.length > 10_000 || doc.calls.some(call => !validBoardService(call))) throw new Error('invalid timetable');
+      if (!doc || doc.date !== date) throw new Error('invalid timetable');
+      if (doc.available === false) {
+        misses++; if (options.mode === 'replay') settled = true;
+        if (!calls) changed(); return;
+      }
+      if (!Array.isArray(doc.calls) || doc.calls.length > 10_000 || doc.calls.some(call => !validBoardService(call))) throw new Error('invalid timetable');
       misses = 0;
       calls = options.mode === 'replay' ? doc.calls.map(call => ({ ...call, realtime: null })) : doc.calls;
       for (const row of observed) calls = applyBoardTrust(calls, row.event);

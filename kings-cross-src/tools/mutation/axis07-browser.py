@@ -38,6 +38,25 @@ MUTATIONS = [
     ('SSE reconnect races the failure screenshot', 'tools/axis07-browser.mjs',
      'streamsDropped = true;', 'streamsDropped = false;',
      'synthetic SSE stays dropped until the failure screenshot has been captured'),
+    ('fixture unavailable timetable returns HTTP404', 'tools/axis07-browser.mjs',
+     "if (url.pathname === '/schedule') return sendJson(res, 200, {", "if (url.pathname === '/schedule') return sendJson(res, 404, {",
+     'browser fixture reports an unavailable timetable as data and preserves genuine missing routes'),
+    ('failed request loses its URL', 'tools/axis07-browser.mjs',
+     'url: fullUrl,', 'url: null,',
+     ('CDP failures retain full URLs and request IDs while genuine 404s fail and injected SSE drops are expected',
+      'a console error with no URL resolves its CDP request ID after the request finishes')),
+    ('transport failures are omitted', 'tools/axis07-browser.mjs',
+     "if (method === 'Network.loadingFailed') {", 'if (false) {',
+     'CDP failures retain full URLs and request IDs while genuine 404s fail and injected SSE drops are expected'),
+    ('schedule404 is whitelisted again', 'tools/axis07-browser.mjs',
+     'if (!pathname) return false;', "if (!pathname) return false; if (pathname === '/relay/schedule' && status === 404) return true;",
+     'CDP failures retain full URLs and request IDs while genuine 404s fail and injected SSE drops are expected'),
+    ('console errors cannot recover their URL by request ID', 'tools/axis07-browser.mjs',
+     "return usableUrl(entry?.url) ?? usableUrl(requestInfo.get(entry?.networkRequestId)?.url);", 'return usableUrl(entry?.url);',
+     'a console error with no URL resolves its CDP request ID after the request finishes'),
+    ('errors between screenshots are hidden', 'tools/axis07-browser.mjs',
+     "if (report.networkDiagnostics?.some(d => d.consoleErrorCount || d.cspErrorCount || d.unexpectedNetworkFailures.length)) return 'GAP';", '',
+     'browser report completeness requires all phases, attribution, status, board, counts and screenshots'),
 ]
 
 
@@ -88,9 +107,9 @@ try:
 
     baseline, expired = run(root)
     expected = test_names(baseline.stdout)
-    if baseline.returncode or baseline.stderr or expired or len(expected) != 6 or '# tests 6' not in baseline.stdout:
+    if baseline.returncode or baseline.stderr or expired or len(expected) != 9 or '# tests 9' not in baseline.stdout:
         print(baseline.stdout, baseline.stderr)
-        raise SystemExit('baseline failed or did not run exactly the six focused tests')
+        raise SystemExit('baseline failed or did not run exactly the nine focused tests')
 
     originals = {file: (root / file).read_text() for _, file, _, _, _ in MUTATIONS}
     for label, filename, old, new, expected_failure in MUTATIONS:
@@ -102,12 +121,13 @@ try:
         (root / filename).write_text(changed.replace(old, new, 1))
         result, expired = run(root)
         failures = assertion_failures(result.stdout)
+        required_failures = {expected_failure} if isinstance(expected_failure, str) else set(expected_failure)
         named = {name for name in test_names(result.stdout) if name in expected}
         if expired:
             timeouts.append(label)
             print(f'[TIMEOUT] {label}', flush=True)
-        elif result.returncode and failures == {expected_failure} and named == expected and not result.stderr:
-            print(f'[CAUGHT] {label}: {expected_failure}', flush=True)
+        elif result.returncode and failures == required_failures and named == expected and not result.stderr:
+            print(f'[CAUGHT] {label}: {", ".join(sorted(failures))}', flush=True)
         else:
             survivors.append(label)
             print(f'[SURVIVED] {label}', flush=True)

@@ -234,7 +234,8 @@ export async function startRelay({
           if (dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date'))
             return json(res, 400, { error: 'date must be YYYY-MM-DD' });
           const doc = await schedules.get(date);
-          if (!doc) return json(res, 404, { error: 'schedule not available yet' });
+          // An uncached day is a normal board state, not a missing HTTP route.
+          if (!doc) return json(res, 200, { date, available: false, reason: 'no timetable' });
           return json(res, 200, { ...doc, ...trust.enrich(doc.calls) });
         }
         case '/snapshot':

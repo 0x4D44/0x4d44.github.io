@@ -88,6 +88,8 @@ MUTATIONS = [
     ("schedule: accepts arbitrary cache paths", "schedule.mjs", "if (!validDate(date)) throw new Error('invalid schedule date');", ""),
     ("schedule: missing HTTP validation", "relay.mjs", "dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date')", "false"),
     ("schedule: all requests use today", "relay.mjs", "const date = dates[0] ?? scheduleDate(now());", "const date = scheduleDate(now());"),
+    ("schedule: unavailable timetable is an HTTP error", "relay.mjs", "if (!doc) return json(res, 200, { date, available: false, reason: 'no timetable' });", "if (!doc) return json(res, 404, { date, available: false, reason: 'no timetable' });"),
+    ("relay: unknown routes claim success", "relay.mjs", "default:\n          return json(res, 404, { error: 'not found' });", "default:\n          return json(res, 200, { error: 'not found' });"),
     ("feed: TRUST subscription missing", "feed.mjs", "if (trustTopic) client.subscribe(trustTopic, { id: 'trust' });", ""),
     ("feed: TRUST routed into TD parser", "feed.mjs", "trustTopic && (destination === trustTopic || subscription === 'trust')", "false"),
     ("relay: TRUST not broadcast", "relay.mjs", "else if (row.e.kind === 'trust')", "else if (false)"),

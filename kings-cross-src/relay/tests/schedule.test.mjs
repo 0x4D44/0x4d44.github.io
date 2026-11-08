@@ -176,12 +176,29 @@ async function checkScheduleEndpoint(t, offline = false) {
   assert.equal(response.headers['cache-control'], 'no-store');
   for (const query of ['date=../../etc/passwd', 'date=20261108', 'date=2026-02-30', 'date=2026-11-08&date=2026-11-09', 'path=/etc/passwd', 'date=2026-11-08%00'])
     assert.equal((await request(`/schedule?${query}`)).status, 400, query);
-  assert.equal((await request('/schedule?date=2026-11-09')).status, 404);
+  const unavailable = await request('/schedule?date=2026-11-09');
+  assert.equal(unavailable.status, 200);
+  assert.deepEqual(unavailable.body, { date: '2026-11-09', available: false, reason: 'no timetable' });
   assert.equal((await request('/schedule', { method: 'POST' })).status, 405);
   assert.equal((await request('/schedule', { host: `127.0.0.1.evil:${relay.port}` })).status, 403);
 }
 test('schedule endpoint: only valid calendar dates select private cache files behind the shared relay guards', t => checkScheduleEndpoint(t));
 test('schedule endpoint offline: calendar dates and shared guards use the same HTTP handler', t => checkScheduleEndpoint(t, true));
+
+test('schedule endpoint offline: an uncached day is a non-error fact and unknown routes stay not found', async t => {
+  const captured = captureScheduleHttp(t), dataDir = await temporary(t);
+  const relay = await startRelay({ area: 'ZZ', dataDir, feedEnabled: false, now: () => instant });
+  t.after(() => relay.close());
+  const missing = await captured.request(`/schedule?date=${date}`);
+  assert.equal(missing.status, 200);
+  assert.deepEqual(missing.body, { date, available: false, reason: 'no timetable' });
+  assert.equal(missing.headers['cache-control'], 'no-store');
+  for (const path of ['/unknown', '/schedule/unknown']) {
+    const response = await captured.request(path);
+    assert.equal(response.status, 404);
+    assert.deepEqual(response.body, { error: 'not found' });
+  }
+});
 
 class FakeSocket extends EventEmitter {
   parser = new FrameParser(); subscriptions = [];
