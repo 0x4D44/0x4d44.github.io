@@ -153,7 +153,9 @@ test('axis07 relay probe closes a listener that starts after the bounded startup
 
 test('axis07 relay probe checks a real loopback listener with synthetic upstream only', async (t) => {
   const dir = await caseDir(t);
-  const result = await probeRelaySecurity({ dataDir: dir });
+  // The default suite must never try the machine's LAN interface. The injected
+  // matrix above tests non-loopback refusal without sending traffic to the LAN.
+  const result = await probeRelaySecurity({ dataDir: dir }, { networkInterfaces: () => ({}) });
   const listener = result.checks.find((item) => item.name === 'listener_started');
   if (listener?.status === 'UNAVAILABLE' && /permission denied/.test(listener.detail)) {
     t.skip('sandbox denied binding the synthetic relay to 127.0.0.1 (EPERM/EACCES)');

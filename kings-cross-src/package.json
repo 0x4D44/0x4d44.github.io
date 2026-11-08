@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Source for the live 3D King's Cross model: the Network Rail relay (relay/) and, later, the Vite page (web/).",
   "scripts": {
-    "test": "node --test relay/tests/*.test.mjs core/tests/*.test.ts web/tests/*.test.ts",
+    "test": "node --test relay/tests/*.test.mjs core/tests/*.test.ts web/tests/*.test.ts tools/tests/*.test.mjs tools/tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "relay": "node relay/main.mjs",
     "berths": "node tools/berths.ts",

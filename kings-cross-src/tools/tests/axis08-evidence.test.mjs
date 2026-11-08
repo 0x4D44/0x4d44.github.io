@@ -4,9 +4,9 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import vm from 'node:vm';
-import { sizeReport, hardwareReport, summarizeRuns, collectRuns, BUDGET_BYTES, main, evidenceMarkdown } from './axis08-evidence.mjs';
-import { startupObserver, extractTiming } from './perf.mjs';
-const scratch = path.resolve(import.meta.dirname, '../../.scratch/axis08-tests');
+import { sizeReport, hardwareReport, summarizeRuns, collectRuns, BUDGET_BYTES, main, evidenceMarkdown } from '../axis08-evidence.mjs';
+import { startupObserver, extractTiming } from '../perf.mjs';
+const scratch = path.resolve(import.meta.dirname, '../../../.scratch/axis08-tests');
 const timing = (first, full) => ({ navigationStartToSceneRenderedMs: first, navigationStartToFullSceneRenderedMs: full });
 const report = () => ({ success: true, startup: { coldFreshProfile: timing(100, 600), warmSecondLoadSameProfile: timing(50, 300) }, cameras: Object.fromEntries(['overview', 'shed'].map(name => [name, { realMetal: true, renderer: 'ANGLE Apple Metal', rAFThrottleDetected: false, fps: { median: 60, p5: 60 }, frameMs: { p95: 16.5, p99: 20 } }])) });
 
