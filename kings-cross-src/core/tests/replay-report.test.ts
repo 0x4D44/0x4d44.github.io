@@ -2,13 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import type { AnchorMap } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
 import { buildGraph } from '../graph.ts';
 import { DEFAULT_BUFFER_CLEARANCE_M } from '../motion.ts';
-import { platformStoppingPoint } from '../../tools/replay-report.ts';
+import { completeRecordingPrefix, platformStoppingPoint } from '../../tools/replay-report.ts';
+import { parseRecording } from '../../web/src/feed.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const tool = process.env.REPLAY_REPORT_TEST_TOOL ?? resolve(root, 'kings-cross-src/tools/replay-report.ts');
@@ -29,7 +31,29 @@ async function run(name: string, anchors: AnchorMap, rows: unknown[]) {
   const child = spawnSync(process.execPath, [tool, '--anchors', resolve(dir, 'anchors.json'), '--recording', resolve(dir, 'recording.ndjson'), '--graph', resolve(dir, 'graph.json'), '--out', resolve(dir, 'out')], { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(child.error, undefined);
   const report = JSON.parse(await readFile(resolve(dir, 'out/replay-report.json'), 'utf8'));
-  return { status: child.status, report };
+  return { status: child.status, report, dir };
+}
+
+async function runMultiple(name: string, anchors: AnchorMap, recordings: unknown[][], graph = data, smart?: Buffer) {
+  const dir = resolve(scratch, name); await mkdir(dir, { recursive: true });
+  await writeFile(resolve(dir, 'anchors.json'), JSON.stringify(anchors));
+  await writeFile(resolve(dir, 'graph.json'), JSON.stringify(graph));
+  const files = await Promise.all(recordings.map(async (rows, index) => {
+    const file = resolve(dir, `recording-${index + 1}.ndjson`);
+    await writeFile(file, rows.map((r) => JSON.stringify(r)).join('\n'));
+    return file;
+  }));
+  const recordingArgs = files.flatMap((file) => ['--recording', file]);
+  const args = [tool, ...recordingArgs, '--anchors', resolve(dir, 'anchors.json'), '--graph', resolve(dir, 'graph.json'), '--out', resolve(dir, 'out')];
+  if (smart) { const smartPath = resolve(dir, 'smart.json.gz'); await writeFile(smartPath, smart); args.push('--smart', smartPath); }
+  const child = spawnSync(process.execPath, args,
+    { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.equal(child.error, undefined);
+  let reportText: string;
+  try { reportText = await readFile(resolve(dir, 'out/replay-report.json'), 'utf8'); }
+  catch { assert.fail(`replay-report CLI wrote no report (exit ${child.status}): ${child.stderr}`); }
+  const report = JSON.parse(reportText!);
+  return { status: child.status, report, dir };
 }
 
 test('CLI inventory includes cancel, snapshot and placeholder-only berths and rejects missing classification', async () => {
@@ -143,4 +167,87 @@ test('CLI rejects matched residence implying more than 50 m/s', async () => {
   assert.equal(report.stepSummary.impliedSpeedFlagPairs, 1);
   assert.match(report.violations.join(';'), /mapped step implied-speed/);
   assert.equal(report.stepJumps[0].speedMps, 400);
+});
+
+test('growing recording capture omits only an incomplete final JSON line', () => {
+  const complete = Buffer.from('{"t":1,"e":{"kind":"heartbeat","area":"TEST"}}\n');
+  const partial = Buffer.concat([complete, Buffer.from('{"t":2,"e":{"kind":"heartbeat","area":"TEST"}')]);
+  const cut = completeRecordingPrefix(partial, true);
+  assert.deepEqual(cut.bytes, complete);
+  assert.equal(cut.trailingBytesOmitted, partial.length - complete.length);
+  const validFinal = completeRecordingPrefix(Buffer.from('{"t":1,"e":{"kind":"heartbeat","area":"TEST"}}'), true);
+  assert.equal(validFinal.trailingBytesOmitted, 0);
+  const malformed = Buffer.from('{"t":1,"e":]');
+  const keptMalformed = completeRecordingPrefix(malformed, true);
+  assert.equal(keptMalformed.trailingBytesOmitted, 0);
+  assert.throws(() => parseRecording(keptMalformed.bytes.toString('utf8')), /invalid recording line/);
+});
+
+test('optional SMART reconciliation classifies candidates before replay metrics and keeps positions pending', async () => {
+  const previous = map(); previous.area = 'Y9'; previous.anchors = [a('A', 0.1)]; previous.unmapped = [];
+  const smart = gzipSync(Buffer.from(JSON.stringify({ BERTHDATA: [] })));
+  const { status, report } = await runMultiple('preserve-position-map', previous,
+    [[{ t: 0, e: event('interpose', { area: 'Y9', to: 'NEW' }) }],
+      [{ t: 0, e: event('interpose', { area: 'Y9', to: 'NEW', descr: 'SYN2' }) }]], data, smart);
+  assert.equal(status, 0);
+  assert.equal(report.berthsReconciliation.status, 'COMPLETE');
+  assert.equal(report.berthsReconciliation.candidatePlacement.status, 'pending-validation');
+  const candidate = report.coverage.berths.find((berth: { berth: string }) => berth.berth === 'NEW');
+  assert.equal(candidate.classification, 'unmapped');
+  assert.equal(candidate.reason, 'no-evidence');
+  assert.equal(report.recordings[0].metrics.coverage.berths.find((berth: { berth: string }) => berth.berth === 'NEW').classification, 'unmapped');
+  assert.equal(report.violations.some((violation: string) => violation.includes('missing berth classification: NEW')), false);
+  assert.match(report.reproducibility.inputHashes.effectiveAnchors.sha256, /^[a-f0-9]{64}$/);
+});
+
+test('CLI combines multiple recordings with union reasons, per-recording measures and bounded input hashes', async () => {
+  const multiData: KxData = { ...data, platforms: [
+    { id: 20, ref: '0', pts: [[42, -200], [45, -200], [45, -300], [42, -300]] },
+    { id: 21, ref: '1', pts: [[12, -200], [15, -200], [15, -300], [12, -300]] }] };
+  const m = map();
+  m.anchors.push({ ...a('1000', 1), from: 4, to: 3, point: [40, -200], platform: '0', kind: 'platform' });
+  m.anchors.push({ ...a('1001', 1), from: 2, to: 1, point: [10, -200], platform: '1', kind: 'platform' });
+  m.unmapped.push({ berth: 'OUT', seen: 1, reason: 'outside-network', detail: 'synthetic boundary outside the graph' });
+  const { status, report, dir } = await runMultiple('multi-recording', m, [
+    [{ t: 0, e: event('interpose', { to: 'A' }) },
+      { t: 100, e: event('interpose', { to: 'A', descr: 'SYN2' }) },
+      { t: 40000, e: event('step', { from: 'A', to: 'B', descr: 'SYN2' }) },
+      { t: 40100, e: event('step', { from: 'B', to: 'OUT', descr: '****' }) }],
+    [{ t: 0, e: event('interpose', { to: '1000', descr: 'SYN3' }) },
+      { t: 20000, e: event('interpose', { to: '1001', descr: 'SYN4' }) }],
+  ], multiData);
+  assert.equal(status, 0);
+  assert.equal(report.recordings.length, 2);
+  assert.equal(report.recordings[0].metrics.headcodeChurn.renames, 1);
+  assert.equal(report.recordings[0].metrics.stepSummary.mappedPairs, 1);
+  assert.equal(report.recordings[1].metrics.platforms.find((p: { berth: string }) => p.berth === '1000').platform, '0');
+  assert.equal(report.recordings[1].metrics.platforms.find((p: { berth: string }) => p.berth === '1001').platform, '1');
+  assert.equal(report.coverage.seen, 5);
+  assert.equal(report.coverage.anchored, 4);
+  assert.equal(report.coverage.unmapped, 1);
+  assert.deepEqual(report.coverage.berths.find((b: { berth: string }) => b.berth === 'OUT'), {
+    berth: 'OUT', observations: 1, classification: 'unmapped', reason: 'outside-network', detail: 'synthetic boundary outside the graph',
+  });
+  assert.equal(report.motion.starsDrawn, 0);
+  assert.equal(report.headcodeChurn.renames, 1);
+  assert.equal(report.stepJumps[0].from, 'A');
+  assert.equal(report.stepJumps[0].to, 'B');
+  assert.ok(report.recordings.every((r: { input: { sha256: string; capturedBounds: { byteStart: number; byteEndExclusive: number; firstEventTimeMs: number; lastEventTimeMs: number } } }) =>
+    /^[a-f0-9]{64}$/.test(r.input.sha256) && r.input.capturedBounds.byteStart === 0 && r.input.capturedBounds.byteEndExclusive > 0 &&
+    Number.isFinite(r.input.capturedBounds.firstEventTimeMs) && Number.isFinite(r.input.capturedBounds.lastEventTimeMs)));
+  assert.equal(report.reproducibility.inputHashes.anchors.sha256.length, 64);
+  assert.equal(report.reproducibility.inputHashes.graph.sha256.length, 64);
+  const md = await readFile(resolve(dir, 'out/replay-report.md'), 'utf8');
+  assert.match(md, /Union berth inventory/);
+  assert.match(md, /synthetic boundary outside the graph/);
+  assert.match(md, /Placeholder draw check:\*\* PASS — 0 \*\*\*\* samples drawn across all recordings/);
+  assert.match(md, /1000 \| 0 \| yes/);
+  const command = report.reproducibility.command;
+  const reproduced = spawnSync(command.executable, command.args, { cwd: command.cwd, encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.equal(reproduced.status, 0, reproduced.stderr);
+  const reproducedOut = command.args[command.args.indexOf('--out') + 1];
+  const rerun = JSON.parse(await readFile(resolve(reproducedOut!, 'replay-report.json'), 'utf8'));
+  assert.equal(rerun.coverage.seen, report.coverage.seen);
+  assert.deepEqual(rerun.reproducibility.inputHashes.recordings.map((input: { sha256: string }) => input.sha256),
+    report.reproducibility.inputHashes.recordings.map((input: { sha256: string }) => input.sha256));
 });

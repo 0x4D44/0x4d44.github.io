@@ -11,7 +11,7 @@ const nonnegativeInteger = (value: unknown): number | null => Number.isSafeInteg
 const percent = (numerator: number | null, denominator: number | null): number | null =>
   numerator !== null && denominator !== null && denominator > 0 ? numerator * 100 / denominator : null;
 
-export interface SummaryOptions { out: string; boardReport?: string; liveReport?: string; relay?: string }
+export interface SummaryOptions { out: string; boardReport?: string; liveReport?: string; replayReport?: string; relay?: string }
 
 function isWithin(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate);
@@ -32,8 +32,8 @@ export function axis04Options(args: string[]): SummaryOptions {
   const values = new Map<string, string>();
   for (let i = 0; i < args.length; i += 2) {
     const key = args[i], value = args[i + 1];
-    if (!['--out', '--board-report', '--live-report', '--relay'].includes(key!) || !value || value.startsWith('--') || values.has(key!)) {
-      throw new Error('usage: axis04-summary.ts --out <.scratch/dir> [--board-report <json>] [--live-report <json>] [--relay <loopback-origin>]');
+    if (!['--out', '--board-report', '--live-report', '--replay-report', '--relay'].includes(key!) || !value || value.startsWith('--') || values.has(key!)) {
+      throw new Error('usage: axis04-summary.ts --out <.scratch/dir> [--board-report <json>] [--live-report <json>] [--replay-report <json>] [--relay <loopback-origin>]');
     }
     values.set(key!, value);
   }
@@ -45,6 +45,7 @@ export function axis04Options(args: string[]): SummaryOptions {
     out,
     ...(values.has('--board-report') ? { boardReport: path.resolve(values.get('--board-report')!) } : {}),
     ...(values.has('--live-report') ? { liveReport: path.resolve(values.get('--live-report')!) } : {}),
+    ...(values.has('--replay-report') ? { replayReport: path.resolve(values.get('--replay-report')!) } : {}),
     ...(relay ? { relay } : {}),
   };
 }
@@ -135,16 +136,20 @@ function makeLiveFallback(reportPath: string, out: string): unknown {
 export function summarizeAxis04(input: {
   board?: Record<string, unknown>;
   live?: Record<string, unknown>;
+  replay?: Record<string, unknown>;
   boardPath?: string;
   livePath?: string;
+  replayPath?: string;
   boardError?: string;
   liveError?: string;
+  replayError?: string;
   out: string;
   relay?: string;
 }) {
   const gaps: string[] = [];
   const boardSource = reportSource(input.boardPath, input.out, !!input.board);
   const liveSource = reportSource(input.livePath, input.out, !!input.live);
+  const replaySource = reportSource(input.replayPath, input.out, !!input.replay);
 
   let liveReplay: Record<string, unknown> | null = null;
   let liveDiagnostic: Record<string, unknown> | null = null;
@@ -246,22 +251,69 @@ export function summarizeAxis04(input: {
     if (!liveReproduction) gaps.push('Live/replay report has no usable saved-capture reproduction command.');
   }
 
+  let replayReproduction: Reproduction | null = null;
+  if (input.replay) {
+    replayReproduction = reproduction(object(input.replay.reproducibility).command, 'Recompute replay berth and motion report', 'report');
+    if (!replayReproduction) gaps.push('Replay berth report has no usable exact reproduction command.');
+  }
+
   const newCapture = input.relay ? reproduction({
     cwd: repoRoot, command: 'timeout', args: ['720', 'node', 'kings-cross-src/tools/live-vs-replay.ts', '--out', path.join(input.out, 'live-capture-60s'),
       '--seconds', '60', '--start', 'checkpoint', '--checkpoint-wait', '610', '--relay', input.relay],
   }, 'New 60-second live capture (new window; does not reproduce historical observations)', 'new capture', false) : null;
 
+  let berthEvidence: Record<string, unknown> | null = null;
+  if (!input.replay) {
+    gaps.push(input.replayError ? `Replay berth report unavailable: ${input.replayError}` : 'No replay berth report supplied; berth inventory, step jumps, and placeholder draw evidence are unavailable.');
+  } else {
+    const coverage = object(input.replay.coverage), churn = object(input.replay.headcodeChurn), steps = object(input.replay.stepSummary);
+    const motion = object(input.replay.motion), recordings = Array.isArray(input.replay.recordings) ? input.replay.recordings : [];
+    const berths = Array.isArray(coverage.berths) ? coverage.berths.map(object) : [];
+    const unmappedReasons: Record<string, number> = {};
+    for (const berth of berths) if (berth.classification === 'unmapped' && typeof berth.reason === 'string') {
+      unmappedReasons[berth.reason] = (unmappedReasons[berth.reason] ?? 0) + 1;
+    }
+    const platformRows = Array.isArray(input.replay.platforms) ? input.replay.platforms.map(object) : [];
+    const reconciliation = object(input.replay.berthsReconciliation);
+    const inputHashes = object(object(input.replay.reproducibility).inputHashes);
+    const recordingInputs = Array.isArray(inputHashes.recordings) ? inputHashes.recordings.map(object) :
+      Object.keys(object(input.replay.recordingInput)).length ? [object(input.replay.recordingInput)] : [];
+    berthEvidence = {
+      status: typeof input.replay.ok === 'boolean' ? input.replay.ok ? 'PASS' : 'FAIL' : 'UNAVAILABLE',
+      recordingCount: recordings.length || recordingInputs.length || 1,
+      coverage: { seen: nonnegativeInteger(coverage.seen), anchored: nonnegativeInteger(coverage.anchored), unmapped: nonnegativeInteger(coverage.unmapped), unmappedReasons },
+      stepSummary: { physicalStepEvents: nonnegativeInteger(steps.physicalStepEvents), unmeasuredEndpointEvents: nonnegativeInteger(steps.unmeasuredEndpointEvents),
+        mappedPairs: nonnegativeInteger(steps.mappedPairs), disconnectedPairs: nonnegativeInteger(steps.disconnectedPairs),
+        reversalPairs: nonnegativeInteger(steps.reversalPairs), impliedSpeedFlagPairs: nonnegativeInteger(steps.impliedSpeedFlagPairs) },
+      headcodeChurn: { physicalIds: nonnegativeInteger(churn.physicalIds), renames: nonnegativeInteger(churn.renames),
+        idsWithMultipleDescriptions: nonnegativeInteger(churn.idsWithMultipleDescriptions) },
+      platforms: { checked: platformRows.length, incorrectTargetTracks: platformRows.filter((item) => item.correctTargetTrack === false).length,
+        wrongTrackHeldSamples: platformRows.reduce((n, item) => n + (nonnegativeInteger(item.actuallyHeldWrongTrackSamples) ?? 0), 0) },
+      placeholderDraw: { starsDrawn: nonnegativeInteger(motion.starsDrawn), status: motion.starsDrawn === 0 ? 'PASS' : motion.starsDrawn === undefined ? 'UNAVAILABLE' : 'FAIL' },
+      inputs: recordingInputs.map((record) => ({ path: typeof record.path === 'string' ? record.path : null,
+        sha256: typeof record.sha256 === 'string' ? record.sha256 : null, bytes: nonnegativeInteger(record.capturedBytes) })),
+      reconciliation: Object.keys(reconciliation).length ? {
+        status: typeof reconciliation.status === 'string' ? reconciliation.status : 'UNAVAILABLE',
+        candidatePlacement: object(reconciliation.candidatePlacement), artifacts: object(reconciliation.artifacts),
+      } : null,
+    };
+    if (recordings.length > 0 && !Array.isArray(object(input.replay.unionInventory).berths)) {
+      gaps.push('Replay multi-recording report has no union berth inventory.');
+    }
+  }
+
   return {
     schema: 1,
     axis: '04',
-    sources: { board: boardSource, live: liveSource },
+    sources: { board: boardSource, live: liveSource, replay: replaySource },
     liveReplay,
     liveDiagnostic,
     boardAgreement,
     hourly,
     hourlyVariation: variation,
     scheduleMatch,
-    reproductions: { board: boardReproduction, liveReplay: liveReproduction, newLiveCapture: newCapture },
+    berthEvidence,
+    reproductions: { board: boardReproduction, liveReplay: liveReproduction, replay: replayReproduction, newLiveCapture: newCapture },
     gaps,
   };
 }
@@ -331,11 +383,25 @@ export function renderAxis04Markdown(summary: ReturnType<typeof summarizeAxis04>
     } else lines.push('Hourly variation: unavailable.', '');
   }
 
+  lines.push('## Replay berth and motion evidence', '');
+  if (!summary.berthEvidence) lines.push('Unavailable: no usable replay berth report was supplied.', '');
+  else {
+    const evidence = object(summary.berthEvidence), coverage = object(evidence.coverage), steps = object(evidence.stepSummary);
+    const churn = object(evidence.headcodeChurn), placeholders = object(evidence.placeholderDraw), platforms = object(evidence.platforms);
+    const reasons = object(coverage.unmappedReasons);
+    const reasonText = Object.keys(reasons).sort().map((reason) => `${reason} ${reasons[reason]}`).join(', ') || 'none';
+    lines.push(`**${mdTableCell(evidence.status)}** — ${mdTableCell(evidence.recordingCount)} recording(s); ${mdTableCell(coverage.seen)} unique seen berths, ${mdTableCell(coverage.anchored)} anchored and ${mdTableCell(coverage.unmapped)} unmapped (${reasonText}). Step jumps: ${mdTableCell(steps.mappedPairs)} mapped, ${mdTableCell(steps.unmeasuredEndpointEvents)} with an unmapped endpoint, ${mdTableCell(steps.impliedSpeedFlagPairs)} implied-speed flags. Headcode churn: ${mdTableCell(churn.renames)} renames over ${mdTableCell(churn.physicalIds)} recording-local physical ids. Platform targets: ${mdTableCell(platforms.incorrectTargetTracks)} incorrect, ${mdTableCell(platforms.wrongTrackHeldSamples)} wrong-track held samples. Placeholder draw check: **${mdTableCell(placeholders.status)}**, ${mdTableCell(placeholders.starsDrawn)} ` + '****' + ' drawn samples.', '');
+    const reconciliation = object(evidence.reconciliation);
+    if (Object.keys(reconciliation).length) lines.push(`Position-preserving candidate reconciliation: **${mdTableCell(reconciliation.status)}**; runtime anchors were compared with the candidate map. The full diff and candidate evidence are in the replay report.`, '');
+  }
+
   lines.push('## Sources', '',
     `- ${markdownLink('Board comparison report', summary.sources.board.link)}`,
-    `- ${markdownLink('Live/replay report', summary.sources.live.link)}`, '',
+    `- ${markdownLink('Live/replay report', summary.sources.live.link)}`,
+    `- ${markdownLink('Replay berth and motion report', summary.sources.replay.link)}`, '',
     '## Reproduction commands', '');
-  const commands = [summary.reproductions.board, summary.reproductions.liveReplay, summary.reproductions.newLiveCapture].filter((value): value is Reproduction => value !== null);
+  const commands = [summary.reproductions.board, summary.reproductions.liveReplay, summary.reproductions.replay, summary.reproductions.newLiveCapture]
+    .filter((value): value is Reproduction => value !== null);
   if (!commands.length) lines.push('No reproduction command is available.', '');
   for (const command of commands) lines.push(`### ${command.label}`, '', `Working directory: \`${command.cwd.replaceAll('`', '\\`')}\``, '', fenced(command.shellCommand), '');
   if (summary.gaps.length) lines.push('## Evidence gaps', '', ...summary.gaps.map((gap) => `- ${gap}`), '');
@@ -349,9 +415,10 @@ async function main(): Promise<void> {
     writePrivateFile(file: string, body: string): Promise<void>;
   } = await import(new URL('./evidence.mjs', import.meta.url).href);
   await safeOutputDirectory(repoRoot, options.out);
-  const [boardLoaded, liveLoaded] = await Promise.all([loadReport(options.boardReport), loadReport(options.liveReport)]);
+  const [boardLoaded, liveLoaded, replayLoaded] = await Promise.all([loadReport(options.boardReport), loadReport(options.liveReport), loadReport(options.replayReport)]);
   const summary = summarizeAxis04({ board: boardLoaded.report, live: liveLoaded.report, boardPath: options.boardReport,
-    livePath: options.liveReport, boardError: boardLoaded.error, liveError: liveLoaded.error, out: options.out, relay: options.relay });
+    livePath: options.liveReport, replay: replayLoaded.report, replayPath: options.replayReport,
+    boardError: boardLoaded.error, liveError: liveLoaded.error, replayError: replayLoaded.error, out: options.out, relay: options.relay });
   await writePrivateFile(path.join(options.out, 'axis-04-summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   await writePrivateFile(path.join(options.out, 'axis-04-summary.md'), renderAxis04Markdown(summary));
   console.log(JSON.stringify({ out: options.out, primaryLiveReplay: summary.liveReplay?.status ?? 'UNAVAILABLE',
@@ -359,7 +426,7 @@ async function main(): Promise<void> {
 }
 
 if (process.argv.includes('--help')) {
-  console.log('node tools/axis04-summary.ts --out .scratch/dir [--board-report <json>] [--live-report <json>] [--relay http://127.0.0.1:8787]');
+  console.log('node tools/axis04-summary.ts --out .scratch/dir [--board-report <json>] [--live-report <json>] [--replay-report <json>] [--relay http://127.0.0.1:8787]');
 } else if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => { console.error(`axis04-summary: ${(error as Error).message}`); process.exitCode = 1; });
 }

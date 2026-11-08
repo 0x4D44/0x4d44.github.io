@@ -18,6 +18,12 @@ scratch.mkdir(parents=True, exist_ok=True)
 # Boundary wrappers introduce observable domain faults. Source replacements also
 # exercise the internal inference, validation and routing rules directly.
 M = [
+    ('audit invents direct geographic association', 'source_replace', ('smartAssociations, predecessors, successors,', "smartAssociations: [{name: 'Invented Elsewhere', stanox: '0'}], predecessors, successors,")),
+    ('audit drops observed predecessor proof', 'source_replace', ('smartAssociations, predecessors, successors,', 'smartAssociations, predecessors: [], successors,')),
+    ('snapshot inventory omitted', 'source_replace', ('for (const berth of Object.keys(e.berths ?? {})) seen.set(berth, seen.get(berth) ?? 0);', '')),
+    ('snapshot keeps stale residence timing', 'source_replace', ('occupancy.clear();', '')),
+    ('snapshot invents berth entry times', 'source_replace', ('for (const berth of Object.keys(e.berths ?? {})) seen.set(berth, seen.get(berth) ?? 0);', "for (const [berth, descr] of Object.entries(e.berths ?? {})) { seen.set(berth, seen.get(berth) ?? 0); occupancy.set(berth, {descr, time:t}); }")),
+    ('foreign snapshots reset local timing and enter inventory', 'source_replace', ('if (e.area !== area) continue;', "if (e.area !== area && e.kind !== 'snapshot') continue;")),
     ('platform buffers displaced', 'build', "for (const a of result.anchors) if (a.kind === 'platform') a.point[0] += 20;"),
     ('foreign signal prefixes accepted', 'before', "data.signals.forEach(s => { if (s.ref) s.ref = s.ref.replace(/^(NL|AF|WH)/, 'YA'); });"),
     ('signal directions reversed', 'build', "for (const a of result.anchors) if (a.kind === 'signal') { [a.from,a.to]=[a.to,a.from]; a.t=1-a.t; }"),

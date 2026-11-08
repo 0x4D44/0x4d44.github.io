@@ -10,7 +10,7 @@ import { platformSouthEnd, stationPlatforms } from './station.ts';
 
 export interface RecordingEvent {
   t: number;
-  e: { kind: string; area: string; descr?: string; from?: string; to?: string; time?: number | null };
+  e: { kind: string; area: string; descr?: string; from?: string; to?: string; time?: number | null; berths?: Record<string, string> };
 }
 export interface SmartRow { [key: string]: unknown }
 export interface AnchorOptions { area?: string; sources?: string[]; nominalSpeedMps?: number; calibrate?: boolean }
@@ -32,8 +32,14 @@ export interface BerthAudit {
   cause: string;
   smartPairs: number;
   smartLocations: string[];
+  /** Direct SMART associations identify events/locations, never an exact berth coordinate. */
+  smartAssociations: { name: string; stanox: string }[];
   observedSteps: number;
   timedSteps: number;
+  predecessors: string[];
+  successors: string[];
+  /** Shortest undirected observed chain to a surviving anchor, including both endpoints. */
+  anchorPath: string[];
   nearestAnchor?: { berth: string; steps: number };
   /** YA refs within 250 graph metres of the nearest anchor, not an unknown berth position. */
   nearbySignals: number;
@@ -57,7 +63,15 @@ function observe(recordings: RecordingEvent[][], area: string): Observations {
   for (const recording of recordings) {
     const occupancy = new Map<string, { descr: string; time: number }>();
     for (const { t, e } of recording) {
-      if (e.area !== area || !['step', 'interpose', 'cancel'].includes(e.kind)) continue;
+      if (e.area !== area) continue;
+      if (e.kind === 'snapshot') {
+        // A checkpoint inventories berths but does not establish when their trains entered.
+        // Lost events before reconnect must never turn into measured residence time.
+        occupancy.clear();
+        for (const berth of Object.keys(e.berths ?? {})) seen.set(berth, seen.get(berth) ?? 0);
+        continue;
+      }
+      if (!['step', 'interpose', 'cancel'].includes(e.kind)) continue;
       const berths = e.kind === 'step' ? [e.from, e.to] : [e.kind === 'cancel' ? e.from : e.to];
       for (const b of new Set(berths)) if (b) seen.set(b, (seen.get(b) ?? 0) + (e.kind === 'step' ? 1 : 0));
       // Inventory placeholders too; their transitions are not track or timing evidence.
@@ -772,7 +786,13 @@ export function auditBerths(data: KxData, recordings: RecordingEvent[][], smart:
     const smartPairs = new Set(touches.filter((r) => text(r, 'FROMBERTH') && text(r, 'TOBERTH'))
       .map((r) => key(text(r, 'FROMBERTH'), text(r, 'TOBERTH')))).size;
     const smartLocations = [...new Set(touches.map((r) => text(r, 'STANME')).filter(Boolean))].sort();
+    const smartAssociations = [...new Map(touches.map((r) => {
+      const name = text(r, 'STANME'), stanox = text(r, 'STANOX');
+      return [key(name, stanox), { name, stanox }] as const;
+    }).filter(([, a]) => a.name || a.stanox)).values()].sort((a, b) => a.name.localeCompare(b.name) || a.stanox.localeCompare(b.stanox));
     const steps = [...observed.steps.values()].filter((s) => s.from === item.berth || s.to === item.berth);
+    const predecessors = [...new Set(steps.filter((s) => s.to === item.berth).map((s) => s.from))].sort();
+    const successors = [...new Set(steps.filter((s) => s.from === item.berth).map((s) => s.to))].sort();
     const observedSteps = steps.reduce((n, s) => n + s.count, 0);
     const timedSteps = steps.reduce((n, s) => n + s.seconds.length, 0);
     const incoming = steps.some((s) => s.to === item.berth && s.from !== item.berth);
@@ -789,7 +809,8 @@ export function auditBerths(data: KxData, recordings: RecordingEvent[][], smart:
     } else cause = !observedSteps ? 'no-train-steps' : !incoming || !outgoing ? 'one-sided-chain' : 'unbounded-or-ambiguous-chain';
     const nearby = nearest ? references.filter((s) => s.point && (routeBetween(g, nearest.a, s.point)?.length ?? Infinity) <= 250) : [];
     const nearbySignals = nearby.length;
-    return { berth: item.berth, reason: item.reason, cause, smartPairs, smartLocations, observedSteps, timedSteps,
+    return { berth: item.berth, reason: item.reason, cause, smartPairs, smartLocations, smartAssociations, predecessors, successors,
+      anchorPath: nearest ? reached.get(nearest.a.berth)!.path : [], observedSteps, timedSteps,
       nearestAnchor: nearest ? { berth: nearest.a.berth, steps: nearest.steps } : undefined, nearbySignals,
       detail: `${item.detail}. Evidence audit: ${smartPairs} distinct SMART directed pairs, ${observedSteps} real-train steps (${timedSteps} timed residences). ${nearbySignals} OSM YA references within 250 graph metres of the nearest anchor (${nearby.map((s) => s.ref).join(', ') || 'none'}); this is not a position estimate for this berth. SMART offsets and step durations alone do not establish a metric point` };
   });
@@ -907,7 +928,7 @@ export function describeEvidence(data: KxData, recordings: RecordingEvent[][], s
   const offsetRows = rows.filter((r) => text(r, 'BERTHOFFSET') !== '');
   const partnerSteps = [...observed.steps.values()].filter((s) => /^B\d{3}$/.test(s.from) || /^B\d{3}$/.test(s.to)).reduce((n, s) => n + s.count, 0);
   return [
-    `Inventory: ${observed.seen.size} berths in step/interpose/cancel events, including placeholder-only berths; ${observed.ignored} ${NOT_A_TRAIN} events ignored for all track and timing evidence. Anchors may also include unobserved canonical platforms.`,
+    `Inventory: ${observed.seen.size} berths in step/interpose/cancel events and snapshots, including placeholder-only berths; ${observed.ignored} ${NOT_A_TRAIN} events ignored for all track and timing evidence. Snapshots reset residence timing without inventing entry times or track connections. Anchors may also include unobserved canonical platforms.`,
     `SMART fact: ${rows.length} ${map.area} rows; ${offsetRows.length} carry BERTHOFFSET. It is an event/route-dependent signed offset, not a coordinate. Assumption: seconds correcting the reporting time toward a station event (large positive arrival offsets and negative departure offsets). No unit or distance conversion is established; no metric SMART anchors are manufactured. STANOX 54311 proves station association only.`,
     `Partner-berth fact: ${partnerSteps} non-placeholder steps touch B-prefixed platform partners. This sample does not establish front/rear or buffer-end semantics. Assumption: co-locate a SMART/naming-associated partner at its platform terminal, with 100–150 m uncertainty; never use placeholder hopping to infer track.`,
     `Outside-network policy: SMART names for Finsbury Park, Hornsey, Harringay, Ferme Park and the Moorgate branch are known outside the King's Cross extract; Finsbury Park STANOX 54238 is also recognised. Other STANOX values are not automatically outside. Existing reachability stops at known internal and external boundaries. Additionally, an entire observed undirected step component with no final anchor and an outside SMART seed is classified outside; details name the nearest seed location and shortest step-hop distance. Placeholder steps never connect components. Components touching an anchor retain their existing classification; components with neither anchors nor outside seeds stay no-evidence, and conflicts are preserved. SMART station event association alone is not a metric inside position.`,
