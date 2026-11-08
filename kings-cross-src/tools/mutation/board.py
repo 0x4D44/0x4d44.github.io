@@ -2,7 +2,9 @@
 Usage: python3 -I -u tools/mutation/board.py <kings-cross-src> <worktree/.scratch>
 Copies the board projection, its synthetic tests and the tiny shared graph core.
 """
+import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -53,14 +55,56 @@ M = [
     ('board top overlaps the page controls', [
         ('.kx-board{position:fixed;top:52px;left:16px;', '.kx-board{position:fixed;top:0px;left:16px;'),
     ]),
+    ('timetable enrichment omitted', [
+        ('if (!service) return;', 'if (true) return;'),
+    ]),
+    ('matched departure identity discarded', [
+        ('const service = old ? services.find(s => sameCall(s, old)) ?? old', 'const service = false ? services.find(s => sameCall(s, old!)) ?? old'),
+    ]),
+    ('due window excluded', [
+        ('bookedMs <= nowMs + 30 * 60_000', 'bookedMs < nowMs + 30 * 60_000'),
+    ]),
+    ('sample allowed timetable', [
+        ("(mode === 'live' || mode === 'replay') && options.services !== undefined", 'options.services !== undefined'),
+    ]),
+    ('TRUST identity projection omitted', [
+        ("if (!service) return [...services];", 'return [...services];'),
+    ]),
+    ('TRUST fallback uses actual time', [
+        ('matchService(e.headcode, e.plannedMs, candidates)', 'matchService(e.headcode, e.actualMs as number, candidates)'),
+    ]),
+
 ]
+
+FM = [
+    ('missing TRUST receive time ignores the replay clock', [("receivedAtMs: options.mode === 'replay' ? atMs : now()", 'receivedAtMs: 0')]),
+    ('live TRUST SSE listener omitted', [("current.addEventListener('trust', (event) => {", "current.addEventListener('ignored-trust', (event) => {")]),
+    ('London schedule date uses UTC', [("timeZone: 'Europe/London'", "timeZone: 'UTC'")]),
+    ('replay imports live actuals', [("doc.calls.map(call => ({ ...call, realtime: null }))", 'doc.calls')]),
+    ('buffered TRUST replay omitted', [('for (const row of observed) calls = applyBoardTrust(calls, row.event);', 'for (const row of []) calls = calls;')]),
+    ('missing timetable retry too slow', [('calls ? 60_000 : 5_000', '60_000')]),
+    ('schedule host gate omitted', [('disposed || !relayReachable(options.hostname)', 'disposed')]),
+    ('schedule dispose leaves timer', [('dispose(): void { disposed = true; abort.abort(); if (timer !== undefined) unschedule(timer); }', 'dispose(): void { disposed = true; abort.abort(); }')]),
+]
+M.append(('stale TRUST overwrites newer fact', [('e.receivedAtMs < s.realtime.updatedAtMs', 'false')]))
+MUTATIONS = [(F, label, changes) for label, changes in M] + [('web/src/feed.ts', label, changes) for label, changes in FM]
 
 
 def run(work):
-    return subprocess.run(
-        ['node', '--test', '--test-reporter=tap', '--test-timeout=20000', 'web/tests/board.test.ts'],
-        cwd=work, text=True, capture_output=True, stdin=subprocess.DEVNULL, timeout=40,
-    )
+    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000', 'web/tests/board.test.ts']
+    proc = subprocess.Popen(command, cwd=work, text=True, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+    expired = False
+    try:
+        out, err = proc.communicate(timeout=12)
+    except subprocess.TimeoutExpired:
+        expired = True
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        out, err = proc.communicate(timeout=3)
+    return subprocess.CompletedProcess(command, proc.returncode, out, err), expired or 'testTimeoutFailure' in out
 
 
 def assertion_failures(output):
@@ -79,40 +123,48 @@ def complete_tests(output, expected):
     return total is not None and int(total[1]) == len(expected) and len(names) == len(expected) and set(names) == expected
 
 
+if not scratch.is_relative_to(src.parent / '.scratch'):
+    raise SystemExit('mutation output must be beneath the worktree .scratch')
 scratch.mkdir(parents=True, exist_ok=True)
 root = Path(tempfile.mkdtemp(prefix='board-mutation-', dir=scratch))
 survivors = []
+timeouts = []
 failed_tests = set()
 try:
     for directory in ['core', 'web/src', 'web/tests']:
         (root / directory).mkdir(parents=True, exist_ok=True)
-    for name in ['anchors.ts', 'graph.ts', 'geo.ts']:
+    for name in ['anchors.ts', 'graph.ts', 'geo.ts', 'schedule.ts']:
         shutil.copy2(src / 'core' / name, root / 'core' / name)
     shutil.copy2(src / F, root / F)
+    shutil.copy2(src / 'web/src/feed.ts', root / 'web/src/feed.ts')
     shutil.copy2(src / 'web/tests/board.test.ts', root / 'web/tests/board.test.ts')
     shutil.copy2(src / 'package.json', root / 'package.json')
     (root / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
-    original = (src / F).read_text()
-    baseline = run(root)
-    if baseline.returncode or baseline.stderr:
+    originals = {name: (src / name).read_text() for name in [F, 'web/src/feed.ts']}
+    baseline, expired = run(root)
+    if baseline.returncode or baseline.stderr or expired:
         print(baseline.stdout, baseline.stderr)
         raise SystemExit('Baseline failed')
     expected = set(re.findall(r'^ok \d+ - ([^\n]+)$', baseline.stdout, re.M))
     if not expected or not complete_tests(baseline.stdout, expected):
         raise SystemExit('Baseline TAP output is incomplete; cannot prove every test fails once')
-    for label, replacements in M:
-        (root / F).write_text(original)
-        changed = original
+    for filename, label, replacements in MUTATIONS:
+        for name, original in originals.items():
+            (root / name).write_text(original)
+        changed = originals[filename]
         for old, new in replacements:
             if old not in changed:
                 raise SystemExit(f'Mutation pattern missing: {label}: {old}')
             changed = changed.replace(old, new, 1)
-        (root / F).write_text(changed)
+        (root / filename).write_text(changed)
         try:
-            result = run(root)
+            result, expired = run(root)
             assertion_names = assertion_failures(result.stdout)
             named_failures = set(re.findall(r'^not ok \d+ - ([^\n]+)$', result.stdout, re.M))
-            if result.returncode and assertion_names and assertion_names == named_failures and complete_tests(result.stdout, expected) and not result.stderr:
+            if expired:
+                timeouts.append(label)
+                print(f'[TIMEOUT] {label}', flush=True)
+            elif result.returncode and assertion_names and assertion_names == named_failures and complete_tests(result.stdout, expected) and not result.stderr:
                 failed_tests.update(assertion_names)
                 print(f'[CAUGHT] {label}: {", ".join(sorted(assertion_names))}', flush=True)
             else:
@@ -121,14 +173,14 @@ try:
                 if result.returncode:
                     print(result.stdout[-1500:], result.stderr[-1000:])
         except subprocess.TimeoutExpired:
-            survivors.append(label)
-            print(f'[SURVIVED] {label} (timeout is not a kill)', flush=True)
-    print(f'{len(M) - len(survivors)}/{len(M)} mutations caught; {len(failed_tests & expected)}/{len(expected)} tests observed red')
+            timeouts.append(label)
+            print(f'[TIMEOUT] {label} (timeout is not a kill)', flush=True)
+    print(f'{len(MUTATIONS) - len(survivors) - len(timeouts)}/{len(MUTATIONS)} mutations caught; {len(timeouts)} timeouts; {len(failed_tests & expected)}/{len(expected)} tests observed red')
     for label in survivors:
         print('NOT CAUGHT:', label)
     for name in sorted(expected - failed_tests):
         print('NEVER RED:', name)
-    if survivors or expected - failed_tests:
+    if survivors or timeouts or expected - failed_tests:
         raise SystemExit(1)
 finally:
     shutil.rmtree(root)
