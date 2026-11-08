@@ -44,7 +44,7 @@ export function relayUrl(value) {
 }
 export function optionsFrom(args) {
   const values = new Map(), switches = new Set(['--gpu', '--help']);
-  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm']);
+  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
     if (values.has(key) || !switches.has(key) && !names.has(key)) throw new Error(`unknown or repeated option: ${key}`);
@@ -56,10 +56,16 @@ export function optionsFrom(args) {
   if (!/^\d{8}$/.test(date) || !Number.isFinite(Date.parse(iso)) || new Date(iso).toISOString().slice(0, 10) !== iso) throw new Error('--date must be a real YYYYMMDD date');
   if (!Number.isFinite(speed) || speed <= 0 || speed > 120) throw new Error('--speed must be positive and at most 120');
   if (!/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(signalAt)) throw new Error('--signal-at must be HH:mm:ss (UK recording time)');
+  const liveWindowText = values.get('--live-window');
+  const liveWindow = liveWindowText === undefined ? null : Number(liveWindowText);
+  if (liveWindowText !== undefined && (!Number.isInteger(liveWindow) || liveWindow < 1 || liveWindow > 3600)) throw new Error('--live-window must be an integer from 1 to 3600 seconds');
+  if (liveWindow !== null && !values.has('--relay')) throw new Error('--live-window requires --relay');
+  if (liveWindow !== null && values.has('--live-report')) throw new Error('--live-window and --live-report cannot be used together');
+  const liveReport = values.has('--live-report') ? path.resolve(values.get('--live-report')) : null;
   const out = path.resolve(values.get('--out') ?? path.join(repoRoot, '.scratch/evidence'));
   if (!within(path.join(repoRoot, '.scratch'), out)) throw new Error('--out must be under this worktree .scratch (the pack contains private derived data)');
   return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out,
-    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt };
+    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
 export async function safeOutputDirectory(root, directory) {
   if (!within(root, directory)) throw new Error('output escapes its root');
@@ -332,7 +338,7 @@ export function createEvidenceServer({ dist, relay, repo = repoRoot }) {
 
 export async function main(args = process.argv.slice(2)) {
   const options = optionsFrom(args);
-  if (options.help) { console.log('node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--raw-osm <OSM extract.json>] [--chrome <path>]'); return; }
+  if (options.help) { console.log('node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]'); return; }
   await stat(path.join(options.dist, 'index.html'));
   await safeOutputDirectory(repoRoot, options.out);
   await walk(options.out); // Reject reused input/report links before fetching any private data.
@@ -591,14 +597,12 @@ export async function main(args = process.argv.slice(2)) {
   // Supporting evidence is generated without reading any login or account name.
   await mkdir(path.join(options.out, 'checks'), { recursive: true });
   const run = async (id, name, command, args, timeout = 300000) => { const r = await commandResult(command, args, packageRoot, path.join(options.out, 'checks', `${name}.log`), timeout); r.file=`checks/${name}.log`; report.commands.push(r); axis(id).artifacts.push(`checks/${name}.log`); if(r.code!==0) gap(id, `${name}: ${r.timedOut?'timed out':`exit ${r.code}`}`); return r; };
-  await run('09', 'evidence-tests', 'node', ['--test', '--test-timeout=10000', 'tools/tests/evidence.test.mjs'], 60000);
+  await run('09', 'evidence-tests', 'node', ['--test', '--test-timeout=10000', 'tools/tests/evidence.test.mjs', 'tools/tests/board-vs-trust.test.ts', 'tools/tests/live-vs-replay.test.ts', 'tools/tests/axis04-summary.test.ts'], 60000);
   await run('09', 'tests', 'npm', ['test']); await run('09', 'typecheck', 'npx', ['tsc', '--noEmit', '-p', '.'], 120000);
   await run('07', 'relay-mutations', 'python3', ['-I', '-u', 'tools/mutation/relay.py', 'relay', path.join(options.out, 'relay-mutations')]);
   try { await stat(options.rawOsm); await run('01', 'osm-fidelity', 'node', ['tools/fidelity.ts', '--raw', options.rawOsm, '--json']); }
   catch { gap('01', 'No raw OSM extract: pass --raw-osm to generate the independent fidelity deltas and unresolved-issue list.'); }
-  if (options.relay) {
-    await attemptReports(options, report, run, gap);
-  }
+  await runAxis04Reports(options, report, { fetchImpl: fetch, run, gap });
   gap('07', 'Credential/account-name sweep is intentionally not automated: the scorer runs their local secret scan without giving this tool an account name or login.');
   gap('09', 'Scorer must separately rerun the repository responsive/catalog checks and inspect mutation evidence for other changed components.');
   if (!options.gpu || !report.validGpu) gap('08', 'Only a measured real Metal renderer qualifies; software or unknown graphics do not.');
@@ -614,35 +618,198 @@ export async function main(args = process.argv.slice(2)) {
   await writePrivateFile(path.join(options.out, 'manifest.json'), `${JSON.stringify(report, null, 2)}\n`);
   // Keep the old evidence.json entry point for existing scorer scripts.
   await writePrivateFile(path.join(options.out, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
-  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
+  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
   console.log(JSON.stringify({ out: options.out, renderer: report.renderer, screenshots: report.screenshots.length, bundleGzipBytes: report.build.totalGzipBytes, gaps: report.gaps, fatal: report.fatal ?? null }, null, 2));
   process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
   if (report.fatal) process.exitCode = 1;
   return report;
 }
 
-async function attemptReports(options, report, run, gap) {
-  const inputs = path.join(options.out, 'inputs'); await safeOutputDirectory(repoRoot, inputs);
+function londonDate(ms) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms));
+  const get = type => parts.find(part => part.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+function validLiveReport(report) {
+  return report && typeof report === 'object' && report.interval && Number.isFinite(report.interval.startMs) &&
+    Number.isFinite(report.interval.endMs) && report.interval.startMs <= report.interval.endMs;
+}
+async function jsonReport(file) {
+  try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; }
+}
+async function fileStamp(file) {
   try {
-    for (const [endpoint, name] of [['/anchors', 'anchors.json'], [`/recording?date=${options.date}`, 'recording.ndjson'], ['/sclass', 'sclass.json']]) {
+    const info = await stat(file, { bigint: true });
+    return `${info.dev}:${info.ino}:${info.size}:${info.mtimeNs}:${info.ctimeNs}`;
+  } catch { return null; }
+}
+async function changedSince(file, previous) {
+  const current = await fileStamp(file);
+  return current !== null && current !== previous;
+}
+async function hostHeaderStatus(relay) {
+  return new Promise(resolve => {
+    const request = (relay.protocol === 'https:' ? httpsRequest : httpRequest)(new URL('/health', relay), {
+      headers: { host: 'outside.invalid' }, timeout: 5000,
+    }, response => { response.resume(); resolve(response.statusCode); });
+    request.once('timeout', () => request.destroy()); request.once('error', () => resolve(null)); request.end();
+  });
+}
+
+/** Supporting report orchestration; fetch/run are injected so this stays testable without a browser or relay. */
+export async function runAxis04Reports(options, report, { fetchImpl = fetch, run, gap, checkHost = hostHeaderStatus } = {}) {
+  if (typeof run !== 'function' || typeof gap !== 'function') throw new TypeError('runAxis04Reports requires run and gap callbacks');
+  const axis04 = report.axes.find(a => a.id === '04');
+  const packPath = file => path.relative(options.out, file).split(path.sep).join('/');
+  const addArtifact = file => { const relative = packPath(file); if (!axis04.artifacts.includes(relative)) axis04.artifacts.push(relative); };
+  const inputs = path.join(options.out, 'inputs'); await safeOutputDirectory(repoRoot, inputs);
+  const boardOut = path.join(options.out, 'board-vs-trust');
+  const liveOut = path.join(options.out, 'live-vs-replay');
+  const liveReportPath = path.join(liveOut, 'live-vs-replay.json');
+  const summaryOut = path.join(options.out, 'axis-04-summary');
+  let liveReport = null, liveReportRecomputable = false, boardReport = null, boardDateMatches = true;
+  const anchorsFile = path.join(inputs, 'anchors.json'), recordingFile = path.join(inputs, 'recording.ndjson');
+  const scheduleFile = path.join(inputs, `schedule-${options.iso}.json`);
+
+  if (options.liveWindow !== null && options.liveWindow !== undefined) {
+    await safeOutputDirectory(repoRoot, liveOut);
+    const timeout = (options.liveWindow + 610 + 45) * 1000;
+    const previous = await fileStamp(liveReportPath);
+    const result = await run('04', 'live-vs-replay', 'node', ['tools/live-vs-replay.ts', '--out', liveOut, '--seconds', String(options.liveWindow),
+      '--start', 'checkpoint', '--checkpoint-wait', '610', '--relay', options.relay.origin], timeout);
+    const fresh = (result?.code === 0 || result?.code === 1) && !result?.timedOut && await changedSince(liveReportPath, previous);
+    liveReport = fresh ? await jsonReport(liveReportPath) : null;
+    if (!validLiveReport(liveReport)) gap('04', `Live/replay capture did not produce a fresh valid ${packPath(liveReportPath)} interval report.`);
+    else addArtifact(liveReportPath);
+  } else if (options.liveReport) {
+    try {
+      const bytes = await readFile(options.liveReport);
+      const parsed = JSON.parse(bytes.toString('utf8'));
+      if (!validLiveReport(parsed)) throw new Error('report needs a valid interval.startMs and interval.endMs');
+      await safeOutputDirectory(repoRoot, liveOut);
+      const sourceDir = path.dirname(path.resolve(options.liveReport));
+      const hasSavedSamples = await Promise.all(['live-samples.json', 'replay-samples.json'].map(file => stat(path.join(sourceDir, file)).then(() => true, () => false))).then(values => values.every(Boolean));
+      if (hasSavedSamples) {
+        const previous = await fileStamp(liveReportPath);
+        const result = await run('04', 'live-vs-replay-summary', 'node', ['tools/live-vs-replay.ts', '--summarize', sourceDir, '--out', liveOut], 60000);
+        const fresh = (result?.code === 0 || result?.code === 1) && !result?.timedOut && await changedSince(liveReportPath, previous);
+        liveReport = fresh ? await jsonReport(liveReportPath) : null;
+        liveReportRecomputable = validLiveReport(liveReport);
+        if (!liveReportRecomputable) {
+          gap('04', 'Saved live report samples could not be recomputed into a fresh report; retaining the original report as non-recomputable evidence.');
+          await writePrivateFile(liveReportPath, bytes); liveReport = parsed;
+        }
+      } else {
+        gap('04', 'Saved live report has no live-samples.json and replay-samples.json; retaining the original report as non-recomputable evidence.');
+        await writePrivateFile(liveReportPath, bytes); liveReport = parsed;
+      }
+      addArtifact(liveReportPath);
+    } catch (error) { gap('04', `Live report unavailable: ${error.message}`); }
+  }
+  if (options.liveWindow !== null && options.liveWindow !== undefined && liveReport && validLiveReport(liveReport)) {
+    const startDate = londonDate(liveReport.interval.startMs), endDate = londonDate(liveReport.interval.endMs);
+    boardDateMatches = startDate === options.iso && endDate === options.iso;
+    if (!boardDateMatches) gap('04', `Live/replay interval ${startDate} to ${endDate} does not match recording date ${options.iso}; interval-scoped board agreement is unavailable.`);
+  }
+
+  let scheduleReady = false, anchorsReady = false, recordingReady = false;
+  if (!options.relay) {
+    gap('04', `No relay was provided; no /schedule?date=${options.iso} timetable is available for board agreement.`);
+  } else {
+    try {
+      const response = await fetchImpl(new URL(`/schedule?date=${options.iso}`, options.relay), { signal: AbortSignal.timeout(10000) });
+      if (!response.ok) throw new Error(`/schedule HTTP ${response.status}`);
+      const text = await response.text(), schedule = JSON.parse(text);
+      if (schedule.date !== options.iso || !Array.isArray(schedule.calls)) throw new Error(`schedule response does not contain date ${options.iso} and calls[]`);
+      await writePrivateFile(scheduleFile, `${JSON.stringify(schedule, null, 2)}\n`);
+      scheduleReady = true; addArtifact(scheduleFile);
+    } catch (error) { gap('04', `No timetable for recording date ${options.iso}; board-vs-TRUST agreement is unavailable: ${error.message}`); }
+  }
+
+  if (options.relay) {
+    for (const [endpoint, name] of [['/anchors', 'anchors.json'], [`/recording?date=${options.date}`, 'recording.ndjson']]) {
       try {
-        const response = await fetch(new URL(endpoint, options.relay), { signal: AbortSignal.timeout(35000) });
+        const response = await fetchImpl(new URL(endpoint, options.relay), { signal: AbortSignal.timeout(35000) });
         if (!response.ok) throw new Error(`${endpoint.split('?')[0]} HTTP ${response.status}`);
         await writePrivateFile(path.join(inputs, name), new Uint8Array(await response.arrayBuffer()));
-        if(name==='sclass.json') report.axes.find(a=>a.id==='06').artifacts.push('inputs/sclass.json');
-      } catch(e) { if(name==='sclass.json') gap('06',e.message); else throw e; }
+        if (name === 'anchors.json') anchorsReady = true; else recordingReady = true;
+      } catch (error) { gap('04', `Supporting recording reports: ${error.message}`); }
     }
-    await run('04', 'replay-report', 'node', ['tools/replay-report.ts', '--anchors', path.join(inputs, 'anchors.json'), '--recording', path.join(inputs, 'recording.ndjson'), '--out', path.join(options.out, 'replay-report')]);
-    await run('05', 'motion-report', 'node', ['tools/motion-check.ts', '--anchors', path.join(inputs, 'anchors.json'), '--recording', path.join(inputs, 'recording.ndjson'), '--out', path.join(options.out, 'motion-report')]);
-    report.axes.find(a=>a.id==='04').artifacts.push('replay-report/'); report.axes.find(a=>a.id==='05').artifacts.push('motion-report/');
-    // Refusal proof uses a harmless invalid Host, never the account name.
-    const refusal = await new Promise(resolve => { const request = (options.relay.protocol==='https:'?httpsRequest:httpRequest)(new URL('/health', options.relay), { headers:{host:'outside.invalid'},timeout:5000 }, response=>{response.resume();resolve(response.statusCode);});request.once('timeout',()=>request.destroy());request.once('error',()=>resolve(null));request.end(); });
+    try {
+      const response = await fetchImpl(new URL('/sclass', options.relay), { signal: AbortSignal.timeout(35000) });
+      if (!response.ok) throw new Error(`/sclass HTTP ${response.status}`);
+      await writePrivateFile(path.join(inputs, 'sclass.json'), new Uint8Array(await response.arrayBuffer()));
+      report.axes.find(a => a.id === '06').artifacts.push('inputs/sclass.json');
+    } catch (error) { gap('06', error.message); }
+
+    if (anchorsReady && recordingReady) {
+      await run('04', 'replay-report', 'node', ['tools/replay-report.ts', '--anchors', anchorsFile, '--recording', recordingFile, '--out', path.join(options.out, 'replay-report')]);
+      await run('05', 'motion-report', 'node', ['tools/motion-check.ts', '--anchors', anchorsFile, '--recording', recordingFile, '--out', path.join(options.out, 'motion-report')]);
+      addArtifact(path.join(options.out, 'replay-report')); report.axes.find(a => a.id === '05').artifacts.push('motion-report/');
+    }
+    const refusal = await checkHost(options.relay);
     report.hostHeaderRefusal = { host: 'outside.invalid', status: refusal, passed: refusal === 403 };
-    await writePrivateFile(path.join(options.out,'checks/host-header.json'),JSON.stringify(report.hostHeaderRefusal,null,2)+'\n');
-    report.axes.find(a=>a.id==='07').artifacts.push('checks/host-header.json');
-    if(refusal!==403) gap('07','Host-header refusal did not return 403');
-  } catch(e) { gap('04',`supporting recording reports: ${e.message}`); }
-  gap('04', 'For a contemporaneous live/replay comparison run tools/live-vs-replay.ts against a checkpointed window; an old replay cannot establish live equivalence by itself.');
+    await writePrivateFile(path.join(options.out, 'checks/host-header.json'), JSON.stringify(report.hostHeaderRefusal, null, 2) + '\n');
+    report.axes.find(a => a.id === '07').artifacts.push('checks/host-header.json');
+    if (refusal !== 403) gap('07', 'Host-header refusal did not return 403');
+  }
+
+  if (options.relay && scheduleReady && anchorsReady && recordingReady && boardDateMatches) {
+    const args = ['tools/board-vs-trust.ts', '--recording', recordingFile, '--schedule', scheduleFile, '--anchors', anchorsFile,
+      '--out', boardOut, '--hourly'];
+    if (options.liveWindow !== null && options.liveWindow !== undefined && liveReport && validLiveReport(liveReport)) args.push('--from', new Date(liveReport.interval.startMs).toISOString(), '--to', new Date(liveReport.interval.endMs).toISOString());
+    await safeOutputDirectory(repoRoot, boardOut);
+    const boardReportPath = path.join(boardOut, 'board-vs-trust.json');
+    const previous = await fileStamp(boardReportPath);
+    const result = await run('04', 'board-vs-trust', 'node', args, 300000);
+    const fresh = result?.code === 0 && !result?.timedOut && await changedSince(boardReportPath, previous);
+    boardReport = fresh ? await jsonReport(boardReportPath) : null;
+    if (!boardReport) gap('04', 'Board-vs-TRUST command did not produce a readable board-vs-trust.json report.');
+    else addArtifact(path.join(boardOut, 'board-vs-trust.json'));
+    if (boardReport && await stat(path.join(boardOut, 'board-vs-trust.md')).then(() => true, () => false)) addArtifact(path.join(boardOut, 'board-vs-trust.md'));
+    addArtifact(boardOut);
+  }
+
+  const boardReportFile = boardReport ? path.join(boardOut, 'board-vs-trust.json') : null;
+  const summaryArgs = ['tools/axis04-summary.ts', '--out', summaryOut];
+  if (boardReportFile) summaryArgs.push('--board-report', boardReportFile);
+  if (liveReport && validLiveReport(liveReport)) summaryArgs.push('--live-report', liveReportPath);
+  if (options.relay) summaryArgs.push('--relay', options.relay.origin);
+  await safeOutputDirectory(repoRoot, summaryOut);
+  const summaryMarkdownPath = path.join(summaryOut, 'axis-04-summary.md'), summaryJsonPath = path.join(summaryOut, 'axis-04-summary.json');
+  const previousSummary = await fileStamp(summaryMarkdownPath);
+  const summaryResult = await run('04', 'axis-04-summary', 'node', summaryArgs, 60000);
+  const summaryFresh = summaryResult?.code === 0 && !summaryResult?.timedOut && await changedSince(summaryMarkdownPath, previousSummary);
+  if (summaryFresh) addArtifact(summaryOut);
+
+  const summary = boardReport?.summary;
+  const rows = (boardReport?.results ?? []).filter(row => row.reasons?.length || row.agreed === false || row.fullyObserved === false);
+  axis04.boardVsTrust = boardReport ? {
+    summary: boardReport.summary ?? null, hourly: boardReport.hourly ?? [], scheduleMatch: boardReport.scheduleMatch ?? null,
+    results: boardReport.results ?? [], disagreements: rows,
+    disagreementTable: rows.map(row => ({ actualMs: row.actualMs, headcode: row.headcode, eventType: row.eventType,
+      platform: row.platform, bookedPlatform: row.bookedPlatform, section: row.observation?.section ?? null,
+      platforms: row.observation?.platforms ?? [], lagSeconds: row.observation?.lagSeconds ?? null, reasons: row.reasons ?? [] })),
+    reproduce: boardReport.reproduce ?? null,
+    json: packPath(path.join(boardOut, 'board-vs-trust.json')),
+    markdown: packPath(path.join(boardOut, 'board-vs-trust.md')),
+  } : { summary: null, hourly: [], scheduleMatch: null, results: [], disagreements: [], disagreementTable: [], reproduce: null, json: null, markdown: null };
+  axis04.liveVsReplay = liveReport && validLiveReport(liveReport) ? {
+    interval: liveReport.interval, passed: liveReport.passed ?? null, samples: liveReport.samples ?? null,
+    positionDifferenceM: liveReport.positionDifferenceM ?? null, recomputable: liveReportRecomputable,
+    reproduce: liveReport.reproduce ?? null, captureCommand: liveReport.captureCommand ?? null, json: packPath(liveReportPath),
+  } : { interval: null, passed: null, recomputable: false, reproduce: null, captureCommand: null, json: null };
+  axis04.summary = summaryFresh && await fileStamp(summaryJsonPath) !== null
+    ? { markdown: packPath(summaryMarkdownPath), json: packPath(summaryJsonPath) }
+    : { markdown: null, json: null };
+  const format = value => value === null || value === undefined ? 'unavailable' : String(value);
+  const disagreements = rows.length ? rows.map(row => `| ${new Date(row.actualMs).toISOString()} | ${String(row.headcode ?? '').replaceAll('|', '')} | ${String(row.eventType ?? '').replaceAll('|', '')} | ${row.platform ?? '?'} / ${row.bookedPlatform ?? '?'} | ${row.observation ? `${row.observation.section} / ${(row.observation.platforms ?? []).join(', ')}` : 'absent'} | ${row.observation?.lagSeconds ?? '—'} | ${(row.reasons ?? []).join('; ').replaceAll('|', '')} |`).join('\n') : '| — | — | — | — | — | — | No disagreement rows available. |';
+  const hourly = (boardReport?.hourly ?? []).map(hour => `| ${hour.fromISO} | ${hour.toISO} | ${hour.summary?.movements ?? 0} | ${hour.summary?.agreementPercent ?? '—'} | ${hour.summary?.medianLagSeconds ?? '—'} | ${hour.scheduleMatch?.matchedHeadcodes ?? 0}/${hour.scheduleMatch?.observedHeadcodes ?? 0} |`).join('\n');
+  const liveLink = liveReport ? `${liveReportRecomputable ? '[JSON]' : '[JSON (non-recomputable)]'}(live-vs-replay/live-vs-replay.json)` : 'unavailable';
+  const summaryLink = summaryFresh ? '[Axis 04 generated summary](axis-04-summary/axis-04-summary.md)' : 'Axis 04 generated summary unavailable';
+  const axisMarkdown = `# Axis 04 — Live-data correctness\n\n## Board versus TRUST\n\n- Agreement: ${format(summary?.boardAgreement)} / ${format(summary?.fullyObserved)} fully observed movements (${format(summary?.agreementPercent)}%).\n- Median signed lag: ${format(summary?.medianLagSeconds)} s; median absolute lag: ${format(summary?.medianAbsoluteLagSeconds)} s.\n- Schedule headcodes: ${format(boardReport?.scheduleMatch?.matchedHeadcodes)} / ${format(boardReport?.scheduleMatch?.observedHeadcodes)} (${format(boardReport?.scheduleMatch?.percent)}%).\n- ${summaryLink}; [full Axis 04 JSON](axis-04.json).\n- Board report: ${boardReport ? '[JSON](board-vs-trust/board-vs-trust.json), [table](board-vs-trust/board-vs-trust.md)' : 'unavailable'}; live report: ${liveLink}; supporting reports: [replay](replay-report/replay-report.md), [motion](motion-report/motion-report.md).\n\n## Hourly agreement (UTC)\n\n| From | To | Movements | Agreement % | Median lag s | Schedule headcodes matched |\n| --- | --- | ---: | ---: | ---: | ---: |\n${hourly || '| — | — | — | — | — | — | No hourly report available. |'}\n\n## Disagreements\n\n| Actual (UTC) | Headcode | Movement | TRUST / booked | Board section / platforms | Lag s | Reason |\n| --- | --- | --- | --- | --- | ---: | --- |\n${disagreements}\n`;
+  await writePrivateFile(path.join(options.out, 'axis-04.md'), axisMarkdown);
+  addArtifact(path.join(options.out, 'axis-04.md'));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

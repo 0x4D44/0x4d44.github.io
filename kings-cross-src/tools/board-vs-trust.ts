@@ -89,8 +89,11 @@ export function createBoardObserver() {
 }
 
 const median = (values: number[]): number | null => { if (!values.length) return null; const sorted=[...values].sort((a,b)=>a-b), mid=Math.floor(sorted.length/2); return sorted.length%2 ? sorted[mid]! : (sorted[mid-1]!+sorted[mid]!)/2; };
+export interface ComparisonOptions {
+  fromMs: number; toMs: number; recordingStartMs: number; recordingEndMs: number; withinMs: number; stepMs: number;
+}
 export function compareBoardToTrust(movements: readonly TrustMovement[], observations: readonly BoardObservation[], services: readonly BoardService[],
-  options: { fromMs: number; toMs: number; recordingStartMs: number; recordingEndMs: number; withinMs: number; stepMs: number }) {
+  options: ComparisonOptions) {
   const results = movements.filter(m=>m.actualMs>=options.fromMs && m.actualMs<=options.toMs).map(m=>{
     const service=movementService(m,services), bookedPlatform=platformNumber(service?.platform);
     const expectedPlatform=m.platform ?? bookedPlatform;
@@ -133,6 +136,35 @@ export function compareBoardToTrust(movements: readonly TrustMovement[], observa
     disagreements:results.filter(r=>!r.agreed || r.timetablePlatformAgrees===false || !r.fullyObserved).length }, results };
 }
 
+/** Count labels actually shown by the board, including non-public/empty-stock labels.
+ * A repeated headcode counts once; interval coverage also exposes partial matching. */
+export function scheduleMatchRate(observations: readonly BoardObservation[], fromMs: number, toMs: number, endExclusive=false) {
+  const selected=observations.filter(o=>o.endMs>=fromMs && (endExclusive?o.startMs<toMs:o.startMs<=toMs));
+  const seen=new Set(selected.map(o=>o.headcode)), matched=new Set(selected.filter(o=>!!o.uid).map(o=>o.headcode));
+  const matchedIntervals=selected.filter(o=>!!o.uid).length;
+  return { observedHeadcodes:seen.size, matchedHeadcodes:matched.size,
+    percent:seen.size?100*matched.size/seen.size:null,
+    unmatchedHeadcodes:[...seen].filter(d=>!matched.has(d)).sort(),
+    observedIntervals:selected.length, matchedIntervals,
+    intervalPercent:selected.length?100*matchedIntervals/selected.length:null };
+}
+
+/** One continuous replay supplies every UTC hour, including context across its ends.
+ * Internal boundaries belong to the following hour; the final requested instant is inclusive. */
+export function hourlyAgreement(movements: readonly TrustMovement[], observations: readonly BoardObservation[], services: readonly BoardService[], options: ComparisonOptions) {
+  const hours=[];
+  for(let start=options.fromMs;start<options.toMs;) {
+    const end=Math.min(options.toMs,(Math.floor(start/3600000)+1)*3600000),last=end===options.toMs;
+    const rows=movements.filter(m=>m.actualMs>=start && (m.actualMs<end || last&&m.actualMs===end));
+    const {summary}=compareBoardToTrust(rows,observations,services,{...options,fromMs:start,toMs:end});
+    // The comparison uses full observations, not a cold-start or clipped board history.
+    hours.push({fromMs:start,toMs:end,fromISO:new Date(start).toISOString(),toISO:new Date(end).toISOString(),summary,
+      scheduleMatch:scheduleMatchRate(observations,start,end,!last)});
+    start=end;
+  }
+  return hours;
+}
+
 export async function replayBoard(data: KxData, rows: readonly RecordedEvent[], anchors: AnchorMap, schedule: {date:string;calls:BoardService[]}, endMs: number, stepMs=250) {
   if (!rows.length || !Number.isFinite(stepMs) || stepMs<=0) throw new Error('recording and positive step required');
   const graph=buildGraph(data), arrivals=approachPlatforms(anchors), observer=createBoardObserver();
@@ -159,9 +191,11 @@ export async function replayBoard(data: KxData, rows: readonly RecordedEvent[], 
 
 export function agreementOptions(args:string[]) {
   const values=new Map<string,string>();
-  for(let i=0;i<args.length;i+=2) {
-    const key=args[i]!,value=args[i+1];
-    if(!['--recording','--schedule','--anchors','--out','--from','--to','--within-seconds','--step-seconds'].includes(key)||!value||values.has(key)) throw new Error('use --help for options');
+  for(let i=0;i<args.length;i++) {
+    const key=args[i]!;
+    if(key==='--hourly') {if(values.has(key))throw new Error('repeated --hourly');values.set(key,'true');continue;}
+    const value=args[++i];
+    if(!['--recording','--schedule','--anchors','--out','--from','--to','--within-seconds','--step-seconds'].includes(key)||!value||value.startsWith('--')||values.has(key)) throw new Error('use --help for options');
     values.set(key,value);
   }
   for(const key of ['--recording','--schedule','--anchors','--out']) if(!values.has(key)) throw new Error(`${key} is required`);
@@ -171,12 +205,12 @@ export function agreementOptions(args:string[]) {
   if(!Number.isFinite(withinMs)||withinMs<=0||withinMs>600000||!Number.isFinite(stepMs)||stepMs<=0||stepMs>1000) throw new Error('within must be (0,600] seconds and step (0,1] seconds');
   const time=(key:string):number|undefined=>{const v=values.get(key);if(v===undefined)return;const ms=Date.parse(v);if(!v.includes('T')||!/(Z|[+-]\d{2}:\d{2})$/.test(v)||!Number.isFinite(ms))throw new Error(`${key} needs an ISO timestamp with timezone`);return ms;};
   const fromMs=time('--from'),toMs=time('--to');if(fromMs!==undefined&&toMs!==undefined&&fromMs>toMs)throw new Error('--from must not follow --to');
-  return {recording:path.resolve(values.get('--recording')!),schedule:path.resolve(values.get('--schedule')!),anchors:path.resolve(values.get('--anchors')!),out,withinMs,stepMs,fromMs,toMs};
+  return {recording:path.resolve(values.get('--recording')!),schedule:path.resolve(values.get('--schedule')!),anchors:path.resolve(values.get('--anchors')!),out,withinMs,stepMs,fromMs,toMs,hourly:values.has('--hourly')};
 }
 
 const sha=(s:string|Buffer)=>createHash('sha256').update(s).digest('hex');
 async function main() {
-  if(process.argv.includes('--help')) {console.log('node tools/board-vs-trust.ts --recording <ndjson> --schedule <schedule-YYYY-MM-DD.json> --anchors <anchors.json> --out <.scratch/dir> [--from <ISO>] [--to <ISO>] [--within-seconds 120] [--step-seconds 0.25]');return;}
+  if(process.argv.includes('--help')) {console.log('node tools/board-vs-trust.ts --recording <ndjson> --schedule <schedule-YYYY-MM-DD.json> --anchors <anchors.json> --out <.scratch/dir> [--from <ISO>] [--to <ISO>] [--hourly] [--within-seconds 120] [--step-seconds 0.25]');return;}
   const options=agreementOptions(process.argv.slice(2));await safeOutputDirectory(repo,options.out);
   const [bytes,scheduleText,anchorText]=await Promise.all([readFile(options.recording),readFile(options.schedule,'utf8'),readFile(options.anchors,'utf8')]);
   // An active recorder may be halfway through a line. Freeze only complete records.
@@ -185,7 +219,7 @@ async function main() {
   const schedule=JSON.parse(scheduleText) as {date:string;calls:BoardService[]};
   if(!validDate(schedule.date)||!Array.isArray(schedule.calls))throw new Error('invalid schedule cache');
   const anchors=JSON.parse(anchorText) as AnchorMap;
-  const fromMs=options.fromMs??all[0]!.t+options.withinMs,toMs=options.toMs??all.at(-1)!.t-options.withinMs;
+  const fromMs=options.fromMs??all[0]!.t,toMs=options.toMs??all.at(-1)!.t;
   if(fromMs>toMs)throw new Error('recording shorter than the comparison window');
   const endMs=Math.min(toMs+options.withinMs,all.at(-1)!.t),rows=all.filter(r=>r.t<=endMs);
   // Hash the replay prefix plus its coverage marker; freeze the whole received file
@@ -195,15 +229,24 @@ async function main() {
   const snapshot=all.map(r=>JSON.stringify(r)).join('\n')+'\n';
   const data=JSON.parse(await readFile(new URL('../web/src/data/kx-track.json',import.meta.url),'utf8')) as KxData;
   const replay=await replayBoard(data,rows,anchors,schedule,endMs,options.stepMs),trust=trustMovements(all,anchors.area);
-  const comparison=compareBoardToTrust(trust.movements,replay.observations,schedule.calls,{...options,fromMs,toMs,recordingStartMs:all[0]!.t,recordingEndMs:endMs});
-  const report={schema:1,window:{fromMs,toMs,fromISO:new Date(fromMs).toISOString(),toISO:new Date(toMs).toISOString(),withinSeconds:options.withinMs/1000,stepSeconds:options.stepMs/1000},
+  const comparisonOptions={...options,fromMs,toMs,recordingStartMs:all[0]!.t,recordingEndMs:endMs};
+  const comparison=compareBoardToTrust(trust.movements,replay.observations,schedule.calls,comparisonOptions);
+  const reproduce={cwd:repo,command:'node',args:['kings-cross-src/tools/board-vs-trust.ts',
+    '--recording',path.join(options.out,'inputs/recording.ndjson'),'--schedule',path.join(options.out,'inputs/schedule.json'),
+    '--anchors',path.join(options.out,'inputs/anchors.json'),'--from',new Date(fromMs).toISOString(),'--to',new Date(toMs).toISOString(),
+    '--within-seconds',String(options.withinMs/1000),'--step-seconds',String(options.stepMs/1000),
+    '--out',path.join(options.out,'reproduced'),...(options.hourly?['--hourly']:[])]};
+  const report={schema:2,window:{fromMs,toMs,fromISO:new Date(fromMs).toISOString(),toISO:new Date(toMs).toISOString(),withinSeconds:options.withinMs/1000,stepSeconds:options.stepMs/1000},
     method:'Replay uses the page feed, motion, train-length resolver, schedule feed and boardRows. Due is excluded. Board agreement means a same-headcode, same-service observation on TRUST platform (booked if missing) within +/- tolerance; a multi-platform approaching set is compatibility, not an exact platform observation. Lag is signed time of the nearest qualifying board sample minus TRUST actual. Booked/actual platform differences are separate.',
     inputs:{recording:options.recording,asOfMs:all.at(-1)!.t,readBytes:bytes.length,completeBytes:Buffer.byteLength(complete),completeFileSha256:sha(complete),effectiveRecordingSha256:sha(effective),snapshotSha256:sha(snapshot),scheduleSha256:sha(scheduleText),anchorsSha256:sha(anchorText),graphSha256:sha(JSON.stringify(data))},
-    samples:replay.samples,observationIntervals:replay.observations.length,duplicateMovements:trust.duplicates,missingActual:trust.missingActual,...comparison};
+    samples:replay.samples,observationIntervals:replay.observations.length,duplicateMovements:trust.duplicates,missingActual:trust.missingActual,...comparison,
+    scheduleMatch:scheduleMatchRate(replay.observations,fromMs,toMs),
+    hourly:options.hourly?hourlyAgreement(trust.movements,replay.observations,schedule.calls,comparisonOptions):[],reproduce};
   for(const [file,body] of [['inputs/recording.ndjson',snapshot],['inputs/schedule.json',scheduleText],['inputs/anchors.json',anchorText],['board-observations.json',JSON.stringify(replay.observations,null,2)+'\n'],['board-vs-trust.json',JSON.stringify(report,null,2)+'\n']])await writePrivateFile(path.join(options.out,file!),body!);
   const failures=comparison.results.filter(r=>r.reasons.length);
   const md=`# Board versus TRUST\n\n${report.window.fromISO} to ${report.window.toISO}; ±${options.withinMs/1000}s; ${options.stepMs/1000}s board samples.\n\n${report.method}\n\n${Object.entries(report.summary).map(([k,v])=>`- ${k}: ${typeof v==='object'&&v!==null?JSON.stringify(v):v??'unavailable'}`).join('\n')}\n\n## Disagreements and unavailable references\n\n| Actual (UTC) | Headcode | Movement | TRUST / booked | Board section / platforms | Lag s | Reason |\n|---|---|---|---|---|---|---|\n${failures.map(r=>`| ${new Date(r.actualMs).toISOString()} | ${r.headcode.replaceAll('|','')} | ${r.eventType} | ${r.platform??'?'} / ${r.bookedPlatform??'?'} | ${r.observation?`${r.observation.section} / ${r.observation.platforms.join(',')}`:'absent'} | ${r.observation?.lagSeconds??'—'} | ${r.reasons.join('; ')} |`).join('\n')}\n\nInput hashes and every movement are in board-vs-trust.json; frozen private inputs make this growing recording reproducible. Censored movements are listed but excluded from the percentage. A near-zero lag measures label visibility around the TRUST actual, not the board's response latency to the TRUST message.\n`;
-  await writePrivateFile(path.join(options.out,'board-vs-trust.md'),md);
+  const hourlyMd=options.hourly?`\n## Hourly agreement (UTC)\n\nThe motion and board history continue across hour boundaries. Zero-movement hours are unavailable, not 100%.\n\n| From | To | Movements | Complete | Agreed | Agreement % | Median lag s | Booked platform agreement | Schedule headcodes matched |\n|---|---|---:|---:|---:|---:|---:|---|---|\n${report.hourly.map(h=>`| ${h.fromISO} | ${h.toISO} | ${h.summary.movements} | ${h.summary.fullyObserved} | ${h.summary.boardAgreement} | ${h.summary.agreementPercent??'—'} | ${h.summary.medianLagSeconds??'—'} | ${h.summary.timetablePlatformAgreement}/${h.summary.timetablePlatformCompared} | ${h.scheduleMatch.matchedHeadcodes}/${h.scheduleMatch.observedHeadcodes} |`).join('\n')}\n`:'';
+  await writePrivateFile(path.join(options.out,'board-vs-trust.md'),md+`\n## Schedule match rate\n\n${report.scheduleMatch.matchedHeadcodes}/${report.scheduleMatch.observedHeadcodes} distinct observed headcodes matched at least once (${report.scheduleMatch.percent??'unavailable'}%). Interval coverage: ${report.scheduleMatch.matchedIntervals}/${report.scheduleMatch.observedIntervals}. Only platform, approaching and departed rows count; Due is excluded.\n`+hourlyMd);
   console.log(JSON.stringify({out:options.out,...report.summary},null,2));
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href)main().catch(error=>{console.error(`board-vs-trust: ${(error as Error).message}`);process.exitCode=1;});

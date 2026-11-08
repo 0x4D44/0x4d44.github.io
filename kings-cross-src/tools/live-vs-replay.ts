@@ -4,6 +4,7 @@
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { buildGraph } from '../core/graph.ts';
 import { createMotion } from '../core/motion.ts';
 import type { TrainView } from '../core/motion.ts';
@@ -121,8 +122,46 @@ async function scratchDirectory(out: string): Promise<void> {
   await mkdir(out, { recursive: true });
 }
 
+const repoRoot=fileURLToPath(new URL('../../',import.meta.url));
+export function comparisonReproduction(directory: string, out: string) {
+  return {cwd:repoRoot,command:'node',args:['kings-cross-src/tools/live-vs-replay.ts','--summarize',directory,'--out',out]};
+}
+
+/** Re-evaluate captured samples without opening a connection or inventing a live run. */
+export async function summarizeCapture(directory: string, out: string) {
+  const {safeOutputDirectory,writePrivateFile,within}: {
+    safeOutputDirectory(root:string,directory:string):Promise<string>;
+    writePrivateFile(file:string,body:string):Promise<void>;
+    within(root:string,file:string):boolean;
+  }=await import(new URL('./evidence.mjs',import.meta.url).href);
+  if(out===resolve(repoRoot,'.scratch')||!within(resolve(repoRoot,'.scratch'),out))throw new Error('--out must be beneath worktree .scratch');
+  await safeOutputDirectory(repoRoot,out);
+  const filenames=['live-samples.json','replay-samples.json','live-vs-replay.json'];
+  const texts=await Promise.all(filenames.map(f=>readFile(resolve(directory,f),'utf8')));
+  const [live,replay,original]=texts.map(t=>JSON.parse(t)) as [MotionSample[],MotionSample[],Record<string,unknown>];
+  const samplesValid=(rows:MotionSample[])=>Array.isArray(rows)&&rows.every(s=>s&&Number.isFinite(s.atMs)&&Array.isArray(s.trains)&&s.trains.every(t=>t&&Number.isFinite(t.id)&&typeof t.description==='string'&&Array.isArray(t.point)&&t.point.length===2&&t.point.every(Number.isFinite)&&Array.isArray(t.edge)&&t.edge.length===3&&t.edge.every(Number.isFinite)));
+  if(!samplesValid(live)||!samplesValid(replay)||!original||typeof original!=='object'||Array.isArray(original))throw new Error('invalid saved comparison');
+  const report={...original,...compareSamples(live,replay),
+    recomputedFrom:{directory,files:Object.fromEntries(texts.map((s,i)=>[filenames[i]!,createHash('sha256').update(s).digest('hex')]))},
+    reproduce:comparisonReproduction(out,resolve(out,'recomputed'))};
+  for(const [i,name] of filenames.entries())if(i<2)await writePrivateFile(resolve(out,name),texts[i]!);
+  await writePrivateFile(resolve(out,'live-vs-replay.json'),JSON.stringify(report,null,2)+'\n');
+  await writePrivateFile(resolve(out,'live-vs-replay.md'),`# Saved live versus replay comparison\n\nPrimary recorded-checkpoint comparison: ${report.passed?'PASS':'FAIL'}.\n\nSame description sets: ${report.sameTrainSetSeconds}/${report.samples} samples. Position difference p95: ${report.positionDifferenceM.p95??'unavailable'} m.\n\nRecomputed from the saved actual live and recorded-replay samples, without a new live connection. The same-initial-snapshot diagnostic, if present, remains diagnostic only. Source hashes and exact reproduction arguments are in live-vs-replay.json.\n`);
+  return report as typeof report & Record<string,unknown>;
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2), values = new Map<string, string>();
+  if(args.includes('--help')) {console.log('node tools/live-vs-replay.ts --out .scratch/dir [--seconds 600] [--start checkpoint|now] [--checkpoint-wait 610] [--relay http://127.0.0.1:8787]\nnode tools/live-vs-replay.ts --summarize <saved-capture-dir> --out <.scratch/dir>');return;}
+  if(args.includes('--summarize')) {
+    for(let i=0;i<args.length;i+=2) {
+      const k=args[i]!,v=args[i+1];if(!['--summarize','--out'].includes(k)||!v||v.startsWith('--')||values.has(k))throw new Error('summary requires --summarize <capture-dir> --out <.scratch/dir>');values.set(k,v);
+    }
+    if(!values.has('--summarize')||!values.has('--out'))throw new Error('summary requires --summarize and --out');
+    const report=await summarizeCapture(resolve(values.get('--summarize')!),resolve(values.get('--out')!));
+    console.log(JSON.stringify({passed:report.passed,samples:report.samples,sameTrainSetSeconds:report.sameTrainSetSeconds,positionDifferenceM:report.positionDifferenceM},null,2));
+    if(!report.passed)process.exitCode=1;return;
+  }
   for (let i = 0; i < args.length; i += 2) {
     const k = args[i]!, v = args[i + 1];
     if (!['--out', '--seconds', '--relay', '--start', '--checkpoint-wait'].includes(k) || !v || values.has(k)) throw new Error('usage: live-vs-replay.ts --out .scratch/dir [--seconds 600] [--start checkpoint|now] [--checkpoint-wait 610] [--relay http://127.0.0.1:8787]');
@@ -266,7 +305,9 @@ async function main(): Promise<void> {
   const jitter = received.filter((r) => r.elapsedMs !== null && (r.type === 'td' || r.type === 'trust')).flatMap((r) => {
     const t = (r.data as { t?: number }).t; return typeof t === 'number' ? [r.receivedAtMs - t] : [];
   });
-  const report = { interval: { startMs: startWall, endMs: endWall, durationSeconds: duration, connectionStartedAt, startMode,
+  const report = { reproduce:comparisonReproduction(out,resolve(out,'recomputed')),
+    captureCommand:{cwd:repoRoot,command:'node',args:['kings-cross-src/tools/live-vs-replay.ts','--out',out,'--seconds',String(duration),'--start',startMode,'--checkpoint-wait',String(wait),'--relay',relay.origin]},
+    interval: { startMs: startWall, endMs: endWall, durationSeconds: duration, connectionStartedAt, startMode,
     recordedCheckpointMs: window[0]!.t, checkpointToLiveStartMs: startWall - window[0]!.t, sameInitialBerths },
     received: { messages: received.length, snapshots, pings, recordedEventsInReplay: window.length },
     timetable: { date: scheduleDate, calls: schedule.calls.length, policy: 'One timetable fetched before checkpoint wait, fixed for all worlds; independent birth-kind caches. Page refresh timing is not reproduced.' },
