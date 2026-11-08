@@ -282,26 +282,53 @@ function originalLocation(rows, line, column) {
   }
   return found?.source ? found : null;
 }
-function aggregateCpu(profile, maps) {
-  const nodes = new Map(profile.nodes.map((node) => [node.id, node]));
-  const files = new Map(), functions = new Map();
+export function aggregateCpu(profile, maps) {
+  const nodes = new Map((profile?.nodes ?? []).filter(Boolean).map((node) => [node.id, node]));
+  const samples = profile?.samples ?? [];
+  const files = new Map(), functions = new Map(), gaps = new Map();
+  const gap = (code, detail) => {
+    const entry = gaps.get(code) ?? { code, count: 0, detail };
+    entry.count++; gaps.set(code, entry);
+  };
+  if (!samples.length) gap('samples-unavailable', 'V8 supplied no CPU samples; no self time can be measured.');
   let sampledUs = 0, mappedUs = 0;
-  for (let i = 0; i < (profile.samples?.length ?? 0); i++) {
-    const node = nodes.get(profile.samples[i]);
-    if (!node) throw new Error('CPU sample refers to unknown node');
+  let timedSampleCount = 0;
+  for (let i = 0; i < samples.length; i++) {
     const us = profile.timeDeltas?.[i];
-    if (!Number.isFinite(us) || us < 0) throw new Error('CPU profile lacks sample time deltas');
-    const frame = node.callFrame;
-    const location = originalLocation(maps.get(frame.url), frame.lineNumber, frame.columnNumber);
-    const source = location?.source ?? (frame.url ? `[unmapped] ${frame.url}` : `[runtime] ${frame.functionName || '(anonymous)'}`);
+    // Requested sampling intervals and profile wall duration cannot reconstruct the
+    // missing per-sample weights. Keep other metrics without inventing CPU costs.
+    if (!Number.isFinite(us) || us < 0) {
+      gap('sample-time-unavailable', 'Missing/invalid timeDeltas; these samples are excluded from timed totals and percentages.');
+      continue;
+    }
+    const node = nodes.get(samples[i]), frame = node?.callFrame;
+    if (!node) gap('sample-node-unavailable', 'Timed sample has no node; retained as unattributed self time.');
+    else if (!frame) gap('call-frame-unavailable', 'Timed node has no call frame; retained as unattributed self time.');
+    const hasPosition = Number.isInteger(frame?.lineNumber) && frame.lineNumber >= 0 && Number.isInteger(frame?.columnNumber) && frame.columnNumber >= 0;
+    if (frame?.url && !hasPosition) gap('source-position-unavailable', 'Missing source position; retained under the generated URL without guessing a source-map location.');
+    const location = hasPosition ? originalLocation(maps?.get(frame.url), frame.lineNumber, frame.columnNumber) : null;
+    const source = location?.source ?? (frame?.url ? `[unmapped] ${frame.url}` : frame ? `[runtime] ${frame.functionName || '(anonymous)'}` : '[unattributed] missing CPU node/call frame');
     if (location) mappedUs += us;
     sampledUs += us;
+    timedSampleCount++;
     files.set(source, (files.get(source) ?? 0) + us);
-    const key = `${source}:${location ? location.originalLine + 1 : frame.lineNumber + 1} ${location?.name ?? frame.functionName ?? '(anonymous)'}`;
+    const key = `${source}:${location ? location.originalLine + 1 : hasPosition ? frame.lineNumber + 1 : '?'} ${location?.name ?? frame?.functionName ?? '(anonymous)'}`;
     functions.set(key, (functions.get(key) ?? 0) + us);
   }
+  if ((profile?.timeDeltas?.length ?? 0) > samples.length) gap('unmatched-time-deltas', 'V8 supplied more deltas than samples; unmatched deltas cannot be attributed.');
   const rows = (entries, label) => [...entries].map(([key, us]) => ({ [label]: key, selfMs: us / 1000, percent: sampledUs ? us / sampledUs * 100 : 0 })).sort((a, b) => b.selfMs - a.selfMs);
-  return { sampledMs: sampledUs / 1000, mappedSelfMs: mappedUs / 1000, byOriginalSourceFile: rows(files, 'source'), byFunction: rows(functions, 'function') };
+  return { status: timedSampleCount ? gaps.size ? 'partial' : 'complete' : 'unavailable',
+    sampleCount: samples.length, timedSampleCount, gaps: [...gaps.values()],
+    sampledMs: timedSampleCount ? sampledUs / 1000 : null, mappedSelfMs: timedSampleCount ? mappedUs / 1000 : null,
+    byOriginalSourceFile: rows(files, 'source'), byFunction: rows(functions, 'function') };
+}
+
+export function cpuProfileMarkdown(cpu) {
+  const value = n => Number.isFinite(n) ? Number(n.toFixed(2)) : 'unavailable';
+  return [`CPU profile: ${cpu?.status ?? 'unavailable'}; ${cpu?.timedSampleCount ?? 0}/${cpu?.sampleCount ?? 0} samples timed. CPU self ms: ${value(cpu?.sampledMs)}. Percentages cover only timed samples.`, '',
+    ...(cpu?.gaps?.length ? cpu.gaps.map(gap => `- CPU gap: ${gap.code} (${gap.count}): ${gap.detail}`) : cpu?.status === 'complete' ? [] : ['- CPU gap: profile details unavailable.']), '',
+    '| Original source / runtime | CPU self ms | Sample % |', '| --- | ---: | ---: |',
+    ...(cpu?.byOriginalSourceFile ?? []).slice(0, 15).map(row => `| ${row.source.replaceAll('|', '\\|')} | ${value(row.selfMs)} | ${value(row.percent)} |`), ''];
 }
 
 async function selfTest() {
@@ -409,6 +436,8 @@ async function selfTest() {
   assert.equal(errors[0], 'log: missing URL: http://test/missing.svg');
   console.log('perf self-test passed: timing phases, fetch body timing, request failure URLs, source-map boundaries, CPU self time, actual-train draw observer');
 }
+// Import the pure profile helpers in Node tests without starting Chrome.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 if (process.argv.includes('--self-test')) { await selfTest(); process.exit(0); }
 
 const args = process.argv.slice(2);
@@ -913,8 +942,7 @@ try {
     `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
     ...startupPhaseMarkdown(report.startup), '',
     `Failed request URLs: ${report.requests.failedUrls.length ? report.requests.failedUrls.join(', ') : 'none'}.`, '',
-    '| Original source / runtime | CPU self ms | Sample % |', '| --- | ---: | ---: |',
-    ...report.startup.cpu.byOriginalSourceFile.slice(0, 15).map(row => `| ${row.source.replaceAll('|', '\\|')} | ${rounded(row.selfMs)} | ${rounded(row.percent)} |`), '',
+    ...cpuProfileMarkdown(report.startup.cpu),
     ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS, p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
     report.startup.limitations, '', report.startup.cpu.caveat, '',
   ].join('\n');
@@ -945,4 +973,5 @@ try {
   throw error;
 } finally {
   await cleanup();
+}
 }
