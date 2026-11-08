@@ -56,19 +56,25 @@ export const FIGURES = {
   gauge: { value: 1.435, unit: 'm', basis: 'published', source: 'Wikipedia infoboxes: "1,435 mm (4 ft 8+1/2 in) standard gauge"' },
 } as const satisfies Record<string, Figure>;
 
-/** The vehicle families the model draws: Hitachi AT300 (Azuma and its cousins), Bombardier Electrostar, Siemens Desiro City. */
-export type Family = 'at300' | 'electrostar' | 'desiro';
-export type CarType = 'DPTS' | 'MS' | 'MC' | 'TS' | 'MF' | 'DPTF' | 'DMSO' | 'MSO' | 'PTSO' | 'DMOS' | 'TOS' | 'TOSLW' | 'MOS' | 'PTOS';
+/**
+ * The vehicle families the model draws: Hitachi AT300 (Azuma and its cousins), Bombardier Electrostar (Class 387),
+ * Siemens Desiro City as the Great Northern 717 and as the Thameslink 700 (two families, because the cars differ in
+ * length and the fronts differ), and the Alstom Coradia 1000 diesel Class 180 "Adelante".
+ */
+export type Family = 'at300' | 'electrostar' | 'desiro' | 'desiro700' | 'adelante';
+export type CarType = 'DPTS' | 'MS' | 'MC' | 'TS' | 'MF' | 'DPTF' | 'DMSO' | 'MSO' | 'PTSO' | 'DMOS' | 'TOS' | 'TOSLW' | 'MOS' | 'PTOS'
+  | 'DMSL' | 'MFL' | 'MSL' | 'MSLRB' | 'DMCO' | 'TSO' | 'TSOW' | 'TSOLW';
 /** Driving cars have a cab. DPTS and DPTF differ inside (standard or first class), not in length. */
-export const DRIVING: ReadonlySet<CarType> = new Set(['DPTS', 'DPTF', 'DMSO', 'DMOS']);
+export const DRIVING: ReadonlySet<CarType> = new Set(['DPTS', 'DPTF', 'DMSO', 'DMOS', 'DMSL', 'DMCO']);
 
-export type Livery = 'lner' | 'hulltrains' | 'lumo' | 'greatnorthern';
+export type Livery = 'lner' | 'hulltrains' | 'lumo' | 'greatnorthern' | 'grandcentral' | 'thameslink';
 /**
  * The trains the model can draw. The first four are Hitachi AT300 (Azuma family). The Great Northern
  * kinds are Class 387 Electrostars (one 4-car unit, or two or three coupled: 8 and 12 cars) and the
- * 6-car Class 717 Desiro City.
+ * 6-car Class 717 Desiro City. `gc180x5` is Grand Central's 5-car Class 180 Adelante diesel unit; `tl700x8`
+ * and `tl700x12` are the Thameslink Class 700/0 (8 cars) and 700/1 (12 cars) Desiro City.
  */
-export type TrainKind = 'lner5' | 'lner9' | 'hull5' | 'lumo5' | 'gn387x4' | 'gn387x8' | 'gn387x12' | 'gn717x6';
+export type TrainKind = 'lner5' | 'lner9' | 'hull5' | 'lumo5' | 'gn387x4' | 'gn387x8' | 'gn387x12' | 'gn717x6' | 'gc180x5' | 'tl700x8' | 'tl700x12';
 
 export interface TrainSpec {
   readonly kind: TrainKind;
@@ -85,6 +91,9 @@ export interface TrainSpec {
 const WIKI = 'Wikipedia infoboxes (British Rail Class 800, 801, 802, 803)';
 const WIKI_387 = 'Wikipedia infobox for British Rail Class 387 (read 2026-11-08)';
 const WIKI_717 = 'Wikipedia infobox for British Rail Class 717 (read 2026-11-08)';
+const WIKI_180 = 'Wikipedia infobox for British Rail Class 180 (read 2026-11-08)';
+const WIKI_700 = 'Wikipedia infobox for British Rail Class 700 (read 2026-11-08)';
+const SIEMENS_700 = 'Siemens datasheet "Desiro City Electrical Multiple Unit for Thameslink" (order no. A19100-V800-B824-V1-7600, Siemens AG 2014; read 2026-11-08)';
 /** The 4-car Electrostar unit, and the Desiro City 6-car, as the infoboxes give them. */
 const UNIT_387: readonly CarType[] = ['DMSO', 'MSO', 'PTSO', 'DMSO'];
 export const TRAIN_SPECS: Readonly<Record<TrainKind, TrainSpec>> = {
@@ -96,18 +105,31 @@ export const TRAIN_SPECS: Readonly<Record<TrainKind, TrainSpec>> = {
   gn387x8: { kind: 'gn387x8', family: 'electrostar', classes: '387 x2', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387], source: `${WIKI_387}: two 4-car units coupled (the units work in multiple)` },
   gn387x12: { kind: 'gn387x12', family: 'electrostar', classes: '387 x3', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387, ...UNIT_387], source: `${WIKI_387}: three 4-car units coupled; the page says c2c ran 387s as 12-car sets` },
   gn717x6: { kind: 'gn717x6', family: 'desiro', classes: '717', operator: 'Great Northern', livery: 'greatnorthern', cars: ['DMOS', 'TOS', 'TOSLW', 'MOS', 'PTOS', 'DMOS'], source: `${WIKI_717}: "DMOS-TOS-TOS(L)W-MOS-PTOS-DMOS" (6 cars)` },
+  gc180x5: { kind: 'gc180x5', family: 'adelante', classes: '180', operator: 'Grand Central', livery: 'grandcentral', cars: ['DMSL', 'MFL', 'MSL', 'MSLRB', 'DMSL'], source: `${WIKI_180}: 5 cars per set, "DMSL(A)-MFL-MSL-MSLRB-DMSL(B)"; Angel Trains: "Operate as 5-car units (DMSL[A], MFL, MSL, MSLRB, DMSL[B])"; Wikipedia, Grand Central: Class 180 Adelante, 10 units, 5 carriages each` },
+  tl700x8: { kind: 'tl700x8', family: 'desiro700', classes: '700/0', operator: 'Thameslink', livery: 'thameslink', cars: ['DMCO', 'PTSO', 'MSO', 'TSOW', 'TSOLW', 'MSO', 'PTSO', 'DMCO'], source: `${WIKI_700}: 700/0 (8 cars) "DMCO-PTSO-MSO-TSOW-TSOLW-MSO-PTSO-DMCO"` },
+  tl700x12: { kind: 'tl700x12', family: 'desiro700', classes: '700/1', operator: 'Thameslink', livery: 'thameslink', cars: ['DMCO', 'PTSO', 'MSO', 'MSO', 'TSO', 'TSOW', 'TSOLW', 'TSO', 'MSO', 'MSO', 'PTSO', 'DMCO'], source: `${WIKI_700}: 700/1 (12 cars) "DMCO-PTSO-MSO-MSO-TSO-TSOW-TSOLW-TSO-MSO-MSO-PTSO-DMCO"` },
 };
 
 /** The four Azuma-family kinds (Class 800, 801, 802, 803). The Great Northern kinds are in EMU_KINDS. */
 export const TRAIN_KINDS: TrainKind[] = ['lner5', 'lner9', 'hull5', 'lumo5'];
 /** The Great Northern commuter kinds: Class 387 (4, 8 and 12 cars) and Class 717. */
 export const EMU_KINDS: TrainKind[] = ['gn387x4', 'gn387x8', 'gn387x12', 'gn717x6'];
+/** Grand Central's Class 180 Adelante (diesel, 5 cars). */
+export const GC_KINDS: TrainKind[] = ['gc180x5'];
+/** The Thameslink Class 700 Desiro City: 700/0 (8 cars) and 700/1 (12 cars). */
+export const TL_KINDS: TrainKind[] = ['tl700x8', 'tl700x12'];
 /** Every kind the model can draw. */
 export const ALL_KINDS = Object.keys(TRAIN_SPECS) as TrainKind[];
 
-export function carLength(type: CarType): number {
-  if (EMU_CAR_LENGTH_FIGURE[type]) return EMU_CAR_LENGTH_FIGURE[type].value;
-  return DRIVING.has(type) ? FIGURES.drivingCarLength.value : FIGURES.intermediateCarLength.value;
+/**
+ * The length of one car. A car code is not enough on its own where two families share it (a PTSO is 20.39 m on a
+ * Class 387 and 20.15 m on a Class 700), so name the family; with none, the family the code first belongs to is used.
+ */
+export function carLength(type: CarType, family?: Family): number {
+  const f = family ?? FAMILY_OF_CAR[type];
+  if (f === undefined || f === 'at300') return DRIVING.has(type) ? FIGURES.drivingCarLength.value : FIGURES.intermediateCarLength.value;
+  const fig = EMU_FIGURES[f];
+  return DRIVING.has(type) && fig.drivingCarLength ? fig.drivingCarLength.value : fig.carLength.value;
 }
 
 /** One car, positioned along the train. `s` is metres from the front nose, growing rearwards. */
@@ -235,52 +257,129 @@ export const DESIRO_CITY = {
   pantographLength: { value: 2.0, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\'s drawn 2.02 m is used, to be replaced.' },
 } as const satisfies Record<keyof typeof ELECTROSTAR, Figure>;
 
-export type EmuFamily = 'electrostar' | 'desiro';
-export const EMU_FIGURES: Readonly<Record<EmuFamily, Readonly<Record<keyof typeof ELECTROSTAR, Figure>>>> = { electrostar: ELECTROSTAR, desiro: DESIRO_CITY };
+// --- the Thameslink Class 700 -------------------------------------------------------------------
 
-/** The length figure of each commuter-EMU car type (undefined for an Azuma car). */
-const EMU_CAR_LENGTH_FIGURE: Partial<Record<CarType, Figure>> = {
-  DMSO: ELECTROSTAR.carLength,
-  MSO: ELECTROSTAR.carLength,
-  PTSO: ELECTROSTAR.carLength,
-  DMOS: DESIRO_CITY.carLength,
-  TOS: DESIRO_CITY.carLength,
-  TOSLW: DESIRO_CITY.carLength,
-  MOS: DESIRO_CITY.carLength,
-  PTOS: DESIRO_CITY.carLength,
+/**
+ * The Class 700 is the same Siemens Desiro City as the Class 717, so its body, doors and bogies are the 717's; what
+ * differs is the length of the cars (the 717's equal split of its unit is an assumption, and the Class 700's two
+ * published unit lengths let the split be worked out), the cab front (no emergency door; a yellow warning panel),
+ * and the livery.
+ *
+ * The cars, worked out from the datasheet's two unit lengths, which are exact to 0.1 m: the 12-car unit is the 8-car
+ * unit plus four intermediate cars, so an intermediate car is (242.6 - 162.0) / 4 = 20.15 m, and the two end cars
+ * share what is left of the 8-car unit: (162.0 - 6 x 20.15) / 2 = 20.55 m. The 717's published 121.674 m is then
+ * 2 x 20.55 + 4 x 20.15 = 121.7 m, within 0.03 m, which is a check that the split is right. It holds only if every
+ * intermediate car and both end cars are alike, which no source states: ASSUMED.
+ */
+export const DESIRO_700 = {
+  carLength: { value: 20.15, unit: 'm', basis: 'assumed', source: `Not published per car (${WIKI_700}: "Car length 20.2 m"; ${SIEMENS_700}: "Nominal vehicle length 20 m"). Worked out, as ASSUMED, from the datasheet's unit lengths "162,000 mm (8-car)" and "242,600 mm (12-car)": the difference is four intermediate cars, (242.6 - 162.0) / 4 = 20.15 m. To be replaced by a printed figure.` },
+  drivingCarLength: { value: 20.55, unit: 'm', basis: 'assumed', source: `Not published per car. Worked out, as ASSUMED, from the 8-car unit length of 162.0 m (${SIEMENS_700}) less six intermediate cars of 20.15 m, shared between the two end cars: (162.0 - 6 x 20.15) / 2 = 20.55 m. The Class 717's published 121.674 m agrees: 2 x 20.55 + 4 x 20.15 = 121.7 m. To be replaced.` },
+  bodyWidth: { value: 2.8, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Width 2,800 mm"; ${WIKI_700}: "Width 2.80 m (9 ft 2 in)"` },
+  /** Neither the datasheet nor the Wikipedia page gives a height; taken as the Class 717's assumption. */
+  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published (the Siemens datasheet and Wikipedia give no height). Taken equal to the Class 717\'s assumed 3.77 m, which is the Class 387\'s published height, as all three run the same UK routes; to be replaced.' },
+  floorHeight: { value: 1.1, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Floor height (a.r.l.) 1,100 mm"; ${WIKI_700}: "Floor height 1.10 m (43.31 in)"` },
+  wheelDiameter: { value: 0.82, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Wheel diameter 820 mm (new) / 760 mm (worn)"; the new wheel is drawn` },
+  wheelbaseMotor: { value: 2.2, unit: 'm', basis: 'published', source: `${WIKI_700}: Siemens SGP SF7000 bogies, "Wheelbase 2,200 mm (motor bogies)"` },
+  wheelbaseTrailer: { value: 2.1, unit: 'm', basis: 'published', source: `${WIKI_700}: "2,100 mm (trailer bogies)"` },
+  bogieFromEnd: { value: 3.1, unit: 'm', basis: 'assumed', source: 'Not published in any page read: bogie centres taken about 14 m apart under a 20.15 to 20.55 m car, as for the Class 717, to be replaced.' },
+  doorWidth: { value: 1.5, unit: 'm', basis: 'assumed', source: `Not published for the Class 700 (${WIKI_700}: "Double-leaf pocket sliding, 2 per side per car", no width). Taken from the Class 717's published 1,500 mm, the same Desiro City door; to be replaced.` },
+  doorFromEnd: { value: 4.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read; doors near the quarter points, to be replaced.' },
+  pantographLength: { value: 2.0, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\'s drawn 2.02 m is used, to be replaced.' },
+} as const satisfies Record<keyof typeof ELECTROSTAR | 'drivingCarLength', Figure>;
+
+// --- the Grand Central Class 180 Adelante ---------------------------------------------------------
+
+const ANGEL_180 = 'Angel Trains fleet page for the Class 180, angeltrains.co.uk/fleet/class-180 (read 2026-11-08)';
+const LOCO_180 = 'loco-info.com Class 180 data (read 2026-11-08)';
+/**
+ * The Class 180 is a diesel-hydraulic Alstom Coradia 1000 multiple unit: one Cummins QSK19 engine and Voith transmission
+ * under every car (Wikipedia), with power to one bogie of each car. It has no pantograph. Every other published
+ * dimension the model needs (height, floor, wheels, bogies, doors) was not in any page read.
+ */
+export const ADELANTE = {
+  carLength: { value: 23.03, unit: 'm', basis: 'published', source: `${WIKI_180}: "Car length 23.71 or 23.03 m"; the intermediate cars (MFL, MSL, MSLRB). ${ANGEL_180} gives 23.02 m for them, 10 mm less. 2 x 23.71 + 3 x 23.03 = 116.51 m, against the published train length of 116.52 m (${WIKI_180}; ${LOCO_180}).` },
+  drivingCarLength: { value: 23.71, unit: 'm', basis: 'published', source: `${WIKI_180}: "Car length 23.71 or 23.03 m", the driving cars (DMSL); ${ANGEL_180}: "23.71 m (DMSL)"` },
+  bodyWidth: { value: 2.73, unit: 'm', basis: 'published', source: `${WIKI_180}: "Width 2.73 m (8 ft 11 1/2 in)"; ${ANGEL_180}: "Width 2.73 m"` },
+  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia, loco-info.com and Angel Trains give no height). 3.77 m is what one aggregator (gptkb.org) lists for the class, unverified, and is the Class 387\'s published height; to be replaced.' },
+  floorHeight: { value: 1.1, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a typical UK diesel multiple unit, to be replaced.' },
+  wheelDiameter: { value: 0.84, unit: 'm', basis: 'assumed', source: 'Not published in any page read (a forum thread asks the same question unanswered); a typical new wheel for a UK DMU, to be replaced.' },
+  wheelbaseMotor: { value: 2.7, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia names the bogies "Alstom MB2" and gives no wheelbase); a typical value, to be replaced.' },
+  wheelbaseTrailer: { value: 2.7, unit: 'm', basis: 'assumed', source: 'Not published in any page read; taken equal to the motor bogie, to be replaced.' },
+  bogieFromEnd: { value: 3.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read: bogie centres taken about 16 m apart under a 23 m car, to be replaced.' },
+  doorWidth: { value: 0.9, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a typical single-leaf sliding-plug door opening, to be replaced.' },
+  doorFromEnd: { value: 3.8, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a door near each end of every car (from the nose tip on a cab car), to be replaced.' },
+} as const satisfies Record<Exclude<keyof typeof ELECTROSTAR, 'pantographLength'> | 'drivingCarLength', Figure>;
+
+/** The figures of a commuter or regional unit (not an Azuma): the same keys for every family, so the model builder reads one table. */
+export interface UnitFigures {
+  /** Every car; or every car but the driving ones where `drivingCarLength` is given. */
+  readonly carLength: Figure;
+  readonly drivingCarLength?: Figure;
+  readonly bodyWidth: Figure;
+  /** Highest point of the body (roof equipment included), pantograph folded. */
+  readonly height: Figure;
+  readonly floorHeight: Figure;
+  readonly wheelDiameter: Figure;
+  readonly wheelbaseMotor: Figure;
+  readonly wheelbaseTrailer: Figure;
+  readonly bogieFromEnd: Figure;
+  readonly doorWidth: Figure;
+  readonly doorFromEnd: Figure;
+  /** Only an electric unit has a pantograph. */
+  readonly pantographLength?: Figure;
+}
+export type EmuFamily = 'electrostar' | 'desiro' | 'desiro700' | 'adelante';
+export const EMU_FIGURES: Readonly<Record<EmuFamily, UnitFigures>> = { electrostar: ELECTROSTAR, desiro: DESIRO_CITY, desiro700: DESIRO_700, adelante: ADELANTE };
+
+/** The family a car code first belongs to, for `carLength(type)` called without a family (PTSO and MSO are on the 387 and the 700 alike). */
+const FAMILY_OF_CAR: Partial<Record<CarType, EmuFamily>> = {
+  DMSO: 'electrostar', MSO: 'electrostar', PTSO: 'electrostar',
+  DMOS: 'desiro', TOS: 'desiro', TOSLW: 'desiro', MOS: 'desiro', PTOS: 'desiro',
+  DMCO: 'desiro700', TSO: 'desiro700', TSOW: 'desiro700', TSOLW: 'desiro700',
+  DMSL: 'adelante', MFL: 'adelante', MSL: 'adelante', MSLRB: 'adelante',
 };
 
 /**
- * Where the traction motors are, from the published wheel arrangements. Written in train order,
- * first bogie then second, T for a trailer bogie and M for a motor bogie.
+ * Where the traction (or drive) bogies are, from the published wheel arrangements. Written in train order,
+ * first bogie then second, T for a trailer bogie and M for a motor bogie. A cab car with no entry has its motor bogie at
+ * the inner end (see `emuLayout`).
  * Class 387, loco-info.com: 2-B + 2-B + 2-2 + B-2, so the motor bogie is the inner one of a driving car.
  * Class 717, Wikipedia: Bo'Bo' + 2'2' + 2'2' + Bo'Bo' + 2'2' + Bo'Bo'.
+ * Class 700, Siemens datasheet "Axle arrangement": 8-car Bo'Bo'+2'2'+Bo'Bo'+2'2'+2'2'+Bo'Bo'+2'2'+Bo'Bo' and 12-car
+ * Bo'Bo'+2'2'+Bo'Bo'+Bo'Bo'+2'2'+2'2'+2'2'+2'2'+Bo'Bo'+Bo'Bo'+2'2'+Bo'Bo'.
+ * Class 180, Wikipedia: 2'B'+B'2'+B'2'+B'2'+B'2' (one driven bogie a car, the cab-end bogie of a driving car is the trailing one).
  */
-const EMU_BOGIES: Partial<Record<CarType, string>> = { MSO: 'TM', PTSO: 'TT', TOS: 'TT', TOSLW: 'TT', MOS: 'MM', PTOS: 'TT', DMOS: 'MM' };
+const EMU_BOGIES: Readonly<Record<EmuFamily, Partial<Record<CarType, string>>>> = {
+  electrostar: { MSO: 'TM', PTSO: 'TT' },
+  desiro: { TOS: 'TT', TOSLW: 'TT', MOS: 'MM', PTOS: 'TT', DMOS: 'MM' },
+  desiro700: { DMCO: 'MM', PTSO: 'TT', MSO: 'MM', TSO: 'TT', TSOW: 'TT', TSOLW: 'TT' },
+  adelante: { MFL: 'MT', MSL: 'MT', MSLRB: 'MT' },
+};
 
 /** The car that carries the pantograph on a commuter EMU: the "P" in PTSO / PTOS (Pantograph Trailer). */
 const EMU_PANTOGRAPH_CARS: ReadonlySet<CarType> = new Set(['PTSO', 'PTOS']);
 
 function emuLayout(spec: TrainSpec): TrainLayout {
-  const f = EMU_FIGURES[spec.family as EmuFamily];
+  const family = spec.family as EmuFamily;
+  const f = EMU_FIGURES[family];
   const cars: Car[] = [];
   let cursor = 0;
   spec.cars.forEach((type, index) => {
-    const length = carLength(type);
+    const length = carLength(type, family);
     const start = cursor;
     const end = cursor + length;
     // a cab at the end of a unit: the first car of each unit looks forward, the last backward. On the
     // 387 a unit is four cars, so a coupled set has driving cars in the middle with their noses together.
     const unitSize = spec.family === 'electrostar' ? UNIT_387.length : spec.cars.length;
     const inUnit = index % unitSize;
-    const cab: Car['cab'] = type === 'DMSO' || type === 'DMOS' ? (inUnit === 0 ? 'front' : 'rear') : null;
+    const cab: Car['cab'] = DRIVING.has(type) ? (inUnit === 0 ? 'front' : 'rear') : null;
     const bogies: [number, number] = [start + f.bogieFromEnd.value, end - f.bogieFromEnd.value];
-    // a DMSO has its motor bogie at the inner end, so the order depends on which end the cab is
-    const code = EMU_BOGIES[type] ?? (cab === 'front' ? 'TM' : 'MT');
+    // a driving car (DMSO, DMSL) has its motor bogie at the inner end, so the order depends on which end the cab is
+    const code = EMU_BOGIES[family][type] ?? (cab === 'front' ? 'TM' : 'MT');
     const motor: [boolean, boolean] = [code[0] === 'M', code[1] === 'M'];
     const centre = (start + end) / 2;
-    const half = f.pantographLength.value / 2;
-    const pantograph = EMU_PANTOGRAPH_CARS.has(type) ? ([centre - half, centre + half] as const) : null;
+    const half = (f.pantographLength?.value ?? 0) / 2;
+    const pantograph = EMU_PANTOGRAPH_CARS.has(type) && f.pantographLength ? ([centre - half, centre + half] as const) : null;
     cars.push({ type, index, length, start, end, bogies, pantograph, cab, motor });
     cursor = end;
   });

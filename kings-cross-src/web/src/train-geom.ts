@@ -95,6 +95,14 @@ export function roundedRect(a0: number, a1: number, b0: number, b1: number, r: n
   return out;
 }
 
+/** An ellipse as a counter-clockwise polygon in (a, b), centred (ca, cb), radii (ra, rb), `n` distinct points (a rounded rectangle whose radius is half its width doubles its points where the corners meet, and a zero-area triangle with them). */
+export function ellipse(ca: number, cb: number, ra: number, rb: number, n = 14): [number, number][] {
+  return Array.from({ length: n }, (_, i): [number, number] => {
+    const t = (2 * Math.PI * i) / n;
+    return [ca + ra * Math.cos(t), cb + rb * Math.sin(t)];
+  });
+}
+
 /** A bag of triangles. Winding is fixed at insertion so it agrees with the normals given. */
 export class Soup {
   readonly pos: number[] = [];

@@ -33,6 +33,8 @@ export interface DecalItem {
 export interface DecalCar {
   index: number;
   count: number;
+  /** the car's code (DMSL, MFL, ...), for a livery that dresses one kind of car differently; absent where the livery does not care */
+  type?: string;
   cab: boolean;
   length: number;
   /** length of the raked nose, 0 for a car with no cab */
@@ -69,6 +71,10 @@ export interface LiveryDef {
   swoosh: number | null;
   /** a plain stripe below the windows (null: none) */
   stripe: number | null;
+  /** where the stripe sits on the side, metres above the rail head (default STRIPE_Y): the Grand Central band is broad, the Thameslink one thin */
+  stripeY?: [number, number];
+  /** the door leaf's colour for one car, where it differs from `door` (Grand Central: gold on the first-class car, silver on the rest) */
+  doorFor?(car: DecalCar): number;
   /** the dark band along the foot of the body, above the skirts (null: the body colour runs down) */
   foot: number | null;
   /** Lettering and solid decals for one car. */
@@ -214,6 +220,73 @@ export const LIVERIES: Readonly<Record<Livery, LiveryDef>> = {
       return items;
     },
   },
+  // Grand Central's Class 180: Wikipedia (Grand Central): "Initially, Grand Central adopted an all black livery with doors
+  // painted gold (first class) and silver (standard class)" and "When the Class 180 was introduced, an orange band was
+  // introduced"; a Class 180 article and a Wikipedia mirror call it a broad orange stripe at the waist. The band's exact
+  // width and orange, the wordmark and its place on the band, and the grey roof are guesses; so is the yellow warning panel
+  // on the front, which no source mentions (a train built for 125 mph in 2000 carried one; ASSUMED).
+  grandcentral: {
+    basis: 'all-black body, an orange band at the waist, gold and silver doors sourced (Wikipedia, "initially"); the band width, every shade, the lettering and the yellow warning panel on the front approximate',
+    sources: [
+      'Wikipedia, Grand Central (train operating company), Livery: "Initially, Grand Central adopted an all black livery with doors painted gold (first class) and silver (standard class)." and "When the Class 180 was introduced, an orange band was introduced."',
+      'Wikipedia, British Rail Class 180: 180112 "was the first train to carry Grand Central\'s new logo and orange stripe livery"; a Class 180 fleet article (paulbigland.blog, 2023): "the standard stripe is orange", 180112\'s converted to green; a Wikipedia mirror: "a broad orange waistline stripe"',
+    ],
+    body: 0x17181c,
+    roof: 0x4a4d53,
+    skirt: 0x101114,
+    door: 0xb9bec6,
+    noseFront: 0x17181c,
+    noseBand: 0x17181c,
+    noseCone: null,
+    glass: 0x0b0d10,
+    surround: null,
+    window: 0x222c38,
+    swoosh: null,
+    stripe: 0xf27a1a,
+    stripeY: [1.04, 1.5],
+    foot: null,
+    // gold doors on the first-class car (MFL), silver on the others
+    doorFor: (c) => (c.type === 'MFL' ? 0xc9a227 : 0xb9bec6),
+    // the wordmark in black on the orange band, centred in the bay between the doors
+    decals: (c) => [{ text: 'Grand Central', colour: 0x17181c, rect: [bay(c) - 0.5 * textEms('Grand Central') * 0.28, 1.13, 0, 1.41] }],
+  },
+  // Thameslink's Class 700: the 2013 First Capital Connect and Siemens announcement, repeated by Wikipedia: "light grey with
+  // pastel blue doors and a white diagonal flash at the carriage ends". Forum posts (seen as search snippets; the threads
+  // would not open) call the doors "bright cyan" and the stripe "a rather uninspiring little pink stripe", and say the 700s
+  // "still have a yellow panel" on the cab front. The shades, the stripe, the lettering colour and where it sits are guesses.
+  thameslink: {
+    basis: 'light grey body, pastel blue doors and a white diagonal flash sourced (a 2013 announcement, Wikipedia); the thin pink stripe, the cyan of the doors and the yellow warning panel from forum snippets; every shade and the lettering approximate',
+    sources: [
+      'Wikipedia, British Rail Class 700: "light grey with pastel blue doors and a white diagonal flash at the carriage ends" (the livery announced by First Capital Connect and Siemens in 2013)',
+      'RailForums threads on the Class 700 (search snippets only; the threads would not open): the doors "bright cyan", "Thameslink\'s Class 700s still have a yellow panel"; an RMweb post: the white 700s were redone as "the current rather uninspiring little pink stripe version"; Railway Magazine: the first unit with branding other than its "white base livery"',
+    ],
+    body: 0xd9dce1,
+    roof: 0xb4b9c0,
+    skirt: 0x30343a,
+    door: 0x34a9e1,
+    noseFront: 0xd9dce1,
+    noseBand: 0xd9dce1,
+    noseCone: null,
+    glass: 0x0e1014,
+    surround: null,
+    window: 0x26364a,
+    swoosh: null,
+    stripe: 0xd2257c,
+    stripeY: [1.12, 1.24],
+    foot: 0x41464e,
+    decals: (c) => {
+      const items: DecalItem[] = [];
+      // the same white diagonal flash across each end of the car as the Great Northern units (on a cab car, its inner end only)
+      const w = 0.55;
+      for (const atStart of c.cab ? [false] : [true, false]) {
+        const x0 = atStart ? 0.4 : c.length - 0.4 - w;
+        items.push({ text: null, colour: 0xffffff, rect: [x0, 0.95, x0 + w, 3.0], skew: atStart ? 0.9 : -0.9 });
+      }
+      // "Thameslink" in the pink of the stripe, centred in the bay between the doors
+      items.push({ text: 'Thameslink', colour: 0xd2257c, rect: [bay(c) - 0.5 * textEms('Thameslink') * 0.32, 1.27, 0, 1.59] });
+      return items;
+    },
+  },
 };
 
 /**
@@ -243,6 +316,8 @@ export const WINDOW_Y: [number, number] = [1.72, 2.72];
 export const SURROUND_Y: [number, number] = [1.6, 2.86];
 /** Lower red/stripe band on the side. */
 export const BAND_Y: [number, number] = [1.0, 1.5];
+/** Where a livery's plain stripe sits unless it says (LiveryDef.stripeY). */
+export const STRIPE_Y: [number, number] = [1.2, 1.5];
 /** Top of the dark foot band. */
 export const FOOT_TOP = 1.0;
 
@@ -267,7 +342,8 @@ function paint(def: LiveryDef, nose: number): HTMLCanvasElement {
   }
   if (def.stripe !== null) {
     g.fillStyle = hex(def.stripe);
-    rect(nose > 0 ? nose : 0.3, TEX_SPAN, 1.2, 1.5);
+    const [y0, y1] = def.stripeY ?? STRIPE_Y;
+    rect(nose > 0 ? nose : 0.3, TEX_SPAN, y0, y1);
   }
   if (def.swoosh !== null) {
     g.fillStyle = hex(def.swoosh);
@@ -342,7 +418,8 @@ export const BASELINE = 0.2;
 /** Pixels an em of lettering is drawn at in the atlas (so, for lettering `em` metres tall, ROW_H / em texels a metre), and the atlas's size. */
 export const ROW_H = 128;
 const ATLAS_W = 2048;
-const ATLAS_H = 1280;
+/** The atlas is a row tall for every text and one more for the solid patch, so a livery's lettering never runs into it. */
+const atlasH = (): number => (atlasTexts().length + 1) * ROW_H;
 
 let texts: string[] | null = null;
 /** Every text any livery uses, sorted, so the atlas is drawn once and a text always has the same row. */
@@ -369,10 +446,11 @@ export interface AtlasRect {
 /** Where a text sits in the atlas. Texts come first, one per row, and a solid white patch is the last row. */
 export function atlasRect(text: string | null): AtlasRect {
   // the solid patch: the bottom-left corner of the sheet, inset from its edges (see atlasTexture)
-  if (text === null) return { u0: 8 / ATLAS_W, v0: 8 / ATLAS_H, u1: 24 / ATLAS_W, v1: 24 / ATLAS_H };
+  const H = atlasH();
+  if (text === null) return { u0: 8 / ATLAS_W, v0: 8 / H, u1: 24 / ATLAS_W, v1: 24 / H };
   const row = atlasTexts().indexOf(text);
   const width = Math.min(ATLAS_W, Math.ceil(textEms(text) * ROW_H) + 8);
-  return { u0: 4 / ATLAS_W, u1: (4 + width - 8) / ATLAS_W, v0: 1 - ((row + 1) * ROW_H) / ATLAS_H, v1: 1 - (row * ROW_H) / ATLAS_H };
+  return { u0: 4 / ATLAS_W, u1: (4 + width - 8) / ATLAS_W, v0: 1 - ((row + 1) * ROW_H) / H, v1: 1 - (row * ROW_H) / H };
 }
 
 let atlas: THREE.CanvasTexture | null = null;
@@ -380,10 +458,11 @@ function atlasTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   if (atlas) return atlas;
   const c = document.createElement('canvas');
+  const H = atlasH();
   c.width = ATLAS_W;
-  c.height = ATLAS_H;
+  c.height = H;
   const g = c.getContext('2d') as CanvasRenderingContext2D;
-  g.clearRect(0, 0, ATLAS_W, ATLAS_H);
+  g.clearRect(0, 0, ATLAS_W, H);
   g.fillStyle = '#ffffff';
   g.textBaseline = 'alphabetic';
   atlasTexts().forEach((text, row) => {
@@ -398,7 +477,7 @@ function atlasTexture(): THREE.CanvasTexture | null {
     g.restore();
   });
   // a solid patch in the bottom-left corner of the sheet for the plain decals, under the last text row
-  g.fillRect(0, ATLAS_H - 32, 32, 32);
+  g.fillRect(0, H - 32, 32, 32);
   atlas = new THREE.CanvasTexture(c);
   atlas.colorSpace = THREE.SRGBColorSpace;
   atlas.anisotropy = 8;
