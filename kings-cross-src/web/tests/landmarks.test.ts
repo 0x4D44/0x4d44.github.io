@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
-import { barlowPlan, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
+import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
 import { addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, headArc, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
@@ -612,41 +612,157 @@ test('addTwin: paired lancets under an arch of stone and red voussoirs, the halv
 /** world -> (across, along, up) in the vault's frame */
 const inVault = (p: V3): { u: number; v: number; y: number } => ({ ...worldToShed({ origin: barlow.origin, heading: barlow.heading }, [p[0], p[2]]), y: p[1] });
 
+const margin = (barlow.width - barlow.span) / 2;
+const skin = barlowSection(24, barlow.span, barlow.rise).map((p) => ({ u: p.x + margin, y: p.y }));
+/** how far the point (across, up) is from the roof's skin: the nearest of the 24 strips of the arch */
+function underSkin(u: number, y: number): number {
+  let best = Infinity;
+  for (let k = 0; k + 1 < skin.length; k++) {
+    const a = skin[k] as { u: number; y: number };
+    const b = skin[k + 1] as { u: number; y: number };
+    const t = Math.max(0, Math.min(1, ((u - a.u) * (b.u - a.u) + (y - a.y) * (b.y - a.y)) / ((b.u - a.u) ** 2 + (b.y - a.y) ** 2)));
+    best = Math.min(best, Math.hypot(u - a.u - t * (b.u - a.u), y - a.y - t * (b.y - a.y)));
+  }
+  return best;
+}
+const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const unit = (a: V3): V3 => a.map((x) => x / Math.hypot(...a)) as V3;
+
 test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springings, inside the 245 ft 6 in walls', () => {
   const parts = barlowGeometry(barlow);
-  const roof = [...triangles(parts.slate as Batch), ...triangles(parts.roofGlass as Batch)].flatMap((t) => t.p).map(inVault);
+  const slate = triangles(parts.slate as Batch).flatMap((t) => t.p).map(inVault);
+  const roof = [...slate, ...triangles(parts.roofGlass as Batch).flatMap((t) => t.p).map(inVault)];
   close(Math.max(...roof.map((p) => p.y)), FIGURES.barlow.rise, 1e-3, 'crown');
-  close(Math.min(...roof.map((p) => p.y)), 0, 1e-9, 'springings');
-  const margin = (barlow.width - barlow.span) / 2;
-  close(Math.min(...roof.map((p) => p.u)), margin, 1e-6, 'west springing');
-  close(Math.max(...roof.map((p) => p.u)), margin + barlow.span, 1e-6, 'east springing (73.15 m apart)');
-  close(Math.min(...roof.map((p) => p.v)), 0, 1e-6, 'south end');
-  close(Math.max(...roof.map((p) => p.v)), barlow.length, 1e-6, 'north end');
+  close(Math.min(...slate.map((p) => p.y)), 0, 1e-9, 'springings');
+  close(Math.min(...slate.map((p) => p.u)), margin, 1e-6, 'west springing');
+  close(Math.max(...slate.map((p) => p.u)), margin + barlow.span, 1e-6, 'east springing (73.15 m apart)');
+  close(Math.min(...slate.map((p) => p.v)), 0, 1e-6, 'south end');
+  close(Math.max(...slate.map((p) => p.v)), barlow.barlowLength, 1e-6, 'the arch ends at the 689 ft gable: the extension is not arched');
   // the arch is symmetric about the shed's middle
   close(Math.max(...roof.filter((p) => p.y > 29).map((p) => p.u)) + Math.min(...roof.filter((p) => p.y > 29).map((p) => p.u)), barlow.width, 1.5, 'the crown is mid-shed');
 });
 
-test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the outer quarters, to 210 m; glass alone beyond', () => {
+test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the outer quarters, to 210 m', () => {
   const parts = barlowGeometry(barlow);
-  const glassAll = triangles(parts.roofGlass as Batch);
   const slate = triangles(parts.slate as Batch);
   // the glass strips that start at the south wall (the middle of the arch): glass u is the distance along the arch, slate v likewise
-  const glass = glassAll.filter((t) => t.p.some((p) => inVault(p).v < 1e-6));
+  const glass = triangles(parts.roofGlass as Batch).filter((t) => t.p.some((p) => inVault(p).v < 1e-6));
   const glassFrom = Math.min(...glass.flatMap((t) => t.uv.map((q) => q[0])));
   const glassTo = Math.max(...glass.flatMap((t) => t.uv.map((q) => q[0])));
   const total = Math.max(...slate.flatMap((t) => t.uv.map((q) => q[1])));
   close((glassTo - glassFrom) / total, FIGURES.barlow.glassFraction, 0.05, 'fraction of the arch that is glass');
   close(glassFrom / total, 0.25, 0.05, 'the west quarter is slate');
   close(Math.max(...slate.flatMap((t) => t.p.map((p) => inVault(p).v))), barlow.barlowLength, 1e-6, 'slate ends at 689 ft');
-  // beyond the Barlow shed the roof is glass right down to the ground
-  const ext = glassAll.filter((t) => t.p.every((p) => inVault(p).v >= barlow.barlowLength - 1e-6));
-  assert.ok(ext.length > 0);
-  assert.ok(Math.min(...ext.flatMap((t) => t.p.map((p) => inVault(p).y))) < 1e-6, 'extension glazing reaches the ground');
+  close(Math.max(...glass.flatMap((t) => t.p.map((p) => inVault(p).v))), barlow.barlowLength, 1e-6, 'and so does the glass');
+  // UVs are metres, so slate, panes and boards come out true to scale along the whole shed
+  for (const t of [...slate, ...glass, ...triangles(parts.lining as Batch)]) close(uvArea(t) / worldArea(t), 1, 0.01, 'texel area equals roof area');
 });
 
-test('Barlow vault: a rib of 24 segments at every rib position, each along the arch; the south wall closes the end', () => {
+test('Barlow ribs [WP-STP, hist-d]: a lattice truss 1.4 m deep at each of the 24 rib positions, springing from the platform, wholly inside the roof', () => {
   const parts = barlowGeometry(barlow);
-  assert.equal(triangles(parts.steel as Batch).length, barlow.ribs.length * 24 * 3 * 2);
+  assert.equal(barlow.ribs.length, 24);
+  // a rib lies in its own 0.3 m slab: the purlins run the whole length and the extension's plates stand beyond the gable, so neither is a rib
+  const slab = (t: Tri): number => barlow.ribs.findIndex((r) => t.p.every((p) => Math.abs(inVault(p).v - r) <= 0.15 + 1e-6));
+  const ribTris = triangles(parts.rib as Batch).filter((t) => slab(t) >= 0);
+  barlow.ribs.forEach((_, i) => {
+    const ts = ribTris.filter((t) => slab(t) === i);
+    const pts = ts.flatMap((t) => t.p).map(inVault);
+    close(Math.min(...pts.map((p) => p.y)), 0, 1e-9, `rib ${i} springs from the platform`);
+    close(Math.max(...pts.map((p) => p.y)), barlow.rise - 0.1, 0.01, `rib ${i} reaches the crown`);
+    const crown = pts.filter((p) => Math.abs(p.u - barlow.width / 2) < 0.05); // a ribbon is half a chord's width either side of the crown node
+    close(Math.min(...crown.map((p) => p.y)), barlow.rise - 1.4, 0.01, `rib ${i} is 1.4 m deep at the crown`);
+    assert.ok(Math.min(...pts.map((p) => underSkin(p.u, p.y))) >= 0.05, `rib ${i} stands wholly inside the roof`); // 0.10 under it but for the feet, which are held to the platform
+    // two chords, and a lattice that crosses the gap between them: a diagonal and a vertical to each of the 24 segments, each seen from both sides
+    const depths = ts.map((t) => t.p.map((p) => underSkin(inVault(p).u, inVault(p).y)));
+    const top = depths.filter((d) => Math.max(...d) < 0.45).length;
+    const bottom = depths.filter((d) => Math.min(...d) > 0.9).length;
+    assert.equal(top, 24 * 3 * 2, `rib ${i}: the top chord, two sides and an underside to a segment`);
+    assert.equal(bottom, 24 * 3 * 2, `rib ${i}: the bottom chord`);
+    assert.equal(ts.length - top - bottom, 24 * 12 + 4, `rib ${i}: two diagonals and a vertical to a segment, and the closing vertical`);
+  });
+  // the purlins run the length of the shed, one under each node of the arch
+  const purlins = triangles(parts.rib as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > barlow.barlowLength - 1);
+  assert.equal(purlins.length, 25 * 3 * 2, 'a purlin of three faces under each of the 25 nodes');
+});
+
+test('Barlow shed [hist-d]: pale boarding 8 cm under each slate strip, parallel to it, facing out so that it shows from inside only', () => {
+  const parts = barlowGeometry(barlow);
+  const slate = triangles(parts.slate as Batch);
+  const lining = triangles(parts.lining as Batch);
+  assert.equal(lining.length, slate.length, 'a strip of boarding to every strip of slate');
+  assert.equal((createMaterials().table.lining as THREE.MeshLambertMaterial).side, THREE.BackSide, 'seen from inside only');
+  for (const t of lining) {
+    const n = unit(geoNormal(t));
+    const s = slate.find((q) => dot(n, unit(geoNormal(q))) > 1 - 1e-4); // the foot of the boarding is held to the platform, a tenth of a degree off the strip
+    assert.ok(s, 'a slate strip faces the same way');
+    for (const p of t.p) if (p[1] > 0.5) close(dot(unit(geoNormal(s)), [s.p[0][0] - p[0], s.p[0][1] - p[1], s.p[0][2] - p[2]]), 0.08, 1e-6, 'under the slate');
+  }
+  close(Math.max(...lining.flatMap((t) => t.uv.map((q) => q[1]))), barlow.barlowLength, 1e-6, 'the boards run the length of the shed, to the gable');
+});
+
+test('Barlow end screen [hist-d2]: the gable is glazed from the foot of the transition roof up to the arch, in panes about 3.6 m', () => {
+  const parts = barlowGeometry(barlow);
+  const screen = triangles(parts.roofGlass as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - barlow.barlowLength) < 1e-6));
+  assert.ok(screen.length >= 15, 'a screen');
+  const pts = screen.flatMap((t) => t.p).map(inVault);
+  close(Math.min(...pts.map((p) => p.y)), FIGURES.barlow.screenFoot, 1e-9, 'it starts where the transition roof meets it');
+  close(Math.max(...pts.map((p) => p.y)), FIGURES.barlow.rise, 1e-3, 'and reaches the crown');
+  assert.ok(pts.every((p) => underSkin(p.u, p.y) < 1e-6 || p.y <= FIGURES.barlow.screenFoot + 1e-9), 'every corner is on the arch, or on the foot');
+  // its area is the arch's above the foot (a 24-sided arch is a hair inside the curve)
+  let want = 0;
+  for (let u = 0.005; u < barlow.span; u += 0.01) want += Math.max(0, barlowHeight(u - barlow.span / 2) - FIGURES.barlow.screenFoot) * 0.01;
+  close(screen.reduce((s, t) => s + worldArea(t), 0) / want, 1, 0.01, 'it fills the arch above its foot');
+  // the shared pane is 0.9 x 1.8 m: stretched four times across and twice up, it is 3.6 m square
+  const tile = TEXTURES.shedGlass.tile;
+  close(tile[0] * 4, 3.6, 1e-9, 'panes 3.6 m across');
+  close(tile[1] * 2, 3.6, 1e-9, 'and 3.6 m high');
+  for (const t of screen) t.p.forEach((p, i) => {
+    close((t.uv[i] as [number, number])[0], inVault(p).u / 4, 1e-6, 'u is across the gable, a quarter metre to the metre');
+    close((t.uv[i] as [number, number])[1], p[1] / 2, 1e-6, 'v is up it, half a metre to the metre');
+  });
+});
+
+test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of glass pyramids, then seven bays of saw-tooth roof to the outline\'s end', () => {
+  const parts = barlowGeometry(barlow);
+  const F = FIGURES.barlow;
+  const beyond = (t: Tri): boolean => t.p.some((p) => inVault(p).v > barlow.barlowLength + 1e-6);
+  const lo = F.screenFoot - F.girder;
+  // nothing beyond the gable is arched or high: the extension is subservient to the Barlow shed
+  const all = Object.values(parts).flatMap((m) => triangles(m as Batch)).filter(beyond).flatMap((t) => t.p).map(inVault);
+  assert.ok(Math.max(...all.map((p) => p.y)) <= Math.max(F.screenFoot + F.pyramid, lo + F.truss) + 1e-9, 'under half the crown');
+  assert.ok(Math.min(...all.map((p) => p.y)) > 5, 'on its own height: no glass to the ground as the arch had');
+  close(Math.max(...all.map((p) => p.v)), barlow.length, 1e-9, 'to the outline\'s north end');
+  assert.ok(all.every((p) => p.u > -1e-9 && p.u < barlow.width + 1e-9), 'wall to wall');
+  // the transition: 12 x 4 pyramids of glass, 1.5 m high, over the 22 m behind the gable
+  const pyramids = triangles(parts.roofGlass as Batch).filter(beyond);
+  assert.equal(pyramids.length, 12 * 4 * 4, 'four faces to each pyramid');
+  assert.ok(pyramids.every((t) => t.p.every((p) => inVault(p).v <= barlow.barlowLength + F.transition + 1e-9)), 'they fill the 22 m, no more');
+  close(Math.max(...pyramids.flatMap((t) => t.p.map((p) => inVault(p).y))) - F.screenFoot, F.pyramid, 1e-9, 'each rises 1.5 m');
+  // the main roof: 14 teeth in 7 bays; each slope climbs a truss depth to the north, wall to wall, and a dark riser drops back to the low edge
+  const slopes = triangles(parts.metal as Batch).filter((t) => dot(unit(geoNormal(t)), [0, 1, 0]) > 0);
+  assert.equal(slopes.length, 14 * 2, 'two triangles to a tooth\'s slope');
+  const tooth = barlow.bay / F.teeth;
+  for (const t of slopes) {
+    const ps = t.p.map(inVault);
+    assert.ok(Math.max(...ps.map((p) => p.y)) - Math.min(...ps.map((p) => p.y)) <= F.truss + 1e-9);
+    assert.ok(Math.max(...ps.map((p) => p.v)) - Math.min(...ps.map((p) => p.v)) <= tooth + 1e-9);
+  }
+  const slopePts = slopes.flatMap((t) => t.p).map(inVault);
+  close(Math.min(...slopePts.map((p) => p.y)), lo, 1e-9, 'the low edge is level with the girders\' underside');
+  close(Math.max(...slopePts.map((p) => p.y)), lo + F.truss, 1e-9, 'each tooth climbs a 2.6 m truss depth');
+  close(Math.min(...slopePts.map((p) => p.v)), barlow.barlowLength + F.transition, 1e-9, 'the roof starts where the transition ends');
+  const risers = triangles(parts.pane as Batch);
+  assert.equal(risers.length, 14 * 2 * 2, 'a riser to each tooth, seen from both sides');
+  assert.ok(risers.every((t) => Math.abs(unit(geoNormal(t))[1]) < 1e-9), 'upright');
+  const north: V3 = [Math.sin(barlow.heading), 0, -Math.cos(barlow.heading)];
+  assert.equal(risers.filter((t) => dot(unit(geoNormal(t)), north) > 0).length, 14 * 2, 'half of them face north, half south');
+  const planes = [...new Set(risers.flatMap((t) => t.p.map((p) => inVault(p).v.toFixed(3))))].map(Number).sort((a, b) => a - b);
+  assert.equal(planes.length, 14, 'one plane to each tooth');
+  planes.forEach((v, i) => close(v, barlow.barlowLength + F.transition + (i + 1) * tooth, 1e-3, `riser ${i} is at the north end of its tooth`));
+});
+
+test('Barlow vault: the south wall closes the end', () => {
+  const parts = barlowGeometry(barlow);
   const wall = triangles(parts.brickRed as Batch);
   assert.equal(wall.length, 24, 'one triangle per arch segment, fanned from the middle of the sill');
   for (const t of wall) for (const p of t.p) close(inVault(p).v, 0.15, 1e-6, 'the wall stands on the south end');
@@ -659,13 +775,14 @@ test('Barlow vault: a rib of 24 segments at every rib position, each along the a
 
 // ---- assembly ----------------------------------------------------------------------------------
 
-test('materials: every look but the clock is the library\'s shared one (red brick, two-sided slate, sashes, panes now live in materials.ts), and nothing shared is changed', () => {
+test('materials: every look but the clock and the extension\'s roof panels is the library\'s shared one (red brick, two-sided slate, the shed\'s glass, ribs and boarding, sashes, panes), and nothing shared is changed', () => {
   const before = (material('brick') as THREE.MeshLambertMaterial).color.getHex();
   const set = createMaterials();
   assert.equal(set.table.brick, material('brick'));
   assert.equal(set.table.stone, material('stone'));
-  assert.equal(set.table.roofGlass, material('roofGlass'));
-  assert.equal(set.table.steel, material('steel'));
+  assert.equal(set.table.roofGlass, material('shedGlass'), 'the shed\'s milky glazing: bright from inside');
+  assert.equal(set.table.rib, material('ribPaint'), 'the restored shed\'s pale ironwork');
+  assert.equal(set.table.lining, material('lining'));
   assert.equal(set.table.brickRed, material('brickRed'), 'the Midland Grand\'s brick is the library\'s tinted one');
   assert.notEqual(set.table.brickRed, material('brick'));
   assert.equal(set.table.slate, material('slateBothSides'));
@@ -679,16 +796,16 @@ test('materials: every look but the clock is the library\'s shared one (red bric
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
   assert.equal((material('brick') as THREE.MeshLambertMaterial).color.getHex(), before, 'the shared brick keeps its colour');
   assert.ok((set.table.brickRed as THREE.MeshLambertMaterial).color.r > (set.table.brickRed as THREE.MeshLambertMaterial).color.g, 'red brick');
-  assert.deepEqual(set.owned, [set.table.clock], 'the clock face is all this set makes (no document here, so no texture)');
-  for (const key of ['brick', 'brickRed', 'slate', 'sash', 'sashArch', 'pane'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal], 'the clock face and the extension\'s roof panels are all this set makes (no document here, so no texture)');
+  for (const key of ['brick', 'brickRed', 'slate', 'sash', 'sashArch', 'pane', 'roofGlass', 'rib', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {
   const scene = new THREE.Scene();
   const lm = addLandmarks(scene, data);
   assert.equal(lm.group.parent, scene);
-  assert.ok(lm.group.children.length <= 10, `${lm.group.children.length} draw calls`);
-  assert.ok(lm.stats.triangles > 5000 && lm.stats.triangles < 30000, `${lm.stats.triangles} triangles`);
+  assert.ok(lm.group.children.length <= 10 + 6, `${lm.group.children.length} draw calls: the 10 of the first build, and the 6 the fidelity rubric allows`);
+  assert.ok(lm.stats.triangles > 5000 && lm.stats.triangles < 40000, `${lm.stats.triangles} triangles`);
   assert.equal(lm.stats.meshes, lm.group.children.length);
   assert.deepEqual([...lm.excludeIds].sort(), [OSM_IDS.greatNorthernHotel, OSM_IDS.midlandGrandHotel, OSM_IDS.stPancrasStation].sort());
   assert.deepEqual([...LANDMARK_OSM_IDS], [...REPLACED_BUILDING_IDS]);

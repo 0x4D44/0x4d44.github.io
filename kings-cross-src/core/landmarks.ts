@@ -99,6 +99,14 @@ export const FIGURES = {
     pointOffset: 4, // ASSUMED: "slightly pointed"; the arc centres sit 4 m either side of the axis
     glassFraction: 0.5, // [WP-STP] glass covers the middle half of the roof
     undercroftRise: 6, // [WP-STP] platforms 20 ft above the street; NOT modelled (one ground level)
+    // The 2007 extension [NSC-EXT]. Heights are ASSUMED, scaled from hist-e (the roof) and hist-d2 (the screen).
+    transition: 22, // [NSC-EXT] the main roof stops 22 m short of the Barlow gable
+    bays: 7, // [NSC-EXT] seven 30 m bays; the outline's length is shared out among them
+    teeth: 2, // ASSUMED: saw-teeth to a bay (hist-e: about nine rows in some 130 m)
+    truss: 2.6, // [NSC-EXT] 2.6 m Warren trusses: a tooth climbs one truss depth
+    girder: 1.1, // [NSC-EXT] the transition's plate girders
+    screenFoot: 12, // ASSUMED: the end screen's glazing starts where the transition roof meets it (hist-d2: about 18 m of glass under the crown)
+    pyramid: 1.5, // ASSUMED: rise of a glass pyramid of the transition roof
   },
   tunnel: {
     boreWidth: 8.0, // ASSUMED internal width of a twin-track Victorian bore (OSM track spacing is 3.1-4.3 m)
@@ -575,11 +583,14 @@ export interface BarlowPlan {
   span: number;
   /** crown above the tracks [WP-STP] */
   rise: number;
-  /** length of the Barlow shed proper [WP-STP]; the vault carries on, glazed, to the OSM outline's north end */
+  /** length of the Barlow shed proper [WP-STP]; the extension (a flat saw-tooth roof, not the arch) carries on to the OSM outline's north end */
   barlowLength: number;
   /** length of the whole vault: Barlow shed plus the northern extension, to the OSM outline's end */
   length: number;
+  /** v of each of the Barlow shed's 24 ribs; the extension has none */
   ribs: number[];
+  /** length of each of the extension's seven bays: what the outline leaves after the shed and the transition, shared out [NSC-EXT] */
+  bay: number;
 }
 
 /** Heading of the St Pancras platforms 5-10: the weighted mean of their long axes (they run the full length). */
@@ -651,12 +662,10 @@ export function barlowPlan(data: Pick<KxData, 'buildings' | 'platforms'>): Barlo
   const u0 = east - f.spanWall;
   const origin = frameToWorld(frame, u0, vSouth);
   const length = vMax - vSouth;
-  // [WP-STP]: 24 ribs one spacing apart, so 23 spacings; centred along the 210 m of the shed proper (the
-  // end bays are 2.2 m). The northern extension carries on the same rhythm (ASSUMED).
-  const ribs: number[] = [];
+  // [WP-STP]: 24 ribs one spacing apart, so 23 spacings; centred along the 210 m of the shed proper (the end bays are 2.2 m)
   const first = (f.length - (f.ribs - 1) * f.ribSpacing) / 2;
-  for (let v = first; v < length; v += f.ribSpacing) ribs.push(v);
-  return { id: b.id, heading, origin, width: f.spanWall, span: f.span, rise: f.rise, barlowLength: f.length, length, ribs };
+  const ribs = Array.from({ length: f.ribs }, (_, i) => first + i * f.ribSpacing);
+  return { id: b.id, heading, origin, width: f.spanWall, span: f.span, rise: f.rise, barlowLength: f.length, length, ribs, bay: (length - f.length - f.transition) / f.bays };
 }
 function worldToFrame(s: { origin: Pt; heading: number }, p: Pt): { u: number; v: number } {
   const c = Math.cos(s.heading);

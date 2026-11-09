@@ -28,8 +28,8 @@ const everyRing = Object.values(rings).flat();
 /** landmarkGeometry gives the hotel, the Midland Grand and the shed, in that order */
 const named = (sets: PartMap<Key>[]): Record<LandmarkName, PartMap<Key>> => ({ hotel: sets[0] as PartMap<Key>, midland: sets[1] as PartMap<Key>, barlow: sets[2] as PartMap<Key> });
 const entries = (parts: PartMap<Key>): [Key, Batch][] => Object.entries(parts) as [Key, Batch][];
-/** The Barlow shed's steel ribs hang below its springing line; everything else of every building stands on its base. */
-const shellOf = (name: LandmarkName, parts: PartMap<Key>): Key[] => (Object.keys(parts) as Key[]).filter((k) => !(name === 'barlow' && k === 'steel'));
+/** Everything of every building stands on its base: the Barlow shed's ribs and boarding start at its springing line, none below it. */
+const shellOf = (_name: LandmarkName, parts: PartMap<Key>): Key[] => Object.keys(parts) as Key[];
 /** the y of every vertex of the given parts */
 function heights(parts: PartMap<Key>, keys: readonly Key[] = Object.keys(parts) as Key[]): number[] {
   const out: number[] = [];
@@ -177,17 +177,18 @@ test('on a step 3 m high that cuts each footprint: the base is on the low side a
 
 // ---- the shed at track level -------------------------------------------------------------------
 
-test('the Barlow shed is held no lower than 0.3 m under the railway\'s ground where the ground is lower; the ribs hang below the shell as built, and the other buildings go down to the ground', () => {
+test('the Barlow shed is held no lower than 0.3 m under the railway\'s ground where the ground is lower; its ribs and boarding stand on the same floor, and the other buildings go down to the ground', () => {
   const seats = landmarkSeats(plans, terrainOver(everyRing, () => -3));
   const parts = named(landmarkGeometry(plans, seats));
   const floor = GROUND_Y - BARLOW_SINK;
   close(lowest(heights(parts.barlow, shellOf('barlow', parts.barlow))), floor, 1e-9, 'the shell stands on the floor, 0.3 m under the ground of the tracks');
   close(lowest(heights(parts.hotel)), -3, 0.01, 'the hotel follows the ground down');
   close(lowest(heights(parts.midland)), -3, 0.01, 'the Midland Grand too');
-  const ribs = lowest(heights(parts.barlow, ['steel']));
-  const asBuilt = lowest(heights(named(landmarkGeometry(plans)).barlow, ['steel']));
-  assert.ok(asBuilt < -0.4, `the ribs hang ${-asBuilt} m under the springing line as built`);
-  close(ribs - floor, asBuilt, 1e-9, 'and as far under the shell once it is seated');
+  const asBuilt = named(landmarkGeometry(plans)).barlow;
+  for (const key of ['rib', 'lining'] as const) {
+    assert.ok(lowest(heights(asBuilt, [key])) > -1e-9, `${key} do not hang under the springing line as built`);
+    close(lowest(heights(parts.barlow, [key])) - floor, lowest(heights(asBuilt, [key])), 1e-9, `${key} keep their place over the shell once it is seated`);
+  }
 });
 
 test('on ground level with the railway\'s own (GROUND_Y) the hotel, the Midland Grand and the shed, built on y = 0, come down by 0.2 m onto it', () => {
@@ -259,7 +260,7 @@ test('with a terrain: the same draw calls, meshes, triangles and materials as wi
   const flat = addLandmarks(new THREE.Scene(), data);
   const lm = addLandmarks(new THREE.Scene(), data, { terrain });
   assert.deepEqual(lm.group.children.map((c) => c.name), flat.group.children.map((c) => c.name), 'one mesh per material, the same ones');
-  assert.ok(lm.group.children.length <= 10, `${lm.group.children.length} draw calls`);
+  assert.ok(lm.group.children.length <= 10 + 6, `${lm.group.children.length} draw calls: the 10 of the first build, and the 6 the fidelity rubric allows`);
   assert.deepEqual(lm.group.children.map((c) => ((c as THREE.Mesh).geometry.index as THREE.BufferAttribute).count), flat.group.children.map((c) => ((c as THREE.Mesh).geometry.index as THREE.BufferAttribute).count), 'the same triangles in each');
   assert.deepEqual(lm.stats, flat.stats);
   assert.deepEqual(lm.excludeIds, flat.excludeIds);

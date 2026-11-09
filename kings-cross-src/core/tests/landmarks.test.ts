@@ -360,14 +360,24 @@ test('Barlow shed: platforms 5 to 10 stand inside the vault, clear of both walls
 
 test('Barlow shed [WP-STP]: 24 ribs, one every 29 ft 4 in, centred along the 210 m of the shed proper', () => {
   const plan = barlowPlan(data);
-  const proper = plan.ribs.filter((v) => v <= plan.barlowLength);
+  const proper = plan.ribs;
   assert.equal(FIGURES.barlow.ribs, 24, '[WP-STP] 24 ribs');
-  assert.equal(proper.length, 24, '24 ribs fall within the 210 m of the shed proper');
+  assert.equal(proper.length, 24, 'exactly the 24 ribs of the shed proper: the extension is not arched and has none');
   for (let i = 1; i < plan.ribs.length; i++) close((plan.ribs[i] ?? 0) - (plan.ribs[i - 1] ?? 0), FIGURES.barlow.ribSpacing, 1e-9, 'rib spacing');
   close(FIGURES.barlow.ribSpacing, 8.941, 0.001, '29 ft 4 in in metres');
   close(plan.barlowLength, 689 * 0.3048, 1e-9, '[WP-STP] 689 ft');
   close(proper[0] ?? 0, plan.barlowLength - (proper[proper.length - 1] ?? 0), 1e-9, 'the end bays match');
-  assert.ok((plan.ribs[plan.ribs.length - 1] ?? 0) < plan.length);
+  assert.ok((plan.ribs[plan.ribs.length - 1] ?? 0) < plan.barlowLength, 'every rib is inside the shed proper');
+});
+
+test('Barlow extension [NSC-EXT]: a 22 m transition, then seven bays of about 30 m that fill the outline to its north end', () => {
+  const plan = barlowPlan(data);
+  const f = FIGURES.barlow;
+  assert.equal(f.transition, 22, '[NSC-EXT] the main roof stops 22 m short of the gable');
+  assert.equal(f.bays, 7, '[NSC-EXT] seven bays');
+  close(plan.bay, 30, 1, '[NSC-EXT] 30 m bays');
+  close(plan.barlowLength + f.transition + f.bays * plan.bay, plan.length, 1e-9, 'shed + transition + bays reach the outline\'s north end');
+  assert.ok(Math.max(f.screenFoot + f.pyramid, f.screenFoot - f.girder + f.truss) < f.rise / 2, 'subservient to the Barlow shed [NSC-EXT]: the extension\'s highest point is under half the crown height');
 });
 
 // ---- the tunnel mouths -------------------------------------------------------------------------

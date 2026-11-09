@@ -37,7 +37,7 @@ const UP: V3 = [0, 1, 0];
 
 // ---- materials ---------------------------------------------------------------------------------
 
-export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'steel' | 'clock';
+export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'rib' | 'lining' | 'metal' | 'clock';
 
 export interface MaterialSet {
   table: Record<Key, THREE.Material>;
@@ -102,6 +102,8 @@ export function createMaterials(): MaterialSet {
     clockMap.colorSpace = THREE.SRGBColorSpace;
   }
   const clock = own(new THREE.MeshBasicMaterial({ map: clockMap, color: clockMap ? 0xffffff : 0xe9e2cc, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  // the extension's roof panels (hist-e): light grey, mid-tone against the white-painted frame; the shade is ASSUMED, the emissive lifts the undersides
+  const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
   return {
     table: {
       brick: material('brick'),
@@ -111,8 +113,10 @@ export function createMaterials(): MaterialSet {
       sash: material('sash'),
       sashArch: material('sashArch'),
       pane: material('pane'),
-      roofGlass: material('roofGlass'),
-      steel: material('steel'),
+      roofGlass: material('shedGlass'), // the Barlow shed's milky glazing, bright from inside (hist-d); the key keeps its name for the render order
+      rib: material('ribPaint'), // the restored shed's pale ironwork (hist-d)
+      lining: material('lining'), // pale boarding under the slate, seen from inside (hist-d)
+      metal,
       clock,
     },
     owned,
@@ -868,9 +872,15 @@ export function pointInQuad(p: Pt, q: readonly Pt[]): boolean {
 
 // ---- the Barlow train shed ---------------------------------------------------------------------
 
+/** a point of the shed's cross-section: across (u), up (y) */
+type P2 = [number, number];
+
 /**
- * The vault: a shell of strips along the shed from the south wall to the end of the OSM outline, slate
- * on the outer quarters and glass on the middle half [WP-STP], with a rib every 8.94 m.
+ * The Barlow shed [WP-STP] to its 689 ft gable, then the 2007 extension [NSC-EXT] to the end of the OSM outline.
+ * Shed: slate on the outer quarters with pale boarding under it, glass on the middle half, a pale lattice rib at each of the 24
+ * rib positions (hist-d), the glazed end screen on the north gable (hist-d2), brick to the south. Extension: not the arch, which
+ * [NSC-EXT] rejects: a 22 m transition of glass pyramids on plate girders, then saw-tooth bays, pale slopes over dark glazed
+ * risers (hist-e). Section sizes and heights are ASSUMED, scaled from those photographs.
  */
 export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const parts: PartMap<Key> = {};
@@ -878,57 +888,118 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const s = Math.sin(plan.heading);
   // frame: u across (east), v along (north); world = origin + u*(c, s) + v*(s, -c)
   const at = (u: number, v: number, y: number): V3 => [plan.origin[0] + u * c + v * s, y, plan.origin[1] + u * s - v * c];
+  const dir = (u: number, y: number, v = 0): V3 => [u * c + v * s, y, u * s - v * c]; // the same turn, for a direction
+  const F = FIGURES.barlow;
+  const L = plan.barlowLength;
   const margin = (plan.width - plan.span) / 2;
   const section = barlowSection(steps, plan.span, plan.rise).map((p) => ({ ...p, x: p.x + margin }));
-  // metres along the arch, from the west foot (for the UVs)
+  const sec = (k: number): (typeof section)[number] => section[k] as (typeof section)[number];
+  // metres along the arch from the west foot (for the UVs), and the outward normal of each strip (the section runs west to east)
   const arc: number[] = [0];
-  for (let k = 1; k < section.length; k++) arc.push((arc[k - 1] as number) + Math.hypot((section[k] as { x: number }).x - (section[k - 1] as { x: number }).x, (section[k] as { y: number }).y - (section[k - 1] as { y: number }).y));
+  const out: P2[] = [];
+  for (let k = 1; k < section.length; k++) {
+    const dx = sec(k).x - sec(k - 1).x;
+    const dy = sec(k).y - sec(k - 1).y;
+    const l = Math.hypot(dx, dy);
+    arc.push((arc[k - 1] as number) + l);
+    out.push([-dy / l, dx / l]);
+  }
+  /** node k of the section, `d` metres inside the roof along the mean of its two strips' normals */
+  const into = (k: number, d: number): P2 => {
+    const a = out[Math.max(k - 1, 0)] as P2;
+    const b = out[Math.min(k, steps - 1)] as P2;
+    const m = Math.hypot(a[0] + b[0], a[1] + b[1]);
+    return [sec(k).x - ((a[0] + b[0]) / m) * d, sec(k).y - ((a[1] + b[1]) / m) * d];
+  };
   const slate = part(parts, 'slate');
+  const lining = part(parts, 'lining');
   const glass = part(parts, 'roofGlass');
-  const steel = part(parts, 'steel');
-  const glassFrom = (1 - FIGURES.barlow.glassFraction) / 2;
-  const glassTo = 1 - glassFrom;
-  for (let k = 0; k < section.length - 1; k++) {
-    const p = section[k] as (typeof section)[number];
-    const q = section[k + 1] as (typeof section)[number];
-    const tm = (p.t + q.t) / 2;
-    const isGlass = tm > glassFrom && tm < glassTo;
-    // the section runs west to east, so the outward (up) side is (-dy, dx) in (u, y)
-    const nu = -(q.y - p.y);
-    const ny = q.x - p.x;
-    const nl = Math.hypot(nu, ny);
-    const hint: V3 = [(nu / nl) * c, ny / nl, (nu / nl) * s];
-    // slate strips end where the Barlow part ends; beyond it (the extension) the roof is glass to the ground
-    const pieces: [number, number, boolean][] = isGlass ? [[0, plan.length, true]] : [[0, plan.barlowLength, false], [plan.barlowLength, plan.length, true]];
-    for (const [v0, v1, g] of pieces) {
-      const a = at(p.x, v0, p.y);
-      const b = at(q.x, v0, q.y);
-      const d = at(q.x, v1, q.y);
-      const e = at(p.x, v1, p.y);
-      const a0 = arc[k] as number;
-      const a1 = arc[k + 1] as number;
-      // glass: u across the strip (panes 0.9 m wide), v along it; slate: u along the shed, v up the slope
-      if (g) glass.quadUV(a, b, d, e, [[a0, v0], [a1, v0], [a1, v1], [a0, v1]], hint);
-      else slate.quadUV(a, b, d, e, [[v0, a0], [v0, a1], [v1, a1], [v1, a0]], hint);
+  const rib = part(parts, 'rib');
+  const pane = part(parts, 'pane');
+  const metal = part(parts, 'metal');
+  // a flat piece seen from either side (a plate, a roof slope, a riser): both faces, `n` being one way it faces
+  const sheet = (m: Batch, pts: V3[], n: V3): void => {
+    for (const k of [1, -1]) m.poly(pts, undefined, { facing: [n[0] * k, n[1] * k, n[2] * k] });
+  };
+
+  // ---- the shed: one strip of shell to each segment of the arch, from the south wall to the gable
+  const glassFrom = (1 - F.glassFraction) / 2;
+  const strip = (m: Batch, k: number, d: number, uv: [V2, V2, V2, V2]): void => {
+    const n = out[k] as P2;
+    const e = (i: number, v: number): V3 => at(sec(i).x - n[0] * d, v, Math.max(0, sec(i).y - n[1] * d));
+    m.quadUV(e(k, 0), e(k + 1, 0), e(k + 1, L), e(k, L), uv, dir(n[0], n[1]));
+  };
+  for (let k = 0; k < steps; k++) {
+    const [a0, a1] = [arc[k] as number, arc[k + 1] as number];
+    const across: [V2, V2, V2, V2] = [[a0, 0], [a1, 0], [a1, L], [a0, L]]; // glass panes and boards: u across the strip, v along it
+    const tm = (sec(k).t + sec(k + 1).t) / 2;
+    if (tm > glassFrom && tm < 1 - glassFrom) strip(glass, k, 0, across);
+    else {
+      strip(slate, k, 0, [[0, a0], [0, a1], [L, a1], [L, a0]]); // slate: u along the shed, v up the slope
+      strip(lining, k, 0.08, across); // painted boarding just under it: the shared lining is seen from inside only (hist-d)
     }
   }
-  // ribs: a steel ribbon 0.5 m wide following the arch, 1.4 m deep, at each rib position
-  const rib = 0.25;
-  const depth = 1.4;
+  // the ribs: two chords and a Warren lattice between them, 1.4 m deep from the roof (hist-d); a bar is a ribbon of width w and
+  // thickness 2t along the shed, with its underside when it is a chord
+  const bar = (v: number, a: P2, b: P2, w: number, t: number, under = false): void => {
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const n: P2 = [(-(b[1] - a[1]) / l) * (w / 2), ((b[0] - a[0]) / l) * (w / 2)];
+    const e = (p: P2, m: number, dv: number): V3 => at(p[0] + m * n[0], v + dv, Math.max(0, p[1] + m * n[1])); // the feet stand on the platform
+    for (const m of [-1, 1]) rib.quadUV(e(a, -1, m * t), e(b, -1, m * t), e(b, 1, m * t), e(a, 1, m * t), undefined, dir(0, 0, m));
+    if (under) rib.quadUV(e(a, -1, -t), e(b, -1, -t), e(b, -1, t), e(a, -1, t), undefined, dir(-n[0], -n[1]));
+  };
+  const top = section.map((_, k) => into(k, 0.18));
+  const bot = section.map((_, k) => into(k, 1.32));
   for (const v of plan.ribs) {
-    for (let k = 0; k < section.length - 1; k++) {
-      const p = section[k] as (typeof section)[number];
-      const q = section[k + 1] as (typeof section)[number];
-      const nu = -(q.y - p.y);
-      const ny = q.x - p.x;
-      const nl = Math.hypot(nu, ny);
-      const inward = (pt: typeof p): [number, number] => [pt.x - (nu / nl) * depth, pt.y - (ny / nl) * depth];
-      const pi = inward(p);
-      const qi = inward(q);
-      steel.quadUV(at(p.x, v - rib, p.y), at(q.x, v - rib, q.y), at(qi[0], v - rib, qi[1]), at(pi[0], v - rib, pi[1]));
-      steel.quadUV(at(p.x, v + rib, p.y), at(q.x, v + rib, q.y), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
-      steel.quadUV(at(pi[0], v - rib, pi[1]), at(qi[0], v - rib, qi[1]), at(qi[0], v + rib, qi[1]), at(pi[0], v + rib, pi[1]));
+    for (let k = 0; k < steps; k++) {
+      const [t0, t1, b0, b1] = [top[k], top[k + 1], bot[k], bot[k + 1]] as P2[];
+      const mid: P2 = [(b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2];
+      bar(v, t0, t1, 0.16, 0.15, true);
+      bar(v, b0, b1, 0.16, 0.15, true);
+      bar(v, t0, mid, 0.1, 0.05);
+      bar(v, mid, t1, 0.1, 0.05);
+      bar(v, t0, b0, 0.1, 0.05);
     }
+    bar(v, top[steps] as P2, bot[steps] as P2, 0.1, 0.05);
+  }
+  // a purlin under the roof at every node of the arch, along the whole shed: the lines that run away down the vault in hist-d
+  for (let k = 0; k <= steps; k++) {
+    const p = into(k, 0.14);
+    rib.box(at(p[0], L / 2, Math.max(0.06, p[1])), [0.14, 0.12, L], { rotY: -plan.heading, skip: ['+y', '+z', '-z'] });
+  }
+  // the end screen on the gable: glazing in a white iron grid from the foot of the transition roof up to the arch; the panes are
+  // about 3.6 m (hist-d2: about 14 across), so the shared glazing is stretched four times along and twice up
+  const gable: P2[] = [];
+  for (let k = 0; k <= steps; k++) {
+    const p = sec(k);
+    const q = sec(Math.min(k + 1, steps));
+    if (p.y >= F.screenFoot) gable.push([p.x, p.y]);
+    if ((p.y < F.screenFoot) !== (q.y < F.screenFoot)) gable.push([p.x + ((F.screenFoot - p.y) / (q.y - p.y)) * (q.x - p.x), F.screenFoot]);
+  }
+  glass.fan(gable.map((p) => at(p[0], L, p[1])), dir(0, 0, 1), (p) => [((p[0] - plan.origin[0]) * c + (p[2] - plan.origin[1]) * s) / 4, p[1] / 2]);
+
+  // ---- the extension [NSC-EXT], wall to wall like the shed: no ribs, no arch
+  const W = plan.width;
+  const y0 = F.screenFoot; // the top of the transition's plate girders, where it meets the screen
+  const lo = y0 - F.girder; // ASSUMED: the saw-tooth's low edge is level with the girders' underside
+  const vT = L + F.transition;
+  const [cu, cv] = [W / 12, F.transition / 4]; // the transition: pyramids of glass 6.2 x 5.5 m on a grillage of girders
+  for (let j = 0; j <= 4; j++) sheet(rib, [at(0, L + j * cv, lo), at(W, L + j * cv, lo), at(W, L + j * cv, y0), at(0, L + j * cv, y0)], dir(0, 0, 1));
+  for (let i = 0; i <= 12; i++) sheet(rib, [at(i * cu, L, lo), at(i * cu, vT, lo), at(i * cu, vT, y0), at(i * cu, L, y0)], dir(1, 0));
+  for (let i = 0; i < 12; i++) {
+    for (let j = 0; j < 4; j++) {
+      const apex = at((i + 0.5) * cu, L + (j + 0.5) * cv, y0 + F.pyramid);
+      const base = [at(i * cu, L + j * cv, y0), at((i + 1) * cu, L + j * cv, y0), at((i + 1) * cu, L + (j + 1) * cv, y0), at(i * cu, L + (j + 1) * cv, y0)];
+      base.forEach((p, n) => glass.tri(p, base[(n + 1) % 4] as V3, apex, [[0, 0], [cu, 0], [cu / 2, cv]], UP));
+    }
+  }
+  // the main roof: 14 teeth, each climbing a truss depth to the north, where a dark glazed riser drops back; a fascia closes each side
+  const tooth = plan.bay / F.teeth;
+  for (let i = 0; i < F.bays * F.teeth; i++) {
+    const [v0, v1, hi] = [vT + i * tooth, vT + (i + 1) * tooth, lo + F.truss];
+    sheet(metal, [at(0, v0, lo), at(W, v0, lo), at(W, v1, hi), at(0, v1, hi)], UP);
+    sheet(pane, [at(0, v1, hi), at(W, v1, hi), at(W, v1, lo), at(0, v1, lo)], dir(0, 0, 1));
+    for (const u of [0, W]) sheet(rib, [at(u, v0, lo - 1.2), at(u, v1, lo - 1.2), at(u, v1, hi), at(u, v0, lo)], dir(1, 0));
   }
   // the south wall: the shed's end, brick, behind the hotel; u across the wall from its west foot, v up
   const brick = part(parts, 'brickRed');
