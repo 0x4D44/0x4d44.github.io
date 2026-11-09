@@ -21,7 +21,7 @@ rel = 'web/src/concourse.ts'
 original = (work / rel).read_text()
 mutations = [
     ('opaque shell restored', '  return batch.build();\n}\n\n// Roof materials,', "  return new THREE.LatheGeometry([[2, 0], [2.1, 19.5]].map(([r,y])=>new THREE.Vector2(r,y)),40);\n}\n\n// Roof materials,"),
-    ('one parent removes branching connectivity', '.slice(0, 2)) edges.push', '.slice(0, 1)) edges.push'),
+    ('one parent removes branching connectivity', '.slice(0, Math.round((2 * below.length) / count))) edges.push', '.slice(0, 1)) edges.push'),
     ('drawn members missing', 'return edges.map(([a, b], e) => {\n', 'return edges.map(([a, b], e) => {\n    if (e % 2) return { pts: [[0, 40, 0], [0, 41, 0]] as V3[], tans: [[0, 1, 0], [0, 1, 0]] as V3[] };\n'),
     ('members outside the trumpet', 'r = columnRadius(t, mouth);', 'r = columnRadius(t, mouth) + 1;'),
     ('head one metre below the roof', 'const p: V3 = last ? [...head[i]!] :', 'const p: V3 = last ? [head[i]![0], head[i]![1] - 1, head[i]![2]] :'),

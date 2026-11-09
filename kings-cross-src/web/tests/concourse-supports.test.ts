@@ -106,8 +106,9 @@ test('tree columns: the trunk forks 2.4 m under the lowest of four branches, whi
 test('struts: two white struts to each pane of the wall, in a V from its rail to the roof edge, and the supports are these and the trees', () => {
   const wall = group.getObjectByName('concourse-wall') as THREE.Mesh, p = wall.geometry.getAttribute('position'), panes = p.count / 4;
   const drawn = sites.filter(s => standsAt(s, [hotel.pts])).length, sides = baseOf(sites[1]!).length / 2;
-  assert.equal(supports.geometry.index!.count / 3, 2 * sides * (5 * drawn + 2 * panes), 'a trunk and four branches to each drawn tree, two struts to each pane');
-  assert.ok(STRUT_DIAMETER <= 0.11, `the struts are thin rods, ${STRUT_DIAMETER} m through (R-c: a light lattice under the brim, not stout bars)`);
+  // a trunk and four branches to each drawn tree are round tubes of `sides` sides, two triangles to a side; a strut is an open V of four sides, its two lower faces: two triangles each, four in all
+  assert.equal(supports.geometry.index!.count / 3, 2 * sides * 5 * drawn + 4 * 2 * panes, 'a trunk and four branches to each drawn tree, two struts to each pane');
+  assert.ok(STRUT_DIAMETER <= 0.07, `the struts are thin rods, ${STRUT_DIAMETER} m through (R-c, round 5: a light zigzag of thin grey struts under the brim, not stout bars)`);
   const struts = new THREE.Raycaster();
   let rails = 0;
   const centre3 = new THREE.Vector3(centre[0], 0, centre[1]);
@@ -124,7 +125,8 @@ test('struts: two white struts to each pane of the wall, in a V from its rail to
       const mid = rail.clone().add(end).multiplyScalar(0.5), axis = end.clone().sub(rail).normalize();
       const side = new THREE.Vector3().crossVectors(axis, new THREE.Vector3(0, 1, 0)).normalize();
       for (const sign of [1, -1]) {
-        struts.set(mid.clone().addScaledVector(side, sign * 0.6), side.clone().multiplyScalar(-sign));
+        // a strut is an open V, the faces under its axis: a ray 1 cm under the axis meets one a hair inside the full radius
+        struts.set(mid.clone().addScaledVector(side, sign * 0.6).setY(mid.y - 0.01), side.clone().multiplyScalar(-sign));
         const hit = struts.intersectObject(supports, false)[0];
         assert.ok(hit && Math.abs(hit.distance - (0.6 - STRUT_DIAMETER / 2)) < 0.02, `pane ${i / 4}: a strut ${STRUT_DIAMETER} m through between the rail and the roof edge (hit at ${hit?.distance.toFixed(3)})`);
       }

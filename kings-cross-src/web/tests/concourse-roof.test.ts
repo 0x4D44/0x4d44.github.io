@@ -3,6 +3,7 @@ import test from 'node:test';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { concourseCanopy, pointInPolygon, shedLayout, stationBuilding } from '../../core/station.ts';
+import * as THREE from 'three';
 import { buildConcourse, concourseGrid, edgesOf, keepTriangles } from '../src/concourse.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -32,19 +33,23 @@ const tubes = roofEdges.filter(edge => !ribKeys.has(`${edge.a}:${edge.b}`));
 const group = buildConcourse(canopy, footprint, shed, exclusions);
 const mesh = group.getObjectByName('concourse-lattice') as import('three').Mesh;
 const position = mesh.geometry.getAttribute('position');
-const SIDES = 8;
+// A drawn tube is open: the four-sided section's two lower faces, a keel of 8 vertices, since the faces that look up at the cladding are never seen (round 5, C1: the weave is
+// twice as fine at the same triangle cost). A rib is a box without its two ends and its top, three faces of four vertices.
+const OPEN = 8, RIB = 12;
+type V3 = [number, number, number];
 
-function frame(a: number, b: number) {
-  const p = grid.nodes[a]!, q = grid.nodes[b]!;
-  const py = p.height ?? 0, qy = q.height ?? 0;
-  const dx = q.x - p.x, dy = qy - py, dz = q.z - p.z, length = Math.hypot(dx, dy, dz);
+/** The section frame of a member from p to q: its centre, the unit vector across it in the vertical plane (u) and the horizontal one across it (v). */
+function frameOf(p: V3, q: V3) {
+  const dx = q[0] - p[0], dy = q[1] - p[1], dz = q[2] - p[2], length = Math.hypot(dx, dy, dz);
   const rz = Math.asin(dy / length), ry = Math.atan2(-dz, dx);
   return {
-    centre: [(p.x + q.x) / 2, (py + qy) / 2, (p.z + q.z) / 2],
+    centre: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2],
     u: [-Math.sin(rz) * Math.cos(ry), Math.cos(rz), Math.sin(rz) * Math.sin(ry)],
     v: [Math.sin(ry), 0, Math.cos(ry)],
   } as const;
 }
+const at = (i: number): V3 => { const n = grid.nodes[i]!; return [n.x, n.height ?? 0, n.z]; };
+const frame = (a: number, b: number) => frameOf(at(a), at(b));
 
 function extent(start: number, count: number, direction: readonly number[], c: readonly number[]): number {
   const values: number[] = [];
@@ -58,8 +63,9 @@ function extent(start: number, count: number, direction: readonly number[], c: r
 test('roof member classification and drawn sections match the published member families', () => {
   assert.ok(roofEdges.every(({a,b}) => [a,b].every(i => !pointInPolygon([grid.nodes[i]!.x, grid.nodes[i]!.z], hotel.pts))), 'classified member endpoints must clear the hotel domain');
   assert.ok(ribs.length > 0 && tubes.length > ribs.length, `expected radial box ribs and more round diagonals, got ${ribs.length}/${tubes.length}`);
-  assert.equal(position.count, ribs.length * 16 + tubes.length * SIDES * 4,
-    'one box per selected radial rib followed by one polygonal tube per other triangulation edge');
+  const cells = keepTriangles(grid, footprint, shed), medial = cells.length * 3;
+  assert.equal(position.count, ribs.length * RIB + tubes.length * OPEN + medial * OPEN,
+    'one open box per selected radial rib, then one open tube per other triangulation edge, then the three slim tubes of each cell\'s medial triangle');
   assert.equal(group.children.filter(child => child.name === 'concourse-lattice').length, 1, 'one batched roof-member mesh');
   assert.equal(mesh.geometry.groups.length, 0, 'single material range on the batched roof mesh');
 
@@ -68,24 +74,38 @@ test('roof member classification and drawn sections match the published member f
     const f = frame(edge.a, edge.b), a = grid.nodes[edge.a]!, b = grid.nodes[edge.b]!;
     const fraction = Math.max(0, Math.min(1, ((a.r + b.r) / 2 - 5.4) / (canopy.radius - 5.4)));
     const depth = 0.45 - 0.20 * fraction; // ASSUMED linear interpolation within Arup's 250–450 mm range.
-    const w = extent(offset, 16, f.u, f.centre), d = extent(offset, 16, f.v, f.centre);
+    const w = extent(offset, RIB, f.u, f.centre), d = extent(offset, RIB, f.v, f.centre);
     assert.ok(Math.abs(Math.min(w, d) - 0.15) < 1e-4, `rib width ${w} x ${d} m is not 150 mm`);
     assert.ok(Math.abs(Math.max(w, d) - depth) < 1e-4, `rib ${edge.a}:${edge.b} depth ${w} x ${d} m, expected ${depth} m at r=${(a.r+b.r)/2}`);
-    offset += 16;
+    // three faces of four vertices, the bottom and the two sides: none looks up (along the section's own up), the top and the ends being left out
+    const looks = Array.from({ length: RIB / 4 }, (_, q) => {
+      const P = [0, 1, 2].map(k => new THREE.Vector3(position.getX(offset + 4 * q + k), position.getY(offset + 4 * q + k), position.getZ(offset + 4 * q + k)));
+      return new THREE.Vector3().crossVectors(P[1]!.clone().sub(P[0]!), P[2]!.clone().sub(P[0]!)).normalize().dot(new THREE.Vector3(...f.u));
+    });
+    assert.ok(looks.filter(d => d < -0.9).length === 1 && looks.filter(d => Math.abs(d) < 0.1).length === 2, `a rib is its bottom and its two sides, open at the top (faces look ${looks.map(d => d.toFixed(2))} along its up)`);
+    offset += RIB;
   }
-  for (const edge of tubes) {
-    const f = frame(edge.a, edge.b), a = grid.nodes[edge.a]!, b = grid.nodes[edge.b]!;
-    const fraction = Math.max(0, Math.min(1, ((a.r + b.r) / 2 - 5.4) / (canopy.radius - 5.4)));
-    const diameter = 0.219 - 0.080 * fraction; // ASSUMED linear interpolation within Arup's 139–219 mm range.
+  // a tube's vertices: all on one circle about its axis (its half-diameter out), and none above the axis, the section's top vertex being the one left out with the faces that look up
+  const measure = (f: ReturnType<typeof frameOf>, diameter: number, label: string): void => {
     const radii: number[] = [];
-    for (let i = offset; i < offset + SIDES * 4; i++) {
+    for (let i = offset; i < offset + OPEN; i++) {
       const d = [position.getX(i) - f.centre[0]!, position.getY(i) - f.centre[1]!, position.getZ(i) - f.centre[2]!];
-      radii.push(Math.hypot(d[0]! * f.u[0]! + d[1]! * f.u[1]! + d[2]! * f.u[2]!,
-        d[0]! * f.v[0]! + d[1]! * f.v[1]! + d[2]! * f.v[2]!));
+      radii.push(Math.hypot(d[0]! * f.u[0]! + d[1]! * f.u[1]! + d[2]! * f.u[2]!, d[0]! * f.v[0]! + d[1]! * f.v[1]! + d[2]! * f.v[2]!));
+      assert.ok(d[0]! * f.u[0]! + d[1]! * f.u[1]! + d[2]! * f.u[2]! < 1e-4, `${label}: a tube's vertex stands above its axis: the faces that look up are left out`);
     }
-    assert.ok(Math.max(...radii) - Math.min(...radii) < 1e-4, 'diagrid section is polygonal-round, not rectangular');
-    assert.ok(Math.abs(2 * radii[0]! - diameter) < 1e-4, `tube diameter ${2 * radii[0]!} m, expected ${diameter} m`);
-    offset += SIDES * 4;
+    assert.ok(Math.max(...radii) - Math.min(...radii) < 1e-4, `${label}: the section is polygonal-round, not rectangular`);
+    assert.ok(Math.abs(2 * radii[0]! - diameter) < 1e-4, `${label}: tube diameter ${2 * radii[0]!} m, expected ${diameter} m`);
+    offset += OPEN;
+  };
+  for (const edge of tubes) {
+    const a = grid.nodes[edge.a]!, b = grid.nodes[edge.b]!;
+    const fraction = Math.max(0, Math.min(1, ((a.r + b.r) / 2 - 5.4) / (canopy.radius - 5.4)));
+    measure(frame(edge.a, edge.b), 0.219 - 0.080 * fraction, `tube ${edge.a}:${edge.b}`); // ASSUMED linear interpolation within Arup's 139–219 mm range.
+  }
+  // half way along each cell's sides, a finer net: the medial triangle of every cell, 0.1 m through (round 5, C1: twice the weave at the same cell)
+  for (const t of cells) {
+    const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
+    for (let k = 0; k < 3; k++) measure(frameOf(mid[k]!, mid[(k + 1) % 3]!), 0.1, `medial tube of cell ${t.join(':')}`);
   }
   assert.equal(offset, position.count, 'all drawn member vertices were measured');
 });

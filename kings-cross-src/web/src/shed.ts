@@ -77,7 +77,7 @@ export const VALLEY_HALF = 0.25;
  * (R-a, R-ab, R-b: the funnel stands before a brick block of about 30 m, with dressed windows and tall arched openings, and glazed curtain
  * walls either side, which concourse.ts draws): the bays whose centres lie within it. ASSUMED, scaled off the photographs.
  */
-export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0, centre: 72.85, block: 17 } as const;
+export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0, centre: 72.85, block: 17, windows: 6 } as const;
 
 /** F7: Arup Journal 2/2012 pp24–25 (circulation), p27 fig4 (southern location), p29 (five bays and concrete/Y support):
  * https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf
@@ -109,8 +109,16 @@ export function westernBlock(): [number, number] {
   const near = westernBays().filter(v => Math.abs(v - WESTERN_RANGE.centre) < WESTERN_RANGE.block);
   return [near[0]! - WESTERN_RANGE.bay / 2, near[near.length - 1]! + WESTERN_RANGE.bay / 2];
 }
-/** The bays of the ground floor that carry a tall round-headed opening: those no gateline bay or shop takes (a bay's 1.4 m span clear of their reveals). */
-export const westernArches = (): number[] => westernBays().filter(v => !westernCuts(true).some(([a, b]) => v + 0.7 > a && v - 0.7 < b));
+/** v of the centre of each window bay of the brick centre: about six larger bays (R-a, R-ab), not one to a 3.4 m bay, each over a tall opening. */
+export function westernWindows(): number[] {
+  const [a, b] = westernBlock(), n = WESTERN_RANGE.windows;
+  return Array.from({ length: n }, (_, i) => a + ((i + 0.5) * (b - a)) / n);
+}
+/** The ground floor's tall round-headed openings, by v: one under each window of the brick centre and one in each bay beside it that no gateline bay or shop takes (a bay's 1.4 m span clear of their reveals). */
+export function westernArches(): number[] {
+  const [a, b] = westernBlock();
+  return [...westernBays().filter(v => v < a || v > b), ...westernWindows()].filter(v => !westernCuts(true).some(([lo, hi]) => v + 0.7 > lo && v - 0.7 < hi)).sort((x, y) => x - y);
+}
 /** Split a solid at ground-level door intervals; retain the header, reveals and all other mass. */
 function westernWall(b: Batch, x: number, d: number, a: number, z: number, top: number, cuts: [number, number][]): void {
   const box = (lo: number, hi: number, bottom: number, head: number): void => {
@@ -740,26 +748,32 @@ export function buildWesternRange(): THREE.Group {
   slate.quad([xm, top + roofRise, zS], [xe, top, zS], [xe, top, zN], [xm, top + roofRise, zN], [0, 0], [slant, 0], [slant, lenA], [0, lenA]);
   brick.poly([[x0, top, -v0], [x1, top, -v0], [xm, top + roofRise, -v0]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
   brick.poly([[x1, top, -v1], [x0, top, -v1], [xm, top + roofRise, -v1]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
-  // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay. On the west face the brick centre has two storeys of sash windows,
-  // the first with jambs, a sill and a hood with a shallow pediment in stone (R-ab, R-b); the top storey stays plain.
-  for (const v of westernBays()) {
-    const z = -v;
-    windowQuad(win, [x1 + 0.02, 9.1, z], '+x');
-    if (v < b0 || v > b1) continue;
-    for (const y of [5, 9.1]) windowQuad(win, [x0 - 0.02, y, z], '-x');
-    for (const s of [-1, 1]) stone.box([x0 - 0.06, 6.3, z + s * 0.8], [0.12, 2.6, 0.2]);
-    stone.box([x0 - 0.1, 4.94, z], [0.2, 0.12, 2]);
-    stone.box([x0 - 0.1, 7.7, z], [0.2, 0.2, 2]);
-    west(stone, [-1, -0.5, 0, 0.5, 1].map((k): V3 => [x0 - 0.14, 7.8 + 0.22 * (1 - k * k), z + 0.95 * k]));
-  }
-  // the ground floor's row of tall round-headed openings (R-b): a dark pane in a stone ring that rises from the floor, a key at the crown
-  const head = (z: number, r: number, d: number): V3[] => [[x0 - d, 0.05, z + r], ...Array.from({ length: 9 }, (_, k): V3 => [x0 - d, spring + r * Math.sin((k * Math.PI) / 8), z + r * Math.cos((k * Math.PI) / 8)]), [x0 - d, 0.05, z - r]];
-  for (const v of arches) {
-    const inner = head(-v, half, 0.12), outer = head(-v, half + ring, 0.12);
-    west(panes, head(-v, half, pane));
+  // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay.
+  for (const v of westernBays()) windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');
+  // a round-headed opening (R-b, R-ab): a dark pane in a stone ring that rises from `y0` to the springing `y1`, a key at the crown
+  const head = (z: number, r: number, d: number, y0: number, y1: number): V3[] => [[x0 - d, y0, z + r], ...Array.from({ length: 9 }, (_, k): V3 => [x0 - d, y1 + r * Math.sin((k * Math.PI) / 8), z + r * Math.cos((k * Math.PI) / 8)]), [x0 - d, y0, z - r]];
+  const arch = (v: number, y0: number, y1: number): void => {
+    const inner = head(-v, half, 0.12, y0, y1), outer = head(-v, half + ring, 0.12, y0, y1);
+    west(panes, head(-v, half, pane, y0, y1));
     for (let k = 0; k + 1 < inner.length; k++) west(stone, [inner[k]!, inner[k + 1]!, outer[k + 1]!, outer[k]!]);
-    stone.box([x0 - 0.1, spring + half + 0.15, -v], [0.2, 0.3, 0.3]);
-  }
+    stone.box([x0 - 0.1, y1 + half + 0.15, -v], [0.2, 0.3, 0.3]);
+  };
+  // The brick centre's six windows on the concourse face (R-a, R-ab, R-b): over each a tall opening below, in the top storey one large sash with a stone sill, in the first floor
+  // dressed stone: a round-headed window, its sash bars in grey, in each end bay and in the four between a three-light window, a jamb and a mullion between the lights, a sill and a hood with a shallow pediment.
+  westernWindows().forEach((v, i) => {
+    const z = -v;
+    windowQuad(win, [x0 - 0.02, 8.95, z], '-x', 1.9, 2.9);
+    if (i % 5 === 0) {
+      arch(v, 4.75, 6.75);
+      return;
+    }
+    for (const k of [-1.2, 0, 1.2]) windowQuad(win, [x0 - 0.02, 4.75, z + k], '-x', 1, 2.8);
+    for (const k of [-1.8, -0.6, 0.6, 1.8]) stone.box([x0 - 0.06, 6.15, z + k], [0.12, 2.8, 0.2]);
+    for (const [y, h] of [[4.69, 0.12], [7.65, 0.2]] as const) stone.box([x0 - 0.1, y, z], [0.2, h, 4]);
+    west(stone, [-1, -0.5, 0, 0.5, 1].map((k): V3 => [x0 - 0.14, 7.75 + 0.28 * (1 - k * k), z + 2 * k]));
+  });
+  // the ground floor's row of tall round-headed openings: the brick centre's six, and every bay beside it that the gateline and the shops leave
+  for (const v of arches) arch(v, 0.05, spring);
   for (const v of WESTERN_SHOPS) {
     // Recessed frontage only: the shop retains its backing mass, unlike the through-gateline.
     brick.box([(x0 + 0.65 + x1) / 2, (GROUND_Y + WESTERN_HEAD) / 2, -v], [depth - 0.65, WESTERN_HEAD - GROUND_Y, 2.8]);

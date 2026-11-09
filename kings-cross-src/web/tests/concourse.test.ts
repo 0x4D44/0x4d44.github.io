@@ -201,7 +201,8 @@ test('the roof meshes the weather reads are triangle soups, and the standing fac
   const along = new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading));
   const reach = (vertices: V3[]): number => { const s = vertices.map(([x, y, z]) => new THREE.Vector3(x, y, z).dot(along)); return Math.max(...s) - Math.min(...s); };
   const reached = reach(panelVertices(group)), soffitOnly = reach(positions(panels));
-  assert.ok(reached - soffitOnly > 3, `the soffit alone reaches ${soffitOnly.toFixed(1)} m: only the edge band, on the outline, brings the roof to ${reached.toFixed(1)} m`);
+  // the fascia stands on the outline itself and the soffit's cells stop a little short of it (the glazed band, round 5: 1.5 m wide, sits between): the edge band reaches further
+  assert.ok(reached - soffitOnly > 0.1, `the soffit alone reaches ${soffitOnly.toFixed(2)} m: only the edge band, on the outline, brings the roof to ${reached.toFixed(2)} m`);
 });
 
 // JMP built photo shows brickwork through the crossing white stalk members.

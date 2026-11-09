@@ -21,9 +21,9 @@ export const SOFFIT_LIFT = 0.12;
 export const SKIN_LIFT = 0.45;
 /** A cladding diamond's bulge at its middle (ASSUMED, R-c2: two tones to a diamond). */
 export const FACET_RISE = 0.2;
-/** Glazed zones (published 15 %; ASSUMED widths tuned to it): within 11 m of the funnel axis (R-a), within 4.6 m of the outline (R-c2). */
-export const FUNNEL_GLAZING_RADIUS = 11;
-export const RIM_GLAZING_WIDTH = 4.6;
+/** Glazed zones (published 15 %; ASSUMED widths tuned to it): within 22 m of the funnel axis (R-a; round 5, C2: the bright field round the funnel is the widest in the roof), within 1.5 m of the outline (R-c2). */
+export const FUNNEL_GLAZING_RADIUS = 22;
+export const RIM_GLAZING_WIDTH = 1.5;
 /** Published glazed share and the band the rubric accepts. */
 export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
 /**
@@ -39,13 +39,13 @@ export const ROOFLIGHT_AZIMUTHS = [-26, -14, -2, 10] as const;
 export const ROOFLIGHT_HALF = { along: 4, across: 4.7 } as const;
 export const ROOFLIGHT_FRAME = 0.08;
 export const ROOFLIGHT_KERB = [0.7, 0.95] as const;
-/** Roof edge fascia (R-c: a thin bright band): rim height up to the skin, on the outline, so the 138 m extent is the cells'. */
-export const FASCIA_BOTTOM = 0;
+/** Roof edge fascia (R-c: a deep grey brim): from this far below the wall top (round 5, C6: a deep edge, not a line) up to the skin, on the outline, so the 138 m extent is the cells'. */
+export const FASCIA_BOTTOM = -0.4;
 /** Wall framing, metres (ASSUMED, R-c): a post at each rim node, two bars along each edge, a transom at this share of the height. */
 export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;
-/** The wall stands this far inside the outline under the glass brim, on white V struts (R-c, R-c2; ASSUMED). */
+/** The wall stands this far inside the outline under the glass brim, on thin grey V struts of this diameter (R-c, R-c2; round 5, C6: a light zigzag, not stout bars; ASSUMED). */
 export const WALL_INSET = 3;
-export const STRUT_DIAMETER = 0.1;
+export const STRUT_DIAMETER = 0.06;
 /** u of the roof's cut plane (0.3 m in front of the Range's face), the top of its cornice and of its first string course, the curtain wall's sill. */
 export const WEST_WALL = -WESTERN_RANGE.depth - 0.3;
 export const CORNICE_TOP = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
@@ -148,16 +148,16 @@ function roofRibs(edges: Map<string, Edge>, nodes: Diagrid['nodes'], centre: Pt)
 }
 
 /** A round member between two points, each end overrunning 0.05 m for the joint (ASSUMED, as the box members' 0.1 m). */
-function roundMember(batch: Batch, p: V3, q: V3, diameter: number): void {
+function roundMember(batch: Batch, p: V3, q: V3, diameter: number, open?: boolean): void {
   const t = unit([q[0] - p[0], q[1] - p[1], q[2] - p[2]]), r = diameter / 2, end = (e: V3, k: number): V3 => [e[0] + k * t[0], e[1] + k * t[1], e[2] + k * t[2]];
-  tube(batch, [{ p: end(p, -0.05), t, r }, { p: end(q, 0.05), t, r }]);
+  tube(batch, [{ p: end(p, -0.05), t, r }, { p: end(q, 0.05), t, r }], undefined, open);
 }
 
 /**
  * The rings of a round tube through {point, tangent, radius}. The first ring's frame comes from its tangent alone, so tubes starting at one ring share it,
  * and each next ring's is the last one's turned just enough to square with the new tangent, so a tube never twists however its tangent bends.
  */
-export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, number]): { n: V3; p: V3 }[][] {
+export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, number], sides = TUBE_SIDES): { n: V3; p: V3 }[][] {
   let f: V3 = [0, 1, 0];
   const crossings = rings.filter(c => c.x);
   return rings.map(({ p, t, r }) => {
@@ -165,8 +165,8 @@ export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, numb
     const u: V3 = l < 1e-6 ? [1, 0, 0] : [w[0] / l, w[1] / l, w[2] / l];
     f = u;
     const v: V3 = [t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2], t[0] * u[1] - t[1] * u[0]];
-    return Array.from({ length: TUBE_SIDES }, (_, j) => {
-      const c = Math.cos((j * 2 * Math.PI) / TUBE_SIDES), s = Math.sin((j * 2 * Math.PI) / TUBE_SIDES), n: V3 = [c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2]];
+    return Array.from({ length: sides }, (_, j) => {
+      const c = Math.cos((j * 2 * Math.PI) / sides), s = Math.sin((j * 2 * Math.PI) / sides), n: V3 = [c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2]];
       const q: V3 = [p[0] + r * n[0], p[1] + r * n[1], p[2] + r * n[2]];
       // Where two tubes cross, each is lit as if it ran into the other: its normal leans toward the other tube's own normal at that point (out from
       // the other's axis), fully within a radius of that axis and not at all beyond two, so the two agree along the crease and the crossing is welded, not torn.
@@ -183,10 +183,11 @@ export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, numb
 /** A ring of a round tube: its point, its tangent, its radius, and where another tube crosses it the tangent of that one. */
 export interface Ring { p: V3; t: V3; r: number; x?: V3 }
 
-function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number]): void {
-  const verts = tubeRings(rings, clamp);
-  for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < TUBE_SIDES; j++) {
-    const a = verts[k]![j]!, b = verts[k]![(j + 1) % TUBE_SIDES]!, c = verts[k + 1]![(j + 1) % TUBE_SIDES]!, d = verts[k + 1]![j]!;
+function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number], open = false): void {
+  const sides = open ? 4 : TUBE_SIDES, verts = tubeRings(rings, clamp, sides);
+  for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < sides; j++) {
+    if (open && Math.cos(((j + 0.5) * 2 * Math.PI) / sides) > -0.1) continue; // an open tube leaves out the faces that look up at the cladding, which no one sees
+    const a = verts[k]![j]!, b = verts[k]![(j + 1) % sides]!, c = verts[k + 1]![(j + 1) % sides]!, d = verts[k + 1]![j]!;
     batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n] });
   }
 }
@@ -311,7 +312,7 @@ export const FUNNEL_HEAD_RING = 2;
 /** The Range side stands straight against the brick (conc-ab), clear of the cornice. */
 export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;
 /** Rings of legs under the head: height share, leg count (the head has the roof ring's). */
-const COLUMN_RINGS = [[0, 12], [0.06, 12], [0.17, 12], [0.29, 12], [0.41, 12], [0.53, 12], [0.65, 18], [0.75, 18], [0.84, 18], [0.92, 24]] as const;
+const COLUMN_RINGS = [[0, 12], [0.064, 12], [0.128, 12], [0.195, 12], [0.267, 12], [0.343, 12], [0.426, 12], [0.518, 12], [0.62, 12], [0.74, 12], [0.84, 12], [0.92, 12]] as const;
 /** Radius of a ring at share t of the head's height: feet 1.85 m out, splayed 0.25 m, a cone, then a bell. */
 export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (1 - Math.sqrt(1 - t * t)) + (t ? 0 : 0.25);
 /** Diameter of a leg at this height, metres: 0.36 at the floor, 0.22 under the roof (ASSUMED, conc-ab). */
@@ -328,13 +329,13 @@ export function columnMembers(head: V3[]): { nodes: V3[]; edges: [number, number
   rings.forEach(([t, count], k) => {
     const here: typeof below = [], last = k === rings.length - 1;
     for (let i = 0; i < count; i++) {
-      const angle = turn + ((i + ((rings.length - 1 - k) % 2) * 0.5) * 2 * Math.PI) / count, r = columnRadius(t, mouth);
+      const angle = turn + ((i + ((rings.length - 1 - k) % 2 ? 0.25 : -0.25)) * 2 * Math.PI) / count, r = columnRadius(t, mouth);
       const p: V3 = last ? [...head[i]!] : [r * Math.cos(angle), t * top, r * Math.sin(angle)];
       here.push({ index: nodes.length, angle: last ? Math.atan2(p[2], p[0]) : angle });
       p[0] = Math.min(p[0], FUNNEL_REACH);
       nodes.push(p);
       const apart = (a: number): number => { const d = Math.abs(a - here[i]!.angle) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
-      for (const a of [...below].sort((a, b) => apart(a.angle) - apart(b.angle) || a.index - b.index).slice(0, 2)) edges.push([a.index, nodes.length - 1]);
+      for (const a of [...below].sort((a, b) => apart(a.angle) - apart(b.angle) || a.index - b.index).slice(0, Math.round((2 * below.length) / count))) edges.push([a.index, nodes.length - 1]);
     }
     below = here;
   });
@@ -351,6 +352,7 @@ export function funnelHead(grid: Diagrid, centre: Pt, shed: ShedLayout): V3[] {
 export const COLUMN_SEGMENTS = 3;
 const sum = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const unit = (a: V3): V3 => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+const dotv = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 /**
  * Each leg a Hermite curve (conc-ab: long, no collars) sharing end tangents with the leg it continues into (`next`): no kink; upright at the floor,
@@ -359,7 +361,7 @@ const unit = (a: V3): V3 => { const l = Math.hypot(...a) || 1; return [a[0] / l,
 export function columnLegs(head: V3[], roof: V3[][]): { pts: V3[]; tans: V3[]; next?: number; across?: V3 }[] {
   const { nodes, edges } = columnMembers(head);
   const dirs = edges.map(([a, b]) => unit([nodes[b]![0] - nodes[a]![0], nodes[b]![1] - nodes[a]![1], nodes[b]![2] - nodes[a]![2]]));
-  const dot = (i: number, j: number): number => dirs[i]![0] * dirs[j]![0] + dirs[i]![1] * dirs[j]![1] + dirs[i]![2] * dirs[j]![2];
+  const dot = (i: number, j: number): number => dotv(dirs[i]!, dirs[j]!);
   const ends = edges.map((_, e): [V3, V3] => [dirs[e]!, dirs[e]!]); // tangent at an edge's lower and upper node
   const onward: number[] = [], across: V3[] = []; // the leg a leg goes on into; the tangent of the other leg that crosses it where it ends
   const first = nodes.length - head.length; // the head's nodes are the last ones
@@ -374,12 +376,8 @@ export function columnLegs(head: V3[], roof: V3[][]): { pts: V3[]; tans: V3[]; n
     }
     through.forEach((i, k) => { across[i] = ends[through[1 - k] ?? i]![1]; });
     if (!ins.length) for (const o of outs) ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));
-    else if (!outs.length && p[0] < FUNNEL_REACH && roof[n - first]) {
-      // each leg lands along the roof member nearest its own heading; two legs share one only where the node sends out a single member
-      const links = roof[n - first]!, pairs = ins.flatMap(i => links.map((l, j) => [i, j, dirs[i]![0] * l[0] + dirs[i]![1] * l[1] + dirs[i]![2] * l[2]] as const)).sort((x, y) => y[2] - x[2]);
-      const landed = new Set<number>(), taken = new Set<number>();
-      for (const shared of [false, true]) for (const [i, j] of pairs) if (!landed.has(i) && (shared || !taken.has(j))) { ends[i]![1] = links[j]!; landed.add(i); taken.add(j); }
-    }
+    // the leg into a head node (one to each) lands along the roof member nearest its own heading
+    else if (!outs.length && p[0] < FUNNEL_REACH && roof[n - first]) for (const i of ins) ends[i]![1] = roof[n - first]!.reduce((a, l) => (dotv(l, dirs[i]!) > dotv(a, dirs[i]!) ? l : a));
   });
   return edges.map(([a, b], e) => {
     const P = nodes[a]!, Q = nodes[b]!, L = Math.hypot(Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]), [t0, t1] = ends[e]!;
@@ -395,8 +393,7 @@ export function columnLegs(head: V3[], roof: V3[][]): { pts: V3[]; tans: V3[]; n
 
 /**
  * The funnel as the tubes it is made of. Legs that go straight on into one another are one tube, so a crossing leaves no seam and no ring is cut
- * across a leg. A tube that starts above the floor forks off the legs it grows from: it starts on their axis at a part of its width (`FORK_START`),
- * hidden inside them, and reaches its full width a third of its way on, so it leaves them as a branch and not as a needle.
+ * across a leg. Every tube stands on the floor and runs up into the head: 24 of them from the 12 feet, each crossing the others in single members.
  */
 export function columnStrands(head: V3[], roof: V3[][]): Ring[][] {
   const legs = columnLegs(head, roof), top = head.reduce((s, p) => s + p[1], 0) / head.length, goesOn = new Set(legs.map(l => l.next));
@@ -404,12 +401,9 @@ export function columnStrands(head: V3[], roof: V3[][]): Ring[][] {
     if (goesOn.has(e)) return [];
     const rings: Ring[] = [];
     for (let l: (typeof legs)[number] | undefined = leg; l; l = legs[l.next ?? -1]) for (let k = l === leg ? 0 : 1; k < l.pts.length; k++) rings.push({ p: l.pts[k]!, t: l.tans[k]!, r: columnTubeDiameter(l.pts[k]![1], top) / 2, x: k === l.pts.length - 1 ? l.across : undefined });
-    if (leg.pts[0]![1] > 0) rings[0]!.r *= FORK_START;
     return [rings];
   });
 }
-/** The share of its width a leg has where it forks off the legs it grows from. */
-export const FORK_START = 0.7;
 
 /**
  * The members the roof sends outward from each node of the funnel's head (ribs and tubes alike), as unit vectors in the funnel's frame
@@ -450,19 +444,11 @@ function canvasTexture(width: number, height: number, draw: (g: CanvasRenderingC
 }
 
 /** One cladding diamond in UVs 0..1 (its corners in order round it): bright in the middle, falling to 0.62 of the light at its edges (R-c). Null in Node. */
-const pillowTexture = (): THREE.CanvasTexture | null => canvasTexture(64, 64, g => {
-  const image = g.createImageData(64, 64);
-  for (let y = 0; y < 64; y++) {
-    for (let x = 0; x < 64; x++) {
-      const t = clamp01(Math.min(x + 0.5, y + 0.5, 63.5 - x, 63.5 - y) / 11.52);
-      const light = 0.62 + 0.38 * t * t * (3 - 2 * t); // linear light; the texture holds sRGB
-      const shade = Math.round(255 * Math.pow(light, 1 / 2.2));
-      const k = (y * 64 + x) * 4;
-      image.data[k] = image.data[k + 1] = image.data[k + 2] = shade;
-      image.data[k + 3] = 255;
-    }
+const pillowTexture = (): THREE.CanvasTexture | null => canvasTexture(64, 64, (_, fill) => {
+  for (let i = 0; i < 13; i++) { // a square a pixel in from the last, lighter each time
+    const t = clamp01((i + 0.5) / 11.52), shade = Math.round(255 * Math.pow(0.62 + 0.38 * t * t * (3 - 2 * t), 1 / 2.2)); // linear light; the texture holds sRGB
+    fill(`rgb(${shade},${shade},${shade})`, i, i, 64 - 2 * i, 64 - 2 * i);
   }
-  g.putImageData(image, 0, 0);
 });
 
 /** The wall's texture (R-c; ASSUMED heights): glass to 3 m, a navy band to 3.9 m, reflective glass above. Null in Node. */
@@ -555,8 +541,8 @@ const BLOCK = westernBlock();
 
 /** Metres; positions are [u, metres north of the funnel axis] in the shed frame. */
 export const FITOUT = {
-  /** four machines back to back round a red core: a square block, the red cowls reaching 0.89 m from its axis */
-  cluster: { size: 1.78, height: 2.2 },
+  /** a block of four machines, two back to back and two side by side, under one red slab (R-ab): this deep (u), this wide (v) and this tall */
+  cluster: { depth: 1.3, width: 2, height: 2.2 },
   clusters: [[-23.5, -12], [-23.5, 12]] as readonly (readonly [number, number])[],
   totem: { width: 1.1, depth: 0.22, height: 3 },
   /** the third keeps out of the gateline view's sight lines to the gate mouths (tested) */
@@ -577,9 +563,9 @@ export const FITOUT = {
 /** The lettering the signs carry. Generic words only. */
 export const FITOUT_TEXT = {
   totem: ['Underground', 'Platforms 0 to 8', 'Toilets', 'Left luggage', 'Information'],
-  board: ['Leeds Platform 4 On time', 'York Platform 6 On time', 'Cambridge Platform 2 Delayed', 'Peterborough Platform 3 On time', 'Newcastle Platform 5 On time'],
-  /** over each of the five gate bays, which all lead to the platforms; then over each of the two shops */
-  plates: ['Platforms 0 to 8  →', 'Cafe', 'News and gifts'],
+  board: ['Leeds Platform 4 On time', 'York Platform 6 On time', 'Cambridge Platform 2 Delayed'],
+  /** over each of the five gate bays, which all lead to the platforms; then over each of the two shops; then across the head of three of the openings' lit interiors (R-ab, R-b) */
+  plates: ['Platforms 0 to 8  →', 'Cafe', 'News and gifts', 'Family Waiting', 'Tickets', 'Toilets'],
 } as const;
 
 /** v of the centre of each opening that carries a plate: the five gate bays, then the two shops. */
@@ -589,14 +575,16 @@ export function plateCentres(): number[] {
 }
 
 /** The sign atlas: one canvas, a region [x, y, w, h] for each lettered face, in its aspect. Null in Node. */
-const ATLAS = {
+export const ATLAS = {
   width: 2048, height: 768,
-  totem: [0, 0, 192, 448], board: [0, 448, 2048, 292], shop: [192, 0, 208, 250],
-  /** a 67 px row per plate, the five bays sharing the first: 582 px for a bay's 5.2 m by 0.6 m, 291 for a shop's 2.6 m */
-  plates: [[400, 0, 582, 67], [400, 67, 291, 67], [400, 134, 291, 67]] as readonly (readonly [number, number, number, number])[],
+  totem: [0, 0, 192, 448], board: [0, 448, 2048, 292],
+  /** an opening's lit interior in each of five uses (a shop, a waiting room, a ticket office, glazed doors, a shutter), 200 x 247 px for the 2 m by 3 m of an opening */
+  uses: Array.from({ length: 5 }, (_, i) => [192 + i * 208, 201, 200, 247] as const),
+  /** a 67 px row per plate, the five bays sharing the first: 582 px for a bay's 5.2 m by 0.6 m, 291 for a shop's 2.6 m; then a 44 px plate across the head of each of three interiors */
+  plates: [[400, 0, 582, 67], [400, 67, 291, 67], [400, 134, 291, 67], [400, 201, 200, 44], [608, 201, 200, 44], [816, 201, 200, 44]] as readonly (readonly [number, number, number, number])[],
 } as const;
 const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, ATLAS.height, (g, fill) => {
-  const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board, [sx, sy, sw, sh] = ATLAS.shop;
+  const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board;
   g.strokeStyle = '#ffffff';
   g.lineWidth = 2;
   g.textBaseline = 'middle';
@@ -609,10 +597,7 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
     g.strokeRect(tx + 10, y - 12, 24, 24);
     g.fillText(line, tx + 44, y, tw - 50);
   });
-  const screen = g.createLinearGradient(0, ty + 270, 0, ty + th - 14);
-  screen.addColorStop(0, '#c9c4ff');
-  screen.addColorStop(1, '#6f86e8');
-  fill(screen, tx + 12, ty + 270, tw - 24, th - 284);
+  fill('#9aa6f2', tx + 12, ty + 270, tw - 24, th - 284);
   // board: a bank of near-black panels in a grey frame, each a pale header and rows of amber lettering (R-a, R-e)
   const { panels } = FITOUT.board, pw = bw / panels;
   fill('#3a3f46', bx, by, bw, bh);
@@ -624,24 +609,25 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
       g.fillText(FITOUT_TEXT.board[(p + row) % FITOUT_TEXT.board.length]!, bx + p * pw + 10, by + 18 + row * 24, pw - 20);
     }
   }
+  // the lit interiors (R-ab, R-b): a tone, a darker lower band, and a shop's goods or a shutter's slats (generic); the doors and the waiting room keep the tone and a navy plate
+  ATLAS.uses.forEach(([ux, uy, uw, uh], i) => {
+    const at = (c: string, x: number, y: number, w: number, h: number): void => fill(c, ux + x, uy + y, w, h);
+    at(['#f3c987', '#f1dcae', '#dce8f0', '#27324e', '#8c939a'][i]!, 0, 0, uw, uh);
+    at('#0006', 0, uh * 0.72, uw, uh * 0.28);
+    for (let j = 0; j < 18; j++) {
+      const c = j % 6, k = (j / 6) | 0; // a shop's goods: three shelves of six
+      if (!i) at(`hsl(${((c + k * 2) % 6) * 60},60%,45%)`, 12 + c * 31, uh * (0.22 + 0.16 * k) - 16, 22, 16);
+      if (i === 4) at('#59606a', 0, 50 + j * 11, uw, 3);
+    }
+  });
   // plates: navy, white lettering, a pictogram square (R-ab, R-b)
   ATLAS.plates.forEach(([px, py, w, h], i) => {
     fill('#1d2c66', px, py, w, h);
     g.strokeRect(px + 14, py + 14, h - 28, h - 28);
     g.fillStyle = '#ffffff';
-    g.font = `bold ${i ? 28 : 36}px sans-serif`;
+    g.font = `bold ${h / 2}px sans-serif`;
     g.fillText(FITOUT_TEXT.plates[i]!, px + h, py + h / 2 + 1, w - h - 12);
   });
-  // a lit shopfront: warm light, shelves, counter, goods (generic)
-  const light = g.createLinearGradient(0, sy, 0, sy + sh), goods = ['#c4202c', '#2b5fb4', '#e6e0d2', '#3c8a52', '#d9a21b', '#7b4a9a'];
-  light.addColorStop(0, '#fff1d2');
-  light.addColorStop(0.7, '#f3c987');
-  light.addColorStop(1, '#a8743d');
-  fill(light, sx, sy, sw, sh);
-  [0.22, 0.38, 0.54].forEach((shelf, k) => {
-    for (let j = 0; j < 6; j++) fill(goods[(j + k * 2) % goods.length]!, sx + 12 + j * 31, sy + sh * shelf - 16, 22, 16);
-  });
-  fill('#3a2f27', sx, sy + sh * 0.72, sw, sh * 0.28);
 });
 /** The corners (0,0), (1,0), (1,1), (0,1) of a face in the atlas, from a region [x, y, w, h]. */
 const atlasQuad = (r: readonly number[]): V2[] => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, v]): V2 => [(r[0]! + u! * r[2]!) / ATLAS.width, 1 - (r[1]! + (1 - v!) * r[3]!) / ATLAS.height]);
@@ -662,25 +648,21 @@ function fitOutMaterial(): { solid: THREE.Material; signs: THREE.Material } {
 function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
   const solid = new Batch({ colored: true, uv: false }), signs = new Batch({ colored: true });
   const textured = typeof document !== 'undefined';
-  const WHITE: Rgb = [1, 1, 1], RED = rgb(0xc4202c), PAPER = rgb(0xe7e9eb), SCREEN = rgb(0x18222c), KEYPAD = rgb(0x8c9298), NAVY = rgb(0x1b2a5e), PLINTH = rgb(0x3b3f45);
+  const WHITE: Rgb = [1, 1, 1], RED = rgb(0xc4202c), PAPER = rgb(0xe7e9eb), SCREEN = rgb(0x18222c), NAVY = rgb(0x1b2a5e), PLINTH = rgb(0x3b3f45);
   const BOARD = rgb(0x121418), SILVER = rgb(0xbcc1c6), TOP = rgb(0x2c3036), LED = rgb(0x35c06e);
   const L = (u: number, y: number, v: number): V3 => [u, y, -v];
   const part = (u: number, y0: number, v: number, du: number, dy: number, dv: number, color: Rgb): void => solid.box(L(u, y0 + dy / 2, v), [du, dy, dv], { color });
   const { cluster, totem, board, gate } = FITOUT;
   const sign = (region: readonly number[], pts: V3[], normal: V3, plain: Rgb): void => signs.poly(pts, atlasQuad(region), { normal, color: textured ? WHITE : plain });
-  // ticket machines: four white machines round a red core, red cowls, a screen and keypad on each front
+  // ticket machines (R-ab): a block of four, two pairs back to back, white bodies under one red slab, a screen and keypad on each front
   for (const [u, dv] of FITOUT.clusters) {
-    const v = funnelV + dv;
-    part(u, 0, v, 0.6, cluster.height, 0.6, RED);
-    for (const [du, dz] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
-      const body = dz === 0 ? [0.5, 0.56] : [0.56, 0.5], cowl = dz === 0 ? [0.62, 0.64] : [0.64, 0.62], mu = u + du * 0.58, mv = v + dz * 0.58;
-      part(mu, 0, mv, body[0]!, 1.55, body[1]!, PAPER);
-      part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, RED);
+    const v = funnelV + dv, w = cluster.width / 2, slab = 0.4;
+    part(u, cluster.height - slab, v, cluster.depth, slab, cluster.width, RED);
+    for (const du of [-1, 1]) for (const k of [-1, 1]) {
+      const mu = u + du * 0.3, mv = v + (k * w) / 2;
+      part(mu, 0, mv, 0.56, cluster.height - slab, w - 0.1, PAPER);
       // fronts, 1 cm proud of the body
-      const fu = mu + du * 0.255, fv = mv + dz * 0.255, across = (a: number, b: number): [number, number] => (dz === 0 ? [a, b] : [b, a]);
-      const [sx, sz] = across(0.02, 0.46), [kx, kz] = across(0.02, 0.4);
-      part(fu, 1.2, fv, sx, 0.34, sz, SCREEN);
-      part(fu, 0.78, fv, kx, 0.3, kz, KEYPAD);
+      part(mu + du * 0.285, 1.0, mv, 0.02, 0.5, 0.5, SCREEN);
     }
   }
   // wayfinding totems: a dark plinth and body, the lettered faces on both sides in the unlit mesh
@@ -725,10 +707,10 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     const pts = ([[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]] as const).map(([w, y]): V3 => L(face - 0.004, y, w));
     sign(ATLAS.plates[Math.max(0, i - gate.bays + 1)]!, pts, [-1, 0, 0], NAVY);
   });
-  // the lit interiors: each shop's, on the Range's dark pane (shed.ts), and each tall opening's, 2 cm in front of its pane and up to the springing of its arch
-  for (const [v, half, top, u] of [...FITOUT.shops.map(v => [v, shopfront.width / 2, shopfront.top, shopfront.u] as const), ...westernArches().map(v => [v, WESTERN_ARCH.half, WESTERN_ARCH.spring, RANGE_FACE - WESTERN_ARCH.pane - 0.02] as const)]) {
+  // the lit interiors: each shop's, on the Range's dark pane (shed.ts), and each tall opening's, 2 cm in front of its pane and up to the springing of its arch, each of one of five uses
+  for (const [v, half, top, u, use] of [...FITOUT.shops.map(v => [v, shopfront.width / 2, shopfront.top, shopfront.u, 0] as const), ...westernArches().map((v, i) => [v, WESTERN_ARCH.half, WESTERN_ARCH.spring, RANGE_FACE - WESTERN_ARCH.pane - 0.02, Number('2130142431024'[i % 13])] as const)]) {
     const pts = ([[v + half, shopfront.bottom], [v - half, shopfront.bottom], [v - half, top], [v + half, top]] as const).map(([w, y]): V3 => L(u, y, w));
-    sign(ATLAS.shop, pts, [-1, 0, 0], rgb(0xe8c58a));
+    sign(ATLAS.uses[use]!, pts, [-1, 0, 0], rgb(0xe8c58a));
   }
   const group = new THREE.Group();
   group.name = 'concourse-fitout';
@@ -776,8 +758,13 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   for (const rib of [true, false]) for (const { a, b } of edges.values()) {
     if (ribs.has(`${a}:${b}`) !== rib) continue;
     const p = at(a), q = at(b), t = share((d.nodes[a]!.r + d.nodes[b]!.r) / 2), dy = q[1] - p[1], len = Math.hypot(q[0] - p[0], dy, q[2] - p[2]);
-    if (rib) members.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2], [len + 0.1, 0.45 - 0.2 * t, RIB_WIDTH], { rotZ: Math.asin(dy / len), rotY: Math.atan2(p[2] - q[2], q[0] - p[0]), skip: ['+x', '-x'] });
-    else roundMember(members, p, q, 0.219 - 0.08 * t);
+    if (rib) members.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2], [len + 0.1, 0.45 - 0.2 * t, RIB_WIDTH], { rotZ: Math.asin(dy / len), rotY: Math.atan2(p[2] - q[2], q[0] - p[0]), skip: ['+x', '-x', '+y'] });
+    else roundMember(members, p, q, 0.219 - 0.08 * t, true);
+  }
+  // Half way along each cell's sides a finer net: the cell's medial triangle in slimmer tubes, so the weave is twice as fine as the cladding's diamonds (R-ab).
+  for (const t of kept) {
+    const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
+    for (let k = 0; k < 3; k++) roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);
   }
 
   // Between the members: glass, or a soffit under silver cladding, two cells either side of a rib one diamond facet (R-c, R-c2).
@@ -828,7 +815,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   // The rooflights: dark glass in a pale frame that rises to it, laid on the cladding (R-c, R-c2). The pillow texture's middle is full light, its edge dark.
   const surface = (x: number, z: number): number => { const r = Math.hypot(x - cx, z - cz); return concourseHeight(canopy, (canopy.radius * r) / (r + rim(x, z))); }; // the nodes' own height law
   for (const { outer, inner } of rooflights(centre, shed, surface)) {
-    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { facing: UP, color: scaled(CLADDING_TONE, 0.72) });
+    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { normal: UP, color: scaled(CLADDING_TONE, 0.72) });
     cladding.poly(inner, undefined, { facing: UP, color: rgb(0x405468) });
   }
   // The oculus: glass over the funnel's open top (R-a).
@@ -893,7 +880,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     const run = Math.hypot(wt[0] - ws[0], wt[2] - ws[2]), rise = MULLION.transom * (wt[1] - ws[1]), slant = Math.hypot(run, rise);
     const foot: V3 = [(ws[0] + wt[0]) / 2, (MULLION.transom * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];
     mullions.box(foot, [slant, MULLION.bar, MULLION.bar], { rotZ: Math.asin(rise / slant), rotY: Math.atan2(-(wt[2] - ws[2]), wt[0] - ws[0]) });
-    for (const end of [p, q]) roundMember(struts, foot, end, STRUT_DIAMETER);
+    for (const end of [p, q]) roundMember(struts, foot, end, STRUT_DIAMETER, true);
   }
   // The Range cut: glass from the cornice to the roof's skin, so no sky shows between roof and Range (R-a, R-b). Either side of the Range's brick centre it comes down to the first
   // string course, over the ground-floor openings, as a curtain wall (R-a): a pane between white fins on the Range's half-bays. Each edge is cut at the brick centre's ends and at

@@ -24,17 +24,17 @@ skin.updateMatrixWorld(true);
 const { centre: axis, grid: skinGrid } = concourseGrid(canopy, station.pts, layout, [hotel.pts]);
 const SLOPE_FACE = 0.7; // a roof facet's normal.y is 0.89 or more (26 degrees at the rim)
 
-/** A triangle of a mesh; `tone` is the luminance of its (first) vertex colour, linear, NaN in a mesh with none. */
-interface Face { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3; mid: THREE.Vector3; normal: THREE.Vector3; area: number; tone: number }
+/** A triangle of a mesh; `tone` is the luminance of its (first) vertex colour, linear, NaN in a mesh with none; `shade` is the normal the lighting reads at its first vertex. */
+interface Face { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3; mid: THREE.Vector3; normal: THREE.Vector3; shade: THREE.Vector3; area: number; tone: number }
 function faces(name: string): Face[] {
   const mesh = skin.getObjectByName(name) as THREE.Mesh | undefined;
   assert.ok(mesh, `the concourse has no ${name} mesh`);
-  const p = mesh.geometry.getAttribute('position'), idx = mesh.geometry.index!, colour = mesh.geometry.getAttribute('color');
+  const p = mesh.geometry.getAttribute('position'), idx = mesh.geometry.index!, colour = mesh.geometry.getAttribute('color'), lit = mesh.geometry.getAttribute('normal');
   const out: Face[] = [];
   for (let i = 0; i < idx.count; i += 3) {
     const [a, b, c] = [0, 1, 2].map(k => new THREE.Vector3(p.getX(idx.getX(i + k)), p.getY(idx.getX(i + k)), p.getZ(idx.getX(i + k)))) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
     const n = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a)), v = idx.getX(i);
-    out.push({ a, b, c, mid: a.clone().add(b).add(c).divideScalar(3), normal: n.clone().normalize(), area: n.length() / 2,
+    out.push({ a, b, c, mid: a.clone().add(b).add(c).divideScalar(3), normal: n.clone().normalize(), shade: new THREE.Vector3(lit.getX(v), lit.getY(v), lit.getZ(v)), area: n.length() / 2,
       tone: colour ? 0.2126 * colour.getX(v) + 0.7152 * colour.getY(v) + 0.0722 * colour.getZ(v) : NaN });
   }
   return out;
@@ -74,6 +74,8 @@ const roofGlass = (): Face[] => { const glass = faces('concourse-glass'), crown 
 // The roof's layers, and the height of the roof over a point of the floor.
 const roofLayers = skin.children.filter(c => ['concourse-closure', 'concourse-glass', 'concourse-panels', 'concourse-lattice', 'concourse-cladding'].includes(c.name));
 const roofAt = (u: number, v: number): number => { const w = shedToWorld(layout, u, v); return new THREE.Raycaster(new THREE.Vector3(w[0], 0, w[1]), new THREE.Vector3(0, 1, 0)).intersectObjects(roofLayers, true)[0]?.point.y ?? 0; };
+/** the roof stays over a sight line at height `y` the whole way from `from` to `to` (in u, at v), so that nothing of it dips under the line before the Range */
+const roofOver = (from: number, to: number, v: number, y: number): boolean => Array.from({ length: 9 }, (_, i) => from + ((to - from) * i) / 8).every(u => roofAt(u, v) >= y + 0.3);
 const CORNICE = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
 const SILL = WESTERN_RANGE.storey + 0.15; // the first string course's top
 const eastward = ((): THREE.Vector3 => { const east = shedToWorld(layout, 1, 0), origin = shedToWorld(layout, 0, 0); return new THREE.Vector3(east[0] - origin[0], 0, east[1] - origin[1]).normalize(); })();
@@ -90,9 +92,22 @@ test('roof skin: 15 percent of the roof is glazed, round the funnel and in a ban
   for (const g of glazed) for (const s of soffit) assert.ok(g.mid.distanceTo(s.mid) > 0.5, 'a soffit lies under a glazed cell');
   // the glazing is not one lump: the zone round the funnel exists and the band at the outline runs all round
   assert.ok(glazed.filter(f => toAxis(f.mid) < 9).length >= 12, 'glazing close round the funnel (within 9 m of its axis)');
-  const band = glazed.filter(f => toAxis(f.mid) >= 14 && toRim(f.mid.x, f.mid.z) < 6);
-  const compass = new Set(band.map(f => Math.floor(((Math.atan2(f.mid.z - axis[1], f.mid.x - axis[0]) + Math.PI) / (2 * Math.PI)) * 12)));
-  assert.ok(compass.size >= 8, `the glazed band covers ${compass.size} of 12 compass sectors`);
+  const sector = (f: Face): number => Math.floor(((Math.atan2(f.mid.z - axis[1], f.mid.x - axis[0]) + Math.PI) / (2 * Math.PI)) * 12), outside = (f: Face): boolean => toAxis(f.mid) >= FUNNEL_GLAZING_RADIUS;
+  const banded = new Set(glazed.filter(f => outside(f) && toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH).map(sector));
+  const rimmed = new Set([...glazed, ...soffit].filter(f => outside(f) && toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH + 2).map(sector)); // where the roof meets its outline
+  assert.ok(banded.size >= 7, `the glazed band covers ${banded.size} of 12 compass sectors`);
+  assert.deepEqual([...banded].sort((x, y) => x - y), [...rimmed].sort((x, y) => x - y), 'the band runs along the outline wherever the roof meets it');
+});
+
+// R-a (round 5, C2): the glazing round the funnel is the brightest, widest field in the roof: it reaches well out from the funnel on every side the roof stands on, the Range side
+// (the cut) apart, which is the way the dome falls away from the Range along it.
+test('roof skin: the glazed field round the funnel reaches 18 m out to the west and along the Range both ways', () => {
+  const glazed = roofGlass().filter(f => toAxis(f.mid) < FUNNEL_GLAZING_RADIUS + 1);
+  const toward = (f: Face): { w: number; n: number } => { const s = worldToShed(layout, [f.mid.x, f.mid.z]), c = worldToShed(layout, axis); return { w: c.u - s.u, n: s.v - c.v }; };
+  const reach = (pick: (d: { w: number; n: number }) => number): number => Math.max(0, ...glazed.map(f => toAxis(f.mid) * (Math.abs(pick(toward(f))) > 0.8 * toAxis(f.mid) ? 1 : 0) * (pick(toward(f)) > 0 ? 1 : 0)));
+  assert.ok(reach(d => d.w) >= 18, `the glazing reaches ${reach(d => d.w).toFixed(1)} m west of the funnel`);
+  assert.ok(reach(d => d.n) >= 18, `the glazing reaches ${reach(d => d.n).toFixed(1)} m north of the funnel along the Range`);
+  assert.ok(reach(d => -d.n) >= 18, `the glazing reaches ${reach(d => -d.n).toFixed(1)} m south of the funnel along the Range`);
 });
 
 test('roof skin: the oculus glazes the funnel crown, and one set of panes is bright from below, dark from above', () => {
@@ -225,6 +240,8 @@ test('rooflights: four clean rhombi of dark glass in a thin silver frame that ri
     for (const f of glass) assert.ok(f.tone < 0.1, `the glass is dark (${f.tone.toFixed(3)})`);
     for (const f of frame) assert.ok(f.tone > 0.3 && f.tone < 0.6, `the frame is a rim of darker silver than the dome, not a white band (${f.tone.toFixed(3)})`); // R-c, R-c2: a thin edge round the glass
     for (const f of light.faces) assert.ok(f.normal.y > 0.5, 'a rooflight face looks up');
+    // round 5 (C6): the frame is lit as the cladding round it is, its normal straight up: lit by its own slope, the strip that faces the sun was a hard white bar across the glass
+    for (const f of frame) assert.ok(f.shade.y > 0.999, `a frame strip is lit with its normal ${f.shade.y.toFixed(2)} up, not by the slope it rises on`);
     azimuths.add(Math.round(azimuth / 10));
   }
   assert.equal(azimuths.size, ROOFLIGHT_AZIMUTHS.length, 'four distinct rooflights in the row');
@@ -284,7 +301,7 @@ test('roof edge: a vertical fascia stands on the outline, over the glazed wall, 
     const out = (f.normal.x * (f.mid.x - axis[0]) + f.normal.z * (f.mid.z - axis[1])) / Math.hypot(f.normal.x, f.normal.z);
     assert.ok(out > 0 && Math.abs(f.normal.y) < 1e-3, 'a fascia face is vertical and looks out of the roof');
     for (const v of [f.a, f.b, f.c]) {
-      assert.ok(v.y > canopy.rim - EPS && v.y < canopy.rim + SKIN_LIFT + EPS, `fascia corner at ${v.y} m`);
+      assert.ok(v.y > canopy.rim + FASCIA_BOTTOM - EPS && v.y < canopy.rim + SKIN_LIFT + EPS, `fascia corner at ${v.y} m`);
       assert.ok(toRim(v.x, v.z) < 0.1, `fascia corner ${toRim(v.x, v.z).toFixed(2)} m inside the roof outline`);
     }
   }
@@ -292,6 +309,8 @@ test('roof edge: a vertical fascia stands on the outline, over the glazed wall, 
   const heights = fascia.flatMap(f => [f.a.y, f.b.y, f.c.y]);
   close(Math.max(...heights), canopy.rim + SKIN_LIFT, EPS);
   close(Math.min(...heights), canopy.rim + FASCIA_BOTTOM, EPS);
+  assert.ok(Math.max(...heights) - Math.min(...heights) >= 0.8, `the fascia is ${(Math.max(...heights) - Math.min(...heights)).toFixed(2)} m deep: R-c's brim has a deep edge, not a line (round 5, C6)`);
+  assert.ok(Math.min(...heights) >= canopy.rim - 0.5 - EPS, `the fascia hangs ${(canopy.rim - Math.min(...heights)).toFixed(2)} m below the wall top: a brim over the glass, not a curtain down it`);
   // the fascia stands on the cell outline, so the roof's overall extent is that of its cells (the evidence pack pins it at 137.2787 m)
   const along = new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading));
   const s = [...faces('concourse-panels'), ...standing()].flatMap(f => [f.a, f.b, f.c]).map(v => v.dot(along));
@@ -372,7 +391,7 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
   // standing in the concourse, looking east at the Range's top from the floor: every sight line between the cornice and the roof meets glass at u = -12.3
   let sampled = 0;
   for (let v = WESTERN_RANGE.v0 + 6; v < WESTERN_RANGE.v1 - 6; v += 4.3) for (const y of [CORNICE + 0.6, CORNICE + 3, CORNICE + 5.5]) {
-    if (roofAt(-26, v) < y + 0.3 || roofAt(-13, v) < y + 0.3) continue; // the roof is lower than this sight line here, so it would meet the roof first
+    if (!roofOver(-26, -13, v, y)) continue; // the roof dips under this sight line on its way to the Range, so it would meet the roof first
     const w = shedToWorld(layout, -26, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward).intersectObjects(roofLayers, true)[0];
     assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v.toFixed(1)}, ${y.toFixed(1)} m high, meets ${hit?.object.name ?? 'the open sky'}`);
     assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, "the glass stands 0.3 m in front of the Range's face");

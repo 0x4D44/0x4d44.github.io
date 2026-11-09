@@ -52,7 +52,7 @@ test('adjoining public frontage is recessed and glazed with upper sash floors an
   const sash = g.getObjectByName('range-windows') as THREE.Mesh;
   const p = sash.geometry.getAttribute('position');
   const ys = Array.from({ length: p.count }, (_, i) => p.getY(i));
-  assert.equal(Math.min(...ys).toFixed(1), '5.0');
+  assert.ok(Math.abs(Math.min(...ys) - 4.75) < 1e-4, `the lowest sash stands on the first floor, 4.75 m up: ${Math.min(...ys)}`); // round 5: the first-floor lights start at 4.75 m (they were 5.0)
   assert.ok(Math.max(...ys) > 11, 'top-storey sash retained');
   assert.ok(hits(g, 130, 1.2).some(h => h.object.name === 'range-brick'), 'unsupported northern removal');
   const brick = g.getObjectByName('range-brick') as THREE.Mesh;
@@ -61,11 +61,12 @@ test('adjoining public frontage is recessed and glazed with upper sash floors an
 });
 
 // The concourse face (R-a, R-ab, R-b). Independent of shed.ts: the Range's 39 bays are 3.4 m apart from v 10.2; the gateline and the two shops take the first fifteen
-// ground-floor bays' openings, so a tall opening stands in bays 15 to 38 (v 61.2 to 139.4); the brick centre is bays 14 to 23 (v 56.1 to 90.1, 0.25 m off the funnel's axis).
+// ground-floor bays' openings; the brick centre is bays 14 to 23 (v 56.1 to 90.1, 0.25 m off the funnel's axis) and carries SIX windows, a sixth of it each (round 5, C4: fewer,
+// larger windows than one to a bay), each over a tall opening; north of it a tall opening stands in each of bays 24 to 38 (v 91.8 to 139.4).
 const FACE = -WESTERN_RANGE.depth - 0.01;
 const range = (): THREE.Group => { const g = buildWesternRange(); g.updateMatrixWorld(true); return g; };
-const arches = Array.from({ length: 24 }, (_, i) => 61.2 + 3.4 * i);
-const block = Array.from({ length: 10 }, (_, i) => 57.8 + 3.4 * i);
+const windows = Array.from({ length: 6 }, (_, i) => 56.1 + (34 * (i + 0.5)) / 6);
+const arches = [...windows, ...Array.from({ length: 15 }, (_, i) => 91.8 + 3.4 * i)];
 /** What a sight line going east at v and y meets first, from 1 m in front of the Range's face. */
 const first = (g: THREE.Group, v: number, y: number): { name: string; x: number } | undefined => { const h = hits(g, v, y, -13, 3)[0]; return h && { name: h.object.name, x: h.point.x }; };
 const meets = (g: THREE.Group, v: number, y: number, name: string, x: number): void => {
@@ -73,8 +74,14 @@ const meets = (g: THREE.Group, v: number, y: number, name: string, x: number): v
   assert.ok(h?.name === name && Math.abs(h.x - x) < 1e-3, `at v ${v.toFixed(2)}, ${y} m: ${h ? `${h.name} at x ${h.x.toFixed(3)}` : 'nothing'}, not ${name} at ${x.toFixed(3)}`);
 };
 
-test('ground floor: a tall round-headed opening in every bay the gateline and the shops leave, a dark pane under a stone ring and key, the plinth broken at each', () => {
+test('ground floor: a tall round-headed opening under each window and in every bay north of the brick centre, a dark pane under a stone ring and key, the plinth broken at each', () => {
   const g = range();
+  assert.equal(arches.length, 21);
+  for (let i = 0; i + 1 < windows.length; i++) { // between two windows the pier is wide, brick over the plinth: no opening where there is no window
+    const mid = (windows[i]! + windows[i + 1]!) / 2;
+    meets(g, mid, 0.5, 'range-stone', FACE - 0.25);
+    for (const y of [1.5, 2.5, 3.5]) meets(g, mid, y, 'range-brick', FACE);
+  }
   for (const v of arches) {
     // dark glass 4 cm in front of the brick, from the floor to a round head 4 m up
     for (const [dv, y] of [[0, 0.1], [0, 2], [0.95, 0.5], [-0.95, 2.9], [0.5, 3.7], [-0.5, 3.7], [0, 3.9]] as const) meets(g, v + dv, y, 'range-public-glazing', FACE - 0.04);
@@ -88,22 +95,38 @@ test('ground floor: a tall round-headed opening in every bay the gateline and th
   }
 });
 
-test('brick centre: the first floor\'s windows are dressed in stone, a jamb each side, a sill and a hood with a shallow pediment; the top storey is plain, and so is all beside the centre above its openings', () => {
-  const stone = range().getObjectByName('range-stone') as THREE.Mesh, p = stone.geometry.getAttribute('position');
+test('brick centre: six first-floor windows dressed in stone, a round-headed light at each end and a three-light window with mullions, a sill and a hood with a shallow pediment between; the top storey is plain, and so is all beside the centre above its openings', () => {
+  const g = range(), stone = g.getObjectByName('range-stone') as THREE.Mesh, p = stone.geometry.getAttribute('position');
   const all = Array.from({ length: p.count }, (_, i) => new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i))), near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-4; // single precision
-  for (const v of block) {
-    const mine = all.filter(q => Math.abs(-q.z - v) < 1.01), offsets = (u: number, y: number): number[] => [...new Set(mine.filter(q => near(q.x, u) && near(q.y, y)).map(q => +(-q.z - v).toFixed(3)))].sort((a, b) => a - b);
-    const at = `bay v ${v.toFixed(1)}`;
-    assert.deepEqual(offsets(FACE - 0.12, 5), [-0.9, -0.7, 0.7, 0.9], `${at}: a jamb 0.2 m wide each side of the window, 0.12 m proud`);
-    const jamb = mine.filter(q => near(q.x, FACE - 0.12) && q.y > 4.5 && Math.abs(-q.z - v) > 0.69 && Math.abs(-q.z - v) < 0.91);
-    assert.ok(near(Math.min(...jamb.map(q => q.y)), 5) && near(Math.max(...jamb.map(q => q.y)), 7.6), `${at}: the jambs run the window's height, 5.0 to 7.6 m`);
-    assert.deepEqual(offsets(FACE - 0.2, 4.88), [-1, 1], `${at}: a sill 2 m wide and 0.2 m proud under the window`);
-    assert.deepEqual(offsets(FACE - 0.2, 7.8), [-1, 1], `${at}: a hood 2 m wide over the head`);
-    const pediment = mine.filter(q => near(q.x, FACE - 0.14)), rise = pediment.map(q => q.y - 7.8);
-    assert.equal(pediment.length, 5, `${at}: a pediment of five corners`);
-    assert.ok(near(Math.max(...rise), 0.22) && rise.filter(r => near(r, 0)).length === 2, `${at}: it rises 0.22 m from a 1.9 m base`);
+  windows.forEach((v, i) => {
+    const mine = all.filter(q => Math.abs(-q.z - v) < 2.5 && q.y > 4.5), offsets = (u: number, y: number): number[] => [...new Set(mine.filter(q => near(q.x, u) && near(q.y, y)).map(q => +(-q.z - v).toFixed(3)))].sort((a, b) => a - b);
+    const at = `window ${i} at v ${v.toFixed(1)}`;
+    if (i === 0 || i === windows.length - 1) {
+      // an arched light: dark glass 4 cm in front of the brick from the sill 4.75 m up to a round head 7.75 m up, a stone ring round it, a key at the crown, brick over that
+      for (const [dv, y] of [[0, 4.9], [0, 6], [0.95, 5], [-0.95, 6.5], [0.5, 7.4], [-0.5, 7.4], [0, 7.7]] as const) meets(g, v + dv, y, 'range-public-glazing', FACE - 0.04);
+      for (const [dv, y] of [[1.1, 5.5], [-1.1, 6], [0.5, 7.7], [-0.5, 7.7]] as const) meets(g, v + dv, y, 'range-stone', FACE - 0.12);
+      meets(g, v, 7.9, 'range-stone', FACE - 0.2);
+      for (const dv of [0, 0.5]) meets(g, v + dv, 8.6, 'range-brick', FACE);
+      assert.equal(mine.filter(q => near(q.x, FACE - 0.14)).length, 0, `${at}: no pediment on an arched light`);
+    } else {
+      // three lights, a mullion 0.2 m wide between them and at each side, a sill 4 m wide under, a hood 4 m wide over and a pediment on the hood
+      for (const k of [-1.2, 0, 1.2]) meets(g, v + k, 6, 'range-windows', FACE - 0.02);
+      for (const k of [-1.8, -0.6, 0.6, 1.8]) meets(g, v + k, 6, 'range-stone', FACE - 0.12);
+      assert.deepEqual(offsets(FACE - 0.12, 4.75), [-1.9, -1.7, -0.7, -0.5, 0.5, 0.7, 1.7, 1.9], `${at}: four mullions 0.2 m wide, 0.12 m proud`);
+      const mullion = mine.filter(q => near(q.x, FACE - 0.12) && Math.abs(-q.z - v) < 2);
+      assert.ok(near(Math.min(...mullion.map(q => q.y)), 4.75) && near(Math.max(...mullion.map(q => q.y)), 7.55), `${at}: the mullions run the lights' height, 4.75 to 7.55 m`);
+      assert.deepEqual(offsets(FACE - 0.2, 4.63), [-2, 2], `${at}: a sill 4 m wide and 0.2 m proud under the lights`);
+      assert.deepEqual(offsets(FACE - 0.2, 7.75), [-2, 2], `${at}: a hood 4 m wide over the head`);
+      const pediment = mine.filter(q => near(q.x, FACE - 0.14)), rise = pediment.map(q => q.y - 7.75);
+      assert.equal(pediment.length, 5, `${at}: a pediment of five corners`);
+      assert.ok(near(Math.max(...rise), 0.28) && rise.filter(r => near(r, 0)).length === 2, `${at}: it rises 0.28 m from a 4 m base`);
+      assert.deepEqual(offsets(FACE - 0.14, 7.75), [-2, 2], `${at}: it stands on the hood`);
+    }
     assert.equal(mine.filter(q => q.y > 8.4 && q.y < 12.2).length, 0, `${at}: nothing is dressed over the second course, up to the cornice`);
-  }
+    // the top storey: one large sash 1.9 m wide, plain brick either side
+    for (const dv of [-0.9, 0, 0.9]) meets(g, v + dv, 10, 'range-windows', FACE - 0.02);
+    for (const dv of [-1.1, 1.1]) meets(g, v + dv, 10, 'range-brick', FACE);
+  });
   const beside = all.filter(q => -q.z < 55.6 || -q.z > 90.6);
   assert.ok(beside.every(q => q.y < 4.4), `the stone beside the brick centre stands to ${Math.max(...beside.map(q => q.y)).toFixed(2)} m: the openings' keys (4.3 m) are the highest`);
 });

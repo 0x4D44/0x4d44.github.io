@@ -30,6 +30,13 @@ mutations = [
     ('rib depth range narrowed', '0.45 - 0.2 * t', '0.45 - 0.1 * t'),
     ('round tube polygon coarsened', 'const TUBE_SIDES = 8', 'const TUBE_SIDES = 4'),
     ('tube diameter interpolation flattened', '0.219 - 0.08 * t', '0.219 - 0.04 * t'),
+    ('no medial net, the weave only as fine as the cladding', 'for (const t of kept) {\n    const mid = [0, 1, 2].map(', 'for (const t of [] as typeof kept) {\n    const mid = [0, 1, 2].map('),
+    ('medial tubes stout', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.2, true);'),
+    ('medial tubes closed, a face looking up into the cladding', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1);'),
+    ('medial tubes along the cell sides, not half way', 'return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });\n    for (let k = 0; k < 3; k++) roundMember(members, mid', 'return [(p[0] * 3 + q[0]) / 4, (p[1] * 3 + q[1]) / 4, (p[2] * 3 + q[2]) / 4]; });\n    for (let k = 0; k < 3; k++) roundMember(members, mid'),
+    ('diagrid tubes closed, as in round 4', 'else roundMember(members, p, q, 0.219 - 0.08 * t, true);', 'else roundMember(members, p, q, 0.219 - 0.08 * t);'),
+    ('ribs closed on top', "skip: ['+x', '-x', '+y'] });", "skip: ['+x', '-x'] });"),
+    ('ribs open at the bottom, closed on top', "skip: ['+x', '-x', '+y'] });", "skip: ['+x', '-x', '-y'] });"),
     ('roof members split over two meshes', "add(members, mat.member, 'concourse-lattice');", "add(members, mat.member, 'concourse-lattice');\n  add(members, mat.member, 'concourse-lattice');"),
 ]
 
