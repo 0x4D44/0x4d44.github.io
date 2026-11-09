@@ -1001,6 +1001,22 @@ export const SKIRT_HEM = {
 } as const;
 
 /**
+ * The access hatch on an equipment box (the Electrostar's underfloor, gn387_03_387123_cambridge.jpg: most of the grey boxes carry a lighter rectangular panel set into the face
+ * with a dark seam round it, a small tag beside it). A box carries one where it is this long and its face this tall: a rectangle no longer than `maxLength` (a long box's hatch does
+ * not grow with it), centred on the box, kept `margin` inside its raked ends, from `below` over the foot to `above` under the floor; a dark frame `rim` wide round a face a shade
+ * lighter than the box. ASSUMED sizes, read off the photograph by eye; they stand the same `SKIRT_SLIT_LIFT` off the face as the louvres do.
+ */
+export const SKIRT_HATCH = {
+  minLength: 0.8,
+  minHeight: 0.3,
+  maxLength: 0.9,
+  margin: 0.15,
+  below: 0.09,
+  above: 0.1,
+  rim: 0.02,
+} as const;
+
+/**
  * Half-width of a skirt's outer face at height `y`: it hangs from just inside the body's lowest corner (`edge` from the centre line, the floor
  * `floor` above the rail head) and leans in as it goes down.
  */
@@ -1054,6 +1070,8 @@ export interface SkirtPanel {
   vent: THREE.Color | null;
   /** the colour of the foot's notches (`SKIRT_HEM`), or null/absent for a panel without them */
   hem?: THREE.Color | null;
+  /** the colours of an access hatch (`SKIRT_HATCH`) set into the face: the dark frame round it and the lighter face in it; null/absent for a panel without one */
+  hatch?: { rim: THREE.Color; face: THREE.Color } | null;
   /** how far the foot is cut back at each end (default SKIRT_RAKE; never more than a quarter of the panel's length) */
   rake?: number;
 }
@@ -1107,6 +1125,20 @@ export function skirtPanel(soup: Soup, o: SkirtPanel): void {
       const zc = (f0 + f1) / 2 + (k - (count - 1) / 2) * H.notchPitch;
       strip(bottom, bottom + H.notchHeight, zc - H.notchWidth / 2, zc + H.notchWidth / 2, o.hem);
     }
+  }
+  if (o.hatch && z1 - z0 >= SKIRT_HATCH.minLength && floor - bottom >= SKIRT_HATCH.minHeight) {
+    const H = SKIRT_HATCH;
+    // one hatch, centred on the box between its raked ends, as long as the box allows up to `maxLength`: a dark frame (four strips) round a lighter face
+    const length = Math.min(H.maxLength, z1 - z0 - 2 * (rake + H.margin));
+    const za = (z0 + z1) / 2 - length / 2;
+    const zb = za + length;
+    const ya = bottom + H.below;
+    const yb = floor - H.above;
+    strip(ya, ya + H.rim, za, zb, o.hatch.rim);
+    strip(yb - H.rim, yb, za, zb, o.hatch.rim);
+    strip(ya + H.rim, yb - H.rim, za, za + H.rim, o.hatch.rim);
+    strip(ya + H.rim, yb - H.rim, zb - H.rim, zb, o.hatch.rim);
+    strip(ya + H.rim, yb - H.rim, za + H.rim, zb - H.rim, o.hatch.face);
   }
 }
 

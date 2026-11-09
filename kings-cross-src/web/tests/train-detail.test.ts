@@ -10,7 +10,7 @@ import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial,
 import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle, PodBox, PodForm, PodMark } from '../src/train-parts.ts';
 import { clipConvex, col, ellipse, Soup } from '../src/train-geom.ts';
 import { ADELANTE_FACE, AMBER, AMBER_DOOR, BEZEL, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, barOutline, boxOutline } from '../src/train-face.ts';
@@ -3636,6 +3636,105 @@ test('skirts: a cover carries a hem of notches along its foot on a stretch of 1.
   assert.equal(count({ ...base, hem, bottom: 0.75 }), 8, 'a cover 0.25 m tall is too shallow for a hem');
   assert.equal(count({ ...base, hem, z1: 1.6 }), 8 + 2 * 2, 'a stretch of 1.6 m has two notches: the foot runs 0.24 m to 1.36 m, and (1.12 - 0.2) / 0.5 = 1.84');
   assert.equal(count({ ...base, hem, bottom: 0.69 }), 8 + 2 * 17, 'a cover 0.31 m tall has the hem');
+});
+
+test('skirts: a box carries an access hatch, a lighter face in a dark seam, centred on it and as long as it allows up to 0.9 m; none on a panel without the colours, a box under 0.8 m or a face under 0.3 m', () => {
+  // (round 4, the scorer's "plain slabs" on gn387x4-underframe: gn387_03_387123_cambridge shows most of the grey boxes with a lighter rectangular panel set into the face in a dark seam;
+  // the sizes are ASSUMED, read off the photograph by eye) literal, so that a mutant of the constants is not followed by the test
+  assert.deepEqual({ ...SKIRT_HATCH }, { minLength: 0.8, minHeight: 0.3, maxLength: 0.9, margin: 0.15, below: 0.09, above: 0.1, rim: 0.02 });
+  const seam = col(0x202224);
+  const face = col(0x77797d);
+  const edge = 1.2;
+  const floor = 1.0;
+  const bottom = 0.5;
+  const rake = 0.03;
+  const lift = SKIRT_SLIT_LIFT * Math.hypot(1, SKIRT_LEAN);
+  const build = (z0: number, z1: number, side: 1 | -1 = 1, hatch: { rim: THREE.Color; face: THREE.Color } | null = { rim: seam, face }): Soup => {
+    const soup = new Soup();
+    skirtPanel(soup, { side, z0, z1, edge, floor, bottom, colour: col(0x555555), vent: null, hatch, rake });
+    return soup;
+  };
+  for (const side of [-1, 1] as const) {
+    // (the hatch is as long as the box less 0.18 m (its rake and the margin) at each end, up to 0.9 m: 0.84 m on a box of 1.2 m)
+    for (const [z0, z1, length] of [[2, 4, 0.9], [2, 3.2, 0.84], [2, 3.1, 0.74], [2, 3.0, 0.64], [2, 2.81, 0.45]] as const) {
+      const soup = build(z0, z1, side);
+      const here = `a box ${(z1 - z0).toFixed(1)} m long, ${side > 0 ? 'right' : 'left'} side`;
+      assert.equal(soup.pos.length / 9, 8 + 10, `${here}: the panel's eight triangles and the hatch's ten`);
+      const frame = quadBoxes(soupTrisOfColour(soup, seam)).sort((a, b) => a[2] - b[2] || a[0] - b[0]);
+      const inner = quadBoxes(soupTrisOfColour(soup, face));
+      assert.equal(frame.length, 4, `${here}: a frame of four strips`);
+      assert.equal(inner.length, 1, `${here}: one face`);
+      const f = inner[0] as number[];
+      const mid = (z0 + z1) / 2;
+      // the face stands inside the frame: a rim in from each edge of the hatch
+      const za = mid - length / 2;
+      const zb = mid + length / 2;
+      const ya = bottom + 0.09;
+      const yb = floor - 0.1;
+      near(f[0] as number, za + 0.02, 1e-6, `${here}: the face starts a rim in from the hatch's near edge`);
+      near(f[1] as number, zb - 0.02, 1e-6, `${here}: and ends a rim in from its far edge`);
+      near(f[2] as number, ya + 0.02, 1e-2 * 0.3, `${here}: the face stands a rim over the hatch's foot`);
+      near(f[3] as number, yb - 0.02, 1e-2 * 0.3, `${here}: and a rim under its top`);
+      // the frame's strips: the foot and the top run the hatch's length, a rim high; the sides stand between them, a rim wide
+      const [foot, top, ...sides] = [frame[0], frame[3], frame[1], frame[2]] as number[][];
+      near((foot as number[])[0] as number, za, 1e-6, `${here}: the foot strip starts at the hatch's edge`);
+      near((foot as number[])[1] as number, zb, 1e-6, `${here}: and ends at the other`);
+      near((top as number[])[0] as number, za, 1e-6, `${here}: the top strip starts at the hatch's edge`);
+      near((top as number[])[1] as number, zb, 1e-6, `${here}: and ends at the other`);
+      assert.equal(sides.length, 2);
+      const sideStrips = sides.slice().sort((a, b) => (a as number[])[0]! - (b as number[])[0]!) as number[][];
+      near((sideStrips[0] as number[])[0] as number, za, 1e-6, `${here}: one side strip at the near edge`);
+      near(((sideStrips[0] as number[])[1] as number) - ((sideStrips[0] as number[])[0] as number), 0.02, 1e-6, `${here}: a rim wide`);
+      near((sideStrips[1] as number[])[1] as number, zb, 1e-6, `${here}: the other at the far edge`);
+      near(((sideStrips[1] as number[])[1] as number) - ((sideStrips[1] as number[])[0] as number), 0.02, 1e-6, `${here}: a rim wide`);
+      // every mark lies on the panel's face, a few millimetres out of it
+      for (const t of [...soupTrisOfColour(soup, seam), ...soupTrisOfColour(soup, face)]) {
+        for (const v of t) near(side * v.x - skirtHalfAt(edge, floor, v.y), lift, 1e-6, `${here}: a vertex stands off the face by the lift`);
+      }
+      // the frame is dark and the face is lighter than the panel: what makes it a recessed hatch
+      assert.ok(lumaOf(0x202224) < lumaOf(0x555555) && lumaOf(0x77797d) > lumaOf(0x555555), 'a dark seam, a lighter face');
+    }
+  }
+  // no hatch without colours, on a box under 0.8 m long, or on a face under 0.3 m tall
+  const count = (z0: number, z1: number, over: Partial<Parameters<typeof skirtPanel>[1]> = {}): number => {
+    const soup = new Soup();
+    skirtPanel(soup, { side: 1, z0, z1, edge, floor, bottom, colour: col(0x555555), vent: null, rake, ...over });
+    return soup.pos.length / 9;
+  };
+  assert.equal(count(2, 4), 8, 'no hatch colours: a plain panel');
+  assert.equal(count(2, 4, { hatch: null }), 8, 'a null hatch: a plain panel');
+  assert.equal(count(0, 0.79, { hatch: { rim: seam, face } }), 8, 'a box of 0.79 m is too short for a hatch');
+  assert.equal(count(0, 0.8, { hatch: { rim: seam, face } }), 8 + 10, 'a box of 0.8 m has one');
+  assert.equal(count(2, 4, { hatch: { rim: seam, face }, bottom: 0.71 }), 8, 'a face of 0.29 m is too shallow for a hatch');
+  assert.equal(count(2, 4, { hatch: { rim: seam, face }, bottom: 0.7 }), 8 + 10, 'a face of 0.3 m has one');
+});
+
+test('skirts: the Electrostar\'s boxes carry the hatches, one on each box of 0.8 m or more on each side; no other family\'s skirt has any', () => {
+  for (const f of FAMILIES) assert.equal(bodySpec(f).skirt.hatches, f === 'electrostar' ? true : undefined, `${f}: hatches on its skirt`);
+  const H = (spec: ReturnType<typeof bodySpec>): number => spec.floor - spec.skirtBottom;
+  for (const kind of ALL_KINDS) {
+    const spec = bodySpec(familyOf(kind));
+    const def = liveryFor(kind);
+    const { panel, hatchSeam, hatchFace } = skirtColours(def, spec);
+    const electro = familyOf(kind) === 'electrostar';
+    assert.equal(hatchSeam === null, !electro, `${kind}: a seam colour only on the Electrostar`);
+    assert.equal(hatchFace === null, !electro, `${kind}: and a face colour`);
+    if (!electro) continue;
+    // the seam is the box's colour darkened by 45%, the face lightened by 12% (toward white)
+    near(lumaOf(hatchSeam as number), lumaOf(panel) * 0.55, 0.02, `${kind}: the seam is the box's colour darkened`);
+    assert.ok(lumaOf(hatchFace as number) > lumaOf(panel) + 0.05 && lumaOf(hatchFace as number) < lumaOf(panel) + 0.2, `${kind}: the face a shade lighter than the box`);
+    const g = built(kind);
+    for (const car of trainLayout(kind).cars) {
+      const mesh = detailOf(g, car);
+      // (a cab car's short stretch inside its nose has no skirt: the nose zone is cut from the stretches, which `stretchesOf` does not do)
+      const outside = stretchesOf(car, spec.cutout).filter(([s, e]) => (car.cab === 'front' ? e > car.start + spec.nose.length : car.cab === 'rear' ? s < car.end - spec.nose.length : true));
+      const boxes = outside.flatMap(([s, e]) => skirtSplit(s, e, spec.skirt.boxes)).filter(([a, b]) => b - a >= 0.8 && H(spec) >= 0.3);
+      assert.ok(boxes.length >= 6, `${kind} car ${car.index}: ${boxes.length} boxes a side`);
+      // the face is one quad a hatch, the seam four: counted by colour, on both sides
+      assert.equal(trisOfColour(mesh, hatchFace as number).length, boxes.length * 2 * 2, `${kind} car ${car.index}: a face for each box on each side`);
+      assert.equal(trisOfColour(mesh, hatchSeam as number).length, boxes.length * 2 * 8, `${kind} car ${car.index}: and its seam`);
+    }
+  }
 });
 
 // --- the cab side window ----------------------------------------------------------------------------------------

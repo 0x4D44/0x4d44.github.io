@@ -411,10 +411,10 @@ interface BodySpec {
   underframe: number;
   /**
    * the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), whether they carry louvres, whether they are a
-   * row of separate boxes with gaps between them (the Electrostar's underfloor) rather than one panel to a stretch, and whether they show a notched hem (the
-   * Azuma's: `SKIRT_HEM`)
+   * row of separate boxes with gaps between them (the Electrostar's underfloor) rather than one panel to a stretch, whether they show a notched hem (the
+   * Azuma's: `SKIRT_HEM`), and whether each box carries an access hatch set into its face (the Electrostar's: `SKIRT_HATCH`)
    */
-  skirt: { light: number; vents: boolean; boxes?: SkirtBoxes; hem?: boolean };
+  skirt: { light: number; vents: boolean; boxes?: SkirtBoxes; hem?: boolean; hatches?: boolean };
   /** what a pantograph car's roof carries beside the pantograph (insulators, a cable run): the style, and the height over the roof's crown nothing of it passes (null: none) */
   roofKit: { style: RoofKitStyle; height: number } | null;
   /** the cab front's lamps, frame, coupler and warning panel */
@@ -627,8 +627,9 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
     pantographTop: 0.14,
     underframe: 1.0,
     // the underfloor is a row of grey equipment boxes with dark gaps between them, hung under the sill (gn387_03_387123_cambridge, gn387_01_387114_ely: boxes of a metre to a
-    // metre and a half, mid-grey in the sun against the dark underframe); sizes and the pale of the grey ASSUMED from those photographs
-    skirt: { light: 0.55, vents: false, boxes: { length: 1.3, gap: 0.16, rake: 0.03 } },
+    // metre and a half, mid-grey in the sun against the dark underframe), each with an access hatch set into its face (a lighter panel in a dark seam, gn387_03_387123_cambridge);
+    // sizes and the pale of the grey ASSUMED from those photographs
+    skirt: { light: 0.55, vents: false, boxes: { length: 1.3, gap: 0.16, rake: 0.03 }, hatches: true },
     // A flat face (ELECTROSTAR_FACE, from gn387_01_387114_ely and gn387_02_387121_ely): two screens either side of a full-height door in a dark frame, amber panels under
     // them with a lamp housing (two round lenses side by side) in each lower outer corner, a pale bumper with the Dellner coupler in a recess. The amber also wraps the roof's
     // front as a brow, back to 0.3 m, over the top nine tenths of the face's width (the cheeks beside the screens are the body's own white); the loft's colours carry that,
@@ -1699,7 +1700,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const edge = (sec.half[0] as [number, number])[0];
   for (const [s0, s1] of free) {
     for (const [z0, z1] of skirtSplit(s0, s1, spec.skirt.boxes)) {
-      for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), hem: skirts.hem === null ? null : col(skirts.hem), rake: spec.skirt.boxes?.rake });
+      for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), hem: skirts.hem === null ? null : col(skirts.hem), hatch: skirts.hatchSeam === null || skirts.hatchFace === null ? null : { rim: col(skirts.hatchSeam), face: col(skirts.hatchFace) }, rake: spec.skirt.boxes?.rake });
     }
   }
   // a diesel unit's tank, cooler, engine, transmission and batteries hang under the floor between the bogies, in plain sight below the valance, a dark hanger across each gap
@@ -1824,15 +1825,21 @@ export const SKIRT_PALE = 0xb4b8be;
 /** How far the louvres are darkened from the livery's skirt colour, and (a good deal further) the notches of the covers' hem. */
 const SKIRT_VENT_DARK = 0.45;
 const SKIRT_HEM_DARK = 0.7;
+/** An equipment box's hatch: the dark seam round it is its box's colour darkened this far, and its face is lightened this far (toward white). */
+const SKIRT_HATCH_SEAM_DARK = 0.45;
+const SKIRT_HATCH_FACE_LIGHT = 0.12;
 /**
- * The colours a body's side skirts wear for a livery: the covers (the livery's skirt colour paled by the family's `skirt.light`), their louvres and their hem
- * (null where the family has none). The underframe slab seen through the bogie cut-outs stays the livery's skirt colour.
+ * The colours a body's side skirts wear for a livery: the covers (the livery's skirt colour paled by the family's `skirt.light`), their louvres and their hem, and the dark seam and
+ * lighter face of an equipment box's access hatch (each null where the family has none). The underframe slab seen through the bogie cut-outs stays the livery's skirt colour.
  */
-export function skirtColours(def: Pick<TrainLivery, 'skirt'>, spec: Pick<BodySpec, 'skirt'>): { panel: number; vent: number | null; hem: number | null } {
+export function skirtColours(def: Pick<TrainLivery, 'skirt'>, spec: Pick<BodySpec, 'skirt'>): { panel: number; vent: number | null; hem: number | null; hatchSeam: number | null; hatchFace: number | null } {
+  const panel = blend(def.skirt, SKIRT_PALE, spec.skirt.light);
   return {
-    panel: blend(def.skirt, SKIRT_PALE, spec.skirt.light),
+    panel,
     vent: spec.skirt.vents ? blend(def.skirt, 0x000000, SKIRT_VENT_DARK) : null,
     hem: spec.skirt.hem === true ? blend(def.skirt, 0x000000, SKIRT_HEM_DARK) : null,
+    hatchSeam: spec.skirt.hatches === true ? blend(panel, 0x000000, SKIRT_HATCH_SEAM_DARK) : null,
+    hatchFace: spec.skirt.hatches === true ? blend(panel, 0xffffff, SKIRT_HATCH_FACE_LIGHT) : null,
   };
 }
 
