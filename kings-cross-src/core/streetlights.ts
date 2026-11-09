@@ -9,6 +9,7 @@
 // Not in any photograph, so ASSUMED: the spacings and heights per class of road below (UK practice: BS 5489 spacing is about four times the mounting height on a main road), which
 // lamps are sodium and which white (the photographs show both on the Euston Road, so a repeatable share of the streets are each), and the kerb offset.
 import type { Pt } from './geo.ts';
+import type { Extent } from './terrain.ts';
 import type { KxData } from './osm.ts';
 import { shedLayout, shedToWorld } from './station.ts';
 import type { Height, RoadClass } from './city.ts';
@@ -144,6 +145,68 @@ export function lampSpots(runs: readonly LampRun[], ctx: LampContext): LampSpot[
 export const POOL_REACH = 2;
 /** How far a lamp's pool of light reaches on the ground, metres. */
 export const poolRadius = (height: number): number => height * POOL_REACH;
+
+/** One road of a scene that has no city data of its own, as the lamps need it: its class, whether it is a bridge's deck, and its centre line (the scene's metres). */
+export interface LampRoad {
+  cls: RoadClass;
+  bridge: boolean;
+  line: Pt[];
+}
+
+/**
+ * The lamp-bearing roads of the Scottish scene as web/src/data/waverley-lamp-roads.json holds them (tools/build-waverley-lamp-roads.ts writes it from web/src/data/waverley-roads.json): by class, the
+ * decks of the bridges apart, each line a run of whole `unit`-metre steps (the first point's own, then each step from the last point), so a line is a few small numbers and the file gzips to a
+ * fifth of the OSM lines it is made from. OpenStreetMap, ODbL: the attribution and the licence stay with the numbers.
+ */
+export interface LampRoadsFile {
+  attribution: string;
+  licence: string;
+  source: string;
+  frame: string;
+  /** the terrain the lines are clipped to: no lamp stands outside it (its ground is not the terrain's there) */
+  extent: Extent;
+  /** metres to a step */
+  unit: number;
+  ways: Partial<Record<RoadClass, number[][]>>;
+  bridges: Partial<Record<RoadClass, number[][]>>;
+}
+
+/** The roads as the file holds them: a point is its whole steps, rounded to the nearest. */
+export function encodeLampRoads(roads: readonly LampRoad[], unit: number): Pick<LampRoadsFile, 'ways' | 'bridges'> {
+  const out: Pick<LampRoadsFile, 'ways' | 'bridges'> = { ways: {}, bridges: {} };
+  for (const road of roads) {
+    const steps: number[] = [];
+    let [px, pz] = [0, 0];
+    for (const [x, z] of road.line) {
+      const [qx, qz] = [Math.round(x / unit), Math.round(z / unit)];
+      steps.push(qx - px, qz - pz);
+      [px, pz] = [qx, qz];
+    }
+    const group = road.bridge ? out.bridges : out.ways;
+    (group[road.cls] ??= []).push(steps);
+  }
+  return out;
+}
+
+/** The roads of a file, the ground's first and then the bridges', each class in the file's order. */
+export function decodeLampRoads(file: Pick<LampRoadsFile, 'unit' | 'ways' | 'bridges'>): LampRoad[] {
+  const out: LampRoad[] = [];
+  for (const [bridge, group] of [[false, file.ways], [true, file.bridges]] as const) {
+    for (const cls of Object.keys(group) as RoadClass[]) {
+      for (const steps of group[cls] ?? []) {
+        const line: Pt[] = [];
+        let [x, z] = [0, 0];
+        for (let i = 0; i + 1 < steps.length; i += 2) {
+          x += steps[i] as number;
+          z += steps[i + 1] as number;
+          line.push([x * file.unit, z * file.unit]);
+        }
+        out.push({ cls, bridge, line });
+      }
+    }
+  }
+  return out;
+}
 
 /** How tall the forecourt's masts are, metres (night-a-kx-square-2015-skinner.jpg: the masts stand about as tall as the front's wall, 12 to 14 m). */
 export const MAST_HEIGHT = 12;

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { describeSun } from '../../core/daylight.ts';
+import { CLEAR_FOG, describeSun, fogRange, lampLevelFor } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
 import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
-import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions } from '../src/station-weather.ts';
+import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions, WAVERLEY_HAZE } from '../src/station-weather.ts';
 import { coverAt, coverUniforms, findRoofs } from '../src/cover.ts';
 import { liveUrl } from '../src/weather.ts';
 import type { WeatherFeedOptions } from '../src/weather.ts';
@@ -461,4 +461,146 @@ test('the Scottish climate lights the Scottish night and puts it back with the c
   assert.ok(!('FLOOD' in (lambertOf(parapets).defines ?? {})) && !('FLOOD' in (lambertOf(dials).defines ?? {})), 'and the flood');
   assert.ok(!compileOf(lambertOf(walls)).includes('float winHash('));
   view.dispose();
+});
+
+// ---- the Scottish street lamps (round seven): a lazy chunk of their own, a moment after the scene --------------------------------------------------
+
+/** Wait, up to ten seconds, for the Scottish street lamps to come into the scene (they load a moment after it). */
+async function lampsIn(scene: THREE.Object3D): Promise<THREE.Group> {
+  for (let waited = 0; waited < 10_000; waited += 20) {
+    const group = scene.getObjectByName('street-lamps');
+    if (group) return group as THREE.Group;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error('the Scottish street lamps did not come into the scene');
+}
+
+test('the Scottish scene has its street lamps a moment after it: dark by day, lit at the sky\'s own lamp level through the dusk and the night, and none left when its climate ends', async () => {
+  const { view } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  let wall = 0;
+  const at = (iso: string | number): number => {
+    climate.update({ ...frame(), timeMs: typeof iso === 'number' ? iso : Date.parse(iso), wallMs: (wall += 1000) });
+    return climate.atmosphere.state()!.rig.lampLevel;
+  };
+  try {
+    assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'not there with the scene: a lazy chunk');
+    assert.equal(at('2026-11-09T12:00:00Z'), 0, 'noon');
+    const group = await lampsIn(view.scene);
+    assert.equal(group.parent, view.scene, 'in the scene it was made for');
+    const halos = group.getObjectByName('street-lamp-halos') as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+    const pools = group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+    assert.ok(halos && pools && pools.count >= 900, `a pool to each of ${pools?.count} lamps`);
+    // it arrived at the level the sky had at the time: none
+    assert.deepEqual([halos.visible, pools.visible], [false, false], 'nothing glows by day');
+    // dusk: the first minute the sky's lamp level is about half, the lamps are half lit
+    let dusk = Date.parse('2026-11-09T15:00:00Z');
+    while (lampLevelFor(solarPosition(dusk, location.lat, location.lon).elevationDeg) < 0.5) dusk += 60_000;
+    const half = at(dusk);
+    assert.ok(half > 0.4 && half < 0.6, `dusk is ${half}`);
+    assert.ok(Math.abs(pools.material.opacity - half) < 1e-9 && Math.abs(halos.material.opacity - 0.9 * half) < 1e-9, 'lit as the sky says');
+    assert.deepEqual([halos.visible, pools.visible], [true, true]);
+    // night: all the way on; and off again by day
+    assert.equal(at('2026-11-09T23:00:00Z'), 1);
+    assert.deepEqual([halos.material.opacity, pools.material.opacity, halos.visible, pools.visible], [0.9, 1, true, true]);
+    assert.equal(at('2026-11-10T12:00:00Z'), 0);
+    assert.deepEqual([halos.visible, pools.visible], [false, false], 'dark again by day');
+    at('2026-11-09T23:00:00Z');
+    climate.dispose();
+    assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'the climate takes its lamps with it');
+    assert.equal(group.parent, null);
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('a lamp layer that arrives after dusk comes in lit: the level it is given is the last the sky gave, not the level it was made at', async () => {
+  const { view } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  try {
+    climate.update({ ...frame(), timeMs: Date.parse('2026-11-09T23:00:00Z') });
+    assert.equal(climate.atmosphere.state()!.rig.lampLevel, 1);
+    const group = await lampsIn(view.scene);
+    assert.equal((group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh).visible, true, 'lit as it arrives');
+    assert.equal(((group.getObjectByName('street-lamp-halos') as THREE.Points).material as THREE.PointsMaterial).opacity, 0.9);
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('a climate that ends before its lamps have loaded leaves the scene without them: they are not added late, and what was made is freed', async () => {
+  const { view } = await viewOf();
+  const added: string[] = [];
+  const add = view.scene.add.bind(view.scene);
+  view.scene.add = ((...objects: THREE.Object3D[]) => { added.push(...objects.map((o) => o.name)); return add(...objects); }) as typeof view.scene.add;
+  const dispose = THREE.BufferGeometry.prototype.dispose;
+  let freed = 0;
+  THREE.BufferGeometry.prototype.dispose = function (this: THREE.BufferGeometry) { freed++; dispose.call(this); };
+  try {
+    const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+    climate.dispose();
+    freed = 0;
+    // the lamps are made a moment later, and freed as they come: the post, the halo and the pool geometry
+    for (let waited = 0; waited < 10_000 && freed < 3; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(freed, 3, 'the geometry of the layer that was made too late');
+    await settled();
+    assert.equal(freed, 3, 'and once');
+    assert.ok(!added.includes('street-lamps'), `added late: ${added}`);
+    assert.equal(view.scene.getObjectByName('street-lamps'), undefined);
+  } finally { THREE.BufferGeometry.prototype.dispose = dispose; view.dispose(); }
+});
+
+test('a scene with no ground to stand lamps on has none, and no complaint; lamps that cannot be made are a warning and not a broken scene', async () => {
+  const { view } = await viewOf();
+  const bare = { ...view, model: { ...view.model, terrain: undefined } } as unknown as WaverleyView;
+  const warn = console.warn;
+  const warned: unknown[][] = [];
+  console.warn = (...args: unknown[]) => { warned.push(args); };
+  try {
+    const climate = createWaverleyWeather(bare, sceneWeatherOptions('clear', null));
+    const control = await viewOf();
+    const controlClimate = createWaverleyWeather(control.view, sceneWeatherOptions('clear', null));
+    try {
+      await lampsIn(control.view.scene); // a scene with ground has its lamps: by then any the first was to have, begun earlier, has come
+      assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'no terrain, no lamps');
+      assert.deepEqual(warned, [], 'and nothing to say about it');
+    } finally { controlClimate.dispose(); control.view.dispose(); climate.dispose(); }
+    // a ground that throws: no lamps, the scene as it was, and the reason told
+    const terrain = view.model!.terrain as unknown as Record<string, unknown>;
+    const broken = { ...view, model: { ...view.model, terrain: { ...terrain, heightAt: () => { throw new Error('no ground'); } } } } as unknown as WaverleyView;
+    const second = createWaverleyWeather(broken, sceneWeatherOptions('clear', null));
+    try {
+      for (let waited = 0; waited < 10_000 && warned.length === 0; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+      assert.equal(warned.length, 1, 'one warning');
+      assert.match(String(warned[0]?.[0]), /Waverley street lamps unavailable/);
+      assert.match(String(warned[0]?.[1]), /no ground/);
+      assert.equal(view.scene.getObjectByName('street-lamps'), undefined);
+      second.update(frame());
+      assert.ok(view.scene.getObjectByName('sun-disc'), 'the rest of the climate goes on');
+    } finally { second.dispose(); }
+  } finally { console.warn = warn; view.dispose(); }
+});
+
+// ---- the Scottish haze (round seven, the W3 city element's C6): the Castle and the horizon recede from Calton Hill; London's haze is as it was --------------
+
+test('the Scottish clear air is hazier than London\'s, and London\'s is untouched: its fog ends where it always ended; in weather each scene has the nearer of the weather\'s own fog and its haze', async () => {
+  assert.ok(WAVERLEY_HAZE.far < CLEAR_FOG.far && WAVERLEY_HAZE.far >= 1000, `a haze (${WAVERLEY_HAZE.far} m) nearer than the clear air's ${CLEAR_FOG.far} m, but past the Castle, 1.2 km from Calton Hill`);
+  const seen: Record<string, { scotland: [number, number]; london: [number, number] }> = {};
+  for (const name of ['clear', 'rain', 'fog']) {
+    const { view } = await viewOf();
+    const scotland = createWaverleyWeather(view, sceneWeatherOptions(name, null));
+    const london = londonOf(sceneWeatherOptions(name, null));
+    try {
+      scotland.update(frame());
+      london.climate.update(frame());
+      const [s, l] = [view.scene.fog as THREE.Fog, london.scene.fog as THREE.Fog];
+      seen[name] = { scotland: [s.near, s.far], london: [l.near, l.far] };
+      // London is the page's own, whatever the Scottish scene does: fogRange, to the metre
+      const own = fogRange(london.climate.atmosphere.state()!.weather.visibilityM, camera.position.y);
+      assert.deepEqual([l.near, l.far], [own.near, own.far], `${name}: London's fog`);
+      // the Scottish scene is the same fog with its far plane brought in to the haze, no further
+      assert.deepEqual([s.near, s.far], [own.near, Math.min(own.far, WAVERLEY_HAZE.far)], `${name}: the Scottish fog`);
+    } finally { scotland.dispose(); london.climate.dispose(); view.dispose(); }
+  }
+  assert.deepEqual(seen.clear, { scotland: [CLEAR_FOG.near, WAVERLEY_HAZE.far], london: [CLEAR_FOG.near, CLEAR_FOG.far] }, 'clear air: the one place the two differ for the Scottish haze alone');
+  assert.ok((seen.rain as { scotland: [number, number]; london: [number, number] }).scotland[1] === WAVERLEY_HAZE.far, 'rain is thinner than the haze: the haze');
+  assert.deepEqual((seen.fog as { scotland: [number, number]; london: [number, number] }).scotland, (seen.fog as { scotland: [number, number]; london: [number, number] }).london, 'fog is thicker than the haze: the weather\'s own, the same in both');
 });

@@ -184,6 +184,11 @@ export interface AtmosphereOptions {
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
   sites: NightLightSites | null;
+  /**
+   * The haze of this scene's clear air: a nearer far plane for its fog than `CLEAR_FOG`'s 2.6 km, metres (the Scottish scene's, station-weather.ts `WAVERLEY_HAZE`). It shortens the clear air's fog and
+   * nothing else: weather that is already thicker (mist, rain, fog) keeps its own, which is nearer than this. Omitted, the scene has the page's own haze, as London's does.
+   */
+  haze?: { far: number };
 }
 
 export interface AtmosphereFrame {
@@ -233,7 +238,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
@@ -424,7 +429,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       if (scene.fog instanceof THREE.Fog) {
         const range = fogRange(state.weather.visibilityM, f.camera.position.y);
         scene.fog.near = range.near;
-        scene.fog.far = range.far;
+        scene.fog.far = haze ? Math.min(range.far, haze.far) : range.far;
         rgb(scene.fog.color, state.rig.fog);
       }
       if (scene.background instanceof THREE.Color) rgb(scene.background, state.rig.dome.horizon);

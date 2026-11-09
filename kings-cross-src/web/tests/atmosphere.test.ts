@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
+import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, fogRange, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
@@ -28,14 +28,14 @@ const NOON = '2026-06-21T12:00:00Z'; // the sun near its highest (13:00 BST; sol
 const MIDNIGHT = '2026-12-21T00:00:00Z';
 const state = (name: string): WeatherState => weatherState(forcedObservation(name));
 
-function setup(sites: NightLightSites | null = null) {
+function setup(sites: NightLightSites | null = null, haze?: { far: number }) {
   trainNight.value = 0;
   windowNight.value = 0;
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x35465e, 1100, 3600);
   scene.background = new THREE.Color(0x35465e);
   const world = addWorld(scene, { grid: false });
-  const atmosphere = createAtmosphere({ scene, world, sites });
+  const atmosphere = createAtmosphere({ scene, world, sites, ...(haze ? { haze } : {}) });
   const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 9000);
   camera.position.set(250, 380, 420);
   const target = new THREE.Vector3(40, 0, -150);
@@ -87,6 +87,43 @@ test('midsummer noon: the sun is where the astronomy puts it, bright and clear; 
   assert.deepEqual([fog.near, fog.far], [CLEAR_FOG.near, CLEAR_FOG.far]);
   assert.equal(atmosphere.precip.stats().drawCalls, 0, 'dry');
   assert.ok(luma(scene.background as THREE.Color) > 0.4, 'a bright sky');
+});
+
+test('a scene\'s own haze (round seven, the Scottish scene\'s): a nearer far plane for the air it is clear in, and nothing else; a scene with none has the page\'s own fog, as it always had', () => {
+  const fogAt = (weather: WeatherState, haze?: { far: number }): { near: number; far: number } => {
+    const { scene, at, camera } = setup(null, haze);
+    at(NOON, weather);
+    const fog = scene.fog as THREE.Fog;
+    assert.equal(fog.near, fogRange(weather.visibilityM, camera.position.y).near, 'the near plane is the page\'s, hazed or not');
+    return { near: fog.near, far: fog.far };
+  };
+  const camera = { y: 380 }; // setup()'s camera
+  // no haze: the clear air's own (100 m to 2.6 km) and the weather's, exactly as fogRange says; London has no haze
+  assert.deepEqual(fogAt(CLEAR_STATE), { ...CLEAR_FOG }, 'London\'s clear air');
+  const weathers = ['rain', 'drizzle', 'mist', 'fog', 'snow'] as const;
+  for (const name of weathers) assert.deepEqual(fogAt(state(name)), fogRange(state(name).visibilityM, camera.y), `London's ${name}`);
+  // a haze nearer than the clear air's: the far plane is there, in clear air, and the near plane is not moved
+  const hazy = fogAt(CLEAR_STATE, { far: 1800 });
+  assert.deepEqual(hazy, { near: CLEAR_FOG.near, far: 1800 }, 'the Scottish clear air');
+  // weather: the nearer of the two far planes, the weather's own when it is already thicker than the haze (fog), the haze's when the weather is thinner (rain, mist, drizzle)
+  let thicker = 0;
+  let thinner = 0;
+  for (const name of weathers) {
+    const own = fogRange(state(name).visibilityM, camera.y);
+    assert.deepEqual(fogAt(state(name), { far: 1800 }), { near: own.near, far: Math.min(own.far, 1800) }, `the Scottish ${name}`);
+    if (own.far < 1800) thicker++; else thinner++;
+  }
+  assert.ok(thicker >= 1 && thinner >= 1, `the weathers cover both sides of the haze (${thicker} thicker, ${thinner} thinner)`);
+  // a haze further than the page\'s own does nothing: it is a nearer plane, never a farther one
+  assert.deepEqual(fogAt(CLEAR_STATE, { far: 9000 }), { ...CLEAR_FOG });
+  // two scenes do not share it: the haze is the atmosphere\'s own, not a module\'s
+  const london = setup(null);
+  const scotland = setup(null, { far: 1800 });
+  scotland.at(NOON);
+  london.at(NOON);
+  scotland.at(NOON);
+  assert.equal((london.scene.fog as THREE.Fog).far, CLEAR_FOG.far);
+  assert.equal((scotland.scene.fog as THREE.Fog).far, 1800);
 });
 
 test('midnight: the stylised moon is the key, the ambient is low, the lamps and the trains\' windows are on, the stars are out', () => {

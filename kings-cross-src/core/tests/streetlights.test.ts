@@ -9,9 +9,9 @@ import type { Pt } from '../geo.ts';
 import type { KxData } from '../osm.ts';
 import { pointInPolygon, shedLayout, shedToWorld, worldToShed } from '../station.ts';
 import {
-  forecourtMasts, FORECOURT_MASTS, LAMP_END_MARGIN, LAMP_KERB, LAMP_KIND, LAMP_MIN_RUN, LAMP_RULES, lampKind, lampSpots, MAST_HEIGHT, MAST_LIFT, POOL_REACH, poolRadius,
+  decodeLampRoads, encodeLampRoads, forecourtMasts, FORECOURT_MASTS, LAMP_END_MARGIN, LAMP_KERB, LAMP_KIND, LAMP_MIN_RUN, LAMP_RULES, lampKind, lampSpots, MAST_HEIGHT, MAST_LIFT, POOL_REACH, poolRadius,
 } from '../streetlights.ts';
-import type { LampContext, LampRule, LampRun } from '../streetlights.ts';
+import type { LampContext, LampRoad, LampRule, LampRun } from '../streetlights.ts';
 
 const city: CityData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-city.json', import.meta.url), 'utf8'));
 const data: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -216,4 +216,32 @@ test('the real forecourt: no mast stands in a building or within two metres of a
   }
   const us = masts.map((m) => worldToShed(layout, [m.x, m.z]).u).sort((p, q) => p - q);
   for (let i = 1; i < us.length; i++) assert.ok((us[i] as number) - (us[i - 1] as number) >= 15, `masts ${i - 1} and ${i} are ${((us[i] as number) - (us[i - 1] as number)).toFixed(1)} m apart along the front`);
+});
+
+test('encodeLampRoads and decodeLampRoads: a line is its first point and then its steps, in whole units, by class, the decks of bridges apart; decoding gives the same lines back', () => {
+  const roads: LampRoad[] = [
+    { cls: 'primary', bridge: false, line: [[-771, -596.5], [-681, -624], [-680.5, -620]] },
+    { cls: 'minor', bridge: false, line: [[10, 20], [10, 20.5]] },
+    { cls: 'primary', bridge: true, line: [[103, -87], [148, 76.5]] },
+    { cls: 'primary', bridge: false, line: [[0, 0], [1.5, -2]] },
+  ];
+  const file = encodeLampRoads(roads, 0.5);
+  // the first point is its own whole units from the origin, then each point is the steps from the last (minus signs and all)
+  assert.deepEqual(file.ways.primary, [[-1542, -1193, 180, -55, 1, 8], [0, 0, 3, -4]]);
+  assert.deepEqual(file.ways.minor, [[20, 40, 0, 1]]);
+  assert.deepEqual(file.bridges.primary, [[206, -174, 90, 327]]);
+  assert.equal(file.bridges.minor, undefined, 'no class that has no deck');
+  // the order is the file's: the ground's roads (each class in the order it was met), then the bridges'
+  const back = decodeLampRoads({ unit: 0.5, ...file });
+  assert.deepEqual(back, [roads[0], roads[3], roads[1], roads[2]]);
+  // a step is the unit: the same file at another unit is the same steps at another scale
+  const wide = decodeLampRoads({ unit: 2, ...file });
+  assert.deepEqual(wide[0]?.line[0], [-3084, -2386]);
+  assert.deepEqual(wide[0]?.line[1], [-3084 + 360, -2386 - 110]);
+  // a point between two units is the nearer one, whichever side of zero it is on
+  const rounded = encodeLampRoads([{ cls: 'tertiary', bridge: false, line: [[0.24, -0.24], [0.26, -0.26], [-0.74, 0.76]] }], 0.5);
+  assert.deepEqual(decodeLampRoads({ unit: 0.5, ...rounded })[0]?.line, [[0, 0], [0.5, -0.5], [-0.5, 1]]);
+  // nothing in, nothing out
+  assert.deepEqual(encodeLampRoads([], 0.5), { ways: {}, bridges: {} });
+  assert.deepEqual(decodeLampRoads({ unit: 0.5, ways: {}, bridges: {} }), []);
 });

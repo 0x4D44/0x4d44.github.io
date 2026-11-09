@@ -8,6 +8,8 @@ import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
 import { floodLit, litWalls } from './materials.ts';
+import type { NightLayer } from './night.ts';
+import type { StreetLights } from './streetlights.ts';
 import { CLEAR_STATE, createWeatherFeed, weatherState } from './weather.ts';
 import type { WeatherFeedOptions, WeatherObservation, WeatherState } from './weather.ts';
 import { addWorld } from './world.ts';
@@ -91,6 +93,42 @@ export function lightWaverleyNight(scene: THREE.Object3D): () => void {
   return () => undo.forEach((u) => u());
 }
 
+/**
+ * The haze of the Scottish scene's clear air (round seven, lighting; the W3 city element's C6, "distance haze consistent with the references"): the far plane of its fog, metres, nearer than London's
+ * 2.6 km (core/daylight.ts `CLEAR_FOG`), so the Castle (1.2 km from Calton Hill) and the Old Town's skyline recede toward the sky's colour. London's haze is round five's (E1), tuned and pinned, and
+ * is not touched: this is an option of the Scottish scene's own atmosphere (atmosphere.ts `haze`). ASSUMED, judged by eye against R-wv3-c's photographs of Calton Hill over Waverley.
+ */
+export const WAVERLEY_HAZE = { far: 1800 } as const;
+
+/**
+ * The Scottish scene's street lamps (waverley-lamps.ts, a lazy chunk of its own: London's page never loads it). They arrive a moment after the scene, are lit with the sky's lamp level (`setLevel`,
+ * the level the windows and the platform lamps come on with) and go with the climate. A scene with no ground to stand them on, or a chunk that does not load, has none.
+ */
+function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
+  const terrain = view.model?.terrain as { heightAt?: (x: number, z: number) => number } | undefined;
+  let layer: StreetLights | null = null;
+  let level = 0;
+  let gone = false;
+  if (typeof terrain?.heightAt === 'function') {
+    const heightAt = terrain.heightAt.bind(terrain);
+    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt)).then((made) => {
+      if (gone) { made.dispose(); return; }
+      layer = made;
+      view.scene.add(made.group);
+      made.setLevel(level);
+    }).catch((error: unknown) => console.warn('Waverley street lamps unavailable:', error));
+  }
+  return {
+    setLevel(next) { level = next; layer?.setLevel(next); },
+    dispose() {
+      gone = true;
+      layer?.group.removeFromParent();
+      layer?.dispose();
+      layer = null;
+    },
+  };
+}
+
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
@@ -105,24 +143,31 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   const extent = terrain?.extent ?? { x0: Math.min(...points.map(p => p[0])) - 100, x1: Math.max(...points.map(p => p[0])) + 100,
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   world.carve(extent);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze: WAVERLEY_HAZE, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
   const night = lightWaverleyNight(scene);
+  const lamps = waverleyLamps(view);
   let disposed = false;
-  return { ...climate, dispose(): void {
-    if (disposed) return; disposed = true;
-    night();
-    climate.dispose();
-    // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not
-    // sweep model/shared materials or the global shader-uniform textures.
-    for (const object of owned) {
-      if (object === world.sky || object.name === 'ground-outside-terrain') {
-        const mesh = object as THREE.Mesh; mesh.geometry.dispose();
-        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.dispose();
+  return { ...climate,
+    update(frame: Parameters<SceneWeather['update']>[0]): void {
+      climate.update(frame);
+      lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 0);
+    },
+    dispose(): void {
+      if (disposed) return; disposed = true;
+      night();
+      lamps.dispose();
+      climate.dispose();
+      // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not
+      // sweep model/shared materials or the global shader-uniform textures.
+      for (const object of owned) {
+        if (object === world.sky || object.name === 'ground-outside-terrain') {
+          const mesh = object as THREE.Mesh; mesh.geometry.dispose();
+          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.dispose();
+        }
+        object.removeFromParent();
       }
-      object.removeFromParent();
-    }
-    for (const [light, visible] of lights) light.visible = visible;
-    scene.background = background; scene.fog = fog;
-  } };
+      for (const [light, visible] of lights) light.visible = visible;
+      scene.background = background; scene.fog = fog;
+    } };
 }
