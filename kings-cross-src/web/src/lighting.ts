@@ -403,8 +403,8 @@ export const GLOW_BELOW = 'GLOW_BELOW';
 export const GLOW_BELOW_GAIN = 30;
 
 /**
- * A define a wall material with a map can carry (`material.defines = { [FOOT_SHADE]: '' }`) for the contact shade at the foot of a wall: the light the surface reflects, the sun's and the
- * sky's, is multiplied by `1 - 0.08 exp( -0.3 h ) - 0.4 exp( -2.5 h )`, h the height up the wall in tiles of its texture (0.6 m for the brick and the stone, whose walls here have their
+ * A define a wall material with a map can carry (`material.defines = { [FOOT_SHADE]: '0.08' }`) for the contact shade at the foot of a wall: the light the surface reflects, the sun's and the
+ * sky's, is multiplied by `1 - d exp( -0.3 h ) - 0.4 exp( -2.5 h )`, d the define's value (0.08 for the landmarks; round six gave the King's Cross front 0.32) and h the height up the wall in tiles of its texture (0.6 m for the brick and the stone, whose walls here have their
  * UVs in metres from the foot; never below the foot). Round five (the E2 scorer: "No contact or ambient occlusion: building bases ... meet the ground with no darkening (GNH, MGF,
  * front-oblique)"): the landmarks' walls and the King's Cross front stood on the ground with none. The two terms are a thin dark line where the wall meets the ground and a long, slight
  * fall-off above it: 0.52 at the foot, 0.82 at 0.3 m, 0.91 at 0.6 m, 0.95 at 1.2 m, 0.98 at 2.4 m. The long term is slight on purpose: the stone of the hotel's ground floor is held to a
@@ -440,7 +440,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   reflectedLight.directDiffuse *= roofK.a;
 #ifdef ${FOOT_SHADE}
   float h = max( vMapUv.y, 0.0 );
-  float foot = 1.0 - 0.08 * exp( -0.3 * h ) - 0.40 * exp( -2.5 * h );
+  float foot = 1.0 - ${FOOT_SHADE} * exp( -0.3 * h ) - 0.40 * exp( -2.5 * h );
   reflectedLight.directDiffuse *= foot;
   reflectedLight.indirectDiffuse *= foot;
 #endif

@@ -476,7 +476,7 @@ test('the King\'s Cross front\'s brick and stone carry the contact shade at the 
   for (const [footed, plain] of [['brickFoot', 'brick'], ['stoneFoot', 'stone']] as const) {
     const a = material(footed) as THREE.MeshLambertMaterial;
     const b = material(plain) as THREE.MeshLambertMaterial;
-    assert.deepEqual(a.defines, { FOOT_SHADE: '' }, `${footed}: the define lighting.ts FOOT_SHADE is`);
+    assert.deepEqual(a.defines, { FOOT_SHADE: '0.32' }, `${footed}: the define lighting.ts FOOT_SHADE is, with the front's depth (round six)`);
     assert.equal(b.defines, undefined, `${plain}: the shared material is the plain one`);
     assert.notEqual(a, b, `${footed} is a material of its own`);
     assert.equal(a.name, footed);
@@ -487,7 +487,8 @@ test('the King\'s Cross front\'s brick and stone carry the contact shade at the 
   // the helper keeps any define the material already had
   const m = new THREE.MeshLambertMaterial();
   m.defines = { OTHER: '' };
-  assert.deepEqual(footShaded(m).defines, { OTHER: '', FOOT_SHADE: '' });
+  assert.deepEqual(footShaded(m).defines, { OTHER: '', FOOT_SHADE: '0.08' }, 'the landmarks\' depth by default');
+  assert.deepEqual(footShaded(new THREE.MeshLambertMaterial(), '0.2').defines, { FOOT_SHADE: '0.2' }, 'and any other that is asked for');
 });
 
 test('the stock brick is worn like the close-up (burnt ends, duller grey-brown bricks and none of them green, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {

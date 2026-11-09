@@ -552,11 +552,16 @@ export type MaterialName =
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
   | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot';
 
-/** A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name). */
-export const footShaded = <T extends THREE.Material>(m: T): T => {
-  m.defines = { ...m.defines, FOOT_SHADE: '' };
+/**
+ * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
+ * The define's value is how deep the long, slight fall-off above the thin line at the wall's foot is, as GLSL: the share of the light lost at the foot (0.08 by default).
+ */
+export const footShaded = <T extends THREE.Material>(m: T, depth = '0.08'): T => {
+  m.defines = { ...m.defines, FOOT_SHADE: depth };
   return m;
 };
+/** The King's Cross front's depth of the contact shade's long fall-off (see `footShaded`; the landmarks keep 0.08): 0.82 of the light at 1.2 m up the wall and 0.93 at 3 m, where 0.08 keeps 0.95 and 0.98. */
+const FRONT_FOOT = '0.32';
 
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
@@ -712,8 +717,10 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   platformEdgeStrip: () => nearer(tiled('platformEdge')),
   // The King's Cross front's brick and stone (shed.ts: the front wall, its plinth and courses, the clock tower, the shed's end walls) with the contact shade at the foot of a wall (round five, E2):
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
-  brickFoot: () => footShaded(tiled('brick')),
-  stoneFoot: () => footShaded(tiled('stone')),
+  // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker
+  // band at the south front's own view, and the close brick view's median L falls from 51.9 to 50.6 (dE2000 to R-a2 3.3 to 4.4, to R-a 2.4 to 3.4)
+  brickFoot: () => footShaded(tiled('brick'), FRONT_FOOT),
+  stoneFoot: () => footShaded(tiled('stone'), FRONT_FOOT),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

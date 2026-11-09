@@ -626,7 +626,7 @@ test('addRoofShade: a material with the FOOT_SHADE define has the light it refle
   const footExpression = /float foot = (.*);/.exec(block)?.[1] ?? '';
   assert.ok(hExpression !== '' && footExpression !== '', `both lines are in the block: ${block}`);
   const glsl = new Glsl('');
-  const footAt = (v: number): number => glsl.evaluate(footExpression, { vars: {} }, { h: glsl.evaluate(hExpression, { vars: {} }, { vMapUv: [0, v] }) }) as number;
+  const footAt = (v: number, depth = 0.08): number => glsl.evaluate(footExpression, { vars: {} }, { h: glsl.evaluate(hExpression, { vars: {} }, { vMapUv: [0, v] }), [FOOT_SHADE]: depth }) as number;
   const tile = 0.6;
   assert.ok(footAt(0) > 0.4 && footAt(0) < 0.7, `a dark line where the wall meets the ground: ${footAt(0)}`);
   assert.equal(footAt(-1), footAt(0), 'a part whose v starts below the foot (a reveal\'s front edge, a plinth sunk in the ground) is no darker than the foot: the sum does not go through zero');
@@ -643,6 +643,13 @@ test('addRoofShade: a material with the FOOT_SHADE define has the light it refle
   let mean = 0;
   for (let i = 0; i < 80; i++) mean += footAt((i + 0.5) / 10) / 80;
   assert.ok(mean > 0.93, `the ground floor keeps its colour: ${mean}`);
+  // the define's value is the long term's depth (round six, E2: "the south-front foot shade is barely visible"): the King's Cross front's 0.32 takes 0.82 of the light at 1.2 m and 0.93 at 3 m, the landmarks'
+  // 0.08 keeps 0.95 and 0.98; the thin line at the foot is the same, and every depth still rises to one and never reaches it
+  assert.ok(footExpression.includes(FOOT_SHADE), 'the long term\'s depth is the define');
+  assert.equal(footAt(0, 0.32), 1 - 0.32 - 0.4, 'the foot itself: the depth and the thin line');
+  assert.ok(Math.abs(footAt(1.2 / tile, 0.32) - 0.82) < 0.01 && Math.abs(footAt(3 / tile, 0.32) - 0.93) < 0.01, `the front's long fall-off: ${footAt(1.2 / tile, 0.32)}, ${footAt(3 / tile, 0.32)}`);
+  assert.ok(footAt(1.2 / tile, 0.32) < footAt(1.2 / tile) - 0.1 && footAt(0, 0.32) < footAt(0), 'deeper than the landmarks\' at the same height');
+  for (let v = 0; v <= 40; v += 0.25) assert.ok(footAt(v, 0.32) < 1 && footAt(v, 0.32) < footAt(v + 0.25, 0.32), `the front's too rises to one: ${v}`);
   // one without the define: it is a preprocessor line, compiled away, and no other line reads `foot`
   assert.ok(!block.includes('looksDown') && f.split('foot').length - 1 === block.split('foot').length - 1, 'nothing outside the define reads the shade');
 });
@@ -653,8 +660,11 @@ test('the walls that stand on the ground have the contact shade, and the Range\'
     assert.ok(mesh, `${name} is a mesh of the scene`);
     return materialsOf(mesh)[0] as THREE.Material;
   };
-  for (const name of ['shed-front', 'shed-brick', 'shed-stone', 'tower-brick', 'tower-stone', 'landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone']) {
-    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '' }, `${name}: a wall on the ground`);
+  for (const name of ['shed-front', 'shed-brick', 'shed-stone', 'tower-brick', 'tower-stone']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.32' }, `${name}: a wall of the front, on the ground, with the deeper shade (round six, E2)`);
+  }
+  for (const name of ['landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08' }, `${name}: a wall on the ground, with the slight one the hotel's measured stone was fitted to`);
   }
   // not the Range: its brick is held at (110, 94, 71) by the concourse's fill and the sun, and not the stock the whole city shares (the city's facades have their own, in their shader)
   for (const name of ['range-brick', 'range-stone', 'landmarks-slate', 'shed-aisle-roofs', 'kxcentral-brick', 'city-stock', 'city-red']) {

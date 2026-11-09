@@ -96,7 +96,12 @@ export function createMaterials(): MaterialSet {
   // either photograph"; aim (150 to 170, 90 to 120, 70 to 100)): less red, a little more blue. (0.66, 0.815, 0.89) draws the clock tower's brick at a median (162, 97, 70), in that range
   // and at R-c's own ratios (green 0.60 and blue 0.43 of the red, as (140, 84, 60) is), and keeps the lighting scorer's numbers: the tower L 49.0 / 22.0 / 25.1 and the range 47.8 / 21.1 /
   // 23.5, dE2000 2.3 and 2.4 from the scorer's R-c (47.4 / 25.3 / 27.9), 2.1 and 1.9 from my masked one, and 5.6 and 6.1 from hist-b's sunlit brick.
-  const brickRed = footShaded(tint('brickRed', [0.66, 0.815, 0.89]));
+  // Round six (the E3 scorer of round five, reading R-c and the render the same way, the mean of the pixels with red over green by 40 and green over blue: R-c (177, 102, 70), the render (152, 94, 71), dE76 10.6,
+  // "darker and browner than round four ... the R-c pixels (primary per lead ruling) are a lighter, more orange red than round five draws"): (0.66, 0.815, 0.89) was the historic D6 fit below. The red up by
+  // a tenth in linear light and the green by an eighth, the blue where it was: that mean is (169, 102, 72) at the noon rig, dE76 3.7 from R-c's (overcast (162, 94, 66), 4.7), and the masked tower and range
+  // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
+  // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
+  const brickRed = footShaded(tint('brickRed', [0.88, 0.92, 0.885]));
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
   // pale salmon (144, 98, 83) in the oblique view, and is a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
