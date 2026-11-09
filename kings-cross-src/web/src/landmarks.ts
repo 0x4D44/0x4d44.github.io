@@ -114,6 +114,10 @@ export function createMaterials(): MaterialSet {
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
   const slate = tint('slateBothSides', [slateGain, 0.85 * slateGain, 0.8 * slateGain]);
   const shedSlate = tint('slateBothSides', [1.15, 0.98, 0.92]);
+  // Round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the library's pane is (0.017, 0.025, 0.04), L 6 lit at the noon rig in the
+  // Midland's ground-floor arches; hist-b's windows are mixed, some white with the sky and the dark ones about L 12 to 20. This is a dark blue-grey glass, L 24 (not a black hole), flat:
+  // a patchy reflection would need the window shader the sash decals have (and a map, which a framed pane lacks), over the size cap.
+  const pane = tint('pane', [0.05, 0.08, 0.125]);
   return {
     table: {
       brick,
@@ -123,7 +127,7 @@ export function createMaterials(): MaterialSet {
       shedSlate,
       sash: material('sash'),
       sashArch: material('sashArch'),
-      pane: material('pane'),
+      pane,
       roofGlass, // the key keeps its name for the render order
       rib,
       lining: material('lining'), // pale boarding under the slate, seen from inside (hist-d)

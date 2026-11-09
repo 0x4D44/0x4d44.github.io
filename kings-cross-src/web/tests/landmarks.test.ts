@@ -2185,11 +2185,18 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.equal(set.table.lining, material('lining'));
   assert.equal(set.table.sash, material('sash'));
   assert.equal(set.table.sashArch, material('sashArch'));
-  assert.equal(set.table.pane, material('pane'));
+  // round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the dark pane set in a frame is the landmarks' own, a blue-grey glass: the library's
+  // (0.017, 0.025, 0.04) drew the Midland's arches at L 6 under the noon sun, a black hole; this is (0.05, 0.08, 0.125), L 24, and still dark, as hist-b's dark windows are (L 12 to 20)
+  const darkGlass = lambert('pane');
+  assert.notEqual(darkGlass, shared('pane'), 'the landmarks\' pane is its own clone of the library\'s');
+  const paneLum = lum([darkGlass.color.r, darkGlass.color.g, darkGlass.color.b]);
+  const libraryLum = lum([shared('pane').color.r, shared('pane').color.g, shared('pane').color.b]);
+  assert.ok(paneLum > 2.5 * libraryLum && paneLum < 5 * libraryLum, `lighter than the library's black-navy, by 2.5 to 5 times (about 3.2): ${(paneLum / libraryLum).toFixed(2)}`);
+  assert.ok(darkGlass.color.b > 1.8 * darkGlass.color.r, 'a blue-grey glass with the sky in it, not a neutral grey');
   for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
-  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate, set.table.shedSlate], 'the clock face, the roof panels, the two bricks, the dressings, the glass, the ribs and the two slates are all this set makes (no document here, so no texture)');
-  for (const key of ['sash', 'sashArch', 'pane', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate, set.table.shedSlate, set.table.pane], 'the clock face, the roof panels, the two bricks, the dressings, the glass, the ribs, the two slates and the dark pane are all this set makes (no document here, so no texture)');
+  for (const key of ['sash', 'sashArch', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {
