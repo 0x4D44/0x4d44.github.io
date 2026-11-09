@@ -1,0 +1,169 @@
+{
+  "wv-platform-11-east": {
+    "pos": [
+      20,
+      2.515,
+      35.3
+    ],
+    "target": [
+      65,
+      6,
+      23.44
+    ],
+    "fov": 60,
+    "source": "OSM platform 11 centreline at x 20 (width 4.3 m), eye 1.6 m above the ASSUMED 0.915 m deck, looking east under the west roof toward the central block"
+  },
+  "wv-platform-5-west": {
+    "pos": [
+      290,
+      2.515,
+      -51.61
+    ],
+    "target": [
+      160,
+      7,
+      -16.25
+    ],
+    "fov": 60,
+    "source": "OSM platform 5 centreline at x 290 (width 3.6 m), eye 1.6 m above deck, looking west under the east roof to North Bridge"
+  },
+  "wv-roof-underside": {
+    "pos": [
+      -30,
+      2.515,
+      59.52
+    ],
+    "target": [
+      10,
+      10.4,
+      53.52
+    ],
+    "fov": 70,
+    "source": "OSM platform 10 centreline at x -30, looking up and east at the ridge-and-furrow underside (gutter 8 m, ridge 10.4 m per WAVERLEY_ROOF_PROFILE)"
+  },
+  "wv-roof-from-north-bridge": {
+    "pos": [
+      125.47,
+      16.73,
+      35
+    ],
+    "target": [
+      -40,
+      8,
+      10
+    ],
+    "fov": 60,
+    "source": "North Bridge west parapet line (OSM way/380552925) at z 35, deck from the landmarks deck rule (raw DTM at the bridge ends), eye 1.6 m above deck, looking west over the roof: the standpoint of the Liberaler Humanist 2015 photo cited in waverley-roof.ts"
+  },
+  "wv-balmoral-east-end": {
+    "pos": [
+      70,
+      17.86,
+      -185
+    ],
+    "target": [
+      55,
+      43,
+      -125
+    ],
+    "fov": 60,
+    "source": "East end of Princes Street in front of Register House (OSM relation/963741 south face), eye 1.7 m above model ground, looking south at the Balmoral tower (OSM way/313744197, 58 m HES LB30315)"
+  },
+  "wv-waverley-bridge-east": {
+    "pos": [
+      -57.42,
+      7.24,
+      70
+    ],
+    "target": [
+      60,
+      10,
+      -95
+    ],
+    "fov": 60,
+    "source": "Waverley Bridge east parapet line (OSM way/377738788) at z 70 (south of the OSM block way/377738789 on its east side), 1.5 m inside its east parapet line, eye 1.6 m above deck, looking north-east over the west roof to Princes Mall, Waverley Steps and the Balmoral"
+  },
+  "wv-north-bridge-side": {
+    "pos": [
+      345,
+      2.515,
+      -63.48
+    ],
+    "target": [
+      125,
+      5,
+      0
+    ],
+    "fov": 45,
+    "source": "OSM platform 5 east end at x 345, eye 1.6 m above deck, looking west at the North Bridge east elevation (arches) across the tracks"
+  },
+  "wv-calton-hill-panorama": {
+    "pos": [
+      365,
+      45.4,
+      -301
+    ],
+    "target": [
+      -300,
+      45,
+      250
+    ],
+    "fov": 50,
+    "source": "Calton Hill beside the Dugald Stewart Monument (55.95461 N, 3.18456 W, projected with core/geo.ts project), eye 1.7 m above DTM, looking south-west over the station to the Old Town ridge and the Castle"
+  },
+  "wv-castle-from-princes-st": {
+    "pos": [
+      -600,
+      12.4,
+      30
+    ],
+    "target": [
+      -595,
+      80,
+      372
+    ],
+    "fov": 45,
+    "source": "Princes Street at x -600 (line from the OSM building fronts), eye 1.7 m above DTM, looking south over West Princes Street Gardens to Castle Rock (Crown Square 55.94856 N, 3.19998 W)"
+  },
+  "wv-scott-monument": {
+    "pos": [
+      -240,
+      5.81,
+      10
+    ],
+    "target": [
+      -176,
+      40,
+      -51
+    ],
+    "fov": 50,
+    "source": "East Princes Street Gardens south-west of the Scott Monument (OSM way/39044819), eye 1.7 m above DTM, 88 m off, looking north-east"
+  },
+  "wv-calton-hill-from-north-bridge": {
+    "pos": [
+      114.38,
+      14.44,
+      -70
+    ],
+    "target": [
+      480,
+      62,
+      -235
+    ],
+    "fov": 45,
+    "source": "North Bridge east parapet near its north end (z -70), eye 1.6 m above deck, looking north-east to Calton Hill (Nelson Monument 55.95400 N, 3.18273 W)"
+  },
+  "wv-overview": {
+    "pos": [
+      199.04,
+      397.92,
+      422.07
+    ],
+    "target": [
+      89.9,
+      5,
+      -14.5
+    ],
+    "source": "waverleyView(geometry, 1.6): the app landing view fitted to the OSM platform extent"
+  }
+}
