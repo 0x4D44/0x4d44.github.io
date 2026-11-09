@@ -116,6 +116,16 @@ test('a coach detail view samples its region by area, however the body is cut in
  const plate=new T.Mesh(new T.PlaneGeometry(1,3,1,1).rotateY(Math.PI/2),new T.MeshBasicMaterial());plate.name='body-detail';plate.position.set(1.36,2,15.8);group.add(plate);
  assert.throws(()=>detailCamera(T,scene,camera,controls,group,{heightAt:()=>0},[0,1.85,13]),/insufficient visible coach surface samples/);
 });
+test('a coach detail view samples only the surfaces that face its camera: a plate in the region whose normal points into the body gives it no surface, and the same plate turned to face the camera gives it one',()=>{
+ // (the camera stands on the +x side, 3 m from the body side at x 1.35; a plate at x 1.36 is in the 2.25 m region around the focus)
+ for(const [turned,surface] of [[-Math.PI/2,false],[Math.PI/2,true]]){
+  const {scene,group,camera,controls}=sceneFixture();group.children[0].geometry=new T.BoxGeometry(2.7,3.1,1);group.children[0].position.set(0,2,30);
+  const plate=new T.Mesh(new T.PlaneGeometry(1,3,1,1).rotateY(turned),new T.MeshBasicMaterial());plate.name='body-detail';plate.position.set(1.36,2,13);group.add(plate);
+  const look=()=>detailCamera(T,scene,camera,controls,group,{heightAt:()=>0},[0,1.85,13]);
+  if(surface){let view;assert.doesNotThrow(()=>{view=look();},'a plate that faces the camera is a surface');assert.equal(view.visibility.clear,true);}
+  else assert.throws(look,/insufficient visible coach surface samples/,'a plate that faces away from the camera is no surface');
+ }
+});
 test('forward captures reuse replay and seek on the simulated clock without reloading for camera or coach changes',async()=>{
  const loads=[],seeks=[],session=replaySession(async index=>{loads.push(index);return {start:1000};},async(...v)=>seeks.push(v));
  assert.equal((await session.at(0,1100)).loaded,true);assert.equal((await session.at(0,1200)).loaded,false);

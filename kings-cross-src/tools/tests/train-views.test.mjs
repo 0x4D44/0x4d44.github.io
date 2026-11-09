@@ -1169,7 +1169,7 @@ test('a V10 view frozen as a GAP is an earlier answer too: it is searched for ag
  const plan=stationPlans.get('lner5'),A=plan.placements[0].id,B=plan.placements[1].id,suffix='station-150m-coach';
  // round 2's search stopped at the spread: the view was frozen as a GAP, with its placement, its reason and its blocker
  const held=F.stationViewsFromSearch(plan,fakeReport(plan,{[B]:{...allAt(plan,B)[B],[suffix]:null}})),frozen=F.stationViewsFromFrozen(plan,manifestOf(held)),gap=frozen.find(v=>v.suffix===suffix);
- assert.ok(gap.status==='GAP'&&gap.search.frozen===true&&gap.placement.id===B&&gap.blocker,'the fixture: a view frozen as a GAP that keeps its placement and its blocker');
+ assert.ok(gap.status==='GAP'&&gap.search?.frozen===true&&gap.placement?.id===B&&gap.blocker,'the fixture: a view frozen as a GAP that keeps its placement and its blocker');
  const okResult=view=>({view,status:'OK',reason:null,inspection:{clear:true},file:`lner5-${view.suffix}.png`,attempts:1}),gapResult=view=>({view,status:'GAP',reason:view.reason,attempts:0});
  const results=frozen.map(v=>v===gap?gapResult(v):okResult(v)),calls={search:[],capture:[]};
  const searchWith=accepts=>async placements=>{calls.search.push(placements.map(p=>p.id));return fakeReport(plan,accepts).filter(r=>placements.some(p=>p.id===r.placementId));};
