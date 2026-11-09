@@ -427,7 +427,8 @@ check('the manifest names C02 beside C01: the radius that is typical of the trac
  const arc=F.curveRouteFor({nodes:[],rails:[]},100,{typical:{radiusM:452}}),synthetic=C.curveManifest({route:arc,longest:{kind:'gn387x12',lengthM:100},trackData:{file:'x',sha256:'0'.repeat(64)},typical:{radiusM:452}},F.CURVE_NORMAL);
  assert.equal(synthetic.route.source,'synthetic');assert.equal(synthetic.route.note,arc.note);assert.ok(!('pick' in synthetic.route));assert.deepEqual(synthetic.typical,{radiusM:452});
  // a run without C02 says nothing of it, with or without C01
- assert.ok(!('curveNormal' in C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,generated:stamp})));assert.ok(!('curveNormal' in C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,curveNormal:null,generated:stamp})));
+ assert.ok(!('curveNormal' in safely(()=>C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,generated:stamp}))),'with C01 alone');assert.ok(!('curveNormal' in safely(()=>C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,curveNormal:null,generated:stamp}))),'with C02 given as null');
+ assert.ok(!('curveNormal' in safely(()=>C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,generated:stamp}))),'with neither');
  const only=C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curveNormal:normal,generated:stamp});assert.ok(!('curve' in only));assert.deepEqual(only.curveNormal,head.curveNormal);
 });
 
@@ -463,6 +464,11 @@ check('catalogue preflight plans C02 without Chrome beside C01 and the rest, and
   await writeFile(poses,JSON.stringify(held('curve',tight)));
   const [other]=await ok('--kinds','lner5','--views','C02','--poses',poses);assert.equal(other.posesFrozen,true,'a run of C02 does not compare C01\'s entry');
   await assert.rejects(run('--kinds','lner5','--views','C01,C02','--poses',poses),/lner5\/curve curve plan differs from the frozen plan at \/views\/0\/eye\/0/);
+  // asked together, each curve is planned on its own route: C02 is not planned on C01's tightest bend because that was loaded too. Frozen as they are planned alone, both are what the run plans again
+  assert.notEqual(normal.route.radiusM,tight.route.radiusM,'the two routes are two bends');
+  const together=JSON.parse(JSON.stringify(earlier));together.kinds.lner5.views.curve={plan:JSON.parse(JSON.stringify(F.curvePoseOf(tight)))};together.kinds.lner5.views['curve-normal']={plan:JSON.parse(JSON.stringify(F.curvePoseOf(normal)))};
+  await writeFile(poses,JSON.stringify(together));
+  const [pair]=await ok('--kinds','lner5','--views','C01,C02','--poses',poses);assert.equal(pair.posesFrozen,true,'each of the two plans equals its own frozen entry');
  } finally {console.log=log;await rm(dir,{recursive:true,force:true});}
 });
 

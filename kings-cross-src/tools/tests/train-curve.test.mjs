@@ -62,6 +62,10 @@ check('C02 is C01\'s second pose and has numbers of its own: a bend is 1 degree 
  assert.notEqual(F.CURVE_NORMAL.id,F.CURVE.id);assert.notEqual(F.CURVE_NORMAL.suffix,F.CURVE.suffix);assert.notEqual(F.CURVE_NORMAL_RULE,F.CURVE_RULE);
  // the rule says how the radius was picked, from the track and not from a train, and what stands in when no stretch has it
  for(const word of ['C02','typical','median','1 degree','26 m','0.5 m','service main','10%','never from a train','synthetic','day only','information','carPoses','least mean'])assert.ok(F.CURVE_NORMAL_RULE.includes(word),`the rule names ${word}`);
+ // and each number it gives is the number the search uses, in the place the rule gives it: 26 m is twice the baseline (the run of track the turn is read across, and the radius's numerator), 0.5 m twice the step
+ // (the spacing of the positions, and the length of bend each stands for). A word-in-text check passes when only one of the two places of a number is wrong.
+ assert.equal(F.CURVE.baselineM,26);assert.equal(F.CURVE.stepM,.5);
+ for(const phrase of [`across the ${F.CURVE.baselineM} m of the longest car`,`at the radius ${F.CURVE.baselineM} m over its turn`,`every ${F.CURVE.stepM} m along each piece`,`stands for ${F.CURVE.stepM} m of bend`,`by ${F.CURVE_NORMAL.bendMinDeg} degree or more`,`within ${F.CURVE_NORMAL.bandShare*100}% of the typical one`])assert.ok(F.CURVE_NORMAL_RULE.includes(phrase),`the rule says: ${phrase}`);
 });
 
 check('the polyline helpers measure a path: the distance along it to each point, the segment a distance falls in, the point at a distance, and the distance from a point to it',()=>{
@@ -412,6 +416,21 @@ check('a position counts for the service of the edge it stands on, not of the ed
  assert.deepEqual(summary(typical(['main'],bend(1e-8))),[q6(RADIUS(20)),187.5,23,1]);
 });
 
+check('a position stands on the edge it is in even where the nodes lie closer than a step: the edge is the last whose node is at or behind the position, however many nodes that passes',()=>{
+ // one chain of 100 m: a main way of 59.9 m with a node every 0.1 m (five of them to a step of 0.5 m) and a kink of 20 degrees at 30 m, then a siding of one dense edge and one long one.
+ // Positions run 13 to 87 every 0.5 m: 13 to 59.5 stand on the main way (94 of the 149) and 60 to 87 on the siding (55). A search that moves one edge on at a step is still in the
+ // first edges of the main way's 599 when the way ends, and calls every position main.
+ const a=[0,0],points=[a];
+ for(let i=1;i<=300;i++)points.push(run(a,0,0.1*i));
+ const k=points[300];
+ for(let i=1;i<=299;i++)points.push(run(k,20,0.1*i));
+ const end=run(k,20,30),far=run(end,20,40);
+ const data={nodes:[...points.map((p,i)=>[500+i,...p]),[1100,...end],[2000,...far]],rails:[{id:1,nodes:points.map((p,i)=>500+i),tunnel:false,service:'main'},{id:2,nodes:[1099,1100,2000],tunnel:false,service:'siding'}]};
+ const typical=services=>safely(()=>F.typicalRadius(data,{services}));
+ assert.deepEqual([typical(['main']).radiusM,typical(['main']).trackM,typical(['main']).pieces],[q6(RADIUS(20)),47,1],'94 positions on the main way, whatever the node spacing');
+ assert.equal(typical(['siding']),null,'none of the siding\'s positions has a window across the kink: no bend');
+});
+
 check('the typical radius is measured on the curve the page draws, not on the chords between the nodes',()=>{
  const data=arcWay({R:120,spacing:40,count:9}),smooth=safely(()=>F.typicalRadius(data,{shapeOf:shapesOf(data)})),chords=safely(()=>F.typicalRadius(data));
  assert.ok(Math.abs(smooth.radiusM-120)<.05*120,`the drawn curve is the circle: ${smooth.radiusM}`);
@@ -509,6 +528,79 @@ check('a place counts if its own radius is within the band of the typical one, t
  assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:0}),/a typical radius of 0 m is no bend/);assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:-3}),/a typical radius of -3 m/);assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:NaN}),/a typical radius of NaN m/);
 });
 
+check('the typical route cuts the track at the page\'s corners, as the tightest bend\'s does, and reads a turn across due south as it reads one across due north',()=>{
+ // a turn of 29 degrees at a node is smoothed by the page and is a bend of its own radius; 31 degrees is a corner, with no bend either side of it
+ const turn=deg=>polyWay([[0,0],run([0,0],0,200),run(run([0,0],0,200),deg,200),run(run(run([0,0],0,200),deg,200),deg,200)]);
+ assert.notEqual(typicalRoute(turn(29),60,RADIUS(29),{curved:false}),null,'29 degrees is smoothed');
+ assert.equal(typicalRoute(turn(31),60,RADIUS(31),{curved:false}),null,'31 degrees is a corner');
+ // a cut of its own moves the line: at 15 degrees a kink of 20 is a corner, at 25 a kink of 20 is a bend
+ assert.equal(typicalRoute(turn(20),60,RADIUS(20),{curved:false,options:{cutDeg:15}}),null);assert.notEqual(typicalRoute(turn(20),60,RADIUS(20),{curved:false,options:{cutDeg:25}}),null);
+ // the headings of a kink across due south are 170 and -170 degrees as the page counts them (clockwise from north, -180 to 180): the turn is 20 degrees, as it is across due north, and not 340
+ const here=typicalRoute(kinked(20),60,RADIUS(20),{curved:false}),b=run([0,0],170,100.25),there=typicalRoute(polyWay([[0,0],b,run(b,190,299.75)]),60,RADIUS(20),{curved:false});
+ assert.notEqual(there,null,'a bend across due south is a bend of 20 degrees');near(there.turnDeg,20,1e-6);near(there.radiusM,q6(RADIUS(20)),1e-6);
+ near(there.pick.meanDeviation,here.pick.meanDeviation,1e-6);near(there.pick.tightestM,here.pick.tightestM,1e-5);assert.equal(there.pick.straightM,here.pick.straightM);
+});
+
+check('a piece holds the train if it is as long as the train and its margin each end, to a nanometre: a hair short does not, a hair over does, and half a metre short never does',()=>{
+ // a way of 120 m with a kink of 20 degrees in the middle holds a train of 100 m and 10 m of margin each end with one place, the kink; a second piece that always holds the train gives a route to count against
+ const way=extra=>polyWay([[0,0],[0,-60],run([0,-60],20,60+extra)],{idBase:700,wayId:7}),long=kinked(20,{x0:3000,idBase:300,wayId:3});
+ for(const [extra,holds] of [[0,true],[5e-10,true],[-5e-10,true],[1e-8,true],[-1e-8,false],[-.5,false],[-1,false],[-1.5,false]]) {
+  const route=typicalRoute(merge(way(extra),long),100,RADIUS(20),{curved:false});
+  assert.deepEqual([route.searched.pieces,route.searched.fitting],[2,holds?2:1],`a piece ${120+extra} m long ${holds?'holds':'does not hold'} a train of 100 m and its margins of 10 m`);
+ }
+ // alone, the piece of exactly the length holds the train on its one place, the kink in the middle of it
+ const alone=typicalRoute(way(0),100,RADIUS(20),{curved:false});assert.notEqual(alone,null,'exactly long enough');near(alone.apexS,60,1e-6);near(alone.turnDeg,20,1e-6);
+ assert.equal(typicalRoute(way(-1e-8),100,RADIUS(20),{curved:false}),null,'a hundredth of a micrometre short');
+});
+
+check('the length of the train is counted in steps with a hair of allowance for float: 40.4 m is 404 steps of 0.1 m, so its mean and its straight are over 405 places of it, not 404',()=>{
+ // 40.4 / 0.1 is 403.99999999999994 in float; the train has 405 places along it, each 0.1 m, the kink in the middle of 405 of the places a train can stand
+ const way=kinked(20,{lead:100.23}),want=typicalScan(way,40.4,RADIUS(20),{curved:false,step:.1}),route=typicalRoute(way,40.4,RADIUS(20),{curved:false,options:{stepM:.1}});
+ near(route.pick.meanDeviation,want.mean,1e-6,'the mean over 405 places');near(route.pick.tightestM,want.tightest,2e-6,'the tightest bend under the train');near(route.pick.straightM,want.straight,1e-6,'the straight under it');
+ assert.ok(Math.abs(route.pick.straightM/.1-Math.round(route.pick.straightM/.1))<1e-6,'a whole number of steps');
+});
+
+check('the track and the bend of the typical radius are given to a micrometre: a step that is no fraction of two leaves no float dust',()=>{
+ // 1247 positions of 0.3 m on a way of 400 m, 87 of them in the kink\'s window: 374.1 and 26.1 m, where the sums are 374.10000000000844 and 26.099999999999998
+ const typical=safely(()=>F.typicalRadius(kinked(20),{stepM:.3}));
+ assert.deepEqual([typical.stepM,typical.trackM,typical.bendM],[.3,374.1,26.1]);
+});
+
+check('the last place of a piece counts to a nanometre: a piece 0.3 m longer than the train and its margins holds four places of 0.1 m, however the float falls, and the pick is the middle of the four',()=>{
+ // 120.3 m less a hundredth of a nanometre with the kink in the middle: (0.3 - 1e-11) / 0.1 is 2.9999999999 in float, three steps and a hair, so the fourth place needs the allowance. All four tie: the kink is within 0.15 m of each.
+ const way=polyWay([[0,0],[0,-60.15],run([0,-60.15],20,60.15-1e-11)]),options={stepM:.1};
+ const route=typicalRoute(way,100,RADIUS(20),{curved:false,options}),want=typicalScan(way,100,RADIUS(20),{curved:false,step:.1});
+ near(want.apex,60.15,1e-6,'written another way, the middle of four places from 60 m to 60.3 m');near(route.apexS,60.15,1e-6,'the middle of the four, not of three');
+ near(route.pick.meanDeviation,want.mean,1e-6);near(route.turnDeg,20,1e-6);
+});
+
+check('a straight is outside every band however wide, and a bend however gentle is inside its own: the radius of a straight is infinite, not nothing, and only a turn of a nanoradian or less is a straight',()=>{
+ // the radius of a straight is not nothing: with a band of 100% or more, a radius of nothing would be within it of any typical radius
+ const straight=polyWay([[0,0],[0,-300],[0,-600]]);
+ for(const bandShare of [.5,1,2,10])assert.equal(typicalRoute(straight,60,RADIUS(20),{curved:false,options:{bandShare}}),null,`a straight in a band of ${bandShare}`);
+ // a turn of a hundredth of a degree is a bend like any other: a radius of 149 km, within 10% of a typical radius of 149 km
+ const gentle=typicalRoute(kinked(.01),60,RADIUS(.01),{curved:false});assert.notEqual(gentle,null,'a hundredth of a degree is a bend');near(gentle.turnDeg,.01,1e-9);near(gentle.radiusM,q6(RADIUS(.01)),1e-6);
+});
+
+check('the turn of the pick is the turn at the middle of the run of places that tie, not at its first or its last: a window takes in one kink at each end of the run and both in the middle',()=>{
+ // kinks of 20 and 25 degrees 20 m apart, 150.25 and 170.25 m along: a window sees the first alone (20 degrees), then both (45), then the second alone (25). A train of 100 m has all of both
+ // in the 92 places from 137.5 m to 183 m, so those tie (a band of 50% of a typical turn of 26 degrees takes all three turns in), and the middle of them, 160.25 m, sees both
+ const a=[0,0],b=run(a,0,150.25),c=run(b,20,20),both=polyWay([a,b,c,run(c,45,229.75)]),options={bandShare:.5};
+ const route=typicalRoute(both,100,RADIUS(26),{curved:false,options}),want=typicalScan(both,100,RADIUS(26),{curved:false,band:.5});
+ near(want.apex,160.25,1e-9,'written another way, the middle of the run');near(want.turn,45*D2R,1e-9,'and the window there takes in both kinks');
+ near(route.apexS,160.25,1e-6);near(route.turnDeg,45,1e-6,'the turn at the middle, 45 degrees, not 20 at the first place or 25 at the last');near(route.radiusM,q6(RADIUS(45)),1e-5);
+ near(route.pick.meanDeviation,want.mean,1e-6);near(route.pick.tightestM,want.tightest,2e-6);assert.equal(route.pick.straightM,want.straight);
+});
+
+check('a place under the train is straight to the eye below the threshold and a bend at it, to a part in a million-million: a kink of exactly the threshold is no straight, whatever the float makes of it',()=>{
+ // a kink of D degrees under a threshold of D: the 52 places of the kink are bends (the turn is the threshold, to the float) and the other 69 of the 121 are straight. A turn a float short of the
+ // threshold is the threshold still; across 29 kinks several are a float short (and none is a million-millionth over it, so the allowance is not a licence to count a bend as a straight)
+ for(let deg=1;deg<=29;deg++) {
+  const route=typicalRoute(kinked(deg),60,RADIUS(deg),{curved:false,options:{bendMinDeg:deg}});
+  assert.equal(route.pick.straightM,34.5,`${deg} degrees against a threshold of ${deg}: 69 straight places of the 121`);
+ }
+});
+
 check('of two bends in the band the one the train sees more of wins wherever it is in the file, and of two equal ones the one walked first',()=>{
  // one kink of 20 degrees on way 3, two of 20 degrees 30 m apart (a train of 60 m sees both from between) on way 2, a lone kink on way 1: way 2 is the nearest to a bend all along the train
  const lone=kinked(20,{idBase:100,wayId:1}),a=[3000,0],b=run(a,0,100.25),c=run(b,20,30),pair=polyWay([a,b,c,run(c,40,269.75)],{idBase:200,wayId:2}),late=kinked(20,{x0:6000,idBase:300,wayId:3});
@@ -538,8 +630,12 @@ check('the route for a typical radius is the bend nearest it on the page\'s trac
  assert.equal(none.source,'synthetic');near(none.radiusM,600,1e-9);assert.equal(none.pick,undefined);assert.ok(none.local);
  assert.equal(none.note,'a synthetic circular arc of radius 600 m: no run of the page\'s track holds a train 100 m long on a bend within 10% of the typical radius');
  assert.match(F.curveRouteFor(data,100,{shapeOf,typical:{radiusM:600},bandShare:.25}).note,/ on a bend within 25% of the typical radius$/);
+ // the share is said to a micrometre of a per cent: .07 * 100 is 7.000000000000001 in float, and the note says 7
+ assert.match(F.curveRouteFor(data,100,{shapeOf,typical:{radiusM:600},bandShare:.07}).note,/ on a bend within 7% of the typical radius$/);
  // the arc of a track with no bend at all is of the typical radius too, not of the fallback\'s, and the tightest bend\'s fallback is as it was
  const arc=F.curveRouteFor({nodes:[],rails:[]},130,{typical:{radiusM:452}});near(arc.radiusM,452,1e-9);assert.match(arc.note,/^a synthetic circular arc of radius 452 m: .* 130 m long on a bend within 10% of the typical radius$/);
+ // the typical radius comes before a fallback radius the caller names: the fallback is for the tightest bend\'s arc, which has no typical radius
+ near(F.curveRouteFor({nodes:[],rails:[]},130,{typical:{radiusM:452},fallbackRadiusM:200}).radiusM,452,1e-9);near(F.curveRouteFor({nodes:[],rails:[]},130,{fallbackRadiusM:200}).radiusM,200,1e-9);
  const old=F.curveRouteFor({nodes:[],rails:[]},130);near(old.radiusM,100,1e-9);assert.match(old.note,/ 130 m long on a bend$/,'the tightest bend\'s arc says what it said');
  // a note ends with the reason the caller gave
  assert.match(F.circularArcRoute(130,100,{reason:'on a hill'}).note,/ 130 m long on a hill$/);
