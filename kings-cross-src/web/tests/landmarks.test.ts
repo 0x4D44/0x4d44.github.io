@@ -1064,11 +1064,11 @@ test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the
   for (const t of [...slate, ...glass, ...triangles(parts.lining as Batch)]) close(uvArea(t) / worldArea(t), 1, 0.01, 'texel area equals roof area');
 });
 
-test('Barlow ribs [WP-STP, hist-d]: a lattice truss 1.4 m deep at each of the 24 rib positions, springing from the platform, wholly inside the roof', () => {
+test('Barlow ribs [WP-STP, hist-d, hist-d2]: a lattice truss 2 m deep of heavy members at each of the 24 rib positions, springing from the platform, wholly inside the roof', () => {
   const parts = barlowGeometry(barlow);
   assert.equal(barlow.ribs.length, 24);
-  // a rib lies in its own 0.3 m slab: the purlins run the whole length and the extension's plates stand beyond the gable, so neither is a rib
-  const slab = (t: Tri): number => barlow.ribs.findIndex((r) => t.p.every((p) => Math.abs(inVault(p).v - r) <= 0.15 + 1e-6));
+  // a rib lies in its own 0.34 m slab (a chord is 0.34 m thick along the shed): the purlins run the whole length and the extension's plates stand beyond the gable, so neither is a rib
+  const slab = (t: Tri): number => barlow.ribs.findIndex((r) => t.p.every((p) => Math.abs(inVault(p).v - r) <= 0.17 + 1e-6));
   const ribTris = triangles(parts.rib as Batch).filter((t) => slab(t) >= 0);
   barlow.ribs.forEach((_, i) => {
     const ts = ribTris.filter((t) => slab(t) === i);
@@ -1076,19 +1076,33 @@ test('Barlow ribs [WP-STP, hist-d]: a lattice truss 1.4 m deep at each of the 24
     close(Math.min(...pts.map((p) => p.y)), 0, 1e-9, `rib ${i} springs from the platform`);
     close(Math.max(...pts.map((p) => p.y)), barlow.rise - 0.1, 0.01, `rib ${i} reaches the crown`);
     const crown = pts.filter((p) => Math.abs(p.u - barlow.width / 2) < 0.05); // a ribbon is half a chord's width either side of the crown node
-    close(Math.min(...crown.map((p) => p.y)), barlow.rise - 1.4, 0.01, `rib ${i} is 1.4 m deep at the crown`);
+    close(Math.min(...crown.map((p) => p.y)), barlow.rise - 2, 0.01, `rib ${i} is 2 m deep at the crown (hist-d2: about 2 m under a 62 m chord)`);
     assert.ok(Math.min(...pts.map((p) => underSkin(p.u, p.y))) >= 0.05, `rib ${i} stands wholly inside the roof`); // 0.10 under it but for the feet, which are held to the platform
     // two chords, and a lattice that crosses the gap between them: a diagonal and a vertical to each of the 24 segments, each seen from both sides
     const depths = ts.map((t) => t.p.map((p) => underSkin(inVault(p).u, inVault(p).y)));
-    const top = depths.filter((d) => Math.max(...d) < 0.45).length;
-    const bottom = depths.filter((d) => Math.min(...d) > 0.9).length;
-    assert.equal(top, 24 * 3 * 2, `rib ${i}: the top chord, two sides and an underside to a segment`);
-    assert.equal(bottom, 24 * 3 * 2, `rib ${i}: the bottom chord`);
-    assert.equal(ts.length - top - bottom, 24 * 12 + 4, `rib ${i}: two diagonals and a vertical to a segment, and the closing vertical`);
+    const topTs = ts.filter((_, j) => Math.max(...(depths[j] as number[])) < 0.45);
+    const bottomTs = ts.filter((_, j) => Math.min(...(depths[j] as number[])) > 1.5);
+    const latticeTs = ts.filter((t) => !topTs.includes(t) && !bottomTs.includes(t));
+    assert.equal(topTs.length, 24 * 3 * 2, `rib ${i}: the top chord, two sides and an underside to a segment`);
+    assert.equal(bottomTs.length, 24 * 3 * 2, `rib ${i}: the bottom chord`);
+    assert.equal(latticeTs.length, 24 * 12 + 4, `rib ${i}: two diagonals and a vertical to a segment, and the closing vertical`);
+    // heavy members, not wires (hist-d, hist-d2): every face of a chord stands 0.17 m either side of the rib's plane (0.34 m thick), of a lattice bar 0.07 m (0.14 m)
+    for (const [name, sel, half] of [['top chord', topTs, 0.17], ['bottom chord', bottomTs, 0.17], ['lattice', latticeTs, 0.07]] as const) {
+      for (const t of sel) for (const p of t.p) close(Math.abs(inVault(p).v - (barlow.ribs[i] as number)), half, 1e-6, `rib ${i}: the ${name} is ${2 * half} m thick`);
+    }
   });
   // the purlins run the length of the shed, one under each node of the arch
   const purlins = triangles(parts.rib as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > barlow.barlowLength - 1);
   assert.equal(purlins.length, 25 * 3 * 2, 'a purlin of three faces under each of the 25 nodes');
+  // each is 0.2 m wide and 0.16 m deep, in groups of six triangles in order across the shed
+  const byU = [...purlins].sort((a, b) => a.p.reduce((x, p) => x + inVault(p).u, 0) / 3 - b.p.reduce((x, p) => x + inVault(p).u, 0) / 3);
+  for (let n = 0; n < 25; n++) {
+    const pts = byU.slice(6 * n, 6 * n + 6).flatMap((t) => t.p).map(inVault);
+    close(Math.max(...pts.map((p) => p.u)) - Math.min(...pts.map((p) => p.u)), 0.2, 1e-6, `purlin ${n}: 0.2 m wide`);
+    close(Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y)), 0.16, 1e-6, `purlin ${n}: 0.16 m deep`);
+  }
+  // all of the vault's ironwork is the dark rib material: the extension's plate girders beyond the gable are the light roof panels' (metal)
+  assert.equal(triangles(parts.rib as Batch).filter((t) => t.p.some((p) => inVault(p).v > barlow.barlowLength + 1e-6)).length, 0, 'no dark ironwork beyond the gable');
 });
 
 test('Barlow shed [hist-d]: pale boarding 8 cm under each slate strip, parallel to it, facing out so that it shows from inside only', () => {
@@ -1145,7 +1159,7 @@ test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of g
   assert.ok(pyramids.every((t) => t.p.every((p) => inVault(p).v <= barlow.barlowLength + F.transition + 1e-9)), 'they fill the 22 m, no more');
   close(Math.max(...pyramids.flatMap((t) => t.p.map((p) => inVault(p).y))) - F.screenFoot, F.pyramid, 1e-9, 'each rises 1.5 m');
   // the main roof: 14 teeth in 7 bays; each slope climbs a truss depth to the north, wall to wall, and a dark riser drops back to the low edge
-  const slopes = triangles(parts.metal as Batch).filter((t) => dot(unit(geoNormal(t)), [0, 1, 0]) > 0);
+  const slopes = triangles(parts.metal as Batch).filter((t) => dot(unit(geoNormal(t)), [0, 1, 0]) > 0.5); // the roof panels, not the girders and fascias standing on edge
   assert.equal(slopes.length, 14 * 2, 'two triangles to a tooth\'s slope');
   const tooth = barlow.bay / F.teeth;
   for (const t of slopes) {
@@ -1181,28 +1195,52 @@ test('Barlow vault: the south wall closes the end', () => {
 
 // ---- assembly ----------------------------------------------------------------------------------
 
-test('materials: every look but the clock, the extension\'s roof panels, the Midland\'s terracotta brick and the cream dressings is the library\'s shared one (stock brick, two-sided slate, the shed\'s glass, ribs and boarding, sashes, panes), and nothing shared is changed', () => {
-  const before = (material('brick') as THREE.MeshLambertMaterial).color.getHex();
-  const redBefore = (material('brickRed') as THREE.MeshLambertMaterial).color.getHex();
-  const stoneBefore = (material('stone') as THREE.MeshLambertMaterial).color.getHex();
+test('materials: the tinted looks (terracotta and buff brick, cream dressings, the shed\'s silver glass and dark ribs, the extension\'s roof panels, the clock face) are this set\'s own clones, the rest is the library\'s, and nothing shared is changed', () => {
+  const hex = (name: Parameters<typeof material>[0]): number[] => {
+    const m = material(name) as THREE.MeshLambertMaterial;
+    return [m.color.getHex(), m.emissive.getHex()];
+  };
+  const before = Object.fromEntries((['brick', 'brickRed', 'stone', 'shedGlass', 'ribPaint'] as const).map((n) => [n, hex(n)]));
   const set = createMaterials();
-  assert.equal(set.table.brick, material('brick'));
-  const cream = set.table.stone as THREE.MeshLambertMaterial;
-  const ashlar = material('stone') as THREE.MeshLambertMaterial;
-  assert.notEqual(cream, ashlar, 'the dressings are their own: creamier and paler than the library\'s grey ashlar [hist-a, hist-b]');
-  assert.equal(cream.map, ashlar.map, 'on the same coursed-stone texture');
-  assert.ok(cream.color.r > ashlar.color.r && cream.color.g > ashlar.color.g && cream.color.b > ashlar.color.b && cream.color.r > cream.color.b, 'paler, and warm');
-  assert.equal(ashlar.color.getHex(), stoneBefore, 'the shared one keeps its colour');
-  assert.equal(set.table.roofGlass, material('shedGlass'), 'the shed\'s milky glazing: bright from inside');
-  assert.equal(set.table.rib, material('ribPaint'), 'the restored shed\'s pale ironwork');
+  const lambert = (k: keyof typeof set.table): THREE.MeshLambertMaterial => set.table[k] as THREE.MeshLambertMaterial;
+  const shared = (n: Parameters<typeof material>[0]): THREE.MeshLambertMaterial => material(n) as THREE.MeshLambertMaterial;
+  // the dressings and the two bricks keep the library's texture and differ from its colour
+  const cream = lambert('stone');
+  assert.notEqual(cream, shared('stone'), 'the dressings are their own: creamier and paler than the library\'s grey ashlar [hist-a, hist-b]');
+  assert.equal(cream.map, shared('stone').map, 'on the same coursed-stone texture');
+  assert.ok(cream.color.r > shared('stone').color.r && cream.color.g > shared('stone').color.g && cream.color.b > shared('stone').color.b && cream.color.r > cream.color.b, 'paler, and warm');
+  const red = lambert('brickRed');
+  assert.notEqual(red, shared('brickRed'), 'the Midland Grand\'s brick is its own: a lighter terracotta than the library\'s crimson [hist-b]');
+  assert.equal(red.map, shared('brickRed').map, 'on the same stock-brick texture');
+  assert.ok(red.color.g > shared('brickRed').color.g * 2 && red.color.b > shared('brickRed').color.b * 2 && red.color.r >= shared('brickRed').color.r, 'lighter, and less saturated');
+  assert.ok(red.color.r > red.color.g && red.color.r > red.color.b, 'a red tint on the stock brick');
+  const buff = lambert('brick');
+  assert.notEqual(buff, shared('brick'), 'the hotel\'s brick is its own: a lighter, golden buff [hist-a]');
+  assert.equal(buff.map, shared('brick').map, 'on the same stock-brick texture');
+  assert.ok(buff.color.r > shared('brick').color.r && buff.color.g > shared('brick').color.g && buff.color.b > shared('brick').color.b, 'lighter than the library\'s');
+  assert.ok(buff.color.r > buff.color.g && buff.color.g > buff.color.b && buff.color.g / buff.color.r > 0.9, 'warm, and golden rather than red');
+  assert.notEqual(lambert('brick'), lambert('brickRed'));
+  // the shed [hist-d]: silver-grey glazing that is not blue, and dark steel ribs rather than pale ones
+  const glass = lambert('roofGlass');
+  assert.notEqual(glass, shared('shedGlass'));
+  assert.equal(glass.map, shared('shedGlass').map, 'on the same astragal-barred texture');
+  assert.equal(glass.emissiveMap, shared('shedGlass').emissiveMap);
+  assert.ok(glass.transparent && glass.side === THREE.DoubleSide && glass.depthWrite === false, 'still see-through from either side, and never hiding what is behind it');
+  // the glow is the emissive colour times the pane texture, whose average colour the library records: neutral here, blue in the library's
+  const average = new THREE.Color(TEXTURES.shedGlass.average);
+  const glow = (m: THREE.MeshLambertMaterial): number[] => [m.emissive.r * average.r, m.emissive.g * average.g, m.emissive.b * average.b];
+  const spread = (v: number[]): number => Math.max(...v) / Math.min(...v);
+  assert.ok(spread(glow(shared('shedGlass'))) > 2, 'the library\'s glass glows blue (the test\'s yardstick)');
+  assert.ok(spread(glow(glass)) < 1.2, 'its glow is neutral: silver, not sky');
+  assert.ok(Math.min(...glow(glass)) > Math.max(...glow(shared('shedGlass'))) * 0.9, 'and bright: no dimmer than the library\'s brightest channel');
+  assert.ok(glass.color.b <= glass.color.r, 'no bluer than it is red: silver, not sky');
+  const iron = lambert('rib');
+  assert.notEqual(iron, shared('ribPaint'));
+  assert.ok(iron.color.r < shared('ribPaint').color.r / 3 && iron.color.b < shared('ribPaint').color.b / 3, 'dark steel where the library\'s ironwork is white');
+  assert.ok(iron.emissive.r < shared('ribPaint').emissive.r / 2, 'not glowing pale');
+  for (const n of ['brick', 'brickRed', 'stone', 'shedGlass', 'ribPaint'] as const) assert.deepEqual(hex(n), before[n], `the shared ${n} keeps its colours`);
+  // the rest is the library's own
   assert.equal(set.table.lining, material('lining'));
-  const red = set.table.brickRed as THREE.MeshLambertMaterial;
-  const sharedRed = material('brickRed') as THREE.MeshLambertMaterial;
-  assert.notEqual(red, sharedRed, 'the Midland Grand\'s brick is its own: a lighter terracotta than the library\'s crimson [hist-b]');
-  assert.equal(red.map, sharedRed.map, 'on the same stock-brick texture');
-  assert.ok(red.color.g > sharedRed.color.g * 2 && red.color.b > sharedRed.color.b * 2 && red.color.r >= sharedRed.color.r, 'lighter, and less saturated');
-  assert.equal(sharedRed.color.getHex(), redBefore, 'the shared one keeps its colour');
-  assert.notEqual(set.table.brickRed, material('brick'));
   assert.equal(set.table.slate, material('slateBothSides'));
   assert.notEqual(set.table.slate, material('slate'), 'the shed\'s slate is seen from inside: a two-sided one');
   assert.equal((set.table.slate as THREE.MeshLambertMaterial).side, THREE.DoubleSide);
@@ -1212,10 +1250,8 @@ test('materials: every look but the clock, the extension\'s roof panels, the Mid
   assert.equal(set.table.pane, material('pane'));
   for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
-  assert.equal((material('brick') as THREE.MeshLambertMaterial).color.getHex(), before, 'the shared brick keeps its colour');
-  assert.ok(red.color.r > red.color.g && red.color.r > red.color.b, 'a red tint on the stock brick');
-  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone], 'the clock face, the extension\'s roof panels, the terracotta brick and the cream dressings are all this set makes (no document here, so no texture)');
-  for (const key of ['brick', 'slate', 'sash', 'sashArch', 'pane', 'roofGlass', 'rib', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib], 'the clock face, the roof panels, the two bricks, the dressings, the glass and the ribs are all this set makes (no document here, so no texture)');
+  for (const key of ['slate', 'sash', 'sashArch', 'pane', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {

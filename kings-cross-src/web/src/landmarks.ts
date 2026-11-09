@@ -1,20 +1,7 @@
-// The buildings around King's Cross, drawn from the numbers in core/landmarks.ts: the Great Northern
-// Hotel's crescent, the St Pancras Renaissance (Midland Grand) Hotel with its two towers, and the
-// Barlow train shed beside it. Everything is procedural: geometry is built in code, the textures are
-// the shared ones in materials.ts (drawn into a canvas at runtime; no image assets, nothing to license).
-//
-// All geometry is built in world coordinates (x east, y up, z south), so nothing here is turned or
-// moved after the fact, but for one thing: given the terrain, each building is built standing on y = 0 and
-// then raised as a whole (`liftParts`) onto its seat, the lowest ground under its footprint
-// (core/landmarks.ts `landmarkSeats`). UVs are in METRES, which is what materials.ts asks for (it sets the
-// texture repeat to 1 / tile), so brick comes out brick-sized on any wall at any angle.
-//
-// The geometry builders (`hotelGeometry`, `midlandGeometry`, `barlowGeometry`) need no DOM and are
-// tested in web/tests/landmarks.test.ts; only `createMaterials` and `addLandmarks` touch materials.
-//
-// Wiring (main.ts):
-//   const landmarks = addLandmarks(scene, data, { terrain });          // once, after the scene exists (`terrain` is optional)
-//   const hidden = new Set([...buildingsUnderStation(...), ...LANDMARK_OSM_IDS]);  // before buildingPrisms(data, hidden)
+// The buildings around King's Cross, drawn from the numbers in core/landmarks.ts: the Great Northern Hotel, the St Pancras Renaissance (Midland
+// Grand) Hotel and the Barlow train shed. Procedural, on the shared textures of materials.ts; built in world coordinates (x east, y up, z south) on
+// y = 0, then raised as a whole onto its seat (`liftParts`). UVs are in METRES, so brick is brick-sized on any wall. The builders need no DOM
+// (web/tests/landmarks.test.ts). Wiring (main.ts): `addLandmarks(scene, data, { terrain })` once; pass LANDMARK_OSM_IDS to buildingPrisms().
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, polygonEdges, REPLACED_BUILDING_IDS, towerSquare } from '../../core/landmarks.ts';
@@ -29,9 +16,7 @@ export { towerSquare };
 /** The OSM building ids this module replaces: leave them out of buildingPrisms(). */
 export const LANDMARK_OSM_IDS: readonly number[] = REPLACED_BUILDING_IDS;
 
-// ---- the mesh builder --------------------------------------------------------------------------
-// Every wall, roof and band below goes into a `Batch` from materials.ts (the one mesh builder of the
-// station modules), one per material per building (`part`), merged across buildings by `mergeParts`.
+// ---- the mesh builder: every wall, roof and band goes into a `Batch` (materials.ts), one per material per building (`part`), merged by `mergeParts`
 
 const UP: V3 = [0, 1, 0];
 
@@ -51,8 +36,7 @@ export function createMaterials(): MaterialSet {
     owned.push(x);
     return x;
   };
-  // The only material of its own is the clock face: a canvas picture of a dial, drawn here (nothing else uses it). hist-c shows a
-  // gilt ring round a cream dial with black Roman numerals, a gilt rosette in the middle and black hands; the colours are ASSUMED from it.
+  // The clock face is drawn here (nothing else uses it): hist-c shows a gilt ring round a cream dial, black Roman numerals and hands, a gilt rosette; colours ASSUMED from it.
   let clockMap: THREE.CanvasTexture | null = null;
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
@@ -102,26 +86,38 @@ export function createMaterials(): MaterialSet {
     clockMap.colorSpace = THREE.SRGBColorSpace;
   }
   const clock = own(new THREE.MeshBasicMaterial({ map: clockMap, color: clockMap ? 0xffffff : 0xe9e2cc, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-  // the extension's roof panels (hist-e): light grey, mid-tone against the white-painted frame; the shade is ASSUMED, the emissive lifts the undersides
+  // The shared materials belong to the lighting rig, so each tinted look is a clone. At the noon rig (?time=2026-06-21T12:00:00+01:00&weather=clear) the library's brick and
+  // stone render at 0.84 and 0.72 of the luminance of hist-a and hist-b, hues right: the gains lift them level.
+  const tint = (name: Parameters<typeof material>[0], [r, g, b]: [number, number, number], emissive?: number): THREE.MeshLambertMaterial => {
+    const m = own((material(name) as THREE.MeshLambertMaterial).clone());
+    m.color.setRGB(r, g, b);
+    if (emissive !== undefined) m.emissive.set(emissive);
+    return m;
+  };
+  const [brickGain, stoneGain] = [1.5, 1.75];
+  // the extension's roof panels and girders (hist-e): light grey, mid-tone against the white-painted frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
-  // hist-b: the Midland's brick is a light terracotta red (sunlit about 0xbd8263), not the library's deep crimson (about 0x8e3c2c): the shared
-  // brick texture times (1.1, 0.55, 0.78) comes to about 0xa8684f. The shade is ASSUMED.
-  const brickRed = own((material('brickRed') as THREE.MeshLambertMaterial).clone());
-  brickRed.color.setRGB(1.1, 0.55, 0.78);
-  // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa): times (1.25, 1.2, 1.1); ASSUMED
-  const stone = own((material('stone') as THREE.MeshLambertMaterial).clone());
-  stone.color.setRGB(1.25, 1.2, 1.1);
+  // hist-b: the Midland's brick is a light terracotta red (sunlit about 0xbd8263), not the library's deep crimson: the shared brick texture times (1.1, 0.55, 0.78); ASSUMED
+  const brickRed = tint('brickRed', [1.1 * brickGain, 0.55 * brickGain, 0.78 * brickGain]);
+  // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa); ASSUMED
+  const stone = tint('stone', [1.25 * stoneGain, 1.2 * stoneGain, 1.15 * stoneGain]);
+  // hist-a: the hotel's stock brick, a golden buff (mean about 0x7c6a51 against the library's 0x65583f at the same light), a touch warmer than the library's
+  const brick = tint('brick', [brickGain, 0.96 * brickGain, 0.92 * brickGain]);
+  // hist-d, hist-d2: the glazing is silver-grey and bright, the ribs dark steel grey (about 0x312d29 in shadow; the library's are 0xdadee1). The library's glass glows as its pane
+  // texture (a light sky blue, average 0xaec3d3) times 0x73879a, which stays blue; times 0xd4beaf it comes out neutral, at twice the light. The shades are ASSUMED.
+  const roofGlass = tint('shedGlass', [1.24, 0.95, 0.84], 0xd4beaf);
+  const rib = tint('ribPaint', [0.155, 0.175, 0.2], 0x1a1e22);
   return {
     table: {
-      brick: material('brick'),
+      brick,
       brickRed,
       stone,
       slate: material('slateBothSides'),
       sash: material('sash'),
       sashArch: material('sashArch'),
       pane: material('pane'),
-      roofGlass: material('shedGlass'), // the Barlow shed's milky glazing, bright from inside (hist-d); the key keeps its name for the render order
-      rib: material('ribPaint'), // the restored shed's pale ironwork (hist-d)
+      roofGlass, // the key keeps its name for the render order
+      rib,
       lining: material('lining'), // pale boarding under the slate, seen from inside (hist-d)
       metal,
       clock,
@@ -144,11 +140,9 @@ export function addWalls(m: Batch, outline: readonly Pt[], y0: number, y1: numbe
 }
 
 /**
- * A sloped roof from the eaves outline (at y0) up to a ring (at y1), and a flat cap on the ring. u runs
- * along the eaves and v up the slope, in metres. A ring of one repeated point makes a pyramid (no cap).
- * With `runs` (the horizontal run of each facet, for a roof whose ring edges are parallel to its eaves edges: every facet a flat trapezoid)
- * the UVs unfold each facet true to scale, so the slates keep their courses and a brick or stone frustum is not stretched; without, v is the
- * length of the line from each eaves corner to its ring corner. A facet whose ring corners meet is a triangle.
+ * A sloped roof from the eaves outline (y0) up to a ring (y1), and a flat cap on the ring; u along the eaves, v up the slope, in metres. A ring of
+ * one repeated point makes a pyramid (no cap). With `runs` (each facet's horizontal run, for a ring parallel to the eaves) every facet is a flat
+ * trapezoid whose UVs unfold true to scale; without, v is the length from each eaves corner to its ring corner.
  */
 export function addRoof(m: Batch, outline: readonly Pt[], ring: readonly Pt[], y0: number, y1: number, cap = true, runs?: readonly number[]): void {
   const n = outline.length;
@@ -191,11 +185,7 @@ export interface Seg {
   s0: number;
 }
 
-/**
- * The parts of the polygon's edges that lie outside every `cutter` (convex quads: tower footprints),
- * as segments. Bands (string courses, cornices) are cut where a tower stands in front of the wall, so
- * they do not poke through the tower's face.
- */
+/** The parts of the polygon's edges outside every `cutter` (convex quads: tower footprints), as segments: bands are cut where a tower stands in front of the wall. */
 export function segmentsOutside(edges: readonly Edge[], cutters: readonly (readonly Pt[])[]): Seg[] {
   const out: Seg[] = [];
   let s = 0;
@@ -330,9 +320,7 @@ const SASH_HEIGHT = 2.4; // ASSUMED
 const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly advanced": hist-a shows each on a stucco box about this far out (ASSUMED)
 const ADVANCED = [5, 12]; // their places along the main front, counting from 0
 
-// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry):
-// "Slate roof with pedimented dormers." All dimensions and the one-per-bay count below are ASSUMED;
-// locations follow the OSM-derived facade bays and the matching eaves/ridge ring.
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry): "Slate roof with pedimented dormers." Sizes and the one-per-bay count are ASSUMED; places follow the facade bays and the eaves/ridge ring.
 const GNH_DORMER_INSET = 0.34; // ASSUMED fraction up the roof slope
 const GNH_DORMER_REAR_INSET = 0.68; // ASSUMED dormer roof run
 const GNH_DORMER_WIDTH = 1.8; // ASSUMED maximum width
@@ -343,10 +331,8 @@ const GNH_DORMER_WINDOW_WIDTH = 1.05; // ASSUMED
 const GNH_DORMER_WINDOW_HEIGHT = 1.15; // ASSUMED
 const GNH_DORMER_REAR_CLEARANCE = 0.04; // ASSUMED: the slate cheeks meet the main roof
 
-// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry)
-// also records "Prominent slab chimney-stacks." hist-a shows them in the hotel's own brick, with a pale slab cap, eight or nine along the
-// front slope, each about a dormer wide. Count and dimensions are ASSUMED: eight on each long roof slope, spread over its middle,
-// selected by bay index and projected onto the OSM roof ring.
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry) also records "Prominent slab chimney-stacks";
+// hist-a shows eight or nine in the hotel's brick with pale slab caps, each about a dormer wide. ASSUMED: eight on each long slope, over its middle.
 const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 8; // ASSUMED
 const GNH_CHIMNEY_WIDTH = 1.5; // ASSUMED shaft width along a facade bay
 const GNH_CHIMNEY_DEPTH = 0.8; // ASSUMED depth across the roof slope
@@ -511,23 +497,15 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   return parts;
 }
 
-// ---- the St Pancras Renaissance (Midland Grand) Hotel ------------------------------------------
-// What is not a published figure is drawn from the reference photographs, with its size ASSUMED by scaling from them:
-//   hist-b  the Midland Grand from Euston Road, 2012: the front, the clock tower in its setting, the roof and its chimneys
-//   hist-c  the clock tower, 2015: its stages, the dial, the gables, the turrets and the spire
-//   hist-e  the roof from the air, 2016: the ridge, the dormers, the stacks
-// (refs/historic-neighbours/ in the graphical-fidelity reference set).
+// ---- the St Pancras Renaissance (Midland Grand) Hotel: what is not a published figure is drawn from refs/historic-neighbours/, its size ASSUMED by
+// scaling: hist-b the front from Euston Road, hist-c the clock tower, hist-e the roof from the air
 
 /** A square ring about `c`: `half` from the middle to each side, its sides along `along` and `out`. */
 function squareAbout(c: Pt, along: Pt, out: Pt, half: number): Pt[] {
   return ([[-1, -1], [1, -1], [1, 1], [-1, 1]] as const).map(([a, b]) => [c[0] + (along[0] * a + out[0] * b) * half, c[1] + (along[1] * a + out[1] * b) * half] as Pt);
 }
 
-/**
- * The head of a pointed opening `w` wide, from the right-hand jamb over the apex to the left-hand one: two arcs springing at `spring`,
- * `grow` metres outside the opening (concentric with its own). x is across from the opening's middle, y up from its sill.
- * `round` makes it the semicircle about the middle of the springing (hist-b: the ground storey's arches).
- */
+/** The head of a pointed opening `w` wide, right jamb to left: two arcs springing at `spring`, `grow` m outside the opening; x across from the middle, y up from the sill. `round`: a semicircle (hist-b: the ground arches). */
 export function headArc(w: number, spring: number, grow: number, steps = 3, round = false): [number, number][] {
   const hw = w / 2;
   const r = round ? hw + grow : w + grow;
@@ -546,11 +524,7 @@ export function headArc(w: number, spring: number, grow: number, steps = 3, roun
 /** The stone moulding round a window group's arch and jambs (hist-c): it keeps the red blocks of the arch from vanishing into the red wall. */
 const MOULDING = 0.08;
 
-/**
- * A ring of voussoirs round a pointed head, stone and red brick in turn (the polychrome arches of hist-b and hist-c), with a thin stone
- * moulding round the outside of it. The two halves are mirror images (each runs stone, brick, stone ... up from its jamb), so the apex is
- * a pale pair of blocks, never a pale one beside a red one. `t` thick, `lift` off the wall.
- */
+/** A ring of voussoirs round a pointed head, stone and red brick in turn (hist-b, hist-c), with a thin stone moulding outside; the halves mirror each other, so the apex is a pair of pale blocks. `t` thick, `lift` off the wall. */
 function addVoussoirs(parts: PartMap<Key>, p: Placed, y: number, w: number, spring: number, t: number, lift: number, steps = 3, round = false): void {
   const rings = [0, t, t + MOULDING].map((g) => headArc(w, spring, g, steps, round));
   const q = ([x, v]: readonly [number, number]): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * lift, y + v, p.at[1] + p.dir[1] * x + p.normal[1] * lift];
@@ -578,11 +552,7 @@ function addDisc(m: Batch, p: Placed, x: number, y: number, r: number, lift: num
   m.fan(pts, [p.normal[0], 0, p.normal[1]], (q) => [(q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1], q[1]]);
 }
 
-/**
- * A pair of lancets under one pointed relieving arch of polychrome voussoirs, with a stone shaft between them, an oculus above and a sill
- * below: the window group of the Euston Road front (hist-b, hist-c show paired pointed lights under a pointed head in every bay).
- * `W` is the arch's opening, `h` its height; every size here is ASSUMED, scaled from those photographs.
- */
+/** Two lancets under one pointed relieving arch of polychrome voussoirs, a stone shaft between, an oculus above and a sill below: the Euston Road front's window group (hist-b, hist-c). `W` is the arch's opening, `h` its height; sizes ASSUMED. */
 export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h: number): void {
   const stone = part(parts, 'stone');
   const pane = part(parts, 'pane');
@@ -622,7 +592,7 @@ export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h:
   addJambs(parts, p, y, w, h - w / 2, 0.22);
 }
 
-/** A chimney stack on the crown of the roof: a brick shaft, a stone corbel course and cap, a clay pot (hist-b, hist-e: big corbelled brick stacks in a row along the ridge). Sizes ASSUMED, about a dormer wide. */
+/** A chimney stack on the crown: a brick shaft, a stone corbel course and cap, a clay pot (hist-b, hist-e). Sizes ASSUMED, about a dormer wide. */
 function addStack(parts: PartMap<Key>, c: Pt, dir: Pt, y: number, h: number): void {
   const rotY = Math.atan2(-dir[1], dir[0]);
   const brick = part(parts, 'brickRed');
@@ -640,10 +610,9 @@ function addSpike(m: Batch, c: Pt, along: Pt, out: Pt, half0: number, y0: number
 }
 
 /**
- * A gabled projection standing on a pitched roof: `base` is the middle of its face where the face meets the roof, `w` is half its width,
- * `h` its height to the apex and `hs` to the shoulders (0 for a plain triangle); the roof rises `slope` metres to the metre going back, so
- * the sides run back h / slope to meet it. The face (stone-bordered) looks out along `normal`. `p` > 0 stands the face that far in front of the
- * roof's foot (a bay out of the wall): the sides then start `p` back and a plain gable's roof planes are quads.
+ * A gabled projection on a pitched roof: `base` is the middle of its face where it meets the roof, `w` half its width, `h` its height to the apex, `hs` to
+ * the shoulders (0: a triangle); the roof rises `slope` m to the metre going back, so the sides run back h / slope to meet it. The stone-bordered face
+ * looks out along `normal`; `p` > 0 stands it that far in front of the roof's foot (a bay out of the wall).
  */
 function addGable(parts: PartMap<Key>, base: V3, dir: Pt, normal: Pt, slope: number, w: number, h: number, hs: number, face: Key, p = 0): void {
   const slate = part(parts, 'slate');
@@ -676,10 +645,10 @@ export const PAVILIONS: readonly number[] = [10, 14, 17];
 const pavilionHalf = (b: BayPosition): number => b.width / 2 - 0.2;
 
 /**
- * hist-b, hist-e: a gabled bay (`b` is its middle and whole width: two window bays) standing out of the front and rising through the cornice, as the Euston
- * Road front's pavilions do. ASSUMED, scaled from those photographs: brick from the first string course (on a porch hood of corbels over the entrances; the footprint stays the wall's)
- * up to the eaves, a steep brick gable 9 m above them with a stone border, a twin lancet and a finial, the cornice and string courses carried round its front,
- * the slate cheeks running back to the roof. Returns the plan of the stretch of wall it stands on, which the parapet there gives up.
+ * hist-b, hist-e: a gabled bay (`b`: its middle and width, two window bays) out of the front and through the cornice. ASSUMED, scaled from those
+ * photographs: brick from the first string course (on a corbelled porch hood over the entrances) to the eaves, a steep brick gable 9 m above with a
+ * stone border, twin lancet and finial, the cornice and string courses carried round its front, slate cheeks back to the roof. Returns the wall it
+ * stands on, which the parapet there gives up.
  */
 function addPavilion(parts: PartMap<Key>, b: BayPosition, eaves: number, slope: number): Pt[] {
   const [P, y0, hp, w] = [PAVILION_OUT, 6, 9, pavilionHalf(b)];
@@ -716,7 +685,7 @@ function onRoof(r: RoofFrame, i: number, s: number, d: number): V3 {
   return [e.a[0] + e.dir[0] * s - e.normal[0] * d, r.plan.eaves + (r.rise * d) / (r.plan.roof.runs[i] as number), e.a[1] + e.dir[1] * s - e.normal[1] * d];
 }
 
-/** The stretch of facet i, along its eaves from the facet's first corner, that is still the facet at every depth from d0 to d1: the hip lines lean in at a corner that turns away, out at a re-entrant one. */
+/** The stretch of facet i, along its eaves from its first corner, that is still the facet at every depth from d0 to d1 (hip lines lean in at a corner that turns away, out at a re-entrant one). */
 function facetSpan(r: RoofFrame, i: number, d0: number, d1: number): [number, number] {
   const e = r.edges[i] as Edge;
   const n = r.plan.outline.length;
@@ -737,9 +706,8 @@ function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, h
 }
 
 /**
- * Where a tower's stages end, for a tower `H` tall: the shaft (the facade's rows of windows and then lancets), the belfry, the corbel table
- * above it, the wall head where the roof begins, the roof's top where the lantern stands, and the lantern's top; the needle runs on to `H`.
- * ASSUMED: the fractions are scaled from hist-b (the whole tower, the spire a quarter of its height) and hist-c, taking the clock tower as 82 m (82 +/- 4 m).
+ * Where a tower `H` tall's stages end: shaft, belfry, corbel table, wall head (the roof begins), roof top (the lantern stands) and lantern top; the
+ * needle runs on to `H`. ASSUMED: fractions scaled from hist-b (the spire a quarter of the height) and hist-c, the clock tower being 82 +/- 4 m.
  */
 export function towerStages(H: number): { shaft: number; belfry: number; corbel: number; wall: number; roof: number; lantern: number } {
   const belfry = H * 0.66;
@@ -747,10 +715,9 @@ export function towerStages(H: number): { shaft: number; belfry: number; corbel:
 }
 
 /**
- * A tower on a square plan, by stages (proportions ASSUMED, scaled from hist-c on the 82 m clock tower): a brick shaft with the facade's
- * window rows and then lancets, a belfry of paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial in
- * a stone ring and a brick gable on each face, [HE-STP] "gabled clocks on each face"), four striped turrets at the corners, a steep slate
- * roof, a lantern and a needle. The entrance is a pointed portal at the foot of the front.
+ * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 82 m clock tower): a brick shaft of window rows then lancets, a belfry of
+ * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial and a brick gable on each face, [HE-STP] "gabled clocks
+ * on each face"), four striped corner turrets, a steep slate roof, a lantern and a needle; a pointed portal at the foot of the front.
  */
 function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const h = t.side / 2;
@@ -781,8 +748,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     for (const [y, wh] of [[6.9, 3.4], [12.4, 3.4], [17.9, 3.0]] as const) if (!inside) addTwin(parts, f, y, 2.4, wh);
     for (const y of [27, 36, 45]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
-  // the entrance: a pointed portal in the front face (the hotel's grand entrance is at the foot of its west tower [HE-STP]); its surround
-  // stops short of the ground, so nothing at ground level stands off the OSM outline (the footprint tests hold the feet to it)
+  // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
   // the belfry: paired pointed arches (the west tower: three round ones) on each face
   for (const f of faces) {
@@ -897,11 +863,10 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
     dress(bays, false);
   }
 
-  // HE 1342037: two roof storeys with stacked gabled dormers; hist-b, hist-c and hist-e show them as slate gables with pale borders and
-  // pale-framed lights, a storey tall in a lower row just above the cornice and a smaller upper one set back. https://historicengland.org.uk/listing/the-list/list-entry/1342037
-  // Public roof photograph: https://www.blackheath.org/events/2026/3/26/walk-amp-talk-st-pancras-and-somerstown
-  // ASSUMED: one of each row to a bay, their sizes and places; they stand on the facet of their own bay (they are left to the facet's width where
-  // a hip cuts in) and never inside a tower's envelope; a gabled bay is its own lower row, and the upper one is behind it.
+  // HE 1342037 (https://historicengland.org.uk/listing/the-list/list-entry/1342037): two roof storeys with gabled dormers; hist-b, hist-c, hist-e show slate gables
+  // with pale borders and lights, a storey tall in a lower row above the cornice and a smaller upper row set back; roof photograph:
+  // https://www.blackheath.org/events/2026/3/26/walk-amp-talk-st-pancras-and-somerstown. ASSUMED: one of each row to a bay, sizes and places; on the
+  // facet of its own bay (as wide as a hip leaves it), never inside a tower's envelope; a gabled bay is its own lower row.
   for (const bay of [...plan.front.bays, ...plan.wing.bays]) {
     const i = bay.edge;
     const e = edges[i] as Edge;
@@ -931,8 +896,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
     }
   }
-  // chimney stacks in pairs along the crown of the roof, round the whole building, the long side toward the shed too (hist-b, hist-e: a row of big corbelled
-  // brick stacks), a pair only where both stand wholly on the crown and clear of the towers
+  // stacks in pairs along the crown round the whole building (hist-b, hist-e: a row of big corbelled brick stacks), a pair only where both stand wholly on the crown, clear of the towers
   for (const e of edges) {
     const ra = plan.roof.ring[e.i] as Pt;
     const rb = plan.roof.ring[(e.i + 1) % plan.outline.length] as Pt;
@@ -972,11 +936,10 @@ export function pointInQuad(p: Pt, q: readonly Pt[]): boolean {
 type P2 = [number, number];
 
 /**
- * The Barlow shed [WP-STP] to its 689 ft gable, then the 2007 extension [NSC-EXT] to the end of the OSM outline.
- * Shed: slate on the outer quarters with pale boarding under it, glass on the middle half, a pale lattice rib at each of the 24
- * rib positions (hist-d), the glazed end screen on the north gable (hist-d2), brick to the south. Extension: not the arch, which
- * [NSC-EXT] rejects: a 22 m transition of glass pyramids on plate girders, then saw-tooth bays, pale slopes over dark glazed
- * risers (hist-e). Section sizes and heights are ASSUMED, scaled from those photographs.
+ * The Barlow shed [WP-STP] to its 689 ft gable, then the 2007 extension [NSC-EXT] to the end of the OSM outline. Shed: slate on the outer quarters over
+ * pale boarding (hist-d), glass on the middle half, a dark steel lattice rib at each of the 24 rib positions and the glazed end screen (hist-d2), brick to
+ * the south. Extension: not the arch: a 22 m transition of glass pyramids on plate girders, then saw-tooth bays, pale slopes over dark glazed risers
+ * (hist-e). Section sizes and heights are ASSUMED, scaled from those photographs.
  */
 export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const parts: PartMap<Key> = {};
@@ -1035,8 +998,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
       strip(lining, k, 0.08, across); // painted boarding just under it: the shared lining is seen from inside only (hist-d)
     }
   }
-  // the ribs: two chords and a Warren lattice between them, 1.4 m deep from the roof (hist-d); a bar is a ribbon of width w and
-  // thickness 2t along the shed, with its underside when it is a chord
+  // the ribs: two chords and a Warren lattice, 2 m deep from the roof (hist-d2: about 2 m under a 62 m chord); a bar is a ribbon of width w and thickness 2t
+  // along the shed, with its underside when it is a chord. Members ASSUMED, scaled from hist-d2: chords 0.2 x 0.34 m, lattice 0.14 x 0.14 m.
   const bar = (v: number, a: P2, b: P2, w: number, t: number, under = false): void => {
     const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const n: P2 = [(-(b[1] - a[1]) / l) * (w / 2), ((b[0] - a[0]) / l) * (w / 2)];
@@ -1044,27 +1007,26 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     for (const m of [-1, 1]) rib.quadUV(e(a, -1, m * t), e(b, -1, m * t), e(b, 1, m * t), e(a, 1, m * t), undefined, dir(0, 0, m));
     if (under) rib.quadUV(e(a, -1, -t), e(b, -1, -t), e(b, -1, t), e(a, -1, t), undefined, dir(-n[0], -n[1]));
   };
-  const top = section.map((_, k) => into(k, 0.18));
-  const bot = section.map((_, k) => into(k, 1.32));
+  const top = section.map((_, k) => into(k, 0.2));
+  const bot = section.map((_, k) => into(k, 1.9));
   for (const v of plan.ribs) {
     for (let k = 0; k < steps; k++) {
       const [t0, t1, b0, b1] = [top[k], top[k + 1], bot[k], bot[k + 1]] as P2[];
       const mid: P2 = [(b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2];
-      bar(v, t0, t1, 0.16, 0.15, true);
-      bar(v, b0, b1, 0.16, 0.15, true);
-      bar(v, t0, mid, 0.1, 0.05);
-      bar(v, mid, t1, 0.1, 0.05);
-      bar(v, t0, b0, 0.1, 0.05);
+      bar(v, t0, t1, 0.2, 0.17, true);
+      bar(v, b0, b1, 0.2, 0.17, true);
+      bar(v, t0, mid, 0.14, 0.07);
+      bar(v, mid, t1, 0.14, 0.07);
+      bar(v, t0, b0, 0.14, 0.07);
     }
-    bar(v, top[steps] as P2, bot[steps] as P2, 0.1, 0.05);
+    bar(v, top[steps] as P2, bot[steps] as P2, 0.14, 0.07);
   }
   // a purlin under the roof at every node of the arch, along the whole shed: the lines that run away down the vault in hist-d
   for (let k = 0; k <= steps; k++) {
     const p = into(k, 0.14);
-    rib.box(at(p[0], L / 2, Math.max(0.06, p[1])), [0.14, 0.12, L], { rotY: -plan.heading, skip: ['+y', '+z', '-z'] });
+    rib.box(at(p[0], L / 2, Math.max(0.08, p[1])), [0.2, 0.16, L], { rotY: -plan.heading, skip: ['+y', '+z', '-z'] });
   }
-  // the end screen on the gable: glazing in a white iron grid from the foot of the transition roof up to the arch; the panes are
-  // about 3.6 m (hist-d2: about 14 across), so the shared glazing is stretched four times along and twice up
+  // the end screen: glazing in a white iron grid from the transition roof's foot up to the arch; panes about 3.6 m (hist-d2: about 14 across), so the shared glazing is stretched 4x along, 2x up
   const gable: P2[] = [];
   for (let k = 0; k <= steps; k++) {
     const p = sec(k);
@@ -1080,8 +1042,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const lo = y0 - F.girder; // ASSUMED: the saw-tooth's low edge is level with the girders' underside
   const vT = L + F.transition;
   const [cu, cv] = [W / 12, F.transition / 4]; // the transition: pyramids of glass 6.2 x 5.5 m on a grillage of girders
-  for (let j = 0; j <= 4; j++) sheet(rib, [at(0, L + j * cv, lo), at(W, L + j * cv, lo), at(W, L + j * cv, y0), at(0, L + j * cv, y0)], dir(0, 0, 1));
-  for (let i = 0; i <= 12; i++) sheet(rib, [at(i * cu, L, lo), at(i * cu, vT, lo), at(i * cu, vT, y0), at(i * cu, L, y0)], dir(1, 0));
+  for (let j = 0; j <= 4; j++) sheet(metal, [at(0, L + j * cv, lo), at(W, L + j * cv, lo), at(W, L + j * cv, y0), at(0, L + j * cv, y0)], dir(0, 0, 1));
+  for (let i = 0; i <= 12; i++) sheet(metal, [at(i * cu, L, lo), at(i * cu, vT, lo), at(i * cu, vT, y0), at(i * cu, L, y0)], dir(1, 0));
   for (let i = 0; i < 12; i++) {
     for (let j = 0; j < 4; j++) {
       const apex = at((i + 0.5) * cu, L + (j + 0.5) * cv, y0 + F.pyramid);
@@ -1095,7 +1057,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     const [v0, v1, hi] = [vT + i * tooth, vT + (i + 1) * tooth, lo + F.truss];
     sheet(metal, [at(0, v0, lo), at(W, v0, lo), at(W, v1, hi), at(0, v1, hi)], UP);
     sheet(pane, [at(0, v1, hi), at(W, v1, hi), at(W, v1, lo), at(0, v1, lo)], dir(0, 0, 1));
-    for (const u of [0, W]) sheet(rib, [at(u, v0, lo - 1.2), at(u, v1, lo - 1.2), at(u, v1, hi), at(u, v0, lo)], dir(1, 0));
+    for (const u of [0, W]) sheet(metal, [at(u, v0, lo - 1.2), at(u, v1, lo - 1.2), at(u, v1, hi), at(u, v0, lo)], dir(1, 0));
   }
   // the south wall: the shed's end, brick, behind the hotel; u across the wall from its west foot, v up
   const brick = part(parts, 'brickRed');
@@ -1116,11 +1078,7 @@ export function partMarks<K extends string>(parts: PartMap<K>): Partial<Record<K
   return marks;
 }
 
-/**
- * Raise a structure by `dy` metres: the y of every vertex its parts hold (past `from`, if given), and nothing else. The normals and the UVs
- * stay as built, so the brick courses and the shading are what they were; the parts keep their heights relative to one another. A shift
- * of nothing leaves the vertices alone, so a structure with no terrain under it comes out byte for byte as it was built.
- */
+/** Raise a structure by `dy` metres: the y of every vertex its parts hold (past `from`, if given), and nothing else (normals and UVs stay as built). A shift of nothing leaves it byte for byte as built. */
 export function liftParts<K extends string>(parts: PartMap<K>, dy: number, from: Partial<Record<K, number>> = {}): void {
   if (dy === 0) return;
   for (const k of Object.keys(parts) as K[]) {
@@ -1130,10 +1088,7 @@ export function liftParts<K extends string>(parts: PartMap<K>, dy: number, from:
   }
 }
 
-/**
- * The parts of the three buildings: the hotel, the Midland Grand, the Barlow shed. They are built standing on y = 0; with `seats` each is
- * raised to its own (`landmarkSeats`), so its lowest wall vertex is on the lowest ground under it.
- */
+/** The parts of the three buildings, built on y = 0; with `seats` each is raised to its own (`landmarkSeats`), so its lowest wall vertex is on the lowest ground under it. */
 export function landmarkGeometry(plans: LandmarkPlans, seats?: Readonly<Record<LandmarkName, Seat>>): PartMap<Key>[] {
   const built: Record<LandmarkName, PartMap<Key>> = { hotel: hotelGeometry(plans.hotel), midland: midlandGeometry(plans.midland), barlow: barlowGeometry(plans.barlow) };
   if (seats) for (const name of Object.keys(built) as LandmarkName[]) liftParts(built[name], seats[name].y);
@@ -1157,11 +1112,7 @@ export interface LandmarkOptions {
   terrain?: Terrain;
 }
 
-/**
- * Add the landmark buildings to the scene. In main.ts: call this once after building the scene, and add
- * LANDMARK_OSM_IDS (or `landmarks.excludeIds`) to the set passed to buildingPrisms(), so the generic OSM
- * boxes for these three buildings are not drawn as well. With `opts.terrain` the buildings are seated on it.
- */
+/** Add the landmark buildings to the scene; pass `landmarks.excludeIds` to buildingPrisms() so the generic OSM boxes are not drawn too. With `opts.terrain` they are seated on it. */
 export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOptions = {}): Landmarks {
   const set = createMaterials();
   const plans = landmarkPlans(data);

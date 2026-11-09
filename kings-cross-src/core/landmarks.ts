@@ -1,49 +1,38 @@
-// The buildings around King's Cross and the tunnel mouths north of the throat, as numbers: which
-// OSM outline is which building, how its facade divides into bays, where the St Pancras train shed
-// stands, and where the Gasworks and Copenhagen tunnel mouths are. Pure functions, no three.js, so
-// the rules are testable without a browser. The web modules (web/src/landmarks.ts, portals.ts)
-// only turn these numbers into meshes.
+// The buildings around King's Cross and the tunnel mouths north of the throat, as numbers: which OSM outline is which building, how its
+// facade divides into bays, where the St Pancras train shed stands, and where the Gasworks and Copenhagen tunnel mouths are. Pure functions,
+// no three.js, so the rules are testable without a browser; the web modules (web/src/landmarks.ts, portals.ts) turn the numbers into meshes.
 //
 // Frame: x east, z south, metres (core/geo.ts). Heights are metres above the model's one ground level.
 //
 // References (all read 2026-11-08). Each is repeated where its figure is used.
-//   [HE-GNH]  Historic England list entry 1113244, Great Northern Hotel (Grade II), text as mirrored by
+//   [HE-GNH]  Historic England 1113244, Great Northern Hotel (Grade II), as mirrored by
 //             https://britishlistedbuildings.co.uk/101113244-great-northern-hotel-and-attached-railings-st-pancras-and-somers-town-ward
-//             1854, Lewis Cubitt; yellow stock brick with stucco dressings; slate roof with pedimented
-//             dormers; 5 storeys plus attic and basement, 18 windows wide; the southern return is 5
-//             windows wide; the sixth and thirteenth bays are slightly advanced; round-arched ground
-//             floor openings with stucco keystones, square-headed windows above; modillion cornice;
-//             "Crescent shaped building. Concave main facade towards King's Cross Station."
-//   [HE-STP]  Historic England list entry 1342037, St Pancras Station and former Midland Grand Hotel
-//             (Grade I), https://britishlistedbuildings.co.uk/101342037-st-pancras-station-and-former-midland-grand-hotel-st-pancras-and-somers-town-ward
-//             "4 main storeys with 2 extra storeys in the roof" lit by gabled dormers; "Deep red
-//             Gripper's patent Nottingham bricks" with Ancaster stone dressings; "23 windows flanked by
-//             towers and a curved 10 window wing to the west"; the "South-east tower" carries gabled
-//             clocks on each face with pinnacles at each corner and a spire; the "Left hand tower" has 3
-//             storeys of arcaded windows above the main entrance; "25-bay train shed a single 240 foot
-//             span" with pointed-arch ribs, Butterley Iron Company, dated 1867.
-//   [WP-STP]  Wikipedia, "St Pancras railway station": Barlow shed 245 ft 6 in (74.83 m) wall to wall,
-//             240 ft (73.2 m) wide, 689 ft (210 m) long, 100 ft (30.5 m) high at the apex above the
-//             tracks; 24 ribs, one every 29 ft 4 in (8.94 m); the arch is slightly pointed and springs
-//             from station level; glass covers the middle half of the roof, timber and slate the outer
-//             quarters; the platforms sit 20 ft (6 m) above street level.
-//   [WP-MGH]  Wikipedia, "St Pancras Renaissance London Hotel": clock tower 76 m (249 ft).
-//             (exploring-london.com gives 82 m for the clock tower and 76 m for the west tower; gilbertscott.org
-//             says 280 ft = 85.3 m; other sites 72-76 m. The sources disagree: the model takes 82 m, the figure
-//             most repeated and the one the graphical-fidelity rubric asks for (82 m +/- 4), and marks the west
-//             tower ASSUMED. See refs/DIMENSIONS.md section 4.)
-//   [NSC-EXT] New Steel Construction, "Rebirth of St Pancras" (newsteelconstruction.com/wp/rebirth-of-st-pancras/):
-//             the 2007 extension is "a new 200m long steel canopy" with "three spans across the tracks and seven
-//             30m bays longitudinally", a flat roof "subservient to the Barlow Shed" (the arch was rejected
-//             because the extension is much wider than the old station), on "four lines of 2.6m deep Warren
-//             trusses" with Vierendeel girders across, a "saw-tooth roof profile curving from the top of each
-//             girder to the bottom of the next", and a main roof that "stops 22m short of the gable end of the
-//             Barlow Shed", the gap closed by a shallower transition roof of "pyramids of glass" on a grillage of
-//             1.1m plate girders hung from the Barlow arch. The heights are not published: ASSUMED below.
-//   [WP-GAS]  Wikipedia, "Gasworks Tunnel": three bores, each 528 yd (483 m) long, between 0 mi 22 ch
-//             and 0 mi 46 ch from King's Cross; "circular portals decorated with a cornice and voussoir".
-//   [WP-COP]  Wikipedia, "Copenhagen Tunnel": three twin-track bores, 594 yd (543 m) long, between 0 mi
-//             65 ch and 1 mi 12 ch from King's Cross; two bores carry trains, the eastern one does not.
+//             1854, Lewis Cubitt; yellow stock brick, stucco dressings; slate roof with pedimented dormers; 5 storeys plus attic and basement,
+//             18 windows wide, the southern return 5; the sixth and thirteenth bays slightly advanced; round-arched ground floor openings with
+//             stucco keystones, square-headed windows above; modillion cornice; "Crescent shaped building. Concave main facade towards King's Cross Station."
+//   [HE-STP]  Historic England 1342037, St Pancras Station and former Midland Grand Hotel (Grade I),
+//             https://britishlistedbuildings.co.uk/101342037-st-pancras-station-and-former-midland-grand-hotel-st-pancras-and-somers-town-ward
+//             "4 main storeys with 2 extra storeys in the roof", gabled dormers; "Deep red Gripper's patent Nottingham bricks", Ancaster stone
+//             dressings; "23 windows flanked by towers and a curved 10 window wing to the west"; the "South-east tower" has gabled clocks on each
+//             face, corner pinnacles and a spire; the "Left hand tower" 3 storeys of arcaded windows above the main entrance; "25-bay train shed
+//             a single 240 foot span", pointed-arch ribs, Butterley Iron Company, 1867.
+//   [WP-STP]  Wikipedia, "St Pancras railway station": Barlow shed 245 ft 6 in (74.83 m) wall to wall, 240 ft (73.2 m) wide, 689 ft (210 m)
+//             long, 100 ft (30.5 m) high at the apex above the tracks; 24 ribs, one every 29 ft 4 in (8.94 m); the arch is slightly pointed and
+//             springs from station level; glass covers the middle half of the roof, timber and slate the outer quarters; the platforms sit 20 ft
+//             (6 m) above street level.
+//   [WP-MGH]  Wikipedia, "St Pancras Renaissance London Hotel": clock tower 76 m (249 ft). exploring-london.com gives 82 m (west tower 76 m),
+//             gilbertscott.org 280 ft = 85.3 m, other sites 72-76 m: the sources disagree. The model takes 82 m, the most repeated figure and the
+//             graphical-fidelity rubric's (82 m +/- 4), and marks the west tower ASSUMED (refs/DIMENSIONS.md section 4).
+//   [NSC-EXT] New Steel Construction, "Rebirth of St Pancras" (newsteelconstruction.com/wp/rebirth-of-st-pancras/): the 2007 extension is "a new
+//             200m long steel canopy", "three spans across the tracks and seven 30m bays longitudinally", a flat roof "subservient to the Barlow
+//             Shed" (the arch was rejected: the extension is much wider than the old station), on "four lines of 2.6m deep Warren trusses" with
+//             Vierendeel girders across, a "saw-tooth roof profile curving from the top of each girder to the bottom of the next"; the main roof
+//             "stops 22m short of the gable end of the Barlow Shed", the gap closed by a shallower transition roof of "pyramids of glass" on a
+//             grillage of 1.1m plate girders hung from the Barlow arch. Heights are not published: ASSUMED below.
+//   [WP-GAS]  Wikipedia, "Gasworks Tunnel": three bores, each 528 yd (483 m), between 0 mi 22 ch and 0 mi 46 ch from King's Cross;
+//             "circular portals decorated with a cornice and voussoir".
+//   [WP-COP]  Wikipedia, "Copenhagen Tunnel": three twin-track bores, 594 yd (543 m), between 0 mi 65 ch and 1 mi 12 ch from King's Cross;
+//             two bores carry trains, the eastern one does not.
 import type { Pt } from './geo.ts';
 import type { KxData, Rail } from './osm.ts';
 import { FT, pointInPolygon } from './station.ts';
@@ -96,7 +85,9 @@ export const FIGURES = {
     rise: 100 * FT, // [WP-STP] 100 ft = 30.48 m above the tracks (OSM carries height=30.5)
     ribSpacing: 29 * FT + 4 * (FT / 12), // [WP-STP] 29 ft 4 in = 8.94 m
     ribs: 24, // [WP-STP]
-    pointOffset: 4, // ASSUMED: "slightly pointed"; the arc centres sit 4 m either side of the axis
+    // ASSUMED: "slightly pointed" [WP-STP]; the arc centres sit 4 m across the axis. hist-d2's end screen drops 0.5, 1.5, 3.4 and 4.9 m from the crown at 4.4, 8, 13.3 and
+    // 16.8 m out (scaled from the 73.15 m span): a round arch is off by 0.73 m rms, offsets of 2, 3, 4, 6 and 8 m by 0.26, 0.10, 0.22, 0.59 and 0.93 m.
+    pointOffset: 4,
     glassFraction: 0.5, // [WP-STP] glass covers the middle half of the roof
     undercroftRise: 6, // [WP-STP] platforms 20 ft above the street; NOT modelled (one ground level)
     // The 2007 extension [NSC-EXT]. Heights are ASSUMED, scaled from hist-e (the roof) and hist-d2 (the screen).
@@ -327,12 +318,10 @@ export function edgeDepth(edges: readonly Edge[], i: number): number {
 }
 
 /**
- * A roof ring with a run of its own for each facet, as near `want[i]` as the outline allows. Edges that turn by no more than `joinDeg`
- * degrees from one to the next make a chain, and a chain is one roof: its facets share a run (the least wanted along it), so a curved
- * front or a bend in a wing keeps one pitch; a lone short edge is held to 0.8 of its own length. Where two facets collide (a short edge,
- * a tight corner) the chains involved give way by a sixth at a time down to `floor`, then their neighbours do, until the ring is
- * simple, every edge points the way it did and the ring lies inside the outline. Never throws: an outline that cannot take a roof gets
- * no ring at all (every run 0, the ring the outline itself).
+ * A roof ring with a run of its own for each facet, as near `want[i]` as the outline allows. Edges turning by no more than `joinDeg` degrees make a chain,
+ * one roof whose facets share a run (the least wanted along it), so a curved front keeps one pitch; a lone short edge is held to 0.8 of its length. Where
+ * facets collide the chains involved give way by a sixth at a time down to `floor`, then their neighbours, until the ring is simple, every edge points
+ * the way it did and the ring lies inside the outline. Never throws: an outline that cannot take a roof gets no ring (every run 0).
  */
 export function fitRoofRuns(pts: readonly Pt[], want: readonly number[], floor = 0.3, joinDeg = 45): { ring: Pt[]; runs: number[] } {
   const n = pts.length;
@@ -551,9 +540,8 @@ export function midlandGrandPlan(data: Pick<KxData, 'buildings'>): MidlandPlan {
     wingEdges.push(e);
     if (e.length < 3) break;
   }
-  // The roof: one steep pitch the whole length of the front, set by the front's thinnest place so that the two slopes of the main
-  // block leave a ridge between them (the photographs, hist-b and hist-e, show a steep slate roof of about 60 degrees with a
-  // narrow crown; the pitch itself is ASSUMED). Elsewhere each facet takes the run its own depth allows, never more than the front's.
+  // The roof: one steep pitch the whole length of the front, set by its thinnest place so the two slopes leave a ridge (hist-b, hist-e: slate at about
+  // 60 degrees with a narrow crown; ASSUMED). Elsewhere each facet takes the run its own depth allows, never more than the front's.
   const frontRun = Math.min(m.roofInset, m.roofDepthShare * Math.min(...run.edges.map((e) => edgeDepth(edges, e.i))));
   const want = edges.map((e) => Math.max(m.roofMinRun, Math.min(frontRun, m.roofDepthShare * edgeDepth(edges, e.i))));
   const fit = fitRoofRuns(b.pts, want, m.roofMinRun);
@@ -622,12 +610,10 @@ function principalAxis(pts: Pt[]): Pt {
 }
 
 /**
- * Place the Barlow vault on the OSM outline: the platforms give the heading, the outline gives the
- * south wall, the north end and the east wall. The OSM outline is far wider than the shed (it takes in
- * the hotel's west annexe and, to the north, the 2007 extension that widens to carry platforms 11-13), so
- * the shed hangs from its east wall: the outline's east edge 40 m in from the south wall, which is the
- * shed's outer face; the west wall is one wall-to-wall width [WP-STP] to the west of it. The south wall
- * is the length-weighted mean of the outline's long east-west edges at its south end.
+ * Place the Barlow vault on the OSM outline: the platforms give the heading, the outline the south wall, the north end and the east wall. The outline
+ * is far wider than the shed (it takes in the hotel's west annexe and the 2007 extension), so the shed hangs from its east edge 40 m in from the south
+ * wall, the shed's outer face; the west wall is one wall-to-wall width [WP-STP] to the west. The south wall is the length-weighted mean of the
+ * outline's long east-west edges at its south end.
  */
 export function barlowPlan(data: Pick<KxData, 'buildings' | 'platforms'>): BarlowPlan {
   const b = building(data, OSM_IDS.stPancrasStation);
@@ -725,9 +711,8 @@ export interface Seat {
 }
 
 /**
- * Where a structure's base goes: the lowest ground under its footprint (`seatY`), so no wall floats and on a slope the uphill side
- * is in the ground. A footprint of several rings (a building and its towers, a block of joined buildings) is one rigid structure: it
- * takes the lowest of them, so its parts keep their heights relative to one another. `floor` stops a deep cutting under part of the
+ * Where a structure's base goes: the lowest ground under its footprint (`seatY`), so no wall floats. A footprint of several rings (a building and its
+ * towers) is one rigid structure: it takes the lowest, so its parts keep their relative heights. `floor` stops a deep cutting under part of the
  * footprint from sinking the base with it.
  */
 export function seatOf(terrain: Pick<Terrain, 'rangeUnder'>, rings: readonly (readonly Pt[])[], floor = -Infinity): Seat {
@@ -776,10 +761,7 @@ export function landmarkFootprints(p: LandmarkPlans): Record<LandmarkName, Pt[][
   };
 }
 
-/**
- * How far below the ground of a railway (`terrain.groundY`) the Barlow shed's springings may go. Its floor is the track level, which the
- * terrain has levelled along the platforms; this stops the cutting that runs past the shed's edge from pulling the vault down with it.
- */
+/** How far below the railway's ground (`terrain.groundY`) the Barlow shed's springings may go: its floor is the track level; this stops the cutting past its edge from pulling the vault down. */
 export const BARLOW_SINK = 0.3;
 
 /** Where each building stands: its base at the lowest ground under its footprint (the Barlow shed no lower than `BARLOW_SINK` under the railway's ground). */
@@ -840,9 +822,8 @@ const TUNNEL_REF = 'ECM1';
 const BORE_PAIR_MAX = 5.5; // two tracks of one bore are 3.1-4.3 m apart in OSM; bores are 6.3 m or more apart
 
 /**
- * Every place the East Coast Main Line's rails go from open to `tunnel`: OSM nodes shared by a tunnel
- * way and an open way, grouped into mouths (the Gasworks Tunnel's two ends, the Copenhagen Tunnel's
- * south end) and each mouth into bores of one or two tracks. Positions are the OSM nodes themselves.
+ * Every place the East Coast Main Line's rails go from open to `tunnel`: OSM nodes shared by a tunnel way and an open way, grouped into mouths (the
+ * Gasworks Tunnel's two ends, the Copenhagen Tunnel's south end) and each mouth into bores of one or two tracks.
  */
 export function tunnelMouths(data: Pick<KxData, 'nodes' | 'rails'>, ref = TUNNEL_REF): Mouth[] {
   const pos = new Map<number, Pt>(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
@@ -937,9 +918,8 @@ function mouthName(origin: Pt): { id: string; name: string } {
 }
 
 /**
- * Tunnels as runs between mouths: walk the tunnel ways from each mouth, and join the mouths that reach
- * each other. The Gasworks Tunnel joins its two mouths; the Copenhagen Tunnel runs on past the
- * extract's north edge, so its far end is the farthest tunnel node.
+ * Tunnels as runs between mouths: walk the tunnel ways from each mouth and join the mouths that reach each other. The Copenhagen Tunnel runs on
+ * past the extract's north edge, so its far end is the farthest tunnel node.
  */
 export function tunnelRuns(data: Pick<KxData, 'nodes' | 'rails'>, ref = TUNNEL_REF): TunnelRun[] {
   const mouths = tunnelMouths(data, ref);
@@ -1033,11 +1013,7 @@ export interface EnvelopeStation {
   hi: number | null;
 }
 
-/**
- * How wide the open tracks are on the approach to a mouth: at each `step` metres back from the face,
- * the outermost rail positions across the face. The retaining walls of the cutting follow this so they
- * never cross a rail. Rails more than `corridor` metres beyond the face's half width are other lines.
- */
+/** How wide the open tracks are on the approach to a mouth: at each `step` metres back from the face, the outermost rail positions across it (the cutting's walls follow them). Rails more than `corridor` m beyond the face's half width are other lines. */
 export function approachEnvelope(data: Pick<KxData, 'nodes' | 'rails'>, mouth: Pick<Mouth, 'origin' | 'axis' | 'across' | 'halfWidth'>, reach = 75, step = 15, corridor = 10): EnvelopeStation[] {
   const pos = new Map<number, Pt>(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
   const out: EnvelopeStation[] = [];
