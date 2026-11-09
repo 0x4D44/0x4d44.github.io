@@ -152,7 +152,7 @@ test('roof skin: the oculus glazes the funnel crown, and one set of panes is bri
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   assert.equal((below.material as THREE.Material).type, 'MeshBasicMaterial', 'seen from below the glazing is unlit, so it is daylight whatever the scene lights');
   assert.ok(lum((below.material as THREE.MeshBasicMaterial).color) > 0.9 && lum((above.material as THREE.MeshPhongMaterial).emissive) < 0.05, 'glazing glows from below and does not from above');
-  // R-a: from inside it is clear sky blue, each pane its own shade, so that the white members stand out against it (round 2: milky white)
+  // R-a: from inside it is clear sky blue, so that the white members stand out against it (round 2: milky white; round 7, C2: one tint for every pane, the shade from pane to pane having been 4 levels of 255 at most, on the render, at a cost in bytes)
   const tint = below.geometry.getAttribute('color'), mean = [0, 1, 2].map(k => Array.from({ length: tint.count }, (_, i) => tint.getComponent(i, k)).reduce((s, x) => s + x, 0) / tint.count);
   assert.ok(mean[2]! > 0.9 && mean[1]! < 0.9 * mean[2]! && mean[0]! < 0.8 * mean[2]!, `the panes are tinted blue: mean (${mean.map(x => x.toFixed(2)).join(', ')})`);
   const cases = [
@@ -163,6 +163,29 @@ test('roof skin: the oculus glazes the funnel crown, and one set of panes is bri
     const first = new THREE.Raycaster(start, direction).intersectObject(skin, true).find(h => !['concourse-column', 'concourse-lattice', 'concourse-supports'].includes(h.object.name));
     assert.equal(first?.object.name, mesh, `a ray up or down the funnel axis meets the crown glazing from ${side}`);
   }
+});
+
+// Round 7 (C2): the glass seen from below is out of the tone map (inside it, the grade lifted the sky blue it is painted to a pale haze, where R-a has bright sky behind crisp white members), and out of
+// the exposure curve it would glow as bright at dusk as at noon, so each frame it takes the colour of the sky itself: the scene fog's, the dome's horizon colour as the hour and the weather give it.
+test('roof skin: the glass seen from below is out of the tone map and takes the sky\'s colour each frame, so that it dims at dusk and night', () => {
+  const below = skin.getObjectByName('concourse-glass') as THREE.Mesh, glass = below.material as THREE.MeshBasicMaterial;
+  assert.equal(glass.toneMapped, false, 'out of the tone map: the blue it is painted is the blue that is seen');
+  const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const draw = (scene: THREE.Scene): void => below.onBeforeRender(undefined as never, scene, undefined as never, undefined as never, undefined as never, undefined as never);
+  const day = new THREE.Scene(), dusk = new THREE.Scene(), night = new THREE.Scene(), bare = new THREE.Scene();
+  day.fog = new THREE.Fog(0xa8c8ee, 1, 2);
+  dusk.fog = new THREE.Fog(0x6a6480, 1, 2);
+  night.fog = new THREE.Fog(0x0c1220, 1, 2);
+  draw(day);
+  assert.ok(glass.color.equals(day.fog.color), 'by day the glass is the colour of the sky at the horizon');
+  const bright = lum(glass.color);
+  draw(dusk);
+  assert.ok(glass.color.equals(dusk.fog.color) && lum(glass.color) < 0.6 * bright, `at dusk it is as dim as the sky (${lum(glass.color).toFixed(2)} against ${bright.toFixed(2)} by day)`);
+  draw(night);
+  assert.ok(glass.color.equals(night.fog.color) && lum(glass.color) < 0.05 * bright, `at night it is as dark as the sky (${lum(glass.color).toFixed(3)}), not a bright pane`);
+  draw(bare);
+  assert.ok(glass.color.equals(night.fog.color), 'a scene with no fog leaves the colour as it was');
+  glass.color.setScalar(1); // the build's own colour, for the tests that follow
 });
 
 test('roof build-up: soffit above the member centre lines, cladding above that, the glazing level with the cladding', () => {
@@ -207,8 +230,9 @@ test('roof build-up: a ray meets the cladding from above and the soffit from bel
   }
 });
 
-// A rooflight is read back from the built cladding: its faces are the ones that stand clear of every pillow, a flat sheet of clear mid-tone glass (linear luminance 0.12 to 0.35,
-// round 6, C6: lighter than round 5's dark slot) in a frame of darker silver than the dome's (half its tone at most). `hover` is a point's height over the roof's smooth surface (the profile, drawn in to the outline, so that the roof
+// A rooflight is read back from the built cladding: its faces are the ones that stand clear of every pillow, a flat sheet of dark slate glass (linear luminance 0.12 to 0.18; round 7, C6: R-c's
+// rooflights are dark grey, (70, 75, 80), where round 6's 0.2 to 0.3 read as a patch of sky, and round 5's dark slot was under 0.1) in a pale frame, a fifth lighter than the dome's cladding or a little more, round the dark
+// glass (R-c: thin pale edges; round 6's was darker than the dome, half its tone at most, and sank into it). `hover` is a point's height over the roof's smooth surface (the profile, drawn in to the outline, so that the roof
 // falls to the rim where the outline is: the nodes' height law, written out again here): the skin is 0.45 m over the nodes and a diamond rises 0.2 m more.
 const surfaceAt = (x: number, z: number): number => { const r = Math.hypot(x - axis[0], z - axis[1]); return concourseHeight(canopy, (canopy.radius * r) / (r + toRim(x, z))); };
 const hover = (v: THREE.Vector3): number => v.y - surfaceAt(v.x, v.z);
@@ -241,10 +265,11 @@ const rhombus = (corners: THREE.Vector3[]): { long: number; short: number; along
   return p.length() > q.length() ? { long: 2 * p.length(), short: 2 * q.length(), along: q.clone().normalize() } : { long: 2 * q.length(), short: 2 * p.length(), along: p.clone().normalize() };
 };
 
-test('rooflights: four clean rhombi of clear mid-tone glass in a thin silver frame that rises to it, wider across the slope than up it, three quarters of the way out', () => {
+test('rooflights: four clean rhombi of dark slate glass in a thin pale silver frame that rises to it, wider across the slope than up it, three quarters of the way out', () => {
   const lights = rooflightsBuilt(), funnel = worldToShed(layout, axis);
   const dome = claddingFacets().filter(f => ![f.a, f.b, f.c].every(v => hover(v) > PILLOW_TOP + 0.02)).map(f => f.tone), domeTone = dome.reduce((sum, t) => sum + t, 0) / dome.length;
-  assert.ok(domeTone > 0.45 && domeTone < 0.7, `the dome's cladding is silver, ${domeTone.toFixed(2)}`);
+  // round 7 (C6): the vertex colour is the paint, and the grade lifts it: round 6's 0.5 to 0.65 drew near-white (205, 205, 205) where R-c's dome is silver-grey (154, 152, 146); 0.3 renders as that
+  assert.ok(domeTone > 0.25 && domeTone < 0.4, `the dome's cladding is silver, ${domeTone.toFixed(2)}`);
   assert.equal(lights.length, ROOFLIGHT_AZIMUTHS.length, 'one rooflight to each azimuth');
   const azimuths = new Set<number>();
   for (const light of lights) {
@@ -269,12 +294,12 @@ test('rooflights: four clean rhombi of clear mid-tone glass in a thin silver fra
     assert.ok(lo > PILLOW_TOP + 0.03 && lo < 1 && hi > lo + 0.2 && hi < lo + 0.7, `the frame stands ${lo.toFixed(2)} m over the nodes at its edge and ${hi.toFixed(2)} m at the glass`);
     const [c0, c1, c2, c3] = light.inner as [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3], plane = new THREE.Plane().setFromCoplanarPoints(c0, c1, c2);
     assert.ok(Math.abs(plane.distanceToPoint(c3)) < 0.12, `the glass is a flat sheet, to within the roof's curve over its width (${plane.distanceToPoint(c3).toFixed(3)} m out of true)`);
-    // clear glass, silver frame: the faces of the inner ring are the glass
+    // dark glass, pale silver frame: the faces of the inner ring are the glass
     const glass = light.faces.filter(f => [f.a, f.b, f.c].every(v => light.inner.some(w => w.equals(v)))), frame = light.faces.filter(f => !glass.includes(f));
     assert.equal(glass.length, 2, 'the glass is one quad');
     assert.equal(frame.length, 8, 'the frame is four strips of two triangles');
-    for (const f of glass) assert.ok(f.tone > 0.12 && f.tone < 0.35, `the glass is a mid tone, neither a dark slot nor a pale blank (${f.tone.toFixed(3)})`); // R-c, round 6 (C6): a clear framed diamond
-    for (const f of frame) assert.ok(f.tone > 0.1 && f.tone < 0.5 * domeTone, `the frame is a rim of darker silver than the dome (${domeTone.toFixed(2)}), not a white band (${f.tone.toFixed(3)})`); // R-c, R-c2: a thin edge round the glass
+    for (const f of glass) assert.ok(f.tone > 0.12 && f.tone < 0.18, `the glass is dark slate, neither a black slot nor a pale patch of sky (${f.tone.toFixed(3)})`); // R-c, round 7 (C6): a dark framed diamond
+    for (const f of frame) assert.ok(f.tone > 1.05 * domeTone && f.tone < 1.5 * domeTone, `the frame is a pale rim a little lighter than the dome (${domeTone.toFixed(2)}), not a white band (${f.tone.toFixed(3)})`); // R-c, R-c2: a thin pale edge round the glass
     for (const f of light.faces) assert.ok(f.normal.y > 0.5, 'a rooflight face looks up');
     // round 5 (C6): the frame is lit as the cladding round it is, its normal straight up: lit by its own slope, the strip that faces the sun was a hard white bar across the glass
     for (const f of frame) assert.ok(f.shade.y > 0.999, `a frame strip is lit with its normal ${f.shade.y.toFixed(2)} up, not by the slope it rises on`);
@@ -359,11 +384,16 @@ test('roof materials: the underside reads light, as the scene lights shine from 
   const soffit = material('concourse-panels');
   assert.equal(soffit.type, 'MeshBasicMaterial', 'the soffit is unlit, so it cannot go black');
   assert.equal(soffit.side, THREE.DoubleSide, 'the soffit shows from below, the apron from outside');
+  // round 7 (C1, C3): the members are white paint lit as the room is, with no glow of their own. Round 6 gave them an emissive of 0.35 and more; the grade (a flat fill under the roof, then the tone curve)
+  // drew every glowing member the same near-white, so that the weave and the legs had no shading at all. The funnel's legs are the same painted steel, shaded round by the colour baked on each vertex.
   const member = material('concourse-lattice') as THREE.MeshLambertMaterial;
-  assert.ok(lum(member.emissive) > 0.35, `members glow ${lum(member.emissive).toFixed(2)} from below`);
+  assert.equal(member.type, 'MeshLambertMaterial', 'the members are lit, painted steel');
+  assert.ok(member.color.r > 0.85 && member.color.g > 0.85 && member.color.b > 0.85, 'painted white');
+  assert.ok(lum(member.emissive) < 0.02, `members glow ${lum(member.emissive).toFixed(2)}: lit as the room is, not self-lit`);
+  assert.equal(member.vertexColors, true, 'the paint takes the shade baked on its vertices');
   const funnel = material('concourse-column') as THREE.MeshLambertMaterial;
   assert.equal(funnel.type, 'MeshLambertMaterial', 'the funnel is the same painted steel');
-  assert.ok(funnel.color.r > 0.85 && lum(funnel.emissive) > 0.15 && lum(funnel.emissive) < lum(member.emissive), `the funnel's tubes stay white but keep a shaded side (glow ${lum(funnel.emissive).toFixed(2)})`);
+  assert.ok(funnel.color.r > 0.85 && lum(funnel.emissive) < 0.02 && funnel.vertexColors === true, `the funnel's tubes are white paint, shaded by their vertex colours (glow ${lum(funnel.emissive).toFixed(2)})`);
 });
 
 // R-ab: dark coffers between bright, deep members; R-a: the glazing round the funnel a large bright field with the lattice in sharp silhouette. Linear luminance of
@@ -378,7 +408,7 @@ test('roof skin: the coffers are a deep grey recess, flat, shaded under white me
   assert.ok(mean(glass) > 2.5 * mean(soffit), `the glazing (${mean(glass).toFixed(2)}) stands out from the recess (${mean(soffit).toFixed(2)}) as the brightest field`);
   const member = (skin.getObjectByName('concourse-lattice') as THREE.Mesh).material as THREE.MeshLambertMaterial;
   assert.ok(member.color.r > 0.9 && member.color.g > 0.9, 'the members are painted white');
-  assert.ok(mean(soffit) < 0.65 * lum(member.emissive), `the coffers (${mean(soffit).toFixed(2)}) stand well under the glow of the members alone (${lum(member.emissive).toFixed(2)}): each cell is shaded`);
+  assert.ok(mean(soffit) < 0.28 * lum(member.color), `the coffers (${mean(soffit).toFixed(2)}) stand well under a third of the white of the members (${lum(member.color).toFixed(2)}): each cell is shaded`);
   // dimming toward the rim: the outer third of the cells, by distance from the funnel axis, against the inner third
   const byRadius = cells.map(f => ({ r: toAxis(f.mid), tone: f.tone })).sort((a, b) => a.r - b.r), third = Math.floor(byRadius.length / 3);
   const near = mean(byRadius.slice(0, third).map(c => c.tone)), far = mean(byRadius.slice(-third).map(c => c.tone));

@@ -27,7 +27,7 @@ export const RIM_GLAZING_WIDTH = 2.4;
 /** Published glazed share and the band the rubric accepts. */
 export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
 /**
- * Rooflights (R-c, R-c2; ASSUMED): clean rhombi of clear mid-tone glass (round 6, C6: not dark slots) in a darker silver frame laid on the cladding, not cells of the lattice, a row of four round the dome
+ * Rooflights (R-c, R-c2; ASSUMED): clean rhombi of dark slate glass (round 7, C6: R-c's are dark grey; round 6's mid-tone read as a patch of sky) in a paler silver frame laid on the cladding, not cells of the lattice, a row of four round the dome
  * three quarters of the way from the funnel axis to the outline. R-c2 puts them on the south-west; they stand 12 degrees apart from 26 north of west to 10
  * south of it, the dome's west face, because from a low standpoint in the west (concourse-exterior-west, 1.1 m up) the roof is nearly edge-on: south of 12
  * degrees its own shoulder hides a rooflight, and nearer in than 55 m it is a line a few pixels tall; and from the square the hotel hides the south-west.
@@ -183,12 +183,18 @@ export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, numb
 /** A ring of a round tube: its point, its tangent, its radius, and where another tube crosses it the tangent of that one. */
 export interface Ring { p: V3; t: V3; r: number; x?: V3 }
 
+/**
+ * How much of its white a full round member (a leg of the funnel, a tree column) shows where its surface looks along n (round 7, C3): lit from the west, where the glass wall is, so the one
+ * flat fill the grade gives a room leaves it round, full on the side to the viewer from the concourse and a third as bright at its edge, dark on the side to the Range (R-a), not a flat ribbon.
+ */
+export const tubeShade = (n: V3): number => ((1 - n[0]) / 2) ** 1.5;
+
 function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number], open = false): void {
   const sides = open ? 4 : TUBE_SIDES, verts = tubeRings(rings, clamp, sides);
   for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < sides; j++) {
     if (open && Math.cos(((j + 0.5) * 2 * Math.PI) / sides) > -0.1) continue; // an open tube leaves out the faces that look up at the cladding, which no one sees
-    const a = verts[k]![j]!, b = verts[k]![(j + 1) % sides]!, c = verts[k + 1]![(j + 1) % sides]!, d = verts[k + 1]![j]!;
-    batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n] });
+    const a = verts[k]![j]!, b = verts[k]![(j + 1) % sides]!, c = verts[k + 1]![(j + 1) % sides]!, d = verts[k + 1]![j]!, s = open ? 1 : tubeShade(a.n);
+    batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n], color: [s, s, s] });
   }
 }
 
@@ -420,7 +426,7 @@ export function funnelRoof(grid: Diagrid, kept: [number, number, number][], cent
 }
 
 function columnGeometry(head: V3[], roof: V3[][]): THREE.BufferGeometry {
-  const batch = new Batch();
+  const batch = new Batch({ colored: true });
   for (const rings of columnStrands(head, roof)) tube(batch, rings, [0, 99]);
   return batch.build();
 }
@@ -443,10 +449,10 @@ function canvasTexture(width: number, height: number, draw: (g: CanvasRenderingC
   return t;
 }
 
-/** One cladding diamond in UVs 0..1 (its corners in order round it): bright in the middle, falling to 0.62 of the light at its edges (R-c). Null in Node. */
+/** One cladding diamond in UVs 0..1 (its corners in order round it): bright in the middle, falling to half the light at its edges (R-c; round 7, C6: from 0.62, so that the ribs between the diamonds read). Null in Node. */
 const pillowTexture = (): THREE.CanvasTexture | null => canvasTexture(64, 64, (_, fill) => {
   for (let i = 0; i < 13; i++) { // a square a pixel in from the last, lighter each time
-    const t = clamp01((i + 0.5) / 11.52), shade = Math.round(255 * Math.pow(0.62 + 0.38 * t * t * (3 - 2 * t), 1 / 2.2)); // linear light; the texture holds sRGB
+    const t = clamp01((i + 0.5) / 11.52), shade = Math.round(255 * Math.pow(0.5 + 0.5 * t * t * (3 - 2 * t), 1 / 2.2)); // linear light; the texture holds sRGB
     fill(`rgb(${shade},${shade},${shade})`, i, i, 64 - 2 * i, 64 - 2 * i);
   }
 });
@@ -469,10 +475,9 @@ function wallTexture(): THREE.CanvasTexture | null {
 interface RoofMaterials {
   soffit: THREE.Material;
   cladding: THREE.Material;
-  skylight: THREE.Material;
+  skylight: THREE.MeshBasicMaterial;
   skylightTop: THREE.Material;
   member: THREE.Material;
-  funnel: THREE.Material;
   floor: THREE.Material;
   wallGlass: THREE.Material;
   mullion: THREE.Material;
@@ -488,12 +493,12 @@ function roofMaterial(): RoofMaterials {
     // Unlit: the scene's lights shine from above, so a lit underside would be black (R-a: pale soffit).
     soffit: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, name: 'concourse-soffit' }),
     cladding: new THREE.MeshPhongMaterial({ map: pillowTexture(), color: 0xffffff, vertexColors: true, specular: 0xe8f0f8, shininess: 64, name: 'concourse-cladding' }),
-    // Glows from below as daylight does (R-a, conc-ab).
-    skylight: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, name: 'concourse-skylight' }),
+    // Glows from below as daylight does (R-a, conc-ab). Round 7 (C2): out of the tone map, so the sky blue it is painted is the blue that is seen (the grade lifted it to a pale haze); it takes the sky's colour as the hour and the weather give it (buildConcourse).
+    skylight: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, toneMapped: false, name: 'concourse-skylight' }),
     // Dark and glassy from above (R-c).
     skylightTop: new THREE.MeshPhongMaterial({ color: 0x6f8aa5, emissive: 0x16202b, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.66, side: THREE.FrontSide, depthWrite: false, name: 'concourse-skylight-top' }),
-    member: new THREE.MeshLambertMaterial({ color: 0xf7f9fb, emissive: 0xa9aeb4, name: 'concourse-member' }),
-    funnel: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, emissive: 0x91979d, name: 'concourse-funnel' }),
+    // White paint, lit as the room is and shaded by `tubeShade` (round 7, C1, C3: with the emissive it once carried, the grade's flat fill and tone curve drew every member the same near-white).
+    member: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, vertexColors: true, name: 'concourse-member' }),
     // R-c: dark reflective glass over shopfront glass, a navy band between.
     wallGlass: new THREE.MeshPhongMaterial({ map: wall, color: wall ? 0xffffff : 0x4f677a, specular: 0xdfe9f2, shininess: 110, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall' }),
     mullion: new THREE.MeshLambertMaterial({ color: 0x59606a, emissive: 0x23282e, name: 'concourse-mullion' }),
@@ -741,10 +746,10 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   const mat = roofMaterial();
   const north = concourseNorth(footprint, shed);
 
-  const members = new Batch();
+  const members = new Batch({ colored: true });
   const glass = new Batch({ colored: true, uv: false });
   const closure = new Batch({ colored: true, uv: false });
-  const struts = new Batch();
+  const struts = new Batch({ colored: true });
   const soffit = new Batch({ colored: true, uv: false });
   const standing = new Batch({ colored: true, uv: false }); // the upstands and the fascia: vertical quads, kept out of the soffit's triangle soup
   const cladding = new Batch({ colored: true });
@@ -764,22 +769,24 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   // Between the members: glass, or a soffit under silver cladding, two cells either side of a rib one diamond facet (R-c, R-c2).
   const rim = (x: number, z: number): number => rimDistance(shed, footprint, north, x, z);
   const glazed = glazedCells(d, kept, centre, rim);
-  const tone = rng(0x4b58), paneTone = rng(0x91a3);
-  const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.78, k * 0.89, k]; }; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a), each pane its own shade
-  const SOFFIT_TONE = rgb(0x888d94), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
+  const tone = rng(0x4b58), PANE: Rgb = [0.78, 0.89, 1]; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a); the glass's own colour is the sky's, set each frame
+  const SOFFIT_TONE = rgb(0x888d94), CLADDING_TONE = rgb(0x92979f), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun (round 7, C6: the grade drew the 0xc2c7cc of round 6 near-white, (205, 205, 205))
   const scaled = (c: Rgb, k: number): Rgb => [c[0] * k, c[1] * k, c[2] * k];
   const nodeAt = (i: number, by: number): V3 => { const p = at(i); return [p[0], p[1] + by, p[2]]; };
   kept.forEach((t, i) => {
+    // Half way along each cell's sides a finer net: the cell's medial triangle in slimmer tubes, so the weave is twice as fine as the cladding's diamonds (R-ab), over the glazed field too (round 7, C1:
+    // R-ab keeps the dense weave there), but not in the funnel's head, the cells whose corners all lie on the ring the legs land on or inside it, where the legs run on into members at their full thickness.
+    if (Math.max(...t.map(n => d.nodes[n]!.ring)) > FUNNEL_HEAD_RING) {
+      const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
+      for (let k = 0; k < 3; k++) roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);
+    }
     if (glazed.has(i)) {
-      glass.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], undefined, { facing: UP, color: pane() });
+      glass.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], undefined, { facing: UP, color: PANE });
       return;
     }
     const outer = share((d.nodes[t[0]]!.r + d.nodes[t[1]]!.r + d.nodes[t[2]]!.r) / 3);
     // Each cell its own shade (ASSUMED +-4 %), dimming toward the rim by up to a fifth.
     soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], undefined, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.2 * outer)) });
-    // Half way along each solid cell's sides a finer net: the cell's medial triangle in slimmer tubes, so the weave is twice as fine as the cladding's diamonds (R-ab); the glazed field keeps the funnel's coarse lattice.
-    const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
-    for (let k = 0; k < 3; k++) roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);
   });
   // An upstand closes the cavity where a solid cell meets a glazed one, so no sky shows through.
   for (const { a, b, cells } of edges.values()) {
@@ -809,17 +816,17 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     if (glazed.has(i) || paired.has(i)) return;
     cladding.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], [[0, 0], [1, 0], [1, 1]], { facing: UP, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
   });
-  // The rooflights: clear mid-tone glass in a darker silver frame that rises to it, laid on the cladding (R-c, R-c2; round 6, C6: lighter glass, not a dark slot). The pillow texture's middle is full light, its edge dark; the glass sits at its edge.
+  // The rooflights: dark slate glass in a lighter silver frame that rises to it, laid on the cladding (R-c, R-c2: dark framed diamonds; round 7, C6: round 6's pale mid-tone glass read as a patch of sky). The pillow texture's middle is full light, its edge dark; the glass sits at its edge.
   const surface = (x: number, z: number): number => { const r = Math.hypot(x - cx, z - cz); return concourseHeight(canopy, (canopy.radius * r) / (r + rim(x, z))); }; // the nodes' own height law
   for (const { outer, inner } of rooflights(centre, shed, surface)) {
-    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { normal: UP, color: scaled(CLADDING_TONE, 0.3) });
-    cladding.poly(inner, undefined, { facing: UP, color: rgb(0x6a7f99) });
+    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { normal: UP, color: scaled(CLADDING_TONE, 1.2) });
+    cladding.poly(inner, undefined, { facing: UP, color: rgb(0x5b6978) });
   }
   // The oculus: glass over the funnel's open top (R-a).
   const crown = d.nodes.filter(n => n.ring === 0);
   for (let i = 0; i < crown.length; i++) {
     const p = crown[i]!, q = crown[(i + 1) % crown.length]!;
-    glass.poly([[cx, canopy.apex + SKIN_LIFT, cz], [p.x, height(p) + SKIN_LIFT, p.z], [q.x, height(q) + SKIN_LIFT, q.z]], undefined, { facing: UP, color: pane() });
+    glass.poly([[cx, canopy.apex + SKIN_LIFT, cz], [p.x, height(p) + SKIN_LIFT, p.z], [q.x, height(q) + SKIN_LIFT, q.z]], undefined, { facing: UP, color: PANE });
   }
 
   // The ground follows the OSM outline clipped at the façade and northern limits, keeping its small corners.
@@ -899,7 +906,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       const foot = (v: number): V3 => on(v, Math.min(low, on(v)[1])), quad = [foot(s0), foot(s1), on(s1), on(s0)];
       // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
       // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
-      closure.poly(quad, undefined, { facing: EAST, color: fin ? white : pane() });
+      closure.poly(quad, undefined, { facing: EAST, color: fin ? white : PANE });
       cladding.poly(quad, [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
     }
   }
@@ -924,16 +931,18 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   add(cladding, mat.cladding, 'concourse-cladding');
   if (glass.count > 0) { // one geometry, two looks: bright from below, dark and glinting from above
     const panes = glass.build();
-    for (const [m, name] of [[mat.skylight, 'concourse-glass'], [mat.skylightTop, 'concourse-glass-top']] as const) addMesh(group, panes, m, name, 3);
+    // out of the tone map, the glass shows the sky's own colour: it takes the scene fog's, which is the dome's horizon (atmosphere.ts), so it is pale by day, grey under cloud and dark by night; the closure's too
+    addMesh(group, panes, mat.skylight, 'concourse-glass', 3).onBeforeRender = (_, scene) => scene.fog && mat.skylight.color.copy(scene.fog.color);
+    addMesh(group, panes, mat.skylightTop, 'concourse-glass-top', 3);
   }
   add(wall, mat.wallGlass, 'concourse-wall', 3);
   add(closure, mat.skylight, 'concourse-closure', 3);
-  add(struts, mat.funnel, 'concourse-supports');
+  add(struts, mat.member, 'concourse-supports');
   add(mullions, mat.mullion, 'concourse-mullions');
   add(floor, mat.floor, 'concourse-floor');
   group.add(buildFitOut(shed, worldToShed(shed, centre).v));
   // The funnel: one mesh about its own axis in the shed's frame, its legs landing on the roof's third ring.
-  const column = addMesh(group, columnGeometry(funnelHead(d, centre, shed), funnelRoof(d, kept, centre, shed)), mat.funnel, 'concourse-column');
+  const column = addMesh(group, columnGeometry(funnelHead(d, centre, shed), funnelRoof(d, kept, centre, shed)), mat.member, 'concourse-column');
   column.position.set(cx, 0, cz);
   column.rotation.y = -shed.heading;
   return group;

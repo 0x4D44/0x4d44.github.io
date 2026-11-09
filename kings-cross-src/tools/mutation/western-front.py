@@ -29,6 +29,7 @@ titles = [
     (FRONT, 'brick centre: six first-floor windows dressed in stone, a round-headed light at each end and a three-light window with mullions, a sill and a hood with a shallow pediment between; the top storey is plain, and so is all beside the centre above its openings'),
     (FRONT, "brick centre: a stone quoin at each end from the openings' heads up, the second course and the cornice over its length only, the first course the whole length"),
     (SHED, 'buildWesternRange: three storeys of brick west of the shed wall, between its OSM limits'),
+    (FRONT, 'beside the brick centre: a window 1.2 m wide in the top storey of every bay, in plain brick, none over the lower floors or in front of the centre'),
 ]
 mutations = [
     ('missing fifth bay', 'Array.from({ length: 5 }', 'Array.from({ length: 4 }', 0),
@@ -73,7 +74,18 @@ mutations = [
     ('cornice along the flanks', '[eaves + 0.25, 0.9, 0.5, b0, b1]', '[eaves + 0.25, 0.9, 0.5, v0, v1]', 6),
     ('first course over the brick centre only', '[storey, 0.3, 0.3, v0, v1]', '[storey, 0.3, 0.3, b0, b1]', 6),
     # the Range's own test: bays, brick centre, windows, meshes
-    ('no top-storey window on the east face', "for (const v of westernBays()) windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');", '', 7),
+    ('no top-storey window on the east face', "    windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');\n", '', 7),
+    # round 7 (C4): a window in the top storey of every bay beside the brick centre, on the concourse face
+    ('no flank windows', "    if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);\n", '', 8),
+    ('flank windows in front of the brick centre too', 'if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], \'-x\', 1.2, 2.4);', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", 7),
+    ('flank windows south of the centre only', 'if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], \'-x\', 1.2, 2.4);', "if (v < b0) windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", 8),
+    ('flank windows north of the centre only', 'if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], \'-x\', 1.2, 2.4);', "if (v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", 8),
+    ('flank windows on the first floor, over the string course', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", "windowQuad(win, [x0 - 0.02, 4.75, -v], '-x', 1.2, 2.4);", 8),
+    ('flank windows as large as the centre\'s sashes', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.9, 2.9);", 8),
+    ('flank windows as wide as the bay, a band of glass', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 3.2, 2.4);", 8),
+    ('flank windows facing the shed, not the concourse', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", "windowQuad(win, [x0 - 0.02, 8.95, -v], '+x', 1.2, 2.4);", 8),
+    ('flank windows off the middle of their bays', "windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);", "windowQuad(win, [x0 - 0.02, 8.95, -v - 0.8], '-x', 1.2, 2.4);", 8),
+    ('flank windows only in every other bay', 'if (v < b0 || v > b1) windowQuad(', 'if ((v < b0 || v > b1) && Math.round((v - 10.2) / WESTERN_RANGE.bay) % 2 === 0) windowQuad(', 8),
     ('windows on the ground floor too', "windowQuad(win, [x0 - 0.02, 8.95, z], '-x', 1.9, 2.9);", "windowQuad(win, [x0 - 0.02, 8.95, z], '-x', 1.9, 2.9); windowQuad(win, [x0 - 0.02, 1.4, z], '-x');", 7),
     ('one storey of windows in the brick centre', "for (const k of [-1.2, 0, 1.2]) windowQuad(win, [x0 - 0.02, 4.75, z + k], '-x', 1, 2.8);", '', 7),
     ('top storey sashes narrower', "windowQuad(win, [x0 - 0.02, 8.95, z], '-x', 1.9, 2.9);", "windowQuad(win, [x0 - 0.02, 8.95, z], '-x', 1.4, 2.9);", 7),

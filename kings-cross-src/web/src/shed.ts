@@ -748,8 +748,12 @@ export function buildWesternRange(): THREE.Group {
   slate.quad([xm, top + roofRise, zS], [xe, top, zS], [xe, top, zN], [xm, top + roofRise, zN], [0, 0], [slant, 0], [slant, lenA], [0, lenA]);
   brick.poly([[x0, top, -v0], [x1, top, -v0], [xm, top + roofRise, -v0]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
   brick.poly([[x1, top, -v1], [x0, top, -v1], [xm, top + roofRise, -v1]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
-  // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay.
-  for (const v of westernBays()) windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');
+  // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay. On the concourse face, beside the brick centre (whose windows are below), the top storey of each flank
+  // bay shows through the curtain wall's clear panes with a window of its own, a sash a little smaller than the centre's (round 7, C4: R-a, R-ab show fenestration in the flanks, where there was blank brick).
+  for (const v of westernBays()) {
+    windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');
+    if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);
+  }
   // a round-headed opening (R-b, R-ab): a dark pane in a stone ring that rises from `y0` to the springing `y1`, a key at the crown
   const head = (z: number, r: number, d: number, y0: number, y1: number): V3[] => [[x0 - d, y0, z + r], ...Array.from({ length: 9 }, (_, k): V3 => [x0 - d, y1 + r * Math.sin((k * Math.PI) / 8), z + r * Math.cos((k * Math.PI) / 8)]), [x0 - d, y0, z - r]];
   const arch = (v: number, y0: number, y1: number): void => {

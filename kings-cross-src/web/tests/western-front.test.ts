@@ -142,3 +142,21 @@ test('brick centre: a stone quoin at each end from the openings\' heads up, the 
   for (const v of [45.5, 73, 100, 130]) meets(g, v, 4.1, 'range-stone', FACE - 0.15); // the first course, the curtain wall's sill, runs on either side
   for (const v of [45.5, 100, 130]) assert.notEqual(first(g, v, 12.55)?.name, 'range-stone', 'no cornice beside the brick centre');
 });
+
+// Round 7 (C4): above the string course, beside the brick centre, the curtain wall's clear panes show the Range's top storey, and R-a, R-ab show it fenestrated where the brick was blank: a window
+// 1.2 m wide and 2.4 m tall, its foot 8.95 m up, in the middle of every bay (the 39 bays are 3.4 m apart from v 10.2: 14 south of the brick centre, 15 north), a little smaller than the centre's 1.9 x 2.9 m sashes.
+test('beside the brick centre: a window 1.2 m wide in the top storey of every bay, in plain brick, none over the lower floors or in front of the centre', () => {
+  const g = range(), bays = Array.from({ length: 39 }, (_, i) => 10.2 + 3.4 * i), flank = bays.filter(v => v < 56.1 || v > 90.1), block = bays.filter(v => v > 56.1 && v < 90.1);
+  assert.equal(flank.length, 29, 'fourteen bays south of the brick centre, fifteen north of it');
+  for (const v of flank) {
+    // the sash stands 2 cm in front of the brick, from 8.95 to 11.35 m up and 0.6 m either side of the bay's middle
+    for (const [dv, y] of [[0, 9.1], [0.5, 10.1], [-0.5, 11.2], [0, 11.3]] as const) meets(g, v + dv, y, 'range-windows', FACE - 0.02);
+    for (const [dv, y] of [[0.8, 10], [-0.8, 10], [0, 8.7], [0, 11.6]] as const) meets(g, v + dv, y, 'range-brick', FACE);
+    // plain brick on the first floor over the string course: the windows are the top storey's
+    for (const y of [5, 6.5, 7.8]) meets(g, v, y, 'range-brick', FACE);
+  }
+  // in front of the brick centre the top storey keeps its six large sashes: a bay's middle that is clear of one is plain brick
+  const clear = block.filter(v => windows.every(w => Math.abs(v - w) > 1.1));
+  assert.ok(clear.length >= 6, `${clear.length} bays' middles in the brick centre stand clear of its large sashes`);
+  for (const v of clear) meets(g, v, 10, 'range-brick', FACE);
+});

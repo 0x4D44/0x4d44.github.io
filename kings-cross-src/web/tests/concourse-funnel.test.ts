@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, COLUMN_SEGMENTS, columnLegs, columnMembers, columnRadius, columnStrands, columnTubeDiameter, concourseGrid, CORNICE_TOP, edgesOf, FUNNEL_HEAD_RING, FUNNEL_REACH, funnelHead, funnelRoof, keepTriangles, RANGE_FACE, tubeRings } from '../src/concourse.ts';
+import { buildConcourse, COLUMN_SEGMENTS, columnLegs, columnMembers, columnRadius, columnStrands, columnTubeDiameter, concourseGrid, CORNICE_TOP, edgesOf, FUNNEL_HEAD_RING, FUNNEL_REACH, funnelHead, funnelRoof, keepTriangles, RANGE_FACE, tubeRings, tubeShade } from '../src/concourse.ts';
 import type { Ring } from '../src/concourse.ts';
 type V3 = [number, number, number];
 
@@ -345,4 +345,23 @@ test('funnel: members run 1.2 to 5.1 m between nodes, but for the last stretch i
   for (let i = 0; i < position.count; i++) nearest = Math.min(nearest, Math.hypot(position.getX(i) - mid[0], position.getY(i) - mid[1], position.getZ(i) - mid[2]));
   const radius = columnTubeDiameter(mid[1], top) / 2;
   assert.ok(Math.abs(nearest - radius) < 0.02, `a node at ${mid[1].toFixed(1)} m has surface ${nearest.toFixed(3)} m away, a ${radius.toFixed(3)} m radius`);
+});
+
+// Round 7 (C3): R-a's legs are round, lit on the side that faces the concourse and shaded on the side that faces the Range. Under the roof the grade's fill reaches every surface nearly alike, so the
+// lighting alone drew the legs as flat white bands (round 6's emissive made it worse): the shade is baked into each strip of each leg, from the normal at its first corner, and the roof's open members stay plain white.
+test('funnel: the legs are shaded round, each strip coloured from its normal, lit on the concourse side and dark on the Range side, and the roof\'s members are plain white', () => {
+  assert.ok(tubeShade([-1, 0, 0]) > 0.9 && tubeShade([1, 0, 0]) < 0.2 && Math.abs(tubeShade([0, 1, 0]) - tubeShade([0, 0, 1])) < 1e-9, 'a normal facing the concourse (west, -x) is lit, one facing the Range (+x) is dark, and one across them is between');
+  const colour = column.geometry.getAttribute('color'), normal = column.geometry.getAttribute('normal');
+  assert.ok(colour && colour.count === position.count && position.count % 4 === 0, 'one colour to each vertex, strips of four vertices');
+  const shades: number[] = [];
+  for (let q = 0; q < position.count; q += 4) {
+    const shade = colour.getX(q);
+    for (let k = 0; k < 4; k++) for (const c of [0, 1, 2]) close(colour.getComponent(q + k, c), shade, 1e-6); // one grey to a strip
+    close(shade, tubeShade([normal.getX(q), normal.getY(q), normal.getZ(q)]), 1e-5);
+    shades.push(shade);
+  }
+  const mean = shades.reduce((s, x) => s + x, 0) / shades.length, spread = Math.sqrt(shades.reduce((s, x) => s + (x - mean) ** 2, 0) / shades.length);
+  assert.ok(Math.min(...shades) < 0.2 && Math.max(...shades) > 0.9 && spread > 0.2, `the strips run from ${Math.min(...shades).toFixed(2)} to ${Math.max(...shades).toFixed(2)}, a spread of ${spread.toFixed(2)}`);
+  const lattice = (group.getObjectByName('concourse-lattice') as THREE.Mesh).geometry.getAttribute('color');
+  for (let i = 0; i < lattice.count; i++) assert.ok(lattice.getX(i) === 1 && lattice.getY(i) === 1 && lattice.getZ(i) === 1, 'the roof\'s open members carry no shade: plain white');
 });

@@ -413,7 +413,12 @@ test('buildWesternRange: three storeys of brick west of the shed wall, between i
   const windows = Array.from({ length: 6 }, (_, i) => 56.1 + (34 * (i + 0.5)) / 6);
   assert.deepEqual(westernWindows().map(v => v.toFixed(3)), windows.map(v => v.toFixed(3)), 'six windows, a sixth of the brick centre each: larger than a bay');
   const west = decals.filter(d => d.west);
-  assert.equal(west.length, 6 + 12, 'a top-storey sash over each of the six windows and the three lights of each of the four between the arched ends on the first floor, none beside the centre or on the ground floor');
+  // round 7 (C4): beside the brick centre the top storey of every bay has a window of its own, 1.2 x 2.4 m, a little smaller than the centre's sashes (29 bays: 14 south of it, 15 north)
+  const flankBays = allLowerCentres.filter(v => v < 56.1 || v > 90.1), flank = west.filter(d => Math.abs(d.wide - 1.2) < EPS && Math.abs(d.tall - 2.4) < EPS);
+  assert.equal(flankBays.length, 14 + 15, 'fourteen bays south of the brick centre and fifteen north of it');
+  assert.equal(west.length, 6 + 12 + flankBays.length, 'a top-storey sash over each of the six windows, the three lights of each of the four between the arched ends on the first floor, and a window in the top storey of each bay beside the centre: none on the ground floor');
+  assert.deepEqual(flank.map(d => d.v.toFixed(3)).sort(), flankBays.map(v => v.toFixed(3)).sort(), 'one window 1.2 x 2.4 m in the middle of every bay beside the brick centre, and none in front of it');
+  assert.ok(flank.every(d => Math.abs(d.foot - 8.95) < EPS), 'on the top storey, a window foot 8.95 m up, as the centre\'s sashes');
   for (const v of windows) assert.ok(west.some(d => Math.abs(d.v - v) < EPS && Math.abs(d.foot - 8.95) < EPS && Math.abs(d.wide - 1.9) < EPS && Math.abs(d.tall - 2.9) < EPS), `a 1.9 x 2.9 m sash on the top storey at v ${v.toFixed(2)}`);
   for (const v of windows.slice(1, 5)) for (const k of [-1.2, 0, 1.2]) assert.ok(west.some(d => Math.abs(d.v - (v + k)) < EPS && Math.abs(d.foot - 4.75) < EPS && Math.abs(d.wide - 1) < EPS && Math.abs(d.tall - 2.8) < EPS), `a 1 x 2.8 m light on the first floor at v ${(v + k).toFixed(2)}`);
   // The gateline's five bays and the two shops replace ground-floor openings; every other opening wears a pane in the public glazing (R-b)
