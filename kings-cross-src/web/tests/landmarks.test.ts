@@ -620,8 +620,43 @@ test('Midland Grand: the clock tower has a belfry of paired arches on every face
   assert.equal(corners.size, 4, `${tips.length} turret tips at ${[...corners]}`);
   assert.ok(tips.every((p) => Math.abs(Math.abs(p.a) - Math.abs(tips[0]!.a)) < 1e-6 && Math.abs(Math.abs(p.o) - Math.abs(tips[0]!.o)) < 1e-6), 'one pattern of four');
   assert.ok(tipY < st.roof, 'the turrets stand below the roof\'s top');
-  // and nothing above the wall head but the roof, the lantern, the turrets and the gables stands out beyond the lantern's width
-  for (const p of all) if (p.y > st.roof + 1e-6) assert.ok(Math.abs(p.a) < 1.6 && Math.abs(p.o) < 1.6, `a vertex at ${p.y} above the roof's top is off the lantern`);
+  // and above the roof's top nothing stands out beyond the lantern (1.7 m a side, its corner pinnacles 0.22 m more)
+  for (const p of all) if (p.y > st.roof + 1e-6) assert.ok(Math.abs(p.a) < 2.0 && Math.abs(p.o) < 2.0, `a vertex at ${p.y} above the roof's top is off the lantern`);
+});
+
+test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate pyramid between the turrets, an open pinnacled lantern part-way up, a long needle and a rod', () => {
+  const parts = midlandGeometry(midland);
+  const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
+  const st = towerStages(t.height);
+  const stage = t.side / 2 + 0.5;
+  const g = 4.3;
+  const within = (half: number) => (s: Tri): boolean => s.p.every((v) => Math.abs(inTower(t, v).a) <= half + 1e-6 && Math.abs(inTower(t, v).o) <= half + 1e-6);
+  const pitch = (s: Tri): number => (Math.atan2(Math.hypot(geoNormal(s)[0], geoNormal(s)[2]), Math.abs(geoNormal(s)[1])) * 180) / Math.PI;
+  // taller than the clock stage it crowns, by a good margin: the spire is the building's signature
+  assert.ok(t.height - st.wall >= 3 * (st.wall - st.corbel), `${t.height - st.wall} m of spire over a ${st.wall - st.corbel} m clock stage`);
+  // the steep roof: its base a little over half the stage's width (hist-c), its facets near 73 degrees, as steep as hist-b and hist-c show
+  const slate = triangles(parts.slate as Batch).filter(within(stage));
+  const steep = slate.filter((s) => s.p.every((v) => v[1] >= st.wall + g - 1e-6 && v[1] <= st.roof + 1e-6) && within(3.3)(s));
+  assert.equal(steep.length, 8, 'four facets of two triangles');
+  for (const s of steep) assert.ok(pitch(s) > 70 && pitch(s) < 76, `a steep roof facet at ${pitch(s)} degrees`);
+  assert.ok(Math.max(...steep.flatMap((s) => s.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))) <= 0.65 * stage, 'its base is under two thirds of the stage\'s width');
+  // the gables' cheeks meet the hip where the steep roof begins: an apex-back point on each face, on the pyramid's base
+  const backs = slate.flatMap((s) => s.p).filter((v) => Math.abs(v[1] - (st.wall + g)) < 1e-6 && Math.abs(Math.hypot(inTower(t, v).a, inTower(t, v).o) - 3.3) < 1e-6 && (Math.abs(inTower(t, v).a) < 1e-6 || Math.abs(inTower(t, v).o) < 1e-6));
+  assert.ok(new Set(backs.map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`)).size === 4, 'one cheek meeting point on each face');
+  // the lantern is open: dark lights behind two mullions a face, a cornice, a pinnacle on each corner; the needle starts from inside its cornice
+  const lantern = (s: Tri): boolean => s.p.every((v) => v[1] >= st.roof + 0.4 - 1e-6 && v[1] <= st.lantern - 0.4 + 1e-6) && within(2.0)(s);
+  assert.equal(triangles(parts.pane as Batch).filter(lantern).length, 8, 'four dark walls');
+  const mullions = triangles(parts.stone as Batch).filter((s) => lantern(s) && Math.abs(geoNormal(s)[1]) < 1e-9);
+  assert.equal(mullions.length, 64, 'eight mullions, a box each with four sides of two triangles');
+  const pinnacles = triangles(parts.stone as Batch).filter((s) => s.p.some((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6));
+  assert.equal(new Set(pinnacles.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6).map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`))).size, 4, 'a pinnacle on each corner of the lantern');
+  // the needle: slender (taller than twice its base), then a thin rod to 82 m
+  const needle = slate.filter((s) => s.p.every((v) => v[1] >= st.lantern - 1e-6) && s.p.some((v) => v[1] > st.lantern + 1));
+  assert.ok(needle.length >= 8, 'a needle and a rod');
+  const baseHalf = Math.max(...needle.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - st.lantern) < 1e-6).map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)))));
+  assert.ok(t.height - 1.8 - st.lantern > 2 * (2 * baseHalf), `a needle ${t.height - 1.8 - st.lantern} m tall on a base ${2 * baseHalf} m wide`);
+  const rod = needle.flatMap((s) => s.p).filter((v) => Math.abs(v[1] - (t.height - 1.8)) < 1e-6);
+  assert.ok(rod.length > 0 && rod.every((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)) < 0.2), 'the rod rises from the needle\'s tip');
 });
 
 test('Midland Grand [hist-c]: a row of corbels under the corbel table on every face of each tower, no farther out than its first step, clear of the belfry\'s windows', () => {

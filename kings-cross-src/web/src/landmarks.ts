@@ -692,11 +692,11 @@ function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, h
 /**
  * Where a tower's stages end, for a tower `H` tall: the shaft (the facade's rows of windows and then lancets), the belfry, the corbel table
  * above it, the wall head where the roof begins, the roof's top where the lantern stands, and the lantern's top; the needle runs on to `H`.
- * ASSUMED: the fractions are scaled from hist-c, whose clock tower is taken to be 82 m (the rubric's figure, 82 +/- 4 m).
+ * ASSUMED: the fractions are scaled from hist-b (the whole tower, the spire a quarter of its height) and hist-c, taking the clock tower as 82 m (82 +/- 4 m).
  */
 export function towerStages(H: number): { shaft: number; belfry: number; corbel: number; wall: number; roof: number; lantern: number } {
-  const belfry = H * 0.726;
-  return { shaft: H * 0.622, belfry, corbel: belfry + 1.8, wall: H * 0.813, roof: H * 0.92, lantern: H * 0.95 };
+  const belfry = H * 0.66;
+  return { shaft: H * 0.56, belfry, corbel: belfry + 1.8, wall: H * 0.748, roof: H * 0.862, lantern: H * 0.898 };
 }
 
 /**
@@ -714,7 +714,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const clockTower = t.name === 'clock';
   const { shaft: sT, belfry: bT, corbel: tT, wall: wH, roof: rT, lantern: lT } = towerStages(H);
   const sq = (half: number): Pt[] => squareAbout(t.centre, t.along, t.out, half);
-  const whole = (grow: number): Seg[] => segmentsOutside(polygonEdges(sq(h + grow)), []);
+  const ring = (half: number): Seg[] => segmentsOutside(polygonEdges(sq(half)), []);
   const facesAt = (half: number): Placed[] => [
     { at: [t.centre[0] + t.out[0] * half, t.centre[1] + t.out[1] * half], dir: t.along, normal: t.out },
     { at: [t.centre[0] - t.out[0] * half, t.centre[1] - t.out[1] * half], dir: [-t.along[0], -t.along[1]], normal: [-t.out[0], -t.out[1]] },
@@ -726,8 +726,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
 
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
-  for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, whole(0), y, 0.4, 0.2);
-  addBand(stone, whole(0), sT, 0.5, 0.25);
+  for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.2);
+  addBand(stone, ring(h), sT, 0.5, 0.25);
   // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
@@ -743,7 +743,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     else for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, sideAt(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
   }
   // the corbel table: three steps, each a little farther out
-  for (let k = 0; k < 3; k++) addBand(stone, whole(0), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
+  for (let k = 0; k < 3; k++) addBand(stone, ring(h), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
   // and under it a row of corbels, as far out as the first step (hist-c: the table is dense with them); their size and spacing are ASSUMED
   const nc = Math.round((2 * h) / 0.9);
   for (const f of faces) {
@@ -753,8 +753,11 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const grow = 0.5;
   addWalls(brick, sq(h + grow), tT, wH);
   const stage = facesAt(h + grow);
-  const lant = 1.4; // half the lantern's side
-  const roofSlope = (rT - wH) / (h + grow - lant);
+  // hist-c, hist-b: a hip over the clock stage down to the gables, then a steep slate pyramid (about 73 deg) between the turrets, a lantern, a needle; sizes ASSUMED
+  const P = h + grow;
+  const [rb, g, lant] = [3.3, 4.3, 1.7]; // the steep roof's base (a little over half the stage's width), the gables' height, half the lantern's side
+  const top = clockTower ? rT : lT;
+  const roofSlope = g / (P - rb);
   if (clockTower) {
     const cy = (tT + wH) / 2;
     for (const f of stage) {
@@ -773,7 +776,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
       part(parts, 'clock').quadUV(q(left, cy - half, 0.14), q(-left, cy - half, 0.14), q(-left, cy + half, 0.14), q(left, cy + half, 0.14), [[0, 0], [1, 0], [1, 1], [0, 1]], face);
       // the gable over the dial, brick with a stone border and a rosette in it, its sides running back into the roof
       const gw = h - 1.0;
-      addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, gw, 4.3, 0, 'brickRed');
+      addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, gw, g, 0, 'brickRed');
       addDisc(stone, f, 0, wH + 1.9, 0.45, 0.12);
     }
   }
@@ -782,12 +785,18 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     const c: Pt = [t.centre[0] + (t.along[0] * a + t.out[0] * b) * (h + grow - 0.75), t.centre[1] + (t.along[1] * a + t.out[1] * b) * (h + grow - 0.75)];
     addTurret(parts, c, t.along, t.out, wH, 0.65, 3.0, 3.6);
   }
-  // the roof, the lantern and the needle
-  addRoof(slate, sq(h + grow), sq(lant), wH, rT, true, [h + grow - lant, h + grow - lant, h + grow - lant, h + grow - lant]);
-  addWalls(stone, sq(lant), rT, lT);
-  for (const f of facesAt(lant)) for (const dx of [-0.6, 0.6]) addWindow(part(parts, 'pane'), sideAt(f, dx, 0.05), rT + 0.45, 0.5, lT - rT - 0.9, 'pointed', 0.05);
-  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) addSpike(stone, [t.centre[0] + (t.along[0] * a + t.out[0] * b) * lant, t.centre[1] + (t.along[1] * a + t.out[1] * b) * lant], t.along, t.out, 0.22, rT, lT + 0.9);
-  addSpike(slate, t.centre, t.along, t.out, lant + 0.12, lT, H);
+  // the roof; the clock tower's open lantern (dark lights between mullions, a pinnacle on each corner) and then the needle and its rod
+  addRoof(slate, sq(P), sq(rb), wH, wH + g, false, [P - rb, P - rb, P - rb, P - rb]);
+  addRoof(slate, sq(rb), sq(lant), wH + g, top, false, [rb - lant, rb - lant, rb - lant, rb - lant]);
+  if (clockTower) {
+    addWalls(part(parts, 'pane'), sq(lant - 0.12), rT + 0.4, lT - 0.4);
+    for (const f of facesAt(lant)) for (const dx of [-0.55, 0.55]) stone.box([sideAt(f, dx, 0).at[0], (rT + lT) / 2, sideAt(f, dx, 0).at[1]], [0.2, lT - rT - 0.8, 0.2], { rotY: Math.atan2(-f.dir[1], f.dir[0]), skip: ['-y', '+y'] });
+    addBand(stone, ring(lant), rT, 0.4, 0.1);
+    addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
+    for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) addSpike(stone, [t.centre[0] + (t.along[0] * a + t.out[0] * b) * lant, t.centre[1] + (t.along[1] * a + t.out[1] * b) * lant], t.along, t.out, 0.22, rT, lT + 0.9);
+  }
+  addSpike(slate, t.centre, t.along, t.out, lant - 0.3, lT, H - 1.8);
+  addSpike(slate, t.centre, t.along, t.out, 0.08, H - 1.8, H);
 }
 
 export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
