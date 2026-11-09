@@ -741,6 +741,11 @@ export function waverleyAddress(pin) {
   return withPin('?station=edinburgh-waverley&trains=none&board=0&tooltip=0', pin);
 }
 
+/** Page script that waits for the city, then switches the page to Edinburgh Waverley (instantly under reduced motion). Shared with tools/perf.mjs --scene waverley. */
+export const WAVERLEY_SELECT_SCRIPT = "(async()=>{const k=window.__kx;await k.cityLoaded;if(k.stations.state().selected!=='edinburgh-waverley')await k.stations.select('edinburgh-waverley',false);return true;})()";
+/** Page condition true once the Waverley scene is loaded, real (not the placeholder) and the one on show. */
+export const WAVERLEY_READY_CONDITION = "(()=>{const k=window.__kx,s=k.stations.state(),e=k.stations.edinburgh();return s.phase==='ready'&&s.selected==='edinburgh-waverley'&&!!e&&!e.placeholder&&k.stations.activeScene()===e.scene;})()";
+
 /** One id for a built page: the sha256 of its files' relative paths and hashes, so two captures can be shown to come from the same build. */
 export function buildId(files) {
   return createHash('sha256').update(JSON.stringify([...files].sort((a, b) => a.file.localeCompare(b.file)).map(f => [f.file, f.sha256]))).digest('hex');
@@ -814,8 +819,8 @@ async function waverleyMain(options) {
     await S('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await S('Page.navigate', { url: `${base}${waverleyAddress(options.pin)}` });
     await until('!!window.__kx?.ready');
-    await evaluate("(async()=>{const k=window.__kx;await k.cityLoaded;if(k.stations.state().selected!=='edinburgh-waverley')await k.stations.select('edinburgh-waverley',false);return true;})()");
-    await until("(()=>{const k=window.__kx,s=k.stations.state(),e=k.stations.edinburgh();return s.phase==='ready'&&s.selected==='edinburgh-waverley'&&!!e&&!e.placeholder&&k.stations.activeScene()===e.scene;})()", 120000);
+    await evaluate(WAVERLEY_SELECT_SCRIPT);
+    await until(WAVERLEY_READY_CONDITION, 120000);
     await twoFrames();
     const hudControl = hudController({ evaluate, settle: twoFrames });
     for (const [name, camera] of Object.entries(cameras).filter(([name]) => !selected || selected.has(name))) {

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createServer } from 'node:http';
-import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, createRelayRoute, firstTrainVisible, headroomMarkdown, headroomReport, headroomVsBaseline, peakMarkdown, sourceMapPlan, sweepMarkdown } from '../perf.mjs';
+import { HEADROOM_FPS_TARGET, PERF_SCENES, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, WAVERLEY_PERF_VIEWS, WAVERLEY_REFUSED_FLAGS, aggregateCpu, cpuProfileMarkdown, createRelayRoute, firstTrainVisible, headroomMarkdown, headroomReport, headroomVsBaseline, peakMarkdown, sceneFrom, sourceMapPlan, sweepMarkdown, waverleyPerfCameras } from '../perf.mjs';
+import { waverleyCameras } from '../evidence.mjs';
+import { readFile } from 'node:fs/promises';
 import { sweepSummary } from '../camera-sweep.mjs';
 
 const node = { id: 1, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 0, functionName: 'scene' } };
@@ -291,4 +293,49 @@ test('a re-export chunk Rollup gave no source map is left unmapped; a declared m
   // A build made without --sourcemap has no map on any script, declared or not.
   assert.deepEqual(sourceMapPlan([script('assets/index-a.js', false), script('assets/landmarks-b.js', false)]).missing, ['assets/index-a.js', 'assets/landmarks-b.js']);
   assert.deepEqual(sourceMapPlan([script('assets/index-a.js', true), script('assets/landmarks-b.js', true)]), { missing: [], facades: [] });
+});
+
+test('--scene defaults to London and takes waverley; the pinning and length options go with either', () => {
+  assert.deepEqual(PERF_SCENES, ['kings-cross', 'waverley']);
+  assert.equal(sceneFrom([]), 'kings-cross');
+  assert.equal(sceneFrom(['--seconds', '10', '--relay', 'http://127.0.0.1:8787', '--peak', 'none', '--stations', 'none']), 'kings-cross');
+  assert.equal(sceneFrom(['--scene', 'kings-cross', '--relay', 'http://127.0.0.1:8787', '--startup-only']), 'kings-cross');
+  assert.equal(sceneFrom(['--scene', 'waverley']), 'waverley');
+  const pinned = ['--dist', 'd', '--out', 'o', '--seconds', '10', '--uncapped-seconds', '8', '--time', '2026-06-21T12:00:00Z', '--weather', 'clear', '--sky', 'ref', '--no-uncapped', '--headroom-baseline', 'b.json', '--check-build'];
+  assert.equal(sceneFrom(['--scene', 'waverley', ...pinned]), 'waverley');
+  assert.equal(sceneFrom([...pinned, '--scene', 'waverley']), 'waverley');
+});
+
+test('--scene refuses an unknown or missing scene, and a Waverley run refuses each London-only option by name', () => {
+  assert.throws(() => sceneFrom(['--scene']), /--scene must be kings-cross or waverley/);
+  assert.throws(() => sceneFrom(['--scene', 'edinburgh']), /--scene must be kings-cross or waverley/);
+  assert.throws(() => sceneFrom(['--scene', '--seconds', '10']), /--scene must be kings-cross or waverley/);
+  assert.deepEqual([...WAVERLEY_REFUSED_FLAGS].sort(), ['--no-legacy-cameras', '--peak', '--peak-from', '--peak-start', '--relay', '--scene-ready', '--startup-only', '--station-seconds', '--stations']);
+  for (const name of WAVERLEY_REFUSED_FLAGS) assert.throws(() => sceneFrom(['--scene', 'waverley', name, 'x']), new RegExp(`remove ${name}`), `${name} must be refused with --scene waverley`);
+  assert.throws(() => sceneFrom(['--scene', 'waverley', '--relay', 'http://x', '--peak', 'none']), /remove --relay, --peak\b/);
+});
+
+test('the Waverley cameras are the frozen ones of evidence.mjs, by name, posed as evidence.mjs poses them, and are not copied into perf.mjs', async () => {
+  const frozen = waverleyCameras();
+  assert.deepEqual([...WAVERLEY_PERF_VIEWS], ['wv-overview', 'wv-roof-from-north-bridge']);
+  const cameras = await waverleyPerfCameras();
+  assert.deepEqual(cameras.map(camera => camera.name), [...WAVERLEY_PERF_VIEWS]);
+  for (const camera of cameras) {
+    assert.deepEqual(camera.pos, frozen[camera.name].pos, `${camera.name} pos`);
+    assert.deepEqual(camera.target, frozen[camera.name].target, `${camera.name} target`);
+    assert.equal(camera.fov, frozen[camera.name].fov ?? 50, `${camera.name} fov`);
+    assert.equal(camera.near, frozen[camera.name].near ?? 0.1, `${camera.name} near`);
+    assert.equal(camera.waverley, true);
+  }
+  assert.equal(cameras[0].fov, 50, 'wv-overview has no fov of its own: the page\'s 50 degrees');
+  assert.equal(cameras[1].fov, 60);
+  // A fresh copy each call: editing what it hands out cannot change the next run or the frozen cameras.
+  cameras[0].pos[0] = 0;
+  assert.notEqual((await waverleyPerfCameras())[0].pos[0], 0);
+  assert.notEqual(waverleyCameras()['wv-overview'].pos[0], 0);
+  // Imported, not copied: none of the frozen poses' distinctive numbers appears as a literal in perf.mjs.
+  const source = await readFile(new URL('../perf.mjs', import.meta.url), 'utf8');
+  const literals = cameras.flatMap(camera => [...camera.pos, ...camera.target]).map(String).filter(text => /\.\d{2}/.test(text));
+  assert.ok(literals.length >= 4, `distinctive literals to look for: ${literals}`);
+  for (const text of literals) assert.ok(!source.includes(text), `perf.mjs must not hold the frozen coordinate ${text}`);
 });

@@ -16,11 +16,16 @@
 // After the capped cameras (Chrome's frame limit on, about 60 FPS) it measures the same cameras again in a second Chrome started with
 // --disable-gpu-vsync --disable-frame-rate-limit and reports the headroom: uncapped FPS over the 60 FPS target (--no-uncapped skips it;
 // --uncapped-seconds sets its length, default min(--seconds, 20); --headroom-baseline <earlier perf json> adds the ratio to that run).
+// --scene waverley measures Edinburgh Waverley instead: the frozen cameras wv-overview and wv-roof-from-north-bridge (evidence.mjs
+// waverleyCameras), on a page loaded the way evidence.mjs --scene waverley loads it (trains=none), capped then uncapped with the same
+// statistics and the same report shape. It needs no relay, no recording and no EB data, so it takes none of the London replay options
+// (--relay, --peak*, --stations, --station-seconds, --no-legacy-cameras, --startup-only, --scene-ready) and measures no startup.
 // Every page load carries the scene pin (--time <ISO instant with a zone>, --weather <name>, default midsummer noon, clear; --sky ref
 // for the page's old fixed look), so a page that reads the pin shows the same sky every run and requests no weather.
 //
-//   node tools/perf.mjs [--dist <built dir>] [--out <output dir>] [--seconds 60]
-//                       [--chrome <path>] [--relay http://127.0.0.1:8787]
+//   node tools/perf.mjs [--scene kings-cross|waverley] [--dist <built dir>] [--out <output dir>] [--seconds 60]
+//                       [--uncapped-seconds 20] [--time <ISO instant>] [--weather <name>]
+//                       [--chrome <path>] [--relay http://127.0.0.1:8787]   (--relay is London only)
 //
 // Uses headless Chrome with ANGLE Metal requested, then records the WebGL renderer string so a
 // SwiftShader fallback cannot be mistaken for a real-GPU result. Replay data comes only from the
@@ -522,6 +527,39 @@ export function sweepMarkdown(stationCameras, summary, title = 'Fixed station ca
     ...rows.map(([name, c]) => `| ${name}${c.view?.grid ? ' (grid view)' : ''} | ${c.trainsShown.min}/${c.trainsShown.median}/${c.trainsShown.max} | ${fixed(c.fps.median, 0)} | ${fixed(c.fps.p5, 0)} | ${fixed(c.frameDistribution.p50)} | ${fixed(c.frameDistribution.p95)} | ${fixed(c.frameDistribution.p99)} | ${fixed(c.frameDistribution.max)} | ${fixed(c.frameDistribution.slowShare * 100, 2)} | ${c.frameDistribution.missedSlots} | ${yes(c.steady60)} | ${yes(c.busy)} |`), ''];
 }
 
+// ---- The scene: London (default) or Edinburgh Waverley -------------------------------------------------------------------------------
+export const PERF_SCENES = Object.freeze(['kings-cross', 'waverley']);
+/** The frozen Waverley cameras measured: the whole station from above, and the roof from the North Bridge. Their poses are evidence.mjs's. */
+export const WAVERLEY_PERF_VIEWS = Object.freeze(['wv-overview', 'wv-roof-from-north-bridge']);
+/** London-only options: they feed the relay, the recording and the replay peak, which a Waverley run (trains=none) does not have. */
+export const WAVERLEY_REFUSED_FLAGS = Object.freeze(['--relay', '--peak', '--peak-start', '--peak-from', '--stations', '--station-seconds', '--no-legacy-cameras', '--startup-only', '--scene-ready']);
+
+/** `--scene` from the argument list: kings-cross when absent. Throws on a missing or unknown value, and on a London-only option beside waverley. */
+export function sceneFrom(args) {
+  const index = args.indexOf('--scene');
+  if (index < 0) return 'kings-cross';
+  const scene = args[index + 1];
+  if (!PERF_SCENES.includes(scene)) throw new Error(`--scene must be ${PERF_SCENES.join(' or ')}`);
+  if (scene === 'waverley') {
+    const refused = WAVERLEY_REFUSED_FLAGS.filter((name) => args.includes(name));
+    if (refused.length) throw new Error(`--scene waverley measures the two frozen Waverley cameras with no relay or recording; remove ${refused.join(', ')}`);
+  }
+  return scene;
+}
+
+/**
+ * The Waverley cameras to measure, as perf's camera list wants them: the named frozen cameras of evidence.mjs (waverleyCameras, a copy of
+ * FROZEN_WAVERLEY_CAMERAS), with the fov and near plane evidence.mjs shoots them at when the frozen camera gives none. Not copied here.
+ */
+export async function waverleyPerfCameras() {
+  const { waverleyCameras } = await import('./evidence.mjs');
+  const frozen = waverleyCameras();
+  return WAVERLEY_PERF_VIEWS.map((name) => {
+    const { pos, target, fov = 50, near = 0.1 } = frozen[name];
+    return { name, pos, target, fov, near, waverley: true };
+  });
+}
+
 async function selfTest() {
   assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: null, trainDraws: 0 } }), null);
   assert.equal(extractTiming({ observation: { sceneRenderedMs: 5, replayTrainsRenderedMs: 8, trainDraws: 2 }, firstFrameMs: 5 }).navigationStartToReplayTrainsRenderedMs, 8);
@@ -632,6 +670,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 if (process.argv.includes('--self-test')) { await selfTest(); process.exit(0); }
 
 const args = process.argv.slice(2);
+const scene = sceneFrom(args);
+const waverley = scene === 'waverley';
 const flag = (name, fallback) => {
   const index = args.indexOf(name);
   return index < 0 ? fallback : args[index + 1];
@@ -758,7 +798,9 @@ const report = {
     gzipBudgetBytes: 2_000_000,
     scriptsWithoutSourceMap: sourceMapChoice.facades,
   },
-  replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds, stationSecondsPerCamera: stationSeconds },
+  ...(waverley
+    ? { scene: 'edinburgh-waverley', trains: 'none', relay: null, secondsPerCamera: seconds, warmupSeconds: 2 }
+    : { replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds, stationSecondsPerCamera: stationSeconds } }),
   scenePin: { ...pin, parameters: pinParameters(pin), note: 'Added to every page address. A page built before the sky and weather work ignores it; a page that reads it shows this clock and weather and requests none.' },
   viewport,
   frameBudgetMs: 1000 / 60,
@@ -781,17 +823,20 @@ if (args.includes('--check-build')) {
 }
 // The fixed station cameras (evidence.mjs), loaded only for a run that measures them: the evidence module is heavy and a startup-only run needs none of it.
 let stationList = [];
-if (!args.includes('--startup-only') && stationsSpec !== 'none') {
+if (!waverley && !args.includes('--startup-only') && stationsSpec !== 'none') {
   const { stationCameras } = await import('./evidence.mjs');
   const { stationData } = await import('./station-scene.mjs');
   stationList = sweepCameraList(stationCameras(stationData().data), stationsSpec).map((camera) => ({ ...camera, station: true }));
 }
 // The camera sets in the order they are measured: the two axis 8 cameras at --seconds, then every station camera at --station-seconds.
-const legacyList = legacyCameras && !args.includes('--startup-only') ? Object.entries(cameras).map(([name, camera]) => ({ name, ...camera })) : [];
+// (--scene waverley: its two frozen cameras take the place of the two axis 8 cameras, at --seconds; there are no station cameras.)
+const legacyList = waverley ? await waverleyPerfCameras()
+  : legacyCameras && !args.includes('--startup-only') ? Object.entries(cameras).map(([name, camera]) => ({ name, ...camera })) : [];
+const waverleyEvidence = waverley ? await import('./evidence.mjs') : null;
 // How much replay one camera's page load can cover: the load, the two settling seconds and its window, at the replay speed. The peak must hold that long.
 const peakWindowMs = (8 + 2 + Math.max(5, legacyList.length ? seconds : 0, stationList.length ? stationSeconds : 0)) * 1000 * replaySpeed;
 const replayWindow = { startMs: null };
-const relayRoute = createRelayRoute(relayBase, replayWindow);
+const relayRoute = waverley ? () => false : createRelayRoute(relayBase, replayWindow); // Waverley: nothing is forwarded, so a /relay request is a 404 and is reported
 const cleanup = () => {
   if (cleanupPromise) return cleanupPromise;
   cleanupPromise = (async () => {
@@ -931,6 +976,8 @@ try {
     await S('Network.setCacheDisabled', { cacheDisabled: false });
     await S('Page.addScriptToEvaluateOnNewDocument', { source: observerSource });
     await S('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1, mobile: false });
+    // As evidence.mjs --scene waverley: reduced motion makes the station switch swap scenes at once, so no flight moves a posed camera.
+    if (waverley) await S('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await S('Page.bringToFront');
     const evaluate = async (expression, timeoutMs = 10_000) => {
       const result = await S('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, timeoutMs);
@@ -951,6 +998,8 @@ try {
   };
   // Every page load carries the scene pin (tools/scene-pin.mjs), so the sky and weather are the same in every run and the page asks for no weather.
   const replayQuery = withPin(`?trains=replay&date=${replayDate}&speed=${replaySpeed}`, pin);
+  // Waverley: the address evidence.mjs --scene waverley loads (the Edinburgh scene, no trains, no board or tooltip), pinned the same way.
+  const waverleyQuery = waverley ? waverleyEvidence.waverleyAddress(pin) : null;
   const freshNavigationFor = ({ S, evaluate }) => async (url, beforeNavigate = async () => {}) => {
     await S('Page.navigate', { url: 'about:blank' });
     // Wait for the blank document to commit before requesting a fresh navigation.
@@ -976,6 +1025,21 @@ try {
       await delay(150);
     }
     throw new Error(`${label}: replay page did not start within 35 seconds (${pageState?.connection ?? 'page not ready'})`);
+  };
+
+  // Waits for the Edinburgh Waverley scene to be loaded and on show, switching to it the way evidence.mjs --scene waverley does.
+  const awaitWaverleyPage = async (evaluate) => {
+    const waitFor = async (expression, timeoutMs, label) => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (await evaluate(expression).catch(() => false)) return;
+        await delay(100);
+      }
+      throw new Error(`Waverley page: ${label} within ${timeoutMs / 1000} seconds`);
+    };
+    await waitFor('!!window.__kx?.ready', 60_000, 'the page was not ready');
+    await evaluate(waverleyEvidence.WAVERLEY_SELECT_SCRIPT, 90_000);
+    await waitFor(waverleyEvidence.WAVERLEY_READY_CONDITION, 120_000, 'the Edinburgh Waverley scene was not on show');
   };
 
   // The replay peak. One scan load of the whole recording at SCAN_SPEED, in a Chrome of its own that is closed before the measured one opens
@@ -1018,8 +1082,8 @@ try {
       scan: { speed: SCAN_SPEED, samples: samples.length, firstMs: samples[0].clockMs, lastMs: samples.at(-1).clockMs, firstISO: iso(samples[0].clockMs), lastISO: iso(samples.at(-1).clockMs),
         maxShown: top.shown, maxShownAtMs: top.clockMs, maxShownISO: iso(top.clockMs), seriesClockShown: samples.filter((_, i) => i % thin === 0).map((sample) => [sample.clockMs, sample.shown]) } };
   };
-  report.replayPeak = await resolvePeak();
-  console.log(JSON.stringify({ replayPeak: { ...report.replayPeak, scan: report.replayPeak.scan && { ...report.replayPeak.scan, seriesClockShown: undefined } } }, null, 2));
+  report.replayPeak = waverley ? { mode: 'none' } : await resolvePeak();
+  if (!waverley) console.log(JSON.stringify({ replayPeak: { ...report.replayPeak, scan: report.replayPeak.scan && { ...report.replayPeak.scan, seriesClockShown: undefined } } }, null, 2));
 
   const session = await openSession();
   const { send, S, evaluate } = session;
@@ -1101,25 +1165,28 @@ try {
     }
     throw new Error('Startup scene and actual replay train draws not observed within 60 seconds');
   };
-  report.startup = {
-    method: 'Three separate navigations: fresh Chrome profile cold load, same-profile second load with HTTP cache enabled, then an instrumented CPU profile load. Timings exclude the CPU profiler.',
-    phaseDefinition: 'Navigation-relative wall milliseconds. Fetch start/headers and text/json body consumption include async waiting; measuredThrough identifies body completion, failure, or headers when the body is unused. Recorded travel at speed is simulation offset divided by replay speed; the remaining elapsed time includes setup and rendering and is not a CPU duration. ResourceTiming supplies transferred bytes and response end. Replay clock start is the first playing/recording-ended status during initial dispatch; motion apply/advance are sink entry, first motion view is sampled immediately before render. Geometry-ready requires a mesh under visible train/car ancestors with a visible nonzero-alpha material, independent of camera frustum; cars become visible only when complete. Simulation offsets use the first applied replay event timestamp as origin (initial playing status occurs before main assigns the feed); positive status time is a fallback. Geometry-to-draw is a wall interval, including travel toward the initial camera. Parse duration uses optional kx:recording-parse-start/end marks; null means unavailable. CDP request timestamps are monotonic seconds; server timestamps are Unix milliseconds. No response bodies or headers saved.',
-    timingDefinition: 'performance.now() after renderer.render returns; milliseconds since navigation start. First replay train requires a mesh onAfterRender callback in replay mode.',
-    limitations: 'Draw submission completion, not GPU completion or display presentation. Browser/OS filesystem caches are not flushed. Cold and warm replay availability includes local relay latency. Observer callbacks add small overhead to both timing loads. No claim of equal replay snapshots across loads.',
-  };
-  report.startup.coldFreshProfile = await startupLoad();
-  report.startup.warmSecondLoadSameProfile = await startupLoad();
-  await S('Profiler.enable');
-  await S('Profiler.setSamplingInterval', { interval: 1000 });
-  let cpuProfile;
-  try { report.startup.profileLoad = await startupLoad(true); }
-  finally { ({ profile: cpuProfile } = await S('Profiler.stop')); }
-  const sourceMaps = new Map([...decodedBuildMaps].map(([file, map]) => [`${base}/kings-cross/${file}`, map]));
-  report.startup.cpu = {
-    ...aggregateCpu(cpuProfile, sourceMaps),
-    samplingIntervalUs: 1000,
-    caveat: 'Sampled leaf self time, not inclusive time or wall time. Separate warm third load with profiler overhead; ends after first replay train render is observed. Native/runtime samples remain named runtime buckets (including JSON.parse when exposed by V8); no guessed source attribution. Long uninterruptible native operations may be under-sampled. Source-map locations are function entry positions supplied by V8.',
-  };
+  // Startup timing needs the London replay's first train; a Waverley run (trains=none) measures frame rate only.
+  if (!waverley) {
+    report.startup = {
+      method: 'Three separate navigations: fresh Chrome profile cold load, same-profile second load with HTTP cache enabled, then an instrumented CPU profile load. Timings exclude the CPU profiler.',
+      phaseDefinition: 'Navigation-relative wall milliseconds. Fetch start/headers and text/json body consumption include async waiting; measuredThrough identifies body completion, failure, or headers when the body is unused. Recorded travel at speed is simulation offset divided by replay speed; the remaining elapsed time includes setup and rendering and is not a CPU duration. ResourceTiming supplies transferred bytes and response end. Replay clock start is the first playing/recording-ended status during initial dispatch; motion apply/advance are sink entry, first motion view is sampled immediately before render. Geometry-ready requires a mesh under visible train/car ancestors with a visible nonzero-alpha material, independent of camera frustum; cars become visible only when complete. Simulation offsets use the first applied replay event timestamp as origin (initial playing status occurs before main assigns the feed); positive status time is a fallback. Geometry-to-draw is a wall interval, including travel toward the initial camera. Parse duration uses optional kx:recording-parse-start/end marks; null means unavailable. CDP request timestamps are monotonic seconds; server timestamps are Unix milliseconds. No response bodies or headers saved.',
+      timingDefinition: 'performance.now() after renderer.render returns; milliseconds since navigation start. First replay train requires a mesh onAfterRender callback in replay mode.',
+      limitations: 'Draw submission completion, not GPU completion or display presentation. Browser/OS filesystem caches are not flushed. Cold and warm replay availability includes local relay latency. Observer callbacks add small overhead to both timing loads. No claim of equal replay snapshots across loads.',
+    };
+    report.startup.coldFreshProfile = await startupLoad();
+    report.startup.warmSecondLoadSameProfile = await startupLoad();
+    await S('Profiler.enable');
+    await S('Profiler.setSamplingInterval', { interval: 1000 });
+    let cpuProfile;
+    try { report.startup.profileLoad = await startupLoad(true); }
+    finally { ({ profile: cpuProfile } = await S('Profiler.stop')); }
+    const sourceMaps = new Map([...decodedBuildMaps].map(([file, map]) => [`${base}/kings-cross/${file}`, map]));
+    report.startup.cpu = {
+      ...aggregateCpu(cpuProfile, sourceMaps),
+      samplingIntervalUs: 1000,
+      caveat: 'Sampled leaf self time, not inclusive time or wall time. Separate warm third load with profiler overhead; ends after first replay train render is observed. Native/runtime samples remain named runtime buckets (including JSON.parse when exposed by V8); no guessed source attribution. Long uninterruptible native operations may be under-sampled. Source-map locations are function entry positions supplied by V8.',
+    };
+  }
   // Raw CPU profiles deliberately omitted: only aggregate source/function costs are saved.
 
   // The two axis 8 cameras keep the placement they have always had; a station camera is placed as the evidence pack places it (evidence.mjs
@@ -1149,12 +1216,18 @@ try {
     const freshNavigation = freshNavigationFor({ S, evaluate });
     for (const camera of cameraList) {
       const cameraName = camera.name;
-      const url = `${base}/kings-cross/${replayQuery}`;
-      await freshNavigation(url);
-      await awaitReplayPage(evaluate, cameraName);
-      await evaluate(camera.station ? stationCameraScript(camera) : legacyCameraScript(camera));
+      await freshNavigation(`${base}/kings-cross/${camera.waverley ? waverleyQuery : replayQuery}`);
+      if (camera.waverley) await awaitWaverleyPage(evaluate);
+      else await awaitReplayPage(evaluate, cameraName);
+      await evaluate(camera.station || camera.waverley ? stationCameraScript(camera) : legacyCameraScript(camera));
       await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
       await evaluate('new Promise((resolve) => setTimeout(resolve, 2000))', 5000);
+      if (camera.waverley) {
+        // The camera must still be the frozen one after the settling seconds (a flight or the controls must not have moved it): the same check evidence.mjs makes.
+        const posed = await evaluate('(() => { const k = window.__kx; return { pos: k.camera.position.toArray(), target: k.controls.target.toArray(), fov: k.camera.fov }; })()');
+        const departure = waverleyEvidence.cameraDeparture(camera, posed);
+        if (departure.length) throw new Error(`camera ${cameraName} moved from its frozen value: ${departure.join('; ')}`);
+      }
 
       const measurement = await evaluate(`(() => new Promise((resolve) => {
         const durationMs = ${measureSeconds * 1000};
@@ -1249,7 +1322,7 @@ try {
       const distribution = frameDistribution(frameTimes);
       const normalized = {
         ...measurement,
-        view: { pos: camera.pos, target: camera.target, ...(camera.station ? { fov: camera.fov, near: camera.near, ...(camera.grid ? { grid: true } : {}) } : {}) },
+        view: { pos: camera.pos, target: camera.target, ...(camera.station || camera.waverley ? { fov: camera.fov, near: camera.near, ...(camera.grid ? { grid: true } : {}) } : {}) },
         frameDistribution: distribution,
         steady60: steadyAt60(measurement.fps.median, distribution),
         busy: busyFloor === null ? null : measurement.trainsShown.median >= busyFloor,
@@ -1273,7 +1346,7 @@ try {
     return results;
   };
   const startupOnly = args.includes('--startup-only');
-  report.firstTrainVisible = firstTrainVisible(report.startup, report.replayPeak);
+  if (!waverley) report.firstTrainVisible = firstTrainVisible(report.startup, report.replayPeak);
   if (!startupOnly) {
     if (legacyList.length) await measureCameras(session, report.rafControl.medianFps, seconds, 'capped', legacyList, report.cameras);
     if (stationList.length) {
@@ -1309,8 +1382,18 @@ try {
   report.consoleErrors = consoleErrors;
   report.success = true;
   const file = path.join(out, `perf-${stamp()}.json`);
+  // A Waverley run needs no relay: any /relay request the page made is listed (and was answered 404).
+  if (waverley) report.relayRequests = serverRequests.filter((row) => row.url.startsWith('/relay')).map((row) => ({ url: row.url, status: row.status ?? null }));
   await writeFile(file, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
-  const markdown = [
+  const markdown = waverley ? [
+    '# Edinburgh Waverley performance', '',
+    `Scene: edinburgh-waverley, trains none; no relay, no recording, no EB data (nothing is forwarded to a relay; the page's own /relay requests, ${report.relayRequests.length} here, are answered 404 and are harmless). Cameras: ${legacyList.map((camera) => camera.name).join(', ')} (frozen, evidence.mjs).`,
+    `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
+    `Failed request URLs: ${report.requests.failedUrls.length ? report.requests.failedUrls.join(', ') : 'none'}.`, '',
+    ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS (p5 ${camera.fps.p5}), p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
+    ...headroomMarkdown(report.headroom),
+    `Scene pin: ${report.scenePin.parameters}.`, '',
+  ].join('\n') : [
     '# King’s Cross performance', '',
     `Cold scene: ${rounded(report.startup.coldFreshProfile.navigationStartToSceneRenderedMs)} ms; replay trains: ${rounded(report.startup.coldFreshProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
     `Warm second load scene: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToSceneRenderedMs)} ms (${report.startup.warmSecondLoadSameProfile.sceneWithin3s ? 'PASS' : 'FAIL'}, strict <3 s); replay trains: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
