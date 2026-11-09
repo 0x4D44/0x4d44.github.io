@@ -25,6 +25,7 @@ interface CliArgs {
   previous?: string;
   graph?: string;
   geographicEvidence?: string;
+  corpus?: string;
   preservePositions: boolean;
 }
 
@@ -41,6 +42,7 @@ function parseArgs(argv: string[]): CliArgs {
   let previous: string | undefined;
   let graph: string | undefined;
   let geographicEvidence: string | undefined;
+  let corpus: string | undefined;
   let preservePositions = false;
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -50,7 +52,7 @@ function parseArgs(argv: string[]): CliArgs {
       preservePositions = true;
       continue;
     }
-    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous' && flag !== '--graph' && flag !== '--geographic-evidence') {
+    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous' && flag !== '--graph' && flag !== '--geographic-evidence' && flag !== '--corpus') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -66,6 +68,9 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--geographic-evidence') {
       if (geographicEvidence !== undefined) throw new Error('--geographic-evidence may be given once');
       geographicEvidence = value;
+    } else if (flag === '--corpus') {
+      if (corpus !== undefined) throw new Error('--corpus may be given once');
+      corpus = value;
     } else if (flag === '--graph') {
       if (graph !== undefined) throw new Error('--graph may be given once');
       graph = value;
@@ -77,11 +82,12 @@ function parseArgs(argv: string[]): CliArgs {
 
   if (recordings.length === 0 || !smart || !out) throw new Error(usage());
   if (preservePositions && !previous) throw new Error('--preserve-positions requires --previous');
-  return { recordings, smart, out, previous, graph, geographicEvidence, preservePositions };
+  if (corpus && !geographicEvidence) throw new Error('--corpus requires --geographic-evidence');
+  return { recordings, smart, out, previous, graph, geographicEvidence, corpus, preservePositions };
 }
 
 function usage(): string {
-  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>] [--preserve-positions] [--graph <kx-track.json>] [--geographic-evidence <overpass.json>]';
+  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>] [--preserve-positions] [--graph <kx-track.json>] [--geographic-evidence <overpass.json> [--corpus <corpus.json.gz>]]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -265,6 +271,20 @@ async function readRecording(file: string): Promise<RecordingEvent[]> {
     result.push(validateEvent(parsed, path.basename(file), index + 1));
   }
   return result;
+}
+
+async function readCorpus(file: string): Promise<SmartRow[]> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(gunzipSync(await readFile(file)).toString('utf8'));
+  } catch {
+    throw new Error(`${path.basename(file)} is not readable gzipped JSON`);
+  }
+  const rows = parsed && typeof parsed === 'object' ? (parsed as { TIPLOCDATA?: unknown }).TIPLOCDATA : undefined;
+  if (!Array.isArray(rows) || rows.some((row) => !row || typeof row !== 'object' || Array.isArray(row))) {
+    throw new Error(`${path.basename(file)} must contain a TIPLOCDATA array of objects`);
+  }
+  return rows as SmartRow[];
 }
 
 async function readSmart(file: string): Promise<SmartRow[]> {
@@ -753,6 +773,7 @@ async function main(): Promise<void> {
   const smartPath = await inputPath(args.smart);
   const previousPath = args.previous ? await inputPath(args.previous) : undefined;
   const geographicPath = args.geographicEvidence ? await inputPath(args.geographicEvidence) : undefined;
+  const corpusPath = args.corpus ? await inputPath(args.corpus) : undefined;
   const graphPath = args.graph
     ? await inputPath(args.graph)
     : await realpath(path.join(packageRoot, 'web', 'src', 'data', 'kx-track.json'));
@@ -768,12 +789,14 @@ async function main(): Promise<void> {
     `OSM: ${data.attribution}; graph ${path.basename(graphPath)}`,
   ];
   if (geographicPath) sources.push(`Geographic evidence: ${path.basename(geographicPath)} (raw Overpass JSON; 50 m conservative positional screening assumption, not surveyed accuracy)`);
+  if (corpusPath) sources.push(`CORPUS: ${path.basename(corpusPath)} (signal-prefix corroboration only)`);
   const reportSources = [...sources, ...(previousPath ? [`Previous map: ${path.basename(previousPath)}`] : [])];
 
   const geographicSourceHash = geographicPath ? await sourceHash(geographicPath, 'geographic-evidence') : undefined;
   const builtMap = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
   const geographicReview = geographicPath
     ? reviewGeographicEvidence(data, builtMap, JSON.parse(await readFile(geographicPath, 'utf8')), { source: path.basename(geographicPath),
+      ...(corpusPath ? { corpus: await readCorpus(corpusPath), smart: smartRows } : {}),
       seen: new Map(observationInventory(recordings, builtMap.area).map(({ berth, observations }) => [berth, observations.step])) })
     : undefined;
   const candidateMap = geographicReview?.map ?? builtMap;
@@ -800,6 +823,7 @@ async function main(): Promise<void> {
     sourceHash(smartPath, 'smart'),
     sourceHash(graphPath, 'graph'),
     ...(geographicSourceHash ? [geographicSourceHash] : []),
+    ...(corpusPath ? [sourceHash(corpusPath, 'corpus')] : []),
     ...(previousPath ? [sourceHash(previousPath, 'previous-anchor-map')] : []),
   ]);
   const diffCounts = {

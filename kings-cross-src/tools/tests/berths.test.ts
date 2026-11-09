@@ -212,3 +212,28 @@ test('berths CLI: geographic screening records private provenance and removals w
   assert.equal(frozenReport.summary.counts.candidate.anchors, report.summary.counts.candidate.anchors);
   assert.deepEqual(frozenReport.geographicEvidence, report.geographicEvidence);
 });
+
+test('berths CLI: CORPUS is optional prefix corroboration for the geographic review, hashed and refused when malformed', async (t) => {
+  const f = await fixture();
+  t.after(() => rm(f.dir, { recursive: true, force: true }));
+  const geographicPath = path.join(f.dir, 'synthetic-overpass.json');
+  const corpusPath = path.join(f.dir, 'synthetic-corpus.json.gz');
+  const badPath = path.join(f.dir, 'bad-corpus.json.gz');
+  await writeFile(geographicPath, `${JSON.stringify({ elements: [{ type: 'node', id: 80001, lat: 51.56, lon: -0.12, tags: { railway: 'signal', ref: 'K 2999' } }] })}\n`);
+  await writeFile(corpusPath, gzipSync(Buffer.from(JSON.stringify({ TIPLOCDATA: [{ STANOX: '99001', TIPLOC: 'TESTSIG', NLCDESC: 'INVENTED SIG K2999' }] }))));
+  await writeFile(badPath, gzipSync(Buffer.from(JSON.stringify({ BERTHDATA: [] }))));
+
+  const alone = f.run(['--corpus', corpusPath]);
+  assert.equal(alone.status, 1); assert.match(alone.stderr, /--corpus requires --geographic-evidence/);
+  const bad = f.run(['--geographic-evidence', geographicPath, '--corpus', badPath]);
+  assert.equal(bad.status, 1); assert.match(bad.stderr, /TIPLOCDATA array/);
+
+  const run = f.run(['--geographic-evidence', geographicPath, '--corpus', corpusPath]);
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+  const report = JSON.parse(await readFile(path.join(f.outPath, 'berths-report.json'), 'utf8'));
+  const hash = report.sourceHashes.find((source: { role: string }) => source.role === 'corpus');
+  assert.equal(hash?.sha256, createHash('sha256').update(await readFile(corpusPath)).digest('hex'));
+  // Synthetic SMART has no row tying STANOX 99001 to berth 2999, so the K prefix stays unproven.
+  assert.deepEqual(report.geographicEvidence.summary.corroboratedPrefixes, {});
+  assert.equal(report.candidateUnmapped.find((u: { berth: string }) => u.berth === '2999')?.reason, 'no-evidence');
+});

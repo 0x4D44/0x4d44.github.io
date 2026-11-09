@@ -27,18 +27,74 @@ export interface GeographicDecision {
   berth: string;
   before: string;
   after: string;
-  status: 'outside-network' | 'boundary-straddle' | 'not-north-outside' | 'no-matching-ref' | 'ambiguous-ref' | 'platform-starter-reference';
+  status: 'outside-network' | 'boundary-straddle' | 'boundary-anchored' | 'not-north-outside' | 'no-matching-ref' | 'ambiguous-ref' | 'platform-starter-reference';
   signals: GeographicSignal[];
   detail: string;
+}
+
+/** Prefix -> the CORPUS/SMART facts naming one of its signals as this area's berth. */
+function corroboratedPrefixes(area: string, corpus: SmartRow[], smart: SmartRow[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const row of corpus) {
+    const sig = /\bSIG\s+([A-Z]{1,2})\s*(\d{1,4})\b/i.exec(text(row, 'NLCDESC'));
+    const stanox = text(row, 'STANOX');
+    if (!sig || !stanox || sig[1]!.toUpperCase() === 'YA') continue;
+    const berth = sig[2]!.padStart(4, '0');
+    const tied = smart.some((r) => text(r, 'TD') === area && text(r, 'STANOX') === stanox && (text(r, 'FROMBERTH') === berth || text(r, 'TOBERTH') === berth));
+    if (tied && !out.has(sig[1]!.toUpperCase())) out.set(sig[1]!.toUpperCase(),
+      `CORPUS ${text(row, 'TIPLOC') || 'location'} (STANOX ${stanox}) "${text(row, 'NLCDESC')}", a SMART ${area} location of berth ${berth}`);
+  }
+  return out;
+}
+
+/** Same allowance as a YA signal's 25 m snap to a rail, measured here along the OSM track. */
+const OVERHANG_LIMIT_M = 25;
+
+/**
+ * An exact YA signal just beyond the cut, on an OSM rail way that runs into a graph end, is
+ * placed at that end with its along-track overhang added to the error. The way geometry,
+ * not a coordinate snap, connects it; any ambiguity or missing direction leaves it unmapped.
+ */
+function boundaryOverhang(g: Graph, ways: { id: number; nodes: number[]; points: Pt[] }[], signal: GeographicSignal, direction: unknown, berth: string):
+  { anchor: BerthAnchor } | { failure: string } {
+  if (direction !== 'forward' && direction !== 'backward') return { failure: 'signal has no forward/backward direction tag' };
+  const found: { node: number; overhangM: number; inward: boolean; way: number }[] = [];
+  for (const way of ways) {
+    way.nodes.forEach((id, i) => {
+      if (id !== signal.osmId) return;
+      for (const step of [1, -1]) {
+        let length = 0;
+        for (let j = i + step; j >= 0 && j < way.nodes.length; j += step) {
+          length += dist(way.points[j - step]!, way.points[j]!);
+          if (length > OVERHANG_LIMIT_M) break;
+          if (!g.pos.has(way.nodes[j]!)) continue;
+          // Trains obeying the signal travel in way order for "forward"; inward means toward the graph.
+          if ((g.adj.get(way.nodes[j]!) ?? []).length === 1) found.push({ node: way.nodes[j]!, overhangM: length, inward: (step === 1) === (direction === 'forward'), way: way.id });
+          break;
+        }
+      }
+    });
+  }
+  const unique = [...new Map(found.map((f) => [f.node, f])).values()];
+  if (unique.length !== 1) return { failure: unique.length ? `${unique.length} graph ends within ${OVERHANG_LIMIT_M} m along OSM track` : `no graph end within ${OVERHANG_LIMIT_M} m along an OSM rail way through the signal` };
+  const { node, overhangM, inward, way } = unique[0]!;
+  const edge = g.adj.get(node)![0]!;
+  // An inward signal faces trains entering the graph at this end; an outward one is reached just after leaving it.
+  const forward = inward ? edge.a === node : edge.b === node;
+  const errorM = Math.round((5 + overhangM) * 10) / 10;
+  return { anchor: anchor(berth, 'signal', g, edge, edge.a === node ? 0 : 1, forward, errorM,
+    `${overhangM.toFixed(1)} m beyond graph end ${node} along OSM way ${way}; placed at that end heading ${inward ? 'into' : 'out of'} the graph; error 5 m + overhang` ) };
 }
 
 /**
  * A named junction locates that junction, never both endpoints of its SMART rows.
  * Review exact YA identities independently AFTER calibration: no new inference seed,
  * snapping hint or train-speed estimate may bypass the leave-one-out/straddle rules.
+ * Another ref prefix identifies berths only when CORPUS names a "SIG <prefix><n>" location
+ * that SMART ties to this area's berth n; the YA convention is otherwise the only one.
  */
 export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document: unknown,
-  options: { source: string; errorM?: number; seen?: ReadonlyMap<string, number> }) {
+  options: { source: string; errorM?: number; seen?: ReadonlyMap<string, number>; corpus?: SmartRow[]; smart?: SmartRow[] }) {
   const errorM = options.errorM ?? 50;
   if (!Number.isFinite(errorM) || errorM < 15 || !options.source?.trim()) throw new Error('invalid geographic evidence options');
   if (!document || typeof document !== 'object' || !Array.isArray((document as { elements?: unknown }).elements)) throw new Error('geographic evidence must be an Overpass document');
@@ -49,9 +105,18 @@ export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document:
   if (!Number.isFinite(northZ)) throw new Error('geographic evidence needs a finite graph boundary');
   const signals = new Map<string, GeographicSignal[]>();
   const namedLocations: (GeographicSignal & { name: string; tiploc: string | null })[] = [];
+  const directions = new Map<number, unknown>();
+  const ways: { id: number; nodes: number[]; points: Pt[] }[] = [];
+  const prefixes = corroboratedPrefixes(map.area, options.corpus ?? [], options.smart ?? []);
   let signalNodes = 0, referencedSignals = 0, otherRefSignals = 0;
   for (const element of elements) {
     if (!element || typeof element !== 'object') continue;
+    const w = element as { type?: unknown; id?: unknown; nodes?: unknown; geometry?: unknown; tags?: Record<string, unknown> };
+    if (w.type === 'way' && w.tags?.railway === 'rail' && Array.isArray(w.nodes) && Array.isArray(w.geometry) && w.nodes.length === w.geometry.length &&
+      w.nodes.every((n) => Number.isSafeInteger(n)) && w.geometry.every((p) => p && typeof p.lat === 'number' && Number.isFinite(p.lat) && typeof p.lon === 'number' && Number.isFinite(p.lon))) {
+      ways.push({ id: Number(w.id), nodes: w.nodes as number[], points: (w.geometry as { lat: number; lon: number }[]).map((p) => project(p.lat, p.lon, data.origin)) });
+      continue;
+    }
     const e = element as { type?: unknown; id?: unknown; lat?: unknown; lon?: unknown; tags?: Record<string, unknown> };
     if (e.type !== 'node' || !e.tags || typeof e.tags !== 'object' || Array.isArray(e.tags)) continue;
     const isSignal = e.tags.railway === 'signal';
@@ -66,8 +131,11 @@ export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document:
     if (isJunction) namedLocations.push({ ...fact, name: String(e.tags.name), tiploc: typeof e.tags['ref:tiploc'] === 'string' ? e.tags['ref:tiploc'] : null });
     if (!isSignal) continue;
     signalNodes++;
+    directions.set(Number(e.id), e.tags['railway:signal:direction']);
     if (ref) referencedSignals++;
-    const match = /^YA\s*(\d{4})$/i.exec(ref);
+    const prefixed = /^([A-Z]{1,2})\s*(\d{1,4})$/i.exec(ref);
+    const corroborated = prefixed && prefixes.has(prefixed[1]!.toUpperCase()) ? [ref, prefixed[2]!.padStart(4, '0')] : null;
+    const match = /^YA\s*(\d{4})$/i.exec(ref) ?? corroborated;
     if (!match) { if (ref) otherRefSignals++; continue; }
     const group = signals.get(match[1]!) ?? [];
     const prior = group.find((item) => item.osmId === fact.osmId);
@@ -77,6 +145,8 @@ export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document:
   }
   const decisions: GeographicDecision[] = [];
   const remove = new Set<string>();
+  const added: BerthAnchor[] = [];
+  const g = buildGraph(data);
   const unmapped = new Map(map.unmapped.map((item) => [item.berth, { ...item }]));
   const inventory = [...map.unmapped, ...map.anchors.filter((a) => signals.has(a.berth))];
   for (const item of inventory) {
@@ -88,7 +158,8 @@ export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document:
       status = 'ambiguous-ref'; detail = 'Multiple OSM nodes carry the same YA identity; no unique geographic placement is established';
     } else if (matching.length === 1) {
       const signal = matching[0]!;
-      const source = `OSM node ${signal.osmId}, ref ${JSON.stringify(signal.ref)}, (${signal.lat}, ${signal.lon}), ${signal.url}; ${signal.northOfBoundaryM.toFixed(1)} m north of graph boundary`;
+      const prefix = /^YA/i.test(signal.ref) ? null : prefixes.get(/^[A-Z]{1,2}/i.exec(signal.ref)![0].toUpperCase())!;
+      const source = `OSM node ${signal.osmId}, ref ${JSON.stringify(signal.ref)}, (${signal.lat}, ${signal.lon}), ${signal.url}; ${signal.northOfBoundaryM.toFixed(1)} m north of graph boundary${prefix ? `; ref prefix identifies ${map.area} berths per ${prefix}` : ''}`;
       if ('kind' in item && item.kind === 'platform') {
         status = 'platform-starter-reference'; detail = `${source}. A platform YA ref identifies its departure starter, not the nose-to-buffer arrival anchor`;
       } else if (signal.northOfBoundaryM > errorM) {
@@ -99,19 +170,28 @@ export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document:
         if ('kind' in item) remove.add(item.berth);
       } else if (signal.northOfBoundaryM >= -errorM) {
         status = 'boundary-straddle'; detail = `${source}; its +/- ${errorM} m screening interval straddles or touches the cut. Outside status is not established`;
+        const overhang = 'reason' in item && item.reason === 'no-evidence' ? boundaryOverhang(g, ways, signal, directions.get(signal.osmId), item.berth) : null;
+        if (overhang && 'anchor' in overhang) {
+          status = 'boundary-anchored'; detail = `${source}; ${overhang.anchor.evidence}`;
+          overhang.anchor.evidence = detail;
+          added.push(overhang.anchor); unmapped.delete(item.berth);
+        } else if (overhang) detail += `. Boundary anchor not established: ${overhang.failure}`;
       } else {
         status = 'not-north-outside'; detail = `${source}; it does not establish a position beyond the north cut. Coordinate inside the geographic envelope alone does not establish a route on the graph`;
       }
     }
-    if (status !== 'outside-network' && 'reason' in item) unmapped.get(item.berth)!.detail += `. Geographic review: ${detail}`;
-    decisions.push({ berth: item.berth, before, after: status === 'outside-network' ? 'outside-network' : before, status, signals: matching, detail });
+    if (status !== 'outside-network' && status !== 'boundary-anchored' && 'reason' in item) unmapped.get(item.berth)!.detail += `. Geographic review: ${detail}`;
+    decisions.push({ berth: item.berth, before, after: status === 'outside-network' ? 'outside-network' : status === 'boundary-anchored' ? 'signal' : before, status, signals: matching, detail });
   }
   const result: AnchorMap = { ...map, sources: [...map.sources, `OSM geographic review: ${options.source}; ${errorM} m positional screening assumption; exact YA refs only`],
-    anchors: map.anchors.filter((a) => !remove.has(a.berth)), unmapped: [...unmapped.values()].sort((a, b) => a.berth.localeCompare(b.berth)) };
-  return { map: result, decisions, namedLocations, summary: { signalNodes, referencedSignals, yaSignals: [...signals.values()].reduce((n, group) => n + group.length, 0), otherRefSignals,
+    anchors: [...map.anchors.filter((a) => !remove.has(a.berth)), ...added].sort((a, b) => a.berth.localeCompare(b.berth)),
+    unmapped: [...unmapped.values()].sort((a, b) => a.berth.localeCompare(b.berth)) };
+  return { map: result, decisions, namedLocations, summary: { signalNodes, referencedSignals, yaSignals: [...signals.values()].flat().filter((s) => /^YA/i.test(s.ref)).length, otherRefSignals,
+    prefixedSignals: [...signals.values()].flat().filter((s) => !/^YA/i.test(s.ref)).length, corroboratedPrefixes: Object.fromEntries(prefixes),
     screeningErrorM: errorM, assumption: '50 m default is a conservative screening allowance, not measured OSM accuracy; YA reference identity is assumed current',
     outsideDecisions: decisions.filter((d) => d.status === 'outside-network').length, removedAnchors: remove.size,
     straddlingDecisions: decisions.filter((d) => d.status === 'boundary-straddle').length,
+    boundaryAnchors: added.length, boundaryOverhangLimitM: OVERHANG_LIMIT_M,
     matchedBerths: decisions.filter((d) => d.signals.length > 0).length, noRefDecisions: decisions.filter((d) => d.status === 'no-matching-ref').length,
     namedLocations: namedLocations.length, propagation: 'none: named SMART locations and observed chains never seed geographic reclassification' } };
 }

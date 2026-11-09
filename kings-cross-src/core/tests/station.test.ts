@@ -18,6 +18,8 @@ import {
   platformFormationLimits,
   platformDrawingOutline,
   PLATFORM_9_OUTLINE_BASIS,
+  PLATFORM_10_LENGTH_REVIEW,
+  KINGS_CROSS_PLATFORM_GA_M,
   platformSouthEnd,
   pointInPolygon,
   polygonArea,
@@ -81,6 +83,23 @@ test('station: formation limits fall back to polygon length only without a publi
   const limits = platformFormationLimits(data, clearance, {});
   assert.equal(limits.get('9'), length - clearance);
   assert.equal(limits.has('10'), false, 'no measured or published length stays unknown');
+});
+
+test('station: P10 is drawn as OSM maps it, within 1 m of Network Rail\'s 175.48 m construction drawing; the 176 m operational figure is rounded', () => {
+  // NR/Morgan Sindall 152319-MOS-DRG-ECV-070106 (Camden 8958497): START CH 148.66, END CH 324.14, TOTAL 175.48 m.
+  for (const [ref, g] of Object.entries(KINGS_CROSS_PLATFORM_GA_M)) assert.ok(Math.abs(g.start + g.length - g.end) < 0.011, `P${ref}: the drawing's own arithmetic`);
+  const ga = KINGS_CROSS_PLATFORM_GA_M['10']!;
+  const p10 = stationPlatforms(data).get('10')!;
+  assert.equal(p10.id, PLATFORM_10_LENGTH_REVIEW.osmId);
+  assert.equal(platformDrawingOutline(p10, data), p10.pts, 'no outline inference on P10: no coordinate is invented');
+  const drawn = longAxis(p10.pts).length;
+  assert.ok(Math.abs(drawn - PLATFORM_10_LENGTH_REVIEW.osmLongAxisM) < 0.01, `${drawn}`);
+  assert.equal(PLATFORM_10_LENGTH_REVIEW.gaLengthM, ga.length);
+  assert.ok(Math.abs(drawn - ga.length) <= 1, `drawn ${drawn} m vs NR drawing ${ga.length} m`);
+  // The published operational length exceeds the physical design length: rounding, not a short platform.
+  assert.equal(KINGS_CROSS_PLATFORM_LENGTHS_M['10'], PLATFORM_10_LENGTH_REVIEW.operationalM);
+  const over = KINGS_CROSS_PLATFORM_LENGTHS_M['10']! - ga.length;
+  assert.ok(over > 0 && over < 1, `${over}`);
 });
 
 test('station: P9 north cap uses the published 176 m along rail and preserves every mapped vertex and all other platforms', () => {
