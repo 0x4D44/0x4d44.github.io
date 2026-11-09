@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyseSclass, analyseSclassRecordings, revalidateSignalHypotheses, signalStates, trackSclass, updateBytes } from '../sclass.ts';
+import { analyseSclass, analyseSclassLoo, analyseSclassRecordings, revalidateSignalHypotheses, SESSION_GAP_MS, signalStates, splitRecordingSessions, trackSclass, updateBytes } from '../sclass.ts';
 import type { SignalHypothesis, TimedTdEvent } from '../sclass.ts';
 import type { AnchorMap } from '../anchors.ts';
 
@@ -291,9 +291,14 @@ test('sclass: rule snapshots establish bytes atomically without counting a clear
   const trace = trackSclass([byte(0, 0), byte(1, 1), snapshot(2, { '20': '00' }), byte(3, 1)], 'SYN');
   assert.equal(trace.transitions.find(c => c.t === 2 && c.bit === 0)?.from, null);
   assert.equal(trace.transitions.find(c => c.t === 3 && c.bit === 0)?.from, 0);
+  // A malformed checkpoint is rejected whole: it neither applies nor erases recorded history.
   for (const [data, count] of [[{ '20': '00', '21': 'GG' }, 2], [{ '20': '00000000' }, 1], [{ '20': '00' }, 2], [{ 'a': '01', '0A': '02' }, 2]] as const) {
-    assert.deepEqual(trackSclass([byte(0, 1), snapshot(1, data, count)], 'SYN').state, {});
+    const malformed = trackSclass([byte(0, 1), snapshot(1, data, count), byte(2, 0)], 'SYN');
+    assert.deepEqual(malformed.state, { '20': 0 });
+    assert.equal(malformed.rejectedMessages, 1);
+    assert.equal(malformed.transitions.find(c => c.t === 2 && c.bit === 0)?.from, 1);
   }
+  assert.deepEqual(trackSclass([byte(0, 1), { t: 1, e: { kind: 'snapshot', area: 'SYN' } }], 'SYN').state, {}, 'a checkpoint without S-class still marks unknown history');
   const rows = fixture().map(r => r.e.kind === 'sclass' && r.e.data === '00' && r.t > 0 ? snapshot(r.t, { '20': '00' }) : r);
   assert.deepEqual(analyse(rows).hypotheses, []);
 });
@@ -376,4 +381,62 @@ test('sclass: rule invalid analysis windows and empty evidence remain explicit',
   assert.equal(empty.splitMs, 0);
   assert.deepEqual(empty.hypotheses, []);
   assert.deepEqual(empty.berths.map(b => b.status), ['unknown', 'unknown']);
+});
+
+test('sclass: rule a restart checkpoint keeps omitted bytes across a short gap but not after the recorder was down', () => {
+  const snapshot = (t: number, data: Record<string, string>): TimedTdEvent => ({ t, e: { kind: 'snapshot', area: 'SYN', sclass: { addresses: Object.keys(data).length, data } } });
+  const short = trackSclass([byte(0, 1), byte(0, 0, '21'), snapshot(1, {}), snapshot(2, { '21': '00' }), byte(3, 0)], 'SYN');
+  assert.equal(short.transitions.find(c => c.t === 3 && c.address === '20' && c.bit === 0)?.from, 1, 'an empty restart picture cannot erase byte 20');
+  const late = SESSION_GAP_MS + 10;
+  const long = trackSclass([byte(0, 1), byte(0, 0, '21'), snapshot(late, { '21': '00' }), byte(late + 1, 0)], 'SYN');
+  assert.equal(long.transitions.find(c => c.t === late + 1 && c.address === '20' && c.bit === 0)?.from, null);
+});
+
+const shift = (rows: TimedTdEvent[], by: number) => rows.map(row => ({ ...row, t: row.t + by }));
+const loo = (rows: TimedTdEvent[][]) => analyseSclassLoo(rows, anchors, { windows });
+
+test('sclass: rule leave-one-recording-out holds out every session whole and decodes a stable mapping', () => {
+  const days = [fixture(), shift(fixture(), 5000), shift(fixture(), 10000)];
+  const result = loo(days);
+  assert.equal(result.validation, 'leave-one-recording-out');
+  assert.deepEqual(result.folds, [0, 5000, 10000].map(t => ({ startMs: t, splitMs: t, endMs: t + 1000 })));
+  const h = result.hypotheses.find(h => h.address === '20' && h.bit === 0 && h.berth === 'A' && h.kind === 'proceed');
+  assert.ok(h); assert.equal(h.status, 'decoded');
+  assert.equal(h.heldOut.support, 18); assert.equal(h.heldOut.trials, 18);
+  assert.deepEqual((h as typeof h & { loo: { selected: boolean }[] }).loo.map(f => f.selected), [true, true, true]);
+  assert.deepEqual(result.loo.nested.map(n => [n.recording, n.all.recall]), [[0, 1], [1, 1], [2, 1]]);
+  assert.deepEqual(analyseSclassRecordings([days[2]!, days[0]!, days[1]!], anchors, { windows, validation: 'leave-one-recording-out' }), result);
+});
+
+test('sclass: rule leave-one-recording-out prunes a mapping that fails one held-out session even when pooled evidence passes', () => {
+  const noCycles = shift(fixture(times.slice(0, 3)), 15000).filter(r => r.e.kind !== 'sclass' || r.t === 15000);
+  const result = loo([fixture(), shift(fixture(), 5000), shift(fixture(), 10000), noCycles]);
+  const h = result.hypotheses.find(h => h.address === '20' && h.bit === 0 && h.berth === 'A' && h.kind === 'proceed');
+  assert.ok(h);
+  assert.ok(h.heldOut.recall! >= 0.8, 'pooled held-out alone would admit it');
+  assert.equal(h.status, 'unknown');
+  assert.match(h.reason, /session\(s\) 3 below/);
+  const nested = result.loo.nested[3]!;
+  assert.equal(nested.admitted, 1, 'admission without session 3 cannot see its failure');
+  assert.equal(nested.all.recall, 0);
+  assert.equal(signalStates({ '20': 1 }, result.hypotheses, anchors).A, 'unknown');
+});
+
+test('sclass: rule leave-one-recording-out rejects a mapping only one session can teach', () => {
+  const bTimes = [100, 200, 300, 700, 800, 900];
+  const first = [...fixture(), ...fixture(bTimes, bTimes, '21').filter(r => r.e.kind === 'sclass'), ...bTimes.map(t => step(t, 'B'))];
+  const result = loo([first, shift(fixture(), 5000), shift(fixture(), 10000)]);
+  const b = result.hypotheses.find(h => h.berth === 'B');
+  assert.ok(b); assert.equal(b.status, 'unknown'); assert.match(b.reason, /Unstable: training without session\(s\) 0/);
+  assert.equal(result.hypotheses.find(h => h.berth === 'A' && h.address === '20')?.status, 'decoded');
+});
+
+test('sclass: rule recording sessions split at receipt gaps and leave-one-out needs three disjoint sessions', () => {
+  const later = shift(fixture(), SESSION_GAP_MS + 2000);
+  assert.deepEqual(splitRecordingSessions([...later, ...fixture()]).map(s => [s[0]!.t, s.at(-1)!.t]), [[0, 1000], [SESSION_GAP_MS + 2000, SESSION_GAP_MS + 3000]]);
+  assert.equal(splitRecordingSessions(fixture(), 50).length > 1, true);
+  assert.throws(() => splitRecordingSessions(fixture(), 0), /gap/);
+  assert.equal(loo([[...fixture(), ...later], shift(fixture(), 3 * SESSION_GAP_MS)]).folds.length, 3, 'one file with an outage is two sessions');
+  assert.throws(() => loo([fixture(), shift(fixture(), 5000)]), /three/);
+  assert.throws(() => loo([fixture(), shift(fixture(), 500), shift(fixture(), 5000)]), /disjoint/);
 });

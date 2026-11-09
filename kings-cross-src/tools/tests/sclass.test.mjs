@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aggregate, completedRecordingNames, countHeads, publicationDecision, relearnSclass } from '../sclass.ts';
+import { aggregate, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation } from '../sclass.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const evidence = (support, trials, unmatchedCycles) => ({ support, trials, unmatchedCycles, contradictions: trials - support,
@@ -68,7 +68,8 @@ test('CLI writes reproducible last-recording and baseline reports without raw ev
   assert.match(report, /\| all: held-out micro precision \|/);
   assert.ok(Array.isArray(runtime.hypotheses));
   assert.equal(runtime.events, undefined);
-  assert.match(invoke(['--validation', 'random']).stderr, /must be halves or last-recording/);
+  assert.match(invoke(['--validation', 'random']).stderr, /must be halves, last-recording or leave-one-recording-out/);
+  assert.match(invoke(['--validation', 'leave-one-recording-out']).stderr, /at least three nonempty recording sessions/);
 });
 
 const analysis = hypotheses => ({ area: 'Y9', hypotheses });
@@ -235,4 +236,13 @@ test('on demand relearn CLI uses the guarded job and prints only a decision summ
   assert.equal(summary.candidate.bits, 1);
   assert.equal(summary.hypotheses, undefined);
   assert.deepEqual(summary.reasons, []);
+});
+
+test('relearn uses leave-one-recording-out once three continuous sessions exist', () => {
+  const row = t => ({ t, e: { kind: 'heartbeat', area: 'Y9' } });
+  const other = t => ({ t, e: { kind: 'heartbeat', area: 'X0' } });
+  assert.equal(relearnValidation([[row(0)], [row(1e9)]], 'Y9'), 'last-recording');
+  assert.equal(relearnValidation([[row(0)], [row(1e9), row(1e9 + 11 * 60_000)]], 'Y9'), 'leave-one-recording-out', 'an outage splits a day into two sessions');
+  assert.equal(relearnValidation([[row(0)], [row(1e9), other(1e9 + 5 * 60_000), row(1e9 + 11 * 60_000)]], 'Y9'), 'leave-one-recording-out', 'another area does not bridge an outage');
+  assert.equal(relearnValidation([[row(0)], [row(1e9), row(1e9 + 9 * 60_000)]], 'Y9'), 'last-recording');
 });

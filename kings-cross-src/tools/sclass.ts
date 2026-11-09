@@ -12,8 +12,8 @@ import { createSignals } from '../web/src/signals.ts';
 import { buildGraph } from '../core/graph.ts';
 import type { KxData } from '../core/osm.ts';
 import type { SignalOverlay } from '../web/src/signals.ts';
-import { analyseSclassRecordings, qualifiesSignalEvidence, revalidateSignalHypotheses, signalStates } from '../core/sclass.ts';
-import type { SclassAnalysis, SignalHypothesis, TimedTdEvent } from '../core/sclass.ts';
+import { analyseSclassRecordings, qualifiesSignalEvidence, revalidateSignalHypotheses, signalStates, splitRecordingSessions } from '../core/sclass.ts';
+import type { LooValidation, SclassAnalysis, SclassValidation, SignalHypothesis, TimedTdEvent } from '../core/sclass.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 
 interface CliArgs {
@@ -22,7 +22,7 @@ interface CliArgs {
   out: string;
   dataDir?: string;
   baseline?: string;
-  validation: 'halves' | 'last-recording';
+  validation: SclassValidation;
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -58,7 +58,7 @@ function parseArgs(argv: string[]): CliArgs {
       baseline = value;
     } else if (flag === '--validation') {
       if (validationSeen) throw new Error('--validation may be given once');
-      if (value !== 'halves' && value !== 'last-recording') throw new Error('--validation must be halves or last-recording');
+      if (value !== 'halves' && value !== 'last-recording' && value !== 'leave-one-recording-out') throw new Error('--validation must be halves, last-recording or leave-one-recording-out');
       validation = value; validationSeen = true;
     } else {
       if (dataDir !== undefined) throw new Error('--data-dir may be given once');
@@ -70,7 +70,7 @@ function parseArgs(argv: string[]): CliArgs {
 }
 
 function usage(): string {
-  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>] [--baseline <prior-sclass.json>] [--validation <halves|last-recording>]';
+  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>] [--baseline <prior-sclass.json>] [--validation <halves|last-recording|leave-one-recording-out>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -305,6 +305,7 @@ function buildReport(analysis: SclassAnalysis, anchors: AnchorMap, currentStates
     'These are temporal correlations in this recording. They do not identify signal positions, track circuits, or routes, and they are not an authoritative signalling diagram. A weekday peak can add repeated passages and route diversity, but correlation still cannot establish circuit or route identity.',
     '',
     ...comparisonMarkdown(comparison),
+    ...looMarkdown(analysis),
     '## Reproducibility', '', 'Source fingerprints, exact byte lengths, timing cutoffs, and renderer inputs:', '', '```json', JSON.stringify(provenance, null, 2), '```', '',
     '## Recording window and split',
     '',
@@ -418,6 +419,23 @@ export function completedRecordingNames(names: readonly string[], area: string, 
   }).sort();
 }
 
+/** Leave-one-recording-out once three continuous sessions exist; otherwise hold out the latest day. */
+export function relearnValidation(recordings: readonly (readonly TimedTdEvent[])[], area: string): SclassValidation {
+  const sessions = recordings.reduce((n, rows) => n + splitRecordingSessions(rows.filter(row => row.e.area === area)).length, 0);
+  return sessions >= 3 ? 'leave-one-recording-out' : 'last-recording';
+}
+
+const looOf = (analysis: SclassAnalysis): LooValidation | null => (analysis as SclassAnalysis & { loo?: LooValidation }).loo ?? null;
+
+/** Nested leave-one-recording-out scores: admission never saw the session it scores. */
+function looMarkdown(analysis: SclassAnalysis): string[] {
+  const loo = looOf(analysis);
+  if (!loo) return [];
+  return ['## Leave-one-recording-out held-out scores', '', `${loo.rule}. Sessions split at receipt gaps over ${loo.sessionGapMs / 60_000} min. Each row repeats the whole admission without that session, then scores it.`, '',
+    '| Session | Span | Admitted without it | All precision / recall | Proceed precision / recall |', '| ---: | --- | ---: | ---: | ---: |',
+    ...loo.nested.map(n => `| ${n.recording} | ${timestamp(n.startMs)} to ${timestamp(n.endMs)} | ${n.admitted} | ${precision(n.all.precision)} / ${precision(n.all.recall)} (${n.all.support}/${n.all.trials}) | ${precision(n.proceed.precision)} / ${precision(n.proceed.recall)} (${n.proceed.support}/${n.proceed.trials}) |`), ''];
+}
+
 async function atomicJson(file: string, value: unknown): Promise<void> {
   await checkOutputFile(path.dirname(file), path.basename(file));
   const temp = `${file}.${process.pid}.tmp`;
@@ -500,7 +518,8 @@ export async function relearnSclass(options: RelearnOptions) {
           throw new Error('Recording contains an event outside its named UTC day');
         }
       }
-      candidate = analyseSclassRecordings(recordings, anchors, { validation: 'last-recording' });
+      const validation = relearnValidation(recordings, area);
+      candidate = analyseSclassRecordings(recordings, anchors, { validation });
       const validationRows = recordings.at(-1)!;
       const incumbent = current ? { ...current, hypotheses: revalidateSignalHypotheses(validationRows, current.hypotheses,
         { area, windows: candidate.windows }) } : null;
@@ -513,10 +532,10 @@ export async function relearnSclass(options: RelearnOptions) {
         const bytes = await readFile(file);
         return { file: path.basename(file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
       }));
-      const provenance = { generatedAt: report.generatedAt, validationDay, fingerprints, validation: 'last-recording',
+      const provenance = { generatedAt: report.generatedAt, validationDay, fingerprints, validation,
         windows: candidate.windows, baseline: tableFile, comparison: decision };
       candidate = Object.assign(candidate, { provenance, currentStates: signalStates(candidate.trace.state, candidate.hypotheses, anchors) });
-      table = { area, generatedAt: report.generatedAt, provenance, folds: candidate.folds,
+      table = { area, generatedAt: report.generatedAt, provenance, folds: candidate.folds, loo: looOf(candidate),
         sources: [...names.map(name => `Recording: ${name}`), `Anchor map: ${path.basename(anchorsFile)}`],
         summary: { all: aggregate(candidate), proceed: aggregate(candidate, 'proceed'), route: aggregate(candidate, 'route') },
         bits: addressTable(candidate) };
@@ -614,7 +633,7 @@ async function main(): Promise<void> {
   await checkOutputFile(outDir, 'sclass-report.md');
   await checkOutputFile(outDir, 'sclass-table.json');
   await checkOutputFile(outDir, 'sclass-comparison.json');
-  const table = { area: analysis.area, generatedAt, sources, folds: analysis.folds,
+  const table = { area: analysis.area, generatedAt, sources, folds: analysis.folds, loo: looOf(analysis),
     comparison, provenance, summary: { all: aggregate(analysis), proceed: aggregate(analysis, 'proceed'), route: aggregate(analysis, 'route') }, bits: addressTable(analysis) };
   const runtime = { ...analysis, currentStates: states, comparison, provenance };
   await writeFile(path.join(outDir, 'sclass.json'), `${JSON.stringify(runtime, null, 2)}\n`, { mode: 0o600 });
