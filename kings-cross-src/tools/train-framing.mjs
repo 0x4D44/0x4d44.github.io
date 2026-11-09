@@ -70,7 +70,8 @@ function bodySamples(T, group, camera, detail) {
       const centre = p.clone().add(q).add(r).multiplyScalar(1/3);
       if (normal.lengthSq() < 1e-10 || normal.normalize().dot(camera.position.clone().sub(centre).normalize()) < .45) continue;
       if (detail) {
-        if (centre.distanceTo(detail.focus) > detail.radius) continue;
+        if (detail.focus && centre.distanceTo(detail.focus) > detail.radius) continue;
+        if (detail.includePoint && !detail.includePoint(centre)) continue;
       } else if (centre.y < maxY - 2) continue;
       samples.push(centre);
     }
@@ -159,4 +160,21 @@ export function detailCamera(T, scene, camera, controls, coach, ground, focusLoc
   if(!visibility.clear)throw Object.assign(new Error(`3 m coach detail: ${visibility.reason}${visibility.blocker?' by '+visibility.blocker:''}`),{details:visibility});
   return {position:camera.position.toArray(),target:focus.toArray(),fov:camera.fov,distanceM:position.distanceTo(focus),
     focusLocal:local.toArray(),visibility,coachBounds:{min:box.min.toArray(),max:box.max.toArray()},detailRadiusM:detail.radius};
+}
+
+/** Exterior view into the unchanged drawn portal. The buried coach surface is expected hidden. */
+export function portalTrainCamera(T,camera,controls,group,leading,ground,portal,candidate=0) {
+  const follow=followTrainCamera(T,camera,controls,group,leading,ground,0),{origin,axis,across,bore}=portal;
+  const target=[origin[0]+across[0]*bore.lateral+axis[0]*2,2.8,origin[1]+across[1]*bore.lateral+axis[1]*2];
+  const side=candidate%2?-1:1,distance=[34,42,50][Math.floor(candidate/2)%3];
+  const position=[target[0]-axis[0]*distance+across[0]*side*12,6,target[2]-axis[1]*distance+across[1]*side*12];
+  const groundY=ground?.heightAt(position[0],position[2]);
+  if(!Number.isFinite(groundY))throw new Error('portal camera scene terrain unavailable');
+  position[1]=Math.max(position[1],groundY+.5);
+  setCaptureView(T,camera,controls,position,target,55);
+  const opening=[[-bore.width/2,0],[-bore.width/2,6],[bore.width/2,0],[bore.width/2,6]].map(([u,y])=>new T.Vector3(origin[0]+across[0]*(bore.lateral+u),y,origin[1]+across[1]*(bore.lateral+u)).project(camera));
+  if(opening.some(p=>Math.abs(p.x)>.88||Math.abs(p.y)>.88||p.z<=-1||p.z>=1))throw new Error('portal opening outside close frame');
+  const detail={includePoint:p=>{const w=(p.x-origin[0])*axis[0]+(p.z-origin[1])*axis[1];return w<-.3&&w>-28;}};
+  return {coach:follow.coach,detail,camera:{position,target,fov:camera.fov,groundY,focusCoach:follow.coach.name,
+    mode:'close view into Gasworks south; only exterior leading-coach surfaces ray-tested; inside portion expected hidden',openingNdc:opening.map(p=>p.toArray())}};
 }

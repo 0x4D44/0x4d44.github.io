@@ -7,8 +7,8 @@ import {EventEmitter} from 'node:events';
 import * as T from 'three';
 import {ALL_KINDS} from '../../core/train.ts';
 import {buildTrain} from '../../web/src/train.ts';
-import {capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
-import {detailCamera,inspectTrainFrame,sequenceCamera,setCaptureView,trainBounds,followTrainCamera,intersectCaptureRay} from '../train-framing.mjs';
+import {selectPortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
+import {detailCamera,inspectTrainFrame,sequenceCamera,setCaptureView,trainBounds,followTrainCamera,portalTrainCamera,intersectCaptureRay} from '../train-framing.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from '../capture-runtime.mjs';
 const frame=(timeMs,speedMps=0)=>({timeMs,point:[0,10],speedMps,state:speedMps?'moving':'held',lengthM:26,reversals:0,occupied:[{a:1,b:2,fromT:0,toT:1,edgeLengthM:40}]});
 const plan=(direction='arrival',trainId=1)=>({recordingIndex:0,trainId,description:'SYN',kind:'synthetic',platform:'2',direction,movedM:2,startMs:1,frames:[frame(1,1),frame(2,0),frame(3,0)]});
@@ -147,4 +147,31 @@ test('deadlines and termination signal the detached browser group and cleanup wa
  },remove:async()=>{assert.equal(alive,false,'parent exit alone must not allow profile removal');removed=true;}});
  assert.equal(cleanup.exited,true);assert.equal(removed,true);assert.ok(signals.some(([pid,sig])=>pid===-123&&sig==='SIGKILL'));assert.equal(cleanup.profileRetained,null);
  const retained=await cleanupCaptureBrowser(undefined,'synthetic-profile',{remove:async()=>{throw Object.assign(new Error('busy'),{code:'ENOTEMPTY'});},warn:()=>{}});assert.equal(retained.profileRetained,'synthetic-profile');assert.equal(retained.warnings.length,1);
+});
+
+test('portal selection requires a moving physical entry straddling the face in time order',()=>{
+ const history=[-8,-2,2,8].map((alongM,i)=>({...frame(i*1000,2),alongM}));
+ assert.deepEqual(selectPortalFrames(history),history);
+ assert.equal(selectPortalFrames(history.slice(0,2)),null);
+ assert.equal(selectPortalFrames(history.map(f=>({...f,speedMps:0}))),null);
+ assert.equal(selectPortalFrames([...history].map(f=>({...f,timeMs:-f.timeMs}))),null);
+ const p={...plan('portal-entry'),frames:history,portal:{id:'synthetic'}};
+ assert.deepEqual(capturePlans({portalMode:true,captureCandidates:[p]}).requirements,['0-portal-entry']);
+ assert.throws(()=>capturePlans({portalMode:true,captureCandidates:[{...p,portal:null}]}));
+});
+test('portal camera frames an opening from exterior terrain and ray-tests only exterior coach surfaces',()=>{
+ const {scene,group,camera,controls}=sceneFixture(),ground={heightAt:()=>0};
+ const portal={origin:[0,20],axis:[0,1],across:[1,0],bore:{lateral:0,width:8}};
+ const view=portalTrainCamera(T,camera,controls,group,[0,26],ground,portal);
+ assert.ok(view.camera.position[2]<portal.origin[1]);assert.ok(view.camera.position[2]>-40);
+ assert.equal(view.detail.includePoint(new T.Vector3(0,2,21)),false);
+ assert.equal(view.detail.includePoint(new T.Vector3(0,2,19.9)),false);
+ assert.equal(view.detail.includePoint(new T.Vector3(0,2,10)),true);
+ assert.equal(view.detail.includePoint(new T.Vector3(0,2,-20)),false);
+ assert.ok(view.camera.openingNdc.every(p=>Math.abs(p[0])<.88&&Math.abs(p[1])<.88));
+ assert.equal(inspectTrainFrame(T,scene,camera,group,ground,{detail:view.detail,minScreenSpan:.1}).clear,true);
+ const wall=new T.Mesh(new T.BoxGeometry(10,10,.1),new T.MeshBasicMaterial());wall.name='synthetic-portal-interior';wall.position.set(0,3,21);scene.add(wall);
+ assert.equal(inspectTrainFrame(T,scene,camera,group,ground,{detail:view.detail,minScreenSpan:.1}).clear,true,'legitimate interior concealment is outside exterior sample set');
+ const raised=portalTrainCamera(T,camera,controls,group,[0,26],{heightAt:()=>20},portal);assert.equal(raised.camera.position[1],20.5);
+ assert.throws(()=>portalTrainCamera(T,camera,controls,group,[0,26],{heightAt:()=>NaN},portal),/terrain/);
 });

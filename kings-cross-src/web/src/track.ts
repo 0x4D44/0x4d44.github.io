@@ -26,7 +26,7 @@
 //                   they ARE the track beyond the zone, and along the zone's rails they float 4 mm over
 //                   the head and are discarded within 90 m of the camera, because the 3D head (0.072 m)
 //                   is under a pixel beyond about 60 m and the overview would lose its rails;
-//   track-tunnel    the tunnel lines, exactly as before (TUNNEL_DEPTH, 0x5b6b86, opacity 0.7).
+//   track-tunnel    the tunnel lines at the train rail datum (0 m), depth-tested against terrain and portal covers.
 // Sleepers also fade into the ballast's average colour between 110 and 260 m from the camera: at
 // 0.65 m apart they are a pixel or two beyond that, and the rows turn to moire.
 //
@@ -106,7 +106,7 @@ const SLEEPER_FADE = [110, 260] as const;
 const LINE_LIFT = 0.004;
 const LINE_NEAR_CUTOFF = 90;
 
-/** The tunnel lines, exactly as main.ts drew them. */
+/** Tunnel centre-lines share the train rail datum; hill/portal geometry occludes them. */
 const TUNNEL_COLOUR = 0x5b6b86;
 const TUNNEL_OPACITY = 0.7;
 /** The cheap lines and ribbons beyond the zone, as main.ts drew them (main and siding differ). */
@@ -478,7 +478,7 @@ function sleeperMesh(placements: SleeperPlacement[]): THREE.InstancedMesh {
 // ---------------------------------------------------------------------------------------------
 // the group
 
-/** The tunnel lines, exactly as main.ts drew them. */
+/** Tunnel centre-lines share the train rail datum; hill/portal geometry occludes them. */
 function tunnelLines(positions: number[]): THREE.LineSegments {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -533,7 +533,9 @@ export type TrackLayout = ZoneLayout;
  * (`bounds(rails.main)`) still wants it. `userData` carries the counts: sleepers, chains, near and far segments.
  */
 export function buildTrack(data: Pick<KxData, 'nodes' | 'rails'>, layout: TrackLayout): THREE.Group {
-  const rails = railSegments(data);
+  // Only the ECML has modelled bores and a train rail datum. Raising other underground routes
+  // (Tube, Thameslink, etc.) would expose them across flat ground; their elevations are unknown.
+  const rails = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => !r.tunnel || r.ref === 'ECM1') });
   const main = splitByZone(rails.main, layout);
   const siding = splitByZone(rails.siding, layout);
 

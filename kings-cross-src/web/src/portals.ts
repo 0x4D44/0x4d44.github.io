@@ -206,7 +206,9 @@ function faceParts(parts: PartMap<PortalKey>, mouth: Mouth, top: number, H: numb
     }
     const first = prof[0] as [number, number];
     const last = prof[prof.length - 1] as [number, number];
-    tube.quadUV(at(f, first[0], 0, 0.01), at(f, last[0], 0, 0.01), at(f, last[0], PORTAL.recess, 0.01), at(f, first[0], PORTAL.recess, 0.01), undefined, [0, 1, 0]);
+    // Keep the lining floor below railheads, retaining its anti-z-fight lift above flat ground.
+    const floorY = GROUND_Y + 0.01;
+    tube.quadUV(at(f, first[0], 0, floorY), at(f, last[0], 0, floorY), at(f, last[0], PORTAL.recess, floorY), at(f, first[0], PORTAL.recess, floorY), undefined, [0, 1, 0]);
     tube.fan(prof.map(([u, y]) => at(f, u, PORTAL.recess, y)), toward);
   }
 }

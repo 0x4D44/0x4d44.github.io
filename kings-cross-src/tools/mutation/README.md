@@ -44,6 +44,7 @@ python3 -I -u kings-cross-src/tools/mutation/test-suite.py
 python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .scratch/mutation/train-capture
 python3 -I -u kings-cross-src/tools/mutation/train.py kings-cross-src .scratch/mutation/train
 python3 -I -u kings-cross-src/tools/mutation/trainweb.py kings-cross-src .scratch/mutation/trainweb
+python3 -I -u kings-cross-src/tools/mutation/tunnel-track.py kings-cross-src .scratch/mutation/tunnel-track
 ```
 
 `axis01-evidence.py` and the no-argument drivers choose their own private `.scratch`

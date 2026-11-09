@@ -217,7 +217,7 @@ export function prepareSideEvidence(T,scene,view,report,terrain,trains=[]) {
   return {bounds,targetNames,section,hidden,view,verticalScale:section?.verticalScale??1,projection:view==='arch'||view==='portal'?'cross':'side',minimumExtentM:view==='side'?[20,2.5]:view==='arch'?[25,12]:view==='portal'?[20,5]:[1500,20]};
 }
 
-/** Read rail level from the scene's real line vertices, including the schematic tunnel drop. */
+/** Read rail level from the actual mesh/line vertices, without inventing tunnel elevation. */
 export function sampleEcmlSection(T,scene,route,terrain,spacingM=2) {
   if(!route?.segments?.length)throw new Error('continuous OSM ECML section route missing');
   scene.updateMatrixWorld(true);
@@ -250,7 +250,7 @@ export function sampleEcmlSection(T,scene,route,terrain,spacingM=2) {
     }
     distance+=length;
   }
-  return {ground,rails,lengthM:distance,spacingM,verticalScale:10,route,basis:'Along a continuous OSM ECML route; ground from the actual drawn mesh heightAt; rails from drawn geometry. Orange ground and blue rail heights exaggerated 10x, horizontal distance in metres. Surface railheads are drawn at y=0 m. Tunnel lines are schematic at their actual drawn y=-4 m depth (core/scene.ts TUNNEL_DEPTH), not a surveyed rail gradient; live train bodies remain at y=0 m.'};
+  return {ground,rails,lengthM:distance,spacingM,verticalScale:10,route,basis:'Along a continuous OSM ECML route; ground from the actual drawn mesh heightAt; rails from drawn geometry. Orange ground and blue rail heights exaggerated 10x, horizontal distance in metres. Surface and tunnel rails use the live trains’ y=0 m rail datum. The profile reads their actual vertices; this flat model is not a surveyed gradient.'};
 }
 
 /** Real target vertices must occupy both grid axes; a flat platform wall cannot certify a train/arch/portal. */
