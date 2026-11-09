@@ -583,7 +583,16 @@ export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h:
   addWindow(stone, p, y, W, h, 'pointed', 0.05, true);
   const sw = n > 2 ? 0.4 : 0.6; // the shafts between the lancets: stone 0.6 m wide between a pair, 0.4 m between three, so that they read as a group across the street
   const lw = (W - sw * (n - 1)) / n;
-  for (let k = 0; k < n; k++) addWindow(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
+  for (let k = 0; k < n; k++) {
+    addWindow(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
+    // hist-b, hist-c: two lights stacked in each lancet, a transom 0.1 m tall at 0.45 of its height, and (between the lights) a shaft 0.2 m square with a capital standing out of the wall (ASSUMED sizes)
+    addWindow(stone, shift(p, (k - (n - 1) / 2) * (lw + sw)), y + (h - 0.9) * 0.45, lw, 0.1, 'flat', 0.15, true);
+    if (k) {
+      const sh = Math.max(0, h - 0.9 - lw * Math.sin(Math.PI / 3));
+      stone.box(onWall(p, (k - n / 2) * (lw + sw), y + sh / 2, 0.16), [0.2, sh, 0.22], { rotY: yaw(p.dir), skip: ['-y', '+y'] });
+      stone.box(onWall(p, (k - n / 2) * (lw + sw), y + sh + 0.07, 0.16), [0.3, 0.14, 0.3], { rotY: yaw(p.dir) });
+    }
+  }
   addDisc(pane, p, 0, y + h - 0.45, 0.27, 0.1);
   addVoussoirs(parts, p, y, W, spring, t, 0.05, 5);
   addJambs(parts, p, y, W, spring, t);
@@ -608,6 +617,9 @@ function addJambs(parts: PartMap<Key>, p: Placed, y: number, W: number, spring: 
 /** A round-headed opening in a ring of red and stone voussoirs, on jambs of red and stone courses (hist-b: the ground storey's arcade); sizes ASSUMED. */
 export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number): void {
   addWindow(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
+  // hist-b: the glazed arch is not a black hole: a stone mullion 0.18 m wide up to the springing and a transom 0.16 m tall at 0.55 of it, standing 0.05 m in front of the glass (ASSUMED)
+  addWindow(part(parts, 'stone'), p, y, 0.18, h - w / 2, 'flat', 0.15, true);
+  addWindow(part(parts, 'stone'), p, y + (h - w / 2) * 0.55, w, 0.16, 'flat', 0.15, true);
   addVoussoirs(parts, p, y, w, h - w / 2, 0.22, 0.05, 3, true);
   addJambs(parts, p, y, w, h - w / 2, 0.22);
 }
@@ -688,6 +700,7 @@ function addPavilion(parts: PartMap<Key>, b: BayPosition, eaves: number, slope: 
     for (const s of [-1, 1]) wall(m, span, s * w, s * w, 0, P, [s * b.dir[0], 0, s * b.dir[1]]);
   }
   stone.box(q(0, (P + 0.4) / 2, y0 - 0.45), [2 * w + 0.4, 0.9, P + 0.4], { rotY, skip: ['+z'] }); // the porch hood over the entrances: corbels out from the first floor
+  for (const s of [-1, 1]) stone.box(q(s * (w - 0.185), P - 0.185, (0.9 + eaves) / 2), [0.43, eaves - 0.9, 0.43], { rotY, skip: ['-y', '+y'] }); // hist-b: stone quoins 0.4 m wide up the corners, 0.03 m proud of the brick (ASSUMED)
   stone.box(q(0, (P + 0.3) / 2, eaves - 0.5), [2 * w + 0.6, 1, P + 0.3], { rotY, skip: ['+z', '-y'] });
   for (const y of [11.5, 17]) stone.box(q(0, (P + 0.12) / 2, y + 0.175), [2 * w + 0.24, 0.35, P + 0.12], { rotY, skip: ['+z'] });
   addGable(parts, q(0, P, eaves), b.dir, b.normal, slope, w, hp, 0, 'brickRed', P);
@@ -930,7 +943,18 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, ...ROWS.map(([y, h]) => ({ y, h, head: 'pointed' as Head }))];
   // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; the first floor's is its balcony, standing 0.4 m out; sizes ASSUMED
   rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.14 : 0.4));
-  addBand(part(parts, 'pane'), segs, ROWS[0][0] - 0.2, 0.7, 0.38); // hist-b: an iron balconette along the balcony, a dark rail 0.7 m tall on it and a hair inside its edge (ASSUMED)
+  // hist-b: a cast-iron balcony along the first floor's balcony, a hair inside its edge: a rail 0.06 m tall at the foot and at the head, 0.7 m apart, and a baluster 0.08 m wide
+  // every 0.32 m between them (round 5's solid dark band read as a wall); sizes ASSUMED
+  const iron = part(parts, 'pane');
+  const foot = ROWS[0][0] - 0.2;
+  for (const y of [foot, foot + 0.64]) addBand(iron, segs, y, 0.06, 0.38);
+  for (const sg of segs) {
+    const [dx, dz] = [sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]];
+    const l = Math.hypot(dx, dz);
+    const n = Math.floor(l / 0.32);
+    const q = (u: number, y: number): V3 => [sg.a[0] + (dx * u) / l + sg.normal[0] * 0.38, y, sg.a[1] + (dz * u) / l + sg.normal[1] * 0.38];
+    for (let k = 0; k < n; k++) iron.quadUV(q(((k + 0.5) * l) / n - 0.04, foot + 0.06), q(((k + 0.5) * l) / n + 0.04, foot + 0.06), q(((k + 0.5) * l) / n + 0.04, foot + 0.64), q(((k + 0.5) * l) / n - 0.04, foot + 0.64), undefined, [sg.normal[0], 0, sg.normal[1]]);
+  }
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
   const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {
@@ -939,6 +963,8 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       // a gabled bay's upper lights stand out with its front, and its arch is the entrance (hist-b): wider and taller, its sill off the ground like the portal's
       const out = pavs.includes(bay) ? PAVILION_OUT : 0;
       const up = shift(bay, 0, out);
+      // hist-b: the first floor's balcony stands on a stone corbel under each bay, 0.5 m wide and 0.7 m tall, as far out as the slab (ASSUMED sizes)
+      stone.box(onWall(up, 0, ROWS[0][0] - 0.8, 0.2), [0.5, 0.7, 0.4], { rotY: yaw(up.dir), skip: ['+y'] });
       rows.forEach((row, r) => {
         // round 5 (the scorer: pairs and triples under a containing arch, an arcade below): the first floor's group is three lights in a wide arch, the floors above pairs; the ground
         // storey an arcade of arches 0.6 of a bay wide (at most 3.2 m) all springing at 3.4 m (hist-b)
