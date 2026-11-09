@@ -710,6 +710,12 @@ const FROZEN_WAVERLEY_CAMERAS = {
     target: [89.9, 5, -14.5],
     source: 'waverleyView(geometry, 1.6): the app landing view fitted to the OSM platform extent',
   },
+  'wv-waverley-steps': {
+    pos: [16.61, 17.543, -126.32],
+    target: [32.93, 7.543, -68.61],
+    fov: 60,
+    source: 'Head landing of the Waverley Steps (OSM way/577519823; bridgeFrame of the outline at s 0.3 m from the Princes Street end, t 0.3, 1.3 m west of the centreline), eye 1.6 m above the head landing (15.943 m: W2 layTreads, highest DTM under the walking line + 0.02), looking south down the line to its Market Street end at t 0.3, pitched 10 degrees down: the standpoint of R-wv2-d / R-wv1-d2 (M J Richardson 2013, geotag 55.95291 N, 3.19017 W). Placed 2026-11-09 by a neutral agent from the photo, no render consulted',
+  },
 };
 
 /** The Waverley cameras by name: a fresh copy of FROZEN_WAVERLEY_CAMERAS on every call. */
@@ -720,7 +726,7 @@ export function waverleyCameras() {
 /** The fixed Waverley views each element is scored from (gfx-rubrics/waverley/rubric-<element>.md, "Fixed views"). */
 export const WAVERLEY_ELEMENT_VIEWS = {
   'waverley-station': ['wv-roof-from-north-bridge', 'wv-platform-11-east', 'wv-platform-5-west', 'wv-roof-underside', 'wv-overview'],
-  'waverley-frontage': ['wv-balmoral-east-end', 'wv-waverley-bridge-east', 'wv-north-bridge-side', 'wv-roof-from-north-bridge'],
+  'waverley-frontage': ['wv-balmoral-east-end', 'wv-waverley-bridge-east', 'wv-north-bridge-side', 'wv-roof-from-north-bridge', 'wv-waverley-steps'],
   'waverley-city': ['wv-calton-hill-panorama', 'wv-castle-from-princes-st', 'wv-scott-monument', 'wv-calton-hill-from-north-bridge', 'wv-overview'],
 };
 
