@@ -1327,12 +1327,14 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
       if (mask) {
         // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
-        // first row stands only 4 mm off the face's edge, where the cap's strip meets it, and the lift grows to the 12 mm the loft's facets need over the first fifth.
+        // first row stands ON the face's edge (no lift), where the cap's strip meets it, and the lift grows from there to the 12 mm the loft's facets need over the first fifth.
+        // (At 4 mm the row stood 2.7 mm over the edge and 3 mm in front of the face, and the red of the loft behind showed through the slit between them as a hairline along the
+        // arch of the face, in the 3 m views of the LNER's yellow and the Hull Trains beak.)
         const sEnd = screen.s0 - front.frame + 0.06;
         nosePatch(12, 18, (v, u) => {
           const s = sEnd * (0.5 - 0.5 * Math.cos(Math.PI * v));
           return [lerp(bandStart, mask.hwSill, s / sEnd) * Math.sin(Math.PI * (u - 0.5)), s];
-        }, detail, colourOf(mask.colour), (v) => lerp(0.004, 0.012, Math.min(1, v * 5)));
+        }, detail, colourOf(mask.colour), (v) => lerp(0, 0.012, Math.min(1, v * 5)));
       }
       if (front.wipers) {
         // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying

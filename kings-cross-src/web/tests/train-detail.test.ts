@@ -3650,6 +3650,15 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       assert.ok(reach > sGlass - 0.15 && reach < sGlass + 0.1, `${kind} car ${car.index}: the band reaches ${reach.toFixed(2)} m back, the windscreen starts at ${sGlass}`);
       const bandOut = Math.max(...band.flat().map((v) => Math.abs(v.x)));
       assert.ok(bandOut <= mask.hwSill + 0.03 && bandOut > mask.hwTop - 0.1, `${kind} car ${car.index}: the band is ${bandOut.toFixed(2)} m out at its widest, the spec says ${mask.hwSill}`);
+      // the band's front row stands on the face's own outline, in the face's plane: where the cap's yellow ends the band's begins, with no slit between them for the red of the loft
+      // behind to show through (the row used to stand 4 mm off the loft: 2.7 mm over the outline and 3 mm in front of the face, and the red showed as a hairline along the arch of the
+      // face in the 3 m views of the LNER's yellow and of the Hull Trains beak)
+      const edgeRow = tris.filter((t) => t.some((v) => Math.abs(along(v)) > 1e-3)).flat().filter((v) => along(v) < 0.002);
+      assert.ok(edgeRow.length >= 19, `${kind} car ${car.index}: only ${edgeRow.length} vertices of the band stand at the face's edge`);
+      for (const v of edgeRow) {
+        assert.ok(Math.abs(along(v)) < 1e-4, `${kind} car ${car.index}: the band's front row stands ${(along(v) * 1000).toFixed(1)} mm off the face's plane`);
+        near(v.y, yAtX(tipHalf, Math.abs(v.x)), 1e-4, `${kind} car ${car.index}: the band's front row at x = ${v.x.toFixed(3)} stands off the face's outline`);
+      }
     }
   }
 });
