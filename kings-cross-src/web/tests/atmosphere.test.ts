@@ -139,6 +139,23 @@ test('dusk and dawn through the frame loop are smooth: nothing the scene shows j
   assert.ok(dusk.every((r) => Math.abs((r[HALO] as number) - (r[LAMPS] as number) * 0.95) < 1e-9), 'the platform halos follow the lamp level');
 });
 
+test('the sun\'s shadow is as dark as the sun is there: whole in a clear sky, fading across broken cloud, none under an overcast deck', () => {
+  const { lights, at } = setup();
+  at(NOON);
+  assert.equal(lights.sun.shadow.intensity, 1, 'a clear sky: the whole shadow');
+  const withCloud = (cloud: number): number => { at(NOON, { ...CLEAR_STATE, cloud }); return lights.sun.shadow.intensity; };
+  assert.equal(withCloud(0.3), 1, 'thin cloud changes nothing');
+  const broken = withCloud(0.65);
+  assert.ok(broken > 0.3 && broken < 0.7, `broken cloud: half of it, ${broken}`);
+  assert.ok(withCloud(0.5) > broken && withCloud(0.8) < broken, 'and it fades with the cloud, never back');
+  assert.equal(withCloud(0.9), 0, 'an overcast deck: no sun shadow (R-lighting-materials-d: the shade under it has no edge)');
+  assert.equal(withCloud(1), 0);
+  at(NOON, state('rain'));
+  assert.equal(lights.sun.shadow.intensity, 0, 'rain comes under an overcast deck');
+  at(NOON);
+  assert.equal(lights.sun.shadow.intensity, 1, 'and the shadow comes back with the sun');
+});
+
 test('under cloud and rain the light drops but the scene stays readable; in fog the world closes in; snow lights the ground', () => {
   const { lights, scene, at, camera } = setup();
   at(NOON);

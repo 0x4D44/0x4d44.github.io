@@ -325,6 +325,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     keyKnown = true;
     rgb(sun.color, key.colour);
     sun.intensity = key.intensity;
+    sun.shadow.intensity = 1 - smoothstep(0.4, 0.9, weather.cloud); // an overcast deck throws no sun shadow (R-lighting-materials-d); only the shadow's darkness changes, so no redraw of the map
     rgb(hemisphere.color, rig.hemisphere.sky);
     rgb(hemisphere.groundColor, rig.hemisphere.ground);
     hemisphere.intensity = rig.hemisphere.intensity;
