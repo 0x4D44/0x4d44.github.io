@@ -12,7 +12,7 @@ import { Batch } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
 const ASSUMED_DORMER_REAR_INSET = 0.68;
-const ASSUMED_STACK_CAP_DEPTH = 0.84;
+const ASSUMED_STACK_CAP_DEPTH = 1.0;
 const ASSUMED_STACK_CAP_HEIGHT = 0.14;
 const ASSUMED_DORMER_STACK_GAP = 0.12;
 const ASSUMED_DORMER_WINDOW_SILL = 0.18;
@@ -110,7 +110,8 @@ test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof witho
   const baselineSlate = new Set(all(bare, 'slate').map(signature));
   const addedSlate = all(full, 'slate').filter(t => !baselineSlate.has(signature(t)));
   const atticStone = all(full, 'stone').filter(t => t.p.some(v => v[1] > plan.eaves));
-  const detail = [...atticSashes, ...addedSlate, ...atticStone];
+  const atticBrick = all(full, 'brick').filter(t => t.p.some(v => v[1] > plan.eaves)); // the stacks' shafts: the only brick above the eaves
+  const detail = [...atticSashes, ...addedSlate, ...atticStone, ...atticBrick];
   let closest = Infinity, highest = -Infinity;
   const roof = new THREE.Mesh((bare.slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
   roof.updateMatrixWorld(true);

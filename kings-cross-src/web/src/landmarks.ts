@@ -344,13 +344,14 @@ const GNH_DORMER_WINDOW_HEIGHT = 1.15; // ASSUMED
 const GNH_DORMER_REAR_CLEARANCE = 0.04; // ASSUMED: the slate cheeks meet the main roof
 
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry)
-// also records "Prominent slab chimney-stacks." Their stone finish, count and dimensions are ASSUMED:
-// three on each long roof slope, selected by bay index and projected onto the OSM roof ring.
-const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 3; // ASSUMED
-const GNH_CHIMNEY_WIDTH = 0.72; // ASSUMED shaft width along a facade bay
-const GNH_CHIMNEY_DEPTH = 0.64; // ASSUMED depth across the roof slope
-const GNH_CHIMNEY_CAP_WIDTH = 0.92; // ASSUMED slab cap width
-const GNH_CHIMNEY_CAP_DEPTH = 0.84; // ASSUMED slab cap depth
+// also records "Prominent slab chimney-stacks." hist-a shows them in the hotel's own brick, with a pale slab cap, eight or nine along the
+// front slope, each about a dormer wide. Count and dimensions are ASSUMED: eight on each long roof slope, spread over its middle,
+// selected by bay index and projected onto the OSM roof ring.
+const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 8; // ASSUMED
+const GNH_CHIMNEY_WIDTH = 1.5; // ASSUMED shaft width along a facade bay
+const GNH_CHIMNEY_DEPTH = 0.8; // ASSUMED depth across the roof slope
+const GNH_CHIMNEY_CAP_WIDTH = 1.75; // ASSUMED slab cap width
+const GNH_CHIMNEY_CAP_DEPTH = 1.0; // ASSUMED slab cap depth
 const GNH_CHIMNEY_HEIGHT = 3.2; // ASSUMED stack height, scaled from hist-a (a stack stands about one and a half dormers tall)
 const GNH_CHIMNEY_CAP_HEIGHT = 0.14; // ASSUMED slab cap thickness
 const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
@@ -415,7 +416,8 @@ function addHotelDormer(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition):
 }
 
 function hotelChimneyBays(plan: HotelPlan): BayPosition[] {
-  return plan.faces.filter(face => face.bays.length >= 8).flatMap(face => Array.from({ length: GNH_CHIMNEY_COUNT_PER_LONG_SLOPE }, (_, i) => face.bays[Math.floor((i + 0.5) * face.bays.length / GNH_CHIMNEY_COUNT_PER_LONG_SLOPE)] as BayPosition));
+  const n = GNH_CHIMNEY_COUNT_PER_LONG_SLOPE;
+  return plan.faces.filter(face => face.bays.length >= 8).flatMap(face => Array.from({ length: n }, (_, i) => face.bays[Math.floor(2.5 + (i * (face.bays.length - 6)) / (n - 1))] as BayPosition));
 }
 
 function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
@@ -446,7 +448,9 @@ function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition)
   const sides: V3[] = [[bay.normal[0], 0, bay.normal[1]], [bay.dir[0], 0, bay.dir[1]], [-bay.normal[0], 0, -bay.normal[1]], [-bay.dir[0], 0, -bay.dir[1]]];
   for (let i = 0; i < 4; i++) {
     const j = (i + 1) % 4;
-    stone.quadUV(shaftCorners[i] as V3, shaftCorners[j] as V3, shaftTop[j] as V3, shaftTop[i] as V3, undefined, sides[i] as V3);
+    const [a, b] = [shaftCorners[i] as V3, shaftCorners[j] as V3];
+    const w = Math.hypot(b[0] - a[0], b[2] - a[2]);
+    part(parts, 'brick').quadUV(a, b, shaftTop[j] as V3, shaftTop[i] as V3, [[0, a[1]], [w, b[1]], [w, shaftTopY], [0, shaftTopY]], sides[i] as V3);
     stone.quadUV(capBase[i] as V3, capBase[j] as V3, capTop[j] as V3, capTop[i] as V3, undefined, sides[i] as V3);
   }
   stone.quadUV(capBase[0] as V3, capBase[1] as V3, capBase[2] as V3, capBase[3] as V3, undefined, [0, -1, 0]);
@@ -481,9 +485,17 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
       stone.box([bay.at[0] + bay.normal[0] * 0.2, crown + 0.1, bay.at[1] + bay.normal[1] * 0.2], [0.5, 0.45, 0.12], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]) }); // [HE-GNH] keystone dimensions are ASSUMED
       // ground floor: round-headed openings [HE-GNH]
       addSash(parts, 'sashArch', bay, 0.75, aw, ah);
-      // the sixth and thirteenth bays of the main front are tripartite and advanced [HE-GNH]: three narrow lights on a stucco box (hist-a, 3 m wide), from the first floor to the cornice
+      // the sixth and thirteenth bays of the main front are tripartite and advanced [HE-GNH]: three narrow lights on a stucco box as wide as the bay (hist-a), from the first floor to the cornice
       const advanced = face.kind === 'main' && ADVANCED.includes(index);
-      if (advanced) stone.box([bay.at[0] + (bay.normal[0] * (ADVANCE - 0.15)) / 2, (plan.groundStorey + plan.eaves - CORNICE_HEIGHT) / 2, bay.at[1] + (bay.normal[1] * (ADVANCE - 0.15)) / 2], [3, plan.eaves - CORNICE_HEIGHT - plan.groundStorey, ADVANCE + 0.15], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]), skip: ['+y'] });
+      if (advanced) stone.box([bay.at[0] + (bay.normal[0] * (ADVANCE - 0.15)) / 2, (plan.groundStorey + plan.eaves - CORNICE_HEIGHT) / 2, bay.at[1] + (bay.normal[1] * (ADVANCE - 0.15)) / 2], [bay.width, plan.eaves - CORNICE_HEIGHT - plan.groundStorey, ADVANCE + 0.15], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]), skip: ['+y'] });
+      // hist-a: full-height stucco strips, 0.14 m proud, up the outer side of a face's end bays and both sides of an advanced bay, as wide as the lights beside them leave room for (up to 1 m; ASSUMED)
+      for (const k of [-1, 1]) {
+        const next = face.bays[index + k];
+        const [s0, s1] = !next ? [Math.max(bay.width / 2 - 1, 0.8), bay.width / 2] : advanced ? [bay.width / 2, Math.min(bay.width / 2 + 1, (bay.width + next.width) / 2 - 0.8)] : [0, 0];
+        if (s1 - s0 < 0.3) continue;
+        const m = ((s0 + s1) / 2) * k;
+        stone.box([bay.at[0] + bay.dir[0] * m + bay.normal[0] * 0.07, (plan.groundStorey + plan.eaves - CORNICE_HEIGHT) / 2, bay.at[1] + bay.dir[1] * m + bay.normal[1] * 0.07], [s1 - s0, plan.eaves - CORNICE_HEIGHT - plan.groundStorey, 0.14], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]), skip: ['+y', '-y', '+z'] });
+      }
       for (let s = 1; s < f.storeys; s++) {
         // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little) so the top row clears the cornice
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;

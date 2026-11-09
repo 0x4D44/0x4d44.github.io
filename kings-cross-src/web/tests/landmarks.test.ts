@@ -261,7 +261,7 @@ test('Great Northern Hotel: every window stands on a wall (the advanced bays\' l
       for (const v of t.p) {
         assert.equal(pointInPolygon([v[0], v[2]], hotel.outline), false, `${key} vertex outside the walls`);
         // [HE-GNH] the sixth and thirteenth bays are advanced: their three lights stand on a box 0.4 m out, a hand's breadth (0.08) proud of it
-        const onBox = advanced.find((b) => Math.abs((v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1]) <= 1.5 && (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] > 0.3);
+        const onBox = advanced.find((b) => Math.abs((v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1]) <= b.width / 2 + 1e-6 && (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] > 0.3);
         if (onBox) close((v[0] - onBox.at[0]) * onBox.normal[0] + (v[2] - onBox.at[1]) * onBox.normal[1], 0.48, 1e-6, 'a light of an advanced bay stands on its box');
         else assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
       }
@@ -271,21 +271,62 @@ test('Great Northern Hotel: every window stands on a wall (the advanced bays\' l
   }
 });
 
-test('Great Northern Hotel [HE-GNH, hist-a]: the sixth and thirteenth bays of the main front stand 0.4 m out on a 3 m stucco box from the first floor to the cornice, and no other bay does', () => {
+test('Great Northern Hotel [HE-GNH, hist-a]: the sixth and thirteenth bays of the main front stand 0.4 m out on a stucco box as wide as the bay, from the first floor to the cornice, and no other bay does', () => {
   const stone = triangles(hotelGeometry(hotel).stone as Batch);
   const main = hotel.faces.find((f) => f.kind === 'main')!;
   assert.equal(main.bays.length, 18);
   const frame = (v: V3, b: (typeof main.bays)[number]): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
   main.bays.forEach((b, i) => {
-    const fronts = stone.filter((t) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.4) < 1e-6 && Math.abs(frame(v, b).along) <= 1.5 + 1e-6));
+    const fronts = stone.filter((t) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.4) < 1e-6 && Math.abs(frame(v, b).along) <= b.width / 2 + 1e-6));
     if (i !== 5 && i !== 12) return assert.equal(fronts.length, 0, `bay ${i + 1} is not advanced`);
     assert.equal(fronts.length, 2, `bay ${i + 1}: one flat front, two triangles`);
     const ys = fronts.flatMap((t) => t.p.map((v) => v[1]));
     const along = fronts.flatMap((t) => t.p.map((v) => frame(v, b).along));
     close(Math.min(...ys), hotel.groundStorey, 1e-9, 'the box starts at the first floor');
     close(Math.max(...ys), hotel.eaves - 0.7, 1e-9, 'and ends under the cornice');
-    close(Math.max(...along) - Math.min(...along), 3, 1e-6, 'it is 3 m wide');
+    close(Math.max(...along) - Math.min(...along), b.width, 1e-6, 'it is as wide as its bay');
   });
+});
+
+type Bay = (typeof hotel.faces)[number]['bays'][number];
+const ADVANCED_BAYS = [5, 12];
+
+test('Great Northern Hotel [hist-a]: full-height stucco strips 0.14 m proud close every face and flank both advanced bays, each clear of every light', () => {
+  const parts = hotelGeometry(hotel);
+  const top = hotel.eaves - 0.7;
+  const frame = (v: V3, b: Bay): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
+  const strips = (b: Bay, lo: number, hi: number, side: number): Tri[] => triangles(parts.stone as Batch).filter((t) => t.p.every((v) => {
+    const f = frame(v, b);
+    return Math.abs(f.depth - 0.14) < 1e-6 && f.along * side >= lo - 1e-6 && f.along * side <= hi + 1e-6 && (Math.abs(v[1] - hotel.groundStorey) < 1e-9 || Math.abs(v[1] - top) < 1e-9);
+  }));
+  // the ends of each face: the outer metre of the end bay (or what its light leaves, 0.3 m at the least); the advanced bays' sides: from the box out, a metre at most
+  for (const face of hotel.faces) {
+    face.bays.forEach((b, i) => {
+      for (const k of [-1, 1]) {
+        const end = face.bays[i + k] === undefined;
+        const want = end && b.width >= 2.2 ? 2 : face.kind === 'main' && ADVANCED_BAYS.includes(i) ? 2 : 0;
+        const got = strips(b, end ? Math.max(b.width / 2 - 1, 0.8) : b.width / 2, end ? b.width / 2 : b.width / 2 + 1, k).length;
+        if (end || want) assert.ok(got >= want && (want > 0 || got === 0), `${face.kind} bay ${i + 1}, side ${k}: ${got} strip triangles, wanted ${want}`);
+      }
+    });
+  }
+  // none stands on a light: no sash vertex falls in any strip's footprint (between the wall and its front, along its width)
+  const all = triangles(parts.stone as Batch).filter((t) => t.p.every((v) => Math.abs(v[1] - hotel.groundStorey) < 1e-9 || Math.abs(v[1] - top) < 1e-9));
+  const fronts = all.filter((t) => hotel.faces.some((f) => f.bays.some((b) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.14) < 1e-6 && Math.abs(frame(v, b).along) < b.width))));
+  const ends = hotel.faces.flatMap((f) => [f.bays[0], f.bays[f.bays.length - 1]]).filter((b) => (b as Bay).width >= 2.2).length;
+  assert.equal(fronts.length, 2 * (ends + 4), `${fronts.length} strip front triangles: the ends of the faces whose end bays are 2.2 m wide, and both sides of both advanced bays`);
+  const sashes = triangles(parts.sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves));
+  for (const t of fronts) {
+    const [a, b] = t.p.filter((v) => Math.abs(v[1] - hotel.groundStorey) < 1e-9);
+    if (!a || !b) continue;
+    const len = Math.hypot(b[0] - a[0], b[2] - a[2]);
+    const dir: Pt = [(b[0] - a[0]) / len, (b[2] - a[2]) / len];
+    for (const s of sashes) for (const v of s.p) {
+      const along = (v[0] - a[0]) * dir[0] + (v[2] - a[2]) * dir[1];
+      const off = Math.abs((v[0] - a[0]) * dir[1] - (v[2] - a[2]) * dir[0]);
+      assert.ok(!(along > 1e-6 && along < len - 1e-6 && off < 0.14 + 1e-6 && v[1] > hotel.groundStorey), `a light's corner at (${v[0].toFixed(2)}, ${v[2].toFixed(2)}) stands inside a strip`);
+    }
+  }
 });
 
 test('Great Northern Hotel [hist-a]: a stucco sill course under each of the upper rows, the cornice 0.8 m out', () => {
@@ -310,7 +351,7 @@ test('Great Northern Hotel [hist-a]: a stucco sill course under each of the uppe
   close(Math.max(...cornice.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])))), 0.8, 1e-6, 'the cornice stands 0.8 m out');
 });
 
-test('Great Northern Hotel [hist-a]: each slab stack stands 3.2 m above the roof at its centre, one and a half dormers high', () => {
+test('Great Northern Hotel [hist-a]: eight brick slab stacks on each long slope, each 3.2 m above the roof at its centre (one and a half dormers high) with a pale cap', () => {
   const stone = triangles(hotelGeometry(hotel).stone as Batch);
   const roof = new THREE.Mesh((hotelGeometry({ ...hotel, faces: [] }).slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
   roof.updateMatrixWorld(true);
@@ -326,7 +367,9 @@ test('Great Northern Hotel [hist-a]: each slab stack stands 3.2 m above the roof
     used.add(j);
     quads.push([...new Map([...a.p, ...(tops[j] as Tri).p].map((v) => [key(v), v] as const)).values()]);
   });
-  assert.equal(quads.length, 6, 'three stacks on each of the two long slopes');
+  assert.equal(quads.length, 16, 'eight stacks on each of the two long slopes');
+  // the shafts are the hotel's own brick: above the eaves the brick is those sixteen shafts, four quads of two triangles each
+  assert.equal(triangles(hotelGeometry(hotel).brick as Batch).filter((t) => t.p.every((v) => v[1] > hotel.eaves)).length, 16 * 8);
   for (const q of quads) {
     assert.equal(q.length, 4);
     const c: V3 = [q.reduce((s, v) => s + v[0], 0) / 4, 0, q.reduce((s, v) => s + v[2], 0) / 4];
@@ -338,7 +381,7 @@ test('Great Northern Hotel [hist-a]: each slab stack stands 3.2 m above the roof
 
 test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and no window is hidden by the cornice', () => {
   const parts = hotelGeometry(hotel);
-  close(Math.max(...triangles(parts.brick as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick to the eaves');
+  close(Math.max(...triangles(parts.brick as Batch).filter((t) => t.p.some((v) => v[1] <= hotel.eaves)).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick walls to the eaves');
   close(Math.min(...allVertices(parts).map((v) => v[1])), 0, 1e-9, 'walls stand on the ground');
   const slateYs = triangles(parts.slate as Batch).flatMap((t) => t.p.map((v) => v[1]));
   close(Math.max(...slateYs), hotel.ridge, 1e-9, 'the slate ridge remains the highest roof surface');
