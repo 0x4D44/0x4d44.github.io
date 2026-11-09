@@ -37,9 +37,11 @@ test('the real station cameras: all 42 are in the sweep, each with a finite lens
   for (const c of list) assert.ok([...c.pos, ...c.target, c.fov, c.near].every(Number.isFinite), c.name);
 });
 
+// The 5th percentile FPS sits 7 below the median FPS, and the trains drawn range from 2 below their median to 3 above it, so that a figure read
+// from the wrong field of a report cannot pass for the right one.
 const camera = (fps, p99, slowShare, shown, extra = {}) => ({
-  fps: { median: fps, p5: fps }, frameDistribution: { p99, slowShare, missedSlots: Math.round(slowShare * 300) },
-  trainsShown: { min: shown, median: shown, max: shown }, realMetal: true, rAFThrottleDetected: false,
+  fps: { median: fps, p5: fps - 7 }, frameDistribution: { p99, slowShare, missedSlots: Math.round(slowShare * 300) },
+  trainsShown: { min: shown - 2, median: shown, max: shown + 3 }, realMetal: true, rAFThrottleDetected: false,
   steady60: fps >= 60 && slowShare <= .01, busy: shown >= 9, ...extra,
 });
 
@@ -70,11 +72,13 @@ test('across pairs: per camera, the spread of its median FPS and whether it was 
   const sweep = sweepAcrossPairs(pairs);
   assert.equal(sweep.pairs, 3); assert.equal(sweep.cameraCount, 2);
   assert.deepEqual(sweep.cameras.a.medianFps, { min: 60, median: 60, max: 61 });
+  assert.deepEqual(sweep.cameras.a.p5Fps, { min: 53, median: 53, max: 54 }, 'the 5th percentile FPS, not the median');
   assert.deepEqual(sweep.cameras.a.trainsShownMedian, { min: 12, median: 13, max: 14 });
   assert.equal(sweep.cameras.a.steadyEveryPair, true);
   assert.equal(sweep.cameras.b.steadyEveryPair, false, 'one pair at 59 is enough');
   assert.deepEqual(sweep.cameras.b.p99FrameMs, { min: 16.7, median: 16.7, max: 33.3 });
   assert.deepEqual(sweep.cameras.b.slowShare, { min: 0, median: 0, max: .02 });
+  assert.deepEqual(sweep.cameras.b.missedSlots, { min: 0, median: 0, max: 6 }, 'the slots the slow frames overran, not their p99');
   assert.equal(sweep.allSteadyAt60, false); assert.deepEqual(sweep.notSteady, ['b']);
   assert.equal(sweep.allBusy, true); assert.equal(sweep.allRealMetal, true); assert.equal(sweep.everyCameraEveryPair, true);
   assert.equal(sweep.worstMedianFps, 59); assert.equal(sweep.slowestP99FrameMs, 33.3);

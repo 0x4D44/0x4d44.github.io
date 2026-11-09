@@ -147,7 +147,8 @@ by 13 tests of `tools/tests/evidence.test.mjs` chosen by name; the driver stops 
 It needs no browser, relay or recording. It exits 0 only when every mutation is caught and every
 test it runs was also seen failing by an assertion, and its report names the first mutation that
 reddened each test; append group names to run fewer (`... .scratch/mutation/evidence-helpers hud
-flicker`). Mutations that no test catches yet are kept, not run, in the driver's `UNCAUGHT` list.
+flicker`). The one mutation that changes nothing, so that no test can catch it, is kept, not run, in the driver's
+`EQUIVALENT` list.
 
 `ole.py` mutates the overhead line equipment (`core/ole.ts`, `web/src/ole.ts`): what is wired, the
 support lines, stagger, sag and tunnel-mouth taper, the shed's cross-spans, portals and masts, the

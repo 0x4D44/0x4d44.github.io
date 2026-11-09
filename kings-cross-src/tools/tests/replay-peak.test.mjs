@@ -59,6 +59,8 @@ test('rows out of order are sorted as the page sorts them, and a second TD area 
   const two = windowRecording(text([...SCRIPT, JSON.stringify({ t: 500, e: { kind: 'interpose', area: 'Z1', descr: '9Z99', to: 'Q1' } })]), 6500);
   assert.deepEqual(two.areas, ['Y9', 'Z1']);
   assert.deepEqual(rowsOf(two.text).slice(0, 2).map(r => [r.e.area, r.t]), [['Y9', 6500], ['Z1', 6500]]);
+  assert.deepEqual(rowsOf(two.text).slice(0, 2).map(r => r.e.berths), [{ B2: '1A01' }, { Q1: '9Z99' }], 'each area has only its own berths');
+  assert.deepEqual(two.berths, { Y9: 1, Z1: 1 });
 });
 
 test('a window before the first row changes nothing; one after the last row leaves only the snapshot', () => {
@@ -124,6 +126,7 @@ test('a window never runs past the last sample, and the earliest of equal window
 test('a recording shorter than the window is used whole', () => {
   const window = peakWindow(series([3, 4, 5, 6]), 60 * MINUTES);
   assert.equal(window.startMs, 0); assert.equal(window.endMs, 3 * 30_000); assert.equal(window.windowMs, 3 * 30_000);
+  assert.deepEqual([window.minShown, window.p25Shown, window.medianShown, window.meanShown, window.maxShown], [3, 3, 4, 4.5, 6], 'four samples: the median is the lower middle one, and the mean is exact');
   const single = peakWindow([{ clockMs: 5, shown: 7 }], 60 * MINUTES);
   assert.deepEqual([single.startMs, single.endMs, single.medianShown, single.samples], [5, 5, 7, 1]);
 });

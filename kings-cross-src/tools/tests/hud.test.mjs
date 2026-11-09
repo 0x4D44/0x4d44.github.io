@@ -30,15 +30,16 @@ function pageElements(changes = {}) {
 /**
  * Enough of a document for hudPage: top-level elements, a head that takes style elements, and a computed style in which a style
  * element hides what its rule names. An element with `inline` keeps a `display: block !important` of its own (an inline important
- * beats a stylesheet's), and one with `pageHidden` is hidden by the page's own rules whatever the overlay style says.
+ * beats a stylesheet's), and one with `pageHidden` is hidden by the page's own rules whatever the overlay style says. One with `invisible`
+ * has visibility hidden and one with `transparent` an opacity of 0: each keeps its box, as it does in a browser, and is not drawn.
  */
 function fakePage(elements) {
   const styles = [];
   const matches = (element, selector) => selector.startsWith('body > ') ? matches(element, selector.slice(7))
     : selector.startsWith('.') ? element.classes.includes(selector.slice(1))
       : selector.startsWith('#') ? element.id === selector.slice(1) : element.tag === selector;
-  const nodes = elements.map(({ tag, id = '', classes = [], inline = false, pageHidden = false }) => {
-    const element = { tag, tagName: tag.toUpperCase(), id, classes, className: classes.join(' '), inline, pageHidden };
+  const nodes = elements.map(({ tag, id = '', classes = [], inline = false, pageHidden = false, invisible = false, transparent = false }) => {
+    const element = { tag, tagName: tag.toUpperCase(), id, classes, className: classes.join(' '), inline, pageHidden, invisible, transparent };
     element.matches = selector => matches(element, selector);
     return element;
   });
@@ -54,7 +55,7 @@ function fakePage(elements) {
     getElementById: id => styles.find(style => style.id === id) ?? nodes.find(node => node.id === id) ?? null,
     querySelectorAll: selector => nodes.filter(node => matches(node, selector)),
   };
-  return { document, styles, getComputedStyle: element => ({ display: display(element), visibility: 'visible', opacity: '1' }) };
+  return { document, styles, getComputedStyle: element => ({ display: display(element), visibility: element.invisible ? 'hidden' : 'visible', opacity: element.transparent ? '0' : '1' }) };
 }
 
 /** Run page source in the stand-in; the result comes back as JSON, as it does over the DevTools protocol. */
@@ -155,6 +156,16 @@ test('an overlay the page itself hides fails --hud on, and one that does not com
   const hidden = await control.apply('off', 'overview');
   assert.ok(hidden.hidden.includes('.station-switcher'), 'hidden either way, so the off check passes');
   await assert.rejects(control.restore('off'), /the page's overlays did not come back after the capture: \.station-switcher: 1 of 1 not drawn/);
+});
+
+test('an overlay that is invisible or transparent is not drawn, though it keeps its box', async () => {
+  for (const [look, change] of [['visibility hidden', { invisible: true }], ['opacity 0', { transparent: true }]]) {
+    const page = fakePage(pageElements({ hud: change }));
+    assert.deepEqual(countsOf(await probeOf(page)).find(([selector]) => selector === '.hud'), ['.hud', 1, 0], look);
+    await assert.rejects(controllerFor(page, []).apply('on', 'overview-hud-on'), /\.hud: 1 of 1 not drawn/, look);
+    const board = fakePage(pageElements({ extra: [{ tag: 'div', classes: ['kx-board'], ...change }] }));
+    assert.deepEqual((await controllerFor(board, []).apply('off', 'overview')).otherOverlays, [], `${look}: a departure board nobody can see is not reported`);
+  }
 });
 
 test('a page with none of the overlays cannot be checked, and an overlay the list does not name is reported', async () => {

@@ -21,7 +21,7 @@ Two things must hold for the driver to exit 0: every mutation is caught, and eve
 under at least one mutation (a test that only ever throws, or never fails, is unproven). The report names, for each test, the first mutation
 that turned it red. A mutation is a plausible regression of the code under test; each anchor must occur exactly once in its file.
 
-UNCAUGHT, below the tables, lists the mutations no test catches yet. They are not run; they are the tests' known gaps.
+EQUIVALENT, below the tables, holds the one mutation that changes nothing, so no test can catch it. It is not run.
 """
 import re
 import shutil
@@ -68,6 +68,7 @@ CAMERA_SWEEP = [
     ('a spread starts at its largest value', '{ min: sorted[0], median:', '{ min: sorted.at(-1), median:'),
     ('a spread ends at its smallest value', 'max: sorted.at(-1) } : null;', 'max: sorted[0] } : null;'),
     ('the median of a spread is the mean', 'median: (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.ceil((sorted.length - 1) / 2)]) / 2', 'median: sorted.reduce((sum, value) => sum + value, 0) / sorted.length'),
+    ('the trains shown spread is of the busiest sample, not the median', 'camera.trainsShown?.median);', 'camera.trainsShown?.max);'),
 
     # ---- several pairs (tests: "across pairs: per camera, the spread of its median FPS ...", "... a camera missing from a pair ...",
     #      "... reports with no station sweep are ignored, and none at all is null")
@@ -91,6 +92,10 @@ CAMERA_SWEEP = [
     ('the p99 spread is read from the slow share', 'p99FrameMs: spread(perPair.map(c => c.frameDistribution?.p99))', 'p99FrameMs: spread(perPair.map(c => c.frameDistribution?.slowShare))'),
     ('the slow share spread is read from the p99', 'slowShare: spread(perPair.map(c => c.frameDistribution?.slowShare))', 'slowShare: spread(perPair.map(c => c.frameDistribution?.p99))'),
     ('the trains-shown spread is read from the FPS', 'trainsShownMedian: spread(perPair.map(c => c.trainsShown?.median))', 'trainsShownMedian: spread(perPair.map(c => c.fps?.median))'),
+    ('the trains-shown spread is of the quietest sample, not the median', 'trainsShownMedian: spread(perPair.map(c => c.trainsShown?.median))', 'trainsShownMedian: spread(perPair.map(c => c.trainsShown?.min))'),
+    ('the median FPS spread is read from the p5', 'medianFps: spread(perPair.map(c => c.fps?.median))', 'medianFps: spread(perPair.map(c => c.fps?.p5))'),
+    ('the p5 FPS spread is read from the median', 'p5Fps: spread(perPair.map(c => c.fps?.p5))', 'p5Fps: spread(perPair.map(c => c.fps?.median))'),
+    ('the missed slots spread is read from the p99', 'missedSlots: spread(perPair.map(c => c.frameDistribution?.missedSlots))', 'missedSlots: spread(perPair.map(c => c.frameDistribution?.p99))'),
 ]
 
 REPLAY_PEAK = [
@@ -111,6 +116,8 @@ REPLAY_PEAK = [
     ('an interpose does not fill a berth', "(e.kind === 'step' || e.kind === 'interpose') && e.to", "e.kind === 'step' && e.to"),
     ('a cancel naming another origin still empties the berth', 'owner === e.descr && (!e.from || e.from === berth)', 'owner === e.descr'),
     ('a cancel naming no origin empties nothing', '(!e.from || e.from === berth)', '(e.from === berth)'),
+    # (test: "rows out of order are sorted as the page sorts them, and a second TD area gets its own snapshot")
+    ('the berth picture of one TD area takes in the other areas', 'if (e.area !== area) continue;', ''),
 
     # ---- the signal bytes (test: "the signal bytes at the instant ride in the snapshot ...")
     ('signal bytes are written without padding', ".padStart(2, '0')", ".padStart(1, '0')"),
@@ -142,6 +149,10 @@ REPLAY_PEAK = [
     ('a window leaves out its first sample', 's.clockMs >= startMs && ', 's.clockMs > startMs && '),
     ('the window reports the length asked for', 'windowMs: span, samples: shown.length', 'windowMs, samples: shown.length'),
     ('the window ends where the asked length ends', 'endMs: startMs + span, windowMs', 'endMs: startMs + windowMs, windowMs'),
+    # (test: "a recording shorter than the window is used whole": min, lower quartile, median, mean and max of its four samples)
+    ('the lower quartile is read from the median', 'p25Shown: lowerQuantile(shown, .25)', 'p25Shown: lowerQuantile(shown, .5)'),
+    ('the mean is left at zero', 'meanShown: Number((shown.reduce((sum, value) => sum + value, 0) / shown.length).toFixed(2)),', 'meanShown: 0,'),
+    ('the median of an even number of samples is the upper one', 'Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))', 'Math.min(sorted.length - 1, Math.ceil((sorted.length - 1) * p))'),
 
     # ---- samples that are not measurements (test: "unsorted and non-finite samples are handled, and nothing to measure is null")
     ('nothing to measure is an empty window', 'if (!samples.length) return null;', 'if (!samples.length) return { startMs: 0, endMs: 0, windowMs: 0, samples: 0, busyFloor: 1 };'),
@@ -160,6 +171,8 @@ FRAME_STATS = [
     ('a frame of exactly 20 ms is late', 'if (value > slowMs)', 'if (value >= slowMs)'),
     ('the frame budget is 50 Hz', 'export const FRAME_BUDGET_MS = 1000 / 60;', 'export const FRAME_BUDGET_MS = 1000 / 50;'),
     ('a late frame costs one slot too many', 'Math.round(value / budgetMs) - 1', 'Math.round(value / budgetMs)'),
+    ('a late frame can cost no slot', 'Math.max(1, Math.round(value / budgetMs) - 1)', 'Math.max(0, Math.round(value / budgetMs) - 1)'),
+    ('a late frame of 2.7 slots costs the slots of the one below it, not the nearest', 'Math.round(value / budgetMs) - 1', 'Math.floor(value / budgetMs) - 1'),
 
     # ---- the histogram (tests: "a clean 60 Hz run ...", "late frames are counted ... and land in the right bins", "a frame exactly on a bin edge ...")
     ('a frame on a bin edge falls in the next bin', 'edges.findIndex(edge => value <= edge)', 'edges.findIndex(edge => value < edge)'),
@@ -181,6 +194,8 @@ FRAME_STATS = [
     ('p99 is read from the 90th percentile', 'p99: roundTo(quantile(sorted, .99), 2)', 'p99: roundTo(quantile(sorted, .9), 2)'),
     ('a percentile index rounds up', 'Math.floor((sorted.length - 1) * p)', 'Math.ceil((sorted.length - 1) * p)'),
     ('the maximum is the smallest frame', 'max: roundTo(sorted.at(-1) ?? null, 2)', 'max: roundTo(sorted[0] ?? null, 2)'),
+    ('p95 is read from the median', 'p95: roundTo(quantile(sorted, .95), 2)', 'p95: roundTo(quantile(sorted, .5), 2)'),
+    ('p999 is read from the median', 'p999: roundTo(quantile(sorted, .999), 2)', 'p999: roundTo(quantile(sorted, .5), 2)'),
 
     # ---- steady at 60 (test: "steady at 60 needs the median second at 60 and at most 1% slow frames")
     ('steady needs a median second of only 59', 'fpsMedian >= 60', 'fpsMedian >= 59'),
@@ -195,6 +210,7 @@ SCENE_PIN = [
     ('the default time is an hour late', "export const PIN_TIME = '2026-06-21T12:00:00+01:00';", "export const PIN_TIME = '2026-06-21T13:00:00+01:00';"),
     ('the default weather is cloudy', "export const PIN_WEATHER = 'clear';", "export const PIN_WEATHER = 'cloudy';"),
     ('a weather name is missing from the list', "'mist', 'fog', 'snow'", "'mist', 'snow'"),
+    ('the weather list can be edited', 'export const WEATHER_NAMES = Object.freeze([', 'export const WEATHER_NAMES = (['),
 
     # ---- what a time may be (test: "a time the page could not read is refused here instead of silently showing the live clock")
     ('an empty time takes the default', 'const t = time ?? PIN_TIME, w = weather ?? PIN_WEATHER;', 'const t = time || PIN_TIME, w = weather ?? PIN_WEATHER;'),
@@ -222,6 +238,7 @@ SCENE_PIN = [
     ('a page with time= gets a pin', '(?:bare|sky|time|weather)=', '(?:bare|sky|weather)='),
     ('a page with weather= gets a pin', '(?:bare|sky|time|weather)=', '(?:bare|sky|time)='),
     ('a parameter that only starts like a look is taken for it', '/[?&](?:bare|sky|time|weather)=/', '/[?&](?:bare|sky|time|weather)/'),
+    ('a parameter that only ends like a look (xtime=) is taken for one', '/[?&](?:bare|sky|time|weather)=/', '/(?:bare|sky|time|weather)=/'),
 
     # ---- was the pin applied (test: "the pin counts as applied only when the page built a sky of its own")
     ('a pinned page is honoured by a page with a fixed sky', "return typeof atmosphere === 'object' && atmosphere !== null;", "return atmosphere !== 'absent';"),
@@ -320,6 +337,9 @@ HUD = [
     ('hiding twice adds a second style', "if (action === 'hide' && !existing) {", "if (action === 'hide') {"),
     ('showing does not remove the style', "else if (action === 'show' && existing) existing.remove();", "else if (action === 'show' && existing) existing;"),
     ('everything counts as drawn', "return element.getClientRects().length > 0 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0;", 'return true;'),
+    # (test: "an overlay that is invisible or transparent is not drawn, though it keeps its box")
+    ('a transparent overlay counts as drawn', ' && Number(style.opacity) > 0;', ';'),
+    ('an invisible overlay counts as drawn', " && style.visibility !== 'hidden'", ''),
 
     # ---- the other overlays (tests: "a pack capture hides every overlay ...", "a page with none of the overlays cannot be checked, and an overlay the list does not name is reported")
     ('the canvas holder counts as an overlay', "element.id !== 'app' && ", ''),
@@ -434,32 +454,11 @@ EVIDENCE = [
     ('the usage text separates the scoring views with commas', "${r.role} view`).join('; ')}", "${r.role} view`).join(', ')}"),
 ]
 
-# Mutations tried that NO test catches: each survived a run of its group's tests (observed 2026-11-09). They are data, not run, so the driver can
-# exit 0 while they stay open. To close one, add the missing assertion, see it fail under the mutation, then move the tuple into its group's table
-# above, where the driver holds it to account. (group, label, old, new[, file]) as in the tables.
-UNCAUGHT = [
-    # frame-stats.test.mjs: every run it makes has frame times of one value, or one frame of each kind, so these percentiles and roundings coincide
-    ('frame-stats', 'p95 is read from the median', 'p95: roundTo(quantile(sorted, .95), 2)', 'p95: roundTo(quantile(sorted, .5), 2)'),
-    ('frame-stats', 'p999 is read from the median', 'p999: roundTo(quantile(sorted, .999), 2)', 'p999: roundTo(quantile(sorted, .5), 2)'),
-    ('frame-stats', 'a late frame can cost no slot (a 20.01 ms frame has missedSlots 1, not 0)', 'Math.max(1, Math.round(value / budgetMs) - 1)', 'Math.max(0, Math.round(value / budgetMs) - 1)'),
-    ('frame-stats', 'a late frame of 2.7 slots costs the slots it overran rounded down, not to the nearest', 'Math.round(value / budgetMs) - 1', 'Math.floor(value / budgetMs) - 1'),
-    # camera-sweep.test.mjs: its synthetic cameras have fps p5 = median and trains shown min = median = max
-    ('camera-sweep', 'the p5 FPS spread is read from the median', 'p5Fps: spread(perPair.map(c => c.fps?.p5))', 'p5Fps: spread(perPair.map(c => c.fps?.median))'),
-    ('camera-sweep', 'the median FPS spread is read from the p5', 'medianFps: spread(perPair.map(c => c.fps?.median))', 'medianFps: spread(perPair.map(c => c.fps?.p5))'),
-    ('camera-sweep', 'the missed slots spread is read from the p99', 'missedSlots: spread(perPair.map(c => c.frameDistribution?.missedSlots))', 'missedSlots: spread(perPair.map(c => c.frameDistribution?.p99))'),
-    ('camera-sweep', 'one pair: the trains shown spread is of the busiest sample, not the median', 'camera.trainsShown?.median);', 'camera.trainsShown?.max);'),
-    ('camera-sweep', 'across pairs: the trains shown spread is of the quietest sample, not the median', 'trainsShownMedian: spread(perPair.map(c => c.trainsShown?.median))', 'trainsShownMedian: spread(perPair.map(c => c.trainsShown?.min))'),
-    # replay-peak.test.mjs: the second TD area's berths are never read, and its windows have constant or odd-length samples
-    ('replay-peak', 'the berth picture of one TD area takes in the other areas', 'if (e.area !== area) continue;', ''),
-    ('replay-peak', 'the lower quartile is read from the median', 'p25Shown: lowerQuantile(shown, .25)', 'p25Shown: lowerQuantile(shown, .5)'),
-    ('replay-peak', 'the mean is left at zero', 'meanShown: Number((shown.reduce((sum, value) => sum + value, 0) / shown.length).toFixed(2)),', 'meanShown: 0,'),
-    ('replay-peak', 'the median of an even number of samples is the upper one', 'Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))', 'Math.min(sorted.length - 1, Math.ceil((sorted.length - 1) * p))'),
-    # hud.test.mjs: its stand-in for the page's computed style always says visible and opaque
-    ('hud', 'a transparent overlay counts as drawn', ' && Number(style.opacity) > 0;', ';'),
-    ('hud', 'an invisible overlay counts as drawn', " && style.visibility !== 'hidden'", ''),
-    # scene-pin.test.mjs
-    ('scene-pin', 'the weather list can be edited', 'export const WEATHER_NAMES = Object.freeze([', 'export const WEATHER_NAMES = (['),
-    ('scene-pin', 'a parameter that only ends like a look (xtime=) is taken for one', '/[?&](?:bare|sky|time|weather)=/', '/(?:bare|sky|time|weather)=/'),
+# Mutations that change nothing, so no test can catch them. They are not run; they are kept so that the next reader does not take one for a gap.
+# (group, label, old, new[, file]) as in the tables.
+EQUIVALENT = [
+    # trackSclass (core/sclass.ts:173) skips every row of another TD area itself, so choosing the rows of one area first changes nothing.
+    ('replay-peak', 'the signal bytes of one TD area are taken from the rows of every area', 'trackSclass(rowsBefore.filter(row => row.e.area === area), area)', 'trackSclass(rowsBefore, area)'),
 ]
 
 # name, the module its mutations change, its test file, the tests to run by name (all of the file when empty), the mutations

@@ -24,12 +24,14 @@ test('late frames are counted by the slots they overran, and land in the right b
   assert.equal(d.max, 120);
   assert.deepEqual(d.histogram.counts, [290, 0, 0, 6, 3, 0, 1], '<=17.5 | <=20 | <=25 | <=34 | <=51 | <=100 | above');
   assert.equal(d.p99, 50, 'the fourth-slowest of 300 frames');
+  assert.equal(frameDistribution([45]).missedSlots, 2, 'a 45 ms frame is 2.7 slots long: it took the third slot, so it missed two (the nearest slot, not the one below)');
 });
 
 test('a frame exactly on a bin edge belongs to that bin, and exactly 20 ms is not slow', () => {
   const d = frameDistribution([17.5, 20, 20.01]);
   assert.deepEqual(d.histogram.counts.slice(0, 3), [1, 1, 1]);
   assert.equal(d.slowFrames, 1, 'only 20.01 is later than 20 ms');
+  assert.equal(d.missedSlots, 1, 'a frame just over 20 ms is slow and costs one slot, never none');
   assert.equal(SLOW_FRAME_MS, 20);
 });
 
@@ -45,6 +47,8 @@ test('values that are not frames are dropped, and an empty run says so with null
 test('percentiles follow the sorted frames, whatever order they arrive in', () => {
   const d = frameDistribution([5, 1, 4, 2, 3, 10, 9, 8, 7, 6]);
   assert.deepEqual([d.p50, d.p90, d.max], [5, 9, 10]);
+  const ramp = frameDistribution(Array.from({ length: 200 }, (_, i) => 200 - i));
+  assert.deepEqual([ramp.p50, ramp.p90, ramp.p95, ramp.p99, ramp.p999, ramp.max], [100, 180, 190, 198, 199, 200], '1 to 200 ms, slowest first: each percentile is a different frame');
 });
 
 test('steady at 60 needs the median second at 60 and at most 1% slow frames', () => {

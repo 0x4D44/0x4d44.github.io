@@ -14,6 +14,7 @@ test('the default pin is midsummer noon in London with a clear sky', () => {
 
 test('the weather names are the ones the page documents', () => {
   assert.deepEqual([...WEATHER_NAMES], ['clear', 'cloudy', 'overcast', 'drizzle', 'rain', 'heavy-rain', 'thunder', 'mist', 'fog', 'snow', 'off', '0']);
+  assert.ok(Object.isFrozen(WEATHER_NAMES), 'the list a --weather is checked against cannot be edited');
   for (const name of WEATHER_NAMES) assert.equal(scenePinFrom({ weather: name }).weather, name);
 });
 
@@ -64,6 +65,7 @@ test('withPin adds the pin to a query, and leaves a page with a look of its own 
   assert.equal(withPin('?trains=none', { mode: 'ref' }), '?trains=none&sky=ref');
   assert.equal(withPin('', { mode: 'ref' }), '?sky=ref');
   assert.equal(withPin('?barefoot=1&dateline=2', pin), `?barefoot=1&dateline=2&${parameters}`, 'only whole parameter names count');
+  assert.equal(withPin('?xtime=5&mysky=1', pin), `?xtime=5&mysky=1&${parameters}`, 'a name that only ends like a look (xtime, mysky) is not one');
 });
 
 test('the pin counts as applied only when the page built a sky of its own', () => {
