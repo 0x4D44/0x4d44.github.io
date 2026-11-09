@@ -7,10 +7,10 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, COVER_RELIEF, END_GAP, FACE_CLEAR, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, COVER_RELIEF, END_GAP, FACE_CLEAR, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, skirtHalfAt, skirtPanel } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, kitRadiusScale, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
 import { clipConvex, col, ellipse, Soup } from '../src/train-geom.ts';
 import { ADELANTE_FACE, AMBER, AMBER_DOOR, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, boxOutline } from '../src/train-face.ts';
@@ -2743,9 +2743,11 @@ test('skirts: every side skirt is a thin panel hanging from just inside the body
       for (const sign of [-1, 1]) {
         const vs = tris.filter((t) => t.every((v) => v.x * sign > 0)).flat();
         // a panel of eight triangles (an outer face, two raked ends and a foot) for each clear stretch: three on a through car, one at each end and one between the bogies
+        // (CHANGED: a family with boxes (the Electrostar's) has a panel of eight for each box of its stretch's row; one box to a stretch where the family has none)
         const stretches = stretchesOf(car, spec.cutout);
         assert.equal(stretches.length, 3, `${here}: three clear stretches`);
-        assert.equal(vs.length / 3, 8 * stretches.length, `${here} side ${sign}: a panel of eight triangles for each clear stretch`);
+        const panels = stretches.flatMap(([s, e]) => skirtSplit(s, e, spec.skirt.boxes)).length;
+        assert.equal(vs.length / 3, 8 * panels, `${here} side ${sign}: a panel of eight triangles for each clear stretch (a box of its row)`);
         // never outboard of the body: every vertex is inside the body's outline at its height (a skirt below the floor, inside its lowest corner)
         for (const v of vs) assert.ok(Math.abs(v.x) <= (v.y >= spec.floor ? bodyHalfAt(spec, v.y) : edge) - 0.005, `${here}: a skirt vertex at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) stands out of the body`);
         const top = Math.max(...vs.map((v) => v.y));
@@ -2826,6 +2828,11 @@ test('skirts: the Azuma\'s covers are paler than its underframe and carry two gr
       // light grey covers with louvres (lner-801-214-2025, lner-800-doncaster-2026, hull-802-paragon-2025), not a dark slab
       assert.ok(lumaOf(panel) >= lumaOf(def.skirt) + 0.12, `${kind}: covers (${lumaOf(panel).toFixed(2)}) paler than the underframe (${lumaOf(def.skirt).toFixed(2)})`);
       assert.ok(vent !== null && lumaOf(vent) < lumaOf(panel) - 0.1, `${kind}: louvres darker than the covers`);
+    } else if (familyOf(kind) === 'electrostar') {
+      // CHANGED (the covers as the livery gives them: it was every family but the Azuma): the Electrostar's boxes are mid-grey against the dark underframe (gn387_03_387123_cambridge,
+      // gn387_01_387114_ely), no louvres; the other two electric families' and the Class 180's are as the livery gives them
+      assert.ok(lumaOf(panel) >= lumaOf(def.skirt) + 0.12 && lumaOf(panel) <= 0.6, `${kind}: grey boxes (${lumaOf(panel).toFixed(2)}) over the underframe (${lumaOf(def.skirt).toFixed(2)})`);
+      assert.equal(vent, null, `${kind}: no louvres`);
     } else {
       assert.equal(panel, def.skirt, `${kind}: the covers as the livery gives them`);
       assert.equal(vent, null, `${kind}: no louvres`);
@@ -3006,6 +3013,194 @@ test('Great Northern: coupled Class 387 units meet nose to nose, 2 x END_GAP apa
   const noseCouplers = all(g, 'coupler').filter((c) => c.userData.nose);
   assert.equal(noseCouplers.length, 2);
   assert.deepEqual(noseCouplers.map((c) => c.parent?.name).sort(), ['car-3', 'car-4']);
+});
+
+// --- the Electrostar's underfloor boxes, the roof equipment beside a pantograph, and the pantograph's strips -----------------------------------
+//
+// Round 3 (T6 underframe, T5 roof). The Electrostar's boxes are read off gn387_03_387123_cambridge and gn387_01_387114_ely; the Azuma's roof kit off
+// lner-800-pantograph-leeds-2019; the electric units' roof kit and the strips are ASSUMED (see train-parts.ts).
+
+test('skirts: a stretch is cut into a row of separate boxes, a gap between neighbours, where the family has boxes (the Electrostar\'s only), and is one panel where it has none', () => {
+  assert.deepEqual(skirtSplit(10, 20, undefined), [[10, 20]], 'no boxes: the stretch whole');
+  for (const family of FAMILIES) assert.equal(bodySpec(family).skirt.boxes !== undefined, family === 'electrostar', `${family}: boxes only on the Electrostar`);
+  const boxes = bodySpec('electrostar').skirt.boxes as { length: number; gap: number; rake: number };
+  const row = skirtSplit(10, 20, boxes);
+  // end to end, in order, the gap between neighbours; none a sliver or a slab; not all one length (the pattern's weights, normalised over the row)
+  assert.ok(row.length >= 6 && row.length <= 9, `${row.length} boxes in ten metres`);
+  assert.equal((row[0] as [number, number])[0], 10, 'the first box starts with the stretch');
+  near((row[row.length - 1] as [number, number])[1], 20, 1e-9, 'the last ends with it');
+  row.forEach(([a, b], i) => {
+    assert.ok(b - a >= 0.6 * boxes.length && b - a <= 1.9 * boxes.length, `box ${i}: ${(b - a).toFixed(3)} m`);
+    if (i > 0) near(a - (row[i - 1] as [number, number])[1], boxes.gap, 1e-9, `the gap before box ${i}`);
+  });
+  assert.ok(new Set(row.map(([a, b]) => (b - a).toFixed(3))).size >= 4, 'the boxes are not all one length');
+  // the lengths follow the pattern's proportions
+  const w0 = (row[0] as [number, number])[1] - (row[0] as [number, number])[0];
+  const w1 = (row[1] as [number, number])[1] - (row[1] as [number, number])[0];
+  near(w1 / w0, (SKIRT_BOX_PATTERN[1] as number) / (SKIRT_BOX_PATTERN[0] as number), 1e-9, 'the second box is the pattern\'s proportion of the first');
+  // a stretch too short for two boxes is one panel, still the whole stretch; and the row is in the stretch whatever its length
+  assert.deepEqual(skirtSplit(0, 1.4, boxes), [[0, 1.4]]);
+  for (const len of [0.5, 2.9, 3.3, 6.1, 10.4, 11.7]) {
+    const r = skirtSplit(0, len, boxes);
+    assert.equal((r[0] as [number, number])[0], 0);
+    near((r[r.length - 1] as [number, number])[1], len, 1e-9, `a ${len} m stretch ends where it ends`);
+    for (const [a, b] of r) assert.ok(b > a, `a box of ${(b - a).toFixed(3)} m in a ${len} m stretch`);
+  }
+  // built: each through car's skirt panels start and end exactly where the row's boxes do, on both sides, and a box's foot is cut back by the family's rake (a box's ends are
+  // nearly square: 3 cm; a one-piece cover's are raked 14 cm)
+  assert.equal(boxes.rake, 0.03, 'a box is cut back 3 cm at each end of its foot');
+  for (const kind of ALL_KINDS) {
+    const spec = bodySpec(familyOf(kind));
+    const g = built(kind);
+    const top = spec.floor + SKIRT_TUCK;
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab === null).slice(0, 2)) {
+      const panels = stretchesOf(car, spec.cutout).flatMap(([s, e]) => skirtSplit(s, e, spec.skirt.boxes));
+      const expected = panels.flat().map((z) => z.toFixed(3));
+      const expectedFoot = panels.flatMap(([a, b]) => {
+        const rake = Math.min(spec.skirt.boxes?.rake ?? SKIRT_RAKE, 0.25 * (b - a));
+        return [a + rake, b - rake];
+      }).map((z) => z.toFixed(3));
+      for (const sign of [-1, 1]) {
+        const tris = skirtTris(g, kind, car).filter((t) => t.every((v) => v.x * sign > 0));
+        const got = [...new Set(tris.flat().filter((v) => Math.abs(v.y - top) < 1e-5).map((v) => v.z.toFixed(3)))];
+        assert.deepEqual(got.sort(), [...new Set(expected)].sort(), `${kind} car ${car.index} side ${sign}: the panels' ends are the boxes' ends`);
+        const foot = [...new Set(tris.flat().filter((v) => Math.abs(v.y - spec.skirtBottom) < 1e-5).map((v) => v.z.toFixed(3)))];
+        assert.deepEqual(foot.sort(), [...new Set(expectedFoot)].sort(), `${kind} car ${car.index} side ${sign}: the panels' feet are cut back by the family's rake`);
+      }
+    }
+  }
+});
+
+test('roof kit: the tables put every insulator on its own plate, clear of the others, inside the flat of the roof, and every cable run from the pantograph or an insulator to an insulator without passing another', () => {
+  for (const style of ['azuma', 'emu'] as const) {
+    const def = ROOF_KITS[style];
+    const kit = style === 'azuma' ? bodySpec('at300').roofKit : bodySpec('desiro').roofKit;
+    assert.equal(kit?.style, style);
+    const k = kitRadiusScale((kit as { height: number }).height);
+    const half = (i: (typeof def.items)[number]): [number, number] => [KIT_PLATE_HALF[i.kind][0] * k, KIT_PLATE_HALF[i.kind][1] * k];
+    const radius = (i: (typeof def.items)[number]): number => (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k;
+    def.items.forEach((a, ia) => {
+      const [hx, hz] = half(a);
+      assert.ok(Math.abs(a.x) + hx <= KIT_HALF_WIDTH + 1e-9, `${style} item ${ia}: its plate stands ${(Math.abs(a.x) + hx).toFixed(3)} m out, the roof is flat to ${KIT_HALF_WIDTH}`);
+      assert.ok(a.u - hz > 0.1, `${style} item ${ia}: a clear 0.1 m or more from the pantograph's edge`);
+      assert.ok(a.u + hz <= roofKitReach(style) - 0.2 + 1e-9, `${style} item ${ia}: inside the kit's reach`);
+      def.items.forEach((b, ib) => {
+        if (ib <= ia) return;
+        const [bx, bz] = half(b);
+        const apart = Math.abs(a.x - b.x) >= hx + bx || Math.abs(a.u - b.u) >= hz + bz;
+        assert.ok(apart, `${style}: plates ${ia} and ${ib} overlap`);
+      });
+    });
+    const atItem = (x: number, u: number): boolean => def.items.some((i) => Math.abs(i.x - x) < 1e-9 && Math.abs(i.u - u) < 1e-9);
+    def.cables.forEach((run, ir) => {
+      const [x0, u0] = run[0] as readonly [number, number];
+      const [x1, u1] = run[run.length - 1] as readonly [number, number];
+      assert.ok(u0 === 0 || atItem(x0, u0), `${style} run ${ir}: starts at the pantograph's edge or on an insulator`);
+      assert.ok(atItem(x1, u1), `${style} run ${ir}: ends on an insulator`);
+      for (let i = 0; i + 1 < run.length; i++) {
+        const [xa, ua] = run[i] as readonly [number, number];
+        const [xb, ub] = run[i + 1] as readonly [number, number];
+        assert.ok(xa === xb || ua === ub, `${style} run ${ir} leg ${i}: along the roof or across it`);
+        for (const [ii, item] of def.items.entries()) {
+          // the legs may touch the insulators they start and end on
+          if ((item.x === xa && item.u === ua) || (item.x === xb && item.u === ub)) continue;
+          // the distance of the insulator's axis from the leg: more than its sheds' radius and the cable's half width
+          const cx = Math.min(Math.max(item.x, Math.min(xa, xb)), Math.max(xa, xb));
+          const cu = Math.min(Math.max(item.u, Math.min(ua, ub)), Math.max(ua, ub));
+          assert.ok(Math.hypot(item.x - cx, item.u - cu) > radius(item) + KIT_CABLE_WIDTH / 2, `${style} run ${ir} leg ${i} passes through insulator ${ii}`);
+        }
+      }
+    });
+  }
+});
+
+test('roof kit: a pantograph car carries ribbed insulators on plates with cables between them, on the nose side of its pantograph and clear of it, under the covers\' height, the covers kept off it; no other car, and not the Class 180, has one', () => {
+  for (const kind of ALL_KINDS) {
+    const spec = bodySpec(familyOf(kind));
+    const g = built(kind);
+    for (const car of trainLayout(kind).cars) {
+      const here = `${kind} car ${car.index}`;
+      const mesh = detailOf(g, car);
+      const parts = { shed: trisOfColour(mesh, KIT_COLOURS.shed), cap: trisOfColour(mesh, KIT_COLOURS.cap), plate: trisOfColour(mesh, KIT_COLOURS.plate), cable: trisOfColour(mesh, KIT_COLOURS.cable) };
+      if (!car.pantograph || !spec.roofKit) {
+        for (const [name, ts] of Object.entries(parts)) assert.equal(ts.length, 0, `${here}: no ${name} triangles on a car without a roof kit`);
+        continue;
+      }
+      const kit = spec.roofKit;
+      const def = ROOF_KITS[kit.style];
+      const dir = car.cab === 'rear' ? 1 : -1;
+      const sx = car.cab === 'rear' ? -1 : 1;
+      const [p0, p1] = car.pantograph;
+      const nearEdge = dir < 0 ? p0 : p1;
+      const k = kitRadiusScale(kit.height);
+      const plateTop = spec.crown + KIT_PLATE_TOP;
+      assert.ok(kit.height < spec.coverHeight, `${here}: the kit's ${kit.height} m is under the covers' ${spec.coverHeight} m`);
+      // standing on the roof's flat, under its height, on the nose side of the pantograph and inside the car well clear of its nose
+      const noseClear = spec.nose.length + 1;
+      for (const v of Object.values(parts).flat(2)) {
+        assert.ok(v.y >= spec.crown - 0.0125 && v.y <= spec.crown + kit.height + 1e-5, `${here}: a kit vertex at ${v.y.toFixed(4)}, the crown at ${spec.crown}`);
+        assert.ok(Math.abs(v.x) <= KIT_HALF_WIDTH + 1e-5, `${here}: a kit vertex ${v.x.toFixed(3)} m off the centre line`);
+        const u = (v.z - nearEdge) * dir;
+        assert.ok(u >= -KIT_CABLE_WIDTH / 2 - 1e-5 && u <= roofKitReach(kit.style), `${here}: a kit vertex ${u.toFixed(3)} m beyond the pantograph's near edge`);
+        assert.ok(v.z >= car.start + noseClear && v.z <= car.end - noseClear, `${here}: a kit vertex at z ${v.z.toFixed(2)} in a car of ${car.start.toFixed(2)} to ${car.end.toFixed(2)}`);
+      }
+      // each item's plate (its four top corners) and its stack's cap (the centre vertex at the stack's top) are where the table puts them, the train's right being +x for the front car
+      const near3 = (a: THREE.Vector3, x: number, y: number, z: number): boolean => Math.abs(a.x - x) < 1e-4 && Math.abs(a.y - y) < 1e-4 && Math.abs(a.z - z) < 1e-4;
+      for (const item of def.items) {
+        const x = sx * item.x;
+        const z = nearEdge + dir * item.u;
+        const [hx, hz] = [KIT_PLATE_HALF[item.kind][0] * k, KIT_PLATE_HALF[item.kind][1] * k];
+        for (const cx of [-1, 1]) {
+          for (const cz of [-1, 1]) {
+            assert.ok(parts.plate.flat().some((v) => near3(v, x + cx * hx, plateTop, z + cz * hz)), `${here}: the plate of the ${item.kind} insulator at (${item.x}, ${item.u}) lacks its corner (${cx}, ${cz})`);
+          }
+        }
+        const top = item.kind === 'big' ? spec.crown + kit.height : plateTop + (kit.height - KIT_PLATE_TOP) * 0.6;
+        assert.ok(parts.cap.flat().some((v) => near3(v, x, top, z)), `${here}: the ${item.kind} insulator at (${item.x}, ${item.u}) has no cap centre at ${top.toFixed(3)}`);
+        // its sheds' widest ring is the radius the tables give, and no vertex of its stack is wider
+        const r = (item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k;
+        const mine = [...parts.shed.flat(), ...parts.cap.flat()].filter((v) => Math.hypot(v.x - x, v.z - z) <= r + 1e-4 && v.y > plateTop + 1e-4);
+        assert.ok(mine.length > 0, `${here}: no stack vertices over the plate at (${item.x}, ${item.u})`);
+        near(Math.max(...mine.map((v) => Math.hypot(v.x - x, v.z - z))), r, 1e-4, `${here}: the widest shed of the ${item.kind} insulator at (${item.x}, ${item.u})`);
+      }
+      // no cap or shed anywhere that is not on an item: every stack vertex is within its radius of some item's axis
+      for (const v of [...parts.shed.flat(), ...parts.cap.flat()]) {
+        const onItem = def.items.some((i) => Math.hypot(v.x - sx * i.x, v.z - (nearEdge + dir * i.u)) <= (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k + 1e-4);
+        assert.ok(onItem, `${here}: a stack vertex at (${v.x.toFixed(3)}, ${v.z.toFixed(3)}) is on no insulator`);
+      }
+      // the cables: a box of ten triangles for each leg of each run (five faces and no bottom: two triangles each)
+      assert.equal(parts.cable.length, 10 * def.cables.reduce((n, run) => n + run.length - 1, 0), `${here}: cable triangles`);
+      // the covers keep out of the kit and the pantograph
+      const [k0, k1] = roofKitSpan(kit.style, p0, p1, dir);
+      for (const t of trisOfColour(mesh, SKIRT_PALE).filter((tr) => tr.some((v) => v.y > spec.crown))) {
+        for (const v of t) assert.ok(v.z <= k0 + 1e-4 || v.z >= k1 - 1e-4, `${here}: a roof cover over the kit at z ${v.z.toFixed(3)} (kit and pantograph from ${k0.toFixed(3)} to ${k1.toFixed(3)})`);
+      }
+    }
+  }
+});
+
+test('pantograph: the head carries two dark carbon strips along its top, inside the bow, no higher than the folded pantograph', () => {
+  let seen = 0;
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    for (const pan of all(g, 'pantograph')) {
+      const mesh = named(pan, 'pantograph-mesh') as THREE.Mesh;
+      const strips = trisOfColour(mesh, PANTOGRAPH_STRIP);
+      // two boxes of twelve triangles
+      assert.equal(strips.length, 2 * 12, `${kind}: strip triangles`);
+      const b = boxOfTris(strips);
+      const top = boxOf(pan).max.y;
+      near(b.max.y, top, 1e-5, `${kind}: the strips' tops are the folded pantograph's top`);
+      near(b.max.y - b.min.y, PANTOGRAPH_STRIP_THICKNESS, 1e-5, `${kind}: strip thickness`);
+      assert.ok(b.min.x >= -0.78 - 1e-5 && b.max.x <= 0.78 + 1e-5, `${kind}: the strips are inside the head's ends`);
+      const zc = worldPos(pan).z;
+      const zs = [...new Set(strips.flat().map((v) => (v.z - zc).toFixed(3)))].map(Number).sort((a, c) => a - c);
+      assert.deepEqual(zs, PANTOGRAPH_STRIPS.flat().map((z) => Number(z.toFixed(3))), `${kind}: where the strips lie along the head`);
+      seen++;
+    }
+  }
+  assert.equal(seen, ALL_KINDS.reduce((n, kind) => n + trainLayout(kind).cars.filter((c) => c.pantograph !== null).length, 0), 'a pantograph for each car the layouts give one');
+  assert.ok(seen >= 15, `${seen} pantographs checked`);
 });
 
 // --- the whole trains -----------------------------------------------------------------------------------

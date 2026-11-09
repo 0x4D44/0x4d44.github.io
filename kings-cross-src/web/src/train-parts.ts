@@ -680,11 +680,162 @@ export function buildPantograph(len: number, top: number): THREE.Group {
   // the arm is 0.07 m thick, so its upper face stands 0.035 above its centre line: start it low enough that no part of it passes `top`
   soup.bar([Math.min(0.14, top - 0.035), 0.9], [knee, -0.1], 0.1, 0.07, frame);
   soup.bar([knee, -0.1], [top - 0.1, 0.72], 0.08, 0.06, frame);
-  soup.box(-0.8, 0.8, top - 0.07, top, 0.64, 0.82, head);
+  // the collector head: the bow, and two carbon strips along its top (dark against the pale aluminium; ASSUMED: the Leeds photograph's pantograph is on a pantograph car
+  // seen from far above and shows the base and the arm frame, not the head); the strips stand inside the head's top, so the folded height is the bow's
+  soup.box(-0.8, 0.8, top - 0.07, top - PANTOGRAPH_STRIP_THICKNESS, 0.64, 0.82, head);
+  for (const [z0, z1] of PANTOGRAPH_STRIPS) soup.box(-0.78, 0.78, top - PANTOGRAPH_STRIP_THICKNESS, top, z0, z1, col(PANTOGRAPH_STRIP));
   const mesh = new THREE.Mesh(soup.build(), plain());
   mesh.name = 'pantograph-mesh';
   group.add(mesh);
   return group;
+}
+
+/** The pantograph head's carbon strips: their colour, their thickness, and where they lie along the head (z from the pantograph's centre). ASSUMED. */
+export const PANTOGRAPH_STRIP = 0x1b1c1f;
+export const PANTOGRAPH_STRIP_THICKNESS = 0.014;
+export const PANTOGRAPH_STRIPS: readonly (readonly [number, number])[] = [[0.67, 0.71], [0.75, 0.79]];
+
+// --- the roof equipment beside a pantograph --------------------------------------------------------------------------------
+//
+// What a pantograph car carries on its roof besides the pantograph: ribbed insulators on grey plates, and the cable runs between them. The Azuma's is read off
+// lner-800-pantograph-leeds-2019.jpg (a GWR 800's pantograph-car roof from a footbridge: three big black ribbed insulators on grey plates, smaller ones on blocks,
+// thin black cables looping between them, the pantograph's frame at one end, the roof a flat grey deck): that there are three big and a few small ones, and the order
+// along the roof, are read off it (the photograph has more small ones than the model draws: the cost cap on triangles leaves room for these); the places, the sizes (scaled into the roof envelope: the covers stand 0.27 m over the roof edge, and nothing here stands higher)
+// and which side of the pantograph they lie on are ASSUMED. The electric multiple units' (Class 387, 717, 700) is ASSUMED whole: every one of them has insulators and a
+// cable beside its pantograph, no photograph shows the roof, so there is one big insulator and two small ones with a cable, at the size the cover's height allows.
+
+/** The colours of a roof kit: the insulators' sheds, their caps, the plates and blocks they stand on, and the cables. */
+export const KIT_COLOURS = { shed: 0x25272b, cap: 0x8e9297, plate: 0x7c8086, cable: 0x181a23 } as const;
+
+export type RoofKitStyle = 'azuma' | 'emu';
+export interface RoofKitItem {
+  kind: 'big' | 'small';
+  /** metres from the pantograph base's near edge, toward the car's own nose */
+  u: number;
+  /** metres across, + is the train's right for the front car (mirrored for a rear cab car, which is turned about) */
+  x: number;
+}
+export interface RoofKitDef {
+  items: readonly RoofKitItem[];
+  /** cable runs, each a polyline of (x, u) points */
+  cables: readonly (readonly (readonly [number, number])[])[];
+}
+export const ROOF_KITS: Readonly<Record<RoofKitStyle, RoofKitDef>> = {
+  azuma: {
+    items: [
+      { kind: 'small', u: 0.55, x: 0.52 },
+      { kind: 'big', u: 1.05, x: -0.3 },
+      { kind: 'small', u: 1.65, x: 0.05 },
+      { kind: 'big', u: 2.15, x: 0.38 },
+      { kind: 'big', u: 3.05, x: -0.3 },
+    ],
+    // each run starts at the pantograph's base or at an insulator's axis and ends on another's, and passes no insulator on the way
+    cables: [
+      [[0.52, 0], [0.52, 0.55]],
+      [[0.52, 0.55], [0.52, 2.15], [0.38, 2.15]],
+      [[-0.3, 1.05], [-0.3, 3.05]],
+      [[-0.3, 1.05], [0.05, 1.05], [0.05, 1.65]],
+    ],
+  },
+  emu: {
+    items: [
+      { kind: 'big', u: 0.8, x: -0.3 },
+      { kind: 'small', u: 1.3, x: 0.35 },
+      { kind: 'small', u: 1.8, x: -0.1 },
+    ],
+    cables: [
+      [[0.35, 0], [0.35, 1.3]],
+      [[-0.3, 0], [-0.3, 0.8]],
+      [[-0.3, 0.8], [-0.1, 0.8], [-0.1, 1.8]],
+    ],
+  },
+};
+/** A big insulator's sheds' radius, a small one's, and the half-sides of the plate under a big one and the block under a small one (before the kit's scale). */
+export const KIT_BIG_RADIUS = 0.115;
+export const KIT_SMALL_RADIUS = 0.058;
+export const KIT_PLATE_HALF = { big: [0.31, 0.28], small: [0.1, 0.1] } as const;
+/** A plate's top, above the roof's crown; a cable's width and its top, above the crown. */
+export const KIT_PLATE_TOP = 0.02;
+export const KIT_CABLE_WIDTH = 0.03;
+export const KIT_CABLE_TOP = 0.035;
+/** The roof is flat to within 12 mm across this half-width of the crown, and a kit stays inside it. */
+export const KIT_HALF_WIDTH = 0.74;
+/** Sheds on a big and on a small insulator, and the sides they are drawn with. */
+const KIT_SHEDS = { big: 3, small: 2 } as const;
+const KIT_SIDES = { big: 8, small: 6 } as const;
+
+/** What a kit of `height` over the crown scales its insulators' and plates' sizes by: full size from 0.12 m up (the electric units' 0.13 m and the Azuma's 0.25 m), a lower one shrinks them, but not below 85 per cent. */
+export const kitRadiusScale = (height: number): number => Math.min(1, Math.max(0.85, height / 0.12));
+
+/** The length a kit takes beyond the pantograph base's near edge: its furthest plate and a margin. */
+export function roofKitReach(style: RoofKitStyle): number {
+  return Math.max(...ROOF_KITS[style].items.map((i) => i.u + KIT_PLATE_HALF[i.kind][1])) + 0.2;
+}
+
+/** The stretch of the roof a pantograph car's kit and pantograph take together (the covers keep out of it), for a pantograph base over [p0, p1] and the kit on the side `dir` (-1: toward lower z). */
+export function roofKitSpan(style: RoofKitStyle, p0: number, p1: number, dir: 1 | -1): [number, number] {
+  const reach = roofKitReach(style);
+  return dir < 0 ? [p0 - reach, p1 + 0.35] : [p0 - 0.35, p1 + reach];
+}
+
+/** One ribbed insulator standing on y = `y0`, `h` tall: sheds one on the next up a core, a flared pale cap on top (3 bands to a shed, 2 to the cap). */
+function insulator(soup: Soup, x: number, y0: number, z: number, radius: number, h: number, sheds: number, sides: number): void {
+  const shed = col(KIT_COLOURS.shed);
+  const cap = col(KIT_COLOURS.cap);
+  const core = radius * 0.6;
+  const capT = Math.min(0.02, h * 0.12);
+  const pitch = (h - capT) / sheds;
+  const prof: [number, number][] = [[0, core]];
+  const colours: THREE.Color[] = [];
+  const push = (u: number, r: number, c: THREE.Color): void => {
+    prof.push([u, r]);
+    colours.push(c);
+  };
+  for (let i = 0; i < sheds; i++) {
+    const u = i * pitch;
+    push(u + pitch * 0.2, radius, shed);
+    push(u + pitch * 0.62, radius, shed);
+    push(u + pitch, core, shed);
+  }
+  push(h, radius * 0.85, cap);
+  push(h, 0, cap);
+  lathe(soup, axisY(x, y0, z), prof, sides, colours);
+}
+
+/**
+ * A pantograph car's roof equipment (see above), for a pantograph base over [p0, p1] with the kit on the side `dir` of it (-1: toward lower z; a rear cab car, turned about,
+ * has it toward higher z and its x mirrored), standing on a roof whose crown is at `crown`; nothing stands more than `height` over the crown.
+ */
+export function roofKit(soup: Soup, o: { style: RoofKitStyle; p0: number; p1: number; dir: 1 | -1; crown: number; height: number }): void {
+  const def = ROOF_KITS[o.style];
+  const k = kitRadiusScale(o.height);
+  const near = o.dir < 0 ? o.p0 : o.p1;
+  const zAt = (u: number): number => near + o.dir * u;
+  const xAt = (x: number): number => -o.dir * x;
+  const plateColour = col(KIT_COLOURS.plate);
+  const y0 = o.crown - 0.012;
+  const plateTop = o.crown + KIT_PLATE_TOP;
+  for (const item of def.items) {
+    const [hx, hz] = KIT_PLATE_HALF[item.kind];
+    const x = xAt(item.x);
+    const z = zAt(item.u);
+    soup.box(x - hx * k, x + hx * k, y0, plateTop, z - hz * k, z + hz * k, plateColour, '-y');
+    const stack = o.height - KIT_PLATE_TOP;
+    insulator(soup, x, plateTop, z, (item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k, item.kind === 'big' ? stack : stack * 0.6, KIT_SHEDS[item.kind], KIT_SIDES[item.kind]);
+  }
+  const cable = col(KIT_COLOURS.cable);
+  const w = KIT_CABLE_WIDTH / 2;
+  for (const run of def.cables) {
+    for (let i = 0; i + 1 < run.length; i++) {
+      const [xa, ua] = run[i] as readonly [number, number];
+      const [xb, ub] = run[i + 1] as readonly [number, number];
+      const x0 = Math.min(xAt(xa), xAt(xb)) - w;
+      const x1 = Math.max(xAt(xa), xAt(xb)) + w;
+      const z0 = Math.min(zAt(ua), zAt(ub)) - w;
+      const z1 = Math.max(zAt(ua), zAt(ub)) + w;
+      soup.box(x0, x1, y0, o.crown + KIT_CABLE_TOP, z0, z1, cable, '-y');
+    }
+  }
 }
 
 /** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City) and a Scharfenberg (Class 180). */
@@ -811,6 +962,37 @@ export function skirtHalfAt(edge: number, floor: number, y: number): number {
   return edge - SKIRT_SETBACK - (floor + SKIRT_TUCK - y) * SKIRT_LEAN;
 }
 
+/**
+ * A cover drawn as a row of separate boxes, as the Electrostar's underfloor is (gn387_03_387123_cambridge.jpg, gn387_01_387114_ely.jpg: grey equipment boxes of about a
+ * metre to a metre and a half hung under the sill, dark gaps between them, their ends square, not raked): the length of a typical box, the gap between two, and how far a
+ * box's foot is cut back at each end, metres. All ASSUMED from those photographs.
+ */
+export interface SkirtBoxes {
+  length: number;
+  gap: number;
+  rake: number;
+}
+/** The boxes of a row are not all one length: each is this fraction (of the average) in turn. */
+export const SKIRT_BOX_PATTERN = [1, 1.35, 0.8, 1.2, 0.9, 1.3] as const;
+
+/** The stretch [z0, z1] cut into the boxes of a row (one box, the whole stretch, where it is too short for two): each box's [start, end], the gaps between them as given. */
+export function skirtSplit(z0: number, z1: number, boxes: SkirtBoxes | undefined): [number, number][] {
+  if (!boxes) return [[z0, z1]];
+  const n = Math.max(1, Math.round((z1 - z0 + boxes.gap) / (boxes.length + boxes.gap)));
+  if (n === 1) return [[z0, z1]];
+  const weights = Array.from({ length: n }, (_, i) => SKIRT_BOX_PATTERN[i % SKIRT_BOX_PATTERN.length] as number);
+  const sum = weights.reduce((a, w) => a + w, 0);
+  const total = z1 - z0 - boxes.gap * (n - 1);
+  const out: [number, number][] = [];
+  let z = z0;
+  weights.forEach((w, i) => {
+    const end = i === n - 1 ? z1 : z + (total * w) / sum;
+    out.push([z, end]);
+    z = end + boxes.gap;
+  });
+  return out;
+}
+
 export interface SkirtPanel {
   /** +1: the train's right side, -1: its left */
   side: 1 | -1;
@@ -824,6 +1006,8 @@ export interface SkirtPanel {
   colour: THREE.Color;
   /** the louvres' colour, or null for a plain panel */
   vent: THREE.Color | null;
+  /** how far the foot is cut back at each end (default SKIRT_RAKE; never more than a quarter of the panel's length) */
+  rake?: number;
 }
 
 /**
@@ -834,7 +1018,7 @@ export interface SkirtPanel {
 export function skirtPanel(soup: Soup, o: SkirtPanel): void {
   const { side: sx, z0, z1, edge, floor, bottom } = o;
   const top = floor + SKIRT_TUCK;
-  const rake = Math.min(SKIRT_RAKE, 0.25 * (z1 - z0));
+  const rake = Math.min(o.rake ?? SKIRT_RAKE, 0.25 * (z1 - z0));
   const out = (y: number): number => sx * skirtHalfAt(edge, floor, y);
   const outer: [V3, V3, V3, V3] = [[out(top), top, z0], [out(top), top, z1], [out(bottom), bottom, z1 - rake], [out(bottom), bottom, z0 + rake]];
   const inner = outer.map((p): V3 => [p[0] - sx * SKIRT_THICKNESS, p[1], p[2]]) as [V3, V3, V3, V3];

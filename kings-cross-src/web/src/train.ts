@@ -40,8 +40,8 @@ import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELE
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, skirtPanel, WHEEL_WIDTH } from './train-parts.ts';
-import type { BogieStyle, CouplerStyle } from './train-parts.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, roofKit, roofKitSpan, skirtPanel, skirtSplit, WHEEL_WIDTH } from './train-parts.ts';
+import type { BogieStyle, CouplerStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
 
 /**
  * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
@@ -385,8 +385,13 @@ interface BodySpec {
   pantographTop: number;
   /** half-width of the underframe slab */
   underframe: number;
-  /** the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), and whether they carry louvres */
-  skirt: { light: number; vents: boolean };
+  /**
+   * the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), whether they carry louvres, and whether
+   * they are a row of separate boxes with gaps between them (the Electrostar's underfloor) rather than one panel to a stretch
+   */
+  skirt: { light: number; vents: boolean; boxes?: SkirtBoxes };
+  /** what a pantograph car's roof carries beside the pantograph (insulators, a cable run): the style, and the height over the roof's crown nothing of it passes (null: none) */
+  roofKit: { style: RoofKitStyle; height: number } | null;
   /** the cab front's lamps, frame, coupler and warning panel */
   front: FrontSpec;
   /** louvres and vents on the nose's roof behind the glass (the Class 180's: GC180-01, GC180-05) */
@@ -509,6 +514,8 @@ const AT300: BodySpec = {
     warning: null,
     coupler: { style: 'plain', covered: true },
   },
+  // ASSUMED places and sizes, read off lner-800-pantograph-leeds-2019 (see roofKit in train-parts.ts): nothing over 0.25 m above the roof edge, under the covers' 0.27 m
+  roofKit: { style: 'azuma', height: 0.25 },
   underfloor: null,
   plan: (car) => at300Plan(car),
 };
@@ -594,8 +601,9 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
     // folded, level with the roof covers, so the highest point stays the published 3.77 m
     pantographTop: 0.14,
     underframe: 1.0,
-    // the skirt as the livery gives it (no photograph shows these covers closely): a plain panel, leaning in under the body's edge
-    skirt: { light: 0, vents: false },
+    // the underfloor is a row of grey equipment boxes with dark gaps between them, hung under the sill (gn387_03_387123_cambridge, gn387_01_387114_ely: boxes of a metre to a
+    // metre and a half, mid-grey in the sun against the dark underframe); sizes and the pale of the grey ASSUMED from those photographs
+    skirt: { light: 0.55, vents: false, boxes: { length: 1.3, gap: 0.16, rake: 0.03 } },
     // A flat face (ELECTROSTAR_FACE, from gn387_01_387114_ely and gn387_02_387121_ely): two screens either side of a full-height door in a dark frame, amber panels under
     // them with a lamp housing (two round lenses side by side) in each lower outer corner, a pale bumper with the Dellner coupler in a recess. The amber also wraps the roof's
     // front as a brow, back to 0.3 m, over the top three quarters of the face's width (the cheeks beside the screens are the body's own white); the loft's colours carry that,
@@ -611,6 +619,8 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
       coupler: { style: 'dellner', covered: true },
       face: ELECTROSTAR_FACE,
     },
+    // ASSUMED (no photograph shows the roof; every AC unit has an insulator and a cable beside its pantograph): one big insulator and two small, 0.13 m over the crown (the covers' 0.14 m: the published 3.77 m stays the highest point)
+    roofKit: { style: 'emu', height: 0.13 },
     underfloor: null,
     plan: emuPlan('electrostar', length),
   };
@@ -681,6 +691,8 @@ const DESIRO_BODY = ((): BodySpec => {
       coupler: { style: 'dellner', covered: false },
       face: DESIRO_717_FACE,
     },
+    // ASSUMED, as the Electrostar's
+    roofKit: { style: 'emu', height: 0.13 },
     underfloor: null,
     plan: emuPlan('desiro', length),
   };
@@ -808,6 +820,8 @@ const ADELANTE_BODY = ((): BodySpec => {
         { name: 'battery-box', length: 1.1, half: 0.7, bottom: 0.62, colour: 0x42464d },
       ],
     },
+    // a diesel unit: no pantograph, no roof kit
+    roofKit: null,
     plan: emuPlan('adelante', length),
   };
 })();
@@ -1556,7 +1570,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const runLen = (carTo - carFrom - gap * (runs - 1)) / runs;
   let covers: [number, number][] = [];
   for (let k = 0; k < runs; k++) covers.push([carFrom + k * (runLen + gap), carFrom + k * (runLen + gap) + runLen]);
-  if (car.pantograph) covers = without(covers, car.pantograph[0] - 0.35, car.pantograph[1] + 0.35);
+  // a pantograph car's roof equipment lies on the side of the pantograph toward the car's own nose (a rear cab car is turned about); the covers keep out of it and the pantograph
+  const kitDir: 1 | -1 = car.cab === 'rear' ? 1 : -1;
+  if (car.pantograph && spec.roofKit) {
+    const [k0, k1] = roofKitSpan(spec.roofKit.style, car.pantograph[0], car.pantograph[1], kitDir);
+    covers = without(covers, k0, k1);
+    roofKit(detail, { style: spec.roofKit.style, p0: car.pantograph[0], p1: car.pantograph[1], dir: kitDir, crown: spec.crown, height: spec.roofKit.height });
+  } else if (car.pantograph) covers = without(covers, car.pantograph[0] - 0.35, car.pantograph[1] + 0.35);
   const coverColour = col(0xb4b8be);
   for (const [z0, z1] of covers) {
     if (z1 - z0 < 0.8) continue;
@@ -1585,8 +1605,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   // the skirts: thin panels leaning in from the body's lowest corner (a flush box under a lower edge that tucks in read as a block standing proud of the body)
   const skirts = skirtColours(def, spec);
   const edge = (sec.half[0] as [number, number])[0];
-  for (const [z0, z1] of free) {
-    for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent) });
+  for (const [s0, s1] of free) {
+    for (const [z0, z1] of skirtSplit(s0, s1, spec.skirt.boxes)) {
+      for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), rake: spec.skirt.boxes?.rake });
+    }
   }
   // a diesel unit's engine, cooler, tank and batteries hang under the floor between the bogies, in plain sight below the valance
   for (const b of underfloorBlocks(car, spec)) detail.box(b.x0, b.x1, b.y0, b.y1, b.z0, b.z1, col(b.colour), '+y');
