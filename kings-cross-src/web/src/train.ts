@@ -38,7 +38,7 @@ import { col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Sou
 import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, WHEEL_WIDTH } from './train-parts.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, skirtPanel, WHEEL_WIDTH } from './train-parts.ts';
 import type { BogieStyle, CouplerStyle } from './train-parts.ts';
 
 /**
@@ -111,6 +111,35 @@ export const HULL_POD = 0x272b32;
 export const CAB_SWOOSH = 0x101215;
 /** The parked wiper arms' colour: a dark grey, a shade off the glass's black so they still read against it. */
 const WIPER = 0x3b4048;
+/**
+ * The cab side window, as a pane of glass rather than a black cut-out (the round-4 scorer's finding on coach-lner9-3m and coach-lumo5-3m: "a flat black
+ * polygon", with a white specular blob where the pane's normals turned to the sun). Three layers, from the photographs lner-800-doncaster-2026,
+ * hull-802-doncaster-2024 and LUMO-04-Lumo-803003-at-Edinburgh-Waverley, whose side windows are glossy dark panes in a thin black seal with a soft pale
+ * sky reflection across their upper part:
+ *   the seal    a near-black patch a hand's breadth bigger than the pane, under it (PANE_SEAL, a shade off every other near-black the nose uses);
+ *   the pane    the reflective glass, shaded with one normal across it (tilted down, so it reflects the dark ground: no blob), and
+ *   the sky     two matte bands over the pane's upper rows, a pale one along the top edge and a fainter one under it.
+ * The shades are approximate (read off those photographs, not published).
+ */
+export const PANE_SEAL = 0x0b0c0e;
+export const PANE_SKY_HI = 0x4b5b73;
+export const PANE_SKY_MID = 0x1d2733;
+/** The seal reaches this far outside the pane along the nose (metres) and across it (as a fraction of the ring's height). */
+const PANE_SEAL_ALONG = 0.045;
+const PANE_SEAL_ACROSS = 0.025;
+/** A pane's one shading normal is tilted down by this much (the y of its unit normal, before it is normalised again), so it reflects the dark ground. */
+const PANE_DOWN = 0.25;
+/** A side window is a grid of this many rows by this many columns of quads over the nose's flank (the width follows the loft's own curvature). */
+export const PANE_ROWS = 8;
+export const PANE_COLS = 12;
+/** The sky bands cover these row spans (of the pane's rows), the pale one on top. */
+const PANE_SKY_ROWS: readonly [readonly [number, number], readonly [number, number]] = [[6, 8], [4, 6]];
+/**
+ * How far each layer of the cab side window stands off the loft, metres: the dark swoosh (Hull Trains, Lumo), the seal, the pane, the sky bands. The shoulder's facets
+ * sag a centimetre between rings, so the first stands 12 mm off; each layer is at least 2 mm over the one under it (the pane's polygon offset pulls it toward the
+ * eye, so the bands over it stand 6 mm clear).
+ */
+export const PANE_LIFT = { swoosh: 0.012, seal: 0.014, pane: 0.016, sky: 0.022 } as const;
 /**
  * The lenses of a cab's lamps, lit and dark. A train in service shows white headlights at its leading end and red tail lamps at its trailing end,
  * and the other lenses unlit (an unlit headlamp is a pale reflector, an unlit tail lens a dark red); the cab ends of two coupled units show none
@@ -262,6 +291,8 @@ interface BodySpec {
   pantographTop: number;
   /** half-width of the underframe slab */
   underframe: number;
+  /** the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), and whether they carry louvres */
+  skirt: { light: number; vents: boolean };
   /** the cab front's lamps, frame, coupler and warning panel */
   front: FrontSpec;
   /** a diesel unit's engine, transmission, cooler and tank hanging under the floor (null: an electric unit's underframe is hidden behind its skirts) */
@@ -350,6 +381,8 @@ const AT300: BodySpec = {
   gangway: { width: ASSUMED.gangwayWidth, height: ASSUMED.gangwayHeight, bottom: ASSUMED.gangwayBottom },
   pantographTop: FIGURES.pantographFoldedHeight.value,
   underframe: 0.95,
+  // light grey equipment covers with groups of louvres (lner-801-214-2025, lner-800-doncaster-2026, hull-802-paragon-2025); how pale is read off them, not published
+  skirt: { light: 0.6, vents: true },
   // the Azuma's front: round lamps in the face's outer corners, a cover over the coupler, parked wipers, a livery-coloured front (LNER's is yellow in the livery)
   front: {
     // round lenses, a larger headlight with a smaller round lamp inboard and under it, in a dark housing at the face's upper outer corner
@@ -451,6 +484,8 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
     // folded, level with the roof covers, so the highest point stays the published 3.77 m
     pantographTop: 0.14,
     underframe: 1.0,
+    // the skirt as the livery gives it (no photograph shows these covers closely): a plain panel, leaning in under the body's edge
+    skirt: { light: 0, vents: false },
     // ASSUMED, all of it: an LED headlight bar over a tail-lamp bar in a dark bezel at each lower corner; a Dellner coupler under a cover; a
     // yellow warning panel (no source says the Great Northern 387s have one: the 2010s Electrostars' fronts were photographed with and without it)
     front: {
@@ -520,6 +555,8 @@ const DESIRO_BODY = ((): BodySpec => {
     // folded, level with the roof covers, so the highest point stays the published 3.77 m
     pantographTop: 0.14,
     underframe: 1.0,
+    // the skirt as the livery gives it (no photograph shows these covers closely): a plain panel, leaning in under the body's edge
+    skirt: { light: 0, vents: false },
     // ASSUMED, all of it: round headlights over round tail lamps in a dark bezel; a front evacuation door between them (the 717 works the
     // Moorgate tunnels); the coupler stands out of the face, uncovered; and no warning panel (a 2018 train with compliant lights)
     front: {
@@ -625,6 +662,8 @@ const ADELANTE_BODY = ((): BodySpec => {
     // no pantograph: this value is never used
     pantographTop: 0.14,
     underframe: 0.95,
+    // a shallow valance (0.3 m deep, black in Grand Central's livery), plain: the engine and tank hang in plain sight under it
+    skirt: { light: 0, vents: false },
     // ASSUMED: a big dark pod at each lower corner (a round headlight, with a smaller lamp above it), the yellow panel running across the whole face and
     // only just over the bonnet, no display on the glass, and the Scharfenberg coupler out in the open
     front: {
@@ -1115,9 +1154,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     }
     // the cab side windows, one each side, following the nose's slope: the pane (glass), and where the kind has one the dark swoosh round it (a
     // matte patch a little under the glass)
-    const sideWindow = (side: number, sw: FlankPatch, target: Soup, colour: THREE.Color | null, liftBy: number): void => {
-      const rows = 8;
-      const cols = 12;
+    // (`rows` draws only some of the patch's rows; `flat` shades the whole patch with one normal, the mean of its own, tilted down: see PANE_DOWN)
+    const sideWindow = (side: number, sw: FlankPatch, target: Soup, colour: THREE.Color | null, liftBy: number, opt: { rows?: readonly [number, number]; flat?: boolean } = {}): void => {
+      const rows = PANE_ROWS;
+      const cols = PANE_COLS;
       const grid: V3[][] = [];
       for (let q = 0; q <= rows; q++) {
         const v = lerp(sw.v0, sw.v1, q / rows);
@@ -1135,14 +1175,21 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
       const inside = (i: number): V3 => [0, ((grid[i] as V3[])[0] as V3)[1], tip + sw.sFront1];
       const Ng = gridNormals(grid, false, inside);
-      for (let i = 0; i < rows; i++) {
+      let flatN: V3 | null = null;
+      if (opt.flat) {
+        const sum = Ng.flat().reduce<V3>((a, n) => [a[0] + n[0], a[1] + n[1], a[2] + n[2]], [0, 0, 0]);
+        const mean = unit(sum);
+        flatN = unit([mean[0], mean[1] - PANE_DOWN, mean[2]]);
+      }
+      const [i0, i1] = opt.rows ?? [0, rows];
+      for (let i = i0; i < i1; i++) {
         for (let j = 0; j < cols; j++) {
           const lift = (a: number, b: number): V3 => {
             const p = (grid[a] as V3[])[b] as V3;
             const n = (Ng[a] as V3[])[b] as V3;
             return [p[0] + n[0] * liftBy, p[1] + n[1] * liftBy, p[2] + n[2] * liftBy];
           };
-          const nn = (a: number, b: number): V3 => (Ng[a] as V3[])[b] as V3;
+          const nn = (a: number, b: number): V3 => flatN ?? ((Ng[a] as V3[])[b] as V3);
           target.quad([world(lift(i, j)), world(lift(i, j + 1)), world(lift(i + 1, j + 1)), world(lift(i + 1, j))], [wn(nn(i, j)), wn(nn(i, j + 1)), wn(nn(i + 1, j + 1)), wn(nn(i + 1, j))], colour);
         }
       }
@@ -1151,8 +1198,14 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // the lamp pod's housing, swept back along the flank from the face's edge
       if (front.pod) sideWindow(side, front.pod, detail, col(front.pod.colour), 0.012);
       // (the shoulder's facets sag a centimetre between rings, so the swoosh stands 12 mm off the loft, and the pane 4 mm proud of it)
-      if (front.cabSideSurround !== undefined && spec.glass.side.surround) sideWindow(side, spec.glass.side.surround, detail, col(front.cabSideSurround), 0.012);
-      sideWindow(side, spec.glass.side, glass, null, 0.016);
+      if (front.cabSideSurround !== undefined && spec.glass.side.surround) sideWindow(side, spec.glass.side.surround, detail, col(front.cabSideSurround), PANE_LIFT.swoosh);
+      // the seal round the pane, the pane itself, and the sky's two matte bands over its upper rows
+      const sw = spec.glass.side;
+      const seal: FlankPatch = { sBack: sw.sBack + PANE_SEAL_ALONG, sBack1: sw.sBack1 === undefined ? undefined : sw.sBack1 + PANE_SEAL_ALONG, sFront0: sw.sFront0 - PANE_SEAL_ALONG, sFront1: sw.sFront1 - PANE_SEAL_ALONG, v0: sw.v0 - PANE_SEAL_ACROSS, v1: sw.v1 + PANE_SEAL_ACROSS };
+      sideWindow(side, seal, detail, col(PANE_SEAL), PANE_LIFT.seal);
+      sideWindow(side, sw, glass, null, PANE_LIFT.pane, { flat: true });
+      sideWindow(side, sw, detail, col(PANE_SKY_HI), PANE_LIFT.sky, { rows: PANE_SKY_ROWS[0] });
+      sideWindow(side, sw, detail, col(PANE_SKY_MID), PANE_LIFT.sky, { rows: PANE_SKY_ROWS[1] });
     }
   }
   // an end wall at every inner end of the body, and the gangway bellows and coupler in the gap beyond it
@@ -1231,7 +1284,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   // (a shallow valance, as a diesel unit has, leaves less than 0.17 m between its foot and the floor: the slab then stops at the floor)
   const slabBottom = Math.min(spec.skirtBottom + 0.17, spec.floor - 0.01);
   for (const [z0, z1] of underframe) detail.box(-spec.underframe, spec.underframe, slabBottom, spec.floor + 0.05, z0, z1, col(def.skirt), '+y');
-  for (const [z0, z1] of free) for (const sx of [-1, 1]) detail.box(sx > 0 ? W - 0.06 : -(W - 0.03), sx > 0 ? W - 0.03 : -(W - 0.06), spec.skirtBottom, spec.floor + 0.1, z0, z1, col(def.skirt));
+  // the skirts: thin panels leaning in from the body's lowest corner (a flush box under a lower edge that tucks in read as a block standing proud of the body)
+  const skirts = skirtColours(def, spec);
+  const edge = (sec.half[0] as [number, number])[0];
+  for (const [z0, z1] of free) {
+    for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent) });
+  }
   // a diesel unit's engine, cooler, tank and batteries hang under the floor between the bogies, in plain sight below the valance
   for (const b of underfloorBlocks(car, spec)) detail.box(b.x0, b.x1, b.y0, b.y1, b.z0, b.z1, col(b.colour), '+y');
 
@@ -1341,6 +1399,18 @@ function blend(a: number, b: number, t: number): number {
   const ch = (n: number, sh: number): number => (n >> sh) & 255;
   const m = (sh: number): number => Math.round(lerp(ch(a, sh), ch(b, sh), t));
   return (m(16) << 16) | (m(8) << 8) | m(0);
+}
+
+/** The pale grey an Azuma's underfloor covers tend to (a livery's skirt colour is blended toward it by the family's `skirt.light`). Read off photographs, not published. */
+export const SKIRT_PALE = 0xb4b8be;
+/** How far the louvres are darkened from the livery's skirt colour. */
+const SKIRT_VENT_DARK = 0.45;
+/**
+ * The colours a body's side skirts wear for a livery: the covers (the livery's skirt colour paled by the family's `skirt.light`) and their louvres
+ * (null where the family has none). The underframe slab seen through the bogie cut-outs stays the livery's skirt colour.
+ */
+export function skirtColours(def: Pick<TrainLivery, 'skirt'>, spec: Pick<BodySpec, 'skirt'>): { panel: number; vent: number | null } {
+  return { panel: blend(def.skirt, SKIRT_PALE, spec.skirt.light), vent: spec.skirt.vents ? blend(def.skirt, 0x000000, SKIRT_VENT_DARK) : null };
 }
 
 /**

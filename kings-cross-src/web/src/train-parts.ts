@@ -736,3 +736,90 @@ export function bellowsRings(outline: (scale: number) => [number, number][], z0:
 export function ringNormal(p: [number, number], centre: [number, number]): V3 {
   return unit([p[0] - centre[0], p[1] - centre[1], 0]);
 }
+
+// --- side skirts -----------------------------------------------------------------------------------
+//
+// What a skirt is drawn from: lner-801-214-2025, lner-800-doncaster-2026 and hull-802-paragon-2025 show the Azuma's underfloor equipment covers as
+// light grey panels with groups of louvres, standing well inboard of the body side (in its shadow, the solebar overhanging them), their ends
+// square-ish beside the bogies. They are not a dark slab flush with the wall: a skirt that stood flush with the wall, under a lower body edge that
+// tucks in, read as a block standing proud of the body (the round-4 scorer's finding on coach-lner9-3m and coach-lumo5-3m).
+
+/**
+ * How far a side skirt leans in toward the centre line for each metre it hangs down. The lean and the set-back below are read off the
+ * photographs above, not published.
+ */
+export const SKIRT_LEAN = 0.3;
+/** A skirt's lower corners are cut back this far along the car, so its ends are raked, not square. ASSUMED. */
+export const SKIRT_RAKE = 0.14;
+/** A skirt is a panel this thick, not a block. */
+export const SKIRT_THICKNESS = 0.05;
+/** The top edge of a skirt stands this far above the floor, inside the body, so no seam shows under the body's lower edge. */
+export const SKIRT_TUCK = 0.04;
+/** A skirt's outer face starts this far inside the body's lowest corner. */
+export const SKIRT_SETBACK = 0.01;
+/** A cover this tall (metres) or taller carries louvres, on a stretch this long (metres) or longer: two groups of `SKIRT_SLITS`, at these fractions of its length. */
+export const SKIRT_VENT_MIN_HEIGHT = 0.4;
+export const SKIRT_VENT_MIN_LENGTH = 3.5;
+export const SKIRT_VENT_AT = [0.3, 0.7] as const;
+export const SKIRT_SLITS = 4;
+export const SKIRT_SLIT_WIDTH = 0.05;
+export const SKIRT_SLIT_PITCH = 0.13;
+/** A louvre stands this far off the panel's face (clear of it, so neither shows through the other). */
+export const SKIRT_SLIT_LIFT = 0.004;
+
+/**
+ * Half-width of a skirt's outer face at height `y`: it hangs from just inside the body's lowest corner (`edge` from the centre line, the floor
+ * `floor` above the rail head) and leans in as it goes down.
+ */
+export function skirtHalfAt(edge: number, floor: number, y: number): number {
+  return edge - SKIRT_SETBACK - (floor + SKIRT_TUCK - y) * SKIRT_LEAN;
+}
+
+export interface SkirtPanel {
+  /** +1: the train's right side, -1: its left */
+  side: 1 | -1;
+  /** the stretch of the train it covers (z0 < z1) */
+  z0: number;
+  z1: number;
+  /** half-width of the body's lowest corner, the floor's height and the height of the panel's foot (all from the rail head) */
+  edge: number;
+  floor: number;
+  bottom: number;
+  colour: THREE.Color;
+  /** the louvres' colour, or null for a plain panel */
+  vent: THREE.Color | null;
+}
+
+/**
+ * One side skirt over a clear stretch between two bogie cut-outs: a thin panel leaning in from the body's lower edge, its foot raked at each end,
+ * with (on a tall enough, long enough stretch, and where the kind has them) two groups of louvres on its face. Its top and inner face are not drawn:
+ * the first is inside the body and the second looks at the underframe.
+ */
+export function skirtPanel(soup: Soup, o: SkirtPanel): void {
+  const { side: sx, z0, z1, edge, floor, bottom } = o;
+  const top = floor + SKIRT_TUCK;
+  const rake = Math.min(SKIRT_RAKE, 0.25 * (z1 - z0));
+  const out = (y: number): number => sx * skirtHalfAt(edge, floor, y);
+  const outer: [V3, V3, V3, V3] = [[out(top), top, z0], [out(top), top, z1], [out(bottom), bottom, z1 - rake], [out(bottom), bottom, z0 + rake]];
+  const inner = outer.map((p): V3 => [p[0] - sx * SKIRT_THICKNESS, p[1], p[2]]) as [V3, V3, V3, V3];
+  const pts = [...outer, ...inner];
+  const centre: V3 = [0, 0, 0].map((_, k) => pts.reduce((a, p) => a + p[k]!, 0) / pts.length) as V3;
+  soup.face(outer, centre, o.colour);
+  soup.face([outer[0], outer[3], inner[3], inner[0]], centre, o.colour);
+  soup.face([outer[1], outer[2], inner[2], inner[1]], centre, o.colour);
+  soup.face([outer[3], outer[2], inner[2], inner[3]], centre, o.colour);
+  if (o.vent === null || z1 - z0 < SKIRT_VENT_MIN_LENGTH || floor - bottom < SKIRT_VENT_MIN_HEIGHT) return;
+  // the louvres lie on the panel: the face's normal leans down as the panel leans in
+  const n = unit([sx, -SKIRT_LEAN, 0]);
+  const y0 = bottom + 0.12;
+  const y1 = floor - 0.1;
+  const at = (y: number, z: number): V3 => [out(y) + n[0] * SKIRT_SLIT_LIFT, y + n[1] * SKIRT_SLIT_LIFT, z];
+  for (const f of SKIRT_VENT_AT) {
+    for (let k = 0; k < SKIRT_SLITS; k++) {
+      const zc = z0 + f * (z1 - z0) + (k - (SKIRT_SLITS - 1) / 2) * SKIRT_SLIT_PITCH;
+      const a = zc - SKIRT_SLIT_WIDTH / 2;
+      const b = zc + SKIRT_SLIT_WIDTH / 2;
+      soup.quad([at(y0, a), at(y0, b), at(y1, b), at(y1, a)], [n, n, n, n], o.vent);
+    }
+  }
+}

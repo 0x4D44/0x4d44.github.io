@@ -7,9 +7,10 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, POD, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, skirtHalfAt, skirtPanel } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
 import { col, ellipse, Soup } from '../src/train-geom.ts';
 import { COUPLING_CLEARANCE } from '../src/trains-live.ts';
@@ -1947,6 +1948,229 @@ test('underfloor: a diesel car has its cooler, engine, tank and batteries evenly
     assert.ok(b.z0 >= tight.bogies[0] + wheelsReach && b.z1 <= tight.bogies[1] - wheelsReach, `${b.name} reaches a wheel`);
   }
   for (let i = 1; i < blocks.length; i++) assert.ok((blocks[i] as { z0: number }).z0 - (blocks[i - 1] as { z1: number }).z1 >= 0.12 - 1e-9, 'pods run into each other');
+});
+
+// --- the side skirts ------------------------------------------------------------------------------------------
+//
+// The round-4 scorer's finding on coach-lner9-3m and coach-lumo5-3m: "a large dark box sits proud of the body at bottom-left, below the solebar over the bogie
+// area". The skirt was a box flush with the wall (x = W - 0.03) under a lower body edge that tucks in to W - 0.15, so it stood 0.12 m out of the body's lowest
+// corner. The photographs lner-801-214-2025, lner-800-doncaster-2026 and hull-802-paragon-2025 show the covers standing well inboard of the body side.
+
+/** Half-width of the body section at height `y`: its outline between the section's own points, from the floor up. */
+function bodyHalfAt(spec: ReturnType<typeof bodySpec>, y: number): number {
+  const pts = carSection(spec).half;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1] as [number, number];
+    const [x1, y1] = pts[i] as [number, number];
+    if (y >= y0 && y <= y1 && y1 > y0) return x0 + ((x1 - x0) * (y - y0)) / (y1 - y0);
+  }
+  throw new Error(`the body has no section at ${y}`);
+}
+/** A car's clear stretches along the train: its body's span less every bogie's cut-out (the same rule the builder follows, written out so a test does not ask it). */
+function stretchesOf(car: Car, cutout: number): [number, number][] {
+  let spans: [number, number][] = [[car.start + END_GAP + 0.1, car.end - END_GAP - 0.1]];
+  for (const b of car.bogies) spans = spans.flatMap(([s, e]): [number, number][] => [[s, Math.min(e, b - cutout)], [Math.max(s, b + cutout), e]]).filter(([s, e]) => e > s);
+  return spans;
+}
+/**
+ * The triangles of a car's side skirts: those in the panel colour with a corner on a panel's foot. (A panel is a quad on each of four faces and every triangle of a quad
+ * has a corner on the quad's top edge and one on its bottom edge; the foot's are all on the foot. The underframe slab, which wears the same colour as the covers on
+ * every kind but the Azuma, stands from `slabBottom`, 0.17 m or more over the foot, so none of its corners is on it.)
+ */
+function skirtTris(g: THREE.Group, kind: TrainKind, car: Car): Tri[] {
+  const spec = bodySpec(familyOf(kind));
+  const { panel } = skirtColours(liveryFor(kind), spec);
+  return trisOfColour(detailOf(g, car), panel).filter((t) => t.some((v) => Math.abs(v.y - spec.skirtBottom) < 1e-5));
+}
+
+test('skirts: every side skirt is a thin panel hanging from just inside the body\'s lowest corner and leaning in, never outboard of the body, with its foot at the family\'s skirt line', () => {
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    const spec = bodySpec(familyOf(kind));
+    // the body's lowest corner: the first point of its section, on the floor
+    const edge = (carSection(spec).half[0] as [number, number])[0];
+    for (const car of layout.cars) {
+      const here = `${kind} car ${car.index}`;
+      const tris = skirtTris(g, kind, car);
+      assert.ok(tris.length >= 16, `${here}: ${tris.length} skirt triangles`);
+      if (car.cab) continue;
+      for (const sign of [-1, 1]) {
+        const vs = tris.filter((t) => t.every((v) => v.x * sign > 0)).flat();
+        // a panel of eight triangles (an outer face, two raked ends and a foot) for each clear stretch: three on a through car, one at each end and one between the bogies
+        const stretches = stretchesOf(car, spec.cutout);
+        assert.equal(stretches.length, 3, `${here}: three clear stretches`);
+        assert.equal(vs.length / 3, 8 * stretches.length, `${here} side ${sign}: a panel of eight triangles for each clear stretch`);
+        // never outboard of the body: every vertex is inside the body's outline at its height (a skirt below the floor, inside its lowest corner)
+        for (const v of vs) assert.ok(Math.abs(v.x) <= (v.y >= spec.floor ? bodyHalfAt(spec, v.y) : edge) - 0.005, `${here}: a skirt vertex at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) stands out of the body`);
+        const top = Math.max(...vs.map((v) => v.y));
+        const foot = Math.min(...vs.map((v) => v.y));
+        // its top edge is inside the body, 2 to 10 cm over the floor, so the body's lower edge hides the seam; its foot is at the family's skirt line
+        assert.ok(top > spec.floor + 0.02 && top < spec.floor + 0.1, `${here}: the top edge at ${top.toFixed(3)}, the floor at ${spec.floor}`);
+        near(foot, spec.skirtBottom, 1e-5, `${here}: the foot is at the skirt line`);
+        const outerAt = (y: number): number => Math.max(...vs.filter((v) => Math.abs(v.y - y) < 1e-5).map((v) => Math.abs(v.x)));
+        const innerAt = (y: number): number => Math.min(...vs.filter((v) => Math.abs(v.y - y) < 1e-5).map((v) => Math.abs(v.x)));
+        // it hangs from just inside the corner (within 5 cm), leans in as it goes down (by a tenth to six tenths of a metre for each metre it hangs), a panel 2 to 10 cm thick
+        assert.ok(edge - outerAt(top) > 0 && edge - outerAt(top) <= 0.05, `${here}: it hangs ${(edge - outerAt(top)).toFixed(3)} m inside the body's lowest corner`);
+        const lean = (outerAt(top) - outerAt(foot)) / (top - foot);
+        assert.ok(lean >= 0.1 && lean <= 0.6, `${here}: it leans in by ${lean.toFixed(3)} m for each metre`);
+        assert.ok(outerAt(foot) - innerAt(foot) >= 0.02 && outerAt(foot) - innerAt(foot) <= 0.1, `${here}: a panel ${(outerAt(foot) - innerAt(foot)).toFixed(3)} m thick`);
+        // the Azuma's lower edge is well clear of its skirt's foot: the foot stands a hand's breadth or more inboard
+        if (familyOf(kind) === 'at300') assert.ok(edge - outerAt(foot) >= 0.1, `${here}: the foot is ${(edge - outerAt(foot)).toFixed(3)} m inboard of the body's lowest corner`);
+        // only the clear stretches: nothing within a bogie's cut-out
+        for (const b of car.bogies) assert.ok(vs.every((v) => Math.abs(v.z - b) >= spec.cutout - 1e-3), `${here}: a skirt reaches into the cut-out of the bogie at ${b}`);
+      }
+    }
+  }
+});
+
+test('skirts: one panel is a closed shell leaning in, its foot raked at both ends, every face turned out of it', () => {
+  for (const side of [-1, 1] as const) {
+    const soup = new Soup();
+    skirtPanel(soup, { side, z0: 10, z1: 16, edge: 1.2, floor: 1.0, bottom: 0.45, colour: col(0x777777), vent: null });
+    const geo = soup.build();
+    const pos = geo.getAttribute('position');
+    const nrm = geo.getAttribute('normal');
+    // four faces (the top is inside the body and the inner face looks at the underframe), two triangles each
+    assert.equal(pos.count / 3, 8);
+    const at = (i: number): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute(pos, i);
+    const vs = Array.from({ length: pos.count }, (_, i) => at(i));
+    // the panel's centre: the mean of its eight distinct corners (the triangles repeat some corners, which would pull the mean toward them)
+    const corners = new Map<string, THREE.Vector3>();
+    for (const v of vs) corners.set(`${v.x.toFixed(4)} ${v.y.toFixed(4)} ${v.z.toFixed(4)}`, v);
+    assert.equal(corners.size, 8, 'a panel has eight corners');
+    const centre = [...corners.values()].reduce((a, v) => a.add(v), new THREE.Vector3()).divideScalar(corners.size);
+    for (let i = 0; i < pos.count; i += 3) {
+      const t: Tri = [at(i), at(i + 1), at(i + 2)];
+      const geometric = faceNormal(t);
+      const stored = new THREE.Vector3().fromBufferAttribute(nrm, i);
+      assert.ok(geometric.dot(stored) > 0.99, `triangle ${i / 3}: the winding agrees with the normal it carries`);
+      const mid = t[0].clone().add(t[1]).add(t[2]).divideScalar(3);
+      assert.ok(geometric.dot(mid.sub(centre)) > 0, `triangle ${i / 3}: faces out of the panel`);
+    }
+    // every corner is on the side asked for, the outer face leans in as it goes down, and the foot is shorter than the top edge by a rake at each end
+    assert.ok(vs.every((v) => v.x * side > 0), 'the panel is on its own side of the centre line');
+    const zAt = (y: number): number[] => vs.filter((v) => Math.abs(v.y - y) < 1e-5).map((v) => v.z).sort((a, b) => a - b);
+    const footZ = zAt(0.45);
+    const topZ = zAt(1.0 + SKIRT_TUCK);
+    // the foot is shorter than the top edge by a rake of 5 to 30 cm at each end
+    assert.ok((footZ[0] as number) - 10 >= 0.05 && (footZ[0] as number) - 10 <= 0.3, `the foot starts ${(footZ[0] as number) - 10} in`);
+    assert.ok(16 - (footZ[footZ.length - 1] as number) >= 0.05 && 16 - (footZ[footZ.length - 1] as number) <= 0.3, `and ends ${16 - (footZ[footZ.length - 1] as number)} short`);
+    near(topZ[0] as number, 10, 1e-5, 'the top edge spans the whole stretch');
+    near(topZ[topZ.length - 1] as number, 16, 1e-5, 'to its far end');
+    near(Math.max(...vs.filter((v) => Math.abs(v.y - 0.45) < 1e-5).map((v) => Math.abs(v.x))), skirtHalfAt(1.2, 1.0, 0.45), 1e-5, 'the foot is where the lean puts it');
+    // a very short stretch is raked by no more than a quarter of its length
+    const tiny = new Soup();
+    skirtPanel(tiny, { side, z0: 0, z1: 0.4, edge: 1.2, floor: 1.0, bottom: 0.45, colour: col(0x777777), vent: null });
+    const tz = Array.from({ length: tiny.pos.length / 3 }, (_, i) => tiny.pos[3 * i + 2] as number).filter((_, i) => Math.abs((tiny.pos[3 * i + 1] as number) - 0.45) < 1e-6);
+    assert.ok(Math.min(...tz) > 0 && Math.min(...tz) <= 0.1 + 1e-9, `a short stretch is raked by ${Math.min(...tz)}, at most a quarter of its length`);
+  }
+});
+
+test('skirts: the Azuma\'s covers are paler than its underframe and carry two groups of four louvres on each long stretch, lying on the panel; no other family has louvres', () => {
+  // two groups of four louvres on each clear stretch 3.5 m or longer, on each side, where the cover hangs 0.4 m or more
+  const expectedSlits = (car: Car, spec: ReturnType<typeof bodySpec>): number =>
+    stretchesOf(car, spec.cutout).filter(([s, e]) => e - s >= 3.5 && spec.floor - spec.skirtBottom >= 0.4).length * 2 * 4 * 2;
+  for (const kind of ALL_KINDS) {
+    const layout = trainLayout(kind);
+    const spec = bodySpec(familyOf(kind));
+    const def = liveryFor(kind);
+    const { panel, vent } = skirtColours(def, spec);
+    const g = built(kind);
+    if (familyOf(kind) === 'at300') {
+      // light grey covers with louvres (lner-801-214-2025, lner-800-doncaster-2026, hull-802-paragon-2025), not a dark slab
+      assert.ok(lumaOf(panel) >= lumaOf(def.skirt) + 0.12, `${kind}: covers (${lumaOf(panel).toFixed(2)}) paler than the underframe (${lumaOf(def.skirt).toFixed(2)})`);
+      assert.ok(vent !== null && lumaOf(vent) < lumaOf(panel) - 0.1, `${kind}: louvres darker than the covers`);
+    } else {
+      assert.equal(panel, def.skirt, `${kind}: the covers as the livery gives them`);
+      assert.equal(vent, null, `${kind}: no louvres`);
+    }
+    const edge = (carSection(spec).half[0] as [number, number])[0];
+    for (const car of layout.cars.filter((c) => c.cab === null).slice(0, 2)) {
+      const slits = vent === null ? [] : trisOfColour(detailOf(g, car), vent);
+      assert.equal(slits.length, vent === null ? 0 : 2 * expectedSlits(car, spec), `${kind} car ${car.index}: louvre triangles (two sides)`);
+      // on the panel: a few millimetres out of its face, clear of it
+      for (const v of slits.flat()) {
+        const out = Math.abs(v.x) - skirtHalfAt(edge, spec.floor, v.y);
+        assert.ok(out > 0.002 && out < 0.006, `${kind} car ${car.index}: a louvre vertex stands ${out.toFixed(4)} m off the panel`);
+      }
+    }
+  }
+});
+
+test('skirts: a panel carries louvres only where the cover is tall enough and the stretch long enough, and only where the kind has them', () => {
+  const trianglesOf = (z1: number, bottom: number, vent: boolean): number => {
+    const soup = new Soup();
+    skirtPanel(soup, { side: 1, z0: 0, z1, edge: 1.2, floor: 1.0, bottom, colour: col(0x777777), vent: vent ? col(0x222222) : null });
+    return soup.pos.length / 9;
+  };
+  // the panel's eight triangles, and sixteen more for two groups of four louvres
+  assert.equal(trianglesOf(8, 0.45, true), 8 + 16, 'a long, tall cover');
+  assert.equal(trianglesOf(4, 0.5, true), 8 + 16, 'a stretch of 4 m, a cover 0.5 m tall');
+  assert.equal(trianglesOf(2, 0.45, true), 8, 'a stretch of 2 m is too short for louvres');
+  assert.equal(trianglesOf(8, 0.7, true), 8, 'a cover 0.3 m tall is too shallow for louvres');
+  assert.equal(trianglesOf(8, 0.45, false), 8, 'a kind without louvres has none');
+});
+
+// --- the cab side window ----------------------------------------------------------------------------------------
+//
+// The same finding: "the cab side window is a flat black polygon", with a white specular blob where the pane's smoothly turning normals met the sun's glow in the glass's
+// sky. The pane is now one flat-shaded surface tilted to reflect the dark ground, in a dark seal, under two matte bands of sky (lner-800-doncaster-2026,
+// hull-802-doncaster-2024 and LUMO-04-Lumo-803003-at-Edinburgh-Waverley: glossy dark panes in a thin black seal with a soft pale reflection across the upper part).
+
+/** The triangles of a mesh with the normals stored at their corners, in train coordinates (the cars are not turned, so a normal needs no matrix). */
+function trianglesWithNormals(mesh: THREE.Mesh): { p: Tri; n: Tri }[] {
+  const pos = mesh.geometry.getAttribute('position');
+  const nrm = mesh.geometry.getAttribute('normal');
+  const out: { p: Tri; n: Tri }[] = [];
+  for (let i = 0; i + 2 < pos.count; i += 3) {
+    const p = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, i + k).applyMatrix4(mesh.matrixWorld)) as Tri;
+    const n = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(nrm, i + k)) as Tri;
+    out.push({ p, n });
+  }
+  return out;
+}
+
+test('glass: the cab side window is one flat-shaded pane tilted down, in a dark seal, under two sky bands; each layer stands clear of the one under it', () => {
+  // the layers stand 2 mm or more apart, and the sky 6 mm clear of the pane (whose polygon offset pulls it toward the eye)
+  assert.ok(PANE_LIFT.seal - PANE_LIFT.swoosh >= 0.002 - 1e-9 && PANE_LIFT.pane - PANE_LIFT.seal >= 0.002 - 1e-9 && PANE_LIFT.sky - PANE_LIFT.pane >= 0.006 - 1e-9, `lifts ${JSON.stringify(PANE_LIFT)}`);
+  assert.equal(new Set([PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, CAB_SWOOSH]).size, 4, 'each layer\'s colour is its own');
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    for (const car of layout.cars.filter((c) => c.cab)) {
+      const group = named(g, `car-${car.index}`);
+      const flank = trianglesWithNormals(named(group, 'cab-glass') as THREE.Mesh);
+      for (const sign of [-1, 1]) {
+        const here = `${kind} car ${car.index} side ${sign}`;
+        const onSide = (t: Tri): boolean => t.every((v) => v.x * sign > 1.1);
+        // the pane: the flank's triangles whose three corners carry one and the same normal (the windscreen's wings, which wrap round onto the flank of the 387 and the 717, are smooth-shaded)
+        const pane = flank.filter((t) => onSide(t.p) && t.n[0].distanceTo(t.n[1]) < 1e-5 && t.n[0].distanceTo(t.n[2]) < 1e-5);
+        assert.equal(pane.length, PANE_ROWS * PANE_COLS * 2, `${here}: the pane, every quad of it flat-shaded`);
+        // one normal across the whole pane: out of the flank, and tilted down so that it reflects the dark ground and not the pale horizon band or the sun's glow in the glass's sky
+        // (a ray arriving level from the side leaves at 2 |nx| ny of a unit below the horizon; the sky's horizon band is a few degrees deep)
+        const n0 = pane[0]!.n[0];
+        for (const t of pane) assert.ok(t.n[0].distanceTo(n0) < 1e-5, `${here}: the pane is shaded by more than one normal`);
+        assert.ok(n0.x * sign > 0.5, `${here}: the pane's normal (${n0.x.toFixed(2)}, ${n0.y.toFixed(2)}, ${n0.z.toFixed(2)}) looks out of the flank`);
+        assert.ok(2 * Math.abs(n0.x) * n0.y < -0.3, `${here}: the pane's normal (${n0.x.toFixed(2)}, ${n0.y.toFixed(2)}, ${n0.z.toFixed(2)}) is not tilted down enough to reflect the ground`);
+        const paneBox = boxOfTris(pane.map((t) => t.p));
+        // the seal: a dark patch round the pane, 2 cm or more bigger than it above and below and at both ends
+        const seal = trisOfColour(detailOf(g, car), PANE_SEAL).filter(onSide);
+        assert.equal(seal.length, PANE_ROWS * PANE_COLS * 2, `${here}: the seal`);
+        const sealBox = boxOfTris(seal);
+        assert.ok(sealBox.min.y <= paneBox.min.y - 0.02 && sealBox.max.y >= paneBox.max.y + 0.02, `${here}: the seal frames the pane above and below (${sealBox.min.y.toFixed(3)}..${sealBox.max.y.toFixed(3)} against ${paneBox.min.y.toFixed(3)}..${paneBox.max.y.toFixed(3)})`);
+        assert.ok(sealBox.min.z <= paneBox.min.z - 0.02 && sealBox.max.z >= paneBox.max.z + 0.02, `${here}: the seal frames the pane at both ends (${sealBox.min.z.toFixed(3)}..${sealBox.max.z.toFixed(3)} against ${paneBox.min.z.toFixed(3)}..${paneBox.max.z.toFixed(3)})`);
+        // the sky: two bands of two rows of quads, the pale one above the fainter, both inside the pane's height
+        const hi = trisOfColour(detailOf(g, car), PANE_SKY_HI).filter(onSide);
+        const mid = trisOfColour(detailOf(g, car), PANE_SKY_MID).filter(onSide);
+        assert.equal(hi.length, 2 * PANE_COLS * 2, `${here}: the pale band`);
+        assert.equal(mid.length, 2 * PANE_COLS * 2, `${here}: the fainter band`);
+        const meanY = (ts: Tri[]): number => ts.flat().reduce((a, v) => a + v.y, 0) / (ts.length * 3);
+        assert.ok(meanY(hi) > meanY(mid) && meanY(mid) > meanY(pane.map((t) => t.p)), `${here}: pale above faint above the pane's middle`);
+        for (const v of [...hi, ...mid].flat()) assert.ok(v.y > paneBox.min.y && v.y < paneBox.max.y + 0.03, `${here}: a band vertex at ${v.y.toFixed(3)} is off the pane`);
+      }
+    }
+  }
 });
 
 test('geometry: an ellipse is n distinct points, counter-clockwise, on the ellipse, reaching its radii (the rounded rectangle it replaced doubled points and made zero-area triangles)', () => {
