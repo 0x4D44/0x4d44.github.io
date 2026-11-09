@@ -6,7 +6,9 @@ import type {WaverleyScene as WaverleyData} from '../../core/waverley-data.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import {terrainFromFunction} from '../../core/terrain.ts';
 import {material} from '../src/materials.ts';
-import {buildWaverleyScene, polygonSurface, waverleyGround, waverleyTrackSegments} from '../src/waverley-scene.ts';
+import {WAVERLEY_FRONTAGE_OMIT_IDS} from '../src/waverley-frontage.ts';
+import {WAVERLEY_CITY_OMIT_IDS} from '../src/waverley-city.ts';
+import {RAILWAY_OVERLAP_TOLERANCE, WAVERLEY_LEVELS, buildWaverleyScene, polygonSurface, waverleyGround, waverleyRailwayIntrusions, waverleyTrackSegments} from '../src/waverley-scene.ts';
 
 const rect=(x0:number,z0:number,x1:number,z1:number):[number,number][]=>[[x0,z0],[x1,z0],[x1,z1],[x0,z1]];
 const empty=():WaverleyData=>({origin:{lat:55.9519018,lon:-3.1904199},bbox:[55.9465,-3.205,55.9575,-3.173],attribution:'© OpenStreetMap contributors (ODbL)',source:{url:'synthetic',fetchedAt:'2026-01-01',sha256:'synthetic',license:'ODbL',query:'synthetic'},rails:[],platforms:[],roofs:[],buildings:[],warnings:[]});
@@ -114,4 +116,46 @@ test('Waverley default scene includes the mapped landmarks within the complete s
  assert.equal(built.stats.triangles,triangles);assert.equal(built.stats.drawCalls,draws);
  assert.ok(triangles<400000,`complete geometry has ${triangles} triangles`);
  assert.ok(draws<=20,`complete geometry has ${draws} draws`);built.dispose();
+});
+
+// The railway is kept clear of city blocks by a general rule (waverleyRailwayIntrusions), not by id. These checks measure the
+// overlap independently of the rule's polygon clipping: a 0.25 m probe grid over each drawn footprint, a probe counting as railway
+// when it is within the ballast half-width of a drawn track segment or inside a mapped platform.
+function railwayProbeOverlap(d:WaverleyData,footprint:{outer:[number,number][];holes:[number,number][][]}):number {
+ const inRing=(x:number,z:number,p:[number,number][])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
+ const xs=footprint.outer.map(p=>p[0]),zs=footprint.outer.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs),half=WAVERLEY_LEVELS.ballastHalfWidth;
+ const tracks=waverleyTrackSegments(d).filter(([ax,az,bx,bz])=>Math.max(ax,bx)+half>=x0&&Math.min(ax,bx)-half<=x1&&Math.max(az,bz)+half>=z0&&Math.min(az,bz)-half<=z1);
+ const platforms=d.platforms.map(p=>p.path as [number,number][]).filter(p=>!(Math.max(...p.map(v=>v[0]))<x0||Math.min(...p.map(v=>v[0]))>x1||Math.max(...p.map(v=>v[1]))<z0||Math.min(...p.map(v=>v[1]))>z1));
+ if(!tracks.length&&!platforms.length)return 0;
+ const near=(x:number,z:number,[ax,az,bx,bz]:number[])=>{const dx=bx-ax,dz=bz-az,t=((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz);return t>0&&t<1&&Math.hypot(x-ax-t*dx,z-az-t*dz)<half;};
+ let probes=0;
+ for(let x=x0+.125;x<x1;x+=.25)for(let z=z0+.125;z<z1;z+=.25){
+  if(!inRing(x,z,footprint.outer)||footprint.holes.some(h=>inRing(x,z,h)))continue;
+  if(tracks.some(s=>near(x,z,s))||platforms.some(p=>inRing(x,z,p)))probes++;
+ }
+ return probes*.0625;
+}
+
+test('no drawn Waverley city block stands on a track or a platform (way/377738789 beside Waverley Bridge did, by 440 m²)',()=>{
+ const d=real(),built=buildWaverleyScene({lighting:false});
+ try {
+  const drawn=new Set(built.buildingIds),byId=new Map(d.buildings.map(b=>[b.id,b]));
+  assert.ok(!drawn.has('way/377738789'),'the 12 m block on the tracks and platforms beside Waverley Bridge is not drawn');
+  const standing=[...drawn].map(id=>[id,railwayProbeOverlap(d,byId.get(id)!)] as const).filter(([,m2])=>m2>=RAILWAY_OVERLAP_TOLERANCE);
+  assert.deepEqual(standing,[],'every drawn block overlaps the railway by less than the mapping tolerance');
+  assert.ok(drawn.has('way/62065007'),'an office whose wall overlaps a platform edge by a mapping sliver is kept');
+  const left=new Set([...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS,...waverleyRailwayIntrusions(d)]);
+  assert.deepEqual([...drawn],d.buildings.map(b=>b.id).filter(id=>!left.has(id)),'only the landmark replacements and the railway intrusions are left out');
+ } finally {built.dispose();}
+});
+
+test('the railway rule drops a block across a track or on a platform and keeps one that only touches or slivers into it',()=>{
+ const d=empty();
+ d.rails=[{id:'way/1',path:[[0,0],[100,0]],tags:{railway:'rail'}}];
+ d.platforms=[{id:'way/2',ref:'1',path:rect(0,4,100,8),tags:{railway:'platform'}},{id:'way/3',ref:'2',path:rect(60,140,70,150),tags:{railway:'platform'}}];
+ d.buildings=[area('way/across',rect(40,-10,50,10)),area('way/on-platform',rect(60,5,70,7)),area('way/touching',rect(0,8,20,20)),
+  area('way/sliver',rect(80,7.95,95,20)),area('way/clear',rect(0,30,10,40)),area('way/courtyard',rect(50,130,80,160),[rect(55,135,75,155)])];
+ assert.deepEqual(waverleyRailwayIntrusions(d),['way/across','way/on-platform']);
+ const built=buildWaverleyScene({data:d,terrain:flat(),lighting:false});
+ try {assert.deepEqual(built.buildingIds,['way/touching','way/sliver','way/clear','way/courtyard']);} finally {built.dispose();}
 });

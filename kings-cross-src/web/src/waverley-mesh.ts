@@ -6,7 +6,7 @@ import {Batch} from './materials.ts';
 import type {V3,Rgb} from './materials.ts';
 
 /** ASSUMED preview datum and detail dimensions; not Waverley surveyed rail/structure levels. */
-export const WAVERLEY_LEVELS={ground:-.2,rail:0,platform:.915,railHalfGauge:.7175,railHeadWidth:.072,railFlatten:8,blend:40} as const;
+export const WAVERLEY_LEVELS={ground:-.2,rail:0,platform:.915,railHalfGauge:.7175,railHeadWidth:.072,ballastHalfWidth:1.65,railFlatten:8,blend:40} as const;
 export const cleanRing=(p:readonly Pt[]):Pt[]=>{
  const r=p.map(v=>[v[0],v[1]] as Pt);
  if(r.length>1&&r[0][0]===r.at(-1)![0]&&r[0][1]===r.at(-1)![1])r.pop();

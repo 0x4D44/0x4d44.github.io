@@ -19,9 +19,10 @@ export const WAVERLEY_CITY_SOURCES={
 export const WAVERLEY_CITY_OMIT_IDS=[data.scott.id,...data.scott.parts.map(p=>p.id)];
 const ringOf=(p:number[][]):Pt[]=>p.map(q=>[q[0],q[1]]);
 export interface WaverleyCityPart {group:THREE.Group;stats:{triangles:number;drawCalls:number};omitBuildingIds:string[];dispose():void}
+export interface WaverleyCityFabric extends WaverleyCityPart {/** The ids of the mapped blocks drawn, in data order. */ buildingIds:string[]}
 
 /** The generic city blocks, each footprint extruded from its lowest ground to its OSM (or ASSUMED) height; `omitBuildingIds` are drawn by an element. */
-export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>,options:{omitBuildingIds?:Iterable<string>}={}):WaverleyCityPart {
+export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>,options:{omitBuildingIds?:Iterable<string>}={}):WaverleyCityFabric {
  const group=new THREE.Group();group.name='waverley-city';
  const stats={triangles:0,drawCalls:0},geometries=new Set<THREE.BufferGeometry>(),add=meshAdder(stats,geometries);
  // Own variants of the KX palette; never mutate the cached shared materials. Shades
@@ -31,9 +32,10 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  };
  const sandstone=local('stone',0xe4d4b3,true),slate=local('slate',0xada99f);
  const buildings=new Batch({colored:true}),buildingTops=new Batch();
- const omitted=new Set(options.omitBuildingIds??[]);
+ const omitted=new Set(options.omitBuildingIds??[]),buildingIds:string[]=[];
  for(const b of city.buildings){
   if(omitted.has(b.id))continue;
+  buildingIds.push(b.id);
   const base=ground.rangeUnder(b.outer,4).min,top=base+b.height;
   let hash=0;for(const c of b.id)hash=(hash*31+c.charCodeAt(0))>>>0;
   const tone=.86+(hash%17)*.01,color:Rgb=[tone,tone*.985,tone*.95];
@@ -44,7 +46,7 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  }
  add(group,buildings,sandstone,'waverley-building-walls');add(group,buildingTops,slate,'waverley-building-tops');
  let disposed=false;
- return {group,stats,omitBuildingIds:[],dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();slate.dispose();group.clear();}};
+ return {group,stats,omitBuildingIds:[],buildingIds,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();slate.dispose();group.clear();}};
 }
 
 /** The Scott Monument from its 98 mapped OSM parts, on one common base: the lowest ground under its outline. */
