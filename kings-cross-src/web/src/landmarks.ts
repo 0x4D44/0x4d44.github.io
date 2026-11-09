@@ -351,6 +351,17 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
   part(parts, key).quadUV(q(-hw, 0), q(hw, 0), q(hw, h), q(-hw, h), [[0, 0], [tw, 0], [tw, th], [0, th]], [p.normal[0], 0, p.normal[1]]);
 }
 
+/**
+ * A hood over a window group (hist-a: the cream bay's groups carry a shelf, and a pediment on the first and second floors'): a shelf `w` wide and 0.16 m tall, `d` m out at `y`, and on it, when `rise` is more
+ * than 0, a pediment `rise` m high: two raking slabs 0.12 m thick sloping from the shelf's ends up to the apex, the wall behind them the tympanum. Every box has its back sunk 0.02 m into the wall,
+ * so that no face of it lies on the wall's plane. Sizes ASSUMED.
+ */
+export function addPediment(m: Batch, p: Placed, y: number, w: number, rise: number, d: number): void {
+  const [rotY, back, deep] = [yaw(p.dir), d / 2 - 0.01, d + 0.02];
+  m.box(onWall(p, 0, y + 0.08, back), [w, 0.16, deep], { rotY });
+  if (rise) for (const s of [-1, 1]) m.box(onWall(p, (s * w) / 4, y + 0.16 + rise / 2, back), [Math.hypot(w / 2, rise), 0.12, deep], { rotY, rotZ: -s * Math.atan2(rise, w / 2) });
+}
+
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
 const CORNICE_HEIGHT = 1.1; // hist-a: the heavy bracketed cornice is about a third of a storey tall (it was 0.7 m, thin against the photograph); ASSUMED
@@ -503,7 +514,11 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;
         const sh = s < f.storeys - 1 ? SASH_HEIGHT : SASH_HEIGHT - 0.4;
         if (centre) {
-          for (const k of [-1, 0, 1]) addSash(parts, 'sash', shift(bay, k * 0.8), base, 0.75, sh, ADVANCE + 0.08);
+          // hist-a: the cream bay's three lights are not alike: the middle one 1.0 m wide, those beside it 0.45 m, slender colonnettes 0.15 m wide between them, and a hood over the group, the width of the bay
+          // less 0.1 m and 0.3 m proud of the block: a pediment 0.6 m high on the first and second floors', a shelf alone on the third's, nothing under the top cornice (ASSUMED sizes)
+          for (const k of [-1, 0, 1]) addSash(parts, 'sash', shift(bay, k * 0.875), base, k ? 0.45 : 1, sh, ADVANCE + 0.08);
+          for (const k of [-1, 1]) stone.box(onWall(bay, k * 0.575, base + sh / 2, ADVANCE + 0.04), [0.15, sh, 0.12], { rotY, skip: ['-y', '+y'] });
+          if (s < f.storeys - 1) addPediment(stone, shift(bay, 0, ADVANCE), base + sh + 0.05, bay.width - 0.1, s < 3 ? 0.6 : 0, 0.3);
         } else {
           addWindow(stone, bay, base - 0.1, Math.min(tw + 0.5, bay.width - 0.1), sh + 0.15, 'flat', lift + 0.04, true); // hist-a: a cream stucco architrave round every light, 0.25 m wide (ASSUMED)
           addSash(parts, 'sash', bay, base, tw, sh, lift + 0.08);

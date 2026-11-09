@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addArch, addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
@@ -308,6 +308,10 @@ const CORNICE = 1.1;
 type Bay = (typeof hotel.faces)[number]['bays'][number];
 /** a world point in a bay's frame: along its wall from the bay's middle, and out of it */
 const inBay = (v: V3, b: Bay): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
+/** how far an advanced block stands out of the wall (ADVANCE in the source) */
+const ADVANCE_OUT = 0.4;
+/** the component of an (unnormalised) normal along a bay's outward normal */
+const inBayNormal = (n: V3, b: Bay): number => n[0] * b.normal[0] + n[2] * b.normal[1];
 /** the middle bays of a face's advanced blocks: those with an advanced bay on both sides or on neither */
 const isMiddle = (adv: readonly number[], i: number): boolean => adv.includes(i) && adv.includes(i - 1) === adv.includes(i + 1);
 type Strip = { name: string; b: Bay; k: number; lo: number; hi: number; depth: number; block: boolean };
@@ -436,6 +440,111 @@ test('Great Northern Hotel [HE-GNH, hist-a]: advanced blocks stand 0.4 m out fro
       close(Math.max(...ys), hotel.eaves - CORNICE, 1e-9, `${name}: and ends under the cornice`);
       close(Math.max(...along) - Math.min(...along), b.width, 1e-6, `${name}: as wide as its bay`);
     });
+  }
+});
+
+test('addPediment: a shelf over the head and on it two raking slabs, from the shelf\'s ends up to the apex, the wall behind them the tympanum; no slabs without a rise', () => {
+  const p = { at: [0, 0] as Pt, dir: [1, 0] as Pt, normal: [0, 1] as Pt };
+  const [w, rise, d, y] = [2.4, 0.6, 0.3, 10];
+  const m = new Batch();
+  addPediment(m, p, y, w, rise, d);
+  const tris = triangles(m);
+  assert.equal(tris.length, 36, 'three boxes of six faces');
+  const range = (ts: Tri[], f: (v: V3) => number): [number, number] => [Math.min(...ts.flatMap((tr) => tr.p.map(f))), Math.max(...ts.flatMap((tr) => tr.p.map(f)))];
+  const shelf = tris.slice(0, 12);
+  assert.deepEqual(range(shelf, (v) => v[0]).map((x) => +x.toFixed(9)), [-1.2, 1.2], 'the shelf is as wide as asked');
+  assert.deepEqual(range(shelf, (v) => v[1]).map((x) => +x.toFixed(9)), [10, 10.16], '0.16 m tall, from y');
+  assert.deepEqual(range(shelf, (v) => v[2]).map((x) => +x.toFixed(9)), [-0.02, 0.3], 'd out of the wall, its back sunk 0.02 m into it');
+  const theta = Math.atan2(rise, w / 2);
+  for (const [k, s] of [[1, -1], [2, 1]] as const) {
+    const slab = tris.slice(12 * k, 12 * k + 12);
+    const verts = slab.flatMap((tr) => tr.p);
+    const centre = [0, 1, 2].map((c) => verts.reduce((a, v) => a + v[c]!, 0) / verts.length);
+    close(centre[0] as number, (s * w) / 4, 1e-9, `slab ${s}: over the middle of its half`);
+    close(centre[1] as number, y + 0.16 + rise / 2, 1e-9, `slab ${s}: half way up the rise, on the shelf`);
+    close(centre[2] as number, d / 2 - 0.01, 1e-9, `slab ${s}: as deep as the shelf, its back sunk 0.02 m into the wall`);
+    // the top face looks up and away from the apex, at the slope's angle; the slab is as long as the slope and 0.12 m thick
+    const up = slab.map((tr) => { const g = geoNormal(tr); return g.map((c) => c / Math.hypot(...g)); }).filter((n) => (n[1] as number) > 0.8);
+    assert.equal(up.length, 2, `slab ${s}: a top face of two triangles`);
+    for (const n of up) {
+      close(n[0] as number, s * Math.sin(theta), 1e-9, `slab ${s}: leaning away from the apex`);
+      close(n[1] as number, Math.cos(theta), 1e-9, `slab ${s}: the slope's angle`);
+    }
+    const axis = [s * Math.cos(theta), -Math.sin(theta)]; // along the slab, from the apex down
+    const along = verts.map((v) => (v[0] - centre[0]!) * axis[0]! + (v[1] - centre[1]!) * axis[1]!);
+    close(Math.max(...along) - Math.min(...along), Math.hypot(w / 2, rise), 1e-9, `slab ${s}: as long as the slope`);
+    const across = verts.map((v) => (v[0] - centre[0]!) * -axis[1]! * s + (v[1] - centre[1]!) * axis[0]! * s);
+    close(Math.max(...across) - Math.min(...across), 0.12, 1e-9, `slab ${s}: 0.12 m thick`);
+    close(centre[0]! - (Math.max(...along) * axis[0]!), 0, 1e-9, `slab ${s}: its upper end is on the apex`);
+    close(centre[1]! + Math.max(...along) * axis[1]! * -1, y + 0.16 + rise, 1e-9, `slab ${s}: at the height of the rise`);
+  }
+  const flat = new Batch();
+  addPediment(flat, p, y, w, 0, d);
+  assert.equal(triangles(flat).length, 12, 'a shelf alone');
+});
+
+test('Great Northern Hotel [hist-a]: the cream middle bay\'s three lights are a wide one between two narrow ones (1.0 and 0.45 m) with a colonnette 0.15 m wide between each pair, under a hood the width of the bay less 0.1 m, 0.3 m proud of the block: a shelf with a pediment 0.6 m high on the first and second floors, a shelf alone on the third and nothing under the top cornice', () => {
+  const parts = hotelGeometry(hotel);
+  const sash = triangles(parts.sash as Batch);
+  const stone = triangles(parts.stone as Batch);
+  const middles = hotel.faces.flatMap((face) => face.bays.filter((_, i) => isMiddle(HOTEL_ADVANCED[face.kind], i)));
+  assert.equal(middles.length, 6, 'two on each long front and one on each end');
+  for (const b of middles) {
+    const where = `the middle bay at (${b.at[0].toFixed(1)}, ${b.at[1].toFixed(1)})`;
+    const here = (ts: Tri[], y0: number, y1: number, d0: number, d1: number): Tri[] => ts.filter((tr) => tr.p.every((v) => v[1] >= y0 - 1e-9 && v[1] <= y1 + 1e-9 && Math.abs(inBay(v, b).along) <= b.width / 2 + 1e-6 && inBay(v, b).depth >= d0 - 1e-6 && inBay(v, b).depth <= d1 + 1e-6));
+    const range = (ts: Tri[], f: (v: V3) => number): [number, number] => [Math.min(...ts.flatMap((tr) => tr.p.map(f))), Math.max(...ts.flatMap((tr) => tr.p.map(f)))];
+    const along = (v: V3): number => inBay(v, b).along;
+    const depth = (v: V3): number => inBay(v, b).depth;
+    const w = b.width - 0.1;
+    for (let s = 1; s < hotel.storeys; s++) {
+      const base = hotel.groundStorey + (s - 1) * hotel.upperStorey + 0.5;
+      const sh = s < hotel.storeys - 1 ? 2.4 : 2.0;
+      const name = `${where}, floor ${s}`;
+      // the lights: a quad each, the middle 1.0 m wide and the two beside it 0.45 m, 0.875 m from the middle
+      const lights = here(sash, base, base + sh, 0.47, 0.49);
+      assert.equal(lights.length, 6, `${name}: three lights of two triangles`);
+      const edges = [...new Set(lights.flatMap((tr) => tr.p.map((v) => along(v).toFixed(6))))].map(Number).sort((a, c) => a - c);
+      assert.equal(edges.length, 6, `${name}: three lights, each with two edges`);
+      [-1.1, -0.65, -0.5, 0.5, 0.65, 1.1].forEach((e, k) => close(edges[k] as number, e, 1e-6, `${name}: light edge ${k}`));
+      // the colonnettes: a shaft 0.15 m wide between each pair, standing 0.02 m proud of the lights, four faces of two triangles
+      for (const side of [-1, 1]) {
+        const shaft = here(stone, base, base + sh, 0.3, 0.52).filter((tr) => tr.p.every((v) => along(v) * side >= 0.5 - 1e-6 && along(v) * side <= 0.65 + 1e-6));
+        assert.equal(shaft.length, 8, `${name}: a colonnette of four faces at ${side}`);
+        const [x0, x1] = range(shaft, (v) => along(v) * side);
+        close(x0, 0.5, 1e-6, `${name}: its inner edge meets the middle light`);
+        close(x1, 0.65, 1e-6, `${name}: its outer edge meets the side light`);
+        close(range(shaft, (v) => v[1])[0], base, 1e-9, `${name}: it stands on the sill`);
+        close(range(shaft, (v) => v[1])[1], base + sh, 1e-9, `${name}: and reaches the head of the lights`);
+        close(range(shaft, depth)[1], 0.5, 1e-6, `${name}: 0.02 m proud of the lights`);
+      }
+      // the hood: a shelf over the head, 0.16 m tall, the width of the bay less 0.1 m, sunk 0.02 m into the block and 0.3 m proud of it; a pediment 0.6 m high on it on the first two floors
+      const yp = base + sh + 0.05;
+      const top = yp + 0.16;
+      const shelf = here(stone, yp, top, 0.35, 0.8);
+      if (s === hotel.storeys - 1) {
+        assert.equal(here(stone, base + sh, base + sh + 0.9, 0.35, 0.8).length, 0, `${name}: nothing over the top floor's lights, under the cornice`);
+        continue;
+      }
+      assert.equal(shelf.length, 12, `${name}: a shelf of six faces`);
+      close(range(shelf, (v) => v[1])[0], yp, 1e-9, `${name}: the shelf stands 0.05 m over the lights`);
+      close(range(shelf, along)[1] - range(shelf, along)[0], w, 1e-6, `${name}: as wide as the bay less 0.1 m`);
+      close(range(shelf, depth)[1], ADVANCE_OUT + 0.3, 1e-6, `${name}: 0.3 m proud of the block`);
+      close(range(shelf, depth)[0], ADVANCE_OUT - 0.02, 1e-6, `${name}: sunk 0.02 m into it`);
+      const slabs = here(stone, top - 0.1, top + 0.7, ADVANCE_OUT - 0.05, 0.8).filter((tr) => !shelf.includes(tr));
+      if (s === 3) {
+        assert.equal(slabs.length, 0, `${name}: a shelf alone`);
+        continue;
+      }
+      assert.equal(slabs.length, 24, `${name}: two raking slabs of six faces`);
+      const apex = range(slabs, (v) => v[1])[1];
+      assert.ok(apex >= top + 0.6 - 1e-9 && apex <= top + 0.6 + 0.07, `${name}: the apex ${(apex - top).toFixed(3)} m over the shelf, 0.6 m by the slabs' centre lines`);
+      assert.ok(Math.max(...range(slabs, along).map(Math.abs)) <= w / 2 + 0.04, `${name}: within the shelf's width`);
+      close(range(slabs, depth)[1], ADVANCE_OUT + 0.3, 1e-6, `${name}: as deep as the shelf`);
+      close(range(slabs, depth)[0], ADVANCE_OUT - 0.02, 1e-6, `${name}: and sunk 0.02 m into the block, none of it on the block's face`);
+      // and it clears the next course above: the sill course under the next row, 0.3 m tall
+      const next = hotel.groundStorey + s * hotel.upperStorey + 0.2;
+      assert.ok(apex <= next - 0.1, `${name}: ${apex.toFixed(2)} m clears the course at ${next.toFixed(2)} m`);
+    }
   }
 });
 
