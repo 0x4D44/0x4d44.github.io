@@ -73,6 +73,7 @@ test('W1 roof: the solid gutter and ridge strips are a fixed share of each pitch
  for(let i=0;i<solid.indices.length;i+=3){const [a,b,c]=solid.indices.slice(i,i+3).map(n=>solid.positions.slice(n*3,n*3+3));area+=Math.abs((b[0]-a[0])*(c[2]-a[2])-(b[2]-a[2])*(c[0]-a[0]))/2;}
  const share=2*(WAVERLEY_ROOF_BANDS.gutter+WAVERLEY_ROOF_BANDS.ridge)/WAVERLEY_ROOF_PROFILE.pitch;
  assert.ok(Math.abs(area-36*24*share)<1e-6,`solid ${area} m2`);
+ assert.ok(WAVERLEY_ROOF_STRIP_LIFT>=.02,'the strips stand clear of the glazing, never in its plane');
  for(let i=0;i<solid.positions.length;i+=3)assert.ok(Math.abs(solid.positions[i+1]-roofHeight(solid.positions[i])-WAVERLEY_ROOF_STRIP_LIFT)<1e-6);
 });
 

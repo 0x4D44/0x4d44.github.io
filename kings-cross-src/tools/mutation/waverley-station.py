@@ -45,6 +45,8 @@ MUTATIONS = [
     ('the valance drops onto the block', STRUCT, 'valanceBottom:6.6,', 'valanceBottom:6.2,'),
     ('the column stops short of its girder', STRUCT, 'y3=underGirder-S.abacus,', 'y3=underGirder-S.abacus-.2,'),
     # the roof's solid strips
+    ('the roof rises 2.0 m, not the 2.4 m profile', ROOF, 'export const WAVERLEY_ROOF_PROFILE={gutter:8,rise:2.4,', 'export const WAVERLEY_ROOF_PROFILE={gutter:8,rise:2.0,'),
+    ('the half-pitch pieces are cut half a metre off the folds', ROOF, '   const x0=profile.phase+k*half;\n', '   const x0=profile.phase+k*half+.5;\n'),
     ('the strips lie in the glazing', ROOF, 'export const WAVERLEY_ROOF_STRIP_LIFT=.03;', 'export const WAVERLEY_ROOF_STRIP_LIFT=0;'),
     ('the ridge capping is twice as wide', ROOF, '[r0,r1]=rising?[x0+half-bands.ridge,x0+half]', '[r0,r1]=rising?[x0+half-2*bands.ridge,x0+half]'),
     # platform edge bands
