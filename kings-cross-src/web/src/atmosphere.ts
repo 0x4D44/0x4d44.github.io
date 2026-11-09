@@ -9,7 +9,7 @@
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
-import { fogRange, skyRig } from '../../core/daylight.ts';
+import { cloudDeck, fogRange, skyRig, smoothstep } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
@@ -57,6 +57,11 @@ const SNOW = new THREE.Color(0.72, 0.75, 0.79);
 
 const rgb = (c: THREE.Color, v: Rgb): THREE.Color => c.setRGB(v[0], v[1], v[2], THREE.SRGBColorSpace);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
+/**
+ * How strongly an overcast deck's structure shows on the dome: a billow is up to 0.85 x 0.4 = 34% darker than the deck's mean, and up to
+ * 17% paler (ASSUMED, judged by eye against R-lighting-materials-d, whose clouds run from white to a slate grey).
+ */
+const CLOUD_BILLOW = 0.85;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
 const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
@@ -197,6 +202,14 @@ export interface Atmosphere {
 
 type Emissive = THREE.MeshLambertMaterial | THREE.MeshPhongMaterial;
 
+/**
+ * The emissive colour each glowing surface was BUILT with, whichever atmosphere saw it first. The shed's lining, glazing and ribs are one set of
+ * materials in King's Cross and Edinburgh Waverley, and each atmosphere dims them after dark from the colour it remembers: one that met a material
+ * the other had already dimmed would take the dimmed colour for the built one, dim it again (a double dim at night) and bring back only the
+ * dimmed colour by day.
+ */
+const emissiveBuilt = new WeakMap<Emissive, THREE.Color>();
+
 /** After dark a daylight stand-in (a shed lining that glows like sky-lit day) keeps this share of its glow, warmed, as the lamps' light on it. */
 export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
@@ -255,8 +268,10 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
         // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
         if (lambert.isMeshLambertMaterial) addRoofShade(lambert);
         const emissive = m as Emissive;
-        if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && emissive.emissive.getHex() !== 0 && !standIns.has(emissive)) {
-          standIns.set(emissive, emissive.emissive.clone());
+        if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && (emissiveBuilt.has(emissive) || emissive.emissive.getHex() !== 0) && !standIns.has(emissive)) {
+          let built = emissiveBuilt.get(emissive);
+          if (!built) emissiveBuilt.set(emissive, built = emissive.emissive.clone());
+          standIns.set(emissive, built);
         }
       }
     });
@@ -265,14 +280,18 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
 
   let state: AtmosphereState | null = null;
   let lastCompute = -Infinity;
-  const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '' };
+  const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '', cloud: -1 };
   const sunDirection = new THREE.Vector3();
   const keyDir: [number, number, number] = [0, 1, 0];
   let keyKnown = false;
   const colour = new THREE.Color();
 
-  /** Repaint the dome: horizon to zenith, with a glow round the sun. The colours are worked in sRGB, then stored as linear. */
-  const paintDome = (rig: SkyRig): void => {
+  /**
+   * Repaint the dome: horizon to zenith, with a glow round the sun and, under cloud, the cloud deck's own structure (darker and paler
+   * billows, fading out toward the horizon so the sky still meets the fog in one colour). The colours are worked in sRGB, then stored
+   * as linear.
+   */
+  const paintDome = (rig: SkyRig, cloud: number): void => {
     const geometry = world.sky.geometry;
     const pos = geometry.getAttribute('position');
     const attr = geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -280,6 +299,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     const { zenith, horizon } = rig.dome;
     const gc = rig.glow.colour;
     const gs = rig.glow.strength;
+    const billow = CLOUD_BILLOW * smoothstep(0.15, 0.85, cloud);
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const r = Math.hypot(x, y, z);
@@ -287,10 +307,11 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       const k = Math.pow(t, 0.55);
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
+      const deck = billow > 0 ? 1 + billow * smoothstep(0.02, 0.3, t) * (cloudDeck(x / r, y / r, z / r) - 0.6) : 1;
       colour.setRGB(
-        horizon[0] + (zenith[0] - horizon[0]) * k + gc[0] * glow,
-        horizon[1] + (zenith[1] - horizon[1]) * k + gc[1] * glow,
-        horizon[2] + (zenith[2] - horizon[2]) * k + gc[2] * glow, THREE.SRGBColorSpace);
+        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow,
+        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow,
+        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow, THREE.SRGBColorSpace);
       attr.setXYZ(i, colour.r, colour.g, colour.b);
     }
     attr.needsUpdate = true;
@@ -314,16 +335,17 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       f.intensity = r.intensity;
     });
 
-    // The dome only when its colours or the sun's place have moved enough to see.
+    // The dome only when its colours, the cloud's structure or the sun's place have moved enough to see.
     let moved = Math.abs(rig.glow.strength - paint.glow);
     for (let i = 0; i < 3; i++) moved = Math.max(moved, Math.abs((rig.dome.zenith[i] as number) - (paint.zenith[i] as number)), Math.abs((rig.dome.horizon[i] as number) - (paint.horizon[i] as number)));
     const sunKey = `${Math.round(sunPos.elevationDeg * 4)}/${Math.round(sunPos.azimuthDeg * 2)}`;
-    if (moved > 0.004 || sunKey !== paint.sunKey) {
-      paintDome(rig);
+    if (moved > 0.004 || sunKey !== paint.sunKey || Math.abs(weather.cloud - paint.cloud) > 0.03) {
+      paintDome(rig, weather.cloud);
       paint.zenith = [...rig.dome.zenith];
       paint.horizon = [...rig.dome.horizon];
       paint.glow = rig.glow.strength;
       paint.sunKey = sunKey;
+      paint.cloud = weather.cloud;
     }
     // the sun's disc: visible from just under the horizon, dimmed by cloud and fog
     sunDirection.set(...rig.sun.direction);

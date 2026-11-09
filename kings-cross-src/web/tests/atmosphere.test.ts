@@ -240,6 +240,33 @@ test('the dome is repainted from the rig: its horizon and its zenith are the rig
   assert.equal(attr.version, before, 'the same sky leaves the dome\'s colours alone');
 });
 
+test('an overcast dome carries the cloud deck\'s billows, a clear one is a smooth gradient, and the horizon stays one colour so the sky meets the fog', () => {
+  const { world, at } = setup();
+  const attr = world.sky.geometry.getAttribute('color') as THREE.BufferAttribute;
+  const pos = world.sky.geometry.getAttribute('position');
+  const lumaAt = (i: number): number => luma(new THREE.Color().setRGB(attr.getX(i), attr.getY(i), attr.getZ(i), THREE.LinearSRGBColorSpace));
+  // the vertices on one ring of the dome (one elevation, all the way round): a smooth sky has one colour on a ring, a deck has many
+  const ring = (elevationDeg: number): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getY(i) / 5200 - Math.sin((elevationDeg * Math.PI) / 180)) < 1e-3) out.push(i);
+    return out;
+  };
+  const spread = (indices: readonly number[]): number => {
+    const l = indices.map(lumaAt);
+    const mean = l.reduce((s, v) => s + v, 0) / l.length;
+    return Math.sqrt(l.reduce((s, v) => s + (v - mean) ** 2, 0) / l.length) / mean;
+  };
+  const high = ring(26.25);
+  assert.ok(high.length >= 90, `a ring of vertices: ${high.length}`);
+  at(NOON);
+  assert.ok(spread(high) < 0.005, `a clear dome is one colour round a ring: ${spread(high)}`);
+  at(NOON, state('overcast'));
+  assert.ok(spread(high) > 0.03, `an overcast dome has darker and paler patches round a ring: ${spread(high)}`);
+  assert.ok(spread(ring(0)) < 1e-6, `and the horizon is one colour all round, the fog's: ${spread(ring(0))}`);
+  at(NOON, state('clear'));
+  assert.ok(spread(high) < 0.005, 'a clearing sky is smooth again (the dome is repainted when the cloud changes, not only when its colours do)');
+});
+
 test('what glowed like sky-lit day (shed lining, glazing, ribs) dims after dark and picks up the lamps\' warmth', () => {
   const { scene, atmosphere, at } = setup();
   const m = new THREE.MeshLambertMaterial({ color: 0xdddddd, emissive: 0x808080 });
@@ -257,6 +284,24 @@ test('what glowed like sky-lit day (shed lining, glazing, ribs) dims after dark 
   assert.equal(plain.emissive.getHex(), 0, 'a material with no emissive is left alone');
   at(NOON);
   assert.deepEqual(m.emissive.toArray(), base.toArray(), 'and the day brings it back exactly');
+});
+
+test('two scenes share the station\'s glowing surfaces: the second atmosphere takes the colour the material was built with, not what the first has dimmed it to', () => {
+  // The shed's lining, glazing and ribs are the one set of materials in King's Cross and Edinburgh Waverley. Each atmosphere remembers the emissive colour it
+  // finds, and dims from it after dark: one that finds the material already dimmed (the other scene's atmosphere got there first) dimmed it twice.
+  const london = setup(), waverley = setup();
+  const shared = new THREE.MeshLambertMaterial({ color: 0xdddddd, emissive: 0x808080 });
+  for (const { scene } of [london, waverley]) scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), shared));
+  london.atmosphere.rescan();
+  const built = shared.emissive.clone();
+  london.at(MIDNIGHT);
+  const dimmed = shared.emissive.clone();
+  assert.ok(dimmed.r < 0.4 * built.r, 'London dims it for the night');
+  waverley.atmosphere.rescan(); // the Edinburgh scene is built, and its atmosphere scans, while the material is dimmed
+  waverley.at(MIDNIGHT);
+  assert.deepEqual(shared.emissive.toArray(), dimmed.toArray(), 'the same night dims it the same, whichever scene shows it');
+  waverley.at(NOON);
+  assert.deepEqual(shared.emissive.toArray(), built.toArray(), 'and the day brings back what it was built with');
 });
 
 test('the far rails, which are unlit lines, dim after dark so they do not glow white against the night city', () => {

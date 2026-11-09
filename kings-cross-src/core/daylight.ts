@@ -145,24 +145,63 @@ export function fogAmount(visibilityM: number): number {
 }
 
 /**
- * The haze of clear air: the city a kilometre off goes a fifth of the way to the horizon's colour and the far ground and the dome's
- * edge meet at 2.8 km, so a far skyline reads as distance, not as a cut-out. ASSUMED amounts, judged by eye: the daylight references
- * (R-lighting-materials-a, -d) are close-ups with no far skyline to measure; a clear London day is hazy at a kilometre (the weather
- * feed's 24 km visibility). The page's old fog began at 1100 m and ended at 3600.
+ * The haze of clear air, as aerial perspective: it starts at the camera's feet (80 m) and thickens evenly, so the city 400 m off is
+ * a sixth of the way to the horizon's colour, a kilometre off a third, and the far ground and the dome's edge meet at 2.8 km. A
+ * high view (the overview looks 260 to 1050 m down the ground) then shows the far blocks paler and bluer than the near ones, as the
+ * daylight references do, while a street-level view (everything within 150 m) is untouched. ASSUMED amounts, judged by eye: the
+ * references (R-lighting-materials-a, -d) are close-ups with no far skyline to measure. The first fog here began at 1100 m and
+ * ended at 3600; the second began at 450 m, which left the lower half of the overview with no haze at all.
  */
-export const CLEAR_FOG = { near: 450, far: 2800 } as const;
+export const CLEAR_FOG = { near: 80, far: 2800 } as const;
 
 /**
- * Scene fog distances for a visibility, metres. At 10 km or more it is the clear-air haze (`CLEAR_FOG`). Below that the
- * far plane comes in with the visibility: a camera low in the fog sees only about the visibility; a camera high above it looks down
- * through a fog layer that is shallow (a few hundred metres), so its effective visibility grows with its height.
+ * The haze of a visibility of exactly 10 km, and the cap on every thinner one (mist, rain, drizzle, fog): the weather's own fog, which
+ * the clear-air haze above does not change.
+ */
+const HAZE_CAP = { near: 450, far: 2800 } as const;
+
+/**
+ * Scene fog distances for a visibility, metres. At 20 km or more (the clear state, and the weather feed's 24 km) it is the clear-air
+ * haze (`CLEAR_FOG`); from 10 to 20 km it eases in from the weather's own haze (`HAZE_CAP`), so a visibility that drifts past 10 km
+ * never steps. Below 10 km the far plane comes in with the visibility: a camera low in the fog sees only about the visibility; a camera
+ * high above it looks down through a fog layer that is shallow (a few hundred metres), so its effective visibility grows with its height.
  */
 export function fogRange(visibilityM: number, cameraHeightM = 0): { near: number; far: number } {
-  const clear = { ...CLEAR_FOG };
-  if (!(visibilityM < 10_000)) return clear;
+  if (!(visibilityM < 10_000)) {
+    const t = Number.isNaN(visibilityM) ? 1 : smoothstep(10_000, 20_000, visibilityM);
+    return { near: lerp(HAZE_CAP.near, CLEAR_FOG.near, t), far: lerp(HAZE_CAP.far, CLEAR_FOG.far, t) };
+  }
   const effective = visibilityM * (1 + Math.max(0, cameraHeightM) / 250);
-  const far = Math.min(clear.far, Math.max(60, 1.25 * effective));
-  return { near: Math.min(clear.near, 0.2 * far), far };
+  const far = Math.min(HAZE_CAP.far, Math.max(60, 1.25 * effective));
+  return { near: Math.min(HAZE_CAP.near, 0.2 * far), far };
+}
+
+/** A smooth 0..1 value noise at the integer lattice point (ix, iy): fixed numbers, no random state. */
+function lattice(ix: number, iy: number): number {
+  let h = Math.imul(ix, 374761393) + Math.imul(iy, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+
+function valueNoise(x: number, y: number): number {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  return lerp(lerp(lattice(ix, iy), lattice(ix + 1, iy), sx), lerp(lattice(ix, iy + 1), lattice(ix + 1, iy + 1), sx), sy);
+}
+
+/**
+ * The structure of a cloud deck seen from below, 0..1 and about 0.5 on average, for a unit direction on the sky dome (x east, y up,
+ * z south). The deck is a flat layer: the direction is projected onto it (so the billows are large overhead and crowd together toward
+ * the horizon, as a real deck does), and three octaves of value noise give billows about 20 degrees across with edges of 5 to 10.
+ * atmosphere.ts multiplies the overcast dome by `1 + k (deck - 0.5)`, so a grey sky has darker and paler cloud rather than one flat
+ * tone. Fixed numbers: the same sky every time, so a capture can be repeated.
+ */
+export function cloudDeck(x: number, y: number, z: number): number {
+  const h = 1 / (Math.max(y, 0) + 0.35);
+  const u = x * h * 2.4, v = z * h * 2.4;
+  const n = 0.55 * valueNoise(u + 17.3, v + 4.1) + 0.3 * valueNoise(2 * u + 3.7, 2 * v + 91.9) + 0.15 * valueNoise(4 * u + 55.5, 4 * v + 12.2);
+  return n;
 }
 
 /** Lamp level from elevation alone: 0 at +2 degrees or higher, 1 at -6 degrees or lower, a smooth ease between. */

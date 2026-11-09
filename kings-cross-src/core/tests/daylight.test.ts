@@ -3,7 +3,7 @@
 // end of civil twilight (-6 degrees) and off in daylight, cloud dims and greys, rain darkens, fog pulls the scene in and flattens the sky.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CLEAR, CLEAR_FOG, DAY_EXPOSURE, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, NIGHT_EXPOSURE, skyRig, smoothstep } from '../daylight.ts';
+import { CLEAR, CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, NIGHT_EXPOSURE, skyRig, smoothstep } from '../daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig, SkyWeather } from '../daylight.ts';
 
 // web/src/world.ts DAYLIGHT, spelled out (web/tests/atmosphere.test.ts holds the two together): a bright sun over a softer sky with a
@@ -174,9 +174,9 @@ test('fog: 0 at ten kilometres, 1 at two hundred metres, and the scene fog comes
     assert.ok(f >= previous - 1e-12 && f >= 0 && f <= 1, `fog thinned as the visibility fell, at ${v}`);
     previous = f;
   }
-  // clear London air is hazy at distance: the far city fades into the horizon from 450 m and is gone at 2.8 km (R-lighting-materials-d: the
-  // buildings beyond the foreground lose contrast and warm toward the sky's horizon). The amounts are ASSUMED, judged by eye against that photograph.
-  assert.deepEqual({ ...CLEAR_FOG }, { near: 450, far: 2800 });
+  // clear London air is hazy at distance: the far city fades into the horizon from 80 m and is gone at 2.8 km (R-lighting-materials-d: the
+  // buildings beyond the foreground lose contrast and pale toward the sky's horizon). The amounts are ASSUMED, judged by eye against that photograph.
+  assert.deepEqual({ ...CLEAR_FOG }, { near: 80, far: 2800 });
   assert.deepEqual(fogRange(Infinity), { ...CLEAR_FOG }, 'clear air is the haze');
   assert.deepEqual(fogRange(30_000, 500), { ...CLEAR_FOG });
   const mist = fogRange(1800), fog = fogRange(300), dense = fogRange(40);
@@ -371,5 +371,53 @@ test('by day the ground\'s share of the ambient is the paving\'s warm bounce, no
     const g = rig(e).hemisphere.ground;
     assert.ok(g[0] > g[2], `warm at ${e} degrees: ${g}`);
     assert.ok(luma(g) > 0.35, `bright enough to lift the underside of things at ${e}: ${luma(g)}`);
+  }
+});
+
+test('clear air is aerial perspective: haze from 80 m, so a high view shows the far blocks paler than the near ones, and the weather\'s own fog is unchanged', () => {
+  // the share of the way to the horizon's colour at a distance, as the scene's linear fog works it out
+  const share = (d: number, v = Infinity): number => { const f = fogRange(v); return Math.min(1, Math.max(0, (d - f.near) / (f.far - f.near))); };
+  assert.equal(share(40), 0, 'the street at the feet is clear');
+  assert.ok(share(150) < 0.03, `a street-level view (all within 150 m) is untouched: ${share(150)}`);
+  // the overview looks 260 to 1050 m down the ground: the near edge has barely any haze, the far edge a third of the way to the horizon
+  assert.ok(share(260) < 0.1 && share(260) > 0.04, `${share(260)}`);
+  assert.ok(share(1050) > 0.3 && share(1050) < 0.42, `${share(1050)}`);
+  assert.ok(share(1050) > 3 * share(260), 'the far blocks carry several times the haze of the near ones');
+  // the weather's own fog is what it was: 10 km is the old haze exactly, and everything thinner keeps its near plane at 450 m or a fifth of its far plane
+  assert.deepEqual(fogRange(10_000), { near: 450, far: 2800 });
+  assert.deepEqual(fogRange(7000), { near: 450, far: 2800 }, 'rain');
+  assert.deepEqual(fogRange(4000), { near: 450, far: 2800 }, 'drizzle');
+  assert.deepEqual(fogRange(1800), { near: 0.2 * 2250, far: 2250 }, 'mist');
+  // between 10 and 20 km the clear-air haze eases in: never a step, never thinner as the air clears
+  let previous = 450;
+  for (let v = 10_000; v <= 20_000; v += 250) {
+    const { near: n, far } = fogRange(v);
+    assert.ok(n <= previous + 1e-9 && n >= CLEAR_FOG.near - 1e-9, `near ${n} at ${v} m`);
+    assert.equal(far, 2800);
+    previous = n;
+  }
+  assert.ok(Math.abs(fogRange(10_001).near - 450) < 1, 'no step as the visibility passes 10 km');
+  assert.deepEqual(fogRange(NaN), { ...CLEAR_FOG }, 'an unreadable visibility is the clear air, as it always was');
+});
+
+test('a cloud deck has structure: smooth, fixed, about half on average, and different from one part of the sky to another', () => {
+  // a grid of sky directions from 5 to 90 degrees up, all round
+  const values: number[] = [];
+  for (let el = 5; el <= 90; el += 5) {
+    for (let az = 0; az < 360; az += 10) {
+      const e = (el * Math.PI) / 180, a = (az * Math.PI) / 180;
+      values.push(cloudDeck(Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a)));
+    }
+  }
+  const mean = values.reduce((s, v) => s + v, 0) / values.length;
+  const sd = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length);
+  assert.ok(values.every((v) => v >= 0 && v <= 1), 'in range');
+  assert.ok(mean > 0.4 && mean < 0.6, `about half on average: ${mean}`);
+  assert.ok(sd > 0.07, `there is structure to see, not a flat deck: sd ${sd}`);
+  assert.equal(cloudDeck(0.3, 0.8, -0.2), cloudDeck(0.3, 0.8, -0.2), 'fixed: the same sky every time');
+  // smooth: half a degree on, the value has moved only a little (so the dome shows billows, not grain)
+  for (const [el, az] of [[20, 40], [45, 200], [70, 310], [10, 120]] as const) {
+    const at = (a: number): number => { const e = (el * Math.PI) / 180, r = (a * Math.PI) / 180; return cloudDeck(Math.cos(e) * Math.sin(r), Math.sin(e), Math.cos(e) * Math.cos(r)); };
+    assert.ok(Math.abs(at(az) - at(az + 0.5)) < 0.05, `smooth at ${el},${az}: ${at(az)} vs ${at(az + 0.5)}`);
   }
 });
