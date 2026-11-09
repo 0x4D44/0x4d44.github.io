@@ -228,9 +228,11 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
   // The dome: clear colours, then toward the cloud's pale cool white (zenith darker, horizon paler), darkened by rain, then into the fog colour.
   // A bright overcast is the brightest thing in the sky, not a dark grey one: in the day the cloud colour is the clear colour's own grey
   // lifted by `CLOUD_LIFT` (R-lighting-materials-d: about (212, 219, 235) high up, (228, 233, 245) at the horizon, a little blue left in it),
-  // and at dusk, when the lift is not wanted, it is the old dim grey. The lift is ASSUMED, matched by eye to that one photograph.
-  let zenith = mixRgb(k.zenith, scaleRgb(desaturate(k.zenith, CLOUD_SKY_GREY), 0.82 + CLOUD_LIFT.zenith * dayAmount), 0.9 * cloud);
-  let horizon = mixRgb(k.horizon, scaleRgb(desaturate(k.horizon, CLOUD_SKY_GREY), 0.96 + CLOUD_LIFT.horizon * dayAmount), 0.85 * cloud);
+  // and at dusk, when the lift is not wanted, it is the old dim grey. Rain takes the lift away again (gone by a rain amount of 0.5),
+  // so a rainy sky is as dull as it always was. The lift is ASSUMED, matched by eye to that one photograph.
+  const lift = dayAmount * (1 - smoothstep(0, 0.5, rain));
+  let zenith = mixRgb(k.zenith, scaleRgb(desaturate(k.zenith, CLOUD_SKY_GREY), 0.82 + CLOUD_LIFT.zenith * lift), 0.9 * cloud);
+  let horizon = mixRgb(k.horizon, scaleRgb(desaturate(k.horizon, CLOUD_SKY_GREY), 0.96 + CLOUD_LIFT.horizon * lift), 0.85 * cloud);
   const darker = 1 - 0.14 * rain;
   zenith = scaleRgb(zenith, darker);
   horizon = scaleRgb(horizon, darker);

@@ -129,6 +129,11 @@ test('an overcast day\'s sky is the pale cool white of a bright overcast, not a 
   assert.ok(luma(noon.dome.horizon) > luma(noon.dome.zenith), 'the horizon is the paler');
   assert.ok(noon.dome.zenith[2] > noon.dome.zenith[0] && spread(noon.dome.zenith) < 0.16, `a little blue, not a colour: ${noon.dome.zenith}`);
   assert.ok(luma(noon.dome.zenith) > luma(rig(40).dome.zenith), 'a cloud sky is brighter than the clear blue');
+  // the lift is for dry cloud: in rain (from an amount of 0.5) the sky is the dull grey it always was, darker than the clear sky
+  const rainy = rig(40, { cloud: 1, rain: 0.6 });
+  assert.ok(luma(rainy.dome.horizon) < luma(rig(40).dome.horizon), `a rainy horizon is duller than the clear one: ${luma(rainy.dome.horizon)}`);
+  assert.ok(luma(rainy.dome.zenith) < 0.45, `and so is its zenith: ${luma(rainy.dome.zenith)}`);
+  assert.ok(luma(rig(40, { cloud: 1, rain: 0.2 }).dome.zenith) > luma(rainy.dome.zenith), 'a drizzle keeps some of the lift');
   // the dusk with cloud keeps the dusk's dark sky (the lift is the day's), and the lift comes in smoothly with the sun
   assert.ok(luma(rig(-8, { cloud: 1 }).dome.zenith) < 0.1, `a cloudy dusk is dark: ${luma(rig(-8, { cloud: 1 }).dome.zenith)}`);
   let previous = luma(rig(-8, { cloud: 1 }).dome.zenith);
