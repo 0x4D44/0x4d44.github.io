@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addArch, addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, headArc, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, segmentsOutside, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addLandmarks, addTwin, addWalls, ARCH, barlowGeometry, createMaterials, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, segmentsOutside, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
@@ -154,6 +154,45 @@ test('segmentsOutside: an edge crossing a tower is cut where the tower stands, a
   assert.equal(segmentsOutside(edges, [])[1]?.s0, 20);
 });
 
+test('addBand: the bands of two walls that meet at a slight turn are mitred into one, with no step; a building\'s corner is not', () => {
+  // a 20 degree facet join at (10, 0), then turns of 70 and 90 degrees: only the first is mitred
+  const [c, s] = [Math.cos(Math.PI / 9), Math.sin(Math.PI / 9)];
+  const outline: Pt[] = [[0, 0], [10, 0], [10 + 10 * c, 10 * s], [10 + 10 * c, 20], [0, 20]];
+  const segs = segmentsOutside(polygonEdges(outline), []);
+  assert.equal(segs.length, 5);
+  const m = new Batch();
+  addBand(m, segs, 0, 1, 0.5);
+  const tris = triangles(m);
+  assert.equal(tris.length, 6 * segs.length, 'a front, a top and an underside to each wall');
+  // the UVs are in metres on the mitred quads too (a mitre moves a front's ends along its wall, and the map follows)
+  for (const t of tris) close(uvArea(t), worldArea(t), 1e-9, 'texel area equals surface area');
+  /** the two front corners of wall i at the foot of its band, in order along the wall */
+  const corners = (i: number): [V3, V3] => {
+    const sg = segs[i] as (typeof segs)[number];
+    const feet = tris.slice(6 * i, 6 * i + 2).flatMap((t) => t.p).filter((v) => v[1] === 0);
+    const along = (v: V3): number => (v[0] - sg.a[0]) * (sg.b[0] - sg.a[0]) + (v[2] - sg.a[1]) * (sg.b[1] - sg.a[1]);
+    const sorted = [...feet].sort((p, q) => along(p) - along(q));
+    return [sorted[0] as V3, sorted[sorted.length - 1] as V3];
+  };
+  const [n0, n1] = [(segs[0] as (typeof segs)[number]).normal, (segs[1] as (typeof segs)[number]).normal];
+  const k = 0.5 / (1 + n0[0] * n1[0] + n0[1] * n1[1]);
+  const mitre: V3 = [10 + (n0[0] + n1[0]) * k, 0, (n0[1] + n1[1]) * k];
+  const end0 = corners(0)[1];
+  const start1 = corners(1)[0];
+  for (const v of [end0, start1]) for (let i = 0; i < 3; i++) close(v[i] as number, mitre[i] as number, 1e-9, `the join's corner, axis ${i}`);
+  // the corner is where the two lines 0.5 m off the walls cross: 0.5 m from each, more than 0.5 m from the vertex they turn about
+  for (const sg of [segs[0], segs[1]] as (typeof segs)[number][]) close((mitre[0] - sg.a[0]) * sg.normal[0] + (mitre[2] - sg.a[1]) * sg.normal[1], 0.5, 1e-9, 'half a metre off each wall');
+  assert.ok(Math.hypot(mitre[0] - 10, mitre[2]) > 0.5 && Math.hypot(mitre[0] - 10, mitre[2]) < 0.51, 'the mitre stands 0.5 / cos 10 degrees from the vertex');
+  // a turn past 60 degrees keeps each wall's front square to it: the corner at (10 + 10 c, 10 s) leaves a gap between the two fronts, each end straight out from its wall
+  const [a2, b1] = [corners(2)[0], corners(1)[1]];
+  const p2 = (segs[2] as (typeof segs)[number]).a;
+  const sg1 = segs[1] as (typeof segs)[number];
+  const sg2 = segs[2] as (typeof segs)[number];
+  close(b1[0], p2[0] + sg1.normal[0] * 0.5, 1e-9, 'the first wall\'s front ends straight out from its end');
+  close(a2[0], p2[0] + sg2.normal[0] * 0.5, 1e-9, 'the second wall\'s front starts straight out from its start');
+  close(Math.hypot(a2[0] - b1[0], a2[2] - b1[2]), 0.5 * Math.hypot(sg1.normal[0] - sg2.normal[0], sg1.normal[1] - sg2.normal[1]), 1e-9, 'so the two fronts do not meet there');
+});
+
 test('Midland Grand: no band stands in front of a tower\'s face', () => {
   const cutters = midland.towers.map((t) => towerSquare(t, 0.45));
   const m = new Batch();
@@ -186,26 +225,61 @@ test('Midland Grand [hist-b]: a continuous stone sill course 0.45 m under each o
     const front = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (y - 0.45)) < 1e-9 || Math.abs(v[1] - (y - 0.2)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y - 0.45)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y - 0.2)) < 1e-9));
     assert.equal(front.length, 2 * segs.length, `the course under the row at ${y} m is one front face to every uncut wall`);
     for (const t of front) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, 'and nowhere inside a tower');
-    // every front-face vertex is the segment end moved out by the course's depth along its wall's normal: 0.14 m from that wall
-    const out = front.flatMap((t) => t.p.map((v) => Math.min(...polygonEdges(midland.outline).map((e) => {
-      const s = Math.max(0, Math.min(e.length, (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1]));
-      return Math.hypot(v[0] - (e.a[0] + e.dir[0] * s), v[2] - (e.a[1] + e.dir[1] * s));
-    }))));
-    close(Math.max(...out), 0.14, 1e-6, `the course under the row at ${y} m stands 0.14 m proud`);
+    // each wall's front face (a quad of two triangles) stands exactly 0.14 m off the line of its wall, its ends where it meets its neighbour's mitre or the cut at a tower
+    for (const sg of segs) {
+      const l = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
+      const depth = (v: V3): number => (v[0] - sg.a[0]) * sg.normal[0] + (v[2] - sg.a[1]) * sg.normal[1];
+      const along = (v: V3): number => ((v[0] - sg.a[0]) * (sg.b[0] - sg.a[0]) + (v[2] - sg.a[1]) * (sg.b[1] - sg.a[1])) / l;
+      const mine = front.filter((t) => t.p.every((v) => Math.abs(depth(v) - 0.14) < 1e-6) && Math.min(...t.p.map(along)) < l - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
+      assert.equal(mine.length, 2, `the course under the row at ${y} m: the wall from (${sg.a[0].toFixed(1)}, ${sg.a[1].toFixed(1)}) has one front face standing 0.14 m proud`);
+    }
   }
   assert.equal(stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (1.0 - 0.45)) < 1e-9 || Math.abs(v[1] - (1.0 - 0.2)) < 1e-9)).length, 0, 'there is none under the ground row');
 });
 
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
+type Bay = (typeof hotel.faces)[number]['bays'][number];
+/** a world point in a bay's frame: along its wall from the bay's middle, and out of it */
+const inBay = (v: V3, b: Bay): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
+/** the middle bays of a face's advanced blocks: those with an advanced bay on both sides or on neither */
+const isMiddle = (adv: readonly number[], i: number): boolean => adv.includes(i) && adv.includes(i - 1) === adv.includes(i + 1);
+type Strip = { name: string; b: Bay; k: number; lo: number; hi: number; depth: number; block: boolean };
+/**
+ * The cream strips the hotel should have, each in its bay's frame (`lo` to `hi` along the bay's side `k`, its front `depth` out): one at each end of every face whose end bay is 2.2 m
+ * wide (the outer metre, or what the light leaves, 0.8 m in at the least; 0.14 m proud of the wall), and one at each end of every advanced block (from 0.3 m inside its end bay, no nearer
+ * the middle than the outer light of a bay of three, 1.2 m, to a metre outside it, no nearer than 0.8 m to the light of the bay beside it; 0.14 m proud of the block).
+ */
+function pilasterRects(): Strip[] {
+  const out: Strip[] = [];
+  for (const face of hotel.faces) {
+    const adv = HOTEL_ADVANCED[face.kind];
+    assert.ok(adv.every((i) => i < face.bays.length), `${face.kind}: every advanced bay is on the face`);
+    face.bays.forEach((b, i) => {
+      for (const k of [-1, 1]) {
+        const next = face.bays[i + k];
+        const name = `${face.kind} bay ${i + 1}, side ${k}`;
+        if (!next) {
+          if (b.width >= 2.2) out.push({ name, b, k, lo: Math.max(b.width / 2 - 1, 0.8), hi: b.width / 2, depth: 0.14, block: false });
+        } else if (adv.includes(i) && !adv.includes(i + k)) {
+          out.push({ name, b, k, lo: Math.max(b.width / 2 - 0.3, isMiddle(adv, i) ? 1.2 : 0), hi: Math.min(b.width / 2 + 1, (b.width + next.width) / 2 - 0.8), depth: 0.54, block: true });
+        }
+      }
+    });
+  }
+  return out;
+}
+
 test('Great Northern Hotel: facade windows keep their counts and assumed attic dormers add one sash per bay', () => {
   const parts = hotelGeometry(hotel);
   const bays = hotel.faces.reduce((s, f) => s + f.bays.length, 0);
   assert.equal(bays, 50);
   assert.equal(triangles(parts.sashArch as Batch).length, 2 * bays);
-  // 4 upper storeys per bay; the sixth and thirteenth bays of the main front are tripartite: two more lights per storey
+  // 4 upper storeys per bay; the middle bay of each advanced block (the sixth and thirteenth of the main front, and the same on the road front and the returns) is tripartite: two more lights per storey
   const sashes = triangles(parts.sash as Batch);
-  assert.equal(sashes.filter(t => t.p.every(v => v[1] <= hotel.eaves)).length, 2 * (4 * bays + 2 * 2 * 4));
+  const middles = hotel.faces.reduce((n, f) => n + HOTEL_ADVANCED[f.kind].filter((i, _, adv) => adv.includes(i - 1) === adv.includes(i + 1)).length, 0);
+  assert.equal(middles, 6, 'two on each long front and one on each end');
+  assert.equal(sashes.filter(t => t.p.every(v => v[1] <= hotel.eaves)).length, 2 * (4 * bays + middles * 2 * 4));
   // HE confirms plural attic dormers; one per OSM-derived facade bay is ASSUMED.
   assert.equal(sashes.filter(t => t.p.every(v => v[1] > hotel.eaves)).length, 2 * bays);
 });
@@ -217,9 +291,9 @@ test('Great Northern Hotel: a synthetic impost run clears its arch and carries a
   const synthetic = { ...hotel, outline, faces: [{ kind: 'main' as const, chain, bays: chainBays(chain.edges, 1) }], roof: { ring: outline, inset: 0 } };
   const bay = synthetic.faces[0]!.bays[0]!;
   const stone = triangles(hotelGeometry(synthetic).stone as Batch);
-  const spring = 0.75 + TEXTURES.windowArch.tile[1] - TEXTURES.windowArch.tile[0] / 2;
-  const crown = 0.75 + TEXTURES.windowArch.tile[1];
-  const impost = stone.filter((t) => t.p.some((v) => Math.abs(v[1] - spring) <= 0.081));
+  const spring = ARCH.sill + ARCH.height - ARCH.width / 2;
+  const crown = ARCH.sill + ARCH.height;
+  const impost = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - spring) <= 0.08 + 1e-9));
   const keystone = stone.filter((t) => t.p.every((v) => v[1] >= crown - 0.126 && v[1] <= crown + 0.326));
   assert.equal(impost.length, 30, 'five unbroken facade segments, each with the three faces of one moulded band');
   assert.equal(keystone.length, 12, 'one six-sided stone block over the arch');
@@ -228,7 +302,7 @@ test('Great Northern Hotel: a synthetic impost run clears its arch and carries a
   for (const t of impost) for (const v of t.p) {
     const along = (v[0] - bay.at[0]) * bay.dir[0] + (v[2] - bay.at[1]) * bay.dir[1];
     const depth = (v[0] - bay.at[0]) * bay.normal[0] + (v[2] - bay.at[1]) * bay.normal[1];
-    assert.ok(depth < -1e-6 || depth > 0.3 || Math.abs(along) >= TEXTURES.windowArch.tile[0] / 2 - 1e-6, 'the impost does not overlap the pane');
+    assert.ok(depth < -1e-6 || depth > 0.3 || Math.abs(along) >= ARCH.width / 2 - 1e-6, 'the impost does not overlap the pane');
   }
 });
 
@@ -236,10 +310,10 @@ test('Great Northern Hotel: every real ground arch gets one keystone and the imp
   const parts = hotelGeometry(hotel);
   const bays = hotel.faces.reduce((n, f) => n + f.bays.length, 0);
   const stone = triangles(parts.stone as Batch);
-  const crown = 0.75 + TEXTURES.windowArch.tile[1];
+  const crown = ARCH.sill + ARCH.height;
   const keystones = stone.filter((t) => t.p.every((v) => v[1] >= crown - 0.126 && v[1] <= crown + 0.326));
-  const spring = 0.75 + TEXTURES.windowArch.tile[1] - TEXTURES.windowArch.tile[0] / 2;
-  const impost = stone.filter((t) => t.p.some((v) => Math.abs(v[1] - spring) <= 0.081));
+  const spring = ARCH.sill + ARCH.height - ARCH.width / 2;
+  const impost = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - spring) <= 0.08 + 1e-9));
   assert.equal(keystones.length, bays * 12);
   assert.ok(impost.length > bays * 6, `${impost.length} impost triangles run around the facade between the arches`);
   assert.ok(Math.max(...[...keystones, ...impost].flatMap((t) => t.p.map((v) => v[1]))) < hotel.eaves - 0.6, 'the details clear the upper facade and roof');
@@ -253,130 +327,204 @@ test('Great Northern Hotel: every window stands on a wall (the advanced bays\' l
     const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
     return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
   }));
-  const main = hotel.faces.find((f) => f.kind === 'main')!;
-  const advanced = [5, 12].map((i) => main.bays[i]!);
+  const advanced = hotel.faces.flatMap((f) => HOTEL_ADVANCED[f.kind].map((i) => f.bays[i]!));
+  assert.equal(advanced.length, 14, 'two blocks of three bays on each long front, a central bay on each end');
   for (const key of ['sash', 'sashArch'] as const) {
     const windows = triangles(parts[key] as Batch).filter(t => key === 'sash' ? t.p.every(v => v[1] <= hotel.eaves) : true);
     for (const t of windows) {
       for (const v of t.p) {
         assert.equal(pointInPolygon([v[0], v[2]], hotel.outline), false, `${key} vertex outside the walls`);
-        // [HE-GNH] the sixth and thirteenth bays are advanced: their three lights stand on a box 0.4 m out, a hand's breadth (0.08) proud of it
-        const onBox = advanced.find((b) => Math.abs((v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1]) <= b.width / 2 + 1e-6 && (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] > 0.3);
-        if (onBox) close((v[0] - onBox.at[0]) * onBox.normal[0] + (v[2] - onBox.at[1]) * onBox.normal[1], 0.48, 1e-6, 'a light of an advanced bay stands on its box');
+        // [HE-GNH] the advanced blocks: their lights stand on the block, 0.4 m out, a hand's breadth (0.08) proud of it
+        const onBox = advanced.find((b) => Math.abs(inBay(v, b).along) <= b.width / 2 + 1e-6 && inBay(v, b).depth > 0.3);
+        if (onBox) close(inBay(v, onBox).depth, 0.48, 1e-6, 'a light of an advanced bay stands on its box');
         else assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
       }
       const g = geoNormal(t);
       assert.ok(Math.abs(g[1]) < 1e-9, 'windows are vertical');
     }
   }
-});
-
-test('Great Northern Hotel [HE-GNH, hist-a]: the sixth and thirteenth bays of the main front stand 0.4 m out on a stucco box as wide as the bay, from the first floor to the cornice, and no other bay does', () => {
-  const stone = triangles(hotelGeometry(hotel).stone as Batch);
-  const main = hotel.faces.find((f) => f.kind === 'main')!;
-  assert.equal(main.bays.length, 18);
-  const frame = (v: V3, b: (typeof main.bays)[number]): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
-  main.bays.forEach((b, i) => {
-    const fronts = stone.filter((t) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.4) < 1e-6 && Math.abs(frame(v, b).along) <= b.width / 2 + 1e-6));
-    if (i !== 5 && i !== 12) return assert.equal(fronts.length, 0, `bay ${i + 1} is not advanced`);
-    assert.equal(fronts.length, 2, `bay ${i + 1}: one flat front, two triangles`);
-    const ys = fronts.flatMap((t) => t.p.map((v) => v[1]));
-    const along = fronts.flatMap((t) => t.p.map((v) => frame(v, b).along));
-    close(Math.min(...ys), hotel.groundStorey, 1e-9, 'the box starts at the first floor');
-    close(Math.max(...ys), hotel.eaves - 0.7, 1e-9, 'and ends under the cornice');
-    close(Math.max(...along) - Math.min(...along), b.width, 1e-6, 'it is as wide as its bay');
-  });
-});
-
-type Bay = (typeof hotel.faces)[number]['bays'][number];
-const ADVANCED_BAYS = [5, 12];
-
-test('Great Northern Hotel [hist-a]: full-height stucco strips 0.14 m proud close every face and flank both advanced bays, each clear of every light', () => {
-  const parts = hotelGeometry(hotel);
-  const top = hotel.eaves - 0.7;
-  const frame = (v: V3, b: Bay): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
-  const strips = (b: Bay, lo: number, hi: number, side: number): Tri[] => triangles(parts.stone as Batch).filter((t) => t.p.every((v) => {
-    const f = frame(v, b);
-    return Math.abs(f.depth - 0.14) < 1e-6 && f.along * side >= lo - 1e-6 && f.along * side <= hi + 1e-6 && (Math.abs(v[1] - hotel.groundStorey) < 1e-9 || Math.abs(v[1] - top) < 1e-9);
+  // and none is buried: the lights of the first floor and above in an advanced bay are all on its block, those of the ground floor on the wall
+  hotel.faces.forEach((face) => face.bays.forEach((b, i) => {
+    const adv = HOTEL_ADVANCED[face.kind].includes(i);
+    const upper = triangles(parts.sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves)).flatMap((t) => t.p).filter((v) => Math.abs(inBay(v, b).along) <= b.width / 2 + 1e-6 && inBay(v, b).depth > -1e-6 && inBay(v, b).depth < 0.6);
+    assert.ok(upper.length >= 4 * (hotel.storeys - 1), `${face.kind} bay ${i + 1}: its lights are there`);
+    for (const v of upper) close(inBay(v, b).depth, adv ? 0.48 : 0.08, 1e-6, `${face.kind} bay ${i + 1}: a light stands ${adv ? 'on its block' : 'a hand\'s breadth off the wall'}`);
   }));
-  // the ends of each face: the outer metre of the end bay (or what its light leaves, 0.3 m at the least); the advanced bays' sides: from the box out, a metre at most
+});
+
+test('Great Northern Hotel [HE-GNH, hist-a]: advanced blocks stand 0.4 m out from the first floor to the cornice, three bays to a block on the main and road fronts, one on each end; the middle bay of a block cream, its neighbours brick, and no other bay is advanced', () => {
+  const parts = hotelGeometry(hotel);
+  // [HE-GNH]: the sixth and thirteenth bays of the main front, each the middle of three; the road front "similar", its blocks at the same thirds of its 22 bays (ASSUMED); the return's and the end's central bays
+  assert.deepEqual({ ...HOTEL_ADVANCED }, { main: [4, 5, 6, 11, 12, 13], rear: [5, 6, 7, 14, 15, 16], return: [2], end: [2] });
+  assert.deepEqual(hotel.faces.map((f) => f.bays.length), [18, 22, 5, 5]);
   for (const face of hotel.faces) {
+    const adv = HOTEL_ADVANCED[face.kind];
     face.bays.forEach((b, i) => {
-      for (const k of [-1, 1]) {
-        const end = face.bays[i + k] === undefined;
-        const want = end && b.width >= 2.2 ? 2 : face.kind === 'main' && ADVANCED_BAYS.includes(i) ? 2 : 0;
-        const got = strips(b, end ? Math.max(b.width / 2 - 1, 0.8) : b.width / 2, end ? b.width / 2 : b.width / 2 + 1, k).length;
-        if (end || want) assert.ok(got >= want && (want > 0 || got === 0), `${face.kind} bay ${i + 1}, side ${k}: ${got} strip triangles, wanted ${want}`);
-      }
+      const front = (m: Batch): Tri[] => triangles(m).filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 0.4) < 1e-6 && Math.abs(inBay(v, b).along) <= b.width / 2 + 1e-6));
+      const [cream, brick] = [front(parts.stone as Batch), front(parts.brick as Batch)];
+      const name = `${face.kind} bay ${i + 1}`;
+      if (!adv.includes(i)) return assert.equal(cream.length + brick.length, 0, `${name} is not advanced`);
+      assert.equal(cream.length, isMiddle(adv, i) ? 2 : 0, `${name}: ${isMiddle(adv, i) ? 'the middle of its block is cream' : 'not cream'}`);
+      assert.equal(brick.length, isMiddle(adv, i) ? 0 : 2, `${name}: ${isMiddle(adv, i) ? 'not brick' : 'the side of its block is brick'}`);
+      const fronts = [...cream, ...brick];
+      const ys = fronts.flatMap((t) => t.p.map((v) => v[1]));
+      const along = fronts.flatMap((t) => t.p.map((v) => inBay(v, b).along));
+      close(Math.min(...ys), hotel.groundStorey, 1e-9, `${name}: the block starts at the first floor`);
+      close(Math.max(...ys), hotel.eaves - 0.7, 1e-9, `${name}: and ends under the cornice`);
+      close(Math.max(...along) - Math.min(...along), b.width, 1e-6, `${name}: as wide as its bay`);
     });
   }
-  // none stands on a light: no sash vertex falls in any strip's footprint (between the wall and its front, along its width)
-  const all = triangles(parts.stone as Batch).filter((t) => t.p.every((v) => Math.abs(v[1] - hotel.groundStorey) < 1e-9 || Math.abs(v[1] - top) < 1e-9));
-  const fronts = all.filter((t) => hotel.faces.some((f) => f.bays.some((b) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.14) < 1e-6 && Math.abs(frame(v, b).along) < b.width))));
-  const ends = hotel.faces.flatMap((f) => [f.bays[0], f.bays[f.bays.length - 1]]).filter((b) => (b as Bay).width >= 2.2).length;
-  assert.equal(fronts.length, 2 * (ends + 4), `${fronts.length} strip front triangles: the ends of the faces whose end bays are 2.2 m wide, and both sides of both advanced bays`);
+});
+
+test('Great Northern Hotel [hist-a]: full-height cream strips close every face (0.14 m proud) and stand at both ends of every advanced block (0.14 m proud of it, 0.54 m of the wall), each clear of every light', () => {
+  const parts = hotelGeometry(hotel);
+  const top = hotel.eaves - 0.7;
+  /** a strip's front: two triangles at `depth`, spanning from the ground-floor base (1 m) to the cornice, between `lo` and `hi` along the side `side` of the bay */
+  const strips = (b: Bay, depth: number, lo: number, hi: number, side: number): Tri[] => triangles(parts.stone as Batch).filter((t) => t.p.every((v) => {
+    const f = inBay(v, b);
+    return Math.abs(f.depth - depth) < 1e-6 && f.along * side >= lo - 1e-6 && f.along * side <= hi + 1e-6 && (Math.abs(v[1] - 1) < 1e-9 || Math.abs(v[1] - top) < 1e-9);
+  }));
+  const rects = pilasterRects();
+  for (const r of rects) {
+    const got = strips(r.b, r.depth, r.lo, r.hi, r.k);
+    assert.equal(got.length, 2, `${r.name}: ${r.block ? 'a pilaster ends the block' : 'a strip closes the face'}`);
+    const along = got.flatMap((t) => t.p.map((v) => inBay(v, r.b).along * r.k));
+    close(Math.min(...along), r.lo, 1e-6, `${r.name}: the strip starts where it should`);
+    close(Math.max(...along), r.hi, 1e-6, `${r.name}: and ends where it should`);
+  }
+  const [ends, pilasters] = [rects.filter((r) => !r.block).length, rects.filter((r) => r.block).length];
+  assert.equal(pilasters, 12, 'two to each of the four blocks and the two ends\' central bays');
+  // and there are no others: every strip front in the whole stone is one of those
+  const all = triangles(parts.stone as Batch).filter((t) => t.p.every((v) => Math.abs(v[1] - 1) < 1e-9 || Math.abs(v[1] - top) < 1e-9) && t.p.some((v) => Math.abs(v[1] - 1) < 1e-9) && t.p.some((v) => Math.abs(v[1] - top) < 1e-9));
+  const fronts = all.filter((t) => hotel.faces.some((f) => f.bays.some((b) => t.p.every((v) => [0.14, 0.54].some((d) => Math.abs(inBay(v, b).depth - d) < 1e-6) && Math.abs(inBay(v, b).along) < b.width))));
+  assert.equal(fronts.length, 2 * (ends + pilasters), `${fronts.length} strip front triangles: the ends of the faces whose end bays are 2.2 m wide, and both sides of every block`);
+  // none stands on a light: no corner of a sash falls in any strip's footprint (between the wall and its front, along its width, above the base)
   const sashes = triangles(parts.sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves));
-  for (const t of fronts) {
-    const [a, b] = t.p.filter((v) => Math.abs(v[1] - hotel.groundStorey) < 1e-9);
-    if (!a || !b) continue;
-    const len = Math.hypot(b[0] - a[0], b[2] - a[2]);
-    const dir: Pt = [(b[0] - a[0]) / len, (b[2] - a[2]) / len];
-    for (const s of sashes) for (const v of s.p) {
-      const along = (v[0] - a[0]) * dir[0] + (v[2] - a[2]) * dir[1];
-      const off = Math.abs((v[0] - a[0]) * dir[1] - (v[2] - a[2]) * dir[0]);
-      assert.ok(!(along > 1e-6 && along < len - 1e-6 && off < 0.14 + 1e-6 && v[1] > hotel.groundStorey), `a light's corner at (${v[0].toFixed(2)}, ${v[2].toFixed(2)}) stands inside a strip`);
+  for (const r of rects) for (const s of sashes) for (const v of s.p) {
+    const f = inBay(v, r.b);
+    assert.ok(!(f.along * r.k > r.lo + 1e-6 && f.along * r.k < r.hi - 1e-6 && f.depth > -1e-6 && f.depth < r.depth + 1e-6 && v[1] > 1), `a light's corner at (${v[0].toFixed(2)}, ${v[1].toFixed(2)}, ${v[2].toFixed(2)}) stands inside the strip of ${r.name}`);
+  }
+});
+
+test('Great Northern Hotel [hist-a]: the cornice is broken forward over each advanced block and its pilasters, 1.4 m out against 1.0 m elsewhere, and its facet joins are mitred', () => {
+  const stone = triangles(hotelGeometry(hotel).stone as Batch);
+  const top = hotel.eaves - 0.7;
+  const level = (t: Tri): boolean => t.p.every((v) => Math.abs(v[1] - top) < 1e-9 || Math.abs(v[1] - hotel.eaves) < 1e-9) && t.p.some((v) => Math.abs(v[1] - top) < 1e-9) && t.p.some((v) => Math.abs(v[1] - hotel.eaves) < 1e-9);
+  const fronts = stone.filter(level);
+  const rects = pilasterRects().filter((r) => r.block);
+  let broken = 0;
+  for (const face of hotel.faces) {
+    const adv = HOTEL_ADVANCED[face.kind];
+    face.bays.forEach((b, i) => {
+      // (a pilaster is a metre wide at most)
+      const over = fronts.filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 1.4) < 1e-6 && Math.abs(inBay(v, b).along) <= b.width / 2 + 1 + 1e-6));
+      if (!adv.includes(i)) return assert.equal(over.length, 0, `${face.kind} bay ${i + 1}: the cornice stays 1.0 m out`);
+      assert.equal(over.length, 2, `${face.kind} bay ${i + 1}: one front, 1.4 m out`);
+      // it is as wide as the bay and the pilaster beside it, if the bay ends its block, and sits over both
+      const along = over.flatMap((t) => t.p.map((v) => inBay(v, b).along));
+      const reach = (k: number): number => { const r = rects.find((q) => q.b === b && q.k === k); return r ? r.hi - b.width / 2 : 0; };
+      close(Math.min(...along), -(b.width / 2 + reach(-1)), 1e-6, `${face.kind} bay ${i + 1}: over its pilaster on the left`);
+      close(Math.max(...along), b.width / 2 + reach(1), 1e-6, `${face.kind} bay ${i + 1}: and on the right`);
+      broken++;
+    });
+  }
+  assert.equal(broken, 14);
+  // every wall has its cornice front 1.0 m off its line, one quad to a wall
+  for (const e of polygonEdges(hotel.outline).filter((q) => q.length >= 0.05)) {
+    const depth = (v: V3): number => (v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1];
+    const along = (v: V3): number => (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
+    const own = fronts.filter((t) => t.p.every((v) => Math.abs(depth(v) - 1.0) < 1e-6) && Math.min(...t.p.map(along)) < e.length - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
+    assert.equal(own.length, 2, `the wall ${e.i}: its cornice front is one quad 1.0 m out`);
+  }
+  // no step at a facet join: the front of one wall's cornice ends where the next one's begins, one corner 1.0 m off both walls, for every join of the road front and the main front
+  for (const face of hotel.faces.filter((f) => f.kind === 'rear' || f.kind === 'main')) {
+    const walls = face.chain.edges;
+    for (let i = 0; i + 1 < walls.length; i++) {
+      const [e, f] = [walls[i]!, walls[i + 1]!];
+      const depthIn = (q: typeof e) => (v: V3): number => (v[0] - q.a[0]) * q.normal[0] + (v[2] - q.a[1]) * q.normal[1];
+      const corner = fronts.flatMap((t) => t.p).filter((v) => Math.abs(v[1] - top) < 1e-9 && Math.abs(depthIn(e)(v) - 1) < 1e-6 && Math.abs(depthIn(f)(v) - 1) < 1e-6);
+      assert.equal(new Set(corner.map((v) => v.map((c) => c.toFixed(6)).join())).size, 1, `the cornice of walls ${e.i} and ${f.i} meets at one corner, 1.0 m off each`);
     }
   }
 });
 
-test('Great Northern Hotel [hist-a]: a stucco sill course under each of the upper rows, the cornice 1.0 m out', () => {
+test('Great Northern Hotel [hist-a]: a stucco sill course under each of the upper rows, 0.1 m out and carried across the advanced blocks 0.5 m out, the cornice 1.0 m out', () => {
   const stone = triangles(hotelGeometry(hotel).stone as Batch);
   const edges = polygonEdges(hotel.outline).filter((e) => e.length >= 0.05);
-  const outline = hotel.outline;
-  const distance = (p: Pt): number => Math.min(...polygonEdges(outline).map((e) => {
-    const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
-    return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
-  }));
+  /** the front quads between two heights whose corners all stand `depth` off a wall's line and span some of its length */
+  const fronts = (y0: number, y1: number, e: { a: Pt; b: Pt; normal: Pt; length: number }, depth: number): Tri[] => stone.filter((t) => t.p.every((v) => (Math.abs(v[1] - y0) < 1e-9 || Math.abs(v[1] - y1) < 1e-9) && Math.abs((v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1] - depth) < 1e-6) && t.p.some((v) => Math.abs(v[1] - y0) < 1e-9) && t.p.some((v) => Math.abs(v[1] - y1) < 1e-9)
+    && Math.min(...t.p.map((v) => ((v[0] - e.a[0]) * (e.b[0] - e.a[0]) + (v[2] - e.a[1]) * (e.b[1] - e.a[1])) / e.length)) < e.length - 1e-6 && Math.max(...t.p.map((v) => ((v[0] - e.a[0]) * (e.b[0] - e.a[0]) + (v[2] - e.a[1]) * (e.b[1] - e.a[1])) / e.length)) > 1e-6);
+  const sashes = triangles(hotelGeometry(hotel).sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves)).flatMap((t) => t.p.map((v) => v[1]));
   for (const s of [2, 3, 4]) {
     const y0 = hotel.groundStorey + (s - 1) * hotel.upperStorey + 0.2;
-    const faces = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - y0) < 1e-9 || Math.abs(v[1] - (y0 + 0.3)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - y0) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y0 + 0.3)) < 1e-9));
-    assert.equal(faces.length, 2 * edges.length, `row ${s}: one front face (two triangles) on every wall`);
-    const out = faces.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])));
-    close(Math.max(...out), 0.1, 1e-6, `row ${s}: the course stands 0.1 m out`);
-    assert.ok(Math.min(...out) > 0.09, `row ${s}: and no nearer the wall at a corner than a hair`);
-    const sills = triangles(hotelGeometry(hotel).sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves)).flatMap((t) => t.p.map((v) => v[1]));
-    assert.ok(sills.some((y) => Math.abs(y - (y0 + 0.3)) < 1e-9), `row ${s}: the windows stand on the top of the course`);
+    for (const e of edges) assert.equal(fronts(y0, y0 + 0.3, e, 0.1).length, 2, `row ${s}: wall ${e.i} has one front face (two triangles) 0.1 m out`);
+    for (const face of hotel.faces) face.bays.forEach((b, i) => {
+      const own = stone.filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 0.5) < 1e-6 && Math.abs(inBay(v, b).along) <= b.width / 2 + 1e-6 && (Math.abs(v[1] - y0) < 1e-9 || Math.abs(v[1] - (y0 + 0.3)) < 1e-9)));
+      assert.equal(own.length, HOTEL_ADVANCED[face.kind].includes(i) ? 2 : 0, `row ${s}: ${face.kind} bay ${i + 1}${HOTEL_ADVANCED[face.kind].includes(i) ? ' carries the course across its block' : ' has none beyond the wall\'s'}`);
+    });
+    assert.ok(sashes.some((y) => Math.abs(y - (y0 + 0.3)) < 1e-9), `row ${s}: the windows stand on the top of the course`);
   }
-  const cornice = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (hotel.eaves - 0.7)) < 1e-9 || Math.abs(v[1] - hotel.eaves) < 1e-9));
-  close(Math.max(...cornice.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])))), 1.0, 1e-6, 'the cornice stands 1.0 m out');
+  for (const e of edges) assert.equal(fronts(hotel.eaves - 0.7, hotel.eaves, e, 1.0).length, 2, `wall ${e.i}: the cornice is one front face 1.0 m out`);
 });
 
 test('Great Northern Hotel [hist-a]: a stucco base 1 m tall stands 0.06 m proud round the ground floor, and every upper light has a cream architrave 0.25 m wide behind its sash', () => {
   const stone = triangles(hotelGeometry(hotel).stone as Batch);
-  const wallDistance = (p: Pt): number => Math.min(...polygonEdges(hotel.outline).map((e) => {
-    const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
-    return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
-  }));
-  const base = stone.filter((t) => t.p.every((v) => Math.abs(v[1]) < 1e-9 || Math.abs(v[1] - 1) < 1e-9) && t.p.some((v) => Math.abs(v[1]) < 1e-9) && t.p.some((v) => Math.abs(v[1] - 1) < 1e-9));
-  assert.equal(base.length, 2 * polygonEdges(hotel.outline).filter((e) => e.length >= 0.05).length, 'one front face (two triangles) on every wall');
-  close(Math.max(...base.flatMap((t) => t.p.map((v) => wallDistance([v[0], v[2]])))), 0.06, 1e-6, 'standing 0.06 m out');
+  for (const e of polygonEdges(hotel.outline).filter((q) => q.length >= 0.05)) {
+    const depth = (v: V3): number => (v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1];
+    const along = (v: V3): number => (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
+    const base = stone.filter((t) => t.p.every((v) => (Math.abs(v[1]) < 1e-9 || Math.abs(v[1] - 1) < 1e-9) && Math.abs(depth(v) - 0.06) < 1e-6) && t.p.some((v) => Math.abs(v[1]) < 1e-9) && t.p.some((v) => Math.abs(v[1] - 1) < 1e-9) && Math.min(...t.p.map(along)) < e.length - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
+    assert.equal(base.length, 2, `wall ${e.i}: one front face (two triangles) 0.06 m out`);
+  }
   // the architrave: a flat stucco surround 0.25 m wider each side than the sash (the bay's width less 0.1 m at most), 0.1 m below its sill, 0.05 m over its head, a hair behind the sash
   const [tw] = TEXTURES.window.tile;
   for (const face of hotel.faces) {
-    const b = face.bays[Math.floor(face.bays.length / 2)]!;
-    const frame = (v: V3): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
+    const adv = HOTEL_ADVANCED[face.kind];
+    const mid = Math.floor(face.bays.length / 2);
+    const b = face.bays[adv.includes(mid) ? 1 : mid]!;
     const w = Math.min(tw + 0.5, b.width - 0.1);
     for (let s = 1; s < hotel.storeys; s++) {
       const sill = hotel.groundStorey + (s - 1) * hotel.upperStorey + 0.5;
-      const surround = stone.filter((t) => t.p.every((v) => Math.abs(frame(v).depth - 0.04) < 1e-6 && Math.abs(frame(v).along) <= w / 2 + 1e-6 && v[1] >= sill - 0.1 - 1e-9 && v[1] <= sill + 2.45 + 1e-9));
+      const surround = stone.filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 0.04) < 1e-6 && Math.abs(inBay(v, b).along) <= w / 2 + 1e-6 && v[1] >= sill - 0.1 - 1e-9 && v[1] <= sill + 2.45 + 1e-9));
       assert.equal(surround.length, 2, `${face.kind} face, row ${s}: one flat quad`);
-      const along = surround.flatMap((t) => t.p.map((v) => frame(v).along));
+      const along = surround.flatMap((t) => t.p.map((v) => inBay(v, b).along));
       const ys = surround.flatMap((t) => t.p.map((v) => v[1]));
       close(Math.max(...along) - Math.min(...along), w, 1e-6, 'as wide as the sash and 0.25 m each side');
       close(Math.min(...ys), sill - 0.1, 1e-9, 'from 0.1 m under the sill');
       close(Math.max(...ys), sill + 2.45, 1e-9, 'to 0.05 m over the head of the 2.4 m sash');
     }
   }
+  // on an advanced block the architrave stands on the block (0.4 m out), as do the sashes (a hand's breadth further)
+  for (const face of hotel.faces) face.bays.forEach((b, i) => {
+    const adv = HOTEL_ADVANCED[face.kind];
+    if (!adv.includes(i) || isMiddle(adv, i)) return;
+    const w = Math.min(tw + 0.5, b.width - 0.1);
+    const sill = hotel.groundStorey + 0.5;
+    const surround = stone.filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 0.44) < 1e-6 && Math.abs(inBay(v, b).along) <= w / 2 + 1e-6 && v[1] >= sill - 0.1 - 1e-9 && v[1] <= sill + 2.45 + 1e-9));
+    assert.equal(surround.length, 2, `${face.kind} bay ${i + 1}: the side bay of a block keeps its architrave, on the block`);
+  });
+});
+
+test('Great Northern Hotel [hist-a]: the ground-floor arches are 1.6 x 3.2 m on a sill 0.6 m up, each in a cream archivolt a quarter-metre wider each side (less where the bay is narrow)', () => {
+  const parts = hotelGeometry(hotel);
+  const stone = triangles(parts.stone as Batch);
+  assert.deepEqual({ ...ARCH }, { sill: 0.6, width: 1.6, height: 3.2 }, 'the arch figures (ASSUMED, scaled from hist-a)');
+  for (const face of hotel.faces) face.bays.forEach((b, i) => {
+    const arch =triangles(parts.sashArch as Batch).filter((t) => t.p.every((v) => Math.abs(inBay(v, b).along) <= ARCH.width / 2 + 1e-6 && Math.abs(inBay(v, b).depth - 0.08) < 1e-6));
+    assert.equal(arch.length, 2, `${face.kind} bay ${i + 1}: one arch light`);
+    const ys = arch.flatMap((t) => t.p.map((v) => v[1]));
+    close(Math.min(...ys), ARCH.sill, 1e-9, 'its sill');
+    close(Math.max(...ys), ARCH.sill + ARCH.height, 1e-9, 'its crown');
+    const along = arch.flatMap((t) => t.p.map((v) => inBay(v, b).along));
+    close(Math.max(...along) - Math.min(...along), ARCH.width, 1e-6, 'its width');
+    // the archivolt: a flat round-headed stucco shape 0.04 m off the wall, a hand's breadth (0.04) behind the light, 0.25 m wider each side or the bay's width less 0.1 m
+    const w = Math.min(ARCH.width + 0.5, b.width - 0.1);
+    const ring = stone.filter((t) => t.p.every((v) => Math.abs(inBay(v, b).depth - 0.04) < 1e-6 && Math.abs(inBay(v, b).along) <= w / 2 + 1e-6 && v[1] >= ARCH.sill - 0.1 - 1e-9 && v[1] <= ARCH.sill + ARCH.height + 0.2 + 1e-9));
+    assert.ok(ring.length >= 8, `${face.kind} bay ${i + 1}: ${ring.length} triangles of a round-headed fan`);
+    const rw = ring.flatMap((t) => t.p.map((v) => inBay(v, b).along));
+    close(Math.max(...rw) - Math.min(...rw), w, 1e-6, `${face.kind} bay ${i + 1}: the archivolt is ${w} m wide`);
+    close(Math.min(...ring.flatMap((t) => t.p.map((v) => v[1]))), ARCH.sill - 0.1, 1e-9, 'from 0.1 m under the sill');
+    close(Math.max(...ring.flatMap((t) => t.p.map((v) => v[1]))), ARCH.sill + ARCH.height + 0.2, 1e-9, 'to 0.2 m over the crown');
+  });
 });
 
 test('Great Northern Hotel [hist-a]: eight brick slab stacks on each long slope, each 3.2 m above the roof at its centre (one and a half dormers high) with a pale cap', () => {

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, polygonEdges, REPLACED_BUILDING_IDS, towerSquare } from '../../core/landmarks.ts';
-import type { BarlowPlan, BayPosition, Edge, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
+import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { mergeParts, material, part, TEXTURES } from './materials.ts';
@@ -231,20 +231,37 @@ export function segmentsOutside(edges: readonly Edge[], cutters: readonly (reado
   return out;
 }
 
-/** A band (string course or cornice) standing `out` metres proud of the wall, `h` tall, from y. Stone UVs in metres. */
+/**
+ * A band (string course or cornice) standing `out` metres proud of the wall, `h` tall, from y. Stone UVs in metres. Where a segment ends at the start of its
+ * neighbour's and the turn is slight (under 60 degrees: a facet join) the two fronts are mitred: both end at the one corner, where their lines `out` from their walls
+ * cross, so the band runs on as one without a step; a building's own corner keeps each segment's front square to its wall.
+ */
 export function addBand(m: Batch, segs: readonly Seg[], y: number, h: number, out: number): void {
-  for (const sg of segs) {
+  const front = (p: Pt, sg: Seg, nb: Seg | undefined, joint: Pt | undefined): V3 => {
+    let [x, z] = sg.normal;
+    if (nb && joint && Math.hypot(joint[0] - p[0], joint[1] - p[1]) < 1e-6) {
+      const c = x * nb.normal[0] + z * nb.normal[1];
+      if (c > 0.5) [x, z] = [(x + nb.normal[0]) / (1 + c), (z + nb.normal[1]) / (1 + c)];
+    }
+    return [p[0] + x * out, y, p[1] + z * out];
+  };
+  segs.forEach((sg, i) => {
+    const prev = segs[(i + segs.length - 1) % segs.length];
+    const next = segs[(i + 1) % segs.length];
     const l = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
     const n3: V3 = [sg.normal[0], 0, sg.normal[1]];
-    const ao: V3 = [sg.a[0] + sg.normal[0] * out, y, sg.a[1] + sg.normal[1] * out];
-    const bo: V3 = [sg.b[0] + sg.normal[0] * out, y, sg.b[1] + sg.normal[1] * out];
+    const ao = front(sg.a, sg, prev, prev?.b);
+    const bo = front(sg.b, sg, next, next?.a);
     const up = (v: V3, dy: number): V3 => [v[0], v[1] + dy, v[2]];
     const s0 = sg.s0;
     const s1 = sg.s0 + l;
-    m.quadUV(ao, bo, up(bo, h), up(ao, h), [[s0, y], [s1, y], [s1, y + h], [s0, y + h]], n3);
-    m.quadUV(up(ao, h), up(bo, h), [sg.b[0], y + h, sg.b[1]], [sg.a[0], y + h, sg.a[1]], [[s0, 0], [s1, 0], [s1, out], [s0, out]], UP);
-    m.quadUV([sg.a[0], y, sg.a[1]], [sg.b[0], y, sg.b[1]], bo, ao, [[s0, 0], [s1, 0], [s1, out], [s0, out]], [0, -1, 0]);
-  }
+    // a mitred end stands a little along the wall from the segment's end: the UVs follow it, so they stay in metres
+    const along = (v: V3): number => s0 + ((v[0] - sg.a[0]) * (sg.b[0] - sg.a[0]) + (v[2] - sg.a[1]) * (sg.b[1] - sg.a[1])) / l;
+    const [u0, u1] = [along(ao), along(bo)];
+    m.quadUV(ao, bo, up(bo, h), up(ao, h), [[u0, y], [u1, y], [u1, y + h], [u0, y + h]], n3);
+    m.quadUV(up(ao, h), up(bo, h), [sg.b[0], y + h, sg.b[1]], [sg.a[0], y + h, sg.a[1]], [[u0, 0], [u1, 0], [s1, out], [s0, out]], UP);
+    m.quadUV([sg.a[0], y, sg.a[1]], [sg.b[0], y, sg.b[1]], bo, ao, [[s0, 0], [s1, 0], [u1, out], [u0, out]], [0, -1, 0]);
+  });
 }
 
 export type Head = 'flat' | 'round' | 'pointed';
@@ -320,8 +337,17 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
 const CORNICE_HEIGHT = 0.7; // ASSUMED
 const CORNICE_OUT = 1.0; // hist-a: a heavy modillion cornice stands well out from the wall; the depth is ASSUMED
 const SASH_HEIGHT = 2.4; // ASSUMED
-const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly advanced": hist-a shows each on a stucco box about this far out (ASSUMED)
-const ADVANCED = [5, 12]; // their places along the main front, counting from 0
+const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly advanced": hist-a shows each block about this far out (ASSUMED)
+/**
+ * The bays that stand ADVANCE out, by face, counting from 0. [HE-GNH]: on the main front "sixth and thirteenth bays slightly advanced with tripartite windows and stucco
+ * dressings", on "the southern return 5 windows with slightly advanced central bay", and "Road facade similar". hist-a shows each advanced block three window bays wide,
+ * framed by full-height cream pilasters, the sixth bay (cream, tripartite) its middle one: the blocks are those three bays (ASSUMED). The road (rear) front takes the
+ * main front's blocks at the same thirds of its length (ASSUMED), the north-west end the return's central bay (ASSUMED: "the north-west end matches").
+ */
+export const HOTEL_ADVANCED: Record<HotelFaceKind, readonly number[]> = { main: [4, 5, 6, 11, 12, 13], rear: [5, 6, 7, 14, 15, 16], return: [2], end: [2] };
+/** hist-a: tall round-headed openings in cream archivolts on the ground floor (a sill 0.6 m up, 1.6 x 3.2 m; sizes ASSUMED, scaled from the photograph's storey). */
+export const ARCH = { sill: 0.6, width: 1.6, height: 3.2 } as const;
+const PILASTER = 1.0; // hist-a: the cream pilasters are about this wide at most (ASSUMED); each gives way to the light of the bay beside it
 
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry): "Slate roof with pedimented dormers." Sizes and the one-per-bay count are ASSUMED; places follow the facade bays and the eaves/ridge ring.
 const GNH_DORMER_INSET = 0.34; // ASSUMED fraction up the roof slope
@@ -456,49 +482,70 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   const stone = part(parts, 'stone');
   addWalls(part(parts, 'brick'), plan.outline, 0, plan.eaves);
   const segs = segmentsOutside(polygonEdges(plan.outline), []);
+  const top = plan.eaves - CORNICE_HEIGHT;
+  // hist-a: a stucco string course over the ground floor and a sill course under each upper row (the first has the ground floor's); sizes ASSUMED.
+  // [HE-GNH]: "Plain stucco bands at 1st, 2nd, and 3rd floor levels"
+  const courses: [number, number, number][] = [[plan.groundStorey - 0.12, 0.28, 0.1]];
+  for (let s = 2; s < plan.storeys; s++) courses.push([plan.groundStorey + (s - 1) * plan.upperStorey + 0.2, 0.3, 0.1]);
   addBand(stone, segs, 0, 1, 0.06); // hist-a: the ground floor stands on a stucco base about a metre high (ASSUMED)
-  addBand(stone, segs, plan.groundStorey - 0.12, 0.28, 0.1); // string course over the ground floor
-  addBand(stone, segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, CORNICE_OUT); // modillion cornice [HE-GNH]
-  for (let s = 2; s < plan.storeys; s++) addBand(stone, segs, plan.groundStorey + (s - 1) * plan.upperStorey + 0.2, 0.3, 0.1); // hist-a: a stucco sill course under each upper row (the first has the ground floor's); sizes ASSUMED
+  addBand(stone, segs, top, CORNICE_HEIGHT, CORNICE_OUT); // modillion cornice [HE-GNH]
+  for (const c of courses) addBand(stone, segs, ...c);
   addRoof(part(parts, 'slate'), plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
   addHotelRoofDetails(parts, plan);
 
   const f = FIGURES.gnh;
   const [tw] = TEXTURES.window.tile;
-  const [aw, ah] = TEXTURES.windowArch.tile;
-  const crown = 0.75 + ah;
+  const { sill, width: aw, height: ah } = ARCH;
+  const crown = sill + ah;
   const bays = plan.faces.flatMap(face => face.bays);
   const openings = bays.map(({ at, dir, normal }) => [-aw / 2, aw / 2, aw / 2, -aw / 2].map((x, i) => [at[0] + dir[0] * x + normal[0] * (i < 2 ? -1 : 1), at[1] + dir[1] * x + normal[1] * (i < 2 ? -1 : 1)] as Pt));
-  addBand(stone, segmentsOutside(polygonEdges(plan.outline), openings), 0.75 + ah - aw / 2 - 0.08, 0.16, 0.14); // [HE-GNH] continuous imposts; profile is ASSUMED
-  const [mid, tall] = [(plan.groundStorey + plan.eaves - CORNICE_HEIGHT) / 2, plan.eaves - CORNICE_HEIGHT - plan.groundStorey];
+  addBand(stone, segmentsOutside(polygonEdges(plan.outline), openings), crown - aw / 2 - 0.08, 0.16, 0.14); // [HE-GNH] continuous imposts; profile is ASSUMED
+  const blocks: Seg[] = []; // the faces of the advanced blocks, which the courses cross
   for (const face of plan.faces) {
+    const adv = HOTEL_ADVANCED[face.kind];
     face.bays.forEach((bay, index) => {
       const rotY = yaw(bay.dir);
+      const on = adv.includes(index);
+      const lift = on ? ADVANCE : 0;
       stone.box(onWall(bay, 0, crown + 0.1, 0.2), [0.5, 0.45, 0.12], { rotY }); // [HE-GNH] keystone dimensions are ASSUMED
-      // ground floor: round-headed openings [HE-GNH]
-      addSash(parts, 'sashArch', bay, 0.75, aw, ah);
-      // [HE-GNH] the sixth and thirteenth bays of the main front are advanced: hist-a shows three narrow lights on a stucco box as wide as the bay, first floor to cornice
-      const advanced = face.kind === 'main' && ADVANCED.includes(index);
-      if (advanced) stone.box(onWall(bay, 0, mid, (ADVANCE - 0.15) / 2), [bay.width, tall, ADVANCE + 0.15], { rotY, skip: ['+y'] });
-      // hist-a: full-height stucco strips 0.14 m proud on a face's outer end bays and both sides of an advanced bay, up to 1 m wide (ASSUMED)
-      for (const k of [-1, 1]) {
+      // ground floor: round-headed openings [HE-GNH], each in a cream archivolt 0.25 m wide (hist-a)
+      addWindow(stone, bay, sill - 0.1, Math.min(aw + 0.5, bay.width - 0.1), ah + 0.3, 'round', 0.04, true);
+      addSash(parts, 'sashArch', bay, sill, aw, ah);
+      // the ends of the run of advanced bays it is in, and of the face: a pilaster stands there
+      const ends = [-1, 1].map(k => !face.bays[index + k] || adv.includes(index + k) !== on);
+      const centre = on && ends[0] === ends[1];
+      const wide = [0, 0] as [number, number];
+      ends.forEach((end, i) => {
+        const k = i ? 1 : -1;
         const next = face.bays[index + k];
-        const [s0, s1] = !next ? [Math.max(bay.width / 2 - 1, 0.8), bay.width / 2] : advanced ? [bay.width / 2, Math.min(bay.width / 2 + 1, (bay.width + next.width) / 2 - 0.8)] : [0, 0];
-        if (s1 - s0 < 0.3) continue;
-        stone.box(onWall(bay, ((s0 + s1) / 2) * k, mid, 0.07), [s1 - s0, tall, 0.14], { rotY, skip: ['+y', '-y', '+z'] });
+        // hist-a: full-height cream pilasters 0.14 m proud of the wall at the ends of a face, and of the block at both sides of an advanced one: a metre wide at most (ASSUMED),
+        // reaching 0.3 m into the block's end bay (no nearer the middle than the outer light of a bay of three, 1.2 m) and no nearer than 0.8 m to the light of the bay beside it
+        const [s0, s1] = !next ? [Math.max(bay.width / 2 - 1, 0.8), bay.width / 2] : end && on ? [Math.max(bay.width / 2 - 0.3, centre ? 1.2 : 0), Math.min(bay.width / 2 + PILASTER, (bay.width + next.width) / 2 - 0.8)] : [0, 0];
+        if (s1 - s0 < 0.3) return;
+        const d = (next ? lift : 0) + 0.14;
+        stone.box(onWall(bay, ((s0 + s1) / 2) * k, (1 + top) / 2, d / 2), [s1 - s0, top - 1, d], { rotY, skip: ['+y', '-y', '+z'] });
+        if (next) wide[i] = s1 - bay.width / 2;
+      });
+      if (on) {
+        // the block: brick from the first floor to the cornice, its middle bay cream (hist-a), its courses carried across it, the cornice broken forward over it and its pilasters
+        part(parts, centre ? 'stone' : 'brick').box(onWall(bay, 0, (f.groundStorey + top) / 2, (ADVANCE - 0.15) / 2), [bay.width, top - f.groundStorey, ADVANCE + 0.15], { rotY, skip: ['+y'] });
+        const [a, b] = [-bay.width / 2, bay.width / 2].map((x): Pt => [onWall(bay, x, 0, ADVANCE)[0], onWall(bay, x, 0, ADVANCE)[2]]);
+        blocks.push({ a: a as Pt, b: b as Pt, normal: bay.normal, s0: 0 });
+        stone.box(onWall(bay, (wide[1] - wide[0]) / 2, plan.eaves - CORNICE_HEIGHT / 2, CORNICE_OUT + ADVANCE / 2 - 0.005), [bay.width + wide[0] + wide[1], CORNICE_HEIGHT, ADVANCE + 0.01], { rotY, skip: ['+z'] });
       }
       for (let s = 1; s < f.storeys; s++) {
         // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little) so the top row clears the cornice
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;
-        if (advanced) {
+        if (centre) {
           for (const k of [-1, 0, 1]) addSash(parts, 'sash', shift(bay, k * 0.8), base, 0.75, SASH_HEIGHT, ADVANCE + 0.08);
         } else {
-          addWindow(stone, bay, base - 0.1, Math.min(tw + 0.5, bay.width - 0.1), SASH_HEIGHT + 0.15, 'flat', 0.04, true); // hist-a: a cream stucco architrave round every light, 0.25 m wide (ASSUMED)
-          addSash(parts, 'sash', bay, base, tw, SASH_HEIGHT);
+          addWindow(stone, bay, base - 0.1, Math.min(tw + 0.5, bay.width - 0.1), SASH_HEIGHT + 0.15, 'flat', lift + 0.04, true); // hist-a: a cream stucco architrave round every light, 0.25 m wide (ASSUMED)
+          addSash(parts, 'sash', bay, base, tw, SASH_HEIGHT, lift + 0.08);
         }
       }
     });
   }
+  for (const c of courses) addBand(stone, blocks, ...c);
   return parts;
 }
 

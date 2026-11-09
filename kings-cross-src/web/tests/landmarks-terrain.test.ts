@@ -204,7 +204,9 @@ test('on ground level with the railway\'s own (GROUND_Y) the hotel, the Midland 
 
 test('the footprints are where the walls are: every vertex of the hotel and the Midland Grand is within a cornice\'s reach of its rings, the walls\' feet are on them, and the shed lies inside its rectangle, end to end', () => {
   const plain = named(landmarkGeometry(plans));
-  const reach: Record<LandmarkName, number> = { hotel: 1 + 1e-6, midland: 1 + 1e-6, barlow: 0.01 }; // cornices stand proud of the wall by up to 1 m (the hotel's, hist-a), bands and pavilions by less
+  // cornices stand proud of the wall by up to 1 m (the hotel's, hist-a), bands and pavilions by less; the hotel's cornice is broken forward 0.4 m over each advanced block, 1.4 m from
+  // the wall, and where the end of its pilaster passes a facet join of the road front the corner of that block stands 1.5 m from the ring
+  const reach: Record<LandmarkName, number> = { hotel: 1.51, midland: 1 + 1e-6, barlow: 0.01 };
   for (const name of NAMES) {
     let worst = 0;
     const xs: number[] = [];
@@ -232,7 +234,8 @@ test('the footprints are where the walls are: every vertex of the hotel and the 
     const proud = name === 'hotel' ? 0.06 : 0.5;
     const stoneFeet = feetAt(plain[name], ['stone'], 0);
     assert.ok(stoneFeet.length >= 20, `${name}: ${stoneFeet.length} stone feet`);
-    for (const p of stoneFeet) assert.ok(rings[name].some((r) => distToRing(p, r) <= proud + 1e-6), `${name}: a stone foot at ${p} is more than ${proud} m off its rings`);
+    // a mitred band's corner at a facet join stands proud / cos(half the turn) from its vertex: under 1 % more for the joins in these outlines (turns up to 12 degrees)
+    for (const p of stoneFeet) assert.ok(rings[name].some((r) => distToRing(p, r) <= proud * 1.01 + 1e-6), `${name}: a stone foot at ${p} is more than ${proud} m off its rings`);
   }
   // the shed: along its length the rectangle is the vault, from the south wall to the north end
   const frame = { origin: plans.barlow.origin, heading: plans.barlow.heading };
