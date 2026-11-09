@@ -1,5 +1,7 @@
 // Run from kings-cross-src: node tools/axis08-evidence.mjs [--dist DIR] [--runs 3]
 // [--out ../.scratch/axis08-evidence] [--chrome PATH] [--relay URL] [--seconds 60]
+// [--uncapped-seconds N] [--headroom-baseline PERF.json] [--time ISO] [--weather NAME | --sky ref]   (passed to perf.mjs: the first pair
+// also measures the uncapped FPS headroom, and every page load carries the scene pin)
 // Omitting --dist builds with source maps into a fresh private .scratch directory.
 // Full evidence exits successfully only with genuine, unthrottled Metal on both FPS cameras
 // 60 FPS median/p5, warm first render <3 s, and app gzip below 2 MB; all-emitted including maps has its own explicit budget result.
@@ -11,6 +13,7 @@ import { gzipSync } from 'node:zlib';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { headroomMarkdown } from './perf.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const project = path.resolve(here, '..');
@@ -80,7 +83,9 @@ export function summarizeRuns(reports) {
   const targets = { fpsTarget: 60, warmFirstRenderLimitMs: 3000, warmFirstRenderStrict: true, frameBudgetMs: 1000 / 60,
     cameraTargets, warmFirstRenderWithin3s, fpsAtLeast60, passed: genuineMetal && warmFirstRenderWithin3s && fpsAtLeast60,
     definition: 'Both camera median and p5 FPS must be >=60; every warm first render must be strictly <3000 ms; genuine unthrottled Metal required. Frame p95/p99 comparisons are disclosed separately.' };
-  return { samples, targets, gaps, aggregates: Object.fromEntries(Object.entries(samples).map(([name, rows]) => [name, { firstRenderMs: summarize(rows.map(row => row.firstRenderMs)), sceneReadyMs: summarize(rows.map(row => row.sceneReadyMs)) }])), cameras, genuineMetal, timingDefinition: 'Navigation-relative draw submission completion after renderer.render, not GPU completion/display presentation. First render is the initial visible-scene draw submission; full scene requires cityLoaded completion, terrain and city buildings present, and a subsequent render. Each cold/warm pair uses an independent clean Chrome profile; warm is the cache-enabled second navigation in that same profile. OS/filesystem caches are not flushed. Replay train drawing is also required by perf before collecting each sample.' };
+  return { samples, targets, gaps, aggregates: Object.fromEntries(Object.entries(samples).map(([name, rows]) => [name, { firstRenderMs: summarize(rows.map(row => row.firstRenderMs)), sceneReadyMs: summarize(rows.map(row => row.sceneReadyMs)) }])), cameras, genuineMetal,
+    // Uncapped FPS headroom (perf.mjs): measured on the first pair with the cameras; null when that report predates it or the run skipped it.
+    headroom: reports[0].headroom ?? null, timingDefinition: 'Navigation-relative draw submission completion after renderer.render, not GPU completion/display presentation. First render is the initial visible-scene draw submission; full scene requires cityLoaded completion, terrain and city buildings present, and a subsequent render. Each cold/warm pair uses an independent clean Chrome profile; warm is the cache-enabled second navigation in that same profile. OS/filesystem caches are not flushed. Replay train drawing is also required by perf before collecting each sample.' };
 }
 
 export function evidenceMarkdown(report) {
@@ -109,6 +114,7 @@ export function evidenceMarkdown(report) {
       const camera = browser.cameras[name], target = browser.targets.cameraTargets[name];
       lines.push(`| ${name} | ${cell(camera?.renderer)} | ${show(camera?.fps?.median)} | ${show(camera?.fps?.p5)} | ${show(camera?.frameMs?.p95)} | ${show(camera?.frameMs?.p99)} | ${verdict(target.medianFpsAtLeast60)} | ${verdict(target.p5FpsAtLeast60)} | ${verdict(target.p95FrameWithinBudget)} | ${verdict(target.p99FrameWithinBudget)} |`);
     }
+    lines.push('', ...headroomMarkdown(browser.headroom));
   } else lines.push('Browser timing, FPS and genuine Metal: NOT MEASURED.');
   lines.push('', 'Limitations and gaps:', '',
     '- Draw submission timing does not establish GPU completion or actual display presentation. OS/filesystem caches are not flushed.',
@@ -140,7 +146,7 @@ function command(executable, args) {
   });
 }
 export async function main(args = process.argv.slice(2)) {
-  const allowed = new Set(['--dist', '--out', '--runs', '--seconds', '--chrome', '--relay', '--check-build']);
+  const allowed = new Set(['--dist', '--out', '--runs', '--seconds', '--chrome', '--relay', '--check-build', '--time', '--weather', '--sky', '--uncapped-seconds', '--headroom-baseline']);
   for (let i = 0; i < args.length; i++) {
     if (!allowed.has(args[i])) throw new Error(`unknown option ${args[i]}`);
     if (args[i] !== '--check-build' && (!args[++i] || args[i].startsWith('--'))) throw new Error('option requires a value');
@@ -164,7 +170,7 @@ export async function main(args = process.argv.slice(2)) {
     if (!args.includes('--check-build')) report.browser = await collectRuns(runs, async (index, startupOnly) => {
       const runOut = path.join(out, `pair-${index + 1}`);
       const perfArgs = [path.join(here, 'perf.mjs'), '--dist', dist, '--out', runOut, '--scene-ready'];
-      for (const name of ['--seconds', '--chrome', '--relay']) if (flag(name)) perfArgs.push(name, flag(name));
+      for (const name of ['--seconds', '--chrome', '--relay', '--time', '--weather', '--sky', '--uncapped-seconds', '--headroom-baseline']) if (flag(name)) perfArgs.push(name, flag(name));
       if (startupOnly) perfArgs.push('--startup-only');
       await command(process.execPath, perfArgs);
       const files = (await readdir(runOut)).filter(file => /^perf-.*\.json$/.test(file) && !file.startsWith('perf-failure-'));

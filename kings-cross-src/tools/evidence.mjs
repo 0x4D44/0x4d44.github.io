@@ -11,12 +11,18 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { PLATFORM_HEIGHT, railSegments, twinRails } from '../core/scene.ts';
-import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, stationBuilding, stationPlatforms, worldToShed } from '../core/station.ts';
-import { barlowPlan, greatNorthernHotelPlan, midlandGrandPlan, REPLACED_BUILDING_IDS, tunnelMouths } from '../core/landmarks.ts';
+import { CLOCK_TOWER_HEIGHT, GAUGE, RAIL_HEAD_WIDTH, SHED_SPAN_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, stationBuilding, stationPlatforms, worldToShed } from '../core/station.ts';
+import { barlowPlan, greatNorthernHotelPlan, landmarkPlans, landmarkSeats, midlandGrandPlan, REPLACED_BUILDING_IDS, tunnelMouths } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
+import { gasholderPlan, granaryComplex } from '../core/kxcentral.ts';
+import { createTerrain } from '../core/terrain.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
-import { WESTERN_RANGE } from '../web/src/shed.ts';
+import { TOWER_SIZE, WESTERN_RANGE } from '../web/src/shed.ts';
 import { concourseGrid, keepTriangles } from '../web/src/concourse.ts';
+import { furniturePlan } from '../web/src/furniture.ts';
+import { FLICKER_GAP_MS, compareFrames, flickerSummary } from './flicker.mjs';
+import { PIN_TIME, PIN_WEATHER, WEATHER_NAMES, pinHonoured, pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
+import { stationData } from './station-scene.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -35,6 +41,45 @@ export const AXES = [
   ['09', 'Engineering quality', 'Recorded test/typecheck commands; scorer reruns these and the responsive/catalog checks.'],
 ].map(([id, name, evidence]) => ({ id, name, evidence }));
 
+/**
+ * The fixed station views each graphical-fidelity element is scored from (gfx-rubrics/rubric-<element>.md, "Fixed views"),
+ * so an iterator can capture only its own: `node tools/evidence.mjs --gpu --views kx-front ...`. A view may belong to
+ * several elements. `<camera>-solid-slate` names are the physical-slate override shot of that camera.
+ */
+export const ELEMENT_VIEWS = {
+  'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
+  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
+  'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full'],
+  'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
+  'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
+};
+
+/** Every fixed station view a pack can capture: each camera, plus the solid-slate override shot of the two paired cameras. */
+export function stationViewNames(cameras) {
+  return [...Object.keys(cameras), ...roofMaterialEvidencePairs(cameras).map(pair => `${pair.cameraName}-solid-slate`)];
+}
+
+/**
+ * Turn a `--views` value into the set of view names to capture, or null for the whole pack (`all`, or no `--views`).
+ * Each comma-separated token is an element (see ELEMENT_VIEWS), a single view name, or `station` for every fixed station view.
+ */
+export function resolveViews(spec, cameras) {
+  if (spec === undefined || spec === 'all') return null;
+  const known = new Set(stationViewNames(cameras)), names = new Set();
+  for (const token of String(spec).split(',').map(t => t.trim())) {
+    if (token === 'station') for (const view of known) names.add(view);
+    else if (Object.hasOwn(ELEMENT_VIEWS, token)) {
+      for (const view of ELEMENT_VIEWS[token]) {
+        if (!known.has(view)) throw new Error(`element ${token} lists ${view}, which is not a station camera`);
+        names.add(view);
+      }
+    } else if (known.has(token)) names.add(token);
+    else throw new Error(`unknown view or element: ${token || '(empty)'}. Elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}. Views: ${[...known].join(', ')}`);
+  }
+  return names;
+}
+
 export function within(root, file) { const rel = path.relative(root, file); return rel === '' || !rel.startsWith(`..${path.sep}`) && rel !== '..' && !path.isAbsolute(rel); }
 export function relayUrl(value) {
   if (!value) return null;
@@ -45,7 +90,7 @@ export function relayUrl(value) {
 }
 export function optionsFrom(args) {
   const values = new Map(), switches = new Set(['--gpu', '--help']);
-  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report']);
+  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
     if (values.has(key) || !switches.has(key) && !names.has(key)) throw new Error(`unknown or repeated option: ${key}`);
@@ -65,7 +110,14 @@ export function optionsFrom(args) {
   const liveReport = values.has('--live-report') ? path.resolve(values.get('--live-report')) : null;
   const out = path.resolve(values.get('--out') ?? path.join(repoRoot, '.scratch/evidence'));
   if (!within(path.join(repoRoot, '.scratch'), out)) throw new Error('--out must be under this worktree .scratch (the pack contains private derived data)');
-  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out,
+  const views = values.get('--views') ?? 'all';
+  if (views !== 'all') {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*(?:,[a-z0-9]+(?:-[a-z0-9]+)*)*$/.test(views)) throw new Error('--views must be all, or element and view names separated by commas');
+    const notStation = ['--relay', '--live-window', '--live-report', '--raw-osm', '--date', '--speed', '--signal-at'].filter(key => values.has(key));
+    if (notStation.length) throw new Error(`--views captures fixed station views only; remove ${notStation.join(', ')}`);
+  }
+  const pin = scenePinFrom({ time: values.get('--time'), weather: values.get('--weather'), sky: values.get('--sky') });
+  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin,
     rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
 export async function safeOutputDirectory(root, directory) {
@@ -100,14 +152,19 @@ export function roofMaterialEvidencePairs(cameras) {
   }));
 }
 
-/** Run the intact Station camera set and its same-camera physical-slate comparison shots. */
-export async function runStationEvidenceShots(cameras, shot, attempt) {
+/**
+ * Run the intact Station camera set and its same-camera physical-slate comparison shots. `select` (a Set of view
+ * names, see resolveViews) limits the run to those views; null runs them all. Every shot is a fixed camera on a
+ * still scene, so each also takes the two-frame flicker check (`twoFrame`).
+ */
+export async function runStationEvidenceShots(cameras, shot, attempt, select = null) {
   const pairs = roofMaterialEvidencePairs(cameras);
   const contextEvidence = new Map(pairs.map(pair => [pair.cameraName, pair.context.roofMaterialEvidence]));
-  for (const [name, camera] of Object.entries(cameras).filter(([, camera]) => !camera.grid))
-    await attempt('02', name, () => shot('02', name, camera, contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}));
-  for (const pair of pairs)
-    await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+  const wanted = name => !select || select.has(name);
+  for (const [name, camera] of Object.entries(cameras).filter(([name, camera]) => !camera.grid && wanted(name)))
+    await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
+  for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))
+    await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
 }
 
 /** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
@@ -158,8 +215,15 @@ export async function safeFile(root, name) {
   } catch { return null; }
 }
 
+let worldCache;
+/** The committed terrain and city extract the ground-level cameras stand on, read once. */
+export function stationWorld() {
+  if (!worldCache) { const { city, terrain } = stationData(); worldCache = { city, terrain: createTerrain(terrain) }; }
+  return worldCache;
+}
+
 // x east, y up, z south. Landmark targets come from their actual public OSM outlines.
-export function stationCameras(data) {
+export function stationCameras(data, world = stationWorld()) {
   const s = shedLayout(data), concourse = concourseCanopy(data);
   const at = (u, v, y) => { const [x, z] = shedToWorld(s, u, v); return [x, y, z]; };
   const camera = (pos, target, source, extra = {}) => ({ pos, target, source, ...extra });
@@ -183,8 +247,10 @@ export function stationCameras(data) {
   // Roof-family comparison: the same public-model triangle in before/after builds,
   // viewed from below at about six metres. No shell, cladding or city is hidden.
   const station = stationBuilding(data);
+  let funnel = null; // world [x, z] of the concourse funnel's axis
   if (station) {
     const { centre, grid } = concourseGrid(concourse, station.pts, s, data.buildings.filter(b => b.id === 46821177).map(b => b.pts));
+    funnel = centre;
     const targets = keepTriangles(grid, station.pts, s).map(tri => tri.reduce((p, i) => {
       const n = grid.nodes[i]; return [p[0] + n.x / 3, p[1] + n.height / 3, p[2] + n.z / 3];
     }, [0, 0, 0]));
@@ -224,6 +290,173 @@ export function stationCameras(data) {
   );
   const mouth = tunnelMouths(data).find(m => m.id === 'gasworks-south');
   if (mouth) cams['gasworks-portals'] = camera([mouth.origin[0] - mouth.axis[0] * 65, 12, mouth.origin[1] - mouth.axis[1] * 65], [mouth.origin[0], 4, mouth.origin[1]], 'tunnelMouths gasworks-south rail boundary');
+
+  // ---- Wave 0 of the graphical-fidelity programme: the fixed views the six element rubrics add ----------------------
+  // (gfx-rubrics/rubric-<element>.md, "Fixed views"). Each stands where its reference photograph was taken (refs/<group>/
+  // SOURCES.md) or on the OSM feature the rubric names, and is frozen once an element's iteration starts. A camera that
+  // stands on the ground takes the terrain height under it (the ground is not flat here); platform eyes stand 1.6 m above
+  // the platform surface. ELEMENT_VIEWS says which element is scored from which view.
+  const { terrain, city } = world;
+  const stand = ([x, z], eye = 1.7) => [x, terrain.heightAt(x, z) + eye, z];
+  const standAt = (u, v, eye) => stand(shedToWorld(s, u, v), eye);
+  const groundAt = ([x, z], above = 0) => [x, terrain.heightAt(x, z) + above, z];
+  const way = id => (city.roads.find(r => r.id === id) ?? city.canals.find(c => c.id === id) ?? (() => { throw new Error(`OSM way ${id} is not in the city extract`); })()).pts;
+  const pathLength = pts => pts.slice(1).reduce((n, p, i) => n + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
+  // The point `distance` metres along a polyline, with the unit direction of travel there.
+  const along = (pts, distance) => {
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const length = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+      if (distance <= length || i + 2 === pts.length) {
+        const t = Math.min(1, distance / length);
+        return { point: [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t], dir: [(pts[i + 1][0] - pts[i][0]) / length, (pts[i + 1][1] - pts[i][1]) / length] };
+      }
+      distance -= length;
+    }
+  };
+  const wallPlane = -(TOWER_SIZE + .15); // v of the clock tower's south face: buildTower stands TOWER_SIZE/2 + .15 in front of the south front
+
+  // lighting-materials. R-lighting-materials-a (light-a2-facade-brick-sunlit-2026-06.jpg, Bex Walton CC BY 4.0): stock brick
+  // beside a pier of the south front. The east end pier is the stone pier at u = width - 0.5 (shed.ts); the eye stands
+  // 4 m south of it and aims at the brick between the pier and the nearest porch arch.
+  cams['facade-brick-close'] = camera(standAt(s.width - 1, -4), at(s.width - 2.5, 0, 2.6),
+    'R-lighting-materials-a standpoint (light-a2-facade-brick-sunlit-2026-06.jpg): 4 m south of the east end pier of the south front, eye 1.7 m', { fov: 50, near: .1 });
+
+  // kx-front.
+  // R-kx-front-c (front-c-clocktower-2019.jpg, Acabashi CC BY-SA 4.0): the clock tower from the square. 35 m south of the
+  // tower's south face at y = 28 m, aimed at the clock centre (buildTower's clockY, 5.75 m under the 112 ft overall height).
+  cams['tower-close'] = camera(at(s.width / 2, wallPlane - 35, 28), at(s.width / 2, wallPlane, CLOCK_TOWER_HEIGHT - 5.75),
+    'R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre', { fov: 35, near: .1 });
+  // R-kx-front-b (front-b-oblique-sw-2016.jpg, Oast House Archive CC BY-SA 2.0): the front from the square's south-west,
+  // about 60 m from the west great arch (centre u = aisle + half a span), looking north-east at the front. The pure
+  // south-west bearing (45 degrees) puts the eye inside the square's row of trees (a trunk 0.7 m away filled 58% of the
+  // frame), so the eye keeps the 60 m but stands 38 m west and 49 m south of the arch: south-south-west, clear of them.
+  const westArch = s.aisle + SHED_SPAN_WIDTH / 2;
+  cams['front-southwest-pedestrian'] = camera(standAt(westArch - 38, -49), at(s.width / 2, 0, 12),
+    'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east', { fov: 60, near: .1 });
+  // R-kx-front-d (front-d2-north-york-way-2019.jpg, Colin Cheesman CC BY-SA 2.0): the east flank from York Way. The OSM York Way
+  // centreline (way 43892837) runs about 10 m east of the flank wall here; the eye stands 40 m out at y = 12 m, looking west.
+  cams['shed-east-flank'] = camera(at(s.width + 40, s.length / 2, 12), at(s.width, s.length / 2, 9),
+    'R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west', { near: .1 });
+
+  // shed-interior. The platform eyes use platform 4's recipe (polygon midpoint, 1.6 m above the platform, looking along it).
+  const platformMid = ref => { const q = stationPlatforms(data).get(ref); return q && q.pts.reduce((a, b) => [a[0] + b[0] / q.pts.length, a[1] + b[1] / q.pts.length], [0, 0]); };
+  const platformEye = (mid, sign, source) => camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]],
+    [mid[0] + sign * Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] - sign * Math.cos(s.heading) * 40], source);
+  const platform1 = platformMid('1'), platform8 = platformMid('8'), platform4 = platformMid('4');
+  // East-shed interior photograph (shed-a-north-from-footbridge-2019.jpg, kitmasterbloke CC BY 2.0, looks north along the platforms).
+  if (platform1) cams['platform-eye-p1-north'] = platformEye(platform1, 1, 'OSM platform 1 polygon midpoint, eye 1.6 m above platform, looking north; east-shed interior standpoint (shed-a-north-from-footbridge-2019.jpg)');
+  // R-kx-shed-interior-b (shed-b-south-screen-2019.jpg, kitmasterbloke CC BY 2.0): the inner face of the south screen.
+  if (platform8) cams['platform-eye-p8-south'] = platformEye(platform8, -1, 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)');
+  const furniture = furniturePlan(data, s);
+  if (platform4) {
+    // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
+    // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
+    const m = worldToShed(s, platform4), eye = PLATFORM_HEIGHT + 1.6, pitch = 55 * Math.PI / 180, reach = 30, run = Math.cos(pitch) * reach * Math.SQRT1_2;
+    cams['roof-underside'] = camera([platform4[0], eye, platform4[1]], at(m.u + run, m.v + run, eye + Math.sin(pitch) * reach),
+      'OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)');
+    // R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg, The wub CC BY-SA 4.0): the bench/lamp/help-point groups on a platform.
+    // The nearest such group to the midpoint is everything within 3 m of the nearest piece; the eye stands 4 m from its centre,
+    // along the platform on the midpoint's side, looking at it.
+    const pieces = [...furniture.benches, ...furniture.lamps, ...furniture.helpPoints].filter(piece => piece.ref === '4');
+    if (pieces.length) {
+      const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+      const first = pieces.reduce((a, b) => dist([a.x, a.z], platform4) <= dist([b.x, b.z], platform4) ? a : b);
+      const group = pieces.filter(piece => dist([piece.x, piece.z], [first.x, first.z]) <= 3);
+      const centre = [group.reduce((n, piece) => n + piece.x, 0) / group.length, group.reduce((n, piece) => n + piece.z, 0) / group.length];
+      const axis = [Math.sin(s.heading), -Math.cos(s.heading)], toMid = (platform4[0] - centre[0]) * axis[0] + (platform4[1] - centre[1]) * axis[1] >= 0 ? 1 : -1;
+      cams['furniture-close'] = camera([centre[0] + toMid * axis[0] * 4, PLATFORM_HEIGHT + 1.6, centre[1] + toMid * axis[1] * 4], [centre[0], PLATFORM_HEIGHT + .8, centre[1]],
+        'OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)');
+    }
+  }
+  // R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, Mr Ignavy CC BY-SA 2.0): the platform 9-10 canopies. Platform 9's
+  // vertex mean lies outside its own canopy (the platform splays), so the midpoint is the canopy's middle sample, which is under it.
+  const canopy9 = furniture.canopies.find(c => c.ref === '9');
+  if (canopy9) {
+    const k = Math.floor(canopy9.left.length / 2), centreline = i => [(canopy9.left[i][0] + canopy9.right[i][0]) / 2, (canopy9.left[i][1] + canopy9.right[i][1]) / 2];
+    const mid = centreline(k), ahead = [centreline(Math.min(k + 1, canopy9.left.length - 1)), centreline(Math.max(k - 1, 0))];
+    const dir = [ahead[0][0] - ahead[1][0], ahead[0][1] - ahead[1][1]], length = Math.hypot(...dir), north = (dir[0] * Math.sin(s.heading) - dir[1] * Math.cos(s.heading)) >= 0 ? 1 : -1;
+    cams['suburban-p9'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] + north * dir[0] / length * 40, PLATFORM_HEIGHT + 1.6, mid[1] + north * dir[1] / length * 40],
+      'OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)');
+  }
+
+  // western-concourse.
+  if (funnel) {
+    // R-western-concourse-a (conc-a-funnel-2012.jpg, Colin CC BY-SA 3.0; conc-ab-funnel-brick-2025.jpg): the funnel and the Range behind
+    // it. 8 m west of the funnel's axis, eye 1.6 m above the concourse floor (y = 0.02), pitched up 35 degrees, looking east.
+    const f = worldToShed(s, funnel), eye = 1.62;
+    cams['concourse-funnel-up'] = camera(at(f.u - 8, f.v, eye), at(f.u, f.v, eye + 8 * Math.tan(35 * Math.PI / 180)),
+      'R-western-concourse-a standpoint (conc-a-funnel-2012.jpg): 8 m from the funnel axis, eye 1.6 m, pitched up 35 degrees, looking east at the funnel and the Range');
+  }
+  // R-western-concourse-c (conc-c-exterior-square-2016.jpg, ell brown CC BY-SA 2.0): the concourse roof from King's Cross Square.
+  // The canopy edge is the fitted arc's southern point. The pure south-west bearing at 50 m is off the square (the ground beyond
+  // its west boundary is the hotel and Pancras Road) and the round service building (OSM 96299681) fills the south-south-west,
+  // so the eye stands on the square 35 m south of the edge and 5 m west. The photograph centres the whole dome, so the aim is the
+  // canopy's centre (a 45 degree aim put the roof half out of frame) and the lens is 60 degrees to take the 123 m span in.
+  const arc = worldToShed(s, concourse.centre), canopyEdge = arc.v - concourse.radius;
+  cams['concourse-exterior-square'] = camera(standAt(arc.u - 5, canopyEdge - 35), [concourse.centre[0], 8, concourse.centre[1]],
+    'R-western-concourse-c standpoint (conc-c-exterior-square-2016.jpg): King\'s Cross Square, eye 1.7 m, 35 m south of the canopy edge, looking at the whole roof', { fov: 60, near: .1 });
+  // R-western-concourse-b (conc-b-roof-meets-range-2025-08.jpg, Jonosunde CC BY-SA 4.0): the whole Range elevation from inside the
+  // concourse. y = 8 m under the roof near the canopy's west edge (the rim itself is only ~5 m high), at the Range's mid-length.
+  cams['western-range-full'] = camera(at(-WESTERN_RANGE.depth - 62, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 8), at(-WESTERN_RANGE.depth - .1, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 6),
+    'R-western-concourse-b standpoint (conc-b-roof-meets-range-2025-08.jpg): inside the concourse near the canopy\'s west edge, y = 8 m, the full Range elevation', { fov: 70, near: .1 });
+
+  // historic-neighbours.
+  // R-historic-neighbours-a (hist-a-great-northern-hotel-2013.jpg, Richard Ash CC BY-SA 2.0): the crescent from the square, 45 m
+  // from the hotel's south end (its southernmost OSM outline point), looking north along the crescent's main face. Due south of
+  // the end stands the round service building (OSM 96299681, 3 m ahead of the eye, 92% of the frame), so the eye keeps the 45 m
+  // and swings 20 degrees east of south, clear of it, in the square.
+  const hotelSouth = worldToShed(s, hotel.outline.reduce((a, b) => b[1] > a[1] ? b : a)), swing = 70 * Math.PI / 180;
+  cams['gnh-from-square'] = camera(standAt(hotelSouth.u + 45 * Math.cos(swing), hotelSouth.v - 45 * Math.sin(swing)), [junction.mid[0], hotel.eaves / 2, junction.mid[1]],
+    'R-historic-neighbours-a standpoint (hist-a-great-northern-hotel-2013.jpg): King\'s Cross Square, eye 1.7 m, 45 m south-south-east of the hotel\'s south end, looking north along the crescent');
+  // R-historic-neighbours-b (hist-b-midland-grand-euston-road-2012.jpg, Colin CC BY-SA 3.0): the front from Euston Road. The two
+  // OSM carriageways cross the front's normal 29.8 m and 42.1 m out; 50 m is the south pavement beyond them.
+  cams['midland-euston-road'] = camera(stand([face.mid[0] + face.normal[0] * 50, face.mid[1] + face.normal[1] * 50]), [face.mid[0], 16, face.mid[1]],
+    'R-historic-neighbours-b standpoint (hist-b-midland-grand-euston-road-2012.jpg): south pavement of Euston Road opposite the hotel centre, eye 1.7 m', { fov: 70, near: .1 });
+  // R-historic-neighbours-c (hist-c-clock-tower-2015.jpg, Elliott Brown CC BY-SA 2.0): the clock stage. 60 m out along the tower's
+  // front normal at y = 40 m; the clock centre is 0.68 of the tower height (landmarks.ts addTower: belfry top 0.63, clock top 0.73).
+  const seats = landmarkSeats(landmarkPlans(data), terrain), clock = midland.towers.find(t => t.name === 'clock');
+  if (clock) cams['midland-clock-tower'] = camera([clock.centre[0] + clock.out[0] * 60, 40, clock.centre[1] + clock.out[1] * 60], [clock.centre[0], seats.midland.y + clock.height * .68, clock.centre[1]],
+    'R-historic-neighbours-c standpoint (hist-c-clock-tower-2015.jpg): 60 m from the clock tower along its front normal, y = 40 m, aimed at the clock', { fov: 35, near: .1 });
+  // R-historic-neighbours-d (hist-d-barlow-interior-2014.jpg, mattbuck CC BY-SA 4.0; hist-d2-barlow-looking-north-2018.jpg): the
+  // Barlow shed from inside, on its centreline 40 m from the south end, eye 1.6 m above the shed's floor (its seat), looking north.
+  cams['barlow-interior'] = camera(bp(barlow.width / 2, 40, seats.barlow.y + 1.6), bp(barlow.width / 2, 200, seats.barlow.y + 1.6),
+    'R-historic-neighbours-d standpoint (hist-d-barlow-interior-2014.jpg): inside the Barlow shed on its centreline, 40 m from the south end, eye 1.6 m, looking north');
+
+  // city-surroundings.
+  // R-city-surroundings-b (city-b-granary-building-2016.jpg, Clem Rutter CC BY-SA 3.0): the Granary from Granary Square. The square
+  // runs from the Granary's front to the canal, whose OSM centreline is ~98 m south of the front; 88 m is the south steps.
+  const granary = granaryComplex(data).granary, granaryFront = granary.front[1];
+  cams['granary-square'] = camera(stand([granaryFront.mid[0] + granaryFront.normal[0] * 88, granaryFront.mid[1] + granaryFront.normal[1] * 88]), groundAt(granaryFront.mid, granary.eaves / 2),
+    'R-city-surroundings-b standpoint (city-b-granary-building-2016.jpg): Granary Square south steps, 88 m south of the Granary front, eye 1.7 m, looking north');
+  // R-city-surroundings-c (city-c-gasholders-2023.jpg, The wub CC BY-SA 4.0): the triplet from the towpath. The canal vertex nearest
+  // the point 55 m south of the triplet's centre, then 7 m to the triplet's side of the centreline (the water is 9 m wide).
+  const triplet = gasholderPlan().triplet, holders = [triplet.reduce((n, h) => n + h.centre[0], 0) / triplet.length, triplet.reduce((n, h) => n + h.centre[1], 0) / triplet.length];
+  const canalRuns = city.canals.map(c => c.pts), canalDist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+  let bank = null;
+  for (const pts of canalRuns) pts.forEach((p, i) => { const d = canalDist(p, [holders[0], holders[1] + 55]); if (!bank || d < bank.d) bank = { d, p, dir: [pts[Math.min(i + 1, pts.length - 1)][0] - pts[Math.max(i - 1, 0)][0], pts[Math.min(i + 1, pts.length - 1)][1] - pts[Math.max(i - 1, 0)][1]] }; });
+  if (bank) {
+    const length = Math.hypot(...bank.dir), side = [-bank.dir[1] / length, bank.dir[0] / length], towardHolders = side[0] * (holders[0] - bank.p[0]) + side[1] * (holders[1] - bank.p[1]) >= 0 ? 1 : -1;
+    cams.gasholders = camera(stand([bank.p[0] + towardHolders * side[0] * 7, bank.p[1] + towardHolders * side[1] * 7]), groundAt(holders, 12),
+      'R-city-surroundings-c standpoint (city-c-gasholders-2023.jpg): canal towpath south of the gasholder triplet, eye 1.7 m, looking north');
+  }
+  // R-city-surroundings-d (city-d-canal-lock-2022.jpg, Jim Osley CC BY-SA 2.0): St Pancras Lock. OSM canal way 108337675 starts at the
+  // lock junction, where the terrain falls to the lock cutting. The scene's water polygons run ~11 m either side of that centreline
+  // (a 7 m offset put the eye in the water), so the eye stands on the east towpath 14 m from it, 10 m down-canal of the junction, and
+  // looks 60 m down the canal (it runs south-south-east here, not due east as the rubric words it).
+  const lockWay = way(108337675), lockDir = along(lockWay, 1).dir, lockSide = [-lockDir[1], lockDir[0]], lockEast = lockSide[0] >= 0 ? 1 : -1;
+  const lockEye = [lockWay[0][0] + lockDir[0] * 10 + lockEast * lockSide[0] * 14, lockWay[0][1] + lockDir[1] * 10 + lockEast * lockSide[1] * 14];
+  cams['canal-lock'] = camera(stand(lockEye), groundAt([lockWay[0][0] + lockDir[0] * 60, lockWay[0][1] + lockDir[1] * 60], 1),
+    'R-city-surroundings-d standpoint (city-d-canal-lock-2022.jpg): east towpath at St Pancras Lock (OSM canal way 108337675), eye 1.7 m, looking down the canal');
+  // R-city-surroundings-e (city-e-google-kgx1-2026.jpg, Bex Walton CC BY 4.0): KGX1 from King's Boulevard. The OSM centreline of the
+  // boulevard (way 807924984) runs beside KGX1's west face; the eye stands 25 m along it from the south end, looking up the street.
+  const boulevard = way(807924984), here = along(boulevard, 25), ahead = along(boulevard, 120);
+  cams['kings-boulevard'] = camera(stand(here.point), groundAt(ahead.point, 14),
+    'R-city-surroundings-e standpoint (city-e-google-kgx1-2026.jpg): King\'s Boulevard, eye 1.7 m, looking north up the street at KGX1');
+  // R-city-surroundings-a (city-a-aerial-skyline-2016.jpg, Robot8A CC BY-SA 4.0): Euston Road outside the forecourt. The eye stands on
+  // the middle of OSM way 367808662 (the eastbound carriageway beside the Square) and looks along the road to Pentonville Road (way 1112581153).
+  const eustonWay = way(367808662), eustonMid = along(eustonWay, pathLength(eustonWay) / 2), pentonville = way(1112581153).at(-1);
+  cams['euston-road-east'] = camera(stand(eustonMid.point), groundAt(pentonville, 4),
+    'R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King\'s Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road');
   return cams;
 }
 
@@ -241,6 +474,49 @@ export function cameraBuildingCollisions(cameras, buildings, groundY = -.2) {
     return c.pos[1] < roofY && pointInPolygon([c.pos[0], c.pos[2]], b.ring)
       ? [{ camera, buildingId: b.id, roofY, pos: c.pos }] : [];
   }));
+}
+
+/**
+ * Time of day and weather are pinned in the page address (tools/scene-pin.mjs): `?time=` and `?weather=`, default midsummer noon and
+ * a clear sky, so a capture does not follow the real clock or the live weather. A build from before the sky and weather work ignores
+ * both and keeps web/src/world.ts LIGHTS, one fixed dusk rig, so every capture of that build is lit alike. Either way each shot
+ * records `lightingFingerprint` of the lights, sky, fog and tone mapping it was rendered with, so two captures can be shown to share
+ * their lighting, and `pinHonoured` says whether the page applied the pin.
+ */
+export const LIGHTING_NOTE = 'Captures pin the scene with ?time=<instant>&weather=<name> (default 2026-06-21T12:00:00+01:00, clear: midsummer noon) on pages that read them; --sky ref asks for the old fixed look. A build from before the sky and weather work ignores the pin and keeps its one fixed dusk rig (web/src/world.ts LIGHTS), so every capture of that build is lit alike; lighting.pinHonoured says which happened. Each shot carries a fingerprint of its light rig, sky, fog and tone mapping: equal fingerprints mean equal lighting.';
+
+/** Serialized into the page: the lighting state of the scene, rounded so equal rigs read equal. */
+export function lightingProbe(kx) {
+  const round = n => Math.round(n * 1e4) / 1e4, hex = c => c?.getHexString?.() ?? null, lights = [];
+  kx.scene.traverse(o => {
+    if (o.isLight) lights.push({ type: o.type, name: o.name || null, colour: hex(o.color), groundColour: hex(o.groundColor), intensity: round(o.intensity), position: o.position.toArray().map(round), visible: o.visible });
+  });
+  // The sky dome is a vertex-coloured sphere: its lowest and highest vertex colours are the horizon and the zenith.
+  const dome = kx.scene.children.find(o => o.isMesh && o.geometry?.type === 'SphereGeometry' && o.geometry.parameters?.radius > 1000);
+  let horizon = null, zenith = null;
+  if (dome) {
+    const position = dome.geometry.getAttribute('position'), colours = dome.geometry.getAttribute('color');
+    let low = 0, high = 0;
+    for (let i = 1; i < position.count; i++) { if (position.getY(i) < position.getY(low)) low = i; if (position.getY(i) > position.getY(high)) high = i; }
+    if (colours) { horizon = [colours.getX(low), colours.getY(low), colours.getZ(low)].map(round); zenith = [colours.getX(high), colours.getY(high), colours.getZ(high)].map(round); }
+  }
+  const fog = kx.scene.fog;
+  // What the page says about its sky: no hook (a build from before the sky and weather work), the old fixed look, or a live atmosphere and its sun.
+  let atmosphere = 'absent';
+  if ('atmosphere' in kx) {
+    atmosphere = 'fixed';
+    if (kx.atmosphere) { let sun = null; try { sun = kx.atmosphere.state?.().sun?.elevationDeg; } catch { /* the hook exists; its sun is unknown */ } atmosphere = { sunElevationDeg: Number.isFinite(sun) ? round(sun) : null }; }
+  }
+  return { lights, background: hex(kx.scene.background), horizon, zenith, fog: fog ? { colour: hex(fog.color), near: fog.near ?? null, far: fog.far ?? null, density: fog.density ?? null } : null,
+    toneMapping: kx.renderer.toneMapping, exposure: round(kx.renderer.toneMappingExposure), outputColorSpace: kx.renderer.outputColorSpace, atmosphere };
+}
+
+/** A short stable id for a lighting state: independent of the order of lights and of object key order. */
+export function lightingFingerprint(state) {
+  const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+  const lights = state.lights.map(canonical).map(light => JSON.stringify(light)).sort();
+  return createHash('sha256').update(JSON.stringify({ ...canonical(state), lights })).digest('hex').slice(0, 16);
 }
 
 /** Serialized into the page so a deferred city cannot arrive after a cutaway was hidden. */
@@ -428,18 +704,28 @@ export function createEvidenceServer({ dist, relay, repo = repoRoot }) {
 
 export async function main(args = process.argv.slice(2)) {
   const options = optionsFrom(args);
-  if (options.help) { console.log('node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]'); return; }
+  if (options.help) { console.log(`node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]
+node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...]   (station views only: no trains, relay, tests or performance run)
+  elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
+Every fixed station view is shot twice, 150 ms apart, to check it for flicker; exit code 1 if the capture stops or a view flickers.
+Every page load pins the scene clock and weather in its address (a build that predates the sky and weather work ignores them):
+  --time <ISO 8601 instant with a zone, or 13-digit epoch ms>   default ${PIN_TIME}
+  --weather <${WEATHER_NAMES.join('|')}>   default ${PIN_WEATHER}
+  --sky ref   the page's old fixed look instead (cannot be combined with --time or --weather)`); return; }
   await stat(path.join(options.dist, 'index.html'));
   await safeOutputDirectory(repoRoot, options.out);
   await walk(options.out); // Reject reused input/report links before fetching any private data.
   const data = JSON.parse(await readFile(path.join(packageRoot, 'web/src/data/kx-track.json'), 'utf8'));
   const city = JSON.parse(await readFile(path.join(packageRoot, 'web/src/data/kx-city.json'), 'utf8'));
   const buildings = cityBuildings(data), cameras = stationCameras(data), files = await walk(options.dist);
+  const selected = resolveViews(options.views, cameras); // null: the whole pack; a Set: only those fixed station views
   const bundleFiles = await Promise.all(files.sort().map(async f => { const b = await readFile(f); return { file: path.relative(options.dist, f), bytes: b.length, gzip: gzipSync(b).length, sha256: createHash('sha256').update(b).digest('hex') }; }));
   const twin = twinRails(railSegments(data).main.slice(0, 6));
   const drawnGauge = Math.hypot(twin[0]-twin[6], twin[2]-twin[8]) - RAIL_HEAD_WIDTH;
   const report = { schema: 2, when: new Date().toISOString(), machine: `${os.type()} ${os.release()}, ${os.cpus()[0]?.model}, ${os.cpus().length} cores, ${Math.round(os.totalmem() / 2 ** 30)} GB`,
     requestedGpu: options.gpu ? 'ANGLE Metal' : 'SwiftShader (diagnostic only)', renderer: null, validGpu: false, complete: false,
+    views: { requested: options.views, partial: !!selected, names: selected ? [...selected] : null },
+    lighting: { pin: { ...options.pin, parameters: pinParameters(options.pin) }, pinHonoured: null, note: LIGHTING_NOTE, fingerprints: {} },
     build: { dist: options.dist, files: bundleFiles, totalBytes: bundleFiles.reduce((n, f) => n + f.bytes, 0), totalGzipBytes: bundleFiles.reduce((n, f) => n + f.gzip, 0), budgetGzipBytes: 2 * 1024 ** 2 },
     replay: { date: options.date, speed: options.speed, signalAtUK: options.signalAt, relay: options.relay?.origin ?? null },
     axes: AXES.map(a => ({ ...a, screenshots: [], artifacts: [], gaps: [] })), screenshots: [], commands: [], scenarios: [], consoleErrors: [], networkFailures: [], gaps: [],
@@ -492,12 +778,14 @@ export async function main(args = process.argv.slice(2)) {
     const until = async (expression, ms = 20000) => { const end = Date.now() + ms; do { if (await evaluate(expression).catch(() => false)) return; await sleep(100); } while (Date.now() < end); throw new Error(`page condition timed out: ${expression}`); };
     const twoFrames = () => evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))');
     const prepareScene = hideScenery => evaluate(`(${prepareEvidenceScene.toString()})(window.__kx,${JSON.stringify(hideScenery)},new URLSearchParams(location.search).has('bare'))`);
+    let pinnedLoad = false; // did the page now loaded get the scene pin in its address (bare geometry views carry their own fixed look)
     const navigate = async (query, scenario, vp = 'desktop', origin = base) => {
-      currentScenario = scenario; await viewport(vp); await S('Page.navigate', { url: `${origin}${query}` });
+      const address = withPin(query, options.pin); pinnedLoad = address !== query;
+      currentScenario = scenario; await viewport(vp); await S('Page.navigate', { url: `${origin}${address}` });
       await until('!!window.__kx?.ready'); await prepareScene(); await twoFrames();
     };
     const setCamera = async c => { await evaluate(`(() => { const k=window.__kx; k.controls.minDistance=.05; k.controls.maxDistance=20000; k.controls.maxPolarAngle=Math.PI; k.camera.far=20000; k.camera.near=${c.near ?? .1}; k.camera.fov=${c.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${c.pos}); k.controls.target.set(${c.target}); k.controls.update(); return true; })()`); await twoFrames(); };
-    const shot = async (id, name, c, extra = {}) => {
+    const shot = async (id, name, c, { twoFrame = false, ...extra } = {}) => {
       await prepareScene(c ? !!c.hideScenery : undefined);
       if (c) await setCamera(c); else await twoFrames();
       const metadata = await evaluate(`(() => { const k=window.__kx,g=k.renderer.getContext(),d=g.getExtension('WEBGL_debug_renderer_info'); return {
@@ -508,6 +796,9 @@ export async function main(args = process.argv.slice(2)) {
         board:k.boardRows?{timetable:k.boardRows.timetable,platformTrains:k.boardRows.platforms.flatMap(p=>p.trains).length,matched:k.boardRows.platforms.flatMap(p=>p.trains).filter(t=>t.uid).length,due:k.boardRows.due.length}:null,
         city:{loaded:!!k.parts?.buildings,bare:new URLSearchParams(location.search).has('bare'),visible:k.parts?.buildings?.visible??false},
         motion:k.motionState?.map(t=>({id:t.id,state:t.state,speed:t.speed,point:t.leading.point})),signals:k.signals?.signals().map(r=>({id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,starter:!!r.group.userData.platformStarter,label:r.label}))}; })()`);
+      const lightingState = await evaluate(`(${lightingProbe.toString()})(window.__kx)`), lighting = lightingFingerprint(lightingState);
+      (report.lighting.fingerprints[lighting] ??= { state: lightingState, shots: 0 }).shots++;
+      if (pinnedLoad) report.lighting.pinHonoured = (report.lighting.pinHonoured ?? true) && pinHonoured(options.pin, lightingState.atmosphere);
       const collisions = cameraBuildingCollisions({ [name]: metadata.camera }, buildings);
       report.cameraClearance.captures.push({ name, collisions });
       if (collisions.length) throw new Error(`camera ${name} is inside city building ${collisions.map(c=>c.buildingId).join(', ')} below its roof`);
@@ -516,7 +807,7 @@ export async function main(args = process.argv.slice(2)) {
       if (extra.signalId !== undefined && metadata.signals?.find(s=>s.id===extra.signalId)?.state !== extra.observedState) throw new Error('signal changed state before capture; shot was not accepted');
       const file = `axis-${id}/${name}.png`; await mkdir(path.join(options.out, `axis-${id}`), { recursive: true });
       const boardState = extra.signalId === undefined ? null : await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),true)`);
-      let png, captureRender = null;
+      let png, secondPng = null, captureRender = null;
       try {
         if (extra.signalId !== undefined) await twoFrames();
         png = await captureEvidencePng(extra.roofMaterialEvidence, {
@@ -541,7 +832,10 @@ export async function main(args = process.argv.slice(2)) {
                 return {drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,roofCladding:{opacity,depthWrite,glassOpacity:glass.material.opacity},overrideFrames:2};
               })()`);
             }
-            return S('Page.captureScreenshot', { format: 'png' });
+            const first = await S('Page.captureScreenshot', { format: 'png' });
+            // Flicker check: the scene is still, so a second screenshot a moment and two rendered frames later must match.
+            if (twoFrame) { await sleep(FLICKER_GAP_MS); await twoFrames(); secondPng = await S('Page.captureScreenshot', { format: 'png' }); }
+            return first;
           },
           restore: async () => {
             await evaluate('window.__kx.__solidSlateCapture?.release?.(true); true');
@@ -559,7 +853,8 @@ export async function main(args = process.argv.slice(2)) {
       }
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
-      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', ...extra };
+      const flicker = secondPng ? compareFrames(Buffer.from(png.data, 'base64'), Buffer.from(secondPng.data, 'base64')) : null;
+      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(flicker ? { flicker } : {}), ...extra };
       report.screenshots.push(record); axis(id).screenshots.push(file); return record;
     };
     const attempt = async (id, name, work) => { try { await work(); } catch (e) { gap(id, `${name}: ${e.message}`); } };
@@ -577,160 +872,170 @@ export async function main(args = process.argv.slice(2)) {
 
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
     await navigate('?trains=none&board=0', 'station');
-    await runStationEvidenceShots(cameras, shot, attempt);
-    if (!cameras['gasworks-portals']) gap('02', 'Gasworks south mouth could not be located in public geometry');
-    await navigate('?trains=none&bare=1&grid=1&board=0', 'geometry');
-    for (const [name, c] of Object.entries(cameras).filter(([, c]) => c.grid)) await shot('01', `${name}-10m-grid`, c);
-
-    await navigate('?trains=demo&board=0', 'sample trains');
-    const readTrainRows = () => evaluate('window.__kx.trains.map(t=>({kind:t.kind,nose:t.noseWorld,h:t.headingRad}))');
-    const stageSample = async kind => evaluate(`(() => {
-      const k=window.__kx;
-      if(k.trains.some(t=>t.kind===${JSON.stringify(kind)}))return 'existing sample';
-      if(typeof k.evidenceBuildTrain!=='function'||k.__evidenceActiveTrain)return null;
-      const base=k.trains.find(t=>t.kind==='lner5'); if(!base)return null;
-      const group=k.evidenceBuildTrain(${JSON.stringify(kind)});
-      group.position.copy(base.group.position);group.quaternion.copy(base.group.quaternion);k.scene.add(group);base.group.visible=false;
-      const active={...base,kind:${JSON.stringify(kind)},group};
-      k.__evidenceBaseTrain=base;k.__evidenceActiveTrain=active;k.trains[k.trains.indexOf(base)]=active;
-      return 'staged sample ${kind} replacing sample lner5 for evidence';
-    })()`);
-    const restoreSample = () => evaluate(`(() => {
-      const k=window.__kx, base=k.__evidenceBaseTrain, active=k.__evidenceActiveTrain;
-      if(!base||!active)return false;
-      const index=k.trains.indexOf(active); if(index<0)return false;
-      active.group.visible=false;active.group.removeFromParent();base.group.visible=true;k.trains[index]=base;
-      delete k.__evidenceBaseTrain;delete k.__evidenceActiveTrain;return true;
-    })()`);
-    const trainRows = () => readTrainRows();
-    let trains = await trainRows();
-    const staged = await stageSample('gn387x4');
-    if (staged) trains = await trainRows();
-    else gap('03', `387 unavailable in built samples. After kx is created in main.ts add: ${TRAIN_FACTORY_HOOK} (existing web/dev/trains.ts is not in the normal dist).`);
-    for (const [name, c] of Object.entries(trainCameras(trains, data)))
-      await attempt('03', name, () => shot('03', name, c, { fixture: name === 'great-northern-387' ? staged : 'offline labelled sample' }));
-    if (staged?.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
-    for (const kind of ['gc180x5', 'tl700x8']) {
-      const fixture = await stageSample(kind);
-      if (!fixture) { gap('03', `${kind} unavailable in built samples; evidenceBuildTrain could not stage a labelled sample.`); continue; }
-      trains = await trainRows();
-      const cameras = trainCameras(trains, data);
-      for (const name of [`${kind}-nose-three-quarter`, `${kind}-whole-side`]) {
-        const c = cameras[name];
-        if (!c) { gap('03', `${kind} sample did not produce ${name}.`); continue; }
-        await attempt('03', name, () => shot('03', name, c, { fixture: fixture === 'existing sample' ? 'offline labelled sample' : fixture }));
-      }
-      if (fixture.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
+    await runStationEvidenceShots(cameras, shot, attempt, selected);
+    if (!cameras['gasworks-portals'] && (!selected || selected.has('gasworks-portals'))) gap('02', 'Gasworks south mouth could not be located in public geometry');
+    const gridViews = Object.entries(cameras).filter(([name, c]) => c.grid && (!selected || selected.has(name)));
+    if (gridViews.length) {
+      await navigate('?trains=none&bare=1&grid=1&board=0', 'geometry');
+      for (const [name, c] of gridViews) await shot('01', `${name}-10m-grid`, c, { twoFrame: true });
     }
 
-    // Match the Pages hostname gate, not just a missing upstream on localhost.
-    await navigate('', 'Pages-like public host, no relay', 'desktop', publicBase);
-    await until("window.__kx.feed.connection==='relay absent'");
-    await shot('07', 'pages-no-relay', cameras.overview, { expected: 'offline samples; no relay fetch on a public hostname' });
-    setProxy(false);
-    // Reload after closing the proxy: one quiet probe is the page's normal auto-mode behavior.
-    await navigate('', 'localhost no relay'); await until("window.__kx.feed.connection==='relay absent'");
-    await shot('07', 'localhost-no-relay', cameras.overview);
-    await navigate('?trains=live', 'simulated stopped relay');
-    await until("/reconnecting/.test(window.__kx.feed.connection)");
-    await shot('07', 'relay-stopped', cameras.overview, { fault: 'evidence proxy returns 503; upstream relay process is untouched' });
-    setProxy(true);
-
-    if (options.relay) {
-      const observedDecodedIds = new Set();
-      const signalFrame = () => evaluate(`(() => {
+    // --views captures only the fixed station views above; the rest of the pack (trains, relay scenarios, performance) is skipped.
+    if (!selected) {
+      await navigate('?trains=demo&board=0', 'sample trains');
+      const readTrainRows = () => evaluate('window.__kx.trains.map(t=>({kind:t.kind,nose:t.noseWorld,h:t.headingRad}))');
+      const stageSample = async kind => evaluate(`(() => {
         const k=window.__kx;
-        const camera=${signalStateCamera.toString()};
-        return {timeMs:k.feed.timeMs,ended:k.feed.connection==='recording ended',signals:(k.signals?.signals()??[]).map(r=>{
-          const p=r.group.position;
-          return {id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,
-            ...camera([p.x,p.y,p.z],r.signal,r.label)};
-        })};
+        if(k.trains.some(t=>t.kind===${JSON.stringify(kind)}))return 'existing sample';
+        if(typeof k.evidenceBuildTrain!=='function'||k.__evidenceActiveTrain)return null;
+        const base=k.trains.find(t=>t.kind==='lner5'); if(!base)return null;
+        const group=k.evidenceBuildTrain(${JSON.stringify(kind)});
+        group.position.copy(base.group.position);group.quaternion.copy(base.group.quaternion);k.scene.add(group);base.group.visible=false;
+        const active={...base,kind:${JSON.stringify(kind)},group};
+        k.__evidenceBaseTrain=base;k.__evidenceActiveTrain=active;k.trains[k.trains.indexOf(base)]=active;
+        return 'staged sample ${kind} replacing sample lner5 for evidence';
       })()`);
-      await attempt('04', 'replay and board', async () => {
-        await navigate(`?trains=replay&date=${options.date}&speed=${options.speed}`, 'recording replay');
-        await until("['playing','recording ended'].includes(window.__kx.feed.connection)", 60000);
-        // Inferred positions get context evidence, never a state wait or a decoded-state claim.
-        const inferred = (await signalFrame()).signals.find(s=>s.inferred);
-        if (inferred) await attempt('06', 'inferred position context', () => shot('06', 'inferred-position-context', inferred, { purpose: 'position provenance only; not a state target' }));
-        // A sequence records the real motion core through the real page feed; no odometer shortcut.
-        await attempt('05', 'moving sequence', async () => {
-          await until('window.__kx.motionState.some(t=>t.speed>0)', 30000);
-          for (let i = 0; i < 4; i++) { const start = await evaluate('window.__kx.feed.timeMs'); if(i) await until(`window.__kx.feed.timeMs>=${start+2000}`, 10000); await shot('05', `motion-${String(i).padStart(2,'0')}`, cameras['north-gable']); }
-        });
-        await attempt('06', 'decoded OSM state search', async () => {
-          const window = signalReplayWindow(options.iso, options.signalAt), initial = await signalFrame();
-          report.signalSearch = await searchSignalStates({ ...window, sample: signalFrame,
-            timeoutMs: Math.min(900000, Math.max(0, window.endMs-initial.timeMs)/options.speed+15000),
-            capture: async (target, state) => {
-              try {
-                await shot('06', `${state}-decoded-osm-replay`, target, { observedState: state, signalId: target.id, berth: target.berth });
-                return true;
-              } catch (e) { if (/signal changed/.test(e.message)) return false; throw e; }
-            },
-          });
-          for (const id of report.signalSearch.decodedIds) observedDecodedIds.add(id);
-          for (const state of report.signalSearch.missing) gap('06', `No decoded, non-inferred ${state} head captured in replay window ${new Date(window.startMs).toISOString()}–${new Date(window.endMs).toISOString()} (${report.signalSearch.reason}).`);
-        });
-        await boardShots();
-        if (await evaluate("!!document.querySelector('[data-signal-legend],.kx-signal-legend')")) await shot('06', 'overlay-legend', cameras.overview);
-        else axis('06').notes = ['The page has no signal overlay legend; labels/provenance are in shot metadata.'];
-      });
-      await attempt('07', 'live drop and recovery', async () => {
-        await navigate('?trains=live', 'live connected'); await until("window.__kx.feed.connection==='connected'", 60000);
-        await shot('07', 'relay-connected', cameras.overview);
-        for (const s of (await signalFrame()).signals) if (s.id > 0 && !s.inferred && ['danger','proceed'].includes(s.state)) observedDecodedIds.add(s.id);
-        setProxy(false); currentScenario='live relay drop'; await until("/reconnecting/.test(window.__kx.feed.connection)", 20000);
-        await shot('07', 'relay-dropped', cameras.overview, { fault: 'all proxy upstream sockets closed; real relay stays running' });
-        const unknown = signalStateTarget((await signalFrame()).signals, 'unknown', observedDecodedIds);
-        if (unknown) await shot('06', 'unknown-decoded-osm-disconnected', unknown, { observedState: 'unknown', signalId: unknown.id, cause: 'live disconnect clears stale byte picture on a previously decoded OSM head; no aspect was injected' });
-        else gap('06', 'No previously decoded, non-inferred unknown head remained after the live disconnect.');
-        setProxy(true); currentScenario='live relay recovered'; await until("window.__kx.feed.connection==='connected'", 30000); await shot('07', 'relay-recovered', cameras.overview);
-      });
-    } else for (const id of ['04', '05', '06']) gap(id, 'Pass --relay to collect replay/board, motion and decoded signal evidence.');
-
-    if (!axis('04').screenshots.some(file=>file.includes('board-desktop'))) {
-      await navigate('?trains=demo', 'sample board, no timetable'); await boardShots('sample-board');
-    }
-    await navigate('?trains=demo&board=0', 'performance'); await setCamera(cameras.overview);
-    report.performance = await evaluate(`new Promise(resolve => {
-      const k = window.__kx, t = k.controls.target, c = k.camera;
-      const radius = Math.hypot(c.position.x-t.x,c.position.z-t.z), y = c.position.y;
-      const angle = Math.atan2(c.position.z-t.z,c.position.x-t.x), durations = [];
-      let last, start;
-      const tick = now => {
-        start ??= now;
-        if (last !== undefined) durations.push(now-last);
-        last = now;
-        const a = angle + (now-start)/2000;
-        c.position.set(t.x+radius*Math.cos(a),y,t.z+radius*Math.sin(a));
-        if (now-start < 5000) requestAnimationFrame(tick);
-        else {
-          const sorted = [...durations].sort((a,b)=>a-b), q = p=>sorted[Math.floor((sorted.length-1)*p)];
-          resolve({frames:durations.length,seconds:(now-start)/1000,fps:durations.length/((now-start)/1000),
-            frameMs:{p50:q(.5),p95:q(.95),p99:q(.99),max:sorted.at(-1)},
-            over20ms:durations.filter(x=>x>20).length,firstFrameMs:k.firstFrameMs});
+      const restoreSample = () => evaluate(`(() => {
+        const k=window.__kx, base=k.__evidenceBaseTrain, active=k.__evidenceActiveTrain;
+        if(!base||!active)return false;
+        const index=k.trains.indexOf(active); if(index<0)return false;
+        active.group.visible=false;active.group.removeFromParent();base.group.visible=true;k.trains[index]=base;
+        delete k.__evidenceBaseTrain;delete k.__evidenceActiveTrain;return true;
+      })()`);
+      const trainRows = () => readTrainRows();
+      let trains = await trainRows();
+      const staged = await stageSample('gn387x4');
+      if (staged) trains = await trainRows();
+      else gap('03', `387 unavailable in built samples. After kx is created in main.ts add: ${TRAIN_FACTORY_HOOK} (existing web/dev/trains.ts is not in the normal dist).`);
+      for (const [name, c] of Object.entries(trainCameras(trains, data)))
+        await attempt('03', name, () => shot('03', name, c, { fixture: name === 'great-northern-387' ? staged : 'offline labelled sample' }));
+      if (staged?.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
+      for (const kind of ['gc180x5', 'tl700x8']) {
+        const fixture = await stageSample(kind);
+        if (!fixture) { gap('03', `${kind} unavailable in built samples; evidenceBuildTrain could not stage a labelled sample.`); continue; }
+        trains = await trainRows();
+        const cameras = trainCameras(trains, data);
+        for (const name of [`${kind}-nose-three-quarter`, `${kind}-whole-side`]) {
+          const c = cameras[name];
+          if (!c) { gap('03', `${kind} sample did not produce ${name}.`); continue; }
+          await attempt('03', name, () => shot('03', name, c, { fixture: fixture === 'existing sample' ? 'offline labelled sample' : fixture }));
         }
-      };
-      requestAnimationFrame(tick);
-    })`);
-    await shot('08', 'performance-overview', null);
+        if (fixture.startsWith('staged sample')) { await restoreSample(); trains = await trainRows(); }
+      }
+
+      // Match the Pages hostname gate, not just a missing upstream on localhost.
+      await navigate('', 'Pages-like public host, no relay', 'desktop', publicBase);
+      await until("window.__kx.feed.connection==='relay absent'");
+      await shot('07', 'pages-no-relay', cameras.overview, { expected: 'offline samples; no relay fetch on a public hostname' });
+      setProxy(false);
+      // Reload after closing the proxy: one quiet probe is the page's normal auto-mode behavior.
+      await navigate('', 'localhost no relay'); await until("window.__kx.feed.connection==='relay absent'");
+      await shot('07', 'localhost-no-relay', cameras.overview);
+      await navigate('?trains=live', 'simulated stopped relay');
+      await until("/reconnecting/.test(window.__kx.feed.connection)");
+      await shot('07', 'relay-stopped', cameras.overview, { fault: 'evidence proxy returns 503; upstream relay process is untouched' });
+      setProxy(true);
+
+      if (options.relay) {
+        const observedDecodedIds = new Set();
+        const signalFrame = () => evaluate(`(() => {
+          const k=window.__kx;
+          const camera=${signalStateCamera.toString()};
+          return {timeMs:k.feed.timeMs,ended:k.feed.connection==='recording ended',signals:(k.signals?.signals()??[]).map(r=>{
+            const p=r.group.position;
+            return {id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,
+              ...camera([p.x,p.y,p.z],r.signal,r.label)};
+          })};
+        })()`);
+        await attempt('04', 'replay and board', async () => {
+          await navigate(`?trains=replay&date=${options.date}&speed=${options.speed}`, 'recording replay');
+          await until("['playing','recording ended'].includes(window.__kx.feed.connection)", 60000);
+          // Inferred positions get context evidence, never a state wait or a decoded-state claim.
+          const inferred = (await signalFrame()).signals.find(s=>s.inferred);
+          if (inferred) await attempt('06', 'inferred position context', () => shot('06', 'inferred-position-context', inferred, { purpose: 'position provenance only; not a state target' }));
+          // A sequence records the real motion core through the real page feed; no odometer shortcut.
+          await attempt('05', 'moving sequence', async () => {
+            await until('window.__kx.motionState.some(t=>t.speed>0)', 30000);
+            for (let i = 0; i < 4; i++) { const start = await evaluate('window.__kx.feed.timeMs'); if(i) await until(`window.__kx.feed.timeMs>=${start+2000}`, 10000); await shot('05', `motion-${String(i).padStart(2,'0')}`, cameras['north-gable']); }
+          });
+          await attempt('06', 'decoded OSM state search', async () => {
+            const window = signalReplayWindow(options.iso, options.signalAt), initial = await signalFrame();
+            report.signalSearch = await searchSignalStates({ ...window, sample: signalFrame,
+              timeoutMs: Math.min(900000, Math.max(0, window.endMs-initial.timeMs)/options.speed+15000),
+              capture: async (target, state) => {
+                try {
+                  await shot('06', `${state}-decoded-osm-replay`, target, { observedState: state, signalId: target.id, berth: target.berth });
+                  return true;
+                } catch (e) { if (/signal changed/.test(e.message)) return false; throw e; }
+              },
+            });
+            for (const id of report.signalSearch.decodedIds) observedDecodedIds.add(id);
+            for (const state of report.signalSearch.missing) gap('06', `No decoded, non-inferred ${state} head captured in replay window ${new Date(window.startMs).toISOString()}–${new Date(window.endMs).toISOString()} (${report.signalSearch.reason}).`);
+          });
+          await boardShots();
+          if (await evaluate("!!document.querySelector('[data-signal-legend],.kx-signal-legend')")) await shot('06', 'overlay-legend', cameras.overview);
+          else axis('06').notes = ['The page has no signal overlay legend; labels/provenance are in shot metadata.'];
+        });
+        await attempt('07', 'live drop and recovery', async () => {
+          await navigate('?trains=live', 'live connected'); await until("window.__kx.feed.connection==='connected'", 60000);
+          await shot('07', 'relay-connected', cameras.overview);
+          for (const s of (await signalFrame()).signals) if (s.id > 0 && !s.inferred && ['danger','proceed'].includes(s.state)) observedDecodedIds.add(s.id);
+          setProxy(false); currentScenario='live relay drop'; await until("/reconnecting/.test(window.__kx.feed.connection)", 20000);
+          await shot('07', 'relay-dropped', cameras.overview, { fault: 'all proxy upstream sockets closed; real relay stays running' });
+          const unknown = signalStateTarget((await signalFrame()).signals, 'unknown', observedDecodedIds);
+          if (unknown) await shot('06', 'unknown-decoded-osm-disconnected', unknown, { observedState: 'unknown', signalId: unknown.id, cause: 'live disconnect clears stale byte picture on a previously decoded OSM head; no aspect was injected' });
+          else gap('06', 'No previously decoded, non-inferred unknown head remained after the live disconnect.');
+          setProxy(true); currentScenario='live relay recovered'; await until("window.__kx.feed.connection==='connected'", 30000); await shot('07', 'relay-recovered', cameras.overview);
+        });
+      } else for (const id of ['04', '05', '06']) gap(id, 'Pass --relay to collect replay/board, motion and decoded signal evidence.');
+
+      if (!axis('04').screenshots.some(file=>file.includes('board-desktop'))) {
+        await navigate('?trains=demo', 'sample board, no timetable'); await boardShots('sample-board');
+      }
+      await navigate('?trains=demo&board=0', 'performance'); await setCamera(cameras.overview);
+      report.performance = await evaluate(`new Promise(resolve => {
+        const k = window.__kx, t = k.controls.target, c = k.camera;
+        const radius = Math.hypot(c.position.x-t.x,c.position.z-t.z), y = c.position.y;
+        const angle = Math.atan2(c.position.z-t.z,c.position.x-t.x), durations = [];
+        let last, start;
+        const tick = now => {
+          start ??= now;
+          if (last !== undefined) durations.push(now-last);
+          last = now;
+          const a = angle + (now-start)/2000;
+          c.position.set(t.x+radius*Math.cos(a),y,t.z+radius*Math.sin(a));
+          if (now-start < 5000) requestAnimationFrame(tick);
+          else {
+            const sorted = [...durations].sort((a,b)=>a-b), q = p=>sorted[Math.floor((sorted.length-1)*p)];
+            resolve({frames:durations.length,seconds:(now-start)/1000,fps:durations.length/((now-start)/1000),
+              frameMs:{p50:q(.5),p95:q(.95),p99:q(.99),max:sorted.at(-1)},
+              over20ms:durations.filter(x=>x>20).length,firstFrameMs:k.firstFrameMs});
+          }
+        };
+        requestAnimationFrame(tick);
+      })`);
+      await shot('08', 'performance-overview', null);
+    }
   } catch (error) { report.fatal = error.message; report.gaps.push(`Capture stopped: ${error.message}`); }
   finally { await cleanup(); }
 
   // Supporting evidence is generated without reading any login or account name.
   await mkdir(path.join(options.out, 'checks'), { recursive: true });
   const run = async (id, name, command, args, timeout = 300000) => { const r = await commandResult(command, args, packageRoot, path.join(options.out, 'checks', `${name}.log`), timeout); r.file=`checks/${name}.log`; report.commands.push(r); axis(id).artifacts.push(`checks/${name}.log`); if(r.code!==0) gap(id, `${name}: ${r.timedOut?'timed out':`exit ${r.code}`}`); return r; };
-  await run('09', 'evidence-tests', 'node', ['--test', '--test-timeout=10000', 'tools/tests/evidence.test.mjs', 'tools/tests/board-vs-trust.test.ts', 'tools/tests/live-vs-replay.test.ts', 'tools/tests/axis04-summary.test.ts'], 60000);
-  await run('09', 'tests', 'npm', ['test']); await run('09', 'typecheck', 'npx', ['tsc', '--noEmit', '-p', '.'], 120000);
-  await run('07', 'relay-mutations', 'python3', ['-I', '-u', 'tools/mutation/relay.py', 'relay', path.join(options.out, 'relay-mutations')]);
-  try { await stat(options.rawOsm); await run('01', 'osm-fidelity', 'node', ['tools/fidelity.ts', '--raw', options.rawOsm, '--json']); }
-  catch { gap('01', 'No raw OSM extract: pass --raw-osm to generate the independent fidelity deltas and unresolved-issue list.'); }
-  await runAxis04Reports(options, report, { fetchImpl: fetch, run, gap });
-  gap('07', 'Credential/account-name sweep is intentionally not automated: the scorer runs their local secret scan without giving this tool an account name or login.');
-  gap('09', 'Scorer must separately rerun the repository responsive/catalog checks and inspect mutation evidence for other changed components.');
+  if (selected) gap('02', `Partial pack: --views ${options.views} captured only ${[...selected].length} fixed station views; trains, relay scenarios, supporting commands and performance were not run.`);
+  else {
+    await run('09', 'evidence-tests', 'node', ['--test', '--test-timeout=10000', 'tools/tests/evidence.test.mjs', 'tools/tests/board-vs-trust.test.ts', 'tools/tests/live-vs-replay.test.ts', 'tools/tests/axis04-summary.test.ts'], 60000);
+    await run('09', 'tests', 'npm', ['test']); await run('09', 'typecheck', 'npx', ['tsc', '--noEmit', '-p', '.'], 120000);
+    await run('07', 'relay-mutations', 'python3', ['-I', '-u', 'tools/mutation/relay.py', 'relay', path.join(options.out, 'relay-mutations')]);
+    try { await stat(options.rawOsm); await run('01', 'osm-fidelity', 'node', ['tools/fidelity.ts', '--raw', options.rawOsm, '--json']); }
+    catch { gap('01', 'No raw OSM extract: pass --raw-osm to generate the independent fidelity deltas and unresolved-issue list.'); }
+    await runAxis04Reports(options, report, { fetchImpl: fetch, run, gap });
+    gap('07', 'Credential/account-name sweep is intentionally not automated: the scorer runs their local secret scan without giving this tool an account name or login.');
+    gap('09', 'Scorer must separately rerun the repository responsive/catalog checks and inspect mutation evidence for other changed components.');
+  }
   if (!options.gpu || !report.validGpu) gap('08', 'Only a measured real Metal renderer qualifies; software or unknown graphics do not.');
-  await writePrivateFile(path.join(options.out, 'checks/camera-clearance.json'), `${JSON.stringify(report.cameraClearance,null,2)}\n`);
+  report.flicker = flickerSummary(report.screenshots);
+  for (const f of report.flicker.failed) gap(f.axis, `${f.camera}: flicker, ${f.differingPixels} px differ between two frames of a still scene (${(f.fraction * 100).toFixed(3)}% > ${report.flicker.limit * 100}%), in ${f.bbox?.join(',')}`);  await writePrivateFile(path.join(options.out, 'checks/camera-clearance.json'), `${JSON.stringify(report.cameraClearance,null,2)}\n`);
   axis('02').artifacts.push('checks/camera-clearance.json'); axis('03').artifacts.push('checks/camera-clearance.json');
   report.scenarios = [...new Set(report.screenshots.map(s=>s.scenario))].map(name=>({name,files:report.screenshots.filter(s=>s.scenario===name).map(s=>s.file),consoleErrors:report.consoleErrors.filter(e=>e.scenario===name).length,relayRequests:(report.relayRequests??[]).filter(r=>r.scenario===name).length}));
   report.complete = !report.fatal && report.validGpu && !report.gaps.length;
@@ -742,10 +1047,12 @@ export async function main(args = process.argv.slice(2)) {
   await writePrivateFile(path.join(options.out, 'manifest.json'), `${JSON.stringify(report, null, 2)}\n`);
   // Keep the old evidence.json entry point for existing scorer scripts.
   await writePrivateFile(path.join(options.out, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
-  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
-  console.log(JSON.stringify({ out: options.out, renderer: report.renderer, screenshots: report.screenshots.length, bundleGzipBytes: report.build.totalGzipBytes, gaps: report.gaps, fatal: report.fatal ?? null }, null, 2));
+  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.views.partial ? `Partial pack: only ${report.views.names.length} fixed station views (--views ${report.views.requested}).\n\n` : ''}Flicker: ${report.flicker.checked} fixed views shot twice, ${report.flicker.failed.length} over the ${report.flicker.limit * 100}% limit (worst ${(report.flicker.worstFraction * 100).toFixed(4)}%). Scene pin: ${report.lighting.pin.parameters} (applied by the page: ${report.lighting.pinHonoured ?? 'no pinned page was shot'}). Lighting: ${LIGHTING_NOTE}\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
+  console.log(JSON.stringify({ out: options.out, renderer: report.renderer, screenshots: report.screenshots.length, bundleGzipBytes: report.build.totalGzipBytes, gaps: report.gaps, fatal: report.fatal ?? null,
+    flicker: { checked: report.flicker.checked, failed: report.flicker.failed.length, worstFraction: report.flicker.worstFraction },
+    lighting: { pin: report.lighting.pin.parameters, pinHonoured: report.lighting.pinHonoured, fingerprints: Object.keys(report.lighting.fingerprints) } }, null, 2));
   process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
-  if (report.fatal) process.exitCode = 1;
+  if (report.fatal || !report.flicker.pass) process.exitCode = 1;
   return report;
 }
 

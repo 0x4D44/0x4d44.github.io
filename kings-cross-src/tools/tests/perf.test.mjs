@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { aggregateCpu, cpuProfileMarkdown } from '../perf.mjs';
+import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, headroomMarkdown, headroomReport, headroomVsBaseline } from '../perf.mjs';
 
 const node = { id: 1, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 0, functionName: 'scene' } };
 const maps = new Map([['bundle.js', [[{ generatedColumn: 0, source: 'scene.ts', originalLine: 2 }]]]]);
@@ -82,4 +82,83 @@ test('missing source positions never guess a source-map match and unmatched delt
   const zero = aggregateCpu({ nodes: [node], samples: [1], timeDeltas: [0] });
   assert.equal(zero.sampledMs, 0, 'a measured zero is distinct from missing timing');
   assert.equal(zero.byOriginalSourceFile[0].percent, 0);
+});
+
+// ---- uncapped headroom ----------------------------------------------------------------------------------------------
+const camera = (median, p5 = median - 5, { p50 = 1000 / median, p95 = 1500 / median, realMetal = true } = {}) => ({ fps: { median, p5 }, frameMs: { p50, p95 }, realMetal });
+const capped = { control: { medianFps: 60 }, cameras: { overview: camera(60, 59, { p50: 16.7, p95: 16.8 }), shed: camera(60, 60, { p50: 16.7, p95: 16.7 }) } };
+const uncapped = { control: { medianFps: 1908.5 }, cameras: { overview: camera(438, 436, { p50: 1.9, p95: 3.1 }), shed: camera(549, 543, { p50: 1.5, p95: 2.9 }) } };
+
+test('the headroom run uses exactly the two flags that lift the frame limit', () => {
+  assert.deepEqual([...UNCAPPED_FLAGS], ['--disable-gpu-vsync', '--disable-frame-rate-limit']);
+  assert.throws(() => UNCAPPED_FLAGS.push('--x'), TypeError, 'the list cannot be edited by accident');
+  assert.equal(HEADROOM_FPS_TARGET, 60);
+  assert.equal(UNCAPPED_CONTROL_RATIO, 1.5);
+});
+
+test('headroom is the uncapped median FPS over the 60 FPS target, beside the capped figure', () => {
+  const headroom = headroomReport(capped, uncapped);
+  assert.equal(headroom.valid, true);
+  assert.equal(headroom.flagsEffective, true);
+  assert.deepEqual(headroom.gaps, []);
+  assert.deepEqual(headroom.control, { cappedFps: 60, uncappedFps: 1908.5 });
+  assert.deepEqual(headroom.cameras.overview, { cappedMedianFps: 60, cappedP5Fps: 59, uncappedMedianFps: 438, uncappedP5Fps: 436, uncappedFrameMs: { p50: 1.9, p95: 3.1 }, headroom: 7.3, headroomP5: 7.27, frameCostMs: 2.283, realMetal: true });
+  assert.equal(headroom.cameras.shed.headroom, 9.15);
+  assert.equal(headroom.worstHeadroom, 7.3, 'the worst camera sets the headline');
+  assert.deepEqual(headroom.flags, ['--disable-gpu-vsync', '--disable-frame-rate-limit']);
+  assert.match(headroom.definition, /uncapped median frames per second over the 60 FPS target/);
+});
+
+test('flags that did nothing are reported, not mistaken for headroom', () => {
+  for (const control of [60, 89, null, undefined, NaN]) {
+    const headroom = headroomReport(capped, { ...uncapped, control: { medianFps: control } });
+    assert.equal(headroom.valid, false, `uncapped control ${control}`);
+    assert.equal(headroom.flagsEffective, false);
+    assert.ok(headroom.gaps.some(gap => /did not lift the frame limit/.test(gap)));
+    assert.equal(headroom.cameras.overview.headroom, 7.3, 'the numbers are still shown');
+  }
+  assert.equal(headroomReport(capped, { ...uncapped, control: { medianFps: 90 } }).valid, true, 'exactly 1.5x the capped control is enough');
+  assert.equal(headroomReport({ ...capped, control: { medianFps: 0 } }, uncapped).valid, false, 'a dead capped control proves nothing');
+});
+
+test('a missing camera, a missing run or a software renderer makes the headroom invalid', () => {
+  const missing = headroomReport(capped, { ...uncapped, cameras: { overview: uncapped.cameras.overview } });
+  assert.ok(missing.gaps.some(gap => /shed: no uncapped measurement/.test(gap)));
+  assert.deepEqual(Object.keys(missing.cameras), ['overview']);
+  const software = headroomReport(capped, { ...uncapped, cameras: { ...uncapped.cameras, shed: camera(549, 543, { realMetal: false }) } });
+  assert.equal(software.valid, false);
+  assert.ok(software.gaps.some(gap => /real Metal/.test(gap)));
+  const none = headroomReport(capped, undefined);
+  assert.equal(none.valid, false);
+  assert.equal(none.worstHeadroom, null);
+  assert.ok(none.gaps.some(gap => /No camera was measured uncapped/.test(gap)));
+  const unmeasured = headroomReport(capped, { ...uncapped, cameras: { overview: { fps: {}, frameMs: {}, realMetal: true }, shed: uncapped.cameras.shed } });
+  assert.equal(unmeasured.valid, false);
+  assert.equal(unmeasured.cameras.overview.headroom, null);
+});
+
+test('the baseline comparison is the uncapped median now over then, per camera', () => {
+  const now = headroomReport(capped, uncapped);
+  const then = { cameras: { overview: { uncappedMedianFps: 500 }, shed: { uncappedMedianFps: 549 }, extra: { uncappedMedianFps: 10 } } };
+  const against = headroomVsBaseline(now, then);
+  assert.deepEqual(against.cameras, { overview: { baselineFps: 500, fps: 438, ratio: 0.876 }, shed: { baselineFps: 549, fps: 549, ratio: 1 } });
+  assert.equal(against.worstRatio, 0.876);
+  assert.match(against.definition, /below 1 is slower/);
+  assert.deepEqual(headroomVsBaseline(now, { cameras: { overview: { uncappedMedianFps: 0 }, shed: {} } }).cameras, {}, 'a zero or absent baseline is skipped, not divided by');
+  assert.equal(headroomVsBaseline(now, undefined).worstRatio, null);
+  assert.equal(headroomVsBaseline(undefined, then).worstRatio, null);
+});
+
+test('the Markdown says whether the headroom is valid and lists each camera', () => {
+  const now = headroomReport(capped, uncapped);
+  const valid = headroomMarkdown({ ...now, vsBaseline: headroomVsBaseline(now, { cameras: { overview: { uncappedMedianFps: 438 } } }) }).join('\n');
+  assert.match(valid, /Headroom \(uncapped, --disable-gpu-vsync --disable-frame-rate-limit\): valid\./);
+  assert.match(valid, /Repainting-page control 60 FPS capped, 1908\.5 FPS uncapped/);
+  assert.match(valid, /\| overview \| 60 \| 438 \| 436 \| 7\.3 \| 2\.28 \| 3\.1 \|/);
+  assert.match(valid, /\| shed \| 60 \| 549 \| 543 \| 9\.15 \| 1\.82 \| 2\.9 \|/);
+  assert.match(valid, /Against the baseline run: overview 438 \/ 438 = 1x/);
+  const invalid = headroomMarkdown(headroomReport(capped, { ...uncapped, control: { medianFps: 61 } })).join('\n');
+  assert.match(invalid, /NOT VALID/);
+  assert.match(invalid, /Headroom gap: The uncapped flags did not lift the frame limit/);
+  assert.match(headroomMarkdown(undefined).join('\n'), /not measured/);
 });

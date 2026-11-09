@@ -1,26 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import * as THREE from 'three';
-import { barlowPlan, barlowSection, landmarkPlans, landmarkSeats, REPLACED_BUILDING_IDS, tunnelMouths } from '../../core/landmarks.ts';
-import { buildingsUnderStation, concourseCanopy, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
-import { railSegments } from '../../core/scene.ts';
-import { createTerrain } from '../../core/terrain.ts';
-import { addCity } from '../../web/src/city.ts';
-import { buildConcourse } from '../../web/src/concourse.ts';
-import { addKxCentral, KXCENTRAL_OSM_IDS } from '../../web/src/kxcentral.ts';
-import { landmarkGeometry } from '../../web/src/landmarks.ts';
-import { addPortals, portalHole } from '../../web/src/portals.ts';
-import { buildBufferStops, buildTrack } from '../../web/src/track.ts';
-import { buildFurniture, buildPlatforms } from '../../web/src/furniture.ts';
-import { buildShed } from '../../web/src/shed.ts';
-import { addTerrain } from '../../web/src/world.ts';
+import { barlowPlan, barlowSection, landmarkPlans, landmarkSeats } from '../../core/landmarks.ts';
+import { shedLayout, shedToWorld, worldToShed } from '../../core/station.ts';
 import * as evidence from '../evidence.mjs';
+import { buildStationScene, stationData } from '../station-scene.mjs';
 
-const data = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
-const cityData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-city.json', import.meta.url), 'utf8'));
-const terrainData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-terrain.json', import.meta.url), 'utf8'));
+const { data } = stationData();
 
 function barlowTargets(plan, seatY = 0) {
   const margin = (plan.width - plan.span) / 2;
@@ -34,37 +21,6 @@ function barlowTargets(plan, seatY = 0) {
   const length = [.15, plan.barlowLength / 2, plan.barlowLength - .15]
     .map(v => point(margin + eastFlank.x, v, eastFlank.y + seatY));
   return { arch, length };
-}
-
-function stationSceneOccluders() {
-  const scene = new THREE.Scene();
-  const layout = shedLayout(data), canopy = concourseCanopy(data), station = stationBuilding(data);
-  scene.add(buildTrack(data, layout), buildPlatforms(data, layout), buildFurniture(data, layout));
-  const field = createTerrain(terrainData);
-  const terrain = addTerrain(scene, field, { exclude: portalHole(tunnelMouths(data)), rails: railSegments(data) }).ground;
-  addPortals(scene, data, { terrain });
-  const plans = landmarkPlans(data), seats = landmarkSeats(plans, terrain);
-  const landmarks = landmarkGeometry(plans, seats).map((parts, index) => {
-    const name = ['great-northern-hotel', 'midland-grand', 'barlow'][index];
-    const group = new THREE.Group();
-    for (const [part, batch] of Object.entries(parts)) {
-      const mesh = new THREE.Mesh(batch.build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
-      mesh.name = `${name}-${part}`;
-      group.add(mesh);
-    }
-    group.updateMatrixWorld(true);
-    return group;
-  });
-  scene.add(...landmarks);
-  addKxCentral(scene, data, { terrain });
-  const hidden = new Set([...buildingsUnderStation(data, layout, canopy), ...REPLACED_BUILDING_IDS, ...KXCENTRAL_OSM_IDS]);
-  if (station) hidden.add(station.id);
-  addCity(scene, data, cityData, { hidden, terrain });
-  scene.add(buildShed(layout));
-  if (station) scene.add(buildConcourse(canopy, station.pts, layout, data.buildings.filter(b => b.id === 46821177).map(b => b.pts)));
-  scene.add(buildBufferStops(data, layout));
-  scene.updateMatrixWorld(true);
-  return { occluders: scene.children, ground: terrain };
 }
 
 function cameraFor(camera) {
@@ -94,7 +50,7 @@ test('Barlow oblique evidence frames the south arch and long slate flank clear o
   const oldCamera = cameras['st-pancras-shed'];
   const newCamera = cameras['st-pancras-shed-oblique'];
   assert.ok(newCamera, 'keep the original context shot and add a Barlow-specific oblique');
-  const { occluders, ground } = stationSceneOccluders();
+  const { occluders, ground } = buildStationScene();
   const targets = barlowTargets(plan, landmarkSeats(landmarkPlans(data), ground).barlow.y);
   const old = cameraFor(oldCamera), oblique = cameraFor(newCamera);
   const oldArch = targets.arch.map(target => visibleTarget(old, target, occluders));

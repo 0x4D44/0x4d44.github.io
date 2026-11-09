@@ -103,6 +103,28 @@ test('explicit target verdicts reject low FPS, missing FPS and warm render at th
   assert.equal(measured.targets.cameraTargets.overview.p99FrameWithinBudget, false);
 });
 
+test('the first pair\'s uncapped headroom reaches the summary and the Markdown, and its absence is stated', () => {
+  const cameraRow = (uncappedMedianFps, headroom) => ({ cappedMedianFps: 60, cappedP5Fps: 60, uncappedMedianFps, uncappedP5Fps: uncappedMedianFps - 5, uncappedFrameMs: { p50: 2, p95: 3 }, headroom, headroomP5: headroom, frameCostMs: 2, realMetal: true });
+  const headroom = { fpsTarget: 60, flags: ['--disable-gpu-vsync', '--disable-frame-rate-limit'], flagsEffective: true, control: { cappedFps: 60, uncappedFps: 1900 }, valid: true, gaps: [], worstHeadroom: 7.3,
+    cameras: { overview: cameraRow(438, 7.3), shed: cameraRow(549, 9.15) } };
+  const first = { ...report(), headroom };
+  const measured = summarizeRuns([first, report(), report()]);
+  assert.deepEqual(measured.headroom, headroom, 'the first pair measures the cameras, so its headroom is the summary\'s');
+  assert.equal(summarizeRuns([report(), report()]).headroom, null, 'a report from before the headroom run has none');
+  assert.equal(summarizeRuns([report(), first]).headroom, null, 'later pairs measure startup only');
+  const markdown = (browser) => evidenceMarkdown({ status: 'pass', invocation: ['node'], hardware: { model: 'M', cpu: 'C', logicalCpus: 1, gpu: ['G'], os: { platform: 'darwin', release: '1', version: 'v', arch: 'arm64' } },
+    build: { files: [], appPayloadGzipBytes: 1, allEmittedGzipBytes: 1, sourceMapsGzipBytes: 0, budgetBytes: 2000000, appPayloadWithinBudget: true, allEmittedWithinBudget: true, budgetDefinition: 'x' }, browser });
+  const text = markdown(measured);
+  assert.match(text, /Headroom \(uncapped, --disable-gpu-vsync --disable-frame-rate-limit\): valid\./);
+  assert.match(text, /\| overview \| 60 \| 438 \| 433 \| 7\.3 \| 2 \| 3 \|/);
+  assert.match(markdown(summarizeRuns([report(), report()])), /Headroom: not measured/);
+});
+
+test('the CLI passes the scene pin and the headroom options on to perf and refuses unknown ones', async () => {
+  await assert.rejects(main(['--headroom']), /unknown option/);
+  await assert.rejects(main(['--runs', '1', '--weather', 'rain']), /integer/, 'the pin options are known; the run count is what is wrong');
+});
+
 test('Markdown includes hardware, every file, samples, aggregates, failed targets, limitations and exact command', () => {
   const low = report(); low.cameras.shed.fps.p5 = 40;
   const browser = summarizeRuns([low, report()]);
