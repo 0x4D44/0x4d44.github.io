@@ -7,9 +7,9 @@ import * as THREE from 'three';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, shellMaterial } from '../src/livery.ts';
-import { bodySpec, buildTrain } from '../src/train.ts';
+import { NOSE_RECESS, bodySpec, buildTrain } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, LNER_BAND, LNER_RED, curveY, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
+import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
 
 const LNER_NOSE = bodySpec('at300').nose.length;
@@ -115,6 +115,64 @@ test('Great Northern 387: a white-cream body with a thin orange pinstripe at the
   assert.equal(liveryFor('gn387x12'), l);
 });
 
+test('Hull Trains 802: a blue body with a cyan sweep up the cab side, a spectrum band in steps along each car under the windows, red doors, a grey beak over blue cheeks', () => {
+  const nose = bodySpec('at300').nose.length;
+  const l = liveryFor('hull5');
+  assert.equal(l.body, HULL_BLUE);
+  assert.equal(l.door, HULL_DOOR);
+  // the doors are red, not the magenta one unopened snippet said (the photographs show red and pink-red): the red channel leads, blue is behind it
+  assert.ok(((HULL_DOOR >> 16) & 255) > ((HULL_DOOR & 255) + 0x40) && ((HULL_DOOR >> 8) & 255) < 0x50, 'a red door');
+  // the cab sweep: cyan low on the nose's flank, climbing to the band's height by the door; blue body above it; the dark foot below
+  assert.equal(at('hull5', nose, 1.5, 0.76), HULL_CYAN, 'the sweep, 1.5 m from the tip');
+  assert.equal(at('hull5', nose, 1.5, 1.6), HULL_BLUE, 'blue over the sweep');
+  assert.equal(at('hull5', nose, nose + 0.5, (HULL_BAND[0] + HULL_BAND[1]) / 2), HULL_CYAN, 'the sweep arrives at the band by the cab door');
+  assert.equal(at('hull5', nose, 12, 0.7), 0x23262b, 'the dark foot');
+  assert.equal(at('hull5', nose, 12, 2.0), HULL_BLUE, 'blue body above the band: along the car the band is the decals\' (a texture reads blue there)');
+  // the band: every car has steps that run edge to edge without a gap, inside the band's height, each a flat colour from that car's stops
+  const layout = trainLayout('hull5');
+  for (const car of layout.cars) {
+    const items = l.decals({ index: car.index, count: layout.cars.length, type: car.type as string, cab: car.cab !== null, length: car.length, nose: car.cab ? nose : 0, doors: [3, car.length - 3] });
+    const steps = items.filter((i) => i.text === null);
+    assert.equal(steps.length, HULL_BAND_STEPS, `car ${car.index}: the band's steps`);
+    for (let k = 0; k < steps.length; k++) {
+      const [s0, y0, s1, y1] = (steps[k] as { rect: [number, number, number, number] }).rect;
+      assert.deepEqual([y0, y1], HULL_BAND, `car ${car.index} step ${k}: the band's height`);
+      assert.ok(s1 > s0, `car ${car.index} step ${k}: a step has a length`);
+      if (k > 0) near2(s0, (steps[k - 1] as { rect: number[] }).rect[2] as number, 1e-9, `car ${car.index} step ${k}: no gap`);
+    }
+    const first = (steps[0] as { rect: number[] }).rect[0] as number;
+    const last = (steps[steps.length - 1] as { rect: number[] }).rect[2] as number;
+    assert.ok(first >= (car.cab ? nose : 0) + 0.5 && last <= car.length - 0.5, `car ${car.index}: the band (${first.toFixed(1)} to ${last.toFixed(1)} m) stays inside the car and behind the cab's nose`);
+    // the first and last steps are close to the car's first and last stops, and the colours move along the car (the spectrum), not one flat colour
+    const colours = steps.map((i) => i.colour);
+    assert.ok(new Set(colours).size >= 6, `car ${car.index}: ${new Set(colours).size} distinct colours across the band`);
+    const stops = HULL_BAND_STOPS[car.index % HULL_BAND_STOPS.length] as readonly (readonly [number, number])[];
+    assert.equal(hullBandColour(car.index, 0), (stops[0] as readonly [number, number])[1]);
+    assert.equal(hullBandColour(car.index, 1), (stops[stops.length - 1] as readonly [number, number])[1]);
+    // at every stop that is not half of a cut (two stops a hair apart) the colour is the stop's own; between two stops it lies between their channels
+    stops.forEach(([t, colour], k) => {
+      const cut = (k > 0 && t - (stops[k - 1] as readonly [number, number])[0] < 0.02) || (k + 1 < stops.length && (stops[k + 1] as readonly [number, number])[0] - t < 0.02);
+      if (!cut) assert.equal(hullBandColour(car.index, t), colour, `car ${car.index}: the band at stop ${k}`);
+    });
+    for (let k = 0; k + 1 < stops.length; k++) {
+      const [ta, ca] = stops[k] as readonly [number, number];
+      const [tb, cb] = stops[k + 1] as readonly [number, number];
+      const mid = hullBandColour(car.index, (ta + tb) / 2);
+      for (const shift of [16, 8, 0]) {
+        const lo = Math.min((ca >> shift) & 255, (cb >> shift) & 255) - 1;
+        const hi = Math.max((ca >> shift) & 255, (cb >> shift) & 255) + 1;
+        assert.ok(((mid >> shift) & 255) >= lo && ((mid >> shift) & 255) <= hi, `car ${car.index}: the colour between stops ${k} and ${k + 1} leaves their range (channel ${shift})`);
+      }
+    }
+    // the lettering of livery.ts's row stays (the town on the band)
+    assert.ok(items.some((i) => i.text !== null), `car ${car.index}: the town's name`);
+  }
+  // the beak is the grey the front draws over blue cheeks; the cone of livery.ts's row (the whole face dark) is not used
+  assert.equal(l.noseCone, null);
+  assert.equal(l.swoosh, HULL_BEAK);
+  assert.equal(l.noseFront, HULL_BLUE);
+});
+
 test('the other schemes: nothing on the side but the foot, or (a base scheme) nothing at all', () => {
   assert.deepEqual(sideShapes('base', 5), []);
   assert.deepEqual(sideShapes('gn717', 5).map((s) => s.pts.length), [4]);
@@ -134,14 +192,15 @@ test('the other schemes: nothing on the side but the foot, or (a base scheme) no
 test('liveryFor: each kind wears its scheme, and kinds without one of their own wear the operator row of livery.ts unchanged', () => {
   const scheme: Partial<Record<TrainKind, Scheme>> = {
     lner5: 'lner', lner9: 'lner', gn387x4: 'gn387', gn387x8: 'gn387', gn387x12: 'gn387', gn717x6: 'gn717', gc180x5: 'grandcentral', tl700x8: 'tl700', tl700x12: 'tl700',
-    hull5: 'base', lumo5: 'base',
+    // CHANGED (hull5 was a base scheme): the Hull Trains 802 has a cyan cab sweep and a spectrum band of its own now
+    hull5: 'hull', lumo5: 'base',
   };
   for (const kind of ALL_KINDS) {
     assert.equal(liveryFor(kind).scheme, scheme[kind], kind);
     // a livery always has its basis and its sources: nothing here is unsourced
     assert.ok(liveryFor(kind).basis.length > 20 && liveryFor(kind).sources.length > 0, `${kind}: its basis`);
   }
-  for (const kind of ['hull5', 'lumo5'] as TrainKind[]) {
+  for (const kind of ['lumo5'] as TrainKind[]) {
     const l = liveryFor(kind);
     const row = LIVERIES[TRAIN_SPECS[kind].livery];
     assert.equal(l.noseTop, null);
@@ -228,9 +287,10 @@ test('paintSide: the body colour over the whole texture, then each shape in orde
 
 test('shellMaterialFor: the operator row of livery.ts for a base scheme; this module\'s own lit white material for a scheme, one per scheme and nose, no map without a document', () => {
   const nose = bodySpec('at300').nose.length;
-  // a base scheme (Hull Trains, Lumo) shares livery.ts's material for the row
-  assert.equal(shellMaterialFor('hull5', nose), shellMaterial(TRAIN_SPECS.hull5.livery, nose));
+  // a base scheme (Lumo) shares livery.ts's material for the row
+  // (Lumo is the one base scheme left: Hull Trains has paint of its own now)
   assert.equal(shellMaterialFor('lumo5', nose), shellMaterial(TRAIN_SPECS.lumo5.livery, nose));
+  assert.notEqual(shellMaterialFor('hull5', nose), shellMaterial(TRAIN_SPECS.hull5.livery, nose));
   const m = shellMaterialFor('lner5', nose);
   assert.ok(m instanceof THREE.MeshLambertMaterial);
   assert.equal(shellMaterialFor('lner9', nose), m, 'the 5- and 9-car LNER share one');
@@ -258,6 +318,31 @@ const detailOf = (g: THREE.Object3D, index: number): THREE.Mesh => {
   assert.ok(d, `car ${index} has no body-detail`);
   return d as THREE.Mesh;
 };
+
+test('the Hull Trains front: a grey beak between two blue cheeks on the face, the dome over the glass the body\'s blue, the doors red', () => {
+  const g = buildTrain('hull5');
+  g.updateMatrixWorld(true);
+  const layout = trainLayout('hull5');
+  for (const car of layout.cars.filter((c) => c.cab)) {
+    // the face stands NOSE_RECESS behind the end of the car (a covered coupler); the flat caps stand in its plane, the lamps and the seam a few millimetres off it
+    const face = car.cab === 'front' ? car.start + NOSE_RECESS : car.end - NOSE_RECESS;
+    const mesh = detailOf(g, car.index);
+    const onFace = (hex: number): Tri[] => trisOfColour(mesh, hex).filter((t) => t.every((v) => Math.abs(v.z - face) < 1e-3));
+    const beak = onFace(HULL_BEAK);
+    const cheeks = onFace(HULL_BLUE);
+    assert.ok(beak.length > 0 && cheeks.length > 0, `car ${car.index}: ${beak.length} beak and ${cheeks.length} cheek triangles on the face`);
+    const cheekBox = new THREE.Box3().setFromPoints(cheeks.flat());
+    const innerCheek = Math.min(...cheeks.flat().map((v) => Math.abs(v.x)));
+    assert.ok(cheekBox.min.x < -0.2 && cheekBox.max.x > 0.2, `car ${car.index}: a cheek each side`);
+    // the beak, where the cheeks are (their height), stays between them
+    const inCheekHeight = beak.flat().filter((v) => v.y > cheekBox.min.y + 1e-6 && v.y <= cheekBox.max.y);
+    assert.ok(inCheekHeight.length > 0);
+    for (const v of inCheekHeight) assert.ok(Math.abs(v.x) <= innerCheek + 1e-6, `car ${car.index}: the beak reaches x = ${v.x.toFixed(3)}, past the cheeks' edge at ${innerCheek.toFixed(3)}`);
+  }
+  // the doors are the Hull red
+  // (the doors are vertex-coloured leaves in each car's body-detail, so the colour is looked for there: a leaf is a pair of quads of the door colour)
+  for (const car of layout.cars) assert.ok(trisOfColour(detailOf(g, car.index), HULL_DOOR).length >= 8, `car ${car.index}: red door leaves`);
+});
 
 test('the nose\'s top: the LNER has a dark dome over the glass from 3.2 m back, the 717 a dark nose roof from the tip, every other kind none', () => {
   const dark = 0x1a1c21;

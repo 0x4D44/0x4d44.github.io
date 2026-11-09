@@ -271,7 +271,7 @@ M = [
     ("paint: 387 name panel too narrow", "const tw = textEms('Great Northern') * em;", "const tw = textEms('Great Northern') * em * 0.3;", LV),
     ("paint: 387 doors blue again", "  door: GN387_GREEN,", "  door: 0x24307a,", LV),
     ("paint: 717 nose top not dark", "  noseTop: 0x1a1c21,\n  noseTopFrom: 0,", "  noseTop: null,\n  noseTopFrom: 0,", LV),
-    ("paint: Hull wears the LNER paint", "  lner9: LNER,", "  lner9: LNER,\n  hull5: LNER,", LV),
+    ("paint: Hull wears the LNER paint", "  hull5: HULL,", "  hull5: LNER,", LV),
     ("paint: the 9-car LNER unpainted", "  lner9: LNER,", "", LV),
     ("paint: body colour not laid first", "  g.fillRect(0, 0, TEX_W, TEX_H);\n", "", LV),
     ("paint: shapes upside down", "(1 - (y - TEX_Y0) / (TEX_Y1 - TEX_Y0)) * TEX_H", "((y - TEX_Y0) / (TEX_Y1 - TEX_Y0)) * TEX_H", LV),
@@ -280,6 +280,15 @@ M = [
     ("paint: curve lookup not clamped", "if (s >= last[0]) return last[1];", "if (s >= last[0]) return 0;", LV),
     ("paint: shell material remade for every car", "let m = shells.get(key);", "let m: THREE.MeshLambertMaterial | undefined;", LV),
     ("paint: base scheme gets a material of its own", "if (livery.scheme === 'base') return shellMaterial(TRAIN_SPECS[kind].livery, nose);", "", LV),
+    ("paint: Hull cab sweep the wrong cyan", "    { colour: HULL_CYAN, pts: between(top, bottom) },", "    { colour: HULL_BLUE, pts: between(top, bottom) },", LV),
+    ("paint: Hull band 1 m too high", "export const HULL_BAND: [number, number] = [1.0, 1.45];", "export const HULL_BAND: [number, number] = [2.0, 2.45];", LV),
+    ("paint: Hull band steps overlap", "rect: [a + (b - a) * t0, HULL_BAND[0], a + (b - a) * t1, HULL_BAND[1]]", "rect: [a + (b - a) * t0, HULL_BAND[0], a + (b - a) * t1 * 0.9, HULL_BAND[1]]", LV),
+    ("paint: Hull band through the cab's nose", "const a = c.cab ? c.nose + 0.9 : 1.0;", "const a = c.cab ? 0.1 : 1.0;", LV),
+    ("paint: Hull band one flat colour", "return mix(a[1], b[1], (t - a[0]) / (b[0] - a[0]));", "return a[1];", LV),
+    ("paint: Hull doors magenta again", "export const HULL_DOOR = 0xc41e46;", "export const HULL_DOOR = 0xb0147e;", LV),
+    ("paint: Hull without the grey beak on blue cheeks", "  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8 },\n", "", F),
+    ("paint: Hull beak the whole width", "  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8 },", "  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 1 },", F),
+    ("paint: Hull town names dropped", "    const rest = LIVERIES.hulltrains.decals(c).slice(1);", "    const rest: DecalItem[] = [];", LV),
 ]
 only = sys.argv[3:]
 selected = [m for m in M if not only or any(o in m[0] for o in only)]

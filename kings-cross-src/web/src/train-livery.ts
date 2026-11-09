@@ -23,7 +23,7 @@ export interface Shape {
   pts: [number, number][];
 }
 
-export type Scheme = 'base' | 'lner' | 'grandcentral' | 'gn387' | 'gn717' | 'tl700';
+export type Scheme = 'base' | 'lner' | 'grandcentral' | 'gn387' | 'gn717' | 'tl700' | 'hull';
 
 /** A livery with the extra things this module knows: which painter draws its side, and the colour of the nose's top. */
 export interface TrainLivery extends LiveryDef {
@@ -111,6 +111,14 @@ export const GN387_GREEN = 0x1b5e4a;
 export const GN_PINSTRIPE = 0xe8731c;
 /** The navy of the Great Northern name panel (gn387_04_kings_cross_2023: a dark blue, near-black in shade). */
 export const GN_NAVY = 0x1d2c5e;
+/** Hull Trains' body: a dark royal blue, navy in shade (hull-802-paragon-2025 in sun reads about 0x213f93, hull-802-home-2023 under a roof about 0x14224a). The shade is approximate. */
+export const HULL_BLUE = 0x1a3772;
+/** The dull grey of the Hull Trains beak (busandtrainuser.com: "a rather dull grey/black front nose cone"; hull-802-doncaster-2024 shows it mid-grey in sun). Kept dark so the coupler cover's seam reads against it. */
+export const HULL_BEAK = 0x2d3138;
+/** The cyan the wrap's band starts with at the cab (hull-802-paragon-2025, hull-802-doncaster-2024: a bright cyan sweep along the cab side). */
+export const HULL_CYAN = 0x23b5e6;
+/** The doors of the Hull Trains 802s: a crimson that reads red in hull-802-home-2023 and pink-red at the edges in hull-802-paragon-2025 (the earlier "magenta" came from one unopened snippet). */
+export const HULL_DOOR = 0xc41e46;
 
 // --- LNER ---------------------------------------------------------------------------------------
 
@@ -178,6 +186,61 @@ function gn387Shapes(nose: number): Shape[] {
   ];
 }
 
+// --- Hull Trains ---------------------------------------------------------------------------------
+
+/**
+ * The 802's side. hull-802-doncaster-2024 and hull-802-paragon-2025: a dark blue body, the dark foot under it, and at the cab a cyan sweep
+ * that rises from the nose's lower flank along the cab side to the wrap's band (the band itself, behind the cab door, is the decals'). The
+ * numbers are readings off the two photographs: the sweep leaves the tip's flank 0.6 m up, thins to a sliver by 1.5 m back and reaches the
+ * band's height at the cab door.
+ */
+function hullShapes(nose: number): Shape[] {
+  const top = smoothCurve([[0.15, 0.66], [1.0, 0.86], [2.2, 1.12], [nose, 1.4], [nose + 0.9, HULL_BAND[1]]], 40);
+  const bottom = smoothCurve([[0.15, 0.62], [1.4, 0.7], [3.0, 0.84], [nose, 0.98], [nose + 0.9, HULL_BAND[0]]], 40);
+  return [
+    { colour: 0x23262b, pts: rect(0, TEX_SPAN, TEX_Y0, 0.95) },
+    { colour: HULL_CYAN, pts: between(top, bottom) },
+  ];
+}
+/** Top and bottom of the wrap's band along the car (metres above the rail head): under the window row, over the dark foot (hull-802-paragon-2025). */
+export const HULL_BAND: [number, number] = [1.0, 1.45];
+
+/**
+ * The colour stops of the wrap's band, car by car from the front of the train, as [t along the car, colour]: read off hull-802-paragon-2025 (802 304,
+ * 2025), where the band is a photographic wrap that runs through the spectrum along each car (cyan to green on the first, with a cut to violet at its
+ * end; violet through pink and orange to yellow on the second, and so on). The photograph does not show every car's band clearly, and other units wear
+ * other wraps (hull-802-home-2023 is a darker teal-and-green one): so each car's colours are an APPROXIMATION of that one unit's band, not a record of
+ * every 802. Two stops a hair apart are a cut; the colours between stops are blended.
+ */
+export const HULL_BAND_STOPS: readonly (readonly (readonly [number, number])[])[] = [
+  [[0, 0x23b5e6], [0.3, 0x12b5a5], [0.55, 0x35b94a], [0.8, 0x9ad03a], [0.81, 0x8a40c0], [1, 0x7a3fc4]],
+  [[0, 0x8a3fc8], [0.12, 0xd8479c], [0.3, 0xf08a24], [0.55, 0xf4b52a], [0.8, 0xf5cf2a], [1, 0x9ad03a]],
+  [[0, 0xe0408a], [0.2, 0x7a4fd0], [0.5, 0x3f6fe0], [0.75, 0x7a4fd0], [0.76, 0xe0408a], [1, 0xe0408a]],
+  [[0, 0xe8458f], [0.2, 0xf08a24], [0.45, 0xf5cf2a], [0.7, 0x40b84a], [1, 0x2f8fe0]],
+  [[0, 0x35b94a], [0.3, 0x12b5a5], [0.55, 0x7a3fc4], [0.8, 0xe0408a], [1, 0x7a3fc4]],
+];
+/** The number of flat steps a car's band is drawn in (a decal is one flat colour). */
+export const HULL_BAND_STEPS = 40;
+
+const mix = (a: number, b: number, t: number): number => {
+  const ch = (shift: number): number => Math.round(((a >> shift) & 255) * (1 - t) + ((b >> shift) & 255) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+};
+/** The colour of car `index`'s band at fraction t (0 at its first end, 1 at its last): the stops, blended. */
+export function hullBandColour(index: number, t: number): number {
+  const stops = HULL_BAND_STOPS[index % HULL_BAND_STOPS.length] as readonly (readonly [number, number])[];
+  const first = stops[0] as readonly [number, number];
+  const last = stops[stops.length - 1] as readonly [number, number];
+  if (t <= first[0]) return first[1];
+  if (t >= last[0]) return last[1];
+  for (let i = 0; i + 1 < stops.length; i++) {
+    const a = stops[i] as readonly [number, number];
+    const b = stops[i + 1] as readonly [number, number];
+    if (t <= b[0]) return mix(a[1], b[1], (t - a[0]) / (b[0] - a[0]));
+  }
+  return last[1];
+}
+
 // --- the Great Northern 717 and the Thameslink 700 ---------------------------------------------------
 
 /** The Desiro City's side. GN717-03-717005-Potters-Bar, GN717-05-25.06.26-Welwyn-Garden-City-717014: a pale body, the orange pinstripe only over the windscreen (see noseTop), nothing on the side beyond the flash. */
@@ -194,6 +257,8 @@ export function sideShapes(scheme: Scheme, nose: number): Shape[] {
       return grandCentralShapes(nose);
     case 'gn387':
       return gn387Shapes(nose);
+    case 'hull':
+      return hullShapes(nose);
     case 'gn717':
     case 'tl700':
       return desiroShapes();
@@ -303,6 +368,41 @@ const TL700: TrainLivery = asTrainLivery(LIVERIES.thameslink, {
   noseTopFrom: 0.9,
 });
 
+// Hull Trains: a blue body with a cyan sweep at the cab, a spectrum band along the cars (stepped in decals) with the town's name on it, red doors, a
+// grey beak over blue cheeks (the front's warning-panel machinery draws the beak, see FRONT_OVERRIDES in train.ts); the lettering is livery.ts's own.
+const HULL: TrainLivery = asTrainLivery(LIVERIES.hulltrains, {
+  scheme: 'hull',
+  basis: 'dark blue body and grey/black beak sourced (two articles); the cyan cab sweep, the spectrum band, the red doors and the grey beak on blue cheeks read from photographs hull-802-doncaster-2024, hull-802-paragon-2025 and hull-802-home-2023; shades approximate; the town on each car is a guess',
+  sources: [
+    ...LIVERIES.hulltrains.sources,
+    'photographs (private review set, never shipped): hull-802-doncaster-2024, hull-802-paragon-2025 (802 304, 2025), hull-802-home-2023 (802 302) and hull-802-grantham-2020 (Wikimedia Commons)',
+  ],
+  body: HULL_BLUE,
+  door: HULL_DOOR,
+  roof: 0x9aa2ad,
+  noseCone: null,
+  noseFront: HULL_BLUE,
+  noseBand: HULL_BLUE,
+  swoosh: HULL_BEAK,
+  // the dome over the windscreen is the body's blue (hull-802-doncaster-2024)
+  noseTop: HULL_BLUE,
+  noseTopFrom: 0,
+  decals: (c) => {
+    // the band: flat steps of a blend between the car's stops, from just behind the cab's door (or the car's first metre) to its last, the town's name over it
+    const a = c.cab ? c.nose + 0.9 : 1.0;
+    const b = c.length - 1.0;
+    const items: DecalItem[] = [];
+    for (let k = 0; k < HULL_BAND_STEPS; k++) {
+      const t0 = k / HULL_BAND_STEPS;
+      const t1 = (k + 1) / HULL_BAND_STEPS;
+      items.push({ text: null, colour: hullBandColour(c.index, (t0 + t1) / 2), rect: [a + (b - a) * t0, HULL_BAND[0], a + (b - a) * t1, HULL_BAND[1]] });
+    }
+    // the town's name, in white over the band, as livery.ts's row has it (the first item of its decals is the old flat band, which this replaces)
+    const rest = LIVERIES.hulltrains.decals(c).slice(1);
+    return [...items, ...rest];
+  },
+});
+
 // Grand Central: the sweep and the pinstripe are this module's; the black body, the doors and the lettering are livery.ts's.
 const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
   scheme: 'grandcentral',
@@ -313,6 +413,7 @@ const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
 const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   lner5: LNER,
   lner9: LNER,
+  hull5: HULL,
   gn387x4: GN387,
   gn387x8: GN387,
   gn387x12: GN387,
@@ -322,7 +423,7 @@ const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   tl700x12: TL700,
 };
 
-/** The livery a kind wears. Kinds without an entry (Hull Trains, Lumo) wear their operator's livery.ts row unchanged. */
+/** The livery a kind wears. Kinds without an entry (Lumo) wear their operator's livery.ts row unchanged. */
 export function liveryFor(kind: TrainKind): TrainLivery {
   return BY_KIND[kind] ?? asTrainLivery(LIVERIES[TRAIN_SPECS[kind].livery], { scheme: 'base' });
 }

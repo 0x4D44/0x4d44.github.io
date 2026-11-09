@@ -32,7 +32,7 @@ import { EMU_FIGURES, FIGURES, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind, TrainLayout } from '../../core/train.ts';
 import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
 import type { DecalItem } from './livery.ts';
-import { liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
+import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
 import { col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
@@ -609,6 +609,8 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
   lner5: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
   lner9: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
+  // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp pods, the cheeks the body's blue)
+  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8 },
 };
 
 /**
