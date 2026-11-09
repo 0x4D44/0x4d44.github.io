@@ -111,6 +111,9 @@ M = [
     ("crew door on a through car too", "  const crewDoors = car.cab ? [{ s: nose + ASSUMED.crewDoorFromNose", "  const crewDoors = true ? [{ s: nose + ASSUMED.crewDoorFromNose"),
     ("crew door 2 m behind the nose", "  crewDoorFromNose: 0.65,", "  crewDoorFromNose: 2.65,"),
     ("crew door on one side only", "      const side = sx > 0 ? 'right' : 'left';\n      const x = (a: number): number => sx * a;", "      const side = sx > 0 ? 'right' : 'left';\n      if (crew && sx < 0) continue;\n      const x = (a: number): number => sx * a;"),
+    ("bogie maker: every family on the Hitachi", "{ at300: 'hitachi', electrostar: 'electrostar', desiro: 'siemens', desiro700: 'siemens', adelante: 'alstom' };", "{ at300: 'hitachi', electrostar: 'hitachi', desiro: 'hitachi', desiro700: 'hitachi', adelante: 'hitachi' };"),
+    ("bogie maker: the 700 on the Electrostar's", "desiro700: 'siemens', adelante: 'alstom' };", "desiro700: 'electrostar', adelante: 'alstom' };"),
+    ("bogie maker: the style not passed to the bogie", ", style: BOGIE_STYLE[spec.family] });", " });"),
     ("crew door counted among the passenger doors", "      marker.name = crew ? 'crew-door' : 'door';", "      marker.name = 'door';"),
     ("cab glass in the body material", "const m = new THREE.Mesh(glass.build(), glassMaterial());", "const m = new THREE.Mesh(glass.build(), plain());"),
     # --- bogies ------------------------------------------------------------------------------------------------

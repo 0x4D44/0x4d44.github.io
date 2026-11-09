@@ -39,7 +39,7 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, buildBogie, buildPantograph, couplerHalf, WHEEL_WIDTH } from './train-parts.ts';
-import type { CouplerStyle } from './train-parts.ts';
+import type { BogieStyle, CouplerStyle } from './train-parts.ts';
 
 /**
  * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
@@ -82,6 +82,13 @@ export const ASSUMED = {
 
 /** Half the gap between two bodies, metres. */
 export const END_GAP = ASSUMED.endGap;
+
+/**
+ * The maker's bogie each family runs on, each drawn in train-parts.ts from its own photographs: the Hitachi AT300's (lner-gwr800-bogie-detail-2017),
+ * the Electrostar's (no usable photograph: a generic outside-frame bogie), the Desiro City's, which the 700 shares (tl700_03_gatwick_bogie_28898326470:
+ * an inside frame) and the Class 180's Alstom (GC180-01-180-101-Kings-Cross).
+ */
+export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitachi', electrostar: 'electrostar', desiro: 'siemens', desiro700: 'siemens', adelante: 'alstom' };
 
 /** How far the doors stand proud of the shell, so they, not the shell, set the body width. */
 const DOOR_RELIEF = 0.02;
@@ -1280,7 +1287,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const radius = fig ? fig.wheelDiameter.value / 2 : FIGURES.wheelDiameter.value / 2;
     const motor = (car.motor as readonly boolean[])[k] as boolean;
     const wheelbase = fig ? (motor ? fig.wheelbaseMotor.value : fig.wheelbaseTrailer.value) : FIGURES.bogieWheelbase.value;
-    const b = buildBogie({ radius, wheelbase, track: FIGURES.gauge.value, motor, diesel: spec.family === 'adelante' });
+    const b = buildBogie({ radius, wheelbase, track: FIGURES.gauge.value, motor, diesel: spec.family === 'adelante', style: BOGIE_STYLE[spec.family] });
     b.name = `bogie-${car.index}-${k}`;
     b.position.set(0, 0, z);
     group.add(b);

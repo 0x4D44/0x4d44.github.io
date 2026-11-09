@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ASSUMED, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
@@ -2107,5 +2107,33 @@ test('glass: the AT300 cab side window is a wedge raked back at the top and stan
   for (const kind of ['gn387x4', 'gn717x6', 'tl700x8', 'gc180x5'] as TrainKind[]) {
     const g = built(kind);
     for (const car of endCabs(trainLayout(kind))) assert.equal(trisOfColour(detailOf(g, car), CAB_SWOOSH).length, 0, `${kind} car ${car.index}: no swoosh`);
+  }
+});
+
+test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electrostar\'s, the Siemens Desiro City and 700, the Alstom 180), every car on its own family\'s', () => {
+  assert.deepEqual(BOGIE_STYLE, { at300: 'hitachi', electrostar: 'electrostar', desiro: 'siemens', desiro700: 'siemens', adelante: 'alstom' });
+  const nearOf = (bogie: THREE.Object3D): THREE.BufferGeometry => ((named(bogie, 'bogie-lod') as THREE.LOD).levels[0] as unknown as { object: THREE.Mesh }).object.geometry;
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    const family = layout.spec.family;
+    const fig = family === 'at300' ? null : EMU_FIGURES[family as EmuFamily];
+    for (const car of layout.cars) {
+      car.bogies.forEach((_, k) => {
+        const motor = (car.motor as readonly boolean[])[k] as boolean;
+        const spec = {
+          radius: fig ? fig.wheelDiameter.value / 2 : FIGURES.wheelDiameter.value / 2,
+          wheelbase: fig ? (motor ? fig.wheelbaseMotor.value : fig.wheelbaseTrailer.value) : FIGURES.bogieWheelbase.value,
+          track: FIGURES.gauge.value,
+          motor,
+          diesel: family === 'adelante',
+        };
+        // the build shares one geometry per spec and maker, so a bogie of the right maker is the very geometry built here with that maker's style
+        const actual = nearOf(named(named(g, `car-${car.index}`), `bogie-${car.index}-${k}`));
+        for (const style of ['hitachi', 'electrostar', 'siemens', 'alstom'] as const) {
+          assert.equal(actual === nearOf(buildBogie({ ...spec, style })), style === BOGIE_STYLE[family], `${kind} car ${car.index} bogie ${k}: the ${style} geometry`);
+        }
+      });
+    }
   }
 });
