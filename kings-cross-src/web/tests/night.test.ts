@@ -115,3 +115,38 @@ test('a site list with nothing in it makes no draw at all', () => {
   const onlyLamps = createNightLights({ platform: [0, 5, 0], shed: [], concourse: [] });
   assert.equal(onlyLamps.group.children.length, 1);
 });
+
+test('attach: a layer is handed the level at once and from then on, and stops getting it when it lets go (round seven: the street lamps come on with the platform lamps)', () => {
+  const night = createNightLights(sites);
+  const seen: number[] = [];
+  const other: number[] = [];
+  const first = night.attach({ setLevel: (l) => seen.push(l) });
+  assert.deepEqual(seen, [0], 'applied at once, at the level there is (the lamps arrive after the first frame, by day: they start out)');
+  night.setLevel(0.3);
+  const second = night.attach({ setLevel: (l) => other.push(l) });
+  assert.deepEqual(other, [0.3], 'a layer that arrives late starts at the level it finds');
+  night.setLevel(0.8);
+  night.setLevel(5);
+  night.setLevel(-1);
+  assert.deepEqual(seen, [0, 0.3, 0.8, 1, 0], 'each level the lights are given, held to 0..1 as theirs are');
+  assert.deepEqual(other, [0.3, 0.8, 1, 0]);
+  first();
+  night.setLevel(0.6);
+  assert.deepEqual(seen, [0, 0.3, 0.8, 1, 0], 'nothing after it lets go');
+  assert.deepEqual(other, [0.3, 0.8, 1, 0, 0.6], 'and the other still gets it');
+  first();
+  second();
+  night.setLevel(0.2);
+  assert.equal(other.length, 5, 'letting go twice does no harm');
+  // the lights' own glow is unchanged by what is attached to them
+  const third = night.attach({ setLevel: () => {} });
+  night.setLevel(1);
+  for (const child of night.group.children) assert.ok(((child as THREE.Points).material as THREE.PointsMaterial).opacity > 0.4);
+  third();
+  // disposing the lights lets every layer go
+  const late: number[] = [];
+  night.attach({ setLevel: (l) => late.push(l) });
+  night.dispose();
+  night.setLevel(0.5);
+  assert.deepEqual(late, [1], 'only the level it was handed when it arrived');
+});

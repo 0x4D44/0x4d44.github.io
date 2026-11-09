@@ -8,10 +8,10 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addGlass, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowId, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
 import { FLOOD, FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
-import { Batch, material, TEXTURES } from '../src/materials.ts';
+import { Batch, material, PANE_UV, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -2867,4 +2867,82 @@ test('the replaced OSM boxes: nothing else stands inside the Barlow vault once t
     const { u, v } = worldToShed(frame, c);
     assert.ok(!(u > 0 && u < barlow.width && v > 0 && v < barlow.length), `building ${b.id} would stand inside the vault`);
   }
+});
+
+test('windowId: a number of 0 to PANE_UV.numbers for the window at a place, the same on every build, steady to a few centimetres and spread over the windows of a facade (round seven)', () => {
+  const at = (x: number, z: number) => ({ at: [x, z] as Pt, dir: [1, 0] as Pt, normal: [0, 1] as Pt });
+  const id = windowId(at(10.2, 4), 3);
+  assert.ok(Number.isInteger(id) && id >= 0 && id < PANE_UV.numbers, `${id}`);
+  assert.equal(windowId(at(10.2, 4), 3), id, 'the same every time');
+  assert.equal(windowId(at(10.24, 3.96), 3.03), id, 'steady to 4 cm either way (the place is taken to a tenth of a metre)');
+  assert.notEqual(windowId(at(10.2, 4), 6.4), id, 'the window above has a number of its own');
+  assert.notEqual(windowId(at(13.4, 4), 3), id, 'and the one beside it');
+  assert.notEqual(windowId(at(10.2, 9), 3), id, 'and the one across the street');
+  const ids = new Set<number>();
+  for (let col = 0; col < 25; col++) for (let row = 0; row < 20; row++) {
+    const n = windowId(at(col * 3.2, 4), 2 + row * 3.4);
+    assert.ok(Number.isInteger(n) && n >= 0 && n < PANE_UV.numbers, `${n}`);
+    ids.add(n);
+  }
+  assert.ok(ids.size > 380, `${ids.size} different numbers across 500 windows (of ${PANE_UV.numbers}: about 445 are expected)`);
+  assert.ok(Math.max(...ids) > PANE_UV.numbers * 0.8 && Math.min(...ids) < PANE_UV.numbers * 0.2, 'over the whole range');
+});
+
+test('addGlass: the flat shape of a window wearing the UVs of a lit pane: u is its number and its way across the glass (0.1 to 0.9), v is -1 at the sill and -2 at the head, the number all over the pane (round seven)', () => {
+  for (const head of ['flat', 'round', 'pointed'] as const) for (const angle of [0, 0.7, 2.4]) {
+    const dir: Pt = [Math.cos(angle), Math.sin(angle)];
+    const p = { at: [31.4, -12.7] as Pt, dir, normal: [-dir[1], dir[0]] as Pt };
+    const b = new Batch();
+    addGlass(b, p, 5.5, 1.1, 2.3, head, 0.1);
+    const id = windowId(p, 5.5);
+    assert.ok(b.positions.length / 3 >= 4, `${head}: a fan of at least four corners`);
+    const us: number[] = [];
+    const vs: number[] = [];
+    for (let i = 0; i < b.positions.length / 3; i++) {
+      const [u, v] = [b.uvs[2 * i] as number, b.uvs[2 * i + 1] as number];
+      assert.equal(Math.floor(u), id, `${head} at ${angle}: the window's number is floor( u ) at every corner`);
+      us.push(u - id);
+      vs.push(v);
+      // a lift off the wall (0.1 m along its normal), the corner's place along the wall giving u and its height giving v
+      const [x, y, z] = [b.positions[3 * i] as number, b.positions[3 * i + 1] as number, b.positions[3 * i + 2] as number];
+      close((x - p.at[0]) * p.normal[0] + (z - p.at[1]) * p.normal[1], 0.1, 1e-9, `${head}: lifted off the wall`);
+      const across = ((x - p.at[0]) * dir[0] + (z - p.at[1]) * dir[1]) / 1.1;
+      close(u - id, PANE_UV.margin + (1 - 2 * PANE_UV.margin) * (0.5 + across), 1e-9, `${head}: u is the way across the glass`);
+      close(v, -1 - (y - 5.5) / 2.3, 1e-9, `${head}: v is the way up it, negated`);
+    }
+    close(Math.min(...us), PANE_UV.margin, 1e-9, `${head}: the left edge is 0.1 of the way`);
+    close(Math.max(...us), 1 - PANE_UV.margin, 1e-9, `${head}: the right edge 0.9`);
+    close(Math.max(...vs), -1, 1e-9, `${head}: the sill is -1`);
+    close(Math.min(...vs), -2, 1e-9, `${head}: the head is -2`);
+  }
+});
+
+test('Midland Grand: the lit pane\'s windows have a negative v and nothing else of the pane material does: every window is a number of its own, whole, and the rest (the balcony, the belfry\'s lancets) have a v of zero or more', () => {
+  const pane = midlandGeometry(midland).pane as Batch;
+  const tris = triangles(pane);
+  let windows = 0;
+  let rest = 0;
+  const ids = new Set<number>();
+  for (const t of tris) {
+    const negative = t.uv.filter((q) => q[1] < 0).length;
+    assert.ok(negative === 0 || negative === 3, 'a triangle is all window or none of it');
+    if (negative === 0) { rest++; continue; }
+    windows++;
+    const numbers = t.uv.map((q) => Math.floor(q[0]));
+    assert.ok(numbers.every((n) => n === numbers[0]), `one window to a triangle: ${numbers}`);
+    assert.ok((numbers[0] as number) >= 0 && (numbers[0] as number) < PANE_UV.numbers);
+    ids.add(numbers[0] as number);
+    for (const [u, v] of t.uv) {
+      assert.ok(v >= -2 - 1e-9 && v <= -1 + 1e-9, `v from the sill to the head: ${v}`);
+      const along = u - Math.floor(u);
+      assert.ok(along >= PANE_UV.margin - 1e-9 && along <= 1 - PANE_UV.margin + 1e-9, `inside the margins: ${along}`);
+    }
+  }
+  assert.ok(windows > 300, `${windows} window triangles`);
+  assert.ok(rest > 100, `${rest} triangles of the pane that are not windows (the balcony, the lancets)`);
+  assert.ok(ids.size > 250, `${ids.size} different window numbers`);
+  // the pane material lights them: the windows only (materials.ts litPane)
+  const m = createMaterials().table.pane as THREE.MeshLambertMaterial;
+  assert.equal(m.customProgramCacheKey(), 'litPane');
+  assert.equal(m.defines?.WIN_GAIN, '0.8');
 });

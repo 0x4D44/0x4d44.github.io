@@ -96,8 +96,8 @@ export interface NightLights {
   group: THREE.Group;
   /** 0 (off) to 1 (full); the halos are hidden at 0 */
   setLevel(level: number): void;
-  /** Hand a layer the level from now on (and at once): the city's lamps arrive after the first frame. */
-  attach(layer: NightLayer): void;
+  /** Hand a layer the level from now on (and at once): the city's lamps arrive after the first frame. The function returned stops it (the city is gone). */
+  attach(layer: NightLayer): () => void;
   counts(): { platform: number; shed: number; concourse: number };
   dispose(): void;
 }
@@ -138,10 +138,15 @@ export function createNightLights(sites: NightLightSites): NightLights {
     attach(layer) {
       attached.push(layer);
       layer.setLevel(level);
+      return () => {
+        const i = attached.indexOf(layer);
+        if (i >= 0) attached.splice(i, 1);
+      };
     },
     counts: () => ({ platform: sites.platform.length / 3, shed: sites.shed.length / 3, concourse: sites.concourse.length / 3 }),
     dispose() {
       for (const layer of layers) { layer.points.geometry.dispose(); layer.material.dispose(); }
+      attached.length = 0;
     },
   };
 }

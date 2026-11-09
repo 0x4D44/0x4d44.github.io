@@ -82,10 +82,12 @@ export interface LampContext {
   blocked(p: Pt, road: number): boolean;
 }
 
-/** What light a road's lamps give: a repeatable share of the old streets are sodium and the rest white (ASSUMED), the new quarter's are white, its walkways cool. */
-export function lampKind(run: Pick<LampRun, 'id' | 'cls' | 'line'>, ctx: Pick<LampContext, 'rand' | 'modern'>): LampKind {
-  const mid = run.line[Math.floor(run.line.length / 2)] as Pt;
-  if (ctx.modern(mid)) return run.cls === 'pedestrian' || run.cls === 'service' ? LAMP_KIND.cool : LAMP_KIND.warm;
+/**
+ * What light a road's lamp gives at `at`: a repeatable share of the old streets are sodium (the road's own luck, the same all along it) and the rest white (ASSUMED), the new quarter's lamps
+ * are white wherever a road runs into it (a long street changes at the quarter's edge), its walkways cool.
+ */
+export function lampKind(run: Pick<LampRun, 'id' | 'cls'>, ctx: Pick<LampContext, 'rand' | 'modern'>, at: Pt): LampKind {
+  if (ctx.modern(at)) return run.cls === 'pedestrian' || run.cls === 'service' ? LAMP_KIND.cool : LAMP_KIND.warm;
   if (run.cls === 'pedestrian') return LAMP_KIND.warm;
   const sodium = run.cls === 'trunk' || run.cls === 'primary' || run.cls === 'secondary' ? 0.8 : 0.55;
   return ctx.rand(run.id, 1) < sodium ? LAMP_KIND.sodium : LAMP_KIND.warm;
@@ -109,7 +111,6 @@ export function lampSpots(runs: readonly LampRun[], ctx: LampContext): LampSpot[
     }
     const total = along[along.length - 1] as number;
     if (total < LAMP_MIN_RUN) continue;
-    const kind = lampKind(run, ctx);
     const off = run.half + LAMP_KERB;
     const lonely = rule.sides === 'one' ? (ctx.rand(run.id, 2) < 0.5 ? 1 : -1) : 0;
     let seg = 1;
@@ -133,7 +134,7 @@ export function lampSpots(runs: readonly LampRun[], ctx: LampContext): LampSpot[
           (height(at[0] + normal[0] * SLOPE_STEP, at[1] + normal[1] * SLOPE_STEP, d, side * off + SLOPE_STEP) - height(at[0] - normal[0] * SLOPE_STEP, at[1] - normal[1] * SLOPE_STEP, d, side * off - SLOPE_STEP)) / (2 * SLOPE_STEP)]
         : [0, 0];
       const slope: [number, number] = [alongRise * tangent[0] + acrossRise * normal[0], alongRise * tangent[1] + acrossRise * normal[1]];
-      out.push({ x: at[0], y, z: at[1], yaw: Math.atan2(normal[1] * side, -normal[0] * side), height: rule.height, kind, slope });
+      out.push({ x: at[0], y, z: at[1], yaw: Math.atan2(normal[1] * side, -normal[0] * side), height: rule.height, kind: lampKind(run, ctx, at), slope });
     }
   }
   return out;

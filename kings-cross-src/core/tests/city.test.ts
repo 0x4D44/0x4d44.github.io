@@ -20,6 +20,8 @@ import {
   windOutward,
 } from '../city.ts';
 import type { BuildingFacts, CityData, CityRoad, CityKey, FacadeKey, RawCityElement, V2, V3 } from '../city.ts';
+import { LAMP_KERB, LAMP_RULES } from '../streetlights.ts';
+import type { LampRule } from '../streetlights.ts';
 
 const city: CityData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-city.json', import.meta.url), 'utf8'));
 const data: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -1210,4 +1212,59 @@ test('the real city: no tree stands in a building, and an excluded polygon clear
   assert.ok(cleared.stats.areas < real.stats.areas, 'squares in the box are not drawn');
   assert.ok(cleared.meshes.asphalt.triangleCount < real.meshes.asphalt.triangleCount, 'streets through the box are cut');
   assert.equal(cleared.stats.buildings, real.stats.buildings, 'exclusion is for flat things: the buildings stay');
+});
+
+test('buildCity: street lamps stand a kerb outside a street on its walking surface, and nowhere a building, an excluded polygon or another street is in the way; lamps: false builds none (round seven)', () => {
+  const road = (over: Partial<CityRoad> = {}): CityRoad => ({ id: 1, cls: 'secondary', pts: [[0, 0], [300, 0]], ...over });
+  const build = (roads: CityRoad[], opts = {}, buildings: { id: number; kind: string; pts: Pt[] }[] = []) => buildCity(buildings, { ...emptyCity, roads }, { groundY: 0, ...opts });
+  const half = roadWidth(road()).width / 2;
+  const rule = LAMP_RULES.secondary as LampRule;
+  const out = build([road()]);
+  assert.ok(out.lamps.length >= 12 && out.lamps.length <= 18, `${out.lamps.length} lamps on 300 m of a street with one every ${rule.spacing} m`);
+  for (const l of out.lamps) {
+    close(Math.abs(l.z), half + LAMP_KERB, 1e-9, 'a kerb outside the carriageway');
+    close(l.y, LAYER_LIFT.pavement, 1e-9, 'on the pavement layer');
+    assert.equal(l.height, rule.height);
+    assert.deepEqual(l.slope, [0, 0], 'flat ground');
+  }
+  assert.deepEqual(build([road()], { lamps: false }).lamps, []);
+  assert.deepEqual(build([road({ cls: 'path' })]).lamps, [], 'a path has none');
+  assert.deepEqual(build([road()]).lamps, out.lamps, 'repeatable');
+  // a building across the street's side: the lamps that would stand in it do not, the others stay where they were
+  const block = { id: 31, kind: 'yes', pts: rect(90, -12, 130, 12) };
+  const blocked = build([road()], {}, [block]);
+  assert.ok(out.lamps.some((l) => l.x > 90 && l.x < 130), 'there are lamps in the stretch the block covers');
+  assert.ok(blocked.lamps.every((l) => !pointInPolygon([l.x, l.z], block.pts)), 'none inside the building');
+  assert.deepEqual(blocked.lamps, out.lamps.filter((l) => !pointInPolygon([l.x, l.z], block.pts)), 'the others do not move');
+  // an excluded polygon (the station): none in it, however the street is cut round it
+  const hole = rect(190, -12, 230, 12);
+  const cleared = build([road()], { exclude: [hole] });
+  assert.ok(cleared.lamps.length > 0 && cleared.lamps.length < out.lamps.length, `${cleared.lamps.length} lamps with a hole in the street, ${out.lamps.length} without`);
+  assert.ok(cleared.lamps.every((l) => !pointInPolygon([l.x, l.z], hole)), 'none inside the excluded polygon');
+  // a street that crosses it: no lamp of either stands within 0.3 m of the other's carriageway
+  const cross = road({ id: 2, cls: 'primary', pts: [[150, -100], [150, 100]] });
+  const half2 = roadWidth(cross).width / 2;
+  const crossed = build([road(), cross]);
+  assert.ok(crossed.lamps.length > out.lamps.length, 'the second street has lamps of its own');
+  for (const l of crossed.lamps) {
+    if (l.x >= 0 && l.x <= 300) assert.ok(Math.abs(l.z) - half >= 0.3 - 1e-9, `lamp at ${l.x.toFixed(1)}, ${l.z.toFixed(1)} is ${(Math.abs(l.z) - half).toFixed(2)} m from the first street's carriageway`);
+    if (l.z >= -100 && l.z <= 100) assert.ok(Math.abs(l.x - 150) - half2 >= 0.3 - 1e-9, `lamp at ${l.x.toFixed(1)}, ${l.z.toFixed(1)} is ${(Math.abs(l.x - 150) - half2).toFixed(2)} m from the second street's carriageway`);
+  }
+});
+
+test('the real city: about a thousand lamps, none in a building or in an excluded polygon, each on the pavement layer, repeatably', () => {
+  assert.ok(real.lamps.length > 900 && real.lamps.length < 1300, `${real.lamps.length} lamps`);
+  for (const l of real.lamps) {
+    assert.ok([l.x, l.y, l.z, l.yaw, l.slope[0], l.slope[1]].every(Number.isFinite), 'finite');
+    assert.ok(Object.values(LAMP_RULES).some((r) => r.height === l.height), `a height a rule gives: ${l.height}`);
+    assert.ok(l.y >= GROUND + LAYER_LIFT.pavement - 1e-9 && l.y <= GROUND + LAYER_LIFT.pavement + BRIDGE_LIFT + 1e-9, `on the pavement layer or the bridge over the rails: ${l.y}`);
+    for (const b of data.buildings) if (pointInPolygon([l.x, l.z], b.pts)) assert.fail(`a lamp at ${l.x},${l.z} is inside building ${b.id}`);
+  }
+  assert.deepEqual(buildCity(data.buildings, city, { hidden: hiddenIds, groundY: GROUND, rails: [...rails.main, ...rails.siding] }).lamps, real.lamps, 'repeatable');
+  assert.deepEqual(buildCity(data.buildings, city, { hidden: hiddenIds, groundY: GROUND, lamps: false }).lamps, [], 'lamps: false');
+  const box = rect(-300, -720, -100, -540);
+  const cleared = buildCity(data.buildings, city, { hidden: hiddenIds, groundY: GROUND, rails: [...rails.main, ...rails.siding], exclude: [box] });
+  assert.ok(real.lamps.some((l) => pointInPolygon([l.x, l.z], box)), 'there are lamps in the box to start with');
+  assert.ok(cleared.lamps.every((l) => !pointInPolygon([l.x, l.z], box)), 'none in the excluded box');
+  assert.ok(cleared.lamps.length < real.lamps.length);
 });

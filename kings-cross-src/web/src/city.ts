@@ -36,7 +36,7 @@ export interface CityOptions {
   /** place the street lamps (default true): their posts stand in the scene by day, their glow and pools of light come on with the night lights */
   lamps?: boolean;
   /** the lights that come on at dusk (atmosphere.ts `nightLights`): the lamps' glow follows its level. Without it they stay dark. */
-  night?: { attach(layer: NightLayer): void } | null;
+  night?: { attach(layer: NightLayer): () => void } | null;
   /** the ground the city stands on: buildings, streets, squares, parks, water and trees follow it. Without it, everything stands on the flat plane at GROUND_Y */
   terrain?: Terrain;
   /**
@@ -174,9 +174,10 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
   const lights = lamps.length > 0 ? createStreetLights(lamps) : null;
   stats.lamps = lamps.length;
+  let detach: (() => void) | undefined;
   if (lights) {
     scene.add(lights.group);
-    opts.night?.attach(lights);
+    detach = opts.night?.attach(lights);
   }
   return {
     group,
@@ -186,6 +187,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
       scene.remove(group);
       for (const g of geometries) g.dispose();
       if (lights) {
+        detach?.();
         scene.remove(lights.group);
         lights.dispose();
       }

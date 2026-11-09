@@ -8,7 +8,7 @@ import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
-import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from '../src/station-weather.ts';
+import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions } from '../src/station-weather.ts';
 import { coverAt, coverUniforms, findRoofs } from '../src/cover.ts';
 import { liveUrl } from '../src/weather.ts';
 import type { WeatherFeedOptions } from '../src/weather.ts';
@@ -388,5 +388,77 @@ test('disposal frees the sky and the flat ground, geometry and material, and not
   (platform.material as THREE.Material).addEventListener('dispose', () => freed.push('model material'));
   climate.dispose();
   assert.deepEqual(freed.sort(), ['flat ground geometry', 'flat ground material', 'sky geometry', 'sky material']);
+  view.dispose();
+});
+
+/** The three meshes the Scottish night lighting looks for, by name, each with a Lambert material of its own (the frontage and the city clone theirs). */
+function nightMeshes() {
+  const group = new THREE.Group();
+  const add = (name: string, y: number): THREE.Mesh => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshLambertMaterial({ vertexColors: true }));
+    mesh.name = name;
+    mesh.position.y = y;
+    group.add(mesh);
+    return mesh;
+  };
+  return { group, walls: add('waverley-building-walls', 0), parapets: add('waverley-balmoral-and-bridge-parapets', 5), dials: add('waverley-balmoral-clock-dials', 40) };
+}
+const lambertOf = (mesh: THREE.Mesh): THREE.MeshLambertMaterial => mesh.material as THREE.MeshLambertMaterial;
+const compileOf = (m: THREE.Material): string => {
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  return s.fragmentShader;
+};
+
+test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone is floodlit from the foot of its tower and its dials glow, each material alone, and the function it returns puts them all back (round seven)', () => {
+  const { group, walls, parapets, dials } = nightMeshes();
+  const before = [walls, parapets, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile }));
+  const undo = lightWaverleyNight(group);
+  const w = lambertOf(walls), p = lambertOf(parapets), d = lambertOf(dials);
+  assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
+  assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
+  // the stone of the tower is lit from where the ground is under it: the lowest point of the mesh (5 m up, 4 m tall: its foot is 3 m up)
+  assert.equal(p.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 3.0 )');
+  assert.ok(!('WALL_WIN' in (p.defines ?? {})), 'and has no windows of its own');
+  // a clock dial is lit all over: no fall-off (a reach of a metre, a floor of one), and over strength 1 so it reads as lit from within
+  assert.equal(d.defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
+  assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls'), 'the walls are a program of their own');
+  assert.equal(p.customProgramCacheKey(), before[1]!.key, 'the flood is a define: the program key is the same, the define makes the program');
+  assert.ok(compileOf(w).includes('float winHash('), 'the walls compile with the night functions');
+  undo();
+  [walls, parapets, dials].forEach((mesh, i) => {
+    const m = lambertOf(mesh);
+    assert.equal(m.defines, before[i]!.defines, `${mesh.name}: its defines, as they were`);
+    assert.equal(m.customProgramCacheKey(), before[i]!.key, `${mesh.name}: its key`);
+    assert.equal(m.onBeforeCompile, before[i]!.compile, `${mesh.name}: its patch`);
+  });
+  // a scene without them, or whose materials are not Lambert (a basic one has no emissive term to add to), is left alone, with nothing to undo
+  const empty = new THREE.Group();
+  const basic = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+  basic.name = 'waverley-building-walls';
+  empty.add(basic);
+  assert.doesNotThrow(() => lightWaverleyNight(empty)());
+  assert.equal((basic.material as THREE.MeshBasicMaterial).defines, undefined);
+  assert.doesNotThrow(() => lightWaverleyNight(new THREE.Group())());
+});
+
+test('the Scottish climate lights the Scottish night and puts it back with the climate: the walls\' windows, the Balmoral\'s flood and dials, over the roof shade the atmosphere gives every wall', async () => {
+  const { view } = await viewOf();
+  const { group, walls, parapets, dials } = nightMeshes();
+  view.scene.add(group);
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  try {
+    const w = lambertOf(walls);
+    assert.ok(w.defines && 'WALL_WIN' in w.defines, 'lit windows on the walls');
+    const f = compileOf(w);
+    assert.ok(f.includes('float winHash(') && f.includes('coverGroundAt'), 'over the roof shade: both patches are in the program');
+    assert.ok(String(lambertOf(parapets).defines?.FLOOD).startsWith('vec4( 0.25, 30.0, 0.25, '), 'the tower is floodlit');
+    assert.equal(lambertOf(dials).defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
+    assert.ok(compileOf(lambertOf(parapets)).includes('#ifdef FLOOD'), 'the flood needs the roof shade\'s patch, which the atmosphere gave the stone');
+  } finally { climate.dispose(); }
+  assert.ok(!('WALL_WIN' in (lambertOf(walls).defines ?? {})), 'the walls\' windows go with the climate');
+  assert.ok(!('FLOOD' in (lambertOf(parapets).defines ?? {})) && !('FLOOD' in (lambertOf(dials).defines ?? {})), 'and the flood');
+  assert.ok(!compileOf(lambertOf(walls)).includes('float winHash('));
   view.dispose();
 });

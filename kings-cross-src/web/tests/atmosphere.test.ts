@@ -12,7 +12,7 @@ import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station
 import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
 import { coverUniforms } from '../src/cover.ts';
 import { furniturePlan } from '../src/furniture.ts';
-import { cityMaterial, material, terrainMaterial } from '../src/materials.ts';
+import { cityMaterial, material, terrainMaterial, windowNight } from '../src/materials.ts';
 import { nightLightSites } from '../src/night.ts';
 import { trainNight } from '../src/train-geom.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
@@ -30,6 +30,7 @@ const state = (name: string): WeatherState => weatherState(forcedObservation(nam
 
 function setup(sites: NightLightSites | null = null) {
   trainNight.value = 0;
+  windowNight.value = 0;
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x35465e, 1100, 3600);
   scene.background = new THREE.Color(0x35465e);
@@ -50,7 +51,7 @@ const luma = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * 
 const lambertShader = () => ({ uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader });
 const compile = (m: THREE.Material) => { const s = lambertShader(); m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never); return s; };
 
-test.afterEach(() => { trainNight.value = 0; });
+test.afterEach(() => { trainNight.value = 0; windowNight.value = 0; });
 
 test('the reference rig is the page\'s own DAYLIGHT, so a high sun in a clear sky changes nothing; the fixed LIGHTS stay for the bare page', () => {
   assert.equal(REFERENCE.sun.colour, DAYLIGHT.sun.colour);
@@ -105,6 +106,34 @@ test('midnight: the stylised moon is the key, the ambient is low, the lamps and 
   assert.equal(world.sky.getObjectByName('stars')!.visible, true);
   assert.equal(world.sky.getObjectByName('sun-disc')!.visible, false, 'the sun is not in the sky');
   assert.ok(luma(scene.background as THREE.Color) < 0.1, 'a dark sky');
+});
+
+test('the windows of the city light with the lamps (round seven): the shared night uniform is 0 by day, 1 at midnight and the gloom\'s level under heavy rain, the trains\' own number; a layer attached to the night lights follows the same level', () => {
+  const { atmosphere, at } = setup(SITES);
+  assert.equal(windowNight.value, 0, 'dark before the first frame');
+  at(NOON);
+  assert.equal(windowNight.value, 0, 'no window glows by day');
+  at(MIDNIGHT);
+  assert.equal(windowNight.value, 1, 'every lit window is on at midnight');
+  assert.equal(windowNight.value, trainNight.value, 'the same number the trains\' windows read: one night, not two');
+  at(NOON, state('heavy-rain'));
+  assert.ok(windowNight.value > 0 && windowNight.value < 0.6, `the gloom of a heavy-rain noon brings the first windows on: ${windowNight.value}`);
+  assert.equal(windowNight.value, trainNight.value);
+  // dusk: the level climbs with the dark and never falls back while it deepens (the sun at the horizon, then under it)
+  const levels: number[] = [];
+  for (const hour of [15, 16, 17, 18, 19, 20, 21]) {
+    at(`2026-12-21T${String(hour).padStart(2, '0')}:00:00Z`);
+    levels.push(windowNight.value);
+  }
+  assert.ok(levels.every((v, i) => i === 0 || v >= levels[i - 1]!) && levels[0]! < 0.5 && levels[6] === 1, `a winter evening ramps: ${levels}`);
+  // a layer attached to the night lights (the street lamps are one) is handed the level the windows have
+  const seen: number[] = [];
+  const detach = atmosphere.nightLights!.attach({ setLevel: (l) => seen.push(l) });
+  at(NOON);
+  at(MIDNIGHT);
+  detach();
+  at(NOON);
+  assert.deepEqual(seen, [1, 0, 1], 'the level when attached (still night), then day, then night again; nothing after it let go');
 });
 
 test('the key light\'s direction is handed on for the sun\'s shadow: unknown before the first sky, then the sun\'s by day and the moon\'s after dark, the way the light itself shines from', () => {
