@@ -14,7 +14,7 @@ import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShe
 import { trainLayout } from '../../core/train.ts';
 import { WESTERN_RANGE } from '../../web/src/shed.ts';
 import { lensFor } from '../station-scene.mjs';
-import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, WESTERN_RANGE_STANDOFF, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, WESTERN_RANGE_STANDOFF, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, main, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -551,6 +551,69 @@ test('runStationEvidenceShots shoots every fixed view twice for flicker, or only
   assert.equal(some[1].extra.roofMaterialEvidence, 'solid slate (evidence override)');
   assert.deepEqual(await run(new Set()), [], 'an empty selection shoots nothing');
   for (const element of Object.keys(ELEMENT_VIEWS)) assert.deepEqual((await run(resolveViews(element, cameras))).map(shot => shot.name).sort(), [...ELEMENT_VIEWS[element]].sort(), element);
+});
+
+// The lead's decision: the rubrics score the model, not the page's overlays (the station switcher alone covers rows 48-125 of the
+// frame), so a station view is shot with them hidden, and one labelled overview keeps them so the user's view is still in the pack.
+test('--hud is off by default, takes on or off, and is refused otherwise', () => {
+  assert.equal(optionsFrom([]).hud, 'off');
+  assert.equal(optionsFrom(['--hud', 'off']).hud, 'off');
+  assert.equal(optionsFrom(['--hud', 'on']).hud, 'on');
+  assert.equal(optionsFrom(['--views', 'kx-front', '--hud', 'on']).hud, 'on', 'a views run takes it');
+  for (const value of ['ON', 'yes', 'hidden', 'on,off']) assert.throws(() => optionsFrom(['--hud', value]), /--hud must be on or off/, JSON.stringify(value));
+  for (const args of [['--hud'], ['--hud', '']]) assert.throws(() => optionsFrom(args), /missing value for --hud/, JSON.stringify(args));
+  assert.throws(() => optionsFrom(['--hud', 'on', '--hud', 'off']), /unknown or repeated option: --hud/);
+});
+
+test('the usage text documents --hud', async () => {
+  const lines = [], log = console.log;
+  console.log = (...parts) => { lines.push(parts.join(' ')); };
+  try { await main(['--help']); } finally { console.log = log; }
+  const text = lines.join('\n');
+  assert.match(text, /--hud <on\|off>\s+default off: every fixed station view is shot with them hidden/);
+  assert.match(text, /overview-hud-on/);
+});
+
+test('with the overlays off every station view is shot with them hidden, plus an overview with them shown and labelled', async () => {
+  const cameras = stationCameras(trackData);
+  const run = async (select, hud) => {
+    const shots = [];
+    await runStationEvidenceShots(cameras, async (axis, name, camera, extra) => { shots.push({ axis, name, camera, extra }); }, async (_axis, _name, capture) => capture(), select, hud);
+    return shots;
+  };
+  const off = await run(null, 'off'), plain = stationViewNames(cameras).filter(name => !cameras[name]?.grid);
+  assert.deepEqual(off.map(shot => shot.name).sort(), [...plain, 'overview-hud-on'].sort(), 'the same views as ever, and one more');
+  assert.equal(off.at(-1).name, 'overview-hud-on', 'shot last, after every view that needs the overlays off');
+  assert.equal(off.at(-1).axis, '02');
+  assert.equal(off.at(-1).camera, cameras.overview, 'the overview camera, not a new stand');
+  assert.equal(off.at(-1).extra.hud, 'on');
+  assert.equal(off.at(-1).extra.twoFrame, true, 'it takes the flicker check like the others');
+  assert.match(off.at(-1).extra.label, /overlays are shown/, 'and is labelled');
+  assert.ok(off.filter(shot => shot.name !== 'overview-hud-on').every(shot => shot.extra.hud === 'off'), 'every other view has them hidden, the solid-slate pairs included');
+  assert.ok(off.some(shot => shot.name === 'front-oblique-solid-slate' && shot.extra.hud === 'off'));
+  assert.equal(off.find(shot => shot.name === 'overview').extra.hud, 'off', 'overview itself is the model with no overlay');
+  assert.deepEqual(off.map(shot => shot.name).filter(name => cameras[name]?.grid), [], 'the axis-01 grid views are not station views here: they keep the overlays');
+});
+
+test('the labelled overview is added only when the overview is selected and the overlays are off', async () => {
+  const cameras = stationCameras(trackData);
+  const names = async (select, hud) => {
+    const shots = [];
+    await runStationEvidenceShots(cameras, async (_axis, name) => { shots.push(name); }, async (_axis, _name, capture) => capture(), select, hud);
+    return shots;
+  };
+  assert.deepEqual(await names(resolveViews('overview', cameras), 'off'), ['overview', 'overview-hud-on']);
+  assert.ok((await names(resolveViews('lighting-materials', cameras), 'off')).includes('overview-hud-on'), 'an element that lists overview carries it');
+  assert.deepEqual(await names(resolveViews('tower-close', cameras), 'off'), ['tower-close'], 'a selection without the overview does not');
+  assert.deepEqual(await names(new Set(), 'off'), []);
+  assert.deepEqual(await names(resolveViews('overview', cameras), 'on'), ['overview'], 'with the overlays on, every view already shows them');
+  assert.deepEqual(await names(resolveViews('overview', cameras), null), ['overview'], 'a caller that leaves them alone gets what it always got');
+  const untouched = [];
+  await runStationEvidenceShots(cameras, async (_axis, _name, _camera, extra) => { untouched.push(Object.keys(extra)); }, async (_axis, _name, capture) => capture(), null);
+  assert.ok(untouched.every(keys => !keys.includes('hud')), 'no overlay request at all when none is made');
+  const on = [];
+  await runStationEvidenceShots(cameras, async (_axis, _name, _camera, extra) => { on.push(extra.hud); }, async (_axis, _name, capture) => capture(), null, 'on');
+  assert.ok(on.length > 20 && on.every(hud => hud === 'on'), 'with --hud on every station view asks for them shown');
 });
 
 // The round-4 scorer found `western-range` (a 1.6 m stand 6 m off the face, about three bays in frame) useless; the lead asked for it to be

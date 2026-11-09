@@ -22,6 +22,7 @@ import { concourseGrid, keepTriangles } from '../web/src/concourse.ts';
 import { furniturePlan } from '../web/src/furniture.ts';
 import { FLICKER_GAP_MS, compareFrames, flickerSummary } from './flicker.mjs';
 import { PIN_TIME, PIN_WEATHER, WEATHER_NAMES, pinHonoured, pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
+import { HUD_NOTE, HUD_SELECTORS, hudController, hudMode } from './hud.mjs';
 import { stationData } from './station-scene.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -109,7 +110,7 @@ export function relayUrl(value) {
 }
 export function optionsFrom(args) {
   const values = new Map(), switches = new Set(['--gpu', '--help']);
-  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky']);
+  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky', '--hud']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
     if (values.has(key) || !switches.has(key) && !names.has(key)) throw new Error(`unknown or repeated option: ${key}`);
@@ -136,7 +137,8 @@ export function optionsFrom(args) {
     if (notStation.length) throw new Error(`--views captures fixed station views only; remove ${notStation.join(', ')}`);
   }
   const pin = scenePinFrom({ time: values.get('--time'), weather: values.get('--weather'), sky: values.get('--sky') });
-  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin,
+  const hud = hudMode(values.get('--hud'));
+  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin, hud,
     rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
 export async function safeOutputDirectory(root, directory) {
@@ -174,16 +176,22 @@ export function roofMaterialEvidencePairs(cameras) {
 /**
  * Run the intact Station camera set and its same-camera physical-slate comparison shots. `select` (a Set of view
  * names, see resolveViews) limits the run to those views; null runs them all. Every shot is a fixed camera on a
- * still scene, so each also takes the two-frame flicker check (`twoFrame`).
+ * still scene, so each also takes the two-frame flicker check (`twoFrame`). `hud` ('off' or 'on', see hud.mjs) is passed to every
+ * shot, which hides or shows the page's overlays for it; null leaves the page alone. With the overlays off, a selection that
+ * includes `overview` also gets `overview-hud-on`: the same camera with the overlays shown, labelled, so that the page as a user
+ * sees it is still in the pack.
  */
-export async function runStationEvidenceShots(cameras, shot, attempt, select = null) {
+export async function runStationEvidenceShots(cameras, shot, attempt, select = null, hud = null) {
   const pairs = roofMaterialEvidencePairs(cameras);
   const contextEvidence = new Map(pairs.map(pair => [pair.cameraName, pair.context.roofMaterialEvidence]));
   const wanted = name => !select || select.has(name);
+  const overlays = hud ? { hud } : {};
   for (const [name, camera] of Object.entries(cameras).filter(([name, camera]) => !camera.grid && wanted(name)))
-    await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
+    await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...overlays, ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
   for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))
-    await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+    await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+  if (hud === 'off' && cameras.overview && wanted('overview'))
+    await attempt('02', 'overview-hud-on', () => shot('02', 'overview-hud-on', cameras.overview, { twoFrame: true, hud: 'on', label: 'The overview as a user sees the page: its overlays are shown (every other station view has them hidden).' }));
 }
 
 /** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
@@ -757,7 +765,10 @@ Every fixed station view is shot twice, 150 ms apart, to check it for flicker; e
 Every page load pins the scene clock and weather in its address (a build that predates the sky and weather work ignores them):
   --time <ISO 8601 instant with a zone, or 13-digit epoch ms>   default ${PIN_TIME}
   --weather <${WEATHER_NAMES.join('|')}>   default ${PIN_WEATHER}
-  --sky ref   the page's old fixed look instead (cannot be combined with --time or --weather)`); return; }
+  --sky ref   the page's old fixed look instead (cannot be combined with --time or --weather)
+The page draws its own overlays (station switcher, status and attribution panels, title, Almanac pill) over the canvas:
+  --hud <on|off>   default off: every fixed station view is shot with them hidden (and restored after each shot), plus overview-hud-on, the
+                   overview with them shown; the axis-01 grid views keep them. on shows them in every station view.`); return; }
   await stat(path.join(options.dist, 'index.html'));
   await safeOutputDirectory(repoRoot, options.out);
   await walk(options.out); // Reject reused input/report links before fetching any private data.
@@ -772,6 +783,7 @@ Every page load pins the scene clock and weather in its address (a build that pr
     requestedGpu: options.gpu ? 'ANGLE Metal' : 'SwiftShader (diagnostic only)', renderer: null, validGpu: false, complete: false,
     views: { requested: options.views, partial: !!selected, names: selected ? [...selected] : null },
     lighting: { pin: { ...options.pin, parameters: pinParameters(options.pin) }, pinHonoured: null, note: LIGHTING_NOTE, fingerprints: {} },
+    hud: { mode: options.hud, selectors: [...HUD_SELECTORS], note: HUD_NOTE },
     build: { dist: options.dist, files: bundleFiles, totalBytes: bundleFiles.reduce((n, f) => n + f.bytes, 0), totalGzipBytes: bundleFiles.reduce((n, f) => n + f.gzip, 0), budgetGzipBytes: 2 * 1024 ** 2 },
     replay: { date: options.date, speed: options.speed, signalAtUK: options.signalAt, relay: options.relay?.origin ?? null },
     axes: AXES.map(a => ({ ...a, screenshots: [], artifacts: [], gaps: [] })), screenshots: [], commands: [], scenarios: [], consoleErrors: [], networkFailures: [], gaps: [],
@@ -831,7 +843,9 @@ Every page load pins the scene clock and weather in its address (a build that pr
       await until('!!window.__kx?.ready'); await prepareScene(); await twoFrames();
     };
     const setCamera = async c => { await evaluate(`(() => { const k=window.__kx; k.controls.minDistance=.05; k.controls.maxDistance=20000; k.controls.maxPolarAngle=Math.PI; k.camera.far=20000; k.camera.near=${c.near ?? .1}; k.camera.fov=${c.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${c.pos}); k.controls.target.set(${c.target}); k.controls.update(); return true; })()`); await twoFrames(); };
-    const shot = async (id, name, c, { twoFrame = false, ...extra } = {}) => {
+    // The page's overlays (hud.mjs): hidden or checked before a shot, put back and checked after it.
+    const hudControl = hudController({ evaluate, settle: twoFrames });
+    const shot = async (id, name, c, { twoFrame = false, hud: hudWanted, ...extra } = {}) => {
       await prepareScene(c ? !!c.hideScenery : undefined);
       if (c) await setCamera(c); else await twoFrames();
       const metadata = await evaluate(`(() => { const k=window.__kx,g=k.renderer.getContext(),d=g.getExtension('WEBGL_debug_renderer_info'); return {
@@ -853,6 +867,7 @@ Every page load pins the scene clock and weather in its address (a build that pr
       if (extra.signalId !== undefined && metadata.signals?.find(s=>s.id===extra.signalId)?.state !== extra.observedState) throw new Error('signal changed state before capture; shot was not accepted');
       const file = `axis-${id}/${name}.png`; await mkdir(path.join(options.out, `axis-${id}`), { recursive: true });
       const boardState = extra.signalId === undefined ? null : await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),true)`);
+      const hud = hudWanted ? await hudControl.apply(hudWanted, name) : null;
       let png, secondPng = null, captureRender = null;
       try {
         if (extra.signalId !== undefined) await twoFrames();
@@ -896,11 +911,12 @@ Every page load pins the scene clock and weather in its address (a build that pr
         });
       } finally {
         if (extra.signalId !== undefined) await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),false,${JSON.stringify(boardState)})`);
+        if (hud) hud.restored = await hudControl.restore(hud.mode);
       }
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
       const flicker = secondPng ? compareFrames(Buffer.from(png.data, 'base64'), Buffer.from(secondPng.data, 'base64')) : null;
-      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(flicker ? { flicker } : {}), ...extra };
+      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(flicker ? { flicker } : {}), ...(hud ? { hud } : {}), ...extra };
       report.screenshots.push(record); axis(id).screenshots.push(file); return record;
     };
     const attempt = async (id, name, work) => { try { await work(); } catch (e) { gap(id, `${name}: ${e.message}`); } };
@@ -918,7 +934,7 @@ Every page load pins the scene clock and weather in its address (a build that pr
 
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
     await navigate('?trains=none&board=0', 'station');
-    await runStationEvidenceShots(cameras, shot, attempt, selected);
+    await runStationEvidenceShots(cameras, shot, attempt, selected, options.hud);
     if (!cameras['gasworks-portals'] && (!selected || selected.has('gasworks-portals'))) gap('02', 'Gasworks south mouth could not be located in public geometry');
     const gridViews = Object.entries(cameras).filter(([name, c]) => c.grid && (!selected || selected.has(name)));
     if (gridViews.length) {
@@ -1080,6 +1096,8 @@ Every page load pins the scene clock and weather in its address (a build that pr
     gap('09', 'Scorer must separately rerun the repository responsive/catalog checks and inspect mutation evidence for other changed components.');
   }
   if (!options.gpu || !report.validGpu) gap('08', 'Only a measured real Metal renderer qualifies; software or unknown graphics do not.');
+  report.hud.shots = { hidden: report.screenshots.filter(s => s.hud?.mode === 'off').length, shown: report.screenshots.filter(s => s.hud?.mode === 'on').length };
+  report.hud.otherOverlays = [...new Set(report.screenshots.flatMap(s => s.hud?.otherOverlays ?? []))];
   report.flicker = flickerSummary(report.screenshots);
   for (const f of report.flicker.failed) gap(f.axis, `${f.camera}: flicker, ${f.differingPixels} px differ between two frames of a still scene (${(f.fraction * 100).toFixed(3)}% > ${report.flicker.limit * 100}%), in ${f.bbox?.join(',')}`);  await writePrivateFile(path.join(options.out, 'checks/camera-clearance.json'), `${JSON.stringify(report.cameraClearance,null,2)}\n`);
   axis('02').artifacts.push('checks/camera-clearance.json'); axis('03').artifacts.push('checks/camera-clearance.json');
@@ -1093,10 +1111,11 @@ Every page load pins the scene clock and weather in its address (a build that pr
   await writePrivateFile(path.join(options.out, 'manifest.json'), `${JSON.stringify(report, null, 2)}\n`);
   // Keep the old evidence.json entry point for existing scorer scripts.
   await writePrivateFile(path.join(options.out, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
-  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.views.partial ? `Partial pack: only ${report.views.names.length} fixed station views (--views ${report.views.requested}).\n\n` : ''}Flicker: ${report.flicker.checked} fixed views shot twice, ${report.flicker.failed.length} over the ${report.flicker.limit * 100}% limit (worst ${(report.flicker.worstFraction * 100).toFixed(4)}%). Scene pin: ${report.lighting.pin.parameters} (applied by the page: ${report.lighting.pinHonoured ?? 'no pinned page was shot'}). Lighting: ${LIGHTING_NOTE}\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
+  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.views.partial ? `Partial pack: only ${report.views.names.length} fixed station views (--views ${report.views.requested}).\n\n` : ''}Flicker: ${report.flicker.checked} fixed views shot twice, ${report.flicker.failed.length} over the ${report.flicker.limit * 100}% limit (worst ${(report.flicker.worstFraction * 100).toFixed(4)}%). Scene pin: ${report.lighting.pin.parameters} (applied by the page: ${report.lighting.pinHonoured ?? 'no pinned page was shot'}). Lighting: ${LIGHTING_NOTE}\n\nOverlays (--hud ${report.hud.mode}): ${report.hud.shots.hidden} shots with the page's overlays hidden, ${report.hud.shots.shown} with them shown. ${report.hud.note}\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
   console.log(JSON.stringify({ out: options.out, renderer: report.renderer, screenshots: report.screenshots.length, bundleGzipBytes: report.build.totalGzipBytes, gaps: report.gaps, fatal: report.fatal ?? null,
     flicker: { checked: report.flicker.checked, failed: report.flicker.failed.length, worstFraction: report.flicker.worstFraction },
-    lighting: { pin: report.lighting.pin.parameters, pinHonoured: report.lighting.pinHonoured, fingerprints: Object.keys(report.lighting.fingerprints) } }, null, 2));
+    lighting: { pin: report.lighting.pin.parameters, pinHonoured: report.lighting.pinHonoured, fingerprints: Object.keys(report.lighting.fingerprints) },
+    hud: { mode: report.hud.mode, hiddenShots: report.hud.shots.hidden, shownShots: report.hud.shots.shown, otherOverlays: report.hud.otherOverlays } }, null, 2));
   process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
   if (report.fatal || !report.flicker.pass) process.exitCode = 1;
   return report;
