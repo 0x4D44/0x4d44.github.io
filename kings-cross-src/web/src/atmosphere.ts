@@ -9,7 +9,7 @@
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
-import { cloudDeck, fogRange, skyRig, smoothstep } from '../../core/daylight.ts';
+import { cloudDeck, DAY_EXPOSURE, fogRange, skyRig, smoothstep } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
@@ -65,6 +65,12 @@ const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
  * ASSUMED, judged by eye and by sdL against R-lighting-materials-d.
  */
 const CLOUD_BILLOW = 2.2;
+/**
+ * How much of its swing the dark side of the deck keeps (the paler side keeps all of it). Round five (the E1 scorer: "smooth dark charcoal blobs at the top of frame", "reads stormier than
+ * R-d's pale deck with lighter grey patches"; R-d's sky has p10 L 66 and p50 84): the darkest masses ran to 0.28 of the base and the sides of the frame's sky had a p10 of L 49 to 55. The
+ * dark side's swing is held to this share, so the deck's floor is 0.6 of its base and the patches stay as pale and as many.
+ */
+const CLOUD_DARK = 0.55;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
 const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
@@ -237,6 +243,8 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
   // ---- surfaces that get wet, and stand-ins for daylight --------------------------------------------------
   const standIns = new Map<Emissive, THREE.Color>();
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
+  // the concourse's soffit is unlit (a lit underside would be black under the sun), so no light dims it: it follows the camera's exposure instead, the one thing that moves its pixels
+  let soffit: THREE.MeshBasicMaterial | null = null;
   // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
   let roofKey: string | null = null;
   let coverMap: CoverMap | null = null;
@@ -270,6 +278,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
         // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
         // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
         if (lambert.isMeshLambertMaterial) addRoofShade(lambert);
+        if (m.name === 'concourse-soffit') soffit = m as THREE.MeshBasicMaterial;
         const emissive = m as Emissive;
         if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && (emissiveBuilt.has(emissive) || emissive.emissive.getHex() !== 0) && !standIns.has(emissive)) {
           let built = emissiveBuilt.get(emissive);
@@ -310,7 +319,8 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       const k = Math.pow(t, 0.45 + 0.1 * cloud); // a clear sky deepens to its blue sooner (R-lighting-materials-a2: deep blue by 30 degrees up), a cloud deck keeps its old, slower ease
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
-      const deck = billow > 0 ? 1 + billow * smoothstep(0.02, 0.3, t) * (cloudDeck(x / r, y / r, z / r) - 0.52) : 1;
+      const d = cloudDeck(x / r, y / r, z / r) - 0.52;
+      const deck = 1 + billow * smoothstep(0.02, 0.3, t) * Math.max(d, CLOUD_DARK * d);
       colour.setRGB(
         (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow,
         (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow,
@@ -373,6 +383,9 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     }
 
     for (const [m, base] of railLines) m.color.copy(base).multiplyScalar(RAIL_NIGHT + (1 - RAIL_NIGHT) * rig.daylight);
+    // Round five (the E6 scorer: the overcast concourse's soffit was mean 239, p99 254, "the coffer pattern washes out to near white", against 215 at noon): an exposure opened for cloud (or
+    // night) doubles what the camera makes of an unlit surface, so the soffit is held to the picture it makes at the clear day's exposure, 215 at noon and, in cloud, no brighter.
+    soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);
 
     // wet and snowy ground
     rgb(surfaceUniforms.sheen.value, rig.dome.horizon).multiplyScalar(0.55);

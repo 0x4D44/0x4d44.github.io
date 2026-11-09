@@ -186,10 +186,11 @@ test('fog: 0 at ten kilometres, 1 at two hundred metres, and the scene fog comes
     assert.ok(f >= previous - 1e-12 && f >= 0 && f <= 1, `fog thinned as the visibility fell, at ${v}`);
     previous = f;
   }
-  // clear London air is hazy at distance: the far city fades into the horizon from 80 m and is gone at 2 km (R-lighting-materials-d: the
+  // clear London air is hazy at distance: the far city fades into the horizon from 100 m and is gone at 2.6 km (R-lighting-materials-d: the
   // buildings beyond the foreground lose contrast and pale toward the sky's horizon). The amounts are ASSUMED, judged by eye against that photograph
-  // (and, in round three, against a scorer who found the far third of the overview nearly as contrasty as its foreground at 2.8 km).
-  assert.deepEqual({ ...CLEAR_FOG }, { near: 80, far: 2000 });
+  // (and, in round three, against a scorer who found the far third of the overview nearly as contrasty as its foreground at 2.8 km; in round five against one who found 2 km a
+  // flat grey wash for a clear day, so the far plane went out to 2.6 km, still under the weather's own 2.8 km).
+  assert.deepEqual({ ...CLEAR_FOG }, { near: 100, far: 2600 });
   assert.deepEqual(fogRange(Infinity), { ...CLEAR_FOG }, 'clear air is the haze');
   assert.deepEqual(fogRange(30_000, 500), { ...CLEAR_FOG });
   const mist = fogRange(1800), fog = fogRange(300), dense = fogRange(40);
@@ -271,9 +272,9 @@ test('fog amount and scene fog distances at known visibilities; a nonsense visib
   }
   assert.equal(fogAmount(0), 1);
   assert.equal(fogAmount(-5), 1);
-  assert.deepEqual(fogRange(NaN), { ...CLEAR_FOG }, 'an unknown visibility has the clear air\'s haze (round one made clear air hazy: 80 m to 2 km, where it was 1100 m to 3600 m)');
+  assert.deepEqual(fogRange(NaN), { ...CLEAR_FOG }, 'an unknown visibility has the clear air\'s haze (round one made clear air hazy: 80 m to 2 km, where it was 1100 m to 3600 m; round five has it 100 m to 2.6 km)');
   // far = 1.25 x the visibility (seen from higher up, the visibility grows with the height over 250 m), at least 60 m and at most the weather's own haze, 2800 m (HAZE_CAP, what every thinner
-  // visibility is capped at: the page's old clear fog was 3600 m and is now the clear air's own 2 km); near = a fifth of far, at most that haze's 450 m
+  // visibility is capped at: the page's old clear fog was 3600 m and is now the clear air's own 2.6 km); near = a fifth of far, at most that haze's 450 m
   for (const [v, h, near, far] of [[300, 0, 75, 375], [1800, 0, 450, 2250], [40, 0, 12, 60], [9000, 0, 450, 2800], [5000, 0, 450, 2800], [300, 250, 150, 750], [300, 1000, 375, 1875], [2000, 100, 450, 2800]] as const) {
     const r = fogRange(v, h);
     assert.ok(Math.abs(r.near - near) < 1e-9 && Math.abs(r.far - far) < 1e-9, `${v} m seen from ${h} m: ${JSON.stringify(r)} against ${near} to ${far}`);
@@ -365,7 +366,9 @@ test('exposure: the filmic grade runs at the day\'s exposure, higher at night an
 
 test('exposure under a dry overcast deck opens a further CLOUD_EXPOSURE_DRY (round four, E3): rain, dusk and night keep the exposure they had', () => {
   assert.equal(CLOUD_EXPOSURE, 0.9);
-  assert.ok(CLOUD_EXPOSURE_DRY > 0.5 && CLOUD_EXPOSURE_DRY < 1.5, `a lift of a half to a stop and a half, not a runaway: ${CLOUD_EXPOSURE_DRY}`);
+  // round five: 0.75 drew the stock brick of the south front 9 dE2000 from R-d (the same wall in overcast: a median L 50.5 to 53.2); 0.35 draws it 2.8 to 4.4 away. It stays above the
+  // zero that drew it too dark (L 48, 3.6 away in round three) so that the overcast day is lifted, not left at the clear day's light
+  assert.ok(CLOUD_EXPOSURE_DRY > 0.2 && CLOUD_EXPOSURE_DRY < 0.6, `a lift of a fifth to a half over the clear day's, not the 0.75 that overshot R-d and not the 0 that undershot it: ${CLOUD_EXPOSURE_DRY}`);
   const noon = { dry: rig(55, { cloud: 1 }).exposure, rain: rig(55, { cloud: 1, rain: 1 }).exposure, drizzle: rig(55, { cloud: 1, rain: 0.2 }).exposure };
   assert.ok(Math.abs(noon.dry - DAY_EXPOSURE * (1 + CLOUD_EXPOSURE + CLOUD_EXPOSURE_DRY)) < 1e-12, `a dry overcast noon: ${noon.dry}`);
   assert.ok(Math.abs(noon.rain - DAY_EXPOSURE * (1 + CLOUD_EXPOSURE)) < 1e-12, `rain keeps the exposure it had: ${noon.rain}`);
@@ -402,23 +405,24 @@ test('by day the ground\'s share of the ambient is the paving\'s warm bounce, no
   }
 });
 
-test('clear air is aerial perspective: haze from 80 m, so a high view shows the far blocks paler than the near ones, and the weather\'s own fog is unchanged', () => {
+test('clear air is aerial perspective: haze from 100 m, so a high view shows the far blocks paler than the near ones, and the weather\'s own fog is unchanged', () => {
   // the share of the way to the horizon's colour at a distance, as the scene's linear fog works it out
   const share = (d: number, v = Infinity): number => { const f = fogRange(v); return Math.min(1, Math.max(0, (d - f.near) / (f.far - f.near))); };
   assert.equal(share(40), 0, 'the street at the feet is clear');
   assert.ok(share(150) < 0.04, `a street-level view (all within 150 m) is all but untouched: ${share(150)}`);
   // the overview looks 250 to 1160 m down the ground (the frozen camera, 220 m up at 36 degrees down, a 50 degree lens): the near edge has barely
-  // any haze, the far third (480 m and beyond) a fifth to over half of the way to the horizon, so it reads lighter, greyer and bluer
-  assert.ok(share(260) < 0.12 && share(260) > 0.06, `${share(260)}`);
-  assert.ok(share(480) > 0.18 && share(480) < 0.25, `${share(480)}`);
-  assert.ok(share(1160) > 0.5 && share(1160) < 0.62, `${share(1160)}`);
+  // any haze, the far third (480 m and beyond) a seventh to over two fifths of the way to the horizon, so it reads lighter, greyer and bluer (round five: with the far plane at
+  // 2.6 km and not 2, the far third is 15% to 42% of the way where it was 21% to 56%, "a flat grey wash" to the E1 scorer)
+  assert.ok(share(260) < 0.12 && share(260) > 0.05, `${share(260)}`);
+  assert.ok(share(480) > 0.13 && share(480) < 0.19, `${share(480)}`);
+  assert.ok(share(1160) > 0.38 && share(1160) < 0.46, `${share(1160)}`);
   assert.ok(share(1160) > 5 * share(260), 'the far blocks carry several times the haze of the near ones');
   // the weather's own fog is what it was: 10 km is the old haze exactly, and everything thinner keeps its near plane at 450 m or a fifth of its far plane
   assert.deepEqual(fogRange(10_000), { near: 450, far: 2800 });
   assert.deepEqual(fogRange(7000), { near: 450, far: 2800 }, 'rain');
   assert.deepEqual(fogRange(4000), { near: 450, far: 2800 }, 'drizzle');
   assert.deepEqual(fogRange(1800), { near: 0.2 * 2250, far: 2250 }, 'mist');
-  // between 10 and 20 km the clear-air haze eases in: never a step, never thinner as the air clears (the far plane comes in from the weather's 2.8 km to 2 km)
+  // between 10 and 20 km the clear-air haze eases in: never a step, never thinner as the air clears (the far plane comes in from the weather's 2.8 km to 2.6 km)
   let previous = 450;
   let previousFar = 2800;
   for (let v = 10_000; v <= 20_000; v += 250) {

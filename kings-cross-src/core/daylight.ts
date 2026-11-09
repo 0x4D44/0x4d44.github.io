@@ -145,15 +145,18 @@ export function fogAmount(visibilityM: number): number {
 }
 
 /**
- * The haze of clear air, as aerial perspective: it starts at the camera's feet (80 m) and thickens evenly, so the city 400 m off is
- * a sixth of the way to the horizon's colour, a kilometre off nearly half, and the far ground and the dome's edge meet at 2 km. A
+ * The haze of clear air, as aerial perspective: it starts at the camera's feet (100 m) and thickens evenly, so the city 400 m off is
+ * an eighth of the way to the horizon's colour, a kilometre off over a third, and the far ground and the dome's edge meet at 2.6 km. A
  * high view (the overview looks 480 to 1160 m down the ground in its top two thirds) then shows the far blocks lighter, greyer and bluer
  * than the near ones, as the daylight references do, while a street-level view (everything within 150 m) is untouched. ASSUMED amounts,
  * judged by eye: the references (R-lighting-materials-a, -d) are close-ups with no far skyline to measure. The first fog here began at
  * 1100 m and ended at 3600; the second began at 450 m, which left the lower half of the overview with no haze at all; the third ended
- * at 2.8 km, which left the far third of the overview (480 to 1160 m: 19% to 40% of the way) nearly as contrasty as the foreground.
+ * at 2.8 km, which left the far third of the overview (480 to 1160 m: 19% to 40% of the way) nearly as contrasty as the foreground. Round five (the E1 scorer: the noon overview's far
+ * third "goes to a flat grey wash, not the blue-white of a clear-day horizon: 2 km haze is heavy for a clear day"): the far plane out to 2.6 km (the far third now 15% to 42% of the
+ * way, so the far blocks keep more of their own colour and pale toward the horizon's) and the near plane to 100 m. It stays under the weather's own 2.8 km, which the easing in
+ * `fogRange` between 10 and 20 km relies on, so a thin air is never hazier than a thick one.
  */
-export const CLEAR_FOG = { near: 80, far: 2000 } as const;
+export const CLEAR_FOG = { near: 100, far: 2600 } as const;
 
 /**
  * The haze of a visibility of exactly 10 km, and the cap on every thinner one (mist, rain, drizzle, fog): the weather's own fog, which
@@ -231,11 +234,12 @@ export const DAY_EXPOSURE = 1.25;
 export const CLOUD_EXPOSURE = 0.9;
 /**
  * What a dry overcast day opens a further, as a multiple of the clear day's exposure (round four, lighting-materials E3): with the sun at 12% of itself and the whole of the
- * light the sky's, the stock tower of the south front drew L 48 where R-d's overcast one is L 58, the Midland's brick L 41 against R-c's 57 and the road L 15 (the sky dome is not
- * tone-mapped, so it does not move). 0.75 puts them at about L 58, 56 and 42. The sky's lift goes in rain (gone by a rain amount of 0.5) and this goes with it, so a rainy day's
- * exposure is what it was.
+ * light the sky's, the stock tower of the south front drew L 48 where R-d's overcast one was read as L 58, the Midland's brick L 41 against R-c's 57 and the road L 15 (the sky dome is not
+ * tone-mapped, so it does not move). 0.75 put them at about L 58, 56 and 42. Round five (the E3 scorer, from R-d's own pixels, whole-facade brick median 50.5 and 53.2 by two masks):
+ * that overshot, the stock brick drawing 9 dE2000 from R-d; 0.35 draws the tower at L 53 and the close view at L 48 (R-d's 50.5 and 53.2), 2.8 and 4.4 dE2000 from it. The sky's lift goes
+ * in rain (gone by a rain amount of 0.5) and this goes with it, so a rainy day's exposure is what it was.
  */
-export const CLOUD_EXPOSURE_DRY = 0.75;
+export const CLOUD_EXPOSURE_DRY = 0.35;
 
 /** The share of the daylight stand-ins (the shed's sky-lit lining and glazing) kept at night, so they never go quite dead. */
 export const DAYLIGHT_FLOOR = 0.12;

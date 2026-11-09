@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CLEAR_FOG, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
+import { CLEAR_FOG, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
@@ -285,6 +285,44 @@ test('an overcast dome carries the cloud deck\'s billows, a clear one is a smoot
   assert.ok(spread(ring(0)) < 1e-6, `and the horizon is one colour all round, the fog's: ${spread(ring(0))}`);
   at(NOON, state('clear'));
   assert.ok(spread(high) < 0.005, 'a clearing sky is smooth again (the dome is repainted when the cloud changes, not only when its colours do)');
+});
+
+test('the overcast deck\'s dark masses are lifted, and the bright ones are still there (round five, E1)', () => {
+  const { world, at } = setup();
+  const attr = world.sky.geometry.getAttribute('color') as THREE.BufferAttribute;
+  const pos = world.sky.geometry.getAttribute('position');
+  const lumaAt = (i: number): number => luma(new THREE.Color().setRGB(attr.getX(i), attr.getY(i), attr.getZ(i), THREE.LinearSRGBColorSpace));
+  const ring: number[] = [];
+  for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getY(i) / 5200 - Math.sin((26.25 * Math.PI) / 180)) < 1e-3) ring.push(i);
+  at(NOON, state('overcast'));
+  const l = ring.map(lumaAt).sort((a, b) => a - b);
+  const mean = l.reduce((sum, v) => sum + v, 0) / l.length;
+  // the E1 scorer of round five: the darkest cloud masses read L 55 to 60 where R-lighting-materials-d's darkest tenth is L 66. The deck's dark side (a billow of 2.2 over the cloud
+  // field's depth below its mean) took the ring's darkest patch to 0.07 of its mean and its darkest tenth to 0.32 in linear light; with the dark side at 0.55 of that depth they are 0.30 and
+  // 0.52 (the sky's darkest tenth L 66 to 75 in the frozen views, R-d's 66), the brightest patches still 2.3 times the mean and the spread (0.46) still over round four's bar of 0.4
+  assert.ok(l[0]! > 0.2 * mean, `the darkest patch is not black cloud: ${(l[0]! / mean).toFixed(2)} of the mean (it was 0.07)`);
+  assert.ok(l[Math.floor(l.length / 10)]! > 0.45 * mean, `nor is the darkest tenth: ${(l[Math.floor(l.length / 10)]! / mean).toFixed(2)} of the mean (it was 0.32)`);
+  assert.ok(l[l.length - 1]! > 2 * mean, `and the bright patches are still far over it: ${(l[l.length - 1]! / mean).toFixed(2)} of the mean`);
+});
+
+test('the concourse soffit, an unlit colour the exposure multiplies, is divided by it again, so a cloudy sky does not take it to white (round five, E6)', () => {
+  const { scene, atmosphere, at } = setup();
+  const soffit = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
+  soffit.name = 'concourse-soffit';
+  const other = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  other.name = 'concourse-something-else';
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), soffit), new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), other));
+  atmosphere.rescan();
+  at(NOON);
+  assert.ok(Math.abs(soffit.color.r - 1) < 1e-9, `at a clear noon the exposure is the day's and the soffit as built: ${soffit.color.r}`);
+  at(NOON, state('overcast'));
+  const { exposure } = atmosphere.state()!.rig;
+  assert.ok(exposure > 1.8 * DAY_EXPOSURE, `the cloud has doubled the exposure (${exposure.toFixed(2)} against ${DAY_EXPOSURE})`);
+  assert.ok(Math.abs(soffit.color.r - DAY_EXPOSURE / exposure) < 1e-9 && soffit.color.g === soffit.color.r && soffit.color.b === soffit.color.r, `so it is scaled down to ${soffit.color.r.toFixed(2)}`);
+  assert.ok(Math.abs(soffit.color.r * exposure - DAY_EXPOSURE) < 1e-9, 'and what the film sees of it is the clear noon\'s: the concourse ceiling mean was 239 with p99 254 under cloud, 210 with p99 230 in the sun, and is 217 and 245 now');
+  assert.equal(other.color.r, 1, 'no other unlit material is touched');
+  at(NOON);
+  assert.ok(Math.abs(soffit.color.r - 1) < 1e-9, 'and a clearing sky brings it back');
 });
 
 test('what glowed like sky-lit day (shed lining, glazing, ribs) dims after dark and picks up the lamps\' warmth', () => {
