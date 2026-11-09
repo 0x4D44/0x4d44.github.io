@@ -1759,7 +1759,7 @@ const sideWalls = (parts: PartMap<Key>): Tri[] => triangles(parts.brickRed as Ba
 
 test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springings, inside the 245 ft 6 in walls', () => {
   const parts = barlowGeometry(barlow);
-  const slate = triangles(parts.slate as Batch).flatMap((t) => t.p).map(inVault);
+  const slate = triangles(parts.shedSlate as Batch).flatMap((t) => t.p).map(inVault);
   const walls = sideWalls(parts).flatMap((t) => t.p).map(inVault);
   const roof = [...slate, ...walls, ...triangles(parts.roofGlass as Batch).flatMap((t) => t.p).map(inVault)];
   close(Math.max(...roof.map((p) => p.y)), FIGURES.barlow.rise, 1e-3, 'crown');
@@ -1774,7 +1774,7 @@ test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springing
 
 test('Barlow vault [WP-STP, hist-e]: glass covers the middle half of the roof as seen from above (round 4 took half the arch\'s length: glass over 70% of the width, a roof near-white from outside), slate the rest, to 210 m', () => {
   const parts = barlowGeometry(barlow);
-  const slate = triangles(parts.slate as Batch);
+  const slate = triangles(parts.shedSlate as Batch);
   // the glass strips that start at the south wall (the middle of the arch): glass u is the distance along the arch, slate v likewise
   const glass = triangles(parts.roofGlass as Batch).filter((t) => t.p.some((p) => inVault(p).v < 1e-6));
   const across = glass.flatMap((t) => t.p.map((p) => inVault(p).u));
@@ -1840,7 +1840,8 @@ test('Barlow ribs [WP-STP, hist-d, hist-d2]: an X-braced lattice truss 2.6 m dee
 
 test('Barlow shed [hist-d]: pale boarding 8 cm under each slate strip, parallel to it, facing out so that it shows from inside only', () => {
   const parts = barlowGeometry(barlow);
-  const slate = triangles(parts.slate as Batch);
+  const slate = triangles(parts.shedSlate as Batch);
+  assert.equal(parts.slate, undefined, 'the flank is its own batch, not the Midland\'s and the hotel\'s roof slate: it has a colour of its own');
   const lining = triangles(parts.lining as Batch);
   assert.equal(lining.length, slate.length, 'a strip of boarding to every strip of slate');
   assert.equal((createMaterials().table.lining as THREE.MeshLambertMaterial).side, THREE.BackSide, 'seen from inside only');
@@ -1993,7 +1994,7 @@ test('Barlow shed [hist-d2, hist-e]: the springing strip of the arch on each sid
   const knee = (skin[1] as { y: number }).y;
   close(Math.min(...walls.flatMap((t) => t.p.map((p) => inVault(p).y))), 0, 1e-9, 'on the ground');
   close(Math.max(...walls.flatMap((t) => t.p.map((p) => inVault(p).y))), knee, 1e-9, 'up to the first node of the arch');
-  close(Math.min(...triangles(parts.slate as Batch).flatMap((t) => t.p.map((p) => inVault(p).y))), knee, 1e-9, 'where the slate begins');
+  close(Math.min(...triangles(parts.shedSlate as Batch).flatMap((t) => t.p.map((p) => inVault(p).y))), knee, 1e-9, 'where the slate begins');
   const across: V3 = [Math.cos(barlow.heading), 0, Math.sin(barlow.heading)]; // the shed's +u (east) in the world
   const key = (t: Tri): string => JSON.stringify(t.p.map((p) => p.map((x) => x.toFixed(6))).sort());
   for (const side of [-1, 1]) {
@@ -2142,7 +2143,12 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   const spread = (v: number[]): number => Math.max(...v) / Math.min(...v);
   assert.ok(spread(glow(shared('shedGlass'))) > 2, 'the library\'s glass glows blue (the test\'s yardstick)');
   assert.ok(spread(glow(glass)) < 1.2, 'its glow is neutral: silver, not sky');
-  assert.ok(Math.min(...glow(glass)) > Math.max(...glow(shared('shedGlass'))) * 0.9, 'and bright: no dimmer than the library\'s brightest channel');
+  // round four (the lighting-materials E4 scorer): from outside, hist-e's crown is a silver-grey with its ribs showing, L 60 to 70, where round three's glass (a glow of 0.28 of the pane texture's
+  // average in each channel and a lit reflectance of 0.52) drew it flat white, L 84 to 87. The light is the sun's now: a lit reflectance of 0.18 (L 62 and 67 at the noon rig, in the two frozen
+  // views) and a glow a tenth of the library's brightest channel, so that from inside the glazing is darker than the boarding, as hist-d's is against its lining
+  const litGlass = lum([glass.color.r * average.r, glass.color.g * average.g, glass.color.b * average.b]);
+  assert.ok(litGlass > 0.14 && litGlass < 0.22, `lit, the crown's glass reflects about 0.18 (silver-grey at L 62 to 67, not white): ${litGlass.toFixed(3)}`);
+  assert.ok(Math.max(...glow(glass)) < Math.max(...glow(shared('shedGlass'))) * 0.2, `and it glows far less than the library's glass (a tenth of its brightest channel): ${Math.max(...glow(glass)).toFixed(3)} against ${Math.max(...glow(shared('shedGlass'))).toFixed(3)}`);
   assert.ok(glass.color.b <= glass.color.r, 'no bluer than it is red: silver, not sky');
   const iron = lambert('rib');
   const luminance = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
@@ -2163,6 +2169,17 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.ok(slate.color.b / slate.color.r < shared('slateBothSides').color.b / shared('slateBothSides').color.r, 'and less blue: hist-b\'s slate is grey with a hint of green, not blue');
   assert.equal(slate.side, THREE.DoubleSide);
   assert.equal((material('slate') as THREE.MeshLambertMaterial).side, THREE.FrontSide, 'the shared one is untouched');
+  // round four (the lighting-materials E4 scorer): the Barlow's flank is hist-e's dark slate, L 44 (103, 103, 108) against the L 58 of the Midland's and the hotel's roofs (hist-b's, hist-a's):
+  // the same texture at half the tint, which rendered the flank at L 41 and 46 in the two frozen views (the shared slate drew it L 56 and 61, a pale blue-grey), and the same
+  // cool-grey hue. It has a key of its own so that the Midland's and the hotel's roofs keep the colours they were fitted to.
+  const flank = lambert('shedSlate');
+  assert.notEqual(flank, slate, 'the Barlow\'s flank is its own: darker than the Midland\'s and the hotel\'s roofs');
+  assert.equal(flank.map, slate.map, 'on the same slate texture');
+  assert.equal(flank.side, THREE.DoubleSide, 'seen from inside too');
+  const slateAverage = new THREE.Color(TEXTURES.slate.average);
+  const litSlate = (m: THREE.MeshLambertMaterial): number => lum([m.color.r * slateAverage.r, m.color.g * slateAverage.g, m.color.b * slateAverage.b]);
+  assert.ok(litSlate(flank) > 0.4 * litSlate(slate) && litSlate(flank) < 0.65 * litSlate(slate), `the flank reflects about half what the other roofs' slate does: ${(litSlate(flank) / litSlate(slate)).toFixed(2)}`);
+  assert.ok(flank.color.b / flank.color.r < shared('slateBothSides').color.b / shared('slateBothSides').color.r, 'and is as grey, not blue, as the other slate');
   for (const n of ['brick', 'brickRed', 'stone', 'slateBothSides', 'shedGlass', 'ribPaint'] as const) assert.deepEqual(hex(n), before[n], `the shared ${n} keeps its colours`);
   // the rest is the library's own
   assert.equal(set.table.lining, material('lining'));
@@ -2171,7 +2188,7 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.equal(set.table.pane, material('pane'));
   for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
-  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate], 'the clock face, the roof panels, the two bricks, the dressings, the glass, the ribs and the slate are all this set makes (no document here, so no texture)');
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate, set.table.shedSlate], 'the clock face, the roof panels, the two bricks, the dressings, the glass, the ribs and the two slates are all this set makes (no document here, so no texture)');
   for (const key of ['sash', 'sashArch', 'pane', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 

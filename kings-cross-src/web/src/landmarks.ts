@@ -21,7 +21,7 @@ const UP: V3 = [0, 1, 0];
 
 // ---- materials ---------------------------------------------------------------------------------
 
-export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'rib' | 'lining' | 'metal' | 'clock';
+export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'shedSlate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'rib' | 'lining' | 'metal' | 'clock';
 
 export interface MaterialSet {
   table: Record<Key, THREE.Material>;
@@ -106,15 +106,21 @@ export function createMaterials(): MaterialSet {
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
   // blue-grey: hist-b's roof is (147, 139, 141) and hist-a's (136, 134, 136). (1, 0.85, 0.8) x 2.3 renders the Midland's (152, 151, 154), dE 4.9, and the hotel's (133, 131, 132),
   // dE 1.5; the earlier neutral 2.2 rendered a blue-grey (150, 158, 164), dE 8.9, and (127, 134, 140).
-  const roofGlass = tint('shedGlass', [1.24, 0.95, 0.84], 0xd4beaf);
+  // Round four (the E4 scorer: the Barlow's roof is "a flat white crown over a pale blue-grey flank", L 85 and 67 against hist-e's L 43; measured here, hist-e's flank is (103, 103, 108),
+  // L 44, and its crown L 55 to 65 with fine lines): the glass is the sun's to light now and not a glow, so from outside it is a silver-grey (a lit reflectance of 0.18 where it was
+  // 0.52 with a glow on top; L 62 and 67 in the two frozen views, not 84 and 87) and from inside the glazing is darker than the boarding, as in hist-d. The Barlow's flank has its
+  // own slate, half the roof slate's tint (L 41 and 46 in the two views, not 56 and 61), so that the Midland's and the hotel's roofs keep the colours they were fitted to.
+  const roofGlass = tint('shedGlass', [0.42, 0.32, 0.28], 0x3b3531);
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
   const slate = tint('slateBothSides', [slateGain, 0.85 * slateGain, 0.8 * slateGain]);
+  const shedSlate = tint('slateBothSides', [1.15, 0.98, 0.92]);
   return {
     table: {
       brick,
       brickRed,
       stone,
       slate,
+      shedSlate,
       sash: material('sash'),
       sashArch: material('sashArch'),
       pane: material('pane'),
@@ -1100,7 +1106,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     const m = Math.hypot(a[0] + b[0], a[1] + b[1]);
     return [sec(k).x - ((a[0] + b[0]) / m) * d, sec(k).y - ((a[1] + b[1]) / m) * d];
   };
-  const slate = part(parts, 'slate');
+  const slate = part(parts, 'shedSlate');
   const lining = part(parts, 'lining');
   const glass = part(parts, 'roofGlass');
   const rib = part(parts, 'rib');

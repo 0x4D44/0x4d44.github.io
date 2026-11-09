@@ -160,7 +160,7 @@ test('seated, only y moves: x, z, normals, UVs and triangles are as built and ev
   assert.ok(stackTop > plans.hotel.ridge, 'the assumed chimney stacks extend above the slate ridge');
   close(highest(heights(seated.hotel, ['stone'])) - stackTop, seats.hotel.y, 1e-9, 'the chimney stacks rise with the hotel seat');
   close(highest(heights(seated.midland)) - seats.midland.y, FIGURES.midland.clockTowerHeight, 1e-9, 'the clock tower above its base');
-  close(highest(heights(seated.barlow, ['slate', 'roofGlass'])) - seats.barlow.y, FIGURES.barlow.rise, 1e-3, 'the Barlow crown above its springings');
+  close(highest(heights(seated.barlow, ['shedSlate', 'roofGlass'])) - seats.barlow.y, FIGURES.barlow.rise, 1e-3, 'the Barlow crown above its springings');
 });
 
 test('on a step 3 m high that cuts each footprint: the base is on the low side and level, so the walls are sunk 3 m into the high side', () => {
