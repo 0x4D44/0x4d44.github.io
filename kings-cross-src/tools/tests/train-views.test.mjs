@@ -8,7 +8,7 @@ import {mkdir,mkdtemp,realpath,rm,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import * as T from 'three';
-import {ALL_KINDS,trainLayout} from '../../core/train.ts';
+import {ALL_KINDS,TRAIN_SPECS,trainLayout} from '../../core/train.ts';
 import {PLATFORM_HEIGHT} from '../../core/scene.ts';
 import {pointInPolygon} from '../../core/station.ts';
 import {buildTrain,bodySpec,carPlan} from '../../web/src/train.ts';
@@ -26,6 +26,9 @@ const any=(kind,suffix)=>{const v=plans.get(kind).find(x=>x.suffix===suffix);ass
 const view=(kind,suffix)=>{const v=any(kind,suffix);assert.equal(v.status,'OK',`${kind}/${suffix} is ${v.status}: ${v.reason}`);return v;};
 const mirror=(p,L)=>[-p[0],p[1],L-p[2]];
 const AT300=['lner5','lner9','hull5','lumo5'];
+// written out, not read from the tool, so a changed word is a failed test
+const LNER_NOTE='the model draws the car pattern shared by these classes; it does not distinguish the bi-mode 800 from the electric 801 (no underfloor engines, one roof/pantograph pattern); it is not claimed to match either variant';
+const CLASSES={lner5:'800/2, 801/1',lner9:'800/1, 801/2',hull5:'802/3',lumo5:'803',gn387x4:'387',gn387x8:'387 x2',gn387x12:'387 x3',gn717x6:'717',gc180x5:'180',tl700x8:'700/0',tl700x12:'700/1'};
 
 test('catalogue plans every required view of every kind once, in rubric order, as OK, GAP or N/A with a reason',()=>{
  const expected=F.STAGE_VIEWS.flatMap(([id,suffixes])=>suffixes.map(s=>[id,s]));
@@ -532,6 +535,11 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.deepEqual(sidecar.costs,{trainStatic:{triangles:11,drawCalls:12},rendererInfo:{calls:13,triangles:14}});assert.equal(sidecar.label,'label');assert.deepEqual(sidecar.hiddenSceneNames,[{name:'shed',type:'Group'}]);assert.deepEqual(sidecar.hiddenDom,['h1']);
  assert.deepEqual(sidecar.visibility,{clear:true});assert.deepEqual(sidecar.pixels,{ok:true});assert.equal(sidecar.formation.cars.length,5);assert.equal(sidecar.formation.lengthM,formations.get('lner5').length);assert.deepEqual(sidecar.dimensions,formations.get('lner5').dimensions);
  assert.equal(JSON.stringify(sidecar.formation.cars[0]).includes('doors'),false,'the sidecar lists the layout, not the door helper');
+ // the classes the kind stands for, and the note where the model does not tell two classes apart
+ assert.equal(sidecar.formation.classes,'800/2, 801/1');assert.equal(sidecar.formation.classNote,LNER_NOTE);
+ const thameslink=C.catalogueSidecar({kind:'tl700x8',view:view('tl700x8','front-3m'),file:'tl700x8-front-3m.png',formation:formations.get('tl700x8'),session,host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
+  state:{hidden:[],hiddenDom:[],stage:{railHeadTopY:0}},result:{verdict:{ok:true},live},timings:{inspect:1}});
+ assert.equal(thameslink.formation.classes,'700/0');assert.equal(thameslink.formation.classNote,null,'a kind that is one class has no note');assert.equal(thameslink.formation.kind,'tl700x8');
  // the exposure, the page's atmosphere, the lamp level of the trains and the lamp API are in the render state; what was hidden, and what was still drawn, is in `chrome`
  assert.deepEqual(sidecar.renderState,{toneMapping:0,toneMappingExposure:1,outputColorSpace:'srgb',background:'35465e',fog:null,lights:session.lights,exposure:'day',urlQuery:C.catalogueUrlQuery('day'),rig:'fixed',pinnedTime:null,pinnedWeather:null,
   atmosphere:null,trainNight:0,trainNightSource:C.trainNightOf(C.exposureRecord('day'),null).trainNightSource,lampApi:false});
@@ -700,6 +708,20 @@ test('a frame reports the page atmosphere as it has it: null under the fixed day
   page.k.atmosphere={state:()=>null};assert.equal(cat.atmosphere(),null,'an atmosphere that has not drawn a frame has no state');
   cat.end();
  });
+});
+
+test('every kind names the classes it stands for, and the LNER kinds say the model does not tell the Class 800 from the 801',()=>{
+ assert.deepEqual([...ALL_KINDS].sort(),Object.keys(CLASSES).sort(),'every kind has an expected class label here');
+ assert.deepEqual(Object.keys(C.CLASS_NOTES).sort(),['lner5','lner9'],'only the two LNER kinds carry a note');
+ for(const kind of ALL_KINDS) {
+  const formation=formations.get(kind),lner=kind==='lner5'||kind==='lner9';
+  assert.equal(formation.classes,TRAIN_SPECS[kind].classes,`${kind}: the classes come from the train spec`);assert.equal(formation.classes,CLASSES[kind],`${kind}: the classes`);
+  assert.equal(formation.classNote,lner?LNER_NOTE:null,`${kind}: ${lner?'the LNER note, word for word':'no note'}`);
+  // the manifest's formation block carries both, beside what it carried before
+  const block=C.manifestFormation(formation);
+  assert.deepEqual(block,{family:formation.family,classes:CLASSES[kind],classNote:lner?LNER_NOTE:null,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars},`${kind}: manifest formation`);
+ }
+ assert.ok(Object.isFrozen(C.CLASS_NOTES),'the table is not edited by a run');
 });
 
 test('the geometry check reports the surface points it saw so the picture can be checked against them',()=>{

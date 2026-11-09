@@ -299,6 +299,15 @@ const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const basisOf=list=>[...new Set(list)].join('+');
 /** The one Chrome command line every capture mode uses: headless, pipe-driven, on the real Metal GPU (never a software renderer). */
 export const chromeArgs=profile=>['--headless=new','--remote-debugging-pipe',`--user-data-dir=${profile}`,'--no-sandbox','--no-first-run','--no-default-browser-check','--disable-breakpad','--disable-crash-reporter','--noerrdialogs','--use-mock-keychain','--password-store=basic','--no-proxy-server','--ignore-gpu-blocklist','--use-angle=metal','--enable-gpu-rasterization','about:blank'];
+/**
+ * Where the model's one car pattern stands for more than one class. The LNER Class 800 (bi-mode) and 801 (electric) share the AT300 car shape, and the model
+ * draws that one pattern: no underfloor engines, one roof/pantograph arrangement. So a picture of an LNER kind must not be read as either variant. The other
+ * kinds stand for one class (or one class family) and carry no note.
+ */
+const LNER_CLASS_NOTE='the model draws the car pattern shared by these classes; it does not distinguish the bi-mode 800 from the electric 801 (no underfloor engines, one roof/pantograph pattern); it is not claimed to match either variant';
+export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE,lner9:LNER_CLASS_NOTE});
+/** The formation block of a manifest entry: the family, the classes and the note on them, the length, the dimensions and the cars. */
+export const manifestFormation=formation=>({family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars});
 /** A plain description of one kind's formation: the input of planCatalogueViews and the sidecars' `formation`/`dimensions`. */
 export function describeFormation(kind) {
   const layout=trainLayout(kind),family=layout.spec.family,body=bodySpec(family),figures=family==='at300'?FIGURES:EMU_FIGURES[family];
@@ -311,7 +320,7 @@ export function describeFormation(kind) {
   const roofTop=body.crown+body.coverHeight;
   const lengthFigures=[...new Set(layout.cars.map(c=>family==='at300'?(c.cab?'drivingCarLength':'intermediateCarLength'):(c.cab&&figures.drivingCarLength?'drivingCarLength':'carLength')))];
   const roofFigures=family==='at300'?['roofEdgeHeight','roofCoverHeight']:['height'];
-  return {kind,family,length:layout.length,half:body.half,crown:body.crown,coverHeight:body.coverHeight,roofTop,doorWidth:body.doorWidth,cars,
+  return {kind,family,classes:layout.spec.classes,classNote:Object.hasOwn(CLASS_NOTES,kind)?CLASS_NOTES[kind]:null,length:layout.length,half:body.half,crown:body.crown,coverHeight:body.coverHeight,roofTop,doorWidth:body.doorWidth,cars,
     dimensions:{
       lengthM:{value:layout.length,basis:basisOf(lengthFigures.map(n=>figures[n].basis)),figures:lengthFigures.map(n=>`${family==='at300'?'FIGURES':`EMU_FIGURES.${family}`}.${n}`)},
       widthM:{value:2*body.half,basis:figures.bodyWidth.basis,figures:[`${family==='at300'?'FIGURES':`EMU_FIGURES.${family}`}.bodyWidth`],figureM:figures.bodyWidth.value},
@@ -673,7 +682,7 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
     ...(view.id==='V10'?{station:{placement:view.placement,focus:view.focus,distanceM:view.distanceM,azimuthDeg:view.azimuthDeg,platform:view.platform,platformHeightM:view.platformHeightM,
       horizontalDistanceM:Math.hypot(live.pose.position[0]-live.pose.target[0],live.pose.position[2]-live.pose.target[2]),eyeAbovePlatformM:live.pose.position[1]-view.platformHeightM,
       scenery:state.scenery,ground:state.ground,search:view.search}}:{}),
-    formation:{kind,family:formation.family,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
+    formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
     dimensions:formation.dimensions,
     visibility:live.inspection,pixels:result.verdict,
     hiddenSceneNames:state.hidden,hiddenDom:state.hiddenDom,chrome:live.chrome??null,stage:state.stage,label:live.labelText,
@@ -806,7 +815,7 @@ export async function catalogueMain(args) {
           for(const r of await captureViews(kind,plan,views,state))entries[r.view.suffix]=manifestEntry(r);
         } finally {await evaluate('window.__cat.end()');}
       }
-      manifest.kinds[kind]={formation:{family:plan.formation.family,lengthM:plan.formation.length,dimensions:plan.formation.dimensions,cars:plan.formation.cars},views:entries};
+      manifest.kinds[kind]={formation:manifestFormation(plan.formation),views:entries};
       const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
       summary.kinds[kind]=tally;summary.timingsMs[kind]=Math.round(performance.now()-kindStart);
       console.log(`${kind}: ${JSON.stringify(tally)} in ${(summary.timingsMs[kind]/1000).toFixed(1)} s`);

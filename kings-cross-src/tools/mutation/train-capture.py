@@ -469,6 +469,18 @@ M = [
  ('photograph leaves the specimen cut', C, "await evaluate(`window.__cat.isolate('all')`);\n  return {shot,baseline,subject};", 'return {shot,baseline,subject};'),
  ('photograph isolates the wrong car', C, "isolate('car:${view.extents.car}')`);subject=await screenshot();", "isolate('car:0')`);subject=await screenshot();"),
  ('photograph takes a car picture of every view with extents', C, "if(view.extents?.scope==='car'){await evaluate(", 'if(view.extents){await evaluate('),
+ ('formation forgets the classes of the kind', C, 'classes:layout.spec.classes,classNote:', 'classes:layout.spec.kind,classNote:'),
+ ('formation gives every kind the LNER class note', C, 'classNote:Object.hasOwn(CLASS_NOTES,kind)?CLASS_NOTES[kind]:null,', 'classNote:CLASS_NOTES.lner5,'),
+ ('formation never gives a class note', C, 'classNote:Object.hasOwn(CLASS_NOTES,kind)?CLASS_NOTES[kind]:null,', 'classNote:null,'),
+ ('LNER class note says it matches either variant', C, "it is not claimed to match either variant'", "it matches either variant'"),
+ ('LNER class note tells the 800 from the 801', C, 'it does not distinguish the bi-mode 800 from the electric 801', 'it distinguishes the bi-mode 800 from the electric 801'),
+ ('LNER class note forgets the underfloor engines', C, '(no underfloor engines, one roof/pantograph pattern)', '(one roof/pantograph pattern)'),
+ ('the nine-car LNER kind has no class note', C, 'export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE,lner9:LNER_CLASS_NOTE});', 'export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE});'),
+ ('the Hull kind gets the LNER class note', C, 'export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE,lner9:LNER_CLASS_NOTE});', 'export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE,lner9:LNER_CLASS_NOTE,hull5:LNER_CLASS_NOTE});'),
+ ('sidecar omits the classes of the kind', C, 'formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM', 'formation:{kind,family:formation.family,classNote:formation.classNote,lengthM'),
+ ('sidecar omits the class note', C, 'formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM', 'formation:{kind,family:formation.family,classes:formation.classes,lengthM'),
+ ('manifest formation omits the classes of the kind', C, 'family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions', 'family:formation.family,classNote:formation.classNote,lengthM:formation.length,dimensions'),
+ ('manifest formation omits the class note', C, 'classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions', 'classes:formation.classes,lengthM:formation.length,dimensions'),
 ]
 def run(work):
     return kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/train-capture-schedule.test.mjs','tools/tests/train-framing.test.mjs','tools/tests/portal-entry.test.mjs','tools/tests/train-views.test.mjs'], cwd=work, timeout=30)
