@@ -44,6 +44,7 @@ const columns=lines.map(l=>({s:Math.round(l.s*100)/100,cols:r(l.cols)}));
 console.log(JSON.stringify(columns.map(l=>[l.s,l.cols.length])));
 if(columns.length!==6||columns.some(l=>l.cols.length<2))throw Error('Waverley Bridge: six support lines of two or more columns not found');
 
+const stepsRoof=scene.roofs.find(r=>r.id==='way/577519823');if(!stepsRoof)throw Error('way/577519823 missing from waverley-scene.json');
 const body=area('relation/15839904'),mall=area('relation/1113940'),seat=area('way/225997712');
 const out={
  origin:frontage.origin,attribution:'© OpenStreetMap contributors (ODbL)',
@@ -52,12 +53,14 @@ const out={
   balmoralBody:'https://www.openstreetmap.org/relation/15839904 (Balmoral Hotel body, building:levels 6, roof:levels 1); HES LB30315 "5 storeys, mezzanine and attic"',
   princesMall:'https://www.openstreetmap.org/relation/1113940 (building=retail, layer -1)',
   northBridgePierSeat:'https://www.openstreetmap.org/way/225997712 (station block in North Bridge pier 1\'s clear band; height as the city draws it, ASSUMED 3 m per OSM level)',
+  waverleySteps:'https://www.openstreetmap.org/way/577519823 (the Waverley Steps cover, building=roof, layer 1)',
   waverleyBridgeColumns:'derived: HES LB30270 seven plate-girder spans; columns on the island platforms as in R-wv2-b; placement rule WAVERLEY_BRIDGE_COLUMN (web/src/waverley-frontage-bridges.ts)',
  },
  balmoralBody:{id:body.id,levels:6,roofLevels:1,ring:r(body.outer),holes:body.holes.map(r)},
  princesMall:{id:mall.id,ring:r(mall.outer),holes:mall.holes.map(r)},
  northBridgePierSeat:{id:seat.id,height:seat.height,ring:r(seat.outer)},
  waverleyBridgeColumns:columns,
+ waverleySteps:{id:stepsRoof.id,ring:r(stepsRoof.outer)},
 };
 writeFileSync('web/src/data/waverley-frontage-extra.json',JSON.stringify(out)+'\n');
 console.log(`Wrote the hotel body, the mall, the pier seat and ${columns.reduce((s,l)=>s+l.cols.length,0)} Waverley Bridge columns on ${columns.length} lines`);

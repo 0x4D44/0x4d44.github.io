@@ -17,7 +17,7 @@ import {obox,unit,wallBox} from './waverley-frontage-mesh.ts';
 
 export const NORTH_BRIDGE={spanLength:53,ribsPerSpan:6,springing:6.4,rib:[1.3,.5] as const,deckDepth:1,
  /** Along the bridge from its north end (m): spans and piers. Pier 2 fills the 3.5 m band between platform 10's end and the next track. */
- spans:[[0,53],[56.5,109.45],[112.55,165.55]] as [number,number][],piers:[[53,56.5],[109.45,112.55]] as [number,number][],
+ spans:[[0,53],[58,109.25],[112.75,165.55]] as [number,number][],piers:[[53,58],[109.25,112.75]] as [number,number][],
  parapet:1.1} as const;
 export const BRIDGE_COLOURS={rib:0x7d8b92,spandrel:0x3f4b57,blue:0x4c78ad,cream:0xe4dcc4,trim:0x6b2f2a,coping:0xcfc6b0,pier:0x786d60,
  balustrade:0xd8d2bd,panel:0xc4bda7,girder:0x8d9188,column:0x5d6a62} as const;
@@ -82,8 +82,10 @@ function parapets(b:Batch,f:Frame,deck:Deck,style:'north'|'waverley',gaps:readon
      at(.01,[len/2-.3,.3,.01],BRIDGE_COLOURS.trim);at(.02,[len/2-.42,.2,.01],BRIDGE_COLOURS.cream);}
    }else{
     wallBox(b,a,c,y,y+.25,.24,C(BRIDGE_COLOURS.panel),.01);
-    wallBox(b,a,c,y+.25,y+H-.14,.18,C(BRIDGE_COLOURS.balustrade),.01);
-    wallBox(b,a,c,y+H-.14,y+H,.25,C(BRIDGE_COLOURS.balustrade),.01);
+    wallBox(b,a,c,y+.25,y+H-.24,.18,C(BRIDGE_COLOURS.balustrade),.01);
+    wallBox(b,a,c,y+H-.24,y+H-.16,.22,C(BRIDGE_COLOURS.panel),.01);// bed moulding
+    wallBox(b,a,c,y+H-.16,y+H-.05,.3,C(BRIDGE_COLOURS.coping),.01);// the cope, overhanging both faces
+    wallBox(b,a,c,y+H-.05,y+H,.24,C(BRIDGE_COLOURS.coping),.01);// its weathered top
     for(const o of [1,-1]){const n:V3=[out[0]*o,0,out[2]*o];obox(b,[mid[0]+n[0]*.19,y+.62,mid[2]+n[2]*.19],ax,[0,1,0],n,[len/2-.28,.26,.01],C(BRIDGE_COLOURS.panel));}
     obox(b,[a[0],y+.6,a[1]],ax,[0,1,0],out,[.16,.62,.27],C(BRIDGE_COLOURS.balustrade));// post at each panel joint
    }
@@ -157,7 +159,7 @@ export function northBridge(b:Batch,input:NorthBridgeInput){
  return {frame:f,piers:pierParts,ribs};
 }
 
-export interface WaverleyBridgeInput {ring:Pt[];deck:Deck;columns:{s:number;cols:number[][]}[]}
+export interface WaverleyBridgeInput {ring:Pt[];deck:Deck;columns:{s:number;cols:number[][]}[];ground?:(x:number,z:number)=>number}
 /** Waverley Bridge below and beside its deck: plate-girder fascia, columns on the island platforms at its six support lines, balustrade. */
 export function waverleyBridge(b:Batch,input:WaverleyBridgeInput){
  const f=bridgeFrame(input.ring),up:V3=[0,1,0],deck=input.deck,columns:{x:number;z:number;bottom:number;top:number}[]=[];
@@ -171,5 +173,30 @@ export function waverleyBridge(b:Batch,input:WaverleyBridgeInput){
  }
  fascia(b,f,deck,BRIDGE_COLOURS.girder,1.8);
  parapets(b,f,deck,'waverley');
- return {frame:f,columns};
+ const ramp=input.ground?marketStreetRamp(b,f,deck,input.ground):null;
+ return {frame:f,columns,ramp};
+}
+
+/**
+ * The approach toward Market Street: the road runs on from the bridge's south end on its own line between masonry retaining walls,
+ * graded from the deck to where the ground meets it (ASSUMED: straight on, the end width, walls 0.5 m with a 1.1 m parapet; R-wv2-b2
+ * shows the walled approach). Returns the road's centre profile and footprint for the tests.
+ */
+export function marketStreetRamp(b:Batch,f:Frame,deck:Deck,ground:(x:number,z:number)=>number){
+ const L=f.length,e0=f.at(L,0),e1=f.at(L,1),c0=f.at(L,.5),c1=f.at(L-5,.5),u=[(c0[0]-c1[0])/5,(c0[1]-c1[1])/5];
+ const at=(k:number,t:number):Pt=>{const e=[e0[0]+(e1[0]-e0[0])*t,e0[1]+(e1[1]-e0[1])*t];return [e[0]+u[0]*k,e[1]+u[1]*k];};
+ const y0=deck(c0),high=(k:number)=>Math.max(...[0,.25,.5,.75,1].map(t=>{const p=at(k,t);return ground(p[0],p[1]);}));
+ let K=0;while(K<40&&high(K)<y0-.05)K+=1;
+ const yK=Math.max(y0-.05,high(K)),road=(k:number)=>y0+(yK-y0)*k/Math.max(1,K);
+ const footprint:Pt[]=[at(0,0),at(K,0),at(K,1),at(0,1)],profile:{k:number;y:number;ground:number}[]=[];
+ for(let k=0;k<K;k+=2){const k1=Math.min(K,k+2),ya=road(k),yb=road(k1);
+  const low=Math.min(...[0,.5,1].flatMap(t=>[at(k,t),at(k1,t)]).map(p=>ground(p[0],p[1])))-.15;
+  const q=(kk:number,t:number,y:number):V3=>{const p=at(kk,t);return [p[0],y,p[1]];};
+  b.poly([q(k,.03,ya),q(k,.97,ya),q(k1,.97,yb),q(k1,.03,yb)],undefined,{facing:[0,1,0],color:C(0x56585b)});
+  b.poly([q(k,.03,ya),q(k1,.03,yb),q(k1,.97,yb),q(k,.97,ya)],undefined,{facing:[0,-1,0],color:C(BRIDGE_COLOURS.pier)});
+  for(const t of [.015,.985]){const a=at(k,t),c=at(k1,t),ym=(ya+yb)/2;
+   wallBox(b,a,c,low,ym+1.1-.12,.25,C(BRIDGE_COLOURS.pier),.01);wallBox(b,a,c,ym+1.1-.12,ym+1.1,.32,C(BRIDGE_COLOURS.coping),.01);}
+  const m=at((k+k1)/2,.5);profile.push({k:(k+k1)/2,y:(ya+yb)/2,ground:ground(m[0],m[1])});
+ }
+ return {length:K,footprint,profile,start:y0,end:yK};
 }

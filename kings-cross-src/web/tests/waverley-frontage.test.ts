@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildWaverleyFrontage,WAVERLEY_FRONTAGE_HEIGHTS,WAVERLEY_FRONTAGE_SOURCES,WAVERLEY_FRONTAGE_OMIT_IDS} from '../src/waverley-frontage.ts';
 import {BALMORAL_LEVELS,towerFrame} from '../src/waverley-frontage-balmoral.ts';
-import {NORTH_BRIDGE,bridgeFrame} from '../src/waverley-frontage-bridges.ts';
+import {NORTH_BRIDGE,WAVERLEY_BRIDGE_COLUMN,bridgeFrame} from '../src/waverley-frontage-bridges.ts';
 import {buildWaverleyScene,waverleyRailwayFootprint,waverleyRailwayIntrusions,waverleyTrackSegments} from '../src/waverley-scene.ts';
 import {WAVERLEY_LEVELS} from '../src/waverley-mesh.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
@@ -31,7 +31,7 @@ test('published tower, dial and bridge figures retain primary citations',()=>{
 });
 test('frontage keeps mapped bridge layers, finite bounded geometry and owned disposal',()=>{
  assert.deepEqual(data.bridges.map(b=>[b.id,b.layer]),[['way/380552925',2],['way/377738788',1]]);
- const built=buildWaverleyFrontage(ground);assert.equal(built.stats.drawCalls,6);assert.ok(built.stats.triangles<240000);
+ const built=buildWaverleyFrontage(ground);assert.equal(built.stats.drawCalls,7);assert.ok(built.stats.triangles<240000);
  assert.deepEqual(built.omitBuildingIds,WAVERLEY_FRONTAGE_OMIT_IDS);
  let count=0,disposed=0;
  built.group.traverse((obj:THREE.Object3D)=>{if(obj instanceof THREE.Mesh){count++;const p=obj.geometry.getAttribute('position');for(let i=0;i<p.count;i++)for(const v of [p.getX(i),p.getY(i),p.getZ(i)])assert.ok(Number.isFinite(v));obj.geometry.addEventListener('dispose',()=>disposed++);}});
@@ -69,7 +69,12 @@ test('the hotel stands on its unchanged OSM outline, walls to the main cornice, 
  try {
   const P=built.group.userData.frontage.P,body=ringOf(extra.balmoralBody.ring);
   const facade=positions(built.group.getObjectByName('waverley-balmoral-facade') as THREE.Mesh);
-  for(const v of facade){assert.ok(body.some(p=>Math.abs(p[0]-v.x)<1e-3&&Math.abs(p[1]-v.z)<1e-3),'every facade corner is an OSM outline vertex');assert.ok(v.y<=P+BALMORAL_LEVELS.cornice+1e-3);}
+  // the walls' corners are OSM vertices; the only others are the projecting bays', at most 0.6 m off the outline and above the balcony
+  let bays=0;
+  for(const v of facade){const vertex=body.some(p=>Math.abs(p[0]-v.x)<1e-3&&Math.abs(p[1]-v.z)<1e-3);
+   if(!vertex){bays++;assert.ok(edgeDist(v.x,v.z,body)<=.6+.05&&v.y>=P+8.5-1e-3,`facade corner ${v.x.toFixed(2)},${v.z.toFixed(2)} off the outline is not a projecting bay's`);}
+   assert.ok(v.y<=P+BALMORAL_LEVELS.cornice+1e-3);}
+  assert.ok(bays>=2*12&&bays<=3*12+1e-9,`two or three projecting bays (${bays/12})`);
   assert.ok(facade.some(v=>Math.abs(v.y-P-BALMORAL_LEVELS.cornice)<1e-3));
   for(const v of positions(built.group.getObjectByName('waverley-balmoral-tower') as THREE.Mesh))assert.ok(v.y>=P+BALMORAL_LEVELS.cornice-1e-3,'the textured tower starts at the cornice, above the coplanar body wall');
   // HES: 5 storeys, mezzanine and attic. The cornice holds six levels; the attic is above it
@@ -133,7 +138,7 @@ test('Waverley Bridge: six support lines (seven spans, HES LB30270), each column
   assert.ok(on,`column at ${c.x},${c.z} stands on a platform`);
   // the lead's ruling (round 1): the whole base at least 1.0 m in from the platform edge and off the coping, yellow tactile strip and
   // white line, which run to 1.15 m from the edge (materials.ts platformEdge); probed round the base's circumscribing circle
-  for(let k=0;k<16;k++){const a=k*Math.PI/8,x=c.x+.42*Math.SQRT2*Math.cos(a),z=c.z+.42*Math.SQRT2*Math.sin(a);
+  for(let k=0;k<16;k++){const a=k*Math.PI/8,x=c.x+WAVERLEY_BRIDGE_COLUMN.reach*Math.cos(a),z=c.z+WAVERLEY_BRIDGE_COLUMN.reach*Math.sin(a);
    assert.ok(inRing(x,z,on.path as Pt[]),'the base stays on its platform');const d=edgeDist(x,z,on.path as Pt[]);
    assert.ok(d>=1.0&&d>=1.15,`column base ${d.toFixed(2)} m from the platform edge, inside the edge, tactile or line zone`);}
   for(const s of tracks)assert.ok(segDist(c.x,c.z,[s[0],s[1]],[s[2],s[3]])>3.2,'3.2 m from any track centre');
@@ -165,6 +170,48 @@ test('bridge decks use unwarped public context terrain instead of the flattened 
     assert.ok(found,`${bridge.id} endpoint deck follows the unwarped source height`);
    }
   }
-  assert.equal(built.stats.drawCalls,6);
+  assert.equal(built.stats.drawCalls,7);
  } finally {built.dispose();}
+});
+
+test('the Waverley Steps keep public-stair dimensions, stand on the ground and stay inside the mapped cover',()=>{
+ const st=frontageOf().steps,ring=ringOf(extra.waverleySteps.ring),g=realScene().terrain;
+ assert.equal(extra.waverleySteps.id,'way/577519823');
+ const body=ringOf(extra.balmoralBody.ring),mall=ringOf(extra.princesMall.ring);
+ let run=0,rises=0;
+ for(let i=0;i<st.treads.length;i++){const t=st.treads[i];assert.ok(t.s1>t.s0);
+  for(const s of [t.s0+.02,(t.s0+t.s1)/2,t.s1-.02])for(const k of [.2,.5,.8]){const p=st.frame.at(s,k);
+   assert.ok(inRing(p[0],p[1],ring)||edgeDist(p[0],p[1],ring)<.05,`tread at ${s.toFixed(1)} inside the cover`);
+   assert.ok(t.y>=g.heightAt(p[0],p[1])-.005,`tread at s ${s.toFixed(2)} is ${(g.heightAt(p[0],p[1])-t.y).toFixed(2)} m under the ground`);}
+  if(t.flight){const d=st.treads[i-1].y-t.y;assert.ok(d>0&&d<=.17+1e-9,'rise at most 170 mm');assert.ok(t.s1-t.s0>=.3-1e-9,'going at least 300 mm');run++;rises++;assert.ok(run<=12,'at most 12 risers a flight');}
+  else{if(i>0&&st.treads[i-1].flight&&i<st.treads.length-1)assert.ok(t.s1-t.s0>=1.8-1e-9,'landing at least 1.8 m');run=0;}}
+ assert.ok(rises>=40,`the stair falls ${rises} risers`);
+ const last=st.treads.at(-1)!,foot=st.frame.at(last.s1-.05,.5);assert.ok(last.y-g.heightAt(foot[0],foot[1])<.3,'the stair lands on the station floor');
+ const head=st.frame.at(.1,.5);assert.ok(Math.abs(st.treads[0].y-g.heightAt(head[0],head[1]))<.6,'the head meets Princes Street');
+ for(const k of st.canopy){for(const t of st.treads)if(t.s1>=k.s-2&&t.s0<=k.s+2)assert.ok(k.y-t.y>=2.4,`canopy headroom ${(k.y-t.y).toFixed(2)} at s ${k.s}`);
+  for(const t of [.02,.98]){const p=st.frame.at(k.s,t);assert.ok(!inRing(p[0],p[1],body)&&!inRing(p[0],p[1],mall)||edgeDist(p[0],p[1],ring)<1,'the canopy stays off the hotel and the mall');}}
+ assert.ok(st.trees.length>=2);
+ for(const tr of st.trees){assert.ok(inRing(tr.x,tr.z,ring));assert.ok(tr.y1-tr.y0>=2.4);assert.ok(st.treads.some((t:{flight:boolean;y:number})=>!t.flight&&Math.abs(t.y-tr.y0)<1e-9),'every tree stands on a landing');}
+});
+
+test('the Market Street approach runs on from the bridge, grades down to the ground and keeps off the tracks and every mapped building',()=>{
+ const r=frontageOf().waverleyBridge.ramp,tracks=waverleyTrackSegments(scene),g=realScene().terrain;
+ assert.ok(r&&r.length>=10&&r.length<40,`approach ${r?.length} m`);
+ assert.ok(Math.abs(r.profile[0].y-r.start)<.6,'it starts at the deck');
+ const last=r.profile.at(-1)!;assert.ok(last.y-last.ground<1.2&&last.y>=last.ground-.05,'it meets the ground');
+ for(const q of r.profile)assert.ok(q.y>=q.ground-.05,`road ${q.y.toFixed(2)} under the ground ${q.ground.toFixed(2)}`);
+ const fp=r.footprint as Pt[];
+ for(let k=0;k<=20;k++)for(let j=0;j<=4;j++){const a=fp[0],b=fp[1],c=fp[3],x=a[0]+(b[0]-a[0])*k/20+(c[0]-a[0])*j/4,z=a[1]+(b[1]-a[1])*k/20+(c[1]-a[1])*j/4;
+  for(const t of tracks)assert.ok(segDist(x,z,[t[0],t[1]],[t[2],t[3]])>3.2,'3.2 m from any track centre');
+  for(const p of scene.platforms)assert.ok(!inRing(x,z,p.path as Pt[]),'off the platforms');
+  for(const bld of [...scene.buildings,...scene.roofs] as {id:string;outer:Pt[]}[])assert.ok(!inRing(x,z,bld.outer),`inside ${bld.id}`);
+  void g;}
+});
+test('the Balmoral crown: the ogee bell stands clear above the clock gables and the corner spires, all under the published top',()=>{
+ const T=BALMORAL_LEVELS.tower;
+ assert.ok(T.dome-T.gable>=2.5,'the bell rises at least 2.5 m over the gables\' apex, so it reads above them from the street');
+ assert.ok(T.dome-T.cornice>=3,'a bell at least 3 m tall');
+ assert.ok(T.turretCap+1.6<T.dome,'the corner spires stop under the bell\'s shoulder');
+ assert.ok(T.turretCap+1.6-T.turret>=4,'tall ogee crown spires, bell and point');
+ assert.ok(T.top>T.dome+2,'a lantern and finial over the bell');
 });

@@ -13,6 +13,7 @@ import type {ClockDial} from './clocks.ts';
 import {BALMORAL_COLOURS,BALMORAL_LEVELS,balmoralBody,balmoralFacadeTexture,balmoralTower,balmoralTowerTexture,towerFrame} from './waverley-frontage-balmoral.ts';
 import {northBridge,waverleyBridge} from './waverley-frontage-bridges.ts';
 import {princesMall} from './waverley-frontage-mall.ts';
+import {waverleySteps} from './waverley-frontage-steps.ts';
 import data from './data/waverley-frontage.json' with {type:'json'};
 import extra from './data/waverley-frontage-extra.json' with {type:'json'};
 export const WAVERLEY_FRONTAGE_HEIGHTS={balmoral:58,clockDiameter:3.2} as const;
@@ -32,7 +33,7 @@ export function buildWaverleyFrontage(ground:Pick<Terrain,'heightAt'|'rangeUnder
  const ownedGeometries:THREE.BufferGeometry[]=[],ownedMaterials:THREE.Material[]=[],ownedTextures:THREE.Texture[]=[];
  const add=(b:Batch,m:THREE.Material,name:string)=>{if(!b.triangles)return;const g=b.build(),mesh=new THREE.Mesh(g,m);mesh.name=name;group.add(mesh);ownedGeometries.push(g);stats.drawCalls++;stats.triangles+=b.triangles;};
  const own=<T extends THREE.Material>(m:T):T=>{ownedMaterials.push(m);return m;};
- const decks=new Batch(),paint=new Batch({colored:true}),spire=new Batch({colored:true}),facade=new Batch(),tower=new Batch(),dial=new Batch();
+ const decks=new Batch(),paint=new Batch({colored:true}),spire=new Batch({colored:true}),facade=new Batch(),tower=new Batch(),dial=new Batch(),glass=new Batch({uv:false});
  // decks: the mapped outlines, ends at the unwarped DTM, linear between (unchanged rule)
  const deckOf=(ring:Pt[])=>{const byZ=[...ring].sort((a,b)=>a[1]-b[1]),a=byZ[0],b=byZ.at(-1)!,y0=contextTerrain.heightAt(...a),y1=contextTerrain.heightAt(...b);
   return (p:Pt)=>y0+(y1-y0)*Math.max(0,Math.min(1,(p[1]-a[1])/(b[1]-a[1])));};
@@ -40,9 +41,10 @@ export function buildWaverleyFrontage(ground:Pick<Terrain,'heightAt'|'rangeUnder
  for(const r of [nb,wb]){const deck=deckOf(r);shell(decks,r,p=>deck(p)-1,deck);}
  const seat=ringOf(extra.northBridgePierSeat.ring);
  const north=northBridge(paint,{ring:nb,deck:deckOf(nb),ground:r=>ground.rangeUnder(r,2).min,seatTop:ground.rangeUnder(seat,4).min+extra.northBridgePierSeat.height});
- const waverley=waverleyBridge(paint,{ring:wb,deck:deckOf(wb),columns:extra.waverleyBridgeColumns});
+ const waverley=waverleyBridge(paint,{ring:wb,deck:deckOf(wb),columns:extra.waverleyBridgeColumns,ground:(x,z)=>ground.heightAt(x,z)});
  const mallRing=ringOf(extra.princesMall.ring),mallNorth=[...mallRing].sort((a,b)=>a[1]-b[1])[0];
  const mall=princesMall(paint,{ring:mallRing,holes:extra.princesMall.holes.map(ringOf),roof:contextTerrain.heightAt(...mallNorth),foot:ground.rangeUnder(mallRing,4).min-.15});
+ const steps=waverleySteps(paint,glass,{ring:ringOf(extra.waverleySteps.ring),ground});
  // the Balmoral: P is the street at the tower's north corner, the body stands on the lowest ground under its outline (as the city's blocks do)
  const tr=ringOf(data.balmoral.ring),body=ringOf(extra.balmoralBody.ring),northCorner=[...tr].sort((a,b)=>a[1]-b[1])[0],P=ground.heightAt(...northCorner);
  const input={towerRing:tr,bodyRing:body,P,foot:ground.rangeUnder(body,4).min-.15};
@@ -63,7 +65,10 @@ export function buildWaverleyFrontage(ground:Pick<Terrain,'heightAt'|'rangeUnder
  const towerMat=own(new THREE.MeshLambertMaterial({map:towerMap,color:towerMap?0xffffff:BALMORAL_COLOURS.stone}));
  const dialMat=own((material('concrete') as THREE.MeshLambertMaterial).clone());dialMat.color.setHex(0xeee8d1);
  add(decks,deckMat,'waverley-bridge-decks');add(paint,paintMat,'waverley-frontage-structure');add(facade,facadeMat,'waverley-balmoral-facade');add(tower,towerMat,'waverley-balmoral-tower');
+ // the steps' canopy and balustrade glass: clear, a little green, never writing depth so what is behind shows (ASSUMED tone)
+ const glassMat=own(new THREE.MeshLambertMaterial({color:0xcfe0dc,transparent:true,opacity:.32,depthWrite:false,side:THREE.DoubleSide}));
+ add(glass,glassMat,'waverley-steps-canopy');
  add(spire,paintMat,'waverley-balmoral-spire-and-hands');add(dial,dialMat,'waverley-balmoral-clock-dials');
- group.userData.frontage={northBridge:north,waverleyBridge:waverley,mall,P};
+ group.userData.frontage={northBridge:north,waverleyBridge:waverley,mall,steps,P};
  let disposed=false;return {group,stats,omitBuildingIds:[...WAVERLEY_FRONTAGE_OMIT_IDS],dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of ownedGeometries)g.dispose();for(const m of ownedMaterials)m.dispose();for(const t of ownedTextures)t.dispose();group.clear();}};
 }
