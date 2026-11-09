@@ -131,6 +131,9 @@ test('axis07 evidence: absent relay logs and incomplete GPU phases prevent a cle
     { ...good, phases: good.phases.map((p) => ({ ...p, validCsp: false })) },
     { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { osm: false } } })) },
     { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { ...p.attribution.present, openMeteo: false } } })) },
+    // Each credit is required on its own: a pack that lacks only one of them cannot pass (openMeteo is the case above).
+    ...['osm', 'environmentAgency', 'openGovernmentLicence'].map((credit) => ({ ...good,
+      phases: good.phases.map((p) => ({ ...p, attribution: { present: { ...p.attribution.present, [credit]: false } } })) })),
     { ...good, cspAudit: { valid: false, connectSrc: ['*'], problems: ['connect-src is *'] } }, { ...good, cspAudit: undefined }]) {
     await writeFile(file, JSON.stringify(bad)); assert.equal((await browserEvidence(file)).status, 'FAIL');
   }

@@ -1,9 +1,16 @@
 """Mutation check for core/station.ts, the new core/scene.ts helpers, and tools/fidelity.ts.
-usage: python3 -I -u tools/mutation/station.py <kings-cross-src> <scratch dir> <raw osm extract>"""
-import json, re, shutil, subprocess, sys
+usage: python3 -I -u tools/mutation/station.py <kings-cross-src> <scratch dir> <raw osm extract>
+Everything runs in a copy with the real node_modules linked in. The unmodified copy must pass the core tests
+and the fidelity CLI before anything is mutated, and a load or crash error is an ERROR, never a kill
+(tools/mutation/lib/kxmut.py)."""
+import json, sys
 from pathlib import Path
 
-src = Path(sys.argv[1]); scratch = Path(sys.argv[2]); raw = sys.argv[3]
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+src = Path(sys.argv[1]).resolve(); scratch = Path(sys.argv[2]).resolve(); raw = sys.argv[3]
 S = "core/station.ts"; C = "core/scene.ts"
 M = [
     ("longAxis: length and width swapped", S, "if (along >= across) {", "if (along < across) {"),
@@ -58,31 +65,8 @@ M = [
     ("train pose: nose south of the stop", S, "stop.z - Math.cos(shed.heading) * noseGap]", "stop.z + Math.cos(shed.heading) * noseGap]"),
     ("buffers: behind the south end", S, "u >= 0 && u <= shed.width && v >= 0 && v <= 40", "u >= 0 && u <= shed.width && v <= 40"),
 ]
-survived = []
-def run_tests(work, files):
-    return subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=8000", *files], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=90)
-
-tests = sorted(str(p.relative_to(src)) for p in (src / "core" / "tests").glob("*.test.ts"))
-for i, (label, rel, old, new) in enumerate(M):
-    work = scratch / f"u{i:02d}"
-    if work.exists(): shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-    f = work / rel; text = f.read_text()
-    if old not in text:
-        print(f"[SKIP    ] {label}: pattern not found", flush=True); survived.append(label); shutil.rmtree(work); continue
-    f.write_text(text.replace(old, new, 1))
-    try:
-        r = run_tests(work, tests)
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    if r.returncode != 0:
-        print(f"[KILLED  ] {label} <- {failed[0] if failed else '(non-zero exit)'}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-    shutil.rmtree(work)
-
 # data mutations: the committed data is part of what the tests pin
+DATA = "web/src/data/kx-track.json"
 def surface_underground(d):
     for p in d["platforms"]:
         if p.get("id") == 110643740:  # a deep tube platform
@@ -91,30 +75,9 @@ def stretch3(d):
     for p in d["platforms"]:
         if p.get("id") == 68294392:
             for pt in p["pts"]: pt[1] = round(pt[1] * 1.01, 1)
-for label, fn in [("data: an underground platform passes as surface", surface_underground), ("data: platform 3 stretched by 1 % (pinned lengths)", stretch3)]:
-    work = scratch / "dm"
-    if work.exists(): shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-    d = json.loads((work / "web/src/data/kx-track.json").read_text()); fn(d)
-    (work / "web/src/data/kx-track.json").write_text(json.dumps(d))
-    try:
-        r = run_tests(work, tests)
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); M.append(None); continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    if r.returncode != 0:
-        print(f"[KILLED  ] {label} <- {failed[0] if failed else '(non-zero exit)'}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-    M.append(None)
-    shutil.rmtree(work)
+DATA_MUTATIONS = [("data: an underground platform passes as surface", surface_underground), ("data: platform 3 stretched by 1 % (pinned lengths)", stretch3)]
 
 # the fidelity script must fail when the model drifts from the raw extract
-def fid(work):
-    return subprocess.run(["node", "tools/fidelity.ts", "--raw", raw], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
-
-DATA = "web/src/data/kx-track.json"
-cases = []
 def stretch_platform(d):  # platform 3 drawn 1 % too long
     for p in d["platforms"]:
         if p.get("id") == 68294392:  # King's Cross platform 3 (St Pancras has a platform 3 too)
@@ -128,23 +91,56 @@ def extra_platform_11(d):
     for p in d["platforms"]:
         if p.get("id") == 945776388:  # King's Cross platform 10
             q = copy.deepcopy(p); q["ref"] = "11"; q["id"] = 1; d["platforms"].append(q); break
-cases = [("fidelity: platform 3 stretched by 1 %", stretch_platform), ("fidelity: track nodes scaled 3 %", shift_all_rails), ("fidelity: platform 10 missing", drop_platform_10), ("fidelity: a platform 11 appears", extra_platform_11)]
-work = scratch / "fid"
-if work.exists(): shutil.rmtree(work)
-shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-base = fid(work)
-print(f"[BASELINE] fidelity unmodified exit {base.returncode}", flush=True)
-if base.returncode != 0: survived.append("fidelity baseline is not clean")
-orig = (work / DATA).read_text()
-for label, fn in cases:
-    d = json.loads(orig); fn(d); (work / DATA).write_text(json.dumps(d))
-    r = fid(work)
-    if r.returncode != 0:
-        print(f"[KILLED  ] {label}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-shutil.rmtree(work)
+FIDELITY_MUTATIONS = [("fidelity: platform 3 stretched by 1 %", stretch_platform), ("fidelity: track nodes scaled 3 %", shift_all_rails), ("fidelity: platform 10 missing", drop_platform_10), ("fidelity: a platform 11 appears", extra_platform_11)]
 
-total = len(M) + len(cases)
-print(f"\n{total - len(survived)}/{total} mutations caught")
-for s in survived: print("  NOT CAUGHT:", s)
+# The only survivor the README documents: counting crossings to the left of the point instead of to the right
+# gives the same parity for any closed polygon, so no test can tell the two apart. tools/evidence-pack.mjs
+# accepts exactly this label for this driver and fails collection on every other survivor.
+KNOWN_EQUIVALENT = {"pointInPolygon: wrong side of the edge"}
+
+if not Path(raw).is_file():
+    raise SystemExit(f"raw OSM extract not found: {raw}")
+tally = kxmut.Tally(known_equivalent=KNOWN_EQUIVALENT)
+with kxmut.workspace(src, scratch, "station") as work:
+    tests = sorted(str(p.relative_to(work)) for p in (work / "core" / "tests").glob("*.test.ts"))
+
+    def run():
+        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90, force_exit=True)
+
+    def fid():
+        return kxmut.run_command(work, ["node", "tools/fidelity.ts", "--raw", raw], timeout=60)
+
+    baseline = kxmut.require_green(run(), "core/tests/*.test.ts")
+    clean = fid()
+    if clean.returncode != 0 or clean.expired:
+        raise SystemExit(f"BASELINE NOT GREEN (node tools/fidelity.ts --raw <extract>): exit {clean.returncode}\n{clean.tail()}\nthe unmodified copy must pass before any fidelity mutation counts")
+    print("[BASELINE] fidelity unmodified exit 0", flush=True)
+
+    for label, rel, old, new in M:
+        try:
+            with kxmut.mutated(work / rel, [(old, new)]):
+                verdict = kxmut.judge(run(), baseline)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+
+    original = (work / DATA).read_text()
+    for label, fn in DATA_MUTATIONS:
+        d = json.loads(original); fn(d)
+        (work / DATA).write_text(json.dumps(d))
+        try:
+            verdict = kxmut.judge(run(), baseline)
+        finally:
+            (work / DATA).write_text(original)
+        tally.record(label, verdict)
+
+    for label, fn in FIDELITY_MUTATIONS:
+        d = json.loads(original); fn(d)
+        (work / DATA).write_text(json.dumps(d))
+        try:
+            verdict = kxmut.judge_cli(fid(), fail_marker="\nFAIL:\n")
+        finally:
+            (work / DATA).write_text(original)
+        tally.record(label, verdict)
+sys.exit(tally.finish())

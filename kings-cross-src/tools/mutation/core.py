@@ -1,15 +1,18 @@
 """Mutation check for the core (TypeScript) tests.
 
 usage: python3 -I -u tools/mutation/core.py <path to kings-cross-src> <scratch dir>
+The tests run in a copy with the real node_modules linked in. The unmodified copy must pass first, and a
+kill is a named test failing: a load or crash error is an ERROR (tools/mutation/lib/kxmut.py).
 """
-import re
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
-src = Path(sys.argv[1])
-scratch = Path(sys.argv[2])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+src = Path(sys.argv[1]).resolve()
+scratch = Path(sys.argv[2]).resolve()
 
 # (label, relative file, old, new, replace_all)
 M = [
@@ -34,37 +37,20 @@ M = [
     ("data: attribution removed", "web/src/data/kx-track.json", "OpenStreetMap", "Elsewhere", False),
 ]
 
-survived = []
-for i, (label, rel, old, new, all_) in enumerate(M):
-    work = scratch / f"c{i:02d}"
-    if work.exists():
-        shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-    f = work / rel
-    text = f.read_text()
-    if old not in text:
-        print(f"[SKIP   ] {label}: pattern not found in {rel}", flush=True)
-        survived.append(label)
-        shutil.rmtree(work)
-        continue
-    f.write_text(text.replace(old, new) if all_ else text.replace(old, new, 1))
-    try:
-        r = subprocess.run(
-            ["node", "--test", "--test-force-exit", "--test-timeout=8000", *sorted(str(p.relative_to(work)) for p in (work / "core" / "tests").glob("*.test.ts"))],
-            cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60,
-        )
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED ] {label}  (hung)", flush=True)
-        shutil.rmtree(work, ignore_errors=True)
-        continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    if r.returncode != 0:
-        print(f"[KILLED ] {label}  <- {failed[0] if failed else '(non-zero exit)'}" + (f" (+{len(failed) - 1})" if len(failed) > 1 else ""), flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True)
-        survived.append(label)
-    shutil.rmtree(work)
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, "core") as work:
+    tests = sorted(str(p.relative_to(work)) for p in (work / "core" / "tests").glob("*.test.ts"))
 
-print(f"\n{len(M) - len(survived)}/{len(M)} mutations caught")
-for s in survived:
-    print("  NOT CAUGHT:", s)
+    def run():
+        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90, force_exit=True)
+
+    baseline = kxmut.require_green(run(), "core/tests/*.test.ts")
+    for label, rel, old, new, all_ in M:
+        try:
+            with kxmut.mutated(work / rel, [(old, new)], every=all_):
+                verdict = kxmut.judge(run(), baseline)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+sys.exit(tally.finish())

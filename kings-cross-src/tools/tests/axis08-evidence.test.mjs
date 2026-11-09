@@ -78,6 +78,8 @@ test('full scene waits for city completion, actual geometry and a later renderer
 
 test('CLI rejects invalid options, too few runs and output outside private scratch', async () => {
   await assert.rejects(main(['--unknown']), /unknown/);
+  // Order matters: an unsafe --out stops a bypassed run-count guard here, instead of letting it go on to run a real build and browser.
+  await assert.rejects(main(['--runs', '1', '--out', '/private/tmp/outside']), /integer/);
   await assert.rejects(main(['--runs', '1']), /integer/);
   await assert.rejects(main(['--out', '/private/tmp/outside']), /beneath/);
 });

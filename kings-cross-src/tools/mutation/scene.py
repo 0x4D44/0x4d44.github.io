@@ -1,8 +1,14 @@
-"""Mutation check for core/scene.ts tests. usage: python3 -I -u tools/mutation/scene.py <kings-cross-src> <scratch dir>"""
-import re, shutil, subprocess, sys
+"""Mutation check for core/scene.ts tests. usage: python3 -I -u tools/mutation/scene.py <kings-cross-src> <scratch dir>
+The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
+load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
 
-src = Path(sys.argv[1]); scratch = Path(sys.argv[2])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+src = Path(sys.argv[1]).resolve(); scratch = Path(sys.argv[2]).resolve()
 F = "core/scene.ts"
 M = [
     ("tunnel rails go in the main bucket", "const bucket = r.tunnel ? out.tunnel : r.service === 'main' ? out.main : out.siding;", "const bucket = r.service === 'main' ? out.main : out.siding;"),
@@ -25,24 +31,18 @@ M = [
     ("bounds minZ wrong", "if (z < minZ) minZ = z;", ""),
     ("bounds reads y as z", "const z = positions[i + 2] as number;", "const z = positions[i + 1] as number;"),
 ]
-survived = []
-for i, (label, old, new) in enumerate(M):
-    work = scratch / f"s{i:02d}"
-    if work.exists(): shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-    f = work / F; text = f.read_text()
-    if old not in text:
-        print(f"[SKIP    ] {label}: pattern not found", flush=True); survived.append(label); shutil.rmtree(work); continue
-    f.write_text(text.replace(old, new, 1))
-    try:
-        r = subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=8000", "core/tests/scene.test.ts"], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    if r.returncode != 0:
-        print(f"[KILLED  ] {label} <- {failed[0] if failed else '(non-zero exit)'}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-    shutil.rmtree(work)
-print(f"\n{len(M) - len(survived)}/{len(M)} mutations caught")
-for s in survived: print("  NOT CAUGHT:", s)
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, "scene") as work:
+    def run():
+        return kxmut.run_tests(work, ["core/tests/scene.test.ts"], test_timeout_ms=8000, timeout=60, force_exit=True)
+
+    baseline = kxmut.require_green(run(), "core/tests/scene.test.ts")
+    for label, old, new in M:
+        try:
+            with kxmut.mutated(work / F, [(old, new)]):
+                verdict = kxmut.judge(run(), baseline)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+sys.exit(tally.finish())

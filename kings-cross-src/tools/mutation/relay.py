@@ -1,15 +1,16 @@
 """Mutation check: break the relay on purpose in a copy and confirm a test fails.
 
 usage: python3 -I -u tools/mutation/relay.py <path to kings-cross-src/relay> <scratch dir>
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass first,
+and a load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py). A run that hangs is reported as
+caught with timeout, as it always was; tools/axis07-evidence.mjs reads these summary lines.
 """
-import os
-import re
-import shutil
-import signal
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -191,60 +192,8 @@ TEST_FILES = [
     'trust.test.mjs', 'units.test.mjs', 'sclass-state.test.mjs', 'recorder.test.mjs',
 ]
 
-def run(work):
-    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               f'--test-name-pattern={OFFLINE_TEST_PATTERN}',
-               *[str((work / 'relay/tests' / name).relative_to(work)) for name in TEST_FILES]]
-    process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, stdin=subprocess.DEVNULL, start_new_session=True)
-    expired = False
-    try:
-        stdout, stderr = process.communicate(timeout=12)
-    except subprocess.TimeoutExpired:
-        expired = True
-        # Node's test runner has child processes. Kill the whole group before reading
-        # its pipes, otherwise a leaked child can hang the mutation driver itself.
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        stdout, stderr = process.communicate(timeout=3)
-    result = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
-    return result, expired or 'testTimeoutFailure' in stdout
-
-
-def test_names(output):
-    return {m.group(1) for m in re.finditer(r'^ok \d+ - (.+)$', output, re.M)
-            if '# SKIP' not in m.group(1) and not m.group(1).startswith('relay/tests/')}
-
-
-def complete_tests(output, expected):
-    names = [name for name in re.findall(r'^(?:ok|not ok) \d+ - ([^\n]+)$', output, re.M)
-             if not name.startswith('relay/tests/')]
-    total = re.search(r'^# tests (\d+)$', output, re.M)
-    return total is not None and int(total[1]) == len(expected) and len(names) == len(expected) and set(names) == expected
-
-
-def named_failures(output, expected):
-    failed = set()
-    for block in re.split(r'(?=^not ok \d+ - )', output, flags=re.M)[1:]:
-        match = re.match(r'not ok \d+ - ([^\n]+)', block)
-        if match and match[1] in expected and 'EPERM' not in block and 'EACCES' not in block:
-            failed.add(match[1])
-    return failed
-
-for label, fname, old, _ in MUTATIONS:
-    if old not in (src / fname).read_text():
-        raise SystemExit(f'mutation pattern missing: {label}')
-
-baseline, expired = run(src.parent)
-if baseline.returncode or expired:
-    print(baseline.stdout, baseline.stderr)
-    raise SystemExit('offline baseline must pass')
-names = test_names(baseline.stdout)
-if not names or not complete_tests(baseline.stdout, names):
-    raise SystemExit('offline baseline TAP output is incomplete')
-new_names = {name for name in names if name.startswith((
+FILES = [f'relay/tests/{name}' for name in TEST_FILES]
+NEW_PREFIXES = (
     'area S-class jobs', 'sclass job: CLI runner passes shared', 'areas:', 'relay multi-area:', 'feed: invalid areas', 'feed: legacy area', 'feed: fake transport parses a mixed-area',
     'relay canonical clock:', 'recorder canonical clock:',
     'relay offline:', 'schedule endpoint offline:', 'schedule integration offline:',
@@ -252,42 +201,27 @@ new_names = {name for name in names if name.startswith((
     'Origin guard', 'SSE heartbeat reports', 'recording and cache symlinks',
     'recordings stream', 'reference downloads reject', 'HTTP errors and logs never echo',
     'relay heartbeat: a connected SSE client', 'trust:', 'state: S-class',
-))}
-seen, survived, timeouts = set(), [], []
-for i, (label, fname, old, new) in enumerate(MUTATIONS):
-    with tempfile.TemporaryDirectory(prefix='relay-', dir=scratch) as tmp:
-        work = Path(tmp)
-        shutil.copytree(src, work / 'relay')
-        shutil.copytree(src.parent / 'core', work / 'core')
-        (work / 'web/src/data').mkdir(parents=True)
-        shutil.copy2(src.parent / 'web/src/signals.ts', work / 'web/src/signals.ts')
-        shutil.copy2(src.parent / 'web/src/data/kx-track.json', work / 'web/src/data/kx-track.json')
-        (work / 'node_modules').symlink_to(src.parent / 'node_modules', target_is_directory=True)
-        f = work / 'relay' / fname
-        f.write_text(f.read_text().replace(old, new, 1))
-        result, expired = run(work)
-        failed = named_failures(result.stdout, names)
-        seen.update(failed)
-        if expired:
-            log = scratch / f'mutation-{i:02d}.log'
-            log.write_text(result.stdout + result.stderr)
-            print(f'[CAUGHT WITH TIMEOUT] {label} ({log})', flush=True)
-            timeouts.append(label)
-            continue
-        # A timeout is reported separately above; ordinary kills need a named assertion.
-        if result.returncode and failed and complete_tests(result.stdout, names) and not result.stderr:
-            print(f'[KILLED] {label} <- {sorted(failed)[0]}', flush=True)
-        else:
-            log = scratch / f'mutation-{i:02d}.log'
-            log.write_text(result.stdout + result.stderr)
-            print(f'[SURVIVED] {label} (exit {result.returncode}; {log})', flush=True)
-            survived.append((label, 'no named assertion failed'))
+)
 
-print(f'\n{len(MUTATIONS) - len(survived)}/{len(MUTATIONS)} mutations caught')
-print(f'{len(timeouts)} caught with timeout')
+tally = kxmut.Tally(timeout_is_caught=True)
+with kxmut.workspace(src.parent, scratch, 'relay') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=5000, timeout=12)
+    names = suite.baseline(FILES, [OFFLINE_TEST_PATTERN]).passed
+    new_names = {name for name in names if name.startswith(NEW_PREFIXES)}
+    for label, fname, old, new in MUTATIONS:
+        try:
+            with kxmut.mutated(work / 'relay' / fname, [(old, new)]):
+                # A listener refused by the sandbox (EPERM/EACCES) is not a test noticing the mutation.
+                verdict, run = suite.judge(FILES, [OFFLINE_TEST_PATTERN], block_markers=r'EPERM|EACCES')
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if verdict.kind == kxmut.KILLED and run.stderr:
+            verdict = kxmut.Verdict(kxmut.ERROR, 'unexpected stderr: ' + run.stderr.strip()[:200])
+        tally.record(label, verdict)
+status = tally.finish()
+seen = tally.red
 print(f'{len(new_names & seen)}/{len(new_names)} new tests observed failing at least once')
-for label, why in survived:
-    print('  NOT CAUGHT:', label, '-', why)
 for name in sorted(new_names - seen):
     print('  NEVER FAILED:', name)
-raise SystemExit(1 if survived or new_names - seen else 0)
+sys.exit(1 if status or new_names - seen else 0)

@@ -1,18 +1,22 @@
 """Bounded synthetic timestamp/ordering checks, no private inputs or source edits.
 
 python3 -I -u kings-cross-src/tools/mutation/axis07-recording-latency.py
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass
+each command first, and every kill must be an assertion (tools/mutation/lib/kxmut.py): a load or crash error,
+a timeout or a mutation whose search text is no longer in the source is an ERROR, not a kill.
 """
-import re
-import shutil
-import subprocess
-import tempfile
+import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(__file__).resolve().parents[2]
 scratch = src.parent / '.scratch' / 'recording-latency-mutations'
-scratch.mkdir(parents=True, exist_ok=True)
 module = 'tools/axis07-recording-latency.mjs'
-suite = 'tools/tests/axis07-recording-latency.test.mjs'
+suite_file = 'tools/tests/axis07-recording-latency.test.mjs'
 mutations = [
     ('wrong quantile rank', 'Math.ceil(n * fraction)', '1'),
     ('source time ignored', 'const lag = row.t - e.time;', 'const lag = row.t;'),
@@ -23,56 +27,41 @@ mutations = [
     ('source regressions missed', 'sourceRegressions++;', 'sourceRegressions += 0;'),
     ('row size is unbounded', '2 * 1024 * 1024', '20 * 1024 * 1024'),
 ]
+# The real browser feed must apply late observations immediately, in delivery order. Exercise that assertion
+# without needing any HTTP or Chrome listener: the live feed hands the timeline the clock's own time, never
+# the event's source time.
+FEED_FILE = 'web/src/feed.ts'
+FEED_TEST = 'web/tests/feed.test.ts'
+FEED_PATTERN = 'late and out-of-order source timestamps'
+FEED_MUTATION = ('live feed schedules by source time instead of receive order',
+                 'timeline.deliver(e, timeline.timeMs(), recordedAtMs === undefined',
+                 'timeline.deliver(e, e.time ?? 0, recordedAtMs === undefined')
 
-def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=10000', suite], cwd=work,
-                          stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=20)
-
-with tempfile.TemporaryDirectory(prefix='case-', dir=scratch) as temp:
-    work = Path(temp)
-    (work / 'tools/tests').mkdir(parents=True)
-    shutil.copy2(src / module, work / module)
-    shutil.copy2(src / suite, work / suite)
-    baseline = run(work)
-    if baseline.returncode: raise SystemExit(baseline.stdout + baseline.stderr)
-    names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-    seen = set()
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, 'recording-latency') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=10000, timeout=60)
+    recording = suite.baseline([suite_file])
+    feed = suite.baseline([FEED_TEST], [FEED_PATTERN])
     for label, old, new in mutations:
-        original = (src / module).read_text()
-        if old not in original: raise SystemExit('missing mutation target: ' + label)
-        (work / module).write_text(original.replace(old, new))
-        result = run(work)
-        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
-        if not result.returncode or not failed or 'ERR_ASSERTION' not in result.stdout:
-            raise SystemExit(f'SURVIVED/INVALID {label}\n{result.stdout}\n{result.stderr}')
-        seen.update(failed)
-        print('CAUGHT ' + label, flush=True)
-    if names - seen: raise SystemExit('never red: ' + ', '.join(sorted(names - seen)))
-    print(f'{len(mutations)}/{len(mutations)} caught; {len(seen)}/{len(names)} tests seen failing; zero survivors')
-    # The real browser feed must apply late observations immediately, in delivery order.
-    # Exercise that new assertion without needing any HTTP or Chrome listener.
-    shutil.copytree(src / 'core', work / 'core')
-    (work / 'web/src').mkdir(parents=True)
-    (work / 'web/tests').mkdir()
-    for name in ['feed.ts', 'board.ts']:
-        shutil.copy2(src / 'web/src' / name, work / 'web/src' / name)
-    shutil.copy2(src / 'web/tests/feed.test.ts', work / 'web/tests/feed.test.ts')
-    for name in ['package.json', 'vite.config.ts']:
-        shutil.copy2(src / name, work / name)
-    (work / 'node_modules').symlink_to(src / 'node_modules', target_is_directory=True)
-    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=10000',
-               '--test-name-pattern=late and out-of-order source timestamps', 'web/tests/feed.test.ts']
-    def feed_run():
-        return subprocess.run(command, cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=20)
-    baseline = feed_run()
-    if baseline.returncode: raise SystemExit(baseline.stdout + baseline.stderr)
-    target = work / 'web/src/feed.ts'
-    original = target.read_text()
-    before = 'timeline.deliver(e); lastDataAt'
-    if before not in original: raise SystemExit('missing feed mutation anchor')
-    target.write_text(original.replace(before, 'timeline.deliver(e, e.time ?? 0); lastDataAt', 1))
-    result = feed_run()
-    if not result.returncode or 'ERR_ASSERTION' not in result.stdout:
-        raise SystemExit('SURVIVED/INVALID source-time scheduling\n' + result.stdout + result.stderr)
-    print('CAUGHT live feed schedules by source time instead of receive order')
-    print(f'{len(mutations) + 1}/{len(mutations) + 1} caught; {len(names) + 1}/{len(names) + 1} tests seen failing; zero survivors')
+        try:
+            with kxmut.mutated(work / module, [(old, new)], every=True):
+                verdict, _run = suite.judge([suite_file], strict=True)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+    label, old, new = FEED_MUTATION
+    try:
+        with kxmut.mutated(work / FEED_FILE, [(old, new)]):
+            verdict, _run = suite.judge([FEED_TEST], [FEED_PATTERN], strict=True)
+    except kxmut.StalePattern as error:
+        tally.stale(label, error)
+    else:
+        tally.record(label, verdict)
+status = tally.finish()
+known = recording.passed | feed.passed
+unseen = known - tally.red
+print(f'{len(tally.red & known)}/{len(known)} tests seen failing')
+for name in sorted(unseen):
+    print('  NEVER RED:', name)
+sys.exit(1 if status or unseen else 0)

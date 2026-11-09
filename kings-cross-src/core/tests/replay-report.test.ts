@@ -222,6 +222,7 @@ test('CLI combines multiple recordings with union reasons, per-recording measure
       { t: 20000, e: event('interpose', { to: '1001', descr: 'SYN4' }) }],
   ], multiData);
   assert.equal(status, 0);
+  assert.ok(Array.isArray(report.recordings), 'a report that combines recordings lists each one');
   assert.equal(report.recordings.length, 2);
   assert.equal(report.recordings[0].metrics.headcodeChurn.renames, 1);
   assert.equal(report.recordings[0].metrics.stepSummary.mappedPairs, 1);

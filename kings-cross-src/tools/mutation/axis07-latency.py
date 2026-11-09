@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Plant stage/report regressions in isolated scratch copies; never edit source."""
+"""Plant stage/report regressions in isolated scratch copies; never edit source.
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass the
+same command first, and a load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
-import re
-import shutil
-import subprocess
-import tempfile
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRATCH = ROOT.parent / '.scratch' / 'axis07-latency' / 'mutation'
@@ -20,27 +24,19 @@ MUTATIONS = [
     ('injected handler never receives events', 'relay/relay.mjs', 'const server = createServer(async (req, res) => {', 'const server = createServer(async (req, res) => { return;', 'real relay handler sends'),
 ]
 
-SCRATCH.mkdir(parents=True, exist_ok=True)
-failures = 0
-for index, (label, file, before, after, pattern) in enumerate(MUTATIONS):
-    work = Path(tempfile.mkdtemp(prefix=f'{index:02d}-', dir=SCRATCH))
-    for directory in ('relay', 'core', 'web/src'):
-        shutil.copytree(ROOT / directory, work / directory)
-    (work / 'tools/tests').mkdir(parents=True)
-    shutil.copy2(ROOT / MODULE, work / MODULE)
-    shutil.copy2(ROOT / TEST, work / TEST)
-    target = work / file
-    source = target.read_text()
-    if before not in source:
-        raise SystemExit(f'missing mutation anchor: {label}')
-    target.write_text(source.replace(before, after, 1))
-    try:
-        result = subprocess.run(['node', '--test', '--test-reporter=tap', f'--test-name-pattern={pattern}', TEST], cwd=work,
-                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
-        failed = re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)
-        killed = result.returncode != 0 and any(pattern in name for name in failed)
-    except subprocess.TimeoutExpired:
-        killed = False
-    print(f'[{"KILLED" if killed else "SURVIVED"}] {label}', flush=True)
-    failures += not killed
-raise SystemExit(1 if failures else 0)
+tally = kxmut.Tally()
+with kxmut.workspace(ROOT, SCRATCH, 'axis07-latency') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=10000, timeout=30)
+    for pattern in sorted({m[4] for m in MUTATIONS}):
+        suite.baseline([TEST], [pattern])
+    for label, file, before, after, pattern in MUTATIONS:
+        try:
+            with kxmut.mutated(work / file, [(before, after)]):
+                verdict, _run = suite.judge([TEST], [pattern])
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if verdict.kind == kxmut.KILLED and not any(pattern in name for name in verdict.failed):
+            verdict = kxmut.Verdict(kxmut.ERROR, f'failed {verdict.failed[:1]}, none of them the {pattern!r} test')
+        tally.record(label, verdict)
+sys.exit(tally.finish())

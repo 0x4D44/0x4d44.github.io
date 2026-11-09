@@ -1,15 +1,21 @@
-"""Bounded, synthetic evidence-runner mutations; no browser, relay or keychain is opened."""
-import re
+"""Bounded, synthetic evidence-runner mutations; no browser, relay or keychain is opened.
+
+The test runs in a copy of the package (with the frozen rubric beside it, as in the repository) with the real
+node_modules linked in. The unmodified copy must pass first, and a load or crash error is an ERROR, not a kill
+(tools/mutation/lib/kxmut.py)."""
 import shutil
-import subprocess
-import tempfile
+import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 PACKAGE = Path(__file__).resolve().parents[2]
 ROOT = PACKAGE.parent
 SCRATCH = ROOT / '.scratch' / 'mutation' / 'evidence-pack'
 RUBRIC = 'wrk_docs/2026.11.07 - KXLIVE - Scoring rubric and loop rules.md'
-SCRATCH.mkdir(parents=True, exist_ok=True)
+TEST = 'kings-cross-src/tools/tests/evidence-pack.test.mjs'
 
 MUTATIONS = [
     ('accept axis ten', '0?([1-9])$', '0?([0-9]+)$'),
@@ -39,47 +45,22 @@ MUTATIONS = [
     ('silently skip undocumented mutation drivers', "options.only.includes('09') && undocumented.length", 'false'),
 ]
 
-
-def run(root):
-    return subprocess.run(
-        ['node', '--test', '--test-reporter=tap', '--test-timeout=10000',
-         'kings-cross-src/tools/tests/evidence-pack.test.mjs'],
-        cwd=root, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
-
-
-baseline = run(ROOT)
-if baseline.returncode:
-    raise SystemExit('baseline failed\n' + baseline.stdout + baseline.stderr)
-names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-seen, survivors, timeouts = set(), [], []
-source = (PACKAGE / 'tools/evidence-pack.mjs').read_text()
-for number, (label, old, new) in enumerate(MUTATIONS, 1):
-    if old not in source:
-        raise SystemExit(f'stale mutation: {label}')
-    with tempfile.TemporaryDirectory(prefix='case-', dir=SCRATCH) as temporary:
-        work = Path(temporary)
-        for relative in [RUBRIC, 'kings-cross-src/tools/mutation/README.md',
-                         'kings-cross-src/tools/tests/evidence-pack.test.mjs']:
-            target = work / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / relative, target)
-        (work / 'kings-cross-src/tools/evidence-pack.mjs').write_text(source.replace(old, new, 1))
+tally = kxmut.Tally()
+with kxmut.workspace(PACKAGE, SCRATCH, 'evidence-pack') as work:
+    repository = work.parent
+    (repository / RUBRIC).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / RUBRIC, repository / RUBRIC)
+    suite = kxmut.Suite(work, cwd=repository, test_timeout_ms=10000, timeout=30)
+    baseline = suite.baseline([TEST])
+    for label, old, new in MUTATIONS:
         try:
-            result = run(work)
-            failures = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
-            killed = result.returncode != 0 and failures and 'ERR_ASSERTION' in result.stdout
-            if killed:
-                seen.update(failures)
-                print(f'KILLED: {label}', flush=True)
-            else:
-                survivors.append(label)
-                (SCRATCH / f'{number:02d}.log').write_text(result.stdout + result.stderr)
-                print(f'SURVIVED: {label}', flush=True)
-        except subprocess.TimeoutExpired:
-            timeouts.append(label)
-            print(f'CAUGHT WITH TIMEOUT: {label}', flush=True)
-print(f'{len(MUTATIONS) - len(survivors)}/{len(MUTATIONS)} mutations caught; {len(timeouts)} caught with timeout')
-print(f'{len(seen & names)}/{len(names)} tests seen failing; unproven: {sorted(names - seen)}')
-for label in survivors:
-    print(f'NOT CAUGHT: {label}')
-raise SystemExit(1 if survivors or names - seen else 0)
+            with kxmut.mutated(work / 'tools/evidence-pack.mjs', [(old, new)]):
+                verdict, _run = suite.judge([TEST], strict='any')
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+status = tally.finish()
+unproven = baseline.passed - tally.red
+print(f'{len(tally.red & baseline.passed)}/{len(baseline.passed)} tests seen failing; unproven: {sorted(unproven)}')
+sys.exit(1 if status or unproven else 0)

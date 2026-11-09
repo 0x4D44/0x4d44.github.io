@@ -1,10 +1,18 @@
 """Mutation check for core/train.ts and its tests.
-usage: python3 -I -u tools/mutation/train.py <kings-cross-src> <scratch dir>"""
-import re, shutil, subprocess, sys
+usage: python3 -I -u tools/mutation/train.py <kings-cross-src> <scratch dir>
+The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
+load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
 
-src = Path(sys.argv[1]); scratch = Path(sys.argv[2])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+src = Path(sys.argv[1]).resolve(); scratch = Path(sys.argv[2]).resolve()
 F = "core/train.ts"
+# More test files can be named here; each is run for every mutation.
+TESTS = ["core/tests/train.test.ts"]
 M = [
     ("driving car 25.35 m", "drivingCarLength: { value: 25.85,", "drivingCarLength: { value: 25.35,"),
     ("intermediate car 25 m", "intermediateCarLength: { value: 26.0,", "intermediateCarLength: { value: 25.0,"),
@@ -112,39 +120,22 @@ M = [
     ("a car's length ignores its family (a PTSO of a 700 as a 387's)", "const f = family ?? FAMILY_OF_CAR[type];", "const f = FAMILY_OF_CAR[type];"),
     ("a Class 700 pantograph base 2.5 m long", "pantographLength: { value: 2.0, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<keyof typeof ELECTROSTAR | 'drivingCarLength', Figure>;", "pantographLength: { value: 2.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<keyof typeof ELECTROSTAR | 'drivingCarLength', Figure>;"),
 ]
-survived = []
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, "train") as work:
+    def run():
+        return kxmut.run_tests(work, TESTS, test_timeout_ms=8000, timeout=60, force_exit=True)
 
-def run_tests(work):
-    return subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=8000", "core/tests/train.test.ts"], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
-
-# every test, from an unmutated run, so that at the end we can say which tests no mutation ever turned red
-base = run_tests(src)
-if base.returncode != 0: sys.exit("the unmutated tests fail:\n" + base.stdout[-3000:])
-all_tests = sorted(set(re.findall(r"^\s*✔ (.+?) \(", base.stdout, re.M)))
-seen_red = set()
-
-for i, (label, old, new) in enumerate(M):
-    work = scratch / f"t{i:02d}"
-    if work.exists(): shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("node_modules", "relay"))
-    f = work / F; text = f.read_text()
-    if old not in text:
-        print(f"[SKIP    ] {label}: pattern not found", flush=True); survived.append(label); shutil.rmtree(work); continue
-    f.write_text(text.replace(old, new, 1))
-    try:
-        r = run_tests(work)
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    seen_red.update(failed)
-    if r.returncode != 0:
-        print(f"[KILLED  ] {label} <- {failed[0] if failed else '(non-zero exit)'}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-    shutil.rmtree(work)
-
-print(f"\n{len(M) - len(survived)}/{len(M)} mutations caught")
-for s in survived: print("  NOT CAUGHT:", s)
-print(f"{len(seen_red)}/{len(all_tests)} tests turned red by at least one mutation")
-for t in all_tests:
-    if t not in seen_red: print("  NEVER RED:", t)
+    # every test, from an unmutated run of the copy, so that at the end we can say which tests no mutation ever turned red
+    baseline = kxmut.require_green(run(), " ".join(TESTS))
+    for label, old, new in M:
+        try:
+            with kxmut.mutated(work / F, [(old, new)]):
+                verdict = kxmut.judge(run(), baseline)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+status = tally.finish()
+print(f"{len(tally.red & baseline.passed)}/{len(baseline.passed)} tests turned red by at least one mutation")
+for t in sorted(baseline.passed - tally.red): print("  NEVER RED:", t)
+sys.exit(status)

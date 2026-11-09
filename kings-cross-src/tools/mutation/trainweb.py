@@ -1,10 +1,16 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, livery.ts) against
 web/tests/train.test.ts and web/tests/train-detail.test.ts.
-usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir>"""
-import os, re, shutil, subprocess, sys
+usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
+The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
+load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
 
-src = Path(sys.argv[1]).resolve(); scratch = Path(sys.argv[2])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+src = Path(sys.argv[1]).resolve(); scratch = Path(sys.argv[2]).resolve()
 F = "web/src/train.ts"
 P = "web/src/train-parts.ts"
 N = "web/src/train-nose.ts"
@@ -239,43 +245,30 @@ M = [
     ("lettering atlas leaves out the newest liveries", "  for (const def of Object.values(LIVERIES)) {\n    for (const cab of [true, false]) {\n      for (let index = 0; index < 6; index++) {", "  for (const def of Object.values(LIVERIES).slice(0, 4)) {\n    for (const cab of [true, false]) {\n      for (let index = 0; index < 6; index++) {", L),
     ("ellipse closes on its first point", "const t = (2 * Math.PI * i) / n;", "const t = (2 * Math.PI * i) / (n - 1);", "web/src/train-geom.ts"),
 ]
-survived = []
 only = sys.argv[3:]
-# every test, from an unmutated run, so that at the end we can say which tests no mutation ever turned red
-base = subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=20000", *TESTS], cwd=src, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=120)
-all_tests = sorted(set(re.findall(r"^\s*✔ (.+?) \(", base.stdout, re.M)))
-if base.returncode != 0: sys.exit("the unmutated tests fail:\n" + base.stdout[-3000:])
-seen_red = set()
-for i, m in enumerate(M):
-    label, old, new = m[:3]
-    rel = m[3] if len(m) > 3 else F
-    if only and not any(o in label for o in only):
-        continue
-    work = scratch / f"w{i:02d}"
-    if work.exists(): shutil.rmtree(work)
-    shutil.copytree(src, work, ignore=shutil.ignore_patterns("relay", "node_modules", "dist"), symlinks=True)
-    os.symlink(src / "node_modules", work / "node_modules")
-    f = work / rel; text = f.read_text()
-    if old not in text:
-        print(f"[SKIP    ] {label}: pattern not found", flush=True); survived.append(label); shutil.rmtree(work); continue
-    f.write_text(text.replace(old, new, 1))
-    try:
-        r = subprocess.run(["node", "--test", "--test-force-exit", "--test-timeout=20000", *TESTS], cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=120)
-    except subprocess.TimeoutExpired:
-        print(f"[KILLED  ] {label} (hung)", flush=True); shutil.rmtree(work, ignore_errors=True); continue
-    failed = sorted(set(re.findall(r"^\s*✖ (.+?) \(", r.stdout, re.M)))
-    seen_red.update(failed)
-    if r.returncode != 0:
-        # with a filter, say every test that went red, so a run of a few mutations shows which tests they exercise
-        shown = " | ".join(failed) if only else (failed[0] if failed else "(non-zero exit)")
-        print(f"[KILLED  ] {label} <- {shown}", flush=True)
-    else:
-        print(f"[SURVIVED] {label}", flush=True); survived.append(label)
-    shutil.rmtree(work)
-total = len([1 for m in M if not only or any(o in m[0] for o in only)])
-print(f"\n{total - len(survived)}/{total} mutations caught")
-for s in survived: print("  NOT CAUGHT:", s)
+selected = [m for m in M if not only or any(o in m[0] for o in only)]
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, "trainweb") as work:
+    def run():
+        return kxmut.run_tests(work, TESTS, test_timeout_ms=20000, timeout=120, force_exit=True)
+
+    # every test, from an unmutated run of the copy, so that at the end we can say which tests no mutation ever turned red
+    baseline = kxmut.require_green(run(), " ".join(TESTS))
+    for m in selected:
+        label, old, new = m[:3]
+        rel = m[3] if len(m) > 3 else F
+        try:
+            with kxmut.mutated(work / rel, [(old, new)]):
+                verdict = kxmut.judge(run(), baseline)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if only and verdict.kind == kxmut.KILLED:
+            # with a filter, say every test that went red, so a run of a few mutations shows which tests they exercise
+            verdict.detail = " | ".join(verdict.failed)
+        tally.record(label, verdict)
+status = tally.finish()
 if not only:
-    print(f"{len(seen_red)}/{len(all_tests)} tests turned red by at least one mutation")
-    for t in all_tests:
-        if t not in seen_red: print("  NEVER RED:", t)
+    print(f"{len(tally.red & baseline.passed)}/{len(baseline.passed)} tests turned red by at least one mutation")
+    for t in sorted(baseline.passed - tally.red): print("  NEVER RED:", t)
+sys.exit(status)

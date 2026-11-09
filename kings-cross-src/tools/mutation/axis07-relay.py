@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Prove the Axis 07 relay probe tests fail under planted guard regressions."""
+"""Prove the Axis 07 relay probe tests fail under planted guard regressions.
+
+Each mutation runs the relay probe tests in a copy of the package with the real node_modules linked in. The
+unmodified copy must pass the same command first, and a load or crash error is an ERROR, not a kill
+(tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
-import re
-import shutil
-import subprocess
-import tempfile
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRATCH = ROOT.parent / '.scratch'
+SCRATCH = ROOT.parent / '.scratch' / 'axis07-relay-mutation'
 SOURCE = 'tools/axis07-relay.mjs'
 TEST = 'tools/tests/axis07-relay.test.mjs'
 
@@ -45,33 +50,19 @@ MUTATIONS = [
 ]
 
 
-def run_mutation(label, old, new, pattern, index):
-    with tempfile.TemporaryDirectory(prefix=f'axis07-{index:02d}-', dir=SCRATCH) as temp:
-        work = Path(temp)
-        for name in ('relay', 'core', 'tools'):
-            shutil.copytree(ROOT / name, work / name)
-        module = work / SOURCE
-        source = module.read_text()
-        if old not in source:
-            raise SystemExit(f'mutation pattern missing: {label}')
-        module.write_text(source.replace(old, new, 1))
-        command = ['node', '--test', '--test-reporter=tap', f'--test-name-pattern={pattern}', TEST]
+tally = kxmut.Tally()
+with kxmut.workspace(ROOT, SCRATCH, 'axis07-relay') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=10000, timeout=30)
+    for pattern in sorted({m[3] for m in MUTATIONS}):
+        suite.baseline([TEST], [pattern])
+    for label, old, new, pattern in MUTATIONS:
         try:
-            result = subprocess.run(command, cwd=work, stdin=subprocess.DEVNULL,
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    text=True, timeout=15, check=False)
-        except subprocess.TimeoutExpired:
-            print(f'[TIMEOUT] {label}')
-            return False
-        failed = re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)
-        if result.returncode and any(pattern in name for name in failed):
-            print(f'[KILLED] {label}')
-            return True
-        print(f'[SURVIVED] {label} (exit {result.returncode})')
-        return False
-
-
-SCRATCH.mkdir(parents=True, exist_ok=True)
-passed = sum(run_mutation(*mutation, index) for index, mutation in enumerate(MUTATIONS))
-print(f'\n{passed}/{len(MUTATIONS)} planted Axis 07 relay mutations killed')
-raise SystemExit(0 if passed == len(MUTATIONS) else 1)
+            with kxmut.mutated(work / SOURCE, [(old, new)]):
+                verdict, _run = suite.judge([TEST], [pattern])
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if verdict.kind == kxmut.KILLED and not any(pattern in name for name in verdict.failed):
+            verdict = kxmut.Verdict(kxmut.ERROR, f'failed {verdict.failed[:1]}, none of them the {pattern!r} test')
+        tally.record(label, verdict)
+sys.exit(tally.finish())

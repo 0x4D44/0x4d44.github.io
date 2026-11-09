@@ -1,20 +1,23 @@
 """Mutate the pure perf helpers in private copies; no Chrome or real data required.
 
 python3 -I -u kings-cross-src/tools/mutation/perf.py kings-cross-src .scratch/perf-mutations
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass first,
+and a load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py).
 """
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 if not scratch.is_relative_to(src.parent / '.scratch'):
     raise SystemExit('mutation output must be beneath the worktree .scratch')
 scratch.mkdir(parents=True, exist_ok=True)
-source = (src / 'tools/perf.mjs').read_text()
+TEST = 'tools/tests/perf.test.mjs'
 mutations = [
     ('missing timing becomes fabricated zero', "gap('sample-time-unavailable',", "sampledUs += 1000; gap('sample-time-unavailable',"),
     ('timing gaps silently disappear', "entry.count++; gaps.set(code, entry);", "entry.count++;"),
@@ -32,38 +35,22 @@ mutations = [
     ('Markdown omits source table', '(cpu?.byOriginalSourceFile ?? []).slice(0, 15)', '[].slice(0, 15)'),
 ]
 
-def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', 'tools/tests/perf.test.mjs'], cwd=work,
-                          stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
-
-baseline = run(src)
-if baseline.returncode:
-    raise SystemExit(baseline.stdout + baseline.stderr)
-names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-failed_once = set()
-killed = []
-survivors = []
-for label, old, new in mutations:
-    if old not in source:
-        raise SystemExit(f'missing mutation pattern: {label}')
-    with tempfile.TemporaryDirectory(prefix='perf-', dir=scratch) as tmp:
-        work = Path(tmp)
-        (work / 'tools/tests').mkdir(parents=True)
-        shutil.copy2(src / 'tools/tests/perf.test.mjs', work / 'tools/tests/perf.test.mjs')
-        (work / 'tools/perf.mjs').write_text(source.replace(old, new, 1))
-        result = run(work)
-    failures = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
-    assertion = "code: 'ERR_ASSERTION'" in result.stdout or 'code: ERR_ASSERTION' in result.stdout
-    complete = bool(re.search(r'^# tests \d+$', result.stdout, re.M))
-    if result.returncode and failures and assertion and complete:
-        killed.append(label)
-        failed_once.update(failures)
-        print(f'[KILLED] {label}', flush=True)
-    else:
-        survivors.append(label)
-        print(f'[SURVIVED/INVALID] {label}\n{result.stdout}\n{result.stderr}', flush=True)
-unproven = names - failed_once
-summary = f'{len(killed)}/{len(mutations)} caught; survivors: {survivors}; tests seen failing: {len(names)-len(unproven)}/{len(names)}; unproven: {sorted(unproven)}'
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, 'perf') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=20000, timeout=30)
+    baseline = suite.baseline([TEST])
+    for label, old, new in mutations:
+        try:
+            with kxmut.mutated(work / 'tools/perf.mjs', [(old, new)]):
+                verdict, _run = suite.judge([TEST], strict='any')
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+status = tally.finish()
+unproven = baseline.passed - tally.red
+summary = (f'{len(tally.caught)}/{len(mutations)} caught; survivors: {tally.survived + [e[0] for e in tally.errors]}; '
+           f'tests seen failing: {len(baseline.passed) - len(unproven)}/{len(baseline.passed)}; unproven: {sorted(unproven)}')
 print(summary)
 (scratch / 'report.txt').write_text(summary + '\n')
-raise SystemExit(1 if survivors or unproven else 0)
+sys.exit(1 if status or unproven else 0)

@@ -1,14 +1,16 @@
 """Mutation checks for motion, including proof that every motion test failed once.
 
 usage: python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/motion-mutations
-Only temporary copies inside the supplied scratch directory are changed.
+Only temporary copies inside the supplied scratch directory are changed. The tests run in a copy of the package
+with the real node_modules linked in; the unmodified copy must pass each command first, every failing test must
+fail by assertion, and a load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py).
 """
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -105,111 +107,31 @@ A = [
     ('audit suppresses platform overhang', 'bodyOutside > bodyTolerance', 'false'),
 ]
 
-def run(work, audit=False):
-    return subprocess.run(
-        ['node', '--test', '--test-reporter=tap', '--test-timeout=15000',
-         'tools/tests/motion-audit.test.mjs' if audit else 'core/tests/motion.test.ts'],
-        cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30,
-    )
-
-def tap_result(result):
-    """Return (names, failures, assertion_only) only for a complete TAP run."""
-    output = result.stdout
-    plan = re.search(r'^1\.\.([0-9]+)$', output, re.M)
-    counts = {name: re.search(rf'^# {name} ([0-9]+)$', output, re.M) for name in ('tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo')}
-    if not plan or any(value is None for value in counts.values()):
-        return None
-    numbers = {name: int(value.group(1)) for name, value in counts.items() if value}
-    statuses = re.findall(r'^(ok|not ok) ([0-9]+) - (.+)$', output, re.M)
-    names = {name for status, _, name in statuses if status == 'ok'}
-    failures = {name for status, _, name in statuses if status == 'not ok'}
-    if int(plan.group(1)) != numbers['tests'] or len(statuses) != numbers['tests']:
-        return None
-    if len(names) != numbers['pass'] or len(failures) != numbers['fail']:
-        return None
-    if numbers['tests'] != numbers['pass'] + numbers['fail'] + numbers['cancelled'] + numbers['skipped'] + numbers['todo']:
-        return None
-    assertion_only = True
-    failed_headers = list(re.finditer(r'^not ok [0-9]+ - .+$', output, re.M))
-    for index, header in enumerate(failed_headers):
-        end = failed_headers[index + 1].start() if index + 1 < len(failed_headers) else output.find('\n1..', header.end())
-        block = output[header.start():end if end >= 0 else len(output)]
-        if "code: 'ERR_ASSERTION'" not in block and 'code: ERR_ASSERTION' not in block:
-            assertion_only = False
-    return names, failures, assertion_only
-
-baseline = run(src)
-baseline_tap = tap_result(baseline)
-if baseline.returncode or baseline_tap is None or baseline_tap[1]:
-    print(baseline.stdout, baseline.stderr)
-    raise SystemExit('baseline must pass with complete TAP before mutation')
-test_names = baseline_tap[0]
-audit_baseline = run(src, True)
-audit_tap = tap_result(audit_baseline)
-if audit_baseline.returncode or audit_tap is None or audit_tap[1]:
-    print(audit_baseline.stdout, audit_baseline.stderr)
-    raise SystemExit('audit baseline must pass with complete TAP before mutation')
-test_names |= audit_tap[0]
-seen_failing = set()
-survivors = []
-killed = []
-invalid_runs = []
-originals = {file: (src / file).read_text() for file in ('core/motion.ts', 'tools/motion-audit.ts')}
-report = []
-def note(message):
-    report.append(message)
-    print(message, flush=True)
+MOTION_TEST = 'core/tests/motion.test.ts'
+AUDIT_TEST = 'tools/tests/motion-audit.test.mjs'
 
 cases = [('core/motion.ts', label, old, new) for label, old, new in M] + [('tools/motion-audit.ts', label, old, new) for label, old, new in A]
-for file, label, old, new in cases:
-    original = originals[file]
-    if old not in original:
-        raise SystemExit(f'mutation pattern missing: {label}')
-    with tempfile.TemporaryDirectory(prefix='motion-', dir=scratch) as tmp:
-        work = Path(tmp)
-        audit = file.startswith('tools/')
-        if audit:
-            # The audit alone is mutated. Reuse read-only dependencies, including Three's
-            # package resolution through the real web directory's node_modules ancestor.
-            (work / 'core').symlink_to(src / 'core', target_is_directory=True)
-            (work / 'web').symlink_to(src / 'web', target_is_directory=True)
-            (work / 'tools/tests').mkdir(parents=True)
-            shutil.copy2(src / 'tools/tests/motion-audit.test.mjs', work / 'tools/tests/motion-audit.test.mjs')
-        else:
-            shutil.copytree(src / 'core', work / 'core')
-        shutil.copy2(src / 'package.json', work / 'package.json')
-        (work / file).write_text(original.replace(old, new, 1))
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, 'motion') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=15000, timeout=30)
+    test_names = suite.baseline([MOTION_TEST]).passed | suite.baseline([AUDIT_TEST]).passed
+    for file, label, old, new in cases:
+        test = AUDIT_TEST if file.startswith('tools/') else MOTION_TEST
         try:
-            result = run(work, audit)
-        except subprocess.TimeoutExpired:
-            invalid_runs.append(f'{label}: timeout')
-            note(f'[INVALID ] {label} (timeout; not counted as a kill)')
+            with kxmut.mutated(work / file, [(old, new)]):
+                verdict, _run = suite.judge([test], strict=True)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
             continue
-        parsed = tap_result(result)
-        if parsed is None:
-            invalid_runs.append(f'{label}: incomplete TAP or syntax/runtime failure')
-            note(f'[INVALID ] {label} (incomplete TAP or syntax/runtime failure)')
-            continue
-        _, failed, assertion_only = parsed
-        if result.returncode and failed and assertion_only:
-            killed.append(label)
-            seen_failing.update(failed)
-            note(f'[KILLED ] {label} <- {sorted(failed)[0]}')
-        elif result.returncode or failed:
-            invalid_runs.append(f'{label}: test failure was not an assertion')
-            note(f'[INVALID ] {label} (failure was not an assertion; not counted as a kill)')
-        else:
-            survivors.append(label)
-            note(f'[SURVIVED] {label}')
-
-unproven = test_names - seen_failing
-note(f'\n{len(killed)}/{len(cases)} mutations caught by assertions')
-note(f'{len(test_names) - len(unproven)}/{len(test_names)} tests observed failing at least once')
-for label in survivors:
-    note('  NOT CAUGHT: ' + label)
-for item in invalid_runs:
-    note('  INVALID RUN: ' + item)
+        tally.record(label, verdict)
+status = tally.finish()
+unproven = test_names - tally.red
+print(f'{len(test_names) - len(unproven)}/{len(test_names)} tests observed failing at least once')
 for name in sorted(unproven):
-    note('  NEVER FAILED: ' + name)
-(scratch / 'round9-mutation-report.txt').write_text('\n'.join(report) + '\n')
-raise SystemExit(1 if survivors or invalid_runs or unproven else 0)
+    print('  NEVER FAILED: ' + name)
+(scratch / 'round9-mutation-report.txt').write_text(
+    f'{len(tally.caught)}/{len(cases)} mutations caught by assertions\n'
+    + ''.join(f'  NOT CAUGHT: {label}\n' for label in tally.survived)
+    + ''.join(f'  ERROR: {label}: {why}\n' for label, why in tally.errors)
+    + ''.join(f'  NEVER FAILED: {name}\n' for name in sorted(unproven)))
+sys.exit(1 if status or unproven else 0)

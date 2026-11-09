@@ -2,15 +2,16 @@
 
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/live-mutations
 Listener-free relay tests run here; the lead runs the socket integration suite outside the sandbox.
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass every
+command used on a mutant first, and a load, crash or timeout is an ERROR, not a kill (tools/mutation/lib/kxmut.py).
 """
-import os
-import re
-import shutil
-import signal
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -149,7 +150,7 @@ M = [
     ('relay shutdown errors disappear', R, 'server.close((error) => error ? reject(error) : resolve());', 'server.close(() => resolve());'),
 ]
 
-def run(work, rel=None):
+def files_for(rel=None):
     # Renderer geometry tests are expensive; a feed/relay mutation cannot affect them.
     # Keep the full baseline, then run the owning tests and their direct consumers.
     files = {
@@ -163,72 +164,28 @@ def run(work, rel=None):
         'tools/motion-check.ts': ['web/tests/feed.test.ts'],
     }.get(rel, ['web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts', 'web/tests/trains-live.test.ts',
                 'web/tests/tooltip.test.ts', 'core/tests/station.test.ts', 'relay/tests/relay.test.mjs'])
-    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               '--test-name-pattern=^(recorded .* time controls|timeline forwards observation|live feed rejects invalid recorder|relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|an explicit unavailable timetable|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
-               *files]
-    process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, stdin=subprocess.DEVNULL, start_new_session=True)
-    expired = False
-    try:
-        stdout, stderr = process.communicate(timeout=30)
-    except subprocess.TimeoutExpired:
-        expired = True
+    return files
+
+PATTERN = '^(recorded .* time controls|timeline forwards observation|live feed rejects invalid recorder|relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|an explicit unavailable timetable|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)'
+
+
+tally = kxmut.Tally(timeout_is_caught=True)
+with kxmut.workspace(src, scratch, 'live') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=5000, timeout=30)
+    names = suite.baseline(files_for(), [PATTERN]).passed
+    for rel in sorted({m[1] for m in M}):
+        suite.baseline(files_for(rel), [PATTERN])
+    for label, rel, old, new in M:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        stdout, stderr = process.communicate(timeout=3)
-    result = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
-    return result, expired or 'testTimeoutFailure' in stdout
-
-for label, rel, old, _ in M:
-    if old not in (src / rel).read_text():
-        raise SystemExit(f'mutation pattern missing: {label}')
-
-baseline, expired = run(src)
-if baseline.returncode or expired:
-    print(baseline.stdout, baseline.stderr)
-    raise SystemExit('baseline must pass')
-names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-seen = set()
-survivors = []
-timeouts = []
-for i, (label, rel, old, new) in enumerate(M):
-    original = (src / rel).read_text()
-    if old not in original:
-        raise SystemExit(f'mutation pattern missing: {label}')
-    with tempfile.TemporaryDirectory(prefix='live-', dir=scratch) as tmp:
-        work = Path(tmp)
-        for directory in ['core', 'web', 'relay', 'tools']:
-            shutil.copytree(src / directory, work / directory)
-        for file in ['package.json', 'vite.config.ts']:
-            shutil.copy2(src / file, work / file)
-        (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
-        (work / rel).write_text(original.replace(old, new, 1))
-        result, expired = run(work, rel)
-        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)) & names
-        seen.update(failed)
-        if expired:
-            log = scratch / f'mutation-{i:02d}.log'
-            log.write_text(result.stdout + result.stderr)
-            timeouts.append(label)
-            print(f'[CAUGHT WITH TIMEOUT] {label} ({log})', flush=True)
+            with kxmut.mutated(work / rel, [(old, new)]):
+                verdict, _run = suite.judge(files_for(rel), [PATTERN])
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
             continue
-        # A crashed or timed-out test file is not an assertion killing the mutation.
-        if result.returncode and failed:
-            print(f'[KILLED ] {label} <- {sorted(failed)[0]}', flush=True)
-        else:
-            survivors.append(label)
-            log = scratch / f'mutation-{i:02d}.log'
-            log.write_text(result.stdout + result.stderr)
-            print(f'[SURVIVED] {label} (exit {result.returncode}; {log})', flush=True)
-
-unproven = names - seen
-print(f'\n{len(M) - len(survivors)}/{len(M)} mutations caught')
-print(f'{len(timeouts)} caught with timeout')
+        tally.record(label, verdict)
+status = tally.finish()
+unproven = names - tally.red
 print(f'{len(names) - len(unproven)}/{len(names)} new tests observed failing at least once')
-for label in survivors:
-    print('  NOT CAUGHT:', label)
 for name in sorted(unproven):
     print('  NEVER FAILED:', name)
-raise SystemExit(1 if survivors or unproven else 0)
+sys.exit(1 if status or unproven else 0)

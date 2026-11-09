@@ -1,12 +1,14 @@
-"""Mutation check for the UTC sclass relearn scheduler; usage: sclass-job.py <kings-cross-src> <.scratch/output>."""
-import os
-import re
-import shutil
-import signal
-import subprocess
+"""Mutation check for the UTC sclass relearn scheduler; usage: sclass-job.py <kings-cross-src> <.scratch/output>.
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass first,
+every failing test must fail by assertion, and a load or crash error is an ERROR, not a kill
+(tools/mutation/lib/kxmut.py)."""
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 if len(sys.argv) != 3:
     raise SystemExit(__doc__)
@@ -16,6 +18,7 @@ scratch = Path(sys.argv[2]).resolve()
 if not scratch.is_relative_to(src.parent / '.scratch'):
     raise SystemExit('mutation output must be beneath the worktree .scratch')
 scratch.mkdir(parents=True, exist_ok=True)
+TEST = 'relay/tests/sclass-job.test.mjs'
 
 MUTATIONS = [
     ('startup catch-up omitted', "if (!stopped) trigger(utcDate(now()));\n      }, startupDelay(at));", "if (!stopped) {}\n      }, startupDelay(at));"),
@@ -37,70 +40,26 @@ MUTATIONS = [
     ('failed spawn without PID may reclaim lock', 'if (!Number.isInteger(pid) || pid <= 0) return false;', "if (!Number.isInteger(pid) || pid <= 0) return lockFs.unlink(path.join(dataDir, '.sclass-relearn.lock')).then(() => true, () => false);"),
 ]
 
-
-def run(work):
-    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=4000', 'relay/tests/sclass-job.test.mjs']
-    process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, stdin=subprocess.DEVNULL, start_new_session=True)
-    expired = False
-    try:
-        stdout, stderr = process.communicate(timeout=12)
-    except subprocess.TimeoutExpired:
-        expired = True
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, 'sclass-job') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=4000, timeout=12)
+    baseline = suite.baseline([TEST])
+    expected = {n for n in baseline.passed if n.startswith('sclass job: ')}
+    if expected != baseline.names:
+        raise SystemExit('baseline TAP was incomplete or did not contain only the expected scheduler tests')
+    for label, old, new in MUTATIONS:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        stdout, stderr = process.communicate(timeout=3)
-    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr), expired
-
-
-def assertion_failures(output):
-    failures = set()
-    for block in re.split(r'(?=^not ok \d+ - )', output, flags=re.M)[1:]:
-        name = re.match(r'^not ok \d+ - (sclass job: .+)$', block, re.M)
-        if name and re.search(r"^\s+code: ['\"]?ERR_ASSERTION", block, re.M):
-            failures.add(name[1])
-    return failures
-
-
-for _label, old, _new in MUTATIONS:
-    if (src / 'relay/sclass-job.mjs').read_text().count(old) != 1:
-        raise SystemExit(f'mutation source pattern must occur exactly once: {_label}')
-
-baseline, expired = run(src)
-if expired or baseline.returncode:
-    print(baseline.stdout + baseline.stderr)
-    raise SystemExit('baseline scheduler tests must pass')
-expected = set(re.findall(r'^ok \d+ - (sclass job: .+)$', baseline.stdout, re.M))
-count = re.search(r'^# tests (\d+)$', baseline.stdout, re.M)
-if count is None or len(expected) != int(count[1]):
-    raise SystemExit('baseline TAP was incomplete or did not contain only the expected scheduler tests')
-
-seen, survivors = set(), []
-for index, (label, old, new) in enumerate(MUTATIONS):
-    with tempfile.TemporaryDirectory(prefix='sclass-job-', dir=scratch) as temporary:
-        work = Path(temporary)
-        (work / 'relay/tests').mkdir(parents=True)
-        shutil.copy2(src / 'relay/tests/sclass-job.test.mjs', work / 'relay/tests/sclass-job.test.mjs')
-        original = (src / 'relay/sclass-job.mjs').read_text()
-        (work / 'relay/sclass-job.mjs').write_text(original.replace(old, new, 1))
-        result, expired = run(work)
-        named_failures = set(re.findall(r'^not ok \d+ - (sclass job: .+)$', result.stdout, re.M)) & expected
-        failed = assertion_failures(result.stdout) & expected
-        if failed and failed == named_failures and not expired and not result.stderr:
-            seen.update(failed)
-            print(f'[KILLED] {label} <- {sorted(failed)[0]}', flush=True)
-        else:
-            log = scratch / f'mutation-{index:02d}.log'
-            log.write_text(result.stdout + result.stderr)
-            survivors.append(label)
-            print(f'[SURVIVED/INVALID] {label} (exit {result.returncode}; {log})', flush=True)
-
-unseen = expected - seen
-print(f'\n{len(MUTATIONS) - len(survivors)}/{len(MUTATIONS)} mutations caught; {len(seen)}/{len(expected)} tests observed failing')
+            with kxmut.mutated(work / 'relay/sclass-job.mjs', [(old, new)], unique=True):
+                verdict, run = suite.judge([TEST], strict=True)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if verdict.kind == kxmut.KILLED and run.stderr:
+            verdict = kxmut.Verdict(kxmut.ERROR, 'unexpected stderr: ' + run.stderr.strip()[:200])
+        tally.record(label, verdict)
+status = tally.finish()
+unseen = expected - tally.red
+print(f'{len(expected) - len(unseen)}/{len(expected)} tests observed failing')
 for name in sorted(unseen):
     print('  NEVER FAILED:', name)
-for label in survivors:
-    print('  NOT CAUGHT:', label)
-raise SystemExit(1 if survivors or unseen else 0)
+sys.exit(1 if status or unseen else 0)

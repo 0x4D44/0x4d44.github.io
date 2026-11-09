@@ -1,11 +1,17 @@
-"""Bounded, synthetic mutations for the fidelity CLI; no browser, relay or private feed is opened."""
+"""Bounded, synthetic mutations for the fidelity CLI; no browser, relay or private feed is opened.
+
+Every run, the unmodified baseline included, happens in a copy of the package with the real node_modules linked
+in; the baseline must pass before any mutation counts (tools/mutation/lib/kxmut.py)."""
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 if len(sys.argv) != 3:
     raise SystemExit('usage: python3 -I tools/mutation/fidelity.py <kings-cross-src> <worktree .scratch output>')
@@ -73,10 +79,12 @@ def run(root: Path, scratch: Path, timeout: int = 55):
     )
 
 
-baseline = run(PACKAGE, SCRATCH / 'baseline-fixtures')
+with tempfile.TemporaryDirectory(prefix='case-baseline-', dir=SCRATCH) as temporary:
+    case = Path(temporary)
+    baseline = run(kxmut.copy_package(PACKAGE, case / 'tree' / 'kings-cross-src'), case / 'fixtures')
 (SCRATCH / 'baseline.log').write_text(baseline.stdout + baseline.stderr)
 if baseline.returncode:
-    raise SystemExit('baseline failed\n' + baseline.stdout + baseline.stderr)
+    raise SystemExit('BASELINE NOT GREEN: the unmodified copy fails the command used on mutants\n' + baseline.stdout + baseline.stderr)
 names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
 if names != set(TESTS):
     raise SystemExit(f'baseline test set differs: {sorted(names)}')
@@ -88,16 +96,7 @@ for number, (label, old, new, expected) in enumerate(MUTATIONS, 1):
         raise SystemExit(f'stale or ambiguous mutation {number}: {label}')
     with tempfile.TemporaryDirectory(prefix=f'case-{number:02d}-', dir=SCRATCH) as temporary:
         case = Path(temporary)
-        mutated_package = case / 'tree' / 'kings-cross-src'
-        mutated_package.parent.mkdir(parents=True)
-        shutil.copytree(
-            PACKAGE,
-            mutated_package,
-            ignore=shutil.ignore_patterns('.git', 'node_modules', '.scratch', 'dist', 'coverage'),
-        )
-        modules = PACKAGE / 'node_modules'
-        if modules.exists():
-            (mutated_package / 'node_modules').symlink_to(modules.resolve(), target_is_directory=True)
+        mutated_package = kxmut.copy_package(PACKAGE, case / 'tree' / 'kings-cross-src')
         tool = mutated_package / 'tools/fidelity.ts'
         tool.write_text(tool.read_text().replace(old, new, 1))
         try:

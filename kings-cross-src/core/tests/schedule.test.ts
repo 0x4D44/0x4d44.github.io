@@ -47,7 +47,9 @@ test('schedule: bypass overlays and header-only cancellations suppress permanent
 });
 test('schedule: overnight call keeps origin service date and rolls through pass locations', () => {
   const r = record('P', [location('YORK', '2300'), { tiploc_code: 'PASS', pass: '2359H' }, { tiploc_code: 'KNGX', arrival: '0010', departure: '0012', platform: '10', public_arrival: '0009' }], { schedule_start_date: '2026-11-08', schedule_end_date: '2026-11-08' });
-  const c = callsForDate([r], day)[0]!;
+  const calls = callsForDate([r], day);
+  assert.equal(calls.length, 1, 'an overnight service is found on the day after its service date');
+  const c = calls[0]!;
   assert.equal(c.serviceDate, '2026-11-08'); assert.equal(c.date, day); assert.equal(c.arrivalMs, Date.parse(`${day}T00:10Z`));
   assert.equal(c.publicArrivalMs, Date.parse(`${day}T00:09Z`)); assert.equal(c.origin, 'YORK'); assert.equal(c.destination, 'KNGX'); assert.equal(c.platform, '10');
 });

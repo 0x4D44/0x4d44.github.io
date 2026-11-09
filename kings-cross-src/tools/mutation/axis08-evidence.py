@@ -1,12 +1,17 @@
-"""Private synthetic mutations: python3 -I -u kings-cross-src/tools/mutation/axis08-evidence.py (from repo root)."""
-import re
-import shutil
-import subprocess
-import tempfile
+"""Private synthetic mutations: python3 -I -u kings-cross-src/tools/mutation/axis08-evidence.py (from repo root).
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass first,
+and a load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import sys
 from pathlib import Path
-src = Path(__file__).resolve().parent.parent
-scratch = src.parent.parent / '.scratch' / 'axis08-mutations'
-scratch.mkdir(parents=True, exist_ok=True)
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
+
+package = Path(__file__).resolve().parents[2]
+scratch = package.parent / '.scratch' / 'axis08-mutations'
+TEST = 'tools/tests/axis08-evidence.test.mjs'
 mutations = [
  ('ignore FPS targets', 'axis08-evidence.mjs', 'genuineMetal && warmFirstRenderWithin3s && fpsAtLeast60', 'genuineMetal && warmFirstRenderWithin3s'),
  ('ignore warm startup target', 'axis08-evidence.mjs', 'sample.firstRenderMs < 3000', 'sample.firstRenderMs <= 3000'),
@@ -22,26 +27,22 @@ mutations = [
  ('premature city readiness', 'perf.mjs', 'cityComplete && k.parts?.terrain && k.parts?.buildings', 'true'),
  ('allow one startup pair', 'axis08-evidence.mjs', 'runs < 2', 'runs < 1'),
 ]
-def run(work):
- return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=10000', 'tools/tests/axis08-evidence.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
-baseline = run(src.parent)
-if baseline.returncode: raise SystemExit(baseline.stdout + baseline.stderr)
-names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-failed = set()
-for label, file, old, new in mutations:
- with tempfile.TemporaryDirectory(prefix='case-', dir=scratch) as tmp:
-  work = Path(tmp)
-  (work / 'tools/tests').mkdir(parents=True)
-  for name in ['axis08-evidence.mjs', 'perf.mjs']: shutil.copy2(src / name, work / 'tools' / name)
-  shutil.copy2(src / 'tests/axis08-evidence.test.mjs', work / 'tools/tests/axis08-evidence.test.mjs')
-  target = work / 'tools' / file
-  source = target.read_text()
-  if old not in source: raise SystemExit(f'missing pattern: {label}')
-  target.write_text(source.replace(old, new, 1))
-  result = run(work)
-  failures = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
-  if not (result.returncode and failures and 'ERR_ASSERTION' in result.stdout and re.search(r'^# tests \d+$', result.stdout, re.M)): raise SystemExit(f'SURVIVED/INVALID {label}\n{result.stdout}\n{result.stderr}')
-  failed.update(failures)
-  print(f'KILLED {label}', flush=True)
-if names - failed: raise SystemExit(f'unproven: {names - failed}')
-print(f'{len(mutations)}/{len(mutations)} mutations killed; {len(failed)}/{len(names)} tests seen failing')
+
+tally = kxmut.Tally()
+with kxmut.workspace(package, scratch, 'axis08') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=10000, timeout=30)
+    baseline = suite.baseline([TEST])
+    for label, file, old, new in mutations:
+        try:
+            with kxmut.mutated(work / 'tools' / file, [(old, new)]):
+                verdict, _run = suite.judge([TEST], strict='any')
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        tally.record(label, verdict)
+status = tally.finish()
+unproven = baseline.passed - tally.red
+print(f'{len(tally.red & baseline.passed)}/{len(baseline.passed)} tests seen failing')
+for name in sorted(unproven):
+    print('  UNPROVEN:', name)
+sys.exit(1 if status or unproven else 0)

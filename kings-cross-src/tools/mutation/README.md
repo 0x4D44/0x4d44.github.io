@@ -4,6 +4,30 @@ Each script copies the source into a scratch directory, breaks one thing on purp
 the tests with stdin closed and a timeout, and reports whether a test failed ("KILLED") or
 not ("SURVIVED"). A survivor means a test is too weak, or the change was harmless.
 
+A kill counts only when a named test fails. Three rules stop an unusable copy from being
+mistaken for a kill (a copy that cannot load what the tests import fails every run, and a
+failure to load looks exactly like a failing test):
+
+- The copy carries every directory the tests reach and links the real `node_modules`.
+- The unmodified copy runs the exact test command used on the mutants first and must pass. If it
+  does not, the driver stops before mutating anything and prints `BASELINE NOT GREEN`.
+- A mutant run that cannot load (`ERR_MODULE_NOT_FOUND`, a parse error), whose test file dies,
+  that runs no tests or different tests from the baseline, or whose search text is no longer in
+  the source is an `ERROR`, never a kill. A hang is a `TIMEOUT`. Errors and timeouts count
+  against the total and make the driver exit non-zero. (`live.py` and `relay.py` have always
+  reported a hang as "caught with timeout", counted it, and said how many; they still do.)
+
+The drivers that copy the package share `lib/kxmut.py`, which does the copying, runs
+`node --test` with TAP output, parses it, takes the baselines and classifies each mutant run.
+It lives in `lib/` because the evidence pack treats every `.py` file directly in this directory
+as a driver that must be documented here. `tools/tests/mutation-harness.test.mjs` runs it against a
+throwaway package: a kill, a survivor, a parse error, a missing dependency, a hang, a stale
+anchor and a failing baseline each get the verdict above. Drivers that predate it
+(`axis01-*`, `axis03-evidence`, `axis05-evidence`, `axis07-browser`, `berths*`, `board`,
+`concourse*`, `hotel-*`, `sclass`, `sclass-cli`, `shed-*`, `signal*`, `station-evidence`, `test-suite`,
+`train-capture`, `tunnel-track`, `western-front`) already copy what their tests import, take
+their baseline in the copy, and accept only named assertion failures.
+
 Run each driver from the repository root. Drivers that accept a scratch path keep their
 temporary copies and logs under the private `.scratch/mutation/` directory. Most take the
 package directory and that scratch path; the commands below show each driver's actual

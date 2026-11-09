@@ -1,15 +1,19 @@
 """Replay-report CLI mutations; only the named replay assertion may kill each change.
 
 Usage: python3 -I -u kings-cross-src/tools/mutation/replay-report.py kings-cross-src .scratch/replay-report-mutation
+
+The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass
+every command used on a mutant first, and a load or crash error is an ERROR, not a kill
+(tools/mutation/lib/kxmut.py).
 """
 from __future__ import annotations
 
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -20,16 +24,16 @@ scratch.mkdir(parents=True, exist_ok=True)
 FILE = 'tools/replay-report.ts'
 MUTATIONS = [
     ('second recording is ignored', FILE,
-     'recordingPaths.push(v); else values.set(k, v);',
-     'if (recordingPaths.length === 0) recordingPaths.push(v); else values.set(k, v);',
+     "if (k === '--recording') recordingPaths.push(v);",
+     "if (k === '--recording' && recordingPaths.length === 0) recordingPaths.push(v);",
      'core/tests/replay-report.test.ts', 'CLI combines multiple recordings'),
     ('incomplete growing tail is retained', FILE,
      'if (!hasIncompleteJsonPrefix(tail)) return { bytes, trailingBytesOmitted: 0 };',
      'if (true) return { bytes, trailingBytesOmitted: 0 };',
      'core/tests/replay-report.test.ts', 'growing recording capture omits only an incomplete final JSON line'),
     ('replay metrics use the supplied map instead of preserved map', FILE,
-     'metrics: replayReport(data, rows, effectiveAnchors)',
-     'metrics: replayReport(data, rows, anchors)',
+     'metrics: replayReport(data, rows, effectiveAnchors, {schedule:',
+     'metrics: replayReport(data, rows, anchors, {schedule:',
      'core/tests/replay-report.test.ts', 'optional SMART reconciliation classifies candidates before replay metrics'),
     ('Axis 04 omits replay reproduction', 'tools/axis04-summary.ts',
      "replayReproduction = reproduction(object(input.replay.reproducibility).command, 'Recompute replay berth and motion report', 'report');",
@@ -45,59 +49,35 @@ NEW_TESTS = [
 ]
 
 
-def run(work: Path, target: str | None = None, pattern: str | None = None) -> subprocess.CompletedProcess[str]:
-    command = ['node', '--test', '--test-reporter=tap', '--test-timeout=10000']
-    if pattern:
-        command.append(f'--test-name-pattern={pattern}')
-    if target:
-        command.append(target)
-    else:
-        command.extend(['core/tests/replay-report.test.ts', 'tools/tests/axis04-summary.test.ts'])
-    return subprocess.run(command, cwd=work, capture_output=True, text=True,
-                          stdin=subprocess.DEVNULL, timeout=45)
+ALL = ['core/tests/replay-report.test.ts', 'tools/tests/axis04-summary.test.ts']
 
+tally = kxmut.Tally()
+with kxmut.workspace(src, scratch, 'replay-report') as work:
+    suite = kxmut.Suite(work, test_timeout_ms=10000, timeout=45)
+    full = suite.baseline(ALL)
+    if not set(NEW_TESTS).issubset(full.passed):
+        raise SystemExit(f'new replay-report baseline assertions missing: {sorted(set(NEW_TESTS) - full.passed)}')
+    for _label, _relative, _old, _new, target_test, test_name in MUTATIONS:
+        suite.baseline([target_test], [test_name])
 
-with tempfile.TemporaryDirectory(prefix='replay-report-', dir=scratch) as temp:
-    repo = Path(temp)
-    work = repo / 'kings-cross-src'
-    work.mkdir()
-    for name in ['core', 'tools', 'web']:
-        shutil.copytree(src / name, work / name)
-    shutil.copy2(src / 'package.json', work / 'package.json')
-    (work / 'node_modules').symlink_to(src / 'node_modules', target_is_directory=True)
-    (repo / '.scratch').mkdir(exist_ok=True)
-
-    baseline = run(work)
-    if baseline.returncode or baseline.stderr:
-        print(baseline.stdout, baseline.stderr)
-        raise SystemExit('baseline replay-report tests must pass')
-    baseline_names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
-    if not set(NEW_TESTS).issubset(baseline_names):
-        raise SystemExit(f'new replay-report baseline assertions missing: {sorted(set(NEW_TESTS) - baseline_names)}')
-
-    survivors = []
     observed = set()
-    for index, (label, relative, old, new, target_test, test_name) in enumerate(MUTATIONS):
-        target = work / relative
-        original = (src / relative).read_text()
-        if old not in original:
-            raise SystemExit(f'missing mutation pattern: {label}')
-        target.write_text(original.replace(old, new, 1))
-        result = run(work, target_test, test_name)
-        target.write_text(original)
-        failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))
+    for label, relative, old, new, target_test, test_name in MUTATIONS:
         expected = {name for name in NEW_TESTS if name.startswith(test_name)}
-        complete = len(re.findall(r'^ok \d+ - |^not ok \d+ - ', result.stdout, re.M)) == 1
-        failed_block = result.stdout.split(f'not ok 1 - {next(iter(expected), "")}')[-1] if expected else ''
-        if result.returncode and failed == expected and len(expected) == 1 and complete and 'ERR_ASSERTION' in failed_block and not result.stderr:
-            observed.update(failed)
-            print(f'[CAUGHT] {label}: {next(iter(failed))}', flush=True)
-        else:
-            survivors.append(label)
-            (scratch / f'{index:02d}.log').write_text(result.stdout + result.stderr)
-            print(f'[SURVIVED] {label}', flush=True)
-
-    print(f'{len(MUTATIONS) - len(survivors)}/{len(MUTATIONS)} caught; survivors: {survivors}')
-    new_tests_not_caught = set(NEW_TESTS) - observed
-    print(f'{len(set(NEW_TESTS) - new_tests_not_caught)}/{len(NEW_TESTS)} new replay-report/Axis 04 tests observed failing; never failed: {sorted(new_tests_not_caught)}')
-    raise SystemExit(1 if survivors or new_tests_not_caught else 0)
+        try:
+            with kxmut.mutated(work / relative, [(old, new)]):
+                verdict, run = suite.judge([target_test], [test_name], strict=True)
+        except kxmut.StalePattern as error:
+            tally.stale(label, error)
+            continue
+        if verdict.kind == kxmut.KILLED:
+            top = [r for r in run.results if r.depth == 0]
+            if set(verdict.failed) != expected or len(expected) != 1 or len(top) != 1 or run.stderr:
+                verdict = kxmut.Verdict(kxmut.ERROR, f'expected only {sorted(expected)} to fail, saw {verdict.failed} '
+                                        f'({len(top)} top-level results, stderr {bool(run.stderr)})')
+            else:
+                observed.update(verdict.failed)
+        tally.record(label, verdict)
+    status = tally.finish()
+    not_caught = set(NEW_TESTS) - observed
+    print(f'{len(NEW_TESTS) - len(not_caught)}/{len(NEW_TESTS)} new replay-report/Axis 04 tests observed failing; never failed: {sorted(not_caught)}')
+    sys.exit(1 if status or not_caught else 0)

@@ -53,6 +53,7 @@ const sample: RawElement[] = [
 ];
 
 test('osm: rails keep node ids, service, tunnel, bridge, layer and optional tags', () => {
+  assert.doesNotThrow(() => compactOsm(sample), 'a way with a missing coordinate is skipped, not a crash');
   const d = compactOsm(sample);
   assert.equal(d.rails.length, 3, 'the way with a missing coordinate is skipped');
   const r1 = d.rails.find((r) => r.id === 1);
