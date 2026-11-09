@@ -413,6 +413,15 @@ export const GLOW_BELOW_GAIN = 30;
  */
 export const FOOT_SHADE = 'FOOT_SHADE';
 
+/**
+ * A define a paving material with a map can carry (`material.defines = { [MOTTLE]: '' }`) for the tone of one slab against the next: the surface's colour is multiplied by 0.8 to 1.2
+ * by a hash of the slab, a slab being half a tile of the paving's texture on a side (1.2 m on the forecourt: the texture's 2 x 2 slabs, whose joints the hash's cells follow). The same number
+ * every time for one slab. The texture itself cannot do this: it is one tile of four slabs repeated every 2.4 m, and its mip levels average the four to one grey a little way off. The number is
+ * faded to 1 as the slab shrinks on the screen, from a slab eight pixels across (full) to two (none): a hash read once a pixel is noise, and it shimmers when the camera moves. It is applied to
+ * the colour, straight after the texture and the vertex colour and before the weather's wet and snow (atmosphere.ts), so lying snow covers the slabs' tones as it covers their joints.
+ */
+export const MOTTLE = 'MOTTLE';
+
 const shaded = new WeakSet<THREE.Material>();
 
 /**
@@ -432,6 +441,11 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
     fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+#ifdef ${MOTTLE}
+  vec2 slab = vMapUv * 2.0;
+  diffuseColor.rgb *= mix( 0.8 + 0.4 * fract( sin( dot( floor( slab ), vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ), 1.0, smoothstep( 0.125, 0.5, length( fwidth( slab ) ) ) );
+#endif`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 {
   vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );

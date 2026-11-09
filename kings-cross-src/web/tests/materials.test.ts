@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
+import { MOTTLE } from '../src/lighting.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 import { Glsl } from './glsl.ts';
 
@@ -568,6 +569,18 @@ test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on 
   const base = String(a.styles[0]);
   const n = parseInt(base.slice(1), 16);
   assert.ok(base.startsWith('#') && Math.abs(((n >> 16) & 255) - (n & 255)) <= 6, `the painted base is neutral too: ${base}`);
+});
+
+test('the forecourt\'s plaza and the city\'s footways carry the slab-to-slab tone (the MOTTLE define); the roads, the station\'s own floor and the shared slab material do not (round six, E5)', () => {
+  assert.equal(MOTTLE, 'MOTTLE', 'the name materials.ts writes is the one the roof shade (lighting.ts) reads');
+  for (const name of ['plaza', 'pavement'] as const) {
+    assert.deepEqual((cityMaterial(name) as THREE.MeshLambertMaterial).defines, { [MOTTLE]: '' }, `${name}: paving laid in slabs, each its own tone`);
+  }
+  assert.equal((cityMaterial('asphalt') as THREE.MeshLambertMaterial).defines?.[MOTTLE], undefined, 'a road is one piece of tarmac, not slabs');
+  // the cities' paving is a clone of the station's floor: the clone has the define and the original, which the concourse is paved with, does not (and so does not read the shader's slab number)
+  assert.equal((material('concourseFloor') as THREE.MeshLambertMaterial).defines?.[MOTTLE], undefined, 'the concourse floor is the original, and its slabs are the texture\'s own');
+  assert.notEqual(cityMaterial('plaza'), material('concourseFloor'));
+  assert.equal((cityMaterial('plaza') as THREE.MeshLambertMaterial).map, (material('concourseFloor') as THREE.MeshLambertMaterial).map, 'and the paving is still the same texture, shared (the tone is the shader\'s)');
 });
 
 test('rgb: the linear triple a vertex colour wants (sRGB hex in, linear out)', () => {

@@ -18,8 +18,8 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
-import { material } from '../src/materials.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { cityMaterial, material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
 import { Glsl, toValue } from './glsl.ts';
@@ -652,6 +652,81 @@ test('addRoofShade: a material with the FOOT_SHADE define has the light it refle
   for (let v = 0; v <= 40; v += 0.25) assert.ok(footAt(v, 0.32) < 1 && footAt(v, 0.32) < footAt(v + 0.25, 0.32), `the front's too rises to one: ${v}`);
   // one without the define: it is a preprocessor line, compiled away, and no other line reads `foot`
   assert.ok(!block.includes('looksDown') && f.split('foot').length - 1 === block.split('foot').length - 1, 'nothing outside the define reads the shade');
+});
+
+test('addRoofShade: a material with the MOTTLE define has its colour scaled by the tone of the slab it lies on, 0.8 to 1.2, one number to a slab, faded to none as a slab shrinks to a couple of pixels; one without compiles it away (round six, E5)', () => {
+  assert.equal(MOTTLE, 'MOTTLE');
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  addRoofShade(m);
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  const open = f.indexOf(`#ifdef ${MOTTLE}`);
+  const close = f.indexOf('#endif', open);
+  assert.ok(open > 0 && close > open, 'the block is there, under its define');
+  const block = f.slice(open, close);
+  assert.ok(f.indexOf('#include <color_fragment>') < open && close < f.indexOf('#include <lights_lambert_fragment>'), 'right after the texture and the vertex colour, before the light is summed');
+  assert.equal(block.split('diffuseColor.rgb *= ').length - 1, 1, 'the colour is scaled, once');
+  assert.ok(!block.includes('reflectedLight'), 'and not the light: the weather\'s snow mixes toward white after this, and a slab of lying snow has no tone of its own');
+  assert.equal(f.split('slab').length - 1, block.split('slab').length - 1, 'nothing outside the define reads the slab');
+  // the number as the shader has it, run. The paving's texture repeats every 2.4 m (two slabs of 1.2 m to a side), and the flat polygons' UVs are metres over that repeat
+  const slabExpression = /vec2 slab = (.*);/.exec(block)?.[1] ?? '';
+  const mottleExpression = /diffuseColor\.rgb \*= (.*);/.exec(block)?.[1] ?? '';
+  assert.ok(slabExpression !== '' && mottleExpression !== '', `both lines are in the block: ${block}`);
+  const glsl = new Glsl('');
+  // the number at (x, z) metres on the paving, `pixel` slabs wide to a pixel (what fwidth( slab ) would answer on the screen)
+  const toneAt = (x: number, z: number, pixel = 0): number => {
+    const slab = glsl.evaluate(slabExpression, { vars: {} }, { vMapUv: [x / 2.4, z / 2.4] });
+    return glsl.evaluate(mottleExpression, { vars: {}, fns: { fwidth: () => [pixel, pixel] } }, { slab }) as number;
+  };
+  const tones: number[] = [];
+  for (let i = 0; i < 40; i++) for (let j = 0; j < 40; j++) tones.push(toneAt(1.2 * i + 0.6, 1.2 * j + 0.6));
+  const mean = tones.reduce((s, x) => s + x, 0) / tones.length;
+  const spread = Math.sqrt(tones.reduce((s, x) => s + (x - mean) ** 2, 0) / tones.length);
+  assert.ok(Math.min(...tones) >= 0.8 && Math.max(...tones) <= 1.2, `from 0.8 to 1.2 of the colour: ${Math.min(...tones)} to ${Math.max(...tones)}`);
+  assert.ok(Math.abs(mean - 1) < 0.02, `a paving as bright as it was, on the whole: ${mean}`);
+  assert.ok(spread > 0.1 && spread < 0.13, `a slab's tone is its own, a hash spread evenly over the 0.4 (0.115 for an even one): ${spread}`);
+  // one number to a slab: every point of a slab, its corners and its middle, has the same
+  for (const [i, j] of [[0, 0], [3, 5], [17, 9], [-4, 12]] as const) {
+    const own = toneAt(1.2 * i + 0.6, 1.2 * j + 0.6);
+    for (const [dx, dz] of [[0.01, 0.01], [1.19, 0.01], [0.01, 1.19], [1.19, 1.19], [0.3, 0.9]] as const) assert.equal(toneAt(1.2 * i + dx, 1.2 * j + dz), own, `slab (${i}, ${j}) at (${dx}, ${dz})`);
+  }
+  // and the next slab is its own: of 1,500 neighbours across, nearly all differ by more than a hundredth
+  let apart = 0;
+  for (let i = 0; i < 39; i++) for (let j = 0; j < 39; j++) apart += Number(Math.abs(toneAt(1.2 * i + 0.6, 1.2 * j + 0.6) - toneAt(1.2 * (i + 1) + 0.6, 1.2 * j + 0.6)) > 0.01);
+  assert.ok(apart > 0.9 * 39 * 39, `neighbouring slabs differ: ${apart} of ${39 * 39}`);
+  // the fade: a slab eight pixels across (an eighth of a slab to a pixel) has all of its number, two pixels across (half) none, and in between a share of it
+  for (const [i, j] of [[0, 0], [3, 5], [17, 9]] as const) {
+    const [x, z] = [1.2 * i + 0.6, 1.2 * j + 0.6];
+    const full = toneAt(x, z);
+    assert.ok(Math.abs(full - 1) > 0.02, `(a slab that is not within a fiftieth of one, to see the fade by: ${full})`);
+    assert.equal(toneAt(x, z, 0.1 / Math.SQRT2), full, 'ten pixels across: all of it');
+    assert.ok(Math.abs(toneAt(x, z, 0.125 / Math.SQRT2) - full) < 1e-9, 'eight across: all of it');
+    assert.ok(Math.abs(toneAt(x, z, 0.5 / Math.SQRT2) - 1) < 1e-9, 'two across: none');
+    assert.ok(Math.abs(toneAt(x, z, 1) - 1) < 1e-9, 'a pixel to a slab: none (it is noise there, and shimmers)');
+    let last = full;
+    for (let p = 0.14; p < 0.5; p += 0.02) {
+      const k = toneAt(x, z, p / Math.SQRT2);
+      assert.ok(Math.abs(k - 1) <= Math.abs(last - 1) + 1e-12, `it fades toward 1 and never away: ${k} at ${p}`);
+      last = k;
+    }
+    assert.ok(Math.abs(toneAt(x, z, 0.3 / Math.SQRT2) - 1) < Math.abs(full - 1) * 0.6 && Math.abs(toneAt(x, z, 0.3 / Math.SQRT2) - 1) > 0, 'part way, part of it');
+  }
+});
+
+test('the city\'s paving, wet-patched by the atmosphere and roof-shaded, has the slab\'s tone in before the snow is mixed in and the wet darkens it (round six, E5)', () => {
+  const s = new THREE.Scene();
+  const w = addWorld(s, { grid: false });
+  const plaza = cityMaterial('plaza') as THREE.MeshLambertMaterial;
+  s.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), plaza));
+  createAtmosphere({ scene: s, world: w, sites: null });
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: '', fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  plaza.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  const [tone, wet, snow] = [f.indexOf('diffuseColor.rgb *= mix( 0.8'), f.indexOf('diffuseColor.rgb *= 1.0 - uDark * wetHere'), f.indexOf('diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour')];
+  assert.ok(tone > 0 && wet > 0 && snow > 0, `all three are in the plaza's program: ${tone}, ${wet}, ${snow}`);
+  assert.ok(tone < wet && tone < snow, `the tone comes first: snow lies over it, 0.85 of the colour, and the wet darkens what is there: ${tone} < ${wet}, ${snow}`);
+  assert.ok(f.includes(`#ifdef ${MOTTLE}`) && (plaza.defines ?? {})[MOTTLE] === '', 'and it is the plaza\'s own define');
 });
 
 test('the walls that stand on the ground have the contact shade, and the Range\'s, held to its measured brick, and the rest of the stock\'s do not (round five, E2)', () => {

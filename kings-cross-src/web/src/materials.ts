@@ -1422,6 +1422,7 @@ function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Mate
   const m = (material(from) as THREE.MeshLambertMaterial).clone();
   m.vertexColors = true;
   m.color.setHex(color);
+  if (from === 'concourseFloor') m.defines = { MOTTLE: '' }; // paving: one slab's tone against the next (lighting.ts MOTTLE)
   return m;
 }
 
