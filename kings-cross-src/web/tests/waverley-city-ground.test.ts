@@ -85,6 +85,17 @@ test('LiDAR heights replace ASSUMED ones: fewer blocks assumed than before, OSM 
  }finally{city.dispose();}
 });
 
+test('waverley-roads.json (for the street lamps) loads: OSM highway lines with their class and licence, every point inside the scene',async()=>{
+ const {default:roads}=await import('../src/data/waverley-roads.json',{with:{type:'json'}});
+ assert.match(roads.attribution,/OpenStreetMap/);assert.match(roads.licence,/ODbL/);
+ const {x0,z0,x1,z1}=scene.terrain.extent;assert.deepEqual(roads.extent,{x0,z0,x1,z1});
+ assert.ok(roads.roads.length>2000);
+ for(const r of roads.roads){assert.match(r.id,/^way\/\d+$/);assert.ok(typeof r.highway==='string'&&r.highway.length>0);assert.ok(r.path.length>=2);
+  for(const [x,z]of r.path)assert.ok(x>=x0&&x<=x1&&z>=z0&&z<=z1,`${r.id} point ${x},${z} outside the scene`);}
+ for(const c of ['primary','secondary','tertiary','residential','footway','pedestrian'])assert.ok(roads.roads.some(r=>r.highway===c),c);
+ assert.ok(roads.roads.some(r=>r.name==='Princes Street'&&r.highway==='primary'));
+});
+
 test('the city stays one batch per material: walls, plain ashlar, roofs; trees and the drape instanced or single',()=>{
  const names:string[]=[];scene.parts.buildings.traverse(o=>{if(o instanceof THREE.Mesh)names.push(o.name);});
  for(const n of ['waverley-building-walls','waverley-building-ashlar','waverley-building-tops','waverley-ground-cover','waverley-tree-crowns','waverley-wood-crowns','waverley-tree-trunks'])assert.equal(names.filter(x=>x===n).length,1,n);

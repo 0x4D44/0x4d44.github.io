@@ -106,4 +106,29 @@ const out={
 };
 const json=JSON.stringify(out)+'\n';
 writeFileSync('web/src/data/waverley-city-landuse.json',json);
+// ---- web/src/data/waverley-roads.json: every OSM highway line for the street lamps (the lighting element, core/streetlights.ts) ----
+// Each way keeps its OSM highway class; tunnels and indoor ways are left out (no street lamp), bridges are kept and flagged (North
+// and Waverley Bridges carry lamps). Lines are clipped to the terrain extent, so every point is inside the scene, and simplified
+// (Douglas-Peucker 0.5 m), 0.1 m rounding. Nothing in W3 draws from it.
+const ex=LANDUSE_EXTENT,inside=(p:Pt)=>p[0]>=ex.x0&&p[0]<=ex.x1&&p[1]>=ex.z0&&p[1]<=ex.z1;
+/** Liang-Barsky: the part of segment a-b inside the extent, or undefined. */
+const clipSeg=(a:Pt,b:Pt):[Pt,Pt]|undefined=>{let t0=0,t1=1;const dx=b[0]-a[0],dz=b[1]-a[1];
+ for(const [p,q]of [[-dx,a[0]-ex.x0],[dx,ex.x1-a[0]],[-dz,a[1]-ex.z0],[dz,ex.z1-a[1]]] as [number,number][]){if(p===0){if(q<0)return undefined;continue;}const r=q/p;if(p<0){if(r>t1)return undefined;t0=Math.max(t0,r);}else{if(r<t0)return undefined;t1=Math.min(t1,r);}}
+ return [[a[0]+t0*dx,a[1]+t0*dz],[a[0]+t1*dx,a[1]+t1*dz]];};
+const r1=(p:Pt):Pt=>[Math.round(p[0]*10)/10,Math.round(p[1]*10)/10];
+const roadLines:{id:string;highway:string;name?:string;bridge?:true;path:Pt[]}[]=[];
+for(const e of all.values()){
+ const t=e.tags??{};if(e.type!=='way'||!e.nodes||!t.highway||t.area==='yes'||t.tunnel&&t.tunnel!=='no'||t.indoor==='yes'||t.highway==='corridor'||t.highway==='elevator'||t.highway==='proposed'||t.highway==='construction')continue;
+ const p=pts(e.nodes);if(!p)continue;
+ let run:Pt[]=[];const flush=()=>{if(run.length>1){const path=dp(run,.5).map(r1);roadLines.push({id:`way/${e.id}`,highway:t.highway,...t.name?{name:t.name}:{},...t.bridge&&t.bridge!=='no'?{bridge:true as const}:{},path});}run=[];};
+ for(let i=1;i<p.length;i++){const c=clipSeg(p[i-1],p[i]);if(!c){flush();continue;}
+  if(!run.length||run.at(-1)![0]!==c[0][0]||run.at(-1)![1]!==c[0][1]){flush();run.push(c[0]);}run.push(c[1]);if(!inside(p[i]))flush();}
+ flush();
+}
+roadLines.sort((a,b)=>a.id.localeCompare(b.id,'en',{numeric:true}));
+const roadsJson=JSON.stringify({attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',licence:'ODbL 1.0, https://opendatacommons.org/licenses/odbl/1-0/',
+ source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); every highway=* way except tunnels, indoor, corridors, areas, proposed and construction; clipped to the terrain extent; Douglas-Peucker 0.5 m; 0.1 m rounding',
+ frame:'Waverley local metres: x east, z south, origin 55.9519018 N, 3.1904199 W (core/geo.ts project)',extent:LANDUSE_EXTENT,roads:roadLines})+'\n';
+writeFileSync('web/src/data/waverley-roads.json',roadsJson);
+console.log(JSON.stringify({roadLines:roadLines.length,classes:Object.fromEntries([...new Set(roadLines.map(r=>r.highway))].map(h=>[h,roadLines.filter(r=>r.highway===h).length])),bytes:roadsJson.length,gzip:gzipSync(roadsJson,{level:9}).length}));
 console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,walls:walls.length,bytes:json.length,gzip:gzipSync(json,{level:9}).length}));
