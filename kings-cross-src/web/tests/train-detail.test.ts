@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, POD, underfloorBlocks } from '../src/train.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
@@ -581,8 +581,10 @@ test('fronts: each family\'s headlight and tail lamp are the size, shape and pla
     }
   }
   // the families differ: round lamps on the 717 and the 180, strips on the 700 and the 387, a tail lamp outboard only on the 700
-  for (const f of ['desiro', 'adelante'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'round');
-  for (const f of ['electrostar', 'desiro700', 'at300'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'rect');
+  // CHANGED (the AT300's were rectangles): the photographs of its pods (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, hull-802-doncaster-2024,
+  // lner-800-doncaster-2026) show round LED lenses, a larger headlight with a smaller round lamp beside it
+  for (const f of ['desiro', 'adelante', 'at300'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'round');
+  for (const f of ['electrostar', 'desiro700'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'rect');
   assert.ok(bodySpec('desiro700').front.lamps.tailAt[0] > 0.1 && bodySpec('electrostar').front.lamps.tailAt[0] === 0, 'the 700 has its tail lamp outboard of the headlight strip; the 387 has it under');
   assert.ok(bodySpec('desiro700').front.lamps.head[1] < 0.08 && bodySpec('adelante').front.lamps.head[1] > 0.1, 'the 700 has a slim strip, the 180 a big round lamp');
   // the 180's lamp pods are a lighter grey than any other family's near-black bezel, so they read against its black front
@@ -695,13 +697,15 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen and 
   }
 });
 
-test('fronts: the Azuma keeps the front it had: rectangular lamps, a covered plain coupler, no wipers, display, door or warning panel (the lamps now sit up in the face\'s outer corners in a dark housing)', () => {
+test('fronts: the Azuma\'s front: round lamps, parked wipers, a covered plain coupler, no display, door or warning panel', () => {
   // CHANGED (the lamps were low and bare, at 0.56 of the face's height and 0.6 of its half-width, with no housing): lner-800-113-newcastle-2025 and
   // hull-802-doncaster-2024 show the headlamp pod in the face's upper outer corner, a dark housing round the lamp with the tail lamp beneath it
+  // CHANGED again (rectangular lamps with no wipers, a pod on the face only): LUMO-04-Lumo-803003-at-Edinburgh-Waverley, hull-802-doncaster-2024 and
+  // lner-800-doncaster-2026 show round lenses in a housing that sweeps back and up the cheek, and wiper arms parked on the glass
   assert.deepEqual(bodySpec('at300').front, {
-    lamps: { shape: 'rect', y: 0.6, x: 0.6, head: [0.26, 0.12], tail: [0.12, 0.06], tailAt: [0, -0.15], bezel: 0.04 },
+    lamps: { shape: 'round', y: 0.6, x: 0.66, head: [0.16, 0.16], tail: [0.08, 0.08], tailAt: [-0.1, -0.09], bezel: 0.05 },
     frame: 0.07,
-    wipers: false,
+    wipers: true,
     display: false,
     door: null,
     warning: null,
@@ -2108,6 +2112,51 @@ test('glass: the AT300 cab side window is a wedge raked back at the top and stan
     const g = built(kind);
     for (const car of endCabs(trainLayout(kind))) assert.equal(trisOfColour(detailOf(g, car), CAB_SWOOSH).length, 0, `${kind} car ${car.index}: no swoosh`);
   }
+});
+
+test('lamps: the AT300 kinds\' lamp pods wrap back from the face onto the cheek, one patch each side of each cab, each kind in its own colour and size, behind the face\'s plane; no other kind has one', () => {
+  // photographs lner-800-doncaster-2026, lner-800-113-newcastle-2025 (a small dark housing at the mask's upper corner), hull-802-doncaster-2024 (a slate panel about a
+  // metre long with the lamps at its front end) and LUMO-04-Lumo-803003-at-Edinburgh-Waverley (a black wedge, deep at the face and tapering back up the cheek)
+  const COLOURS: Partial<Record<TrainKind, number>> = { lner5: POD, lner9: POD, hull5: HULL_POD, lumo5: POD };
+  assert.notEqual(POD, HULL_POD);
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    const pod = frontOf(kind).pod;
+    assert.equal(pod !== undefined, kind in COLOURS, `${kind}: has a pod`);
+    for (const car of endCabs(layout)) {
+      const mesh = detailOf(g, car);
+      if (!pod) {
+        for (const c of [POD, HULL_POD]) assert.equal(trisOfColour(mesh, c).length, 0, `${kind} car ${car.index}: no pod housing`);
+        continue;
+      }
+      assert.equal(pod.colour, COLOURS[kind], `${kind}: the pod's colour`);
+      const tris = trisOfColour(mesh, pod.colour);
+      const face = facePlane(car, true, false);
+      const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+      for (const sign of [-1, 1]) {
+        const vs = tris.filter((t) => t.every((v) => v.x * sign > 0)).flat();
+        assert.ok(vs.length >= 150, `${kind} car ${car.index}: only ${vs.length} housing vertices on the ${sign > 0 ? 'right' : 'left'}`);
+        // behind the face's plane everywhere (nothing stands out in front of the train's end), and it reaches back as far as the spec's top edge says
+        const reach = Math.max(...vs.map(along));
+        assert.ok(Math.min(...vs.map(along)) > 0, `${kind} car ${car.index}: the housing stands in front of the face`);
+        assert.ok(Math.abs(reach - (pod.sBack1 ?? pod.sBack)) < 0.1, `${kind} car ${car.index}: the housing reaches ${reach.toFixed(2)} m back, the spec says ${pod.sBack1 ?? pod.sBack}`);
+        // it wraps onto the cheek: the back end stands further out from the middle than the front, and the housing is outboard of the face's own half-width there
+        const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
+        const first = vs.filter((v) => along(v) < 0.2 * reach);
+        const last = vs.filter((v) => along(v) > 0.8 * reach);
+        assert.ok(first.length > 0 && last.length > 0);
+        assert.ok(mean(last.map((v) => Math.abs(v.x))) - mean(first.map((v) => Math.abs(v.x))) > 0.05, `${kind} car ${car.index}: the housing does not run out along the cheek`);
+        // and it stands at the lamps' height (the cluster's own, a fraction of the face's height), not on the shoulder
+        const lampY = (all(named(g, `car-${car.index}`), 'headlight')[0] as THREE.Object3D).getWorldPosition(new THREE.Vector3()).y;
+        assert.ok(Math.min(...vs.map((v) => v.y)) < lampY + 0.2 && Math.max(...vs.map((v) => v.y)) > lampY - 0.2, `${kind} car ${car.index}: the housing at ${Math.min(...vs.map((v) => v.y)).toFixed(2)}..${Math.max(...vs.map((v) => v.y)).toFixed(2)} m is not at the lamps, ${lampY.toFixed(2)} m up`);
+      }
+    }
+  }
+  // the lengths differ by kind as the photographs do: LNER's is short, Hull's about a metre, Lumo's the longest
+  const reachOf = (k: TrainKind): number => (frontOf(k).pod as { sBack: number; sBack1?: number }).sBack1 ?? 0;
+  assert.ok(reachOf('lner5') < reachOf('hull5') && reachOf('hull5') < reachOf('lumo5'), 'LNER shortest, then Hull Trains, then Lumo');
+  assert.deepEqual(frontOf('lner5').pod, frontOf('lner9').pod, 'both LNER kinds have the same pod');
 });
 
 test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electrostar\'s, the Siemens Desiro City and 700, the Alstom 180), every car on its own family\'s', () => {

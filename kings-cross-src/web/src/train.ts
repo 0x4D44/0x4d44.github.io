@@ -103,6 +103,10 @@ const CRESCENT_ZONE = 1.25;
 const FRAME_REACH = 0.91;
 /** The near-black of a lamp's bezel and of a front door's outline. */
 const BEZEL = 0x15171a;
+/** The housing of an AT300 lamp pod where it sweeps back along the nose's flank: near black, a shade off the bezel's so the two read apart (Lumo, LNER). */
+export const POD = 0x181a1e;
+/** The same housing on a Hull Trains cab, a dark slate a shade off the grey beak's own so the two still read apart (hull-802-doncaster-2024: slate pod, lighter rim). */
+export const HULL_POD = 0x272b32;
 /** The dark swoosh round the cab side window of the Hull Trains and Lumo cabs: near black, a shade off the glass's own so the pane still reads in it. */
 export const CAB_SWOOSH = 0x101215;
 /** The parked wiper arms' colour: a dark grey, a shade off the glass's black so they still read against it. */
@@ -144,7 +148,21 @@ interface GlassSpec {
    */
   screen: { s0: number; s1: number; fraction: number; topRadius: number; bottomRadius: number; pillar?: number };
   /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
-  side: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number; surround?: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number } };
+  side: FlankPatch & { surround?: FlankPatch };
+}
+
+/**
+ * A patch on the nose's flank (the cab side window, its swoosh, the lamp pod's housing), in the nose's own coordinates: rows climb from the height
+ * fraction `v0` to `v1` (of the ring's height, bottom to top), each row running from its front edge to its back edge, the distances from the nose tip.
+ * The front edge slants from `sFront0` at the bottom to `sFront1` at the top, the back edge from `sBack` to `sBack1` (default: upright).
+ */
+interface FlankPatch {
+  sBack: number;
+  sBack1?: number;
+  sFront0: number;
+  sFront1: number;
+  v0: number;
+  v1: number;
 }
 
 /**
@@ -197,6 +215,8 @@ interface FrontSpec {
   centreDoor?: { width: number; leaf: number };
   /** the colour of the dark swoosh round the cab side window, where the livery has one (the glass spec's `side.surround` is its shape); absent: none */
   cabSideSurround?: number;
+  /** the lamp pod's housing swept back along the nose's flank from the face's edge, a patch round the lamp cluster in its own colour; absent: the bezel on the face only */
+  pod?: FlankPatch & { colour: number };
 }
 
 /** One piece of a diesel unit's underframe: its length along the car, half-width, and the height of its underside above the rail head. */
@@ -330,12 +350,15 @@ const AT300: BodySpec = {
   gangway: { width: ASSUMED.gangwayWidth, height: ASSUMED.gangwayHeight, bottom: ASSUMED.gangwayBottom },
   pantographTop: FIGURES.pantographFoldedHeight.value,
   underframe: 0.95,
-  // the Azuma's front is as S3 drew it: plain lamps on the face, a cover over the coupler, a livery-coloured front (LNER's is yellow in the livery)
+  // the Azuma's front: round lamps in the face's outer corners, a cover over the coupler, parked wipers, a livery-coloured front (LNER's is yellow in the livery)
   front: {
-    // headlamp pods in the upper outer corners of the face, under the windscreen's corners (lner-800-113-newcastle-2025, hull-802-doncaster-2024): a dark housing with the lamp, the tail lamp beneath it
-    lamps: { shape: 'rect', y: 0.6, x: 0.6, head: [0.26, 0.12], tail: [0.12, 0.06], tailAt: [0, -0.15], bezel: 0.04 },
+    // round lenses, a larger headlight with a smaller round lamp inboard and under it, in a dark housing at the face's upper outer corner
+    // (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, hull-802-doncaster-2024, lner-800-113-newcastle-2025, lner-800-doncaster-2026); the housing's own sweep back
+    // along the cheek differs by kind (FRONT_OVERRIDES' `pod`). The sizes are read off those photographs, not published.
+    lamps: { shape: 'round', y: 0.6, x: 0.66, head: [0.16, 0.16], tail: [0.08, 0.08], tailAt: [-0.1, -0.09], bezel: 0.05 },
     frame: 0.07,
-    wipers: false,
+    // wiper arms parked on the glass, as lner-800-113-newcastle-2025, lner-800-doncaster-2026, hull-802-doncaster-2024 and LUMO-04 show
+    wipers: true,
     display: false,
     door: null,
     warning: null,
@@ -632,12 +655,16 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
  * lner-800-113-newcastle-2025: the mask is about four fifths of the face's width and runs back to the windscreen's lower edge).
  */
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
-  lner5: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
-  lner9: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
-  // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp pods, the cheeks the body's blue)
-  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8, cabSideSurround: CAB_SWOOSH },
-  // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny)
-  lumo5: { cabSideSurround: CAB_SWOOSH },
+  // LNER: the lamp cluster sits in a small dark housing at the mask's upper corner and wraps only a little way round onto the red cheek
+  // (lner-800-doncaster-2026, lner-800-113-newcastle-2025; the housing's size is read off those photographs, not published)
+  lner5: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8, pod: { colour: POD, sFront0: 0.04, sFront1: 0.04, sBack: 0.5, sBack1: 0.65, v0: 0.46, v1: 0.72 } },
+  lner9: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8, pod: { colour: POD, sFront0: 0.04, sFront1: 0.04, sBack: 0.5, sBack1: 0.65, v0: 0.46, v1: 0.72 } },
+  // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp pods, the cheeks the body's blue);
+  // the pods are slate panels, about a metre long, with the lamps in their front end
+  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8, cabSideSurround: CAB_SWOOSH, pod: { colour: HULL_POD, sFront0: 0.04, sFront1: 0.04, sBack: 0.8, sBack1: 1.0, v0: 0.42, v1: 0.74 } },
+  // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
+  // black wedge of a pod, deep at the face's edge and tapering back up the cheek toward the windscreen's corner (LUMO-04, LUMO-02)
+  lumo5: { cabSideSurround: CAB_SWOOSH, pod: { colour: POD, sFront0: 0.04, sFront1: 0.04, sBack: 0.8, sBack1: 1.5, v0: 0.42, v1: 0.78 } },
 };
 
 /**
@@ -1082,17 +1109,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     }
     // the cab side windows, one each side, following the nose's slope: the pane (glass), and where the kind has one the dark swoosh round it (a
     // matte patch a little under the glass)
-    type SideWindow = { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number };
-    const sideWindow = (side: number, sw: SideWindow, target: Soup, colour: THREE.Color | null, liftBy: number): void => {
+    const sideWindow = (side: number, sw: FlankPatch, target: Soup, colour: THREE.Color | null, liftBy: number): void => {
       const rows = 8;
       const cols = 12;
       const grid: V3[][] = [];
       for (let q = 0; q <= rows; q++) {
         const v = lerp(sw.v0, sw.v1, q / rows);
         const sF = lerp(sw.sFront0, sw.sFront1, q / rows);
+        const sB = lerp(sw.sBack, sw.sBack1 ?? sw.sBack, q / rows);
         const row: V3[] = [];
         for (let p = 0; p <= cols; p++) {
-          const s = lerp(sF, sw.sBack, p / cols);
+          const s = lerp(sF, sB, p / cols);
           const rr = ringAt(spec.nose, s);
           const hh = halfAt(sec, norm, egg, rr);
           const y = rr.bottom + v * (rr.top - rr.bottom);
@@ -1115,6 +1142,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
     };
     for (const side of [-1, 1]) {
+      // the lamp pod's housing, swept back along the flank from the face's edge
+      if (front.pod) sideWindow(side, front.pod, detail, col(front.pod.colour), 0.012);
       // (the shoulder's facets sag a centimetre between rings, so the swoosh stands 12 mm off the loft, and the pane 4 mm proud of it)
       if (front.cabSideSurround !== undefined && spec.glass.side.surround) sideWindow(side, spec.glass.side.surround, detail, col(front.cabSideSurround), 0.012);
       sideWindow(side, spec.glass.side, glass, null, 0.016);
@@ -1339,11 +1368,14 @@ function pushDecal(soup: Soup, item: DecalItem, W: number, Z: (s: number) => num
 
 // --- the train ---------------------------------------------------------------------------------
 
+/** The cab front's finish for a kind: its family's own with the kind's overrides laid over it. For tests and the dev page. */
+export const frontOf = (kind: TrainKind): Readonly<FrontSpec> => ({ ...BODIES[trainLayout(kind).spec.family].front, ...FRONT_OVERRIDES[kind] });
+
 export function buildTrain(kind: TrainKind): THREE.Group {
   const layout = trainLayout(kind);
   const spec = BODIES[layout.spec.family];
   const def = liveryFor(kind);
-  const front: FrontSpec = { ...spec.front, ...FRONT_OVERRIDES[kind] };
+  const front: FrontSpec = frontOf(kind);
   const root = new THREE.Group();
   root.name = `train-${kind}`;
   root.userData = { kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family };
