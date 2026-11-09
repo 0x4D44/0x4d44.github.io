@@ -120,3 +120,55 @@ test('berth geography: an Overpass timeout remark cannot be treated as a complet
   assert.throws(() => reviewGeographicEvidence(data, map(), { elements: [], remark: 'runtime error: Query timed out' },
     { source: 'synthetic' }), /incomplete Overpass/);
 });
+
+test('berth geography: another signal prefix identifies berths only when CORPUS names that signal as a SMART location of the berth', () => {
+  const corpus = [{ STANOX: '99001', TIPLOC: 'TESTSIG', NLCDESC: 'INVENTED SOUTH SIG K 512' }];
+  const tied = [{ TD: 'Y9', STANOX: '99001', FROMBERTH: '0512', TOBERTH: '0510' }];
+  const run = (smart: typeof tied, rows = corpus) => reviewGeographicEvidence(data, map(), { elements: [signal('K2300')] },
+    { source: 'synthetic-overpass.json', corpus: rows, smart });
+  const r = run(tied);
+  assert.equal(r.map.unmapped.find((u) => u.berth === '2300')?.reason, 'outside-network');
+  assert.match(r.map.unmapped.find((u) => u.berth === '2300')!.detail, /ref "K2300".*CORPUS TESTSIG.*SIG K 512.*berth 0512/);
+  assert.equal(r.summary.prefixedSignals, 1); assert.equal(r.summary.yaSignals, 0);
+  // Same CORPUS name without the SMART tie, another area's tie, or a YA-named location: no identity.
+  for (const [smart, rows] of [[[{ ...tied[0]!, FROMBERTH: '0511', TOBERTH: '0513' }], corpus], [[{ ...tied[0]!, TD: 'XX' }], corpus],
+    [tied, [{ ...corpus[0]!, NLCDESC: 'INVENTED SIG YA 512' }]]] as const) {
+    const n = run([...smart], [...rows]);
+    assert.equal(n.map.unmapped.find((u) => u.berth === '2300')?.reason, 'no-evidence'); assert.equal(n.summary.prefixedSignals, 0);
+  }
+});
+
+// A rail way 80 -> 91 (signal) -> 2 (north graph end): way order runs into the graph.
+function overhang(z: number, direction?: string, ref = 'YA 2300') {
+  const s = { ...signal(ref, z), tags: { railway: 'signal', ref, ...(direction ? { 'railway:signal:direction': direction } : {}) } };
+  const way = { type: 'way', id: 7, nodes: [80, 91, 2], tags: { railway: 'rail' },
+    geometry: [unproject(0, z - 40, data.origin), unproject(0, z, data.origin), unproject(0, -100, data.origin)] };
+  return [s, way];
+}
+
+test('berth geography: an exact YA signal just past the cut on a rail into a graph end is anchored there with its overhang as error', () => {
+  const r = review(map(), overhang(-110, 'forward'));
+  const a = r.map.anchors.find((a) => a.berth === '2300')!;
+  assert.equal(a.kind, 'signal'); assert.equal(a.from, 2); assert.equal(a.to, 1); assert.equal(a.t, 0);
+  assert.ok(Math.abs(a.point[1] + 100) < 1e-6); assert.ok(Math.abs(a.errorM - 15) < .2);
+  assert.match(a.evidence, /YA 2300.*beyond graph end 2 along OSM way 7.*into the graph/);
+  assert.equal(r.map.unmapped.some((u) => u.berth === '2300'), false);
+  assert.equal(r.decisions.find((d) => d.berth === '2300')?.status, 'boundary-anchored');
+  assert.equal(r.summary.boundaryAnchors, 1);
+  // A signal facing away from the graph is reached just after leaving it.
+  const out = review(map(), overhang(-110, 'backward')).map.anchors.find((a) => a.berth === '2300')!;
+  assert.equal(out.from, 1); assert.equal(out.to, 2); assert.equal(out.t, 1);
+});
+
+test('berth geography: no direction, an overhang past 25 m of track or a conflict never becomes a boundary anchor', () => {
+  for (const [z, direction] of [[-110, undefined], [-130, 'forward']] as const) {
+    const r = review(map(), overhang(z, direction));
+    assert.deepEqual(r.map.anchors, []);
+    assert.equal(r.map.unmapped.find((u) => u.berth === '2300')?.reason, 'no-evidence');
+    assert.equal(r.decisions[0]?.status, 'boundary-straddle');
+    assert.match(r.map.unmapped.find((u) => u.berth === '2300')!.detail, /Boundary anchor not established/);
+  }
+  const conflict = review(map(), overhang(-110, 'forward', 'YA 2302'));
+  assert.deepEqual(conflict.map.anchors, []);
+  assert.equal(conflict.map.unmapped.find((u) => u.berth === '2302')?.reason, 'conflict');
+});
