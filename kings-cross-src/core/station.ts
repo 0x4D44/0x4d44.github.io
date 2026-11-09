@@ -365,8 +365,9 @@ export const CONCOURSE_APEX = 20;
 export const CONCOURSE_RIM = 5;
 
 export interface ConcourseCanopy {
+  /** Centre of the partial OSM arc fit, not a surveyed funnel position. */
   centre: Pt;
-  /** from the OSM footprint arc: about 63 m, against the 74 m published radius */
+  /** Partial-arc fit radius; twice this value is not the overall roof's north–south extent. */
   radius: number;
   /** rms distance of the arc points from the fitted circle, metres: how well OSM follows a circle */
   rms: number;
@@ -375,9 +376,10 @@ export interface ConcourseCanopy {
 }
 
 /**
- * The Western Concourse canopy. Position and radius come from the circular arc in the OSM station
+ * The Western Concourse arc fit. Position and radius come from the circular arc in the OSM station
  * footprint, west of the shed (the arc points are the vertices more than 45 m west of the shed's
- * west wall and within 140 m of the south front). Heights are the published ones.
+ * west wall and within 140 m of the south front). The renderer follows the full polygon separately:
+ * Arup's 138 m overall roof extent (Journal 2/2012 p.15 fig.6) is not this partial circle's diameter.
  */
 export function concourseCanopy(data: Pick<KxData, 'platforms' | 'buildings'>): ConcourseCanopy {
   const shed = shedLayout(data);

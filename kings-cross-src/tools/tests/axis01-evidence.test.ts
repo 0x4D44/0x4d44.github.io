@@ -85,3 +85,19 @@ test('renders explicit numeric published flags and missing gauge evidence withou
   const empty = fixture(); empty.nodes = []; empty.rails = [];
   assert.ok(createAxis01Report(empty, layout).flags.some(f => f.code === 'gauge-samples-missing'));
 });
+
+test('compares the drawn concourse roof extent with Arup and flags a missing station footprint', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { shedLayout } = await import('../../core/station.ts');
+  const real: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  const report = createAxis01Report(real, shedLayout(real));
+  assert.ok(report.concourse !== null);
+  assert.ok(Math.abs(report.concourse.drawnNorthSouthM - 138) <= 3, `${report.concourse.drawnNorthSouthM} m`);
+  assert.equal(report.concourse.withinTolerance, true);
+  assert.ok(!report.flags.some(f => f.code.startsWith('concourse-')));
+  assert.match(renderAxis01Markdown(report), /Western Concourse overall N–S roof: 13\d\.\d+ m; .* PASS at 3 m/);
+  const synthetic = createAxis01Report(fixture(), layout);
+  assert.equal(synthetic.concourse, null);
+  assert.ok(synthetic.flags.some(f => f.code === 'concourse-missing'));
+  assert.match(renderAxis01Markdown(synthetic), /not measured \(no OSM station footprint\)\. FLAG/);
+});

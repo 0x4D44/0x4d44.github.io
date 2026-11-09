@@ -6,12 +6,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as THREE from 'three';
 import type { KxData } from '../core/osm.ts';
 import type { Pt } from '../core/geo.ts';
-import { GAUGE, KINGS_CROSS_PLATFORM_LENGTHS_M, longAxis, shedLayout, stationPlatforms } from '../core/station.ts';
+import { GAUGE, KINGS_CROSS_PLATFORM_LENGTHS_M, concourseCanopy, longAxis, shedLayout, stationBuilding, stationPlatforms } from '../core/station.ts';
 import { railSegments } from '../core/scene.ts';
 import { trainLayout } from '../core/train.ts';
 import { buildPlatforms } from '../web/src/furniture.ts';
 import { buildTrack, splitByZone } from '../web/src/track.ts';
 import { buildShed } from '../web/src/shed.ts';
+import { buildConcourse } from '../web/src/concourse.ts';
 import { buildTrain } from '../web/src/train.ts';
 import { tunnelMouths } from '../core/landmarks.ts';
 import { faceMouth, mouthPartsTerrain } from '../web/src/portals.ts';
@@ -130,6 +131,17 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     return { id: m.id, osmOrigin: m.origin, drawnFaceOrigin, setbackM, withinThroatTolerance: Math.abs(setbackM) <= TOLERANCES.throatM,
       osmNodeIds: m.nodeIds, osmWayIds: data.rails.filter(r => r.tunnel && r.nodes.some(n => m.nodeIds.includes(n))).map(r => r.id) };
   });
+  // The concourse needs the OSM station footprint; without one there is nothing to measure.
+  const footprint = stationBuilding(data)?.pts;
+  const concourse = footprint ? (() => {
+    const canopy = concourseCanopy(data);
+    const roof = buildConcourse(canopy, footprint, layout).getObjectByName('concourse-panels')!;
+    const drawnNorthSouthM = round(meshExtent(roof, new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading))));
+    return { drawnNorthSouthM, publishedOverallRoofM: 138, differenceM: round(drawnNorthSouthM - 138),
+      withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 3, fittedArcDiameterM: round(2 * canopy.radius),
+      source: 'https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf#page=15',
+      basis: 'Arup fig.6: overall north-south roof extent; compare actual roof mesh extent along the station axis, not twice the partial OSM arc fit. Funnel placement and roof section remain approximations.' };
+  })() : null;
   const train = buildTrain('lner5');
   const car = train.children[1]!;
   const specLengthM = trainLayout('lner5').cars[1]!.length;
@@ -145,13 +157,15 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     ...tunnels.filter(t => !t.withinThroatTolerance).map(t => ({ code: 'throat-tolerance', detail: `${t.id}: ${t.setbackM} m from OSM boundary` })),
     ...(Math.abs(drawnCarLengthM - specLengthM) > 0.001 ? [{ code: 'car-tolerance', detail: `26 m car extent ${drawnCarLengthM} m exceeds 1 mm tolerance` }] : []),
     ...(platforms.some(p => p.ref === '11') ? [{ code: 'platform-eleven-drawn', detail: 'Station surface platform 11 is drawn' }] : []),
+    ...(concourse === null ? [{ code: 'concourse-missing', detail: 'No OSM station footprint, so the Western Concourse roof was not measured' }]
+      : concourse.withinTolerance ? [] : [{ code: 'concourse-tolerance', detail: `Concourse N–S roof ${concourse.drawnNorthSouthM} m differs from Arup's 138 m by more than 3 m` }]),
   ];
   return { schemaVersion: 1, inputs, tolerances: TOLERANCES, flags,
     method: { independentSurvey: false, platforms: 'Actual platform-tops mesh vertex extent projected onto OSM long axis; same buildPlatforms as main.ts, per polygon. Published lengths are operational lengths, not polygon extents.',
       gauge: 'Samples selected before measuring where no other centreline is within 1.7 m (coincident parallel segments permitted); turnout crossings excluded. Horizontal rays from centreline at y=-0.007 onto actual merged rail mesh inner head faces; 2 mm tolerance allows Float32 and miter errors.',
       tunnels: 'Dominant actual brick mesh face plane vs OSM open/tunnel boundary nodes; terrain-mode face builder with flat ground; lid/flank terrain heights excluded.',
       sources: 'Published dimensions and citations retained in core/station.ts; no independent source re-verification in this tool.' },
-    platforms, gaugeSamples, tunnels,
+    platforms, gaugeSamples, tunnels, concourse,
     platform11: { drawn: platforms.some(p => p.ref === '11'), drawnStationRefs: platforms.map(p => p.ref), basis: 'All station-zone surface source polygons passed through the actual platform builder; no generated extra slabs.' },
     sample26mCar: { kind: 'lner5', carIndex: 1, specLengthM, drawnCarLengthM, differenceM: round(drawnCarLengthM - specLengthM), toleranceM: 0.001, withinTolerance: Math.abs(drawnCarLengthM - specLengthM) <= 0.001, includes: 'all car meshes including coupler; model spec length includes coupling allowance' },
     captureBounds: { station: box(station), throat: box(throat) } };
@@ -164,6 +178,8 @@ export function renderAxis01Markdown(report: ReturnType<typeof createAxis01Repor
     '| Platform | Drawn m | OSM m | Published operational m | Drawn − published m | Within published 1 m |',
     '| --- | ---: | ---: | ---: | ---: | --- |',
     ...report.platforms.map(p => `| ${p.ref} | ${p.drawnLengthM} | ${p.osmLongAxisM} | ${p.publishedOperationalLengthM ?? 'missing'} | ${p.drawnMinusPublishedM ?? 'missing'} | ${p.withinPublishedTolerance === null ? 'missing' : p.withinPublishedTolerance ? 'yes' : 'FLAG'} |`),
+    '', report.concourse === null ? 'Western Concourse overall N–S roof: not measured (no OSM station footprint). FLAG.'
+      : `Western Concourse overall N–S roof: ${report.concourse.drawnNorthSouthM} m; Arup overall roof 138 m; difference ${report.concourse.differenceM} m; ${report.concourse.withinTolerance ? 'PASS' : 'FLAG'} at 3 m. Partial OSM arc fitted-circle diameter ${report.concourse.fittedArcDiameterM} m is a different measurement. [Source: Arup fig.6](${report.concourse.source}).`,
     '', 'Gauge samples (actual inner rail faces; tolerance 0.002 m):', '',
     ...report.gaugeSamples.map((p, i) => `- ${i + 1}: x=${round(p.point[0])}, z=${round(p.point[1])}; ${p.gaugeM ?? 'missing'} m; error ${p.errorM ?? 'missing'} m; ${p.withinTolerance ? 'PASS' : 'FLAG'}`),
     '', `26 m intermediate car: drawn ${report.sample26mCar.drawnCarLengthM} m; specification ${report.sample26mCar.specLengthM} m; tolerance ${report.sample26mCar.toleranceM} m; ${report.sample26mCar.withinTolerance ? 'PASS' : 'FLAG'}.`,
