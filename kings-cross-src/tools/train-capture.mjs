@@ -340,8 +340,8 @@ export function stationManifest(scene) {
 }
 
 export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
-const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--timeout-seconds'];
-/** `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--timeout-seconds N]`. */
+const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
+/** `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`. */
 export function parseCatalogueArgs(args) {
   const options=new Map();
   for(let i=0;i<args.length;i+=2) {
@@ -362,9 +362,11 @@ export function parseCatalogueArgs(args) {
     }
     return allowed.filter(item=>items.includes(item));
   };
+  const exposure=options.get('--exposure')??'day';
+  if(!isExposure(exposure))throw new Error(`--exposure: unknown ${exposure}; expected ${EXPOSURE_IDS.join(',')}`);
   const seconds=Number(options.get('--timeout-seconds')??CATALOGUE_TIMEOUT_S.default);
   if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
-  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views:list('--views',VIEW_IDS),chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,timeoutMs:seconds*1000};
+  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views:list('--views',VIEW_IDS),chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
 /** Host and build identity for every sidecar: the machine, the git head and the exact page that was photographed. */
@@ -492,20 +494,37 @@ export function catalogueDriver() {
   const frame=()=>window.__signalFrame(0);
   const names=list=>list.map(o=>({name:o.name||'',type:o.type}));
   const disposeGeometries=object=>object.traverse(o=>{if(o.geometry)o.geometry.dispose();});
-  // the page's title and the map-data credit describe the page, not the specimen, so they come off the pictures too (DOM only; restored by end)
-  const hideHud=()=>{
-    const dom=[...document.querySelectorAll('h1, .hud')].map(el=>({el,display:el.style.display,name:el.tagName.toLowerCase()+(el.className?'.'+el.className:'')}));
-    for(const d of dom)d.el.style.display='none';
-    return dom;
+  // The page's own DOM (title chip, status and credit lines, station tabs and their notice, the Almanac button, anything it adds) describes the page, not the
+  // specimen, so all of it comes off the pictures: everything in the body but the canvas and the capture label (train-framing.mjs hideChrome; restored by end).
+  const keep=()=>({canvas:k.renderer.domElement,keepIds:['capture-train-label']});
+  const hideChrome=(hidden=[])=>cat.F.hideChrome(document,window,{...keep(),hidden});
+  /** Hide what the page has added since, then list what is still drawn besides the canvas and the label (nothing, or the capture stops). */
+  cat.chrome=()=>{
+    const dom=hideChrome(cat.state.dom);
+    return {hidden:dom.map(({name,drawn,box})=>({name,drawn,box})),visible:cat.F.visibleChrome(document,window,keep())};
   };
+  cat.assertChrome=()=>{
+    const r=cat.chrome();
+    if(r.visible.length)throw new Error(`page chrome would be in the picture: ${r.visible.map(v=>`${v.name} at ${v.box.join(',')}`).join('; ')}`);
+    return r;
+  };
+  /** The page's atmosphere as the frame has it (null under the fixed rig, which has none): the clock, the sun, the weather and the lamp level that lights the trains' windows and lenses. */
+  const atmosphereOf=()=>{
+    const a=k.atmosphere?.state?.();if(!a)return null;
+    const finite=v=>Number.isFinite(v)?v:null,w=a.weather;
+    return {timeMs:a.timeMs,iso:new Date(a.timeMs).toISOString(),sun:{elevationDeg:a.sun.elevationDeg,azimuthDeg:a.sun.azimuthDeg},
+      weather:{label:w.label,cloud:w.cloud,rain:w.rain,snow:w.snow,visibilityM:finite(w.visibilityM),wet:w.wet,snowCover:w.snowCover,windMs:w.windMs,thunder:w.thunder},
+      rig:{daylight:a.rig.daylight,lampLevel:a.rig.lampLevel,stars:a.rig.stars,fogAmount:a.rig.fogAmount,sunIntensity:a.rig.sun.intensity,moonIntensity:a.rig.moon.intensity,hemisphereIntensity:a.rig.hemisphere.intensity}};
+  };
+  cat.atmosphere=atmosphereOf;
   const sceneChildren=()=>k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}));
   cat.begin=(kind,length)=>{
     const {T,F}=cat;
     if(cat.state)throw new Error('a specimen is already on stage');
     const group=k.evidenceBuildTrain(kind),hidden=F.hideSceneryForStage(k.scene),stage=F.buildCatalogueStage(T,{length});
     k.scene.add(stage);k.scene.add(group);
-    const dom=hideHud();
-    cat.state={kind,length,group,stage,hidden,dom,saved:null,ground:{heightAt:()=>F.CATALOGUE.groundY}};
+    cat.state={kind,length,group,stage,hidden,dom:[],saved:null,ground:{heightAt:()=>F.CATALOGUE.groundY}};
+    const dom=hideChrome(cat.state.dom);
     return {hidden:names(hidden),hiddenDom:dom.map(d=>d.name),stage:stage.userData.levels,children:sceneChildren()};
   };
   /** V10: only the specimen is added; the station stays exactly as the page built it (nothing hidden, no stage). */
@@ -513,19 +532,20 @@ export function catalogueDriver() {
     const {F}=cat;
     if(cat.state)throw new Error('a specimen is already on stage');
     const group=k.evidenceBuildTrain(kind);k.scene.add(group);
-    const dom=hideHud(),terrain=k.parts?.terrain??null;
-    cat.state={kind,length:null,group,stage:null,hidden:[],dom,saved:null,ground:terrain??{heightAt:()=>F.CATALOGUE.groundY}};
+    const terrain=k.parts?.terrain??null;
+    cat.state={kind,length:null,group,stage:null,hidden:[],dom:[],saved:null,ground:terrain??{heightAt:()=>F.CATALOGUE.groundY}};
+    const dom=hideChrome(cat.state.dom);
     return {hidden:[],hiddenDom:dom.map(d=>d.name),stage:null,scenery:'kept: the page as built, with the specimen added',ground:terrain?'the page terrain':'flat fallback: the page has no terrain',children:sceneChildren()};
   };
   /** One frame for the view the camera has been set to, then the check, the costs and the pose the sidecar reports. */
   const settle=(view,text,pose)=>{
     const {T,F}=cat,s=cat.state;
-    label(text);frame();
+    label(text);const chrome=cat.assertChrome();frame();
     const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
     if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
     const info={calls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles};
     const inspection=F.inspectCatalogueView(T,k.scene,k.camera,s.group,s.ground,view,view.id==='V10'?F.stationCheckOptions():undefined);
-    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text};
+    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text,chrome,atmosphere:atmosphereOf()};
   };
   cat.view=(view,text)=>{
     const {T,F}=cat,s=cat.state;
@@ -560,7 +580,7 @@ export function catalogueDriver() {
     k.scene.remove(s.group);disposeGeometries(s.group);
     if(s.stage){k.scene.remove(s.stage);disposeGeometries(s.stage);}
     for(const o of s.hidden)o.visible=true;
-    for(const d of s.dom)d.el.style.display=d.display;
+    cat.F.restoreChrome(s.dom);
     document.getElementById('capture-train-label')?.remove();
     k.camera.up.set(0,1,0);cat.state=null;frame();return true;
   };
@@ -582,17 +602,70 @@ function catalogueServer(root,dist) {
   }catch{res.writeHead(404).end();}});
 }
 export const CATALOGUE_URL_QUERY='trains=none&board=0&tooltip=0&signals=0';
+/**
+ * The lighting a pass is taken under, a query appended to CATALOGUE_URL_QUERY so the page is pinned and the picture repeats. `day` is the fixed reference
+ * rig the earlier rounds were lit with: the page's `?sky=ref` (web/src/main.ts `fixedSky`: kx.atmosphere is null; hemisphere 1.25, sun 1.7 at
+ * CATALOGUE.sunPosition, background 35465e, no tone mapping) with all of the page's scenery. `?bare=1` selects the same rig but also drops the terrain, the
+ * city and the landmarks and draws a grid, so V10 would stand in a different station: it is not used. `dusk` pins the page's own clock and weather
+ * (`?time=` and `?weather=`; no weather request is made): the sun, sky, lamps and ground of 16:30 UTC on 2026-11-09 under clear skies. The poses of a pass
+ * do not depend on its exposure: the sun-bearing rule turns the specimen by CATALOGUE.sunPosition (the day rig's sun) in both, and a dusk pass reuses the
+ * poses of a day pass (--poses).
+ */
+export const EXPOSURES=Object.freeze({
+  day:Object.freeze({id:'day',query:'sky=ref',rig:'fixed',pinnedTime:null,pinnedWeather:null}),
+  dusk:Object.freeze({id:'dusk',query:'time=2026-11-09T16:30:00Z&weather=clear',rig:'atmosphere',pinnedTime:'2026-11-09T16:30:00Z',pinnedWeather:'clear'}),
+});
+export const EXPOSURE_IDS=Object.freeze(Object.keys(EXPOSURES));
+/** Is this the id of an exposure (an own key: `toString` and `constructor` are not)? */
+function isExposure(id) { return Object.hasOwn(EXPOSURES,id); }
+/** The query of a pass: the catalogue's base query and its exposure's. */
+export function catalogueUrlQuery(exposure='day') {
+  if(!isExposure(exposure))throw new Error(`unknown exposure ${exposure}`);
+  return `${CATALOGUE_URL_QUERY}&${EXPOSURES[exposure].query}`;
+}
+/** What a pass records of its exposure: the id, the full query, the rig, the pinned time and weather. */
+export const exposureRecord=exposure=>({id:exposure,urlQuery:catalogueUrlQuery(exposure),rig:EXPOSURES[exposure].rig,pinnedTime:EXPOSURES[exposure].pinnedTime,pinnedWeather:EXPOSURES[exposure].pinnedWeather});
 const SUN_LIGHT=lights=>lights.find(l=>l.type==='DirectionalLight'&&Math.abs(l.intensity-1.7)<1e-9);
+/**
+ * Is the page lit the way the pass says? `day` is the fixed rig: no atmosphere state, and the sun where the sun-bearing rule puts it. `dusk` is the page's own
+ * atmosphere at the pinned instant: it must have a state, at that time (a page that ignored `?time=` would be lit by the wall clock).
+ */
+export function checkExposure(exposure,session) {
+  if(!isExposure(exposure))throw new Error(`unknown exposure ${exposure}`);
+  const e=EXPOSURES[exposure];
+  if(e.rig==='fixed') {
+    if(session.atmosphereState)throw new Error('the day pass needs the fixed rig, but the page has an atmosphere (is ?sky=ref honoured?)');
+    const sun=SUN_LIGHT(session.lights);
+    if(!sun||sun.position.some((v,i)=>Math.abs(v-CATALOGUE.sunPosition[i])>1e-9))throw new Error(`the page sun is not at ${CATALOGUE.sunPosition}: the sun-bearing rule is stale`);
+    return;
+  }
+  if(!session.atmosphereState)throw new Error(`the ${exposure} pass needs the page's atmosphere, but the page has none (was ?time= or ?weather= ignored?)`);
+  if(session.atmosphereState.timeMs!==Date.parse(e.pinnedTime))throw new Error(`the page clock is ${new Date(session.atmosphereState.timeMs).toISOString()}, not the pinned ${e.pinnedTime}`);
+}
+
+/**
+ * The lamp level the page gives the trains' windows and lenses, and where it was read: the atmosphere's rig sets `trainNight.value` to its `lampLevel` (web/src/atmosphere.ts apply).
+ * The fixed day rig has no atmosphere, so nothing ever sets it and it keeps its initial 0 (web/src/train-geom.ts); that is inferred from the code, not read from the page.
+ */
+export function trainNightOf(exposure,atmosphere) {
+  if(atmosphere)return {trainNight:atmosphere.rig.lampLevel,trainNightSource:'the page atmosphere: rig.lampLevel, which atmosphere.ts apply copies to trainNight.value'};
+  if(exposure.rig==='fixed')return {trainNight:0,trainNightSource:'inferred: the fixed rig has no atmosphere, so trainNight keeps its initial 0 (web/src/train-geom.ts)'};
+  return {trainNight:null,trainNightSource:'unavailable: the page gave no atmosphere state'};
+}
 
 /** The sidecar of one picture: everything needed to reproduce it and to judge it without opening the page. */
-export function catalogueSidecar({kind,view,file,formation,session,host,build,state,result,timings}) {
+export function catalogueSidecar({kind,view,file,formation,session,host,build,state,result,timings,exposure=exposureRecord('day')}) {
   const live=result.live;
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-sidecar/1',kind,file,
     view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,capability:view.capability??null},
     renderer:session.renderer,host:host.os,macModel:host.macModel,git:host.git,build,
     viewport:{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,
       canvas:session.size,devicePixelRatio:session.devicePixelRatio},
-    renderState:{toneMapping:session.toneMapping,toneMappingExposure:session.toneMappingExposure,outputColorSpace:session.outputColorSpace,background:session.background,fog:session.fog,lights:session.lights},
+    // the exposure is what the page was pinned to; `atmosphere` is the page's own state at this frame (null under the fixed day rig), and `trainNight` the lamp level it gives
+    // the trains' windows and lenses (web/src/atmosphere.ts apply: trainNight.value = rig.lampLevel)
+    renderState:{toneMapping:session.toneMapping,toneMappingExposure:session.toneMappingExposure,outputColorSpace:session.outputColorSpace,background:session.background,fog:session.fog,lights:session.lights,
+      exposure:exposure.id,urlQuery:exposure.urlQuery,rig:exposure.rig,pinnedTime:exposure.pinnedTime,pinnedWeather:exposure.pinnedWeather,
+      atmosphere:live.atmosphere??null,...trainNightOf(exposure,live.atmosphere??null),lampApi:session.lampApi===true},
     // V01-V09 are planned in the train's own frame; a V10 view is planned in world metres (the station fixes the specimen), so the page reports its train-local pose
     pose:{trainLocal:{eye:live.local?.eye??view.eye,target:live.local?.target??view.target,fov:view.fov,up:view.up,near:view.near,region:view.region,...(view.extents?{extents:view.extents}:{})},
       world:{position:live.pose.position,target:live.pose.target,fov:live.pose.fov,aspect:live.pose.aspect,near:live.pose.near,far:live.pose.far,up:live.pose.up,positionErrorM:live.pose.positionErrorM}},
@@ -603,12 +676,37 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
     formation:{kind,family:formation.family,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
     dimensions:formation.dimensions,
     visibility:live.inspection,pixels:result.verdict,
-    hiddenSceneNames:state.hidden,hiddenDom:state.hiddenDom,stage:state.stage,label:live.labelText,
+    hiddenSceneNames:state.hidden,hiddenDom:state.hiddenDom,chrome:live.chrome??null,stage:state.stage,label:live.labelText,
     costs:{trainStatic:live.costs,rendererInfo:live.info},timings};
+}
+
+/** The head of the run's manifest: what the run was (rubric, viewport, the sun rule, the exposure, the station, the machine and build, the poses it reused) before any kind is photographed. */
+export function catalogueManifest({exposure,stationScene,host,build,poses,generated=new Date().toISOString()}) {
+  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated,viewport:CATALOGUE.viewport,
+    sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
+      text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose. It always uses the day rig's sun, in every exposure, so a dusk pass turns each specimen exactly as the day pass did."},
+    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),
+    host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:poses,kinds:{}};
+}
+/** The page address of a run: the local server's port and the query its exposure pins. */
+export const cataloguePageUrl=(port,exposure)=>`http://127.0.0.1:${port}/kings-cross/?${catalogueUrlQuery(exposure)}`;
+/**
+ * The photographs of one view, in the order that matters: the page is checked for chrome, the picture is taken, then the same frame with the specimen hidden (the
+ * baseline the pixels are judged against) and, for a whole-car subject, with only that car; the specimen is shown again at the end.
+ */
+export async function photograph({evaluate,screenshot,view}) {
+  await evaluate('window.__cat.assertChrome()');
+  const shot=await screenshot();
+  await evaluate(`window.__cat.isolate('empty')`);const baseline=await screenshot();
+  let subject=null;
+  if(view.extents?.scope==='car'){await evaluate(`window.__cat.isolate('car:${view.extents.car}')`);subject=await screenshot();}
+  await evaluate(`window.__cat.isolate('all')`);
+  return {shot,baseline,subject};
 }
 
 export async function catalogueMain(args) {
   const opts=parseCatalogueArgs(args),root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
+  if(opts.exposure!=='day'&&!opts.poses)throw new Error(`--exposure ${opts.exposure} reuses the poses of a day pass, so poses cannot change between exposures: give --poses <the day pass's catalogue-manifest.json>`);
   const dist=await realpath(path.resolve(opts.dist)),out=path.resolve(opts.out);
   const inside=p=>{const r=path.relative(scratch,p);return !r.startsWith('..')&&!path.isAbsolute(r);};
   if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
@@ -627,17 +725,13 @@ export async function catalogueMain(args) {
     }
   }
   const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
-  if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,posesFrozen:!!frozen,planned:counts}));return;}
+  if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,exposure:opts.exposure,posesFrozen:!!frozen,planned:counts}));return;}
   const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   await mkdir(out,{recursive:true});
   const host=hostInfo(),build=await buildHash(dist),started=performance.now();
   let chrome,cdp,profile,server,cleanup,fatal,session;
   const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
-  const manifest={rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated:new Date().toISOString(),viewport:CATALOGUE.viewport,
-    sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
-      text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose."},
-    station:stationScene?stationManifest(stationScene):null,
-    host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,kinds:{}};
+  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null});
   const summary={kinds:{},timingsMs:{}};
   try {
     server=catalogueServer(root,dist);
@@ -651,7 +745,7 @@ export async function catalogueMain(args) {
     await send('Page.enable');await send('Runtime.enable');
     await send('Emulation.setDeviceMetricsOverride',{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,mobile:false});
     await send('Page.addScriptToEvaluateOnNewDocument',{source:`(${manualFrames.toString()})();window.__captureDocument=location.href;`});
-    const url=`http://127.0.0.1:${server.address().port}/kings-cross/?${CATALOGUE_URL_QUERY}`;
+    const url=cataloguePageUrl(server.address().port,opts.exposure);
     await send('Page.navigate',{url});
     for(const deadline=performance.now()+30000;;){
       let ready=false;try{ready=await evaluate(`window.__captureDocument===${JSON.stringify(url)}&&!!window.__kx?.ready&&typeof window.__kx.evidenceBuildTrain==='function'`);}catch(error){if(!/context|navigat/i.test(error.message))throw error;}
@@ -662,12 +756,13 @@ export async function catalogueMain(args) {
       return {renderer:e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),toneMapping:k.renderer.toneMapping,toneMappingExposure:k.renderer.toneMappingExposure,outputColorSpace:k.renderer.outputColorSpace,
         background:k.scene.background?.getHexString?.()??null,fog:k.scene.fog?{type:k.scene.fog.type,near:k.scene.fog.near,far:k.scene.fog.far,color:k.scene.fog.color.getHexString()}:null,
         size:[c.width,c.height],devicePixelRatio:window.devicePixelRatio,inner:[innerWidth,innerHeight],aspect:k.camera.aspect,lampApi:typeof k.setTrainLampState==='function',
+        atmosphereState:k.atmosphere?.state?.()?{timeMs:k.atmosphere.state().timeMs}:null,
         lights:k.scene.children.filter(o=>o.isLight).map(o=>({name:o.name||'',type:o.type,intensity:o.intensity,color:o.color.getHexString(),position:o.position.toArray()}))};})()`);
     if(!/Metal/i.test(session.renderer)||/SwiftShader|llvmpipe|software/i.test(session.renderer))throw new Error(`real Metal GPU required: ${session.renderer}`);
     if(session.size[0]!==CATALOGUE.viewport.width||session.size[1]!==CATALOGUE.viewport.height||session.devicePixelRatio!==1||Math.abs(session.aspect-CATALOGUE.aspect)>1e-9)throw new Error(`page viewport is ${session.size.join('x')} at ${session.devicePixelRatio}x, aspect ${session.aspect}; need ${CATALOGUE.viewport.width}x${CATALOGUE.viewport.height} at 1x`);
-    const sun=SUN_LIGHT(session.lights);
-    if(!sun||sun.position.some((v,i)=>Math.abs(v-CATALOGUE.sunPosition[i])>1e-9))throw new Error(`the page sun is not at ${CATALOGUE.sunPosition}: the sun-bearing rule is stale`);
+    checkExposure(opts.exposure,session);
     await evaluate(`(${catalogueDriver.toString()})()`);
+    Object.assign(manifest.exposure,{atmosphere:await evaluate('window.__cat.atmosphere()')});
     const shoot=async()=>Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64');
     const publish=async(file,bytes,sidecar)=>{await writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});await writeFile(path.join(out,file+'.json'),JSON.stringify(sidecar,null,2)+'\n',{flag:'wx',mode:0o600});return file;};
     // the views of one specimen already on stage: check, photograph (with the empty-stage baseline), verify the pixels, write the picture and its sidecar
@@ -680,18 +775,11 @@ export async function catalogueMain(args) {
           const station=view.id==='V10',text=`${kind} catalogue specimen ${station?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}`;
           const r=await evaluate(`window.__cat.${station?'stationView':'view'}(${JSON.stringify(view)},${JSON.stringify(text)})`);live.set(view,r);return r.inspection;
         },
-        shoot:async view=>{
-          const shot=await shoot();
-          await evaluate(`window.__cat.isolate('empty')`);const baseline=await shoot();
-          let subject=null;
-          if(view.extents?.scope==='car'){await evaluate(`window.__cat.isolate('car:${view.extents.car}')`);subject=await shoot();}
-          await evaluate(`window.__cat.isolate('all')`);
-          return {shot,baseline,subject};
-        },
+        shoot:view=>photograph({evaluate,screenshot:shoot,view}),
         verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
         publish:async(view,picture,inspection,verdict,timingsMs)=>{
           const file=`${kind}-${view.suffix}.png`;
-          return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs}));
+          return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs,exposure:manifest.exposure}));
         },
       });
     };

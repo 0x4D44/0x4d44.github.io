@@ -834,6 +834,71 @@ export function hideSceneryForStage(scene) {
   return hidden;
 }
 export const describeObjects = list => list.map(o => ({ name: o.name || '', type: o.type }));
+
+// ---- the page's own DOM, which must not be in a picture --------------------------------------------------------------------------------------
+// A picture is the canvas and the capture label. Everything else the page puts on screen (the title chip, the status and credit lines, the station
+// tabs and their notice, the Almanac button, a train board or tooltip, any overlay) is chrome. It is found by structure, not by a list of names, so
+// a page that grows another bar is covered: the chrome is every element of the body that is not the canvas, not on the way to it, and not kept.
+const UNDRAWN_TAGS = new Set(['HEAD', 'SCRIPT', 'STYLE', 'LINK', 'META', 'TEMPLATE', 'NOSCRIPT', 'TITLE', 'BASE']);
+/** A short name for an element in a sidecar: tag, #id and .classes. */
+export const domName = el => {
+  const classes = typeof el.className === 'string' ? el.className.trim().split(/\s+/).filter(Boolean) : [];
+  return el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + classes.map(c => `.${c}`).join('');
+};
+const round1 = v => Math.round(v * 10) / 10 + 0;
+const boxOf = el => { const b = el.getBoundingClientRect(); return [b.x, b.y, b.width, b.height].map(round1); };
+/** Does the element put pixels in the frame: a box with area that meets the viewport, not visibility:hidden, not fully transparent. (`display: none` anywhere above it leaves no box.) */
+export function isDrawn(el, win) {
+  const style = win.getComputedStyle(el);
+  if (style.visibility === 'hidden' || Number.parseFloat(style.opacity) === 0) return false;
+  return Array.from(el.getClientRects()).some(r => r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < win.innerWidth && r.top < win.innerHeight);
+}
+const keptElements = (doc, { canvas, keepIds = [] }) => [canvas, ...keepIds.map(id => doc.getElementById(id))].filter(Boolean);
+/** The page's chrome as a list of elements: those children of the body, or of anything on the way to a kept element, that are neither kept nor on that way. */
+export function pageChrome(doc, options) {
+  const keep = keptElements(doc, options), chrome = [];
+  const walk = parent => {
+    for (const el of parent.children) {
+      if (UNDRAWN_TAGS.has(el.tagName) || keep.includes(el)) continue;
+      if (keep.some(k => el.contains(k))) walk(el); else chrome.push(el);
+    }
+  };
+  walk(doc.body);
+  return chrome;
+}
+/**
+ * Hide all of the page's chrome (inline `display: none !important`, so no stylesheet rule can bring it back), whether it is drawn now or not, so what
+ * it holds later stays hidden too. `hidden` is the list of records so far; each new element gets one: its name, whether it was drawn, where, and the
+ * inline display it had, which `restoreChrome` puts back. Calling it again hides what the page has added since. Returns `hidden`.
+ */
+export function hideChrome(doc, win, { canvas, keepIds = [], hidden = [] }) {
+  const have = new Set(hidden.map(r => r.el));
+  for (const el of pageChrome(doc, { canvas, keepIds })) {
+    if (have.has(el)) continue;
+    const drawn = isDrawn(el, win);
+    hidden.push({ el, name: domName(el), drawn, box: drawn ? boxOf(el) : null, was: { value: el.style.getPropertyValue('display'), priority: el.style.getPropertyPriority('display') } });
+    el.style.setProperty('display', 'none', 'important');
+  }
+  return hidden;
+}
+/** Put every hidden element's inline display back as it was, and empty the list. */
+export function restoreChrome(hidden) {
+  for (const { el, was } of hidden) { if (was.value === '') el.style.removeProperty('display'); else el.style.setProperty('display', was.value, was.priority); }
+  hidden.length = 0;
+}
+/** What the frame would show besides the canvas and the kept elements: [{name, box}] of every drawn element outside them (empty when the chrome is all hidden). */
+export function visibleChrome(doc, win, options) {
+  const keep = keptElements(doc, options), seen = [];
+  const walk = parent => {
+    for (const el of parent.children) {
+      if (UNDRAWN_TAGS.has(el.tagName) || keep.includes(el)) continue;
+      if (keep.some(k => el.contains(k))) { walk(el); continue; }
+      if (isDrawn(el, win)) seen.push({ name: domName(el), box: boxOf(el) }); else walk(el);
+    }
+  };
+  walk(doc.body);
+  return seen;
+}
 /** Specimen and stage share one rigid transform: the vertical-axis rotation the sun rule asks for. V10 has no stage (the station is the stage): it passes null. */
 export function placeStageSpecimen(group, stage, rotationY, position = [0, 0, 0]) {
   for (const o of [group, stage]) if (o) { o.position.set(...position); o.rotation.set(0, rotationY, 0); o.updateMatrixWorld(true); }

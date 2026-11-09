@@ -402,13 +402,13 @@ test('the run loop checks the deadline before each view, and a thrown error stop
 // ---- argv ---------------------------------------------------------------------------------------------------------------------------------
 test('catalogue argv takes known options once with values, in rubric order, and a timeout inside the cap',()=>{
  const base=['--mode','catalogue','--dist','d','--out','o'],parse=extra=>C.parseCatalogueArgs([...base,...extra]);
- const defaults=parse([]);assert.deepEqual(defaults.kinds,ALL_KINDS);assert.deepEqual(defaults.views,F.VIEW_IDS);assert.equal(defaults.chrome,null);assert.equal(defaults.poses,null);assert.equal(defaults.timeoutMs,1800000);assert.equal(defaults.dist,'d');assert.equal(defaults.out,'o');
+ const defaults=parse([]);assert.deepEqual(defaults.kinds,ALL_KINDS);assert.deepEqual(defaults.views,F.VIEW_IDS);assert.equal(defaults.chrome,null);assert.equal(defaults.poses,null);assert.equal(defaults.exposure,'day','the default exposure is the day rig of the earlier rounds');assert.equal(defaults.timeoutMs,1800000);assert.equal(defaults.dist,'d');assert.equal(defaults.out,'o');
  const picked=parse(['--kinds','tl700x8,lner5','--views','V04,V01','--chrome','none','--poses','m.json','--timeout-seconds','90']);
  assert.deepEqual(picked.kinds,['lner5','tl700x8'],'catalogue order, not argv order');assert.deepEqual(picked.views,['V01','V04']);assert.equal(picked.chrome,'none');assert.equal(picked.poses,'m.json');assert.equal(picked.timeoutMs,90000);
- assert.equal(parse(['--timeout-seconds','3600']).timeoutMs,3600000);
+ assert.equal(parse(['--timeout-seconds','3600']).timeoutMs,3600000);assert.equal(parse(['--exposure','dusk']).exposure,'dusk');assert.equal(parse(['--exposure','day']).exposure,'day');
  for(const [extra,message] of [[['--kinds','lner5,nope'],/--kinds: unknown nope/],[['--kinds','lner5,,hull5'],/unknown \(empty\)/],[['--kinds','lner5,lner5'],/lner5 repeated/],[['--views','V11'],/--views: unknown V11/],[['--views','v01'],/unknown v01/],
    [['--bogus','1'],/unknown catalogue option --bogus/],[['--kinds','lner5','--kinds','hull5'],/repeated catalogue option --kinds/],[['--kinds'],/missing value for --kinds/],[['--kinds','--views','V01'],/missing value for --kinds/],
-   [['--timeout-seconds','0'],/positive and at most 3600/],[['--timeout-seconds','-5'],/positive/],[['--timeout-seconds','abc'],/positive/],[['--timeout-seconds','3601'],/at most 3600/],[['--chrome',''],/missing value for --chrome/]])
+   [['--exposure','noon'],/--exposure: unknown noon; expected day,dusk/],[['--exposure','day','--exposure','dusk'],/repeated catalogue option --exposure/],[['--exposure'],/missing value for --exposure/],[['--timeout-seconds','0'],/positive and at most 3600/],[['--timeout-seconds','-5'],/positive/],[['--timeout-seconds','abc'],/positive/],[['--timeout-seconds','3601'],/at most 3600/],[['--chrome',''],/missing value for --chrome/]])
   assert.throws(()=>parse(extra),message,extra.join(' '));
  assert.throws(()=>C.parseCatalogueArgs(['--mode','catalogue','--out','o']),/missing --dist/);assert.throws(()=>C.parseCatalogueArgs(['--mode','catalogue','--dist','d']),/missing --out/);
  assert.throws(()=>C.parseCatalogueArgs(['--mode','portal','--dist','d','--out','o']),/--mode must be catalogue/);assert.throws(()=>C.parseCatalogueArgs(['--dist','d','--out','o']),/--mode must be catalogue/);
@@ -458,6 +458,10 @@ test('catalogue preflight plans the views without Chrome, and refuses to capture
   const [both]=await ok('--kinds','lner5','--views','V02,V10');assert.deepEqual(both.planned,{lner5:{OK:8}});
   const poses=path.join(dir,'manifest.json');await writeFile(poses,JSON.stringify(frozenManifest(['lner5','gn387x8'])));
   const [frozen]=await ok('--kinds','lner5,gn387x8','--views','V01,V08','--poses',poses);assert.equal(frozen.posesFrozen,true);assert.deepEqual(frozen.planned,plain.planned);
+  // a dusk pass reuses the poses of a day pass, so poses cannot change between exposures: it refuses to run without them
+  assert.equal(frozen.exposure,'day');
+  await assert.rejects(run('--kinds','lner5','--views','V01','--exposure','dusk'),/--exposure dusk reuses the poses of a day pass, so poses cannot change between exposures: give --poses/);
+  const [dusk]=await ok('--kinds','lner5,gn387x8','--views','V01,V08','--poses',poses,'--exposure','dusk');assert.deepEqual([dusk.exposure,dusk.posesFrozen,dusk.planned],['dusk',true,plain.planned]);
   const tampered=frozenManifest(['lner5']);tampered.kinds.lner5.views['front-3m'].plan.eye[2]=-3.001;tampered.kinds.lner5.views['roof-plan'].plan.fov=51;await writeFile(poses,JSON.stringify(tampered));
   await assert.rejects(run('--kinds','lner5','--views','V02,V06','--poses',poses),/refusing to capture: 2 pose\(s\) differ from .*lner5\/front-3m pose differs from the frozen pose at \/eye\/2; lner5\/roof-plan pose differs from the frozen pose at \/fov/);
   await assert.rejects(run('--kinds','lner5,hull5','--views','V01','--poses',poses),/refusing to capture.*hull5\/\* kind missing/);
@@ -528,21 +532,71 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.deepEqual(sidecar.costs,{trainStatic:{triangles:11,drawCalls:12},rendererInfo:{calls:13,triangles:14}});assert.equal(sidecar.label,'label');assert.deepEqual(sidecar.hiddenSceneNames,[{name:'shed',type:'Group'}]);assert.deepEqual(sidecar.hiddenDom,['h1']);
  assert.deepEqual(sidecar.visibility,{clear:true});assert.deepEqual(sidecar.pixels,{ok:true});assert.equal(sidecar.formation.cars.length,5);assert.equal(sidecar.formation.lengthM,formations.get('lner5').length);assert.deepEqual(sidecar.dimensions,formations.get('lner5').dimensions);
  assert.equal(JSON.stringify(sidecar.formation.cars[0]).includes('doors'),false,'the sidecar lists the layout, not the door helper');
+ // the exposure, the page's atmosphere, the lamp level of the trains and the lamp API are in the render state; what was hidden, and what was still drawn, is in `chrome`
+ assert.deepEqual(sidecar.renderState,{toneMapping:0,toneMappingExposure:1,outputColorSpace:'srgb',background:'35465e',fog:null,lights:session.lights,exposure:'day',urlQuery:C.catalogueUrlQuery('day'),rig:'fixed',pinnedTime:null,pinnedWeather:null,
+  atmosphere:null,trainNight:0,trainNightSource:C.trainNightOf(C.exposureRecord('day'),null).trainNightSource,lampApi:false});
+ const atmosphere={timeMs:Date.parse('2026-11-09T16:30:00Z'),iso:'2026-11-09T16:30:00.000Z',sun:{elevationDeg:-3.2,azimuthDeg:215},weather:{label:'clear sky',visibilityM:null},rig:{daylight:.1,lampLevel:.8}};
+ const chrome={hidden:[{name:'h1',drawn:true,box:[1380,12,200,30]},{name:'nav.station-switcher',drawn:true,box:[120,8,700,34]}],visible:[]};
+ const dusk=C.catalogueSidecar({kind:'lner5',view:v,file:'lner5-front-3m.png',formation:formations.get('lner5'),session:{...session,lampApi:true},host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
+  state:{hidden:[],hiddenDom:['h1','nav.station-switcher'],stage:{railHeadTopY:0}},result:{verdict:{ok:true},live:{...live,atmosphere,chrome}},timings:{inspect:1},exposure:C.exposureRecord('dusk')});
+ assert.deepEqual([dusk.renderState.exposure,dusk.renderState.urlQuery,dusk.renderState.rig,dusk.renderState.pinnedTime,dusk.renderState.pinnedWeather],['dusk',C.catalogueUrlQuery('dusk'),'atmosphere','2026-11-09T16:30:00Z','clear']);
+ assert.deepEqual(dusk.renderState.atmosphere,atmosphere);assert.equal(dusk.renderState.trainNight,.8);assert.match(dusk.renderState.trainNightSource,/rig\.lampLevel/);assert.equal(dusk.renderState.lampApi,true);
+ assert.deepEqual(dusk.chrome,chrome);assert.deepEqual(dusk.hiddenDom,['h1','nav.station-switcher']);assert.equal(sidecar.chrome,null,'a sidecar of a page that reported no chrome record says so');
+ assert.deepEqual(C.trainNightOf({rig:'atmosphere'},null),{trainNight:null,trainNightSource:'unavailable: the page gave no atmosphere state'});
 });
 
 // ---- the in-page driver, against a stand-in for the page ---------------------------------------------------------------------------------------
+// A stand-in for the page's DOM: a tree of elements with an inline style and a box that exists unless the element or one above it is `display: none`.
+// `display` is what the page's stylesheet says; the inline style wins over it, as the driver's `display: none` does, unless the element is `stubborn`
+// (a stylesheet rule no inline style can override).
+class FakeStyle {
+ constructor() {this.map=new Map();}
+ setProperty(name,value,priority='') {this.map.set(name,[String(value),priority]);}
+ getPropertyValue(name) {return this.map.get(name)?.[0]??'';}
+ getPropertyPriority(name) {return this.map.get(name)?.[1]??'';}
+ removeProperty(name) {this.map.delete(name);}
+ get display() {return this.getPropertyValue('display');}
+ set display(value) {if(value==='')this.removeProperty('display');else this.setProperty('display',value);}
+ set cssText(value) {this.text=value;}
+}
+class FakeEl {
+ constructor(tagName,{id='',className='',display='block',rect=[0,0,200,24],stubborn=false}={}) {Object.assign(this,{tagName,id,className,display,rect,stubborn,parent:null,children:[],style:new FakeStyle(),textContent:'',visibility:'visible',opacity:'1'});}
+ append(...kids) {for(const kid of kids){kid.parent=this;this.children.push(kid);}return this;}
+ remove() {if(this.parent)this.parent.children=this.parent.children.filter(c=>c!==this);this.parent=null;}
+ contains(other) {for(let p=other;p;p=p.parent)if(p===this)return true;return false;}
+ get shown() {for(let p=this;p;p=p.parent)if(!p.stubborn&&(p.style.getPropertyValue('display')||p.display)==='none')return false;return true;}
+ getClientRects() {if(!this.shown)return [];const [x,y,width,height]=this.rect;return [{x,y,width,height,left:x,top:y,right:x+width,bottom:y+height}];}
+ getBoundingClientRect() {const [x,y,width,height]=this.shown?this.rect:[0,0,0,0];return {x,y,width,height,left:x,top:y,right:x+width,bottom:y+height};}
+}
+const nameOfEl=el=>el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(el.className?'.'+el.className.split(' ').join('.'):'');
 function fakePage() {
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(50,1.6,.5,9000),controls={target:new T.Vector3(),update(){}},frames=[],sun=new T.DirectionalLight(0xffe8c2,1.7),hemi=new T.HemisphereLight();
  sun.position.set(-320,520,260);
  const shed=Object.assign(new T.Group(),{name:'train-shed'}),terrain=Object.assign(new T.Group(),{name:'terrain'}),sky=new T.Mesh(new T.PlaneGeometry(10,10),new T.MeshBasicMaterial());
  scene.add(hemi,sun,shed,terrain,sky);
+ // the page's DOM: index.html's own chrome (title chip, fallback, status and credit lines) and what the multi-station page adds around the canvas host
+ // (the Almanac button, the station tabs with their notice and placeholder, a board tooltip, the live-train label layer)
+ const body=new FakeEl('BODY'),app=new FakeEl('DIV',{id:'app',rect:[0,0,1600,1000]}),canvas=new FakeEl('CANVAS',{rect:[0,0,1600,1000]});app.append(canvas);
+ const h1=new FakeEl('H1',{rect:[1380,12,200,30]}),fallback=new FakeEl('DIV',{id:'fallback',display:'none'}),hud=new FakeEl('DIV',{className:'hud',display:'flex',rect:[16,960,1568,28]});
+ hud.append(new FakeEl('SPAN',{id:'status',rect:[16,960,900,24]}),new FakeEl('SPAN',{rect:[920,960,660,24]}));
+ const almanac=new FakeEl('DIV',{id:'almanac-back-host',rect:[0,0,109,41]}),switcher=new FakeEl('NAV',{className:'station-switcher',rect:[120,8,700,34]}),notice=new FakeEl('P',{className:'station-notice',rect:[120,44,700,20]});
+ switcher.append(new FakeEl('STYLE',{display:'none'}),new FakeEl('DIV',{className:'station-buttons',rect:[120,8,500,34]}).append(...['King\u2019s Cross','St Pancras','Edinburgh Waverley'].map(()=>new FakeEl('BUTTON',{rect:[120,8,160,34]}))),notice);
+ const placeholder=new FakeEl('SECTION',{className:'station-placeholder',display:'none'}),tip=new FakeEl('DIV',{className:'kx-tip',display:'none'}),labels=new FakeEl('DIV',{className:'mml-train-labels',rect:[0,0,0,0]});
+ body.append(app,h1,fallback,hud,almanac,switcher,placeholder,tip,labels);
+ const initial=new Set(body.children),outside=[];
+ // what a frame would show besides the canvas and the capture label, worked out here from the tree and the boxes, not by the code under test
+ const drawnOutside=()=>{const out=[],walk=el=>{for(const c of el.children){const kept=c===canvas||c.id==='capture-train-label';
+   if(!kept&&!c.contains(canvas)&&c.shown&&c.rect[2]*c.rect[3]>0)out.push(nameOfEl(c));if(!kept)walk(c);}};walk(body);return out;};
+ const find=(el,id)=>{for(const c of el.children){if(c.id===id)return c;const f=find(c,id);if(f)return f;}return null;};
+ const document={body,getElementById:id=>find(body,id),createElement:tag=>new FakeEl(tag.toUpperCase())};
  // the livery paints on a canvas only where there is a document; the stand-in page has none that can, so the train is built as it is in the other tests
  const build=kind=>{const saved=globalThis.document;delete globalThis.document;try{return buildTrain(kind);}finally{globalThis.document=saved;}};
- const k={scene,camera,controls,renderer:{info:{render:{calls:7,triangles:1234}}},evidenceBuildTrain:build};
- const h1={tagName:'H1',className:'',style:{display:''}},hud={tagName:'DIV',className:'hud',style:{display:'flex'}},made=new Map();
- const document={getElementById:id=>made.get(id)??null,createElement:()=>({style:{},textContent:'',id:'',remove(){made.delete(this.id);}}),querySelectorAll:()=>[h1,hud],body:{append:e=>made.set(e.id,e)}};
- const window={__kx:k,__cat:{T,F},__signalFrame:t=>frames.push(t)};
- return {k,window,document,frames,h1,hud,made,shed,terrain,sky,sun,hemi,scene,camera};
+ const k={scene,camera,controls,renderer:{info:{render:{calls:7,triangles:1234}},domElement:canvas},evidenceBuildTrain:build,atmosphere:null};
+ const window={__kx:k,__cat:{T,F},__signalFrame:t=>{frames.push(t);outside.push(drawnOutside());},innerWidth:1600,innerHeight:1000,
+  getComputedStyle:el=>({visibility:el.visibility,opacity:el.opacity,display:el.shown?el.display:'none'})};
+ return {k,window,document,frames,outside,drawnOutside,body,app,canvas,h1,hud,fallback,almanac,switcher,notice,placeholder,tip,labels,
+  chromeNames:['h1','div#fallback','div.hud','div#almanac-back-host','nav.station-switcher','section.station-placeholder','div.kx-tip','div.mml-train-labels'],
+  get made() {return new Map(body.children.filter(c=>!initial.has(c)&&c.id).map(c=>[c.id,c]));},shed,terrain,sky,sun,hemi,scene,camera};
 }
 function withPage(page,work) {
  Object.assign(globalThis,{window:page.window,document:page.document});
@@ -553,7 +607,8 @@ test('the in-page driver puts the specimen on the neutral stage, hides what the 
  const page=fakePage(),before=page.scene.children.slice(),length=formations.get('lner5').length;
  withPage(page,cat=>{
   const begun=cat.begin('lner5',length);
-  assert.deepEqual(begun.hidden,[{name:'train-shed',type:'Group'},{name:'terrain',type:'Group'},{name:'',type:'Mesh'}]);assert.deepEqual(begun.hiddenDom,['h1','div.hud']);
+  // CHANGED (page chrome): the DOM hidden is all of the page's chrome, not the two elements `h1` and `.hud` (the multi-station page added tabs, a notice, a button...)
+  assert.deepEqual(begun.hidden,[{name:'train-shed',type:'Group'},{name:'terrain',type:'Group'},{name:'',type:'Mesh'}]);assert.deepEqual(begun.hiddenDom,page.chromeNames);
   assert.equal(page.h1.style.display,'none');assert.equal(page.hud.style.display,'none');assert.equal(begun.stage.railHeadTopY,0);
   assert.deepEqual(page.scene.children.map(o=>[o.name||o.type,o.visible]),[['HemisphereLight',true],['DirectionalLight',true],['train-shed',false],['terrain',false],['Mesh',false],['capture-stage',true],['train-lner5',true]]);
   assert.throws(()=>cat.begin('lner5',length),/already on stage/);
@@ -569,7 +624,8 @@ test('the in-page driver puts the specimen on the neutral stage, hides what the 
   cat.isolate('empty');assert.equal(group.visible,false);cat.isolate('car:1');assert.equal(group.visible,true);assert.deepEqual(group.children.filter(o=>o.visible).map(o=>o.name),['car-1']);
   cat.isolate('all');assert.equal(group.visible,true);assert.deepEqual(group.children.map(o=>o.visible),was);assert.equal(page.frames.length,2+3);
   assert.equal(cat.end(),true);
-  assert.deepEqual(page.scene.children,before);assert.ok(page.scene.children.every(o=>o.visible));assert.equal(page.h1.style.display,'');assert.equal(page.hud.style.display,'flex');vec(page.camera.up.toArray(),[0,1,0],1e-12);
+  // CHANGED (page chrome): the stylesheet gives `.hud` its flex, so with the inline style gone the display is the stylesheet's (the old stand-in kept the flex inline)
+  assert.deepEqual(page.scene.children,before);assert.ok(page.scene.children.every(o=>o.visible));assert.equal(page.h1.style.display,'');assert.equal(page.hud.style.display,'');assert.equal(page.hud.shown,true);vec(page.camera.up.toArray(),[0,1,0],1e-12);
   assert.equal(page.made.size,0,'the label comes off the page');
   assert.equal(cat.state,null);assert.equal(cat.end(),false);
   cat.begin('hull5',formations.get('hull5').length);assert.equal(page.scene.children.at(-1).name,'train-hull5');cat.end();
@@ -583,6 +639,66 @@ test('the in-page driver stops at a page that moves the camera, and at a lamp vi
   assert.throws(()=>cat.view(lamp,'x'),/page lost setTrainLampState/);
   const states=[];page.k.setTrainLampState=(group,state)=>states.push([group.name,state]);cat.view(lamp,'x');assert.deepEqual(states,[['train-lner5','leading']]);
   page.window.__signalFrame=()=>{page.camera.position.x+=.5;};assert.throws(()=>cat.view(v,'x'),/moved the camera by 0\.5 m/);
+ });
+});
+
+test('the page chrome is every element of the body off the way to the canvas, found by structure, and it is hidden inline and put back exactly',()=>{
+ const page=fakePage(),doc=page.document,win=page.window,options={canvas:page.canvas,keepIds:['capture-train-label']};
+ assert.equal(F.domName(page.h1),'h1');assert.equal(F.domName(page.hud),'div.hud');assert.equal(F.domName(page.almanac),'div#almanac-back-host');assert.equal(F.domName(new FakeEl('DIV',{id:'a',className:'b  c'})),'div#a.b.c');
+ const svg={tagName:'svg',id:'',className:{baseVal:'x'}};assert.doesNotThrow(()=>F.domName(svg),'an SVG className is not a string');assert.equal(F.domName(svg),'svg');
+ // which elements are chrome: the children of the body, except the canvas host (which holds the canvas and is walked into) and the things that draw nothing
+ page.body.append(new FakeEl('SCRIPT',{rect:[0,0,10,10]}),new FakeEl('STYLE',{rect:[0,0,10,10]}),new FakeEl('NOSCRIPT',{rect:[0,0,10,10]}),new FakeEl('TEMPLATE',{rect:[0,0,10,10]}),new FakeEl('LINK',{rect:[0,0,10,10]}),new FakeEl('META',{rect:[0,0,10,10]}));
+ assert.deepEqual(F.pageChrome(doc,options).map(F.domName),page.chromeNames,'script, style, link, meta, template and noscript are not chrome');
+ const stray=new FakeEl('DIV',{className:'stray',rect:[5,5,20,20]});page.app.append(stray);
+ assert.deepEqual(F.pageChrome(doc,options).map(F.domName),['div.stray',...page.chromeNames],'a sibling of the canvas inside its host is chrome, the host and the canvas are not');
+ assert.deepEqual(F.visibleChrome(doc,win,options).map(v=>v.name),['div.stray','h1','div.hud','div#almanac-back-host','nav.station-switcher'],'and a drawn one is seen from the host as well as from the body');
+ stray.remove();
+ const fractional=new FakeEl('DIV',{className:'fractional',rect:[-0.04,20.06,30.123,40.987]});page.body.append(fractional);
+ assert.deepEqual(F.visibleChrome(doc,win,options).find(v=>v.name==='div.fractional').box,[0,20.1,30.1,41],'boxes are in tenths of a pixel, and a hair below zero is zero, not minus zero');fractional.remove();
+ const wrapper=new FakeEl('DIV',{className:'wrapper'}),kept=new FakeEl('DIV',{id:'keep-me'}),beside=new FakeEl('DIV',{className:'beside'});wrapper.append(kept,beside);page.body.append(wrapper);
+ assert.deepEqual(F.pageChrome(doc,{canvas:page.canvas,keepIds:['keep-me','missing']}).map(F.domName),[...page.chromeNames,'div.beside'],'whatever holds a kept element is walked into, not hidden; an id that is not there keeps nothing');
+ wrapper.remove();
+ // drawn: a box with area that meets the viewport, not hidden and not transparent
+ const probe=patch=>Object.assign(new FakeEl('DIV',{rect:[100,100,50,50]}),patch);
+ assert.equal(F.isDrawn(probe({}),win),true);assert.equal(F.isDrawn(probe({visibility:'hidden'}),win),false);assert.equal(F.isDrawn(probe({opacity:'0'}),win),false);assert.equal(F.isDrawn(probe({opacity:'0.5'}),win),true);
+ assert.equal(F.isDrawn(probe({rect:[100,100,0,50]}),win),false,'no width');assert.equal(F.isDrawn(probe({rect:[100,100,50,0]}),win),false,'no height');assert.equal(F.isDrawn(probe({display:'none'}),win),false);
+ assert.equal(F.isDrawn(probe({rect:[1599,100,50,50]}),win),true,'one pixel inside the right edge');assert.equal(F.isDrawn(probe({rect:[1600,100,50,50]}),win),false,'off the right edge');assert.equal(F.isDrawn(probe({rect:[100,999,50,50]}),win),true);assert.equal(F.isDrawn(probe({rect:[100,1000,50,50]}),win),false,'below the bottom');
+ assert.equal(F.isDrawn(probe({rect:[-49,100,50,50]}),win),true);assert.equal(F.isDrawn(probe({rect:[-50,100,50,50]}),win),false,'off the left edge');assert.equal(F.isDrawn(probe({rect:[100,-50,50,50]}),win),false,'above the top');
+ // hiding: inline and important, whether drawn now or not; each record says what it was and where; a second sweep adds only what is new
+ const hidden=F.hideChrome(doc,win,options);
+ assert.deepEqual(hidden.map(h=>h.name),page.chromeNames);assert.deepEqual(hidden.map(h=>h.drawn),[true,false,true,true,true,false,false,false],'drawn: the title, hud, Almanac button and tabs; not the fallback, the placeholder, the tooltip or the empty label layer');
+ assert.deepEqual(hidden[0].box,[1380,12,200,30]);assert.equal(hidden[1].box,null,'an element that was not drawn has no box to report');
+ assert.ok(hidden.every(h=>h.el.style.getPropertyValue('display')==='none'&&h.el.style.getPropertyPriority('display')==='important'),'inline and important, so no stylesheet rule brings it back');
+ assert.deepEqual(F.visibleChrome(doc,win,options),[]);const swept=hidden.length;assert.equal(F.hideChrome(doc,win,{...options,hidden}),hidden,'it returns the list it was given');assert.equal(hidden.length,swept,'a second sweep finds nothing new');
+ page.body.append(new FakeEl('DIV',{className:'toast',rect:[600,500,300,40]}));assert.deepEqual(F.visibleChrome(doc,win,options),[{name:'div.toast',box:[600,500,300,40]}]);
+ assert.equal(F.hideChrome(doc,win,{...options,hidden}).length,page.chromeNames.length+1);assert.deepEqual(F.visibleChrome(doc,win,options),[]);
+ // the canvas, its host and the label are never hidden
+ assert.ok([page.canvas,page.app].every(e=>e.shown));
+ // putting back: the inline display (and its priority) each element had, or none
+ F.restoreChrome(hidden);assert.equal(hidden.length,0);assert.ok(page.h1.shown&&page.hud.shown&&page.switcher.shown&&page.almanac.shown);assert.equal(page.h1.style.getPropertyValue('display'),'');
+ page.switcher.style.setProperty('display','flex','important');page.hud.style.setProperty('display','grid');
+ const again=F.hideChrome(doc,win,options);assert.deepEqual(again.find(h=>h.el===page.switcher).was,{value:'flex',priority:'important'});assert.deepEqual(again.find(h=>h.el===page.hud).was,{value:'grid',priority:''});F.restoreChrome(again);
+ assert.deepEqual([page.switcher.style.getPropertyValue('display'),page.switcher.style.getPropertyPriority('display')],['flex','important'],'its priority too');assert.deepEqual([page.hud.style.getPropertyValue('display'),page.hud.style.getPropertyPriority('display')],['grid','']);
+ // what is visible: a drawn element anywhere outside the canvas and the label, found even under a parent that draws nothing; the label and the canvas are not
+ const layer=page.labels,span=new FakeEl('SPAN',{className:'train-label',rect:[300,300,80,16]});layer.append(span);
+ assert.deepEqual(F.visibleChrome(doc,win,options).map(v=>v.name),['h1','div.hud','div#almanac-back-host','nav.station-switcher','span.train-label','div.toast'],'the empty label layer draws nothing itself, but its label does');
+ const label=new FakeEl('DIV',{id:'capture-train-label',rect:[8,8,300,24]});page.body.append(label);label.append(new FakeEl('SPAN',{rect:[8,8,40,20]}));
+ assert.ok(!F.visibleChrome(doc,win,options).some(v=>/capture-train-label|^span$/.test(v.name)),'the capture label and what is inside it are the picture');
+});
+
+test('a frame reports the page atmosphere as it has it: null under the fixed day rig, and an unlimited visibility as null',()=>{
+ const page=fakePage(),at=Date.parse('2026-11-09T16:30:00Z');
+ page.k.atmosphere={state:()=>({timeMs:at,sun:{elevationDeg:-3.2,azimuthDeg:215,apparentElevationDeg:-2.9},weather:{label:'clear sky',cloud:.25,rain:.5,snow:.125,visibilityM:Infinity,wet:.75,snowCover:.0625,windMs:2,thunder:true},
+  rig:{daylight:.1,lampLevel:.8,stars:.2,fogAmount:.05,sun:{intensity:.06},moon:{intensity:.3},hemisphere:{intensity:.4},dome:{}}})};
+ withPage(page,cat=>{
+  cat.begin('lner5',formations.get('lner5').length);const r=cat.view(view('lner5','front-3m'),'x');
+  const expected={timeMs:at,iso:'2026-11-09T16:30:00.000Z',sun:{elevationDeg:-3.2,azimuthDeg:215},weather:{label:'clear sky',cloud:.25,rain:.5,snow:.125,visibilityM:null,wet:.75,snowCover:.0625,windMs:2,thunder:true},
+   rig:{daylight:.1,lampLevel:.8,stars:.2,fogAmount:.05,sunIntensity:.06,moonIntensity:.3,hemisphereIntensity:.4}};
+  assert.deepEqual(r.atmosphere,expected);assert.deepEqual(cat.atmosphere(),expected);assert.deepEqual(JSON.parse(JSON.stringify(r.atmosphere)),expected,'it survives the trip back to Node');
+  const was=page.k.atmosphere.state();page.k.atmosphere={state:()=>({...was,weather:{...was.weather,label:'fog',visibilityM:180}})};assert.equal(cat.view(view('lner5','front-3m'),'x').atmosphere.weather.visibilityM,180);
+  page.k.atmosphere=null;assert.equal(cat.view(view('lner5','front-3m'),'x').atmosphere,null);assert.equal(cat.atmosphere(),null);
+  page.k.atmosphere={state:()=>null};assert.equal(cat.atmosphere(),null,'an atmosphere that has not drawn a frame has no state');
+  cat.end();
  });
 });
 
@@ -911,7 +1027,8 @@ test('the in-page driver adds only the specimen for V10, keeps every piece of sc
  const eye=F.placedPoint(B,[-30,2.6,1.5]),pose={id:'V10',suffix:'station-25m',eye,target:F.placedPoint(B,[0,1.7,1.5]),fov:50,up:[0,1,0],near:.3,region:spec.region,placement:{id:B.id,position:B.position,rotationY:B.rotationY}};
  withPage(page,cat=>{
   const begun=cat.beginStation('lner5');
-  assert.deepEqual(begun.hidden,[]);assert.equal(begun.stage,null);assert.deepEqual(begun.hiddenDom,['h1','div.hud']);assert.match(begun.scenery,/^kept/);assert.match(begun.ground,/flat fallback/);
+  // CHANGED (page chrome): see the stage test above
+  assert.deepEqual(begun.hidden,[]);assert.equal(begun.stage,null);assert.deepEqual(begun.hiddenDom,page.chromeNames);assert.match(begun.scenery,/^kept/);assert.match(begun.ground,/flat fallback/);
   assert.equal(page.h1.style.display,'none');assert.ok(page.scene.children.every(o=>o.visible),'nothing is hidden');assert.equal(page.scene.children.length,before.length+1);assert.equal(page.scene.children.at(-1).name,'train-lner5');
   assert.throws(()=>cat.begin('lner5',100),/already on stage/);assert.throws(()=>cat.beginStation('lner5'),/already on stage/);
   const text="lner5 catalogue specimen at King's Cross, station scenery kept - V10 station-25m",r=cat.stationView(pose,text);
@@ -926,10 +1043,92 @@ test('the in-page driver adds only the specimen for V10, keeps every piece of sc
   assert.equal(F.inspectCatalogueView(T,page.scene,page.camera,group,cat.state.ground,distantPose).reason,'viewed region too small in frame','the V01-V09 default refuses that same picture');
   page.window.__signalFrame=()=>{page.camera.position.x+=.5;};assert.throws(()=>cat.stationView(pose,'x'),/moved the camera by 0\.5 m/);page.window.__signalFrame=t=>page.frames.push(t);
   assert.equal(cat.end(),true);
-  assert.deepEqual(page.scene.children,before,'only the specimen was added, and it is gone');assert.ok(page.scene.children.every(o=>o.visible));assert.equal(page.h1.style.display,'');assert.equal(page.hud.style.display,'flex');assert.equal(page.made.size,0);assert.equal(cat.state,null);
+  // CHANGED (page chrome): the stylesheet gives `.hud` its flex, so with the inline style gone the display is the stylesheet's
+  assert.deepEqual(page.scene.children,before,'only the specimen was added, and it is gone');assert.ok(page.scene.children.every(o=>o.visible));assert.equal(page.h1.style.display,'');assert.equal(page.hud.style.display,'');assert.equal(page.hud.shown,true);assert.equal(page.made.size,0);assert.equal(cat.state,null);
   // the stage flow still works afterwards, and a page with terrain gives the check its ground
   page.k.parts={terrain:{heightAt:()=>-.5}};const again=cat.beginStation('hull5');assert.equal(again.ground,'the page terrain');assert.equal(cat.state.ground.heightAt(0,0),-.5,'the check takes its ground from the page terrain');cat.end();
  });
+});
+
+// (the next test uses the station scene, which is loaded above)
+test('an exposure pins the page to its lighting with a query appended to the base query; the day pass keeps the page\'s scenery, and the page must be lit as the pass says',()=>{
+ const base='trains=none&board=0&tooltip=0&signals=0';
+ assert.equal(C.CATALOGUE_URL_QUERY,base);assert.deepEqual(C.EXPOSURE_IDS,['day','dusk']);
+ assert.equal(C.catalogueUrlQuery(),`${base}&sky=ref`,'the default is the day pass');assert.equal(C.catalogueUrlQuery('day'),`${base}&sky=ref`);assert.equal(C.catalogueUrlQuery('dusk'),`${base}&time=2026-11-09T16:30:00Z&weather=clear`);
+ // ?bare=1 also removes the terrain, the city and the landmarks and draws a grid (web/src/main.ts), so V10 would not stand in the same station: neither pass pins it
+ for(const id of C.EXPOSURE_IDS)assert.ok(!/(^|&)(bare|grid|terrain)(=|&|$)/.test(C.catalogueUrlQuery(id)),`${id}: scenery is the page as built`);
+ assert.ok(!/time=|weather=/.test(C.catalogueUrlQuery('day')),'a pinned clock or weather turns the fixed rig off (main.ts fixedSky)');assert.ok(!/sky=/.test(C.catalogueUrlQuery('dusk')));
+ assert.throws(()=>C.catalogueUrlQuery('noon'),/unknown exposure noon/);
+ for(const inherited of ['toString','constructor','__proto__','hasOwnProperty']) {
+  assert.throws(()=>C.catalogueUrlQuery(inherited),new RegExp(`unknown exposure ${inherited}`),`${inherited} is a property of every object, not an exposure`);
+  assert.throws(()=>C.checkExposure(inherited,{lights:[],atmosphereState:null}),new RegExp(`unknown exposure ${inherited}`));
+  assert.throws(()=>C.parseCatalogueArgs(['--mode','catalogue','--dist','d','--out','o','--exposure',inherited]),/--exposure: unknown/);
+ }
+ assert.deepEqual(C.exposureRecord('day'),{id:'day',urlQuery:`${base}&sky=ref`,rig:'fixed',pinnedTime:null,pinnedWeather:null});
+ assert.deepEqual(C.exposureRecord('dusk'),{id:'dusk',urlQuery:`${base}&time=2026-11-09T16:30:00Z&weather=clear`,rig:'atmosphere',pinnedTime:'2026-11-09T16:30:00Z',pinnedWeather:'clear'});
+ // the page must be lit as the pass says, or the run stops
+ const lights=[{type:'HemisphereLight',intensity:1.25,position:[0,1,0]},{type:'DirectionalLight',intensity:1.7,position:[-320,520,260]}];
+ C.checkExposure('day',{lights,atmosphereState:null});
+ assert.throws(()=>C.checkExposure('day',{lights,atmosphereState:{timeMs:1}}),/the day pass needs the fixed rig, but the page has an atmosphere/);
+ assert.throws(()=>C.checkExposure('day',{lights:[lights[0],{...lights[1],position:[-320,520,261]}],atmosphereState:null}),/the page sun is not at -320,520,260/);assert.throws(()=>C.checkExposure('day',{lights:[lights[0]],atmosphereState:null}),/the page sun is not at/);
+ C.checkExposure('dusk',{lights:[],atmosphereState:{timeMs:Date.parse('2026-11-09T16:30:00Z')}});
+ assert.throws(()=>C.checkExposure('dusk',{lights,atmosphereState:null}),/the dusk pass needs the page's atmosphere, but the page has none/);
+ assert.throws(()=>C.checkExposure('dusk',{lights,atmosphereState:{timeMs:Date.parse('2026-11-09T16:31:00Z')}}),/the page clock is 2026-11-09T16:31:00\.000Z, not the pinned 2026-11-09T16:30:00Z/);
+ assert.throws(()=>C.checkExposure('night',{}),/unknown exposure night/);
+ // the page address and the head of the manifest carry the exposure
+ assert.equal(C.cataloguePageUrl(4321,'day'),`http://127.0.0.1:4321/kings-cross/?${base}&sky=ref`);assert.equal(C.cataloguePageUrl(4321,'dusk'),`http://127.0.0.1:4321/kings-cross/?${base}&time=2026-11-09T16:30:00Z&weather=clear`);
+ const host={os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'h'}},head=C.catalogueManifest({exposure:'dusk',stationScene:station,host,build:{indexSha256:'x'},poses:{file:'/p.json',sha256:'abc'},generated:'2026-11-09T00:00:00.000Z'});
+ assert.deepEqual(head.exposure,C.exposureRecord('dusk'));assert.deepEqual([head.rubric,head.schema,head.generated,head.posesFrom,head.kinds,head.macModel,head.build],[F.CATALOGUE.rubric,'kx-catalogue-manifest/1','2026-11-09T00:00:00.000Z',{file:'/p.json',sha256:'abc'},{},'Mac17,6',{indexSha256:'x'}]);
+ assert.match(head.sunRule.text,/always uses the day rig's sun, in every exposure/);assert.deepEqual(head.sunRule.sunPosition,[-320,520,260]);assert.deepEqual(head.station,C.stationManifest(station));
+ const bare=C.catalogueManifest({exposure:'day',stationScene:null,host,build:{},poses:null});assert.deepEqual([bare.station,bare.posesFrom,bare.exposure.id],[null,null,'day']);assert.equal(typeof bare.generated,'string');
+});
+
+test('a view is photographed after the page is checked for chrome, then without the specimen, and for a whole-car subject with only that car',async()=>{
+ const calls=[],evaluate=async expression=>{calls.push(expression);return true;},screenshot=async()=>{calls.push('shot');return Buffer.from([calls.length]);};
+ const plain=await C.photograph({evaluate,screenshot,view:{extents:null}});
+ assert.deepEqual(calls,['window.__cat.assertChrome()','shot',"window.__cat.isolate('empty')",'shot',"window.__cat.isolate('all')"]);assert.deepEqual([plain.shot[0],plain.baseline[0],plain.subject],[2,4,null]);
+ calls.length=0;const car=await C.photograph({evaluate,screenshot,view:{extents:{scope:'car',car:3}}});
+ assert.deepEqual(calls,['window.__cat.assertChrome()','shot',"window.__cat.isolate('empty')",'shot',"window.__cat.isolate('car:3')",'shot',"window.__cat.isolate('all')"]);assert.equal(car.subject[0],6);
+ calls.length=0;await C.photograph({evaluate,screenshot,view:{extents:{scope:'train'}}});assert.equal(calls.filter(c=>c==='shot').length,2,'a whole-train subject is the train, which the baseline already isolates');
+ // a page with chrome on it stops the photograph before anything is taken
+ let shots=0;
+ await assert.rejects(C.photograph({evaluate:async expression=>{if(/assertChrome/.test(expression))throw new Error('page chrome would be in the picture: x');},screenshot:async()=>{shots++;return Buffer.alloc(0);},view:{extents:null}}),/page chrome would be in the picture/);assert.equal(shots,0);
+});
+
+// (this test uses the V10 plans, which exist only once the station scene has loaded below)
+test('the in-page driver leaves only the canvas and the capture label drawn in every frame, hides what the page adds later, stops at chrome it cannot hide, and puts every inline style back',()=>{
+ const plan=stationPlans.get('lner5'),B=plan.placements[1],spec=plan.specs[0],eye=F.placedPoint(B,[-30,2.6,1.5]);
+ const pose={id:'V10',suffix:'station-25m',eye,target:F.placedPoint(B,[0,1.7,1.5]),fov:50,up:[0,1,0],near:.3,region:spec.region,placement:{id:B.id,position:B.position,rotationY:B.rotationY}};
+ for(const station of [false,true]) {
+  const page=fakePage(),length=formations.get('lner5').length;
+  page.switcher.style.setProperty('display','flex');page.notice.style.setProperty('display','block','important');
+  const all=el=>[el,...el.children.flatMap(all)],inline=new Map(all(page.body).map(el=>[el,[el.style.getPropertyValue('display'),el.style.getPropertyPriority('display')]]));
+  // the page as it stands is covered in chrome: the check below could fail
+  assert.deepEqual(page.drawnOutside().filter(n=>/^(h1|div\.hud|div#almanac-back-host|nav\.station-switcher|p\.station-notice)$/.test(n)),['h1','div.hud','div#almanac-back-host','nav.station-switcher','p.station-notice']);
+  withPage(page,cat=>{
+   const begun=station?cat.beginStation('lner5'):cat.begin('lner5',length);assert.deepEqual(begun.hiddenDom,page.chromeNames,station?'V10':'stage');
+   const look=text=>station?cat.stationView(pose,text):cat.view(view('lner5','front-3m'),text);
+   const calm=text=>{let frame;assert.doesNotThrow(()=>{frame=look(text);},`the ${text} frame is drawn`);return frame;};
+   const r=calm('first');
+   assert.deepEqual(page.outside,[[]],'nothing but the canvas and the capture label is drawn in the frame');assert.deepEqual(page.drawnOutside(),[]);
+   // the record of what was hidden: every chrome element, whether it was drawn, where, and nothing still drawn
+   assert.deepEqual(r.chrome.hidden.map(h=>h.name),page.chromeNames);assert.deepEqual(r.chrome.visible,[]);
+   const byName=Object.fromEntries(r.chrome.hidden.map(h=>[h.name,h]));
+   assert.deepEqual(byName.h1,{name:'h1',drawn:true,box:[1380,12,200,30]});assert.deepEqual(byName['nav.station-switcher'],{name:'nav.station-switcher',drawn:true,box:[120,8,700,34]});assert.equal(byName['div#fallback'].drawn,false);assert.equal(byName['div.mml-train-labels'].drawn,false,'a box with no area draws nothing');
+   assert.ok(page.made.get('capture-train-label').shown&&page.canvas.shown&&page.app.shown,'the label, the canvas and its host stay');
+   // what the page adds later is hidden before the next frame, at the top and inside the canvas host
+   const toast=new FakeEl('DIV',{className:'toast',rect:[600,500,300,40]}),badge=new FakeEl('DIV',{className:'badge',rect:[10,10,50,20]});page.body.append(toast);page.app.append(badge);
+   assert.deepEqual(page.drawnOutside(),['div.badge','div.toast'],'in document order: the canvas host comes first');
+   const second=calm('second');assert.deepEqual(page.outside,[[],[]]);assert.deepEqual(second.chrome.hidden.slice(-2).map(h=>[h.name,h.drawn]),[['div.badge',true],['div.toast',true]]);
+   // a chrome no inline style can hide (a stylesheet rule that wins) stops the capture before a frame is drawn
+   const stubborn=new FakeEl('DIV',{className:'stubborn',stubborn:true,rect:[0,0,50,50]});page.body.append(stubborn);const frames=page.frames.length;
+   assert.throws(()=>look('third'),/page chrome would be in the picture: div\.stubborn at 0,0,50,50/);assert.equal(page.frames.length,frames,'no frame is drawn with chrome on it');
+   assert.throws(()=>cat.assertChrome(),/page chrome would be in the picture: div\.stubborn/);stubborn.remove();assert.deepEqual(cat.assertChrome().visible,[]);
+   assert.equal(cat.end(),true);
+  });
+  for(const [el,was] of inline)assert.deepEqual([el.style.getPropertyValue('display'),el.style.getPropertyPriority('display')],was,`${nameOfEl(el)} is as the page had it`);
+  assert.equal(page.made.size,0,'the label is gone');assert.ok(['h1','div.hud','nav.station-switcher'].every(n=>page.drawnOutside().includes(n)),'the chrome is back');
+ }
 });
 
 test('a V10 manifest entry freezes the placement and the search, and its sidecar says how far the camera really is and what it stands on',()=>{
