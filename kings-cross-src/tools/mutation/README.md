@@ -22,6 +22,7 @@ python3 -I -u kings-cross-src/tools/mutation/axis07-relay.py
 python3 -I -u kings-cross-src/tools/mutation/axis07.py kings-cross-src .scratch/mutation/axis07
 python3 -I -u kings-cross-src/tools/mutation/axis08-evidence.py
 python3 -I -u kings-cross-src/tools/mutation/berths-cli.py kings-cross-src .scratch/mutation/berths-cli
+python3 -I -u kings-cross-src/tools/mutation/berths-geography.py
 python3 -I -u kings-cross-src/tools/mutation/berths.py kings-cross-src .scratch/mutation/berths
 python3 -I -u kings-cross-src/tools/mutation/board.py kings-cross-src .scratch/mutation/board
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core

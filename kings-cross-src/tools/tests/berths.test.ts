@@ -153,3 +153,62 @@ test('berths CLI: every JSON destination keeps the symlink output guard', async 
     assert.equal(await readFile(path.join(f.dir, 'symlink-target'), 'utf8'), 'keep');
   }
 });
+
+test('berths CLI: geographic screening records private provenance and removals while preservation freezes runtime geometry', async (t) => {
+  const previous = previousMap();
+  const f = await fixture({ previous });
+  t.after(() => rm(f.dir, { recursive: true, force: true }));
+  const geographicPath = path.join(f.dir, 'synthetic-overpass.json');
+  const evidence = {
+    elements: [
+      { type: 'node', id: 80001, lat: 51.56, lon: -0.12, tags: { railway: 'signal', ref: 'YA2345' } },
+      { type: 'node', id: 80002, lat: 51.56, lon: -0.12, tags: { railway: 'junction', name: 'Synthetic Far Junction' } },
+    ],
+  };
+  await writeFile(geographicPath, `${JSON.stringify(evidence)}\n`);
+
+  const baseline = f.run(['--previous', f.previousPath]);
+  assert.equal(baseline.status, 0, baseline.stderr || baseline.stdout);
+  const before = JSON.parse(await readFile(path.join(f.outPath, 'berths-report.json'), 'utf8'));
+  assert.equal(before.geographicEvidence, undefined, 'absent option must retain the old report shape');
+  assert.equal(before.candidateAnchors.some((a: { berth: string }) => a.berth === '2345'), true);
+
+  const run = f.run(['--previous', f.previousPath, '--geographic-evidence', geographicPath]);
+  assert.equal(run.status, 0, run.stderr || run.stdout);
+  const report = JSON.parse(await readFile(path.join(f.outPath, 'berths-report.json'), 'utf8'));
+  const candidate = JSON.parse(await readFile(path.join(f.outPath, 'anchors-candidate.json'), 'utf8'));
+  const diff = JSON.parse(await readFile(path.join(f.outPath, 'drawn-position-diff.json'), 'utf8'));
+  const md = await readFile(path.join(f.outPath, 'berths-report.md'), 'utf8');
+  const hash = report.sourceHashes.find((source: { role: string }) => source.role === 'geographic-evidence');
+  assert.ok(hash, 'geographic source hash must be present');
+  assert.ok(report.geographicEvidence, 'geographic decisions must be present');
+  assert.equal(hash.file, geographicPath);
+  assert.equal(hash.sha256, createHash('sha256').update(await readFile(geographicPath)).digest('hex'));
+  assert.equal(report.geographicEvidence.source, geographicPath);
+  assert.deepEqual(report.geographicEvidence.sourceHash, hash);
+  assert.deepEqual(report.summary.geographicEvidence, report.geographicEvidence.summary);
+  assert.equal(report.geographicEvidence.summary.outsideDecisions, 1);
+  assert.equal(report.geographicEvidence.summary.removedAnchors, 1);
+  assert.ok(report.geographicEvidence.decisions.some((decision: { berth: string }) => decision.berth === '2345'));
+  assert.ok(report.geographicEvidence.namedLocations.some((location: { name: string }) => location.name === 'Synthetic Far Junction'));
+  assert.ok(candidate.sources.some((source: string) => source.includes(path.basename(geographicPath))));
+  assert.equal(candidate.sources.some((source: string) => source.includes(f.dir)), false, 'map sources should keep private paths in the report');
+  assert.equal(candidate.anchors.some((a: { berth: string }) => a.berth === '2345'), false);
+  assert.equal(candidate.unmapped.find((u: { berth: string }) => u.berth === '2345').seen, 1, 'a removed anchor must retain its observed step count');
+  assert.equal(candidate.unmapped.find((item: { berth: string }) => item.berth === '2345')?.reason, 'outside-network');
+  assert.equal(report.summary.counts.candidate.unmappedByReason['outside-network'], before.summary.counts.candidate.unmappedByReason['outside-network'] + 1);
+  assert.equal(report.summary.counts.after.anchors, before.summary.counts.after.anchors - 1);
+  assert.ok(diff.removed.some((item: { berth: string }) => item.berth === '2345'));
+  assert.match(md, /50 m.*conservative positional screening assumption, not surveyed accuracy/);
+  assert.ok(md.includes(geographicPath));
+  assert.ok(md.includes(JSON.stringify(report.geographicEvidence, null, 2)), 'Markdown must retain the full decision and diagnostic inventory');
+
+  const preserved = f.run(['--previous', f.previousPath, '--preserve-positions', '--geographic-evidence', geographicPath]);
+  assert.equal(preserved.status, 0, preserved.stderr || preserved.stdout);
+  const runtime = JSON.parse(await readFile(path.join(f.outPath, 'anchors.json'), 'utf8'));
+  const frozenReport = JSON.parse(await readFile(path.join(f.outPath, 'berths-report.json'), 'utf8'));
+  assert.deepEqual(runtime.anchors, previous.anchors);
+  assert.equal(frozenReport.summary.counts.after.anchors, 1);
+  assert.equal(frozenReport.summary.counts.candidate.anchors, report.summary.counts.candidate.anchors);
+  assert.deepEqual(frozenReport.geographicEvidence, report.geographicEvidence);
+});
