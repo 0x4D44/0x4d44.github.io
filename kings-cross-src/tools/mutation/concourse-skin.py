@@ -51,7 +51,7 @@ mutations = [
     ('wall tops stand clear under the brim', 'return [x, wa * height(a) + wb * height(b) + (1 - wa - wb) * height(c) + SKIN_LIFT, z];', 'return [x, wa * height(a) + wb * height(b) + (1 - wa - wb) * height(c) + SKIN_LIFT + 0.8, z];'),
     ('no closure glass at the Range cut', "add(closure, mat.skylight, 'concourse-closure', 3);", 'void closure;'),
     ('closure floats over the cornice', 'a: V3 = [A[0], Math.min(CORNICE_TOP, A[1]), A[2]]', 'a: V3 = [A[0], Math.min(CORNICE_TOP + 3, A[1]), A[2]]'),
-    ('no upstands between solid and glazed cells', '    if (pair.length !== 2 || glazed.has(pair[0]!) === glazed.has(pair[1]!)) continue;', '    continue;'),
+    ('no upstands between solid and glazed cells', '    if (cells.length !== 2 || glazed.has(cells[0]!) === glazed.has(cells[1]!)) continue;', '    continue;'),
     ('upstands face the solid cell', '{ facing: [(A[0] + B[0]) / 2 - apex[0], 0, (A[2] + B[2]) / 2 - apex[2]], color: scaled(SOFFIT_TONE, 0.9) }', '{ facing: [apex[0] - (A[0] + B[0]) / 2, 0, apex[2] - (A[2] + B[2]) / 2], color: scaled(SOFFIT_TONE, 0.9) }'),
     ('upstands stop short of the skin', 'soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)]', 'soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT + 0.05), nodeAt(a, SOFFIT_LIFT + 0.05)]'),
 ]

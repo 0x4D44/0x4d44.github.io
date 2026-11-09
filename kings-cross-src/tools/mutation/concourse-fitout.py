@@ -41,7 +41,7 @@ mutations = [
     ('a brand on a board', "'York   Platform 6   On time'", "'Costa   Platform 6   On time'"),
     ('totem lettering mirrored', 'const left = side < 0 ? 1 : -1;', 'const left = side < 0 ? -1 : 1;'),
     ('plate lettering mirrored', '[[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]]', '[[v - half + 0.02, y0], [v + half - 0.02, y0], [v + half - 0.02, y1], [v - half + 0.02, y1]]'),
-    ('plates face east', '{ normal: [-1, 0, 0], color: textured ? WHITE : NAVY }', '{ normal: [1, 0, 0], color: textured ? WHITE : NAVY }'),
+    ('plates face east', 'sign(ATLAS.plates[i]!, pts, [-1, 0, 0], NAVY);', 'sign(ATLAS.plates[i]!, pts, [1, 0, 0], NAVY);'),
     ('signs lit, not glowing', 'signs: new THREE.MeshBasicMaterial({', 'signs: new THREE.MeshLambertMaterial({'),
     ('floor as pale as the shared paving', 'FLOOR_TINT = 0x94948e;', 'FLOOR_TINT = 0xffffff;'),
     ('floor black', 'FLOOR_TINT = 0x94948e;', 'FLOOR_TINT = 0x0a0a0a;'),

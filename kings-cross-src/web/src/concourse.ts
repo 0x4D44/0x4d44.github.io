@@ -102,26 +102,25 @@ export function diagrid(radius: number, centre: Pt, spacing = EDGE): Diagrid {
   return { nodes, tris, rings };
 }
 
-/** Undirected edges of a set of triangles, once each, with the number of triangles sharing each. */
-export function edgesOf(tris: [number, number, number][]): Map<string, { a: number; b: number; uses: number }> {
-  const out = new Map<string, { a: number; b: number; uses: number }>();
-  for (const t of tris) {
+/** An undirected edge, the triangles (indices) sharing it, and how many. */
+interface Edge { a: number; b: number; uses: number; cells: number[] }
+/** Undirected edges of a set of triangles, once each, keyed `a:b`. */
+export function edgesOf(tris: [number, number, number][]): Map<string, Edge> {
+  const out = new Map<string, Edge>();
+  tris.forEach((t, i) => {
     for (let e = 0; e < 3; e++) {
-      const p = t[e] as number;
-      const q = t[(e + 1) % 3] as number;
-      const a = Math.min(p, q);
-      const b = Math.max(p, q);
-      const key = `${a}:${b}`;
-      const found = out.get(key);
-      if (found) found.uses++;
-      else out.set(key, { a, b, uses: 1 });
+      const p = t[e] as number, q = t[(e + 1) % 3] as number, a = Math.min(p, q), b = Math.max(p, q), key = `${a}:${b}`;
+      const found = out.get(key) ?? { a, b, uses: 0, cells: [] };
+      found.uses++;
+      found.cells.push(i);
+      out.set(key, found);
     }
-  }
+  });
   return out;
 }
 
 // Arup pp.13-16: radial box ribs, axial tubes. ASSUMED: each inner node's nearest angular link outward is a rib.
-function roofRibs(edges: Map<string, {a:number;b:number;uses:number}>, nodes: Diagrid['nodes'], centre: Pt): Set<string> {
+function roofRibs(edges: Map<string, Edge>, nodes: Diagrid['nodes'], centre: Pt): Set<string> {
   const nearest = new Map<number, {key:string;delta:number}>();
   const angle = (i:number): number => Math.atan2(nodes[i]!.z-centre[1], nodes[i]!.x-centre[0]);
   for (const {a,b} of edges.values()) {
@@ -171,25 +170,26 @@ export function keepTriangles(d: Diagrid, footprint: Pt[], shed: Pick<ShedLayout
   });
 }
 
+const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
+/** Distance from p to the segment a-b. */
+function segmentDistance(p: Pt, a: Pt, b: Pt): number {
+  const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = l ? clamp01(((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz);
+}
+
 // Reach of a radial box: half depth + half width + 50 mm joint.
 const MEMBER_REACH = 0.45 / 2 + RIB_WIDTH / 2 + 0.05;
 function cellMeetsBuilding(triangle: Pt[], polygon: Pt[]): boolean {
   if (triangle.some(p => pointInPolygon(p, polygon)) || polygon.some(p => pointInPolygon(p, triangle))) return true;
-  const cross = (a: Pt,b: Pt,p: Pt): number => (b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);
-  const distance = (p: Pt,a: Pt,b: Pt): number => {
-    const dx=b[0]-a[0],dz=b[1]-a[1],l=dx*dx+dz*dz;
-    const t=l?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/l)):0;
-    return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz);
-  };
-  for(let i=0;i<triangle.length;i++) for(let j=0;j<polygon.length;j++) {
-    const a=triangle[i]!,b=triangle[(i+1)%triangle.length]!,c=polygon[j]!,d=polygon[(j+1)%polygon.length]!;
-    if (cross(a,b,c)*cross(a,b,d)<0 && cross(c,d,a)*cross(c,d,b)<0) return true;
-    if (Math.min(distance(a,c,d),distance(b,c,d),distance(c,a,b),distance(d,a,b)) <= MEMBER_REACH) return true;
+  const cross = (a: Pt, b: Pt, p: Pt): number => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  for (let i = 0; i < triangle.length; i++) for (let j = 0; j < polygon.length; j++) {
+    const a = triangle[i]!, b = triangle[(i + 1) % triangle.length]!, c = polygon[j]!, d = polygon[(j + 1) % polygon.length]!;
+    if (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) return true;
+    if (Math.min(segmentDistance(a, c, d), segmentDistance(b, c, d), segmentDistance(c, a, b), segmentDistance(d, a, b)) <= MEMBER_REACH) return true;
   }
   return false;
 }
 
-/** The roof follows the OSM boundary (the Range's end separates the suburban roof). JMP: the funnel beside the façade (mcaslan.agencyprojects.com/Kings-Cross-Station); ASSUMED centred along the roof extent, 0.3 m from it. */
 /** The northern limit of the concourse in shed v: where the OSM station outline turns into the suburban roof. */
 function concourseNorth(footprint: Pt[], shed: Pick<ShedLayout, 'origin' | 'heading'>): number {
   const arc = footprint.map(p => worldToShed(shed, p)).filter(p => p.u < -45 && p.v <= WESTERN_RANGE.v1 + .1);
@@ -199,13 +199,9 @@ function concourseNorth(footprint: Pt[], shed: Pick<ShedLayout, 'origin' | 'head
 
 /** Plan distance to the roof's outer limit (the OSM outline or the northern limit; not the Range cut). */
 function rimDistance(shed: Pick<ShedLayout, 'origin' | 'heading'>, footprint: Pt[], north: number, x: number, z: number): number {
-  let toRim = Math.max(0, north - worldToShed(shed, [x, z]).v);
-  for (let i = 0; i < footprint.length; i++) {
-    const a = footprint[i]!, b = footprint[(i + 1) % footprint.length]!;
-    const dx = b[0] - a[0], dz = b[1] - a[1], length2 = dx * dx + dz * dz;
-    const t = length2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / length2)) : 0;
-    toRim = Math.min(toRim, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz));
-  }
+  const here: Pt = [x, z];
+  let toRim = Math.max(0, north - worldToShed(shed, here).v);
+  for (let i = 0; i < footprint.length; i++) toRim = Math.min(toRim, segmentDistance(here, footprint[i]!, footprint[(i + 1) % footprint.length]!));
   return toRim;
 }
 
@@ -214,6 +210,7 @@ export function concourseGrid(canopy: ConcourseCanopy, footprint: Pt[], shed: Sh
   const north = concourseNorth(footprint, shed);
   const westWall = WEST_WALL;
   const south = Math.min(...local.filter(p => p.u < westWall && p.v <= north).map(p => p.v));
+  // JMP: the funnel beside the façade (mcaslan.agencyprojects.com/Kings-Cross-Station); ASSUMED centred along the roof extent, 0.3 m from it.
   const centreUV = { u: westWall - FUNNEL_RADIUS, v: (south + north) / 2 };
   const centre = shedToWorld(shed, centreUV.u, centreUV.v);
   // More boundary samples retain the small OSM steps/canopies instead of cutting their corners.
@@ -285,7 +282,7 @@ const COLUMN_RINGS = [[0, 12], [0.06, 12], [0.17, 12], [0.29, 12], [0.41, 12], [
 export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (0.3 * t + 0.7 * t ** 3) + (t ? 0 : 0.25);
 /** Diameter of a leg at this height, metres: 0.36 at the floor, 0.22 under the roof (ASSUMED, conc-ab). */
 export function columnTubeDiameter(y: number, top: number): number {
-  return 0.36 - 0.14 * Math.max(0, Math.min(1, y / top));
+  return 0.36 - 0.14 * clamp01(y / top);
 }
 
 /** The legs as a graph in the funnel's frame (x = u, z = -v); each node links to the two nearest below, rings half a step apart. */
@@ -357,19 +354,30 @@ function columnGeometry(head: V3[]): THREE.BufferGeometry {
 
 // Roof materials, local (materials.ts has no soffit, cladding or daylit glazing).
 
-/** One roof cell in UVs 0..1 (a triangle's corners (0,0), (1,0), (0,1); a diamond's, in order round it): bright in the middle, falling to `edge` of the light at its edges (R-a, R-c). Null in Node. */
-function pillowTexture(shape: 'triangle' | 'diamond', edge: number): THREE.CanvasTexture | null {
+/** A canvas texture drawn by `draw`, which gets the context and a rectangle fill; null in Node. */
+type Fill = (style: string | CanvasGradient, x: number, y: number, w: number, h: number) => void;
+function canvasTexture(width: number, height: number, draw: (g: CanvasRenderingContext2D, fill: Fill) => void): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
-  c.width = c.height = 64;
+  c.width = width;
+  c.height = height;
   const g = c.getContext('2d');
   if (!g) return null;
+  draw(g, (style, x, y, w, h) => { g.fillStyle = style; g.fillRect(x, y, w, h); });
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+/** One roof cell in UVs 0..1 (a triangle's corners (0,0), (1,0), (0,1); a diamond's, in order round it): bright in the middle, falling to `edge` of the light at its edges (R-a, R-c). Null in Node. */
+const pillowTexture = (shape: 'triangle' | 'diamond', edge: number): THREE.CanvasTexture | null => canvasTexture(64, 64, g => {
   const image = g.createImageData(64, 64);
   for (let y = 0; y < 64; y++) {
     for (let x = 0; x < 64; x++) {
       const u = (x + 0.5) / 64, v = 1 - (y + 0.5) / 64;
       const nearest = shape === 'triangle' ? Math.min(u, v, 1 - u - v) : Math.min(u, v, 1 - u, 1 - v);
-      const t = Math.max(0, Math.min(1, nearest / (shape === 'triangle' ? 0.26 : 0.18)));
+      const t = clamp01(nearest / (shape === 'triangle' ? 0.26 : 0.18));
       const light = edge + (1 - edge) * t * t * (3 - 2 * t); // linear light; the texture holds sRGB
       const shade = Math.round(255 * Math.pow(light, 1 / 2.2));
       const k = (y * 64 + x) * 4;
@@ -378,34 +386,20 @@ function pillowTexture(shape: 'triangle' | 'diamond', edge: number): THREE.Canva
     }
   }
   g.putImageData(image, 0, 0);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
+});
 
 /** The wall's texture (R-c; ASSUMED heights): glass to 3 m, a navy band to 3.9 m, reflective glass above. Null in Node. */
 const WALL_TEXTURE_HEIGHT = 8;
 function wallTexture(): THREE.CanvasTexture | null {
-  if (typeof document === 'undefined') return null;
-  const c = document.createElement('canvas');
-  c.width = 4;
-  c.height = 256;
-  const g = c.getContext('2d');
-  if (!g) return null;
-  const y = (m: number): number => 256 * (1 - m / WALL_TEXTURE_HEIGHT);
-  const sky = g.createLinearGradient(0, 0, 0, y(3.9));
-  sky.addColorStop(0, '#b4c6d6');
-  sky.addColorStop(1, '#4c6276');
-  g.fillStyle = sky;
-  g.fillRect(0, 0, 4, y(3.9));
-  g.fillStyle = '#141f48';
-  g.fillRect(0, y(3.9), 4, y(3) - y(3.9));
-  g.fillStyle = 'rgba(44, 66, 84, 0.72)';
-  g.fillRect(0, y(3), 4, 256 - y(3));
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.repeat.set(1, 1 / WALL_TEXTURE_HEIGHT);
+  const t = canvasTexture(4, 256, (g, fill) => {
+    const y = (m: number): number => 256 * (1 - m / WALL_TEXTURE_HEIGHT), sky = g.createLinearGradient(0, 0, 0, y(3.9));
+    sky.addColorStop(0, '#b4c6d6');
+    sky.addColorStop(1, '#4c6276');
+    fill(sky, 0, 0, 4, y(3.9));
+    fill('#141f48', 0, y(3.9), 4, y(3) - y(3.9));
+    fill('rgba(44, 66, 84, 0.72)', 0, y(3), 4, 256 - y(3));
+  });
+  t?.repeat.set(1, 1 / WALL_TEXTURE_HEIGHT);
   return t;
 }
 
@@ -447,19 +441,6 @@ function roofMaterial(): RoofMaterials {
 }
 
 type Tri = [number, number, number];
-
-/** The cells that use each undirected edge (keyed as in edgesOf): one on the boundary, two inside. */
-function cellsByEdge(kept: Tri[]): Map<string, number[]> {
-  const sharing = new Map<string, number[]>();
-  kept.forEach((t, i) => {
-    for (let e = 0; e < 3; e++) {
-      const p = t[e]!, q = t[(e + 1) % 3]!;
-      const key = `${Math.min(p, q)}:${Math.max(p, q)}`;
-      sharing.set(key, [...(sharing.get(key) ?? []), i]);
-    }
-  });
-  return sharing;
-}
 
 /** Which kept cells are glazed: round the funnel, in the brim, and the rooflights (15 % published; R-a, R-c, R-c2). */
 export function glazedCells(d: Diagrid, kept: Tri[], centre: Pt, shed: Pick<ShedLayout, 'origin' | 'heading'>, rim: (x: number, z: number) => number): Set<number> {
@@ -528,24 +509,17 @@ const ATLAS = {
   /** a 56 px row per plate: 582 px for a bay's 5.2 m by 0.5 m, 291 for a shop's 2.6 m */
   plates: [0, 1, 2, 3, 4, 5, 6].map((k): readonly [number, number, number, number] => [400, k * 56, k < 5 ? 582 : 291, 56]),
 } as const;
-function signAtlas(): THREE.CanvasTexture | null {
-  if (typeof document === 'undefined') return null;
-  const c = document.createElement('canvas');
-  c.width = ATLAS.width;
-  c.height = ATLAS.height;
-  const g = c.getContext('2d');
-  if (!g) return null;
-  const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board;
+const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, ATLAS.height, (g, fill) => {
+  const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board, [sx, sy, sw, sh] = ATLAS.shop;
+  g.strokeStyle = '#ffffff';
+  g.lineWidth = 2;
+  g.textBaseline = 'middle';
   // totem: dark blue, lettered rows, a lit screen (R-b)
-  g.fillStyle = '#1b2a5e';
-  g.fillRect(tx, ty, tw, th);
+  fill('#1b2a5e', tx, ty, tw, th);
   g.fillStyle = '#ffffff';
   g.font = 'bold 18px sans-serif';
-  g.textBaseline = 'middle';
   FITOUT_TEXT.totem.forEach((line, i) => {
     const y = ty + 30 + i * 46;
-    g.strokeStyle = '#ffffff';
-    g.lineWidth = 2;
     g.strokeRect(tx + 10, y - 12, 24, 24);
     g.fillText(line, tx + 44, y, tw - 50);
     g.fillRect(tx + 10, y + 21, tw - 20, 1);
@@ -553,59 +527,37 @@ function signAtlas(): THREE.CanvasTexture | null {
   const screen = g.createLinearGradient(0, ty + 270, 0, ty + th - 14);
   screen.addColorStop(0, '#c9c4ff');
   screen.addColorStop(1, '#6f86e8');
-  g.fillStyle = screen;
-  g.fillRect(tx + 12, ty + 270, tw - 24, th - 284);
+  fill(screen, tx + 12, ty + 270, tw - 24, th - 284);
   // board: near black, amber lettering, three entries to a row (R-a)
-  g.fillStyle = '#121418';
-  g.fillRect(bx, by, bw, bh);
+  fill('#121418', bx, by, bw, bh);
   g.fillStyle = '#ffb21a';
   g.font = 'bold 23px monospace';
   const cell = (bw - 28) / 3;
-  for (let row = 0; row < 2; row++) {
-    for (let k = 0; k < 3; k++) g.fillText(FITOUT_TEXT.board[(row * 3 + k) % FITOUT_TEXT.board.length]!, bx + 14 + k * cell, by + 18 + row * 28, cell - 22);
-  }
+  for (let row = 0; row < 2; row++) for (let k = 0; k < 3; k++) g.fillText(FITOUT_TEXT.board[(row * 3 + k) % FITOUT_TEXT.board.length]!, bx + 14 + k * cell, by + 18 + row * 28, cell - 22);
   // plates: navy, white lettering, a pictogram square (R-ab, R-b)
   ATLAS.plates.forEach(([px, py, pw, ph], i) => {
-    g.fillStyle = '#1d2c66';
-    g.fillRect(px, py, pw, ph);
-    g.strokeStyle = '#ffffff';
-    g.lineWidth = 2;
+    fill('#1d2c66', px, py, pw, ph);
     g.strokeRect(px + 12, py + 12, ph - 24, ph - 24);
     g.fillStyle = '#ffffff';
     g.font = `bold ${i < 5 ? 30 : 26}px sans-serif`;
-    g.textBaseline = 'middle';
     g.fillText(FITOUT_TEXT.plates[i]!, px + ph, py + ph / 2 + 1, pw - ph - 12);
   });
   // a lit shopfront: warm light, shelves, counter, goods (generic)
-  {
-    const [sx, sy, sw, sh] = ATLAS.shop;
-    const light = g.createLinearGradient(0, sy, 0, sy + sh);
-    light.addColorStop(0, '#fff1d2');
-    light.addColorStop(0.7, '#f3c987');
-    light.addColorStop(1, '#a8743d');
-    g.fillStyle = light;
-    g.fillRect(sx, sy, sw, sh);
-    g.fillStyle = '#5a4a3c';
-    for (const shelf of [0.22, 0.38, 0.54]) g.fillRect(sx + 8, sy + sh * shelf, sw - 16, 4);
-    const goods = ['#c4202c', '#2b5fb4', '#e6e0d2', '#3c8a52', '#d9a21b', '#7b4a9a'];
-    for (const [k, shelf] of [0.22, 0.38, 0.54].entries()) for (let j = 0; j < 6; j++) {
-      g.fillStyle = goods[(j + k * 2) % goods.length]!;
-      g.fillRect(sx + 12 + j * 31, sy + sh * shelf - 16, 22, 16);
-    }
-    g.fillStyle = '#3a2f27';
-    g.fillRect(sx, sy + sh * 0.72, sw, sh * 0.28);
-    g.fillStyle = '#d8d2c8';
-    g.fillRect(sx, sy + sh * 0.72, sw, 6);
-    g.fillStyle = '#fff6dc';
-    for (const lamp of [0.2, 0.5, 0.8]) g.fillRect(sx + sw * lamp - 10, sy + 4, 20, 6);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
-const atlasUV = (region: readonly [number, number, number, number], u: number, v: number): V2 =>
-  [(region[0] + u * region[2]) / ATLAS.width, 1 - (region[1] + (1 - v) * region[3]) / ATLAS.height];
+  const light = g.createLinearGradient(0, sy, 0, sy + sh), goods = ['#c4202c', '#2b5fb4', '#e6e0d2', '#3c8a52', '#d9a21b', '#7b4a9a'];
+  light.addColorStop(0, '#fff1d2');
+  light.addColorStop(0.7, '#f3c987');
+  light.addColorStop(1, '#a8743d');
+  fill(light, sx, sy, sw, sh);
+  [0.22, 0.38, 0.54].forEach((shelf, k) => {
+    fill('#5a4a3c', sx + 8, sy + sh * shelf, sw - 16, 4);
+    for (let j = 0; j < 6; j++) fill(goods[(j + k * 2) % goods.length]!, sx + 12 + j * 31, sy + sh * shelf - 16, 22, 16);
+  });
+  fill('#3a2f27', sx, sy + sh * 0.72, sw, sh * 0.28);
+  fill('#d8d2c8', sx, sy + sh * 0.72, sw, 6);
+  for (const lamp of [0.2, 0.5, 0.8]) fill('#fff6dc', sx + sw * lamp - 10, sy + 4, 20, 6);
+});
+/** The corners (0,0), (1,0), (1,1), (0,1) of a face in the atlas, from a region [x, y, w, h]. */
+const atlasQuad = (r: readonly number[]): V2[] => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, v]): V2 => [(r[0]! + u! * r[2]!) / ATLAS.width, 1 - (r[1]! + (1 - v!) * r[3]!) / ATLAS.height]);
 
 let fitOutMaterials: { solid: THREE.Material; signs: THREE.Material } | null = null;
 function fitOutMaterial(): { solid: THREE.Material; signs: THREE.Material } {
@@ -628,6 +580,7 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
   const L = (u: number, y: number, v: number): V3 => [u, y, -v];
   const part = (u: number, y0: number, v: number, du: number, dy: number, dv: number, color: Rgb): void => solid.box(L(u, y0 + dy / 2, v), [du, dy, dv], { color });
   const { cluster, totem, board, gate } = FITOUT;
+  const sign = (region: readonly number[], pts: V3[], normal: V3, plain: Rgb): void => signs.poly(pts, atlasQuad(region), { normal, color: textured ? WHITE : plain });
   // ticket machines: four white machines round a red core, red cowls, a screen and keypad on each front
   for (const [u, dv] of FITOUT.clusters) {
     const v = funnelV + dv;
@@ -654,7 +607,7 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
       // seen from the west face, north is on the left; from the east face, south is
       const left = side < 0 ? 1 : -1;
       const pts = ([[left, y0], [-left, y0], [-left, y1], [left, y1]] as const).map(([k, y]): V3 => L(x, y, v + k * (totem.width / 2 - 0.04)));
-      signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.totem, p!, q!)), { normal: [side, 0, 0], color: textured ? WHITE : NAVY });
+      sign(ATLAS.totem, pts, [side, 0, 0], NAVY);
     }
   }
   // departure boards: a dark frame on brackets, the lettered face toward the concourse
@@ -665,7 +618,7 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     const x = face - 0.004, y0 = board.bottom + 0.06, y1 = board.bottom + board.height - 0.06;
     const pts = ([[v0 + 0.06, y0], [v1 - 0.06, y0], [v1 - 0.06, y1], [v0 + 0.06, y1]] as const).map(([v, y]): V3 => L(x, y, v));
     // seen from the west the board's left is its northern end
-    signs.poly([pts[1]!, pts[0]!, pts[3]!, pts[2]!], [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.board, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : BOARD });
+    sign(ATLAS.board, [pts[1]!, pts[0]!, pts[3]!, pts[2]!], [-1, 0, 0], BOARD);
   }
   // fare gates: silver cabinets, dark tops, a green light
   for (let i = 0; i < gate.bays; i++) for (const o of gate.offsets) {
@@ -683,24 +636,28 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     const y0 = plate.bottom + 0.02, y1 = plate.bottom + plate.height - 0.02;
     // seen from the west the plate's left is its northern end
     const pts = ([[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]] as const).map(([w, y]): V3 => L(face - 0.004, y, w));
-    signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.plates[i]!, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : NAVY });
+    sign(ATLAS.plates[i]!, pts, [-1, 0, 0], NAVY);
   });
   // the shops' lit interiors, on the Range's dark panes (shed.ts)
   for (const v of FITOUT.shops) {
     const pts = ([[v + shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.top], [v + shopfront.width / 2, shopfront.top]] as const).map(([w, y]): V3 => L(shopfront.u, y, w));
-    signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.shop, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : rgb(0xe8c58a) });
+    sign(ATLAS.shop, pts, [-1, 0, 0], rgb(0xe8c58a));
   }
   const group = new THREE.Group();
   group.name = 'concourse-fitout';
   group.rotation.y = -shed.heading;
   group.position.set(shed.origin[0], 0, shed.origin[1]);
   const mat = fitOutMaterial();
-  for (const [batch, m, name] of [[solid, mat.solid, 'concourse-fitout-solid'], [signs, mat.signs, 'concourse-fitout-signs']] as const) {
-    const mesh = new THREE.Mesh(batch.build(), m);
-    mesh.name = name;
-    group.add(mesh);
-  }
+  for (const [batch, m, name] of [[solid, mat.solid, 'concourse-fitout-solid'], [signs, mat.signs, 'concourse-fitout-signs']] as const) addMesh(group, batch.build(), m, name);
   return group;
+}
+
+function addMesh(group: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, name: string, order = 0): THREE.Mesh {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = name;
+  mesh.renderOrder = order;
+  group.add(mesh);
+  return mesh;
 }
 
 export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: ShedLayout, exclusions: Pt[][] = []): THREE.Group {
@@ -726,28 +683,18 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   const mullions = new Batch();
   const edges = edgesOf(kept);
   const ribs = roofRibs(edges, d.nodes, centre);
-  const addRib = ({a,b}: {a:number;b:number}): void => {
-    const p = at(a);
-    const q = at(b);
-    const dx = q[0] - p[0];
-    const dy = q[1] - p[1];
-    const dz = q[2] - p[2];
-    const len = Math.hypot(dx, dy, dz);
-    const r = (d.nodes[a]!.r + d.nodes[b]!.r) / 2, t = Math.max(0, Math.min(1, (r - FUNNEL_RADIUS) / (canopy.radius - FUNNEL_RADIUS)));
-    const depth = 0.45 - 0.20 * t; // ASSUMED linear change from 450 mm at the funnel to 250 mm at the rim.
-    members.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2], [len + 0.1, depth, RIB_WIDTH], { rotZ: Math.asin(dy / len), rotY: Math.atan2(-dz, dx), skip: ['+x', '-x'] });
-  };
-  const addTube = ({a,b}: {a:number;b:number}): void => {
-    const r = (d.nodes[a]!.r + d.nodes[b]!.r) / 2, t = Math.max(0, Math.min(1, (r - FUNNEL_RADIUS) / (canopy.radius - FUNNEL_RADIUS)));
-    roundMember(members, at(a), at(b), 0.219 - 0.080 * t); // ASSUMED linear interpolation within Arup's 139–219 mm range.
-  };
-  for (const edge of edges.values()) if (ribs.has(`${edge.a}:${edge.b}`)) addRib(edge);
-  for (const edge of edges.values()) if (!ribs.has(`${edge.a}:${edge.b}`)) addTube(edge);
+  // Ribs first, then tubes. ASSUMED linear change with the share of the way from funnel to rim: ribs 450 to 250 mm deep, tubes 219 to 139 mm (Arup's range).
+  const share = (r: number): number => clamp01((r - FUNNEL_RADIUS) / (canopy.radius - FUNNEL_RADIUS));
+  for (const rib of [true, false]) for (const { a, b } of edges.values()) {
+    if (ribs.has(`${a}:${b}`) !== rib) continue;
+    const p = at(a), q = at(b), t = share((d.nodes[a]!.r + d.nodes[b]!.r) / 2), dy = q[1] - p[1], len = Math.hypot(q[0] - p[0], dy, q[2] - p[2]);
+    if (rib) members.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2], [len + 0.1, 0.45 - 0.2 * t, RIB_WIDTH], { rotZ: Math.asin(dy / len), rotY: Math.atan2(p[2] - q[2], q[0] - p[0]), skip: ['+x', '-x'] });
+    else roundMember(members, p, q, 0.219 - 0.08 * t);
+  }
 
   // Between the members: glass, or a soffit under silver cladding, two cells either side of a rib one diamond facet (R-c, R-c2).
   const rim = (x: number, z: number): number => rimDistance(shed, footprint, north, x, z);
   const glazed = glazedCells(d, kept, centre, shed, rim);
-  const sharing = cellsByEdge(kept);
   const tone = rng(0x4b58), paneTone = rng(0x91a3);
   const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.84, k * 0.92, k]; }; // daylight, a pale blue-white, each pane its own shade
   const SOFFIT_TONE = rgb(0xdadee2), CLADDING_TONE = rgb(0xa9adb2), UP: V3 = [0, 1, 0]; // CLADDING_TONE: the dome's mean in R-c is about (154, 152, 146)
@@ -759,27 +706,24 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       glass.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], barycentric, { facing: UP, color: pane() });
       return;
     }
-    const rMid = (d.nodes[t[0]]!.r + d.nodes[t[1]]!.r + d.nodes[t[2]]!.r) / 3;
-    const outer = Math.max(0, Math.min(1, (rMid - FUNNEL_RADIUS) / (canopy.radius - FUNNEL_RADIUS)));
+    const outer = share((d.nodes[t[0]]!.r + d.nodes[t[1]]!.r + d.nodes[t[2]]!.r) / 3);
     // Each cell its own shade (ASSUMED +-4 %), dimming toward the rim.
     soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], barycentric, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.1 * outer)) });
   });
   // An upstand closes the cavity where a solid cell meets a glazed one, so no sky shows through.
-  for (const [key, pair] of sharing) {
-    if (pair.length !== 2 || glazed.has(pair[0]!) === glazed.has(pair[1]!)) continue;
-    const [a, b] = key.split(':').map(Number) as [number, number], solid = kept[glazed.has(pair[0]!) ? pair[1]! : pair[0]!]!, apex = at(solid.find(n => n !== a && n !== b)!);
-    const A = at(a), B = at(b);
+  for (const { a, b, cells } of edges.values()) {
+    if (cells.length !== 2 || glazed.has(cells[0]!) === glazed.has(cells[1]!)) continue;
+    const solid = kept[glazed.has(cells[0]!) ? cells[1]! : cells[0]!]!, apex = at(solid.find(n => n !== a && n !== b)!), A = at(a), B = at(b);
     soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)], [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]],
       { facing: [(A[0] + B[0]) / 2 - apex[0], 0, (A[2] + B[2]) / 2 - apex[2]], color: scaled(SOFFIT_TONE, 0.9) });
   }
   const paired = new Set<number>();
-  for (const [key, pair] of sharing) {
-    if (!ribs.has(key) || pair.length !== 2) continue;
-    const [i, j] = pair as [number, number];
+  for (const [key, { a, b, cells }] of edges) {
+    if (!ribs.has(key) || cells.length !== 2) continue;
+    const [i, j] = cells as [number, number];
     if (glazed.has(i) || glazed.has(j) || paired.has(i) || paired.has(j)) continue;
     paired.add(i);
     paired.add(j);
-    const [a, b] = key.split(':').map(Number) as [number, number];
     const third = (k: number): number => kept[k]!.find(n => n !== a && n !== b)!;
     const A = nodeAt(a, SKIN_LIFT), B = nodeAt(b, SKIN_LIFT), C = nodeAt(third(i), SKIN_LIFT), D = nodeAt(third(j), SKIN_LIFT);
     const M: V3 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + FACET_RISE, (A[2] + B[2]) / 2];
@@ -880,24 +824,13 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
 
   const group = new THREE.Group();
   group.name = 'western-concourse';
-  const add = (b: Batch, m: THREE.Material, name: string, order = 0): void => {
-    if (b.count === 0) return;
-    const mesh = new THREE.Mesh(b.build(), m);
-    mesh.name = name;
-    mesh.renderOrder = order;
-    group.add(mesh);
-  };
+  const add = (b: Batch, m: THREE.Material, name: string, order = 0): void => { if (b.count > 0) addMesh(group, b.build(), m, name, order); };
   add(members, mat.member, 'concourse-lattice');
   add(soffit, mat.soffit, 'concourse-panels');
   add(cladding, mat.cladding, 'concourse-cladding');
   if (glass.count > 0) { // one geometry, two looks: bright from below, dark and glinting from above
     const panes = glass.build();
-    for (const [m, name] of [[mat.skylight, 'concourse-glass'], [mat.skylightTop, 'concourse-glass-top']] as const) {
-      const mesh = new THREE.Mesh(panes, m);
-      mesh.name = name;
-      mesh.renderOrder = 3;
-      group.add(mesh);
-    }
+    for (const [m, name] of [[mat.skylight, 'concourse-glass'], [mat.skylightTop, 'concourse-glass-top']] as const) addMesh(group, panes, m, name, 3);
   }
   add(wall, mat.wallGlass, 'concourse-wall', 3);
   add(closure, mat.skylight, 'concourse-closure', 3);
@@ -906,10 +839,8 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   add(floor, mat.floor, 'concourse-floor');
   group.add(buildFitOut(shed, worldToShed(shed, centre).v));
   // The funnel: one mesh about its own axis in the shed's frame, its legs landing on the roof's third ring.
-  const column = new THREE.Mesh(columnGeometry(funnelHead(d, centre, shed)), mat.funnel);
-  column.name = 'concourse-column';
+  const column = addMesh(group, columnGeometry(funnelHead(d, centre, shed)), mat.funnel, 'concourse-column');
   column.position.set(cx, 0, cz);
   column.rotation.y = -shed.heading;
-  group.add(column);
   return group;
 }

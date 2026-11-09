@@ -20,7 +20,7 @@ shutil.copytree(src, work, ignore=shutil.ignore_patterns('node_modules', '.git',
 target = work / 'web/src/concourse.ts'
 original = target.read_text()
 RADIUS = 'export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (0.3 * t + 0.7 * t ** 3) + (t ? 0 : 0.25);'
-THICK = 'return 0.36 - 0.14 * Math.max(0, Math.min(1, y / top));'
+THICK = 'return 0.36 - 0.14 * clamp01(y / top);'
 mutations = [
     ('tubes are six-sided', 'const TUBE_SIDES = 8;', 'const TUBE_SIDES = 6;'),
     ('legs drawn as one straight tube', 'export const COLUMN_SEGMENTS = 3;', 'export const COLUMN_SEGMENTS = 1;'),
@@ -36,7 +36,7 @@ mutations = [
     ('Range-side legs reach into the cornice', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS + 0.4;'),
     ('Range-side legs stand far from the Range', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 3;'),
     ('all tubes one thickness', THICK, 'return 0.36;'),
-    ('thin tubes', THICK, 'return 0.2 - 0.05 * Math.max(0, Math.min(1, y / top));'),
+    ('thin tubes', THICK, 'return 0.2 - 0.05 * clamp01(y / top);'),
     ('rings not turned half a step', '((rings.length - 1 - k) % 2) * 0.5', '0'),
     ('legs kink at every crossing', 'ends[i]![1] = ends[o]![0] = unit(sum(dirs[i]!, dirs[o]!));', 'ends[i]![1] = dirs[i]!; ends[o]![0] = dirs[o]!;'),
     ('feet not upright', 'ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));', 'ends[o]![0] = dirs[o]!;'),

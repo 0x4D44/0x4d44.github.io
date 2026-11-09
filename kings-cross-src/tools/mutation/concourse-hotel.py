@@ -22,7 +22,7 @@ target = work / 'web/src/concourse.ts'
 original = target.read_text()
 mutations = [
     ('exclusions omitted by builder', 'concourseGrid(canopy, footprint, shed, exclusions)', 'concourseGrid(canopy, footprint, shed)'),
-    ('only vertex containment checked', '  for(let i=0;i<triangle.length;i++)', '  return false;\n  for(let i=0;i<triangle.length;i++)'),
+    ('only vertex containment checked', '  for (let i = 0; i < triangle.length; i++)', '  return false;\n  for (let i = 0; i < triangle.length; i++)'),
     ('member section reach omitted', '0.45 / 2 + RIB_WIDTH / 2 + 0.05', '0'),
     ('floor inherits coarse roof cells',
      'for(const tri of THREE.ShapeUtils.triangulateShape(groundOutline.map(p=>new THREE.Vector2(...p)),[])) {\n    let [a,b,c]=tri.map(i=>groundOutline[i]!)',
