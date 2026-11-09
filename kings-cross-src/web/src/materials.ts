@@ -583,6 +583,22 @@ diffuseColor.rgb *= mix( vec3( 1.0 ), gTint * mix( ${lo}, ${hi}, gk ), gShare );
 const GLASS_VARIES_GLSL = glassVariesGlsl(0.55, 1.55);
 
 /**
+ * Blinds in the decal windows (the E4 scorer, round six: the hotel's windows read as one dark blue pane over and over; the photograph of the Great Northern
+ * (hist-a, 2013) has the white sashes round glass that is dark in some windows, grey with the sky in others and pale cream with a blind or a net in a good
+ * quarter of them). A window whose number `gk` lies in the middle of its range (0.4 to 0.6: about one in six, the numbers lean to the ends) has a cream blind
+ * drawn down over the top of its glass, to a depth of its own (0.3 to 0.9 of the window's height, from `gq`, a second number of the window's corner: a plain sine of
+ * 7.3 radians a metre and no steeper, so a window's depth moves by under a hundredth when the shader's idea of the corner wanders by 3 mm, where a hash of `gk` would
+ * jump), of a cream of its own (0.8 to 1.0 of 0.70, 0.62, 0.46, linear: the blind takes the light the wall does). Only the
+ * glass is covered (`gShare`, as the brightening above): the stone, the bars and the reveal stay as they were, so the blind reads as behind the sash. The quad's V
+ * runs up from 0 at the foot of the window to 1 at its top.
+ */
+const GLASS_BLIND_GLSL = /* glsl */`
+float gBlind = smoothstep( 0.37, 0.43, gk ) * ( 1.0 - smoothstep( 0.57, 0.63, gk ) );
+float gDrop = 0.3 + 0.6 * gq;
+diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.70, 0.62, 0.46 ) * ( 1.0 - 0.2 * gq ), gShare * gBlind * smoothstep( 0.97 - gDrop, 1.03 - gDrop, vMapUv.y ) );
+`;
+
+/**
  * One window to a tile (the city's facades: stock, red, stone, panel, glass and shop repeat one storey by one bay): the window's number is the
  * tile's, mixed with the building's own (its vertex colour), so a facade is a patchwork of windows and its neighbour a different one.
  * A curtain wall (the 'glass' facade) takes three quarters of its number from a smooth field across the tiles instead, and a narrower swing
@@ -633,13 +649,15 @@ vec3 gDx = dFdx( vWinPos ), gDy = dFdy( vWinPos );
 vec2 gUx = dFdx( vMapUv ), gUy = dFdy( vMapUv );
 float gDet = gUx.x * gUy.y - gUy.x * gUx.y;
 float gk = 0.5;
+float gq = 0.5;
 if ( abs( gDet ) > 1e-12 ) {
   vec3 gA = ( gDx * gUy.y - gDy * gUx.y ) / gDet;
   vec3 gB = ( gDy * gUx.x - gDx * gUy.x ) / gDet;
   vec3 gO = vWinPos - vMapUv.x * gA - vMapUv.y * gB;
   gk = 0.5 + 0.5 * sin( dot( gO, vec3( ${WINDOW_FIELD.a.join(', ')} ) ) + ${WINDOW_FIELD.k} * sin( dot( gO, vec3( ${WINDOW_FIELD.b.join(', ')} ) ) ) );
+  gq = 0.5 + 0.5 * sin( dot( gO, vec3( 4.3, 2.9, 5.1 ) ) );
 }
-${GLASS_VARIES_GLSL}`;
+${GLASS_VARIES_GLSL}${GLASS_BLIND_GLSL}`;
 
 /**
  * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material

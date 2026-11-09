@@ -440,6 +440,66 @@ test('window glass varies from window to window: the decals by their quad, the c
   assert.ok(!shader(material('window')).fragmentShader.includes('exp( -vMapUv.y )'), 'a window decal is no wall: it has no foot to darken');
 });
 
+test('a decal window has a blind in about one window in six: a cream drawn down over the top of the glass to a depth of its own, and the stone, the bars and the other windows as they were (round six, E4)', () => {
+  const shaderOf = (mat: THREE.Material): string => {
+    const t = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+    mat.onBeforeCompile(t as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+    return t.fragmentShader;
+  };
+  const sash = shaderOf(material('sash'));
+  const lines = sash.split('\n');
+  const from = lines.findIndex((l) => l.startsWith('float gBlind'));
+  assert.ok(from > 0, 'the blind is in the decals\' shader');
+  assert.ok(sash.indexOf('float gShare') < sash.indexOf('float gBlind'), 'after the glass has taken its tone, and the share of it that is glass is known');
+  const body = lines.slice(from, from + 3).join('\n');
+  assert.ok(body.includes('float gDrop') && body.includes('diffuseColor.rgb = mix('), `the three statements: ${body}`);
+  for (const name of ['sashArch', 'window', 'windowArch'] as const) assert.ok(shaderOf(material(name)).includes('float gBlind'), `${name}: the decals have it all`);
+  assert.ok(!shaderOf(cityMaterial('stock')).includes('gBlind') && !shaderOf(cityMaterial('glass')).includes('gBlind'), 'the city\'s tiled facades have none');
+  const glsl = new Glsl('');
+  const pane = [0.3, 0.45, 0.6, 1];
+  const run = (gk: number, v: number, share = 1, gq = 0.5): number[] => {
+    const env = { vars: { gk, gq, gShare: share, vMapUv: [0.5, v], diffuseColor: [...pane] } };
+    glsl.run(body, env);
+    return env.vars.diffuseColor as number[];
+  };
+  // a window at either end of the range has no blind, however high up the glass
+  for (const gk of [0, 0.2, 0.36, 0.64, 0.8, 1]) for (const v of [0, 0.5, 0.97]) assert.deepEqual(run(gk, v), pane, `no blind at ${gk}, ${v}`);
+  // one in the middle has: cream (red over green over blue, a pale warm colour of 0.8 to 1.0 of 0.70, 0.62, 0.46) at the top, the glass as it was at the foot
+  for (const gq of [0, 0.5, 1]) {
+    const top = run(0.5, 0.99, 1, gq);
+    assert.ok(top[0]! > top[1]! && top[1]! > top[2]! && top[0]! >= 0.7 * 0.8 - 1e-9 && top[0]! <= 0.7 + 1e-9 && top[2]! >= 0.46 * 0.8 - 1e-9 && top[3] === 1, `a cream blind at the top: ${top} at ${gq}`);
+    assert.deepEqual(run(0.5, 0, 1, gq), pane, `and none at the foot of the window, below where the blind stops (${gq})`);
+  }
+  assert.ok(run(0.5, 0.99, 1, 1)[0]! < run(0.5, 0.99, 1, 0)[0]!, 'the creams of two windows differ');
+  // it stops where its own depth says: a blind covers the top 0.3 to 0.9 of the window (0.3 + 0.6 gq), and no two windows have the same
+  const edge = (gq: number): number => {
+    let e = 1;
+    for (let v = 1; v >= 0; v -= 0.005) { if (run(0.5, v, 1, gq)[0]! === pane[0]) break; e = v; }
+    return e;
+  };
+  const edges = [0, 0.25, 0.5, 0.75, 1].map(edge);
+  edges.forEach((e, i) => assert.ok(Math.abs(e - (1 - (0.3 + 0.6 * i / 4))) < 0.04, `the blind stops where its depth says: ${e} for the ${i}th of five`));
+  assert.ok(Math.max(...edges) - Math.min(...edges) > 0.5, `windows differ in how far the blind is down: ${Math.min(...edges).toFixed(2)} to ${Math.max(...edges).toFixed(2)}`);
+  // and only over the glass: where the texture is stone, bars or reveal (no share) nothing changes, and a part share takes a part of the cream
+  assert.deepEqual(run(0.5, 0.99, 0), pane, 'the stone and the bars are not covered');
+  const full = run(0.5, 0.99), half = run(0.5, 0.99, 0.5);
+  assert.ok(Math.abs(half[0]! - (pane[0]! + full[0]!) / 2) < 1e-9, `half glass, half blind: ${half[0]}`);
+  // about one window in six: the numbers a facade of windows is given, by the field they are read from (windowKey), over a wide wall
+  let blinded = 0, count = 0;
+  for (let col = 0; col < 40; col++) for (let row = 0; row < 8; row++) {
+    count++;
+    const gk = windowKey(-80 + col * 3.2 * Math.cos(0.7), 2 + row * 3.4, -40 + col * 3.2 * Math.sin(0.7));
+    if (gk > 0.4 && gk < 0.6) blinded++;
+  }
+  assert.ok(blinded / count > 0.1 && blinded / count < 0.25, `about one window in six has a blind: ${blinded} of ${count}`);
+  // the depth's own number is a plain sine of the corner (7.3 radians a metre): the corner the shader rebuilds is good to a few millimetres at worst, and the depth moves by under a hundredth with it
+  const gqField = /gq = 0\.5 \+ 0\.5 \* sin\( dot\( gO, vec3\( ([\d.]+), ([\d.]+), ([\d.]+) \) \) \);/.exec(sash);
+  assert.ok(gqField, 'the second number is read from the corner by a plain sine');
+  const k = [Number(gqField![1]), Number(gqField![2]), Number(gqField![3])];
+  assert.ok(Math.hypot(...(k as [number, number, number])) < 7.5, `no steeper than 7.5 radians a metre: ${Math.hypot(...(k as [number, number, number]))}`);
+  assert.ok(0.6 * 0.5 * Math.hypot(...(k as [number, number, number])) * 0.003 < 0.01, 'so 3 mm of wander moves the depth by under a hundredth of the window');
+});
+
 test('a curtain wall\'s window number rises with the height up the wall and takes a share of its building\'s own colour: darker and warmer glass at the foot, paler and bluer in the upper storeys, and one tower not the next (round five, E4)', () => {
   const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   cityMaterial('glass').onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
