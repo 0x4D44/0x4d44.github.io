@@ -122,6 +122,7 @@ function start(): void {
   if (station) scene.add(buildConcourse(canopy, station.pts, layout, data.buildings.filter(b => b.id === 46821177).map(b => b.pts)));
 
   scene.add(buildBufferStops(data, layout));
+  void import('./ole.ts').then(({ buildOle }) => scene.add(buildOle(data, layout, tunnelMouths(data).map(m => m.origin)))).catch((err: unknown) => { console.error('OLE failed to load', err); });
 
   // Sample trains: four standing nose-in at the buffer stops, on tracks 1, 3, 5 and 7 (counting
   // from the west), so no two share a platform face and the evidence cameras can stand between them.
