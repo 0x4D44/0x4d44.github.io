@@ -37,7 +37,7 @@ export const DISC_THICKNESS = 0.024;
 /** Sides to the tread, the flange and the face of a wheel, and to the far level's wheel. 40 reads round at three metres (a wheel is about 250 px across there). */
 export const WHEEL_SEGMENTS = 40;
 export const FAR_WHEEL_SEGMENTS = 12;
-/** No part of a bogie is further from the centre line than this, and none reaches above the body floor (the lowest is 0.98 m: a Class 180's). */
+/** No part of a bogie is further from the centre line than this, and none reaches above this, under the body floor (the lowest floor is 0.98 m: the electric units' and the Class 180's). */
 export const BOGIE_HALF_WIDTH = 1.15;
 export const BOGIE_TOP = 0.95;
 
@@ -232,7 +232,6 @@ function earClip(poly: readonly P2[]): [number, number, number][] {
  * The outline may be concave but must not cross itself; either winding.
  */
 function plate(soup: Soup, outline: readonly P2[], x0: number, x1: number, outer: THREE.Color, inner: THREE.Color = outer, side: 1 | -1 = 1): void {
-  const c = outer;
   const poly = area2(outline) < 0 ? [...outline].reverse() : [...outline];
   const v = (p: P2, x: number): V3 => [x, p[1], p[0]];
   for (const [i, j, k] of earClip(poly)) {
@@ -247,7 +246,7 @@ function plate(soup: Soup, outline: readonly P2[], x0: number, x1: number, outer
     const b = poly[(i + 1) % poly.length] as P2;
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
     const nrm: V3 = [0, -(b[0] - a[0]) / len, (b[1] - a[1]) / len];
-    soup.quad([v(a, x0), v(a, x1), v(b, x1), v(b, x0)], [nrm, nrm, nrm, nrm], c);
+    soup.quad([v(a, x0), v(a, x1), v(b, x1), v(b, x0)], [nrm, nrm, nrm, nrm], outer);
   }
 }
 
@@ -316,7 +315,7 @@ const PALETTES: Record<BogieStyle, Palette> = {
 
 // --- the parts ----------------------------------------------------------------------------------------------------------
 
-/** Outer face of a wheel's web stands this far out of the tread's mid-plane, its hub this far. */
+/** The radius of a wheel's hub cover, of an axle, and the sides of a brake disc. */
 const HUB_RADIUS = 0.115;
 const AXLE_RADIUS = 0.07;
 const DISC_SIDES = 12;
@@ -470,6 +469,11 @@ function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
       const [cx0, cx1] = xs(sx, 0.585, 0.64);
       F.box(cx0, cx1, yD - 0.04, yD + 0.04, z, z + 0.05, pal.clevis);
     }
+    // the vertical damper beside the air spring, standing on the yaw damper and reaching the top of the beam (the same photograph: a grey cylinder beside the air spring)
+    tube(F, axisY(sx * 0.62, yD + 0.03, 0.2), 0, r + 0.24 - (yD + 0.03), 0.026, 8, pal.damper);
+    // and the boxy housing on the beam beyond the yaw damper's far end (the same photograph shows a plain grey box there)
+    const [hx0, hx1] = xs(sx, 0.58, 0.61);
+    F.box(hx0, hx1, r - 0.1, r + 0.12, -0.62, -0.46, pal.box);
   }
   F.box(-0.5, 0.5, r + 0.1, r + 0.24, -0.08, 0.08, pal.box);
 }
