@@ -17,7 +17,7 @@
 //   const hidden = new Set([...buildingsUnderStation(...), ...LANDMARK_OSM_IDS]);  // before buildingPrisms(data, hidden)
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
-import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, polygonEdges, REPLACED_BUILDING_IDS, towerSquare } from '../../core/landmarks.ts';
+import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, polygonEdges, REPLACED_BUILDING_IDS, towerSquare } from '../../core/landmarks.ts';
 import type { BarlowPlan, BayPosition, Edge, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
@@ -51,36 +51,53 @@ export function createMaterials(): MaterialSet {
     owned.push(x);
     return x;
   };
-  // The only material of its own is the clock face: a canvas picture of a dial, drawn here (nothing else uses it).
+  // The only material of its own is the clock face: a canvas picture of a dial, drawn here (nothing else uses it). hist-c shows a
+  // gilt ring round a cream dial with black Roman numerals, a gilt rosette in the middle and black hands; the colours are ASSUMED from it.
   let clockMap: THREE.CanvasTexture | null = null;
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
-    c.width = c.height = 128;
+    c.width = c.height = 256;
     const g = c.getContext('2d') as CanvasRenderingContext2D;
-    g.fillStyle = '#e9e2cc';
+    const hand = (a: number, len: number, width: number): void => {
+      g.lineWidth = width;
+      g.beginPath();
+      g.moveTo(128 - Math.sin(a) * 14, 128 + Math.cos(a) * 14);
+      g.lineTo(128 + Math.sin(a) * len, 128 - Math.cos(a) * len);
+      g.stroke();
+    };
+    g.fillStyle = '#c9a23c';
     g.beginPath();
-    g.arc(64, 64, 62, 0, Math.PI * 2);
+    g.arc(128, 128, 126, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#efe8d2';
+    g.beginPath();
+    g.arc(128, 128, 106, 0, Math.PI * 2);
     g.fill();
     g.strokeStyle = '#1d1b18';
-    g.lineWidth = 4;
+    g.lineWidth = 3;
     g.stroke();
-    for (let i = 0; i < 12; i++) {
-      const a = (i * Math.PI) / 6;
+    g.fillStyle = '#1d1b18';
+    g.font = 'bold 26px serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'].forEach((label, i) => g.fillText(label, 128 + Math.sin((i * Math.PI) / 6) * 80, 128 - Math.cos((i * Math.PI) / 6) * 80));
+    g.lineWidth = 2;
+    for (let i = 0; i < 60; i++) {
+      const a = (i * Math.PI) / 30;
       g.beginPath();
-      g.moveTo(64 + Math.sin(a) * 50, 64 - Math.cos(a) * 50);
-      g.lineTo(64 + Math.sin(a) * 58, 64 - Math.cos(a) * 58);
+      g.moveTo(128 + Math.sin(a) * 100, 128 - Math.cos(a) * 100);
+      g.lineTo(128 + Math.sin(a) * 105, 128 - Math.cos(a) * 105);
       g.stroke();
     }
-    g.lineWidth = 5;
-    g.beginPath();
-    g.moveTo(64, 64);
-    g.lineTo(64 + Math.sin(2.4) * 30, 64 - Math.cos(2.4) * 30);
-    g.stroke();
-    g.lineWidth = 3;
-    g.beginPath();
-    g.moveTo(64, 64);
-    g.lineTo(64 + Math.sin(5.9) * 46, 64 - Math.cos(5.9) * 46);
-    g.stroke();
+    g.fillStyle = '#c9a23c';
+    for (let i = 0; i < 8; i++) {
+      g.beginPath();
+      g.ellipse(128 + Math.sin((i * Math.PI) / 4) * 15, 128 - Math.cos((i * Math.PI) / 4) * 15, 7, 13, (i * Math.PI) / 4, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.strokeStyle = '#1d1b18';
+    hand(2.4, 52, 8);
+    hand(5.9, 78, 5);
     clockMap = own(new THREE.CanvasTexture(c));
     clockMap.colorSpace = THREE.SRGBColorSpace;
   }
@@ -118,8 +135,11 @@ export function addWalls(m: Batch, outline: readonly Pt[], y0: number, y1: numbe
 /**
  * A sloped roof from the eaves outline (at y0) up to a ring (at y1), and a flat cap on the ring. u runs
  * along the eaves and v up the slope, in metres. A ring of one repeated point makes a pyramid (no cap).
+ * With `runs` (the horizontal run of each facet, for a roof whose ring edges are parallel to its eaves edges: every facet a flat trapezoid)
+ * the UVs unfold each facet true to scale, so the slates keep their courses and a brick or stone frustum is not stretched; without, v is the
+ * length of the line from each eaves corner to its ring corner. A facet whose ring corners meet is a triangle.
  */
-export function addRoof(m: Batch, outline: readonly Pt[], ring: readonly Pt[], y0: number, y1: number, cap = true): void {
+export function addRoof(m: Batch, outline: readonly Pt[], ring: readonly Pt[], y0: number, y1: number, cap = true, runs?: readonly number[]): void {
   const n = outline.length;
   const rise = y1 - y0;
   const slope = (i: number): number => Math.hypot((ring[i] as Pt)[0] - (outline[i] as Pt)[0], (ring[i] as Pt)[1] - (outline[i] as Pt)[1], rise);
@@ -133,7 +153,15 @@ export function addRoof(m: Batch, outline: readonly Pt[], ring: readonly Pt[], y
     const b = outline[j] as Pt;
     const ra = ring[e.i] as Pt;
     const rb = ring[j] as Pt;
-    m.quadUV([a[0], y0, a[1]], [b[0], y0, b[1]], [rb[0], y1, rb[1]], [ra[0], y1, ra[1]], [[s0, 0], [s1, 0], [s1, slope(j)], [s0, slope(e.i)]], [e.normal[0], 1, e.normal[1]]);
+    let uvs: [V2, V2, V2, V2] = [[s0, 0], [s1, 0], [s1, slope(j)], [s0, slope(e.i)]];
+    if (runs) {
+      // the facet's own plane: u along the eaves (a ring corner leans in along the edge by its offset from the eaves corner), v up the slant
+      const v = Math.hypot(runs[e.i] as number, rise);
+      uvs = [[s0, 0], [s1, 0], [s1 + (rb[0] - b[0]) * e.dir[0] + (rb[1] - b[1]) * e.dir[1], v], [s0 + (ra[0] - a[0]) * e.dir[0] + (ra[1] - a[1]) * e.dir[1], v]];
+    }
+    const hint: V3 = [e.normal[0], 1, e.normal[1]];
+    if (Math.hypot(ra[0] - rb[0], ra[1] - rb[1]) < 1e-9) m.tri([a[0], y0, a[1]], [b[0], y0, b[1]], [rb[0], y1, rb[1]], [uvs[0], uvs[1], uvs[2]], hint);
+    else m.quadUV([a[0], y0, a[1]], [b[0], y0, b[1]], [rb[0], y1, rb[1]], [ra[0], y1, ra[1]], uvs, hint);
   }
   if (!cap) return;
   const tris = THREE.ShapeUtils.triangulateShape(ring.map(([x, z]) => new THREE.Vector2(x, z)), []);
@@ -455,90 +483,309 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
 }
 
 // ---- the St Pancras Renaissance (Midland Grand) Hotel ------------------------------------------
+// What is not a published figure is drawn from the reference photographs, with its size ASSUMED by scaling from them:
+//   hist-b  the Midland Grand from Euston Road, 2012: the front, the clock tower in its setting, the roof and its chimneys
+//   hist-c  the clock tower, 2015: its stages, the dial, the gables, the turrets and the spire
+//   hist-e  the roof from the air, 2016: the ridge, the dormers, the stacks
+// (refs/historic-neighbours/ in the graphical-fidelity reference set).
 
-/** A tower on a square plan: brick shaft with lancets, a belfry stage, then (clock tower) a gabled clock stage and a slate spire, or (west tower) an arcaded stage and a pyramid roof. */
-function addTower(parts: PartMap<Key>, t: TowerPlan): void {
+/** A square ring about `c`: `half` from the middle to each side, its sides along `along` and `out`. */
+function squareAbout(c: Pt, along: Pt, out: Pt, half: number): Pt[] {
+  return ([[-1, -1], [1, -1], [1, 1], [-1, 1]] as const).map(([a, b]) => [c[0] + (along[0] * a + out[0] * b) * half, c[1] + (along[1] * a + out[1] * b) * half] as Pt);
+}
+
+/**
+ * The head of a pointed opening `w` wide, from the right-hand jamb over the apex to the left-hand one: two arcs springing at `spring`,
+ * `grow` metres outside the opening (concentric with its own). x is across from the opening's middle, y up from its sill.
+ */
+export function headArc(w: number, spring: number, grow: number, steps = 3): [number, number][] {
+  const hw = w / 2;
+  const r = w + grow;
+  const end = Math.acos(hw / r);
+  const right: [number, number][] = [];
+  const left: [number, number][] = [];
+  for (let k = 0; k <= steps; k++) {
+    const a = (end * k) / steps;
+    right.push([-hw + r * Math.cos(a), spring + r * Math.sin(a)]);
+    left.push([hw - r * Math.cos(a), spring + r * Math.sin(a)]);
+  }
+  return [...right, ...left.reverse().slice(1)];
+}
+
+/** The stone moulding round a window group's arch and jambs (hist-c): it keeps the red blocks of the arch from vanishing into the red wall. */
+const MOULDING = 0.08;
+
+/**
+ * A ring of voussoirs round a pointed head, stone and red brick in turn (the polychrome arches of hist-b and hist-c), with a thin stone
+ * moulding round the outside of it. The two halves are mirror images (each runs stone, brick, stone ... up from its jamb), so the apex is
+ * a pale pair of blocks, never a pale one beside a red one. `t` thick, `lift` off the wall.
+ */
+function addVoussoirs(parts: PartMap<Key>, p: Placed, y: number, w: number, spring: number, t: number, lift: number, steps = 3): void {
+  const rings = [0, t, t + MOULDING].map((g) => headArc(w, spring, g, steps));
+  const q = ([x, v]: readonly [number, number]): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * lift, y + v, p.at[1] + p.dir[1] * x + p.normal[1] * lift];
+  const face: V3 = [p.normal[0], 0, p.normal[1]];
+  const n = 2 * steps;
+  const block = (r0: readonly [number, number][], r1: readonly [number, number][], k: number, key: Key): void => {
+    const a = r0[k] as [number, number];
+    const b = r0[k + 1] as [number, number];
+    const c = r1[k + 1] as [number, number];
+    const d = r1[k] as [number, number];
+    part(parts, key).quadUV(q(a), q(b), q(c), q(d), [a, b, c, d], face);
+  };
+  for (let k = 0; k < n; k++) {
+    block(rings[0] as [number, number][], rings[1] as [number, number][], k, Math.min(k, n - 1 - k) % 2 ? 'brickRed' : 'stone');
+    block(rings[1] as [number, number][], rings[2] as [number, number][], k, 'stone');
+  }
+}
+
+/** A flat eight-sided disc of `r` on the wall at (x across, y up) from the placement's middle: a round light. */
+function addDisc(m: Batch, p: Placed, x: number, y: number, r: number, lift: number): void {
+  const pts = Array.from({ length: 8 }, (_, k): V3 => {
+    const a = (k * Math.PI) / 4;
+    return [p.at[0] + p.dir[0] * (x + r * Math.cos(a)) + p.normal[0] * lift, y + r * Math.sin(a), p.at[1] + p.dir[1] * (x + r * Math.cos(a)) + p.normal[1] * lift];
+  });
+  m.fan(pts, [p.normal[0], 0, p.normal[1]], (q) => [(q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1], q[1]]);
+}
+
+/**
+ * A pair of lancets under one pointed relieving arch of polychrome voussoirs, with a stone shaft between them, an oculus above and a sill
+ * below: the window group of the Euston Road front (hist-b, hist-c show paired pointed lights under a pointed head in every bay).
+ * `W` is the arch's opening, `h` its height; every size here is ASSUMED, scaled from those photographs.
+ */
+export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h: number): void {
+  const stone = part(parts, 'stone');
+  const pane = part(parts, 'pane');
+  const t = 0.22;
+  const spring = Math.max(0, h - W * Math.sin(Math.PI / 3));
+  addWindow(stone, p, y, W, h, 'pointed', 0.05, true);
+  const lw = (W - 0.4) / 2;
+  for (const s of [-1, 1]) {
+    const x = s * (lw / 2 + 0.2);
+    addWindow(pane, { at: [p.at[0] + p.dir[0] * x, p.at[1] + p.dir[1] * x], dir: p.dir, normal: p.normal }, y, lw, h - 0.9, 'pointed', 0.1);
+  }
+  addDisc(pane, p, 0, y + h - 0.45, 0.27, 0.1);
+  addVoussoirs(parts, p, y, W, spring, t, 0.05);
+  // the jambs carry the arch's courses down to the sill (the course under the springing is brick, the next stone, and so on), and its moulding
+  const nb = spring > 0.3 ? Math.max(1, Math.round(spring / 0.65)) : 0;
+  const face: V3 = [p.normal[0], 0, p.normal[1]];
+  const q = (x: number, v: number): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * 0.05, y + v, p.at[1] + p.dir[1] * x + p.normal[1] * 0.05];
+  for (const s of [-1, 1]) {
+    for (let k = 0; k < nb; k++) {
+      const v0 = (spring * k) / nb;
+      const v1 = (spring * (k + 1)) / nb;
+      part(parts, (nb - 1 - k) % 2 === 0 ? 'brickRed' : 'stone').quadUV(q(s * (W / 2), v0), q(s * (W / 2 + t), v0), q(s * (W / 2 + t), v1), q(s * (W / 2), v1), [[0, v0], [t, v0], [t, v1], [0, v1]], face);
+    }
+    if (nb) stone.quadUV(q(s * (W / 2 + t), 0), q(s * (W / 2 + t + MOULDING), 0), q(s * (W / 2 + t + MOULDING), spring), q(s * (W / 2 + t), spring), [[0, 0], [MOULDING, 0], [MOULDING, spring], [0, spring]], face);
+  }
+  stone.box([p.at[0] + p.normal[0] * 0.2, y - 0.1, p.at[1] + p.normal[1] * 0.2], [W + 0.6, 0.2, 0.5], { rotY: Math.atan2(-p.dir[1], p.dir[0]), skip: ['-y'] });
+}
+
+/** A chimney stack on the crown of the roof: a brick shaft, a stone corbel course and cap, a clay pot (hist-b, hist-e: tall brick stacks in pairs along the ridge). Sizes ASSUMED. */
+function addStack(parts: PartMap<Key>, c: Pt, dir: Pt, y: number, h: number): void {
+  const rotY = Math.atan2(-dir[1], dir[0]);
+  const brick = part(parts, 'brickRed');
+  const stone = part(parts, 'stone');
+  brick.box([c[0], y + h / 2, c[1]], [0.95, h, 0.75], { rotY, skip: ['-y'] });
+  stone.box([c[0], y + h - 0.55, c[1]], [1.2, 0.18, 1.0], { rotY, skip: ['-y'] });
+  stone.box([c[0], y + h + 0.12, c[1]], [1.3, 0.24, 1.1], { rotY });
+  brick.box([c[0], y + h + 0.54, c[1]], [0.4, 0.6, 0.4], { rotY, skip: ['-y'] });
+}
+
+/** A four-sided spike (or a frustum, if `half1` is more than 0): the cap of a turret, a finial. Stripes alternate when given two materials. */
+function addSpike(m: Batch, c: Pt, along: Pt, out: Pt, half0: number, y0: number, y1: number, half1 = 0): void {
+  const r = half0 - half1;
+  addRoof(m, squareAbout(c, along, out, half0), squareAbout(c, along, out, half1), y0, y1, false, [r, r, r, r]);
+}
+
+/**
+ * A gabled projection standing on a pitched roof: `base` is the middle of its face where the face meets the roof, `w` is half its width,
+ * `h` its height to the apex and `hs` to the shoulders (0 for a plain triangle); the roof rises `slope` metres to the metre going back, so
+ * the sides run back h / slope to meet it. The face (stone-bordered) looks out along `normal`.
+ */
+function addGable(parts: PartMap<Key>, base: V3, dir: Pt, normal: Pt, slope: number, w: number, h: number, hs: number, face: Key): void {
+  const slate = part(parts, 'slate');
+  const stone = part(parts, 'stone');
+  const q = (u: number, back: number, v: number): V3 => [base[0] + dir[0] * u - normal[0] * back, base[1] + v, base[2] + dir[1] * u - normal[1] * back];
+  const out: V3 = [normal[0], 0, normal[1]];
+  // the face, and round it (in the same plane, not behind it: nothing to fight over) a stone border up the sides and along the rakes
+  const b = 0.14;
+  const shape: V2[] = hs > 0 ? [[-w, 0], [w, 0], [w, hs], [0, h], [-w, hs]] : [[-w, 0], [w, 0], [0, h]];
+  const border: V2[] = hs > 0 ? [[-w - b, 0], [w + b, 0], [w + b, hs], [0, h + 1.7 * b], [-w - b, hs]] : [[-w - b, 0], [w + b, 0], [0, h + 1.7 * b]];
+  part(parts, face).poly(shape.map(([u, v]) => q(u, 0, v)), shape.map(([u, v]): V2 => [u, base[1] + v]), { normal: out });
+  for (let k = 1; k < shape.length; k++) {
+    const k1 = (k + 1) % shape.length;
+    const corners = [border[k], border[k1], shape[k1], shape[k]] as [V2, V2, V2, V2];
+    stone.quadUV(...(corners.map(([u, v]) => q(u, 0, v)) as [V3, V3, V3, V3]), corners, out);
+  }
+  for (const sign of [-1, 1]) {
+    const span = Math.hypot(w, h - hs);
+    if (hs > 0) {
+      slate.tri(q(sign * w, 0, 0), q(sign * w, 0, hs), q(sign * w, hs / slope, hs), [[0, 0], [0, hs], [hs / slope, hs]], [sign * dir[0], 0, sign * dir[1]]);
+      slate.quadUV(q(sign * w, 0, hs), q(0, 0, h), q(0, h / slope, h), q(sign * w, hs / slope, hs), [[0, 0], [span, 0], [span, h / slope], [0, hs / slope]], UP);
+    } else slate.tri(q(sign * w, 0, 0), q(0, 0, h), q(0, h / slope, h), [[0, 0], [span, 0], [span, h / slope]], UP);
+  }
+}
+
+/** The roof of the Midland Grand: what a gable or a stack needs to stand on it. */
+interface RoofFrame {
+  plan: MidlandPlan;
+  edges: Edge[];
+  rise: number;
+}
+
+/** The point `d` m in from the eaves line of facet i and `s` m along it from the facet's first corner: on the facet, so its height follows the pitch. */
+function onRoof(r: RoofFrame, i: number, s: number, d: number): V3 {
+  const e = r.edges[i] as Edge;
+  return [e.a[0] + e.dir[0] * s - e.normal[0] * d, r.plan.eaves + (r.rise * d) / (r.plan.roof.runs[i] as number), e.a[1] + e.dir[1] * s - e.normal[1] * d];
+}
+
+/** The stretch of facet i, along its eaves from the facet's first corner, that is still the facet at every depth from d0 to d1: the hip lines lean in at a corner that turns away, out at a re-entrant one. */
+function facetSpan(r: RoofFrame, i: number, d0: number, d1: number): [number, number] {
+  const e = r.edges[i] as Edge;
+  const n = r.plan.outline.length;
+  const run = r.plan.roof.runs[i] as number;
+  const ra = r.plan.roof.ring[i] as Pt;
+  const rb = r.plan.roof.ring[(i + 1) % n] as Pt;
+  const lo = ((ra[0] - e.a[0]) * e.dir[0] + (ra[1] - e.a[1]) * e.dir[1]) / run;
+  const hi = ((rb[0] - e.b[0]) * e.dir[0] + (rb[1] - e.b[1]) * e.dir[1]) / run;
+  return [Math.max(lo * d0, lo * d1), e.length + Math.min(hi * d0, hi * d1)];
+}
+
+/** One turret: a shaft of stone and red-brick courses, then a banded spirelet (hist-c: the clock tower's four corner turrets are striped). */
+function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, half: number, shaft: number, cap: number): void {
+  const courses = 4;
+  for (let k = 0; k < courses; k++) addWalls(part(parts, k % 2 ? 'brickRed' : 'stone'), squareAbout(c, along, out, half), y0 + (shaft * k) / courses, y0 + (shaft * (k + 1)) / courses);
+  const stripes = 3;
+  for (let k = 0; k < stripes; k++) addSpike(part(parts, k % 2 ? 'brickRed' : 'stone'), c, along, out, half * (1 - k / stripes), y0 + shaft + (cap * k) / stripes, y0 + shaft + (cap * (k + 1)) / stripes, half * (1 - (k + 1) / stripes));
+}
+
+/**
+ * Where a tower's stages end, for a tower `H` tall: the shaft (the facade's rows of windows and then lancets), the belfry, the corbel table
+ * above it, the wall head where the roof begins, the roof's top where the lantern stands, and the lantern's top; the needle runs on to `H`.
+ * ASSUMED: the fractions are scaled from hist-c, whose clock tower is taken to be 82 m (the rubric's figure, 82 +/- 4 m).
+ */
+export function towerStages(H: number): { shaft: number; belfry: number; corbel: number; wall: number; roof: number; lantern: number } {
+  const belfry = H * 0.726;
+  return { shaft: H * 0.622, belfry, corbel: belfry + 1.8, wall: H * 0.813, roof: H * 0.92, lantern: H * 0.95 };
+}
+
+/**
+ * A tower on a square plan, by stages (proportions ASSUMED, scaled from hist-c on the 82 m clock tower): a brick shaft with the facade's
+ * window rows and then lancets, a belfry of paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial in
+ * a stone ring and a brick gable on each face, [HE-STP] "gabled clocks on each face"), four striped turrets at the corners, a steep slate
+ * roof, a lantern and a needle. The entrance is a pointed portal at the foot of the front.
+ */
+function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const h = t.side / 2;
-  const corner = (a: number, b: number, grow = 0): Pt => [t.centre[0] + t.along[0] * a * (h + grow) + t.out[0] * b * (h + grow), t.centre[1] + t.along[1] * a * (h + grow) + t.out[1] * b * (h + grow)];
-  const square = (grow = 0): Pt[] => [corner(-1, -1, grow), corner(1, -1, grow), corner(1, 1, grow), corner(-1, 1, grow)];
+  const H = t.height;
   const brick = part(parts, 'brickRed');
   const stone = part(parts, 'stone');
   const slate = part(parts, 'slate');
   const clockTower = t.name === 'clock';
-  const shaftTop = clockTower ? t.height * 0.5 : t.height * 0.72;
-  addWalls(brick, square(), 0, shaftTop);
-  const whole = (grow: number): Seg[] => segmentsOutside(polygonEdges(square(grow)), []);
-  for (let y = 9; y < shaftTop - 3; y += 9) addBand(stone, whole(0), y, 0.5, 0.2);
-  const faces: Placed[] = [
-    { at: corner(0, 1), dir: t.along, normal: t.out },
-    { at: corner(0, -1), dir: [-t.along[0], -t.along[1]], normal: [-t.out[0], -t.out[1]] },
-    { at: corner(1, 0), dir: t.out, normal: t.along },
-    { at: corner(-1, 0), dir: [-t.out[0], -t.out[1]], normal: [-t.along[0], -t.along[1]] },
+  const { shaft: sT, belfry: bT, corbel: tT, wall: wH, roof: rT, lantern: lT } = towerStages(H);
+  const sq = (half: number): Pt[] => squareAbout(t.centre, t.along, t.out, half);
+  const whole = (grow: number): Seg[] => segmentsOutside(polygonEdges(sq(h + grow)), []);
+  const facesAt = (half: number): Placed[] => [
+    { at: [t.centre[0] + t.out[0] * half, t.centre[1] + t.out[1] * half], dir: t.along, normal: t.out },
+    { at: [t.centre[0] - t.out[0] * half, t.centre[1] - t.out[1] * half], dir: [-t.along[0], -t.along[1]], normal: [-t.out[0], -t.out[1]] },
+    { at: [t.centre[0] + t.along[0] * half, t.centre[1] + t.along[1] * half], dir: t.out, normal: t.along },
+    { at: [t.centre[0] - t.along[0] * half, t.centre[1] - t.along[1] * half], dir: [-t.out[0], -t.out[1]], normal: [-t.along[0], -t.along[1]] },
   ];
   const sideAt = (f: Placed, dx: number, lift: number): Placed => ({ at: [f.at[0] + f.dir[0] * dx + f.normal[0] * lift, f.at[1] + f.dir[1] * dx + f.normal[1] * lift], dir: f.dir, normal: f.normal });
-  for (const f of faces) for (let y = 5; y < shaftTop - 6; y += 9) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
-  if (clockTower) {
-    // belfry stage, then the clock stage: a gable and a clock on each face, a pinnacle at each corner, a spire
-    const belfryTop = shaftTop + t.height * 0.13;
-    addWalls(brick, square(0.15), shaftTop, belfryTop);
-    addBand(stone, whole(0.15), shaftTop, 0.5, 0.2);
-    addBand(stone, whole(0.15), belfryTop - 0.5, 0.5, 0.2);
-    for (const f of faces) for (const dx of [-1.9, 1.9]) addFramedWindow(parts, sideAt(f, dx, 0.25), shaftTop + 1.8, 1.3, t.height * 0.13 - 4.4, 'pointed', 0.2);
-    const clockTop = belfryTop + t.height * 0.1;
-    addWalls(brick, square(0.1), belfryTop, clockTop);
-    for (const f of faces) {
-      const apex: V3 = [f.at[0] + f.normal[0] * 0.2, clockTop + 4.2, f.at[1] + f.normal[1] * 0.2];
-      const l: V3 = [f.at[0] + f.dir[0] * (h + 0.2) + f.normal[0] * 0.2, clockTop, f.at[1] + f.dir[1] * (h + 0.2) + f.normal[1] * 0.2];
-      const r: V3 = [f.at[0] - f.dir[0] * (h + 0.2) + f.normal[0] * 0.2, clockTop, f.at[1] - f.dir[1] * (h + 0.2) + f.normal[1] * 0.2];
-      stone.tri(l, r, apex, [[0, clockTop], [2 * h + 0.4, clockTop], [h + 0.2, clockTop + 4.2]], [f.normal[0], 0, f.normal[1]]);
-      // the clock face: a square panel whose disc is cut out by the material's alpha test
-      const cy = belfryTop + (clockTop - belfryTop) * 0.5;
-      const half = 2.1;
-      const off = 0.27;
-      const q = (x: number, y: number): V3 => [f.at[0] + f.dir[0] * x + f.normal[0] * off, y, f.at[1] + f.dir[1] * x + f.normal[1] * off];
-      part(parts, 'clock').quadUV(q(half, cy - half), q(-half, cy - half), q(-half, cy + half), q(half, cy + half), [[0, 0], [1, 0], [1, 1], [0, 1]], [f.normal[0], 0, f.normal[1]]);
-    }
-    for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
-      const [px, pz] = corner(a, b, 0.1);
-      const sq: Pt[] = [0, 1, 2, 3].map((k) => [px + (k === 1 || k === 2 ? 0.4 : -0.4), pz + (k >= 2 ? 0.4 : -0.4)] as Pt);
-      addWalls(stone, sq, clockTop, clockTop + 2.2);
-      addRoof(slate, sq, sq.map(() => [px, pz] as Pt), clockTop + 2.2, clockTop + 4.2, false);
-    }
-    addRoof(slate, square(0.1), square(0.1).map(() => t.centre), clockTop, t.height, false);
-  } else {
-    const arcTop = shaftTop + t.height * 0.1;
-    addWalls(brick, square(0.15), shaftTop, arcTop);
-    addBand(stone, whole(0.15), shaftTop, 0.5, 0.2);
-    for (const f of faces) for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, sideAt(f, dx, 0.25), shaftTop + 1.0, 1.5, t.height * 0.1 - 2.2, 'round', 0.18);
-    addRoof(slate, square(0.15), square(0.15).map(() => t.centre), arcTop, t.height, false);
+  const faces = facesAt(h);
+
+  // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
+  addWalls(brick, sq(h), 0, bT);
+  for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, whole(0), y, 0.4, 0.2);
+  addBand(stone, whole(0), sT, 0.5, 0.25);
+  // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
+  for (const f of faces) {
+    const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
+    for (const [y, wh] of [[6.9, 3.4], [12.4, 3.4], [17.9, 3.0]] as const) if (!inside) addTwin(parts, f, y, 2.4, wh);
+    for (const y of [27, 36, 45]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
+  // the entrance: a pointed portal in the front face (the hotel's grand entrance is at the foot of its west tower [HE-STP]); its surround
+  // stops short of the ground, so nothing at ground level stands off the OSM outline (the footprint tests hold the feet to it)
+  addFramedWindow(parts, faces[0] as Placed, 0.5, 3.2, 4.6, 'pointed', 0.3);
+  // the belfry: paired pointed arches (the west tower: three round ones) on each face
+  for (const f of faces) {
+    if (clockTower) addTwin(parts, f, sT + 1.2, 5.0, bT - sT - 2.7); // hist-c: the belfry's paired arches fill over half the face
+    else for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, sideAt(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
+  }
+  // the corbel table: three steps, each a little farther out
+  for (let k = 0; k < 3; k++) addBand(stone, whole(0), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
+  // the clock stage
+  const grow = 0.5;
+  addWalls(brick, sq(h + grow), tT, wH);
+  const stage = facesAt(h + grow);
+  const lant = 1.4; // half the lantern's side
+  const roofSlope = (rT - wH) / (h + grow - lant);
+  if (clockTower) {
+    const cy = (tT + wH) / 2;
+    for (const f of stage) {
+      // the dial in a ring of stone (hist-c: a gilt ring and a cream dial 4.2 m across, ASSUMED from the tower's width)
+      const q = (x: number, y: number, lift: number): V3 => [f.at[0] + f.dir[0] * x + f.normal[0] * lift, y, f.at[1] + f.dir[1] * x + f.normal[1] * lift];
+      const face: V3 = [f.normal[0], 0, f.normal[1]];
+      const half = 2.1;
+      for (let k = 0; k < 16; k++) {
+        const a0 = (k * Math.PI) / 8;
+        const a1 = ((k + 1) * Math.PI) / 8;
+        const ring = (a: number, r: number, lift: number): V3 => q(r * Math.cos(a), cy + r * Math.sin(a), lift);
+        stone.quadUV(ring(a0, 2.05, 0.1), ring(a1, 2.05, 0.1), ring(a1, 2.5, 0.1), ring(a0, 2.5, 0.1), [[0, 0], [0.6, 0], [0.6, 0.5], [0, 0.5]], face);
+      }
+      // u runs left to right as a viewer outside sees it; dir points to the viewer's left on the front and back faces and to the right on the sides
+      const left = f.dir[0] * f.normal[1] - f.dir[1] * f.normal[0] < 0 ? half : -half;
+      part(parts, 'clock').quadUV(q(left, cy - half, 0.14), q(-left, cy - half, 0.14), q(-left, cy + half, 0.14), q(left, cy + half, 0.14), [[0, 0], [1, 0], [1, 1], [0, 1]], face);
+      // the gable over the dial, brick with a stone border and a rosette in it, its sides running back into the roof
+      const gw = h - 1.0;
+      addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, gw, 4.3, 0, 'brickRed');
+      addDisc(stone, f, 0, wH + 1.9, 0.45, 0.12);
+    }
+  }
+  // the turrets stand on the corners of the clock stage
+  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+    const c: Pt = [t.centre[0] + (t.along[0] * a + t.out[0] * b) * (h + grow - 0.75), t.centre[1] + (t.along[1] * a + t.out[1] * b) * (h + grow - 0.75)];
+    addTurret(parts, c, t.along, t.out, wH, 0.65, 3.0, 3.6);
+  }
+  // the roof, the lantern and the needle
+  addRoof(slate, sq(h + grow), sq(lant), wH, rT, true, [h + grow - lant, h + grow - lant, h + grow - lant, h + grow - lant]);
+  addWalls(stone, sq(lant), rT, lT);
+  for (const f of facesAt(lant)) for (const dx of [-0.6, 0.6]) addWindow(part(parts, 'pane'), sideAt(f, dx, 0.05), rT + 0.45, 0.5, lT - rT - 0.9, 'pointed', 0.05);
+  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) addSpike(stone, [t.centre[0] + (t.along[0] * a + t.out[0] * b) * lant, t.centre[1] + (t.along[1] * a + t.out[1] * b) * lant], t.along, t.out, 0.22, rT, lT + 0.9);
+  addSpike(slate, t.centre, t.along, t.out, lant + 0.12, lT, H);
 }
 
 export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
   const parts: PartMap<Key> = {};
-  const stone = part(parts, 'stone'), slate = part(parts, 'slate');
+  const stone = part(parts, 'stone');
+  const slate = part(parts, 'slate');
+  const edges = polygonEdges(plan.outline);
   addWalls(part(parts, 'brickRed'), plan.outline, 0, plan.eaves);
   // the towers stand in front of the wall: stop the bands and windows where they stand
   const cutters = plan.towers.map((t) => towerSquare(t, 0.45));
-  const segs = segmentsOutside(polygonEdges(plan.outline), cutters);
+  const segs = segmentsOutside(edges, cutters);
   for (const y of [6.0, 11.5, 17.0]) addBand(stone, segs, y, 0.35, 0.12);
-  addBand(stone, segs, plan.eaves - 1.0, 1.0, 0.6);
-  addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
+  addBand(stone, segs, plan.eaves - 1.0, 1.0, 0.6); // the cornice
+  addBand(stone, segs, plan.eaves, 0.9, 0.35); // the parapet in front of the gutter
+  addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge, true, plan.roof.runs);
 
-  // windows: four storeys, round-headed at the bottom and pointed above; the front and the curved wing in bays, the rest evenly
+  // windows: four storeys, round-headed at the bottom and pairs of pointed lancets above; the front and the curved wing in bays, the rest evenly
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, { y: 6.9, h: 3.4, head: 'pointed' as Head }, { y: 12.4, h: 3.4, head: 'pointed' as Head }, { y: 17.9, h: 3.0, head: 'pointed' as Head }];
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
-  const dress = (bays: readonly BayPosition[]): void => {
+  const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {
       if (covered(bay.at)) continue;
       const w = Math.max(1.0, Math.min(1.7, bay.width * 0.32));
-      for (const row of rows) addFramedWindow(parts, bay, row.y, w, row.h, row.head, 0.22);
+      for (const row of rows) {
+        if (rich && row.head === 'pointed') addTwin(parts, bay, row.y, Math.max(1.6, Math.min(2.5, bay.width * 0.46)), row.h);
+        else addFramedWindow(parts, bay, row.y, w, row.h, row.head, 0.22);
+      }
     }
   };
-  dress(plan.front.bays);
-  dress(plan.wing.bays);
+  dress(plan.front.bays, true);
+  dress(plan.wing.bays, true);
   const dressed = new Set<number>([...plan.front.edges, ...plan.wing.edges].map((e) => e.i));
-  for (const e of polygonEdges(plan.outline)) {
+  for (const e of edges) {
     if (dressed.has(e.i) || e.length < 6) continue;
     const n = Math.max(1, Math.round(e.length / 5.2));
     const bays: BayPosition[] = [];
@@ -546,32 +793,62 @@ export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
       const t = (k + 0.5) / n;
       bays.push({ edge: e.i, at: [e.a[0] + e.dir[0] * e.length * t, e.a[1] + e.dir[1] * e.length * t], dir: e.dir, normal: e.normal, width: e.length / n });
     }
-    dress(bays);
+    dress(bays, false);
   }
-  // HE 1342037: two roof storeys with stacked gabled dormers.
-  // https://historicengland.org.uk/listing/the-list/list-entry/1342037
+
+  // HE 1342037: two roof storeys with stacked gabled dormers; hist-b, hist-c and hist-e show them as small slate gables with pale borders and
+  // pale-framed lights, in a lower row just above the cornice and a smaller upper one. https://historicengland.org.uk/listing/the-list/list-entry/1342037
   // Public roof photograph: https://www.blackheath.org/events/2026/3/26/walk-amp-talk-st-pancras-and-somerstown
-  // ASSUMED: regular bay alignment, tier insets, widths/heights and plain stone gables;
-  // slate cheeks/hoods meet the existing pitch. No new footprint or tower placement.
-  const slope = (plan.ridge - plan.eaves) / plan.roof.inset;
-  for (const bay of [...plan.front.bays, ...plan.wing.bays]) for (const f of [0.12, 0.55]) {
-    const w = Math.min(1.3, bay.width * 0.25) * (f < 0.5 ? 1 : 0.75), h = f < 0.5 ? 3.6 : 2.8, shoulder = h * 0.68;
-    const depth = h / slope, inset = plan.roof.inset * f, y = plan.eaves + slope * inset;
-    const p = { ...bay, at: [bay.at[0] - bay.normal[0] * inset, bay.at[1] - bay.normal[1] * inset] as Pt };
-    // Inflate by the full hood radius, not just its centre: no edge can cross a tower.
-    if (plan.towers.some(t => pointInQuad(p.at, towerSquare(t, Math.hypot(w, depth) + 0.45)))) continue;
-    const q = (u: number, d: number, v: number): V3 => [p.at[0] + p.dir[0] * u - p.normal[0] * d, y + v, p.at[1] + p.dir[1] * u - p.normal[1] * d];
-    const normal: V3 = [p.normal[0], 0, p.normal[1]];
-    const gable: V2[] = [[-w, 0], [w, 0], [w, shoulder], [0, h], [-w, shoulder]];
-    stone.poly(gable.map(([u, v]) => q(u, 0, v)), gable, { normal });
-    for (const sign of [-1, 1]) {
-      slate.tri(q(sign*w, 0, 0), q(sign*w, 0, shoulder), q(sign*w, shoulder/slope, shoulder), [[0, 0], [0, shoulder], [shoulder/slope, shoulder]], [sign*p.dir[0], 0, sign*p.dir[1]]);
-      const span = Math.hypot(w, h - shoulder);
-      slate.quadUV(q(sign*w, 0, shoulder), q(0, 0, h), q(0, depth, h), q(sign*w, shoulder/slope, shoulder), [[0, 0], [span, 0], [span, depth], [0, shoulder/slope]], UP);
+  // ASSUMED: one of each row to a bay, their sizes and places; they stand on the facet of their own bay (they are left to the facet's width where
+  // a hip cuts in) and never inside a tower's envelope.
+  const frame: RoofFrame = { plan, edges, rise: plan.ridge - plan.eaves };
+  for (const bay of [...plan.front.bays, ...plan.wing.bays]) {
+    const i = bay.edge;
+    const e = edges[i] as Edge;
+    const run = plan.roof.runs[i] as number;
+    const slope = frame.rise / run;
+    const s0 = (bay.at[0] - e.a[0]) * e.dir[0] + (bay.at[1] - e.a[1]) * e.dir[1];
+    for (const f of [0.1, 0.5]) {
+      const lower = f < 0.3;
+      const h = lower ? 3.6 : 2.8;
+      const d = run * f;
+      const back = h / slope;
+      if (d + back > run - 0.15) continue; // its back must stop short of the crown
+      // as wide as asked, or as the facet is between its hips there; slid along it, but never out of its own bay, where a hip cuts in
+      const [from, to] = facetSpan(frame, i, d, d + back);
+      const ww = Math.min(Math.min(1.3, bay.width * 0.25) * (lower ? 1 : 0.75), (to - from) / 2 - 0.15);
+      if (ww < 0.5) continue;
+      const s = Math.min(Math.max(s0, from + 0.15 + ww), to - 0.15 - ww);
+      if (Math.abs(s - s0) + ww > bay.width / 2) continue;
+      const mid = onRoof(frame, i, s, d);
+      // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
+      if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
+      const hs = h * 0.58;
+      addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'slate');
+      addFramedWindow(parts, { at: [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], dir: e.dir, normal: e.normal }, mid[1] + 0.2, ww * 0.95, hs * 0.8, 'pointed', 0.1);
+      addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.11, mid[1] + h + 0.1, mid[1] + h + 0.8);
     }
-    addFramedWindow(parts, p, y + 0.18, w * 1.05, shoulder * 0.8, 'pointed', 0.12);
   }
-  for (const t of plan.towers) addTower(parts, t);
+  // chimney stacks in pairs along the crown of the roof (hist-b, hist-e), a pair only where both stand wholly on the crown and clear of the towers
+  for (const e of [...plan.front.edges, ...plan.wing.edges]) {
+    const ra = plan.roof.ring[e.i] as Pt;
+    const rb = plan.roof.ring[(e.i + 1) % plan.outline.length] as Pt;
+    const l = Math.hypot(rb[0] - ra[0], rb[1] - ra[1]);
+    if (l < 8) continue;
+    const n = Math.max(1, Math.round(l / 16));
+    for (let k = 0; k < n; k++) {
+      const pair = [-1, 1].map((o): Pt => {
+        const s = ((k + 0.5) / n) * l + o * 1.1;
+        return [ra[0] + e.dir[0] * s - e.normal[0] * 1.2, ra[1] + e.dir[1] * s - e.normal[1] * 1.2];
+      });
+      const stands = (c: Pt): boolean => {
+        const foot = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]): Pt => [c[0] + e.dir[0] * (a as number) * 0.7 + e.normal[0] * (b as number) * 0.6, c[1] + e.dir[1] * (a as number) * 0.7 + e.normal[1] * (b as number) * 0.6]);
+        return foot.every((p) => pointInPolygon(p, plan.roof.ring)) && !plan.towers.some((t) => pointInQuad(c, towerSquare(t, 1.6)));
+      };
+      if (pair.every(stands)) for (const c of pair) addStack(parts, c, e.dir, plan.ridge - 0.3, 4.2);
+    }
+  }
+  for (const t of plan.towers) addTower(parts, t, plan);
   return parts;
 }
 

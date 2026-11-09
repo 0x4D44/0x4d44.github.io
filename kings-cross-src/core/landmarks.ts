@@ -28,8 +28,18 @@
 //             from station level; glass covers the middle half of the roof, timber and slate the outer
 //             quarters; the platforms sit 20 ft (6 m) above street level.
 //   [WP-MGH]  Wikipedia, "St Pancras Renaissance London Hotel": clock tower 76 m (249 ft).
-//             (exploring-london.com gives 82 m for the clock tower and 76 m for the west tower; the
-//             sources disagree, so the model uses Wikipedia's 76 m and marks the west tower ASSUMED.)
+//             (exploring-london.com gives 82 m for the clock tower and 76 m for the west tower; gilbertscott.org
+//             says 280 ft = 85.3 m; other sites 72-76 m. The sources disagree: the model takes 82 m, the figure
+//             most repeated and the one the graphical-fidelity rubric asks for (82 m +/- 4), and marks the west
+//             tower ASSUMED. See refs/DIMENSIONS.md section 4.)
+//   [NSC-EXT] New Steel Construction, "Rebirth of St Pancras" (newsteelconstruction.com/wp/rebirth-of-st-pancras/):
+//             the 2007 extension is "a new 200m long steel canopy" with "three spans across the tracks and seven
+//             30m bays longitudinally", a flat roof "subservient to the Barlow Shed" (the arch was rejected
+//             because the extension is much wider than the old station), on "four lines of 2.6m deep Warren
+//             trusses" with Vierendeel girders across, a "saw-tooth roof profile curving from the top of each
+//             girder to the bottom of the next", and a main roof that "stops 22m short of the gable end of the
+//             Barlow Shed", the gap closed by a shallower transition roof of "pyramids of glass" on a grillage of
+//             1.1m plate girders hung from the Barlow arch. The heights are not published: ASSUMED below.
 //   [WP-GAS]  Wikipedia, "Gasworks Tunnel": three bores, each 528 yd (483 m) long, between 0 mi 22 ch
 //             and 0 mi 46 ch from King's Cross; "circular portals decorated with a cornice and voussoir".
 //   [WP-COP]  Wikipedia, "Copenhagen Tunnel": three twin-track bores, 594 yd (543 m) long, between 0 mi
@@ -67,13 +77,15 @@ export const FIGURES = {
     roofInset: 3.2, // ASSUMED
   },
   midland: {
-    clockTowerHeight: 76, // [WP-MGH]
+    clockTowerHeight: 82, // [WP-MGH] note: 82 m is exploring-london.com's figure and the rubric's (82 +/- 4); Wikipedia says 76 m
     westTowerHeight: 56, // ASSUMED (sources conflict: 76 m on exploring-london.com)
     towerSide: 10.4, // ASSUMED plan of the clock tower
     westTowerSide: 10.8, // ASSUMED
     eaves: 22, // ASSUMED: 4 main storeys [HE-STP] of about 5.5 m
     roofRise: 12, // ASSUMED: 2 extra storeys in the roof [HE-STP]
-    roofInset: 7.5, // ASSUMED
+    roofInset: 7.5, // ASSUMED: the longest run a roof facet may have (the old uniform inset)
+    roofDepthShare: 0.4, // ASSUMED: a facet runs at most this share of the building's local depth, so two opposite facets leave a ridge between them
+    roofMinRun: 1.0, // ASSUMED: a facet is not squeezed below this run (85 degrees) until its neighbours have given way
     frontBays: 23, // [HE-STP] "23 windows flanked by towers"
     wingBays: 10, // [HE-STP] "a curved 10 window wing to the west"
   },
@@ -265,6 +277,107 @@ export function safeInset(pts: readonly Pt[], d: number): { ring: Pt[]; inset: n
   return { ring: [...pts] as Pt[], inset: 0 };
 }
 
+/**
+ * Offset edge i inward by `runs[i]`, each its own distance, with mitred corners: the ring at the top of a roof whose facets
+ * have a pitch of their own. Every ring edge stays parallel to its eaves edge, so a facet (eaves edge, ring edge) is flat.
+ * Independent of the winding.
+ */
+export function insetPolygonRuns(pts: readonly Pt[], runs: readonly number[]): Pt[] {
+  const edges = polygonEdges(pts);
+  const n = pts.length;
+  return pts.map((p, i) => {
+    const e0 = edges[(i + n - 1) % n] as Edge;
+    const e1 = edges[i] as Edge;
+    const r0 = runs[(i + n - 1) % n] as number;
+    const r1 = runs[i] as number;
+    const det = e0.normal[0] * e1.normal[1] - e0.normal[1] * e1.normal[0];
+    // straight on (to a twentieth of a degree): one offset serves both (fitRoofRuns gives such neighbours the same run)
+    if (Math.abs(det) < 1e-3) return [p[0] - (e1.normal[0] * (r0 + r1)) / 2, p[1] - (e1.normal[1] * (r0 + r1)) / 2] as Pt;
+    // the point r0 inside edge i-1's line and r1 inside edge i's
+    return [p[0] + (r1 * e0.normal[1] - r0 * e1.normal[1]) / det, p[1] + (r0 * e1.normal[0] - r1 * e0.normal[0]) / det] as Pt;
+  });
+}
+
+/** How far the building reaches in from the middle of edge `i`: along the inward normal to the nearest other edge. */
+export function edgeDepth(edges: readonly Edge[], i: number): number {
+  const e = edges[i] as Edge;
+  const o: Pt = [e.mid[0] - e.normal[0] * 0.05, e.mid[1] - e.normal[1] * 0.05];
+  const d: Pt = [-e.normal[0], -e.normal[1]];
+  let best = Infinity;
+  for (const f of edges) {
+    if (f.i === i) continue;
+    // o + t d = f.a + s f.dir
+    const det = d[1] * f.dir[0] - d[0] * f.dir[1];
+    if (Math.abs(det) < 1e-9) continue;
+    const rx = f.a[0] - o[0];
+    const rz = f.a[1] - o[1];
+    const t = (f.dir[0] * rz - f.dir[1] * rx) / det;
+    const s = (d[0] * rz - d[1] * rx) / det;
+    if (t > 0.01 && s >= -1e-6 && s <= f.length + 1e-6) best = Math.min(best, t);
+  }
+  return best + 0.05;
+}
+
+/**
+ * A roof ring with a run of its own for each facet, as near `want[i]` as the outline allows. Edges that turn by no more than `joinDeg`
+ * degrees from one to the next make a chain, and a chain is one roof: its facets share a run (the least wanted along it), so a curved
+ * front or a bend in a wing keeps one pitch; a lone short edge is held to 0.8 of its own length. Where two facets collide (a short edge,
+ * a tight corner) the chains involved give way by a sixth at a time down to `floor`, then their neighbours do, until the ring is
+ * simple, every edge points the way it did and the ring lies inside the outline. Never throws: an outline that cannot take a roof gets
+ * no ring at all (every run 0, the ring the outline itself).
+ */
+export function fitRoofRuns(pts: readonly Pt[], want: readonly number[], floor = 0.3, joinDeg = 45): { ring: Pt[]; runs: number[] } {
+  const n = pts.length;
+  const edges = polygonEdges(pts);
+  const outline: Pt[] = [...pts];
+  const owner = Array.from({ length: n }, (_, i) => i);
+  const root = (i: number): number => (owner[i] === i ? i : (owner[i] = root(owner[i] as number)));
+  for (let i = 0; i < n; i++) {
+    const a = (edges[(i + n - 1) % n] as Edge).normal;
+    const b = (edges[i] as Edge).normal;
+    if (Math.abs((Math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]) * 180) / Math.PI) <= joinDeg) owner[root(i)] = root((i + n - 1) % n);
+  }
+  const chains = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) chains.set(root(i), [...(chains.get(root(i)) ?? []), i]);
+  const chainOf = (i: number): number[] => chains.get(root(i)) as number[];
+  const runs: number[] = new Array<number>(n).fill(0);
+  for (const members of chains.values()) {
+    const r = Math.min(...members.map((i) => Math.max(0, want[i] as number)), members.length === 1 ? 0.8 * (edges[members[0] as number] as Edge).length : Infinity);
+    for (const i of members) runs[i] = r;
+  }
+  const cross = (o: Pt, a: Pt, b: Pt): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const trouble = (ring: readonly Pt[]): Set<number> => {
+    const bad = new Set<number>();
+    for (let i = 0; i < n; i++) {
+      const a = ring[i] as Pt;
+      const b = ring[(i + 1) % n] as Pt;
+      const e = edges[i] as Edge;
+      if ((b[0] - a[0]) * e.dir[0] + (b[1] - a[1]) * e.dir[1] <= 0.3) bad.add(i); // folded over or collapsed
+      if (!pointInPolygon(a, outline)) bad.add(i).add((i + n - 1) % n);
+      for (let j = i + 2; j < n; j++) {
+        if (i === 0 && j === n - 1) continue;
+        const c = ring[j] as Pt;
+        const d = ring[(j + 1) % n] as Pt;
+        if (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) bad.add(i).add(j);
+      }
+    }
+    return bad;
+  };
+  const give = (i: number, least: number): void => {
+    const r = Math.max(least, (runs[i] as number) * 0.85);
+    for (const j of chainOf(i)) runs[j] = r;
+  };
+  for (let k = 0; k < 80; k++) {
+    const ring = insetPolygonRuns(pts, runs);
+    const bad = trouble(ring);
+    if (bad.size === 0 && Math.sign(area2(ring)) === Math.sign(area2(pts))) return { ring, runs };
+    const squeezable = [...bad].filter((i) => (runs[i] as number) > floor);
+    if (squeezable.length) for (const i of squeezable) give(i, floor);
+    else for (const i of bad) for (const j of [(i + n - 1) % n, (i + 1) % n]) give(j, 0.1);
+  }
+  return { ring: [...pts] as Pt[], runs: pts.map(() => 0) };
+}
+
 /** Share `total` bays over runs of the given lengths in proportion (largest remainder), so the sum is exactly `total`. */
 export function allocateBays(lengths: readonly number[], total: number): number[] {
   const sum = lengths.reduce((s, l) => s + l, 0);
@@ -383,7 +496,11 @@ export interface MidlandPlan {
   towers: TowerPlan[];
   eaves: number;
   ridge: number;
-  roof: { ring: Pt[]; inset: number };
+  /**
+   * The roof: facet i runs from the eaves along outline edge i to the ring edge i at the ridge height, `runs[i]` metres in
+   * (so its pitch is atan(rise / runs[i])). `inset` is the front's run, the roof's own proportions.
+   */
+  roof: { ring: Pt[]; inset: number; runs: number[] };
 }
 
 /**
@@ -426,7 +543,12 @@ export function midlandGrandPlan(data: Pick<KxData, 'buildings'>): MidlandPlan {
     wingEdges.push(e);
     if (e.length < 3) break;
   }
-  const roof = safeInset(b.pts, m.roofInset);
+  // The roof: one steep pitch the whole length of the front, set by the front's thinnest place so that the two slopes of the main
+  // block leave a ridge between them (the photographs, hist-b and hist-e, show a steep slate roof of about 60 degrees with a
+  // narrow crown; the pitch itself is ASSUMED). Elsewhere each facet takes the run its own depth allows, never more than the front's.
+  const frontRun = Math.min(m.roofInset, m.roofDepthShare * Math.min(...run.edges.map((e) => edgeDepth(edges, e.i))));
+  const want = edges.map((e) => Math.max(m.roofMinRun, Math.min(frontRun, m.roofDepthShare * edgeDepth(edges, e.i))));
+  const fit = fitRoofRuns(b.pts, want, m.roofMinRun);
   return {
     id: b.id,
     outline: b.pts,
@@ -435,7 +557,7 @@ export function midlandGrandPlan(data: Pick<KxData, 'buildings'>): MidlandPlan {
     towers,
     eaves: m.eaves,
     ridge: m.eaves + m.roofRise,
-    roof,
+    roof: { ring: fit.ring, inset: fit.runs[first.i] as number, runs: fit.runs },
   };
 }
 

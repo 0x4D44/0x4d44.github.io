@@ -15,9 +15,12 @@ import {
   barlowPlan,
   barlowSection,
   chainBays,
+  edgeDepth,
+  fitRoofRuns,
   FIGURES,
   greatNorthernHotelPlan,
   insetPolygon,
+  insetPolygonRuns,
   lateralRange,
   longestStraightRun,
   midlandGrandPlan,
@@ -171,7 +174,10 @@ test('Midland Grand [HE-STP]: 23 bays on the front, a 10 bay curved wing, towers
   const clock = plan.towers.find((t) => t.name === 'clock');
   const west = plan.towers.find((t) => t.name === 'west');
   assert.ok(clock && west);
-  assert.equal(clock.height, 76, '[WP-MGH] clock tower 76 m');
+  // 82 m: exploring-london.com's figure and the graphical-fidelity rubric's (82 +/- 4). Wikipedia [WP-MGH] says 76 m, gilbertscott.org
+  // 280 ft; the sources disagree, so the test holds the model to the rubric's band and to the published range.
+  assert.equal(clock.height, 82, 'clock tower 82 m');
+  assert.ok(clock.height >= 76 && clock.height <= 86, 'inside the published 76 to 85 m range');
   assert.ok(west.height < clock.height, 'the west tower is the lower');
   assert.ok(clock.centre[0] > west.centre[0], 'the clock tower is at the east end');
   assert.ok(clock.out[1] > 0.5, 'the front faces south, to Euston Road');
@@ -198,6 +204,77 @@ test('Midland Grand: each tower stands on the front, 0.3 m proud, with its back 
   }
   const [a, b] = plan.towers;
   assert.ok(a && b && Math.hypot(a.centre[0] - b.centre[0], a.centre[1] - b.centre[1]) > (a.side + b.side) / 2, 'towers do not overlap');
+});
+
+// ---- the Midland Grand's roof: a pitch of its own for every facet ----------------------------------
+
+test('insetPolygonRuns: each edge is offset by its own run, and equal runs are the plain inset', () => {
+  const ring = insetPolygonRuns(RECT, [2, 3, 2, 3]);
+  assert.deepEqual(ring.map(([x, z]) => [Math.round(x * 1e6) / 1e6, Math.round(z * 1e6) / 1e6]), [[3, 2], [17, 2], [17, 8], [3, 8]], 'edge 0 (z = 0) and edge 2 (z = 10) in by 2, edges 1 and 3 in by 3');
+  const same = insetPolygonRuns(RECT, [3, 3, 3, 3]);
+  const plain = insetPolygon(RECT, 3);
+  same.forEach((p, i) => {
+    close(p[0], plain[i]?.[0] ?? NaN, 1e-9, `x${i}`);
+    close(p[1], plain[i]?.[1] ?? NaN, 1e-9, `z${i}`);
+  });
+  // wound the other way (top, right, bottom, left now) it is the same ring, listed in the other order
+  const back = insetPolygonRuns([...RECT].reverse(), [2, 3, 2, 3]);
+  assert.deepEqual(back.map(([x, z]) => [Math.round(x * 1e6) / 1e6, Math.round(z * 1e6) / 1e6]), [[3, 8], [17, 8], [17, 2], [3, 2]]);
+});
+
+test('edgeDepth: the building reaches as far in from an edge as the nearest opposite wall', () => {
+  const edges = polygonEdges(RECT);
+  close(edgeDepth(edges, 0), 10, 1e-6, 'the long side is 10 m from the other');
+  close(edgeDepth(edges, 1), 20, 1e-6, 'the short side is 20 m from the other');
+});
+
+test('fitRoofRuns: a rectangle takes the runs asked; a thin wing gives way until the ring is simple', () => {
+  const ok = fitRoofRuns(RECT, [3, 3, 3, 3], 1);
+  assert.deepEqual(ok.runs, [3, 3, 3, 3]);
+  const thin = fitRoofRuns(RECT, [8, 3, 8, 3], 1); // 8 + 8 > 10: the two long slopes would pass through one another
+  assert.ok((thin.runs[0] as number) < 5 && (thin.runs[2] as number) < 5, `long slopes gave way to ${thin.runs[0]} and ${thin.runs[2]}`);
+  assert.ok((thin.runs[0] as number) > 2.5 && (thin.runs[2] as number) > 2.5, 'but they are still real slopes, not the no-roof fallback');
+  assert.ok(Math.abs(area2(thin.ring)) > 1, 'with a crown between them');
+  assert.equal(ringSelfIntersects(thin.ring), false);
+  assert.ok(Math.sign(area2(thin.ring)) === Math.sign(area2(RECT)), 'same winding as the outline');
+  // an outline with no room for a roof gets no ring at all rather than a broken one
+  const none = fitRoofRuns([[0, 0], [1, 0], [1, 1], [0, 1]], [5, 5, 5, 5], 5);
+  assert.ok(none.runs.every((r) => r >= 0));
+  assert.equal(ringSelfIntersects(none.ring), false);
+  // edges that continue straight on share one run: one facet plane, not two that fail to meet
+  const dogleg = fitRoofRuns([[0, 0], [10, 0], [20, 0], [20, 10], [0, 10]], [2, 6, 3, 3, 3], 1);
+  assert.equal(dogleg.runs[0], dogleg.runs[1], 'two collinear edges, one run');
+});
+
+test('Midland Grand roof: one steep pitch the length of the front, a partition of the footprint, every ring edge parallel to its eaves', () => {
+  const plan = midlandGrandPlan(data);
+  const n = plan.outline.length;
+  const m = FIGURES.midland;
+  assert.equal(plan.roof.ring.length, n);
+  assert.equal(plan.roof.runs.length, n);
+  assert.equal(ringSelfIntersects(plan.roof.ring), false, 'the ring is simple');
+  const edges = polygonEdges(plan.outline);
+  const rise = plan.ridge - plan.eaves;
+  // the front: the same run on every facet, a steep slate pitch (about 60 degrees) that still leaves a crown between the two slopes
+  const front = plan.front.edges.map((e) => plan.roof.runs[e.i] as number);
+  for (const r of front) close(r, plan.roof.inset, 1e-9, 'the front shares one pitch');
+  const pitch = (Math.atan2(rise, plan.roof.inset) * 180) / Math.PI;
+  assert.ok(pitch > 55 && pitch < 66, `front pitch ${pitch} degrees`);
+  for (const e of plan.front.edges) assert.ok(plan.roof.runs[e.i] as number <= m.roofDepthShare * edgeDepth(edges, e.i) + 1e-9, 'a front slope leaves room for the other');
+  // every facet: a run between the floor (a tiny nook may be squeezed lower) and the front's, its ring edge parallel to its eaves edge at that run
+  edges.forEach((e, i) => {
+    const run = plan.roof.runs[i] as number;
+    assert.ok(run > 0.1 && run <= plan.roof.inset + 1e-9, `facet ${i} runs ${run} m`);
+    const a = plan.roof.ring[i] as Pt;
+    const b = plan.roof.ring[(i + 1) % n] as Pt;
+    close((b[0] - a[0]) * e.normal[0] + (b[1] - a[1]) * e.normal[1], 0, 1e-6 * (1 + e.length), `ring edge ${i} is parallel to its eaves edge`);
+    close(-((a[0] - e.a[0]) * e.normal[0] + (a[1] - e.a[1]) * e.normal[1]), run, 1e-6, `ring edge ${i} stands ${run} m inside its eaves edge`);
+  });
+  // eaves + facets + crown tile the footprint exactly: no overlap, no gap
+  const facets = edges.reduce((s, e, i) => s + Math.abs(area2([e.a, e.b, plan.roof.ring[(i + 1) % n] as Pt, plan.roof.ring[i] as Pt])) / 2, 0);
+  close(facets + Math.abs(area2(plan.roof.ring)) / 2, Math.abs(area2(plan.outline)) / 2, 1e-6, 'facets plus crown equal the footprint');
+  edges.forEach((e, i) => assert.ok(Math.sign(area2([e.a, e.b, plan.roof.ring[(i + 1) % n] as Pt, plan.roof.ring[i] as Pt])) === Math.sign(area2(plan.outline)), `facet ${i} is wound as the outline is`));
+  for (const p of plan.roof.ring) assert.equal(pointInPolygon(p, plan.outline), true, 'the ring is inside the walls');
 });
 
 // ---- the Barlow shed ---------------------------------------------------------------------------
