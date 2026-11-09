@@ -89,6 +89,7 @@ python3 -I -u kings-cross-src/tools/mutation/concourse-roof.py kings-cross-src .
 python3 -I -u kings-cross-src/tools/mutation/concourse.py kings-cross-src .scratch/mutation/concourse
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
 python3 -I -u kings-cross-src/tools/mutation/curves.py kings-cross-src .scratch/mutation/curves
+python3 -I -u kings-cross-src/tools/mutation/evidence-helpers.py kings-cross-src .scratch/mutation/evidence-helpers
 python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
 python3 -I -u kings-cross-src/tools/mutation/fidelity.py kings-cross-src .scratch/mutation/fidelity
 python3 -I -u kings-cross-src/tools/mutation/hotel-exterior.py kings-cross-src .scratch/mutation/hotel-exterior
@@ -137,6 +138,16 @@ geometry/camera assertions in Node; they need no browser, relay listener or priv
 `replay-report.py` mutates multi-recording argument handling, growing-file tail capture, and
 the preserved-anchor input to the replay audit. It runs the named synthetic replay assertions
 in isolated package copies.
+
+`evidence-helpers.py` mutates the small modules the evidence and performance tools share, in seven
+groups that are each judged by their own tests: `camera-sweep`, `replay-peak`, `frame-stats`,
+`scene-pin`, `flicker`, `hud` (with the page sources whose names its overlay selectors rely on) and
+`evidence` (the `--hud`, `--views`, scene-pin and scoring-view parts of `tools/evidence.mjs`, judged
+by 13 tests of `tools/tests/evidence.test.mjs` chosen by name; the driver stops if one is renamed).
+It needs no browser, relay or recording. It exits 0 only when every mutation is caught and every
+test it runs was also seen failing by an assertion, and its report names the first mutation that
+reddened each test; append group names to run fewer (`... .scratch/mutation/evidence-helpers hud
+flicker`). Mutations that no test catches yet are kept, not run, in the driver's `UNCAUGHT` list.
 
 `ole.py` mutates the overhead line equipment (`core/ole.ts`, `web/src/ole.ts`): what is wired, the
 support lines, stagger, sag and tunnel-mouth taper, the shed's cross-spans, portals and masts, the
