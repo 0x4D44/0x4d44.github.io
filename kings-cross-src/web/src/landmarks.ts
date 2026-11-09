@@ -77,29 +77,35 @@ export function createMaterials(): MaterialSet {
     clockMap.colorSpace = THREE.SRGBColorSpace;
   }
   const clock = own(new THREE.MeshBasicMaterial({ map: clockMap, color: clockMap ? 0xffffff : 0xe9e2cc, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-  // The shared materials belong to the lighting rig, so each tinted look is a clone. At the noon rig (?time=2026-06-21T12:00:00+01:00&weather=clear) the library's brick and
-  // stone render at 0.84 and 0.72 of the luminance of hist-a and hist-b, hues right: the gains lift them level.
+  // The shared materials belong to the lighting rig, so each tinted look is a clone. The gains are fitted at the noon rig (?time=2026-06-21T12:00:00+01:00&weather=clear) of
+  // the round-3 lighting, from the frozen cameras of tools/evidence.mjs, to the colours measured in the photographs (the targets are measured, the factors ASSUMED): each
+  // renders its reference to within dE 5, the Midland's brick to within dE 9 of hist-b's softer light and dE 4.5 of R-lighting-materials-c's sun.
   const tint = (name: Parameters<typeof material>[0], [r, g, b]: [number, number, number], emissive?: number): THREE.MeshLambertMaterial => {
     const m = own((material(name) as THREE.MeshLambertMaterial).clone());
     m.color.setRGB(r, g, b);
     if (emissive !== undefined) m.emissive.set(emissive);
     return m;
   };
-  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.2];
+  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.3];
   // hist-e: the extension's panels and girders, light grey against the white frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
-  // hist-b: the Midland's brick is a light terracotta red (sunlit about 0xbd8263), not the library's deep crimson: the shared brick texture times (1.1, 0.55, 0.78); ASSUMED
-  const brickRed = tint('brickRed', [1.1 * brickGain, 0.55 * brickGain, 0.78 * brickGain]);
-  // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa); ASSUMED
-  const stone = tint('stone', [1.25 * stoneGain, 1.2 * stoneGain, 1.15 * stoneGain]);
-  // hist-a: the hotel's stock brick, a golden buff: a wall of it reads 0x786449, where (1, 0.96, 0.92) x 1.5 rendered 0x6d604a at the noon rig
-  const brick = tint('brick', [1.15 * brickGain, 1.05 * brickGain, 0.88 * brickGain]);
+  // R-lighting-materials-c and hist-b: the Midland's brick is an orange-red, (156, 98, 69) sunlit in R-c and (160, 113, 91) in hist-b's softer light: not pink, and not the
+  // library's deep crimson. The red texture (average 0xb26952) times (0.5, 0.63, 0.75) renders (165, 101, 78) on the tower and (158, 97, 77) on the range (dE 4.5 from R-c); the
+  // earlier (1.1, 0.55, 0.78) rendered (216, 103, 86), a saturated pink-red, dE 25 from R-c at this rig.
+  const brickRed = tint('brickRed', [0.5 * brickGain, 0.63 * brickGain, 0.75 * brickGain]);
+  // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
+  // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
+  const stone = tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]);
+  // hist-a: the hotel's London stock is a golden-brown, greyer and darker than the sunlit King's Cross stock: (125, 103, 76) as the mean of the brick in the photograph. This tint
+  // renders (120, 101, 74) at the noon rig (dE 1.8); the earlier (1.15, 1.05, 0.88) rendered (136, 117, 81), dE 7.0, too pale and golden.
+  const brick = tint('brick', [0.91 * brickGain, 0.82 * brickGain, 0.83 * brickGain]);
   // hist-d: the glazing is silver-grey and bright, the ribs pale blue-grey (hist-d2: dark only in shadow); the library's glass is its pane texture (light sky blue, mean
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
-  // blue-grey (sunlit about 0x8f8d93 and 0x6b727b against its 0x434950 at the noon rig): a neutral colour of 2.2 renders as 0x666e78.
+  // blue-grey: hist-b's roof is (147, 139, 141) and hist-a's (136, 134, 136). (1, 0.85, 0.8) x 2.3 renders the Midland's (152, 151, 154), dE 4.9, and the hotel's (133, 131, 132),
+  // dE 1.5; the earlier neutral 2.2 rendered a blue-grey (150, 158, 164), dE 8.9, and (127, 134, 140).
   const roofGlass = tint('shedGlass', [1.24, 0.95, 0.84], 0xd4beaf);
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
-  const slate = tint('slateBothSides', [slateGain, slateGain, slateGain]);
+  const slate = tint('slateBothSides', [slateGain, 0.85 * slateGain, 0.8 * slateGain]);
   return {
     table: {
       brick,

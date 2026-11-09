@@ -2092,20 +2092,37 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   const lambert = (k: keyof typeof set.table): THREE.MeshLambertMaterial => set.table[k] as THREE.MeshLambertMaterial;
   const shared = (n: Parameters<typeof material>[0]): THREE.MeshLambertMaterial => material(n) as THREE.MeshLambertMaterial;
   // the dressings and the two bricks keep the library's texture and differ from its colour
+  // (a tint is the colour the texture is multiplied by, so what a wall looks like is the tint times the texture's average, in linear light; a Node material is flat in that average)
+  const lit = (m: THREE.MeshLambertMaterial, name: 'brick' | 'brickRed' | 'stone'): [number, number, number] => {
+    const a = new THREE.Color(TEXTURES[name].average);
+    return [m.color.r * a.r, m.color.g * a.g, m.color.b * a.b];
+  };
   const cream = lambert('stone');
   assert.notEqual(cream, shared('stone'), 'the dressings are their own: creamier and paler than the library\'s grey ashlar [hist-a, hist-b]');
   assert.equal(cream.map, shared('stone').map, 'on the same coursed-stone texture');
-  assert.ok(cream.color.r > shared('stone').color.r && cream.color.g > shared('stone').color.g && cream.color.b > shared('stone').color.b && cream.color.r > cream.color.b, 'paler, and warm');
+  assert.ok(cream.color.r > shared('stone').color.r && cream.color.g > shared('stone').color.g && cream.color.b > shared('stone').color.b, 'paler');
+  const [sr, sg, sb] = lit(cream, 'stone');
+  assert.ok(sr > sg && sg > sb, `and warm: buff-cream once it is on the stone texture, not grey (${sr.toFixed(2)}, ${sg.toFixed(2)}, ${sb.toFixed(2)})`);
   const red = lambert('brickRed');
   assert.notEqual(red, shared('brickRed'), 'the Midland Grand\'s brick is its own: a lighter terracotta than the library\'s crimson [hist-b]');
   assert.equal(red.map, shared('brickRed').map, 'on the same stock-brick texture');
   assert.ok(red.color.g > shared('brickRed').color.g * 2 && red.color.b > shared('brickRed').color.b * 2 && red.color.r >= shared('brickRed').color.r, 'lighter, and less saturated');
-  assert.ok(red.color.r > red.color.g && red.color.r > red.color.b, 'a red tint on the stock brick');
+  const [rr, rg, rb] = lit(red, 'brickRed');
+  assert.ok(rr > rg && rg > rb, 'a red brick: red over green over blue once the tint is on the red texture');
+  // orange-red, not pink: R-lighting-materials-c's sunlit brick is (156, 98, 69) (green at 0.37 of its red in linear light, blue at 0.18) and hist-b's (160, 113, 91) (0.47, 0.30)
+  assert.ok(rg / rr > 0.3 && rg / rr < 0.55 && rb / rr < 0.35, `orange-red, not pink: green at ${(rg / rr).toFixed(2)} of its red, blue at ${(rb / rr).toFixed(2)}`);
   const buff = lambert('brick');
   assert.notEqual(buff, shared('brick'), 'the hotel\'s brick is its own: a lighter, golden buff [hist-a]');
   assert.equal(buff.map, shared('brick').map, 'on the same stock-brick texture');
   assert.ok(buff.color.r > shared('brick').color.r && buff.color.g > shared('brick').color.g && buff.color.b > shared('brick').color.b, 'lighter than the library\'s');
-  assert.ok(buff.color.r > buff.color.g && buff.color.g > buff.color.b && buff.color.g / buff.color.r > 0.9, 'warm, and golden rather than red');
+  const [br, bg, bb] = lit(buff, 'brick');
+  // golden-brown, as hist-a's London stock is (green at about 0.67 of its red in linear light) and the library's (0.71); not red and not grey
+  assert.ok(br > bg && bg > bb && bg / br > 0.55 && bg / br < 0.8, `warm, and golden-brown rather than red: green at ${(bg / br).toFixed(2)} of its red`);
+  // and a lift of the library's brick of about 1.2x, not the 1.6x it was: at the noon rig the wall rendered paler and more golden than hist-a's stock (dE 7.0 on the mean) with it
+  const lum = (v: number[]): number => 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  const stock = new THREE.Color(TEXTURES.brick.average);
+  const lift = lum(lit(buff, 'brick')) / lum([stock.r, stock.g, stock.b]);
+  assert.ok(lift > 1 && lift < 1.3, `lighter than the library's brick, by under 1.3x: ${lift.toFixed(2)}x`);
   assert.notEqual(lambert('brick'), lambert('brickRed'));
   // the shed [hist-d]: silver-grey glazing that is not blue, and pale blue-grey steel ribs
   const glass = lambert('roofGlass');
