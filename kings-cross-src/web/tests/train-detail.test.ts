@@ -3102,8 +3102,9 @@ test('roof kit: the tables put every insulator on its own plate, clear of the ot
         const [xb, ub] = run[i + 1] as readonly [number, number];
         assert.ok(xa === xb || ua === ub, `${style} run ${ir} leg ${i}: along the roof or across it`);
         for (const [ii, item] of def.items.entries()) {
-          // the legs may touch the insulators they start and end on
-          if ((item.x === xa && item.u === ua) || (item.x === xb && item.u === ub)) continue;
+          // CHANGED (red-check: a run whose corner sat on a third insulator passed): a run may touch only the two insulators it starts and ends on, whichever of its legs
+          // reaches them, never one in the middle of it
+          if ((item.x === x0 && item.u === u0) || (item.x === x1 && item.u === u1)) continue;
           // the distance of the insulator's axis from the leg: more than its sheds' radius and the cable's half width
           const cx = Math.min(Math.max(item.x, Math.min(xa, xb)), Math.max(xa, xb));
           const cu = Math.min(Math.max(item.u, Math.min(ua, ub)), Math.max(ua, ub));
@@ -3135,9 +3136,13 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
       const k = kitRadiusScale(kit.height);
       const plateTop = spec.crown + KIT_PLATE_TOP;
       assert.ok(kit.height < spec.coverHeight, `${here}: the kit's ${kit.height} m is under the covers' ${spec.coverHeight} m`);
+      // the stretch of roof the covers are cut back from: the pantograph's, and the kit's beyond it
+      const [k0, k1] = roofKitSpan(kit.style, p0, p1, dir);
       // standing on the roof's flat, under its height, on the nose side of the pantograph and inside the car well clear of its nose
       const noseClear = spec.nose.length + 1;
       for (const v of Object.values(parts).flat(2)) {
+        // CHANGED (red-check: a span cut 1.5 m short passed, the test reading the span from the same function): every vertex of the kit lies inside the stretch the covers are cut back from
+        assert.ok(v.z >= k0 - 1e-4 && v.z <= k1 + 1e-4, `${here}: a kit vertex at z ${v.z.toFixed(3)} outside the cut-back stretch ${k0.toFixed(3)} to ${k1.toFixed(3)}`);
         assert.ok(v.y >= spec.crown - 0.0125 && v.y <= spec.crown + kit.height + 1e-5, `${here}: a kit vertex at ${v.y.toFixed(4)}, the crown at ${spec.crown}`);
         assert.ok(Math.abs(v.x) <= KIT_HALF_WIDTH + 1e-5, `${here}: a kit vertex ${v.x.toFixed(3)} m off the centre line`);
         const u = (v.z - nearEdge) * dir;
@@ -3170,10 +3175,10 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
       }
       // the cables: a box of ten triangles for each leg of each run (five faces and no bottom: two triangles each)
       assert.equal(parts.cable.length, 10 * def.cables.reduce((n, run) => n + run.length - 1, 0), `${here}: cable triangles`);
-      // the covers keep out of the kit and the pantograph
-      const [k0, k1] = roofKitSpan(kit.style, p0, p1, dir);
+      // the covers keep out of the kit and the pantograph: no vertex of a cover inside the stretch, none of a cover's triangles across it
       for (const t of trisOfColour(mesh, SKIRT_PALE).filter((tr) => tr.some((v) => v.y > spec.crown))) {
         for (const v of t) assert.ok(v.z <= k0 + 1e-4 || v.z >= k1 - 1e-4, `${here}: a roof cover over the kit at z ${v.z.toFixed(3)} (kit and pantograph from ${k0.toFixed(3)} to ${k1.toFixed(3)})`);
+        assert.ok(!(Math.min(...t.map((v) => v.z)) < k0 - 1e-4 && Math.max(...t.map((v) => v.z)) > k1 + 1e-4), `${here}: a roof cover triangle across the kit and the pantograph`);
       }
     }
   }
@@ -3189,13 +3194,22 @@ test('pantograph: the head carries two dark carbon strips along its top, inside 
       // two boxes of twelve triangles
       assert.equal(strips.length, 2 * 12, `${kind}: strip triangles`);
       const b = boxOfTris(strips);
-      const top = boxOf(pan).max.y;
+      // CHANGED (red-check: strips drawn a centimetre too high passed): the folded top is the family's figure above the pantograph's base, not the strips' own maximum
+      const top = worldPos(pan).y + bodySpec(familyOf(kind)).pantographTop;
       near(b.max.y, top, 1e-5, `${kind}: the strips' tops are the folded pantograph's top`);
+      near(boxOf(pan).max.y, top, 1e-5, `${kind}: nothing of the pantograph stands above the strips`);
       near(b.max.y - b.min.y, PANTOGRAPH_STRIP_THICKNESS, 1e-5, `${kind}: strip thickness`);
       assert.ok(b.min.x >= -0.78 - 1e-5 && b.max.x <= 0.78 + 1e-5, `${kind}: the strips are inside the head's ends`);
       const zc = worldPos(pan).z;
       const zs = [...new Set(strips.flat().map((v) => (v.z - zc).toFixed(3)))].map(Number).sort((a, c) => a - c);
       assert.deepEqual(zs, PANTOGRAPH_STRIPS.flat().map((z) => Number(z.toFixed(3))), `${kind}: where the strips lie along the head`);
+      // CHANGED (red-check: a strip a centimetre narrower passed, the test reading its numbers from the table it checks): two strips as wide as each other, within the head (0.64 to 0.82 m
+      // along the pantograph, buildPantograph) and mirrored about its middle (0.73 m)
+      assert.equal(zs.length, 4, `${kind}: two strips, four edges`);
+      near(zs[1] - zs[0], zs[3] - zs[2], 1e-6, `${kind}: the strips are as wide as each other`);
+      near(zs[0] + zs[3], 1.46, 1e-6, `${kind}: the strips' outer edges are mirrored about the head's middle`);
+      near(zs[1] + zs[2], 1.46, 1e-6, `${kind}: the strips' inner edges are mirrored about the head's middle`);
+      assert.ok(zs[0] >= 0.64 && zs[3] <= 0.82 && zs[2] > zs[1], `${kind}: the strips lie on the head, apart`);
       seen++;
     }
   }
