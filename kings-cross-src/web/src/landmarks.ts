@@ -925,7 +925,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
   // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones); hist-c: two tall groups from the balcony to the corbels,
-  // their lancets about 5 m, and slender stone shafts with capitals standing in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
+  // their lancets about 5 m, and stone shafts with capitals standing free of the wall in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
+  // (round 7, the scorer: "belfry lights lack the tall detached shafts of R-c": round 6's 0.28 m shafts, 0.12 m out, were two pixels wide and one with the wall; now 0.5 m, with a 0.15 m gap behind)
   const gh = bT - sT - 2.6;
   const shafted = gh - 2.5 * Math.sin(Math.PI / 3) - 0.1;
   for (const f of faces) {
@@ -934,8 +935,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
       addTwin(parts, shift(f, dx), sT + 0.9, 2.5, gh);
       for (const x of [-0.775, 0.775]) stone.box(onWall(f, dx + x, sT + 0.9 + (gh - 0.9) / 2, 0.14), [0.95, 0.14, 0.12], { rotY: yaw(f.dir) }); // a transom across each lancet (hist-c: two lights stacked, the tracery between)
       for (const x of [-1.3, 0, 1.3]) {
-        stone.box(onWall(f, dx + x, sT + 1.0 + shafted / 2, 0.12), [0.28, shafted, 0.28], { rotY: yaw(f.dir), skip: ['-y', '+y'] });
-        stone.box(onWall(f, dx + x, sT + 1.08 + shafted, 0.12), [0.4, 0.16, 0.4], { rotY: yaw(f.dir) }); // and its capital
+        stone.box(onWall(f, dx + x, sT + 1.0 + shafted / 2, 0.4), [0.5, shafted, 0.5], { rotY: yaw(f.dir), skip: ['-y', '+y'] });
+        stone.box(onWall(f, dx + x, sT + 1.1 + shafted, 0.4), [0.72, 0.2, 0.72], { rotY: yaw(f.dir) }); // and its capital
       }
     }
   }
@@ -1091,7 +1092,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
       if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
       const hs = h * 0.58;
-      addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'slate');
+      addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'stone');
       addFramedWindow(parts, { at: [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], dir: e.dir, normal: e.normal }, mid[1] + 0.2, ww * 0.95, hs * 0.8, 'pointed', 0.1);
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
     }
@@ -1260,7 +1261,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     if (k % 6 === 0) long(3.05, [0.5, 0.9, L], ['+y', '+z', '-z']);
     if (k >= 2 * g0 && k <= 2 * g1) long(-0.04, [0.25, 0.08, L], ['-y', '+z', '-z']);
   }
-  // the end screen: glazing in a white iron grid from the transition roof's foot up to the arch; panes about 3.6 m (hist-d2: about 14 across), so the shared glazing is stretched 4x along, 2x up
+  // the end screen: glazing in a white iron grid from the transition roof's foot up to the arch; panes about 3.6 m (hist-d2: about 14 across). Round 7 (the scorer: "grey and moire'd, not R-d2's bright mullioned
+  // screen"): the stretched, shadow-striped glazing read grey from inside, so the screen's glass is a one-sided panel facing the extension, and the shed's inside sees the sky and the roofs beyond through the grid
   const gable: P2[] = [];
   for (let k = 0; k <= steps; k++) {
     const p = sec(k);
@@ -1268,9 +1270,9 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     if (p.y >= F.screenFoot) gable.push([p.x, p.y]);
     if ((p.y < F.screenFoot) !== (q.y < F.screenFoot)) gable.push([p.x + ((F.screenFoot - p.y) / (q.y - p.y)) * (q.x - p.x), F.screenFoot]);
   }
-  glass.fan(gable.map((p) => at(p[0], L, p[1])), dir(0, 0, 1), (p) => [((p[0] - plan.origin[0]) * c + (p[2] - plan.origin[1]) * s) / 4, p[1] / 2]);
+  part(parts, 'metal').fan(gable.map((p) => at(p[0], L, p[1])), dir(0, 0, 1));
   // hist-d2: a strong grid of white iron in the screen, a mullion at the middle and every 3.6 m (a pane) either side up to the arch and a transom at each pane's height, bars
-  // 0.3 m wide standing a hand's breadth inside the glass (ASSUMED sizes)
+  // 0.5 m wide (round 6's 0.3 m were a pixel or two at the shed's length) standing a hand's breadth inside the glass (ASSUMED sizes)
   const archY = (u: number): number => {
     let k = 0;
     while (k < steps - 1 && sec(k + 1).x < u) k++;
@@ -1284,10 +1286,10 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const mid2 = margin + plan.span / 2;
   for (let j = -9; j <= 9; j++) {
     const u = mid2 + 3.6 * j;
-    const head = Math.min(archY(u - 0.15), archY(u + 0.15)) - 0.1; // both corners of its head stay inside the arch
-    if (head > F.screenFoot + 1) bar(L - 0.15, [u, F.screenFoot], [u, head], 0.3, 0.05);
+    const head = Math.min(archY(u - 0.25), archY(u + 0.25)) - 0.1; // both corners of its head stay inside the arch
+    if (head > F.screenFoot + 1) bar(L - 0.15, [u, F.screenFoot], [u, head], 0.5, 0.05);
   }
-  for (let y = F.screenFoot + 3.6; y < plan.rise - 1; y += 3.6) bar(L - 0.15, [archX(y + 0.15) + 0.1, y], [2 * mid2 - archX(y + 0.15) - 0.1, y], 0.3, 0.05);
+  for (let y = F.screenFoot + 3.6; y < plan.rise - 1; y += 3.6) bar(L - 0.15, [archX(y + 0.25) + 0.1, y], [2 * mid2 - archX(y + 0.25) - 0.1, y], 0.5, 0.05);
 
   // ---- the extension [NSC-EXT], wall to wall like the shed: no ribs, no arch
   const W = plan.width;
@@ -1321,12 +1323,13 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const south: V3 = [-s, 0, c]; // facing south, away from the shed
   const centre = at(plan.width / 2, 0.15, 0);
   brick.fan([centre, ...wall], south, (p) => [(p[0] - foot0[0]) * c + (p[2] - foot0[2]) * s, p[1]]);
-  // hist-e: a row of tall brick stacks stands along the Pancras Road (east) wall's top, about every 14 m; the spacing and 3.6 m height are ASSUMED from it.
-  // Wholly outside the shell: 0.7 m out clears the wall, which is 0.2 m out at the foot.
+  // hist-e: a row of tall brick stacks stands along the Pancras Road (east) wall's top, about every 14 m; the spacing and the size are ASSUMED from it (round 7, the scorer: "small pale nubs vs R-e's tall
+  // red stacks": 3.6 m tall of 1.4 x 0.95 m was a stone cap with a stub of brick under it from the aerial's distance; now 6.5 m of 1.96 x 1.33 m).
+  // Wholly outside the shell: 0.9 m out clears the wall, which is 0.2 m out at the foot, by the shaft's 0.665 m half-width.
   const eave = sec(steps - 1);
   for (let i = 0, n = Math.round(L / 14); i < n; i++) {
-    const p = at(eave.x + 0.7, ((i + 0.5) * L) / n, 0);
-    addStack(parts, [p[0], p[2]], [s, -c], eave.y - 0.5, 3.6);
+    const p = at(eave.x + 0.9, ((i + 0.5) * L) / n, 0);
+    addStack(parts, [p[0], p[2]], [s, -c], eave.y - 0.5, 6.5, 1.4);
   }
   return parts;
 }

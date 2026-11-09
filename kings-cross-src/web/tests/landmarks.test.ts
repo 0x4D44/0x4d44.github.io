@@ -956,6 +956,20 @@ test('Midland Grand: every dormer stands on the roof facet of its own bay, betwe
   served.forEach((n, k) => assert.ok(n >= 12, `bay ${k} (edge ${bays[k]?.edge}) has ${n} dormer triangles on its own facet`));
 });
 
+test('Midland Grand [hist-b]: the dormers\' fronts are pale stone (round 7, the scorer: "dormers are plain slate faces; R-b\'s are pale, crocketed"): a dormer\'s slate is its roof and its two cheeks and no front, and a stone front stands in every one', () => {
+  const additions = dormerTriangles();
+  const upright = (t: Tri): boolean => Math.abs(geoNormal(t)[1]) / Math.hypot(...geoNormal(t)) < 0.2;
+  const slate = additions.slate as Tri[];
+  const cheeks = slate.filter(upright);
+  const roofs = slate.filter((t) => !upright(t));
+  assert.ok(roofs.length > 40, `${roofs.length} pitched slate triangles: the dormers' roofs`);
+  // a dormer's slate: two roof planes of two triangles, two cheeks of one; a slate front would add three upright triangles to each (round 6's face, a fan of three)
+  assert.equal(cheeks.length * 2, roofs.length, `${cheeks.length} upright and ${roofs.length} pitched slate triangles: cheeks and roofs, no front`);
+  // and the front is stone: a fan of three triangles to a dormer, each wider than the border strips round it
+  const fronts = (additions.stone as Tri[]).filter((t) => upright(t) && worldArea(t) > 0.3);
+  assert.ok(fronts.length >= (cheeks.length / 2) * 3, `${fronts.length} stone fronts' triangles for ${cheeks.length / 2} dormers`);
+});
+
 test('Midland Grand: dormers lie on the slopes, never on the crown, and no two dormers overlap in plan', () => {
   const additions = dormerTriangles();
   const dormers = additions.slate as Tri[];
@@ -965,8 +979,9 @@ test('Midland Grand: dormers lie on the slopes, never on the crown, and no two d
   const key = (v: V3): string => v.map((x) => x.toFixed(6)).join(',');
   const parent = new Map<string, string>();
   const find = (k: string): string => { let r = k; while (parent.get(r) !== r) r = parent.get(r) as string; return r; };
-  for (const t of dormers) for (const v of t.p) if (!parent.has(key(v))) parent.set(key(v), key(v));
-  for (const t of dormers) { parent.set(find(key(t.p[0])), find(key(t.p[1]))); parent.set(find(key(t.p[1])), find(key(t.p[2]))); }
+  const joined = [...dormers, ...(additions.stone as Tri[])]; // (round 7: the face is stone, and joins a dormer's two cheeks)
+  for (const t of joined) for (const v of t.p) if (!parent.has(key(v))) parent.set(key(v), key(v));
+  for (const t of joined) { parent.set(find(key(t.p[0])), find(key(t.p[1]))); parent.set(find(key(t.p[1])), find(key(t.p[2]))); }
   const pieces = new Map<string, Pt[]>();
   for (const t of dormers) for (const v of t.p) (pieces.get(find(key(v))) ?? pieces.set(find(key(v)), []).get(find(key(v))) as Pt[]).push([v[0], v[2]]);
   assert.ok(pieces.size >= 35, `${pieces.size} separate dormers`); // 33 lower and the upper rows, some of which give way to a cluster of stacks
@@ -1089,6 +1104,17 @@ test('Midland Grand [hist-b, hist-c, hist-e]: the stacks stand in clusters of th
       const along = (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
       const depth = -((v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1]);
       assert.equal(Math.abs(along - p.s) < 2.9 && Math.abs(depth - p.d) < 0.6, false, 'a dormer corner where a cluster of stacks stands');
+    }
+  }
+});
+
+test('Midland Grand [hist-b]: no two stack clusters stand less than 9 m apart along a facet, whichever bays are gabled (a cluster moved off a turret\'s sightline stops short of the one before it)', () => {
+  for (const pavilions of [[10, 14, 17], [13], [0, 13], [3, 13]]) {
+    const clusters = stackClusters(midland, pavilions);
+    assert.ok(clusters.length >= 15, `pavilions ${pavilions}: ${clusters.length} clusters`);
+    for (let k = 1; k < clusters.length; k++) {
+      const [a, b] = [clusters[k - 1], clusters[k]] as [(typeof clusters)[number], (typeof clusters)[number]];
+      if (a.i === b.i) assert.ok(b.s - a.s >= 9 - 1e-9, `pavilions ${pavilions}: facet ${a.i}: clusters ${b.s - a.s} m apart`);
     }
   }
 });
@@ -1431,7 +1457,7 @@ test('Midland Grand [hist-b, hist-c]: the four corner pinnacles of each tower ar
   }
 });
 
-test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front of the clock tower\'s belfry lights, three to a group (the jambs and the middle), 0.28 m square, from the sill to the springing of the arch, and a transom crosses each lancet', () => {
+test('Midland Grand [hist-c]: stone shafts with capitals stand free of the wall in front of the clock tower\'s belfry lights, three to a group (the jambs and the middle), 0.5 m square with a 0.15 m gap behind them (round 7, the scorer: "tall detached shafts"), from the sill to the springing of the arch, and a transom crosses each lancet', () => {
   const parts = midlandGeometry(midland);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
@@ -1441,21 +1467,27 @@ test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front 
     const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
     const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
     const onBelfry = (tr: Tri): boolean => tr.p.every((v) => Math.abs(across(v)) < 4 && v[1] > st.shaft && v[1] < st.belfry);
-    // each shaft's front face: 0.26 m proud of the wall, two triangles, nothing else on the belfry stands so far out but the balcony and the sills (0.45 m)
-    const fronts = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.26)) < 1e-6));
+    // each shaft's front face: 0.65 m proud of the wall, two triangles, nothing else on the belfry stands so far out but the capitals (0.76 m)
+    const fronts = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.65)) < 1e-6) && Math.max(...tr.p.map((v) => v[1])) - Math.min(...tr.p.map((v) => v[1])) > 3);
     assert.equal(fronts.length, 12, `${n}: six shafts of two triangles to a front face`);
     const centres = [...new Set(fronts.map((tr) => ((Math.min(...tr.p.map(across)) + Math.max(...tr.p.map(across))) / 2).toFixed(6)))].map(Number).sort((a, b) => a - b);
     assert.deepEqual(centres, [-3.1, -1.8, -0.5, 0.5, 1.8, 3.1], `${n}: on the jambs and the middle of both groups (groups 3.6 m apart, lights 0.95 m wide)`);
-    for (const tr of fronts) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.28, 1e-6, `${n}: 0.28 m wide`);
+    for (const tr of fronts) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.5, 1e-6, `${n}: 0.5 m wide`);
+    // detached: the shafts' own faces (the tall ones) run from 0.15 m out of the wall to 0.65 m, so a hand's breadth of daylight and shadow stands behind each, where the transoms tie it back
+    const span = (tr: Tri, f: (v: V3) => number): number => Math.max(...tr.p.map(f)) - Math.min(...tr.p.map(f));
+    const shafts = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => depth(v) > h + 0.14) && span(tr, (v) => v[1]) > 3 && [[0, 0.5], [0.5, 0]].some(([d, a]) => Math.abs(span(tr, depth) - (d as number)) < 1e-6 && Math.abs(span(tr, across) - (a as number)) < 1e-6));
+    assert.equal(shafts.length, 6 * 8, `${n}: six shafts of four faces`);
+    close(Math.min(...shafts.flatMap((tr) => tr.p.map(depth))), h + 0.15, 1e-6, `${n}: 0.15 m clear of the wall`);
+    close(Math.max(...shafts.flatMap((tr) => tr.p.map(depth))), h + 0.65, 1e-6, `${n}: 0.65 m out`);
     close(Math.min(...fronts.flatMap((tr) => tr.p.map((v) => v[1]))), st.shaft + 1.0, 1e-9, `${n}: from the sill`);
     close(Math.max(...fronts.flatMap((tr) => tr.p.map((v) => v[1]))), spring, 1e-9, `${n}: to the springing of the arch`);
-    // each under a capital 0.4 m across and 0.16 m tall, 0.06 m proud of the shaft, standing on its top
-    const capitals = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.32)) < 1e-6));
+    // each under a capital 0.72 m across and 0.2 m tall, 0.11 m proud of the shaft, standing on its top
+    const capitals = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.76)) < 1e-6));
     assert.equal(capitals.length, 12, `${n}: six capitals of two triangles to a front face`);
-    for (const tr of capitals) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.4, 1e-6, `${n}: a capital is 0.4 m wide`);
+    for (const tr of capitals) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.72, 1e-6, `${n}: a capital is 0.72 m wide`);
     close(Math.min(...capitals.flatMap((tr) => tr.p.map((v) => v[1]))), spring, 1e-9, `${n}: standing on the shaft`);
-    close(Math.max(...capitals.flatMap((tr) => tr.p.map((v) => v[1]))), spring + 0.16, 1e-9, `${n}: 0.16 m tall`);
-    // a transom across each of the four lancets, half-way up: 0.95 m wide and 0.14 m tall, its face 0.2 m out, between the lights (0.1 m) and the shafts (0.26 m)
+    close(Math.max(...capitals.flatMap((tr) => tr.p.map((v) => v[1]))), spring + 0.2, 1e-9, `${n}: 0.2 m tall`);
+    // a transom across each of the four lancets, half-way up: 0.95 m wide and 0.14 m tall, its face 0.2 m out, between the lights (0.1 m) and the shafts' fronts (0.65 m), tying them to the wall
     const transoms = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.2)) < 1e-6));
     assert.equal(transoms.length, 8, `${n}: four transoms of two triangles to a front face`);
     for (const tr of transoms) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.95, 1e-6, `${n}: a transom is as wide as its lancet`);
@@ -1463,7 +1495,7 @@ test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front 
     // in front of the lights: the dark panes of the groups stand 0.1 m out (the balustrade, 0.4 m out, is a pane too, and below them)
     const lights = triangles(parts.pane as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.1)) < 1e-6 && v[1] >= st.shaft + 0.9 - 1e-9 && v[1] < spring + 1));
     assert.ok(lights.length >= 8, `${n}: four lancets`);
-    assert.ok(fronts.every((tr) => Math.abs(depth((tr.p[0]))) > Math.max(...lights.flatMap((l) => l.p.map(depth))) + 0.1), `${n}: the shafts stand 0.16 m in front of the lights`);
+    assert.ok(fronts.every((tr) => Math.abs(depth((tr.p[0]))) > Math.max(...lights.flatMap((l) => l.p.map(depth))) + 0.5), `${n}: the shafts stand 0.55 m in front of the lights`);
   }
 });
 
@@ -2371,9 +2403,9 @@ test('Barlow shed [hist-d]: pale boarding 8 cm under each slate strip, parallel 
   close(Math.max(...lining.flatMap((t) => t.uv.map((q) => q[1]))), barlow.barlowLength, 1e-6, 'the boards run the length of the shed, to the gable');
 });
 
-test('Barlow end screen [hist-d2]: the gable is glazed from the foot of the transition roof up to the arch, in panes about 3.6 m', () => {
+test('Barlow end screen [hist-d2]: the gable is glazed from the foot of the transition roof up to the arch, in a panel facing the extension that the shed\'s inside sees through (round 7: the screen read grey and striped, not bright)', () => {
   const parts = barlowGeometry(barlow);
-  const screen = triangles(parts.roofGlass as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - barlow.barlowLength) < 1e-6));
+  const screen = triangles(parts.metal as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - barlow.barlowLength) < 1e-6 && p[1] >= FIGURES.barlow.screenFoot - 1e-9));
   assert.ok(screen.length >= 15, 'a screen');
   const pts = screen.flatMap((t) => t.p).map(inVault);
   close(Math.min(...pts.map((p) => p.y)), FIGURES.barlow.screenFoot, 1e-9, 'it starts where the transition roof meets it');
@@ -2383,17 +2415,14 @@ test('Barlow end screen [hist-d2]: the gable is glazed from the foot of the tran
   let want = 0;
   for (let u = 0.005; u < barlow.span; u += 0.01) want += Math.max(0, barlowHeight(u - barlow.span / 2) - FIGURES.barlow.screenFoot) * 0.01;
   close(screen.reduce((s, t) => s + worldArea(t), 0) / want, 1, 0.01, 'it fills the arch above its foot');
-  // the shared pane is 0.9 x 1.8 m: stretched four times across and twice up, it is 3.6 m square
-  const tile = TEXTURES.shedGlass.tile;
-  close(tile[0] * 4, 3.6, 1e-9, 'panes 3.6 m across');
-  close(tile[1] * 2, 3.6, 1e-9, 'and 3.6 m high');
-  for (const t of screen) t.p.forEach((p, i) => {
-    close((t.uv[i] as [number, number])[0], inVault(p).u / 4, 1e-6, 'u is across the gable, a quarter metre to the metre');
-    close((t.uv[i] as [number, number])[1], p[1] / 2, 1e-6, 'v is up it, half a metre to the metre');
-  });
+  // one-sided: it faces along the shed, toward the extension (the shed's far side), so a camera inside the shed looks through it, at the sky and the roofs beyond, past the grid; the glass it replaced (the
+  // shared glazing, stretched 3.6 m a pane) read as grey stripes from inside
+  const along = [inVault([1, 0, 0]).v - inVault([0, 0, 0]).v, inVault([0, 0, 1]).v - inVault([0, 0, 0]).v];
+  for (const t of screen) assert.ok(unit(geoNormal(t))[0] * (along[0] as number) + unit(geoNormal(t))[2] * (along[1] as number) > 0.999, 'every face looks out of the shed');
+  assert.equal(triangles(parts.roofGlass as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - barlow.barlowLength) < 1e-6)).length, 0, 'and no glazing stands in the screen\'s plane to grey it');
 });
 
-test('Barlow end screen [hist-d2]: a grid of 0.3 m iron bars stands inside the glass, a mullion at the middle and every 3.6 m either side up to the arch, and a transom at every pane\'s height', () => {
+test('Barlow end screen [hist-d2]: a grid of 0.5 m iron bars stands inside the glass, a mullion at the middle and every 3.6 m either side up to the arch, and a transom at every pane\'s height', () => {
   const parts = barlowGeometry(barlow);
   const L = barlow.barlowLength;
   const F = FIGURES.barlow;
@@ -2406,15 +2435,17 @@ test('Barlow end screen [hist-d2]: a grid of 0.3 m iron bars stands inside the g
     const q = t.p.map(inVault);
     return { u0: Math.min(...q.map((p) => p.u)), u1: Math.max(...q.map((p) => p.u)), y0: Math.min(...q.map((p) => p.y)), y1: Math.max(...q.map((p) => p.y)) };
   };
-  const upright = grid.filter((t) => { const b = box(t); return b.y1 - b.y0 > 2 && b.u1 - b.u0 < 0.4; });
-  const across = grid.filter((t) => { const b = box(t); return b.u1 - b.u0 > 3 && b.y1 - b.y0 < 0.4; });
+  const upright = grid.filter((t) => { const b = box(t); return b.y1 - b.y0 > 2 && b.u1 - b.u0 < 0.6; });
+  for (const t of upright) close(box(t).u1 - box(t).u0, 0.5, 1e-6, 'a mullion is 0.5 m wide');
+  const across = grid.filter((t) => { const b = box(t); return b.u1 - b.u0 > 3 && b.y1 - b.y0 < 0.6; });
+  for (const t of across) close(box(t).y1 - box(t).y0, 0.5, 1e-6, 'and a transom 0.5 m deep');
   assert.equal(upright.length + across.length, grid.length, 'every bar is a mullion or a transom');
   // every corner is inside the arch's outline and above the screen's foot
   for (const t of grid) for (const p of t.p.map(inVault)) assert.ok(p.y <= skinY(p.u) + 1e-9 && p.y >= F.screenFoot - 1e-9, `a corner at (${p.u.toFixed(2)}, ${p.y.toFixed(2)}) is inside the glass`);
   // the mullions: a pane (3.6 m) apart about the middle, each from the foot up to 0.1 m under the arch, where the arch stands over a metre above the foot
   const mullions = [...new Set(upright.map((t) => { const b = box(t); return ((b.u0 + b.u1) / 2).toFixed(6); }))].map(Number).sort((a, b) => a - b);
   const want: number[] = [];
-  for (let j = -9; j <= 9; j++) if (Math.min(skinY(mid + 3.6 * j - 0.15), skinY(mid + 3.6 * j + 0.15)) - 0.1 > F.screenFoot + 1) want.push(mid + 3.6 * j);
+  for (let j = -9; j <= 9; j++) if (Math.min(skinY(mid + 3.6 * j - 0.25), skinY(mid + 3.6 * j + 0.25)) - 0.1 > F.screenFoot + 1) want.push(mid + 3.6 * j);
   assert.equal(mullions.length, want.length, `${mullions.length} mullions`);
   assert.ok(mullions.length >= 15, 'across most of the screen');
   mullions.forEach((u, i) => {
@@ -2422,7 +2453,7 @@ test('Barlow end screen [hist-d2]: a grid of 0.3 m iron bars stands inside the g
     const mine = upright.filter((t) => Math.abs((box(t).u0 + box(t).u1) / 2 - u) < 1e-6);
     assert.equal(mine.length, 4, `mullion ${i}: four triangles`);
     close(Math.min(...mine.map((t) => box(t).y0)), F.screenFoot, 1e-9, `mullion ${i}: from the screen's foot`);
-    close(Math.max(...mine.map((t) => box(t).y1)), Math.min(skinY(u - 0.15), skinY(u + 0.15)) - 0.1, 1e-6, `mullion ${i}: to 0.1 m under the arch`);
+    close(Math.max(...mine.map((t) => box(t).y1)), Math.min(skinY(u - 0.25), skinY(u + 0.25)) - 0.1, 1e-6, `mullion ${i}: to 0.1 m under the arch`);
   });
   // the transoms: one at every pane's height above the foot, each running across the arch
   const heights = [...new Set(across.map((t) => ((box(t).y0 + box(t).y1) / 2).toFixed(6)))].map(Number).sort((a, b) => a - b);
@@ -2558,7 +2589,7 @@ test('Barlow shed [hist-d2]: Gothic arcading on both brick side walls, between t
   }
 });
 
-test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Pancras Road (east) wall, one every 14 m, each 3.6 m tall from a foot 0.5 m under the eaves and wholly outside the shell', () => {
+test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Pancras Road (east) wall, one every 14 m, each 6.5 m tall (round 7, the scorer: "small pale nubs") from a foot 0.5 m under the eaves and wholly outside the shell', () => {
   const parts = barlowGeometry(barlow);
   // the east half of the arch, from its foot up to the crown: where the wall's outer face stands at each height
   const wallU = (y: number): number => {
@@ -2577,11 +2608,11 @@ test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Panc
   for (let k = 0; k < n; k++) {
     const shaft = stacks.slice(k * 20, k * 20 + 10).flatMap((t) => t.p).map(inVault);
     close(mean(shaft.map((p) => p.v)), ((k + 0.5) * barlow.barlowLength) / n, 1e-6, `stack ${k} is evenly spaced along the shed`);
-    close(mean(shaft.map((p) => p.u)), eave.u + 0.7, 1e-6, `stack ${k} stands on the east wall`);
+    close(mean(shaft.map((p) => p.u)), eave.u + 0.9, 1e-6, `stack ${k} stands on the east wall`);
     close(Math.min(...shaft.map((p) => p.y)), eave.y - 0.5, 1e-9, 'its foot is 0.5 m under the eaves');
-    close(Math.max(...shaft.map((p) => p.y)) - Math.min(...shaft.map((p) => p.y)), 3.6, 1e-9, 'a shaft 3.6 m tall');
-    close(Math.max(...shaft.map((p) => p.v)) - Math.min(...shaft.map((p) => p.v)), 1.4, 1e-6, '1.4 m along the wall');
-    close(Math.max(...shaft.map((p) => p.u)) - Math.min(...shaft.map((p) => p.u)), 0.95, 1e-6, 'and 0.95 m across it');
+    close(Math.max(...shaft.map((p) => p.y)) - Math.min(...shaft.map((p) => p.y)), 6.5, 1e-9, 'a shaft 6.5 m tall');
+    close(Math.max(...shaft.map((p) => p.v)) - Math.min(...shaft.map((p) => p.v)), 1.96, 1e-6, '1.96 m along the wall');
+    close(Math.max(...shaft.map((p) => p.u)) - Math.min(...shaft.map((p) => p.u)), 1.33, 1e-6, 'and 1.33 m across it');
   }
   // nothing of a stack, its stone corbel and cap included, is inside the shell: from the vault the wall shows whole
   // (the stone of the arcading on the walls below is inside the vault on purpose: a stack's stone is up at the eaves)
