@@ -59,6 +59,13 @@ export const ASSUMED = {
   /** Distance from the inner car end to the centre of the end door, and from the nose end of a driving car. Assumed. */
   doorFromEnd: 3.0,
   doorFromNose: 2.6,
+  /**
+   * The AT300's crew (driver's access) door, a narrow door just behind the nose on a driving car's side: its centre this far behind the nose's end, and
+   * its width. Read off photographs, not published: lner-800-doncaster-2026 (a narrow door with a thin window between the cab window and the passenger
+   * door), hull-802-paragon-2025 and LUMO-04-Lumo-803003-at-Edinburgh-Waverley (the same). The positions are estimates from oblique views.
+   */
+  crewDoorFromNose: 0.65,
+  crewDoorWidth: 0.7,
   /** Half-length of the skirt cut-out round each bogie. Assumed. */
   bogieCutout: 1.95,
   /** Wheel tread width. Assumed. */
@@ -89,6 +96,8 @@ const CRESCENT_ZONE = 1.25;
 const FRAME_REACH = 0.91;
 /** The near-black of a lamp's bezel and of a front door's outline. */
 const BEZEL = 0x15171a;
+/** The dark swoosh round the cab side window of the Hull Trains and Lumo cabs: near black, a shade off the glass's own so the pane still reads in it. */
+export const CAB_SWOOSH = 0x101215;
 /** The parked wiper arms' colour: a dark grey, a shade off the glass's black so they still read against it. */
 const WIPER = 0x3b4048;
 /**
@@ -114,6 +123,8 @@ export interface CarPlan {
   doors: number[];
   /** [from, to] of each passenger window */
   windows: [number, number][];
+  /** narrow crew doors (the AT300's driver's access door), each a centre and a width in the same measure as `doors`; none where absent */
+  crewDoors?: { s: number; width: number }[];
 }
 
 // --- one family's body -----------------------------------------------------------------------------
@@ -126,7 +137,7 @@ interface GlassSpec {
    */
   screen: { s0: number; s1: number; fraction: number; topRadius: number; bottomRadius: number; pillar?: number };
   /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
-  side: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number };
+  side: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number; surround?: { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number } };
 }
 
 /**
@@ -177,6 +188,8 @@ interface FrontSpec {
    * pillar's (the screen's black frame is the door's outline).
    */
   centreDoor?: { width: number; leaf: number };
+  /** the colour of the dark swoosh round the cab side window, where the livery has one (the glass spec's `side.surround` is its shape); absent: none */
+  cabSideSurround?: number;
 }
 
 /** One piece of a diesel unit's underframe: its length along the car, half-width, and the height of its underside above the rail head. */
@@ -301,8 +314,11 @@ const AT300: BodySpec = {
   },
   glass: {
     screen: { s0: 1.2, s1: 3.35, fraction: 0.8, topRadius: 0.32, bottomRadius: 0.12 },
-    // a small pane behind the windscreen's pillar, not the broad slab it was (photographs lner-801-214-2025, hull-802-doncaster-2024: a short dark window, about a metre and a half long)
-    side: { sBack: 4.95, sFront0: 4.0, sFront1: 3.25, v0: 0.56, v1: 0.8 },
+    // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
+    // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
+    // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
+    // (`surround`, drawn where the kind's front gives a `cabSideSurround` colour). The numbers are read off those photographs, not published.
+    side: { sBack: 5.3, sFront0: 3.0, sFront1: 4.5, v0: 0.52, v1: 0.8, surround: { sBack: 5.38, sFront0: 2.3, sFront1: 4.15, v0: 0.45, v1: 0.87 } },
   },
   gangway: { width: ASSUMED.gangwayWidth, height: ASSUMED.gangwayHeight, bottom: ASSUMED.gangwayBottom },
   pantographTop: FIGURES.pantographFoldedHeight.value,
@@ -322,7 +338,7 @@ const AT300: BodySpec = {
   plan: (car) => at300Plan(car),
 };
 
-/** Doors at 3 m from the inner end and 2.6 m behind the nose of a driving car; windows (six on a driving car, nine on a through car) between them. */
+/** Doors at 3 m from the inner end and 2.6 m behind the nose of a driving car, and a crew door just behind its nose; windows (six on a driving car, nine on a through car) between the passenger doors. */
 export function at300Plan(car: Car): CarPlan {
   const L = car.length;
   const nose = car.cab ? ASSUMED.noseLength : 0;
@@ -333,7 +349,9 @@ export function at300Plan(car: Car): CarPlan {
   const pitch = (to - from) / n;
   const windows: [number, number][] = [];
   for (let k = 0; k < n; k++) windows.push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);
-  return { length: L, nose, doors, windows };
+  // a driving car has the narrow crew door just behind its nose, as well as its two passenger doors
+  const crewDoors = car.cab ? [{ s: nose + ASSUMED.crewDoorFromNose, width: ASSUMED.crewDoorWidth }] : [];
+  return { length: L, nose, doors, windows, crewDoors };
 }
 
 /** A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them. */
@@ -610,7 +628,9 @@ const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> 
   lner5: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
   lner9: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
   // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp pods, the cheeks the body's blue)
-  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8 },
+  hull5: { warning: HULL_BEAK, warningWrap: 1.2, warningWidth: 0.8, cabSideSurround: CAB_SWOOSH },
+  // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny)
+  lumo5: { cabSideSurround: CAB_SWOOSH },
 };
 
 /**
@@ -1053,9 +1073,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       nosePatch(2, 8, (v, u) => [lerp(-hwDisplay - 0.03, hwDisplay + 0.03, u), lerp(top - 0.25, top + 0.02, v)], detail, col(0x0d0e10), 0.03);
       nosePatch(2, 4, (v, u) => [lerp(-hwDisplay * 0.45, hwDisplay * 0.45, u), lerp(top - 0.15, top - 0.08, v)], detail, col(0xffa000), 0.034);
     }
-    // the cab side windows, one each side, following the nose's slope
-    const sw = spec.glass.side;
-    for (const side of [-1, 1]) {
+    // the cab side windows, one each side, following the nose's slope: the pane (glass), and where the kind has one the dark swoosh round it (a
+    // matte patch a little under the glass)
+    type SideWindow = { sBack: number; sFront0: number; sFront1: number; v0: number; v1: number };
+    const sideWindow = (side: number, sw: SideWindow, target: Soup, colour: THREE.Color | null, liftBy: number): void => {
       const rows = 8;
       const cols = 12;
       const grid: V3[][] = [];
@@ -1079,12 +1100,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           const lift = (a: number, b: number): V3 => {
             const p = (grid[a] as V3[])[b] as V3;
             const n = (Ng[a] as V3[])[b] as V3;
-            return [p[0] + n[0] * 0.008, p[1] + n[1] * 0.008, p[2] + n[2] * 0.008];
+            return [p[0] + n[0] * liftBy, p[1] + n[1] * liftBy, p[2] + n[2] * liftBy];
           };
           const nn = (a: number, b: number): V3 => (Ng[a] as V3[])[b] as V3;
-          glass.quad([world(lift(i, j)), world(lift(i, j + 1)), world(lift(i + 1, j + 1)), world(lift(i + 1, j))], [wn(nn(i, j)), wn(nn(i, j + 1)), wn(nn(i + 1, j + 1)), wn(nn(i + 1, j))], null);
+          target.quad([world(lift(i, j)), world(lift(i, j + 1)), world(lift(i + 1, j + 1)), world(lift(i + 1, j))], [wn(nn(i, j)), wn(nn(i, j + 1)), wn(nn(i + 1, j + 1)), wn(nn(i + 1, j))], colour);
         }
       }
+    };
+    for (const side of [-1, 1]) {
+      // (the shoulder's facets sag a centimetre between rings, so the swoosh stands 12 mm off the loft, and the pane 4 mm proud of it)
+      if (front.cabSideSurround !== undefined && spec.glass.side.surround) sideWindow(side, spec.glass.side.surround, detail, col(front.cabSideSurround), 0.012);
+      sideWindow(side, spec.glass.side, glass, null, 0.016);
     }
   }
   // an end wall at every inner end of the body, and the gangway bellows and coupler in the gap beyond it
@@ -1172,10 +1198,14 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const leafC = col(def.doorFor ? def.doorFor(carInfo) : def.door);
   const paneC = col(def.window);
   const [dy0, dy1] = spec.doorY;
-  plan.doors.forEach((s, di) => {
+  // the passenger doors, then the narrow crew doors (a single leaf with a small window, whatever the passenger doors have)
+  const openings = [
+    ...plan.doors.map((s, di) => ({ s, di, dw: spec.doorWidth, crew: false })),
+    ...(plan.crewDoors ?? []).map((d, di) => ({ s: d.s, di, dw: d.width, crew: true })),
+  ];
+  openings.forEach(({ s, di, dw, crew }) => {
     const z = Z(s);
     for (const sx of [-1, 1]) {
-      const dw = spec.doorWidth;
       const side = sx > 0 ? 'right' : 'left';
       const x = (a: number): number => sx * a;
       const lo = (a: number, b: number): [number, number] => [Math.min(x(a), x(b)), Math.max(x(a), x(b))];
@@ -1183,7 +1213,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
-      if (spec.doorLeaves === 1) {
+      if (crew) {
+        detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
+        detail.box(px0, px1, dy1 - 0.85, dy1 - 0.25, z - 0.12, z + 0.12, paneC);
+      } else if (spec.doorLeaves === 1) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.91, dy1 - 0.21, z - 0.27, z + 0.27, paneC);
       } else {
@@ -1196,7 +1229,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         }
       }
       const marker = new THREE.Object3D();
-      marker.name = 'door';
+      marker.name = crew ? 'crew-door' : 'door';
       marker.position.set(x(half), (dy0 + dy1) / 2, z);
       marker.userData = { side, index: di, width: dw, height: dy1 - dy0 };
       group.add(marker);

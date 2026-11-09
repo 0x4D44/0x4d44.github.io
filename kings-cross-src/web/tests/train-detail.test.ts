@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { bodySpec, buildTrain, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_LOD_DISTANCE, DISC_RADIUS, FLANGE_HEIGHT, WHEEL_WIDTH, bogieFarSoup, bogieSoup, buildBogie, couplerHalf } from '../src/train-parts.ts';
 import { col, ellipse, Soup } from '../src/train-geom.ts';
@@ -1810,4 +1810,95 @@ test('trains: every kind draws in at most 80 calls, four materials and a bounded
   }
   // the Azuma kinds are unchanged by the new stock
   assert.deepEqual(TRAIN_KINDS, ['lner5', 'lner9', 'hull5', 'lumo5']);
+});
+
+// --- the AT300's cab side: crew door and window ------------------------------------------------------------------
+
+test('doors: an AT300 driving car has a narrow crew door each side just behind its nose, a single leaf narrower than a passenger door; no other car or family has one', () => {
+  // photographs lner-800-doncaster-2026, hull-802-paragon-2025, LUMO-04-Lumo-803003-at-Edinburgh-Waverley: between the cab window and the first passenger
+  // door, a narrow door with a thin window at its top. The position and width are read from oblique views (ASSUMED, as the passenger doors' are).
+  const nose = bodySpec('at300').nose.length;
+  assert.ok(ASSUMED.crewDoorWidth < ASSUMED.doorWidth - 0.15, 'narrower than a passenger door');
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    for (const car of layout.cars) {
+      const crew = all(named(g, `car-${car.index}`), 'crew-door');
+      const want = layout.spec.family === 'at300' && car.cab !== null ? 2 : 0;
+      assert.equal(crew.length, want, `${kind} car ${car.index}: ${crew.length} crew doors`);
+      assert.deepEqual(crew.map((d) => d.userData.side).sort(), want ? ['left', 'right'] : [], `${kind} car ${car.index}: one a side`);
+      for (const d of crew) {
+        const at = worldPos(d);
+        const fromEnd = car.cab === 'front' ? at.z - car.start : car.end - at.z;
+        near(fromEnd, nose + ASSUMED.crewDoorFromNose, 1e-6, `${kind} car ${car.index}: the crew door's place behind the car's end`);
+        assert.equal(d.userData.width, ASSUMED.crewDoorWidth);
+        near(Math.abs(at.x), FIGURES.bodyWidth.value / 2, 1e-9, 'the crew door is on the side of the body');
+        // clear of the nose (the section is full width there) and of the first passenger door
+        assert.ok(fromEnd - ASSUMED.crewDoorWidth / 2 - 0.05 >= nose, 'the frame starts on the full-width body');
+        assert.ok(fromEnd + ASSUMED.crewDoorWidth / 2 + 0.05 < nose + ASSUMED.doorFromNose - ASSUMED.doorWidth / 2, 'it stands clear of the first passenger door');
+      }
+      // the passenger doors are as before: two a side, never the crew door counted among them
+      assert.equal(all(named(g, `car-${car.index}`), 'door').length, 4, `${kind} car ${car.index}: the passenger doors`);
+    }
+  }
+  // the leaf is the crew door's own width, whatever the passenger doors have: the Hull Trains red leaf spans 0.7 m of the car's side
+  {
+    const g = built('hull5');
+    const layout = trainLayout('hull5');
+    const door = bodySpec('at300').doorY;
+    for (const car of endCabs(layout)) {
+      const centre = car.cab === 'front' ? car.start + nose + ASSUMED.crewDoorFromNose : car.end - nose - ASSUMED.crewDoorFromNose;
+      const leaf = trisOfColour(detailOf(g, car), 0xc41e46).filter((t) => t.every((v) => Math.abs(v.z - centre) < ASSUMED.crewDoorWidth / 2 + 0.01 && Math.abs(v.y - (door[0] + door[1]) / 2) < (door[1] - door[0]) / 2 + 0.01));
+      assert.ok(leaf.length >= 8, `car ${car.index}: ${leaf.length} crew door leaf triangles`);
+      const box = boxOfTris(leaf);
+      near(box.max.z - box.min.z, ASSUMED.crewDoorWidth, 0.01, `car ${car.index}: the leaf's width`);
+      near(box.max.y - box.min.y, door[1] - door[0], 0.01, `car ${car.index}: the leaf's height`);
+    }
+  }
+});
+
+test('glass: the AT300 cab side window is a wedge raked back at the top and standing against the nose\'s end, with a dark swoosh round it on the Hull Trains and Lumo cabs, none on the LNER', () => {
+  const spec = bodySpec('at300');
+  const side = spec.glass.side;
+  // the foot of the front edge is well ahead of its top (a point low on the cheek, the top edge climbing back to the door), and the back edge stands
+  // against the nose's end (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley)
+  assert.ok(side.sFront1 - side.sFront0 >= 1.0, `the front edge is raked back ${side.sFront1 - side.sFront0} m from foot to top`);
+  assert.ok(side.sBack > spec.nose.length - 0.3 && side.sBack < spec.nose.length, `the back edge, ${spec.nose.length - side.sBack} m before the nose's end`);
+  for (const kind of ['lner5', 'hull5', 'lumo5'] as TrainKind[]) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    for (const car of endCabs(layout)) {
+      const face = facePlane(car, spec.front.coupler.covered, false);
+      const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+      const glass = named(named(g, `car-${car.index}`), 'cab-glass') as THREE.Mesh;
+      for (const sign of [-1, 1]) {
+        // the window is the glass out by the wall (the windscreen is within 1.15 m of the middle)
+        const vs = triangles(glass).filter((t) => t.every((v) => v.x * sign > 1.1)).flat();
+        assert.ok(vs.length > 100, `${kind} car ${car.index}: ${vs.length} window vertices`);
+        const ymin = Math.min(...vs.map((v) => v.y));
+        const ymax = Math.max(...vs.map((v) => v.y));
+        const front = (pick: (v: THREE.Vector3) => boolean): number => Math.min(...vs.filter(pick).map(along));
+        const foot = front((v) => v.y < ymin + 0.05);
+        const top = front((v) => v.y > ymax - 0.05);
+        assert.ok(top - foot > 0.8, `${kind} car ${car.index}: the window's top starts ${(top - foot).toFixed(2)} m behind its foot (a wedge, not a slab)`);
+        near(Math.max(...vs.map(along)), side.sBack, 0.05, `${kind} car ${car.index}: the window's back edge`);
+        // the dark swoosh, round the glass and a little ahead of it, on the two kinds that wear one
+        const swoosh = trisOfColour(detailOf(g, car), CAB_SWOOSH).filter((t) => t.every((v) => v.x * sign > 1.1));
+        if (kind === 'lner5') {
+          assert.equal(swoosh.length, 0, `${kind} car ${car.index}: no swoosh`);
+          continue;
+        }
+        assert.ok(swoosh.length >= 100, `${kind} car ${car.index}: ${swoosh.length} swoosh triangles`);
+        const sv = swoosh.flat();
+        assert.ok(Math.min(...sv.map(along)) < Math.min(...vs.map(along)) - 0.4, `${kind} car ${car.index}: the swoosh reaches ahead of the glass`);
+        assert.ok(Math.min(...sv.map((v) => v.y)) < ymin - 0.03 && Math.max(...sv.map((v) => v.y)) > ymax + 0.03, `${kind} car ${car.index}: the swoosh frames the glass above and below`);
+        assert.ok(Math.max(...sv.map(along)) >= Math.max(...vs.map(along)) - 0.02, `${kind} car ${car.index}: the swoosh reaches the glass's back edge`);
+      }
+    }
+  }
+  // only the AT300 has the swoosh
+  for (const kind of ['gn387x4', 'gn717x6', 'tl700x8', 'gc180x5'] as TrainKind[]) {
+    const g = built(kind);
+    for (const car of endCabs(trainLayout(kind))) assert.equal(trisOfColour(detailOf(g, car), CAB_SWOOSH).length, 0, `${kind} car ${car.index}: no swoosh`);
+  }
 });
