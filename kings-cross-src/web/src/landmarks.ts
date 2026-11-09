@@ -21,7 +21,7 @@ const UP: V3 = [0, 1, 0];
 
 // ---- materials ---------------------------------------------------------------------------------
 
-export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'shedSlate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'rib' | 'lining' | 'metal' | 'clock';
+export type Key = 'brick' | 'brickRed' | 'brickDeep' | 'stone' | 'slate' | 'shedSlate' | 'sash' | 'sashArch' | 'pane' | 'roofGlass' | 'rib' | 'lining' | 'metal' | 'clock';
 
 export interface MaterialSet {
   table: Record<Key, THREE.Material>;
@@ -86,7 +86,7 @@ export function createMaterials(): MaterialSet {
     if (emissive !== undefined) m.emissive.set(emissive);
     return m;
   };
-  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.3];
+  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.1];
   // hist-e: the extension's panels and girders, light grey against the white frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
   // R-lighting-materials-c and hist-b: the Midland's brick is an orange-red, (156, 98, 69) sunlit in R-c and (160, 113, 91) in hist-b's softer light: not pink, and not the
@@ -95,13 +95,27 @@ export function createMaterials(): MaterialSet {
   // range): ten L too dark and short of R-c's chroma, a flat salmon. The red texture (average 0xb26952) times (0.73, 0.825, 0.8) renders about (192, 120, 85), Lab 57.7 / 23.9 / 30.8 on the
   // tower: dE2000 3.0 from R-c and 4.6 from hist-b (the two are 6.5 apart, and this sits between them, nearer R-c's chroma for the deeper orange-red); the earlier (1.1, 0.55, 0.78)
   // rendered (216, 103, 86), a saturated pink-red.
-  const brickRed = tint('brickRed', [0.73 * brickGain, 0.825 * brickGain, 0.8 * brickGain]);
+  // Round five (the E3 scorer: the brick "is L about 59 against R-c's 47 to 53", dE2000 6 to 11 from R-c, which round three, at L 50, was 3.1 from): the scorer's masked R-c is Lab 47.4 / 25.3
+  // / 27.9 (every brick pixel, mine: 47.5 / 20.3 / 26.2) and a lit brick is not the 56.9 round four read it as. (1.1, 1.24, 1.2) drew the tower at L 59.8 and the range at 58.5; this is (0.73, 0.8,
+  // 0.79) outright: the tower L 49.7 / 25.2 / 29.1 and the range 48.5 / 24.3 / 27.5, dE2000 2.4 and 1.2 from the scorer's R-c and 3.4 and 2.4 from my masked one.
+  // Round five, the historic D6 scorer (the clock tower's brick was (200, 122, 83) against R-c's (140, 84, 60) and hist-b's sunlit (170, 122, 102): "lighter and more saturated orange than
+  // either photograph"; aim (150 to 170, 90 to 120, 70 to 100)): less red, a little more blue. (0.66, 0.815, 0.89) draws the clock tower's brick at a median (162, 97, 70), in that range
+  // and at R-c's own ratios (green 0.60 and blue 0.43 of the red, as (140, 84, 60) is), and keeps the lighting scorer's numbers: the tower L 49.0 / 22.0 / 25.1 and the range 47.8 / 21.1 /
+  // 23.5, dE2000 2.3 and 2.4 from the scorer's R-c (47.4 / 25.3 / 27.9), 2.1 and 1.9 from my masked one, and 5.6 and 6.1 from hist-b's sunlit brick.
+  const brickRed = tint('brickRed', [0.66, 0.815, 0.89]);
+  // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
+  // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
+  // pale salmon (144, 98, 83) in the oblique view, and is a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
+  // colour. The stacks along the wall's top stay the Midland's red (hist-e: tall red stacks).
+  const brickDeep = tint('brickRed', [0.36, 0.45, 0.49]);
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
   const stone = tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]);
   // hist-a: the hotel's London stock is a golden-brown, greyer and darker than the sunlit King's Cross stock: (125, 103, 76) as the mean of the brick in the photograph. This tint
   // renders (120, 101, 74) at the noon rig (dE 1.8); the earlier (1.15, 1.05, 0.88) rendered (136, 117, 81), dE 7.0, too pale and golden.
-  const brick = tint('brick', [0.91 * brickGain, 0.82 * brickGain, 0.83 * brickGain]);
+  // Round five: the stock texture has a paler joint, a redder and 6%-darker brick (materials.ts STOCK_BRICK), so this is (0.846, 0.8, 0.8) x the gain, a few per cent up in green and blue
+  // on the earlier (0.91, 0.82, 0.83) x 1.5 for the hotel to keep (126, 104, 73) and dE 1.5.
+  const brick = tint('brick', [0.846 * brickGain, 0.8 * brickGain, 0.8 * brickGain]);
   // hist-d: the glazing is silver-grey and bright, the ribs pale blue-grey (hist-d2: dark only in shadow); the library's glass is its pane texture (light sky blue, mean
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
   // blue-grey: hist-b's roof is (147, 139, 141) and hist-a's (136, 134, 136). (1, 0.85, 0.8) x 2.3 renders the Midland's (152, 151, 154), dE 4.9, and the hotel's (133, 131, 132),
@@ -110,18 +124,30 @@ export function createMaterials(): MaterialSet {
   // L 44, and its crown L 55 to 65 with fine lines): the glass is the sun's to light now and not a glow, so from outside it is a silver-grey (a lit reflectance of 0.18 where it was
   // 0.52 with a glow on top; L 62 and 67 in the two frozen views, not 84 and 87) and from inside the glazing is darker than the boarding, as in hist-d. The Barlow's flank has its
   // own slate, half the roof slate's tint (L 41 and 46 in the two views, not 56 and 61), so that the Midland's and the hotel's roofs keep the colours they were fitted to.
+  // Round five (the historic D5 scorer: from inside, "the glazed crown reads as the darkest band of the vault; in hist-d and hist-d2 it is the brightest"): that tint made it right from
+  // outside and dark from below, where the sun does not reach it. It now glows from below (lighting.ts `GLOW_BELOW`): the face that looks down at the camera has its emissive multiplied
+  // up, so the crown is the brightest band from inside (the noon view's crown band L 53 before, 77 now, over the boarding's 61 to 63: see the lining below) and unchanged from the air.
   const roofGlass = tint('shedGlass', [0.42, 0.32, 0.28], 0x3b3531);
+  roofGlass.defines = { GLOW_BELOW: '' }; // the name lighting.ts `GLOW_BELOW` is (not imported: lighting.ts is the page's, and landmarks.ts its own chunk; a test holds the two to one name)
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
-  const slate = tint('slateBothSides', [slateGain, 0.85 * slateGain, 0.8 * slateGain]);
+  // Round five (the historic D6 scorer: the slate "reads pale silver", should be mid grey): the photographs' sunlit slate is a warm-neutral grey, hist-b's roof (150, 147, 147) and
+  // (161, 159, 152) in its lit patches and hist-a's (136, 134, 136), and this was a cool lilac one, (154, 152, 156), b* -2 and L 63 on the Midland's range in the noon view. (2.1, 1.7,
+  // 1.45) is a little less light and a good deal less blue: the range's roof is a median (147, 142, 140) in the noon view, L 59, b* +1.7, and the Euston Road's (155, 150, 148), L 62.
+  const slate = tint('slateBothSides', [slateGain, 0.81 * slateGain, 0.69 * slateGain]);
   const shedSlate = tint('slateBothSides', [1.15, 0.98, 0.92]);
   // Round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the library's pane is (0.017, 0.025, 0.04), L 6 lit at the noon rig in the
   // Midland's ground-floor arches; hist-b's windows are mixed, some white with the sky and the dark ones about L 12 to 20. This is a dark blue-grey glass, L 24 (not a black hole), flat:
   // a patchy reflection would need the window shader the sash decals have (and a map, which a framed pane lacks), over the size cap.
   const pane = tint('pane', [0.05, 0.08, 0.125]);
+  // Round five (the historic D5 scorer: the crown must be the brightest band of the vault from inside, as in hist-d and hist-d2, where the boarding is L 39 to 49 and the glazing L 56 to 63): the
+  // library's pale boarding (a light grey, R-lighting-materials-b's) drew the flank panels at L 71, over the crown's L 53 and 15 under the crown's new glow. At 0.55 of its light, colour and
+  // glow both, the flank is L 61 to 63 and the crown, at L 77, the brightest thing in the vault; the other users of the library's lining keep its pale grey.
+  const lining = tint('lining', [0.55, 0.55, 0.55], 0x5d5f62);
   return {
     table: {
       brick,
       brickRed,
+      brickDeep,
       stone,
       slate,
       shedSlate,
@@ -130,7 +156,7 @@ export function createMaterials(): MaterialSet {
       pane,
       roofGlass, // the key keeps its name for the render order
       rib,
-      lining: material('lining'), // pale boarding under the slate, seen from inside (hist-d)
+      lining, // painted boarding under the slate, seen from inside (hist-d)
       metal,
       clock,
     },
@@ -1187,7 +1213,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const rib = part(parts, 'rib');
   const pane = part(parts, 'pane');
   const metal = part(parts, 'metal');
-  const brick = part(parts, 'brickRed');
+  const brick = part(parts, 'brickDeep');
   // a flat piece seen from either side (a plate, a roof slope, a riser): both faces, `n` being one way it faces
   const sheet = (m: Batch, pts: V3[], n: V3): void => {
     for (const k of [1, -1]) m.poly(pts, undefined, { facing: [n[0] * k, n[1] * k, n[2] * k] });

@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -524,6 +524,46 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   const plain = new THREE.MeshLambertMaterial();
   addRoofShade(plain);
   assert.equal(plain.customProgramCacheKey().endsWith('+roofShade'), true);
+});
+
+test('addRoofShade: a material with the GLOW_BELOW define has its glow multiplied by how far down the face seen looks, before the emissive is summed; one without compiles the line away (round five, D5)', () => {
+  assert.equal(GLOW_BELOW, 'GLOW_BELOW');
+  // round five (the historic D5 scorer): from inside the Barlow shed the glazed crown was the darkest band of the vault, where hist-d and hist-d2 show it the brightest. The glow gain of 30
+  // draws the crown at L 77 over the boarding's 61 to 63 at the noon rig (17 drew 74 over 71, and past 40 the tone map's shoulder gives nothing more)
+  assert.ok(GLOW_BELOW_GAIN >= 20 && GLOW_BELOW_GAIN <= 40, `the gain is the one the crown was fitted to: ${GLOW_BELOW_GAIN}`);
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080, emissive: 0x3b3531 });
+  addRoofShade(m);
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  const hook = `totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );`;
+  const order = ['#include <lights_fragment_end>', 'reflectedLight.directDiffuse *= roofK.a;', `#ifdef ${GLOW_BELOW}`, hook, '#endif', 'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'].map((needle) => f.indexOf(needle));
+  assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'in the shade\'s block, after the lights are summed and before the emissive joins the output, and only under the define');
+  assert.equal(f.split(hook).length - 1, 1, 'once');
+  // the face "seen" is the one that looks at the camera: `normal` is the view-space normal, flipped for a back face, and viewMatrix[ 1 ] (a column) is the world's up in view space, so
+  // -dot( normal, viewMatrix[ 1 ].xyz ) is how far down that face looks, whichever way the quad winds and wherever the camera turns
+  const camera = new THREE.PerspectiveCamera(50, 1.6, 0.1, 500);
+  const down = new THREE.Vector3(0, -1, 0);
+  const poses: ReadonlyArray<readonly [V3, V3]> = [[[10, 1, 5], [0, 12, 0]], [[-30, 2, 40], [5, 18, -8]], [[0, 0.5, 60], [0, 25, 0]]];
+  for (const [from, to] of poses) {
+    camera.position.set(...from);
+    camera.lookAt(...to);
+    camera.updateMatrixWorld();
+    const view = camera.matrixWorldInverse;
+    const up = new THREE.Vector3().setFromMatrixColumn(view, 1); // GLSL's viewMatrix[ 1 ].xyz: the matrix is column-major in both
+    const seen = (worldNormal: THREE.Vector3): number => Math.max(-new THREE.Vector3().copy(worldNormal).transformDirection(view).dot(up), 0);
+    assert.ok(Math.abs(seen(down) - 1) < 1e-9, 'a face straight down, seen from below: all of the gain');
+    assert.equal(seen(new THREE.Vector3(0, 1, 0)), 0, 'a face turned up (the roof from the air, the back of a quad seen from below once the normal is flipped): none');
+    assert.ok(Math.abs(seen(new THREE.Vector3(1, 0, 0).normalize())) < 1e-9 && Math.abs(seen(new THREE.Vector3(0, 0, 1))) < 1e-9, 'a vertical face: none');
+    assert.ok(Math.abs(seen(new THREE.Vector3(0, -1, 1).normalize()) - Math.SQRT1_2) < 1e-9, 'a face tilted 45 degrees down: 0.71 of it');
+  }
+});
+
+test('the real scene holds the concourse\'s soffit as an unlit material named concourse-soffit, the one atmosphere.ts scales against the exposure (round five, E6)', () => {
+  const found = meshes.flatMap(materialsOf).filter((m) => m.name === 'concourse-soffit');
+  assert.ok(found.length >= 1, 'a material of that name is in the scene');
+  assert.ok(found.every((m) => (m as THREE.MeshBasicMaterial).isMeshBasicMaterial), 'unlit: the exposure multiplies its colour outright, so a cloudy sky\'s exposure of 2.4 took it to white (mean 239, p99 254) until it was divided back');
 });
 
 test('the atmosphere gives every Lambert surface in the scene the roof shade, once, however often it scans', () => {

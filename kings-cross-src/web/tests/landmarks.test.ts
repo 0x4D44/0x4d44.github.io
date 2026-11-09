@@ -10,6 +10,7 @@ import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
 import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
+import { GLOW_BELOW } from '../src/lighting.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
@@ -2315,8 +2316,9 @@ function skinSlope(u: number, y: number): number {
 const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const unit = (a: V3): V3 => a.map((x) => x / Math.hypot(...a)) as V3;
 
-/** the brick strips that run the length of the shed: its side walls, the outer strip of the arch on each side (not the south wall, not the stacks) */
-const sideWalls = (parts: PartMap<Key>): Tri[] => triangles(parts.brickRed as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > barlow.barlowLength - 1);
+/** the brick strips that run the length of the shed: its side walls, the outer strip of the arch on each side (not the south wall, not the stacks). Round five: the shed's own walls are
+ * `brickDeep`, a dark red-brown (hist-e), where the Midland's, and the stacks along the wall's top, stay `brickRed`. */
+const sideWalls = (parts: PartMap<Key>): Tri[] => triangles(parts.brickDeep as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > barlow.barlowLength - 1);
 
 test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springings, inside the 245 ft 6 in walls', () => {
   const parts = barlowGeometry(barlow);
@@ -2572,7 +2574,7 @@ test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of g
 
 test('Barlow vault: the south wall closes the end', () => {
   const parts = barlowGeometry(barlow);
-  const wall = triangles(parts.brickRed as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - 0.15) < 1e-6)); // not the side walls or the stacks
+  const wall = triangles(parts.brickDeep as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - 0.15) < 1e-6)); // not the side walls or the stacks (the stacks are `brickRed`)
   assert.equal(wall.length, 24, 'one triangle per arch segment, fanned from the middle of the sill');
   for (const t of wall) for (const p of t.p) close(inVault(p).v, 0.15, 1e-6, 'the wall stands on the south end');
   close(Math.max(...wall.flatMap((t) => t.p.map((p) => inVault(p).y))), FIGURES.barlow.rise, 1e-3, 'wall rises to the crown');
@@ -2678,12 +2680,12 @@ test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Panc
 
 // ---- assembly ----------------------------------------------------------------------------------
 
-test('materials: the tinted looks (terracotta and buff brick, cream dressings, lighter slate, the shed\'s silver glass and pale blue-grey ribs, the extension\'s roof panels, the clock face) are this set\'s own clones, the rest is the library\'s, and nothing shared is changed', () => {
+test('materials: the tinted looks (terracotta and buff brick, the Barlow\'s deep brick, cream dressings, lighter slate, the shed\'s silver glass, boarding and pale blue-grey ribs, the extension\'s roof panels, the clock face) are this set\'s own clones, the rest is the library\'s, and nothing shared is changed', () => {
   const hex = (name: Parameters<typeof material>[0]): number[] => {
     const m = material(name) as THREE.MeshLambertMaterial;
     return [m.color.getHex(), m.emissive.getHex()];
   };
-  const before = Object.fromEntries((['brick', 'brickRed', 'stone', 'slateBothSides', 'shedGlass', 'ribPaint'] as const).map((n) => [n, hex(n)]));
+  const before = Object.fromEntries((['brick', 'brickRed', 'stone', 'slateBothSides', 'shedGlass', 'ribPaint', 'lining'] as const).map((n) => [n, hex(n)]));
   const set = createMaterials();
   const lambert = (k: keyof typeof set.table): THREE.MeshLambertMaterial => set.table[k] as THREE.MeshLambertMaterial;
   const shared = (n: Parameters<typeof material>[0]): THREE.MeshLambertMaterial => material(n) as THREE.MeshLambertMaterial;
@@ -2710,9 +2712,22 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   // round four (the lighting-materials E3 and historic D6 scorers): their lit-brick means are R-c Lab 56.9 / 29.8 / 35.0 and hist-b 56.8 / 19.6 / 21.1. The tint that renders the tower at
   // Lab 57.7 / 23.9 / 30.8 at the noon rig (dE2000 3.0 from R-c and 4.6 from hist-b; the round-three tint rendered 49.9 / 23.4 / 24.2, 8.3 and 7.0 away, a flat salmon) is a reflectance of
   // 0.24 (the round-three tint's was 0.17) with green at 0.38 of the red and blue at 0.23: the same orange-red, a third lighter, and the deeper chroma the scorers asked for
+  // round five (the lighting-materials E3 scorer, from the masked R-c itself, Lab 47.4 / 25.3 / 27.9, and not from the means round four was told): the 0.24 drew the tower at L 59.8 and the
+  // range at 58.5, dE2000 11 to 12 from R-c, where round three's 0.17 at L 50 was 3.1 away. The tint then was a reflectance of 0.155 (the tower L 49.7 and the range L 48.5, 1.2 to 2.4 from R-c)
+  // and the historic D6 scorer read the clock tower's brick as (200, 122, 83) against R-c's (140, 84, 60) and hist-b's (170, 122, 102), too light and too orange: less red and more blue
+  // by about a tenth, a reflectance of 0.15, green at 0.39 of the red and blue at 0.26 in linear light (R-c's own 0.60 and 0.43 in sRGB), the tower's median (162, 97, 70)
   const reflect = 0.2126 * rr + 0.7152 * rg + 0.0722 * rb;
-  assert.ok(reflect > 0.22 && reflect < 0.26, `lit, the Midland's brick is about 0.24 reflective (L 57 at the noon rig), not the 0.17 that drew L 50: ${reflect.toFixed(3)}`);
-  assert.ok(rg / rr > 0.35 && rg / rr < 0.41 && rb / rr > 0.2 && rb / rr < 0.26, `with green at 0.38 of its red and blue at 0.23 (hue 52 degrees, R-c's chroma and not hist-b's): ${(rg / rr).toFixed(3)}, ${(rb / rr).toFixed(3)}`);
+  assert.ok(reflect > 0.14 && reflect < 0.165, `lit, the Midland's brick is about 0.15 reflective (L 48 to 49 at the noon rig, R-c's masked 47.4), not the 0.24 that drew L 59: ${reflect.toFixed(3)}`);
+  assert.ok(rg / rr > 0.36 && rg / rr < 0.43 && rb / rr > 0.22 && rb / rr < 0.29, `with green at about 0.39 of its red and blue at about 0.26 (the tower's brick (162, 97, 70), R-c's ratios): ${(rg / rr).toFixed(3)}, ${(rb / rr).toFixed(3)}`);
+  // round five, the historic D6 scorer (the shed's flank wall was "salmon" against hist-e's dark red-brown, (63, 40, 36) in shade and (91, 52, 38) in the sun, L 19 and 26): the Barlow's walls
+  // are the same brick at 0.55 of the light and the same hue, a clone of their own (the stacks along the wall's top stay the Midland's red)
+  const deep = lambert('brickDeep');
+  assert.notEqual(deep, red, 'the Barlow\'s walls are their own: the Midland\'s brick at about half the light');
+  assert.equal(deep.map, red.map, 'on the same stock-brick texture');
+  const [dr, dg, db] = lit(deep, 'brickRed');
+  const half = (0.2126 * dr + 0.7152 * dg + 0.0722 * db) / reflect;
+  assert.ok(half > 0.45 && half < 0.65, `at about 0.55 of the Midland's light (the flank drew L 30 and 24 to 28 in the oblique view, hist-e's L 19 to 26): ${half.toFixed(2)}`);
+  assert.ok(Math.abs(dg / dr - rg / rr) < 0.03 && Math.abs(db / dr - rb / rr) < 0.03, `and in the same hue, red over green over blue: ${(dg / dr).toFixed(3)}, ${(db / dr).toFixed(3)}`);
   const buff = lambert('brick');
   assert.notEqual(buff, shared('brick'), 'the hotel\'s brick is its own: a lighter, golden buff [hist-a]');
   assert.equal(buff.map, shared('brick').map, 'on the same stock-brick texture');
@@ -2732,6 +2747,10 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.equal(glass.map, shared('shedGlass').map, 'on the same astragal-barred texture');
   assert.equal(glass.emissiveMap, shared('shedGlass').emissiveMap);
   assert.ok(glass.transparent && glass.side === THREE.DoubleSide && glass.depthWrite === false, 'still see-through from either side, and never hiding what is behind it');
+  // round five (the historic D5 scorer: from inside, the glazed crown was the darkest band of the vault, and in hist-d and hist-d2 it is the brightest): the glass is lit by the sun from
+  // above and dark from below, so it carries the define that makes its glow rise with how far down the face looks (lighting.ts GLOW_BELOW); the library's glass does not
+  assert.deepEqual(glass.defines, { [GLOW_BELOW]: '' }, 'the crown glows from below');
+  assert.equal(shared('shedGlass').defines, undefined, 'and only the crown: the library\'s glass is untouched');
   // the glow is the emissive colour times the pane texture, whose average colour the library records: neutral here, blue in the library's
   const average = new THREE.Color(TEXTURES.shedGlass.average);
   const glow = (m: THREE.MeshLambertMaterial): number[] => [m.emissive.r * average.r, m.emissive.g * average.g, m.emissive.b * average.b];
@@ -2762,6 +2781,9 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.equal(slate.map, shared('slateBothSides').map, 'on the same slate texture');
   assert.ok(slate.color.r > shared('slateBothSides').color.r && slate.color.g > shared('slateBothSides').color.g && slate.color.b > shared('slateBothSides').color.b, 'lighter than the library\'s');
   assert.ok(slate.color.b / slate.color.r < shared('slateBothSides').color.b / shared('slateBothSides').color.r, 'and less blue: hist-b\'s slate is grey with a hint of green, not blue');
+  // round five (the historic D6 scorer: the slate "reads pale silver", should be mid grey): the photographs' sunlit slate is a warm-neutral grey, hist-b's roof (147, 139, 141) and
+  // (161, 159, 152) in its lit patches, hist-a's (136, 134, 136), where this drew a cool lilac (154, 152, 156), b* -2, L 63: the tint is warm of neutral, its blue the least of its channels
+  assert.ok(slate.color.r > slate.color.g && slate.color.g > slate.color.b, `a warm-neutral grey, red over green over blue before the texture: ${slate.color.r.toFixed(2)}, ${slate.color.g.toFixed(2)}, ${slate.color.b.toFixed(2)}`);
   assert.equal(slate.side, THREE.DoubleSide);
   assert.equal((material('slate') as THREE.MeshLambertMaterial).side, THREE.FrontSide, 'the shared one is untouched');
   // round four (the lighting-materials E4 scorer): the Barlow's flank is hist-e's dark slate, L 44 (103, 103, 108) against the L 58 of the Midland's and the hotel's roofs (hist-b's, hist-a's):
@@ -2775,9 +2797,16 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   const litSlate = (m: THREE.MeshLambertMaterial): number => lum([m.color.r * slateAverage.r, m.color.g * slateAverage.g, m.color.b * slateAverage.b]);
   assert.ok(litSlate(flank) > 0.4 * litSlate(slate) && litSlate(flank) < 0.65 * litSlate(slate), `the flank reflects about half what the other roofs' slate does: ${(litSlate(flank) / litSlate(slate)).toFixed(2)}`);
   assert.ok(flank.color.b / flank.color.r < shared('slateBothSides').color.b / shared('slateBothSides').color.r, 'and is as grey, not blue, as the other slate');
-  for (const n of ['brick', 'brickRed', 'stone', 'slateBothSides', 'shedGlass', 'ribPaint'] as const) assert.deepEqual(hex(n), before[n], `the shared ${n} keeps its colours`);
-  // the rest is the library's own
-  assert.equal(set.table.lining, material('lining'));
+  for (const n of ['brick', 'brickRed', 'stone', 'slateBothSides', 'shedGlass', 'ribPaint', 'lining'] as const) assert.deepEqual(hex(n), before[n], `the shared ${n} keeps its colours`);
+  // round five (the historic D5 scorer): the boarding under the slate is the Barlow's own clone, at 0.55 of the library's light in its colour and its glow, so that the flank
+  // panels (L 71 in the noon view, over the crown's) read under the crown's brightness from inside, as hist-d's boarding (L 39 to 49) is under its glazing (L 56 to 63)
+  const lining = lambert('lining');
+  assert.notEqual(lining, shared('lining'), 'the Barlow\'s boarding is its own');
+  assert.equal(lining.map, shared('lining').map, 'on the same boarding texture');
+  assert.equal(lining.emissiveMap, shared('lining').emissiveMap);
+  assert.equal(lining.side, THREE.BackSide, 'seen from inside, as the library\'s is');
+  assert.ok(lining.color.r > 0.6 * shared('lining').color.r && lining.color.r < 0.9 * shared('lining').color.r, `a darker boarding than the library's: ${(lining.color.r / shared('lining').color.r).toFixed(2)}`);
+  assert.ok(lining.emissive.r > 0.45 * shared('lining').emissive.r && lining.emissive.r < 0.75 * shared('lining').emissive.r, `and a dimmer glow: ${(lining.emissive.r / shared('lining').emissive.r).toFixed(2)}`);
   assert.equal(set.table.sash, material('sash'));
   assert.equal(set.table.sashArch, material('sashArch'));
   // round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the dark pane set in a frame is the landmarks' own, a blue-grey glass: the library's
@@ -2790,8 +2819,8 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.ok(darkGlass.color.b > 1.8 * darkGlass.color.r, 'a blue-grey glass with the sky in it, not a neutral grey');
   for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
-  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate, set.table.shedSlate, set.table.pane], 'the clock face, the roof panels, the two bricks, the dressings, the glass, the ribs, the two slates and the dark pane are all this set makes (no document here, so no texture)');
-  for (const key of ['sash', 'sashArch', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.brickDeep, set.table.stone, set.table.brick, set.table.roofGlass, set.table.rib, set.table.slate, set.table.shedSlate, set.table.pane, set.table.lining], 'the clock face, the roof panels, the three bricks, the dressings, the glass, the ribs, the two slates, the dark pane and the boarding are all this set makes (no document here, so no texture)');
+  for (const key of ['sash', 'sashArch'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {

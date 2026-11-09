@@ -116,7 +116,7 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   'concourse-lattice', 'concourse-panels', 'concourse-column',
   // the landmarks (landmarks.ts): the hotels (the Barlow shed's lattice ribs, 'landmarks-rib', and the extension's pale panels and girders, 'landmarks-metal', are left out: 18,666 triangles
   // a frame in the pass for a shadow that falls under a glazed roof nobody frames, round 5's 800,000-triangle ruling)
-  'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate',
+  'landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone', 'landmarks-slate',
   // King's Cross Central (kxcentral.ts)
   'kxcentral-brick', 'kxcentral-brickRed', 'kxcentral-stone', 'kxcentral-slate', 'kxcentral-iron', 'kxcentral-drum', 'kxcentral-timber', 'kxcentral-alu', 'kxcentral-curtain',
   // the city (city.ts): every building's walls and roofs, and the trees (one instanced draw of about 30 triangles a tree: without them the forecourt's trees stand in the sun and
@@ -383,6 +383,16 @@ export const roofShadeUniforms = {
   uInteriorFill: { value: new THREE.Vector3(0, 0, 0) },
 };
 
+/**
+ * A define a roof-shaded Lambert material can carry (`material.defines = { [GLOW_BELOW]: '' }`) to be seen against the light from underneath: the roof's own emissive glow
+ * (what it holds for sky-lit day, which follows the hour like every glowing stand-in) is multiplied by `1 + GLOW_BELOW_GAIN * (how far the face seen looks down)`. Glass is lit
+ * by the sun from above and dark from below, where a real glazed roof is the brightest thing in the shed, the sky itself (hist-d, hist-d2: the crown is the brightest band of the
+ * vault); one face, and the two views, so the pane cannot hold both in its colour. The face seen is the one that looks at the camera, whichever way the geometry winds, so
+ * this is the view from underneath and not the back of a quad.
+ */
+export const GLOW_BELOW = 'GLOW_BELOW';
+export const GLOW_BELOW_GAIN = 30;
+
 const shaded = new WeakSet<THREE.Material>();
 
 /**
@@ -408,6 +418,9 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
   if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) ) * material.diffuseColor * RECIPROCAL_PI;
+#ifdef ${GLOW_BELOW}
+  totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
+#endif
 }`);
     shader.fragmentShader = fragment;
   };
