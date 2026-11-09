@@ -9,27 +9,31 @@
 // The numbers are read off the photographs against the published height (3.77 m) and width (2.80 m), not published themselves: ASSUMED, good to a few centimetres.
 import { ellipse, roundedRect } from './train-geom.ts';
 
-/** One shape on a flat face. */
-export interface FaceShape {
+/** What every shape on a flat face has. */
+interface FaceShapeBase {
   /** what it is, for the tests and for whoever reads the table */
   name: string;
   /** a convex outline in the cab's own frame (x to the cab's right, y above the rail head); wound either way */
   outline: readonly (readonly [number, number])[];
-  /** the colour of an opaque shape (a lens takes its colour from the lamp state, glass from the cab glass's material: neither has one) */
-  colour?: number;
   /** metres in front of the face's plane. Shapes that overlap stand at least a millimetre and a half apart; the highest is a lens, one millimetre inside the face's own setback */
   lift: number;
   /** also drawn mirrored across the middle of the face */
   mirror?: boolean;
   /** kept this far inside the face's own outline, metres (the face's corners are rounded: a shape that would stand over the edge follows it instead) */
   inset?: number;
-  /** reflective glass: drawn into the cab-glass mesh */
-  glass?: boolean;
-  /** a lamp lens: its role (its colour and glow follow the lamp state) */
-  lens?: 'head' | 'tail';
   /** only at the end of a train, not where two units couple (the coupling's own recess and cables are drawn there) */
   trainEnd?: boolean;
 }
+
+/**
+ * One shape on a flat face: an opaque shape with a `colour`, reflective `glass` (drawn into the cab-glass mesh, with the cab glass's material), or a lamp `lens` (its role: its
+ * colour and glow follow the lamp state). A lens and glass have no colour of their own, and a shape is exactly one of the three.
+ */
+export type FaceShape = FaceShapeBase & (
+  | { colour: number; glass?: undefined; lens?: undefined }
+  | { glass: true; colour?: undefined; lens?: undefined }
+  | { lens: 'head' | 'tail'; colour?: undefined; glass?: undefined }
+);
 
 /** A cab front drawn as shapes on its flat face (see the header). */
 export interface FaceSpec {

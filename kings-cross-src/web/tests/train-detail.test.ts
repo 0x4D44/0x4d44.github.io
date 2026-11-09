@@ -13,7 +13,7 @@ import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
 import { clipConvex, col, ellipse, Soup } from '../src/train-geom.ts';
-import { ADELANTE_FACE, AMBER, AMBER_DOOR, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, boxOutline } from '../src/train-face.ts';
+import { ADELANTE_FACE, AMBER, AMBER_DOOR, BEZEL, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, barOutline, boxOutline } from '../src/train-face.ts';
 import type { FaceShape, FaceSpec } from '../src/train-face.ts';
 import { COUPLING_CLEARANCE } from '../src/trains-live.ts';
 
@@ -702,6 +702,9 @@ test('Class 387 face: the spec puts the door between the screens, the lamp housi
   assert.ok(h.x1 - h.x0 > t.x1 - t.x0, 'and larger');
   near((h.y0 + h.y1) / 2, (t.y0 + t.y1) / 2, 0.01, 'the two lamps are level');
   assert.ok((panel as { y0: number }).y0 === (bumper as { y1: number }).y1, 'the panel begins where the bumper ends');
+  // the housing is the near black the photographs show (gn387_01_387114_ely): pinned, so a change of its shade is a decision
+  assert.equal(BEZEL, 0x15171a, 'the housing\'s black');
+  assert.equal((SHAPES['lamp-housing'] as FaceShape).colour, BEZEL, 'the lamp housing wears it');
   // the display, behind the glass of the cab's right-hand screen only, in its upper half, its lit text inside it; the roof lamp on the middle, under the brow
   const [display, text, roofLamp] = ['display', 'display-text', 'roof-lamp'].map(box) as ReturnType<typeof boxOfOutline>[];
   assert.deepEqual(['display', 'display-text', 'roof-lamp'].map((n) => (SHAPES[n] as FaceShape).mirror), [undefined, undefined, undefined], 'one display, one roof lamp');
@@ -782,9 +785,12 @@ test('Class 387 face: the amber brow runs back over the roof\'s front to the fir
   const sec = carSection(spec);
   const norm = normalised(sec);
   const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
-  assert.equal(spec.front.warning, AMBER);
-  const wrap = spec.front.warningWrap as number;
-  const width = spec.front.warningWidth as number;
+  // CHANGED (the colour, the wrap and the width were three fields, the last two optional): `warning` is one object now, and a 387 has it
+  const warning = spec.front.warning as NonNullable<typeof spec.front.warning>;
+  assert.ok(warning, 'the 387 has a warning brow');
+  assert.equal(warning.colour, AMBER);
+  const wrap = warning.wrap;
+  const width = warning.width;
   const panelEnd = ringStations(spec.nose).find((s) => s >= wrap - 1e-9) as number;
   for (const car of layout.cars.filter((c) => c.cab)) {
     const here = `car ${car.index} (${car.cab} cab)`;
@@ -802,6 +808,15 @@ test('Class 387 face: the amber brow runs back over the roof\'s front to the fir
     // and it is the body's own white beside it (cheeks of the livery's front colour on the nose, not amber)
     const cheeks = trisOfColour(detailOf(g, car), liveryFor('gn387x8').noseFront).filter((t) => t.every((v) => back(v) > -1e-4 && back(v) < panelEnd + 1e-4 && Math.abs(v.x) > edge - 1e-6 && v.y > 2.0));
     assert.ok(cheeks.length > 0, `${here}: no cheeks of the livery's colour beside the brow`);
+    // CHANGED (only the brow over the nose was looked at, so an amber cap right across the face, or amber cheeks, passed): in the face's own plane the amber cap stops where the brow
+    // does, and the body's white fills the face above the cover from there to its edge
+    const inPlane = (t: Tri): boolean => t.every((v) => Math.abs(back(v)) < 1e-4);
+    const cap = trisOfColour(detailOf(g, car), AMBER).filter(inPlane);
+    assert.ok(cap.length > 0, `${here}: no amber cap on the face`);
+    near(Math.max(...cap.flat().map((v) => Math.abs(v.x))), edge, 1e-3, `${here}: the cap stops where the brow does`);
+    const faceCheeks = cheeks.filter(inPlane);
+    assert.ok(faceCheeks.length > 0, `${here}: no white cheeks beside the amber cap, in the plane of the face`);
+    near(Math.min(...faceCheeks.flat().map((v) => Math.abs(v.x))), edge, 1e-3, `${here}: the cheeks start where the cap stops`);
   }
 });
 
@@ -1146,10 +1161,9 @@ test('fronts: a yellow warning panel is a shape of the 700\'s face and of the 18
   // CHANGED (the 700's was the loft's, wrapped over the nose): the 700's panel is a shape on its flat face, a trapezoid between white cheeks (the Class 700's face)
   // CHANGED (the 180's was too: a yellow cap over the face above the cover and 0.3 m of the nose behind it): the 180's is a shape of its flat face, a trapezoid under the glass between its pods (the
   // Class 180's face); GC180-05 and GC180-01 show it ending at the glass's foot with the black dome behind it
-  assert.deepEqual(warning, { at300: null, electrostar: AMBER, desiro: null, desiro700: null, adelante: null });
-  // how far back and how far across: a 387's brow is 0.3 m back over the top nine tenths of the face's width (the photographs' cheeks beside the screens are white); no other family has one
-  const reach = Object.fromEntries(FAMILIES.map((f) => [f, [bodySpec(f).front.warningWrap, bodySpec(f).front.warningWidth]]));
-  assert.deepEqual(reach, { at300: [undefined, undefined], electrostar: [0.3, 0.9], desiro: [undefined, undefined], desiro700: [undefined, undefined], adelante: [undefined, undefined] });
+  // CHANGED (how far back and how far across were two more fields, `warningWrap` and `warningWidth`, which no other family set): a 387's brow is amber, 0.3 m back over the top nine
+  // tenths of the face's width (the photographs' cheeks beside the screens are white); no other family has one
+  assert.deepEqual(warning, { at300: null, electrostar: { colour: AMBER, wrap: 0.3, width: 0.9 }, desiro: null, desiro700: null, adelante: null });
   // the 700's and the 180's own: a shape of its face, in the warning yellow, on the cab cars only and nowhere else on the nose (it does not wrap back over the roof)
   const withPanel = FACE_CASES.filter((k) => shapesOf(k.face)['warning-panel']);
   assert.deepEqual(withPanel.map((k) => k.family), ['desiro700', 'adelante']);
@@ -1178,12 +1192,14 @@ test('fronts: a yellow warning panel is a shape of the 700\'s face and of the 18
   for (const car of trainLayout('gn717x6').cars) assert.equal(trisOfColour(detailOf(g717, car), YELLOW).length, 0, `gn717x6 car ${car.index}: yellow on a 717`);
 });
 
-test('fronts: dark parked wipers lie right along the foot of the windscreen and a lit display runs across its top, both lifted a little off the nose\'s own surface', () => {
+test('fronts: dark parked wipers lie right along the foot of the windscreen, lifted a little off the nose\'s own surface, and no lit display is drawn on a roof windscreen', () => {
   // a dark grey, close to the glass's black: pale arms standing higher up the glass read as eyebrows
   const WIPER = 0x3b4048;
   assert.ok((0.2126 * ((WIPER >> 16) & 255) + 0.7152 * ((WIPER >> 8) & 255) + 0.0722 * (WIPER & 255)) / 255 < 0.3, 'dark wiper arms');
   const DISPLAY = 0xffa000;
   // CHANGED (the 387, the 717 and the 700 were of these): their wipers and display are shapes on their flat faces, checked with the rest of them (the flat faces)
+  // CHANGED (the loft could draw a lit display across the top of the glass, `FrontSpec.display`; no family set it, so the block is gone): the families with a roof windscreen
+  // draw none, and nothing of the display's amber is on their noses
   for (const kind of ['lner5', 'gc180x5'] as TrainKind[]) {
     const g = built(kind);
     const layout = trainLayout(kind);
@@ -1200,7 +1216,7 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen and 
       const wipers = trisOfColour(mesh, WIPER);
       const display = trisOfColour(mesh, DISPLAY);
       assert.equal(wipers.length > 0, spec.front.wipers, `${kind} car ${car.index}: wipers`);
-      assert.equal(display.length > 0, spec.front.display, `${kind} car ${car.index}: display`);
+      assert.equal(display.length, 0, `${kind} car ${car.index}: a lit display on the glass`);
       // CHANGED (every arm lay along the glass's foot): the 180's arms are parked leaning up the glass, dark on it, about half way up each pane (GC180-05, GC180-01): `wiperRise` metres along the nose
       const rise = spec.front.wiperRise ?? 0.08;
       if (kind === 'gc180x5') assert.ok(rise >= 0.3, `${kind}: the 180's arms park leaning up the glass, not along its foot (rise ${rise})`);
@@ -1208,7 +1224,6 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen and 
       const cases: [Tri[], string, number, number, number][] = [
         // an arm lies within 12 cm of the glass's lower edge (a 180's within its rise), and no further out than 0.85 m: it never stands up the glass, where it would read as an eyebrow
         [wipers, 'wiper', screen.s0 - 0.02, screen.s0 + rise + 0.04, 0.85],
-        [display, 'display', screen.s1 - 0.5, screen.s1, 0.56],
       ];
       for (const [tris, label, sMin, sMax, xMax] of cases) {
         for (const v of tris.flat()) {
@@ -1221,10 +1236,6 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen and 
           const surface = yAtX(halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, Math.min(spec.nose.length, s)))), Math.abs(v.x));
           assert.ok(v.y - surface > 0.01 && v.y - surface < 0.12, `${kind} car ${car.index}: a ${label} vertex ${((v.y - surface) * 1000).toFixed(0)} mm over the nose`);
         }
-      }
-      if (wipers.length && display.length) {
-        const meanS = (tris: Tri[]): number => tris.flat().reduce((a, v) => a + sOf(v), 0) / (tris.length * 3);
-        assert.ok(meanS(display) - meanS(wipers) > 0.5, `${kind}: the display is above the wipers`);
       }
     }
   }
@@ -1246,7 +1257,6 @@ test('fronts: the Azuma\'s front: a round-lensed lamp cluster on each cheek, par
     },
     frame: 0.07,
     wipers: true,
-    display: false,
     warning: null,
     coupler: { style: 'plain', covered: true },
   });
@@ -1453,6 +1463,11 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
   const SEAM_DARK = 0x1b1d21;
   const SEAM_LIGHT = 0x484c53;
   // CHANGED (the 387 was one of these): a flat bumper has no cover, so no seam of either colour (below, with the 180's open coupler)
+  const at300 = bodySpec('at300');
+  const sec = carSection(at300);
+  const norm = normalised(sec);
+  const egg = eggSection(norm, at300.nose.widest, at300.nose.boxiness);
+  const tipHalf = halfAt(sec, norm, egg, ringAt(at300.nose, 0));
   for (const [kind, want, other] of [['lner5', SEAM_DARK, SEAM_LIGHT], ['hull5', SEAM_LIGHT, SEAM_DARK]] as const) {
     const g = built(kind);
     const layout = trainLayout(kind);
@@ -1461,6 +1476,27 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
       const onPlane = (hex: number): Tri[] => trisOfColour(detailOf(g, car), hex).filter((t) => t.every((v) => Math.abs(v.z - plane) < ZTOL));
       assert.ok(onPlane(want).length > 0, `${kind} car ${car.index}: no seam in ${want.toString(16)}`);
       assert.equal(onPlane(other).length, 0, `${kind} car ${car.index}: a seam in ${other.toString(16)}`);
+      // CHANGED (the seam and the latches are in one colour, so a cover with no seam, or one with no latches, passed): the seam is a strip 2.4 cm tall across the top of the cover, out to
+      // 0.92 of the face's half-width there, and a latch stands under it each side, a hand wide, at 0.45 of that half-width
+      const coverTop = (all(named(g, `car-${car.index}`), 'coupler-cover')[0] as THREE.Object3D).userData.y1 as number;
+      const a = xAtY(tipHalf, coverTop);
+      const seam = onPlane(want).filter((t) => t.every((v) => Math.abs(v.y - coverTop) <= 0.0125));
+      assert.ok(seam.length > 0, `${kind} car ${car.index}: no seam across the top of the cover`);
+      const seamBox = boxOfTris(seam);
+      near(seamBox.min.x, -0.92 * a, 1e-4, `${kind} car ${car.index}: the seam's left end`);
+      near(seamBox.max.x, 0.92 * a, 1e-4, `${kind} car ${car.index}: the seam's right end`);
+      near(seamBox.min.y, coverTop - 0.012, 1e-4, `${kind} car ${car.index}: the seam's foot`);
+      near(seamBox.max.y, coverTop + 0.012, 1e-4, `${kind} car ${car.index}: the seam's top`);
+      for (const sx of [-1, 1]) {
+        const latch = onPlane(want).filter((t) => t.every((v) => v.y < coverTop - 0.029 && v.x * sx > 0));
+        assert.ok(latch.length > 0, `${kind} car ${car.index}: no latch ${sx > 0 ? 'right' : 'left'} of the middle`);
+        const box = boxOfTris(latch);
+        near(Math.abs(box.min.x + box.max.x) / 2, 0.45 * a, 1e-4, `${kind} car ${car.index}: the latch's place`);
+        near(box.max.x - box.min.x, 0.1, 1e-4, `${kind} car ${car.index}: the latch's width`);
+        near(box.min.y, coverTop - 0.1, 1e-4, `${kind} car ${car.index}: the latch's foot`);
+        near(box.max.y, coverTop - 0.03, 1e-4, `${kind} car ${car.index}: the latch's top`);
+      }
+      assert.equal(onPlane(want).length, seam.length + onPlane(want).filter((t) => t.every((v) => v.y < coverTop - 0.029)).length, `${kind} car ${car.index}: the seam and the two latches are all there is`);
     }
   }
   // the 387's flat bumper has no cover to seam: no seam or latch in either colour anywhere on its cabs
@@ -2536,6 +2572,33 @@ test('fronts: the face of a 387, a 717, a 700 and a 180 is broad, at least 0.7 o
   }
 });
 
+test('flat faces: a bar is a rectangle of its width along its line, each wiper is a bar 3.5 cm wide, and a face\'s bumper line stands over its coupler recess by at most a quarter metre', () => {
+  // a bar from (0, 0) to (3, 4) is 5 long and, 0.2 wide, has its corners 0.1 to either side of the line and square to it
+  const bar = barOutline([0, 0], [3, 4], 0.2);
+  const want: [number, number][] = [[-0.08, 0.06], [2.92, 4.06], [3.08, 3.94], [0.08, -0.06]];
+  assert.equal(bar.length, 4);
+  bar.forEach((p, i) => {
+    near(p[0], (want[i] as [number, number])[0], 1e-12, `the bar's corner ${i} across`);
+    near(p[1], (want[i] as [number, number])[1], 1e-12, `the bar's corner ${i} up`);
+  });
+  // every wiper of every flat face is such a bar: 3.5 cm wide, and as long as the line it was drawn along
+  let wipers = 0;
+  for (const c of FACE_CASES) {
+    for (const shape of c.face.shapes.filter((sh) => sh.name === 'wiper')) {
+      const at = (i: number): readonly [number, number] => shape.outline[i] as readonly [number, number];
+      const dist = (i: number, j: number): number => Math.hypot(at(i)[0] - at(j)[0], at(i)[1] - at(j)[1]);
+      near(dist(1, 2), 0.035, 1e-9, `${c.label}: a wiper's width`);
+      assert.ok(dist(0, 1) > 0.3, `${c.label}: a wiper is a long thin bar`);
+      wipers++;
+    }
+  }
+  assert.equal(wipers, 3, 'the 387, the 717 and the 700 each have one wiper shape');
+  // the bumper line (where a cover would end) stands at or over the top of the coupler's recess, and not a quarter metre over it
+  for (const c of FACE_CASES) {
+    assert.ok(c.face.coverTop >= c.face.recess.y1 && c.face.coverTop <= c.face.recess.y1 + 0.25, `${c.label}: the bumper line ${c.face.coverTop} against the recess's top ${c.face.recess.y1}`);
+  }
+});
+
 test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod outboard of each slanting side with a round headlight low in it and a smaller lamp straight above, the recess under the panel, and no glass on the face', () => {
   const S = shapesOf(ADELANTE_FACE);
   const box = (name: string): ReturnType<typeof boxOfOutline> => boxOfOutline((S[name] as FaceShape).outline);
@@ -2565,6 +2628,8 @@ test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod out
   assert.ok(2 * half(foot + 0.01) > 1.2 && 2 * half(foot + 0.01) < 1.6, 'and about 1.4 m at its foot');
   // the recess under it: centred, and not cutting into the panel
   assert.ok(ADELANTE_FACE.recess.y1 <= foot + 1e-9, 'the coupler recess ends where the panel begins');
+  // (the 180 has no cover to seam, so `coverTop` is only the bumper line the table records: where the recess ends, as its comment says)
+  assert.equal(ADELANTE_FACE.coverTop, ADELANTE_FACE.recess.y1, 'the bumper line is where the recess ends');
   // the pods: outboard of the panel's sides, not touching them, each a quadrilateral with a lens inside it, the headlight in its lower half and the larger
   const podShape = S['lamp-pod'] as FaceShape;
   const pod = podShape.outline.map((pt): [number, number] => [pt[0], pt[1]]);
@@ -2623,6 +2688,8 @@ test('Class 180 nose: a bright post between the two panes of the glass, and on t
       const rim = trisOfColour(mesh, f.rim).filter((t) => inBox(t, 0.06));
       const inner = trisOfColour(mesh, f.colour).filter((t) => inBox(t, 0.02));
       assert.ok(rim.length >= 6 && inner.length >= 6, `${here}: the ${f.shape} at ${f.x}: ${rim.length} rim and ${inner.length} centre triangles`);
+      // CHANGED (the rim and the centre were found by their colours, so a rim as dark as its centre passed): a pale rim round a dark centre, as GC180-05 and GC180-01 show
+      assert.ok(lumaOf(f.rim) > lumaOf(f.colour) + 0.1, `${here}: the ${f.shape}'s rim (${f.rim.toString(16)}) is not paler than its centre (${f.colour.toString(16)})`);
       const [rb, ib] = [boxOfTris(rim), boxOfTris(inner)];
       assert.ok(rb.max.x - rb.min.x > ib.max.x - ib.min.x + 0.015, `${here}: the ${f.shape}'s rim is wider than its centre`);
       near((rb.min.x + rb.max.x) / 2, cx, 0.02, `${here}: the ${f.shape}'s place across`);
