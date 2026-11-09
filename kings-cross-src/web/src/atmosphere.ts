@@ -17,6 +17,7 @@ import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
+import { windowNight } from './materials.ts';
 import { createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
@@ -380,9 +381,10 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     stars.visible = rig.stars > 0.01;
     (stars.material as THREE.PointsMaterial).opacity = rig.stars * 0.9;
 
-    // lamps: halos, and the trains' windows and lenses
+    // lamps: halos, and the trains' windows and lenses, and the windows of the city's buildings
     nightLights?.setLevel(rig.lampLevel);
     trainNight.value = rig.lampLevel;
+    windowNight.value = rig.lampLevel;
     // what glowed like sky-lit day dims after dark, with a warm share from the lamps
     for (const [m, base] of standIns) {
       const day = rig.daylight;
