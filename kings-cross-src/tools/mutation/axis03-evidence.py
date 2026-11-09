@@ -23,7 +23,7 @@ WEB_TEST = 'web/tests/train-detail.test.ts'
 WEB_CLASS_180 = 'Class 180: five cars of the fleet owner’s 23.71 and 23.02 m, single-leaf doors, no pantograph, a driven bogie and a trailer bogie on every car, and an uncovered Scharfenberg at each end'
 TESTS = [
     'measures every ALL_KINDS coach body and roof envelope while excluding separate running gear',
-    'keeps the Class 802 transfer explicitly assumed and selects the Class 180 fleet owner’s dimensions',
+    'uses the published Class 802 driving-car figure and selects the Class 180 fleet owner’s dimensions',
     'joins motion birth kinds only when recording and anchor hashes match',
     'labels missing source dimensions and model-derived measurements as non-independent',
     WEB_CLASS_180,
@@ -37,9 +37,10 @@ MUTATIONS = [
      'heightAboveRailM: roundMm(box.max.y),',
      'heightAboveRailM: roundMm(envelopeHeightM),', TESTS[0]),
     ('Class 802 driving length is replaced by the Class 800/801 figure', FILE,
-     'valueM: drive ? 25.7 : 26,',
+     'valueM: drive ? HULL_802_DRIVING_CAR.value : 26,',
      'valueM: drive ? 25.85 : 26,', TESTS[1]),
-    ('Class 802 transfer falsely called published', FILE, "basis: 'assumed', source: TRAIN_SPECS.hull5.source", "basis: 'published', source: TRAIN_SPECS.hull5.source", TESTS[1]),
+    ('actual drawn length falsely replaced by the reference figure', FILE, 'vehicleLengthM: car.length,', 'vehicleLengthM: figures.length.value,', TESTS[1]),
+    ('Class 802 published driving figure falsely called assumed', FILE, '? HULL_802_DRIVING_CAR : lengthFigure', "? { ...HULL_802_DRIVING_CAR, basis: 'assumed' } : lengthFigure", TESTS[1]),
     ('Class 180 owner figure replaced by secondary number', 'core/train.ts', 'carLength: { value: 23.02,', 'carLength: { value: 23.03,', TESTS[1]),
     ('motion report recording hash is not checked', FILE,
      "if (input.sha256 !== expected!.sha256) throw new Error(`motion report recording ${index + 1} hash does not match the supplied recording`);",

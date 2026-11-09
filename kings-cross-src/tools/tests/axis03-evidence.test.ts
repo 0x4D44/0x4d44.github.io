@@ -41,7 +41,10 @@ test('measures every ALL_KINDS coach body and roof envelope while excluding sepa
     for (const car of item.cars) {
       assert.equal(car.index, item.cars.indexOf(car));
       assert.ok(car.geometry.lengthM > 0 && car.geometry.widthM > 0 && car.geometry.heightAboveRailM > 0);
-      assert.equal(car.model.vehicleLengthM, car.expected.lengthM.modelSpec.valueM);
+      assert.equal(car.model.vehicleLengthM, trainLayout(item.kind).cars[car.index]!.length);
+      if (item.kind !== 'hull5' || (car.type !== 'DPTS' && car.type !== 'DPTF')) {
+        assert.equal(car.model.vehicleLengthM, car.expected.lengthM.modelSpec.valueM);
+      }
       assert.equal(car.model.bodyWidthM, car.expected.widthM.modelSpec.valueM);
       assert.equal(car.model.bodyRoofHeightAboveRailM, car.expected.heightAboveRailM.modelSpec.valueM);
     }
@@ -69,16 +72,19 @@ test('measures every ALL_KINDS coach body and roof envelope while excluding sepa
   assert.equal(envelope.minY, 2);
 });
 
-test('keeps the Class 802 transfer explicitly assumed and selects the Class 180 fleet owner’s dimensions', () => {
+test('uses the published Class 802 driving-car figure and selects the Class 180 fleet owner’s dimensions', () => {
   const result = report();
   const hullDriving = result.kinds.find(({ kind }) => kind === 'hull5')!.cars[0]!;
   assert.equal(hullDriving.type, 'DPTS');
-  assert.equal(hullDriving.model.vehicleLengthM, 25.85);
+  assert.equal(hullDriving.model.vehicleLengthM, trainLayout('hull5').cars[0]!.length);
+  assert.equal(hullDriving.expected.lengthM.modelSpec.valueM, 25.7);
   assert.equal(hullDriving.expected.lengthM.published.values[0]?.valueM, 25.7);
   assert.equal(hullDriving.expected.lengthM.published.status, 'reported');
-  assert.equal(hullDriving.expected.lengthM.modelSpec.basis, 'assumed');
-  assert.match(hullDriving.expected.lengthM.published.note ?? '', /25\.85/);
-  assert.equal(hullDriving.expected.lengthM.published.values[0]?.sources[0]?.url, 'https://en.wikipedia.org/wiki/British_Rail_Class_802');
+  assert.equal(hullDriving.expected.lengthM.modelSpec.basis, 'published');
+  assert.match(hullDriving.expected.lengthM.modelSpec.source, /https:\/\/eversholtrail\.co\.uk\/fleet\/class-802\//);
+  assert.equal(hullDriving.expected.lengthM.published.values[0]?.sources[0]?.url, 'https://eversholtrail.co.uk/fleet/class-802/');
+  assert.equal(hullDriving.geometryMinusModelSpecM.lengthM, Math.round((hullDriving.geometry.lengthM - 25.7) * 1000) / 1000);
+  assert.ok(Math.abs(hullDriving.geometry.lengthM - hullDriving.model.vehicleLengthM) < 0.002, 'the report must retain the actual drawn envelope if the train module still uses the old length');
 
   const gcMiddle = result.kinds.find(({ kind }) => kind === 'gc180x5')!.cars[1]!;
   assert.equal(gcMiddle.expected.lengthM.published.status, 'source-conflict');
@@ -148,6 +154,8 @@ test('AT300 primary-source review keeps Class 803 transfers assumed and qualifie
   const hull = result.kinds.find(({ kind }) => kind === 'hull5')!.cars[0]!;
   const reference = hull.expected.lengthM.published.values[0]!;
   assert.equal(reference.valueM, 25.7);
+  assert.equal(hull.expected.lengthM.modelSpec.basis, 'published');
+  assert.equal(hull.expected.lengthM.modelSpec.sources[0]?.url, 'https://eversholtrail.co.uk/fleet/class-802/');
   assert.ok(reference.sources.some(({ url }) => url === 'https://eversholtrail.co.uk/fleet/class-802/'));
   assert.match(reference.note ?? '', /GWR/);
   assert.match(hull.expected.lengthM.published.note ?? '', /coupl/);

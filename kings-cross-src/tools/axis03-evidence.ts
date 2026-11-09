@@ -15,6 +15,7 @@ import {
   ALL_KINDS, DRIVING, EMU_FIGURES, FIGURES, TRAIN_SPECS, roofHeight, trainLayout,
 } from '../core/train.ts';
 import type { Family, Figure, TrainKind } from '../core/train.ts';
+import * as trainFigures from '../core/train.ts';
 import { buildTrain } from '../web/src/train.ts';
 
 const WORKTREE = fileURLToPath(new URL('../../', import.meta.url));
@@ -25,6 +26,16 @@ const DEFAULT_RECORDINGS = [
 ];
 const BODY_MESH_NAMES = new Set(['body-shell', 'body-detail', 'livery-decals', 'cab-glass']);
 const roundMm = (value: number): number => Math.round(value * 1000) / 1000;
+
+// Prefer the train iterator's class-specific Figure once exported. On d077b080 it is absent:
+// use Eversholt's published Class 802 table, https://eversholtrail.co.uk/fleet/class-802/
+// (reviewed 2026-11-09): DPTS & DPTF 25.7 m; MS-TS-MF 26 m. This GWR source does not
+// define coupling endpoints or publish a separate Hull 802/3 cab drawing. Keep that limit visible.
+const exportedHullDrivingCar = (trainFigures as typeof trainFigures & { HULL_802_DRIVING_CAR?: Figure }).HULL_802_DRIVING_CAR;
+const HULL_802_DRIVING_CAR: Figure = exportedHullDrivingCar ?? {
+  value: 25.7, unit: 'm', basis: 'published',
+  source: 'Eversholt Rail, Class 802 fleet dimensions, https://eversholtrail.co.uk/fleet/class-802/ (reviewed 2026-11-09): DPTS & DPTF 25.7 m; GWR fleet, coupling endpoints unspecified.',
+};
 
 export interface InputFingerprint {
   path: string;
@@ -183,7 +194,7 @@ function lengthFigure(family: Family, type: string): Figure {
 function modelFigures(family: Family, type: string, kind: TrainKind): { length: Figure; width: Figure; height: { value: number; basis: string; source: string } } {
   if (family === 'at300') {
     return {
-      length: kind === 'lumo5' ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.lumo5.source } : kind === 'hull5' && DRIVING.has(type as never) ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.hull5.source } : lengthFigure(family, type),
+      length: kind === 'lumo5' ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.lumo5.source } : kind === 'hull5' && DRIVING.has(type as never) ? HULL_802_DRIVING_CAR : lengthFigure(family, type),
       width: kind === 'lumo5' ? { ...FIGURES.bodyWidth, basis: 'assumed', source: TRAIN_SPECS.lumo5.source } : FIGURES.bodyWidth,
       height: {
         value: roofHeight(),
@@ -205,10 +216,11 @@ function expectedDimension(
   published: PublishedValue[],
   modelSources: SourceCitation[],
   note?: string,
+  sourceFile = 'kings-cross-src/core/train.ts',
 ): ExpectedDimension {
   const distinct = new Set(published.map((item) => item.valueM));
   return {
-    modelSpec: { valueM: model.value, basis: model.basis, source: model.source, sourceFile: 'kings-cross-src/core/train.ts', sources: modelSources },
+    modelSpec: { valueM: model.value, basis: model.basis, source: model.source, sourceFile, sources: modelSources },
     published: {
       status: published.length === 0 ? 'not-published' : distinct.size > 1 ? 'source-conflict' : 'reported',
       values: published,
@@ -227,7 +239,7 @@ function modelDimensionSources(kind: TrainKind, dimension: 'length' | 'width' | 
       { ...CLASS_CITATIONS.beacon803, note: 'Owner publishes bogie dimensions, not overall car length, width or height.' },
     ];
     if (kind === 'hull5') return dimension === 'width' ? [CLASS_CITATIONS.angel802] : [
-      { ...CLASS_CITATIONS.wiki800, note: 'Assumed 800/801 cab transfer; the GWR owner’s Class 802 comparison has unspecified coupling endpoints.' },
+      { ...CLASS_CITATIONS.eversholt802, note: 'Published Class 802 DPTS/DPTF and intermediate lengths; GWR fleet, coupling endpoints unspecified.' },
     ];
     return dimension === 'length' ? [CLASS_CITATIONS.hitachi2014, CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801] : [CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801];
   }
@@ -266,8 +278,8 @@ function publishedDimensions(kind: TrainKind, type: string): {
     const drive = DRIVING.has(type as never);
     return {
       length: {
-        values: [{ valueM: drive ? 25.7 : 26, basis: 'published', sources: [CLASS_CITATIONS.wiki802, CLASS_CITATIONS.eversholt802], ...(drive ? { note: 'Eversholt publishes 25.7 m for its GWR Class 802 DPTS/DPTF, without coupling endpoint definitions; this is not a Hull 802/3-specific dimension. The shared model retains an assumed 25.85 m overall cab.' } : {}) }],
-        note: drive ? 'Retain 25.85 m as an ASSUMED Class 800/801 transfer, not a verified Class 802 dimension. Eversholt publishes 25.7 m for GWR Class 802 driving cars, without defining coupling endpoints. Hull fleet owner Angel Trains gives nominal 26 m only. No Hull-specific overall cab dimension was found; do not rescale from a different fleet with unspecified endpoints.' : undefined,
+        values: [{ valueM: drive ? HULL_802_DRIVING_CAR.value : 26, basis: 'published', sources: [CLASS_CITATIONS.eversholt802, CLASS_CITATIONS.wiki802], ...(drive ? { note: 'Eversholt publishes 25.7 m for its GWR Class 802 DPTS/DPTF; coupling endpoints are unspecified, and no Hull 802/3-specific cab drawing is supplied.' } : {}) }],
+        note: drive ? 'Use the published Class 802 driving-car figure, not the Class 800/801 allocated pitch. Eversholt does not define coupling endpoints; Hull fleet owner Angel Trains gives nominal 26 m only. The actual layout and measured mesh remain separately reported, including any difference while the train module awaits its class-specific figure.' : undefined,
       },
       width: { values: [{ valueM: 2.7, basis: 'published', sources: [CLASS_CITATIONS.angel802] }] },
       height: { values: noFigure('Class 802 sources do not give an overall height.'), note: 'No published overall body/roof height was found for Class 802.' },
@@ -360,14 +372,16 @@ function measureKinds(): Axis03Report['kinds'] {
       const geometry = measureCarEnvelope(carGroup);
       const figures = modelFigures(spec.family, car.type, kind);
       const published = publishedDimensions(kind, car.type);
-      const lengthM = expectedDimension(figures.length, published.length.values, modelDimensionSources(kind, 'length'), published.length.note);
+      const lengthSourceFile = kind === 'hull5' && DRIVING.has(car.type) && !exportedHullDrivingCar
+        ? 'kings-cross-src/tools/axis03-evidence.ts' : 'kings-cross-src/core/train.ts';
+      const lengthM = expectedDimension(figures.length, published.length.values, modelDimensionSources(kind, 'length'), published.length.note, lengthSourceFile);
       const widthM = expectedDimension(figures.width, published.width.values, modelDimensionSources(kind, 'width'), published.width.note);
       const heightAboveRailM = expectedDimension(figures.height, published.height.values, modelDimensionSources(kind, 'height'), published.height.note);
       return {
         index: car.index,
         type: car.type,
         model: {
-          vehicleLengthM: figures.length.value,
+          vehicleLengthM: car.length,
           bodyWidthM: figures.width.value,
           bodyRoofHeightAboveRailM: figures.height.value,
         },
@@ -509,7 +523,7 @@ export function createAxis03Report(args: {
       includedMeshes: [...BODY_MESH_NAMES],
       excludedMeshes: ['pantograph-mesh', 'bogie-mesh'],
       excludedGroups: ['pantograph', 'bogie-<car>-<axle> (including wheel markers and both LOD meshes)'],
-      comparisonMeaning: 'Geometry is measured from the built meshes, but those meshes are generated from the same core/train.ts dimensions listed as modelSpec. Geometry-to-model deltas check how the builder realizes its inputs; they are not independent verification. Published values are separate source comparisons. HeightAboveRailM is the highest included vertex y, not the vertical thickness of the mesh box.',
+      comparisonMeaning: 'Geometry is measured from built meshes; model.vehicleLengthM comes from the actual trainLayout. modelSpec lists the core dimensions except for the published Hull Class 802 driving-car reference if its core export is not yet available (sourceFile identifies the fallback). Geometry-to-spec deltas are not independent verification; a pending Hull geometry update remains visible as a delta. Published values are separate source comparisons. HeightAboveRailM is the highest included vertex y, not the vertical thickness of the mesh box.',
       motionKinds: `Copied from the supplied motion report at physical births; no replay or separate kind-resolution loop is run here. Resolver policy: ${motionInputPolicy}`,
     },
     inputs: {
@@ -541,7 +555,7 @@ export function renderAxis03Markdown(report: Axis03Report): string {
     '',
     'Pantograph meshes and all bogie/wheel meshes are excluded from the body/roof envelope. The included `body-detail` mesh also contains nose, roof covers, skirts, underfloor blocks, gangway bellows and coupler geometry; those pieces are not split out in the renderer. The measured length is therefore the car-associated drawn envelope, not a separately isolated bodyshell length.',
     '',
-    '**Evidence limit:** the built meshes and the model-spec values come from the same core dimension inputs. Their difference checks the builder output only; it is not independent verification. The published columns show separate cited class figures. Missing published heights and class-specific transfers stay marked as such.',
+    '**Evidence limit:** built meshes and most model-spec values share the core dimension inputs; their difference is not independent verification. The Hull driving-car spec uses the published Class 802 figure even while an older train module may still draw the Class 800/801 pitch; its actual layout length and mesh delta remain in the JSON, and sourceFile identifies the fallback. The published columns show separate cited class figures. Missing published heights and class-specific transfers stay marked as such.',
     '',
     `Anchors SHA-256: \`${report.inputs.anchors.sha256}\`. Recordings: ${report.inputs.recordings.map((item) => `\`${basename(item.path)}\` (\`${item.sha256.slice(0, 12)}…\`)`).join(', ')}. These recordings are input provenance for the motion-kind join; they are not sources for the static dimensions.`,
     '',
