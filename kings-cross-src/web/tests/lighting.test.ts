@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -361,6 +361,72 @@ test('createSunShadow.update: the box follows the camera\'s target; the map is f
   assert.equal(shadow.update(camera, target, sunDirection(58, 152)), true, 'or shown again');
   camera.position.set(0, 100, 900);
   assert.equal(shadow.update(camera, target, sunDirection(58, 152)), true, 'a step in the box\'s size');
+  shadow.dispose();
+});
+
+test('createSunShadow.update: the lattice and columns cast while the camera is in the concourse, the ribs while it is in the shed, the trees while it is in neither, and the pass stays under its triangle budget (round 5)', () => {
+  const sun = new THREE.DirectionalLight();
+  const shadow = createSunShadow(scene, sun);
+  shadow.tag();
+  scene.updateMatrixWorld(true);
+  const centre = (name: string): THREE.Vector3 => new THREE.Box3().setFromObject(meshes.find((m) => m.name === name) as THREE.Mesh).getCenter(new THREE.Vector3());
+  const triangles = (m: THREE.Mesh): number => (m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute('position').count) / 3 * ((m as THREE.InstancedMesh).isInstancedMesh ? (m as THREE.InstancedMesh).count : 1);
+  const cast = (name: string): boolean => shadow.casters().filter((m) => m.name === name).every((m) => m.castShadow);
+  const camera = new THREE.PerspectiveCamera();
+  const target = new THREE.Vector3();
+  const stand = (p: THREE.Vector3, y: number): number => {
+    camera.position.set(p.x, y, p.z);
+    target.set(p.x + 10, 5, p.z);
+    shadow.update(camera, target, noon);
+    return shadow.casters().filter((m) => m.visible && m.castShadow).reduce((s, m) => s + triangles(m), 0);
+  };
+  const concourse = centre('concourse-lattice'), shed = centre('shed-ribs');
+  // The page draws at most 643,505 triangles without the shadow pass (the nine rubric views, round 4's measure) and must stay under 800,000 on the frame that redraws the map too,
+  // so the pass has 156,495. The page's own casters, flagged, add up to 155,300 in the concourse (and 147,400 drawn, the box culls the rest); this test scene has a few more
+  // buildings (159,191 there), so 165,000 is the alarm here: with the lattice, the columns and the ribs cast from everywhere the pass is 222,000 and 241,000 with the Barlow shed's ribs.
+  const BUDGET = 165_000;
+  const outside = stand(new THREE.Vector3(concourse.x, 0, concourse.z + 300), 120);
+  assert.deepEqual([cast('concourse-lattice'), cast('concourse-column'), cast('shed-ribs'), cast('city-trees')], [false, false, false, true], 'in the open: no lattice, no ribs, the trees');
+  assert.equal(shadow.update(camera, target, noon), false, 'and standing still redraws nothing');
+  const inConcourse = stand(concourse, 2);
+  assert.deepEqual([cast('concourse-lattice'), cast('concourse-column'), cast('shed-ribs'), cast('city-trees')], [true, true, false, false], 'in the concourse: its lattice and columns, not the shed\'s ribs, no trees');
+  const inShed = stand(shed, 2.5);
+  assert.deepEqual([cast('concourse-lattice'), cast('concourse-column'), cast('shed-ribs'), cast('city-trees')], [false, false, true, false], 'in the shed: its ribs');
+  // the camera goes from inside the shed to outside it, the same distance from the same focus: only the casters it holds have changed, and the map has to be drawn again
+  const focus = shed.clone().add(new THREE.Vector3(50, 0, 0));
+  camera.position.copy(shed).setY(2.5);
+  target.copy(focus);
+  shadow.update(camera, target, noon);
+  assert.equal(cast('shed-ribs'), true);
+  camera.position.copy(focus).add(new THREE.Vector3(50, 0, 0)).setY(2.5);
+  assert.equal(shadow.update(camera, target, noon), true, 'a camera walking out of a room redraws the map: the casters it holds changed');
+  assert.equal(cast('shed-ribs'), false);
+  const corner = new THREE.Box3().setFromObject(meshes.find((m) => m.name === 'concourse-lattice') as THREE.Mesh).min.clone().sub(new THREE.Vector3(ROOM_REACH + 3, 0, ROOM_REACH + 3));
+  const atCorner = stand(corner, 8);
+  assert.deepEqual([cast('concourse-lattice'), cast('city-trees')], [false, true], `${ROOM_REACH + 3} m off the concourse's corner is the open air`);
+  for (const [where, n] of [['outside', outside], ['in the concourse', inConcourse], ['in the shed', inShed], ['off the corner', atCorner]] as const) assert.ok(n <= BUDGET, `${where}: ${n} triangles in the shadow pass, over ${BUDGET}`);
+  assert.ok(!SHADOW_CASTERS.has('landmarks-rib'), 'the Barlow shed\'s ribs shade a floor under glass nobody frames, at 18,666 triangles a frame');
+  shadow.dispose();
+});
+
+test('createSunShadow.tag: a room\'s box is taken in world coordinates, before the first render has updated a matrix (the page tags ahead of it)', () => {
+  const room = new THREE.Scene();
+  const group = new THREE.Group();
+  group.position.set(500, 0, -300);
+  const ribs = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 100), new THREE.MeshLambertMaterial());
+  ribs.name = 'shed-ribs';
+  group.add(ribs);
+  room.add(group);
+  const shadow = createSunShadow(room, new THREE.DirectionalLight());
+  shadow.tag();
+  const camera = new THREE.PerspectiveCamera();
+  const focus = new THREE.Vector3(500, 0, -310);
+  camera.position.set(500, 2, -300);
+  shadow.update(camera, focus, noon);
+  assert.equal(ribs.castShadow, true, 'a camera inside the ribs\' box casts them, 500 m from the origin');
+  camera.position.set(0, 2, 0);
+  shadow.update(camera, focus, noon);
+  assert.equal(ribs.castShadow, false, 'and one at the origin does not');
   shadow.dispose();
 });
 

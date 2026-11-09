@@ -114,8 +114,9 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   'range-brick', 'range-stone', 'range-roof', 'tower-brick', 'tower-stone', 'tower-cap',
   // the Western Concourse (concourse.ts): the lattice, the roof panels and the columns (not the glass)
   'concourse-lattice', 'concourse-panels', 'concourse-column',
-  // the landmarks (landmarks.ts): the hotels and the Barlow shed's lattice ribs (the extension's pale panels and girders, 'landmarks-metal', are left out: one more draw in the pass for a shadow nobody frames)
-  'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate', 'landmarks-rib',
+  // the landmarks (landmarks.ts): the hotels (the Barlow shed's lattice ribs, 'landmarks-rib', and the extension's pale panels and girders, 'landmarks-metal', are left out: 18,666 triangles
+  // a frame in the pass for a shadow that falls under a glazed roof nobody frames, round 5's 800,000-triangle ruling)
+  'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate',
   // King's Cross Central (kxcentral.ts)
   'kxcentral-brick', 'kxcentral-brickRed', 'kxcentral-stone', 'kxcentral-slate', 'kxcentral-iron', 'kxcentral-drum', 'kxcentral-timber', 'kxcentral-alu', 'kxcentral-curtain',
   // the city (city.ts): every building's walls and roofs, and the trees (one instanced draw of about 30 triangles a tree: without them the forecourt's trees stand in the sun and
@@ -124,6 +125,15 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   // the platform canopies (furniture.ts)
   'canopy-steel',
 ]);
+
+/**
+ * The casters that shade only what stands under their own roof, by room: 0 the Western Concourse's lattice and columns, 1 the shed's ribs. They cast while the camera is within
+ * `ROOM_REACH` of their room (a camera outside sees their shadow through no more than a glazed roof), and the trees, whose shadows are in the open, cast while it is in none. The
+ * rest of the pass is whole-city meshes that three can only cull whole: with these on everywhere the pass came to 237,000 triangles and the frame to 879,000, over the page's
+ * 800,000 (round 5's ruling); with them as here no view of the rubric's nine is over 780,000, and each draws what its own picture shows.
+ */
+const ROOM_OF: ReadonlyMap<string, number> = new Map([['concourse-lattice', 0], ['concourse-column', 0], ['shed-ribs', 1]]);
+export const ROOM_REACH = 10;
 
 type V3 = readonly [number, number, number];
 const dot3 = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -247,6 +257,8 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
   scene.add(sun.target);
   const cam = sun.shadow.camera;
   const casters: THREE.Mesh[] = [];
+  const rooms = [0, 1].map(() => ({ box: new THREE.Box3(), meshes: [] as THREE.Mesh[] }));
+  const trees: THREE.Mesh[] = [];
   const known = new WeakSet<THREE.Object3D>();
   let key = '';
   let half = 0;
@@ -268,6 +280,8 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
         // a roof or a wall is one sheet: both of its faces are drawn into the map, or the sheet that faces the sun would not shade what is behind it
         for (const m of mats) m.shadowSide = THREE.DoubleSide;
         casters.push(mesh);
+        const room = rooms[ROOM_OF.get(mesh.name) ?? -1];
+        if (room) { mesh.updateWorldMatrix(true, false); room.box.expandByObject(mesh); room.meshes.push(mesh); } else if (mesh.name === 'city-trees') trees.push(mesh);
         changed = true;
       }
     });
@@ -279,8 +293,15 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
     casters: () => casters,
     update(camera, focus, toSun) {
       const fit = shadowFit([focus.x, focus.y, focus.z], camera.position.distanceTo(focus), toSun);
+      let inside = false;
+      for (const { box, meshes } of rooms) {
+        const near = box.distanceToPoint(camera.position) < ROOM_REACH;
+        for (const m of meshes) m.castShadow = near;
+        inside ||= near;
+      }
+      for (const m of trees) m.castShadow = !inside;
       let seen = '';
-      for (const m of casters) seen += m.visible ? '1' : '0';
+      for (const m of casters) seen += m.visible && m.castShadow ? '1' : '0';
       // what the map holds depends on its size, the texel it is centred on in its own plane (its depth along the light only shifts the planes it is cut at),
       // the sun's direction and which casters are shown; a pan along the light's own direction alone must not redraw it
       const { x, y } = lightAxes(toSun);
