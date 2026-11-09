@@ -1,6 +1,6 @@
 """Synthetic board mutations; only named TAP assertion failures count.
 Usage: python3 -I -u tools/mutation/board.py <kings-cross-src> <worktree/.scratch>
-Copies the board projection, its synthetic tests and the tiny shared graph core.
+Copies the board projection, its synthetic tests, the page's panel colours (web/index.html) and the tiny shared graph core.
 """
 import os
 import re
@@ -37,7 +37,7 @@ M = [
         ('nowMs - r.leftAtMs! <= retentionMs', 'nowMs - r.leftAtMs! < retentionMs'),
     ]),
     ('missing standing train called a departure', [
-        ("!train && old.state === 'departing'", '!train'),
+        ("|| old.state === 'departing') {", '|| !train) {'),
     ]),
     ('sample platform rows omitted', [
         ("sample: mode === 'sample'", 'sample: false'),
@@ -92,9 +92,9 @@ M.extend([('station names keep screaming capitals', [("name.trim().toLocaleLower
     "const placeFor = (service: BoardService, direction: Direction): string => false ? stockLabel")]),
  ('future actual exposed early', [('finite(actual) && actual <= nowMs ?', 'finite(actual) ?')]),
  ('positive variation lacks plus',
-  [("rt.variationMinutes > 0 ? '+' : ''", "rt.variationMinutes > 0 ? '' : ''")]),
+  [("minutes > 0 ? '+' : ''", "minutes > 0 ? '' : ''")]),
  ('on time zero variation hidden',
-  [("rt.variationMinutes === 0 ? 'on time'", "rt.variationMinutes === 0 ? ''")]),
+  [("minutes === 0 ? 'on time'", "minutes === 0 ? ''")]),
  ('compact board rows become tall', [('line-height:20px', 'line-height:40px')]),
  ('Due shown before platforms',
   [('<h2>Platforms 0–10</h2>${platformRows}${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : '
@@ -126,7 +126,7 @@ M.extend([
     ('approach origin becomes destination', [('stationName(row.service.originName || row.service.origin)', 'stationName(row.service.destinationName || row.service.destination)')]),
     ('unannounced platform invents P0', [("return sorted.length === 1 ? `P${sorted[0]}` : 'TBC';", "return sorted.length === 1 ? `P${sorted[0]}` : 'P0';")]),
     ('approach stock exposes depot', [("stockCall(row.service, 'arrival') ? stockLabel", "stockCall(row.service, 'arrival') ? stationName(row.service.originName || row.service.origin)")]),
-    ('approach route tooltip unescaped', [('<div class="kx-board-approach" title="${escape(title)}">', '<div class="kx-board-approach" title="${title}">')]),
+    ('approach route tooltip unescaped', [('<div class="kx-board-approach${cancelledClass(row.service)}" title="${escape(title)}">', '<div class="kx-board-approach${cancelledClass(row.service)}" title="${title}">')]),
     ('approach facts lose fixed columns', [('grid-template-columns:32px 12px 56px 56px minmax(0,1fr)', 'grid-template-columns:32px 12px minmax(0,1fr)')]),
     ('approach platform candidates overflow cell', [('const candidates = row.platforms ?? [], platform = platformLabel(candidates);', 'const candidates = row.platforms ?? [], platform = platformRangeLabel(candidates);')]),
     ('approach tooltip hides full platform candidates', [('const platformTooltip = platform === \'TBC\' && candidates.length ? `TBC (possible ${platformRangeLabel(candidates)})` : platform;', 'const platformTooltip = platform;')]),
@@ -145,6 +145,19 @@ M.extend([
     ('stock wording removed', [("const stockLabel = 'Not in service (empty stock)';", "const stockLabel = 'empty stock';")]),
     ('cancellation labels omitted', [("const cancelled = (service?: BoardService): boolean => !!service && (service.stp === 'C' || (service.realtime?.cancelled ?? service.cancelled) === true);", "const cancelled = (service?: BoardService): boolean => false;")]),
     ('cancellation facts are not applied', [('if (cancellation) {', 'if (false && cancellation) {')]),
+    ('five minutes late is not orange-red', [("variationMinutes >= VERY_LATE_FROM_MIN ? 'very-late'", "variationMinutes > VERY_LATE_FROM_MIN ? 'very-late'")]),
+    ('delay label omitted from platform rows', [('${delayChip(service, direction, nowMs)}<span class="kx-board-operator">', '<span class="kx-board-operator">')]),
+    ('late amber too dim for the dark panel', [('--kx-late:#f2b84b', '--kx-late:#7a5a00')]),
+    ('departing row bracket omitted', [("<strong>${leaving ? '(' : ''}", "<strong>${leaving ? '' : ''}")]),
+    ('departing row dropped as soon as it leaves the stop', [('const carried = platform === undefined &&', 'const carried = false && platform === undefined &&')]),
+    ('another train does not release a departing row', [("if (!p.trains.some((r) => r.state === 'standing')) continue;", 'continue;')]),
+    ('departing row held without a time bound', [('&& nowMs - leftAt <= (options.leavingMaxMs ?? LEAVING_MAX_MS)', '')]),
+    ('departing train dropped by the motion model is lost', [("|| old.state === 'departing') {", "|| old.state === 'departing' && false) {")]),
+    ('exiting train not treated as leaving', [("const leaving = train.state === 'departing' || train.exiting === true;", "const leaving = train.state === 'departing';")]),
+    ('due label cell not flexed', [("${flexed ? ' kx-board-with-delay' : ''}", '')]),
+    ('due label may shrink away', [('.kx-board-with-delay .kx-board-delay{flex:0 0 auto}', '.kx-board-with-delay .kx-board-delay{flex:0 1 auto}')]),
+    ('platform label may shrink away', [('.kx-board .kx-board-delay{flex:0 0 auto;', '.kx-board .kx-board-delay{flex:0 1 auto;')]),
+    ('operator keeps its room beside a label', [('.kx-board-train:has(.kx-board-delay) .kx-board-operator{max-width:48px}', '.kx-board-train:has(.kx-board-delay) .kx-board-operator{max-width:92px}')]),
 ])
 MUTATIONS = [(F, label, changes) for label, changes in M] + [('web/src/feed.ts', label, changes) for label, changes in FM]
 
@@ -197,6 +210,7 @@ try:
     shutil.copy2(src / F, root / F)
     shutil.copy2(src / 'web/src/feed.ts', root / 'web/src/feed.ts')
     shutil.copy2(src / 'web/tests/board.test.ts', root / 'web/tests/board.test.ts')
+    shutil.copy2(src / 'web/index.html', root / 'web/index.html')  # the delay-colour contrast test reads the page's panel colours
     shutil.copy2(src / 'package.json', root / 'package.json')
     (root / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
     originals = {name: (src / name).read_text() for name in [F, 'web/src/feed.ts']}

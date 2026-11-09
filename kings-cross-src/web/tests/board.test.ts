@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildGraph } from '../../core/graph.ts';
-import type { Graph } from '../../core/graph.ts';
+import type { Edge, Graph } from '../../core/graph.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
-import type { BoardRow, BoardTrain, BoardService } from '../src/board.ts';
-import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, boardLayout, createBoard, stationName, operatorName } from '../src/board.ts';
+import type { BoardRow, BoardTrain, BoardService, DelayClass } from '../src/board.ts';
+import { approachPlatforms, applyBoardTrust, boardHtml, boardRows, boardLayout, createBoard, stationName, operatorName,
+  delayClass, LATE_FROM_MIN, VERY_LATE_FROM_MIN, PLATFORM_CLEAR_M, LEAVING_MAX_MS } from '../src/board.ts';
 
 import { createLiveFeed, createReplayFeed, createScheduleFeed, ukDate } from '../src/feed.ts';
 import type { EventStream } from '../src/feed.ts';
@@ -88,12 +89,13 @@ test('runtime fan-out reaches platforms recursively and approaching rows use cur
 });
 
 test('departures retain their simulation timestamp and age out after the retention window', () => {
-  const graph = network([[1, 0, 0], [2, 100, 0], [3, 200, 0]], [[1, 2, 3]]);
+  // The leaving edge is long enough that the departing body's tail is clear of the platform (PLATFORM_CLEAR_M from its stop).
+  const graph = network([[1, 0, 0], [2, 100, 0], [3, 1000, 0]], [[1, 2, 3]]);
   const [platformEdge, leavingEdge] = graph.edges;
   const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
   const standing = train(1, { state: 'held', speed: 0, lastBerth: '1004', occupied: [{ edge: platformEdge!, fromT: 0.5, toT: 0.85 }] });
   const first = boardRows([standing], map, { nowMs: 1000, graph });
-  const departing = train(1, { state: 'departing', speed: 2, lastBerth: '1004', occupied: [{ edge: leavingEdge!, fromT: 0, toT: 0.3 }] });
+  const departing = train(1, { state: 'departing', speed: 2, lastBerth: '1004', occupied: [{ edge: leavingEdge!, fromT: 0.45, toT: 0.7 }] });
   const left = boardRows([departing], map, { previous: first, nowMs: 12_000, graph });
   assert.equal(left.departed.length, 1);
   assert.equal(left.departed[0]!.state, 'leaving');
@@ -776,4 +778,240 @@ test('HTTP cancellation metadata is readable and live SSE and recording replay a
     await live.refresh(); await replay.refresh();
     assert.deepEqual(live.services(), replay.services(), 'refresh cannot reimport a stale live cancellation');
   } finally { liveFeed.dispose(); replayFeed.dispose(); live.dispose(); replay.dispose(); }
+});
+
+// ---- Delay colours -------------------------------------------------------------------------------------------------
+// Thresholds under test (board.ts, delayClass): on time or early <= 0 min green, 1-4 min late amber, 5+ min late
+// orange-red, cancelled red, no TRUST report unknown (no colour, no label).
+function boardCss(): string {
+  const doc = new FakeDocument(), parent = new FakeElement(doc);
+  const controller = createBoard(parent as unknown as HTMLElement);
+  const css = parent.children[0]!.children[0]!.textContent;
+  controller.dispose();
+  return css;
+}
+
+test('delay classes: 0 and early on time, 1 to 4 late, 5 and over very late, cancelled wins, no report unknown', () => {
+  assert.equal(LATE_FROM_MIN, 1);
+  assert.equal(VERY_LATE_FROM_MIN, 5);
+  const cases: [number | null | undefined, DelayClass][] = [
+    [-30, 'ontime'], [-2, 'ontime'], [-1, 'ontime'], [0, 'ontime'], [0.99, 'ontime'],
+    [1, 'late'], [2, 'late'], [4, 'late'], [4.99, 'late'],
+    [5, 'very-late'], [6, 'very-late'], [13, 'very-late'], [10_080, 'very-late'],
+    [null, 'unknown'], [undefined, 'unknown'], [NaN, 'unknown'], [Infinity, 'unknown'], [-Infinity, 'unknown'],
+  ];
+  for (const [minutes, expected] of cases) assert.equal(delayClass(minutes), expected, `${minutes} minutes`);
+  for (const minutes of [-3, 0, 1, 7, null, undefined, NaN]) assert.equal(delayClass(minutes, true), 'cancelled', `cancelled with ${minutes}`);
+  assert.equal(delayClass(7, false), 'very-late');
+});
+
+test('board rows print the delay in words and signed minutes, with a class per band and nothing without a report', () => {
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  const held = train(1, { state: 'held', lastBerth: '1004' });
+  const arrivalReport = (variationMinutes: number | null, extra: Partial<NonNullable<BoardService['realtime']>> = {}): BoardService =>
+    service({ departure: null, departureMs: null, publicDeparture: null, publicDepartureMs: null,
+      realtime: { eventType: 'ARRIVAL', actualArrivalMs: bookedAt + 60_000 + 60_000 * (variationMinutes ?? 0), variationMinutes, ...extra } });
+  const html = (call: BoardService, nowMs = bookedAt + 30 * 60_000): string => boardHtml(boardRows([held], map, { nowMs, services: [call] }));
+  const chip = (cls: string, text: string): RegExp => new RegExp(`<span class="kx-board-delay kx-delay-${cls}">${text}</span>`);
+  assert.match(html(arrivalReport(0)), chip('ontime', 'On time'));
+  assert.match(html(arrivalReport(-2)), chip('ontime', 'Early -2'));
+  assert.match(html(arrivalReport(1)), chip('late', 'Late \\+1'));
+  assert.match(html(arrivalReport(4)), chip('late', 'Late \\+4'));
+  assert.match(html(arrivalReport(5)), chip('very-late', 'Late \\+5'));
+  assert.match(html(arrivalReport(13)), chip('very-late', 'Late \\+13'));
+  // The existing text facts stay: signed minutes and the actual time remain in the row description and tooltip.
+  assert.match(html(arrivalReport(6)), /\(\+6\) actual 10:07/);
+  assert.match(html(arrivalReport(0)), /title="[^"]*arr 10:01 on time actual 10:01/);
+  // No report, a future actual, or a report for the other event: no label and no class at all.
+  for (const quiet of [service({ departure: null, departureMs: null }), arrivalReport(null),
+    arrivalReport(6, { actualArrivalMs: bookedAt + 40 * 60_000 }), arrivalReport(6, { eventType: 'DEPARTURE' })]) {
+    assert.doesNotMatch(html(quiet), /kx-board-delay|kx-delay-/, JSON.stringify(quiet.realtime));
+  }
+  // Cancelled wins over any variation: the row's own text turns red, and there is no on-time or late label.
+  const cancelledLate = html({ ...arrivalReport(7), cancelled: true });
+  assert.match(cancelledLate, /class="kx-board-train kx-delay-cancelled" title=/);
+  assert.match(cancelledLate, /class="kx-board-state">Cancelled<\/span>/);
+  assert.doesNotMatch(cancelledLate, /kx-board-delay|Late \+7/);
+  // Due rows carry the same label in a flex cell after the destination (the name is cut first, never the label), departed rows before it.
+  const due = boardHtml(boardRows([], anchors([]), { nowMs: bookedAt, services: [service({ realtime: { eventType: 'ARRIVAL', variationMinutes: 6 } })] }));
+  assert.match(due, /class="kx-board-description kx-board-with-delay"><span class="kx-board-place">from Synthetic Origin<\/span> <span class="kx-board-delay kx-delay-very-late">Late \+6<\/span><\/span>/);
+  // A due row has a report only when the train is early (it arrived before its booked time); the actual time follows the label.
+  const early = boardHtml(boardRows([], anchors([]), { nowMs: bookedAt - 60_000, services: [service({
+    realtime: { eventType: 'ARRIVAL', actualArrivalMs: bookedAt - 2 * 60_000, variationMinutes: -2 } })] }));
+  assert.match(early, /<span class="kx-board-delay kx-delay-ontime">Early -2<\/span> <span class="kx-board-actual">actual 09:58<\/span><\/span>/);
+  assert.doesNotMatch(boardHtml(boardRows([], anchors([]), { nowMs: bookedAt, services: [service()] })), /kx-board-with-delay|kx-board-place/);
+  const css = boardCss();
+  assert.match(css, /\.kx-board-with-delay \.kx-board-delay\{flex:0 0 auto\}/);
+  assert.match(css, /\.kx-board-with-delay \.kx-board-place\{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis\}/);
+  // On a platform row the label never shrinks and the operator, the least important column, yields room first.
+  assert.match(css, /\.kx-board \.kx-board-delay\{flex:0 0 auto;/);
+  assert.match(css, /\.kx-board-train:has\(\.kx-board-delay\) \.kx-board-operator\{max-width:48px\}/);
+  const gone = boardRows([], anchors([]), { nowMs: bookedAt + 30 * 60_000, services: [] });
+  gone.departed.push({ trainId: 9, headcode: '1A01', state: 'leaving', platform: 4, leftAtMs: bookedAt, service: service({
+    realtime: { eventType: 'DEPARTURE', actualDepartureMs: bookedAt + 12 * 60_000, variationMinutes: 3 } }) });
+  assert.match(boardHtml(gone), /<span class="kx-board-route"><span class="kx-board-delay kx-delay-late">Late \+3<\/span> Synthetic Destination<\/span>/);
+  gone.departed[0]!.service = service({ cancelled: true });
+  assert.match(boardHtml(gone), /class="kx-board-departure kx-delay-cancelled" title=/);
+  gone.approaching.push({ trainId: 8, headcode: '1A01', state: 'approaching', platforms: [4], service: service({ stp: 'C' }) });
+  assert.match(boardHtml(gone), /class="kx-board-approach kx-delay-cancelled" title=/);
+});
+
+test('delay colours are WCAG AA on the board panel in both themes, over a dark, dusk and bright backdrop', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const page = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const css = boardCss();
+  const hex = (s: string): number[] => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16));
+  const luminance = (rgb: number[]): number => {
+    const [r, g, b] = rgb.map((c) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  };
+  const contrast = (a: number[], b: number[]): number => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi! + 0.05) / (lo! + 0.05); };
+  const tokens = (declarations: string): Record<string, string> =>
+    Object.fromEntries([...declarations.matchAll(/--kx-([a-z-]+):(#[0-9a-f]{6})/g)].map((m) => [m[1]!, m[2]!]));
+  const themes = [
+    { name: 'dark', tokens: tokens(/\.kx-board\{(--kx-ontime[^}]*)\}/.exec(css)![1]!), root: /:root \{([^}]*)\}/.exec(page)![1]!,
+      backdrops: { 'horizon dusk': hex('#35465e'), 'pale daytime sky': [135, 206, 235] } },
+    { name: 'light', tokens: tokens(/:root\[data-theme="light"\] \.kx-board\{([^}]*)\}/.exec(css)![1]!), root: /:root\[data-theme="light"\] \{([^}]*)\}/.exec(page)![1]!,
+      backdrops: { 'horizon dusk': hex('#35465e'), 'black night': [0, 0, 0] } },
+  ];
+  for (const theme of themes) {
+    assert.deepEqual(Object.keys(theme.tokens).sort(), ['cancelled', 'late', 'ontime', 'very-late'], theme.name);
+    const panel = /--panel:\s*rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/.exec(theme.root)!;
+    const [r, g, b, alpha] = [Number(panel[1]), Number(panel[2]), Number(panel[3]), Number(panel[4])];
+    const pageColour = hex(/--bg:\s*(#[0-9a-f]{6})/.exec(theme.root)![1]!);
+    for (const [backdropName, backdrop] of Object.entries({ 'page background': pageColour, ...theme.backdrops })) {
+      const back = [r!, g!, b!].map((c, i) => c * alpha! + backdrop[i]! * (1 - alpha!));
+      for (const [name, colour] of Object.entries(theme.tokens)) {
+        assert.ok(contrast(hex(colour), back) >= 4.5, `${theme.name} ${name} ${colour} on the panel over ${backdropName}: ${contrast(hex(colour), back).toFixed(2)}:1`);
+      }
+    }
+  }
+});
+
+// ---- A departing train keeps its platform row, bracketed -------------------------------------------------------------
+// One straight line: node 1 at 0 m, node 2 at 100 m, node 3 at 1000 m. Platform 4's stop is 80 m along the first edge.
+function departureLine() {
+  const graph = network([[1, 0, 0], [2, 100, 0], [3, 1000, 0]], [[1, 2, 3]]);
+  const [first, second] = graph.edges as [Edge, Edge];
+  const map = anchors([anchor('1004', 1, 2, 0.8, '4')]);
+  // A body is a tail-to-nose trail: tail at `tail` metres, 60 m long, towards larger x.
+  const body = (tail: number, length = 60) => [
+    ...(tail < 100 ? [{ edge: first, fromT: tail / 100, toT: Math.min(tail + length, 100) / 100 }] : []),
+    ...(tail + length > 100 ? [{ edge: second, fromT: Math.max(tail - 100, 0) / 900, toT: (tail + length - 100) / 900 }] : []),
+  ];
+  const standing = (extra: Partial<BoardTrain> = {}): BoardTrain => train(1, { state: 'held', speed: 0, lastBerth: '1004', occupied: body(20), ...extra });
+  const pulling = (tail: number, extra: Partial<BoardTrain> = {}): BoardTrain => train(1, { state: 'departing', speed: 3, lastBerth: '1004', occupied: body(tail), ...extra });
+  return { graph, map, body, standing, pulling };
+}
+
+test('a train that starts to depart keeps its platform row, in brackets and dimmed, with its departure time kept', () => {
+  const { graph, map, standing, pulling } = departureLine();
+  const services = [service()];
+  const first = boardRows([standing()], map, { nowMs: bookedAt, graph, services });
+  assert.deepEqual(first.platforms[4]!.trains.map((r) => r.state), ['standing']);
+  assert.doesNotMatch(boardHtml(first), /kx-board-leaving|kx-board-close|\(1A01/);
+  const started = bookedAt + 20_000;
+  const out = boardRows([pulling(21)], map, { nowMs: started, graph, services, previous: first });
+  assert.deepEqual(out.platforms[4]!.trains.map((r) => [r.headcode, r.state, r.leftAtMs]), [['1A01', 'departing', started]]);
+  assert.equal(out.departed.length, 0);
+  const html = boardHtml(out);
+  assert.match(html, /class="kx-board-train kx-board-leaving" title=/);
+  assert.match(html, /<strong>\(1A01<\/strong> <span class="kx-board-description">Synthetic Destination · dep 10:09/);
+  assert.match(html, /<\/span><span class="kx-board-close">\)<\/span>/);
+  // Dimmed: lighter, italic, muted colours, never opacity (which would undo the contrast the delay colours promise).
+  const css = boardCss();
+  assert.match(css, /\.kx-board \.kx-board-leaving\{font-style:italic\}/);
+  assert.match(css, /\.kx-board \.kx-board-leaving strong\{[^}]*font-weight:400;color:var\(--muted\)/);
+  assert.doesNotMatch(css, /kx-board-leaving[^}]*opacity/);
+});
+
+test('a departing train stays bracketed while its tail is alongside the platform and goes to Departed once it has cleared', () => {
+  const { graph, map, standing, pulling } = departureLine();
+  const stop = 80;
+  let rows = boardRows([standing()], map, { nowMs: 10_000, graph });
+  rows = boardRows([standing()], map, { nowMs: 14_000, graph, previous: rows });
+  const run = (tail: number, nowMs: number) => (rows = boardRows([pulling(tail)], map, { nowMs, graph, previous: rows }));
+  run(21, 20_000);
+  assert.equal(rows.platforms[4]!.trains[0]!.leftAtMs, 20_000);
+  // Off the stop, tail 40 m away: no longer covers the buffer anchor, but is still drawn along the platform.
+  // Its dwell stays frozen at the last standing snapshot.
+  run(stop + 40, 25_000);
+  assert.deepEqual(rows.platforms[4]!.trains.map((r) => [r.state, r.leftAtMs, r.stoodMs]), [['departing', 20_000, 4_000]]);
+  assert.equal(rows.departed.length, 0);
+  run(stop + PLATFORM_CLEAR_M - 1, 40_000);
+  assert.deepEqual(rows.platforms[4]!.trains.map((r) => r.state), ['departing'], 'one metre inside the reach');
+  // Clear: the row leaves the platform and Departed keeps the moment it began to pull out, not when it cleared.
+  run(stop + PLATFORM_CLEAR_M + 1, 41_000);
+  assert.equal(rows.platforms[4]!.trains.length, 0);
+  assert.deepEqual(rows.departed.map((r) => [r.trainId, r.state, r.platform, r.leftAtMs]), [[1, 'leaving', 4, 20_000]]);
+  // The reach is the documented constant, and a caller can narrow it.
+  assert.equal(PLATFORM_CLEAR_M, 300);
+  const narrow = boardRows([pulling(stop + 100)], map, { nowMs: 25_000, graph, previous: boardRows([pulling(21)], map, { nowMs: 20_000, graph,
+    previous: boardRows([standing()], map, { nowMs: 10_000, graph }) }), platformClearM: 50 });
+  assert.equal(narrow.platforms[4]!.trains.length, 0);
+  assert.equal(narrow.departed[0]!.leftAtMs, 20_000);
+});
+
+test('another train standing on the platform releases a train still pulling out to Departed', () => {
+  const { graph, map, body, standing, pulling } = departureLine();
+  let rows = boardRows([standing()], map, { nowMs: 10_000, graph });
+  rows = boardRows([pulling(21)], map, { nowMs: 20_000, graph, previous: rows });
+  rows = boardRows([pulling(120)], map, { nowMs: 25_000, graph, previous: rows });
+  assert.deepEqual(rows.platforms[4]!.trains.map((r) => r.trainId), [1]);
+  const next = train(2, { description: '1A02', state: 'held', speed: 0, lastBerth: '1004', occupied: body(20) });
+  rows = boardRows([pulling(130), next], map, { nowMs: 26_000, graph, previous: rows });
+  assert.deepEqual(rows.platforms[4]!.trains.map((r) => [r.trainId, r.state]), [[2, 'standing']]);
+  assert.deepEqual(rows.departed.map((r) => [r.trainId, r.state, r.leftAtMs]), [[1, 'leaving', 20_000]]);
+  // The released train is not drawn on the platform again by a later snapshot while the other stands there.
+  rows = boardRows([pulling(140), next], map, { nowMs: 27_000, graph, previous: rows });
+  assert.deepEqual(rows.platforms[4]!.trains.map((r) => r.trainId), [2]);
+  assert.deepEqual(rows.departed.map((r) => r.trainId), [1]);
+});
+
+test('a train held alongside the platform is released after LEAVING_MAX_MS, to the millisecond', () => {
+  const { graph, map, standing, pulling } = departureLine();
+  assert.equal(LEAVING_MAX_MS, 90_000);
+  const first = boardRows([standing()], map, { nowMs: 10_000, graph });
+  const started = boardRows([pulling(21)], map, { nowMs: 20_000, graph, previous: first });
+  // Blocked behind a signal with its tail still 40 m from the stop: the motion model keeps it `departing` at speed 0.
+  const blocked = (nowMs: number, previous: ReturnType<typeof boardRows>, extra: Partial<BoardTrain> = {}) =>
+    boardRows([pulling(120, { speed: 0, ...extra })], map, { nowMs, graph, previous });
+  const inside = blocked(20_000 + LEAVING_MAX_MS, started);
+  assert.deepEqual(inside.platforms[4]!.trains.map((r) => r.state), ['departing']);
+  const outside = blocked(20_000 + LEAVING_MAX_MS + 1, inside);
+  assert.equal(outside.platforms[4]!.trains.length, 0);
+  assert.deepEqual(outside.departed.map((r) => [r.trainId, r.leftAtMs]), [[1, 20_000]], 'a stopped train still counts as departed, not lost');
+  // Once its route is done the model calls it `held` at the next berth: still alongside, still bracketed, then released on time too.
+  const halted = { state: 'held', lastBerth: 'SIG1' } as const;
+  assert.deepEqual(blocked(21_000, started, halted).platforms[4]!.trains.map((r) => r.state), ['departing']);
+  assert.equal(blocked(20_000 + LEAVING_MAX_MS + 1, inside, halted).platforms[4]!.trains.length, 0);
+  // And the option moves the bound.
+  const short = boardRows([pulling(120, { speed: 0 })], map, { nowMs: 20_000 + 5_001, graph, previous: started, leavingMaxMs: 5_000 });
+  assert.equal(short.platforms[4]!.trains.length, 0);
+});
+
+test('a departing train with no body, no graph or no motion record leaves the platform row at once', () => {
+  const { graph, map, standing, pulling } = departureLine();
+  const first = boardRows([standing()], map, { nowMs: 10_000, graph });
+  const started = boardRows([pulling(21)], map, { nowMs: 20_000, graph, previous: first });
+  assert.equal(started.platforms[4]!.trains.length, 1);
+  // Moved off the stop, but the model gives nothing to measure with: no graph, or no occupied track.
+  assert.equal(boardRows([pulling(120)], map, { nowMs: 21_000, previous: started }).departed.length, 1);
+  assert.equal(boardRows([pulling(120, { occupied: [] })], map, { nowMs: 21_000, graph, previous: started }).departed.length, 1);
+  // The motion model dropped the train (it faded or vanished) while it was pulling out.
+  const dropped = boardRows([], map, { nowMs: 21_000, graph, previous: started });
+  assert.deepEqual(dropped.departed.map((r) => [r.trainId, r.leftAtMs]), [[1, 20_000]]);
+  assert.equal(dropped.platforms[4]!.trains.length, 0);
+  // A standing train that vanishes is still not evidence of a departure.
+  assert.equal(boardRows([], map, { nowMs: 15_000, graph, previous: first }).departed.length, 0);
+});
+
+test('a train the motion model marks as exiting is leaving too, but one that merely stands is not bracketed', () => {
+  const { graph, map, standing, body } = departureLine();
+  const first = boardRows([standing()], map, { nowMs: 10_000, graph });
+  const exiting = boardRows([train(1, { state: 'estimated', exiting: true, speed: 1, lastBerth: '1004', occupied: body(21) })], map, { nowMs: 20_000, graph, previous: first });
+  assert.deepEqual(exiting.platforms[4]!.trains.map((r) => r.state), ['departing']);
+  const estimated = boardRows([train(1, { state: 'estimated', speed: 0, lastBerth: '1004', occupied: body(20) })], map, { nowMs: 20_000, graph, previous: first });
+  assert.deepEqual(estimated.platforms[4]!.trains.map((r) => r.state), ['standing']);
+  assert.doesNotMatch(boardHtml(estimated), /kx-board-leaving/);
 });
