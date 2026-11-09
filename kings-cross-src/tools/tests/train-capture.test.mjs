@@ -7,7 +7,7 @@ import {EventEmitter} from 'node:events';
 import * as T from 'three';
 import {ALL_KINDS} from '../../core/train.ts';
 import {buildTrain} from '../../web/src/train.ts';
-import {selectPortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
+import {selectPortalFrames,verifyPortalSequence,capturePortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
 import {detailCamera,inspectTrainFrame,sequenceCamera,setCaptureView,trainBounds,followTrainCamera,portalTrainCamera,intersectCaptureRay} from '../train-framing.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from '../capture-runtime.mjs';
 const frame=(timeMs,speedMps=0)=>({timeMs,point:[0,10],speedMps,state:speedMps?'moving':'held',lengthM:26,reversals:0,occupied:[{a:1,b:2,fromT:0,toT:1,edgeLengthM:40}]});
@@ -149,8 +149,8 @@ test('deadlines and termination signal the detached browser group and cleanup wa
  const retained=await cleanupCaptureBrowser(undefined,'synthetic-profile',{remove:async()=>{throw Object.assign(new Error('busy'),{code:'ENOTEMPTY'});},warn:()=>{}});assert.equal(retained.profileRetained,'synthetic-profile');assert.equal(retained.warnings.length,1);
 });
 
-test('portal selection requires a moving physical entry straddling the face in time order',()=>{
- const history=[-8,-2,2,8].map((alongM,i)=>({...frame(i*1000,2),alongM}));
+test('portal selection requires a moving physical tail entry straddling the face in time order',()=>{
+ const history=[10.4,14.3,18.2,22.1,30].map((alongM,i)=>({...frame(i*1000,2),alongM}));
  assert.deepEqual(selectPortalFrames(history),history);
  assert.equal(selectPortalFrames(history.slice(0,2)),null);
  assert.equal(selectPortalFrames(history.map(f=>({...f,speedMps:0}))),null);
@@ -159,19 +159,58 @@ test('portal selection requires a moving physical entry straddling the face in t
  assert.deepEqual(capturePlans({portalMode:true,captureCandidates:[p]}).requirements,['0-portal-entry']);
  assert.throws(()=>capturePlans({portalMode:true,captureCandidates:[{...p,portal:null}]}));
 });
-test('portal camera frames an opening from exterior terrain and ray-tests only exterior coach surfaces',()=>{
- const {scene,group,camera,controls}=sceneFixture(),ground={heightAt:()=>0};
- const portal={origin:[0,20],axis:[0,1],across:[1,0],bore:{lateral:0,width:8}};
- const view=portalTrainCamera(T,camera,controls,group,[0,26],ground,portal);
- assert.ok(view.camera.position[2]<portal.origin[1]);assert.ok(view.camera.position[2]>-40);
- assert.equal(view.detail.includePoint(new T.Vector3(0,2,21)),false);
- assert.equal(view.detail.includePoint(new T.Vector3(0,2,19.9)),false);
- assert.equal(view.detail.includePoint(new T.Vector3(0,2,10)),true);
- assert.equal(view.detail.includePoint(new T.Vector3(0,2,-20)),false);
- assert.ok(view.camera.openingNdc.every(p=>Math.abs(p[0])<.88&&Math.abs(p[1])<.88));
- assert.equal(inspectTrainFrame(T,scene,camera,group,ground,{detail:view.detail,minScreenSpan:.1}).clear,true);
- const wall=new T.Mesh(new T.BoxGeometry(10,10,.1),new T.MeshBasicMaterial());wall.name='synthetic-portal-interior';wall.position.set(0,3,21);scene.add(wall);
- assert.equal(inspectTrainFrame(T,scene,camera,group,ground,{detail:view.detail,minScreenSpan:.1}).clear,true,'legitimate interior concealment is outside exterior sample set');
- const raised=portalTrainCamera(T,camera,controls,group,[0,26],{heightAt:()=>20},portal);assert.equal(raised.camera.position[1],20.5);
- assert.throws(()=>portalTrainCamera(T,camera,controls,group,[0,26],{heightAt:()=>NaN},portal),/terrain/);
+const fixedPortalCamera=()=>({position:[20,6,-40],target:[0,3,0],fov:55});
+const portalMeasurements=()=>[26,20,13,6,0].map((visibleLengthM,i)=>({timeMs:i*1000,camera:fixedPortalCamera(),
+ visibility:{clear:true,visibleLengthM,outsideLengthM:visibleLengthM,buriedVisibleLengthM:0,track:{visible:true,rendered:true}}}));
+test('portal sequences require decreasing measured train length from one fixed exterior camera',()=>{
+ const measured=portalMeasurements(),result=verifyPortalSequence(measured);
+ assert.equal(result.initialVisibleLengthM,26);assert.equal(result.finalVisibleLengthM,0);assert.equal(result.decreaseM,26);
+ for(const change of [m=>m[1].visibility.visibleLengthM=26,m=>m[4].visibility.visibleLengthM=7,
+  m=>m[0].visibility.visibleLengthM=0,m=>m[1].visibility.clear=false,m=>m[2].camera.position[0]++,
+  m=>m[2].camera.target[0]++,m=>m[2].timeMs=0,m=>m[3].visibility.visibleLengthM=NaN,
+  m=>m[0].visibility.track.visible=false,m=>m[0].visibility.track.rendered=false]){
+  const m=portalMeasurements();change(m);assert.throws(()=>verifyPortalSequence(m));
+ }
+ assert.throws(()=>verifyPortalSequence(measured.slice(0,1)));
+ const tiny=portalMeasurements().slice(0,4);tiny.forEach((f,i)=>f.visibility.visibleLengthM=3-i);
+ assert.throws(()=>verifyPortalSequence(tiny),/no measurable train/);
+});
+test('portal capture retries whole fixed-camera sequences and publishes only a complete valid sequence',async()=>{
+ const frames=[10.4,14.3,18.2,22.1,30].map((alongM,i)=>({...frame(i*1000,2),alongM}));
+ const p={...plan('portal-entry'),frames,portal:{id:'synthetic'}},published=[],visits=[],seeks=[];
+ const result=await capturePortalFrames(p,{
+  seek:async f=>seeks.push(f.timeMs),
+  inspect:async(f,candidate,camera)=>{
+   visits.push({candidate,fixed:camera!==undefined});
+   const i=frames.indexOf(f),actual={...f,id:p.trainId,description:p.description,kind:p.kind,rendered:true,
+    camera:camera??fixedPortalCamera(),visibility:portalMeasurements()[i].visibility};
+   if(candidate===0&&i===1)actual.visibility={...actual.visibility,clear:false,reason:'outside body hidden',blocker:'Scene/central/timber',
+    occluder:{chain:[{name:'timber',type:'Mesh',userData:{source:'synthetic'}},{name:'central',type:'Group',userData:{}}],distanceM:12.5,targetDistanceM:24}};
+   return actual;
+  },
+  picture:async()=>Buffer.from('synthetic PNG'),
+  publish:async(f,actual,bytes)=>{published.push({timeMs:f.timeMs,bytes:String(bytes)});return 'frame-'+f.timeMs;},
+ });
+ assert.equal(result.frames.length,5);assert.equal(result.validation.decreaseM,26);assert.equal(result.attempts.length,1);
+ assert.equal(result.attempts[0].candidate,0);assert.equal(result.frames[0].candidate,1);
+ assert.equal(result.attempts[0].blocker,'Scene/central/timber');assert.ok(result.attempts[0].occluder,'occluder diagnostics must survive capture failure');
+ assert.equal(result.attempts[0].occluder.distanceM,12.5);
+ assert.equal(result.attempts[0].occluder.chain[0].userData.source,'synthetic');
+ assert.match(result.attempts[0].reason,/outside body hidden by Scene\/central\/timber at 12.500 m/);
+ assert.deepEqual(seeks,[0,1000,0,1000,2000,3000,4000]);
+ assert.deepEqual(visits.map(v=>v.fixed),[false,true,false,true,true,true,true]);
+ assert.equal(published.length,5);assert.equal(published[0].timeMs,0);assert.equal(published[4].bytes,'synthetic PNG');
+ let attempts=0;
+ await assert.rejects(capturePortalFrames(p,{seek:async()=>{},inspect:async()=>{attempts++;throw new Error('solid face');},picture:async()=>{},publish:async()=>assert.fail('failed shots must stay unpublished')}),/no valid fixed-camera portal entry/);
+ assert.equal(attempts,6);
+ const resultAfterFlat=await capturePortalFrames(p,{seek:async()=>{},inspect:async(f,candidate,camera)=>{
+  const i=frames.indexOf(f);return {...f,id:p.trainId,description:p.description,kind:p.kind,rendered:true,camera:camera??fixedPortalCamera(),
+   visibility:candidate===0?{...portalMeasurements()[i].visibility,visibleLengthM:26}:portalMeasurements()[i].visibility};
+ },picture:async()=>Buffer.from('synthetic'),publish:async()=>''});
+ assert.equal(resultAfterFlat.frames[0].candidate,1,'clear individual frames cannot bypass the progressive entry check');
+ let inspections=0;
+ await assert.rejects(capturePortalFrames(p,{seek:async()=>{},inspect:async(f,candidate,camera)=>{inspections++;return {...f,id:p.trainId,description:p.description,kind:p.kind,
+  rendered:true,camera:camera??fixedPortalCamera(),visibility:portalMeasurements()[frames.indexOf(f)].visibility};},picture:async()=>Buffer.from('synthetic'),
+  publish:async()=>{throw new Error('filesystem unavailable');}}),/filesystem unavailable/);
+ assert.equal(inspections,5,'a publication error must not retry a partial write');
 });

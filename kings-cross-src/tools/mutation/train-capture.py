@@ -16,8 +16,30 @@ M = [
  ('portal entry accepts stationary frame', C, '||f.speedMps<=.05', ''),
  ('portal sequence accepts backward time', C, '||(i&&f.timeMs<=frames[i-1].timeMs)', ''),
  ('portal capture skips face metadata', C, '!p?.portal||', ''),
- ('portal samples include buried body', F, 'return w<-.3&&w>-28', 'return true'),
- ('portal camera stays below drawn terrain', F, 'position[1]=Math.max(position[1],groundY+.5)', 'position[1]=6'),
+ ('portal selection captures the leading end instead of the final coaches', C, '[lengthM-remainingM,lengthM-remainingM*.75,lengthM-remainingM*.5,lengthM-remainingM*.25,lengthM+4]', '[-8,-2,2,8]'),
+ ('portal camera crosses the city again', F, 'const distance=[45,60,78][index]', 'const distance=[245,260,278][index]'),
+ ('portal body bins drop shallow visible sides', F, '<=1e-6)return;', '<.2)return;'),
+ ('portal blocker name lost from failure', C, 'blocker:visibility?.blocker??null', 'blocker:null'),
+ ('portal blocker distance lost from failure', C, 'occluder:visibility?.occluder??null', 'occluder:null'),
+ ('portal fixed camera moves between frames', C, '!sameCamera(frame.camera)', 'false'),
+ ('portal entry accepts nondecreasing visible length', C, 'frames[i-1].visibility.visibleLengthM-length<=.5', 'false'),
+ ('portal entry accepts backward frame times', C, 'frame.timeMs<=frames[i-1].timeMs', 'false'),
+ ('portal entry starts with no measurable train', C, 'first.visibility.visibleLengthM<4', 'false'),
+ ('portal entry accepts track never rendered', C, '!first.visibility.track.rendered', 'false'),
+ ('portal camera is reset for every frame', C, 'inspect(expected,candidate,camera)', 'inspect(expected,candidate,undefined)'),
+ ('portal frame images published before sequence validation', C, 'pictures.push(await picture(expected,actual))', 'pictures.push(await picture(expected,actual));await publish(expected,actual,pictures.at(-1))'),
+ ('portal sequence validation not run by capture', C, 'validation=verifyPortalSequence(frames)', 'validation={decreaseM:26}'),
+ ('portal alternatives stop before sixth candidate', C, 'candidate<6', 'candidate<3'),
+ ('portal camera stays below drawn terrain', F, 'position.y=Math.max(3.5,groundY+.5)', 'position.y=8'),
+ ('portal camera clips remaining exterior body', F, 'Math.abs(n.x)<.84&&Math.abs(n.y)<.84', 'Math.abs(n.x)<100&&Math.abs(n.y)<100'),
+ ('outside train allowed to disappear', F, 'if(outsideFailure)return fail(', 'if(false)return fail('),
+ ('train passes through tunnel cover visibly', F, 'if(buriedFailure)return fail(', 'if(false)return fail('),
+ ('transparent scenery conceals physical train', F, '(!m?.transparent||m.opacity>=.98)', 'true'),
+ ('portal capture clips exterior body', F, 'if(outside&&!visible)', 'if(outside&&!visible&&framed)'),
+ ('portal track check ignored', F, "if(!track)return fail('track not visibly", "if(false)return fail('track not visibly"),
+ ('unrelated grid mistaken for tunnel track', F, "o.name!=='track-tunnel'||", ''),
+ ('off-bore track accepted as aperture evidence', F, 'Math.abs(portalCoordinates(p,portal).u)>bore.width/2-.15', 'false'),
+ ('elevated line accepted as railhead', F, '||Math.abs(p.y)>.02', ''),
  ('no measured movement required', C, '&&c.movedM>=1', '&&true'),
  ('all-day capture completeness ignored', C, "if(missing.length)throw new Error(`no measured sequence candidates", "if(false)throw new Error(`no measured sequence candidates"),
  ('one bad sequence aborts the run', C, 'catch(error){failed.push(', 'catch(error){throw error;failed.push('),
@@ -61,7 +83,7 @@ M = [
  ('undrawn large mesh triangles become occluders', F, 'geometry.drawRange.count<(index?.count??positions.count)', 'false'),
 ]
 def run(work):
-    return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/portal-entry.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
 with tempfile.TemporaryDirectory(prefix='train-capture-', dir=out) as directory:
     work=Path(directory)/'kings-cross-src'
     for name in ['tools','core','web']:
