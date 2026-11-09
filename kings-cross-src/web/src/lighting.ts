@@ -365,8 +365,17 @@ vec4 roofShade( vec3 p, vec4 loss ) {
  * over a point is the concourse's (cover.ts `ROOM_ROOFS`) a Lambert surface also gets a fill: a warm-neutral irradiance that follows the hemisphere's own intensity (so it
  * follows the hour and the sky), kept less under cloud (the exposure already doubles then), added as the hemisphere's light is, scaled by the surface's own colour and by
  * how far under the roof it is. The amounts are ASSUMED, judged by the Range's and the floor's colour in the frozen views against those photographs.
+ *
+ * It is weighted twice, in the shader (round five, the concourse worker's finding). Added alike in every direction it put about +0.44 (linear) on white steel, and the tone map's shoulder (from
+ * 0.45 up, at the noon rig's exposure) squeezed the diagrid's members and the funnel's legs into 225 to 235 whatever way a face turned, tinted warm: the legs' luminance spread (p90 less p10, at
+ * concourse-funnel-up) fell from 39 to 4, and under cloud the roof and the legs dissolved into the sky. So the fill is scaled by how far down the face seen looks (`down`: the room's light comes
+ * from above, so a face straight down keeps 1 less `down` of it, a floor or a wall all of it) and by how pale the surface is (`pale`: 1 less `pale` times the square of its green, so white steel,
+ * green 0.92 to 0.95, keeps about half of it, the Range's brick, 0.25, 0.96, and the floor, 0.36, 0.92). Noon-clear, the legs' spread and mean luminance, and the roof members' mean, at concourse-funnel-up and
+ * concourse-roof-detail: the concourse's own emissive is a flat glow on the steel (0x91979d on the funnel, 0xa9aeb4 on the members) that no weight here reaches, so with it on, the spread is 10
+ * (mean 217, members 219) against 4 (228, 230) before; with it off (the concourse worker is removing it), 32 (mean 182, members 154) against 10 (212, 207). The photographs (conc-ab, conc-b) read the
+ * legs at a mean of 176 to 188 and the roof's underside at about 152. The Range's brick moves from (110, 91, 64) to (108, 90, 63) with the emissive on and (109, 92, 65) off, the floor from L 32.9 to 32.8.
  */
-export const INTERIOR = { level: 1.5, cloud: 0.5, tint: [1, 0.94, 0.84] } as const;
+export const INTERIOR = { level: 1.5, cloud: 0.5, tint: [1, 0.94, 0.84], down: 0.5, pale: 0.6 } as const;
 
 /**
  * The fill's irradiance, per colour (linear), for a hemisphere of this intensity under this much cloud (0 clear, 1 overcast); written into `out`. It is the amount for a surface wholly
@@ -415,11 +424,12 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 {
   vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );
+  float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
-  if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) ) * material.diffuseColor * RECIPROCAL_PI;
+  if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) * ( 1.0 - ${INTERIOR.down.toFixed(2)} * looksDown ) * ( 1.0 - ${INTERIOR.pale.toFixed(2)} * material.diffuseColor.g * material.diffuseColor.g ) ) * material.diffuseColor * RECIPROCAL_PI;
 #ifdef ${GLOW_BELOW}
-  totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
+  totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;
 #endif
 }`);
     shader.fragmentShader = fragment;

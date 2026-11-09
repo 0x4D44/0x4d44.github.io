@@ -510,9 +510,9 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   assert.equal(m.customProgramCacheKey(), 'prior+roofShade', 'its key is kept in the program\'s, so a surface that is also wet-patched is its own program');
   assert.notEqual(new THREE.MeshLambertMaterial().customProgramCacheKey(), m.customProgramCacheKey());
   assert.equal(f.split('float coverGroundAt(').length - 1, 1, 'the cover read is in once');
-  const fill = 'if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) ) * material.diffuseColor * RECIPROCAL_PI;';
+  const fill = `if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) * ( 1.0 - ${INTERIOR.down.toFixed(2)} * looksDown ) * ( 1.0 - ${INTERIOR.pale.toFixed(2)} * material.diffuseColor.g * material.diffuseColor.g ) ) * material.diffuseColor * RECIPROCAL_PI;`;
   const order = ['float coverGroundAt(', 'float coverRoomAt(', '#include <lights_lambert_pars_fragment>', 'uniform vec3 uInteriorFill;', 'vec4 roofShade(', '#include <lights_fragment_end>',
-    'vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );', 'reflectedLight.indirectDiffuse *= roofK.rgb;', 'reflectedLight.directDiffuse *= roofK.a;', fill, '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
+    'vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );', 'float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );', 'reflectedLight.indirectDiffuse *= roofK.rgb;', 'reflectedLight.directDiffuse *= roofK.a;', fill, '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'declared above where it is used; applied after the lights, before the output');
   assert.ok(f.indexOf('uniform vec4 uRoofShade;') < f.indexOf('vec4 roofShade('), 'the uniform is declared first');
@@ -526,6 +526,45 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   assert.equal(plain.customProgramCacheKey().endsWith('+roofShade'), true);
 });
 
+test('addRoofShade: the concourse\'s fill is weighted by how far down the face looks and by how pale the surface is, so white steel keeps its modelling and the Range\'s brick and the floor keep their fill (round five, the funnel legs)', () => {
+  // The finding (the concourse worker's, on main 8f4e358a): the fill added alike in every direction to every Lambert surface under the roof put about +0.44 (linear) on white steel, which the
+  // tone map's shoulder (from 0.45 up at the noon rig's exposure of 1.25) squeezed into 225 to 235 whatever way a face turned, tinted warm: the funnel legs' luminance spread (p90 less p10 at
+  // concourse-funnel-up) fell from 39 to 4, and under cloud the roof and the legs dissolved into the sky.
+  assert.ok(INTERIOR.down > 0 && INTERIOR.down < 1, `a face looking straight down keeps some of the fill, not none and not all: ${INTERIOR.down}`);
+  assert.ok(INTERIOR.pale > 0 && INTERIOR.pale < 1, `the palest surface keeps some of it: ${INTERIOR.pale}`);
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  addRoofShade(m);
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  assert.equal(f.split('float looksDown').length - 1, 1, 'how far down the face seen looks is worked out once, for the fill and for the glow below');
+  // the two weights as the shader has them, run: the green of the surface's own colour in place of the shader's `material.diffuseColor.g`
+  const line = f.split('\n').find((l) => l.includes('uInteriorFill *')) ?? '';
+  const part = (re: RegExp): string => re.exec(line)?.[0] ?? '';
+  const direction = part(/\( 1\.0 - [0-9.]+ \* looksDown \)/);
+  const colour = part(/\( 1\.0 - [0-9.]+ \* material\.diffuseColor\.g \* material\.diffuseColor\.g \)/).replaceAll('material.diffuseColor.g', 'g');
+  assert.ok(direction !== '' && colour !== '', `both weights are in the fill: ${line}`);
+  const glsl = new Glsl('');
+  const weight = (looksDown: number, g: number): number => (glsl.evaluate(direction, { vars: {} }, { looksDown }) as number) * (glsl.evaluate(colour, { vars: {} }, { g }) as number);
+  const close = (a: number, b: number, what: string): void => assert.ok(Math.abs(a - b) < 1e-9, `${what}: ${a} against ${b}`);
+  close(weight(0, 0), 1, 'a dark face turned up or sideways keeps all of it');
+  close(weight(1, 0), 1 - INTERIOR.down, 'a dark face looking straight down keeps 1 less `down` of it: an underside is lit by what the floor throws back, not by the room');
+  close(weight(0, 1), 1 - INTERIOR.pale, 'a white face turned up or sideways keeps 1 less `pale` of it');
+  close(weight(1, 1), (1 - INTERIOR.down) * (1 - INTERIOR.pale), 'a white underside, both');
+  assert.ok(weight(0.6, 0.9) < weight(0.2, 0.9) && weight(0.2, 0.9) < weight(0, 0.9), 'the further down a face looks, the less it keeps');
+  assert.ok(weight(0, 0.9) < weight(0, 0.6) && weight(0, 0.6) < weight(0, 0.25), 'the paler the surface, the less it keeps');
+  // the scene's own colours: the steel of the diagrid and the funnel keeps half of it or less, the Range's brick (the stock brick: its texture's average colour in Node) and the floor nearly all
+  const named = meshes.flatMap(materialsOf);
+  const green = (name: string): number => {
+    const found = named.find((x) => x.name === name) as THREE.MeshLambertMaterial | undefined;
+    assert.ok(found, `${name} is in the scene`);
+    return found.color.g;
+  };
+  for (const steel of ['concourse-member', 'concourse-funnel']) assert.ok(weight(0, green(steel)) < 0.55, `${steel}: ${weight(0, green(steel))}`);
+  assert.ok(weight(0, (material('brick') as THREE.MeshLambertMaterial).color.g) > 0.95, 'the Range\'s brick keeps its fill: it is held at (110, 94, 71) by it');
+  assert.ok(weight(0, (material('concourseFloor') as THREE.MeshLambertMaterial).color.g) > 0.9, 'and the floor, a mid grey');
+});
+
 test('addRoofShade: a material with the GLOW_BELOW define has its glow multiplied by how far down the face seen looks, before the emissive is summed; one without compiles the line away (round five, D5)', () => {
   assert.equal(GLOW_BELOW, 'GLOW_BELOW');
   // round five (the historic D5 scorer): from inside the Barlow shed the glazed crown was the darkest band of the vault, where hist-d and hist-d2 show it the brightest. The glow gain of 30
@@ -536,8 +575,9 @@ test('addRoofShade: a material with the GLOW_BELOW define has its glow multiplie
   const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
   const f = shader.fragmentShader;
-  const hook = `totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );`;
-  const order = ['#include <lights_fragment_end>', 'reflectedLight.directDiffuse *= roofK.a;', `#ifdef ${GLOW_BELOW}`, hook, '#endif', 'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'].map((needle) => f.indexOf(needle));
+  // `looksDown` is declared once in the shade's block, for this hook and the concourse's fill to share: how far down the face seen looks
+  const hook = `totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;`;
+  const order = ['#include <lights_fragment_end>', 'float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );', 'reflectedLight.directDiffuse *= roofK.a;', `#ifdef ${GLOW_BELOW}`, hook, '#endif', 'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'].map((needle) => f.indexOf(needle));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'in the shade\'s block, after the lights are summed and before the emissive joins the output, and only under the define');
   assert.equal(f.split(hook).length - 1, 1, 'once');
