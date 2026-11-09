@@ -402,6 +402,17 @@ export const STATION_VIEW_TABLE = Object.freeze([['station-25m', 25, 'cab'], ['s
 export const STATION_VIEWS = Object.freeze(STATION_VIEW_TABLE.map(([suffix]) => suffix));
 /** V10 placements, in the order they are tried: the nose at the buffers (as the page stands its own sample trains), then turned so the leading cab is at the north end. */
 export const STATION_ORIENTATIONS = Object.freeze(['nose-at-buffers', 'cab-at-north-end']);
+/**
+ * How a V10 view that has no clear camera at its kind's stop is answered, for the manifest and every sidecar that moved. The stops are the page's own: it stands its sample trains at
+ * the shed's buffer stops (web/src/main.ts) and matches each stop to the platform whose south end is nearest it across the shed; a platform's formation limit is core/station.ts
+ * platformFormationLimits (the published length less the stop clearance), and a kind fits where its layout is no longer than the limit (web/src/trains-live.ts kindForService, createTrainKinds);
+ * no limit is no restriction, and nothing in the page restricts a platform to an operator.
+ */
+export const ALTERNATE_RULE = 'A V10 view with no clear camera at the stop its kind stands at is searched again at the other buffer stops of the shed where the page\'s own rules let this train stand: the page matches '
+  + 'each stop to the platform whose south end is nearest it across the shed (web/src/main.ts), a platform\'s formation limit is core/station.ts platformFormationLimits, and a kind fits where its layout is no '
+  + 'longer than that limit (web/src/trains-live.ts kindForService); a platform with no limit is no restriction and the page restricts no platform to an operator. Platforms 9 and 10 have no stop in the shed\'s list '
+  + '(core/station.ts shedBufferStops), so the page stands no train there. The stops are tried nearest the kind\'s own stop across the shed first, then west to east, each with the nose at the buffers and then '
+  + 'turned so the leading cab is at the north end, by the same search as the first stop; the first placement that gives the view a clear camera takes it. Only a view with no clear camera moves: every other view of the kind keeps its stop.';
 export const VIEW_IDS = Object.freeze([...STAGE_VIEWS.map(([id]) => id), 'V10']);
 
 const D2R = Math.PI / 180;
@@ -697,29 +708,49 @@ export function stationCameras({ placement, spec, platforms, inside, stepDeg = 1
   return { focusWorld, candidateCount: all.length, spreadCount: kept.length, candidates };
 }
 /**
+ * The stops, other than the one the specimen stands at (`primary`), where the page's own rules let a train of `lengthM` stand (ALTERNATE_RULE). `stops` are [{ index, id, u, platform, limitM }]:
+ * the shed's buffer stops with the platform the page matches each to and that platform's formation limit (null: none). A stop fits when its platform has no limit or the train is no longer than
+ * it (trains-live.ts: `layout.length <= limit + 1e-8`). They come nearest `primary` across the shed (`u`, metres across the shed) first, then west to east: the same order on every run, none by hand.
+ */
+export function alternateStops({ stops, primary = CATALOGUE.stationStopIndex, lengthM }) {
+  const home = stops.find(s => s.index === primary)?.u ?? 0;
+  return stops.filter(s => s.index !== primary && (s.limitM == null || lengthM <= s.limitM + 1e-8))
+    .sort((a, b) => Math.abs(a.u - home) - Math.abs(b.u - home) || a.index - b.index);
+}
+/** A placement of a plan by its id: one of the kind's own stop, or one of the other stops its views can move to. */
+export const findPlacement = (station, id) => (id == null ? null : station.placements.find(p => p.id === id) ?? station.alternates?.find(p => p.id === id) ?? null);
+/**
  * Everything V10 needs before the page is asked anything, a pure function of the formation and the station's data: the placements in the
  * order they are tried (each orientation at the chosen buffer stop) with every view's candidate cameras, and one plan row per view. A view
  * with no platform point at its distance from either focus is a GAP already; the rest are OK until the search says otherwise.
- * `inside(xz, pts)` is core/station.ts pointInPolygon; `standing(stop)` is its standingTrainPose at the stop.
+ * `inside(xz, pts)` is core/station.ts pointInPolygon; `standing(stop)` is its standingTrainPose at the stop. With `stopInfo` (alternateStops' input) the plan also carries `alternates`:
+ * the placements at the other stops the page lets this train stand, in the order they are tried, each with the platform and limit its stop was matched to. They are not searched with the
+ * first stop's: a view that has no clear camera there is searched in them (alternatePlacementsFor), and no other view moves.
  */
 export function planStation(f, { heading, stops, platforms, inside, standing, stopIndexes = [CATALOGUE.stationStopIndex], orientations = STATION_ORIENTATIONS, stepDeg = 1,
-  edgeClearM = CATALOGUE.platformEdgeClearM, max = CATALOGUE.stationMaxCandidates, minSeparationDeg = CATALOGUE.stationMinSeparationDeg }) {
-  const specs = stationViewSpecs(f), placements = [];
+  edgeClearM = CATALOGUE.platformEdgeClearM, max = CATALOGUE.stationMaxCandidates, minSeparationDeg = CATALOGUE.stationMinSeparationDeg, stopInfo = null }) {
+  const specs = stationViewSpecs(f), placements = [], alternates = [];
+  const place = (index, stop, orientation, extra = {}) => {
+    const placement = { id: `stop-${index}-${orientation}`, orientation, stop: { index, id: stop.id, x: stop.x, z: stop.z }, ...extra, ...stationPlacement({ standing: standing(stop), heading, length: f.length, orientation }) };
+    placement.views = specs.map(spec => ({ suffix: spec.suffix, region: spec.region, ...stationCameras({ placement, spec, platforms, inside, stepDeg, edgeClearM, max, minSeparationDeg }) }));
+    return placement;
+  };
   for (const index of stopIndexes) {
     const stop = stops[index];
     if (!stop) continue;
-    for (const orientation of orientations) {
-      const placement = { id: `stop-${index}-${orientation}`, orientation, stop: { index, id: stop.id, x: stop.x, z: stop.z }, ...stationPlacement({ standing: standing(stop), heading, length: f.length, orientation }) };
-      placement.views = specs.map(spec => ({ suffix: spec.suffix, region: spec.region, ...stationCameras({ placement, spec, platforms, inside, stepDeg, edgeClearM, max, minSeparationDeg }) }));
-      placements.push(placement);
-    }
+    for (const orientation of orientations) placements.push(place(index, stop, orientation));
+  }
+  if (stopInfo) for (const s of alternateStops({ stops: stopInfo, primary: stopIndexes[0], lengthM: f.length })) {
+    const stop = stops[s.index];
+    if (!stop || stopIndexes.includes(s.index)) continue;
+    for (const orientation of orientations) alternates.push(place(s.index, stop, orientation, { alternate: { platform: s.platform ?? null, limitM: s.limitM ?? null } }));
   }
   const views = specs.map(spec => {
     const candidateCount = placements.reduce((n, p) => n + p.views.find(v => v.suffix === spec.suffix).candidateCount, 0);
     return { ...spec, status: candidateCount ? 'OK' : 'GAP', candidateCount,
       reason: candidateCount ? null : `no platform point lies exactly ${spec.distanceM} m from the ${spec.focus} focus, in any placement` };
   });
-  return { specs, placements, views, context: { platforms, inside, edgeClearM } };
+  return { specs, placements, alternates, views, context: { platforms, inside, edgeClearM } };
 }
 /** Which placement the search settled on: the first with every view clear, else the first with the most clear views (the search stops at the first full one); -1 if none was tried. */
 export function chooseStation(report) {
@@ -739,7 +770,9 @@ const stationBase = (spec, placement, planned, platformHeightM) => ({ id: 'V10',
     rotation: { ruleId: 'station-placement', basis: 'the specimen stands where the real track at the buffer stop puts it; the sun is not consulted', rotationY: placement.rotationY, orientation: placement.orientation } } : {}) });
 /** What a station view says of itself in its sidecar. */
 const stationNotes = view => ({ focus: view.focus, distanceM: view.distanceM, azimuthDeg: view.azimuthDeg ?? null, platform: view.platform ?? null, placement: view.placement?.id ?? null, orientation: view.placement?.orientation ?? null,
-  stop: view.placement?.stop ?? null, eyeAbovePlatformM: CATALOGUE.eyeAbovePlatformM, platformHeightM: view.platformHeightM, sceneryKept: true });
+  stop: view.placement?.stop ?? null, eyeAbovePlatformM: CATALOGUE.eyeAbovePlatformM, platformHeightM: view.platformHeightM, sceneryKept: true,
+  // a view that moved to another stop says so, and why, wherever its notes are read
+  ...(view.search?.alternate ? { movedFrom: view.search.alternate.for, movedBecause: view.search.alternate.reason, platformLimitM: view.search.alternate.platformLimitM ?? null } : {}) });
 /**
  * How much of a view's candidate list its search inspected, split by pass. The candidates are listed spread first, then the thinned-out
  * neighbours (stationCameras), so how many were tested says how many of each: `tested` of the `candidateCount` positions over platforms.
@@ -754,7 +787,7 @@ const searchCounts = (tested, planned) => {
  * Nothing is invented: a view with no clear camera has no pose.
  */
 export function stationViewsFromSearch(station, report, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
-  const at = chooseStation(report), chosen = at >= 0 ? report[at] : null, placement = chosen ? station.placements.find(p => p.id === chosen.placementId) : null;
+  const at = chooseStation(report), chosen = at >= 0 ? report[at] : null, placement = chosen ? findPlacement(station, chosen.placementId) : null;
   const search = { placements: report.map(r => ({ id: r.placementId, clear: r.clear })), chosen: placement?.id ?? null };
   return station.views.map(spec => {
     const planned = placement?.views.find(v => v.suffix === spec.suffix), base = stationBase(spec, placement, planned, platformHeightM), found = chosen?.views[spec.suffix];
@@ -777,8 +810,9 @@ export function stationViewsFromSearch(station, report, { platformHeightM = CATA
  */
 export function stationViewsFromFrozen(station, held, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
   return station.views.map(spec => {
-    const entry = held?.views?.[spec.suffix], p = entry?.plan, placement = station.placements.find(x => x.id === p?.placement?.id) ?? null;
-    const planned = placement?.views.find(v => v.suffix === spec.suffix), frozen = { frozen: true };
+    const entry = held?.views?.[spec.suffix], p = entry?.plan, placement = findPlacement(station, p?.placement?.id);
+    // a view that moved to another stop (ALTERNATE_RULE) keeps its record of where it moved from and why, so a replay of the file says so too
+    const planned = placement?.views.find(v => v.suffix === spec.suffix), moved = placement?.alternate ? entry?.outcome?.search?.alternate : undefined, frozen = moved ? { frozen: true, alternate: moved } : { frozen: true };
     const finish = view => ({ ...view, notes: stationNotes(view) });
     if (p?.status !== 'OK' || !placement) return finish({ ...stationBase(spec, placement, planned, platformHeightM), status: 'GAP', reason: entry?.outcome?.reason ?? entry?.reason ?? 'no reason recorded', blocker: entry?.outcome?.blocker ?? null, search: frozen });
     return finish({ ...stationBase(spec, placement, planned, platformHeightM), status: 'OK', reason: null, eye: p.eye, target: p.target, near: p.near, azimuthDeg: p.azimuthDeg, platform: p.platform, search: frozen });
@@ -801,15 +835,55 @@ export function reseatBlockedStationViews(station, blocked, report, opts) {
     if (!f) throw new Error(`reseatBlockedStationViews: ${b.view.suffix} is not a V10 view of this plan`);
     // the target is the view's focus, the same for every camera of the view, so only the camera (eye, bearing, platform) and why it failed are kept
     if (f.status === 'OK') {
-      replacements.push({ ...f, search: { ...f.search, replacesFrozen: { eye: b.view.eye ?? null, azimuthDeg: b.view.azimuthDeg ?? null, platform: b.view.platform ?? null,
-        reason: b.reason ?? null, blocker: b.blocker ?? b.view.blocker ?? null } } });
+      // (a view that moved to another stop still says so: its camera was replaced in the stop it moved to)
+      const view = { ...f, search: { ...f.search, ...(b.view.search?.alternate ? { alternate: b.view.search.alternate } : {}),
+        replacesFrozen: { eye: b.view.eye ?? null, azimuthDeg: b.view.azimuthDeg ?? null, platform: b.view.platform ?? null, reason: b.reason ?? null, blocker: b.blocker ?? b.view.blocker ?? null } } };
+      replacements.push({ ...view, notes: stationNotes(view) });
     } else stays.set(b.view.suffix, `${b.reason}; searched again in ${b.view.placement.id}: ${f.reason}`);
   }
   return { replacements, stays };
 }
 /**
+ * The placements of `station.alternates` cut down to the views in `suffixes`: what the page is asked to search for the views that have no clear camera at their stop. The page's search
+ * (searchStation) tries the placements in order and stops at the first where every view asked is clear, so a view is searched at as few stops as it needs.
+ */
+export const alternatePlacementsFor = (station, suffixes) => (station.alternates ?? []).map(p => ({ ...p, views: p.views.filter(v => suffixes.includes(v.suffix)) }));
+/**
+ * V10 views that had no clear camera at their stop, answered by the search of the other stops (alternatePlacementsFor): `gaps` are [{ view, reason, blocker }], the view as it stands (its
+ * placement is the stop it had no camera at), what it was told then and what blocked it; `report` is the page's search. A view takes the first alternate placement in the report that gave
+ * it a clear camera: a view of the search's own making, standing in that placement, whose search block says where it moved from and why, and which stops were tried up to it. A view no stop
+ * gave a camera stays a GAP, and its reason says both what was tried at its own stop and that every other stop was tried too. Returns `moves` (the new views) and `stays` (suffix -> reason).
+ */
+export function alternateViewsFromSearch(station, gaps, report, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
+  const moves = [], stays = new Map();
+  for (const g of gaps) {
+    const suffix = g.view.suffix, spec = station.views.find(v => v.suffix === suffix);
+    if (!spec) throw new Error(`alternateViewsFromSearch: ${suffix} is not a V10 view of this plan`);
+    const stopsTried = report.map(r => {
+      const p = findPlacement(station, r.placementId), v = r.views[suffix];
+      return { placement: r.placementId, stop: p?.stop?.index ?? null, platform: p?.alternate?.platform ?? null, platformLimitM: p?.alternate?.limitM ?? null, tested: v.tested, clear: v.accepted != null };
+    });
+    const at = report.findIndex(r => r.views[suffix].accepted != null);
+    if (at < 0) {
+      const failures = failureSummary(report.flatMap(r => r.views[suffix].tried));
+      stays.set(suffix, `${g.reason}; also searched ${report.length} placement(s) at ${new Set(stopsTried.map(s => s.stop)).size} other stop(s) where the page lets this train stand: no clear camera in any`
+        + `${failures.length ? `; blocked by ${failures.map(([k, n]) => `${k} x${n}`).join('; ')}` : ''}`);
+      continue;
+    }
+    const hit = report[at], placement = findPlacement(station, hit.placementId), planned = placement.views.find(v => v.suffix === suffix), found = hit.views[suffix], c = planned.candidates[found.accepted.index];
+    const alternate = { ruleId: 'alternate-stops-v1', rule: ALTERNATE_RULE, for: g.view.placement?.id ?? null, reason: g.reason ?? null, blocker: g.blocker ?? null, chosen: hit.placementId,
+      platformLimitM: placement.alternate?.limitM ?? null, stopsTried: stopsTried.slice(0, at + 1) };
+    const view = { ...stationBase(spec, placement, planned, platformHeightM), status: 'OK', reason: null, eye: c.eye, target: planned.focusWorld, near: c.near, azimuthDeg: c.azimuthDeg, platform: c.platform,
+      search: { placements: report.slice(0, at + 1).map(r => ({ id: r.placementId, clear: r.clear })), chosen: hit.placementId, ...searchCounts(found.tested, planned), pass: c.pass,
+        rejectedBefore: found.tried.filter(t => !t.clear), alternate } };
+    moves.push({ ...view, notes: stationNotes(view) });
+  }
+  return { moves, stays };
+}
+/**
  * Every way the frozen V10 poses of one kind differ from what this run derives: a view missing, a placement this run cannot derive (or two
- * placements in one kind), a camera that no longer lies exactly `distanceM` from the focus over a platform, or numbers that moved by more than `tol`.
+ * placements of the kind's own stop in one kind; a view that moved to another stop, ALTERNATE_RULE, stands in a placement of its own and is checked like any other), a camera that no
+ * longer lies exactly `distanceM` from the focus over a platform, or numbers that moved by more than `tol`.
  */
 export function stationFrozenDrift(station, held, { tol = 1e-6 } = {}) {
   const drifts = [], { platforms, inside, edgeClearM } = station.context;
@@ -818,10 +892,13 @@ export function stationFrozenDrift(station, held, { tol = 1e-6 } = {}) {
     const p = held?.views?.[spec.suffix]?.plan;
     if (!p) { drifts.push({ view: spec.suffix, reason: 'view missing from the frozen poses' }); continue; }
     if (p.status !== 'OK') continue;
-    const placement = station.placements.find(x => x.id === p.placement?.id);
+    const placement = findPlacement(station, p.placement?.id);
     if (!placement) { drifts.push({ view: spec.suffix, reason: 'frozen placement is not one this run derives', at: '/placement/id' }); continue; }
-    if (placementId !== null && placementId !== placement.id) { drifts.push({ view: spec.suffix, reason: 'views of one kind must share one placement', at: '/placement/id' }); continue; }
-    placementId = placement.id;
+    // a view that moved to another stop (ALTERNATE_RULE) stands in a placement of its own; every other view of the kind shares the kind's
+    if (!placement.alternate) {
+      if (placementId !== null && placementId !== placement.id) { drifts.push({ view: spec.suffix, reason: 'views of one kind must share one placement', at: '/placement/id' }); continue; }
+      placementId = placement.id;
+    }
     const wanted = { orientation: placement.orientation, stop: placement.stop, position: placement.position, rotationY: placement.rotationY };
     const placementAt = poseDifference(wanted, { orientation: p.placement.orientation, stop: p.placement.stop, position: p.placement.position, rotationY: p.placement.rotationY }, tol, '/placement');
     if (placementAt !== null) { drifts.push({ view: spec.suffix, reason: 'placement differs from the frozen placement', at: placementAt }); continue; }

@@ -10,7 +10,8 @@ import path from 'node:path';
 import * as T from 'three';
 import {ALL_KINDS,TRAIN_SPECS,trainLayout} from '../../core/train.ts';
 import {PLATFORM_HEIGHT} from '../../core/scene.ts';
-import {pointInPolygon} from '../../core/station.ts';
+import {KINGS_CROSS_PLATFORM_LENGTHS_M,pointInPolygon} from '../../core/station.ts';
+import {DEFAULT_BUFFER_CLEARANCE_M} from '../../core/motion.ts';
 import {buildTrain,bodySpec,carPlan} from '../../web/src/train.ts';
 import {trainNight} from '../../web/src/train-geom.ts';
 import * as F from '../train-framing.mjs';
@@ -28,7 +29,8 @@ const view=(kind,suffix)=>{const v=any(kind,suffix);assert.equal(v.status,'OK',`
 const mirror=(p,L)=>[-p[0],p[1],L-p[2]];
 const AT300=['lner5','lner9','hull5','lumo5'];
 // written out, not read from the tool, so a changed word is a failed test
-const LNER_NOTE='the model draws the car pattern shared by these classes; it does not distinguish the bi-mode 800 from the electric 801 (no underfloor engines, one roof/pantograph pattern); it is not claimed to match either variant';
+const LNER_NOTES={lner5:'stated class: the electric Class 801/1 (five cars). The bi-mode Class 800/2 has the same body shape and car pattern but carries diesel engines under its cars; the model draws none (a plain underframe, one roof and pantograph pattern), so it is stated as the 801 and is not claimed to match the 800',
+ lner9:'stated class: the electric Class 801/2 (nine cars). The bi-mode Class 800/1 has the same body shape and car pattern but carries diesel engines under its cars; the model draws none (a plain underframe, one roof and pantograph pattern), so it is stated as the 801 and is not claimed to match the 800'};
 const CLASSES={lner5:'800/2, 801/1',lner9:'800/1, 801/2',hull5:'802/3',lumo5:'803',gn387x4:'387',gn387x8:'387 x2',gn387x12:'387 x3',gn717x6:'717',gc180x5:'180',tl700x8:'700/0',tl700x12:'700/1'};
 
 test('catalogue plans every required view of every kind once, in rubric order, as OK, GAP or N/A with a reason',()=>{
@@ -582,7 +584,7 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.deepEqual(sidecar.visibility,{clear:true});assert.deepEqual(sidecar.pixels,{ok:true});assert.equal(sidecar.formation.cars.length,5);assert.equal(sidecar.formation.lengthM,formations.get('lner5').length);assert.deepEqual(sidecar.dimensions,formations.get('lner5').dimensions);
  assert.equal(JSON.stringify(sidecar.formation.cars[0]).includes('doors'),false,'the sidecar lists the layout, not the door helper');
  // the classes the kind stands for, and the note where the model does not tell two classes apart
- assert.equal(sidecar.formation.classes,'800/2, 801/1');assert.equal(sidecar.formation.classNote,LNER_NOTE);
+ assert.equal(sidecar.formation.classes,'800/2, 801/1');assert.equal(sidecar.formation.classNote,LNER_NOTES.lner5);
  const thameslink=C.catalogueSidecar({kind:'tl700x8',view:view('tl700x8','front-3m'),file:'tl700x8-front-3m.png',formation:formations.get('tl700x8'),session,host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
   state:{hidden:[],hiddenDom:[],stage:{railHeadTopY:0}},result:{verdict:{ok:true},live},timings:{inspect:1}});
  assert.equal(thameslink.formation.classes,'700/0');assert.equal(thameslink.formation.classNote,null,'a kind that is one class has no note');assert.equal(thameslink.formation.kind,'tl700x8');
@@ -788,16 +790,22 @@ test('a frame reports the page atmosphere as it has it: null under the fixed day
  });
 });
 
-test('every kind names the classes it stands for, and the LNER kinds say the model does not tell the Class 800 from the 801',()=>{
+test('every kind names the classes it stands for, and the LNER kinds state the class the model is: the electric 801, not the bi-mode 800',()=>{
  assert.deepEqual([...ALL_KINDS].sort(),Object.keys(CLASSES).sort(),'every kind has an expected class label here');
  assert.deepEqual(Object.keys(C.CLASS_NOTES).sort(),['lner5','lner9'],'only the two LNER kinds carry a note');
  for(const kind of ALL_KINDS) {
   const formation=formations.get(kind),lner=kind==='lner5'||kind==='lner9';
   assert.equal(formation.classes,TRAIN_SPECS[kind].classes,`${kind}: the classes come from the train spec`);assert.equal(formation.classes,CLASSES[kind],`${kind}: the classes`);
-  assert.equal(formation.classNote,lner?LNER_NOTE:null,`${kind}: ${lner?'the LNER note, word for word':'no note'}`);
+  assert.equal(formation.classNote,lner?LNER_NOTES[kind]:null,`${kind}: ${lner?'the LNER note, word for word':'no note'}`);
   // the manifest's formation block carries both, beside what it carried before
   const block=C.manifestFormation(formation);
-  assert.deepEqual(block,{family:formation.family,classes:CLASSES[kind],classNote:lner?LNER_NOTE:null,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars},`${kind}: manifest formation`);
+  assert.deepEqual(block,{family:formation.family,classes:CLASSES[kind],classNote:lner?LNER_NOTES[kind]:null,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars},`${kind}: manifest formation`);
+  // a stated class: the one electric class of the formation, and the bi-mode class of the same formation named as not drawn
+  if(lner)for(const [electric,bimode] of [kind==='lner5'?['801/1','800/2']:['801/2','800/1']]) {
+   assert.ok(formation.classes.includes(electric)&&formation.classes.includes(bimode),`${kind}: both are classes of the formation (${formation.classes})`);
+   assert.ok(formation.classNote.startsWith(`stated class: the electric Class ${electric} (`),`${kind}: it says which class it is, first`);
+   assert.ok(formation.classNote.includes(`The bi-mode Class ${bimode} has`)&&formation.classNote.includes('the model draws none'),`${kind}: it names the class it is not, and why`);
+  }
  }
  assert.ok(Object.isFrozen(C.CLASS_NOTES),'the table is not edited by a run');
 });
@@ -870,7 +878,9 @@ const calm=(fn,what='the call')=>{try{return fn();}catch(e){if(e instanceof asse
 /** `calm` for an async call: whatever it throws that is not already an assertion becomes one, so a broken function fails the assertion that asked for it. */
 const calmly=async(fn,what='the call')=>{try{return await fn();}catch(e){if(e instanceof assert.AssertionError)throw e;assert.fail(`${what} threw ${e?.name}: ${e?.message}`);}};
 const reseat=args=>calmly(()=>C.reseatStationResults(args),'reseatStationResults');
-const planOf=(kind,scene=station)=>calm(()=>F.planStation(formations.get(kind),scene),`planStation(${kind})`);
+/** The first stop alone: no other stop to move a view to, so the tests of the kind's own stop (and of what happens to a frozen camera there) see no search beyond it. The other stops have their own tests. */
+const firstStop={...station,stopInfo:null};
+const planOf=(kind,scene=firstStop)=>calm(()=>F.planStation(formations.get(kind),scene),`planStation(${kind})`);
 /** The station plan of a kind, made on first use (so a broken planner fails the tests that ask for a plan, not the whole file). */
 const stationPlans={cache:new Map(),get(kind){if(!this.cache.has(kind))this.cache.set(kind,planOf(kind));return this.cache.get(kind);}};
 const NORTH=[Math.sin(station.heading),-Math.cos(station.heading)];
@@ -889,7 +899,7 @@ const fakeReport=(plan,accepts)=>plan.placements.filter(p=>accepts[p.id]).map(p=
 const allAt=(plan,id,index=0)=>({[id]:Object.fromEntries(plan.views.map(v=>[v.suffix,index]))});
 const viewsOf=(kind,accepts)=>{const plan=stationPlans.get(kind);return F.stationViewsFromSearch(plan,fakeReport(plan,accepts(plan)));};
 /** What a run's manifest holds of its views (see C.manifestEntry): the frozen numbers and the outcome. */
-const manifestOf=views=>({views:Object.fromEntries(views.map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v))),outcome:{status:v.status,reason:v.reason,blocker:v.blocker??null}}]))});
+const manifestOf=views=>({views:Object.fromEntries(views.map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v))),outcome:{status:v.status,reason:v.reason,blocker:v.blocker??null,...(v.search?{search:JSON.parse(JSON.stringify(v.search))}:{})}}]))});
 
 test('V10 stands the specimen at the fourth buffer stop from the west, nose at the buffers first and then turned so the leading cab is at the north end',()=>{
  assert.equal(station.stops.length,9);assert.ok(station.stops.every((s,i)=>i===0||s.x>station.stops[i-1].x),'the stops run from west to east');
@@ -1139,7 +1149,7 @@ test('reseatStationResults searches only for a frozen V10 camera found blocked, 
  // nothing blocked: no search, no photograph, the very same results
  const clear=frozen.map(okResult);
  let out=await reseat({results:clear,station:plan,search:searchWith(allAt(plan,B)),capture});
- assert.equal(out.results,clear);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ assert.equal(out.results,clear);assert.equal(out.report,null);assert.equal(out.other,null,'and no search of other stops');assert.deepEqual(calls,{search:[],capture:[]});
  // the first view blocked: placement B alone is searched (not A), only that view's replacement is photographed, and the rest are the same results in the same places
  const results=frozen.map((v,i)=>i===0?blockedResult(v):okResult(v));
  out=await reseat({results,station:plan,search:searchWith({[A]:allAt(plan,A,0)[A],[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:2}}),capture});
@@ -1160,6 +1170,10 @@ test('reseatStationResults searches only for a frozen V10 camera found blocked, 
  out=await reseat({results:odd,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,odd);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
  // a frozen placement this plan does not have is not searched for (the drift check refuses such a file first)
  out=await reseat({results:[{...blockedResult(frozen[0]),view:{...frozen[0],placement:{id:'stop-9-nowhere'}}}],station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // ... and it does not end the search for the views after it
+ reset();const unknown={...blockedResult(frozen[0]),view:{...frozen[0],placement:{id:'stop-9-nowhere'}}};
+ out=await reseat({results:[unknown,blockedResult(frozen[1]),...frozen.slice(2).map(okResult)],station:plan,search:searchWith(allAt(plan,B)),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[[frozen[1].suffix]]});assert.equal(out.results[0],unknown,'the view with a placement this plan does not have is as recorded');assert.equal(out.results[1].status,'OK');assert.equal(out.results[1].view.suffix,frozen[1].suffix);
  // two views blocked, one found and one not: the one is photographed, the other keeps its GAP
  reset();out=await reseat({results:frozen.map((v,i)=>i<2?blockedResult(v):okResult(v)),station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null,[frozen[1].suffix]:1}}),capture});
  assert.deepEqual(calls.capture,[[frozen[1].suffix]]);assert.deepEqual(out.results.slice(0,2).map(r=>r.status),['GAP','OK']);
@@ -1203,6 +1217,211 @@ test('a V10 view frozen as a GAP is an earlier answer too: it is searched for ag
  // the planner on its own: a frozen GAP has no eye, bearing or platform to name, and takes its blocker from the view when the result carries none
  const planned=calm(()=>F.reseatBlockedStationViews(plan,[{view:gap,reason:gap.reason}],fakeReport(plan,{[B]:{...allAt(plan,B)[B],[suffix]:1}})),'reseatBlockedStationViews');
  assert.deepEqual(planned.replacements.map(v=>v.suffix),[suffix]);assert.deepEqual(planned.replacements[0].search.replacesFrozen,{eye:null,azimuthDeg:null,platform:null,reason:gap.reason,blocker:gap.blocker});
+});
+
+// ---- V10: a view with no clear camera at the kind's stop moves to another stop the page lets the train stand at (ALTERNATE_RULE) ----------------------------
+const withStops=kind=>calm(()=>F.planStation(formations.get(kind),station),`planStation(${kind}) with the other stops`);
+/** What the page's search would report for the placements it is given: `accepts[placementId][suffix]` is the camera accepted, or none; it tries only the views the placements carry and stops at the first placement with every one of them clear. */
+const searchOf=(accepts,calls=[])=>async placements=>{
+ calls.push(placements.map(p=>`${p.id}:${p.views.length}`));
+ const out=[];
+ for(const p of placements) {
+  const views={};let clear=0;
+  for(const v of p.views) {
+   const index=accepts[p.id]?.[v.suffix]??null;assert.ok(index===null||v.candidates[index],`${p.id} ${v.suffix} has ${v.candidates.length} cameras, so none is number ${index}`);
+   const tried=v.candidates.slice(0,index===null?v.candidates.length:index+1).map((c,i)=>({azimuthDeg:c.azimuthDeg,platform:c.platform,clear:i===index,reason:i===index?null:'coach occluded',blocker:i===index?null:'Scene/furniture/benches'}));
+   views[v.suffix]={tested:tried.length,accepted:index===null?null:{index,azimuthDeg:v.candidates[index].azimuthDeg},tried};if(index!==null)clear++;
+  }
+  out.push({placementId:p.id,clear,views});if(clear===p.views.length)break;
+ }
+ return out;
+};
+/** A kind whose station-150m-coach view was frozen as a GAP at its stop (the way tl700x8's was), with the results of a replay of that file. */
+const otherFixture=(kind='tl700x8',suffix='station-150m-coach')=>{
+ const plan=withStops(kind),[A,B]=plan.placements.map(p=>p.id),held=F.stationViewsFromSearch(plan,fakeReport(plan,{[B]:{...allAt(plan,B)[B],[suffix]:null}}));
+ const frozen=F.stationViewsFromFrozen(plan,manifestOf(held)),gap=frozen.find(v=>v.suffix===suffix),alt=plan.alternates.map(p=>p.id);
+ const okResult=view=>({view,status:'OK',reason:null,inspection:{clear:true},file:`${kind}-${view.suffix}.png`,attempts:1}),gapResult=view=>({view,status:'GAP',reason:view.reason,attempts:0});
+ const blockedResult=(view,blocker='Scene/furniture/benches')=>({view,status:'GAP',reason:'coach occluded',blocker,inspection:{clear:false,reason:'coach occluded',blocker},attempts:1});
+ assert.ok(gap.status==='GAP'&&gap.placement?.id===B&&gap.search?.frozen===true,'the fixture: a view frozen as a GAP at the first stop');
+ assert.equal(plan.alternates.length,16,'the fixture: eight other stops, two ways each');assert.ok(gap.blocker,'the fixture: the GAP names what blocked it');
+ return {plan,A,B,suffix,frozen,gap,alt,okResult,gapResult,blockedResult,results:frozen.map(v=>v===gap?gapResult(v):okResult(v))};
+};
+
+test('the shed\'s buffer stops carry the platform the page matches each to and that platform\'s formation limit, which every kind fits',()=>{
+ assert.deepEqual(station.stopInfo.map(s=>s.index),[0,1,2,3,4,5,6,7,8]);assert.deepEqual(station.stopInfo.map(s=>s.id),station.stops.map(s=>s.id));
+ assert.deepEqual(station.stopInfo.map(s=>s.platform),['8','7','6','5','4','3','2','1','0'],'the page\'s own match, west to east (its sample 5-car LNER stands at the fourth stop, on platform 5)');
+ assert.ok(station.stopInfo.every((s,i)=>i===0||s.u>station.stopInfo[i-1].u),'across the shed, west to east');
+ assert.equal(DEFAULT_BUFFER_CLEARANCE_M,3);
+ for(const s of station.stopInfo) near(s.limitM,KINGS_CROSS_PLATFORM_LENGTHS_M[s.platform]-DEFAULT_BUFFER_CLEARANCE_M,1e-9,`platform ${s.platform}: the published length less the stop clearance`);
+ for(const kind of ALL_KINDS) assert.ok(station.stopInfo.every(s=>formations.get(kind).length<=s.limitM),`${kind} fits every platform of the shed`);
+ // the manifest head says the rule and the stops it ranges over
+ const head=C.stationManifest(station);assert.equal(head.alternates.rule,F.ALTERNATE_RULE);assert.equal(head.alternates.stopClearanceM,3);
+ assert.deepEqual(head.alternates.stops.map(s=>[s.index,s.id,s.platform,s.limitM,s.acrossShedM]),station.stopInfo.map(s=>[s.index,s.id,s.platform,s.limitM,s.u]));
+ assert.deepEqual(C.stationManifest({...station,stopInfo:undefined}).alternates.stops,[],'a scene with no stop info lists none');
+ assert.match(F.ALTERNATE_RULE,/Platforms 9 and 10 have no stop in the shed's list/);assert.match(F.ALTERNATE_RULE,/Only a view with no clear camera moves/);
+});
+
+test('a train may move to the other stops where the page lets it stand: none its platform is too short for, nearest its own stop across the shed first, west to east on a tie',()=>{
+ const stops=[{index:0,u:0,limitM:100},{index:1,u:10,limitM:300},{index:2,u:12,limitM:null},{index:3,u:30,limitM:300},{index:4,u:31,limitM:150},{index:5,u:42,limitM:300}];
+ const order=(lengthM,primary,list=stops)=>calm(()=>F.alternateStops({stops:list,primary,lengthM}),'alternateStops').map(s=>s.index);
+ assert.deepEqual(order(120,3),[4,5,2,1],'the platform of stop 0 is 100 m, too short for 120 m; the others by distance across the shed: 1, 12, 18, 20 m');
+ assert.deepEqual(order(200,3),[5,2,1],'stop 4\'s platform is 150 m, too short for 200 m; stop 2 has no limit, which is no restriction');
+ assert.deepEqual(order(150,3),[4,5,2,1],'a train as long as the limit fits');assert.deepEqual(order(150+5e-9,3),[4,5,2,1],'inside the 1e-8 the page allows');assert.deepEqual(order(150.0001,3),[5,2,1]);
+ assert.deepEqual(order(50,0),[1,2,3,4,5],'any train fits where the limit is longer, whichever stop it is counted from');assert.deepEqual(order(120,undefined),order(120,F.CATALOGUE.stationStopIndex),'the default is the catalogue\'s stop');
+ assert.ok(!order(50,3).includes(3),'the kind\'s own stop is never an alternate');
+ const tie=[{index:3,u:30,limitM:null},{index:7,u:40,limitM:null},{index:2,u:20,limitM:null},{index:5,u:20,limitM:null}];
+ assert.deepEqual(order(100,3,tie),[2,5,7],'stops the same distance away come west to east');assert.deepEqual(order(100,3,[...tie].reverse()),[2,5,7],'whatever the order they were listed in');
+ assert.deepEqual(order(100,3,[]),[],'no stops, no alternates');
+ for(const kind of ALL_KINDS) {
+  const plan=withStops(kind),L=formations.get(kind).length,ids=F.alternateStops({stops:station.stopInfo,lengthM:L}).flatMap(s=>F.STATION_ORIENTATIONS.map(o=>`stop-${s.index}-${o}`));
+  assert.deepEqual(plan.alternates.map(p=>p.id),ids,kind);assert.equal(ids.length,16,`${kind}: eight other stops, two ways each`);
+  assert.deepEqual(ids.slice(0,6),['stop-2-nose-at-buffers','stop-2-cab-at-north-end','stop-4-nose-at-buffers','stop-4-cab-at-north-end','stop-1-nose-at-buffers','stop-1-cab-at-north-end'],`${kind}: nearest the fourth stop across the shed first`);
+  assert.deepEqual(plan.placements.map(p=>p.id),['stop-3-nose-at-buffers','stop-3-cab-at-north-end'],`${kind}: the stop the kind stands at keeps its two placements and gains none`);
+  for(const p of plan.alternates) {
+   const info=station.stopInfo[p.stop.index],stop=station.stops[p.stop.index];
+   assert.deepEqual(p.stop,{index:info.index,id:stop.id,x:stop.x,z:stop.z},`${kind} ${p.id}`);assert.deepEqual(p.alternate,{platform:info.platform,limitM:info.limitM});
+   // it stands as the first stop's do: the nose, or turned about the tail, 1.5 m north of the stop, the body along the shed
+   const end=F.placedPoint(p,[0,0,p.orientation==='nose-at-buffers'?0:L]);vec(end,[stop.x+1.5*NORTH[0],0,stop.z+1.5*NORTH[1]],1e-9,`${kind} ${p.id}`);
+   assert.deepEqual(p.views.map(v=>v.suffix),F.STATION_VIEWS);
+   for(const v of p.views) {
+    const spec=plan.specs.find(x=>x.suffix===v.suffix);vec(v.focusWorld,F.placedPoint(p,spec.focusLocal),1e-9);assert.ok(v.candidateCount>0&&v.candidates.length===v.candidateCount,`${kind} ${p.id} ${v.suffix}`);
+    for(const c of v.candidates) {near(horizontal(c.eye,v.focusWorld),spec.distanceM,1e-6,`${kind} ${p.id} ${v.suffix} az ${c.azimuthDeg}`);near(c.eye[1],PLATFORM_HEIGHT+1.7,1e-12);assert.ok(station.platforms.some(q=>q.ref===c.platform&&pointInPolygon([c.eye[0],c.eye[2]],q.pts)),'over a platform');}
+   }
+  }
+ }
+ // a kind that stands at two stops is moved to neither of them: the second is its own, not an alternate
+ const two=planOf('lner5',{...station,stopIndexes:[1,3],orientations:['nose-at-buffers']});
+ assert.deepEqual(two.placements.map(p=>p.id),['stop-1-nose-at-buffers','stop-3-nose-at-buffers']);
+ assert.deepEqual(two.alternates.map(p=>p.id),F.alternateStops({stops:station.stopInfo,primary:1,lengthM:formations.get('lner5').length}).filter(s=>s.index!==3).map(s=>`stop-${s.index}-nose-at-buffers`),'counted from the first of them, without the second');
+ assert.ok(two.alternates.length===7&&two.alternates.every(p=>p.stop.index!==1&&p.stop.index!==3&&p.orientation==='nose-at-buffers'));
+ // a plan with no stop info moves nothing; a stop whose platform is too short for the train is left out; the plan the search sends the page holds only the views asked for
+ assert.deepEqual(planOf('lner5').alternates,[]);assert.deepEqual(planOf('lner5',{...station,stopInfo:[]}).alternates,[]);
+ const short=planOf('lner9',{...station,stopInfo:station.stopInfo.map(s=>s.index===5?{...s,limitM:200}:s)});assert.ok(short.alternates.length===14&&short.alternates.every(p=>p.stop.index!==5),'233.7 m does not fit a 200 m platform');
+ const plan=withStops('tl700x8'),cut=F.alternatePlacementsFor(plan,['station-150m-coach']);
+ assert.deepEqual(cut.map(p=>p.id),plan.alternates.map(p=>p.id));assert.ok(cut.every(p=>p.views.length===1&&p.views[0].suffix==='station-150m-coach'&&p.views[0].candidates.length>0&&p.alternate));assert.ok(plan.alternates.every(p=>p.views.length===6),'the plan itself is not cut');
+ assert.deepEqual(F.alternatePlacementsFor({placements:[]},['x']),[],'a plan with no alternates has none to search');assert.equal(F.findPlacement(plan,plan.alternates[3].id),plan.alternates[3]);assert.equal(F.findPlacement(plan,plan.placements[1].id),plan.placements[1]);assert.equal(F.findPlacement(plan,'stop-9-nowhere'),null);assert.equal(F.findPlacement(plan,undefined),null);
+});
+
+test('a V10 view with no clear camera at its stop takes the first other stop that gives it one, and says where it moved from, why, and which stops it tried',async()=>{
+ const {plan,B,suffix,gap,alt}=otherFixture(),gaps=[{view:gap,reason:gap.reason,blocker:gap.blocker}];
+ // the third other placement gives it its second camera
+ const calls=[],out=await calmly(()=>C.searchOtherStops({station:plan,gaps,search:searchOf({[alt[2]]:{[suffix]:1}},calls)}),'searchOtherStops');
+ assert.deepEqual(calls,[alt.map(id=>`${id}:1`)],'one search: every other stop in order, with only the view that has no camera');assert.deepEqual(out.report?.map(r=>r.placementId),alt.slice(0,3),'the page stops at the first placement that gives the view a camera');
+ assert.equal(out.moves.length,1);assert.equal(out.stays.size,0);
+ const m=out.moves[0],at=plan.alternates[2],planned=at.views.find(v=>v.suffix===suffix),cam=planned.candidates[1];
+ assert.equal(m.status,'OK');assert.equal(m.suffix,suffix);assert.equal(m.id,'V10');assert.equal(m.placement?.id,alt[2]);assert.deepEqual(m.placement?.stop,at.stop);assert.equal(m.placement?.orientation,'nose-at-buffers');
+ vec(m.eye,cam.eye,1e-12);assert.equal(m.azimuthDeg,cam.azimuthDeg);assert.equal(m.platform,cam.platform);assert.equal(m.near,cam.near);vec(m.target,planned.focusWorld,1e-12,'it looks at the focus of the specimen where it stands now');
+ near(horizontal(m.eye,m.target),150,1e-6,'V10\'s rule holds');near(m.eye[1],.9+1.7,1e-9,'1.7 m over the platform');assert.deepEqual([m.focus?.name,m.focus?.local],[gap.focus.name,gap.focus.local]);assert.ok(m.focus?.world,'it names the focus where it stands');vec(m.focus?.world??[],planned.focusWorld,1e-12);
+ assert.deepEqual([m.rotation?.rotationY,m.rotation?.orientation],[at.rotationY,'nose-at-buffers'],'the specimen stands where that stop puts it');vec(m.placement?.position??[],at.position,1e-12);
+ for(const k of ['region','car','distanceM','fov','up','frame','platformHeightM'])assert.deepEqual(m[k],gap[k],`${k} is the view's, not the stop's`);
+ // where it moved from and why, and the stops it tried on the way
+ const a=m.search?.alternate??{};assert.equal(a.ruleId,'alternate-stops-v1');assert.equal(a.rule,F.ALTERNATE_RULE);assert.equal(a.for,B);assert.equal(a.reason,gap.reason);assert.equal(a.blocker,gap.blocker);assert.equal(a.chosen,alt[2]);assert.equal(a.platformLimitM,287);
+ assert.deepEqual(a.stopsTried?.map(s=>[s.placement,s.stop,s.platform,s.platformLimitM,s.clear]),[[alt[0],2,'6',286,false],[alt[1],2,'6',286,false],[alt[2],4,'4',287,true]]);
+ const camerasAt=p=>p.views.find(v=>v.suffix===suffix).candidates.length;
+ assert.deepEqual(a.stopsTried?.map(s=>s.tested),[camerasAt(plan.alternates[0]),camerasAt(plan.alternates[1]),2],'every camera of the first two stops, then two at the third');
+ assert.deepEqual(m.search?.placements,out.report.map(r=>({id:r.placementId,clear:r.clear})));assert.equal(m.search?.chosen,alt[2]);assert.equal(m.search?.rejectedBefore?.length,1);assert.equal(m.search?.pass,cam.pass);assert.equal(m.search?.tested,2);assert.equal(m.search?.frozen,undefined);
+ assert.deepEqual([m.notes?.movedFrom,m.notes?.movedBecause,m.notes?.platformLimitM,m.notes?.placement,m.notes?.orientation,m.notes?.stop],[B,gap.reason,287,alt[2],'nose-at-buffers',at.stop],'the sidecar\'s notes carry it too');
+ assert.equal(F.poseDifference(F.poseOf(F.stationViewsFromFrozen(plan,manifestOf([m])).find(v=>v.suffix===suffix)),F.poseOf(m)),null,'and it freezes to its own numbers, in its own placement');
+ // no other stop gives it a camera: nothing moves, and the reason says what was tried at its own stop and at every other
+ calls.length=0;const none=await calmly(()=>C.searchOtherStops({station:plan,gaps,search:searchOf({},calls)}),'searchOtherStops');
+ assert.equal(none.moves.length,0);assert.equal(none.report.length,16,'every placement was tried');
+ const total=plan.alternates.reduce((n,p)=>n+camerasAt(p),0),why=none.stays.get(suffix);
+ assert.equal(why,`${gap.reason}; also searched 16 placement(s) at 8 other stop(s) where the page lets this train stand: no clear camera in any; blocked by Scene/furniture/benches (coach occluded) x${total}`);
+ // nothing to search: no gap, or a plan with no other stop (the page is not asked at all)
+ for(const [what,args] of [['no gap',{station:plan,gaps:[]}],['no other stop',{station:planOf('tl700x8'),gaps}]]) {
+  calls.length=0;const idle=await calmly(()=>C.searchOtherStops({...args,search:searchOf({},calls)}),'searchOtherStops');
+  assert.deepEqual([idle.report,idle.moves,[...idle.stays]],[null,[],[]],what);assert.deepEqual(calls,[],`${what}: the page is not asked`);
+ }
+ // two views at once: each takes its own first stop, and the page is asked for both together
+ const s2='station-75m-coach';calls.length=0;
+ const both=await calmly(()=>C.searchOtherStops({station:plan,gaps:[...gaps,{view:otherFixture().frozen.find(v=>v.suffix===s2),reason:'blocked',blocker:null}],search:searchOf({[alt[0]]:{[s2]:0},[alt[3]]:{[suffix]:0,[s2]:2}},calls)}),'searchOtherStops');
+ assert.deepEqual(calls,[alt.map(id=>`${id}:2`)]);assert.deepEqual(both.moves.map(v=>[v.suffix,v.placement.id]),[[suffix,alt[3]],[s2,alt[0]]],'the 150 m view needed four stops, the 75 m view the first');assert.equal(both.report?.length,4,'the page stops when every view asked has a camera');
+ assert.deepEqual(both.moves.map(v=>v.search?.alternate?.stopsTried?.map(s=>s.placement)),[alt.slice(0,4),alt.slice(0,1)],'each view lists the stops it tried up to the one that gave it its camera, not the ones the page went on to for the other view');
+ assert.deepEqual(both.moves.map(v=>v.search?.placements?.map(p=>p.id)),[alt.slice(0,4),alt.slice(0,1)],'and its search block likewise');
+ assert.throws(()=>F.alternateViewsFromSearch(plan,[{view:{...gap,suffix:'station-300m'},reason:'x'}],[]),/station-300m is not a V10 view of this plan/);
+});
+
+test('a fresh V10 search leaves every view with a camera where it is, and moves only the views that have none at the stop, or says why they stay',async()=>{
+ const plan=withStops('tl700x8'),[A,B]=plan.placements.map(p=>p.id),alt=plan.alternates.map(p=>p.id),s1='station-150m-coach',s2='station-75m-coach';assert.equal(alt.length,16,'the fixture: eight other stops, two ways each');
+ const fresh=F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{'station-25m':1},[B]:{...allAt(plan,B)[B],[s1]:null,[s2]:null}}));
+ assert.deepEqual(fresh.map(v=>v.status),['OK','OK','OK','OK','GAP','GAP'],'the fixture: two views without a camera at the stop');assert.ok(fresh[4].placement&&fresh[5].placement);
+ const calls=[],move=search=>calmly(()=>C.moveGapViews({views:fresh,station:plan,search}),'moveGapViews');
+ // the 75 m view finds a camera at the second other placement; the 150 m view at none
+ let out=await move(searchOf({[alt[1]]:{[s2]:0}},calls));
+ assert.deepEqual(calls,[alt.map(id=>`${id}:2`)],'both are asked for together, at every other stop');assert.equal(out.report?.length,16,'the page is not stopped while the 150 m view has no camera');
+ assert.deepEqual(out.views.map(v=>v.suffix),fresh.map(v=>v.suffix),'in their places');assert.deepEqual(out.views.map(v=>v.status),['OK','OK','OK','OK','OK','GAP']);
+ out.views.slice(0,4).forEach((v,i)=>assert.equal(v,fresh[i],`${v.suffix} is the very view it was`));
+ assert.equal(out.views[4].placement?.id,alt[1]);assert.equal(out.views[4].search?.alternate?.for,B);assert.equal(out.views[4].search?.alternate?.reason,fresh[4].reason);assert.ok(fresh[4].blocker,'the fixture: a GAP names what blocked it');assert.equal(out.views[4].search?.alternate?.blocker,fresh[4].blocker,'and says what blocked the camera at its own stop');
+ assert.ok(out.views[5].reason.startsWith(`${fresh[5].reason}; also searched 16 placement(s) at 8 other stop(s)`),out.views[5].reason);assert.equal(out.views[5].status,'GAP');assert.equal(out.views[5].placement?.id,B,'a GAP keeps the placement it was found in');
+ // nothing without a camera, nothing to search; a GAP the plan itself gives, and one with no placement, are not asked for
+ calls.length=0;out=await calmly(()=>C.moveGapViews({views:fresh.slice(0,4),station:plan,search:searchOf({},calls)}),'moveGapViews');
+ assert.deepEqual([out.report,calls],[null,[]]);assert.deepEqual(out.views.map((v,i)=>v===fresh[i]),[true,true,true,true]);
+ const own={...plan,views:plan.views.map(s=>s.suffix===s1?{...s,status:'GAP',reason:'the plan has no such view'}:s)},lost=(({placement,...rest})=>rest)(fresh[4]);
+ calls.length=0;out=await calmly(()=>C.moveGapViews({views:[...fresh.slice(0,4),lost,fresh[5]],station:own,search:searchOf({},calls)}),'moveGapViews');
+ assert.deepEqual([out.report,calls],[null,[]],'a GAP with no placement and a GAP the plan gives are as recorded');
+ // a plan with no other stop: the views stay as the search left them
+ calls.length=0;out=await calmly(()=>C.moveGapViews({views:fresh,station:planOf('tl700x8'),search:searchOf({},calls)}),'moveGapViews');assert.deepEqual([out.report,calls,out.views===fresh],[null,[],true]);
+});
+
+test('reseatStationResults moves a frozen view that has no clear camera at its own stop to another stop, and searches a view frozen at another stop there first',async()=>{
+ const {plan,B,suffix,frozen,gap,alt,okResult,blockedResult,results}=otherFixture();
+ const calls=[],shots=[],capture=async views=>{shots.push(views.map(v=>[v.suffix,v.placement.id]));return views.map(okResult);},reset=()=>{calls.length=0;shots.length=0;};
+ // the frozen GAP: searched at its own stop (every view of the placement, as before), found no camera, then at the other stops, where the second placement gives it one
+ let out=await reseat({results,station:plan,search:searchOf({[B]:{...allAt(plan,B)[B],[suffix]:null},[alt[1]]:{[suffix]:0}},calls),capture});
+ assert.deepEqual(calls,[[`${B}:6`],alt.map(id=>`${id}:1`)]);assert.deepEqual(shots,[[[suffix,alt[1]]]],'only the moved view is photographed, in its new placement');
+ const moved=out.results.find(r=>r.view.suffix===suffix);assert.equal(moved.status,'OK');assert.equal(moved.file,`tl700x8-${suffix}.png`);assert.equal(moved.view.placement?.id,alt[1]);assert.equal(moved.view.search?.alternate?.for,B);
+ const own=plan.placements[1].views.find(v=>v.suffix===suffix);
+ assert.ok((moved.view.search?.alternate?.reason??'').startsWith(`${gap.reason}; searched again in ${B}: no clear camera: ${own.candidates.length} of ${own.candidateCount} candidate positions`),'it moved because no camera stood at its own stop, and the reason says what was found there');
+ assert.equal(moved.view.search?.alternate?.blocker,gap.blocker,'and what blocked the camera it was frozen with');
+ assert.deepEqual(out.report?.map(r=>r.placementId),[B]);assert.deepEqual(out.other?.map(r=>r.placementId),alt.slice(0,2),'the other stops, up to the one that gave the camera');
+ assert.deepEqual(out.results.map(r=>r.view.suffix),frozen.map(v=>v.suffix),'in their places');out.results.filter(r=>r!==moved).forEach(r=>assert.ok(results.includes(r),`${r.view.suffix} is untouched`));
+ // no stop gives it a camera: nothing is photographed and the GAP keeps its place, its view and its inspection, with a reason that says both searches
+ reset();out=await reseat({results,station:plan,search:searchOf({[B]:{...allAt(plan,B)[B],[suffix]:null}},calls),capture});
+ assert.deepEqual(calls,[[`${B}:6`],alt.map(id=>`${id}:1`)]);assert.deepEqual(shots,[]);
+ const stays=out.results.find(r=>r.view.suffix===suffix);assert.equal(stays.status,'GAP');assert.equal(stays.view,gap);assert.equal(stays.attempts,0);
+ assert.ok(stays.reason.startsWith(`${gap.reason}; searched again in ${B}: no clear camera: `)&&stays.reason.includes('; also searched 16 placement(s) at 8 other stop(s) where the page lets this train stand: no clear camera in any'),stays.reason);
+ assert.equal(out.other?.length,16);
+ // a plan with no other stop is searched at the view's own stop alone, as before, and reports no other search
+ const bare=planOf('tl700x8');reset();out=await reseat({results,station:bare,search:searchOf({[B]:{...allAt(bare,B)[B],[suffix]:null}},calls),capture});
+ assert.deepEqual(calls,[[`${B}:6`]]);assert.equal(out.other,null);assert.equal(out.results.find(r=>r.view.suffix===suffix).status,'GAP');
+ // a view frozen at another stop (round 4 froze it there): the next replay stands it there, and a camera the scene now blocks is searched for again in that stop first, not at the kind's
+ const moves=(await calmly(()=>C.searchOtherStops({station:plan,gaps:[{view:gap,reason:gap.reason,blocker:gap.blocker}],search:searchOf({[alt[1]]:{[suffix]:0}})}),'searchOtherStops')).moves;assert.equal(moves.length,1,'the fixture: the view moved');
+ const held=[...frozen.filter(v=>v!==gap),moves[0]],manifest=manifestOf(held);
+ assert.deepEqual(F.stationFrozenDrift(plan,manifest),[],'five views at the kind\'s stop and one at another is not a drift');
+ const replay=F.stationViewsFromFrozen(plan,manifest),mv=replay.find(v=>v.suffix===suffix);
+ assert.equal(mv.status,'OK');assert.equal(mv.placement?.id,alt[1]);vec(mv.eye,moves[0].eye,1e-12);assert.deepEqual(mv.focus,moves[0].focus,'its focus is the one where it stands');assert.equal(F.poseDifference(F.poseOf(mv),manifest.views[suffix].plan),null);
+ assert.deepEqual(mv.search,{frozen:true,alternate:JSON.parse(JSON.stringify(moves[0].search.alternate))},'a replay still says it moved, from where and why');
+ assert.deepEqual([mv.notes?.movedFrom,mv.notes?.movedBecause,mv.notes?.platformLimitM],[B,gap.reason,plan.alternates[1].alternate.limitM],'in its sidecar too');
+ assert.equal(replay.filter(v=>v.search?.alternate).length,1,'and no other view says it moved');
+ // a record of a move on a view that stands at the kind's own stop is stale (a file edited by hand, or a stop that was the kind's by then): a replay does not carry it
+ const stale=JSON.parse(JSON.stringify(manifest)),entry75=stale.views['station-75m'];entry75.outcome.search={...(entry75.outcome.search??{}),alternate:JSON.parse(JSON.stringify(moves[0].search.alternate))};
+ assert.equal(F.stationViewsFromFrozen(plan,stale).find(v=>v.suffix==='station-75m').search?.alternate,undefined,'a view at the kind\'s own stop does not say it moved');
+ const again=replay.map(okResult);again[replay.indexOf(mv)]=blockedResult(mv,'Scene/furniture/help-points');
+ reset();out=await reseat({results:again,station:plan,search:searchOf({[alt[1]]:{...allAt(plan,alt[1])[alt[1]],[suffix]:2}},calls),capture});
+ assert.deepEqual(calls,[[`${alt[1]}:6`]],'searched at the stop it stands at, and nowhere else');assert.deepEqual(shots,[[[suffix,alt[1]]]]);assert.equal(out.other,null);
+ const kept=out.results[replay.indexOf(mv)];assert.equal(kept.view.placement?.id,alt[1]);assert.equal(kept.view.search?.replacesFrozen?.blocker,'Scene/furniture/help-points');assert.deepEqual(kept.view.search?.replacesFrozen?.eye,mv.eye);assert.deepEqual(kept.view.search?.alternate,mv.search.alternate,'it did not move again, and still says where it moved from');assert.deepEqual([kept.view.notes?.movedFrom,kept.view.notes?.placement],[B,alt[1]],'its sidecar too');
+ // and when its own stop gives it nothing now, the other stops are tried, and it moves from the stop it stood at
+ reset();out=await reseat({results:again,station:plan,search:searchOf({[alt[1]]:{...allAt(plan,alt[1])[alt[1]],[suffix]:null},[alt[5]]:{[suffix]:0}},calls),capture});
+ assert.deepEqual(calls,[[`${alt[1]}:6`],alt.map(id=>`${id}:1`)]);assert.deepEqual(shots,[[[suffix,alt[5]]]]);assert.equal(out.results[replay.indexOf(mv)].view.search?.alternate?.for,alt[1]);
+ // two views frozen at different stops, both blocked: each is searched at its own
+ const both=replay.map(okResult),i25=replay.findIndex(v=>v.suffix==='station-25m');both[replay.indexOf(mv)]=blockedResult(mv);both[i25]=blockedResult(replay[i25]);
+ reset();out=await reseat({results:both,station:plan,search:searchOf({[B]:{...allAt(plan,B)[B],'station-25m':1},[alt[1]]:{...allAt(plan,alt[1])[alt[1]],[suffix]:1}},calls),capture});
+ assert.deepEqual(calls.map(c=>c.join()).sort(),[`${B}:6`,`${alt[1]}:6`].sort(),'one search for each stop');assert.deepEqual(shots[0]?.map(x=>x.join()).sort(),[`${suffix},${alt[1]}`,`station-25m,${B}`].sort());
+ assert.deepEqual(out.report?.map(r=>r.placementId).sort(),[B,alt[1]].sort(),'the report holds every stop that was searched');
+ assert.equal(out.results[i25]?.view.search?.alternate,undefined,'a camera replaced at the stop it stood at does not say it moved');assert.ok(out.results[replay.indexOf(mv)]?.view.search?.alternate,'the one that moved still says so');
+});
+
+test('frozen V10 poses may hold one view at another stop, but not two stops of the kind\'s own, nor a stop this run cannot derive, nor a camera that moved',async()=>{
+ const {plan,A,suffix,frozen,gap,alt}=otherFixture(),moves=(await calmly(()=>C.searchOtherStops({station:plan,gaps:[{view:gap,reason:gap.reason,blocker:gap.blocker}],search:searchOf({[alt[2]]:{[suffix]:1}})}),'searchOtherStops')).moves;assert.equal(moves.length,1,'the fixture: the view moved');
+ const held=manifestOf([...frozen.filter(v=>v!==gap),moves[0]]),drift=change=>{const m=JSON.parse(JSON.stringify(held));change(m.views);return F.stationFrozenDrift(plan,m);};
+ assert.deepEqual(drift(()=>{}),[]);
+ assert.deepEqual(drift(v=>{v['station-75m'].plan.placement.id=A;}).map(d=>[d.view,d.reason]),[['station-75m','views of one kind must share one placement']],'two of the kind\'s own stops are still refused');
+ assert.deepEqual(drift(v=>{v[suffix].plan.placement.id='stop-9-nose-at-buffers';}).map(d=>[d.view,d.reason,d.at]),[[suffix,'frozen placement is not one this run derives','/placement/id']],'and a stop this run does not derive');
+ assert.equal(drift(v=>{v[suffix].plan.eye[0]+=.01;})[0]?.reason,'pose differs from the frozen pose','a camera that moved at the other stop');assert.equal(drift(v=>{v[suffix].plan.placement.position[0]+=.01;})[0]?.reason,'placement differs from the frozen placement');
+ assert.equal(drift(v=>{v[suffix].plan.placement.stop.id=1;})[0]?.at,'/placement/stop/id');assert.equal(drift(v=>{v[suffix].plan.azimuthDeg+=1;})[0]?.reason,'pose differs from the frozen pose','a bearing that is not the one the eye stands at');
+ // a kind whose every view moved is a drift only where its own views disagree; a file from before the other stops (round 3's) is read as it was
+ assert.deepEqual(F.stationFrozenDrift(plan,manifestOf(frozen)),[]);assert.deepEqual(F.stationFrozenDrift(planOf('tl700x8'),manifestOf(frozen)),[]);
+ assert.equal(F.stationFrozenDrift(planOf('tl700x8'),held).length,1,'a plan with no other stops cannot derive the placement of the view that moved');
 });
 
 test('the summary of a station search lists every placement tried and, per view, how many cameras were inspected, the bearing accepted and what blocked the rest',()=>{

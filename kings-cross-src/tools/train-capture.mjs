@@ -11,14 +11,14 @@ import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
 import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
-import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
+import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
+import {ALTERNATE_RULE,ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,alternatePlacementsFor,alternateViewsFromSearch,findPlacement,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph,edgePoint} from '../core/graph.ts';
 import {shapeFrom} from '../core/curves.ts';
-import {createMotion} from '../core/motion.ts';
+import {createMotion,DEFAULT_BUFFER_CLEARANCE_M} from '../core/motion.ts';
 import {carPoses,createTrainKinds} from '../web/src/trains-live.ts';
 import {createReplayFeed,parseRecording} from '../web/src/feed.ts';
 import {matchService,validDate} from '../core/schedule.ts';
@@ -302,12 +302,12 @@ const basisOf=list=>[...new Set(list)].join('+');
 /** The one Chrome command line every capture mode uses: headless, pipe-driven, on the real Metal GPU (never a software renderer). */
 export const chromeArgs=profile=>['--headless=new','--remote-debugging-pipe',`--user-data-dir=${profile}`,'--no-sandbox','--no-first-run','--no-default-browser-check','--disable-breakpad','--disable-crash-reporter','--noerrdialogs','--use-mock-keychain','--password-store=basic','--no-proxy-server','--ignore-gpu-blocklist','--use-angle=metal','--enable-gpu-rasterization','about:blank'];
 /**
- * Where the model's one car pattern stands for more than one class. The LNER Class 800 (bi-mode) and 801 (electric) share the AT300 car shape, and the model
- * draws that one pattern: no underfloor engines, one roof/pantograph arrangement. So a picture of an LNER kind must not be read as either variant. The other
- * kinds stand for one class (or one class family) and carry no note.
+ * Which class a picture of an LNER kind is. The Class 800 (bi-mode) and 801 (electric) share the AT300 car shape and the car codes of each formation (core/train.ts `classes`). The model
+ * draws one pattern: a pantograph on each driving car, a plain underframe and no diesel engine under any car. That is the electric 801, so the pack states it as the 801 (lner5 the 801/1,
+ * lner9 the 801/2) and names the bi-mode 800 of the same formation (800/2, 800/1) as what it does not draw. The other kinds stand for one class (or one class family) and carry no note.
  */
-const LNER_CLASS_NOTE='the model draws the car pattern shared by these classes; it does not distinguish the bi-mode 800 from the electric 801 (no underfloor engines, one roof/pantograph pattern); it is not claimed to match either variant';
-export const CLASS_NOTES=Object.freeze({lner5:LNER_CLASS_NOTE,lner9:LNER_CLASS_NOTE});
+const lnerNote=(electric,cars,bimode)=>`stated class: the electric Class ${electric} (${cars}). The bi-mode Class ${bimode} has the same body shape and car pattern but carries diesel engines under its cars; the model draws none (a plain underframe, one roof and pantograph pattern), so it is stated as the 801 and is not claimed to match the 800`;
+export const CLASS_NOTES=Object.freeze({lner5:lnerNote('801/1','five cars','800/2'),lner9:lnerNote('801/2','nine cars','800/1')});
 /** The formation block of a manifest entry: the family, the classes and the note on them, the length, the dimensions and the cars. */
 export const manifestFormation=formation=>({family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars});
 /** A plain description of one kind's formation: the input of planCatalogueViews and the sidecars' `formation`/`dimensions`. */
@@ -334,12 +334,21 @@ export function describeFormation(kind) {
 /**
  * The real station's numbers for V10, read from the file the page is built from: the shed's heading, its buffer stops from west to east, and the
  * outline of every surface platform. `inside` and `standing` are core/station.ts pointInPolygon and standingTrainPose, which planStation calls.
+ * `stopInfo` has, for each stop, where it is across the shed (`u`), the platform the page matches it to (web/src/main.ts: the one whose south end is nearest it across the shed, which is how
+ * the page names its sample trains' platforms) and that platform's formation limit (core/station.ts platformFormationLimits with the page's stop clearance, as web/src/trains-live.ts
+ * reads it): the stops a train may move to (ALTERNATE_RULE).
  */
 export async function loadStationScene(file=fileURLToPath(new URL('../web/src/data/kx-track.json',import.meta.url))) {
   if(PLATFORM_HEIGHT!==CATALOGUE.platformHeightM)throw new Error(`the page's platform height is ${PLATFORM_HEIGHT} m but the catalogue says ${CATALOGUE.platformHeightM} m`);
   const bytes=await readFile(file),data=JSON.parse(bytes.toString('utf8')),layout=shedLayout(data);
   const stops=shedBufferStops(data,layout).sort((p,q)=>worldToShed(layout,[p.x,p.z]).u-worldToShed(layout,[q.x,q.z]).u);
-  return {heading:layout.heading,stops,platforms:[...stationPlatforms(data)].map(([ref,p])=>({ref,pts:p.pts})),inside:pointInPolygon,
+  const surface=stationPlatforms(data),limits=platformFormationLimits(data,DEFAULT_BUFFER_CLEARANCE_M);
+  const stopInfo=stops.map((stop,index)=>{
+    const {u}=worldToShed(layout,[stop.x,stop.z]);
+    const platform=[...surface].sort(([,p],[,q])=>Math.abs(worldToShed(layout,platformSouthEnd(p.pts)).u-u)-Math.abs(worldToShed(layout,platformSouthEnd(q.pts)).u-u))[0]?.[0]??null;
+    return {index,id:stop.id,u,platform,limitM:limits.get(platform)??null};
+  });
+  return {heading:layout.heading,stops,stopInfo,platforms:[...surface].map(([ref,p])=>({ref,pts:p.pts})),inside:pointInPolygon,
     standing:stop=>standingTrainPose(layout,stop,CATALOGUE.noseToStopM),file,sha256:sha256(bytes)};
 }
 /** What every V10 view of a run shares, for the manifest: the data it was placed from and the search limits. */
@@ -347,6 +356,7 @@ export function stationManifest(scene) {
   return {trackData:{file:'kings-cross-src/web/src/data/kx-track.json',sha256:scene.sha256},heading:scene.heading,stopIndex:CATALOGUE.stationStopIndex,stop:scene.stops[CATALOGUE.stationStopIndex]??null,
     platforms:scene.platforms.map(p=>p.ref),orientations:STATION_ORIENTATIONS,platformHeightM:PLATFORM_HEIGHT,eyeAbovePlatformM:CATALOGUE.eyeAbovePlatformM,noseToStopM:CATALOGUE.noseToStopM,
     search:{azimuthStepDeg:1,maxCandidates:CATALOGUE.stationMaxCandidates,minSeparationDeg:CATALOGUE.stationMinSeparationDeg,edgeClearM:CATALOGUE.platformEdgeClearM,frontAngleDeg:CATALOGUE.stationFrontAngleDeg,minScreenSpan:CATALOGUE.stationMinScreenSpan,passes:['spread','neighbour']},
+    alternates:{rule:ALTERNATE_RULE,stopClearanceM:DEFAULT_BUFFER_CLEARANCE_M,stops:(scene.stopInfo??[]).map(({index,id,platform,limitM,u})=>({index,id,platform,limitM,acrossShedM:u}))},
     rule:'The specimen stands at one real buffer stop, nose at the buffers first, then turned so the leading cab is at the north end. For each view the cameras that lie exactly D m from the focus over a platform are tried in two passes, each best first (nearest a front three-quarter view): first the spread (none within minSeparationDeg of azimuth of another, at most maxCandidates), then every other such position, the neighbours the thinning dropped; the first whose check is clear is accepted, and a view is a GAP only when all of them were tried; the first placement with all six clear is kept, else the one with most. Poses are then frozen.'};
 }
 
@@ -1021,22 +1031,63 @@ export const stationSearchSummary=report=>report.map(r=>({placement:r.placementI
   views:Object.fromEntries(Object.entries(r.views).map(([s,v])=>[s,{tested:v.tested,acceptedAzimuthDeg:v.accepted?.azimuthDeg??null,failures:failureSummary(v.tried)}]))}));
 
 /**
+ * V10 views with no clear camera at their stop, searched at the other stops where the page lets the train stand (ALTERNATE_RULE; alternatePlacementsFor): `gaps` are [{ view, reason, blocker }]
+ * and `search(placements)` is the page's search. Returns `moves` (the views that found a camera: new views standing in their new placement), `stays` (suffix -> the reason a view stays a GAP,
+ * which says what both searches found) and the page's `report` (null when nothing was asked: no gap, or a plan with no other stop).
+ */
+export async function searchOtherStops({station,gaps,search}) {
+  if(!gaps.length||!station.alternates?.length)return {moves:[],stays:new Map(),report:null};
+  const report=await search(alternatePlacementsFor(station,gaps.map(g=>g.view.suffix)));
+  return {...alternateViewsFromSearch(station,gaps,report),report};
+}
+
+/**
+ * The views of a fresh V10 search, with each that has no clear camera at the stop (a GAP the plan itself did not give, with a placement to name) searched for at the other stops
+ * (searchOtherStops): the views in their places, a view that found a camera standing in its new placement, one that did not a GAP whose reason says both searches, and the page's report
+ * (null when nothing was asked).
+ */
+export async function moveGapViews({views,station,search}) {
+  const gaps=views.filter(v=>v.status==='GAP'&&v.placement&&station.views.some(s=>s.suffix===v.suffix&&s.status==='OK')).map(v=>({view:v,reason:v.reason,blocker:v.blocker??null}));
+  const other=await searchOtherStops({station,gaps,search});
+  if(!other.report)return {views,report:null};
+  return {views:views.map(v=>other.moves.find(m=>m.suffix===v.suffix)??(other.stays.has(v.suffix)?{...v,reason:other.stays.get(v.suffix)}:v)),report:other.report};
+}
+
+/**
  * V10 on frozen poses: the results of one kind's frozen station views, with every frozen camera the scene now blocks, and every view frozen as a GAP that the plan asks for,
  * searched for again in its own placement (reseatBlockedStationViews) and the views that search found photographed. A frozen GAP is an earlier answer too: it was recorded
  * under the candidate list the rule had then, and the rule may have tried more positions since (it once stopped at the spread; the neighbours pass came after). Only a view that
  * was OK in the plan and whose inspection found its camera blocked, or one frozen as a GAP whose spec the plan itself marks OK, is reseated: a GAP the plan itself gives (its spec
- * is not OK), a view whose pixels failed and a view that was not frozen are left as recorded. `search(placements)` is the page's search, `capture(views)` photographs views
- * as the first pass did. Returns the results in their order and the search's report (null when nothing was blocked, so nothing was searched).
+ * is not OK), a view whose pixels failed and a view that was not frozen are left as recorded. A view's own placement is the kind's stop, or the other stop it moved to. A view that
+ * still has no clear camera there is searched at the other stops the page lets the train stand (searchOtherStops), and takes the first that gives it one. `search(placements)` is the page's
+ * search, `capture(views)` photographs views as the first pass did. Returns the results in their order, the search's report of the views' own placements (null when nothing was
+ * blocked, so nothing was searched) and `other`, the report of the other stops (null when none was searched).
  */
 export async function reseatStationResults({results,station,search,capture}) {
   const asked=r=>station.views.some(s=>s.suffix===r.view.suffix&&s.status==='OK');
-  const blocked=results.filter(r=>r.view.id==='V10'&&r.view.search?.frozen&&r.status==='GAP'&&(r.view.status==='OK'?r.inspection&&!r.inspection.clear:r.view.status==='GAP'&&r.view.placement&&asked(r)));
-  const placement=blocked.length?station.placements.find(p=>p.id===blocked[0].view.placement?.id):null;
-  if(!placement)return {results,report:null};
-  const report=await search([placement]);
-  const {replacements,stays}=reseatBlockedStationViews(station,blocked,report);
+  const blocked=results.filter(r=>r.view.id==='V10'&&r.view.search?.frozen&&r.status==='GAP'&&(r.view.status==='OK'?r.inspection&&!r.inspection.clear:r.view.status==='GAP'&&asked(r)));
+  const groups=new Map();
+  for(const b of blocked) {
+    const placement=findPlacement(station,b.view.placement?.id);
+    if(!placement)continue;
+    if(!groups.has(placement.id))groups.set(placement.id,{placement,blocked:[]});
+    groups.get(placement.id).blocked.push(b);
+  }
+  if(!groups.size)return {results,report:null,other:null};
+  const report=[],replacements=[],stays=new Map();
+  for(const group of groups.values()) {
+    const found=await search([group.placement]);
+    report.push(...found);
+    const answer=reseatBlockedStationViews(station,group.blocked,found);
+    replacements.push(...answer.replacements);
+    for(const [suffix,reason] of answer.stays)stays.set(suffix,reason);
+  }
+  const gaps=[...stays].map(([suffix,reason])=>{const b=blocked.find(x=>x.view.suffix===suffix);return {view:b.view,reason,blocker:b.blocker??b.view.blocker??null};});
+  const other=await searchOtherStops({station,gaps,search});
+  for(const move of other.moves)replacements.push(move);
+  for(const [suffix,reason] of other.stays)stays.set(suffix,reason);
   const again=replacements.length?await capture(replacements):[];
-  return {results:results.map(r=>again.find(a=>a.view.suffix===r.view.suffix)??(stays.has(r.view.suffix)?{...r,reason:stays.get(r.view.suffix)}:r)),report};
+  return {results:results.map(r=>again.find(a=>a.view.suffix===r.view.suffix)??(stays.has(r.view.suffix)?{...r,reason:stays.get(r.view.suffix)}:r)),report,other:other.report};
 }
 
 // ---- C01: the curve, in Node -----------------------------------------------------------------------------------------------------------------
@@ -1288,17 +1339,23 @@ export async function catalogueMain(args) {
         const state=await evaluate(`window.__cat.beginStation(${JSON.stringify(kind)})`);
         try {
           let views=plan.stationViews;
+          const searchPage=placements=>evaluate(`window.__cat.stationSearch(${JSON.stringify(placements)})`);
           if(!views){
-            const report=await evaluate(`window.__cat.stationSearch(${JSON.stringify(plan.station.placements)})`);
+            const report=await searchPage(plan.station.placements);
             views=stationViewsFromSearch(plan.station,report);
             (summary.stationSearch??={})[kind]=stationSearchSummary(report);
+            // a view with no clear camera at the stop is searched at the other stops the page lets this train stand (ALTERNATE_RULE)
+            const moved=await moveGapViews({views,station:plan.station,search:searchPage});
+            views=moved.views;
+            if(moved.report)(summary.stationOtherStops??={})[kind]=stationSearchSummary(moved.report);
           }
           let results=await captureViews(kind,plan,views,state);
           if(plan.stationViews) {
             // frozen cameras the scene now blocks (a bench, a post, an overhead-line mast another change put in the line) are searched for again, in their placement: nothing else moves
-            const again=await reseatStationResults({results,station:plan.station,search:placements=>evaluate(`window.__cat.stationSearch(${JSON.stringify(placements)})`),capture:views=>captureViews(kind,plan,views,state)});
+            const again=await reseatStationResults({results,station:plan.station,search:searchPage,capture:views=>captureViews(kind,plan,views,state)});
             results=again.results;
             if(again.report)(summary.stationReseat??={})[kind]=stationSearchSummary(again.report);
+            if(again.other)(summary.stationOtherStops??={})[kind]=stationSearchSummary(again.other);
           }
           for(const r of results)entries[r.view.suffix]=manifestEntry(r);
         } finally {await evaluate('window.__cat.end()');}

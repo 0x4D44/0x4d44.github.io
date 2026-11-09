@@ -289,7 +289,7 @@ check('the hidden scene children are sorted by name and then by type, in a copy'
 
 check('the report of a kind names the classes it stands for and what the model cannot tell apart, as the sidecars do',async()=>{
  const kind='lner5',formation=formations.get(kind),run=await runClip({kind}),report=JSON.parse(run.written.get(`${kind}-motion.json`).toString('utf8'));
- assert.equal(typeof formation.classNote,'string','the LNER kinds carry a note that the model does not tell the 800 from the 801');assert.ok(formation.classNote.length>20&&formation.classes.length>3);
+ assert.equal(typeof formation.classNote,'string','the LNER kinds carry a note that states the class');assert.ok(formation.classNote.length>20&&formation.classes.length>3);assert.match(formation.classNote,/^stated class: the electric Class 801\/1 \(five cars\)\./,'the five-car kind is the 801/1');
  assert.equal(report.formation.classes,formation.classes);assert.equal(report.formation.classNote,formation.classNote);assert.equal(report.formation.lengthM,formation.length);assert.equal(report.formation.cars.length,5);
  const sidecar=run.published.get(frameFile(kind,1)).sidecar;assert.equal(sidecar.formation.classes,formation.classes);assert.equal(sidecar.formation.classNote,formation.classNote);
 });
