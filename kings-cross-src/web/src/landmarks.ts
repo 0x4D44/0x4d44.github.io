@@ -701,7 +701,7 @@ const pavilionHalf = (b: BayPosition): number => b.width / 2 - 0.2;
 
 /**
  * hist-b, hist-e: a gabled bay (`b`: its middle and width, two window bays) out of the front and through the cornice. ASSUMED, scaled from those photographs:
- * a stone entrance block to the first string course under a corbelled porch hood, brick above to the eaves, a steep brick gable 9 m higher with a stone border,
+ * a brick front on a stone plinth, a corbelled porch hood at the first string course, brick to the eaves, a steep brick gable 9 m higher with a stone border,
  * twin lancet and finial, two spirelets at its feet, the cornice and string courses carried round its front, slate cheeks back to the roof. Returns the wall it
  * stands on, which the parapet there gives up.
  */
@@ -716,8 +716,9 @@ function addPavilion(parts: PartMap<Key>, b: BayPosition, eaves: number, slope: 
     const l = Math.hypot(u1 - u0, d1 - d0);
     m.quadUV(q(u0, d0, a), q(u1, d1, a), q(u1, d1, z), q(u0, d0, z), [[0, a], [l, a], [l, z], [0, z]], hint);
   };
-  // hist-b: the ground-storey block under the first string course is pale stone, the storeys above red brick
-  for (const [m, span] of [[stone, [0, y0]], [brick, [y0, eaves]]] as const) {
+  // hist-b: the ground storey of the front is red brick with pale dressings, so the block stands on a stone plinth (0.9 m, the height of the base beside it) and is brick above, to the eaves;
+  // round 3's block of pale stone to the first string course read paler and wider than hist-b's mostly brick ground storey
+  for (const [m, span] of [[stone, [0, 0.9]], [brick, [0.9, eaves]]] as const) {
     wall(m, span, -w, w, P, P, [b.normal[0], 0, b.normal[1]]);
     for (const s of [-1, 1]) wall(m, span, s * w, s * w, 0, P, [s * b.dir[0], 0, s * b.dir[1]]);
   }

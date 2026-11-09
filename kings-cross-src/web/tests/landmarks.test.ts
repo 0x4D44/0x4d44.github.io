@@ -1257,7 +1257,7 @@ function inPavilion(pair: readonly [Bay0, Bay0], v: V3): { along: number; out: n
 type Bay0 = (typeof midland.front.bays)[number];
 const pavilionPairs = PAVILIONS.map((i) => [midland.front.bays[i], midland.front.bays[i + 1]] as [Bay0, Bay0]);
 
-test('Midland Grand [hist-b]: three gabled bays two windows wide stand 0.5 m out from the first string course and rise through the cornice to a gable 9 m above the eaves', () => {
+test('Midland Grand [hist-b]: three gabled bays two windows wide stand 0.5 m out of the front, brick from a plinth 0.9 m tall, and rise through the cornice to a gable 9 m above the eaves', () => {
   assert.equal(pavilionPairs.length, 3);
   const withP = midlandGeometry(midland);
   const without = midlandGeometry(midland, []);
@@ -1270,10 +1270,10 @@ test('Midland Grand [hist-b]: three gabled bays two windows wide stand 0.5 m out
     assert.equal(a.edge, b.edge, 'its two bays are on one wall');
     const w = (a.width + b.width) / 2 - 0.2;
     const mine = (t: Tri): boolean => t.p.every((v) => Math.abs(inPavilion(pair, v).along) <= w + 1e-6);
-    // the front: a brick wall 0.5 m out, from the first string course (6 m) to the eaves
+    // the front: a brick wall 0.5 m out, from the stone plinth (0.9 m) to the eaves
     const front = brick.filter((t) => mine(t) && t.p.every((v) => Math.abs(inPavilion(pair, v).out - 0.5) < 1e-6 && v[1] <= midland.eaves + 1e-9));
     assert.equal(front.length, 2, 'one quad');
-    close(Math.min(...front.flatMap((t) => t.p.map((v) => v[1]))), 6, 1e-9, 'it starts at the first string course');
+    close(Math.min(...front.flatMap((t) => t.p.map((v) => v[1]))), 0.9, 1e-9, 'it starts on the plinth');
     close(Math.max(...front.flatMap((t) => t.p.map((v) => v[1]))), midland.eaves, 1e-9, 'and rises to the eaves');
     close(Math.max(...front.flatMap((t) => t.p.map((v) => inPavilion(pair, v).along))) - Math.min(...front.flatMap((t) => t.p.map((v) => inPavilion(pair, v).along))), a.width + b.width - 0.4, 1e-6, 'two bays wide, less a clearance of 0.2 m each side');
     // its sides run back to the wall
@@ -1375,7 +1375,7 @@ test('Midland Grand [hist-b]: a stone base 0.9 m tall and 0.12 m proud runs unde
   }
 });
 
-test('Midland Grand [hist-b]: each gabled bay stands on a stone entrance block 0.5 m out and 6 m tall, its sides running back to the wall, with no brick below the first string course', () => {
+test('Midland Grand [hist-b]: each gabled bay stands on a stone plinth 0.9 m tall and 0.5 m out, its sides running back to the wall, and its ground storey is red brick above it (not a pale block to the first string course)', () => {
   const withP = midlandGeometry(midland);
   const sig = (t: Tri): string => JSON.stringify(t.p);
   const old = new Set(triangles(midlandGeometry(midland, []).stone as Batch).map(sig));
@@ -1386,13 +1386,18 @@ test('Midland Grand [hist-b]: each gabled bay stands on a stone entrance block 0
     const front = stoneAdded.filter((t) => mine(t) && t.p.every((v) => Math.abs(inPavilion(pair, v).out - 0.5) < 1e-6));
     assert.equal(front.length, 2, 'one stone quad');
     close(Math.min(...front.flatMap((t) => t.p.map((v) => v[1]))), 0, 1e-9, 'from the ground');
-    close(Math.max(...front.flatMap((t) => t.p.map((v) => v[1]))), 6, 1e-9, 'to the first string course');
+    close(Math.max(...front.flatMap((t) => t.p.map((v) => v[1]))), 0.9, 1e-9, 'to the plinth\'s top, the height of the base beside it');
     const alongs = front.flatMap((t) => t.p.map((v) => inPavilion(pair, v).along));
     close(Math.max(...alongs) - Math.min(...alongs), 2 * w, 1e-6, 'as wide as the gabled bay');
     const sides = stoneAdded.filter((t) => mine(t) && t.p.every((v) => Math.abs(Math.abs(inPavilion(pair, v).along) - w) < 1e-6) && t.p.some((v) => inPavilion(pair, v).out < 0.1));
     assert.equal(sides.length, 4, 'two stone side walls');
-    const redBelow = triangles(withP.brickRed as Batch).filter((t) => t.p.every((v) => Math.abs(inPavilion(pair, v).out - 0.5) < 1e-6 && Math.abs(inPavilion(pair, v).along) <= w + 1e-6 && v[1] < 6 - 1e-9));
-    assert.equal(redBelow.length, 0, 'the block is stone, not brick');
+    assert.ok(sides.every((t) => t.p.every((v) => v[1] <= 0.9 + 1e-9)), 'as tall as the plinth');
+    // the brick front stands on it, to the eaves (the gable test measures that), and no stone stands on the front's own plane above it: it reads mostly brick
+    const brickFront = triangles(withP.brickRed as Batch).filter((t) => t.p.every((v) => Math.abs(inPavilion(pair, v).out - 0.5) < 1e-6 && Math.abs(inPavilion(pair, v).along) <= w + 1e-6 && v[1] <= midland.eaves + 1e-9));
+    assert.equal(brickFront.length, 2, 'one brick quad');
+    close(Math.min(...brickFront.flatMap((t) => t.p.map((v) => v[1]))), 0.9, 1e-9, 'it starts at the plinth\'s top');
+    const paleAbove = stoneAdded.filter((t) => t.p.every((v) => Math.abs(inPavilion(pair, v).out - 0.5) < 1e-6 && Math.abs(inPavilion(pair, v).along) <= w + 1e-6 && v[1] <= 6 + 1e-9) && t.p.some((v) => v[1] > 0.9 + 1e-9));
+    assert.equal(paleAbove.length, 0, 'no pale stone on the front above the plinth, up to the first string course');
   }
 });
 
