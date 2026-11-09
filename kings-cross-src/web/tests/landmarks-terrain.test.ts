@@ -204,7 +204,7 @@ test('on ground level with the railway\'s own (GROUND_Y) the hotel, the Midland 
 
 test('the footprints are where the walls are: every vertex of the hotel and the Midland Grand is within a cornice\'s reach of its rings, the walls\' feet are on them, and the shed lies inside its rectangle, end to end', () => {
   const plain = named(landmarkGeometry(plans));
-  const reach: Record<LandmarkName, number> = { hotel: 1, midland: 1, barlow: 0.01 }; // cornices and bands stand proud of the wall by up to 0.7 m
+  const reach: Record<LandmarkName, number> = { hotel: 1 + 1e-6, midland: 1 + 1e-6, barlow: 0.01 }; // cornices stand proud of the wall by up to 1 m (the hotel's, hist-a), bands and pavilions by less
   for (const name of NAMES) {
     let worst = 0;
     const xs: number[] = [];
@@ -223,10 +223,16 @@ test('the footprints are where the walls are: every vertex of the hotel and the 
     const rx = rings[name].flat().map((p) => p[0]);
     const rz = rings[name].flat().map((p) => p[1]);
     const over = [Math.min(...rx) - Math.min(...xs), Math.max(...xs) - Math.max(...rx), Math.min(...rz) - Math.min(...zs), Math.max(...zs) - Math.max(...rz)];
-    for (const o of over) assert.ok(o >= -0.01 && o <= 1, `${name}: the building reaches ${o} m beyond its rings' extent`);
-    const feet = feetAt(plain[name], Object.keys(plain[name]) as Key[], 0);
+    for (const o of over) assert.ok(o >= -0.01 && o <= 1 + 1e-6, `${name}: the building reaches ${o} m beyond its rings' extent`);
+    const keys = Object.keys(plain[name]) as Key[];
+    const feet = feetAt(plain[name], keys, 0);
     assert.ok(feet.length >= 40, `${name}: ${feet.length} wall feet`);
-    for (const p of feet) assert.ok(rings[name].some((r) => distToRing(p, r) < 0.01), `${name}: a wall foot at ${p} is off its rings`);
+    // the walls stand on the rings; only the stone at their foot stands out from them: the hotel's base 0.06 m, the Midland's entrance blocks 0.5 m (its base is 0.12 m)
+    for (const p of feetAt(plain[name], keys.filter((k) => k !== 'stone'), 0)) assert.ok(rings[name].some((r) => distToRing(p, r) < 0.01), `${name}: a wall foot at ${p} is off its rings`);
+    const proud = name === 'hotel' ? 0.06 : 0.5;
+    const stoneFeet = feetAt(plain[name], ['stone'], 0);
+    assert.ok(stoneFeet.length >= 20, `${name}: ${stoneFeet.length} stone feet`);
+    for (const p of stoneFeet) assert.ok(rings[name].some((r) => distToRing(p, r) <= proud + 1e-6), `${name}: a stone foot at ${p} is more than ${proud} m off its rings`);
   }
   // the shed: along its length the rectangle is the vault, from the south wall to the north end
   const frame = { origin: plans.barlow.origin, heading: plans.barlow.heading };
