@@ -91,20 +91,41 @@ test('funnel: the head stands on the roof\'s third ring, one leg to each node, a
   for (const r of head) assert.ok(r[1] > 19.2 && r[1] < canopy.apex, `the roof node is at ${r[1]} m, the funnel's 20 m (R3) less the roof's dip to the ring`);
 });
 
-test('funnel: it stands beside the Range, 0.25 to 1 m short of the face, never entering the cornice', () => {
+test('funnel: it stands beside the Range, 0.45 to 1 m short of the face, never entering the cornice', () => {
   const axis = worldToShed(layout, [column.position.x, column.position.z]);
   let east = -Infinity;
   const p = new THREE.Vector3();
   column.updateMatrixWorld(true);
   for (let i = 0; i < position.count; i++) { p.fromBufferAttribute(position, i).applyMatrix4(column.matrixWorld); east = Math.max(east, worldToShed(layout, [p.x, p.z]).u); }
   const gap = RANGE_FACE - east;
-  assert.ok(gap > 0.25 && gap < 1, `the funnel's tubes come within ${gap.toFixed(2)} m of the Range's face (R3: next to, not touching)`);
+  // the Range's cornice stands 0.45 m proud of its face (shed.ts): every tube of the funnel stays west of it, at every height
+  assert.ok(gap > 0.45 && gap < 1, `the funnel's tubes come within ${gap.toFixed(3)} m of the Range's face (R3: next to, not touching; the cornice is 0.45 m)`);
   assert.ok(Math.abs(axis.u + 17.7) < 1e-6, 'its axis stands 17.7 m from the shed wall, where the roof grid puts it');
-  // the Range's cornice stands 0.45 m proud of its face (shed.ts), at and under CORNICE_TOP: the legs stay west of it there. (Higher up, over the Range's roof, the last
-  // stretch into the head may sweep a few centimetres past the limit the legs press against; the gap above is the whole funnel's.)
-  let low = -Infinity;
-  for (let i = 0; i < position.count; i++) { p.fromBufferAttribute(position, i).applyMatrix4(column.matrixWorld); if (p.y <= CORNICE_TOP + 0.5) low = Math.max(low, worldToShed(layout, [p.x, p.z]).u); }
-  assert.ok(low < RANGE_FACE - 0.45, `the legs at the cornice's height stand ${(RANGE_FACE - low).toFixed(2)} m from the face, clear of the cornice (0.45 m)`);
+});
+
+// Round 5 (scorer): over the Range's cornice the roof's closure glass fills the cut, 0.29 m off the brick, so a funnel that came within 0.29 m of the face up there would pierce it.
+test('funnel: it stands clear of the closure glass over the Range\'s cornice, every tube at least 0.1 m west of it (R3: next to, not touching)', () => {
+  const closure = group.getObjectByName('concourse-closure') as THREE.Mesh | undefined;
+  assert.ok(closure, 'the roof closes its cut over the Range with a glass wall');
+  const glass = closure.geometry.getAttribute('position'), p = new THREE.Vector3();
+  const axis = worldToShed(layout, [column.position.x, column.position.z]);
+  closure.updateMatrixWorld(true);
+  column.updateMatrixWorld(true);
+  // the glass in front of the funnel, as built: the closure's corners within the funnel's width of its axis along the Range, from the cornice's foot up
+  const plane: number[] = [], heights: number[] = [];
+  for (let i = 0; i < glass.count; i++) {
+    p.fromBufferAttribute(glass, i).applyMatrix4(closure.matrixWorld);
+    const at = worldToShed(layout, [p.x, p.z]);
+    if (Math.abs(at.v - axis.v) < 6.4 && p.y > CORNICE_TOP - 1) { plane.push(at.u); heights.push(p.y); }
+  }
+  assert.ok(plane.length >= 8, `${plane.length} corners of the closure glass stand before the funnel`);
+  const wall = Math.max(...plane), foot = Math.min(...heights);
+  assert.ok(wall - Math.min(...plane) < 1e-6, 'the glass there is one flat plane');
+  assert.ok(wall < RANGE_FACE - 0.25 && wall > RANGE_FACE - 0.35, `the glass stands ${(RANGE_FACE - wall).toFixed(2)} m off the Range's face (0.29 m: the roof's cut, 0.3 m in front of the wall)`);
+  assert.ok(Math.abs(foot - CORNICE_TOP) < 0.01, `the glass starts at the cornice's top, ${foot.toFixed(2)} m up`);
+  let east = -Infinity;
+  for (let i = 0; i < position.count; i++) { p.fromBufferAttribute(position, i).applyMatrix4(column.matrixWorld); if (p.y > foot) east = Math.max(east, worldToShed(layout, [p.x, p.z]).u); }
+  assert.ok(east < wall - 0.1, `the funnel's tubes above the cornice come within ${(wall - east).toFixed(3)} m of the closure glass`);
 });
 
 test('funnel: legs cross in diamonds, pass every crossing without a kink, stand upright on the floor and sweep outwards into the roof', () => {

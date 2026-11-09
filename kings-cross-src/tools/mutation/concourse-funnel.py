@@ -1,4 +1,4 @@
-"""Funnel mutations: round tubes, smooth curved legs, leg counts, the splay and widening, the head on the roof's third ring.
+"""Funnel mutations: round tubes, smooth curved legs, leg counts, the splay and widening, the head on the roof's third ring, the clearance from the Range and its closure glass.
 Usage: concourse-funnel.py SOURCE SCRATCH. Mutates a private copy of SOURCE under SCRATCH (which must lie beneath a .scratch
 directory); each kill needs an assertion failure from web/tests/concourse-funnel.test.ts, not a load failure.
 """
@@ -42,9 +42,12 @@ mutations = [
     ('a flare that reaches the mouth early and runs on straight', FLARE, 'Math.min(1, 1.2 * t ** 2)'),
     ('head legs stand off the roof ring', 'const p: V3 = last ? [...head[i]!] :', 'const p: V3 = last ? [head[i]![0], head[i]![1] - 0.5, head[i]![2]] :'),
     ('head ring one ring in', 'export const FUNNEL_HEAD_RING = 2;', 'export const FUNNEL_HEAD_RING = 1;'),
-    ('Range-side legs reach into the cornice', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS + 0.4;'),
-    ('Range-side legs press against the cornice, 0.36 m from the face', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.2;'),
-    ('Range-side legs stand far from the Range', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 3;'),
+    ('Range-side legs reach into the cornice', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;', 'export const FUNNEL_REACH = FUNNEL_RADIUS + 0.4;'),
+    ('Range-side legs press into the Range, past its face', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.2;'),
+    ('Range-side legs stand far from the Range', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 3;'),
+    ('Range-side legs a hair short of the cornice, 0.4497 m from the face', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;'),
+    ('Range-side legs pierce the closure glass, 0.24 m from the face', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.43;'),
+    ('the closure glass is cut 0.5 m in front of the face, through the funnel', 'export const WEST_WALL = -WESTERN_RANGE.depth - 0.3;', 'export const WEST_WALL = -WESTERN_RANGE.depth - 0.5;'),
     ('all tubes one thickness', THICK, 'return 0.36;'),
     ('thin tubes', THICK, 'return 0.2 - 0.05 * clamp01(y / top);'),
     ('rings not turned half a step', '((rings.length - 1 - k) % 2 ? 0.25 : -0.25)', '0'),

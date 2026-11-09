@@ -310,7 +310,7 @@ export function concourseGrid(canopy: ConcourseCanopy, footprint: Pt[], shed: Sh
 /** The roof grid ring the legs land on, one leg to each node. */
 export const FUNNEL_HEAD_RING = 2;
 /** The Range side stands straight against the brick (conc-ab), clear of the cornice. */
-export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;
+export const FUNNEL_REACH = FUNNEL_RADIUS - 0.62;
 /** Rings of legs under the head: height share, leg count (the head has the roof ring's). */
 const COLUMN_RINGS = [[0, 12], [0.064, 12], [0.128, 12], [0.195, 12], [0.267, 12], [0.343, 12], [0.426, 12], [0.518, 12], [0.62, 12], [0.74, 12], [0.84, 12], [0.92, 12]] as const;
 /** Radius of a ring at share t of the head's height: feet 1.85 m out, splayed 0.25 m, a cone, then a bell. */
