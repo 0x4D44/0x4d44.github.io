@@ -2872,6 +2872,10 @@ test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod out
   const across = 2 * half(faceTop - 0.01);
   assert.ok(across > 1.6 && across < 2.0, `a panel ${across.toFixed(2)} m across at the glass's foot (GC180-05: about 1.8 m)`);
   assert.ok(2 * half(foot + 0.01) > 1.2 && 2 * half(foot + 0.01) < 1.6, 'and about 1.4 m at its foot');
+  // CHANGED (the panel's foot was 0.95 m, a panel 1.3 m tall under the glass's foot: the round-3 scorer's "oversized flat trapezoid" on gc180x5-front-3m): GC180-02 and GC180-03,
+  // read against the 3.77 m height, put the yellow between about 1.1 m and 2.2 m, a panel about 1.1 m tall; its foot stands at 1.08 m, 13 cm over the recess's top
+  near(foot, 1.08, 1e-9, 'the panel\'s foot stands 1.08 m over the rail head');
+  near(faceTop - foot, 1.1, 0.03, `a panel ${(faceTop - foot).toFixed(2)} m tall under the glass's foot (GC180-02, GC180-03: about 1.1 m)`);
   // the recess under it: centred, and not cutting into the panel
   assert.ok(ADELANTE_FACE.recess.y1 <= foot + 1e-9, 'the coupler recess ends where the panel begins');
   // (the 180 has no cover to seam, so `coverTop` is only the bumper line the table records: where the recess ends, as its comment says)
@@ -2890,6 +2894,22 @@ test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod out
   assert.ok(head.x1 - head.x0 > 1.5 * (tail.x1 - tail.x0), 'and much the larger');
   // the pods are lighter than the black round them, and darker than the yellow
   assert.ok(lumaOf(podShape.colour as number) > lumaOf(0x17181c) + 0.1 && lumaOf(podShape.colour as number) < 0.4, 'a smoked-grey pod on the black front');
+});
+
+test('Class 180 nose: the front edge is rounded over 0.3 m and takes 15% of the section, the face keeping the height it had, so the head reads as rounded and not a box', () => {
+  // (round 4, the scorer's "short and boxy" on gc180x5-front-3m and nose-34-left: the edge was rounded over 0.14 m, taking 9% of the size, against GC180-05 and GC180-03, whose face
+  // curves back into the cab sides over some half a metre; sizes ASSUMED, read off those photographs by eye)
+  const nose = bodySpec('adelante').nose;
+  assert.equal(nose.fillet, 0.3);
+  assert.equal(nose.filletLoss, 0.15);
+  assert.equal(nose.filletSteps, 9);
+  // the face is the tip ring: its top and bottom stand where the narrower rounding had them, within a few centimetres (about 2.19 m and 0.68 m, against 2.18 m and 0.63 m); only its width shrinks a little
+  const tip = ringAt(nose, 0);
+  near(tip.top, 2.187, 0.01, 'the face\'s top');
+  near(tip.bottom, 0.6825, 0.01, 'the face\'s bottom');
+  near(tip.ws, 0.99 * 0.85, 1e-9, 'the face\'s half-width, as a fraction of the body\'s');
+  // rounder than the upright walls' (the 387's, the 717's and the 700's tight edges) in both the length it runs and the share of the section it takes
+  for (const f of ['electrostar', 'desiro', 'desiro700'] as Family[]) assert.ok(bodySpec(f).nose.fillet < nose.fillet && bodySpec(f).nose.filletLoss < nose.filletLoss, `${f}: a tighter front edge than the 180's`);
 });
 
 test('Class 180 nose: a bright post between the two panes of the glass, and on the roof behind it a louvre, a round vent and a smaller louvre, on both cabs, over the nose\'s surface and clear of the glass', () => {
@@ -3506,6 +3526,23 @@ test('skirts: a panel carries louvres only where the cover is tall enough, the s
   // the far end, mirrored: the group of two (0.57 of the way along, 0.51 m each side) stands clear of the far end by 0.43 L - 0.51 - 0.14 - 0.3 at its smallest on a stretch this long
   assert.equal(slatsOn(6.5), 60, 'the test\'s own sum agrees');
   assert.equal(slatsOn(6.4), 20, 'on both');
+  // the far end is held as the near end is. Today's groups stand in the first 57% of a stretch, so on a stretch of 3.5 m or more the far end can never clip one; the guard is held here with
+  // a group put near the far end for the length of the test (restored after it, whatever happens)
+  const groups = SKIRT_LOUVRES as { at: number; grilles: number }[];
+  const saved = groups.map((g) => ({ ...g }));
+  try {
+    // one grille (0.48 m wide) centred 0.9 of the way along 8 m: its far edge stands 7.44 m along, the limit being 8 - 0.14 - 0.3 = 7.56 m: it fits
+    groups.push({ at: 0.9, grilles: 1 });
+    assert.equal(trianglesOf(8, 0.45, true), 8 + 2 * 70, 'a group clear of the far end stands');
+    // centred 0.97 of the way along: its far edge is at 8.0 m, over the limit: left out, though its near edge is well clear of the near end
+    groups.length = 0;
+    groups.push(...saved.map((g) => ({ ...g })), { at: 0.97, grilles: 1 });
+    assert.equal(trianglesOf(8, 0.45, true), 8 + 2 * 60, 'a group running within 0.44 m of the far end is left out');
+  } finally {
+    groups.length = 0;
+    groups.push(...saved);
+  }
+  assert.deepEqual(SKIRT_LOUVRES, [{ at: 0.23, grilles: 4 }, { at: 0.57, grilles: 2 }], 'the groups are put back');
 });
 
 test('skirts: a cover\'s louvres are grilles of ten slats, half a metre wide, four a quarter of the way along and two just past the middle', () => {
@@ -3550,6 +3587,9 @@ test('skirts: a cover\'s louvres are grilles of ten slats, half a metre wide, fo
 });
 
 test('skirts: a cover carries a hem of notches along its foot on a stretch of 1.5 m or more and a cover 0.3 m tall, centred on the foot and clear of its raked ends; a panel without a hem colour has none', () => {
+  // the hem's sizes, literal (ref-case-zoom3 of lner-801-214-2025: notches about 0.2 m wide and 0.07 m tall on a 0.5 m pitch; ASSUMED, read off the photograph by eye): a test that read
+  // them from the constants would follow a mutant of the constants
+  assert.deepEqual({ ...SKIRT_HEM }, { minLength: 1.5, minHeight: 0.3, notchWidth: 0.2, notchHeight: 0.07, notchPitch: 0.5, margin: 0.1 });
   const hem = col(0x101214);
   const z0 = 0;
   const z1 = 9.1;

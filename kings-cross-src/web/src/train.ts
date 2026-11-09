@@ -785,7 +785,7 @@ const ADELANTE_BODY = ((): BodySpec => {
         // ASSUMED, read off GC180-01 and GC180-05 against the published 3.77 m: a face about 1.6 m tall and nearly the body's width, its top edge the windscreen's foot at
         // about 2.2 m; the glass rising from there to about 3.05 m over a metre and a quarter (about 35 degrees off the horizontal: the 700's is now an upright wall);
         // then the roof's black dome, falling away from the crown over some two metres more (the door behind the nose stands about 3.4 m from the tip in GC180-01)
-        { s: 0, top: 2.26, ws: 0.97, bottom: 0.55 },
+        { s: 0, top: 2.32, ws: 0.99, bottom: 0.55 },
         { s: 0.12, top: 2.34, ws: 0.98, bottom: 0.62 },
         { s: 0.5, top: 2.57, ws: 0.985, bottom: 0.7 },
         { s: 0.9, top: 2.83, ws: 0.99, bottom: 0.8 },
@@ -794,8 +794,8 @@ const ADELANTE_BODY = ((): BodySpec => {
         { s: 2.5, top: 3.52, ws: 1, bottom: floor - 0.02 },
         { s: length, top: crown, ws: 1, bottom: floor },
       ],
-      fillet: 0.14,
-      filletLoss: 0.09,
+      fillet: 0.3,
+      filletLoss: 0.15,
       filletSteps: 9,
       roundLen: 2.8,
       widest: 0.47,

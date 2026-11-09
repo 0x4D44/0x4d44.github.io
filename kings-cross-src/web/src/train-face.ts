@@ -280,7 +280,7 @@ export const ADELANTE_FACE: FaceSpec = {
   // (no glass on this face: the windscreen is a patch on the nose's roof)
   glassLean: 0,
   shapes: [
-    { name: 'warning-panel', outline: [[0.95, 2.4], [0.69, 0.95], [-0.69, 0.95], [-0.95, 2.4]], colour: YELLOW, lift: 0.0015 },
+    { name: 'warning-panel', outline: [[0.95, 2.4], [0.69, 1.08], [-0.69, 1.08], [-0.95, 2.4]], colour: YELLOW, lift: 0.0015 },
     { name: 'lamp-pod', outline: [[0.94, 2.0], [1.6, 2.0], [1.6, 1.05], [0.74, 1.05]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
     { name: 'headlight', outline: discOutline(1.0, 1.32, 0.095), lens: 'head', lift: 0.019, mirror: true },
     { name: 'tail-lamp', outline: discOutline(1.0, 1.7, 0.055), lens: 'tail', lift: 0.019, mirror: true },
