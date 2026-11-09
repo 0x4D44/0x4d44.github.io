@@ -58,7 +58,7 @@ const overlap = (a: Footprint, b: Footprint): boolean => a.u0 < b.u1 && b.u0 < a
 
 test('fit-out: two meshes, lit solids and unlit signs, in a group turned into the shed frame', () => {
   assert.ok(fitout, 'the concourse has a fit-out group');
-  assert.equal(fitout.parent, group);
+  assert.ok(fitout.parent === group, 'the fit-out hangs under the concourse group'); // not assert.equal: a failed one would diff two scene graphs
   assert.deepEqual(fitout.children.map(c => c.name).sort(), ['concourse-fitout-signs', 'concourse-fitout-solid']);
   assert.ok(solid.material instanceof THREE.MeshLambertMaterial && solid.material.vertexColors, 'solids are lit and coloured');
   assert.ok(signs.material instanceof THREE.MeshBasicMaterial, 'signs are unlit, so they glow as lit signs do');

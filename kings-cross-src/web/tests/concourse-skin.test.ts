@@ -86,7 +86,7 @@ test('roof skin: the oculus glazes the funnel crown, and one set of panes is bri
   assert.equal(crown.length, skinGrid.nodes.filter(n => n.ring === 0).length, 'one fan triangle per node of the first ring');
   for (const f of crown) for (const v of [f.a, f.b, f.c]) assert.ok(v.y > canopy.apex - 0.3 && v.y < canopy.apex + SKIN_LIFT + 0.01, `oculus corner at ${v.y} m`);
   const below = skin.getObjectByName('concourse-glass') as THREE.Mesh, above = skin.getObjectByName('concourse-glass-top') as THREE.Mesh;
-  assert.equal(below.geometry, above.geometry, 'one geometry, two looks');
+  assert.ok(below.geometry === above.geometry, 'one geometry, two looks'); // not assert.equal: a failed one would diff two geometries, which never finishes
   assert.equal((below.material as THREE.Material).side, THREE.BackSide);
   assert.equal((above.material as THREE.Material).side, THREE.FrontSide);
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
