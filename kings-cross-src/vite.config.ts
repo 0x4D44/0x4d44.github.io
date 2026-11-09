@@ -159,6 +159,65 @@ export const devJsonImports = (): Plugin => ({
   },
 });
 
+// ---- the squeeze of three.js's own shader strings -------------------------------------------------------------------------------------------------------
+// three's build writes each of its shaders as a plain string, `var lights_fragment_begin = "\n\tvec3 geometryPosition = ...\n\t...";`, with the comments and the blank lines
+// taken out already and the indentation left in, a tab to a nesting level and a space to an argument. That is 142 strings (the 140 chunks and programs that
+// ShaderChunk and ShaderLib hold, and the two the variance shadow map draws with), and the indentation and the runs of spaces are about 610 B of the gzipped bundle.
+// The production build strips from each what the GLSL squeeze above strips from a marked template (white space beside a newline, a run of spaces to one, a comment if
+// one is left), reading the string as the JavaScript that it is. Every newline stays, so a line keeps its number: the lines a compile error prints are the lines of
+// three's source, and three's own `#include` and `#pragma unroll_loop` patterns, which read a line start and `\s`, match as they did.
+//
+// What reads these strings as text, besides the GPU's compiler: three's own patterns (the `#include <name>` line, the unrolled loop), and the page's own matches in an
+// `onBeforeCompile` hook and in lighting.ts (every one a one-line `#include <name>` or a one-line phrase that has no run of spaces in it; the page's tests,
+// tools/tests/three-squeeze*.test.ts, hold each of them to the squeezed text and run the hooks on it). A match that spans a line break or a run of white space would
+// stop matching in the build and in no test of a dev server, which is the case those tests are there to catch.
+
+/**
+ * Whether `text` reads as GLSL, which is what a three.js string with a newline in it is, today: a preprocessor line or a declaration. Only such a string is squeezed;
+ * a message or a path would lose its `//`.
+ */
+const readsAsGlsl = (text: string): boolean => /^[ \t]*#[ \t]*(?:if|ifdef|ifndef|else|elif|endif|define|undef|include|extension|version|pragma)\b|\bvoid[ \t]+\w+[ \t]*\(|\b(?:uniform|varying|attribute|precision)[ \t]+\w|\b(?:float|int|bool|vec[234]|mat[234])[ \t]+\w+[ \t]*[=;(\[,]/m.test(text);
+
+/** The string `text` squeezed as the GLSL squeeze squeezes a template (the same function, on the string's own characters), or null: nothing to squeeze, or no certainty, or not GLSL. */
+export function squeezeGlslText(text: string): string | null {
+  if (!text.includes('\n') || !readsAsGlsl(text)) return null;
+  const squeezed = squeezeGlslParts([text])?.[0];
+  return squeezed === undefined || squeezed === text ? null : squeezed;
+}
+
+/** three.js's `three.module.js` with each of its top-level string declarations (`var name = "...";`) that reads as many-line GLSL squeezed, and the same string if there is none. */
+export function squeezeThreeGlsl(code: string): string {
+  const edits: [number, number, string][] = [];
+  for (const statement of (parseAst(code, { lang: 'js' }) as unknown as { body: AstNode[] }).body) {
+    if (statement.type !== 'VariableDeclaration') continue;
+    for (const declarator of statement.declarations as AstNode[]) {
+      const init = declarator.init as AstNode | null;
+      const squeezed = init?.type === 'Literal' && typeof init.value === 'string' ? squeezeGlslText(init.value) : null;
+      if (init && squeezed !== null) edits.push([init.start, init.end, JSON.stringify(squeezed)]);
+    }
+  }
+  let out = code;
+  for (const [from, to, text] of edits.sort((a, b) => b[0] - a[0])) out = out.slice(0, from) + text + out.slice(to);
+  return out;
+}
+
+export const threeGlslSqueeze = (): Plugin => ({
+  name: 'three-glsl-squeeze',
+  apply: 'build',
+  enforce: 'pre',
+  transform(code, id) {
+    const file = (id.split('?', 1)[0] ?? id).replace(/\\/g, '/');
+    if (!file.endsWith('/three/build/three.module.js')) return null;
+    try {
+      const out = squeezeThreeGlsl(code);
+      return out === code ? null : { code: out, map: null }; // (a string stays on its own line, and nothing follows it there but its `;`, so the map stays true)
+    } catch (e) {
+      this.warn(`three-glsl-squeeze left ${file} as it was: ${e instanceof Error ? e.message : e}`);
+      return null;
+    }
+  },
+});
+
 // The Vite project root is web/, so the repo's responsive test (which treats every
 // top-level <dir>/index.html as a published document) never sees this source index.html.
 // The build goes straight into the served directory, ../kings-cross/, with relative URLs
@@ -166,7 +225,7 @@ export const devJsonImports = (): Plugin => ({
 export default defineConfig({
   root: 'web',
   base: './',
-  plugins: [almanacBack(), glslSqueeze(), devJsonImports()],
+  plugins: [almanacBack(), glslSqueeze(), threeGlslSqueeze(), devJsonImports()],
   build: {
     outDir: '../../kings-cross',
     emptyOutDir: true,
