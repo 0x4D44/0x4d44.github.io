@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:* ws://localhost:*; worker-src 'self' blob:; font-src 'self'; manifest-src 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>King's Cross in 3D</title>
 <meta name="description" content="A 3D model of King's Cross station at true scale, built from OpenStreetMap, with sample Azuma trains standing at the buffer stops. Live running is not connected yet.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e1218'/%3E%3Cpath d='M9 26 14 6M23 26 18 6M11 20h10M12.5 13h7' stroke='%23d9a441' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
 <style>:root{--bg:#0e1218;--fg:#d7dde6;--muted:#8793a3;--panel:#0e1218c7;--line:#d7dde629}:root[data-theme=light]{--bg:#e9edf2;--fg:#1c2430;--muted:#5a6677;--panel:#e9edf2d9;--line:#1c24302e}html,body{background:var(--bg);height:100%;color:var(--fg);margin:0;overflow:hidden}body{font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}#app{position:fixed;inset:0}canvas{width:100%;height:100%;display:block}.hud{pointer-events:none;color:var(--muted);flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:4px 16px;font-size:12px;display:flex;position:fixed;bottom:12px;left:16px;right:16px}.hud>*{background:var(--panel);border:1px solid var(--line);pointer-events:auto;border-radius:6px;padding:4px 8px}.hud a{color:inherit}h1{letter-spacing:.02em;background:var(--panel);border:1px solid var(--line);border-radius:6px;margin:0;padding:4px 10px;font-size:15px;font-weight:600;position:fixed;top:12px;right:16px}#fallback{text-align:center;place-items:center;padding:24px;display:none;position:fixed;inset:0}.no-webgl #fallback{display:grid}</style>
-  <script type="module" crossorigin src="./assets/index-D0FbdJ3i.js"></script>
+  <script type="module" crossorigin src="./assets/index-BhlSZn5u.js"></script>
 </head>
 <body>
 <div id="app" aria-label="3D model of King's Cross station"></div>
@@ -15,7 +16,7 @@
 <div id="fallback"><p>This page needs WebGL to draw the 3D model, and your browser has it turned off or unavailable.</p></div>
 <div class="hud">
   <span id="status">Loading…</span>
-  <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL)</span>
+  <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). Ground: contains Environment Agency information © Environment Agency and/or database right 2026 (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>)</span>
 </div>
 <!-- the shared "← Almanac" back button is injected into the production build by vite.config.ts -->
 
