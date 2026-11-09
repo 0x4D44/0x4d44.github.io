@@ -92,10 +92,13 @@ export function createSclassRunner({ execFile = nodeExecFile, cwd = packageRoot,
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('sclass runner timeout must be positive');
   if (!Number.isFinite(killGraceMs) || killGraceMs < 0) throw new Error('sclass runner kill grace must be non-negative');
 
-  return ({ dataDir, area, anchorsPath, tablePath, signal }) => new Promise((resolve, reject) => {
+  return ({ dataDir, area, anchorsPath, tablePath, recordingsDir, overlayPath, trackPath, signal }) => new Promise((resolve, reject) => {
     const args = ['tools/sclass.ts', '--relearn', '--data-dir', dataDir, '--area', area];
     if (anchorsPath !== undefined) args.push('--anchors', anchorsPath);
     if (tablePath !== undefined) args.push('--table', tablePath);
+    if (recordingsDir !== undefined) args.push('--recordings-dir', recordingsDir);
+    if (overlayPath !== undefined) args.push('--overlay', overlayPath);
+    if (trackPath !== undefined) args.push('--track', trackPath);
 
     let child;
     let closed = false;
@@ -172,6 +175,9 @@ export function createSclassJob({
   area,
   anchorsPath,
   tablePath,
+  recordingsDir,
+  overlayPath,
+  trackPath,
   now = Date.now,
   schedule = setTimeout,
   cancel = clearTimeout,
@@ -180,7 +186,7 @@ export function createSclassJob({
   settleMs = DEFAULT_SETTLE_MS,
 } = {}) {
   if (typeof dataDir !== 'string' || !dataDir) throw new Error('sclass job dataDir is required');
-  if (typeof area !== 'string' || !area) throw new Error('sclass job area is required');
+  if (typeof area !== 'string' || !/^[A-Z0-9]{2}$/.test(area)) throw new Error('sclass job area is invalid');
   if (!Number.isFinite(settleMs) || settleMs < 0 || settleMs >= 24 * 60 * 60_000) throw new Error('sclass job settleMs must be less than one UTC day');
 
   let started = false;
@@ -210,7 +216,7 @@ export function createSclassJob({
     const controller = new AbortController();
     activeController = controller;
     activePromise = Promise.resolve()
-      .then(() => run({ date, dataDir, area, anchorsPath, tablePath, signal: controller.signal }))
+      .then(() => run({ date, dataDir, area, anchorsPath, tablePath, recordingsDir, overlayPath, trackPath, signal: controller.signal }))
       .then(result => {
         if (!stopped) safeLog(result?.[SAFE_RESULT] === true ? result.text : `sclass relearn: completed for ${date}`);
       })

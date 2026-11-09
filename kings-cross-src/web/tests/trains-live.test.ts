@@ -557,3 +557,18 @@ test('a fresh physical train gets a new group when its description matches a fad
   });
   layer.dispose();
 });
+
+test('new stations keep unknown operators unresolved and never draw the legacy LNER fallback', () => {
+  for (const stationId of ['st-pancras', 'edinburgh-waverley'] as const) {
+    const resolver = createTrainKinds(() => service('ZZ'), { stationId });
+    const length = resolver.lengthM('1SYN', { id: 99, timeMs: 0 });
+    assert.ok(Number.isFinite(length) && length > 0);
+    const train = { ...fixture().train, id: 99, description: '1SYN', lengthM: length };
+    assert.equal(resolver.kindFor(train), undefined);
+    const parent = new THREE.Group();
+    const drawn = createLiveTrains(fixture().graph, parent, resolver.kindFor);
+    drawn.update([train]);
+    assert.equal(parent.children.length, 0);
+    drawn.dispose();
+  }
+});

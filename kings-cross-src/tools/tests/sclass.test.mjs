@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { appendFile, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aggregate, completedRecordingNames, countHeads, publicationDecision, relearnSclass } from '../sclass.ts';
@@ -129,6 +129,39 @@ test('completed day selection excludes today future malformed and foreign record
     'td-Y9-20250104.ndjson', 'td-Z9-20250101.ndjson', 'td-Y9-20250230.ndjson', 'td-Y9-20241331.ndjson', 'td-Y9-no.ndjson'],
   'Y9', Date.UTC(2025, 0, 3)), ['td-Y9-20250101.ndjson', 'td-Y9-20250102.ndjson']);
   assert.throws(() => completedRecordingNames([], '../', Date.now()), /Invalid/);
+});
+
+test('relearn CLI reads shared recordings and requires area-specific render assets outside Y9', async t => {
+  const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(path.join(scratch, 'sclass-area-cli-test-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const dataDir = path.join(dir, 'areas', 'ZZ'), recordingsDir = path.join(dir, 'recordings');
+  await mkdir(dataDir, { recursive: true }); await mkdir(recordingsDir);
+  const anchors = path.join(dataDir, 'anchors.json');
+  const overlay = path.join(dir, 'zz-signals.json'), track = path.join(dir, 'zz-track.json');
+  const ignoredAnchors = path.join(dir, 'ignored-kx-anchors.json'), ignoredTable = path.join(dir, 'ignored-kx-table.json');
+  await writeFile(anchors, JSON.stringify({ area: 'ZZ', sources: ['synthetic'], anchors: [], unmapped: [] }));
+  await writeFile(overlay, JSON.stringify({ attribution: 'synthetic ZZ', signals: [] }));
+  await writeFile(track, JSON.stringify({ nodes: [], ways: [], rails: [], platforms: [], tracks: [], buildings: [] }));
+  await writeFile(ignoredAnchors, JSON.stringify({ area: 'Y9', sources: [], anchors: [], unmapped: [] }));
+  await writeFile(ignoredTable, '{');
+  for (const day of [1, 2]) {
+    const start = Date.UTC(2025, 0, day);
+    await writeFile(path.join(recordingsDir, `td-ZZ-2025010${day}.ndjson`), `${JSON.stringify({ t: start, e: { kind: 'marker', area: 'ZZ' } })}\n`);
+  }
+  const invoke = extra => spawnSync(process.execPath, [path.join(root, 'kings-cross-src/tools/sclass.ts'), '--relearn',
+    '--data-dir', dataDir, '--area', 'ZZ', '--recordings-dir', recordingsDir, ...extra],
+  { cwd: root, encoding: 'utf8', timeout: 30000, input: '', env: { ...process.env, KX_ANCHORS: ignoredAnchors, KX_SCLASS: ignoredTable } });
+  const unavailable = invoke([]);
+  assert.notEqual(unavailable.status, 0);
+  assert.match(unavailable.stderr, /area-specific overlay and track are required/);
+  assert.deepEqual((await readdir(dataDir)).sort(), ['anchors.json'], 'asset refusal happens before private output writes');
+  const configured = invoke(['--overlay', overlay, '--track', track]);
+  assert.equal(configured.status, 0, configured.stderr);
+  const result = JSON.parse(configured.stdout);
+  assert.equal(result.validationDay, '20250102');
+  assert.equal(result.published, false, 'empty synthetic evidence must not publish');
+  assert.ok((await readdir(dataDir)).includes('sclass-history.json'));
 });
 
 const assets = {

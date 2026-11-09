@@ -1,6 +1,7 @@
 // TD steps are movement authorities, not positions. All distances are metres and time is
 // supplied by the caller. A body is a tail-to-nose trail, so a terminus cab change can
 // reverse that trail without moving any of the occupied track.
+import { areaIdentity } from './station-config.ts';
 import { NOT_A_TRAIN } from './anchors.ts';
 import type { AnchorMap, BerthAnchor } from './anchors.ts';
 import type { Pt } from './geo.ts';
@@ -843,4 +844,49 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     blocked: t.blocked, distanceM: t.distanceM, reversals: t.reversals,
   }));
   return { apply, advance, trains, diagnostics: (): MotionIssue[] => issues.map((i) => ({ ...i })), queuedCount: (): number => queued.size };
+}
+
+export interface AreaMotionInput { graph: Graph; anchors: AnchorMap; options?: MotionOptions }
+export interface AreaTrainView extends TrainView {
+  area: string;
+  /** Use key (rather than the area-local numeric id) when combining areas. */
+  key: string;
+  descriptionKey: string;
+  targetBerthKey: string;
+  lastBerthKey: string;
+  unmappedBerthKey?: string;
+}
+/** Independent area engines preserve the single-area policy and event ordering.
+ * No cross-area handover is inferred: a description observed in two areas remains
+ * two observations until explicit handover evidence is implemented. Graphs should
+ * describe disjoint area ownership; this composition does not arbitrate shared track.
+ */
+export function createMultiAreaMotion(inputs: readonly AreaMotionInput[]) {
+  const engines = new Map<string, ReturnType<typeof createMotion>>();
+  for (const { graph, anchors, options } of inputs) {
+    if (engines.has(anchors.area)) throw new Error(`duplicate motion area: ${anchors.area}`);
+    engines.set(anchors.area, createMotion(graph, anchors, options));
+  }
+  return {
+    apply(event: MotionEvent & { berths?: unknown }, nowMs: number, observedAtMs = nowMs): void {
+      engines.get(event.area)?.apply(event, nowMs, observedAtMs);
+    },
+    advance(dtSeconds: number): void {
+      if (!Number.isFinite(dtSeconds) || dtSeconds < 0) throw new Error('motion dt must be finite and nonnegative');
+      for (const engine of engines.values()) engine.advance(dtSeconds);
+    },
+    trains(): AreaTrainView[] {
+      return [...engines].flatMap(([area, engine]) => engine.trains().map(t => ({
+        ...t, area, key: areaIdentity(area, t.id), descriptionKey: areaIdentity(area, t.description),
+        targetBerthKey: areaIdentity(area, t.targetBerth), lastBerthKey: areaIdentity(area, t.lastBerth),
+        ...(t.unmappedBerth === undefined ? {} : { unmappedBerthKey: areaIdentity(area, t.unmappedBerth) }),
+      })));
+    },
+    diagnostics(): (MotionIssue & { area: string; berthKey: string; descriptionKey: string })[] {
+      return [...engines].flatMap(([area, engine]) => engine.diagnostics().map(issue => ({
+        ...issue, area, berthKey: areaIdentity(area, issue.berth), descriptionKey: areaIdentity(area, issue.description),
+      })));
+    },
+    queuedCount(): number { return [...engines.values()].reduce((n, engine) => n + engine.queuedCount(), 0); },
+  };
 }

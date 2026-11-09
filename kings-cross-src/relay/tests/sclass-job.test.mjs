@@ -246,6 +246,29 @@ test('sclass job: CLI runner passes private paths and bounds then escalates chil
   assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
 });
 
+test('sclass job: CLI runner passes shared recordings and area-specific assets when configured', async () => {
+  let callback, received;
+  const child = { exitCode: null, signalCode: null, kill() {
+    this.exitCode = 0;
+    queueMicrotask(() => callback(Object.assign(new Error('aborted'), { code: 'ABORT_ERR' })));
+    return true;
+  } };
+  const runner = createSclassRunner({ timeoutMs: 500,
+    execFile: (executable, args, options, done) => {
+      received = { executable, args, options }; callback = done; return child;
+    } });
+  const controller = new AbortController();
+  const result = runner({ dataDir: '/private/kx-data/areas/ZZ', area: 'ZZ',
+    anchorsPath: '/private/kx-data/areas/ZZ/anchors.json', tablePath: '/private/kx-data/areas/ZZ/sclass.json',
+    recordingsDir: '/private/kx-data/recordings', overlayPath: '/assets/eus-signals.json', trackPath: '/assets/eus-track.json',
+    signal: controller.signal });
+  assert.deepEqual(received.args, ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data/areas/ZZ', '--area', 'ZZ',
+    '--anchors', '/private/kx-data/areas/ZZ/anchors.json', '--table', '/private/kx-data/areas/ZZ/sclass.json',
+    '--recordings-dir', '/private/kx-data/recordings', '--overlay', '/assets/eus-signals.json', '--track', '/assets/eus-track.json']);
+  controller.abort();
+  await assert.rejects(result);
+});
+
 test('sclass job: errored exited child removes only its own stale relearn lock', async t => {
   const dataDir = await lockDataDir(t), pid = 24681;
   const lockPath = path.join(dataDir, '.sclass-relearn.lock');

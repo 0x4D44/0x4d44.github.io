@@ -1,7 +1,8 @@
 // Keeps one STOMP connection to the TD topic alive: connect, subscribe, parse, reconnect
 // with backoff. Reports through callbacks and never logs credentials.
 import { StompClient } from './stomp.mjs';
-import { inArea, parseTdBody } from './td.mjs';
+import { configuredAreas } from './areas.mjs';
+import { parseTdBody } from './td.mjs';
 
 export function runFeed({
   connectSocket, // () => socket
@@ -9,6 +10,7 @@ export function runFeed({
   topic,
   trustTopic,
   area,
+  areas,
   onEvents, // (events: normalised[]) => void
   onTrust = () => {}, // raw TRUST body; filtered before recording or serving
   onStatus = () => {},
@@ -18,6 +20,7 @@ export function runFeed({
   setTimer = setTimeout,
   clearTimer = clearTimeout,
 }) {
+  const acceptedAreas = new Set(configuredAreas(areas === undefined ? (area ?? 'Y9') : areas));
   let stopped = false;
   let client = null;
   let timer = null;
@@ -49,7 +52,7 @@ export function runFeed({
       }
       let events;
       try {
-        events = inArea(parseTdBody(body), area);
+        events = parseTdBody(body).filter((event) => acceptedAreas.has(event.area));
       } catch (err) {
         onStatus({ state: 'connected', badMessage: true });
         log(`feed: dropped a bad message (${err.message})`);

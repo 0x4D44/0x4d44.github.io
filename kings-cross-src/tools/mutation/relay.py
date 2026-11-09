@@ -21,6 +21,28 @@ scratch.mkdir(parents=True, exist_ok=True)
 # The former recorder TRUST-state mutation was retired as equivalent: TdState.apply's
 # validTdEvent guard already rejects TRUST events, whether or not recorder checks kind.
 MUTATIONS = [
+    ('area sclass: private state leaks into Y9 root', 'sclass-areas.mjs', 'const areaData = areaDataDir(dataDir, area);', 'const areaData = dataDir;'),
+    ('area sclass: unknown geography uses KX assets', 'sclass-areas.mjs', 'if (!isY9 && (!areaConfig.overlayPath || !areaConfig.trackPath)) {', 'if (false) {'),
+    ('area sclass: duplicate jobs accepted', 'sclass-areas.mjs', 'if (seen.has(area)) throw new Error(`duplicate area ${area}`);', ''),
+    ('area sclass: shared recordings location lost', 'sclass-areas.mjs', 'recordingsDir: isY9 ? undefined : recordingsDir,', 'recordingsDir: undefined,'),
+    ('area sclass: runner ignores recordings directory', 'sclass-job.mjs', "if (recordingsDir !== undefined) args.push('--recordings-dir', recordingsDir);", ''),
+    ('area sclass: runner ignores station overlay', 'sclass-job.mjs', "if (overlayPath !== undefined) args.push('--overlay', overlayPath);", ''),
+    ('area sclass: runner ignores station track', 'sclass-job.mjs', "if (trackPath !== undefined) args.push('--track', trackPath);", ''),
+    ('areas: malformed configured selectors accepted', 'areas.mjs', 'const AREA_ID = /^[A-Z0-9]{2}$/;', 'const AREA_ID = /^.+$/;'),
+    ('areas: duplicate configuration entries create duplicate routers', 'areas.mjs', 'if (!seen.has(area)) {', 'if (true) {'),
+    ('areas: unknown selector accepted', 'areas.mjs', 'if (!allowed.has(selected)) throw new Error(`areas: unknown area ${JSON.stringify(selected)}`);', ''),
+    ('areas: repeated query selector accepted', 'areas.mjs', "if (selectors.length > 1) throw new Error('areas: area selector must appear only once');", ''),
+    ('areas: configured selector ignored', 'areas.mjs', 'selectors.length === 0 ? fallback : selectors[0]', 'fallback'),
+    ('areas: private tables use the Y9 root', 'areas.mjs', "return area === 'Y9' ? dataDir : path.join(dataDir, 'areas', area);", 'return dataDir;'),
+    ('feed: allowlist filter missing', 'feed.mjs', 'parseTdBody(body).filter((event) => acceptedAreas.has(event.area))', 'parseTdBody(body)'),
+    ('feed: parse each body twice', 'feed.mjs', 'parseTdBody(body).filter((event) => acceptedAreas.has(event.area))', '(parseTdBody(body), parseTdBody(body)).filter((event) => acceptedAreas.has(event.area))'),
+    ('feed: legacy area always becomes Y9', 'feed.mjs', "(area ?? 'Y9')", "'Y9'"),
+    ('feed: invalid allowlist falls back silently', 'feed.mjs', "const acceptedAreas = new Set(configuredAreas(areas === undefined ? (area ?? 'Y9') : areas));", "const acceptedAreas = new Set(['Y9']);"),
+    ('relay router: all events enter default state', 'relay.mjs', 'const context = contexts.get(e.area);', 'const context = contexts.get(defaultArea);'),
+    ('relay router: area selector ignored after validation', 'relay.mjs', 'area = requestArea(url, allowedAreas, defaultArea);', 'requestArea(url, allowedAreas, defaultArea); area = defaultArea;'),
+    ('relay router: reconnect snapshots only the first area', 'relay.mjs', 'for (const { status, recorder } of contexts.values()) {', 'for (const { status, recorder } of [...contexts.values()].slice(0, 1)) {'),
+    ('relay router: another area refreshes freshness', 'relay.mjs', 'status.lastEventAt = t;', 'for (const c of contexts.values()) c.status.lastEventAt = t;'),
+    ('relay router: nonY9 inherits KX timetable', 'relay.mjs', "const schedules = station?.schedule === 'available' ? createScheduleStore", 'const schedules = true ? createScheduleStore'),
     ("stomp: ignore content-length", "stomp.mjs", "if (cl !== undefined) {", "if (false) {"),
     ("stomp: do not skip heart-beat newlines", "stomp.mjs", "while (skip < this.#buf.length && (this.#buf[skip] === 0x0a || this.#buf[skip] === 0x0d)) skip++;", "while (false) skip++;"),
     ("stomp: do not escape colon in headers", "stomp.mjs", ".replace(/:/g, '\\\\c')", ""),
@@ -75,7 +97,7 @@ MUTATIONS = [
     ("relay: ping interval keeps the process alive", "relay.mjs", "  timer?.unref?.();", ""),
     ("relay: concurrent shutdowns close twice", "relay.mjs", "if (closing) return closing;", ""),
     ("relay: shutdown leaves SSE heartbeats running", "relay.mjs", "for (const stopHeartbeat of heartbeats) stopHeartbeat();", ""),
-    ("relay: shutdown omits recorder close", "relay.mjs", "const recorded = recorder.close();", "const recorded = Promise.resolve();"),
+    ("relay: shutdown omits recorder close", "relay.mjs", "const recorded = Promise.all([...contexts.values()].map(({ recorder }) => recorder.close()));", "const recorded = Promise.resolve();"),
     ("relay: server shutdown errors disappear", "relay.mjs", "server.close((error) => error ? reject(error) : resolve());", "server.close(() => resolve());"),
     ("schedule: discard all station calls", "schedule.mjs", "selector.apply(record);", ""),
     ("schedule: accept an empty extract", "schedule.mjs", "if (!records) throw new Error('schedule: no schedule records');", ""),
@@ -89,14 +111,14 @@ MUTATIONS = [
     ("schedule: close leaves timer running", "schedule.mjs", "if (timer) unschedule(timer);", ""),
     ("schedule: daily timer never refreshes", "schedule.mjs", "void refresh(date);", "void 0;"),
     ("schedule: accepts arbitrary cache paths", "schedule.mjs", "if (!validDate(date)) throw new Error('invalid schedule date');", ""),
-    ("schedule: missing HTTP validation", "relay.mjs", "dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date')", "false"),
+    ("schedule: missing HTTP validation", "relay.mjs", "dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date' && key !== 'area')", "false"),
     ("schedule: all requests use today", "relay.mjs", "const date = dates[0] ?? scheduleDate(now());", "const date = scheduleDate(now());"),
     ("schedule: unavailable timetable is an HTTP error", "relay.mjs", "if (!doc) return json(res, 200, { date, available: false, reason: 'no timetable' });", "if (!doc) return json(res, 404, { date, available: false, reason: 'no timetable' });"),
     ("relay: unknown routes claim success", "relay.mjs", "default:\n          return json(res, 404, { error: 'not found' });", "default:\n          return json(res, 200, { error: 'not found' });"),
     ("feed: TRUST subscription missing", "feed.mjs", "if (trustTopic) client.subscribe(trustTopic, { id: 'trust' });", ""),
     ("feed: TRUST routed into TD parser", "feed.mjs", "trustTopic && (destination === trustTopic || subscription === 'trust')", "false"),
     ("relay: TRUST not broadcast", "relay.mjs", "else if (row.e.kind === 'trust')", "else if (false)"),
-    ("relay: TRUST not recorded", "relay.mjs", "const row = recorder.append(e);\n      for (const send", "const row = { t: now(), e };\n      for (const send"),
+    ("relay: TRUST not recorded", "relay.mjs", "const row = recorder.append(e);\n        for (const send", "const row = { t: now(), e };\n        for (const send"),
     ("schedule: HTTP errors treated as extract", "schedule.mjs", "if (!res.ok) {", "if (false) {"),
     ("trust: startup activations lost", "trust.mjs", "return resolvePending(serviceRows);", "return [];"),
     ("trust: early variation sign wrong", "trust.mjs", "case 'EARLY': return -value;", "case 'EARLY': return value;"),
@@ -157,14 +179,14 @@ MUTATIONS = [
     ("relay clock: initial snapshot loses capture timestamp", "relay.mjs", "JSON.stringify({ ...state.snapshot(), t: now() })", "JSON.stringify(state.snapshot())"),
     ("relay clock: checkpoint loses recorder timestamp", "relay.mjs", "JSON.stringify({ ...snapshot, t: row.t })", "JSON.stringify(snapshot)"),
     ("relay clock: TD uses an independent timestamp", "relay.mjs", "const row = recorder.append(e);\n            recent.push(row);", "const row = { ...recorder.append(e), t: now() };\n            recent.push(row);"),
-    ("relay clock: TRUST uses an independent timestamp", "relay.mjs", "const row = recorder.append(e);\n      for (const send", "const row = { ...recorder.append(e), t: now() };\n      for (const send"),
+    ("relay clock: TRUST uses an independent timestamp", "relay.mjs", "const row = recorder.append(e);\n        for (const send", "const row = { ...recorder.append(e), t: now() };\n        for (const send"),
     ("recorder clock: append does not return captured row", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);\n      return row;", "if (event.kind !== 'trust') state.apply(event);\n      return undefined;"),
     ("recorder clock: failed writer loses captured row", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);\n      return row;", "if (event.kind !== 'trust') state.apply(event);\n      return failure ? undefined : row;"),
 ]
 
-OFFLINE_TEST_PATTERN = r'^(?:encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|recorder robustness:|recorder canonical clock:|relay canonical clock:|stomp robustness:|relay robustness:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
+OFFLINE_TEST_PATTERN = r'^(?:area S-class jobs|sclass job:|areas:|relay multi-area:|feed: invalid areas|feed: legacy area|encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|recorder robustness:|recorder canonical clock:|relay canonical clock:|stomp robustness:|relay robustness:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
 TEST_FILES = [
-    'parser-properties.test.mjs', 'relay.test.mjs', 'robustness17.test.mjs',
+    'sclass-areas.test.mjs', 'sclass-job.test.mjs', 'areas.test.mjs', 'multi-area.test.mjs', 'parser-properties.test.mjs', 'relay.test.mjs', 'robustness17.test.mjs',
     'schedule.test.mjs', 'security17.test.mjs', 'stomp.test.mjs',
     'trust.test.mjs', 'units.test.mjs', 'sclass-state.test.mjs', 'recorder.test.mjs',
 ]
@@ -223,6 +245,7 @@ names = test_names(baseline.stdout)
 if not names or not complete_tests(baseline.stdout, names):
     raise SystemExit('offline baseline TAP output is incomplete')
 new_names = {name for name in names if name.startswith((
+    'area S-class jobs', 'sclass job: CLI runner passes shared', 'areas:', 'relay multi-area:', 'feed: invalid areas', 'feed: legacy area', 'feed: fake transport parses a mixed-area',
     'relay canonical clock:', 'recorder canonical clock:',
     'relay offline:', 'schedule endpoint offline:', 'schedule integration offline:',
     'round17 ', 'parser properties:', 'TD properties:',

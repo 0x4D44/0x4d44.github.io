@@ -28,6 +28,7 @@ MUTATIONS = [
     ('omitted candidate prevents refusal summary', 'if (value === null || value === undefined) return null;', 'if (value === null) return null;'),
     ('unset anchor path is still passed to child', "if (anchorsPath !== undefined) args.push('--anchors', anchorsPath);", "args.push('--anchors', anchorsPath);"),
     ('optional table path is ignored', "if (tablePath !== undefined) args.push('--table', tablePath);", "if (false && tablePath !== undefined) args.push('--table', tablePath);"),
+    ('shared recordings directory is omitted', "if (recordingsDir !== undefined) args.push('--recordings-dir', recordingsDir);", "if (false && recordingsDir !== undefined) args.push('--recordings-dir', recordingsDir);"),
     ('child execution timeout omitted', 'timeout: timeoutMs,', 'timeout: 0,'),
     ('stubborn child is not force-killed', "try { child.kill('SIGKILL'); } catch", "try { void child; } catch"),
     ('same-owner stale lock is not reclaimed', 'if ((error || signal?.aborted) && exited) await removeOwnedLock(dataDir, child.pid, lockFs);', 'if (false) await removeOwnedLock(dataDir, child.pid, lockFs);'),

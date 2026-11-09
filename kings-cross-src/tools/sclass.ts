@@ -21,6 +21,8 @@ interface CliArgs {
   anchors: string;
   out: string;
   dataDir?: string;
+  overlayPath?: string;
+  trackPath?: string;
   baseline?: string;
   validation: 'halves' | 'last-recording';
 }
@@ -34,12 +36,14 @@ function parseArgs(argv: string[]): CliArgs {
   let anchors: string | undefined;
   let out: string | undefined;
   let dataDir: string | undefined;
+  let overlayPath: string | undefined;
+  let trackPath: string | undefined;
   let baseline: string | undefined;
   let validation: CliArgs['validation'] = 'halves';
   let validationSeen = false;
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
-    if (flag !== '--recording' && flag !== '--anchors' && flag !== '--out' && flag !== '--data-dir' && flag !== '--baseline' && flag !== '--validation') {
+    if (flag !== '--recording' && flag !== '--anchors' && flag !== '--out' && flag !== '--data-dir' && flag !== '--overlay' && flag !== '--track' && flag !== '--baseline' && flag !== '--validation') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -53,6 +57,12 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--out') {
       if (out !== undefined) throw new Error('--out may be given once');
       out = value;
+    } else if (flag === '--overlay') {
+      if (overlayPath !== undefined) throw new Error('--overlay may be given once');
+      overlayPath = value;
+    } else if (flag === '--track') {
+      if (trackPath !== undefined) throw new Error('--track may be given once');
+      trackPath = value;
     } else if (flag === '--baseline') {
       if (baseline !== undefined) throw new Error('--baseline may be given once');
       baseline = value;
@@ -66,11 +76,12 @@ function parseArgs(argv: string[]): CliArgs {
     }
   }
   if (!recording.length || !anchors || !out) throw new Error(usage());
-  return { recording, anchors, out, dataDir, baseline, validation };
+  if (Boolean(overlayPath) !== Boolean(trackPath)) throw new Error('--overlay and --track must be given together');
+  return { recording, anchors, out, dataDir, overlayPath, trackPath, baseline, validation };
 }
 
 function usage(): string {
-  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>] [--baseline <prior-sclass.json>] [--validation <halves|last-recording>]';
+  return 'usage: node tools/sclass.ts --recording <td.ndjson> [--recording <another.ndjson>] --anchors <AnchorMap.json> --out <dir-inside-worktree-.scratch> [--data-dir <private-KX_DATA_DIR>] [--overlay <area-signals.json> --track <area-track.json>] [--baseline <prior-sclass.json>] [--validation <halves|last-recording>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -176,7 +187,7 @@ async function readAnchors(file: string): Promise<AnchorMap> {
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${path.basename(file)} must contain an AnchorMap object`);
   const map = parsed as Record<string, unknown>;
-  if (typeof map.area !== 'string' || !Array.isArray(map.anchors) || !Array.isArray(map.unmapped) || !Array.isArray(map.sources)) {
+  if (typeof map.area !== 'string' || !/^[A-Z0-9]{2}$/.test(map.area) || !Array.isArray(map.anchors) || !Array.isArray(map.unmapped) || !Array.isArray(map.sources)) {
     throw new Error(`${path.basename(file)} must contain area, sources, anchors, and unmapped fields`);
   }
   if (map.anchors.some((anchor) => !anchor || typeof anchor !== 'object' || Array.isArray(anchor) || typeof (anchor as Record<string, unknown>).berth !== 'string')) {
@@ -433,31 +444,73 @@ interface RelearnOptions {
   area?: string;
   anchorsFile?: string;
   tableFile?: string;
+  recordingsDir?: string;
+  overlayFile?: string;
+  trackFile?: string;
   now?: () => number;
   assets?: { overlay: SignalOverlay; track: KxData };
 }
 
+async function ensurePrivateDirectory(directory: string, label: string): Promise<string> {
+  const requested = path.resolve(directory);
+  let ancestor = requested;
+  const missing: string[] = [];
+  for (;;) {
+    try { await lstat(ancestor); break; } catch (error) {
+      if (!isMissing(error)) throw error;
+      const parent = path.dirname(ancestor);
+      if (parent === ancestor) throw error;
+      missing.unshift(path.basename(ancestor));
+      ancestor = parent;
+    }
+  }
+  const physicalAncestor = await realpath(ancestor);
+  const predicted = path.resolve(physicalAncestor, ...missing);
+  const physicalRepoRoot = await realpath(repoRoot);
+  const scratchPath = path.join(physicalRepoRoot, '.scratch');
+  const allowed = (value: string) => !isWithinOrEqual(physicalRepoRoot, value) || isWithinOrEqual(scratchPath, value);
+  if (!allowed(predicted)) throw new Error(`${label} must be outside the repository or under .scratch`);
+  await mkdir(requested, { recursive: true });
+  const actual = await realpath(requested);
+  if (!allowed(actual)) throw new Error(`${label} must be outside the repository or under .scratch`);
+  return actual;
+}
+
+async function readAreaAssets(area: string, overlayFile?: string, trackFile?: string) {
+  if (Boolean(overlayFile) !== Boolean(trackFile)) throw new Error('--overlay and --track must be supplied together');
+  let overlayPath: string, trackPath: string;
+  if (overlayFile && trackFile) {
+    [overlayPath, trackPath] = await Promise.all([inputPath(overlayFile), inputPath(trackFile)]);
+  } else {
+    if (area !== 'Y9') throw new Error(`area-specific overlay and track are required for ${area}`);
+    overlayPath = path.join(packageRoot, 'web/src/data/kx-signals.json');
+    trackPath = path.join(packageRoot, 'web/src/data/kx-track.json');
+  }
+  const [overlay, track] = await Promise.all([
+    readFile(overlayPath, 'utf8').then(JSON.parse) as Promise<SignalOverlay>,
+    readFile(trackPath, 'utf8').then(JSON.parse) as Promise<KxData>,
+  ]);
+  return { overlay, track, overlayPath, trackPath };
+}
+
 async function relearnAssets(options: RelearnOptions) {
-  return options.assets ?? Promise.all(['kx-signals.json', 'kx-track.json'].map(name =>
-    readFile(path.join(packageRoot, 'web/src/data', name), 'utf8').then(JSON.parse)))
-    .then(([overlay, track]) => ({ overlay: overlay as SignalOverlay, track: track as KxData }));
+  if (options.assets) return options.assets;
+  return await readAreaAssets(options.area ?? 'Y9', options.overlayFile, options.trackFile);
 }
 
 /** Private, lock-protected daily job. Reports and history are written even on a safe refusal. */
 export async function relearnSclass(options: RelearnOptions) {
-  const dataDir = await realpath(options.dataDir);
-  if (isWithinOrEqual(repoRoot, dataDir) && !isWithinOrEqual(path.join(repoRoot, '.scratch'), dataDir)) {
-    throw new Error('Private S-class data must be outside the repository or under .scratch');
-  }
   const area = options.area ?? 'Y9';
+  if (!/^[A-Z0-9]{2}$/.test(area)) throw new Error('Invalid area');
+  const assets = await relearnAssets({ ...options, area });
+  const dataDir = await ensurePrivateDirectory(options.dataDir, 'Private S-class data');
+  const recordingsDir = await ensurePrivateDirectory(options.recordingsDir ?? path.join(dataDir, 'recordings'), 'Private S-class recordings');
   const nowMs = (options.now ?? Date.now)();
   const date = new Date(nowMs).toISOString().slice(0, 10);
   const stamp = `${new Date(nowMs).toISOString().replaceAll(':', '-')}-${randomUUID()}`;
   const tableFile = path.resolve(options.tableFile ?? path.join(dataDir, 'sclass.json'));
-  const tableDir = await realpath(path.dirname(tableFile));
-  if (isWithinOrEqual(repoRoot, tableDir) && !isWithinOrEqual(path.join(repoRoot, '.scratch'), tableDir)) {
-    throw new Error('Private S-class table must be outside the repository or under .scratch');
-  }
+  const tableDir = await ensurePrivateDirectory(path.dirname(tableFile), 'Private S-class table');
+  const resolvedTableFile = path.join(tableDir, path.basename(tableFile));
   const anchorsFile = path.resolve(options.anchorsFile ?? path.join(dataDir, 'anchors.json'));
   const lockPath = path.join(dataDir, '.sclass-relearn.lock');
   let lock;
@@ -467,7 +520,7 @@ export async function relearnSclass(options: RelearnOptions) {
   }
   try {
     await lock.writeFile(JSON.stringify({ pid: process.pid, startedAt: new Date(nowMs).toISOString() }));
-    const names = completedRecordingNames(await readdir(path.join(dataDir, 'recordings')), area, nowMs);
+    const names = completedRecordingNames(await readdir(recordingsDir), area, nowMs);
     const validationDay = names.at(-1)?.slice(`td-${area}-`.length, -7) ?? null;
     const report: Record<string, unknown> = { date, generatedAt: new Date(nowMs).toISOString(), validationDay, recordings: names,
       published: false, reasons: [] as string[] };
@@ -482,16 +535,15 @@ export async function relearnSclass(options: RelearnOptions) {
     if (names.length < 2) {
       report.reasons = ['Need at least two completed UTC recordings: earlier days for learning and latest completed day for validation'];
       if (current) {
-        const [anchors, assets] = await Promise.all([readAnchors(anchorsFile), relearnAssets(options)]);
+        const anchors = await readAnchors(anchorsFile);
         const available = Object.fromEntries(current.hypotheses.map(h => [h.address, 0]));
         report.incumbent = { bits: aggregate(current).bits,
           heads: countHeads(current, anchors, assets.overlay, assets.track, available).aspectCapable, precision: null, recall: null };
       }
     } else {
-      const paths = names.map(name => path.join(dataDir, 'recordings', name));
-      const [recordings, anchors, assets] = await Promise.all([
+      const paths = names.map(name => path.join(recordingsDir, name));
+      const [recordings, anchors] = await Promise.all([
         Promise.all(paths.map(readRecording)), readAnchors(anchorsFile),
-        relearnAssets(options),
       ]);
       if (anchors.area !== area) throw new Error('Anchor map has the wrong area');
       for (const [i, rows] of recordings.entries()) {
@@ -531,12 +583,12 @@ export async function relearnSclass(options: RelearnOptions) {
     await atomicJson(reportFile, report);
     if (decision?.publish && candidate) {
       const backups: string[] = [];
-      for (const file of [tableFile, path.join(dataDir, 'sclass-table.json')]) {
+      for (const file of [resolvedTableFile, path.join(dataDir, 'sclass-table.json')]) {
         const backup = `${file}.${stamp}.bak`;
         try { await copyFile(file, backup, constants.COPYFILE_EXCL); backups.push(backup); } catch (error) { if (!isMissing(error)) throw error; }
       }
       await atomicJson(path.join(dataDir, 'sclass-table.json'), table);
-      await atomicJson(tableFile, candidate);
+      await atomicJson(resolvedTableFile, candidate);
       Object.assign(report, { published: true, backups });
       await atomicJson(reportFile, report);
     }
@@ -562,14 +614,19 @@ async function relearnMain(argv: string[]): Promise<void> {
   const values = new Map<string, string>();
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i]!, value = argv[i + 1];
-    if (!['--data-dir', '--area', '--anchors', '--table'].includes(flag) || !value || value.startsWith('--') || values.has(flag)) {
-      throw new Error('usage: sclass.ts --relearn [--data-dir <private-dir>] [--area Y9] [--anchors <path>] [--table <path>]');
+    if (!['--data-dir', '--area', '--anchors', '--table', '--recordings-dir', '--overlay', '--track'].includes(flag) || !value || value.startsWith('--') || values.has(flag)) {
+      throw new Error('usage: sclass.ts --relearn [--data-dir <private-area-dir>] [--area Y9] [--anchors <path>] [--table <path>] [--recordings-dir <shared-recordings-dir>] [--overlay <area-signals.json> --track <area-track.json>]');
     }
     values.set(flag, value);
   }
+  const area = values.get('--area') ?? process.env.KX_AREA ?? 'Y9';
+  if (!/^[A-Z0-9]{2}$/.test(area)) throw new Error('Invalid area');
+  const isY9 = area === 'Y9';
+  if (Boolean(values.get('--overlay')) !== Boolean(values.get('--track'))) throw new Error('--overlay and --track must be supplied together');
   const result = await relearnSclass({ dataDir: values.get('--data-dir') ?? process.env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data'),
-    area: values.get('--area') ?? process.env.KX_AREA ?? 'Y9', anchorsFile: values.get('--anchors') ?? process.env.KX_ANCHORS,
-    tableFile: values.get('--table') ?? process.env.KX_SCLASS });
+    area, anchorsFile: values.get('--anchors') ?? (isY9 ? process.env.KX_ANCHORS : undefined),
+    tableFile: values.get('--table') ?? (isY9 ? process.env.KX_SCLASS : undefined),
+    recordingsDir: values.get('--recordings-dir'), overlayFile: values.get('--overlay'), trackFile: values.get('--track') });
   console.log(JSON.stringify({ date: result.date, validationDay: result.validationDay, published: result.published,
     candidate: result.candidate, incumbent: result.incumbent, reasons: result.reasons }));
 }
@@ -581,14 +638,12 @@ async function main(): Promise<void> {
   if (new Set(recordingPaths).size !== recordingPaths.length) throw new Error('duplicate recording input');
   const [events, anchors] = await Promise.all([Promise.all(recordingPaths.map(readRecording)), readAnchors(anchorsPath)]);
   const analysis = analyseSclassRecordings(events, anchors, { validation: args.validation });
+  if (!/^[A-Z0-9]{2}$/.test(analysis.area)) throw new Error('Invalid area');
   const states = signalStates(analysis.trace.state, analysis.hypotheses, anchors);
   const generatedAt = new Date().toISOString();
   const sources = [...recordingPaths.map(p => `Recording: ${path.basename(p)}`), `Anchor map: ${path.basename(anchorsPath)}`];
-  const overlayPath = path.join(packageRoot, 'web/src/data/kx-signals.json');
-  const trackPath = path.join(packageRoot, 'web/src/data/kx-track.json');
-  const [overlay, track, baseline] = await Promise.all([
-    readFile(overlayPath, 'utf8').then(s => JSON.parse(s) as SignalOverlay),
-    readFile(trackPath, 'utf8').then(s => JSON.parse(s) as KxData),
+  const [{ overlay, track, overlayPath, trackPath }, baseline] = await Promise.all([
+    readAreaAssets(analysis.area, args.overlayPath, args.trackPath),
     args.baseline ? readFile(await inputPath(args.baseline), 'utf8').then(s => JSON.parse(s) as SclassAnalysis) : undefined,
   ]);
   if (baseline && (baseline.area !== analysis.area || !Array.isArray(baseline.hypotheses))) throw new Error('baseline must be an S-class analysis for the same area');
@@ -624,7 +679,8 @@ async function main(): Promise<void> {
   // Explicit analysis files remain useful, but publishing always uses all closed
   // days and the common-day regression gate, including this older CLI spelling.
   if (args.dataDir) {
-    const decision = await relearnSclass({ dataDir: args.dataDir, anchorsFile: anchorsPath });
+    const decision = await relearnSclass({ dataDir: args.dataDir, area: analysis.area, anchorsFile: anchorsPath,
+      overlayFile: overlayPath, trackFile: trackPath });
     console.log(JSON.stringify({ published: decision.published, reasons: decision.reasons }));
   }
   printSummary(analysis, states, outDir);

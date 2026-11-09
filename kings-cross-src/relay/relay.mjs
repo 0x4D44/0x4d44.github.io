@@ -23,6 +23,8 @@ import { TdState } from './state.mjs';
 import { createScheduleStore, scheduleDate } from './schedule.mjs';
 import { createTrustState } from './trust.mjs';
 import { validDate } from '../core/schedule.ts';
+import { configuredAreas, requestArea, areaDataDir } from './areas.mjs';
+import { STATIONS } from '../core/station-config.ts';
 
 const RECENT_MAX = 2000;
 const MAX_LOCAL_JSON = 16 * 1024 * 1024;
@@ -78,7 +80,7 @@ export function requestFailure(host, port, method, origin) {
   return method === 'GET' ? null : 405;
 }
 
-export async function localFile(url, { dataDir, area, streamRecording = false, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json'), sclassFile = process.env.KX_SCLASS ?? path.join(dataDir, 'sclass.json') }) {
+export async function localFile(url, { dataDir, area, streamRecording = false, cacheDir = dataDir, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json'), sclassFile = process.env.KX_SCLASS ?? path.join(dataDir, 'sclass.json') }) {
   let file, type;
   if (url.pathname === '/anchors') {
     file = anchorsFile;
@@ -97,7 +99,7 @@ export async function localFile(url, { dataDir, area, streamRecording = false, a
   try {
     // Configured override files are operator-selected. Client-selected recordings
     // and default cache files must remain beneath the canonical data directory.
-    const configuredOverride = url.pathname !== '/recording' && path.resolve(file) !== path.resolve(dataDir, url.pathname.slice(1) + '.json');
+    const configuredOverride = url.pathname !== '/recording' && path.resolve(file) !== path.resolve(cacheDir, url.pathname.slice(1) + '.json');
     if (!configuredOverride) {
       const base = await realpath(dataDir), actual = await realpath(file), relative = path.relative(base, actual);
       if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
@@ -125,7 +127,8 @@ function json(res, status, body) {
 }
 
 export async function startRelay({
-  area,
+  area = 'Y9',
+  areas,
   topic,
   trustTopic,
   port = 0,
@@ -143,30 +146,47 @@ export async function startRelay({
   now = Date.now,
   createServer = http.createServer,
 }) {
-  const state = new TdState(area);
-  const recent = [];
-  const listeners = new Set();
+  const allowedAreas = configuredAreas(areas, area);
+  const defaultArea = allowedAreas.includes(area) ? area : allowedAreas[0];
+  const contexts = new Map();
   const heartbeats = new Set();
   let closing;
-  const status = { state: feedEnabled ? 'connecting' : 'disabled', connectedAt: null, lastEventAt: null, badMessages: 0 };
-  const recorder = await createRecorder({ dir: path.join(dataDir, 'recordings'), area, now,
-    onSnapshot: (row) => { for (const send of listeners) send(row); } });
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
-  let services = [];
-  const trust = createTrustState({ area, services: () => services, now });
-  const publishTrust = (events) => {
-    for (const e of events) {
-      const row = recorder.append(e);
-      for (const send of listeners) send(row);
-    }
-  };
-  const schedules = createScheduleStore({ dataDir, readCredentials, fetchImpl, now,
-    enabled: scheduleEnabled, corpus: () => store.get('corpus'), log,
-    onReady: (doc) => {
-      services = doc.calls;
-      publishTrust(trust.setServices(doc.calls));
-    } });
-  schedules.start();
+  for (const area of allowedAreas) {
+    const station = Object.values(STATIONS).find(config => config.tdAreas.includes(area));
+    const state = new TdState(area);
+    const recent = [], listeners = new Set();
+    const status = { state: feedEnabled ? 'connecting' : 'disabled', connectedAt: null, lastEventAt: null, badMessages: 0 };
+    const recorder = await createRecorder({ dir: path.join(dataDir, 'recordings'), area, now,
+      onSnapshot: (row) => { for (const send of listeners) send(row); } });
+    let services = [];
+    // TODO: wire each station's verified schedule/TRUST projection via station config.
+    // A non-Y9 area must never read/enrich the legacy KNGX schedule.
+    const trust = station?.schedule === 'available' ? createTrustState({ area, services: () => services, now }) : {
+      apply: () => [], stats: () => ({ state: 'unavailable', reason: 'station TRUST not wired' }),
+    };
+    const publishTrust = (events) => {
+      for (const e of events) {
+        const row = recorder.append(e);
+        for (const send of listeners) send(row);
+      }
+    };
+    const schedules = station?.schedule === 'available' ? createScheduleStore({ dataDir, readCredentials, fetchImpl, now,
+      enabled: scheduleEnabled, corpus: () => store.get('corpus'), log,
+      onReady: (doc) => {
+        services = doc.calls;
+        publishTrust(trust.setServices(doc.calls));
+      } }) : {
+      start() {}, async close() {}, async get() { return null; },
+      stats: () => ({ state: 'unavailable', reason: 'station schedule not wired' }),
+    };
+    const cacheDir = areaDataDir(dataDir, area);
+    contexts.set(area, { state, recent, listeners, status, recorder, trust, schedules, publishTrust, cacheDir, station,
+      anchorsFile: area === 'Y9' ? anchorsFile : path.join(cacheDir, 'anchors.json'),
+      sclassFile: area === 'Y9' ? sclassFile : path.join(cacheDir, 'sclass.json'),
+    });
+    schedules.start();
+  }
 
   const feed = feedEnabled
     ? runFeed({
@@ -174,28 +194,35 @@ export async function startRelay({
         readCredentials,
         topic,
         trustTopic,
-        area,
+        areas: allowedAreas,
         heartbeat,
         backoff,
         // runFeed predates the HTTP boundary and may receive arbitrary exception text.
         // Keep useful fixed categories without forwarding upstream strings or paths.
         log: (message) => log(safeFeedLog(message)),
-        onTrust: (body) => publishTrust(trust.apply(body)),
+        onTrust: (body) => {
+          for (const { trust, publishTrust } of contexts.values()) publishTrust(trust.apply(body));
+        },
         onStatus: (s) => {
-          if (s.badMessage) status.badMessages += 1;
-          else status.state = s.state;
-          if (s.state === 'connected' && !s.badMessage) { status.connectedAt = now(); recorder.checkpoint(); }
+          for (const { status, recorder } of contexts.values()) {
+            if (s.badMessage) status.badMessages += 1;
+            else status.state = s.state;
+            if (s.state === 'connected' && !s.badMessage) { status.connectedAt = now(); recorder.checkpoint(); }
+          }
         },
         onEvents: (events) => {
           const t = now();
           for (const e of events) {
+            const context = contexts.get(e.area);
+            if (!context) continue;
+            const { state, recorder, recent, listeners, status } = context;
+            status.lastEventAt = t;
             if (!state.apply(e)) continue;
             const row = recorder.append(e);
             recent.push(row);
             if (recent.length > RECENT_MAX) recent.shift();
             for (const send of listeners) send(row);
           }
-          status.lastEventAt = t;
         },
       })
     : null;
@@ -207,7 +234,13 @@ export async function startRelay({
       if (refusal) return json(res, refusal, { error: refusal === 403 ? 'host not allowed' : 'GET only' });
       const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
 
-      const file = await localFile(url, { dataDir, area, anchorsFile, sclassFile, streamRecording: true });
+      let area;
+      try {
+        if (url.searchParams.has('station')) throw new Error('select by area');
+        area = requestArea(url, allowedAreas, defaultArea);
+      } catch { return json(res, 400, { error: 'unknown or invalid area' }); }
+      const { state, recent, listeners, status, recorder, trust, schedules, cacheDir, station, anchorsFile, sclassFile } = contexts.get(area);
+      const file = await localFile(url, { dataDir, area, cacheDir, anchorsFile, sclassFile, streamRecording: true });
       if (file) {
         res.writeHead(file.status, { 'content-type': file.type, 'cache-control': 'no-store' });
         if (file.stream) return await pipeline(file.stream, res);
@@ -231,10 +264,11 @@ export async function startRelay({
         case '/schedule': {
           const dates = url.searchParams.getAll('date');
           const date = dates[0] ?? scheduleDate(now());
-          if (dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date'))
+          if (dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date' && key !== 'area'))
             return json(res, 400, { error: 'date must be YYYY-MM-DD' });
           const doc = await schedules.get(date);
           // An uncached day is a normal board state, not a missing HTTP route.
+          if (station?.schedule === 'unavailable') return json(res, 200, { date, available: false, reason: 'station schedule not wired' });
           if (!doc) return json(res, 200, { date, available: false, reason: 'no timetable' });
           return json(res, 200, { ...doc, ...trust.enrich(doc.calls) });
         }
@@ -266,6 +300,7 @@ export async function startRelay({
         case '/static/smart': {
           const td = url.searchParams.get('td');
           if (!td) return json(res, 400, { error: 'td parameter required' });
+          if (!allowedAreas.includes(td)) return json(res, 400, { error: 'unknown or invalid area' });
           return json(res, 200, await store.smartRows({ td }));
         }
         case '/static/corpus': {
@@ -288,23 +323,28 @@ export async function startRelay({
       server.once('error', reject);
       server.listen(port, '127.0.0.1', resolve);
     });
-  } catch (error) { feed?.stop(); await schedules.close(); await recorder.close(); throw error; }
+  } catch (error) {
+    feed?.stop();
+    await Promise.all([...contexts.values()].flatMap(({ schedules, recorder }) => [schedules.close(), recorder.close()]));
+    throw error;
+  }
 
   return {
     host: server.address().address,
     port: server.address().port,
-    state,
+    state: contexts.get(defaultArea).state,
+    areas: [...allowedAreas],
     close() {
       if (closing) return closing;
       return closing = (async () => {
         feed?.stop();
         for (const stopHeartbeat of heartbeats) stopHeartbeat();
         heartbeats.clear();
-        listeners.clear();
+        for (const { listeners } of contexts.values()) listeners.clear();
         // Stop periodic writes before waiting for sockets. A server-close error must
         // still finish the recording, and callers may share the same close promise.
-        const recorded = recorder.close();
-        const scheduled = schedules.close();
+        const recorded = Promise.all([...contexts.values()].map(({ recorder }) => recorder.close()));
+        const scheduled = Promise.all([...contexts.values()].map(({ schedules }) => schedules.close()));
         try {
           await new Promise((resolve, reject) => {
             server.close((error) => error ? reject(error) : resolve());
