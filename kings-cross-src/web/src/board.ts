@@ -2,7 +2,7 @@ import { NOT_A_TRAIN } from '../../core/anchors.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import { shortestPath } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
-import type { TrainView } from '../../core/motion.ts';
+import type { TrackPosition, TrainView } from '../../core/motion.ts';
 import { matchService } from '../../core/schedule.ts';
 import type { ScheduleCall } from '../../core/schedule.ts';
 
@@ -35,6 +35,7 @@ export interface BoardRow {
   state: 'standing' | 'departing' | 'approaching' | 'leaving';
   sinceMs?: number;
   stoodMs?: number;
+  /** Simulation time the train began pulling out. Set on a `departing` platform row and kept when it moves to Departed. */
   leftAtMs?: number;
   distanceM?: number;
   sample?: boolean;
@@ -59,7 +60,45 @@ export interface BoardOptions {
   graph?: Graph;
   arrivals?: ReadonlyMap<string, readonly number[]>;
   retentionMs?: number;
+  /** Override PLATFORM_CLEAR_M. */
+  platformClearM?: number;
+  /** Override LEAVING_MAX_MS. */
+  leavingMaxMs?: number;
 }
+
+/**
+ * A departing train keeps its platform row, bracketed, while it is still drawn alongside the platform. It
+ * moves to Departed as soon as ANY of these holds:
+ *  1. its tail is PLATFORM_CLEAR_M of rail or more from the platform's stop (it no longer occupies the platform
+ *     track in the motion model). King's Cross platforms 0-8 are about 300 m, platforms 9 and 10 about 170 m, so a
+ *     train on 9 or 10 stays bracketed a few seconds after its tail has cleared;
+ *  2. another train is standing on that platform;
+ *  3. LEAVING_MAX_MS has passed since it began to leave (the motion model clears 300 m in about 45 s at station
+ *     speed, so this only catches a train held by a signal with its tail still alongside);
+ *  4. the motion model has dropped it, or has no body or track graph to measure (nothing to draw alongside).
+ */
+export const PLATFORM_CLEAR_M = 300;
+export const LEAVING_MAX_MS = 90_000;
+
+/**
+ * Delay classes follow UK station displays. The thresholds are whole minutes behind the booked time, taken from
+ * the signed TRUST variation of the report for the event a row shows (TRUST reports whole minutes):
+ *   cancelled              red          wins over any variation
+ *   5 minutes or more late orange-red   `very-late`; 5 minutes is the National Rail PPM "on time" limit for commuter and regional services
+ *   1 to under 5 late      amber        `late`
+ *   on time or early (<=0) green        `ontime`
+ *   no report              no colour    `unknown`: never guessed, so no label either
+ * Colour is never the only signal: each class also prints words and the signed minutes ("Late +6").
+ */
+export type DelayClass = 'ontime' | 'late' | 'very-late' | 'cancelled' | 'unknown';
+export const LATE_FROM_MIN = 1;
+export const VERY_LATE_FROM_MIN = 5;
+export function delayClass(variationMinutes: number | null | undefined, isCancelled = false): DelayClass {
+  if (isCancelled) return 'cancelled';
+  if (typeof variationMinutes !== 'number' || !Number.isFinite(variationMinutes)) return 'unknown';
+  return variationMinutes >= VERY_LATE_FROM_MIN ? 'very-late' : variationMinutes >= LATE_FROM_MIN ? 'late' : 'ontime';
+}
+
 const validPlatform = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= 10;
 const namedPlatform = (berth = ''): number | undefined => {
   const n = /^10\d{2}$/.test(berth) ? Number(berth) - 1000 : /^B\d{3}$/.test(berth) ? Number(berth.slice(1)) : NaN;
@@ -121,10 +160,9 @@ function coversStop(train: BoardTrain, stop: BerthAnchor): boolean {
   });
 }
 
-/** Shortest rail distance, including fractional end edges; never a straight-line estimate. */
-function distanceToStop(train: BoardTrain, stop: BerthAnchor, graph?: Graph): number | undefined {
-  if (!graph || !train.leading) return undefined;
-  const start = train.leading;
+/** Shortest rail distance, including fractional end edges; never a straight-line estimate. `start` is the nose unless given. */
+function distanceToStop(train: BoardTrain, stop: BerthAnchor, graph?: Graph, start: Pick<TrackPosition, 'edge' | 't'> | undefined = train.leading): number | undefined {
+  if (!graph || !start) return undefined;
   const edge = graph.edges.find((e) => (e.a === stop.from && e.b === stop.to) || (e.b === stop.from && e.a === stop.to));
   if (!edge) return undefined;
   const t = edge.a === stop.from ? stop.t : 1 - stop.t;
@@ -136,6 +174,14 @@ function distanceToStop(train: BoardTrain, stop: BerthAnchor, graph?: Graph): nu
     }
   }
   return Number.isFinite(best) ? best : undefined;
+}
+
+/** A body is a tail-to-nose trail, so the first occupied interval starts at the tail. */
+function tailWithin(train: BoardTrain, platform: number, stops: readonly BerthAnchor[], graph: Graph | undefined, clearM: number): boolean {
+  const tail = train.occupied?.[0];
+  if (!graph || !tail) return false;
+  return stops.some((stop) => anchorPlatform(stop) === platform
+    && (distanceToStop(train, stop, graph, { edge: tail.edge, t: tail.fromT }) ?? Infinity) < clearM);
 }
 
 /** Pure snapshot projection. Pass the previous result to retain dwell and recent departures. */
@@ -155,15 +201,24 @@ export function boardRows(trains: readonly BoardTrain[], anchors: AnchorMap, opt
     const old = prior.find((r) => r.trainId === train.id);
     const physical = stops.find((a) => coversStop(train, a));
     const lastPlatform = anchorPlatform(byBerth.get(train.lastBerth ?? '')) ?? namedPlatform(train.lastBerth);
-    const platform = mode === 'sample' && validPlatform(train.samplePlatform ?? NaN) ? train.samplePlatform
+    let platform = mode === 'sample' && validPlatform(train.samplePlatform ?? NaN) ? train.samplePlatform
       : physical ? anchorPlatform(physical)
         : (train.speed ?? 0) <= 0.1 && train.state !== 'moving' && train.state !== 'departing' ? lastPlatform : undefined;
+    const leaving = train.state === 'departing' || train.exiting === true;
+    // Once a train has begun to pull out, the first snapshot's time stands as when it left.
+    const leftAt = old?.state === 'departing' ? old.leftAtMs ?? nowMs : nowMs;
+    // The body has moved off the stop, but the train is still pulling out alongside its platform (see PLATFORM_CLEAR_M).
+    const carried = platform === undefined && old?.platform !== undefined && (leaving || old.state === 'departing')
+      && nowMs - leftAt <= (options.leavingMaxMs ?? LEAVING_MAX_MS)
+      && tailWithin(train, old.platform, stops, options.graph, options.platformClearM ?? PLATFORM_CLEAR_M);
+    if (carried) platform = old!.platform;
     if (platform !== undefined) {
-      const departing = train.state === 'departing';
+      const departing = leaving || carried;
       const sinceMs = old?.platform === platform ? old.sinceMs ?? nowMs : nowMs;
       const stoodMs = departing && old ? old.stoodMs ?? 0 : Math.max(0, nowMs - sinceMs);
       platforms[platform]!.trains.push({ trainId: train.id, headcode: train.description, platform,
-        state: departing ? 'departing' : 'standing', sinceMs, stoodMs, sample: mode === 'sample' });
+        state: departing ? 'departing' : 'standing', sinceMs, stoodMs, sample: mode === 'sample',
+        ...(departing ? { leftAtMs: leftAt } : {}) });
       atPlatform.add(train.id);
       continue;
     }
@@ -176,13 +231,23 @@ export function boardRows(trains: readonly BoardTrain[], anchors: AnchorMap, opt
       distanceM: distances.length ? Math.min(...distances) : undefined });
   }
   approaching.sort((a, b) => (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) || a.trainId - b.trainId);
+  // Another train standing on a platform releases any train still pulling out of it.
+  for (const p of platforms) {
+    if (!p.trains.some((r) => r.state === 'standing')) continue;
+    p.trains = p.trains.filter((r) => {
+      if (r.state !== 'departing') return true;
+      atPlatform.delete(r.trainId);
+      return false;
+    });
+  }
   const departed = new Map((previous?.departed ?? []).map((r) => [r.trainId, { ...r }]));
   for (const old of prior) {
     if (atPlatform.has(old.trainId)) continue;
     const train = active.find((t) => t.id === old.trainId);
-    // A cancel/fade is not evidence of departure. A moving body leaving its stop is.
-    if (train && ((train.speed ?? 0) > 0.1 || train.state === 'departing' || train.exiting) || !train && old.state === 'departing') {
-      departed.set(old.trainId, { ...old, headcode: train?.description ?? old.headcode, state: 'leaving', leftAtMs: nowMs });
+    // A cancel/fade is not evidence of departure. A moving body leaving its stop is, and so is a train already pulling out.
+    if (train && ((train.speed ?? 0) > 0.1 || train.state === 'departing' || train.exiting) || old.state === 'departing') {
+      departed.set(old.trainId, { ...old, headcode: train?.description ?? old.headcode, state: 'leaving',
+        leftAtMs: old.state === 'departing' ? old.leftAtMs ?? nowMs : nowMs });
     }
   }
   const retentionMs = options.retentionMs ?? 180_000;
@@ -304,21 +369,41 @@ const approachPlace = (row: BoardRow): string => row.service
 const departurePlace = (row: BoardRow): string => row.service
   ? stockCall(row.service, 'departure') ? stockLabel : stationName(row.service.destinationName || row.service.destination) || '—'
   : /^[035]/.test(row.headcode) ? stockLabel : stationName(row.destination ?? '') || '—';
-const timeFact = (service: BoardService, direction: Direction, nowMs: number): string => {
-  if (cancelled(service)) return `${bookedTime(service, direction)} Cancelled`.trim();
+/** The latest TRUST report's signed variation for this call and direction, once its actual time has been reached. */
+const reportedVariation = (service: BoardService, direction: Direction, nowMs: number): number | undefined => {
   const rt = service.realtime;
   const actual = direction === 'arrival' ? rt?.actualArrivalMs : rt?.actualDepartureMs;
-  const variation = rt && (!finite(actual) || actual <= nowMs) && (!rt.eventType || rt.eventType === direction.toUpperCase()) && finite(rt.variationMinutes)
-    ? rt.variationMinutes === 0 ? 'on time' : `(${rt.variationMinutes > 0 ? '+' : ''}${rt.variationMinutes})` : '';
-  return [bookedTime(service, direction), variation, finite(actual) && actual <= nowMs ? `actual ${clock(actual)}` : ''].filter(Boolean).join(' ');
+  return rt && (!finite(actual) || actual <= nowMs) && (!rt.eventType || rt.eventType === direction.toUpperCase()) && finite(rt.variationMinutes)
+    ? rt.variationMinutes : undefined;
 };
+const actualFact = (service: BoardService, direction: Direction, nowMs: number): string => {
+  const actual = direction === 'arrival' ? service.realtime?.actualArrivalMs : service.realtime?.actualDepartureMs;
+  return finite(actual) && actual <= nowMs ? `actual ${clock(actual)}` : '';
+};
+const timeFact = (service: BoardService, direction: Direction, nowMs: number): string => {
+  if (cancelled(service)) return `${bookedTime(service, direction)} Cancelled`.trim();
+  const minutes = reportedVariation(service, direction, nowMs);
+  const variation = minutes === undefined ? '' : minutes === 0 ? 'on time' : `(${minutes > 0 ? '+' : ''}${minutes})`;
+  return [bookedTime(service, direction), variation, actualFact(service, direction, nowMs)].filter(Boolean).join(' ');
+};
+/** The delay label beside a row: words and signed minutes, coloured by class. Cancelled rows colour their own "Cancelled" text instead. */
+const delayChip = (service: BoardService | undefined, direction: Direction, nowMs: number): string => {
+  const minutes = service && !cancelled(service) ? reportedVariation(service, direction, nowMs) : undefined;
+  if (minutes === undefined) return '';
+  const cls = delayClass(minutes);
+  const text = cls === 'ontime' ? minutes < 0 ? `Early ${minutes}` : 'On time' : `Late +${minutes}`;
+  return `<span class="kx-board-delay kx-delay-${cls}">${escape(text)}</span>`;
+};
+const cancelledClass = (service?: BoardService): string => cancelled(service) ? ' kx-delay-cancelled' : '';
 const trainHtml = (row: BoardRow, detail: string, nowMs: number): string => {
   const direction = rowDirection(row), service = row.service;
   const description = service ? `${placeFor(service, direction)} · ${direction === 'arrival' ? 'arr' : 'dep'} ${timeFact(service, direction, nowMs)}`
     : /^[035]/.test(row.headcode) ? stockLabel : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination].filter(Boolean).join(' · ');
   const operator = service ? operatorName(service.operator) : '';
   const title = [row.headcode, description, operator, detail].filter(Boolean).join(' · ');
-  return `<div class="kx-board-train" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(cancelled(service) ? 'Cancelled' : detail)}</span></div>`;
+  // A train pulling out keeps its platform row in brackets, dimmed; the closing bracket is its own item so a long name cannot hide it.
+  const leaving = row.state === 'departing';
+  return `<div class="kx-board-train${leaving ? ' kx-board-leaving' : ''}${cancelledClass(service)}" title="${escape(title)}"><strong>${leaving ? '(' : ''}${escape(row.headcode)}</strong>${leaving ? ' ' : ''}<span class="kx-board-description">${escape(description)}</span>${leaving ? '<span class="kx-board-close">)</span>' : ''}${delayChip(service, direction, nowMs)}<span class="kx-board-operator">${escape(operator)}</span><span class="kx-board-state">${escape(cancelled(service) ? 'Cancelled' : detail)}</span></div>`;
 };
 const approachHtml = (row: BoardRow): string => {
   const candidates = row.platforms ?? [], platform = platformLabel(candidates);
@@ -326,7 +411,7 @@ const approachHtml = (row: BoardRow): string => {
   const distance = distanceLabel(row.distanceM), place = `${cancelled(row.service) ? 'Cancelled · ' : ''}${approachPlace(row)}`;
   const legacy = row.service ? [] : [row.booked && `booked ${row.booked}`, row.expected && `expected ${row.expected}`, row.destination];
   const title = [`${row.headcode} → ${platformTooltip}`, distance, place, ...legacy].filter(Boolean).join(' · ');
-  return `<div class="kx-board-approach" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-arrow">→</span><span>${escape(platform)}</span><span>${escape(distance)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
+  return `<div class="kx-board-approach${cancelledClass(row.service)}" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span class="kx-board-arrow">→</span><span>${escape(platform)}</span><span>${escape(distance)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
 };
 const validClock = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 8.64e15;
 const departureClock = (row: BoardRow, nowMs: number): { value: string; source: string } => {
@@ -338,7 +423,8 @@ const departureHtml = (row: BoardRow, nowMs: number): string => {
   const platform = platformLabel(row.platform === undefined ? [] : [row.platform]), time = departureClock(row, nowMs);
   const place = `${cancelled(row.service) ? 'Cancelled · ' : ''}${departurePlace(row)}`;
   const title = [`${row.headcode} ${platform} →`, `${time.source} ${time.value}`, place].join(' · ');
-  return `<div class="kx-board-departure" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span>${escape(platform)}</span><span class="kx-board-arrow">→</span><span>${escape(time.value)}</span><span class="kx-board-route">${escape(place)}</span></div>`;
+  const chip = delayChip(row.service, 'departure', nowMs);
+  return `<div class="kx-board-departure${cancelledClass(row.service)}" title="${escape(title)}"><strong>${escape(row.headcode)}</strong><span>${escape(platform)}</span><span class="kx-board-arrow">→</span><span>${escape(time.value)}</span><span class="kx-board-route">${chip ? `${chip} ` : ''}${escape(place)}</span></div>`;
 };
 
 /** Also usable by a later schedule adapter; all feed strings are escaped before insertion. */
@@ -352,9 +438,14 @@ export function boardHtml(rows: BoardRows): string {
     const place = placeFor(service, direction), operator = operatorName(service.operator), time = bookedTime(service, direction);
     const platform = platformLabel(service.platform != null && /^(?:[0-9]|10)$/.test(service.platform.trim()) ? [Number(service.platform)] : []);
     const facts = timeFact(service, direction, rows.timeMs).slice(time.length);
-    const description = cancelled(service) ? `Cancelled · ${place}` : place + facts;
+    const actual = actualFact(service, direction, rows.timeMs), chip = delayChip(service, direction, rows.timeMs);
+    // A delay label shares its cell with the destination in a flex row, so a long name is cut before the label or its minutes are.
+    const flexed = chip !== '';
+    const description = cancelled(service) ? escape(`Cancelled · ${place}`)
+      : flexed ? [`<span class="kx-board-place">${escape(place)}</span>`, chip, actual && `<span class="kx-board-actual">${escape(actual)}</span>`].filter(Boolean).join(' ')
+        : [escape(place), escape(actual)].filter(Boolean).join(' ');
     const title = `${time} ${arrival ? 'arr' : 'dep'} ${service.headcode} ${place}${facts} ${platform} ${operator}`;
-    return `<div class="kx-board-due" title="${escape(title)}"><span>${escape(time)}</span><span>${arrival ? 'arr' : 'dep'}</span><strong>${escape(service.headcode)}</strong><span class="kx-board-description">${escape(description)}</span><span>${escape(platform)}</span><span class="kx-board-operator">${escape(operator)}</span></div>`;
+    return `<div class="kx-board-due${cancelledClass(service)}" title="${escape(title)}"><span>${escape(time)}</span><span>${arrival ? 'arr' : 'dep'}</span><strong>${escape(service.headcode)}</strong><span class="kx-board-description${flexed ? ' kx-board-with-delay' : ''}">${description}</span><span>${escape(platform)}</span><span class="kx-board-operator">${escape(operator)}</span></div>`;
   }).join('') || '<p class="kx-board-empty">None booked in the next 30 minutes</p>';
   return `<p class="kx-board-note">${rows.mode === 'sample' ? 'Sample, not live · no timetable' : rows.mode === 'none' ? 'Trains hidden · no timetable' : `${rows.mode === 'replay' ? 'Replay' : 'Live'} TD observations · ${rows.timetable ? 'timetable available' : 'no timetable'}`}<br>Dwell measured since observed · simulation time</p><h2>Platforms 0–10</h2>${platformRows}${rows.timetable ? `<h2>Due in next 30 minutes</h2>${due}` : ''}<h2>Approaching</h2>${approaching}<h2>Departed / leaving</h2>${departed}`;
 }
@@ -378,7 +469,13 @@ export function createBoard(parent: HTMLElement, status?: HTMLElement) {
 .kx-board-platform{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:2px 0;min-height:20px}.kx-board-platform>div{min-width:0}
 .kx-board-train{display:flex;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap}.kx-board-train strong{flex:0 0 32px;font-size:12px;font-variant-numeric:tabular-nums}.kx-board-train span{color:var(--muted)}.kx-board-description{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-operator{flex:0 0 auto;max-width:92px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.kx-board-state{flex:0 1 auto;max-width:84px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .kx-board-approach,.kx-board-departure{display:grid;align-items:baseline;gap:4px;min-width:0;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-approach{grid-template-columns:32px 12px 56px 56px minmax(0,1fr)}.kx-board-departure{grid-template-columns:32px 28px 12px 42px minmax(0,1fr)}.kx-board-approach strong,.kx-board-departure strong{font-size:12px}.kx-board-approach>span,.kx-board-departure>span{color:var(--muted)}.kx-board-approach .kx-board-arrow,.kx-board-departure .kx-board-arrow{color:var(--fg)}.kx-board-route{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.kx-board-due{display:grid;grid-template-columns:34px 20px 32px minmax(0,1fr) 22px auto;gap:4px;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-due>span{color:var(--muted)}.kx-board-due strong{font-size:12px}`;
+.kx-board-due{display:grid;grid-template-columns:34px 20px 32px minmax(0,1fr) 22px auto;gap:4px;line-height:20px;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.kx-board-due>span{color:var(--muted)}.kx-board-due strong{font-size:12px}
+.kx-board{--kx-ontime:#5fd38d;--kx-late:#f2b84b;--kx-very-late:#ff9955;--kx-cancelled:#ff8080}:root[data-theme="light"] .kx-board{--kx-ontime:#0a5c32;--kx-late:#6f4700;--kx-very-late:#962500;--kx-cancelled:#a8001f}
+.kx-board .kx-board-delay{flex:0 0 auto;font-weight:600;white-space:nowrap}.kx-board .kx-delay-ontime{color:var(--kx-ontime)}.kx-board .kx-delay-late{color:var(--kx-late)}.kx-board .kx-delay-very-late{color:var(--kx-very-late);font-weight:700}
+.kx-board .kx-delay-cancelled .kx-board-description,.kx-board .kx-delay-cancelled .kx-board-route,.kx-board .kx-delay-cancelled .kx-board-state{color:var(--kx-cancelled)}
+.kx-board .kx-board-leaving{font-style:italic}.kx-board .kx-board-leaving strong{flex-basis:38px;font-weight:400;color:var(--muted)}.kx-board .kx-board-leaving .kx-board-close{flex:0 0 auto;margin-left:-3px;color:var(--muted)}.kx-board .kx-board-leaving .kx-board-state{font-style:normal}
+.kx-board .kx-board-train:has(.kx-board-delay) .kx-board-operator{max-width:48px}
+.kx-board .kx-board-with-delay{display:flex;align-items:baseline;gap:4px}.kx-board .kx-board-with-delay .kx-board-place{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}.kx-board .kx-board-with-delay .kx-board-delay{flex:0 0 auto}.kx-board .kx-board-with-delay .kx-board-actual{flex:0 100 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}`;
   const toggle = doc.createElement('button'); toggle.type = 'button';
   toggle.setAttribute('aria-controls', 'kx-board-content');
   const body = doc.createElement('div'); body.className = 'kx-board-body'; body.id = 'kx-board-content';

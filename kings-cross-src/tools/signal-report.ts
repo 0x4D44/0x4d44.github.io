@@ -6,11 +6,11 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildGraph } from '../core/graph.ts';
 import { MIN_PRECISION, MIN_SUPPORT, qualifiesSignalEvidence, revalidateSignalHypotheses, SIGNAL_WINDOWS, trackSclass } from '../core/sclass.ts';
-import type { SignalHypothesis, SignalState, SignalWindows, TimedTdEvent } from '../core/sclass.ts';
+import type { LooValidation, SignalHypothesis, SignalState, SignalWindows, TimedTdEvent } from '../core/sclass.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import { createSignals, signalRefBerth, validatedSignalHypotheses } from '../web/src/signals.ts';
-import type { PublicSignalReview, SignalEvent, SignalOverlay } from '../web/src/signals.ts';
+import type { OverlaySignal, PublicSignalReview, SignalEvent, SignalOverlay } from '../web/src/signals.ts';
 import { buildSignalOverlay, publicSignalReviewMatches } from './build-signals.ts';
 import publicReviews from '../web/src/data/kx-signal-review.json' with { type: 'json' };
 
@@ -68,6 +68,40 @@ function tableFoldRelation(folds: unknown, startMs: number | null, endMs: number
   return 'outside-table-folds-independence-unknown';
 }
 
+export const OSM_REVIEW_RADIUS_M = 40;
+export type OsmHeadReviewOutcome = 'unique-osm-main-candidate' | 'no-compatible-osm-main-signal';
+export interface OsmHeadReview {
+  outcome: OsmHeadReviewOutcome;
+  reason: string;
+  nearby: { id: number; ref: string | null; distanceM: number; sameWay: boolean; sameDirection: boolean; main: boolean; refBerth: string | null }[];
+}
+
+/**
+ * Review an inferred head's position against public OSM signal nodes. Only a unique OSM
+ * main signal on the same way, facing the same way, within the radius, whose ref does not
+ * name another berth could locate it; anything else leaves the position uncertain. The
+ * review never moves a head or invents a position.
+ */
+export function osmHeadReview(head: { berth: string; point: readonly number[]; travel: readonly number[]; wayId: number | null },
+  signals: readonly OverlaySignal[], claimed: ReadonlySet<number> = new Set(), radiusM = OSM_REVIEW_RADIUS_M): OsmHeadReview {
+  const nearby = signals.map(s => {
+    const distanceM = Math.hypot(s.edge.point[0] - head.point[0]!, s.edge.point[1] - head.point[1]!);
+    const dot = s.travel[0] * head.travel[0]! + s.travel[1] * head.travel[1]!;
+    return { id: s.id, ref: s.ref ?? null, distanceM: Math.round(distanceM * 10) / 10, sameWay: head.wayId !== null && s.edge.wayId === head.wayId,
+      sameDirection: dot > 0.9, main: (s.kinds ?? []).includes('main'), refBerth: signalRefBerth(s.ref) ?? null };
+  }).filter(s => s.distanceM <= radiusM).sort((a, b) => a.distanceM - b.distanceM);
+  const fits = nearby.filter(s => s.sameWay && s.sameDirection && s.main && !claimed.has(s.id) && (s.ref === null || s.refBerth === head.berth));
+  if (fits.length === 1) return { outcome: 'unique-osm-main-candidate', nearby,
+    reason: `OSM main signal ${fits[0]!.id} is the only same-way, same-direction candidate within ${radiusM} m; identity still needs a private topology review before any rebinding` };
+  const why = !nearby.length ? `no OSM railway=signal node within ${radiusM} m`
+    : fits.length > 1 ? `${fits.length} same-way, same-direction OSM main signals within ${radiusM} m; none is distinguished`
+    : nearby.map(s => `${s.id}${s.ref ? ` (${s.ref})` : ''} ${s.distanceM} m: ${[
+      !s.main && 'not a main signal', !s.sameWay && 'other way', !s.sameDirection && 'faces the other way',
+      s.ref !== null && s.refBerth !== head.berth && 'ref names another signal', claimed.has(s.id) && 'already bound to another berth',
+    ].filter(Boolean).join(', ')}`).join('; ');
+  return { outcome: 'no-compatible-osm-main-signal', nearby, reason: `Position left uncertain: ${why}` };
+}
+
 /** Includes every observed bit, every drawn head, and every decoded but unpositioned berth. */
 export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], data: KxData, overlay: SignalOverlay,
   anchors: AnchorMap, table: unknown, raw?: RawElement[], reviews: readonly PublicSignalReview[] = publicReviews.signals as PublicSignalReview[]) {
@@ -91,6 +125,8 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   const graph = buildGraph(data);
   layer.setAnchors(anchors, graph); layer.setTable(table);
   const records = layer.signals();
+  // OSM nodes already standing for a berth cannot also locate an inferred head.
+  const boundOsm = new Set(records.filter(r => !r.inferredPosition && r.group.userData.berth).map(r => r.signal.id));
   const headRows = records.map(r => {
     const berth = r.group.userData.berth as string | undefined;
     const source = r.mappingSource ?? 'osm-unbound';
@@ -102,6 +138,9 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
       reason: r.inferredPosition ? `No public evidence identifies a signal position or side here; OSM way ${rail?.wayId ?? 'unavailable'} supports the rail only; ${r.label}; ${anchor?.evidence ?? 'anchor evidence unavailable'}`
         : 'No public review of this head\'s track position and side. Berth/reference identity alone cannot establish the mast side.',
     };
+    const osmReview = r.inferredPosition && berth ? osmHeadReview({ berth, point: r.signal.edge.point, travel: r.signal.travel, wayId: rail?.wayId ?? null },
+      overlay.signals, boundOsm) : null;
+    if (osmReview) positionReview.reason = `${positionReview.reason}. OSM review: ${osmReview.reason}`;
     const previousPost = publicReviewById.get(r.signal.id)?.previousPost;
     const facing = r.signal.facing ?? [-r.signal.travel[0], -r.signal.travel[1]];
     return { id: r.signal.id, ref: r.signal.ref ?? null, berth: berth ?? null, decoded: Boolean(aspect),
@@ -116,7 +155,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
         : source === 'nearby' ? `Unique same-edge, direction-compatible OSM main signal within 20 m; ${anchor?.evidence ?? ''}`
         : r.inferredPosition ? `${r.label}; ${anchor?.evidence ?? 'anchor evidence unavailable'}`
         : 'OSM position retained; no admitted proceed identity for this head',
-      observedStates: [] as SignalState[], heldOut: aspect?.heldOut ?? null };
+      osmReview, observedStates: [] as SignalState[], heldOut: aspect?.heldOut ?? null };
   });
   const decodedHeads = proceed.map(h => {
     const positions = headRows.filter(r => r.berth === h.berth && r.decoded);
@@ -211,7 +250,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   const captures = recordings.map((_, recording) => ({ recording, cases: capturePlan(intervals.filter(i => i.recording === recording)) }));
   const reviewCounts = (items: { review: string }[]) => Object.fromEntries([...new Set(items.map(h => h.review))].sort().map(review => [review, items.filter(h => h.review === review).length]));
   return { area: anchors.area, states: CAPTURE_STATES, unsupportedStates: ['caution'],
-    validation: metadata.validation ?? null, windows: metadata.windows ?? null, folds: metadata.folds ?? null,
+    validation: metadata.validation ?? null, loo: (metadata.loo ?? null) as LooValidation | null, windows: metadata.windows ?? null, folds: metadata.folds ?? null,
     evidencePolicy: 'Supplied table held-out evidence; >=3 supports and precision/recall >=0.8 in both folds. Route bits never drive an aspect. No re-learning or synthetic hypotheses.',
     positionPolicy: 'Public review covers horizontal track position, tagged direction and side, independently of berth identity. Topology-only positions remain uncertain. Lateral offsets and head heights are schematic; no survey accuracy or inferred mast side is claimed.',
     counts: { addresses: new Set(bits.map(b => b.address)).size, bits: bits.length, decodedBits: bits.filter(b => b.decoded).length,
@@ -230,6 +269,14 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
     heldOut: { all: total(decoded), proceed: total(proceed) }, fixedRevalidation, bits, heads: headRows, decodedHeads, captures, intervals };
 }
 
+function looLines(loo: unknown): string[] {
+  const value = loo as LooValidation | null | undefined;
+  if (!value || !Array.isArray(value.nested)) return [];
+  return ['## Leave-one-recording-out held-out recall', '', `${value.rule}. Sessions split at receipt gaps over ${value.sessionGapMs / 60_000} min. Each row repeats the admission without that session, then scores the mappings it admits on that session only.`, '',
+    '| Session | Span | Admitted without it | All precision / recall | Proceed precision / recall |', '|---:|---|---:|---:|---:|',
+    ...value.nested.map(n => `| ${n.recording} | ${new Date(n.startMs).toISOString()} to ${new Date(n.endMs).toISOString()} | ${n.admitted} | ${pct(n.all.precision)} / ${pct(n.all.recall)} (${n.all.support}/${n.all.trials}) | ${pct(n.proceed.precision)} / ${pct(n.proceed.recall)} (${n.proceed.support}/${n.proceed.trials}) |`), ''];
+}
+
 export function signalReportMarkdown(report: ReturnType<typeof signalReport>): string {
   const lines = ['# Signals evidence', '', report.evidencePolicy, '', `Counts: ${JSON.stringify(report.counts)}`,
     report.positionPolicy,
@@ -237,6 +284,7 @@ export function signalReportMarkdown(report: ReturnType<typeof signalReport>): s
     `Validation: ${cell(report.validation)}; windows (ms): ${JSON.stringify(report.windows)}; folds: ${JSON.stringify(report.folds)}.`,
     `Held-out micro precision ${pct(report.heldOut.all.precision)}, recall ${pct(report.heldOut.all.recall)}.`,
     'Caution is unsupported by this decoder; no caution screenshot or aspect is claimed.', '',
+    ...looLines(report.loo),
     '## Fixed mapping revalidation', '',
     `${report.fixedRevalidation.method} Per-recording scores use the supplied table windows, or the core defaults when absent. Revalidation does not change table admission or rendered head states.`,
     `Acceptance requires support >= ${report.fixedRevalidation.minimumSupport} and precision and recall >= ${pct(report.fixedRevalidation.minimumPrecision)}.`,
@@ -254,6 +302,12 @@ export function signalReportMarkdown(report: ReturnType<typeof signalReport>): s
   for (const b of report.bits) lines.push(`| ${b.address} | ${b.bit} | ${b.decoded ? b.kind : 'unknown'} | ${cell(b.berth)} | ${b.headIds.join(', ') || 'unpositioned'} | ${b.positionSources.join(', ') || 'none'} | ${pct(b.precision)} | ${pct(b.recall)} |`);
   lines.push('', '## Every decoded proceed head', '', '| Berth | Head(s) | Source | Held-out precision | Recall | Recorded position reason |', '|---|---|---|---:|---:|---|');
   for (const h of report.decodedHeads) lines.push(`| ${h.berth} | ${h.headIds.join(', ') || 'unpositioned'} | ${cell(h.positionSource)} | ${pct(h.heldOut.precision)} | ${pct(h.heldOut.recall ?? h.heldOut.precision)} | ${cell(h.reason)} |`);
+  lines.push('', '## Decoded heads with an uncertain position', '',
+    `Each decoded head without a reviewed position, checked against public OSM railway=signal nodes within ${OSM_REVIEW_RADIUS_M} m. A head is never moved by this review.`, '',
+    '| Head | Berth | Identity source | Outcome | Reason |', '|---|---|---|---|---|');
+  const uncertain = report.heads.filter(h => h.decoded && h.positionReview.status !== 'reviewed');
+  for (const h of uncertain) lines.push(`| ${h.id} | ${cell(h.berth)} | ${h.positionSource} | ${h.osmReview?.outcome ?? 'osm-node-side-untagged'} | ${cell(h.osmReview?.reason ?? h.positionReview.reason)} |`);
+  if (!uncertain.length) lines.push('| — | — | — | — | every decoded head has a reviewed position |');
   lines.push('', '## Every drawn head: position and side review', '',
     'Identity/topology and geographic review are separate. An OSM reference does not establish a missing mast side; unknown aspects are independent of uncertain positions. Deltas compare with the public overlay before this review; private inferred positions have no public baseline.', '',
     '| Head / ref | Identity source | Geographic review | Track point (x,z) | Side drawn | Post change (dx,dz), m | Evidence and limits |', '|---|---|---|---|---|---|---|');

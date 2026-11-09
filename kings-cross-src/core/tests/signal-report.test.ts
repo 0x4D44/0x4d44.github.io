@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { capturePlan, signalReport, signalReportMarkdown } from '../../tools/signal-report.ts';
+import { capturePlan, osmHeadReview, signalReport, signalReportMarkdown } from '../../tools/signal-report.ts';
 import type { AnchorMap } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
 import type { TimedTdEvent } from '../sclass.ts';
@@ -192,4 +192,41 @@ test('signal report CLI freezes complete input lines and refuses output outside 
   assert.equal(readFileSync(`${dir}/out/recording-0.ndjson`, 'utf8').endsWith('\n'), true);
   assert.notEqual(invoke(`${root}/kings-cross-src`).status, 0);
   assert.notEqual(invoke(`${dir}/out`).status, 0, 'an existing pack is immutable');
+});
+
+test('OSM head review locates an inferred head only through a unique same-way, same-direction main signal and never moves it', () => {
+  const head = { berth: '9903', point: [50, 0], travel: [1, 0], wayId: 1 };
+  const signal = (id: number, x: number, extra: Partial<SignalOverlay['signals'][number]> = {}) =>
+    ({ ...overlay.signals[0]!, id, ref: undefined, berth: undefined, edge: { ...overlay.signals[0]!.edge, point: [x, 0] as [number, number] }, ...extra });
+  assert.equal(osmHeadReview(head, [signal(7, 60)]).outcome, 'unique-osm-main-candidate');
+  const cases: [SignalOverlay['signals'], RegExp][] = [
+    [[], /no OSM railway=signal node within 40 m/],
+    [[signal(7, 60, { kinds: ['train_protection'] })], /7 10 m: not a main signal/],
+    [[signal(7, 60, { travel: [-1, 0] })], /faces the other way/],
+    [[signal(7, 60, { edge: { ...overlay.signals[0]!.edge, wayId: 9, point: [60, 0] } })], /other way/],
+    [[signal(7, 60, { ref: 'YA9905' })], /ref names another signal/],
+    [[signal(7, 60), signal(8, 55)], /2 same-way, same-direction OSM main signals/],
+    [[signal(7, 95)], /no OSM railway=signal node/],
+  ];
+  for (const [signals, reason] of cases) {
+    const review = osmHeadReview(head, signals);
+    assert.equal(review.outcome, 'no-compatible-osm-main-signal'); assert.match(review.reason, reason);
+  }
+  assert.match(osmHeadReview(head, [signal(7, 60)], new Set([7])).reason, /already bound to another berth/);
+  assert.deepEqual(head.point, [50, 0]);
+  const map: AnchorMap = { ...anchors, anchors: [{ berth: '9903', kind: 'inferred', from: 1, to: 2, t: .5, point: [50, 0], errorM: 75, evidence: 'synthetic chain' }] };
+  const r = signalReport([rows], data, overlay, map, table);
+  const inferred = r.heads.find(h => h.inferred)!;
+  assert.equal(inferred.osmReview?.outcome, 'no-compatible-osm-main-signal');
+  assert.match(inferred.positionReview.reason, /OSM review: Position left uncertain/);
+  assert.equal(inferred.positionReview.status, 'uncertain');
+  assert.match(signalReportMarkdown(r), /## Decoded heads with an uncertain position[\s\S]*\| -\d+ \| 9903 \| td-anchor \| no-compatible-osm-main-signal/);
+});
+
+test('signal report shows the table leave-one-recording-out scores when present', () => {
+  const nested = [{ recording: 0, startMs: 0, endMs: 1, admitted: 2, all: { support: 9, cycles: 10, trials: 10, precision: .9, recall: .9 }, proceed: { support: 4, cycles: 4, trials: 5, precision: 1, recall: .8 } }];
+  const md = signalReportMarkdown(signalReport([rows], data, overlay, anchors, { ...table, loo: { scheme: 'leave-one-recording-out', sessionGapMs: 600000, rule: 'synthetic rule', nested } }));
+  assert.match(md, /## Leave-one-recording-out held-out recall/);
+  assert.match(md, /\| 0 \| 1970-01-01T00:00:00.000Z to 1970-01-01T00:00:00.001Z \| 2 \| 90.00% \/ 90.00% \(9\/10\) \| 100.00% \/ 80.00% \(4\/5\) \|/);
+  assert.doesNotMatch(signalReportMarkdown(report()), /Leave-one-recording-out/);
 });
