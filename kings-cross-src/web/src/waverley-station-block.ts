@@ -12,8 +12,9 @@ import {cleanRing,fillSurface} from './waverley-mesh.ts';
 
 export const WAVERLEY_CENTRAL_BLOCK_ID='way/225997712';
 export const WAVERLEY_BLOCK={
- /** Bays of about 4.2 m, pilaster to pilaster (ASSUMED, R-wv1-b3). Pilasters 0.6 m wide, 0.15 m proud. */
- bay:4.2,pilasterWidth:.6,pilasterDepth:.15,
+ /** Bays of about 4.2 m, pilaster to pilaster (ASSUMED, R-wv1-b3). Pilasters 0.6 m wide, 0.3 m proud (R-wv1-b3 shows them casting a
+  *  clear shadow; depth ASSUMED). */
+ bay:4.2,pilasterWidth:.6,pilasterDepth:.3,
  /** Plinth to 0.9 m, 0.08 m proud; string course at the first floor (3 m), 0.2 m high, 0.1 m proud (ASSUMED, R-wv1-b3). */
  plinth:.9,plinthDepth:.08,storey:3,stringHeight:.2,stringDepth:.1,
  /** Cornice: the top 0.45 m, 0.3 m proud (ASSUMED, R-wv1-b3). */
@@ -23,9 +24,14 @@ export const WAVERLEY_BLOCK={
  windowWidth:1.4,windowHeight:1.8,groundSill:.95,upperSill:.4,doorHeight:2.6,doorEvery:3,
  /** A window stands this far off its wall, a door clear of the plinth in front of it; the material's polygon offset does the rest (materials.ts `sash`). */
  windowLift:.03,doorLift:.1,
+ /** The balustraded parapet over the cornice (R-wv1-a3: a pale balustrade round the block's roof line): 0.85 m high, set 0.15 m back from
+  *  the wall face; a 0.15 m plinth, square balusters 0.12 m every 0.3 m, a 0.12 m coping 0.35 m wide, a pier every 4 balusters' bay.
+  *  ASSUMED sizes, scaled from R-wv1-a3. */
+ parapetHeight:.85,parapetSetback:.15,parapetBase:.15,baluster:.12,balusterEvery:.3,coping:.12,copingWidth:.35,
 } as const;
-/** Sandstone (R-wv1-b3's warm buff), a darker plinth and the cornice's paler stone. ASSUMED shades. */
-export const WAVERLEY_BLOCK_PAINT={wall:0xe2cfa6,plinth:0x9b8a6d,dressing:0xece0c4} as const;
+/** Sandstone (R-wv1-b3's pale buff, not orange-brown), a darker plinth and the dressings' paler stone. These are the colours as seen: the
+ *  block's material divides out the stone texture's own average (waverley-station.ts), so the texture adds only its coursing. ASSUMED shades. */
+export const WAVERLEY_BLOCK_PAINT={wall:0xc9bb98,plinth:0x8f846f,dressing:0xd8ccad} as const;
 export interface WaverleyBlockBatches {stone:Batch;windows:Batch;top:Batch}
 /** The block's walls, dressings and windows from its footprint, standing on `base` (y) and `height` tall. */
 export function centralBlockBatches(area:Pick<WaverleyArea,'outer'|'height'>,base:number):WaverleyBlockBatches{
@@ -54,6 +60,16 @@ export function centralBlockBatches(area:Pick<WaverleyArea,'outer'|'height'>,bas
     const s0=s-B.windowWidth/2,s1=s+B.windowWidth/2;
     windows.poly([at(s0,lift,y(y0)),at(s1,lift,y(y0)),at(s1,lift,y(y1)),at(s0,lift,y(y1))],[[0,0],[1.4,0],[1.4,2.6],[0,2.6]],{facing:[out[0],0,out[1]]});
    }
+  }
+  // The parapet: plinth, balusters and coping, standing on the cornice's top, set back from the face.
+  const P=B.parapetSetback,yb=y(h+.04),yc=yb+B.parapetHeight,inner=len-2*P;
+  if(inner>1){
+   const mid=at(len/2,-P,0);
+   stone.box([mid[0],yb+B.parapetBase/2,mid[2]],[inner,B.parapetBase,B.copingWidth*.8],{rotY,color:dressing,skip:['-y']});
+   stone.box([mid[0],yc-B.coping/2,mid[2]],[inner,B.coping,B.copingWidth],{rotY,color:dressing});
+   const m=Math.max(1,Math.round(inner/B.balusterEvery));
+   for(let k=0;k<m;k++){const s=P+(k+.5)*inner/m,c=at(s,-P,0),pier=k%5===0;
+    stone.box([c[0],(yb+B.parapetBase+yc-B.coping)/2,c[2]],pier?[.3,yc-B.coping-yb-B.parapetBase,.3]:[B.baluster,yc-B.coping-yb-B.parapetBase,B.baluster],{rotY,color:dressing,skip:['+y','-y']});}
   }
  }
  fillSurface(top,r,[],()=>y(h));

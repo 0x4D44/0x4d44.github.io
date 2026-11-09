@@ -4,13 +4,14 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import dataFile from '../src/data/waverley-scene.json' with {type:'json'};
-import {buildWaverleyStation,WAVERLEY_ROOF_CUTOUTS,WAVERLEY_STATION_OMIT_IDS,WAVERLEY_STATION_ROOF_ID} from '../src/waverley-station.ts';
+import {buildWaverleyStation,WAVERLEY_ROOF_CUTOUTS,WAVERLEY_ROOF_EXTENSION,WAVERLEY_STATION_OMIT_IDS,WAVERLEY_STATION_ROOF_ID,waverleyRoofOutline,waverleyStationRoof} from '../src/waverley-station.ts';
 import {waverleyRailPieces,waverleyStationPlan,waverleyStructureBatches,WAVERLEY_EDGE_BANDS,WAVERLEY_STRUCTURE} from '../src/waverley-station-structure.ts';
+import {WAVERLEY_STATION_TEXTURES} from '../src/waverley-station-textures.ts';
 import {centralBlockBatches,WAVERLEY_BLOCK,WAVERLEY_CENTRAL_BLOCK_ID} from '../src/waverley-station-block.ts';
 import {ridgeRoofBatches,roofHeight,WAVERLEY_ROOF_BANDS,WAVERLEY_ROOF_PROFILE,WAVERLEY_ROOF_STRIP_LIFT} from '../src/waverley-roof.ts';
 import {WAVERLEY_LEVELS} from '../src/waverley-mesh.ts';
 
-const data=unpackWaverleyScene(dataFile as never),roof=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)!,plan=waverleyStationPlan(data,roof,WAVERLEY_ROOF_CUTOUTS),tracks=waverleyRailPieces(data);
+const data=unpackWaverleyScene(dataFile as never),mapped=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)!,roof=waverleyStationRoof(mapped)!,plan=waverleyStationPlan(data,roof,WAVERLEY_ROOF_CUTOUTS),tracks=waverleyRailPieces(data);
 const flat={rangeUnder:()=>({min:WAVERLEY_LEVELS.ground,max:WAVERLEY_LEVELS.ground,mean:WAVERLEY_LEVELS.ground})};
 /** A train's half-width from the track centre line, metres: the KX figure for a platform face (furniture.ts FIGURES.trackProbe), ASSUMED. */
 const ENVELOPE_HALF=1.7;
@@ -20,6 +21,8 @@ const segDist=(p:Pt,[a,b]:[Pt,Pt]):number=>{const dx=b[0]-a[0],dz=b[1]-a[1],l=dx
 const trackDist=(p:Pt):number=>Math.min(...tracks.map(s=>segDist(p,s)));
 const inRing=(p:Pt,r:readonly Pt[]):boolean=>{let yes=false;for(let i=0,j=r.length-1;i<r.length;j=i++)if((r[i][1]>p[1])!==(r[j][1]>p[1])&&p[0]<(r[j][0]-r[i][0])*(p[1]-r[i][1])/(r[j][1]-r[i][1])+r[i][0])yes=!yes;return yes;};
 const onPlatform=(p:Pt):boolean=>data.platforms.some(q=>inRing(p,q.path));
+const onRing=(p:Pt,r:readonly Pt[],tol=.01):boolean=>r.some((a,i)=>segDist(p,[a,r[(i+1)%r.length]])<tol);
+const meshOf=(g:THREE.Group,name:string):THREE.Mesh=>{const m=g.getObjectByName(name);assert.ok(m instanceof THREE.Mesh,`mesh ${name}`);return m;};
 
 test('W1 columns stand on platforms, under the roof, at about the roof pitch, clear of every train',()=>{
  const S=WAVERLEY_STRUCTURE;
@@ -44,12 +47,13 @@ test('W1 furniture keeps out of the train envelope and stays on its platform',()
 
 test('W1 ironwork: under the glazing, above every train, and no chord coplanar with another',()=>{
  const {ironwork}=waverleyStructureBatches(plan),S=WAVERLEY_STRUCTURE,holes=plan.holes;
- const nearHole=(p:Pt):boolean=>holes.some(h=>h.some((a,i)=>segDist(p,[a,h[(i+1)%h.length]])<.01));
+ // The valance round the hole and the clad gables round the outline and along the bridges' flanks are the only screens above the girders.
+ const nearHole=(p:Pt):boolean=>[...holes,plan.outline,...plan.cutouts as Pt[][]].some(h=>onRing(p,h));
  let over=0;
  for(let i=0;i<ironwork.positions.length;i+=3){
   const x=ironwork.positions[i],y=ironwork.positions[i+1],z=ironwork.positions[i+2],p:Pt=[x,z];
   assert.ok(y<=roofHeight(x)+1e-6,`ironwork at ${p} y ${y} is above the glazing`);
-  if(y>S.gutterGirderTop+1e-6)assert.ok(nearHole(p),'only the valance rises above the girders, at the hole');
+  if(y>S.gutterGirderTop+1e-6)assert.ok(nearHole(p),'only the valance and the gable cladding rise above the girders, on the hole, outline or bridge edges');
   if(trackDist(p)<ENVELOPE_HALF){over++;assert.ok(y>=ENVELOPE_TOP,`ironwork over a track at ${p} is ${y.toFixed(2)} m up`);}
  }
  assert.ok(over>1000,'girders do span the tracks');
@@ -61,7 +65,7 @@ test('W1 ironwork: under the glazing, above every train, and no chord coplanar w
 });
 
 test('W1 columns: pedestal, shaft and capital fill the platform-to-girder height',()=>{
- const S=WAVERLEY_STRUCTURE,{fittings}=waverleyStructureBatches({...plan,signs:[],screens:[],benches:[],columns:plan.columns.slice(0,1)});
+ const S=WAVERLEY_STRUCTURE,{fittings}=waverleyStructureBatches({...plan,signs:[],screens:[],benches:[],railings:[],columns:plan.columns.slice(0,1)});
  const ys=fittings.positions.filter((_,i)=>i%3===1);
  assert.ok(Math.abs(Math.min(...ys)-WAVERLEY_LEVELS.platform)<1e-6);
  assert.ok(Math.abs(Math.max(...ys)-(S.platformGirderTop-S.platformGirderDepth))<1e-6,'the abacus carries the platform girder');
@@ -105,6 +109,11 @@ test('W1 draws the central block itself: the mapped block leaves the city loop a
 test('W1 central block: windows sit on the walls between plinth and cornice, never coplanar with them',()=>{
  const block=data.buildings.find(b=>b.id===WAVERLEY_CENTRAL_BLOCK_ID)!,{windows,stone}=centralBlockBatches(block,0);
  assert.ok(windows.triangles>=40&&stone.triangles>100);
+ // The balustraded parapet stands on the cornice, under the valance round the roof's hole.
+ const top=Math.max(...stone.positions.filter((_,i)=>i%3===1));
+ assert.ok(Math.abs(top-(block.height+.04+WAVERLEY_BLOCK.parapetHeight))<1e-6,`parapet top ${top}`);
+ assert.ok(top<WAVERLEY_STRUCTURE.valanceBottom-.05,'the parapet clears the valance');
+ assert.ok(WAVERLEY_BLOCK.pilasterDepth>=.3,'pilasters stand proud enough to cast a shadow (R-wv1-b3)');
  const ys=windows.positions.filter((_,i)=>i%3===1);assert.ok(Math.max(...ys)<=block.height-WAVERLEY_BLOCK.cornice,'windows stop under the cornice');
  assert.ok(WAVERLEY_BLOCK.windowLift>0&&WAVERLEY_BLOCK.doorLift>WAVERLEY_BLOCK.plinthDepth,'a door stands clear of the plinth in front of it');
 });
@@ -122,7 +131,7 @@ test('W1 roof stops at North Bridge and Waverley Bridge, keeps the published 34,
  const {default:frontage}=await import('../src/data/waverley-frontage.json',{with:{type:'json'}});
  const s=buildWaverleyStation(data,flat),bridges=frontage.bridges.map(b=>b.ring as Pt[]);
  let area=0;
- for(const name of ['waverley-mapped-roofs','waverley-roof-strips','waverley-roof-ironwork','waverley-roof-runners']){
+ for(const name of ['waverley-mapped-roofs','waverley-roof-underside','waverley-roof-strips','waverley-roof-ironwork','waverley-roof-runners']){
   const g=(s.roof.getObjectByName(name) as THREE.Mesh).geometry,pos=g.getAttribute('position'),idx=g.index!;
   for(let i=0;i<idx.count;i+=3){
    const v=[0,1,2].map(k=>[pos.getX(idx.getX(i+k)),pos.getY(idx.getX(i+k)),pos.getZ(idx.getX(i+k))]),c:Pt=[(v[0][0]+v[1][0]+v[2][0])/3,(v[0][2]+v[1][2]+v[2][2])/3];
@@ -138,4 +147,57 @@ test('W1 roof stops at North Bridge and Waverley Bridge, keeps the published 34,
  s.roof.updateMatrixWorld(true);
  assert.equal(new THREE.Raycaster(new THREE.Vector3(mid[0],60,mid[1]),new THREE.Vector3(0,-1,0)).intersectObject(s.roof.getObjectByName('waverley-mapped-roofs')!).length,0,'the steps slab is not drawn');
  s.dispose();
+});
+
+test('W1 roof runs out to Waverley Bridge on the south half: the extension is spliced into the real outline and closes the open strip',()=>{
+ const E=WAVERLEY_ROOF_EXTENSION;assert.equal(roof.outer.length,mapped.outer.length+2,'two corners added');
+ assert.deepEqual(waverleyRoofOutline([[0,0],[10,0],[10,10]]),[[0,0],[10,0],[10,10]],'an outline without those corners is left alone');
+ const wb=WAVERLEY_ROOF_CUTOUTS.find(h=>h.some(p=>p[0]<-90))!,face=roof.outer.find(p=>Math.abs(p[1]-E.faceZ)<1e-9&&p[0]<-70)!;
+ assert.ok(face&&!inRing(face,wb)&&onRing(face,wb,E.faceGap+1e-6),`the new corner ${face} stands just off the bridge's east face`);
+ // A point in the old strip of open track is under the roof now, and so is one in the mapped roof; the strip has columns.
+ for(const p of [[-66,20],[-60,5],[-30,-40]] as Pt[])assert.ok(inRing(p,roof.outer),`${p} roofed`);
+ assert.ok(!inRing([-66,20],mapped.outer),'that point was open in OSM');
+ assert.ok(plan.columns.some(c=>!inRing([c.x,c.z],mapped.outer)),'columns carry the extension');
+ assert.ok(plan.gutters.some(([x,z0,z1])=>x===-60&&z1>30),'a gutter girder runs under the extension');
+});
+
+test('W1 glazing: near-opaque silver cassettes from above, the translucent glazing from below, one shared buffer',()=>{
+ const s=buildWaverleyStation(data,flat),top=meshOf(s.roof,'waverley-mapped-roofs'),under=meshOf(s.roof,'waverley-roof-underside');
+ const tm=top.material as THREE.MeshLambertMaterial,um=under.material as THREE.MeshLambertMaterial;
+ assert.equal(tm.side,THREE.FrontSide);assert.equal(um.side,THREE.BackSide);assert.equal(top.geometry,under.geometry);
+ assert.ok(tm.opacity>=.9&&um.opacity<.85,`top ${tm.opacity}, underside ${um.opacity}`);
+ const n=top.geometry.getAttribute('normal');for(let i=0;i<n.count;i+=97)assert.ok(n.getY(i)>.9,'the glazing faces up');
+ const [u,v]=WAVERLEY_STATION_TEXTURES.cassettes.tile;assert.ok(Math.abs(u*v-1.2)<.3,`cassette ${u} x ${v} m against 28,000 panes on 34,000 m2`);
+ s.dispose();
+});
+
+test('W1 purlins and the south edge girder: under the glazing, between the gutter girders, clear of every train',()=>{
+ const S=WAVERLEY_STRUCTURE;assert.ok(plan.purlins.length>300,`${plan.purlins.length} purlins`);assert.ok(plan.edgeGirders.length>100,`${plan.edgeGirders.length} m of south edge girder`);
+ assert.ok(S.purlinTop<=S.gutterGirderTop-.02&&S.purlinTop-S.purlinDepth>=S.platformGirderTop+.04-1e-9,'purlin faces share no plane with a chord');
+ for(const [x0,x1,z]of plan.purlins){
+  assert.ok(Math.abs(x1-x0-(WAVERLEY_ROOF_PROFILE.pitch-S.chordWidth))<1e-9,'a purlin spans gutter girder to gutter girder');
+  for(const x of [x0,x1])assert.ok(inRing([x,z],roof.outer)&&!plan.cutouts.some(c=>inRing([x,z],c)),'under the roof, not under a deck');
+ }
+ for(const [a,b]of plan.edgeGirders)for(const p of [a,b]){assert.ok(inRing(p,roof.outer),'inside the outline');assert.ok(!plan.cutouts.some(c=>inRing(p,c)),'not under a bridge');}
+});
+
+test('W1 railings stand on their platforms along edges with no track, and benches are slatted on end frames',()=>{
+ const S=WAVERLEY_STRUCTURE;assert.ok(plan.railings.length>=5,`${plan.railings.length} railings`);
+ for(const [a,b]of plan.railings)for(const p of [a,b,[(a[0]+b[0])/2,(a[1]+b[1])/2] as Pt]){assert.ok(onPlatform(p),`railing at ${p}`);assert.ok(trackDist(p)>=ENVELOPE_HALF,`railing at ${p} is ${trackDist(p).toFixed(2)} m from a track`);}
+ const one={...plan,columns:[],signs:[],screens:[],railings:[],lamps:[],benches:plan.benches.slice(0,1)},{fittings}=waverleyStructureBatches(one);
+ // Four seat slats, three back slats, per end two legs, a seat rail and a back post: 15 boxes of 12 triangles.
+ assert.equal(fittings.triangles,15*12);
+ const seat=fittings.positions.filter((_,i)=>i%3===1).filter(y=>Math.abs(y-(WAVERLEY_LEVELS.platform+S.benchSeat+.0175))<1e-6).length;assert.ok(seat>0,'slats at seat height');
+});
+
+test('W1 split islands: a column may straddle the seam between two halves, clear of both halves\' tracks',()=>{
+ const island=plan.columns.filter(c=>c.ref.includes('/'));assert.ok(island.length>=1,'at least one island column');
+ for(const c of island)assert.ok(trackDist([c.x,c.z])>=ENVELOPE_HALF+WAVERLEY_STRUCTURE.capitalRadius);
+});
+
+test('W1 platform tactile strip: blister texture in metres, 0.4 m deep, on the platforms',()=>{
+ const {tactile}=waverleyStructureBatches(plan);assert.ok(tactile.triangles>100);
+ const uv=tactile.uvs!,vs=uv.filter((_,i)=>i%2===1);assert.ok(Math.min(...vs)===0&&Math.abs(Math.max(...vs)-.4)<1e-9,'v runs across the 0.4 m strip');
+ for(let i=0;i<tactile.positions.length;i+=3)assert.ok(Math.abs(tactile.positions[i+1]-WAVERLEY_LEVELS.platform-WAVERLEY_STRUCTURE.stripLift)<1e-9);
+ const [tu,tv]=WAVERLEY_STATION_TEXTURES.blister.tile;assert.ok(tu<=.4&&tv<=.4,'a texture tile is no bigger than the strip');
 });
