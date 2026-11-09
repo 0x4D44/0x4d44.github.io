@@ -63,9 +63,18 @@ function extent(start: number, count: number, direction: readonly number[], c: r
 test('roof member classification and drawn sections match the published member families', () => {
   assert.ok(roofEdges.every(({a,b}) => [a,b].every(i => !pointInPolygon([grid.nodes[i]!.x, grid.nodes[i]!.z], hotel.pts))), 'classified member endpoints must clear the hotel domain');
   assert.ok(ribs.length > 0 && tubes.length > ribs.length, `expected radial box ribs and more round diagonals, got ${ribs.length}/${tubes.length}`);
-  const cells = keepTriangles(grid, footprint, shed), medial = cells.length * 3;
+  const cells = keepTriangles(grid, footprint, shed);
+  // round 6 (C3): the finer net is drawn in the solid cells only, those with a soffit; the glazed field round the funnel keeps the coarse lattice, so that the legs run on into members
+  // at their full thickness, with no ring of slim bars at the head. A cell is found by the float32 positions of its corners, which is what the soffit's vertices hold.
+  const soffit = group.getObjectByName('concourse-panels') as THREE.Mesh, sp = soffit.geometry.getAttribute('position'), si = soffit.geometry.index!;
+  const key = (x: number, z: number): string => `${Math.fround(x)},${Math.fround(z)}`;
+  const drawn = new Set<string>();
+  for (let i = 0; i < si.count; i += 3) drawn.add([0, 1, 2].map(k => key(sp.getX(si.getX(i + k)), sp.getZ(si.getX(i + k)))).sort().join('|'));
+  const solid = cells.filter(t => drawn.has(t.map(i => key(grid.nodes[i]!.x, grid.nodes[i]!.z)).sort().join('|'))), medial = solid.length * 3;
+  assert.equal(drawn.size, solid.length, 'a soffit under each solid cell, and no other');
+  assert.ok(solid.length > 1000 && cells.length - solid.length > 100, `${solid.length} solid cells, ${cells.length - solid.length} glazed`);
   assert.equal(position.count, ribs.length * RIB + tubes.length * OPEN + medial * OPEN,
-    'one open box per selected radial rib, then one open tube per other triangulation edge, then the three slim tubes of each cell\'s medial triangle');
+    'one open box per selected radial rib, then one open tube per other triangulation edge, then the three slim tubes of each solid cell\'s medial triangle, none in the glazed field');
   assert.equal(group.children.filter(child => child.name === 'concourse-lattice').length, 1, 'one batched roof-member mesh');
   assert.equal(mesh.geometry.groups.length, 0, 'single material range on the batched roof mesh');
 
@@ -102,8 +111,8 @@ test('roof member classification and drawn sections match the published member f
     const fraction = Math.max(0, Math.min(1, ((a.r + b.r) / 2 - 5.4) / (canopy.radius - 5.4)));
     measure(frame(edge.a, edge.b), 0.219 - 0.080 * fraction, `tube ${edge.a}:${edge.b}`); // ASSUMED linear interpolation within Arup's 139–219 mm range.
   }
-  // half way along each cell's sides, a finer net: the medial triangle of every cell, 0.1 m through (round 5, C1: twice the weave at the same cell)
-  for (const t of cells) {
+  // half way along each solid cell's sides, a finer net: the medial triangle of the cell, 0.1 m through (round 5, C1: twice the weave at the same cell)
+  for (const t of solid) {
     const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
     for (let k = 0; k < 3; k++) measure(frameOf(mid[k]!, mid[(k + 1) % 3]!), 0.1, `medial tube of cell ${t.join(':')}`);
   }

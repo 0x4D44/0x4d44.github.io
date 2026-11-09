@@ -108,7 +108,7 @@ test('struts: two white struts to each pane of the wall, in a V from its rail to
   const drawn = sites.filter(s => standsAt(s, [hotel.pts])).length, sides = baseOf(sites[1]!).length / 2;
   // a trunk and four branches to each drawn tree are round tubes of `sides` sides, two triangles to a side; a strut is an open V of four sides, its two lower faces: two triangles each, four in all
   assert.equal(supports.geometry.index!.count / 3, 2 * sides * 5 * drawn + 4 * 2 * panes, 'a trunk and four branches to each drawn tree, two struts to each pane');
-  assert.ok(STRUT_DIAMETER <= 0.07, `the struts are thin rods, ${STRUT_DIAMETER} m through (R-c, round 5: a light zigzag of thin grey struts under the brim, not stout bars)`);
+  assert.ok(STRUT_DIAMETER >= 0.08 && STRUT_DIAMETER <= 0.095, `the struts are rods ${STRUT_DIAMETER} m through (R-c, round 5: a light zigzag, not stout bars of 0.1 m; round 6, C6: thicker than round 5's 0.06 m, so that the zigzag shows from the square)`);
   const struts = new THREE.Raycaster();
   let rails = 0;
   const centre3 = new THREE.Vector3(centre[0], 0, centre[1]);

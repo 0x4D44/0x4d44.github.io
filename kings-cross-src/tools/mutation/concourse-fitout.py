@@ -1,6 +1,6 @@
 """Fit-out and floor mutations: ticket blocks, totems, boards, plates, gate cabinets, shopfronts, lettering, the floor's tone.
 Usage: concourse-fitout.py SOURCE SCRATCH. Mutates a private copy of SOURCE under SCRATCH (which must lie beneath a .scratch
-directory); each kill needs an assertion failure from web/tests/concourse-fitout.test.ts, not a load failure.
+directory); each kill needs an assertion failure from web/tests/concourse-fitout.test.ts or concourse-atlas.test.ts, not a load failure.
 """
 import re
 import shutil
@@ -83,11 +83,20 @@ mutations = [
     ('each gate bay its own sign, as in round 2', 'ATLAS.plates[Math.max(0, i - gate.bays + 1)]!', 'ATLAS.plates[Math.min(i, 2)]!'),
     ('the toilets over a gate', "'Platforms 0 to 8  →', 'Cafe'", "'Toilets', 'Cafe'"),
     ('the shops share one sign', 'ATLAS.plates[Math.max(0, i - gate.bays + 1)]!', 'ATLAS.plates[Math.min(1, Math.max(0, i - gate.bays + 1))]!'),
+    ('floor slabs as coarse as the shared paving\'s (round 5)', '[a,b,c].map(([x,z]): V2 => [2*x,2*z])', '[a,b,c]'),
+    ('floor slabs a third the size of round 6\'s, a mosaic', '[a,b,c].map(([x,z]): V2 => [2*x,2*z])', '[a,b,c].map(([x,z]): V2 => [8*x,8*z])'),
+    ('floor slabs squashed along the floor', '[a,b,c].map(([x,z]): V2 => [2*x,2*z])', '[a,b,c].map(([x,z]): V2 => [2*x,5*z])'),
+    ('opening interiors bright flat cards again (round 5)', "['#6b4f2c', '#2b3a4a', '#243247', '#161d2c', '#6c737a'][i]!", "['#f3c987', '#f1dcae', '#dce8f0', '#27324e', '#8c939a'][i]!"),
+    ('one opening interior a bright card', "['#6b4f2c', '#2b3a4a', '#243247', '#161d2c', '#6c737a'][i]!", "['#6b4f2c', '#2b3a4a', '#dce8f0', '#161d2c', '#6c737a'][i]!"),
+    ('no shade across the lower part of the interiors', "at('#0007', 0, uh * 0.72, uw, uh * 0.28);", 'void at;'),
+    ('the shade across the interiors a faint wash', "at('#0007', 0, uh * 0.72, uw, uh * 0.28);", "at('#0002', 0, uh * 0.72, uw, uh * 0.28);"),
+    ('the shop\'s goods in primaries again (round 5)', '60},40%,50%)`', '60},60%,45%)`'),
+    ('the shop\'s goods pale', '60},40%,50%)`', '60},40%,75%)`'),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:
     try:
-        result = kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=60000', 'web/tests/concourse-fitout.test.ts'], cwd=work, timeout=120)
+        result = kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=60000', 'web/tests/concourse-fitout.test.ts', 'web/tests/concourse-atlas.test.ts'], cwd=work, timeout=180)
     except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap; the log keeps what it wrote
         (out / f'{name}.log').write_text(f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}')
         raise

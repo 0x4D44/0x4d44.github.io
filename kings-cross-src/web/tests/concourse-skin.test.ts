@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, concourseHeight, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, concourseGrid, FACET_RISE, FASCIA_BOTTOM, FUNNEL_GLAZING_RADIUS, GLAZED_SHARE, keepTriangles, RIM_GLAZING_WIDTH,
+import { buildConcourse, concourseGrid, CURTAIN_FIN, FACET_RISE, FASCIA_BOTTOM, FUNNEL_GLAZING_RADIUS, GLAZED_SHARE, keepTriangles, RIM_GLAZING_WIDTH,
   ROOFLIGHT_AZIMUTHS, ROOFLIGHT_FRAME, ROOFLIGHT_HALF, ROOFLIGHT_RADIUS, SKIN_LIFT, SOFFIT_LIFT } from '../src/concourse.ts';
 import { WESTERN_RANGE } from '../src/shed.ts';
 
@@ -51,7 +51,11 @@ function toRim(x: number, z: number): number {
   return best;
 }
 const toAxis = (v: THREE.Vector3): number => Math.hypot(v.x - axis[0], v.z - axis[1]);
-const inGlazedZone = (f: Face): boolean => toAxis(f.mid) < FUNNEL_GLAZING_RADIUS || toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH;
+// The field's edge steps cell by cell (round 6, C2: not a smooth ellipse): each cell turns solid at a radius of its own, the nominal one less 3 m up to the nominal one plus 3.4 m (ASSUMED).
+const EDGE_SPREAD = { inward: 3, outward: 3.4 } as const;
+const inRimBand = (f: Face): boolean => toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH;
+const surelyGlazed = (f: Face): boolean => toAxis(f.mid) < FUNNEL_GLAZING_RADIUS - EDGE_SPREAD.inward || inRimBand(f);
+const maybeGlazed = (f: Face): boolean => toAxis(f.mid) < FUNNEL_GLAZING_RADIUS + EDGE_SPREAD.outward || inRimBand(f);
 const soffitCells = (): Face[] => {
   const cells = faces('concourse-panels');
   for (const f of cells) assert.ok(f.normal.y > SLOPE_FACE, `the panels hold a face that is not a roof facet (normal.y ${f.normal.y.toFixed(2)})`);
@@ -86,17 +90,44 @@ test('roof skin: 15 percent of the roof is glazed, round the funnel and in a ban
   assert.ok(Math.abs(share - GLAZED_SHARE.published) <= GLAZED_SHARE.tolerance, `glazed share ${(100 * share).toFixed(1)} % of the roof, published 15 %`);
   const glazed = roofGlass(), soffit = soffitCells();
   assert.equal(soffit.length + glazed.length, keepTriangles(skinGrid, station.pts, layout).length, 'every roof cell is either glazed or has a soffit');
-  for (const f of soffit) assert.ok(!inGlazedZone(f), `a solid cell at ${f.mid.x.toFixed(1)}, ${f.mid.z.toFixed(1)} lies in a glazed zone`);
-  assert.equal(glazed.filter(f => !inGlazedZone(f)).length, 0, 'every glazed cell lies in the funnel zone or the band at the outline: the rooflights are laid on the cladding, not cut into the lattice');
-  assert.ok(glazed.filter(inGlazedZone).length > 100, 'the funnel zone and the band are glazed');
+  for (const f of soffit) assert.ok(!surelyGlazed(f), `a solid cell at ${f.mid.x.toFixed(1)}, ${f.mid.z.toFixed(1)} lies in a glazed zone`);
+  assert.equal(glazed.filter(f => !maybeGlazed(f)).length, 0, 'every glazed cell lies in the funnel zone or the band at the outline: the rooflights are laid on the cladding, not cut into the lattice');
+  assert.ok(glazed.filter(surelyGlazed).length > 100, 'the funnel zone and the band are glazed');
   for (const g of glazed) for (const s of soffit) assert.ok(g.mid.distanceTo(s.mid) > 0.5, 'a soffit lies under a glazed cell');
   // the glazing is not one lump: the zone round the funnel exists and the band at the outline runs all round
   assert.ok(glazed.filter(f => toAxis(f.mid) < 9).length >= 12, 'glazing close round the funnel (within 9 m of its axis)');
-  const sector = (f: Face): number => Math.floor(((Math.atan2(f.mid.z - axis[1], f.mid.x - axis[0]) + Math.PI) / (2 * Math.PI)) * 12), outside = (f: Face): boolean => toAxis(f.mid) >= FUNNEL_GLAZING_RADIUS;
+  const sector = (f: Face): number => Math.floor(((Math.atan2(f.mid.z - axis[1], f.mid.x - axis[0]) + Math.PI) / (2 * Math.PI)) * 12), outside = (f: Face): boolean => toAxis(f.mid) >= FUNNEL_GLAZING_RADIUS + EDGE_SPREAD.outward;
   const banded = new Set(glazed.filter(f => outside(f) && toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH).map(sector));
-  const rimmed = new Set([...glazed, ...soffit].filter(f => outside(f) && toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH + 2).map(sector)); // where the roof meets its outline
+  // where the roof meets its outline: a cell within half a metre of the band (the roof's outer row stands 0.8 to 1.1 m from the outline; in sector 10 the roof ends at the hotel, 3.7 m from it)
+  const rimmed = new Set([...glazed, ...soffit].filter(f => outside(f) && toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH + 0.5).map(sector));
   assert.ok(banded.size >= 7, `the glazed band covers ${banded.size} of 12 compass sectors`);
   assert.deepEqual([...banded].sort((x, y) => x - y), [...rimmed].sort((x, y) => x - y), 'the band runs along the outline wherever the roof meets it');
+});
+
+// Round 6 (C2): the bright field's edge steps along whole cells, not a smooth ellipse. Through the spread (3 m inside the nominal radius to 3.4 m outside it) glazed and solid cells are mixed:
+// some cells inside the radius are solid and some outside it are glazed, and in every direction the field reaches a glazed cell stands well out beside a solid one.
+test('roof skin: the glazed field\'s edge steps cell by cell, glazed and solid cells mixed through its spread in every direction, not a smooth ellipse', () => {
+  const glazed = roofGlass().filter(f => !inRimBand(f)), solid = soffitCells().filter(f => !inRimBand(f)), R = FUNNEL_GLAZING_RADIUS;
+  const glazedShare = (lo: number, hi: number): number => {
+    const g = glazed.filter(f => toAxis(f.mid) >= lo && toAxis(f.mid) < hi).length, s = solid.filter(f => toAxis(f.mid) >= lo && toAxis(f.mid) < hi).length;
+    assert.ok(g + s >= 30, `${g + s} cells between ${lo.toFixed(1)} and ${hi.toFixed(1)} m of the axis`);
+    return g / (g + s);
+  };
+  const inside = glazedShare(R - EDGE_SPREAD.inward, R), outside = glazedShare(R, R + EDGE_SPREAD.outward);
+  assert.ok(inside > 0.5 && inside < 0.9, `${(100 * inside).toFixed(0)} % of the cells inside the nominal radius are glazed: some are solid, most are glazed`);
+  assert.ok(outside > 0.15 && outside < 0.55, `${(100 * outside).toFixed(0)} % of the cells outside the nominal radius are glazed: some are, most are not`);
+  assert.equal(glazedShare(R - EDGE_SPREAD.inward - 3, R - EDGE_SPREAD.inward), 1, 'every cell well inside the spread is glazed');
+  assert.equal(glazedShare(R + EDGE_SPREAD.outward, R + EDGE_SPREAD.outward + 3), 0, 'every cell well outside the spread is solid');
+  // in each 30 degree sector the field reaches, the farthest glazed cell stands 2 m or more beyond the nearest solid one (a smooth ellipse has it the other way about)
+  const sector = (f: Face): number => Math.floor(((Math.atan2(f.mid.z - axis[1], f.mid.x - axis[0]) + Math.PI) / (2 * Math.PI)) * 12);
+  let reached = 0;
+  for (let k = 0; k < 12; k++) {
+    const g = glazed.filter(f => sector(f) === k && toAxis(f.mid) > R - 6).map(f => toAxis(f.mid)), s = solid.filter(f => sector(f) === k && toAxis(f.mid) < R + 6).map(f => toAxis(f.mid));
+    if (g.length < 4 || s.length < 4) continue; // the sectors on the Range side, where the roof is cut off, hold no edge
+    reached++;
+    assert.ok(Math.max(...g) - Math.min(...s) > 2, `sector ${k}: the farthest glazed cell is ${Math.max(...g).toFixed(1)} m out, the nearest solid one ${Math.min(...s).toFixed(1)} m`);
+  }
+  assert.ok(reached >= 6, `${reached} sectors of 12 hold the field's edge`);
 });
 
 // R-a (round 5, C2): the glazing round the funnel is the brightest, widest field in the roof: it reaches well out from the funnel on every side the roof stands on, the Range side
@@ -153,6 +184,8 @@ test('roof build-up: soffit above the member centre lines, cladding above that, 
     assert.ok(middle.y > plane - 1.4 && middle.y < plane + FACET_RISE + 1.4, 'a facet middle stands on the skin');
   }
   assert.ok(SOFFIT_LIFT < SKIN_LIFT - 0.2, 'a cavity between soffit and cladding');
+  // round 6 (C1, R-ab): the panel plane stands well back from the members' undersides, so that each cell is a coffer: the 0.219 m tubes hang 0.11 m under the centre line, the ribs 0.125 to 0.225
+  assert.ok(SOFFIT_LIFT >= 0.18, `the soffit stands ${SOFFIT_LIFT} m over the member centre lines: the members hang at least 0.29 m under it, a coffer, not a flat panel`);
 });
 
 test('roof build-up: a ray meets the cladding from above and the soffit from below in a solid cell, and glass both ways in a glazed one', () => {
@@ -174,8 +207,8 @@ test('roof build-up: a ray meets the cladding from above and the soffit from bel
   }
 });
 
-// A rooflight is read back from the built cladding: its faces are the ones that stand clear of every pillow, a flat sheet of dark glass (linear luminance under 0.1)
-// in a frame of darker silver than the dome's (0.5 to 0.65). `hover` is a point's height over the roof's smooth surface (the profile, drawn in to the outline, so that the roof
+// A rooflight is read back from the built cladding: its faces are the ones that stand clear of every pillow, a flat sheet of clear mid-tone glass (linear luminance 0.12 to 0.35,
+// round 6, C6: lighter than round 5's dark slot) in a frame of darker silver than the dome's (half its tone at most). `hover` is a point's height over the roof's smooth surface (the profile, drawn in to the outline, so that the roof
 // falls to the rim where the outline is: the nodes' height law, written out again here): the skin is 0.45 m over the nodes and a diamond rises 0.2 m more.
 const surfaceAt = (x: number, z: number): number => { const r = Math.hypot(x - axis[0], z - axis[1]); return concourseHeight(canopy, (canopy.radius * r) / (r + toRim(x, z))); };
 const hover = (v: THREE.Vector3): number => v.y - surfaceAt(v.x, v.z);
@@ -208,8 +241,10 @@ const rhombus = (corners: THREE.Vector3[]): { long: number; short: number; along
   return p.length() > q.length() ? { long: 2 * p.length(), short: 2 * q.length(), along: q.clone().normalize() } : { long: 2 * q.length(), short: 2 * p.length(), along: p.clone().normalize() };
 };
 
-test('rooflights: four clean rhombi of dark glass in a thin silver frame that rises to it, wider across the slope than up it, three quarters of the way out', () => {
+test('rooflights: four clean rhombi of clear mid-tone glass in a thin silver frame that rises to it, wider across the slope than up it, three quarters of the way out', () => {
   const lights = rooflightsBuilt(), funnel = worldToShed(layout, axis);
+  const dome = claddingFacets().filter(f => ![f.a, f.b, f.c].every(v => hover(v) > PILLOW_TOP + 0.02)).map(f => f.tone), domeTone = dome.reduce((sum, t) => sum + t, 0) / dome.length;
+  assert.ok(domeTone > 0.45 && domeTone < 0.7, `the dome's cladding is silver, ${domeTone.toFixed(2)}`);
   assert.equal(lights.length, ROOFLIGHT_AZIMUTHS.length, 'one rooflight to each azimuth');
   const azimuths = new Set<number>();
   for (const light of lights) {
@@ -222,8 +257,9 @@ test('rooflights: four clean rhombi of dark glass in a thin silver frame that ri
     assert.ok(azimuth > -50 && azimuth < 20, `at ${azimuth.toFixed(0)} degrees from due west, which is not on the dome's west face`);
     const radial = new THREE.Vector3(light.centre.x - axis[0], 0, light.centre.z - axis[1]).normalize();
     assert.ok(Math.abs(radial.dot(along)) > 0.999, 'the short diagonal runs up the slope, the long one round the dome');
-    // the glass is the outer rhombus drawn in by the frame's share, on the same centre: a frame a dozenth or so of the way in (R-c2: a thin edge), not a hairline and not most of it
-    assert.ok(inside.long > 0.8 * long && inside.long < 0.95 * long, `the glass is ${(100 * inside.long / long).toFixed(0)} % of the rhombus across`);
+    // the glass is the outer rhombus drawn in by the frame's share, on the same centre: a frame an eighth or so of the way in (R-c2: a thin edge, round 6, C6: wide enough to read as a frame
+    // from the western square, a tenth or more where round 5's was a twelfth), not a hairline and not most of it
+    assert.ok(inside.long > 0.8 * long && inside.long < 0.9 * long, `the glass is ${(100 * inside.long / long).toFixed(0)} % of the rhombus across`);
     close(inside.long, long * (1 - ROOFLIGHT_FRAME), 1e-3);
     close(inside.short, short * (1 - ROOFLIGHT_FRAME), 1e-3);
     const centre = light.outer.reduce((m, v) => m.add(v), new THREE.Vector3()).divideScalar(4);
@@ -233,12 +269,12 @@ test('rooflights: four clean rhombi of dark glass in a thin silver frame that ri
     assert.ok(lo > PILLOW_TOP + 0.03 && lo < 1 && hi > lo + 0.2 && hi < lo + 0.7, `the frame stands ${lo.toFixed(2)} m over the nodes at its edge and ${hi.toFixed(2)} m at the glass`);
     const [c0, c1, c2, c3] = light.inner as [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3], plane = new THREE.Plane().setFromCoplanarPoints(c0, c1, c2);
     assert.ok(Math.abs(plane.distanceToPoint(c3)) < 0.12, `the glass is a flat sheet, to within the roof's curve over its width (${plane.distanceToPoint(c3).toFixed(3)} m out of true)`);
-    // dark glass, silver frame: the faces of the inner ring are the glass
+    // clear glass, silver frame: the faces of the inner ring are the glass
     const glass = light.faces.filter(f => [f.a, f.b, f.c].every(v => light.inner.some(w => w.equals(v)))), frame = light.faces.filter(f => !glass.includes(f));
     assert.equal(glass.length, 2, 'the glass is one quad');
     assert.equal(frame.length, 8, 'the frame is four strips of two triangles');
-    for (const f of glass) assert.ok(f.tone < 0.1, `the glass is dark (${f.tone.toFixed(3)})`);
-    for (const f of frame) assert.ok(f.tone > 0.3 && f.tone < 0.6, `the frame is a rim of darker silver than the dome, not a white band (${f.tone.toFixed(3)})`); // R-c, R-c2: a thin edge round the glass
+    for (const f of glass) assert.ok(f.tone > 0.12 && f.tone < 0.35, `the glass is a mid tone, neither a dark slot nor a pale blank (${f.tone.toFixed(3)})`); // R-c, round 6 (C6): a clear framed diamond
+    for (const f of frame) assert.ok(f.tone > 0.1 && f.tone < 0.5 * domeTone, `the frame is a rim of darker silver than the dome (${domeTone.toFixed(2)}), not a white band (${f.tone.toFixed(3)})`); // R-c, R-c2: a thin edge round the glass
     for (const f of light.faces) assert.ok(f.normal.y > 0.5, 'a rooflight face looks up');
     // round 5 (C6): the frame is lit as the cladding round it is, its normal straight up: lit by its own slope, the strip that faces the sun was a hard white bar across the glass
     for (const f of frame) assert.ok(f.shade.y > 0.999, `a frame strip is lit with its normal ${f.shade.y.toFixed(2)} up, not by the slope it rises on`);
@@ -252,7 +288,7 @@ test('rooflights: on the solid cladding, over the roof and clear of the glazed z
   for (const light of rooflightsBuilt()) {
     const corners = [...light.outer, light.centre];
     for (const v of corners) {
-      assert.ok(toAxis(v) > FUNNEL_GLAZING_RADIUS + 3 && toRim(v.x, v.z) > RIM_GLAZING_WIDTH + 3, `a rooflight corner ${toAxis(v).toFixed(1)} m from the axis and ${toRim(v.x, v.z).toFixed(1)} m from the outline stands in a glazed zone`);
+      assert.ok(toAxis(v) > FUNNEL_GLAZING_RADIUS + EDGE_SPREAD.outward + 3 && toRim(v.x, v.z) > RIM_GLAZING_WIDTH + 3, `a rooflight corner ${toAxis(v).toFixed(1)} m from the axis and ${toRim(v.x, v.z).toFixed(1)} m from the outline stands in a glazed zone`);
       const s = worldToShed(layout, [v.x, v.z]);
       assert.ok(roofAt(s.u, s.v) > 0, 'a rooflight corner lies over the roof');
     }
@@ -273,7 +309,7 @@ test('rooflights: on the solid cladding, over the roof and clear of the glazed z
 // concourse-exterior-west: eye 1.1 m, 38 m west of the canopy's west rim, 4 m north of the funnel's line, fov 60 over 1280 x 800 (tools/evidence.mjs). Seen from so
 // low a standpoint the dome's near slope is nearly edge-on: a rooflight two thirds of the way out is a line a few pixels tall, and one south of west is behind the
 // dome's shoulder.
-test('rooflights: from a low standpoint in the west each is in sight, a diamond of dark glass 40 px wide and 150 square pixels at least', () => {
+test('rooflights: from a low standpoint in the west each is in sight, a diamond of glass 40 px wide and 150 square pixels at least', () => {
   const eye = shedToWorld(layout, -129.9, 77), look = shedToWorld(layout, -30.3, 77);
   const camera = new THREE.PerspectiveCamera(60, 1280 / 800, 0.1, 4000);
   camera.position.set(eye[0], 1.1, eye[1]);
@@ -331,15 +367,22 @@ test('roof materials: the underside reads light, as the scene lights shine from 
 });
 
 // R-ab: dark coffers between bright, deep members; R-a: the glazing round the funnel a large bright field with the lattice in sharp silhouette. Linear luminance of
-// the cells' own colours: the silver of the cladding is 0.5 to 0.65, so the recess is well under it and the glass well over it.
-test('roof skin: the coffers are a grey recess, flat, under white members, and the glazing is a bright clear field (R-ab, R-a)', () => {
-  const soffit = soffitCells().map(f => f.tone), glass = roofGlass().map(f => f.tone), mean = (a: number[]): number => a.reduce((s, x) => s + x, 0) / a.length;
+// the cells' own colours: the silver of the cladding is 0.5 to 0.65, so the recess is well under it and the glass well over it. Round 6 (C1): the coffers are a deep shaded grey,
+// 0.2 to 0.3 where round 5's were 0.3 to 0.5, well under the glow of the members themselves, and a fifth darker at the rim than at the funnel.
+test('roof skin: the coffers are a deep grey recess, flat, shaded under white members, darker toward the rim, and the glazing is a bright clear field (R-ab, R-a)', () => {
+  const cells = soffitCells(), soffit = cells.map(f => f.tone), glass = roofGlass().map(f => f.tone), mean = (a: number[]): number => a.reduce((s, x) => s + x, 0) / a.length;
+  const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   assert.ok(soffit.length > 1000 && glass.length > 100, `${soffit.length} coffers, ${glass.length} panes`);
-  assert.ok(Math.min(...soffit) > 0.3 && Math.max(...soffit) < 0.5, `every coffer is mid grey, ${Math.min(...soffit).toFixed(2)} to ${Math.max(...soffit).toFixed(2)}, not near white`);
+  assert.ok(Math.min(...soffit) > 0.15 && Math.max(...soffit) < 0.3, `every coffer is a deep grey, ${Math.min(...soffit).toFixed(2)} to ${Math.max(...soffit).toFixed(2)}, not near white`);
   assert.ok(Math.min(...glass) > 0.7, `every pane is bright, from ${Math.min(...glass).toFixed(2)}`);
-  assert.ok(mean(glass) > 1.7 * mean(soffit), `the glazing (${mean(glass).toFixed(2)}) stands out from the recess (${mean(soffit).toFixed(2)}) as the brightest field`);
+  assert.ok(mean(glass) > 2.5 * mean(soffit), `the glazing (${mean(glass).toFixed(2)}) stands out from the recess (${mean(soffit).toFixed(2)}) as the brightest field`);
   const member = (skin.getObjectByName('concourse-lattice') as THREE.Mesh).material as THREE.MeshLambertMaterial;
   assert.ok(member.color.r > 0.9 && member.color.g > 0.9, 'the members are painted white');
+  assert.ok(mean(soffit) < 0.65 * lum(member.emissive), `the coffers (${mean(soffit).toFixed(2)}) stand well under the glow of the members alone (${lum(member.emissive).toFixed(2)}): each cell is shaded`);
+  // dimming toward the rim: the outer third of the cells, by distance from the funnel axis, against the inner third
+  const byRadius = cells.map(f => ({ r: toAxis(f.mid), tone: f.tone })).sort((a, b) => a.r - b.r), third = Math.floor(byRadius.length / 3);
+  const near = mean(byRadius.slice(0, third).map(c => c.tone)), far = mean(byRadius.slice(-third).map(c => c.tone));
+  assert.ok(far < 0.9 * near, `the outer third of the coffers (${far.toFixed(3)}) is darker than the inner third (${near.toFixed(3)}) by a tenth or more`);
 });
 
 test('roof edge: the glazed wall is dark reflective glass in thin dark mullions, three posts to an edge and a rail across', () => {
@@ -398,26 +441,44 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
     sampled++;
   }
   assert.ok(sampled >= 24, `${sampled} sight lines checked`);
-  // its foot rests on the cornice over the brick centre and on the first string course either side of it, and never lower; its top is the roof's skin
+  // its glass rests on the cornice, and never lower (but where the roof itself dips below it); only the thin fins of the curtain wall either side of the brick centre stand on the first string
+  // course (round 6, C4: between the fins the Range's own wall shows); its top is the roof's skin
   const q = closure.geometry.getAttribute('position'), ys = Array.from({ length: q.count }, (_, i) => q.getY(i));
   const feet = (at: number): number => ys.filter(y => Math.abs(y - at) < EPS).length;
-  assert.ok(feet(CORNICE) > ys.length / 25 && feet(SILL) > ys.length / 4 && Math.min(...ys) > SILL - EPS, `the closure stands on the cornice (${feet(CORNICE)} of ${ys.length} vertices) and on the sill (${feet(SILL)}), none lower than ${Math.min(...ys).toFixed(3)}`);
+  assert.ok(feet(CORNICE) > ys.length / 25 && feet(SILL) > 80 && Math.min(...ys) > SILL - EPS, `the closure stands on the cornice (${feet(CORNICE)} of ${ys.length} vertices) and on the sill (${feet(SILL)}), none lower than ${Math.min(...ys).toFixed(3)}`);
+  for (const f of faces('concourse-closure')) {
+    const v = [f.a, f.b, f.c].map(c => worldToShed(layout, [c.x, c.z]).v), width = Math.max(...v) - Math.min(...v), onSill = [f.a, f.b, f.c].some(c => Math.abs(c.y - SILL) < EPS);
+    if (onSill) assert.ok(width <= CURTAIN_FIN + 1e-3, `a closure face on the sill is ${width.toFixed(3)} m wide: only the fins (${CURTAIN_FIN} m) come down to it`);
+    else assert.ok(Math.min(f.a.y, f.b.y, f.c.y) > CORNICE - 0.5, `a pane of the closure stands down to ${Math.min(f.a.y, f.b.y, f.c.y).toFixed(2)} m, under the cornice (${CORNICE.toFixed(1)} m)`);
+  }
+  assert.ok(faces('concourse-closure').filter(f => [f.a, f.b, f.c].some(c => Math.abs(c.y - SILL) < EPS)).length >= 100, 'two triangles to each of the fins');
   assert.ok(Math.max(...ys) > CORNICE + 5, `the closure rises to ${Math.max(...ys).toFixed(1)} m`);
 });
 
-// R-a: either side of the brick centre the roof's glass comes down to the Range's first string course as a curtain wall of tall panes between thin white fins, one at every half-bay
-// (1.7 m: the bays are 3.4 m, so the fins stand over each opening's crown and each pier). The brick centre is v 56.1 to 90.1 (western-front.test.ts), and the wall stops exactly there.
-test('roof edge: beside the Range\'s brick centre the glass is a curtain wall from the first string course up, in panes between white fins; over the centre it stops on the cornice', () => {
+// R-a: either side of the brick centre the roof's glass comes down to the Range's first string course as a curtain wall of thin white fins, one at every half-bay (1.7 m: the bays are
+// 3.4 m, so the fins stand over each opening's crown and each pier). Round 6 (C4): between the fins the panes are clear up to the cornice, so the Range's own wall shows, as R-a's
+// does, and not through milky glass; above the cornice they are glass. The brick centre is v 56.1 to 90.1 (western-front.test.ts), and the wall stops exactly there.
+test('roof edge: beside the Range\'s brick centre the curtain wall is thin white fins from the first string course up, clear between them to the cornice; over the centre it stops on the cornice', () => {
   const sight = (v: number, y: number, among: THREE.Object3D[] = roofLayers): THREE.Intersection | undefined => { const w = shedToWorld(layout, -26, v); return new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward).intersectObjects(among, true)[0]; };
-  const beside = [38, 44, 50, 55.9, 56.07, 90.13, 90.3, 94, 100, 108, 114], over = [56.13, 56.3, 59, 66, 73, 80, 87, 89.9, 90.07]; // 56.07 and 90.13 are in the half-fins the walls end in
-  for (const v of beside) {
-    assert.ok(roofAt(-13, v) > CORNICE + 0.3, `the roof is over the cornice at v ${v}`);
-    for (const y of [SILL + 0.3, 6, 9, CORNICE - 0.3]) {
-      const hit = sight(v, y);
-      assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v}, ${y.toFixed(1)} m high, beside the brick centre meets ${hit?.object.name ?? 'the Range'}`);
-      assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, 'the curtain stands in the plane of the roof glass');
-    }
+  // 56.07 and 90.13 are in the half-fins the walls end in; the fins stand on the half-bays, 1.7 m apart
+  const between = [38, 44, 50, 55.9, 90.3, 94, 100, 108, 114], onFins = [39.1, 44.2, 51, 56.07, 90.13, 100.3, 108.8], over = [56.13, 56.3, 59, 66, 73, 80, 87, 89.9, 90.07];
+  const red = (hit: THREE.Intersection): number => (hit.object as THREE.Mesh).geometry.getAttribute('color').getX(hit.face!.a); // the fins are white, the panes blue: red well under 1
+  const plane = (hit: THREE.Intersection): boolean => Math.abs(worldToShed(layout, [hit.point.x, hit.point.z]).u + 12.3) < 0.02;
+  for (const v of [...between, ...onFins]) {
+    assert.ok(roofAt(-13, v) > CORNICE + 0.3 && roofOver(-26, -13, v, CORNICE + 0.2), `the roof is over the cornice at v ${v}`);
     assert.equal(sight(v, SILL - 0.3)?.object.name, undefined, `nothing below the sill at v ${v}`); // the name, not the hit: a failing assert prints its operand, and a hit holds the whole scene
+    const above = sight(v, CORNICE + 0.2);
+    assert.equal(above?.object.name, 'concourse-closure', `a sight line at v ${v} just over the cornice meets ${above?.object.name ?? 'the open sky'}`);
+    assert.ok(plane(above!), 'the glass stands in the plane of the roof glass');
+  }
+  for (const v of between) {
+    for (const y of [SILL + 0.3, 6, 9, CORNICE - 0.3]) assert.equal(sight(v, y)?.object.name, undefined, `between the fins at v ${v} the Range's own wall shows at ${y.toFixed(1)} m: the pane is clear`);
+    assert.ok(red(sight(v, CORNICE + 0.2)!) < 0.9, `the glass over the cornice at v ${v} is blue, not a white fin`);
+  }
+  for (const v of onFins) for (const y of [SILL + 0.3, 6, 9, CORNICE - 0.3]) {
+    const hit = sight(v, y);
+    assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v}, ${y.toFixed(1)} m high, on a fin meets ${hit?.object.name ?? 'the Range'}`);
+    assert.ok(plane(hit!) && red(hit!) > 0.99, `the fin at v ${v} stands in the plane of the roof glass, white`);
   }
   for (const v of over) for (const y of [SILL + 0.3, 8, CORNICE - 0.3]) assert.equal(sight(v, y)?.object.name, undefined, `over the brick centre the Range's own wall shows at v ${v}, ${y.toFixed(1)} m: no glass`);
   // across a stretch of wall, at a height, the fins are the white stripes of the glass

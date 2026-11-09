@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { ATLAS, buildConcourse, columnMembers, columnTubeDiameter, concourseGrid, FITOUT, FITOUT_TEXT, funnelHead, plateCentres, RANGE_FACE } from '../src/concourse.ts';
+import { TEXTURES } from '../src/materials.ts';
 import { buildWesternRange, WESTERN_ARCH, WESTERN_RANGE, westernArches, westernWindows } from '../src/shed.ts';
 
 // The ground-level fit-out. R-ab (conc-ab-funnel-brick-2025) and R-b (conc-b-roof-meets-range-2025-08) show: red-topped
@@ -272,6 +273,22 @@ test('floor: dark charcoal stone in the references\' tone, in the slab texture, 
   const ratio = luminance(floor.map ? floor.color.clone().multiply(shared) : floor.color) / luminance(shared);
   // lit 64 to 87 a channel in R-ab and R-b against the earlier 136, which is 0.19 to 0.35 of the light in linear terms
   assert.ok(ratio > 0.2 && ratio < 0.4, `the floor reflects ${(100 * ratio).toFixed(0)} % as much light as the shared paving`);
+});
+
+// Round 6 (C5, R-ab, R-b): the floor's slab joints are fine. The shared slab texture is a 2.4 m tile of 2 x 2 slabs (1.2 m slabs, which the city's paving keeps); the concourse floor runs its
+// UVs twice as fast over the same texture, so a slab is 0.6 m, and every edge of the floor is stretched alike.
+test('floor: the slabs are 0.6 m, fine joints, the shared texture drawn twice as fine as the paving draws it', () => {
+  const mesh = group.getObjectByName('concourse-floor') as THREE.Mesh, p = mesh.geometry.getAttribute('position'), uv = mesh.geometry.getAttribute('uv'), index = mesh.geometry.index!;
+  const [tile] = TEXTURES.floorSlab.tile, slabsToTile = 2; // the painter lays 2 x 2 slabs to the tile (the slab texture's own spec)
+  let edges = 0;
+  for (let i = 0; i < index.count; i += 3) for (let k = 0; k < 3; k++) {
+    const a = index.getX(i + k), b = index.getX(i + ((k + 1) % 3)), metres = Math.hypot(p.getX(a) - p.getX(b), p.getZ(a) - p.getZ(b)), texels = Math.hypot(uv.getX(a) - uv.getX(b), uv.getY(a) - uv.getY(b));
+    if (metres < 1) continue;
+    const slab = tile / slabsToTile / (texels / metres);
+    assert.ok(slab > 0.5 && slab < 0.7, `a slab of the floor is ${slab.toFixed(2)} m across along an edge ${metres.toFixed(1)} m long`);
+    edges++;
+  }
+  assert.ok(edges > 20, `${edges} edges of the floor checked`);
 });
 
 test('fit-out: each ticket block is four machines about 2 m tall, two back to back and two side by side, white-bodied under one red slab; boards hang in the first-floor storey; totems stand twice a person\'s height', () => {

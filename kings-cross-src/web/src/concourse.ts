@@ -16,18 +16,18 @@ export const FUNNEL_RADIUS = 5.4;
 export const EDGE = 4.5;
 const RIB_WIDTH = 0.15; // Arup pp.13–16: typical fabricated radial ribs are 150 mm wide.
 const TUBE_SIDES = 8; // ASSUMED exterior approximation; no unsourced wall thickness/bore.
-/** Build-up above the member centre lines, metres (ASSUMED, R-a conc-ab): soffit 0.12, skin 0.45. */
-export const SOFFIT_LIFT = 0.12;
+/** Build-up above the member centre lines, metres (ASSUMED, R-a conc-ab): soffit 0.2 (round 6, C1: the panel plane stands well back from the members' undersides, so each cell reads as a shaded coffer, R-ab), skin 0.45. */
+export const SOFFIT_LIFT = 0.2;
 export const SKIN_LIFT = 0.45;
 /** A cladding diamond's bulge at its middle (ASSUMED, R-c2: two tones to a diamond). */
 export const FACET_RISE = 0.2;
-/** Glazed zones (published 15 %; ASSUMED widths tuned to it): within 22 m of the funnel axis (R-a; round 5, C2: the bright field round the funnel is the widest in the roof), within 1.5 m of the outline (R-c2). */
-export const FUNNEL_GLAZING_RADIUS = 22;
-export const RIM_GLAZING_WIDTH = 1.5;
+/** Glazed zones (published 15 %; ASSUMED widths tuned to it): within 21 m of the funnel axis (R-a; round 5, C2: the bright field round the funnel is the widest in the roof), its edge stepping cell by cell, each cell turning solid at a radius of its own, 3 m inside to 3.4 m outside that (round 6, C2: not a smooth ellipse); within 2.4 m of the outline (R-c2; round 6, C2: the rim reads as a lit strip, the whole outer row of cells). */
+export const FUNNEL_GLAZING_RADIUS = 21;
+export const RIM_GLAZING_WIDTH = 2.4;
 /** Published glazed share and the band the rubric accepts. */
 export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
 /**
- * Rooflights (R-c, R-c2; ASSUMED): clean rhombi of dark glass in a pale frame laid on the cladding, not cells of the lattice, a row of four round the dome
+ * Rooflights (R-c, R-c2; ASSUMED): clean rhombi of clear mid-tone glass (round 6, C6: not dark slots) in a darker silver frame laid on the cladding, not cells of the lattice, a row of four round the dome
  * three quarters of the way from the funnel axis to the outline. R-c2 puts them on the south-west; they stand 12 degrees apart from 26 north of west to 10
  * south of it, the dome's west face, because from a low standpoint in the west (concourse-exterior-west, 1.1 m up) the roof is nearly edge-on: south of 12
  * degrees its own shoulder hides a rooflight, and nearer in than 55 m it is a line a few pixels tall; and from the square the hotel hides the south-west.
@@ -37,20 +37,20 @@ export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
 export const ROOFLIGHT_RADIUS = 58;
 export const ROOFLIGHT_AZIMUTHS = [-26, -14, -2, 10] as const;
 export const ROOFLIGHT_HALF = { along: 4, across: 4.7 } as const;
-export const ROOFLIGHT_FRAME = 0.08;
+export const ROOFLIGHT_FRAME = 0.12;
 export const ROOFLIGHT_KERB = [0.7, 0.95] as const;
 /** Roof edge fascia (R-c: a deep grey brim): from this far below the wall top (round 5, C6: a deep edge, not a line) up to the skin, on the outline, so the 138 m extent is the cells'. */
 export const FASCIA_BOTTOM = -0.4;
 /** Wall framing, metres (ASSUMED, R-c): a post at each rim node, two bars along each edge, a transom at this share of the height. */
 export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;
-/** The wall stands this far inside the outline under the glass brim, on thin grey V struts of this diameter (R-c, R-c2; round 5, C6: a light zigzag, not stout bars; ASSUMED). */
+/** The wall stands this far inside the outline under the glass brim, on grey V struts of this diameter (R-c, R-c2; round 5, C6: a light zigzag, not stout bars; round 6, C6: stout enough to read from the square, 0.085 m; ASSUMED). */
 export const WALL_INSET = 3;
-export const STRUT_DIAMETER = 0.06;
+export const STRUT_DIAMETER = 0.085;
 /** u of the roof's cut plane (0.3 m in front of the Range's face), the top of its cornice and of its first string course, the curtain wall's sill. */
 export const WEST_WALL = -WESTERN_RANGE.depth - 0.3;
 export const CORNICE_TOP = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
 export const SILL = WESTERN_RANGE.storey + 0.15;
-/** Curtain wall either side of the Range's brick centre (R-a), ASSUMED: a white fin 0.1 m wide at every half-bay, a flat pane between. */
+/** Curtain wall either side of the Range's brick centre (R-a), ASSUMED: a white fin 0.1 m wide at every half-bay from the first string course up, the Range's own wall showing between the fins (round 6, C4: clear, not milky glass) up to the cornice, glass above that. */
 export const CURTAIN_PANE = WESTERN_RANGE.bay / 2;
 export const CURTAIN_FIN = 0.1;
 /** Perimeter tree columns: 16, "12 m apart and 52.1 m from the centre of the funnel" (Arup 2/2012 p16), facing west; drawn under the roof only, 3 m in and clear of other buildings. ASSUMED: sizes, fork 2.4 m under the roof. */
@@ -510,7 +510,7 @@ export function glazedCells(d: Diagrid, kept: Tri[], centre: Pt, rim: (x: number
   const glazed = new Set<number>();
   kept.forEach((t, i) => {
     const x = (d.nodes[t[0]]!.x + d.nodes[t[1]]!.x + d.nodes[t[2]]!.x) / 3, z = (d.nodes[t[0]]!.z + d.nodes[t[1]]!.z + d.nodes[t[2]]!.z) / 3;
-    if (Math.hypot(x - centre[0], z - centre[1]) < FUNNEL_GLAZING_RADIUS || rim(x, z) < RIM_GLAZING_WIDTH) glazed.add(i);
+    if (Math.hypot(x - centre[0], z - centre[1]) < FUNNEL_GLAZING_RADIUS + (i ** 3 % 17) * 0.4 - 3 || rim(x, z) < RIM_GLAZING_WIDTH) glazed.add(i);
   });
   return glazed;
 }
@@ -609,14 +609,14 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
       g.fillText(FITOUT_TEXT.board[(p + row) % FITOUT_TEXT.board.length]!, bx + p * pw + 10, by + 18 + row * 24, pw - 20);
     }
   }
-  // the lit interiors (R-ab, R-b): a tone, a darker lower band, and a shop's goods or a shutter's slats (generic); the doors and the waiting room keep the tone and a navy plate
+  // the lit interiors (R-ab, R-b; round 6, C5: dark glazed doors under the lit plate, not bright flat cards): a dark tone, a darker lower band, and a shop's muted goods or a shutter's slats (generic); the doors and the waiting room keep the tone and a navy plate
   ATLAS.uses.forEach(([ux, uy, uw, uh], i) => {
     const at = (c: string, x: number, y: number, w: number, h: number): void => fill(c, ux + x, uy + y, w, h);
-    at(['#f3c987', '#f1dcae', '#dce8f0', '#27324e', '#8c939a'][i]!, 0, 0, uw, uh);
-    at('#0006', 0, uh * 0.72, uw, uh * 0.28);
+    at(['#6b4f2c', '#2b3a4a', '#243247', '#161d2c', '#6c737a'][i]!, 0, 0, uw, uh);
+    at('#0007', 0, uh * 0.72, uw, uh * 0.28);
     for (let j = 0; j < 18; j++) {
       const c = j % 6, k = (j / 6) | 0; // a shop's goods: three shelves of six
-      if (!i) at(`hsl(${((c + k * 2) % 6) * 60},60%,45%)`, 12 + c * 31, uh * (0.22 + 0.16 * k) - 16, 22, 16);
+      if (!i) at(`hsl(${((c + k * 2) % 6) * 60},40%,50%)`, 12 + c * 31, uh * (0.22 + 0.16 * k) - 16, 22, 16);
       if (i === 4) at('#59606a', 0, 50 + j * 11, uw, 3);
     }
   });
@@ -761,18 +761,12 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     if (rib) members.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2], [len + 0.1, 0.45 - 0.2 * t, RIB_WIDTH], { rotZ: Math.asin(dy / len), rotY: Math.atan2(p[2] - q[2], q[0] - p[0]), skip: ['+x', '-x', '+y'] });
     else roundMember(members, p, q, 0.219 - 0.08 * t, true);
   }
-  // Half way along each cell's sides a finer net: the cell's medial triangle in slimmer tubes, so the weave is twice as fine as the cladding's diamonds (R-ab).
-  for (const t of kept) {
-    const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
-    for (let k = 0; k < 3; k++) roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);
-  }
-
   // Between the members: glass, or a soffit under silver cladding, two cells either side of a rib one diamond facet (R-c, R-c2).
   const rim = (x: number, z: number): number => rimDistance(shed, footprint, north, x, z);
   const glazed = glazedCells(d, kept, centre, rim);
   const tone = rng(0x4b58), paneTone = rng(0x91a3);
   const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.78, k * 0.89, k]; }; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a), each pane its own shade
-  const SOFFIT_TONE = rgb(0xaeb3b9), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
+  const SOFFIT_TONE = rgb(0x888d94), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
   const scaled = (c: Rgb, k: number): Rgb => [c[0] * k, c[1] * k, c[2] * k];
   const nodeAt = (i: number, by: number): V3 => { const p = at(i); return [p[0], p[1] + by, p[2]]; };
   kept.forEach((t, i) => {
@@ -781,8 +775,11 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       return;
     }
     const outer = share((d.nodes[t[0]]!.r + d.nodes[t[1]]!.r + d.nodes[t[2]]!.r) / 3);
-    // Each cell its own shade (ASSUMED +-4 %), dimming toward the rim.
-    soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], undefined, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.1 * outer)) });
+    // Each cell its own shade (ASSUMED +-4 %), dimming toward the rim by up to a fifth.
+    soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], undefined, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.2 * outer)) });
+    // Half way along each solid cell's sides a finer net: the cell's medial triangle in slimmer tubes, so the weave is twice as fine as the cladding's diamonds (R-ab); the glazed field keeps the funnel's coarse lattice.
+    const mid = [0, 1, 2].map((k): V3 => { const p = at(t[k]!), q = at(t[(k + 1) % 3]!); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]; });
+    for (let k = 0; k < 3; k++) roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);
   });
   // An upstand closes the cavity where a solid cell meets a glazed one, so no sky shows through.
   for (const { a, b, cells } of edges.values()) {
@@ -812,11 +809,11 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     if (glazed.has(i) || paired.has(i)) return;
     cladding.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], [[0, 0], [1, 0], [1, 1]], { facing: UP, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
   });
-  // The rooflights: dark glass in a pale frame that rises to it, laid on the cladding (R-c, R-c2). The pillow texture's middle is full light, its edge dark.
+  // The rooflights: clear mid-tone glass in a darker silver frame that rises to it, laid on the cladding (R-c, R-c2; round 6, C6: lighter glass, not a dark slot). The pillow texture's middle is full light, its edge dark; the glass sits at its edge.
   const surface = (x: number, z: number): number => { const r = Math.hypot(x - cx, z - cz); return concourseHeight(canopy, (canopy.radius * r) / (r + rim(x, z))); }; // the nodes' own height law
   for (const { outer, inner } of rooflights(centre, shed, surface)) {
-    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { normal: UP, color: scaled(CLADDING_TONE, 0.72) });
-    cladding.poly(inner, undefined, { facing: UP, color: rgb(0x405468) });
+    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { normal: UP, color: scaled(CLADDING_TONE, 0.3) });
+    cladding.poly(inner, undefined, { facing: UP, color: rgb(0x6a7f99) });
   }
   // The oculus: glass over the funnel's open top (R-a).
   const crown = d.nodes.filter(n => n.ring === 0);
@@ -837,10 +834,11 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     }
     groundOutline=clipped;
   }
+  // The floor's UVs run in metres, twice as fast as the shared paving's over the same slab texture (a 2.4 m tile of 2 x 2 slabs): 0.6 m slabs, fine joints (R-ab, R-b; round 6, C5).
   for(const tri of THREE.ShapeUtils.triangulateShape(groundOutline.map(p=>new THREE.Vector2(...p)),[])) {
     let [a,b,c]=tri.map(i=>groundOutline[i]!) as [Pt,Pt,Pt];
     if((b[1]-a[1])*(c[0]-a[0])-(b[0]-a[0])*(c[1]-a[1])<0) [b,c]=[c,b];
-    floor.poly([[a[0],.02,a[1]],[b[0],.02,b[1]],[c[0],.02,c[1]]],[a,b,c]);
+    floor.poly([[a[0],.02,a[1]],[b[0],.02,b[1]],[c[0],.02,c[1]]],[a,b,c].map(([x,z]): V2 => [2*x,2*z]));
   }
 
   // The wall, WALL_INSET inside the outline, from the floor to the brim glass; the fascia stays on the outline.
@@ -882,9 +880,9 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     mullions.box(foot, [slant, MULLION.bar, MULLION.bar], { rotZ: Math.asin(rise / slant), rotY: Math.atan2(-(wt[2] - ws[2]), wt[0] - ws[0]) });
     for (const end of [p, q]) roundMember(struts, foot, end, STRUT_DIAMETER, true);
   }
-  // The Range cut: glass from the cornice to the roof's skin, so no sky shows between roof and Range (R-a, R-b). Either side of the Range's brick centre it comes down to the first
-  // string course, over the ground-floor openings, as a curtain wall (R-a): a pane between white fins on the Range's half-bays. Each edge is cut at the brick centre's ends and at
-  // every fin, so the wall runs true whatever its edges' lengths.
+  // The Range cut: glass from the cornice to the roof's skin, so no sky shows between roof and Range (R-a, R-b). Either side of the Range's brick centre white fins come down to the first
+  // string course, over the ground-floor openings, on the Range's half-bays, as a curtain wall (R-a); between them the panes are clear, so the Range's own wall shows (round 6, C4), and
+  // the glass is drawn from the cornice up. Each edge is cut at the brick centre's ends and at every fin, so the wall runs true whatever its edges' lengths.
   const cut = (i: number): boolean => Math.abs(worldToShed(shed, [d.nodes[i]!.x, d.nodes[i]!.z]).u - WEST_WALL) < 0.01;
   const EAST: V3 = (() => { const o = shedToWorld(shed, 0, 0), e = shedToWorld(shed, 1, 0); return [e[0] - o[0], 0, e[1] - o[1]]; })();
   const [brickFrom, brickTo] = westernBlock(), white: Rgb = [1, 1, 1];
@@ -896,12 +894,12 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     for (let m = Math.ceil((lo - CURTAIN_FIN) / CURTAIN_PANE); m * CURTAIN_PANE - CURTAIN_FIN / 2 < hi; m++) marks.push(m * CURTAIN_PANE - CURTAIN_FIN / 2, m * CURTAIN_PANE + CURTAIN_FIN / 2);
     const cuts = [...new Set(marks.map(v => Math.min(hi, Math.max(lo, v))))].sort((x, y) => x - y);
     for (let k = 0; k + 1 < cuts.length; k++) {
-      const [s0, s1] = [cuts[k]!, cuts[k + 1]!], mid = (s0 + s1) / 2, curtain = mid < brickFrom || mid > brickTo, low = curtain ? SILL : CORNICE_TOP;
+      const [s0, s1] = [cuts[k]!, cuts[k + 1]!], mid = (s0 + s1) / 2, fin = (mid < brickFrom || mid > brickTo) && Math.abs(mid / CURTAIN_PANE - Math.round(mid / CURTAIN_PANE)) * CURTAIN_PANE < CURTAIN_FIN / 2, low = fin ? SILL : CORNICE_TOP;
       if (on(s0)[1] <= low && on(s1)[1] <= low) continue;
       const foot = (v: number): V3 => on(v, Math.min(low, on(v)[1])), quad = [foot(s0), foot(s1), on(s1), on(s0)];
       // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
       // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
-      closure.poly(quad, undefined, { facing: EAST, color: !curtain ? pane() : Math.abs(mid / CURTAIN_PANE - Math.round(mid / CURTAIN_PANE)) * CURTAIN_PANE < CURTAIN_FIN / 2 ? white : scaled(pane(), 0.78) });
+      closure.poly(quad, undefined, { facing: EAST, color: fin ? white : pane() });
       cladding.poly(quad, [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
     }
   }
