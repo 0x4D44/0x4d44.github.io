@@ -679,14 +679,24 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
 }
 
 /**
+ * The panes of the shed's great windows, in the shed's frame (x across, y up). shed.ts `lunetteBars` puts a vertical bar every 1.6 m from the window's centre line and a transom at a third
+ * and two thirds of the half disc's radius (SHED_SPAN_WIDTH / 2 / 3 = 5.334 m) above the springing (SHED_CROWN_HEIGHT - SHED_SPAN_WIDTH / 2 = 5.6388 m): a pane is 1.6 by 5.334 m. The two windows
+ * are 2 x SHED_SPAN_WIDTH = 20 bars apart (to 4 mm), so one grid, counted from the shed's centre line, serves both. ASSUMED to match shed.ts: tests/materials.test.ts holds them to its bars.
+ */
+export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const;
+
+/**
  * GLSL for the sky in the great windows of the shed's front and in the gables behind it (R-lighting-materials-a2: the arched glazing mirrors the sky in pale
  * diagonal streaks and shows the dark ribs and the platforms through the rest, never one even tint). It runs after the lights and the tone map, just before
  * the fog, on `gl_FragColor`: the pane takes the sky's own colour (`fogColor`: the haze the sky ends in at the horizon, as the page shows it, taken 0.7 of
  * the way to white) by a share `gf`, its own colour dimmed by 0.45 so a streak shows, and is 0.8 of that share more opaque, so a bright streak hides the room
- * behind it and a dark gap shows it. The share is a Fresnel-like term (0.45 face-on, 0.85 at a glancing view) times a field of streaks fixed in the world, so
- * a streak stays where it is as the camera moves: bands of the fragment's world x and height that lean 61 degrees (lines of x * 0.9 + y * 0.5), the sum of
- * three sines 6, 17 and 2.7 m apart (so no two bands are alike) and a weak cross wave to stop them running dead parallel, 0.15 to 1.9 of their mean, held to
- * 0.8 (the room is never wholly hidden). A clear sky has the streaks (the sky is bluer than it is red by 0.04 to 0.25: `gc`); a grey one (an overcast, snow,
+ * behind it and a dark gap shows it. The share is a Fresnel-like term (0.45 face-on, 0.85 at a glancing view) times a field of streaks fixed to the glass, so
+ * a streak stays where it is as the camera moves: bands of the glass's x and height that lean 61 degrees (lines of x * 0.9 + y * 0.5), the sum of
+ * three sines 6, 17 and 2.7 m apart (so no two bands are alike) and a weak cross wave to stop them running dead parallel, held to 0.8 (the room is never wholly hidden).
+ * Round six, the lighting-materials scorer ("the reflection reads as broad diagonal bands that wash out the platform numbers"; R-a2's panes each mirror the sky to a share of their own,
+ * and the bars and the ribs read through): the field is read at the middle of each pane, not at the fragment, so a pane is one tone and the next pane another (the panes are
+ * `GLAZING`: a bar every 1.6 m from the shed's centre line, a transom at each third of the half disc, so a pane is 1.6 by 5.334 m), and the field's swing is half what it was, 0.075 to 0.95
+ * of the share and not 0.15 to 1.9 (a clear pane never mirrors more than 0.43 face-on, 0.8 at a glancing view). A clear sky has the streaks (the sky is bluer than it is red by 0.04 to 0.25: `gc`); a grey one (an overcast, snow,
  * fog or rain) has one even veil of the Fresnel-like share, as a sky with nothing in it mirrors. How much the glass mirrors scales with how bright the sky is
  * (`fogColor.g`: none under 0.55, which is a dusk's salmon horizon at 0.549 and a night's at 0.09, all of it from 0.8, a clear noon's 0.804; a heavy rain's grey
  * 0.67 gets 0.44), so a window never glows at dusk or night and the lit shed behind it shows as it did. Only where the scene has fog (no fog, no sky colour) and
@@ -696,21 +706,38 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
  */
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
-vec3 gw = cameraPosition - vViewPosition * mat3( viewMatrix );
-float gp = dot( gw.xy, vec2( 0.9, 0.5 ) );
-float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gw.xy, vec2( -0.45, 0.8 ) ) + 0.7 );
+vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
+float gp = dot( gm, vec2( 0.9, 0.5 ) );
+float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gm, vec2( -0.45, 0.8 ) ) + 0.7 );
 float gs = gl_FrontFacing ? smoothstep( 0.55, 0.8, fogColor.g ) : 0.0;
 float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
-float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.15 + 1.75 * smoothstep( -0.6, 0.9, gb ), gc ), 0.8 ) * gs;
+float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * smoothstep( -0.6, 0.9, gb ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
 #endif
 `;
 
-/** Give a Phong glass the sky above (see `SKY_GLINT_GLSL`). Its program key says so, so it never shares a compile with a plain Phong. */
+/** The x, in the glass's own frame, that the panes are counted from: the middle of the geometry being drawn (the shed's centre line, for the front's glass and the gables'). */
+const paneX = { value: 0 };
+
+/**
+ * Give a Phong glass the sky above (see `SKY_GLINT_GLSL`). Its program key says so, so it never shares a compile with a plain Phong. The glass's own x and height reach the
+ * fragment (`vGlassPos`: the great windows are built flat, in the shed's frame, and only the group moves them), and the panes are counted from the middle of what is drawn,
+ * which is the shed's centre line for the front and for the gables alike (each window is `GLAZING.spacing` times a whole number of bars from it, to 2 mm).
+ */
 export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
   m.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
+    shader.uniforms.uPaneX = paneX;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlassPos = position.xy;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;')
+      .replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
+  };
+  m.onBeforeRender = (_renderer, _scene, _camera, geometry) => {
+    const box = geometry.boundingBox ?? (geometry.computeBoundingBox(), geometry.boundingBox);
+    if (box) paneX.value = (box.min.x + box.max.x) / 2;
   };
   m.customProgramCacheKey = () => 'skyGlint';
   return m;

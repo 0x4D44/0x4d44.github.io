@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
+import type { KxData } from '../../core/osm.ts';
+import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { buildShed, lunetteBars } from '../src/shed.ts';
+import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, GLAZING, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import { MOTTLE } from '../src/lighting.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 import { Glsl, Mat } from './glsl.ts';
@@ -540,7 +544,7 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   const f = s.fragmentShader;
   // on the colour the screen gets (after the lights, the tone map and the colour space), just before the fog takes its share, inside the fog's own guard (no fog, no sky colour to take)
   // and out of the back-face pass of a double-sided pane (three draws that first, with FLIP_SIDED defined, and the winding flipped with it)
-  const at = f.indexOf('#if defined( USE_FOG ) && ! defined( FLIP_SIDED )\nvec3 gw');
+  const at = f.indexOf('#if defined( USE_FOG ) && ! defined( FLIP_SIDED )\nvec2 gm');
   assert.ok(at > 0, 'the glint is in the glass\'s shader, inside the fog\'s guard and out of the back-face pass');
   for (const earlier of ['#include <opaque_fragment>', '#include <tonemapping_fragment>', '#include <colorspace_fragment>']) assert.ok(f.indexOf(earlier) < at, `after ${earlier}`);
   assert.ok(at < f.indexOf('#include <fog_fragment>'), 'before the fog');
@@ -557,7 +561,8 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   const run = (fog: number[], camera: number[], point: number[], normal?: number[], front = true) => {
     const toCamera = camera.map((c, i) => c - point[i]!);
     const length = Math.hypot(...toCamera);
-    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length) } };
+    // the glass is in the plane z = 0 of its own frame here, so a point's x and y are the glass's (`vGlassPos`), and the panes are counted from x = 0 (`uPaneX`)
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length), vGlassPos: [point[0]!, point[1]!], uPaneX: 0 } };
     glsl.run(body, env);
     const out = env.vars.gl_FragColor as number[];
     return { rgb: out.slice(0, 3), alpha: out[3]!, share: (out[3]! - glass[3]!) / (0.8 * (1 - glass[3]!)) };
@@ -573,11 +578,13 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   const mean = (v: number[]): number => v.reduce((a, b) => a + b, 0) / v.length;
   const fraction = (v: number[], test: (x: number) => boolean): number => v.filter(test).length / v.length;
   const faceOn = field(day);
-  // streaks of the sky across the pane and nearly clear glass between, never an even tint: about a third of the pane is streak (over 0.7), about two fifths clear (under 0.15)
-  assert.ok(Math.min(...faceOn) < 0.12 && Math.max(...faceOn) > 0.75, `streaked: ${Math.min(...faceOn).toFixed(3)} to ${Math.max(...faceOn).toFixed(3)}`);
-  assert.ok(fraction(faceOn, (x) => x > 0.7) > 0.2 && fraction(faceOn, (x) => x > 0.7) < 0.5, `a third of the pane is streak: ${fraction(faceOn, (x) => x > 0.7).toFixed(2)}`);
-  assert.ok(fraction(faceOn, (x) => x < 0.15) > 0.25 && fraction(faceOn, (x) => x < 0.15) < 0.55, `two fifths of it is clear: ${fraction(faceOn, (x) => x < 0.15).toFixed(2)}`);
-  assert.ok(mean(faceOn) > 0.3 && mean(faceOn) < 0.5, `the share's mean over the pane: ${mean(faceOn).toFixed(3)}`);
+  // streaks of the sky across the glass and nearly clear panes between, never an even tint, and at HALF the swing round six first gave them (the lighting-materials scorer: "broad diagonal bands that
+  // wash out the platform numbers"): the field's 0.15 to 1.9 of the Fresnel-like term is 0.075 to 0.95, so face-on a pane mirrors 0.034 to 0.43 of the sky and no more (it was 0.07 to 0.855, a swing of 0.79)
+  assert.ok(Math.min(...faceOn) < 0.06 && Math.max(...faceOn) > 0.37, `streaked: ${Math.min(...faceOn).toFixed(3)} to ${Math.max(...faceOn).toFixed(3)}`);
+  assert.ok(Math.max(...faceOn) - Math.min(...faceOn) < 0.4 && Math.max(...faceOn) <= 0.45 * 0.95 + 1e-9 && Math.min(...faceOn) >= 0.45 * 0.075 - 1e-9, `half the swing: ${(Math.max(...faceOn) - Math.min(...faceOn)).toFixed(3)} where it was 0.79`);
+  assert.ok(fraction(faceOn, (x) => x > 0.35) > 0.2 && fraction(faceOn, (x) => x > 0.35) < 0.5, `a third of the panes are streak: ${fraction(faceOn, (x) => x > 0.35).toFixed(2)}`);
+  assert.ok(fraction(faceOn, (x) => x < 0.075) > 0.25 && fraction(faceOn, (x) => x < 0.075) < 0.55, `two fifths of them are clear: ${fraction(faceOn, (x) => x < 0.075).toFixed(2)}`);
+  assert.ok(mean(faceOn) > 0.15 && mean(faceOn) < 0.25, `the share's mean over the glass, half what it was (0.3 to 0.5): ${mean(faceOn).toFixed(3)}`);
   // at a glancing view (the normal across the line of sight) the share is 0.85 where face-on it is 0.45, and never more than 0.8
   const glancing = field(day, true);
   assert.ok(mean(glancing) > 1.15 * mean(faceOn), `a glancing view mirrors more: ${mean(glancing).toFixed(3)} against ${mean(faceOn).toFixed(3)}`);
@@ -585,9 +592,9 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   glancing.forEach((g, i) => {
     if (g < 0.8 - 1e-9) { assert.ok(Math.abs(g / faceOn[i]! - 0.85 / 0.45) < 1e-9, `the same streak, 0.85 against 0.45: ${g} over ${faceOn[i]}`); compared++; }
   });
-  assert.ok(compared > glancing.length * 0.4, `where the 0.8 does not hold it, the Fresnel-like term is 0.85 against 0.45 (${compared} of ${glancing.length} points)`);
+  assert.ok(compared > glancing.length * 0.6, `where the 0.8 does not hold it, the Fresnel-like term is 0.85 against 0.45 (${compared} of ${glancing.length} points)`);
   for (const v of [...faceOn, ...glancing]) assert.ok(v >= 0 && v <= 0.8 + 1e-9, `held to 0.8: ${v}`);
-  assert.ok(Math.abs(Math.max(...glancing) - 0.8) < 1e-9, 'the brightest streak at a glancing view is held to 0.8 (the room is never wholly hidden)');
+  assert.ok(Math.max(...glancing) > 0.7 && Math.max(...glancing) <= 0.8 + 1e-9, 'the brightest pane at a glancing view mirrors 0.8 at most (the room is never wholly hidden), and 0.8 only just');
   // where it mirrors, the pane takes the sky's colour (the haze, taken 0.7 of the way to white) over its own, dimmed by 0.45: the colour out is the dimmed pane toward the mirror by the share the alpha shows
   const dimmed = glass.slice(0, 3).map((c) => c * (1 - 0.45));
   const mirror = day.map((c) => c * 0.3 + 0.7);
@@ -596,24 +603,33 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
     r.rgb.forEach((c, i) => assert.ok(Math.abs(c - (dimmed[i]! + (mirror[i]! - dimmed[i]!) * r.share)) < 1e-9, `channel ${i} is the dimmed pane toward the mirror by ${r.share.toFixed(3)}: ${c}`));
     assert.ok(r.alpha >= glass[3]! && r.alpha <= 1, `more opaque, not less: ${r.alpha}`);
   }
-  // the streaks are fixed in the world: a point of the pane gives the same share (seen straight on) wherever the camera stands, and the next point along gives another
+  // the streaks are fixed to the glass: a point of it gives the same share (seen straight on) wherever the camera stands, and a point in the next pane gives another
   const there = run(day, [21, 9, 60], [21, 9, 0]).share;
   assert.ok(Math.abs(there - run(day, [300, 80, -250], [21, 9, 0]).share) < 1e-9, 'a streak stays where it is as the camera moves');
-  assert.ok(Math.abs(there - run(day, [24, 14, 60], [24, 14, 0]).share) > 0.01, 'and the next point along the pane has its own');
-  // they lean: along a streak (up and to the left, 61 degrees from the horizontal) the share changes little, across it (the way the bands are numbered) it swings through the whole range
-  const stepChange = (dir: number[]): number => {
-    let sum = 0, n = 0;
-    for (let x = 5; x < 55; x += 2.5) for (let y = 5; y < 25; y += 2.5) {
-      const a = run(day, [x, y, 60], [x, y, 0]).share;
-      const b = run(day, [x + 3 * dir[0]!, y + 3 * dir[1]!, 60], [x + 3 * dir[0]!, y + 3 * dir[1]!, 0]).share;
-      sum += Math.abs(a - b); n++;
-    }
-    return sum / n;
+  assert.ok([1, 2, 3, 4, 5].some((k) => Math.abs(there - run(day, [21 + 1.6 * k, 9, 60], [21 + 1.6 * k, 9, 0]).share) > 0.01), 'and the panes along the glass have shares of their own');
+  // round six, pane by pane (R-a2: each pane mirrors the sky to a share of its own, and the bars and the ribs read through): the glass is cut into panes 1.6 m wide (a bar between each) and
+  // 5.334 m tall (a transom between), counted from x = 0 here and from the shed's centre line in the page, and the field is read at the middle of a pane, so a pane is ONE share
+  const { spacing, tier, springing } = GLAZING;
+  const paneAt = (i: number, j: number, fx: number, fy: number): number => run(day, [0, 0, 60], [(i + fx) * spacing, springing + (j + fy) * tier, 0]).share;
+  let changed = 0, pairs = 0;
+  for (let i = -20; i < 20; i++) for (let j = 0; j < 3; j++) {
+    const centre = paneAt(i, j, 0.5, 0.5);
+    for (const fx of [0.02, 0.3, 0.98]) for (const fy of [0.02, 0.5, 0.98]) assert.ok(Math.abs(paneAt(i, j, fx, fy) - centre) < 1e-9, `one share across the pane ${i}, ${j}: ${paneAt(i, j, fx, fy)} against ${centre}`);
+    pairs++;
+    if (Math.abs(paneAt(i + 1, j, 0.5, 0.5) - centre) > 0.01) changed++;
+  }
+  assert.ok(changed / pairs > 0.6, `and the next pane along is another share, in most cases: ${changed} of ${pairs} neighbours differ by over 0.01`);
+  // the tone steps at a bar, not between: just either side of the line a mullion stands on (and of a transom) the two panes' own shares
+  assert.ok(Math.abs(paneAt(3, 1, 0.999, 0.5) - paneAt(3, 1, 0.5, 0.5)) < 1e-9 && Math.abs(paneAt(3, 1, 1.001, 0.5) - paneAt(4, 1, 0.5, 0.5)) < 1e-9, 'a pane ends at its bar');
+  assert.ok(Math.abs(paneAt(3, 1, 0.5, 0.999) - paneAt(3, 1, 0.5, 0.5)) < 1e-9 && Math.abs(paneAt(3, 1, 0.5, 1.001) - paneAt(3, 2, 0.5, 0.5)) < 1e-9, 'and at its transom');
+  // the panes are counted from `uPaneX`: move it and the grid moves with it
+  const shifted = (shift: number): number => {
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 60], viewMatrix: identity, vViewPosition: [0, 0, 60], normal: [0, 0, 1], vGlassPos: [10.2, 12], uPaneX: shift } };
+    glsl.run(body, env);
+    return ((env.vars.gl_FragColor as number[])[3]! - glass[3]!) / (0.8 * (1 - glass[3]!));
   };
-  const norm = Math.hypot(0.9, 0.5);
-  const across = stepChange([0.9 / norm, 0.5 / norm]);
-  const along = stepChange([-0.5 / norm, 0.9 / norm]);
-  assert.ok(across > 3 * along && across > 0.3, `a streak runs up the glass: ${along.toFixed(3)} a 3 m step along it, ${across.toFixed(3)} across`);
+  assert.ok(Math.abs(shifted(0.5) - shifted(0.5 + 3 * spacing)) < 1e-9, 'a shift of whole panes changes nothing');
+  assert.ok(Math.abs(shifted(0) - shifted(0.7)) > 0.01 || Math.abs(shifted(0) - shifted(1.1)) > 0.01, 'a shift that moves a bar across the point moves the pane it is in');
   // a grey sky (an overcast, a snow) has nothing to mirror but itself: one even veil of the Fresnel-like share, 0.45 face-on, and the heavy rain's dimmer grey the same, in less
   for (const grey of [overcast, snow]) {
     const veil = field(grey);
@@ -631,6 +647,47 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   for (const sky of [day, overcast]) {
     const inside = run(sky, [20, 10, 60], [20, 10, 0], undefined, false);
     assert.deepEqual([...inside.rgb, inside.alpha], glass, 'from inside the pane is what it was');
+  }
+});
+
+test('the great windows\' panes are the shed\'s real bars (a mullion every 1.6 m from the shed\'s centre line, a transom at each third), in both windows, on the front and the gables, and the glass finds the centre line itself (round six, E4)', () => {
+  const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+  const layout = shedLayout(data);
+  const centre = layout.width / 2;
+  // the constants are the bars': the springing, the third of the half disc, the bar spacing
+  close(GLAZING.springing, layout.springing, 1e-3);
+  close(GLAZING.tier, SHED_SPAN_WIDTH / 2 / 3, 1e-3);
+  for (const uc of [layout.aisle + SHED_SPAN_WIDTH / 2, layout.aisle + 1.5 * SHED_SPAN_WIDTH]) {
+    const bars = lunetteBars(uc, layout.springing);
+    const mullions = bars.filter((b) => b.kind === 'mullion'), transoms = bars.filter((b) => b.kind === 'transom');
+    assert.ok(mullions.length >= 15 && transoms.length === 2, `the bars are found: ${mullions.length} mullions, ${transoms.length} transoms`);
+    for (const b of mullions) {
+      const n = (b.c[0] - centre) / GLAZING.spacing;
+      assert.ok(Math.abs(n - Math.round(n)) * GLAZING.spacing < 0.005, `a mullion at x ${b.c[0].toFixed(3)} is ${(n - Math.round(n)).toFixed(4)} of a pane off the grid counted from the centre line ${centre.toFixed(3)}`);
+    }
+    for (const b of transoms) {
+      const j = (b.c[1] - GLAZING.springing) / GLAZING.tier;
+      assert.ok(Math.abs(j - Math.round(j)) * GLAZING.tier < 0.005 && Math.round(j) >= 1 && Math.round(j) <= 2, `a transom at y ${b.c[1].toFixed(3)} is on a tier line: ${j.toFixed(4)}`);
+    }
+  }
+  // the glass the grid is for: the front's and the gables' are the glint material, each is centred on the shed's centre line, and the material reads that centre from the geometry it is about to draw
+  const shed = buildShed(layout);
+  const glass = material('glass') as THREE.MeshPhongMaterial;
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.phong.vertexShader, fragmentShader: THREE.ShaderLib.phong.fragmentShader };
+  glass.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.ok(s.vertexShader.includes('varying vec2 vGlassPos;') && s.vertexShader.includes('vGlassPos = position.xy;'), 'the vertex shader hands the glass\'s own x and y on');
+  assert.ok(s.fragmentShader.includes('varying vec2 vGlassPos;\nuniform float uPaneX;'), 'and the fragment shader declares them, and the grid\'s origin');
+  assert.ok('uPaneX' in s.uniforms, 'the origin is a uniform');
+  for (const name of ['shed-front-glass', 'shed-gable-glass']) {
+    const mesh = shed.getObjectByName(name) as THREE.Mesh;
+    assert.ok(mesh, `${name} is built`);
+    assert.equal(mesh.material, glass, `${name} is the glint material`);
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox as THREE.Box3;
+    close((box.min.x + box.max.x) / 2, centre, 1e-4);
+    (s.uniforms.uPaneX as { value: number }).value = -1;
+    glass.onBeforeRender(undefined as never, undefined as never, undefined as never, mesh.geometry, mesh, undefined as never);
+    close((s.uniforms.uPaneX as { value: number }).value, centre, 1e-4);
   }
 });
 
