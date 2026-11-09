@@ -21,6 +21,7 @@ import type { TrainView } from '../../core/motion.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
+import { createClocks } from './clocks.ts';
 import { buildTrain, setTrainLampState, standTrain } from './train.ts';
 import { backoffMs, createLiveFeed, createReplayFeed, createScheduleFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { MotionSink, TrainFeed } from './feed.ts';
@@ -280,6 +281,7 @@ function start(): void {
     });
     stationBoard.update(kx.boardRows);
   };
+  const clocks = createClocks();
   let lastFrame: number | undefined;
   renderer.setAnimationLoop((time) => {
     resize(); // render at the actual host size even before a queued window.resize event
@@ -301,6 +303,7 @@ function start(): void {
     // filmic grade at its own sun's exposure; London's also takes the sun's shadow. A scene with no climate (?bare=1, ?sky=ref, the placeholder)
     // keeps its fixed lights and no tone map. The unlit things (lines, points, sprites) are left out of the grade as they arrive.
     const shown = stations.activeScene();
+    clocks.frame(shown, sceneClock()); // the station clocks show the scene's time (clocks.ts), as the sun and the board do
     const sky = climate?.atmosphere.state() ?? null;
     if (climate && sky) {
       const added = additions(shown); // the scans visit every object of the scene: only on the frame after something was added to it

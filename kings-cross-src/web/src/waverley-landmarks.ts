@@ -5,6 +5,8 @@ import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {Batch,material} from './materials.ts';
 import type {V3} from './materials.ts';
+import {balmoralTime} from './clocks.ts';
+import type {ClockDial} from './clocks.ts';
 import data from './data/waverley-landmarks.json' with {type:'json'};
 export const WAVERLEY_LANDMARK_HEIGHTS={scott:61.11,balmoral:58,clockDiameter:3.2} as const;
 export const WAVERLEY_LANDMARK_SOURCES={
@@ -53,13 +55,14 @@ export function buildWaverleyLandmarks(ground:Pick<Terrain,'heightAt'|'rangeUnde
  const br=ringOf(data.balmoral.ring),bc=centre(br),north=[...br].sort((a,b)=>a[1]-b[1])[0],base=ground.heightAt(...north);
  shell(stone,br,()=>base,()=>base+48);pyramid(roof,br,base+48,base+58);
  const xs=br.map(p=>p[0]),zs=br.map(p=>p[1]);
- // Dial diameter is published; placement and simple fixed hands are illustrative.
+ // Dial diameter is published; placement is illustrative.
+ const dials:ClockDial[]=[];
  for(const [cx,cz,nx,nz] of [[bc[0],Math.min(...zs)-.02,0,-1],[bc[0],Math.max(...zs)+.02,0,1],[Math.min(...xs)-.02,bc[1],-1,0],[Math.max(...xs)+.02,bc[1],1,0]]){
   const cy=base+43,tx=-nz,tz=nx,r=data.balmoral.clockDiameter/2;
   for(let i=0;i<32;i++){const a=i*Math.PI/16,b=(i+1)*Math.PI/16;dial.tri([cx,cy,cz],[cx+tx*r*Math.cos(a),cy+r*Math.sin(a),cz+tz*r*Math.cos(a)],[cx+tx*r*Math.cos(b),cy+r*Math.sin(b),cz+tz*r*Math.cos(b)],undefined,[nx,0,nz]);}
-  // Hands use the roof batch (dark slate), avoiding another material/draw.
-  roof.box([cx+nx*.03,cy+.5,cz+nz*.03],[.08,1,.08]);roof.box([cx+nx*.04+tx*.35,cy,cz+nz*.04+tz*.35],[Math.abs(tx)*.7+.08,.08,Math.abs(tz)*.7+.08]);
+  dials.push({centre:[cx,cy,cz],normal:[nx,0,nz],up:[0,1,0],radius:r,show:balmoralTime}); // the hands are clocks.ts's, three minutes fast
  }
+ group.userData.clockDials=dials;
  add(bridges,'asphalt','waverley-bridge-decks');add(stone,'stone','waverley-balmoral-and-bridge-parapets');add(roof,'slate','waverley-balmoral-spire-and-hands');add(dial,'concrete','waverley-balmoral-clock-dials',0xeee8d1);add(scott,'stone','waverley-scott-monument',0x51463d);
  let disposed=false;return {group,stats,omitBuildingIds:[...WAVERLEY_LANDMARK_OMIT_IDS],dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of ownedGeometries)g.dispose();for(const m of ownedMaterials)m.dispose();group.clear();}};
 }

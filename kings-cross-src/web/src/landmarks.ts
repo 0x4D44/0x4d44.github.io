@@ -9,6 +9,7 @@ import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { footShaded, mergeParts, material, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
+import type { ClockDial } from './clocks.ts';
 
 export { towerSquare };
 
@@ -35,19 +36,12 @@ export function createMaterials(): MaterialSet {
     owned.push(x);
     return x;
   };
-  // hist-c: a gilt ring round a cream dial, black Roman numerals and hands, a gilt rosette; colours ASSUMED.
+  // hist-c: a gilt ring round a cream dial, black Roman numerals and hands, a gilt rosette; colours ASSUMED. The hands are clocks.ts's, turned to the scene clock.
   let clockMap: THREE.CanvasTexture | null = null;
   if (typeof document !== 'undefined') {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const g = c.getContext('2d') as CanvasRenderingContext2D;
-    const hand = (a: number, len: number, width: number): void => {
-      g.lineWidth = width;
-      g.beginPath();
-      g.moveTo(128 - Math.sin(a) * 14, 128 + Math.cos(a) * 14);
-      g.lineTo(128 + Math.sin(a) * len, 128 - Math.cos(a) * len);
-      g.stroke();
-    };
     g.fillStyle = '#c9a23c';
     g.beginPath();
     g.arc(128, 128, 126, 0, Math.PI * 2);
@@ -70,9 +64,6 @@ export function createMaterials(): MaterialSet {
       g.ellipse(128 + Math.sin((i * Math.PI) / 4) * 15, 128 - Math.cos((i * Math.PI) / 4) * 15, 7, 13, (i * Math.PI) / 4, 0, Math.PI * 2);
       g.fill();
     }
-    g.strokeStyle = '#1d1b18';
-    hand(2.4, 52, 8);
-    hand(5.9, 78, 5);
     clockMap = own(new THREE.CanvasTexture(c));
     clockMap.colorSpace = THREE.SRGBColorSpace;
   }
@@ -921,6 +912,19 @@ function addOriel(parts: PartMap<Key>, f: Placed, y: number): void {
   }
 }
 
+/** The four faces of a tower `half` out from its centre, each looking out with its `dir` running to the viewer's right: front, back, then the sides. */
+const towerFaces = (t: TowerPlan, half: number): Placed[] => ([[t.out, t.along], [t.along, t.out]] as const).flatMap(([n, d]) => [1, -1].map((s): Placed => ({ at: [t.centre[0] + n[0] * half * s, t.centre[1] + n[1] * half * s], dir: [d[0] * s, d[1] * s], normal: [n[0] * s, n[1] * s] })));
+/** The clock stage stands `grow` out from the tower's shaft; each dial is a square `half` wide each way, `lift` off the stage's wall, its cream field `field` of `half` across (the texture's 106 of 128). */
+const DIAL = { grow: 0.5, lift: 0.14, half: 2.1, field: 106 / 128 };
+
+/** The Midland Grand clock tower's dials, for clocks.ts, in the frame the landmarks are built in, `lift` up (the seat). */
+export function midlandClockDials(plan: MidlandPlan, lift = 0): ClockDial[] {
+  return plan.towers.filter((t) => t.name === 'clock').flatMap((t) => {
+    const { corbel, wall } = towerStages(t.height);
+    return towerFaces(t, t.side / 2 + DIAL.grow).map((f): ClockDial => ({ centre: onWall(f, 0, (corbel + wall) / 2 + lift, DIAL.lift), normal: [f.normal[0], 0, f.normal[1]], up: [0, 1, 0], radius: DIAL.half * DIAL.field }));
+  });
+}
+
 /**
  * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 73 m clock tower): a brick shaft of window rows then lancets, a belfry of
  * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a brick gable on each face, with a dial on the clock tower's, [HE-STP] "gabled clocks
@@ -937,7 +941,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const sq = (half: number): Pt[] => squareAbout(t.centre, t.along, t.out, half);
   const ring = (half: number): Seg[] => segmentsOutside(polygonEdges(sq(half)), []);
   // the four faces, each looking out with its `dir` running to the viewer's right: front, back, then the sides
-  const facesAt = (half: number): Placed[] => ([[t.out, t.along], [t.along, t.out]] as const).flatMap(([n, d]) => [1, -1].map((s): Placed => ({ at: [t.centre[0] + n[0] * half * s, t.centre[1] + n[1] * half * s], dir: [d[0] * s, d[1] * s], normal: [n[0] * s, n[1] * s] })));
+  const facesAt = (half: number): Placed[] => towerFaces(t, half);
   const faces = facesAt(h);
 
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
@@ -980,7 +984,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   }
   for (const c of sq(h + 0.25)) stone.box([c[0], bT - 0.9, c[1]], [0.5, 1.8, 0.5], { rotY: yaw(t.along), skip: ['+y'] });
   // the clock stage
-  const grow = 0.5;
+  const grow = DIAL.grow;
   addWalls(brick, sq(h + grow), tT, wH);
   const stage = facesAt(h + grow);
   // hist-c, hist-b: a hip over the clock stage down to the gables, then a steep slate pyramid (about 73 deg) between the turrets, a lantern, a needle; sizes ASSUMED
@@ -992,9 +996,9 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   for (const f of stage) {
     if (clockTower) {
       // the dial in a ring of stone (hist-c: a gilt ring and a cream dial 4.2 m across, ASSUMED from the tower's width)
-      const q = (x: number, y: number): V3 => onWall(f, x, y, 0.14);
+      const q = (x: number, y: number): V3 => onWall(f, x, y, DIAL.lift);
       const face: V3 = [f.normal[0], 0, f.normal[1]];
-      const half = 2.1;
+      const half = DIAL.half;
       addDisc(stone, f, 0, cy, 2.5, 0.1, 24); // the stone ring round the dial
       // u runs left to right as a viewer outside sees it; dir points to the viewer's left on the front and back faces and to the right on the sides
       const left = f.dir[0] * f.normal[1] - f.dir[1] * f.normal[0] < 0 ? half : -half;
@@ -1420,6 +1424,7 @@ export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOpt
   const plans = landmarkPlans(data);
   const seats = opts.terrain ? landmarkSeats(plans, opts.terrain) : undefined;
   const { group, triangles } = mergeParts<Key>(landmarkGeometry(plans, seats), set.table, 'landmarks', { roofGlass: 2 });
+  group.userData.clockDials = midlandClockDials(plans.midland, seats?.midland.y ?? 0); // clocks.ts
   scene.add(group);
   const geometries: THREE.BufferGeometry[] = [];
   group.traverse((o) => {

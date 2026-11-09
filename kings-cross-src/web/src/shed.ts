@@ -14,6 +14,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
+import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
@@ -361,10 +362,7 @@ function clockMaterial(): THREE.Material {
     g.lineTo(128 + Math.sin(a) * 114, 128 - Math.cos(a) * 114);
     g.stroke();
   }
-  g.lineWidth = 11; // a still picture at about ten past ten; the model's clock does not run
-  g.beginPath(); g.moveTo(128, 128); g.lineTo(128 + Math.sin(-1.05) * 62, 128 - Math.cos(-1.05) * 62); g.stroke();
-  g.lineWidth = 7;
-  g.beginPath(); g.moveTo(128, 128); g.lineTo(128 + Math.sin(0.9) * 92, 128 - Math.cos(0.9) * 92); g.stroke();
+  // the hands are clocks.ts's, turned to the scene clock
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
@@ -693,6 +691,7 @@ export function buildTower(x: number): THREE.Group {
     ring.rotation.y = face.rotation.y;
     faces.add(ring, face);
   }
+  tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (tw / 2 + 0.06), clockY, nz * (tw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: 1.7 })); // clocks.ts
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
   const vane = new Batch(), vaneY = CLOCK_TOWER_HEIGHT - 0.65;
   vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);
