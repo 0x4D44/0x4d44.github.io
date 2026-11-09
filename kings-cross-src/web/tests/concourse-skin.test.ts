@@ -60,11 +60,23 @@ const standing = (): Face[] => { // fascia on the outline, upstands between soli
   for (const f of walls) assert.ok(Math.abs(f.normal.y) < 1e-3, `the edge band holds a face that is not vertical (normal.y ${f.normal.y.toFixed(2)})`);
   return walls;
 };
+// The cladding mesh holds the roof's facets, and the dome's skin turned down the Range cut (upright faces: the Range side's view of the cut).
+const claddingFacets = (): Face[] => {
+  const all = faces('concourse-cladding'), upright = all.filter(f => Math.abs(f.normal.y) < 1e-3);
+  for (const f of all) assert.ok(f.normal.y > 0 || upright.includes(f), `the cladding holds a face that is neither a roof facet nor upright (normal.y ${f.normal.y.toFixed(2)})`);
+  return all.filter(f => !upright.includes(f));
+};
+const claddingGable = (): Face[] => faces('concourse-cladding').filter(f => Math.abs(f.normal.y) < 1e-3);
 const crownOf = (glass: Face[]): Face[] => glass.filter(f => [f.a, f.b, f.c].some(v => toAxis(v) < 1e-3));
 const roofGlass = (): Face[] => { const glass = faces('concourse-glass'), crown = crownOf(glass); return glass.filter(f => !crown.includes(f)); };
+// The roof's layers, and the height of the roof over a point of the floor.
+const roofLayers = skin.children.filter(c => ['concourse-closure', 'concourse-glass', 'concourse-panels', 'concourse-lattice', 'concourse-cladding'].includes(c.name));
+const roofAt = (u: number, v: number): number => { const w = shedToWorld(layout, u, v); return new THREE.Raycaster(new THREE.Vector3(w[0], 0, w[1]), new THREE.Vector3(0, 1, 0)).intersectObjects(roofLayers, true)[0]?.point.y ?? 0; };
+const CORNICE = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
+const eastward = ((): THREE.Vector3 => { const east = shedToWorld(layout, 1, 0), origin = shedToWorld(layout, 0, 0); return new THREE.Vector3(east[0] - origin[0], 0, east[1] - origin[1]).normalize(); })();
 
 test('roof skin: 15 percent of the roof is glazed, round the funnel and in a band at the outline, as published', () => {
-  const glass = faces('concourse-glass'), cladding = faces('concourse-cladding'), area = (fs: Face[]): number => fs.reduce((s, f) => s + f.area, 0);
+  const glass = faces('concourse-glass'), cladding = claddingFacets(), area = (fs: Face[]): number => fs.reduce((s, f) => s + f.area, 0);
   const share = area(glass) / (area(glass) + area(cladding));
   assert.ok(Math.abs(share - GLAZED_SHARE.published) <= GLAZED_SHARE.tolerance, `glazed share ${(100 * share).toFixed(1)} % of the roof, published 15 %`);
   const glazed = roofGlass(), soffit = soffitCells();
@@ -108,13 +120,13 @@ test('roof build-up: soffit above the member centre lines, cladding above that, 
   for (const f of soffitCells()) for (const v of [f.a, f.b, f.c]) close(lift(v)!, SOFFIT_LIFT, EPS);
   for (const f of roofGlass()) for (const v of [f.a, f.b, f.c]) close(lift(v)!, SKIN_LIFT, EPS);
   let corners = 0, middles = 0;
-  for (const f of faces('concourse-cladding')) for (const v of [f.a, f.b, f.c]) {
+  for (const f of claddingFacets()) for (const v of [f.a, f.b, f.c]) {
     const l = lift(v);
     if (l !== undefined) { close(l, SKIN_LIFT, EPS); corners++; } else middles++; // a diamond's middle is not a node: it stands FACET_RISE above its plane
   }
   assert.ok(corners > 1000 && middles > 1000, `${corners} corner vertices, ${middles} facet middles`);
   // each facet middle rises FACET_RISE above the midpoint of the rib it sits over
-  const diamonds = faces('concourse-cladding').filter(f => [f.a, f.b, f.c].some(v => lift(v) === undefined));
+  const diamonds = claddingFacets().filter(f => [f.a, f.b, f.c].some(v => lift(v) === undefined));
   for (const f of diamonds.slice(0, 400)) {
     const middle = [f.a, f.b, f.c].find(v => lift(v) === undefined)!, ends = [f.a, f.b, f.c].filter(v => v !== middle);
     const plane = (ends[0]!.y + ends[1]!.y) / 2; // the sloping skin's height beside the middle, to within the roof's slope across a cell
@@ -248,15 +260,11 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
   const closure = skin.getObjectByName('concourse-closure') as THREE.Mesh;
   assert.ok(closure, 'the concourse has a closure');
   assert.equal((closure.material as THREE.Material).side, THREE.BackSide, 'bright from the concourse, as the glazing is');
-  const cornice = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5, east = shedToWorld(layout, 1, 0), origin = shedToWorld(layout, 0, 0);
-  const face = new THREE.Vector3(east[0] - origin[0], 0, east[1] - origin[1]);
-  const layers = skin.children.filter(c => ['concourse-closure', 'concourse-glass', 'concourse-panels', 'concourse-lattice', 'concourse-cladding'].includes(c.name));
   // standing in the concourse, looking east at the Range's top from the floor: every sight line between the cornice and the roof meets glass at u = -12.3
   let sampled = 0;
-  const roofAt = (u: number, v: number): number => { const w = shedToWorld(layout, u, v); return new THREE.Raycaster(new THREE.Vector3(w[0], 0, w[1]), new THREE.Vector3(0, 1, 0)).intersectObjects(layers, true)[0]?.point.y ?? 0; };
-  for (let v = WESTERN_RANGE.v0 + 6; v < WESTERN_RANGE.v1 - 6; v += 4.3) for (const y of [cornice + 0.6, cornice + 3, cornice + 5.5]) {
+  for (let v = WESTERN_RANGE.v0 + 6; v < WESTERN_RANGE.v1 - 6; v += 4.3) for (const y of [CORNICE + 0.6, CORNICE + 3, CORNICE + 5.5]) {
     if (roofAt(-26, v) < y + 0.3 || roofAt(-13, v) < y + 0.3) continue; // the roof is lower than this sight line here, so it would meet the roof first
-    const w = shedToWorld(layout, -26, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), face.clone().normalize()).intersectObjects(layers, true)[0];
+    const w = shedToWorld(layout, -26, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward).intersectObjects(roofLayers, true)[0];
     assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v.toFixed(1)}, ${y.toFixed(1)} m high, meets ${hit?.object.name ?? 'the open sky'}`);
     assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, "the glass stands 0.3 m in front of the Range's face");
     sampled++;
@@ -264,8 +272,32 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
   assert.ok(sampled >= 24, `${sampled} sight lines checked`);
   // its foot rests on the cornice; its top is the roof's skin
   const q = closure.geometry.getAttribute('position'), ys = Array.from({ length: q.count }, (_, i) => q.getY(i));
-  assert.ok(ys.filter(y => Math.abs(y - cornice) < EPS).length > ys.length / 3 && Math.min(...ys) > cornice - 4, 'the closure stands on the cornice');
-  assert.ok(Math.max(...ys) > cornice + 5, `the closure rises to ${Math.max(...ys).toFixed(1)} m`);
+  assert.ok(ys.filter(y => Math.abs(y - CORNICE) < EPS).length > ys.length / 3 && Math.min(...ys) > CORNICE - 4, 'the closure stands on the cornice');
+  assert.ok(Math.max(...ys) > CORNICE + 5, `the closure rises to ${Math.max(...ys).toFixed(1)} m`);
+});
+
+test("roof edge: from the Range side the cut is closed too, by the dome's skin turned down it, so no hole opens onto the funnel and the floor", () => {
+  // The closure glass is drawn from the concourse only (it is the back face that shows), so without a face for the other side the cut is a hole seen from
+  // above the Range: the funnel's thin white legs and the fit-out show through it, and at a distance the legs read as a white speckle (the overview).
+  const gable = claddingGable(), area = (fs: Face[]): number => fs.reduce((s, f) => s + f.area, 0), closure = faces('concourse-closure');
+  assert.ok(gable.filter(f => f.area > 1).length >= 20, `${gable.length} upright cladding faces`);
+  for (const f of gable.filter(g => g.area > 0)) {
+    assert.ok(f.normal.dot(eastward) > 0.999, 'a gable face looks east, to the Range side');
+    for (const v of [f.a, f.b, f.c]) assert.ok(Math.abs(worldToShed(layout, [v.x, v.z]).u + 12.3) < 0.02, "the gable stands on the glass's plane, 0.3 m in front of the Range's face");
+  }
+  assert.ok(Math.abs(area(gable) - area(closure)) < 1e-3 * area(closure), `the gable covers what the glass does: ${area(gable).toFixed(1)} m2 against ${area(closure).toFixed(1)} m2`);
+  const material = (skin.getObjectByName('concourse-cladding') as THREE.Mesh).material as THREE.Material;
+  assert.ok(material.side === THREE.FrontSide && !material.transparent && material.type === 'MeshPhongMaterial', 'an opaque lit face, so that it keeps to the weather and the hour as the unlit glass cannot');
+  // from above the Range, looking west: every sight line between the cornice and the roof meets the gable, at the plane of the glass
+  let sampled = 0;
+  for (let v = WESTERN_RANGE.v0 + 6; v < WESTERN_RANGE.v1 - 6; v += 4.3) for (const y of [CORNICE + 0.6, CORNICE + 3, CORNICE + 5.5]) {
+    if (roofAt(-13, v) < y + 0.3) continue; // the roof is lower than this sight line here
+    const w = shedToWorld(layout, -8, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward.clone().negate()).intersectObjects(roofLayers, true)[0];
+    assert.equal(hit?.object.name, 'concourse-cladding', `a sight line at v ${v.toFixed(1)}, ${y.toFixed(1)} m high, from the Range side, meets ${hit?.object.name ?? 'the open sky'}`);
+    assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, "at the glass's plane");
+    sampled++;
+  }
+  assert.ok(sampled >= 24, `${sampled} sight lines checked`);
 });
 
 test('roof build-up: an upstand of the cavity depth closes the slot where a solid cell meets a glazed one, so no sky shows through it', () => {

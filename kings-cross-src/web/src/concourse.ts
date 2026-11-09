@@ -812,6 +812,9 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     if (A[1] <= CORNICE_TOP && B[1] <= CORNICE_TOP) continue;
     closure.poly([a, b, B], barycentric, { facing: EAST, color: pane() });
     closure.poly([a, B, A], barycentric, { facing: EAST, color: pane() });
+    // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
+    // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
+    cladding.poly([a, b, B, A], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
   }
   // The perimeter tree columns: a trunk and four branches to the nearest roof nodes.
   const used = new Set(kept.flat());
