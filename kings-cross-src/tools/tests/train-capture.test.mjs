@@ -7,7 +7,7 @@ import {EventEmitter} from 'node:events';
 import * as T from 'three';
 import {ALL_KINDS,trainLayout} from '../../core/train.ts';
 import {buildTrain} from '../../web/src/train.ts';
-import {selectPortalFrames,verifyPortalSequence,capturePortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,frozenSchedulePolicy,portalCapturePlan,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
+import {selectPortalFrames,verifyPortalSequence,capturePortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,frozenSchedulePolicy,portalCapturePlan,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames,chromeArgs} from '../train-capture.mjs';
 import {detailCamera,inspectTrainFrame,sequenceCamera,setCaptureView,trainBounds,followTrainCamera,portalTrainCamera,intersectCaptureRay} from '../train-framing.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from '../capture-runtime.mjs';
 const frame=(timeMs,speedMps=0)=>({timeMs,point:[0,10],speedMps,state:speedMps?'moving':'held',lengthM:26,reversals:0,occupied:[{a:1,b:2,fromT:0,toT:1,edgeLengthM:40}]});
@@ -236,4 +236,11 @@ test('portal capture retries whole fixed-camera sequences and publishes only a c
   rendered:true,camera:camera??fixedPortalCamera(),visibility:portalMeasurements()[frames.indexOf(f)].visibility};},picture:async()=>Buffer.from('synthetic'),
   publish:async()=>{throw new Error('filesystem unavailable');}}),/filesystem unavailable/);
  assert.equal(inspections,5,'a publication error must not retry a partial write');
+});
+test('every capture mode starts Chrome headless on the real Metal GPU with its own throwaway profile and never a software renderer',()=>{
+ const args=chromeArgs('/tmp/profile-x');
+ for(const flag of ['--headless=new','--remote-debugging-pipe','--use-angle=metal','--ignore-gpu-blocklist','--enable-gpu-rasterization','--user-data-dir=/tmp/profile-x','--no-sandbox'])assert.ok(args.includes(flag),flag);
+ assert.equal(args.at(-1),'about:blank');assert.equal(args.filter(a=>a.startsWith('--user-data-dir=')).length,1);
+ assert.ok(!args.some(a=>/swiftshader|disable-gpu|use-gl=|use-angle=(?!metal$)|software/i.test(a)),args.join(' '));
+ assert.notDeepEqual(chromeArgs('/tmp/profile-y'),args);
 });

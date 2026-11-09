@@ -1,13 +1,19 @@
 // GPU rubric evidence, from the exact frozen inputs of axis05-evidence. Import-safe preflight.
-import {spawn} from 'node:child_process';
+import {spawn,execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import os from 'node:os';
 import {createServer} from 'node:http';
 import {readFile,writeFile,realpath,mkdir,mkdtemp,stat,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
-import {ALL_KINDS} from '../core/train.ts';
+import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
+import {bodySpec,carPlan} from '../web/src/train.ts';
+import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
+import {PLATFORM_HEIGHT} from '../core/scene.ts';
+import {readPng} from './axis01-pixels.mjs';
+import {CATALOGUE,STAGE_VIEWS,STATION_VIEWS,VIEW_IDS,planCatalogueViews,poseOf,poseDifference,stationCandidates,stationPose} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
@@ -283,12 +289,385 @@ export function corridorPoints(plan,graph,anchors) {
   if(stop)points.push([stop.point[0],1,stop.point[1]]);
   return points;
 }
+// =====================================================================================================
+// CATALOGUE MODE (rubric-FROZEN-v1). `--mode catalogue` photographs every train kind from the rubric's required views
+// V01-V10 on the real GPU. No replay, no recording: the kinds are built with the page's own evidenceBuildTrain hook and
+// shown on a neutral specimen stage (V01-V09) or standing at a real platform buffer stop (V10). Poses are frozen numbers,
+// derived once from the formation; a view that cannot be shown is a GAP with its reason, never a different pose.
+// =====================================================================================================
+const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
+const basisOf=list=>[...new Set(list)].join('+');
+/** The one Chrome command line every capture mode uses: headless, pipe-driven, on the real Metal GPU (never a software renderer). */
+export const chromeArgs=profile=>['--headless=new','--remote-debugging-pipe',`--user-data-dir=${profile}`,'--no-sandbox','--no-first-run','--no-default-browser-check','--disable-breakpad','--disable-crash-reporter','--noerrdialogs','--use-mock-keychain','--password-store=basic','--no-proxy-server','--ignore-gpu-blocklist','--use-angle=metal','--enable-gpu-rasterization','about:blank'];
+/** A plain description of one kind's formation: the input of planCatalogueViews and the sidecars' `formation`/`dimensions`. */
+export function describeFormation(kind) {
+  const layout=trainLayout(kind),family=layout.spec.family,body=bodySpec(family),figures=family==='at300'?FIGURES:EMU_FIGURES[family];
+  const cars=layout.cars.map(car=>{
+    // doors are metres from the cab end of a cab car (the rear cab car counts back from its end) or from the car's start (web/src/train.ts buildCar)
+    const base=car.cab==='rear'?car.end:car.start,dir=car.cab==='rear'?-1:1;
+    return {index:car.index,type:car.type,length:car.length,start:car.start,end:car.end,cab:car.cab,bogies:[...car.bogies],motor:[...car.motor],
+      pantograph:car.pantograph?[...car.pantograph]:null,doors:carPlan(car,family).doors.map(s=>base+dir*s)};
+  });
+  const roofTop=body.crown+body.coverHeight;
+  const lengthFigures=[...new Set(layout.cars.map(c=>family==='at300'?(c.cab?'drivingCarLength':'intermediateCarLength'):(c.cab&&figures.drivingCarLength?'drivingCarLength':'carLength')))];
+  const roofFigures=family==='at300'?['roofEdgeHeight','roofCoverHeight']:['height'];
+  return {kind,family,length:layout.length,half:body.half,crown:body.crown,coverHeight:body.coverHeight,roofTop,doorWidth:body.doorWidth,cars,
+    dimensions:{
+      lengthM:{value:layout.length,basis:basisOf(lengthFigures.map(n=>figures[n].basis)),figures:lengthFigures.map(n=>`${family==='at300'?'FIGURES':`EMU_FIGURES.${family}`}.${n}`)},
+      widthM:{value:2*body.half,basis:figures.bodyWidth.basis,figures:[`${family==='at300'?'FIGURES':`EMU_FIGURES.${family}`}.bodyWidth`],figureM:figures.bodyWidth.value},
+      roofTopM:{value:roofTop,basis:basisOf(roofFigures.map(n=>figures[n].basis)),figures:roofFigures.map(n=>`${family==='at300'?'FIGURES':`EMU_FIGURES.${family}`}.${n}`),
+        figureM:family==='at300'?FIGURES.roofEdgeHeight.value+FIGURES.roofCoverHeight.value:figures.height.value}},
+  };
+}
+
+export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
+const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--timeout-seconds'];
+/** `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--timeout-seconds N]`. */
+export function parseCatalogueArgs(args) {
+  const options=new Map();
+  for(let i=0;i<args.length;i+=2) {
+    const name=args[i],value=args[i+1];
+    if(!CATALOGUE_FLAGS.includes(name))throw new Error(`unknown catalogue option ${name}`);
+    if(options.has(name))throw new Error(`repeated catalogue option ${name}`);
+    if(value===undefined||value===''||CATALOGUE_FLAGS.includes(value))throw new Error(`missing value for ${name}`);
+    options.set(name,value);
+  }
+  if(options.get('--mode')!=='catalogue')throw new Error('--mode must be catalogue');
+  for(const name of ['--dist','--out'])if(!options.has(name))throw new Error(`missing ${name}`);
+  const list=(name,allowed)=>{
+    if(!options.has(name))return [...allowed];
+    const items=options.get(name).split(',');
+    for(const item of items) {
+      if(!allowed.includes(item))throw new Error(`${name}: unknown ${item||'(empty)'}; expected ${allowed.join(',')}`);
+      if(items.indexOf(item)!==items.lastIndexOf(item))throw new Error(`${name}: ${item} repeated`);
+    }
+    return allowed.filter(item=>items.includes(item));
+  };
+  const seconds=Number(options.get('--timeout-seconds')??CATALOGUE_TIMEOUT_S.default);
+  if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
+  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views:list('--views',VIEW_IDS),chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,timeoutMs:seconds*1000};
+}
+
+/** Host and build identity for every sidecar: the machine, the git head and the exact page that was photographed. */
+export function hostInfo(run=execFileSync,cwd=ROOT) {
+  const ask=(command,args)=>{try{return String(run(command,args,{cwd,encoding:'utf8',stdio:['ignore','pipe','ignore'],timeout:10000})).trimEnd();}catch{return null;}};
+  const status=ask('git',['status','--porcelain']);
+  return {os:{platform:os.platform(),release:os.release(),arch:os.arch()},macModel:ask('sysctl',['-n','hw.model']),
+    git:{head:ask('git',['rev-parse','HEAD']),dirty:status===null?null:status.length>0,dirtyPaths:status===null?null:status.split('\n').filter(Boolean).slice(0,20)}};
+}
+/** The build hash: sha256 of dist/index.html and the name (and hash) of the main module script it loads. */
+export async function buildHash(dist) {
+  const index=await readFile(path.join(dist,'index.html')),asset=/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+\.js)"/.exec(index.toString('utf8'))?.[1];
+  if(!asset)throw new Error('dist/index.html loads no module script');
+  const file=path.resolve(dist,asset.replace(/^(?:\.\/|\/kings-cross\/|\/)/,''));
+  if(!file.startsWith(dist+path.sep))throw new Error('main asset escapes dist');
+  return {indexSha256:sha256(index),mainAsset:path.basename(file),mainAssetSha256:sha256(await readFile(file))};
+}
+
+/** What changed between a shot and the same frame with the subject hidden: which pixels differ (`mask`), how many, and their bounding box. */
+export function pixelDiff(shot,baseline,{threshold=10}={}) {
+  const a=readPng(shot),b=readPng(baseline);
+  if(a.width!==b.width||a.height!==b.height||a.channels!==b.channels)throw new Error('shot and baseline differ in size');
+  const {width,height,channels}=a,mask=new Uint8Array(width*height);let changed=0,x0=width,x1=-1,y0=height,y1=-1;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
+    const i=(y*width+x)*channels;
+    if(Math.abs(a.pixels[i]-b.pixels[i])>threshold||Math.abs(a.pixels[i+1]-b.pixels[i+1])>threshold||Math.abs(a.pixels[i+2]-b.pixels[i+2])>threshold) {
+      mask[y*width+x]=1;changed++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+    }
+  }
+  return {width,height,changed,mask,fraction:changed/(width*height),bbox:changed?{x0,y0,x1,y1}:null,widthFraction:changed?(x1-x0+1)/width:0,marginLeftPx:changed?x0:null,marginRightPx:changed?width-1-x1:null};
+}
+/** Of the surface points the geometry check says are seen, how many land on (or next to) a pixel that differs from the empty stage. `ndc` are [x, y] in -1..1. */
+export function sampleHits(diff,ndc) {
+  let hits=0;
+  for(const [nx,ny] of ndc) {
+    const px=Math.round((nx+1)/2*diff.width-.5),py=Math.round((1-ny)/2*diff.height-.5);let found=false;
+    for(let dy=-1;dy<=1&&!found;dy++)for(let dx=-1;dx<=1;dx++){const x=px+dx,y=py+dy;if(x>=0&&y>=0&&x<diff.width&&y<diff.height&&diff.mask[y*diff.width+x]){found=true;break;}}
+    if(found)hits++;
+  }
+  return {hits,total:ndc.length,rate:ndc.length?hits/ndc.length:0};
+}
+/**
+ * Is the picture a picture of the specimen? Some pixels must differ from the empty stage, and at least half of the surface points the geometry
+ * check saw must fall on pixels that differ: the sidecar may not claim a clear view of an image that does not show it. A whole-car or whole-train
+ * view (it has `extents`) must also show the subject within 84% of the width, so 8% margins each side, give or take a few pixels. `subject` is the diff
+ * of the subject alone (the car for V04; the train, i.e. `diff`, for V05 and the plan).
+ */
+export function pixelVerdict(view,diff,subject=diff,inspection=null,{minChanged=30,minHitRate=.5,tolerancePx=3}={}) {
+  if(!(diff.changed>=minChanged))return {ok:false,reason:`picture shows no specimen: only ${diff.changed} pixels differ from the empty stage (need ${minChanged})`};
+  let hits=null;
+  if(inspection?.sampleNdc?.length) {
+    hits=sampleHits(diff,inspection.sampleNdc);
+    if(hits.rate<minHitRate)return {ok:false,reason:`picture does not show the checked surface: ${hits.hits} of ${hits.total} seen sample points sit on pixels that differ from the empty stage`};
+  }
+  if(view.extents) {
+    const w=diff.width,limit=CATALOGUE.fitFraction*w+tolerancePx;
+    if(!subject.bbox)return {ok:false,reason:'subject alone leaves no pixels'};
+    if(subject.bbox.x1-subject.bbox.x0+1>limit)return {ok:false,reason:`subject spans ${subject.bbox.x1-subject.bbox.x0+1} of ${w} px, over the 84% limit`};
+    if(Math.min(subject.marginLeftPx,subject.marginRightPx)<(1-CATALOGUE.fitFraction)/2*w-tolerancePx-1e-9)return {ok:false,reason:`subject margin ${Math.min(subject.marginLeftPx,subject.marginRightPx)} px is under 8% of the width`};
+  }
+  return {ok:true,changedPixels:diff.changed,changedFraction:diff.fraction,bbox:diff.bbox,...(hits?{sampleHits:hits}:{}),...(view.extents?{subjectBbox:subject.bbox,subjectWidthFraction:subject.widthFraction}:{})};
+}
+
+/**
+ * Run the planned views of one kind through `steps`. The sequence for each view is: inspect (the geometry check, never moves the camera), then
+ * shoot (picture), then verify (pixels), then publish. A view that fails inspect or verify becomes a GAP with the reason: it is recorded, not
+ * retried, and not replaced by another pose. A view the model plan already marked GAP or N/A is passed through. A thrown error is a defect in the
+ * run itself, not in the view, and stops the kind.
+ */
+export async function runCatalogueViews(views,{inspect,shoot,verify,publish,check=()=>{},unavailable=()=>null,now=()=>performance.now()}) {
+  const results=[];
+  for(const view of views) {
+    check();
+    if(view.status!=='OK'){results.push({view,status:view.status,reason:view.reason,attempts:0});continue;}
+    const missing=unavailable(view);
+    if(missing){results.push({view,status:'GAP',reason:missing,functional:true,attempts:0});continue;}
+    const t0=now(),inspection=await inspect(view),t1=now();
+    if(!inspection?.clear){results.push({view,status:'GAP',reason:inspection?.reason??'view not clear',blocker:inspection?.blocker??null,inspection,attempts:1,timingsMs:{inspect:t1-t0}});continue;}
+    const picture=await shoot(view,inspection),t2=now(),verdict=await verify(view,picture,inspection),t3=now();
+    const timingsMs={inspect:t1-t0,shoot:t2-t1,verify:t3-t2};
+    if(!verdict.ok){results.push({view,status:'GAP',reason:verdict.reason,inspection,attempts:1,timingsMs});continue;}
+    results.push({view,status:'OK',reason:null,inspection,verdict,file:await publish(view,picture,inspection,verdict,timingsMs),attempts:1,timingsMs});
+  }
+  return results;
+}
+
+/** Poses frozen by an earlier run: the `catalogue-manifest.json` it wrote. A later run reuses these numbers, or refuses. */
+export function loadFrozenPoses(text) {
+  let document;try{document=JSON.parse(text);}catch(error){throw new Error(`frozen poses are not JSON: ${error.message}`);}
+  if(document?.rubric!==CATALOGUE.rubric||document.schema!=='kx-catalogue-manifest/1'||!document.kinds||typeof document.kinds!=='object')
+    throw new Error(`frozen poses must be a ${CATALOGUE.rubric} catalogue manifest (kx-catalogue-manifest/1)`);
+  return document;
+}
+/**
+ * Every way the freshly derived poses differ from the frozen ones: a view or kind missing from the frozen file, or a number that moved by more
+ * than `tol`. The capture refuses to run on any difference. It never quietly uses the new pose in place of the frozen one.
+ */
+export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
+  const drifts=[];
+  for(const [kind,plan] of plans) {
+    const held=frozen.kinds[kind];
+    if(!held){drifts.push({kind,reason:'kind missing from the frozen poses'});continue;}
+    for(const view of plan.views) {
+      const entry=held.views?.[view.suffix];
+      if(!entry?.plan){drifts.push({kind,view:view.suffix,reason:'view missing from the frozen poses'});continue;}
+      const at=poseDifference(poseOf(view),entry.plan,tol);
+      if(at!==null)drifts.push({kind,view:view.suffix,reason:'pose differs from the frozen pose',at});
+    }
+  }
+  return drifts;
+}
+/** The planned view with the frozen numbers in place of the derived ones (equal within tolerance once frozenPoseDrift passes). */
+export function freezeView(view,entry) {
+  if(!entry?.plan)return view;
+  const p=entry.plan;
+  return {...view,frame:p.frame,eye:p.eye,target:p.target,fov:p.fov,up:p.up,near:p.near,region:p.region,
+    ...(p.extents?{extents:p.extents}:{}),rotation:view.rotation&&{...view.rotation,rotationY:p.rotationY}};
+}
+
+/** Runs in the page (installed with toString, like manualFrames). The stage and the one-view-at-a-time helpers the capture calls; window.__cat holds {T,F}. */
+export function catalogueDriver() {
+  const cat=window.__cat,k=window.__kx;
+  const label=text=>{let el=document.getElementById('capture-train-label');if(!el){el=document.createElement('div');el.id='capture-train-label';el.style.cssText='position:fixed;top:8px;left:8px;padding:6px 8px;background:#fff;color:#172430;font:14px monospace;z-index:999';document.body.append(el);}el.textContent=text;};
+  const frame=()=>window.__signalFrame(0);
+  const names=list=>list.map(o=>({name:o.name||'',type:o.type}));
+  const disposeGeometries=object=>object.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+  cat.begin=(kind,length)=>{
+    const {T,F}=cat;
+    if(cat.state)throw new Error('a specimen is already on stage');
+    const group=k.evidenceBuildTrain(kind),hidden=F.hideSceneryForStage(k.scene),stage=F.buildCatalogueStage(T,{length});
+    k.scene.add(stage);k.scene.add(group);
+    // the page's title and the map-data credit describe scenery the stage hides, so they come off the pictures too (DOM only; restored by end)
+    const dom=[...document.querySelectorAll('h1, .hud')].map(el=>({el,display:el.style.display,name:el.tagName.toLowerCase()+(el.className?'.'+el.className:'')}));
+    for(const d of dom)d.el.style.display='none';
+    cat.state={kind,length,group,stage,hidden,dom,saved:null,ground:{heightAt:()=>F.CATALOGUE.groundY}};
+    return {hidden:names(hidden),hiddenDom:dom.map(d=>d.name),stage:stage.userData.levels,children:k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}))};
+  };
+  cat.view=(view,text)=>{
+    const {T,F}=cat,s=cat.state;
+    F.placeStageSpecimen(s.group,s.stage,view.rotation.rotationY);
+    const pose=F.setCatalogueView(T,k.camera,k.controls,s.group,view);
+    if(view.capability){if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');k.setTrainLampState(s.group,view.capability.state);}
+    label(text);frame();
+    const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
+    if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
+    const info={calls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles};
+    const inspection=F.inspectCatalogueView(T,k.scene,k.camera,s.group,s.ground,view);
+    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text};
+  };
+  /** 'empty' hides the specimen, 'car:N' shows only car N, 'all' restores; each draws one frame. */
+  cat.isolate=mode=>{
+    const s=cat.state,g=s.group;
+    if(!s.saved)s.saved=g.children.map(o=>o.visible);
+    if(mode==='all'){g.visible=true;g.children.forEach((o,i)=>{o.visible=s.saved[i];});}
+    else if(mode==='empty')g.visible=false;
+    else{const n=Number(mode.slice(4));g.visible=true;g.children.forEach((o,i)=>{o.visible=s.saved[i]&&o.name==='car-'+n;});}
+    frame();return true;
+  };
+  cat.end=()=>{
+    const s=cat.state;if(!s)return false;
+    k.scene.remove(s.group);k.scene.remove(s.stage);disposeGeometries(s.group);disposeGeometries(s.stage);
+    for(const o of s.hidden)o.visible=true;
+    for(const d of s.dom)d.el.style.display=d.display;
+    document.getElementById('capture-train-label')?.remove();
+    k.camera.up.set(0,1,0);cat.state=null;frame();return true;
+  };
+  return true;
+}
+
+/** Serve the built page and the two capture modules; the Almanac back pill is left out so it cannot cover a picture. */
+function catalogueServer(root,dist) {
+  return createServer(async(req,res)=>{try{
+    const u=new URL(req.url,'http://127.0.0.1');let file;
+    if(u.pathname==='/favicon.ico'){res.writeHead(204).end();return;}
+    if(u.pathname==='/capture/train-framing.mjs')file=path.join(root,'kings-cross-src/tools/train-framing.mjs');
+    else if(u.pathname==='/capture/three.core.js')file=path.join(root,'kings-cross-src/node_modules/three/build/three.core.js');
+    else if(['/kings-cross/','/kings-cross'].includes(u.pathname))file=path.join(dist,'index.html');
+    else if(u.pathname.startsWith('/kings-cross/')){file=path.resolve(dist,decodeURIComponent(u.pathname.slice(13)));if(!file.startsWith(dist+path.sep))throw new Error('path escape');}
+    if(!file){res.writeHead(404).end();return;}
+    const bytes=await readFile(file);
+    res.writeHead(200,{'content-type':/\.m?js$/.test(file)?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':file.endsWith('.json')?'application/json':'application/octet-stream','cache-control':'no-store'}).end(bytes);
+  }catch{res.writeHead(404).end();}});
+}
+export const CATALOGUE_URL_QUERY='trains=none&board=0&tooltip=0&signals=0';
+const SUN_LIGHT=lights=>lights.find(l=>l.type==='DirectionalLight'&&Math.abs(l.intensity-1.7)<1e-9);
+
+/** The sidecar of one picture: everything needed to reproduce it and to judge it without opening the page. */
+export function catalogueSidecar({kind,view,file,formation,session,host,build,state,result,timings}) {
+  const live=result.live;
+  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-sidecar/1',kind,file,
+    view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,capability:view.capability??null},
+    renderer:session.renderer,host:host.os,macModel:host.macModel,git:host.git,build,
+    viewport:{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,
+      canvas:session.size,devicePixelRatio:session.devicePixelRatio},
+    renderState:{toneMapping:session.toneMapping,toneMappingExposure:session.toneMappingExposure,outputColorSpace:session.outputColorSpace,background:session.background,fog:session.fog,lights:session.lights},
+    pose:{trainLocal:{eye:view.eye,target:view.target,fov:view.fov,up:view.up,near:view.near,region:view.region,...(view.extents?{extents:view.extents}:{})},
+      world:{position:live.pose.position,target:live.pose.target,fov:live.pose.fov,aspect:live.pose.aspect,near:live.pose.near,far:live.pose.far,up:live.pose.up,positionErrorM:live.pose.positionErrorM}},
+    specimen:{groupWorldPosition:live.placement.position,rotationY:live.placement.rotationY,rotationRule:view.rotation},
+    formation:{kind,family:formation.family,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
+    dimensions:formation.dimensions,
+    visibility:live.inspection,pixels:result.verdict,
+    hiddenSceneNames:state.hidden,hiddenDom:state.hiddenDom,stage:state.stage,label:live.labelText,
+    costs:{trainStatic:live.costs,rendererInfo:live.info},timings};
+}
+
+export async function catalogueMain(args) {
+  const opts=parseCatalogueArgs(args),root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
+  const dist=await realpath(path.resolve(opts.dist)),out=path.resolve(opts.out);
+  const inside=p=>{const r=path.relative(scratch,p);return !r.startsWith('..')&&!path.isAbsolute(r);};
+  if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
+  for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
+  const stageIds=opts.views.filter(id=>id!=='V10');
+  const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id))}];}));
+  let frozen=null,frozenSha=null;
+  if(opts.poses) {
+    const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
+    const drifts=frozenPoseDrift(frozen,plans);
+    if(drifts.length)throw new Error(`refusing to capture: ${drifts.length} pose(s) differ from ${opts.poses}: ${drifts.slice(0,8).map(d=>`${d.kind}/${d.view??'*'} ${d.reason}${d.at?` at ${d.at}`:''}`).join('; ')}`);
+    for(const plan of plans.values())plan.views=plan.views.map(v=>freezeView(v,frozen.kinds[plan.kind].views[v.suffix]));
+  }
+  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,plan.views.reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
+  if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,posesFrozen:!!frozen,planned:counts}));return;}
+  const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
+  await mkdir(out,{recursive:true});
+  const host=hostInfo(),build=await buildHash(dist),started=performance.now();
+  let chrome,cdp,profile,server,cleanup,fatal,session;
+  const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
+  const manifest={rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated:new Date().toISOString(),viewport:CATALOGUE.viewport,
+    sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
+      text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose."},
+    host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,kinds:{}};
+  const summary={kinds:{},timingsMs:{}};
+  try {
+    server=catalogueServer(root,dist);
+    await new Promise((r,j)=>{server.once('error',j);server.listen(0,'127.0.0.1',r);});
+    profile=await mkdtemp(path.join(scratch,'train-catalogue-chrome-'));
+    chrome=spawn(chromePath,chromeArgs(profile),{detached:true,stdio:['ignore','ignore','ignore','pipe','pipe']});
+    lifetime.attach(chrome);
+    cdp=cdpPipe(chrome);const {targetId}=await cdp.send('Target.createTarget',{url:'about:blank'}),{sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:true});
+    const send=(m,p)=>{lifetime.check();return cdp.send(m,p,sessionId);};
+    const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.exception?.description??r.exceptionDetails.text);return r.result.value;};
+    await send('Page.enable');await send('Runtime.enable');
+    await send('Emulation.setDeviceMetricsOverride',{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,mobile:false});
+    await send('Page.addScriptToEvaluateOnNewDocument',{source:`(${manualFrames.toString()})();window.__captureDocument=location.href;`});
+    const url=`http://127.0.0.1:${server.address().port}/kings-cross/?${CATALOGUE_URL_QUERY}`;
+    await send('Page.navigate',{url});
+    for(const deadline=performance.now()+30000;;){
+      let ready=false;try{ready=await evaluate(`window.__captureDocument===${JSON.stringify(url)}&&!!window.__kx?.ready&&typeof window.__kx.evidenceBuildTrain==='function'`);}catch(error){if(!/context|navigat/i.test(error.message))throw error;}
+      if(ready)break;if(performance.now()>deadline)throw new Error('page startup timed out after 30 s');await new Promise(r=>setTimeout(r,50));
+    }
+    session=await evaluate(`(async()=>{const k=window.__kx;await k.cityLoaded;window.__signalFrame(0);const T=await import('/capture/three.core.js'),F=await import('/capture/train-framing.mjs');window.__cat={T,F,state:null};
+      const g=k.renderer.getContext(),e=g.getExtension('WEBGL_debug_renderer_info'),c=k.renderer.domElement;
+      return {renderer:e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),toneMapping:k.renderer.toneMapping,toneMappingExposure:k.renderer.toneMappingExposure,outputColorSpace:k.renderer.outputColorSpace,
+        background:k.scene.background?.getHexString?.()??null,fog:k.scene.fog?{type:k.scene.fog.type,near:k.scene.fog.near,far:k.scene.fog.far,color:k.scene.fog.color.getHexString()}:null,
+        size:[c.width,c.height],devicePixelRatio:window.devicePixelRatio,inner:[innerWidth,innerHeight],aspect:k.camera.aspect,lampApi:typeof k.setTrainLampState==='function',
+        lights:k.scene.children.filter(o=>o.isLight).map(o=>({name:o.name||'',type:o.type,intensity:o.intensity,color:o.color.getHexString(),position:o.position.toArray()}))};})()`);
+    if(!/Metal/i.test(session.renderer)||/SwiftShader|llvmpipe|software/i.test(session.renderer))throw new Error(`real Metal GPU required: ${session.renderer}`);
+    if(session.size[0]!==CATALOGUE.viewport.width||session.size[1]!==CATALOGUE.viewport.height||session.devicePixelRatio!==1||Math.abs(session.aspect-CATALOGUE.aspect)>1e-9)throw new Error(`page viewport is ${session.size.join('x')} at ${session.devicePixelRatio}x, aspect ${session.aspect}; need ${CATALOGUE.viewport.width}x${CATALOGUE.viewport.height} at 1x`);
+    const sun=SUN_LIGHT(session.lights);
+    if(!sun||sun.position.some((v,i)=>Math.abs(v-CATALOGUE.sunPosition[i])>1e-9))throw new Error(`the page sun is not at ${CATALOGUE.sunPosition}: the sun-bearing rule is stale`);
+    await evaluate(`(${catalogueDriver.toString()})()`);
+    const shoot=async()=>Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64');
+    const publish=async(file,bytes,sidecar)=>{await writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});await writeFile(path.join(out,file+'.json'),JSON.stringify(sidecar,null,2)+'\n',{flag:'wx',mode:0o600});return file;};
+    for(const [kind,plan] of plans) {
+      lifetime.check();const kindStart=performance.now();
+      const state=await evaluate(`window.__cat.begin(${JSON.stringify(kind)},${plan.formation.length})`);
+      const entries={};
+      try {
+        const live=new Map();
+        const results=await runCatalogueViews(plan.views,{
+          check:()=>lifetime.check(),
+          unavailable:view=>view.capability&&!session.lampApi?view.capability.reason:null,
+          inspect:async view=>{
+            const text=`${kind} catalogue specimen on neutral stage - ${view.id} ${view.suffix}`;
+            const r=await evaluate(`window.__cat.view(${JSON.stringify(view)},${JSON.stringify(text)})`);live.set(view,r);return r.inspection;
+          },
+          shoot:async view=>{
+            const shot=await shoot();
+            await evaluate(`window.__cat.isolate('empty')`);const baseline=await shoot();
+            let subject=null;
+            if(view.extents?.scope==='car'){await evaluate(`window.__cat.isolate('car:${view.extents.car}')`);subject=await shoot();}
+            await evaluate(`window.__cat.isolate('all')`);
+            return {shot,baseline,subject};
+          },
+          verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
+          publish:async(view,picture,inspection,verdict,timingsMs)=>{
+            const file=`${kind}-${view.suffix}.png`;
+            return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs}));
+          },
+        });
+        for(const r of results)entries[r.view.suffix]=manifestEntry(r);
+      } finally {await evaluate('window.__cat.end()');}
+      manifest.kinds[kind]={formation:{family:plan.formation.family,lengthM:plan.formation.length,dimensions:plan.formation.dimensions,cars:plan.formation.cars},views:entries};
+      const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
+      summary.kinds[kind]=tally;summary.timingsMs[kind]=Math.round(performance.now()-kindStart);
+      console.log(`${kind}: ${JSON.stringify(tally)} in ${(summary.timingsMs[kind]/1000).toFixed(1)} s`);
+    }
+  }catch(error){fatal={reason:error.message,stack:error.stack};}
+  finally{cdp?.close();cleanup=await cleanupCaptureBrowser(chrome,profile);lifetime.dispose();server?.closeAllConnections();if(server?.listening)await new Promise(r=>server.close(r));}
+  const totalMs=Math.round(performance.now()-started);
+  await writeFile(path.join(out,'catalogue-manifest.json'),JSON.stringify(manifest,null,2)+'\n',{flag:'wx',mode:0o600});
+  await writeFile(path.join(out,'captures.json'),JSON.stringify({rubric:CATALOGUE.rubric,mode:'catalogue',renderer:session?.renderer??null,kinds:opts.kinds,views:opts.views,summary,totalMs,cleanup,fatal,stopped:lifetime.reason(),
+    posesFrom:manifest.posesFrom,host:host.os,macModel:host.macModel,git:host.git,build},null,2)+'\n',{flag:'wx',mode:0o600});
+  console.log(JSON.stringify({catalogue:true,out,summary,totalMs,fatal:fatal?.reason??null,cleanup}));
+  process.exitCode=lifetime.reason()?process.exitCode:fatal?1:0;
+}
+/** One view's line in the manifest: the frozen pose that was derived, and what became of it. */
+export function manifestEntry(result) {
+  const {view}=result;
+  return {id:view.id,suffix:view.suffix,plan:poseOf(view),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,capability:view.capability??null,
+    outcome:{status:result.status,reason:result.reason??null,file:result.file??null,blocker:result.blocker??null,
+      ...(result.status==='GAP'&&result.inspection?{inspection:result.inspection}:{}),
+      ...(result.status==='OK'?{checkedSamples:result.inspection.checkedSamples,visibleFraction:result.inspection.visibleFraction,pixels:result.verdict}:{})}};
+}
+
 export async function main(args=process.argv.slice(2)) {
+  for(let i=0;i<args.length;i+=2)if(args[i]==='--mode'&&args[i+1]==='catalogue')return catalogueMain(args);
   const options=new Map();for(let i=0;i<args.length;i+=2){if(!['--motion','--dimensions','--dist','--out','--chrome','--sclass','--timeout-seconds','--mode'].includes(args[i])||!args[i+1]||options.has(args[i]))throw new Error('usage: train-capture.mjs --motion <axis05.json> --dimensions <axis03.json> --dist <dist> --out <.scratch/shots> [--mode portal] [--chrome none|path]');options.set(args[i],args[i+1]);}
   const required=n=>{if(!options.has(n))throw new Error(`missing ${n}`);return path.resolve(options.get(n));};
   const root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
   const reportFile=required('--motion');let report=JSON.parse(await readFile(reportFile,'utf8')),dimensions=JSON.parse(await readFile(required('--dimensions'),'utf8'));
-  const portalMode=options.get('--mode')==='portal';if(options.has('--mode')&&!portalMode)throw new Error('--mode must be portal');
+  const portalMode=options.get('--mode')==='portal';if(options.has('--mode')&&!portalMode)throw new Error('--mode must be portal or catalogue');
   const inputs=report.reproducibility.inputHashes;
   const schedulePolicy=await frozenSchedulePolicy(inputs.schedules);
   const anchorsBytes=await frozenBytes(inputs.anchors),graphBytes=await frozenBytes(inputs.graph),recordings=await Promise.all(inputs.recordings.map(frozenBytes));
@@ -332,7 +711,7 @@ export async function main(args=process.argv.slice(2)) {
     }catch{res.writeHead(404).end();}});
     await new Promise((r,j)=>{server.once('error',j);server.listen(0,'127.0.0.1',r);});
     profile=await mkdtemp(path.join(scratch,'train-capture-chrome-'));
-    chrome=spawn(chromePath,['--headless=new','--remote-debugging-pipe',`--user-data-dir=${profile}`,'--no-sandbox','--no-first-run','--no-default-browser-check','--disable-breakpad','--disable-crash-reporter','--noerrdialogs','--use-mock-keychain','--password-store=basic','--no-proxy-server','--ignore-gpu-blocklist','--use-angle=metal','--enable-gpu-rasterization','about:blank'],{detached:true,stdio:['ignore','ignore','ignore','pipe','pipe']});
+    chrome=spawn(chromePath,chromeArgs(profile),{detached:true,stdio:['ignore','ignore','ignore','pipe','pipe']});
     lifetime.attach(chrome);
     cdp=cdpPipe(chrome);const {targetId}=await cdp.send('Target.createTarget',{url:'about:blank'}),{sessionId}=await cdp.send('Target.attachToTarget',{targetId,flatten:true});
     const send=(m,p)=>{lifetime.check();return cdp.send(m,p,sessionId);};

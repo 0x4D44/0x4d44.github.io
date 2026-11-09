@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as T from 'three';
-import {followTrainCamera,inspectTrainFrame} from '../train-framing.mjs';
+import {followTrainCamera,inspectTrainFrame,setCaptureView} from '../train-framing.mjs';
 function fixture(){
  const scene=new T.Scene(),group=new T.Group(),coach=new T.Group();coach.name='car-0';group.add(coach);scene.add(group);
  const shell=new T.Mesh(new T.BoxGeometry(2.7,3.1,26,1,4,26),new T.MeshBasicMaterial());shell.name='body-shell';shell.position.set(0,2,13);coach.add(shell);
@@ -23,4 +23,15 @@ test('bounded follow alternatives clear platform furniture from above while keep
   const view=followTrainCamera(T,f.camera,f.controls,f.group,[0,0],f.ground,candidate);
   assert.equal(inspectTrainFrame(T,f.scene,f.camera,view.coach,f.ground,{minScreenSpan:.3,minVerticalSpan:.08}).clear,false);
  }
+});
+test('a capture view keeps the 0.03 m near plane and +y up unless it is given others, and a plan view can set both',()=>{
+ const f=fixture();
+ setCaptureView(T,f.camera,f.controls,[0,5,5],[0,0,0],40);
+ assert.equal(f.camera.near,.03);assert.deepEqual(f.camera.up.toArray(),[0,1,0]);assert.equal(f.camera.fov,40);assert.deepEqual(f.camera.position.toArray(),[0,5,5]);
+ setCaptureView(T,f.camera,f.controls,[0,50,0],[0,0,0],50,[1,0,0],.5);
+ assert.equal(f.camera.near,.5);assert.deepEqual(f.camera.up.toArray(),[1,0,0]);assert.deepEqual(f.controls.target.toArray(),[0,0,0]);
+ // looking straight down with +x as image up: the camera's right is +z
+ f.camera.updateMatrixWorld(true);assert.ok(Math.abs(new T.Vector3().setFromMatrixColumn(f.camera.matrixWorld,0).z-1)<1e-9);
+ setCaptureView(T,f.camera,f.controls,[0,5,5],[0,0,0],40);
+ assert.deepEqual(f.camera.up.toArray(),[0,1,0],'the next view without an up returns to +y');assert.equal(f.camera.near,.03);
 });
