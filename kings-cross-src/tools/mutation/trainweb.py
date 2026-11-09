@@ -1,5 +1,5 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, train-livery.ts, livery.ts) against
-web/tests/train.test.ts, web/tests/train-detail.test.ts and web/tests/train-livery.test.ts.
+web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts and web/tests/train-lamps.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
 load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
@@ -16,7 +16,7 @@ P = "web/src/train-parts.ts"
 N = "web/src/train-nose.ts"
 L = "web/src/livery.ts"
 LV = "web/src/train-livery.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts"]
 M = [
     # --- the train: pantograph, bogies, doors, roof covers, windows -----------------------------------------
     ("pantograph at the start of its span", "p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);", "p.position.set(0, spec.crown, car.pantograph[0]);"),
@@ -54,6 +54,27 @@ M = [
     ("inner noses not found", "const interiorCab = cabIsInterior(car, layout);", "const interiorCab = false;"),
     ("a hidden coupler drawn as a gangway coupler", "m.userData = interiorCab ? { end: car.cab, nose: true } :", "m.userData = interiorCab ? { end: car.cab, nose: false } :"),
     ("coupler cover seam on the loft vertex (zero-area fan)", "if (inside(a) !== inside(b) && a[axis] !== value && b[axis] !== value) {", "if (inside(a) !== inside(b)) {"),
+    # --- the lamp state: which lenses a cab end lights, and what the switch touches ---------------------------------
+    ("lamps: a head end lights its red lenses too", "const lit = mode === role;", "const lit = mode !== 'off';"),
+    ("lamps: an unlit lens still glows after dark", "glow: lit ? 2 : 0 };", "glow: 2 };"),
+    ("lamps: head and tail colours swapped", "hex: role === 'head' ? (lit ? LENS.headOn : LENS.headOff) : (lit ? LENS.tailOn : LENS.tailOff)", "hex: role === 'tail' ? (lit ? LENS.headOn : LENS.headOff) : (lit ? LENS.tailOn : LENS.tailOff)"),
+    ("lamps: the service state leads with red", "export const SERVICE_LAMPS: TrainLampState = { front: 'head', rear: 'tail' };", "export const SERVICE_LAMPS: TrainLampState = { front: 'tail', rear: 'head' };"),
+    ("lamps: a coupled unit's inner end is built lit", "const lampMode: TrainLampMode = interiorCab ? 'off' : SERVICE_LAMPS[car.cab === 'rear' ? 'rear' : 'front'];", "const lampMode: TrainLampMode = SERVICE_LAMPS[car.cab === 'rear' ? 'rear' : 'front'];"),
+    ("lamps: the switch lights a coupled unit's inner end", "if (!lamps || lamps.interior) return;", "if (!lamps) return;"),
+    ("lamps: the switch reads the front state for both ends", "lensLook(l.role, state[lamps.end])", "lensLook(l.role, state.front)"),
+    ("lamps: the switch writes the template's own geometry (no copy)", "let geometry = ownLampGeometry.get(mesh);", "let geometry: THREE.BufferGeometry | undefined = current;"),
+    ("lamps: the copy shares the colour buffer", "name === 'color' || name === 'aGlow' ? attribute.clone() : attribute", "name === 'aGlow' ? attribute.clone() : attribute"),
+    ("lamps: the copy shares the glow buffer", "name === 'color' || name === 'aGlow' ? attribute.clone() : attribute", "name === 'color' ? attribute.clone() : attribute"),
+    ("lamps: the copy has its own position buffer (the memory it was to save)", "name === 'color' || name === 'aGlow' ? attribute.clone() : attribute", "attribute.clone()"),
+    ("lamps: a state already shown is copied anyway", "    if (same) return;\n", "    if (false as boolean) return;\n"),
+    ("lamps: the colour buffer is not flagged for upload", "    rgb.needsUpdate = true;\n", ""),
+    ("lamps: the glow buffer is not flagged for upload", "    glow.needsUpdate = true;\n", ""),
+    ("lamps: the state is not recorded on the train", "  train.userData.lampState = { front: state.front, rear: state.rear };\n", ""),
+    ("lamps: a lens range stops a triangle short", "lampLenses.push({ role, v0, v1: detail.glow.length });", "lampLenses.push({ role, v0, v1: detail.glow.length - 3 });"),
+    ("lamps: a lens range starts at the mesh's first vertex", "const v0 = detail.glow.length;\n      detail.emit = look.glow;", "const v0 = 0;\n      detail.emit = look.glow;"),
+    ("lamps: the switch writes the colour but not the glow tag", "        glow.setX(v, look.glow);\n", ""),
+    ("lamps: the switch writes the glow tag but not the colour", "        rgb.setXYZ(v, c.r, c.g, c.b);\n", ""),
+    ("lamps: the cab cars record no lamps", "if (car.cab) detailMesh.userData.lamps = {", "if (false as boolean) detailMesh.userData.lamps = {"),
     # --- the nose and its glass -------------------------------------------------------------------------------
     ("nose rings far apart", "const steps = 6;", "const steps = 2;", N),
     ("face not rounded", "    filletLoss: 0.26,", "    filletLoss: 0,"),

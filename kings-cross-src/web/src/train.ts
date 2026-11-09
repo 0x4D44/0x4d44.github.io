@@ -143,10 +143,76 @@ export const PANE_LIFT = { swoosh: 0.012, seal: 0.014, pane: 0.016, sky: 0.022 }
 /**
  * The lenses of a cab's lamps, lit and dark. A train in service shows white headlights at its leading end and red tail lamps at its trailing end,
  * and the other lenses unlit (an unlit headlamp is a pale reflector, an unlit tail lens a dark red); the cab ends of two coupled units show none
- * of the four. Car 0 is the leading car and the last car the trailing one (trains-live.ts walks the cars back from the leading end), so the
- * model needs no state switch: each end is built in the state it has in service. Shades approximate.
+ * of the four. Car 0 is the leading car and the last car the trailing one (trains-live.ts walks the cars back from the leading end), so a train is
+ * built in the state it has in service (`SERVICE_LAMPS`); `setTrainLampState` switches it (a stopped train's ends, a train running the other way).
+ * Shades approximate.
  */
 export const LENS = { headOn: 0xfff3c4, headOff: 0x70767e, tailOn: 0xd02020, tailOff: 0x4a1317 } as const;
+
+/** What one outer cab end's lamps show: its white lamps lit (`head`), its red lamps lit (`tail`), or all four dark (`off`). */
+export type TrainLampMode = 'head' | 'tail' | 'off';
+/** The two outer cab ends of a train: `front` is car 0's (nose at z = 0), `rear` the last car's. The cab ends of two coupled units stay dark in every state. */
+export type TrainLampState = Readonly<{ front: TrainLampMode; rear: TrainLampMode }>;
+/** The state a train is built in: white lamps at the leading end, red at the trailing end. */
+export const SERVICE_LAMPS: TrainLampState = { front: 'head', rear: 'tail' };
+/** What a lens looks like in a cab end's mode: its colour, and its glow tag (2: it glows in its own colour after dark, 0: it does not, `Soup.emit`). */
+export function lensLook(role: 'head' | 'tail', mode: TrainLampMode): { hex: number; glow: 0 | 2 } {
+  const lit = mode === role;
+  return { hex: role === 'head' ? (lit ? LENS.headOn : LENS.headOff) : (lit ? LENS.tailOn : LENS.tailOff), glow: lit ? 2 : 0 };
+}
+/** One lamp lens in a cab car's detail mesh: its role, and the vertices `[v0, v1)` of the mesh's geometry it covers (plain numbers: `userData` is copied through JSON when a train is cloned). */
+interface LampLens { role: 'head' | 'tail'; v0: number; v1: number }
+/** What a cab car's detail mesh records of its lamps (in `userData.lamps`): which end of the train it is, whether it is a coupled unit's inner end, and its lenses. */
+interface LampRecord { end: 'front' | 'rear'; interior: boolean; lenses: LampLens[] }
+/** The detail meshes `setTrainLampState` has given a geometry of their own, with that geometry: a clone of a train shares its source's geometry, and must not write to it. */
+const ownLampGeometry = new WeakMap<THREE.Mesh, THREE.BufferGeometry>();
+
+/**
+ * Set the lamps of a built train: each outer cab end shows white lamps (`head`), red lamps (`tail`) or none (`off`). The coupled units' inner cab ends
+ * stay dark. A lens is vertices of its car's one detail mesh (no mesh of its own), so this rewrites those vertices' colour and glow tag: the glow
+ * after dark is the shared `trainNight` uniform and the material is the shared `plain()` one, both untouched. The first change to a mesh gives it a
+ * geometry of its own (its position and normal buffers stay shared), so a train cloned from the same template keeps its lamps; the caller disposes
+ * that geometry with the train's. A state the lenses already show changes nothing.
+ */
+export function setTrainLampState(train: THREE.Object3D, state: TrainLampState): void {
+  train.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    const lamps = mesh.isMesh && mesh.name === 'body-detail' ? (mesh.userData.lamps as LampRecord | undefined) : undefined;
+    if (!lamps || lamps.interior) return;
+    const looks = lamps.lenses.map((l) => lensLook(l.role, state[lamps.end]));
+    const current = mesh.geometry;
+    const colour = current.getAttribute('color') as THREE.BufferAttribute;
+    const glowNow = current.getAttribute('aGlow') as THREE.BufferAttribute;
+    const same = lamps.lenses.every((l, i) => {
+      const look = looks[i] as { hex: number; glow: number };
+      const c = col(look.hex);
+      return glowNow.getX(l.v0) === look.glow && colour.getX(l.v0) === Math.fround(c.r) && colour.getY(l.v0) === Math.fround(c.g) && colour.getZ(l.v0) === Math.fround(c.b);
+    });
+    if (same) return;
+    let geometry = ownLampGeometry.get(mesh);
+    if (geometry !== current) {
+      geometry = new THREE.BufferGeometry();
+      for (const [name, attribute] of Object.entries(current.attributes)) geometry.setAttribute(name, name === 'color' || name === 'aGlow' ? attribute.clone() : attribute);
+      geometry.boundingBox = current.boundingBox?.clone() ?? null;
+      geometry.boundingSphere = current.boundingSphere?.clone() ?? null;
+      ownLampGeometry.set(mesh, geometry);
+      mesh.geometry = geometry;
+    }
+    const rgb = geometry.getAttribute('color') as THREE.BufferAttribute;
+    const glow = geometry.getAttribute('aGlow') as THREE.BufferAttribute;
+    lamps.lenses.forEach((l, i) => {
+      const look = looks[i] as { hex: number; glow: number };
+      const c = col(look.hex);
+      for (let v = l.v0; v < l.v1; v++) {
+        rgb.setXYZ(v, c.r, c.g, c.b);
+        glow.setX(v, look.glow);
+      }
+    });
+    rgb.needsUpdate = true;
+    glow.needsUpdate = true;
+  });
+  train.userData.lampState = { front: state.front, rear: state.rear };
+}
 /** The yellow of a warning panel: the shade is approximate (the LNER livery's nose front is about the same). */
 const YELLOW = 0xf2c100;
 /** The 387's gangway door leaf: a duller, orange-leaning yellow than the panels beside it (gn387_02_387121_ely, gn387_03_387123_cambridge). Approximate. */
@@ -830,6 +896,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const detail = new Soup();
   const decals = new Soup();
   const glass = new Soup();
+  const lampLenses: LampLens[] = [];
   const vUv = (y: number): number => (y - TEX_Y0) / (TEX_Y1 - TEX_Y0);
   const world = (p: V3): V3 => [p[0], p[1], Z(p[2])];
   const wn = (n: V3): V3 => [n[0], n[1], n[2] * dir];
@@ -1021,11 +1088,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     }
     // lamps: a cluster at each lower corner of the face, a headlight and a tail lamp, in a dark bezel where the family has one
     const lamps = front.lamps;
-    const lens = (cx: number, cy: number, w: number, h: number, depth: number, colour: THREE.Color): void => {
+    // the lenses are built in the state the cab end has in service (SERVICE_LAMPS; the two coupled units' inner ends dark), and each records the vertices it covers
+    // in the detail mesh, which is how `setTrainLampState` finds it again
+    const lampMode: TrainLampMode = interiorCab ? 'off' : SERVICE_LAMPS[car.cab === 'rear' ? 'rear' : 'front'];
+    const lens = (role: 'head' | 'tail', cx: number, cy: number, w: number, h: number, depth: number): void => {
       const outline = lamps.shape === 'round' ? ellipse(cx, cy, w / 2, h / 2) : roundedRect(cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2, Math.min(w, h) * 0.25, 2);
-      detail.emit = 2; // a lamp lens glows in its own colour after dark
-      detail.fan(onFace(outline, depth), faceN, colour);
+      const look = lensLook(role, lampMode);
+      const v0 = detail.glow.length;
+      detail.emit = look.glow; // a lit lens glows in its own colour after dark; an unlit one does not
+      detail.fan(onFace(outline, depth), faceN, col(look.hex));
       detail.emit = 0;
+      lampLenses.push({ role, v0, v1: detail.glow.length });
     };
     for (const sx of [-1, 1]) {
       const yh = r0.bottom + lamps.y * (r0.top - r0.bottom);
@@ -1041,8 +1114,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // (a corner radius over half the housing's height would make the two corners' arcs cross, and the fan zero-area triangles: a low housing, as the 700's, keeps a flat between them)
         detail.fan(onFace(roundedRect(bx0, bx1, by0, by1, Math.min(lamps.shape === 'round' ? 0.1 : 0.05, 0.45 * Math.min(bx1 - bx0, by1 - by0)), 3), 0.005), faceN, col(lamps.bezelColour ?? BEZEL));
       }
-      lens(cx, yh, lamps.head[0], lamps.head[1], 0.009, col(car.cab === 'front' && !interiorCab ? LENS.headOn : LENS.headOff));
-      lens(tx, ty, lamps.tail[0], lamps.tail[1], 0.009, col(car.cab === 'rear' && !interiorCab ? LENS.tailOn : LENS.tailOff));
+      lens('head', cx, yh, lamps.head[0], lamps.head[1], 0.009);
+      lens('tail', tx, ty, lamps.tail[0], lamps.tail[1], 0.009);
       const m = new THREE.Object3D();
       m.name = 'headlight';
       m.position.set(sx * xh, yh, Z(tip));
@@ -1363,6 +1436,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   shellMesh.name = 'body-shell';
   const detailMesh = new THREE.Mesh(detail.build(), plain());
   detailMesh.name = 'body-detail';
+  if (car.cab) detailMesh.userData.lamps = { end: car.cab, interior: interiorCab, lenses: lampLenses } satisfies LampRecord;
   group.add(shellMesh, detailMesh);
   if (decals.pos.length) {
     const m = new THREE.Mesh(decals.build(), decalMaterial());
@@ -1454,7 +1528,7 @@ export function buildTrain(kind: TrainKind): THREE.Group {
   const front: FrontSpec = frontOf(kind);
   const root = new THREE.Group();
   root.name = `train-${kind}`;
-  root.userData = { kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family };
+  root.userData = { kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family, lampState: { ...SERVICE_LAMPS } };
   for (const car of layout.cars) root.add(buildCar(car, { spec, front, def, kind, layout }));
   return root;
 }

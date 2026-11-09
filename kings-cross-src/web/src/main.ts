@@ -21,7 +21,7 @@ import type { TrainView } from '../../core/motion.ts';
 import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
-import { buildTrain, standTrain } from './train.ts';
+import { buildTrain, setTrainLampState, standTrain } from './train.ts';
 import { backoffMs, createLiveFeed, createReplayFeed, createScheduleFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { MotionSink, TrainFeed } from './feed.ts';
 import { loadOfflineReplay } from './offline-replay.ts';
@@ -235,7 +235,7 @@ function start(): void {
     boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
-  Object.assign(kx, { evidenceBuildTrain: buildTrain, atmosphere, weatherFeed });
+  Object.assign(kx, { evidenceBuildTrain: buildTrain, setTrainLampState, atmosphere, weatherFeed });
   const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
