@@ -4,8 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, columnMembers, columnTubeDiameter, concourseGrid, FITOUT, FITOUT_TEXT, fitOutFootprints, funnelHead, plateCentres, RANGE_FACE } from '../src/concourse.ts';
-import type { Footprint } from '../src/concourse.ts';
+import { buildConcourse, columnMembers, columnTubeDiameter, concourseGrid, FITOUT, FITOUT_TEXT, funnelHead, plateCentres, RANGE_FACE } from '../src/concourse.ts';
 import { buildWesternRange, WESTERN_RANGE } from '../src/shed.ts';
 
 // The ground-level fit-out. R-ab (conc-ab-funnel-brick-2025) and R-b (conc-b-roof-meets-range-2025-08) show: red-topped
@@ -28,6 +27,26 @@ const { centre, grid } = concourseGrid(canopy, station.pts, layout, [hotel.pts])
 const funnel = worldToShed(layout, centre);
 const pieces = fitOutFootprints(funnel.v);
 const BAY = 3.3; // half the 6.6 m clear width of a gateline bay (shed.ts, Arup 2/2012 p29)
+
+// The test's own statement of what the fit-out must fill.
+interface Footprint { kind: 'cluster' | 'totem' | 'board' | 'gate' | 'plate'; u0: number; u1: number; v0: number; v1: number; bottom: number; top: number }
+/** Where each solid piece stands, in the shed frame, given the funnel axis's v. */
+function fitOutFootprints(funnelV: number): Footprint[] {
+  const { cluster, totem, board, gate, plate } = FITOUT, out: Footprint[] = [];
+  for (const [u, dv] of FITOUT.clusters) out.push({ kind: 'cluster', u0: u - cluster.size / 2, u1: u + cluster.size / 2, v0: funnelV + dv - cluster.size / 2, v1: funnelV + dv + cluster.size / 2, bottom: 0, top: cluster.height });
+  // a totem stands on a plinth 0.3 m deep and 0.1 m wider than its body
+  for (const [u, dv] of FITOUT.totems) out.push({ kind: 'totem', u0: u - 0.15, u1: u + 0.15, v0: funnelV + dv - totem.width / 2 - 0.05, v1: funnelV + dv + totem.width / 2 + 0.05, bottom: 0, top: totem.height });
+  for (const dv of FITOUT.boards) out.push({ kind: 'board', u0: RANGE_FACE - board.standoff - board.depth, u1: RANGE_FACE, v0: funnelV + dv, v1: funnelV + dv + board.length, bottom: board.bottom, top: board.bottom + board.height });
+  for (let i = 0; i < gate.bays; i++) for (const o of gate.offsets) {
+    const v = WESTERN_RANGE.v0 + gate.firstBay + i * gate.pitch + o;
+    out.push({ kind: 'gate', u0: gate.u - gate.length / 2, u1: gate.u + gate.length / 2, v0: v - gate.width / 2 - 0.01, v1: v + gate.width / 2 + 0.01, bottom: 0, top: gate.height + 0.02 });
+  }
+  for (const [i, v] of plateCentres().entries()) {
+    const half = (i < gate.bays ? plate.bayWidth : plate.shopWidth) / 2;
+    out.push({ kind: 'plate', u0: RANGE_FACE - plate.standoff - plate.depth, u1: RANGE_FACE, v0: v - half, v1: v + half, bottom: plate.bottom, top: plate.bottom + plate.height });
+  }
+  return out;
+}
 
 function vertices(mesh: THREE.Mesh): THREE.Vector3[] {
   const p = mesh.geometry.getAttribute('position');
