@@ -114,6 +114,51 @@ export const glslSqueeze = (): Plugin => ({
   },
 });
 
+// ---- the dev server's JSON imports ----------------------------------------------------------------------------------------------------------------
+// Node will not import a .json file without `with { type: 'json' }`, so the sources carry it (the node tests load them). Vite drops that attribute from a static import
+// before the browser sees it, but leaves it on a dynamic `import('./x.json', { with: { type: 'json' } })`; its dev server serves every JSON module as JavaScript, and a
+// browser holds a module with that attribute to a JSON MIME type, so the import fails ("Failed to fetch dynamically imported module": Edinburgh Waverley's
+// waverley-scene.ts, whose station then reads "model unavailable"). The build is not affected: rollup reads the attribute and bundles the JSON. So the attribute is
+// dropped from the dev server's dynamic JSON imports, as Vite itself drops it from a static one, and nothing else changes (the source, Node and the build keep it).
+
+const JSON_ATTRIBUTES = /^\{\s*with\s*:\s*\{\s*type\s*:\s*(['"])json\1\s*,?\s*\}\s*,?\s*\}$/;
+
+/** `code` (JavaScript) with the `{ with: { type: 'json' } }` taken off every `import('<string>', ...)` in it, and the same string if there is none. */
+export function dropJsonImportAttributes(code: string): string {
+  if (!/\bimport\s*\(/.test(code) || !/\btype\s*:\s*['"]json['"]/.test(code)) return code;
+  const edits: [number, number][] = []; // (the end of the specifier, the end of the call)
+  const visit = (n: unknown): void => {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) return n.forEach(visit);
+    const node = n as AstNode & { source?: AstNode; options?: AstNode | null };
+    if (node.type === 'ImportExpression' && node.source?.type === 'Literal' && node.options && JSON_ATTRIBUTES.test(code.slice(node.options.start, node.options.end))) {
+      edits.push([node.source.end, node.end]);
+    }
+    for (const key in node) visit(node[key]);
+  };
+  visit(parseAst(code, { lang: 'js' }));
+  let out = code;
+  for (const [from, to] of edits.sort((a, b) => b[0] - a[0])) out = `${out.slice(0, from)})${out.slice(to)}`;
+  return out;
+}
+
+export const devJsonImports = (): Plugin => ({
+  name: 'dev-json-imports',
+  apply: 'serve',
+  enforce: 'post', // (TypeScript is JavaScript by now, and Vite reads the imports after this)
+  transform(code, id) {
+    const file = id.split('?', 1)[0] ?? id;
+    if (!/\.[cm]?[jt]sx?$/.test(file)) return null;
+    try {
+      const out = dropJsonImportAttributes(code);
+      return out === code ? null : { code: out, map: null }; // (the map is not rewritten: a few columns on one line move)
+    } catch (e) {
+      this.warn(`dev-json-imports left ${file} as it was: ${e instanceof Error ? e.message : e}`);
+      return null;
+    }
+  },
+});
+
 // The Vite project root is web/, so the repo's responsive test (which treats every
 // top-level <dir>/index.html as a published document) never sees this source index.html.
 // The build goes straight into the served directory, ../kings-cross/, with relative URLs
@@ -121,7 +166,7 @@ export const glslSqueeze = (): Plugin => ({
 export default defineConfig({
   root: 'web',
   base: './',
-  plugins: [almanacBack(), glslSqueeze()],
+  plugins: [almanacBack(), glslSqueeze(), devJsonImports()],
   build: {
     outDir: '../../kings-cross',
     emptyOutDir: true,
