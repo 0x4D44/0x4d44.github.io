@@ -209,6 +209,27 @@ test('createSunShadow: one directional light casts one 2048 map by hand; the cas
   assert.ok(!scene.children.includes(sun.target));
 });
 
+test('createSunShadow: the map is made up front as a 24-bit depth texture with a one-channel colour attachment, 21 MB and not the 34 MB three allocates unasked (GPU texture cap +32 MB)', () => {
+  const sun = new THREE.DirectionalLight();
+  const shadow = createSunShadow(new THREE.Scene(), sun);
+  const map = sun.shadow.map;
+  assert.ok(map, 'three would make its own, with an RGBA colour attachment that nothing reads, on the first draw');
+  assert.deepEqual([map.width, map.height], [SHADOW_MAP_SIZE, SHADOW_MAP_SIZE]);
+  assert.equal(map.texture.format, THREE.RedFormat, 'one channel: the lit shaders sample the depth texture, and three samples the colour one only when it is RG');
+  assert.equal(map.texture.type, THREE.UnsignedByteType);
+  const depth = map.depthTexture as THREE.DepthTexture;
+  assert.ok(depth && depth.isDepthTexture, 'the depth the lit shaders compare against');
+  assert.deepEqual([depth.image.width, depth.image.height], [SHADOW_MAP_SIZE, SHADOW_MAP_SIZE]);
+  assert.equal(depth.format, THREE.DepthFormat);
+  assert.equal(depth.type, THREE.UnsignedIntType);
+  // what three sets for PCFShadowMap: a hardware comparison (sampler2DShadow) with a linear filter, which is what softens the edge
+  assert.equal(depth.compareFunction, THREE.LessEqualCompare);
+  assert.deepEqual([depth.minFilter, depth.magFilter], [THREE.LinearFilter, THREE.LinearFilter]);
+  const bytes = SHADOW_MAP_SIZE * SHADOW_MAP_SIZE * (1 + 4);
+  assert.ok(bytes < 22e6, `${(bytes / 1e6).toFixed(1)} MB: the colour attachment is a byte a texel and the depth four`);
+  shadow.dispose();
+});
+
 test('createSunShadow.update: the box follows the camera\'s target; the map is flagged for redraw only when the box, the sun or a caster moved', () => {
   const sun = new THREE.DirectionalLight();
   const shadow = createSunShadow(scene, sun);

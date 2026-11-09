@@ -161,6 +161,24 @@ export interface SunShadow {
   dispose(): void;
 }
 
+/**
+ * The shadow map's render target, made here and not by three. Left to itself three makes an RGBA8 colour attachment beside the depth texture, and
+ * nothing reads it: the lit shaders compare against the depth texture (three samples the colour one only when it is two-channel). At 2048 x 2048
+ * that is 16.8 MB for nothing, 33.6 MB for the pair against 21 MB here, and the cap on the page's texture memory is +32 MB. The depth texture is set up
+ * as three sets it up for PCFShadowMap (a hardware comparison, linearly filtered), and three keeps a map it finds already made.
+ */
+function shadowMapTarget(size: number): THREE.WebGLRenderTarget {
+  const map = new THREE.WebGLRenderTarget(size, size, { format: THREE.RedFormat, type: THREE.UnsignedByteType });
+  const depth = new THREE.DepthTexture(size, size, THREE.UnsignedIntType);
+  depth.name = 'sun.shadowMap';
+  depth.format = THREE.DepthFormat;
+  depth.compareFunction = THREE.LessEqualCompare;
+  depth.minFilter = THREE.LinearFilter;
+  depth.magFilter = THREE.LinearFilter;
+  map.depthTexture = depth;
+  return map;
+}
+
 /** Make `sun` cast a shadow over `scene` (see the header). The caller adds nothing: the light's target is added here. */
 export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight): SunShadow {
   sun.castShadow = true;
@@ -168,6 +186,7 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
   sun.shadow.radius = 1.6;
   sun.shadow.autoUpdate = false;
   sun.shadow.needsUpdate = true;
+  sun.shadow.map = shadowMapTarget(SHADOW_MAP_SIZE);
   scene.add(sun.target);
   const cam = sun.shadow.camera;
   const casters: THREE.Mesh[] = [];
