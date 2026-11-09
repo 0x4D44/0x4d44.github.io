@@ -2126,8 +2126,11 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.notEqual(iron, shared('ribPaint'));
   assert.equal(iron.map, shared('ribPaint').map);
   assert.ok(iron.color.b > iron.color.r, 'blue-grey steel, bluer than it is red [hist-d]');
-  assert.ok(luminance(iron.color) > 0.5 && luminance(iron.color) < luminance(shared('ribPaint').color), 'pale (hist-d2 shows the ribs dark only in shadow), a shade under the library\'s white paint');
-  assert.ok(luminance(iron.emissive) > 0 && luminance(iron.emissive) < luminance(shared('ribPaint').emissive), 'with less of the library\'s glow, so it keeps its form in the sun');
+  // the white paint these ribs are judged against is the library's ribPaint as it was until the King's Cross shed's ribs became dark steel (0x343b42):
+  // the comparison is with that paint's numbers, not with whatever the library's ribPaint is now (the KX shed's dark steel is not a yardstick for the Barlow's ribs)
+  const whitePaint = new THREE.Color(0xdadee1), whiteGlow = new THREE.Color(0x555b61);
+  assert.ok(luminance(iron.color) > 0.5 && luminance(iron.color) < luminance(whitePaint), 'pale (hist-d2 shows the ribs dark only in shadow), a shade under white paint (0xdadee1)');
+  assert.ok(luminance(iron.emissive) > 0 && luminance(iron.emissive) < luminance(whiteGlow), 'with less glow than white paint\'s 0x555b61, so it keeps its form in the sun');
   // the slate [hist-a, hist-b]: lighter than the library's dark grey, a clone of its two-sided one (the shed's slate is seen from inside too)
   const slate = lambert('slate');
   assert.notEqual(slate, shared('slateBothSides'), 'the slate is its own');
