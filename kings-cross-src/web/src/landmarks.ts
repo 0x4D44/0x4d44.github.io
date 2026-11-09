@@ -92,7 +92,7 @@ export function createMaterials(): MaterialSet {
   const brickRed = tint('brickRed', [1.1 * brickGain, 0.55 * brickGain, 0.78 * brickGain]);
   // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa); ASSUMED
   const stone = tint('stone', [1.25 * stoneGain, 1.2 * stoneGain, 1.15 * stoneGain]);
-  // hist-a: the hotel's stock brick, a golden buff (a wall of it reads 0x786449; the library's brick, times (1, 0.96, 0.92) x 1.5, rendered 0x6d604a at the noon rig), warmer: times (1.15, 1.05, 0.88)
+  // hist-a: the hotel's stock brick, a golden buff: a wall of it reads 0x786449, where (1, 0.96, 0.92) x 1.5 rendered 0x6d604a at the noon rig
   const brick = tint('brick', [1.15 * brickGain, 1.05 * brickGain, 0.88 * brickGain]);
   // hist-d: the glazing is silver-grey and bright, the ribs pale blue-grey (hist-d2: dark only in shadow); the library's glass is its pane texture (light sky blue, mean
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
@@ -908,7 +908,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       if (pair.every(stands)) for (const c of pair) addStack(parts, c, e.dir, plan.ridge - 0.3, 4.2);
     }
   }
-  // hist-b, hist-e: iron cresting along the crown, dark against the sky; a plain strip 0.7 m tall stands for its piercing (ASSUMED), stopping short of the towers
+  // hist-b, hist-e: iron cresting along the crown; a plain strip 0.7 m tall stands for its piercing (ASSUMED), cut at the towers
   for (const { a, b } of segmentsOutside(polygonEdges(plan.roof.ring), cutters)) part(parts, 'pane').box([(a[0] + b[0]) / 2, plan.ridge + 0.35, (a[1] + b[1]) / 2], [Math.hypot(b[0] - a[0], b[1] - a[1]), 0.7, 0.1], { rotY: Math.atan2(a[1] - b[1], b[0] - a[0]), skip: ['-y'] });
   for (const t of plan.towers) addTower(parts, t, plan);
   return parts;
@@ -1068,10 +1068,11 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   const south: V3 = [-s, 0, c]; // facing south, away from the shed
   const centre = at(plan.width / 2, 0.15, 0);
   brick.fan([centre, ...wall], south, (p) => [(p[0] - foot0[0]) * c + (p[2] - foot0[2]) * s, p[1]]);
-  // hist-e: a row of tall brick stacks stands along the Pancras Road (east) wall's top, about every 14 m; the spacing and 3.6 m height are ASSUMED from it
+  // hist-e: a row of tall brick stacks stands along the Pancras Road (east) wall's top, about every 14 m; the spacing and 3.6 m height are ASSUMED from it.
+  // Wholly outside the shell: 0.7 m out clears the wall, which is 0.2 m out at the foot.
   const eave = sec(steps - 1);
   for (let i = 0, n = Math.round(L / 14); i < n; i++) {
-    const p = at(eave.x + 0.1, ((i + 0.5) * L) / n, 0);
+    const p = at(eave.x + 0.7, ((i + 0.5) * L) / n, 0);
     addStack(parts, [p[0], p[2]], [s, -c], eave.y - 0.5, 3.6);
   }
   return parts;

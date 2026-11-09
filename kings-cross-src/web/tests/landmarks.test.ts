@@ -1353,8 +1353,16 @@ test('Barlow shed [hist-d2, hist-e]: the springing strip of the arch on each sid
   }
 });
 
-test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Pancras Road (east) wall, one every 14 m, each 3.6 m tall from a foot 0.5 m under the eaves', () => {
+test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Pancras Road (east) wall, one every 14 m, each 3.6 m tall from a foot 0.5 m under the eaves and wholly outside the shell', () => {
   const parts = barlowGeometry(barlow);
+  // the east half of the arch, from its foot up to the crown: where the wall's outer face stands at each height
+  const wallU = (y: number): number => {
+    for (let k = skin.length - 1; k > 0; k--) {
+      const [a, b] = [skin[k], skin[k - 1]] as { u: number; y: number }[] as [{ u: number; y: number }, { u: number; y: number }];
+      if (y >= a.y - 1e-9 && y <= b.y + 1e-9) return a.u + ((y - a.y) / (b.y - a.y)) * (b.u - a.u);
+    }
+    return NaN;
+  };
   const span = (t: Tri): number => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v));
   const stacks = triangles(parts.brickRed as Batch).filter((t) => span(t) < 5 && inVault(t.p[0]).v > 1); // not the south wall (v = 0.15) and not the side walls
   const n = Math.round(barlow.barlowLength / 14);
@@ -1364,12 +1372,16 @@ test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Panc
   for (let k = 0; k < n; k++) {
     const shaft = stacks.slice(k * 20, k * 20 + 10).flatMap((t) => t.p).map(inVault);
     close(mean(shaft.map((p) => p.v)), ((k + 0.5) * barlow.barlowLength) / n, 1e-6, `stack ${k} is evenly spaced along the shed`);
-    close(mean(shaft.map((p) => p.u)), eave.u + 0.1, 1e-6, `stack ${k} stands on the east wall`);
+    close(mean(shaft.map((p) => p.u)), eave.u + 0.7, 1e-6, `stack ${k} stands on the east wall`);
     close(Math.min(...shaft.map((p) => p.y)), eave.y - 0.5, 1e-9, 'its foot is 0.5 m under the eaves');
     close(Math.max(...shaft.map((p) => p.y)) - Math.min(...shaft.map((p) => p.y)), 3.6, 1e-9, 'a shaft 3.6 m tall');
     close(Math.max(...shaft.map((p) => p.v)) - Math.min(...shaft.map((p) => p.v)), 1.4, 1e-6, '1.4 m along the wall');
     close(Math.max(...shaft.map((p) => p.u)) - Math.min(...shaft.map((p) => p.u)), 0.95, 1e-6, 'and 0.95 m across it');
   }
+  // nothing of a stack, its stone corbel and cap included, is inside the shell: from the vault the wall shows whole
+  const all = [...stacks, ...triangles(parts.stone as Batch)].flatMap((t) => t.p).map(inVault);
+  assert.ok(all.length >= n * 60, `${all.length} stack vertices`);
+  for (const p of all) assert.ok(p.u >= wallU(p.y) - 1e-6, `a stack vertex at height ${p.y.toFixed(2)} is ${(wallU(p.y) - p.u).toFixed(3)} m inside the shell`);
 });
 
 // ---- assembly ----------------------------------------------------------------------------------
