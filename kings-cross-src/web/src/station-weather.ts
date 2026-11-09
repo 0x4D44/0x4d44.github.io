@@ -66,9 +66,9 @@ export function addWaverleyLights(group: THREE.Group): void {
 
 /**
  * Round seven (night lighting): what the Scottish scene lights after dark, done here, by mesh name, and not in waverley-city.ts and waverley-frontage.ts, which own the meshes. The city blocks' windows
- * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's tower floodlit from its foot and its clock dials glowing (lighting.ts
- * `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm). By day nothing changes. The
- * function returned puts every material back as it was.
+ * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's body and tower floodlit from their feet and its clock dials glowing
+ * (lighting.ts `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm). By day nothing
+ * changes. The function returned puts every material back as it was.
  */
 export function lightWaverleyNight(scene: THREE.Object3D): () => void {
   const undo: (() => void)[] = [];
@@ -86,9 +86,11 @@ export function lightWaverleyNight(scene: THREE.Object3D): () => void {
   };
   const walls = material('waverley-building-walls');
   if (walls) undo.push(litWalls(walls, [1.2, 0.6])); // the sandstone's tile (materials.ts TEXTURES.stone)
-  // the tower's foot: the lowest point of the mesh it shares with the bridges' parapets (ASSUMED: the bridges are at street level too)
-  const parapets = scene.getObjectByName('waverley-balmoral-and-bridge-parapets');
-  if (parapets) flood('waverley-balmoral-and-bridge-parapets', 0.25, 30, 0.25, new THREE.Box3().setFromObject(parapets).min.y);
+  // the hotel's stone, the body and the tower (waverley-frontage.ts names), each lit from the lowest point of its mesh (ASSUMED: the lamps stand where the ground is under it)
+  for (const name of ['waverley-balmoral-facade', 'waverley-balmoral-tower']) {
+    const mesh = scene.getObjectByName(name);
+    if (mesh) flood(name, 0.25, 30, 0.25, new THREE.Box3().setFromObject(mesh).min.y);
+  }
   flood('waverley-balmoral-clock-dials', 1.5, 1, 1); // a dial is lit all over: no fall-off
   return () => undo.forEach((u) => u());
 }

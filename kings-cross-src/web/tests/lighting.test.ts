@@ -838,6 +838,7 @@ test('addRoofShade: a material with the FLOOD define adds its own colour in a wa
   assert.equal(FLOOD, 'FLOOD');
   const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
   const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  m.defines = { [FLOOD]: 'vec4( 0.25, 14.0, 0.35, 0.0 )' };
   addRoofShade(m);
   const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
@@ -886,6 +887,13 @@ test('addRoofShade: a material with the FLOOD define adds its own colour in a wa
   assert.equal(f.split(FLOOD).length - 1, block.split(FLOOD).length - 1, 'nothing outside the define reads it');
   const plain = new THREE.MeshLambertMaterial({ color: 0x808080 });
   assert.equal(plain.defines === undefined || !(FLOOD in plain.defines), true, 'a plain material has no define, so the compiler drops the block');
+  // and no other program changes: a material without the define is not given the night's level, nor a declaration of it (every roof-shaded surface of both scenes goes through this patch)
+  addRoofShade(plain);
+  const bare = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  plain.onBeforeCompile(bare as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(bare.uniforms.uWinNight, undefined, 'no uniform');
+  assert.ok(!bare.fragmentShader.includes('uniform float uWinNight;'), 'no declaration');
+  assert.ok(bare.fragmentShader.includes(`#ifdef ${FLOOD}`), 'the block is still there under its define, for the compiler to drop');
 });
 
 test('addRoofShade: a material with the MOTTLE define has its colour scaled by the tone of the slab it lies on, 0.8 to 1.2, one number to a slab, faded to none as a slab shrinks to a couple of pixels; one without compiles it away (round six, E5)', () => {

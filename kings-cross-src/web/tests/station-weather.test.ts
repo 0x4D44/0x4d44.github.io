@@ -391,7 +391,7 @@ test('disposal frees the sky and the flat ground, geometry and material, and not
   view.dispose();
 });
 
-/** The three meshes the Scottish night lighting looks for, by name, each with a Lambert material of its own (the frontage and the city clone theirs). */
+/** The four meshes the Scottish night lighting looks for, by name (waverley-city.ts and waverley-frontage.ts's), each with a Lambert material of its own. */
 function nightMeshes() {
   const group = new THREE.Group();
   const add = (name: string, y: number): THREE.Mesh => {
@@ -401,7 +401,7 @@ function nightMeshes() {
     group.add(mesh);
     return mesh;
   };
-  return { group, walls: add('waverley-building-walls', 0), parapets: add('waverley-balmoral-and-bridge-parapets', 5), dials: add('waverley-balmoral-clock-dials', 40) };
+  return { group, walls: add('waverley-building-walls', 0), facade: add('waverley-balmoral-facade', 5), tower: add('waverley-balmoral-tower', 30), dials: add('waverley-balmoral-clock-dials', 40) };
 }
 const lambertOf = (mesh: THREE.Mesh): THREE.MeshLambertMaterial => mesh.material as THREE.MeshLambertMaterial;
 const compileOf = (m: THREE.Material): string => {
@@ -410,23 +410,24 @@ const compileOf = (m: THREE.Material): string => {
   return s.fragmentShader;
 };
 
-test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone is floodlit from the foot of its tower and its dials glow, each material alone, and the function it returns puts them all back (round seven)', () => {
-  const { group, walls, parapets, dials } = nightMeshes();
-  const before = [walls, parapets, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile }));
+test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone is floodlit from the foot of its body and of its tower and its dials glow, each material alone, and the function it returns puts them all back (round seven)', () => {
+  const { group, walls, facade, tower, dials } = nightMeshes();
+  const before = [walls, facade, tower, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile }));
   const undo = lightWaverleyNight(group);
-  const w = lambertOf(walls), p = lambertOf(parapets), d = lambertOf(dials);
+  const w = lambertOf(walls), f = lambertOf(facade), t = lambertOf(tower), d = lambertOf(dials);
   assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
   assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
-  // the stone of the tower is lit from where the ground is under it: the lowest point of the mesh (5 m up, 4 m tall: its foot is 3 m up)
-  assert.equal(p.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 3.0 )');
-  assert.ok(!('WALL_WIN' in (p.defines ?? {})), 'and has no windows of its own');
+  // the stone is lit from where the ground is under it: the lowest point of each mesh (the body 5 m up and 4 m tall: its foot is 3 m up; the tower 30 m up: its foot is 28 m)
+  assert.equal(f.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 3.0 )');
+  assert.equal(t.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 28.0 )');
+  assert.ok(!('WALL_WIN' in (f.defines ?? {})) && !('WALL_WIN' in (t.defines ?? {})), 'and have no windows of their own');
   // a clock dial is lit all over: no fall-off (a reach of a metre, a floor of one), and over strength 1 so it reads as lit from within
   assert.equal(d.defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
   assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls'), 'the walls are a program of their own');
-  assert.equal(p.customProgramCacheKey(), before[1]!.key, 'the flood is a define: the program key is the same, the define makes the program');
+  assert.equal(f.customProgramCacheKey(), before[1]!.key, 'the flood is a define: the program key is the same, the define makes the program');
   assert.ok(compileOf(w).includes('float winHash('), 'the walls compile with the night functions');
   undo();
-  [walls, parapets, dials].forEach((mesh, i) => {
+  [walls, facade, tower, dials].forEach((mesh, i) => {
     const m = lambertOf(mesh);
     assert.equal(m.defines, before[i]!.defines, `${mesh.name}: its defines, as they were`);
     assert.equal(m.customProgramCacheKey(), before[i]!.key, `${mesh.name}: its key`);
@@ -442,9 +443,28 @@ test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone
   assert.doesNotThrow(() => lightWaverleyNight(new THREE.Group())());
 });
 
+test('the meshes the Scottish night lights are the ones the real scene builds, each a Lambert surface: a rename in the frontage or the city would leave the night unlit, and this says so', () => {
+  const built = buildWaverleyScene({ lighting: false });
+  try {
+    const names = ['waverley-building-walls', 'waverley-balmoral-facade', 'waverley-balmoral-tower', 'waverley-balmoral-clock-dials'];
+    const surface = (name: string): THREE.MeshLambertMaterial => (built.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    for (const name of names) {
+      const mesh = built.group.getObjectByName(name) as THREE.Mesh | undefined;
+      assert.ok(mesh?.isMesh, `${name} is a mesh of the scene`);
+      assert.ok(surface(name).isMeshLambertMaterial, `${name} is a Lambert surface`);
+      assert.ok(!('WALL_WIN' in (surface(name).defines ?? {})) && !('FLOOD' in (surface(name).defines ?? {})), `${name} is unlit before the night lighting`);
+    }
+    const undo = lightWaverleyNight(built.group);
+    assert.ok('WALL_WIN' in (surface(names[0] as string).defines ?? {}), 'the blocks have windows');
+    for (const name of names.slice(1)) assert.ok('FLOOD' in (surface(name).defines ?? {}), `${name} is floodlit or glows`);
+    undo();
+    for (const name of names) assert.ok(!('WALL_WIN' in (surface(name).defines ?? {})) && !('FLOOD' in (surface(name).defines ?? {})), `${name} is as it was`);
+  } finally { built.dispose(); }
+});
+
 test('the Scottish climate lights the Scottish night and puts it back with the climate: the walls\' windows, the Balmoral\'s flood and dials, over the roof shade the atmosphere gives every wall', async () => {
   const { view } = await viewOf();
-  const { group, walls, parapets, dials } = nightMeshes();
+  const { group, walls, facade, tower, dials } = nightMeshes();
   view.scene.add(group);
   const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
   view.climate = climate;
@@ -453,12 +473,12 @@ test('the Scottish climate lights the Scottish night and puts it back with the c
     assert.ok(w.defines && 'WALL_WIN' in w.defines, 'lit windows on the walls');
     const f = compileOf(w);
     assert.ok(f.includes('float winHash(') && f.includes('coverGroundAt'), 'over the roof shade: both patches are in the program');
-    assert.ok(String(lambertOf(parapets).defines?.FLOOD).startsWith('vec4( 0.25, 30.0, 0.25, '), 'the tower is floodlit');
+    for (const mesh of [facade, tower]) assert.ok(String(lambertOf(mesh).defines?.FLOOD).startsWith('vec4( 0.25, 30.0, 0.25, '), `${mesh.name} is floodlit`);
     assert.equal(lambertOf(dials).defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
-    assert.ok(compileOf(lambertOf(parapets)).includes('#ifdef FLOOD'), 'the flood needs the roof shade\'s patch, which the atmosphere gave the stone');
+    assert.ok(compileOf(lambertOf(facade)).includes('#ifdef FLOOD'), 'the flood needs the roof shade\'s patch, which the atmosphere gave the stone');
   } finally { climate.dispose(); }
   assert.ok(!('WALL_WIN' in (lambertOf(walls).defines ?? {})), 'the walls\' windows go with the climate');
-  assert.ok(!('FLOOD' in (lambertOf(parapets).defines ?? {})) && !('FLOOD' in (lambertOf(dials).defines ?? {})), 'and the flood');
+  assert.ok(![facade, tower, dials].some((mesh) => 'FLOOD' in (lambertOf(mesh).defines ?? {})), 'and the flood');
   assert.ok(!compileOf(lambertOf(walls)).includes('float winHash('));
   view.dispose();
 });
