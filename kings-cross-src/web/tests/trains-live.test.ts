@@ -10,7 +10,8 @@ import type { MotionBirth, TrainView } from '../../core/motion.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import { KINGS_CROSS_PLATFORM_LENGTHS_M } from '../../core/station.ts';
 import { buildTrain } from '../src/train.ts';
-import { carPoses, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
+import { plain, trainNight } from '../src/train-geom.ts';
+import { carPoses, cloneWithShaderHooks, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
 import type { FormationView } from '../src/trains-live.ts';
 
 function fixture(curved = true, kind: (typeof ALL_KINDS)[number] = 'lner9'): { graph: Graph; train: TrainView } {
@@ -407,6 +408,35 @@ test('eight same-kind trains at the same opacity share one material palette', ()
   assert.equal(palette.size, templateMaterials.size, 'one palette copy per original template material');
   for (const group of groups.slice(1)) assert.ok(sameMembers(palette, materialsOf(group)), 'every same-kind train must use the same material objects');
   assertMaterialOpacity(groups[0]!, 1);
+  layer.dispose();
+});
+
+test('a live train keeps the night glow of the train material: its palette copies carry the shader hook of the original, at every opacity', () => {
+  const { graph, train } = fixture(false);
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  layer.update([train, { ...train, id: 2, description: '1FADE', opacity: 0.4 }]);
+  // Material.clone() leaves out onBeforeCompile, which train-geom.ts `plain` sets for the lit windows and the lamp lenses after dark
+  const hooked = (root: THREE.Object3D): THREE.Material[] => [...materialsOf(root)].filter((m) => Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile'));
+  const original = hooked(buildTrain('lner9'));
+  assert.ok(original.length === 1 && original[0] === plain(), 'the train material that patches its shader is the shared plain one');
+  assert.equal(layer.trains().length, 2);
+  for (const record of layer.trains()) {
+    const live = hooked(record.group);
+    assert.equal(live.length, original.length, `train ${record.id}: the patched material of the template stays patched`);
+    for (const material of live) {
+      const shader = { uniforms: {} as Record<string, unknown>, vertexShader: '#include <common>\n#include <begin_vertex>', fragmentShader: '#include <common>\n#include <opaque_fragment>' };
+      (material.onBeforeCompile as unknown as (s: typeof shader, renderer: null) => void)(shader, null);
+      assert.equal(shader.uniforms.uNight, trainNight, `train ${record.id}: the glow reads the shared night uniform`);
+      assert.match(shader.fragmentShader, /uNight/, `train ${record.id}: the glow is added to the fragment shader`);
+      assert.equal(material.customProgramCacheKey(), plain().customProgramCacheKey(), `train ${record.id}: the copy shares the compiled program of the original`);
+    }
+  }
+  // a hook the original sets for itself is copied, one it does not set is left alone
+  const marked = new THREE.MeshBasicMaterial();
+  const key = (): string => 'marked';
+  marked.customProgramCacheKey = key;
+  assert.equal(cloneWithShaderHooks(marked).customProgramCacheKey, key, 'a program cache key the original sets is copied');
+  assert.equal(Object.prototype.hasOwnProperty.call(cloneWithShaderHooks(new THREE.MeshBasicMaterial()), 'onBeforeCompile'), false, 'a plain material gets no hook of its own');
   layer.dispose();
 });
 

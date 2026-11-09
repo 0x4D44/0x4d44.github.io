@@ -184,6 +184,17 @@ interface MaterialPalette {
   copies: Map<THREE.Material, THREE.Material>;
 }
 
+/**
+ * Material.clone() copies a material's settings but not its shader hooks. A material that patches its own shader (train-geom.ts `plain`: the lit windows and the lamp lenses
+ * after dark) would be drawn as a plain Lambert material once cloned, so a live train would lose its night glow. The copy takes the hooks the original sets for itself.
+ */
+export function cloneWithShaderHooks<M extends THREE.Material>(original: M): M {
+  const copy = original.clone() as M;
+  if (Object.prototype.hasOwnProperty.call(original, 'onBeforeCompile')) copy.onBeforeCompile = original.onBeforeCompile;
+  if (Object.prototype.hasOwnProperty.call(original, 'customProgramCacheKey')) copy.customProgramCacheKey = original.customProgramCacheKey;
+  return copy;
+}
+
 export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: KindResolver) {
   const templates = new Map<TrainKind, THREE.Group>();
   const drawn = new Map<number, DrawnTrain>();
@@ -218,7 +229,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     const copy = (material: THREE.Material): THREE.Material => {
       const original = originals.get(material) ?? material;
       if (!palette.copies.has(original)) {
-        const shared = original.clone();
+        const shared = cloneWithShaderHooks(original);
         setOpacity(shared, palette.opacity);
         palette.copies.set(original, shared); originals.set(shared, original);
       }
