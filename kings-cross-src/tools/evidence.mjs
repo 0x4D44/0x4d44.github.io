@@ -75,6 +75,33 @@ export const ELEMENT_VIEWS = {
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
 };
 
+/**
+ * The part a view plays in scoring, for the criteria that have more than one stand in the pack. A criterion is scored from its
+ * `official` view; a `context` view stays in the pack, labelled so, for what it shows around the subject. The western-concourse scorer
+ * found the rubric's frozen stand for C6 (`concourse-exterior-square`, in King's Cross Square) unusable: the Great Northern Hotel stands
+ * in front of about half of the canopy from it (tests/camera-faults.test.mjs measures it). The lead decided that C6 is scored from
+ * `concourse-exterior-west` (Pancras Road: the whole roof, the hotel at the right edge) and that the square stays as context.
+ */
+export const VIEW_ROLES = Object.freeze({
+  'concourse-exterior-west': Object.freeze({ element: 'western-concourse', criterion: 'C6', role: 'official',
+    label: 'Official exterior view for western-concourse criterion C6, the view C6 is scored from: the whole roof from Pancras Road, with the Great Northern Hotel at the right edge.' }),
+  'concourse-exterior-square': Object.freeze({ element: 'western-concourse', criterion: 'C6', role: 'context',
+    label: 'Context for western-concourse criterion C6, not the view it is scored from: the rubric\'s frozen stand in King\'s Cross Square, from which the Great Northern Hotel stands in front of about half of the canopy. C6 is scored from concourse-exterior-west.' }),
+});
+
+/** A view's part in scoring as a capture record carries it, `scoring` ({ element, criterion, role }) and a `label`; nothing for a view that has none. */
+export function viewScoring(name) {
+  if (!Object.hasOwn(VIEW_ROLES, name)) return {};
+  const { element, criterion, role, label } = VIEW_ROLES[name];
+  return { scoring: { element, criterion, role }, label };
+}
+
+/** The pack index's note on the scoring parts of the views it holds (capture records that carry `scoring`), one line each; '' when there are none. */
+export function scoringViewsNote(records) {
+  const lines = records.filter(record => record.scoring).map(record => `- ${record.scoring.element} ${record.scoring.criterion}, ${record.scoring.role}: ${record.file}: ${record.label}`);
+  return lines.length ? `Scoring views: a criterion is scored from its official view; a context view is in the pack for what it shows around the subject, not for the score.\n\n${lines.join('\n')}\n\n` : '';
+}
+
 /** Every fixed station view a pack can capture: each camera, plus the solid-slate override shot of the two paired cameras. */
 export function stationViewNames(cameras) {
   return [...Object.keys(cameras), ...roofMaterialEvidencePairs(cameras).map(pair => `${pair.cameraName}-solid-slate`)];
@@ -176,7 +203,8 @@ export function roofMaterialEvidencePairs(cameras) {
 /**
  * Run the intact Station camera set and its same-camera physical-slate comparison shots. `select` (a Set of view
  * names, see resolveViews) limits the run to those views; null runs them all. Every shot is a fixed camera on a
- * still scene, so each also takes the two-frame flicker check (`twoFrame`). `hud` ('off' or 'on', see hud.mjs) is passed to every
+ * still scene, so each also takes the two-frame flicker check (`twoFrame`). A view with a named part in scoring (VIEW_ROLES: official
+ * or context) passes it on with a label, and its record carries both. `hud` ('off' or 'on', see hud.mjs) is passed to every
  * shot, which hides or shows the page's overlays for it; null leaves the page alone. With the overlays off, a selection that
  * includes `overview` also gets `overview-hud-on`: the same camera with the overlays shown, labelled, so that the page as a user
  * sees it is still in the pack.
@@ -187,7 +215,7 @@ export async function runStationEvidenceShots(cameras, shot, attempt, select = n
   const wanted = name => !select || select.has(name);
   const overlays = hud ? { hud } : {};
   for (const [name, camera] of Object.entries(cameras).filter(([name, camera]) => !camera.grid && wanted(name)))
-    await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...overlays, ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
+    await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...overlays, ...viewScoring(name), ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
   for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))
     await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
   if (hud === 'off' && cameras.overview && wanted('overview'))
@@ -424,13 +452,15 @@ export function stationCameras(data, world = stationWorld()) {
   // the round service building (OSM 96299681), the pavement and the sky filling the rest. So the eye stands on the open square 35 m
   // south of the edge and 5 m west (4 degrees west of south), 7.6 m outside that round building. The photograph centres the whole
   // dome, so the aim is the canopy's centre (a 45 degree aim put the roof half out of frame) and the lens is 60 degrees to take the
-  // 123 m span in.
+  // 123 m span in. The hotel still stands in front of about half of the canopy from this stand (tests/camera-faults.test.mjs measures
+  // it), so the western-concourse scorer could not score C6 from here: it is context only (VIEW_ROLES) and C6 is scored from the west view.
   const arc = worldToShed(s, concourse.centre), canopyEdge = arc.v - concourse.radius;
   cams['concourse-exterior-square'] = camera(standAt(arc.u - 5, canopyEdge - 35), [concourse.centre[0], 8, concourse.centre[1]],
     'R-western-concourse-c standpoint (conc-c-exterior-square-2016.jpg): King\'s Cross Square, eye 1.7 m, 35 m south of the canopy edge and 5 m west (the south-west quarter of the square is behind the hotel), looking at the whole roof', { fov: 60, near: .1 });
   // The photograph's own composition, which the square cannot give: the whole dome with the hotel at the frame's right edge and the
   // clock turret behind the roof. That is the dome seen from the west, across Pancras Road: 38 m west of the canopy's west rim on the
-  // roof's centre line, eye 1.7 m, looking east. Added beside concourse-exterior-square (not named in the rubric) for the C2 and C6 criteria.
+  // roof's centre line, eye 1.7 m, looking east. Added beside concourse-exterior-square (not named in the rubric) for the C2 and C6
+  // criteria, and now the official view for C6 (VIEW_ROLES): the lead's decision after the scorer found the hotel hiding the square's.
   cams['concourse-exterior-west'] = camera(standAt(arc.u - concourse.radius - CONCOURSE_WEST_STANDOFF, arc.v), [concourse.centre[0], 8, concourse.centre[1]],
     `R-western-concourse-c composition (conc-c-exterior-square-2016.jpg, conc-c2-dome-aerial-2016.jpg): Pancras Road, ${CONCOURSE_WEST_STANDOFF} m west of the canopy's west rim on the roof's centre line, eye 1.7 m, looking east at the whole roof with the hotel at the right edge`, { fov: 60, near: .1 });
   // R-western-concourse-b (conc-b-roof-meets-range-2025-08.jpg, Jonosunde CC BY-SA 4.0): the whole Range elevation from inside the
@@ -761,6 +791,7 @@ export async function main(args = process.argv.slice(2)) {
   if (options.help) { console.log(`node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]
 node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...]   (station views only: no trains, relay, tests or performance run)
   elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
+  scoring views (VIEW_ROLES): ${Object.entries(VIEW_ROLES).map(([view, r]) => `${view} is ${r.element} ${r.criterion}'s ${r.role} view`).join('; ')}
 Every fixed station view is shot twice, 150 ms apart, to check it for flicker; exit code 1 if the capture stops or a view flickers.
 Every page load pins the scene clock and weather in its address (a build that predates the sky and weather work ignores them):
   --time <ISO 8601 instant with a zone, or 13-digit epoch ms>   default ${PIN_TIME}
@@ -1111,7 +1142,7 @@ The page draws its own overlays (station switcher, status and attribution panels
   await writePrivateFile(path.join(options.out, 'manifest.json'), `${JSON.stringify(report, null, 2)}\n`);
   // Keep the old evidence.json entry point for existing scorer scripts.
   await writePrivateFile(path.join(options.out, 'evidence.json'), `${JSON.stringify(report, null, 2)}\n`);
-  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.views.partial ? `Partial pack: only ${report.views.names.length} fixed station views (--views ${report.views.requested}).\n\n` : ''}Flicker: ${report.flicker.checked} fixed views shot twice, ${report.flicker.failed.length} over the ${report.flicker.limit * 100}% limit (worst ${(report.flicker.worstFraction * 100).toFixed(4)}%). Scene pin: ${report.lighting.pin.parameters} (applied by the page: ${report.lighting.pinHonoured ?? 'no pinned page was shot'}). Lighting: ${LIGHTING_NOTE}\n\nOverlays (--hud ${report.hud.mode}): ${report.hud.shots.hidden} shots with the page's overlays hidden, ${report.hud.shots.shown} with them shown. ${report.hud.note}\n\n${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
+  await writePrivateFile(path.join(options.out, 'index.md'), `# King's Cross evidence pack\n\nMeasured ${report.when}. Renderer: ${report.renderer ?? 'not captured'}.\n\nEach axis-NN.json links its PNGs and command logs. [Axis 04 summary](axis-04.md) links the replay, board agreement and optional live comparison. manifest.json contains every camera, URL, simulation clock, GPU string, draw calls, triangles, errors and explicit gaps.\n\n${report.views.partial ? `Partial pack: only ${report.views.names.length} fixed station views (--views ${report.views.requested}).\n\n` : ''}Flicker: ${report.flicker.checked} fixed views shot twice, ${report.flicker.failed.length} over the ${report.flicker.limit * 100}% limit (worst ${(report.flicker.worstFraction * 100).toFixed(4)}%). Scene pin: ${report.lighting.pin.parameters} (applied by the page: ${report.lighting.pinHonoured ?? 'no pinned page was shot'}). Lighting: ${LIGHTING_NOTE}\n\nOverlays (--hud ${report.hud.mode}): ${report.hud.shots.hidden} shots with the page's overlays hidden, ${report.hud.shots.shown} with them shown. ${report.hud.note}\n\n${scoringViewsNote(report.screenshots)}${report.axes.map(a=>`- ${a.id}. ${a.name}: ${a.screenshots.length} shots, ${a.artifacts.length} artifacts; ${a.gaps.length} gaps.`).join('\n')}\n\n## Remaining checks\n\n${report.gaps.map(g=>`- ${g}`).join('\n')}\n`);
   console.log(JSON.stringify({ out: options.out, renderer: report.renderer, screenshots: report.screenshots.length, bundleGzipBytes: report.build.totalGzipBytes, gaps: report.gaps, fatal: report.fatal ?? null,
     flicker: { checked: report.flicker.checked, failed: report.flicker.failed.length, worstFraction: report.flicker.worstFraction },
     lighting: { pin: report.lighting.pin.parameters, pinHonoured: report.lighting.pinHonoured, fingerprints: Object.keys(report.lighting.fingerprints) },

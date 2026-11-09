@@ -14,7 +14,7 @@ import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShe
 import { trainLayout } from '../../core/train.ts';
 import { WESTERN_RANGE } from '../../web/src/shed.ts';
 import { lensFor } from '../station-scene.mjs';
-import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, WESTERN_RANGE_STANDOFF, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, main, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, VIEW_ROLES, WESTERN_RANGE_STANDOFF, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, main, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, scoringViewsNote, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, viewScoring, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -614,6 +614,82 @@ test('the labelled overview is added only when the overview is selected and the 
   const on = [];
   await runStationEvidenceShots(cameras, async (_axis, _name, _camera, extra) => { on.push(extra.hud); }, async (_axis, _name, capture) => capture(), null, 'on');
   assert.ok(on.length > 20 && on.every(hud => hud === 'on'), 'with --hud on every station view asks for them shown');
+});
+
+// The lead's decision after the round-5 western-concourse scorer found the Great Northern Hotel standing in front of about half of the
+// canopy at the frozen concourse-exterior-square camera (tests/camera-faults.test.mjs measures it) and scored C6 from concourse-exterior-west:
+// C6 is scored from the west view, and the square stays in the pack as context.
+test('concourse-exterior-west is western-concourse\'s official C6 view and concourse-exterior-square is labelled context', () => {
+  assert.deepEqual(Object.keys(VIEW_ROLES).sort(), ['concourse-exterior-square', 'concourse-exterior-west']);
+  assert.equal(VIEW_ROLES['concourse-exterior-west'].role, 'official');
+  assert.equal(VIEW_ROLES['concourse-exterior-square'].role, 'context');
+  const cameras = stationCameras(trackData);
+  for (const [name, entry] of Object.entries(VIEW_ROLES)) {
+    assert.equal(entry.element, 'western-concourse', name);
+    assert.equal(entry.criterion, 'C6', name);
+    assert.ok(ELEMENT_VIEWS[entry.element].includes(name), `${name} is one of its element's views, so --views ${entry.element} captures it`);
+    assert.ok(cameras[name] && !cameras[name].grid, `${name} is a fixed station camera`);
+    assert.ok(Object.isFrozen(entry), `${name}'s entry is frozen`);
+  }
+  assert.ok(Object.isFrozen(VIEW_ROLES));
+  const official = Object.entries(VIEW_ROLES).filter(([, entry]) => entry.role === 'official');
+  assert.equal(official.length, 1, 'one official view for the criterion');
+  assert.match(VIEW_ROLES['concourse-exterior-west'].label, /Official .*western-concourse criterion C6/);
+  assert.match(VIEW_ROLES['concourse-exterior-square'].label, /Context for western-concourse criterion C6, not the view it is scored from/);
+  assert.match(VIEW_ROLES['concourse-exterior-square'].label, /Great Northern Hotel stands in front of about half of the canopy/);
+  assert.match(VIEW_ROLES['concourse-exterior-square'].label, /scored from concourse-exterior-west/, 'the context label names the official view');
+});
+
+test('a record carries a view\'s part in scoring, and a view with none carries nothing', () => {
+  const west = viewScoring('concourse-exterior-west'), square = viewScoring('concourse-exterior-square');
+  assert.deepEqual(west.scoring, { element: 'western-concourse', criterion: 'C6', role: 'official' });
+  assert.deepEqual(square.scoring, { element: 'western-concourse', criterion: 'C6', role: 'context' });
+  assert.equal(west.label, VIEW_ROLES['concourse-exterior-west'].label);
+  assert.equal(square.label, VIEW_ROLES['concourse-exterior-square'].label);
+  for (const name of ['overview', 'concourse', 'western-range-full', 'concourse-exterior-west-solid-slate', 'constructor', 'toString', '__proto__', '']) assert.deepEqual(viewScoring(name), {}, JSON.stringify(name));
+});
+
+test('only the two exterior views of the western concourse are shot with a scoring part, official and context', async () => {
+  const cameras = stationCameras(trackData);
+  const run = async (select, hud = null) => {
+    const shots = [];
+    await runStationEvidenceShots(cameras, async (_axis, name, camera, extra) => { shots.push({ name, camera, extra }); }, async (_axis, _name, capture) => capture(), select, hud);
+    return shots;
+  };
+  const all = await run(null);
+  assert.deepEqual(all.filter(shot => shot.extra.scoring).map(shot => [shot.name, shot.extra.scoring.role]).sort(), [['concourse-exterior-square', 'context'], ['concourse-exterior-west', 'official']]);
+  assert.ok(all.filter(shot => !shot.extra.scoring).every(shot => shot.extra.label === undefined), 'no other view carries a scoring label');
+  const west = all.find(shot => shot.name === 'concourse-exterior-west'), square = all.find(shot => shot.name === 'concourse-exterior-square');
+  assert.equal(west.extra.label, VIEW_ROLES['concourse-exterior-west'].label);
+  assert.equal(square.extra.label, VIEW_ROLES['concourse-exterior-square'].label);
+  assert.equal(west.camera, cameras['concourse-exterior-west'], 'the same cameras, not new stands');
+  assert.equal(square.camera, cameras['concourse-exterior-square']);
+  assert.equal(west.extra.twoFrame, true, 'both still take the flicker check');
+  const only = await run(resolveViews('concourse-exterior-west', cameras), 'off');
+  assert.deepEqual(only.map(shot => [shot.name, shot.extra.scoring.role, shot.extra.hud]), [['concourse-exterior-west', 'official', 'off']], 'one view alone, with the overlays request beside its part');
+  const element = await run(resolveViews('western-concourse', cameras));
+  assert.deepEqual(element.filter(shot => shot.extra.scoring).map(shot => shot.extra.scoring.role).sort(), ['context', 'official'], 'the element\'s run carries both');
+});
+
+test('the pack index says which view each criterion is scored from, and which are context', () => {
+  const record = name => ({ file: `axis-02/${name}.png`, ...viewScoring(name) });
+  const both = scoringViewsNote([{ file: 'axis-02/overview.png' }, record('concourse-exterior-square'), record('concourse-exterior-west')]);
+  assert.match(both, /^Scoring views: a criterion is scored from its official view; a context view is in the pack for what it shows around the subject, not for the score\.\n\n/);
+  assert.match(both, /^- western-concourse C6, context: axis-02\/concourse-exterior-square\.png: Context for western-concourse criterion C6/m);
+  assert.match(both, /^- western-concourse C6, official: axis-02\/concourse-exterior-west\.png: Official exterior view for western-concourse criterion C6/m);
+  assert.equal(both.split('\n').filter(line => line.startsWith('- ')).length, 2, 'one line for each, none for a view without a part');
+  assert.ok(both.endsWith('\n\n'), 'ends as a paragraph, so the index text after it stays apart');
+  const one = scoringViewsNote([record('concourse-exterior-west')]);
+  assert.equal(one.split('\n').filter(line => line.startsWith('- ')).length, 1, 'a one-view pack lists only the view it holds');
+  assert.equal(scoringViewsNote([]), '');
+  assert.equal(scoringViewsNote([{ file: 'axis-02/overview.png' }, { file: 'axis-01/top-10m-grid.png' }]), '', 'a pack with no such view has no such note');
+});
+
+test('the usage text names the official and the context view', async () => {
+  const lines = [], log = console.log;
+  console.log = (...parts) => { lines.push(parts.join(' ')); };
+  try { await main(['--help']); } finally { console.log = log; }
+  assert.match(lines.join('\n'), /scoring views \(VIEW_ROLES\): concourse-exterior-west is western-concourse C6's official view; concourse-exterior-square is western-concourse C6's context view/);
 });
 
 // The round-4 scorer found `western-range` (a 1.6 m stand 6 m off the face, about three bays in frame) useless; the lead asked for it to be

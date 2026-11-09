@@ -1,7 +1,8 @@
 // The camera faults the round-4 graphical-fidelity scorers found in the wave-0 cameras, and the guards that keep them fixed:
 //   midland-clock-tower cropped the top of the tower (a 35 degree lens aimed at the clock lost the spire);
 //   gnh-from-square stood against OSM building 96299681, the round service building (the rubric's stand is 2.2 m from its wall);
-//   concourse-exterior-square must stand on the open square, and western-range-full must stand clear of the concourse roof.
+//   concourse-exterior-square must stand on the open square, and western-range-full must stand clear of the concourse roof;
+//   concourse-exterior-square has the Great Northern Hotel in front of about half of the canopy, so C6 is scored from concourse-exterior-west.
 // The footprint tests exist because tools/station-scene.mjs viewClearance casts rays, and the city's single-sided materials let a ray
 // leave a building it started inside: an eye inside a footprint is caught here, by plan, not there.
 import assert from 'node:assert/strict';
@@ -9,7 +10,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { greatNorthernHotelPlan, landmarkFootprints, landmarkPlans, landmarkSeats } from '../../core/landmarks.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, worldToShed } from '../../core/station.ts';
-import { CLOCK_TOWER_EYE_Y, CLOCK_TOWER_STANDOFF, CONCOURSE_WEST_STANDOFF, ELEMENT_VIEWS, HUD_FREE_ROWS, cityBuildings, stationCameras, stationWorld } from '../evidence.mjs';
+import { CLOCK_TOWER_EYE_Y, CLOCK_TOWER_STANDOFF, CONCOURSE_WEST_STANDOFF, ELEMENT_VIEWS, HUD_FREE_ROWS, VIEW_ROLES, cityBuildings, stationCameras, stationWorld } from '../evidence.mjs';
 import { buildStationScene, clearanceFaults, lensFor, stationData, viewClearance } from '../station-scene.mjs';
 
 const { data } = stationData();
@@ -130,6 +131,56 @@ test('the exterior roof views take the whole concourse roof into the frame', () 
   const west = cameras['concourse-exterior-west'], local = worldToShed(s, [west.pos[0], west.pos[2]]);
   assert.ok(Math.abs(local.u - (centre.u - canopy.radius - CONCOURSE_WEST_STANDOFF)) < 1e-6 && Math.abs(local.v - centre.v) < 1e-6, '38 m west of the rim on the roof\'s centre line');
   assert.ok(ELEMENT_VIEWS['western-concourse'].includes('concourse-exterior-west'), 'scored with the other western-concourse views');
+});
+
+/**
+ * How much of the concourse canopy the lens sees. Rays across the part of the frame the canopy's vertices cover; a ray counts when it
+ * hits the canopy's own solid triangles (see-through glass does not), and is seen when the first solid hit among everything is the canopy
+ * too, else it is hidden, by the Great Northern Hotel when that hit is one of the hotel's parts. Shares are of the rays that count.
+ */
+function canopySeen(camera, { occluders }, n = 16) {
+  const canopy = occluders.find(o => o.name === 'western-concourse');
+  assert.ok(canopy, 'the scene has the western concourse');
+  const lens = lensFor(camera), origin = lens.position.clone(), raycaster = new THREE.Raycaster();
+  const solid = h => h.object.isMesh && h.object.visible !== false && !(h.object.material?.transparent && h.object.material.opacity < .9);
+  const partOf = (root, object) => { for (let o = object; o; o = o.parent) if (o === root) return true; return false; };
+  const lo = [1, 1], hi = [-1, -1], point = new THREE.Vector3();
+  canopy.traverse(o => {
+    const position = o.isMesh && o.visible !== false ? o.geometry.getAttribute('position') : null;
+    for (let i = 0; position && i < position.count; i += 5) {
+      point.fromBufferAttribute(position, i).applyMatrix4(o.matrixWorld);
+      if (point.clone().applyMatrix4(lens.matrixWorldInverse).z >= 0) continue;
+      point.project(lens);
+      lo[0] = Math.max(-1, Math.min(lo[0], point.x)); lo[1] = Math.max(-1, Math.min(lo[1], point.y));
+      hi[0] = Math.min(1, Math.max(hi[0], point.x)); hi[1] = Math.min(1, Math.max(hi[1], point.y));
+    }
+  });
+  assert.ok(lo[0] < hi[0] && lo[1] < hi[1], 'some of the canopy is in front of the lens');
+  let own = 0, seen = 0, hotel = 0;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    raycaster.set(origin, new THREE.Vector3(lo[0] + (hi[0] - lo[0]) * (i + .5) / n, lo[1] + (hi[1] - lo[1]) * (j + .5) / n, .5).unproject(lens).sub(origin).normalize());
+    if (!raycaster.intersectObject(canopy, true).some(solid)) continue;
+    own++;
+    const first = raycaster.intersectObjects(occluders, true).find(solid);
+    if (first && partOf(canopy, first.object)) seen++;
+    else if (first?.object.name.startsWith('great-northern-hotel-')) hotel++;
+  }
+  return { own, seen: seen / own, hotel: hotel / own };
+}
+
+// The round-5 western-concourse scorer found the Great Northern Hotel in front of about half of the canopy at concourse-exterior-square
+// (the rubric's frozen stand) and scored C6 from concourse-exterior-west; the lead made that the official C6 view (VIEW_ROLES) and kept the
+// square as context. The labels say so, so the geometry must: the official view sees the roof, and the context view is the hotel's.
+test('the official C6 view sees the canopy, and the hotel stands in front of about half of it at the context view the label names', () => {
+  const [official] = Object.entries(VIEW_ROLES).filter(([, v]) => v.criterion === 'C6' && v.role === 'official').map(([name]) => name);
+  const [context] = Object.entries(VIEW_ROLES).filter(([, v]) => v.criterion === 'C6' && v.role === 'context').map(([name]) => name);
+  assert.deepEqual([official, context], ['concourse-exterior-west', 'concourse-exterior-square']);
+  const best = canopySeen(cameras[official], scene), other = canopySeen(cameras[context], scene);
+  assert.ok(best.own >= 50 && other.own >= 50, `the canopy is in both frames (${best.own} and ${other.own} of 256 rays hit it)`);
+  assert.ok(best.seen >= .8, `${official} sees ${(best.seen * 100).toFixed(0)}% of the canopy: with more than 20% hidden it cannot be the view C6 is scored from`);
+  assert.ok(best.hotel <= .1, `the hotel stands in front of ${(best.hotel * 100).toFixed(0)}% of the canopy at ${official}`);
+  assert.ok(other.hotel >= .35, `the hotel stands in front of ${(other.hotel * 100).toFixed(0)}% of the canopy at ${context}: the label says about half`);
+  assert.ok(other.seen <= best.seen - .2, `${context} sees ${(other.seen * 100).toFixed(0)}% against ${official}'s ${(best.seen * 100).toFixed(0)}%: if the official view is not clearly the better one, VIEW_ROLES is out of date`);
 });
 
 test('western-range-full stands inside the concourse under the roof glazing, clear of it and of the floor', () => {
