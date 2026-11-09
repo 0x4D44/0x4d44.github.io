@@ -430,7 +430,7 @@ test('window glass varies from window to window: the decals by their quad, the c
   assert.ok(!shader(material('window')).fragmentShader.includes('exp( -vMapUv.y )'), 'a window decal is no wall: it has no foot to darken');
 });
 
-test('the stock brick is worn like the close-up (burnt ends, olive bricks, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {
+test('the stock brick is worn like the close-up (burnt ends, duller grey-brown bricks and none of them green, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {
   const [w, h] = TEXTURES.brick.px;
   const draw = (name: 'brick' | 'brickRed') => { const a = recorder(); PAINTERS[name](a.ctx, w, h); return a; };
   const stock = draw('brick');
@@ -442,12 +442,14 @@ test('the stock brick is worn like the close-up (burnt ends, olive bricks, crack
   assert.ok(cracks(stock.rects).length >= 2, `a few are cracked: ${cracks(stock.rects).length}`);
   assert.ok(chips(stock.rects).length >= 4, `a few have a chipped corner: ${chips(stock.rects).length}`);
   assert.equal(burnt(red.rects).length + cracks(red.rects).length + chips(red.rects.filter((r) => r.style === '#b8aa94')).length, 0, 'the red brick has none of it');
-  // a stretcher (the long face) of a stock fired olive-grey is far less saturated than a yellow-buff one: about one in three of them
+  // a stretcher (the long face) of a stock fired a duller grey-brown is less saturated than a yellow-buff one: about one in three of them. Round four: and it is never olive: the
+  // E3 scorer found olive-green bricks in facade-brick-close that R-a and R-a2 do not show, so no stretcher's green sits closer to its red than 0.2 of the way down to its blue (0.28 in the buff, 0.11 in the olive it was)
   const stretchers = stock.rects.filter((r) => typeof r.style === 'string' && r.style.startsWith('rgb(') && r.args[2]! > 80 && r.args[3]! > 20);
   const channels = (s: unknown) => String(s).match(/\d+/g)!.map(Number) as [number, number, number];
   const olive = stretchers.filter((r) => { const [R, , B] = channels(r.style); return R - B < 64; });
+  for (const r of stretchers) { const [R, G, B] = channels(r.style); assert.ok((R - G) / (R - B) > 0.2, `a stretcher is yellow-buff or grey-brown, never olive: in ${r.style} green sits ${((R - G) / (R - B)).toFixed(2)} of the way down from red to blue (the buff's is 0.28, an olive's 0.1)`); }
   assert.ok(stretchers.length >= 20, `the stretchers are found: ${stretchers.length}`);
-  assert.ok(olive.length / stretchers.length > 0.15 && olive.length / stretchers.length < 0.5, `about a third are olive-grey: ${olive.length} of ${stretchers.length}`);
+  assert.ok(olive.length / stretchers.length > 0.15 && olive.length / stretchers.length < 0.5, `about a third are the duller grey-brown: ${olive.length} of ${stretchers.length}`);
   const again = draw('brick');
   const plain = (rs: typeof stock.rects) => rs.map((r) => ({ style: String(r.style), args: r.args }));
   assert.deepEqual(plain(again.rects), plain(stock.rects), 'the same wall every load, so screenshots compare');

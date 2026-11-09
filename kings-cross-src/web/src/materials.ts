@@ -140,10 +140,10 @@ interface BrickPalette {
   header: readonly [number, number];
   burnt: readonly [number, number];
   /**
-   * The wear of a Victorian stock (R-lighting-materials-a, the close-up): some bricks fired olive-grey, the ends burnt brown, a crack or
+   * The wear of a Victorian stock (R-lighting-materials-a, the close-up): some bricks fired a duller grey-brown (never green: round four, the E3 scorer found olive bricks in facade-brick-close that R-a and R-a2 do not show), the ends burnt brown, a crack or
    * a chipped corner here and there. Absent on the red, whose brick is drawn as it was.
    */
-  wear?: { olive: readonly [number, number] };
+  wear?: { grey: readonly [number, number] };
 }
 
 /**
@@ -152,7 +152,7 @@ interface BrickPalette {
  * and dark bricks with no course in it; the headers are 0.84 now, the stretchers a 10% spread, so the mortar's courses are what the eye finds.
  */
 const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb4a06c, 0xa18a5a], header: [0x948462, 0x857a66], burnt: [0x72665a, 0x5e564c],
-  wear: { olive: [0xa39d6e, 0x8c8662] } };
+  wear: { grey: [0xa99a72, 0x8f8362] } }; // (was 0xa39d6e, 0x8c8662: green at 0.11 of the way from red to blue against the buff's 0.28; these keep the buff's hue, 0.27, duller and darker)
 /** The Midland Grand's red (R-lighting-materials-c): orange-red stretchers, headers a shade deeper, pale buff mortar. ASSUMED shades. */
 const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86649], header: [0xcf6047, 0xb45640], burnt: [0x5e3a30, 0x4a322c] };
 
@@ -201,7 +201,7 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
         const x0 = k * period + shift + (isHeader ? stretcher + joint : 0);
         const len = isHeader ? header : stretcher;
         const dark = r() < 0.015; // an overburnt brick (one in sixty-six: they were one in thirty-three and near black, the strongest speckle in a close view)
-        const colours = !isHeader && palette.wear && r() < 0.3 ? palette.wear.olive : isHeader ? palette.header : palette.stretcher; // (a stock fired olive-grey: one in three stretchers)
+        const colours = !isHeader && palette.wear && r() < 0.3 ? palette.wear.grey : isHeader ? palette.header : palette.stretcher; // (a stock fired a duller grey-brown: one in three stretchers)
         const lift = palette.wear ? 0.03 : 0; // (the wear below darkens the average a little: the bricks start that much lighter, so the wall keeps its hue and lightness)
         const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.95 + lift + r() * 0.1) : tone(colours[0], colours[1], r(), 0.95 + lift + r() * 0.1);
         g.fillStyle = dark ? tone(palette.burnt[0], palette.burnt[1], r()) : base;
