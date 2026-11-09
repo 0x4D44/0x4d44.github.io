@@ -286,14 +286,14 @@ interface Palette {
 const PALETTES: Record<BogieStyle, Palette> = {
   // the AT300's: near-black frame and boxes with a lighter steel cap and rim (lner-gwr800-bogie-detail-2017.jpg), a yellow step
   hitachi: {
-    frame: col(0x3a3e45), box: col(0x30343a), cap: col(0x6a6f77), spring: col(0x575b61), coil: col(0x2b2d31),
+    frame: col(0x474c54), box: col(0x363a41), cap: col(0x4f545b), spring: col(0x5f646b), coil: col(0x2b2d31),
     tread: col(0x9a9fa6), rim: col(0x6b7078), web: col(0x484c53), hub: col(0x80858c), inner: col(0x2f3238),
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5c6168),
     motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
   // the Electrostar's: the same outside-frame kit in a slightly bluer dark grey (no photograph of its bogie is usable)
   electrostar: {
-    frame: col(0x3c4048), box: col(0x32363d), cap: col(0x6c717a), spring: col(0x585d65), coil: col(0x2c2e33),
+    frame: col(0x494e57), box: col(0x383c44), cap: col(0x51565f), spring: col(0x60656d), coil: col(0x2c2e33),
     tread: col(0x9a9fa6), rim: col(0x6d727a), web: col(0x4a4f57), hub: col(0x80858c), inner: col(0x30343a),
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5e636b),
     motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
@@ -407,7 +407,7 @@ function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: Bo
         ? // a flatter, lower beam
           beamOutline([[0, r + 0.04], [0.5, r + 0.04], [0.85, r + 0.2], [w + 0.34, r + 0.2], [w + 0.34, r + 0.44], [0.8, r + 0.44], [0, r + 0.4]])
         : // the AT300's: deep in the middle, swept up and out over the axle boxes (lner-gwr800-bogie-detail-2017.jpg)
-          beamOutline([[0, r - 0.01], [0.5, r - 0.01], [0.82, r + 0.12], [w - 0.28, r + 0.26], [w + 0.33, r + 0.26], [w + 0.35, r + 0.36], [w + 0.3, r + 0.5], [w - 0.3, r + 0.5], [0.75, r + 0.44], [0, r + 0.4]]);
+          beamOutline([[0, r - 0.08], [0.5, r - 0.08], [0.82, r + 0.1], [w - 0.28, r + 0.26], [w + 0.33, r + 0.26], [w + 0.35, r + 0.36], [w + 0.3, r + 0.5], [w - 0.3, r + 0.5], [0.75, r + 0.44], [0, r + 0.4]]);
   const springTop = r + 0.26;
   for (const sx of [-1, 1]) {
     const [bx0, bx1] = xs(sx, 0.975, 1.065);
@@ -436,7 +436,7 @@ function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: Bo
       const [hx0, hx1] = xs(sx, 1.065, 1.1);
       F.box(hx0, hx1, 0.21, r - 0.06, -0.17, 0.17, pal.frame);
       // the two round bosses on the deep middle of the beam (the same photograph: a circle each side of the step's plate)
-      for (const z of [-0.38, 0.38]) lathe(F, axisX(sx * 1.071, r + 0.04, z, sx as 1 | -1), [[0, 0.1], [0, 0]], 12, pal.spring);
+      for (const z of [-0.36, 0.36]) lathe(F, axisX(sx * 1.071, r + 0.09, z, sx as 1 | -1), [[0, 0.1], [0, 0]], 12, pal.spring);
     }
   }
   // the cross beam between the side beams

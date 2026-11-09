@@ -9,7 +9,8 @@ import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
 import { ASSUMED, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_LOD_DISTANCE, DISC_RADIUS, FLANGE_HEIGHT, WHEEL_WIDTH, bogieFarSoup, bogieSoup, buildBogie, couplerHalf } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf } from '../src/train-parts.ts';
+import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
 import { col, ellipse, Soup } from '../src/train-geom.ts';
 import { COUPLING_CLEARANCE } from '../src/trains-live.ts';
 
@@ -1319,6 +1320,198 @@ test('bogies: a train far from the camera draws the same calls and far fewer tri
     });
   }
   assert.ok(nearOnes > 5 && farOnes > 5, `${nearOnes} near and ${farOnes} far bogies on a 242 m train`);
+});
+
+// --- the rebuilt bogies: wheels, axles, drives, budgets, envelope, clearance -------------------------------------------------------
+
+/**
+ * Every bogie the model draws, as its maker's style and the sizes its family gives it (core/train.ts: wheel diameter, motor and trailer wheelbase):
+ * the Hitachi AT300 (Class 800/801), the Electrostar (387), the Siemens SF7000 (700 and 717) and the Class 180's. Each as a motor and a trailer bogie.
+ */
+const BOGIE_CASES: { label: string; spec: BogieSpec }[] = [];
+for (const [label, style, radius, wheelbase, diesel] of [
+  ['Hitachi AT300', 'hitachi', 0.43, 2.6, false],
+  ['Electrostar', 'electrostar', 0.42, 2.7, false],
+  ['Siemens motor', 'siemens', 0.41, 2.2, false],
+  ['Siemens trailer', 'siemens', 0.41, 2.1, false],
+  ['Class 180', 'alstom', 0.42, 2.7, true],
+] as const) {
+  for (const motor of [true, false]) BOGIE_CASES.push({ label: `${label} ${motor ? 'motor' : 'trailer'}`, spec: { radius, wheelbase, track: FIGURES.gauge.value, motor, style, ...(diesel ? { diesel } : {}) } });
+}
+type V3t = [number, number, number];
+const vertsOf = (s: Soup): V3t[] => Array.from({ length: s.pos.length / 3 }, (_, i): V3t => [s.pos[3 * i] as number, s.pos[3 * i + 1] as number, s.pos[3 * i + 2] as number]);
+const trisOf = (s: Soup): number => s.pos.length / 9;
+const axleZs = (spec: BogieSpec): number[] => [-spec.wheelbase / 2, spec.wheelbase / 2];
+
+test('bogie wheels: the tread and the flange of every wheel are 40 or more sides round in the near level, 12 or more in the far one, in every style', () => {
+  assert.ok(WHEEL_SEGMENTS >= 40, `${WHEEL_SEGMENTS} sides to a wheel`);
+  assert.ok(FAR_WHEEL_SEGMENTS >= 12, `${FAR_WHEEL_SEGMENTS} sides to a far wheel`);
+  // the distinct places round the axle that carry a vertex at `radius` from it, in the plane at `x` (or anywhere within 0.1 m of the wheel's own plane when x is null)
+  const sides = (verts: V3t[], cx: number, az: number, r: number, x: number | null, radius: number): number => {
+    const angles = new Set<number>();
+    for (const [vx, vy, vz] of verts) {
+      if (x === null ? Math.abs(vx - cx) > 0.1 : Math.abs(vx - x) > 1e-9) continue;
+      if (Math.abs(Math.hypot(vy - r, vz - az) - radius) > 1e-9) continue;
+      angles.add(Math.round(Math.atan2(vz - az, vy - r) * 1e6));
+    }
+    return angles.size;
+  };
+  for (const { label, spec } of BOGIE_CASES) {
+    const nearVerts = vertsOf(bogieParts(spec).wheels);
+    const farVerts = vertsOf(bogieFarSoup(spec));
+    for (const az of axleZs(spec)) {
+      for (const sx of [-1, 1]) {
+        const cx = (sx * spec.track) / 2;
+        for (const edge of [-1, 1]) {
+          assert.ok(sides(nearVerts, cx, az, spec.radius, cx + edge * WHEEL_HALF, spec.radius) >= 40, `${label}: the near tread's edge at ${edge} of the wheel at x ${cx}, z ${az} is under 40 sides round`);
+          assert.ok(sides(farVerts, cx, az, spec.radius, cx + edge * WHEEL_HALF, spec.radius) >= 12, `${label}: the far tread's edge at ${edge} of the wheel at x ${cx}, z ${az} is under 12 sides round`);
+        }
+        assert.ok(sides(nearVerts, cx, az, spec.radius, null, spec.radius + FLANGE_HEIGHT) >= 40, `${label}: the flange of the wheel at x ${cx}, z ${az} is under 40 sides round`);
+      }
+    }
+  }
+});
+
+test('bogie wheels and axles: each wheel stands on its axle with its tread bottom on the rail head and its flange a flange-height under it, and the axle runs through the pair', () => {
+  for (const { label, spec } of BOGIE_CASES) {
+    const parts = bogieParts(spec);
+    const wheels = vertsOf(parts.wheels);
+    near(Math.min(...wheels.map((v) => v[1])), -FLANGE_HEIGHT, 1e-9, `${label}: the flange dips below the rail head`);
+    near(Math.max(...wheels.map((v) => v[1])), 2 * spec.radius + FLANGE_HEIGHT, 1e-9, `${label}: the top of the flange`);
+    for (const az of axleZs(spec)) {
+      for (const sx of [-1, 1]) {
+        const cx = (sx * spec.track) / 2;
+        // this wheel's vertices: its own plane and the length of its axle either side of it, not the neighbours'
+        const mine = wheels.filter((v) => Math.abs(v[0] - cx) < 0.12 && Math.abs(v[2] - az) < spec.radius + FLANGE_HEIGHT + 1e-6);
+        assert.ok(mine.length >= 4 * 40, `${label}: ${mine.length} vertices in the wheel at x ${cx}, z ${az}`);
+        near(Math.min(...mine.map((v) => v[2])), az - spec.radius - FLANGE_HEIGHT, 1e-9, `${label}: the flange reaches a radius aft of the axle`);
+        near(Math.max(...mine.map((v) => v[2])), az + spec.radius + FLANGE_HEIGHT, 1e-9, `${label}: and a radius forward`);
+        assert.ok(mine.some((v) => Math.abs(v[1]) < 1e-9 && Math.abs(v[0] - cx) <= WHEEL_HALF + 1e-9), `${label}: the tread of the wheel at x ${cx}, z ${az} has a vertex on the rail head`);
+        // the whole wheel is within the tread width and the flange, hub and web either side of it, centred on the rail
+        assert.ok(mine.every((v) => v[0] - cx > -0.1 && v[0] - cx < 0.1), `${label}: the wheel at x ${cx} is thicker than 0.2 m`);
+      }
+      // the axle: a bare cylinder about the axle line from one wheel to the other
+      const axle = vertsOf(parts.axles).filter((v) => Math.abs(v[2] - az) < 0.2);
+      assert.ok(axle.length >= 16, `${label}: no axle at z ${az}`);
+      const radii = axle.map((v) => Math.hypot(v[1] - spec.radius, v[2] - az));
+      near(Math.max(...radii), Math.min(...radii), 1e-9, `${label}: the axle at z ${az} is round about the wheels' centre line`);
+      assert.ok(radii[0]! > 0.04 && radii[0]! < 0.12, `${label}: an axle of radius ${radii[0]} m`);
+      assert.ok(Math.min(...axle.map((v) => v[0])) <= -spec.track / 2 && Math.max(...axle.map((v) => v[0])) >= spec.track / 2, `${label}: the axle at z ${az} does not reach both wheels`);
+    }
+  }
+});
+
+test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, and the same wheels, axles, discs and frame', () => {
+  for (const { label, spec } of BOGIE_CASES) {
+    const parts = bogieParts(spec);
+    const twin = bogieParts({ ...spec, motor: !spec.motor });
+    const [motor, trailer] = spec.motor ? [parts, twin] : [twin, parts];
+    assert.ok(trisOf(motor.drive) >= 100, `${label}: a motor bogie's drive is ${trisOf(motor.drive)} triangles`);
+    assert.equal(trisOf(trailer.drive), 0, `${label}: a trailer bogie carries no traction motor or gearbox`);
+    for (const part of ['wheels', 'axles', 'brakes', 'frame', 'springs'] as const) assert.deepEqual(motor[part].pos, trailer[part].pos, `${label}: a motor bogie's ${part} are a trailer's`);
+    // brake discs on both: two a side of the middle on each axle, in the plane |x| = 0.3, the callipers on them
+    const discs = vertsOf(trailer.brakes).filter((v) => Math.abs(Math.abs(v[0]) - 0.3) <= DISC_THICKNESS / 2 + 1e-9);
+    assert.ok(discs.length >= 4 * 12 * 2, `${label}: ${discs.length} vertices in the brake discs of a trailer bogie`);
+  }
+});
+
+test('bogie budgets: a near bogie is at most 2,600 triangles (a motor bogie) or 2,400 (a trailer), a far one at most 300, in every style', () => {
+  for (const { label, spec } of BOGIE_CASES) {
+    const nearN = trisOf(bogieSoup(spec));
+    const farN = trisOf(bogieFarSoup(spec));
+    assert.ok(nearN <= (spec.motor ? 2600 : 2400), `${label}: ${nearN} triangles in the near bogie`);
+    assert.ok(nearN >= 1800, `${label}: ${nearN} triangles is too bare for a bogie that reads as one at three metres`);
+    assert.ok(farN <= 300 && farN >= 100, `${label}: ${farN} triangles in the far bogie`);
+    // the wheels are the bulk of it, and the rest is the frame, springs, discs and the drive
+    assert.ok(trisOf(bogieParts(spec).wheels) >= 1000, `${label}: the wheels are ${trisOf(bogieParts(spec).wheels)} triangles`);
+  }
+});
+
+test('bogie levels of detail: the far bogie has the near bogie\'s footprint, within it and reaching most of it, in every style', () => {
+  for (const { label, spec } of BOGIE_CASES) {
+    const nearV = vertsOf(bogieSoup(spec));
+    const farV = vertsOf(bogieFarSoup(spec));
+    for (const [axis, name] of [[0, 'width'], [2, 'length']] as const) {
+      const nearReach = Math.max(...nearV.map((v) => Math.abs(v[axis])));
+      const farReach = Math.max(...farV.map((v) => Math.abs(v[axis])));
+      assert.ok(farReach <= nearReach + 1e-6, `${label}: the far bogie's ${name} ${farReach} is more than the near one's ${nearReach}`);
+      assert.ok(farReach >= 0.9 * nearReach, `${label}: the far bogie's ${name} ${farReach} is under 90% of the near one's ${nearReach}: the silhouette would jump at the swap`);
+    }
+    const nearTop = Math.max(...nearV.map((v) => v[1]));
+    const farTop = Math.max(...farV.map((v) => v[1]));
+    assert.ok(farTop <= nearTop + 1e-6 && farTop >= 0.85 * nearTop, `${label}: the far bogie's top ${farTop} against the near one's ${nearTop}`);
+    near(Math.min(...farV.map((v) => v[1])), 0, 1e-9, `${label}: the far wheels stand on the rail head`);
+  }
+});
+
+test('bogie envelope: nothing is wider than 1.15 m from the centre line or reaches the body floor, nothing but a flange is under the rail head, and no part is longer than its wheels', () => {
+  assert.ok(BOGIE_HALF_WIDTH <= 1.15 && BOGIE_TOP < 0.98, `the envelope constants ${BOGIE_HALF_WIDTH} and ${BOGIE_TOP}`);
+  for (const { label, spec } of BOGIE_CASES) {
+    for (const [level, soup] of [['near', bogieSoup(spec)], ['far', bogieFarSoup(spec)]] as const) {
+      const verts = vertsOf(soup);
+      assert.ok(Math.max(...verts.map((v) => Math.abs(v[0]))) <= 1.15, `${label} ${level}: wider than 1.15 m`);
+      // the lowest body floor of any family is 0.98 m (the electric multiple units and the Class 180); the AT300's is 1.0 m
+      assert.ok(Math.max(...verts.map((v) => v[1])) < 0.98, `${label} ${level}: ${Math.max(...verts.map((v) => v[1]))} m reaches the body floor`);
+      assert.ok(Math.max(...verts.map((v) => Math.abs(v[2]))) <= spec.wheelbase / 2 + spec.radius + FLANGE_HEIGHT + 1e-9, `${label} ${level}: a part is longer than the wheels reach`);
+    }
+    // nothing but the wheels' own flanges is under the rail head
+    for (const part of ['axles', 'brakes', 'frame', 'springs', 'drive'] as const) {
+      const verts = vertsOf(bogieParts(spec)[part]);
+      if (verts.length) assert.ok(Math.min(...verts.map((v) => v[1])) >= 0, `${label}: the ${part} reach under the rail head`);
+    }
+  }
+});
+
+test('bogie clearance: nothing but the axles passes through a wheel: not the discs, the frame, the springs nor the drive, in every style', () => {
+  const inside = (spec: BogieSpec, p: V3t): boolean => {
+    for (const az of axleZs(spec)) {
+      for (const sx of [-1, 1]) {
+        const cx = (sx * spec.track) / 2;
+        if (Math.abs(p[0] - cx) < 0.1 - 1e-6 && Math.hypot(p[1] - spec.radius, p[2] - az) < spec.radius + FLANGE_HEIGHT - 1e-6) return true;
+      }
+    }
+    return false;
+  };
+  for (const { label, spec } of BOGIE_CASES) {
+    const parts = bogieParts(spec);
+    for (const part of ['brakes', 'frame', 'springs', 'drive'] as const) {
+      const v = vertsOf(parts[part]);
+      // every triangle's corners, middles of edges and centroid: a box straddling a wheel has no corner inside it
+      for (let t = 0; t + 2 < v.length; t += 3) {
+        const [a, b, c] = [v[t], v[t + 1], v[t + 2]] as [V3t, V3t, V3t];
+        const pts: V3t[] = [a, b, c, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], [(b[0] + c[0]) / 2, (b[1] + c[1]) / 2, (b[2] + c[2]) / 2], [(c[0] + a[0]) / 2, (c[1] + a[1]) / 2, (c[2] + a[2]) / 2], [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3]];
+        for (const p of pts) assert.ok(!inside(spec, p), `${label}: the ${part} pass through a wheel at (${p.map((x) => x.toFixed(3)).join(', ')})`);
+      }
+    }
+  }
+});
+
+test('bogie styles: absent a style a bogie is the Hitachi\'s, or the Alstom\'s if it is diesel; each style is its own geometry, shared by every bogie of it, and its far level too', () => {
+  assert.equal(bogieStyle({}), 'hitachi');
+  assert.equal(bogieStyle({ diesel: false }), 'hitachi');
+  assert.equal(bogieStyle({ diesel: true }), 'alstom');
+  for (const style of ['hitachi', 'electrostar', 'siemens', 'alstom'] as const) assert.equal(bogieStyle({ style }), style);
+  assert.equal(bogieStyle({ style: 'siemens', diesel: true }), 'siemens', 'an explicit style wins');
+  const spec = { radius: 0.42, wheelbase: 2.7, track: FIGURES.gauge.value, motor: true };
+  const meshOf = (b: THREE.Object3D, lod: string): THREE.Mesh => all(b, 'bogie-mesh').find((m) => m.userData.lod === lod) as THREE.Mesh;
+  const styles = ['hitachi', 'electrostar', 'siemens', 'alstom'] as const;
+  for (const lod of ['near', 'far']) {
+    const geos = styles.map((style) => meshOf(buildBogie({ ...spec, style }), lod).geometry);
+    assert.equal(new Set(geos).size, 4, `${lod}: one geometry for each of the four styles`);
+    styles.forEach((style, k) => assert.equal(meshOf(buildBogie({ ...spec, style }), lod).geometry, geos[k], `${lod}: two ${style} bogies share a geometry`));
+  }
+  // the styles differ where the photographs differ: the Siemens' inside frame keeps everything within the wheels' hubs, the others carry axle boxes and beams outboard of the wheels
+  const reach = (style: BogieStyle): number => Math.max(...vertsOf(bogieSoup({ ...spec, style })).map((v) => Math.abs(v[0])));
+  assert.ok(reach('siemens') <= spec.track / 2 + 0.12, `the Siemens bogie is ${reach('siemens')} m out`);
+  for (const style of ['hitachi', 'electrostar', 'alstom'] as const) assert.ok(reach(style) >= 1.05, `the ${style} bogie is ${reach(style)} m out: no outside frame`);
+  // and only the AT300 carries the yellow maintenance step the photograph shows
+  const yellow = col(0xd9b11a);
+  const hasYellow = (style: BogieStyle): boolean => {
+    const s = bogieSoup({ ...spec, style });
+    for (let i = 0; i < s.clr.length; i += 3) if (Math.abs((s.clr[i] as number) - yellow.r) < 1e-6 && Math.abs((s.clr[i + 1] as number) - yellow.g) < 1e-6 && Math.abs((s.clr[i + 2] as number) - yellow.b) < 1e-6) return true;
+    return false;
+  };
+  assert.deepEqual(styles.map(hasYellow), [true, false, false, false]);
 });
 
 // --- liveries -------------------------------------------------------------------------------------
