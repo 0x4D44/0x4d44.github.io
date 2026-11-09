@@ -353,6 +353,42 @@ test('stomp: fake transport turns ERROR frames into safe faults', (t) => {
   assert.equal(socket.closed, true);
 });
 
+for (const connected of [false, true]) {
+  test(`stomp: fake transport stops immediately on ERROR ${connected ? 'after CONNECTED' : 'during handshake'}`, (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'], now: 1000 });
+    const socket = new FakeSocket();
+    const passcode = 'SYNTHETIC-ERROR-ECHO';
+    const client = new StompClient(socket, { login: 'invented', passcode, heartbeat: [20, 20] });
+    t.after(() => client.disconnect());
+    const emitted = [];
+    for (const name of ['connected', 'message', 'fault', 'close']) {
+      client.on(name, (payload) => emitted.push({ name, payload }));
+    }
+    client.start();
+    if (connected) socket.send('CONNECTED', { 'heart-beat': '20,20' });
+    socket.send('ERROR', { message: `refused ${passcode}` }, `upstream echoed ${passcode}`);
+
+    // Assert before advancing time: a handshake/heartbeat timeout is not an ERROR response.
+    const expected = connected ? ['connected', 'fault', 'close'] : ['fault', 'close'];
+    assert.deepEqual(emitted.map(({ name }) => name), expected, 'ERROR must emit fault and close synchronously');
+    assert.equal(emitted.find(({ name }) => name === 'fault').payload.message, 'stomp: ERROR frame');
+    assert.equal(socket.closed, true, 'ERROR must destroy the transport immediately');
+    assert.ok(!util.inspect(emitted, { depth: null }).includes(passcode), 'ERROR events must not echo the passcode');
+
+    const writes = socket.writes.length;
+    t.mock.timers.tick(60000);
+    // Bypass FakeSocket.send's closed guard to exercise the client's own terminal state.
+    socket.emit('data', Buffer.concat([
+      encodeFrame('CONNECTED', { 'heart-beat': '20,20' }),
+      encodeFrame('MESSAGE', { destination: '/topic/synthetic' }, 'late'),
+      encodeFrame('ERROR', { message: passcode }, passcode),
+    ]));
+    client.disconnect();
+    assert.deepEqual(emitted.map(({ name }) => name), expected, 'closed clients must not emit more events');
+    assert.equal(socket.writes.length, writes, 'ERROR must cancel handshake and heartbeat timers');
+  });
+}
+
 test('feed: fake transport keeps credentials private, logs bad bodies, and reconnects', async (t) => {
   const sockets = [];
   const logs = [];
