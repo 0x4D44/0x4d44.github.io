@@ -1021,13 +1021,16 @@ export const stationSearchSummary=report=>report.map(r=>({placement:r.placementI
   views:Object.fromEntries(Object.entries(r.views).map(([s,v])=>[s,{tested:v.tested,acceptedAzimuthDeg:v.accepted?.azimuthDeg??null,failures:failureSummary(v.tried)}]))}));
 
 /**
- * V10 on frozen poses: the results of one kind's frozen station views, with every frozen camera the scene now blocks searched for again in its own placement
- * (reseatBlockedStationViews) and the views that search found photographed. Only a view that was OK in the plan and whose inspection found its camera blocked is reseated:
- * a planned GAP, a view whose pixels failed and a view that was not frozen are left as recorded. `search(placements)` is the page's search, `capture(views)` photographs views
+ * V10 on frozen poses: the results of one kind's frozen station views, with every frozen camera the scene now blocks, and every view frozen as a GAP that the plan asks for,
+ * searched for again in its own placement (reseatBlockedStationViews) and the views that search found photographed. A frozen GAP is an earlier answer too: it was recorded
+ * under the candidate list the rule had then, and the rule may have tried more positions since (it once stopped at the spread; the neighbours pass came after). Only a view that
+ * was OK in the plan and whose inspection found its camera blocked, or one frozen as a GAP whose spec the plan itself marks OK, is reseated: a GAP the plan itself gives (its spec
+ * is not OK), a view whose pixels failed and a view that was not frozen are left as recorded. `search(placements)` is the page's search, `capture(views)` photographs views
  * as the first pass did. Returns the results in their order and the search's report (null when nothing was blocked, so nothing was searched).
  */
 export async function reseatStationResults({results,station,search,capture}) {
-  const blocked=results.filter(r=>r.view.id==='V10'&&r.view.status==='OK'&&r.view.search?.frozen&&r.status==='GAP'&&r.inspection&&!r.inspection.clear);
+  const asked=r=>station.views.some(s=>s.suffix===r.view.suffix&&s.status==='OK');
+  const blocked=results.filter(r=>r.view.id==='V10'&&r.view.search?.frozen&&r.status==='GAP'&&(r.view.status==='OK'?r.inspection&&!r.inspection.clear:r.view.status==='GAP'&&r.view.placement&&asked(r)));
   const placement=blocked.length?station.placements.find(p=>p.id===blocked[0].view.placement?.id):null;
   if(!placement)return {results,report:null};
   const report=await search([placement]);

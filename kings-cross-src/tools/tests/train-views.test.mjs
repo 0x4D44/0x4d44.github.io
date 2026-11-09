@@ -867,6 +867,9 @@ test('a planned view is exactly its frozen numbers: status, frame, pose, region,
 const station=await C.loadStationScene();
 /** Runs `fn`; whatever it throws that is not already an assertion becomes one, so a broken function fails the assertion that asked for it. */
 const calm=(fn,what='the call')=>{try{return fn();}catch(e){if(e instanceof assert.AssertionError)throw e;assert.fail(`${what} threw ${e?.name}: ${e?.message}`);}};
+/** `calm` for an async call: whatever it throws that is not already an assertion becomes one, so a broken function fails the assertion that asked for it. */
+const calmly=async(fn,what='the call')=>{try{return await fn();}catch(e){if(e instanceof assert.AssertionError)throw e;assert.fail(`${what} threw ${e?.name}: ${e?.message}`);}};
+const reseat=args=>calmly(()=>C.reseatStationResults(args),'reseatStationResults');
 const planOf=(kind,scene=station)=>calm(()=>F.planStation(formations.get(kind),scene),`planStation(${kind})`);
 /** The station plan of a kind, made on first use (so a broken planner fails the tests that ask for a plan, not the whole file). */
 const stationPlans={cache:new Map(),get(kind){if(!this.cache.has(kind))this.cache.set(kind,planOf(kind));return this.cache.get(kind);}};
@@ -1135,30 +1138,71 @@ test('reseatStationResults searches only for a frozen V10 camera found blocked, 
  const reset=()=>{calls.search=[];calls.capture=[];};
  // nothing blocked: no search, no photograph, the very same results
  const clear=frozen.map(okResult);
- let out=await C.reseatStationResults({results:clear,station:plan,search:searchWith(allAt(plan,B)),capture});
+ let out=await reseat({results:clear,station:plan,search:searchWith(allAt(plan,B)),capture});
  assert.equal(out.results,clear);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
  // the first view blocked: placement B alone is searched (not A), only that view's replacement is photographed, and the rest are the same results in the same places
  const results=frozen.map((v,i)=>i===0?blockedResult(v):okResult(v));
- out=await C.reseatStationResults({results,station:plan,search:searchWith({[A]:allAt(plan,A,0)[A],[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:2}}),capture});
- assert.deepEqual(calls,{search:[[B]],capture:[[frozen[0].suffix]]});assert.deepEqual(out.report.map(r=>r.placementId),[B]);
+ out=await reseat({results,station:plan,search:searchWith({[A]:allAt(plan,A,0)[A],[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:2}}),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[[frozen[0].suffix]]});assert.deepEqual(out.report?.map(r=>r.placementId),[B],'the search report is returned');
  assert.deepEqual(out.results.map(r=>r.view.suffix),frozen.map(v=>v.suffix),'in their places');assert.equal(out.results[0].status,'OK');assert.equal(out.results[0].file,`lner5-${frozen[0].suffix}.png`);
- assert.equal(out.results[0].view.search.replacesFrozen.blocker,'Scene/furniture/benches');assert.notEqual(out.results[0].view,frozen[0]);
+ assert.equal(out.results[0].view.search.replacesFrozen?.blocker,'Scene/furniture/benches','the replacement names the camera it replaces');assert.notEqual(out.results[0].view,frozen[0]);
  out.results.slice(1).forEach((r,i)=>assert.equal(r,results[i+1],`${r.view.suffix} is untouched`));
  // no clear camera for the blocked view: nothing is photographed, and its result is the GAP it was with a reason that says both
- reset();out=await C.reseatStationResults({results,station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null}}),capture});
+ reset();out=await reseat({results,station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null}}),capture});
  assert.deepEqual(calls,{search:[[B]],capture:[]},'a search, and no photograph');assert.equal(out.results[0].status,'GAP');assert.match(out.results[0].reason,new RegExp(`^coach occluded; searched again in ${B}: no clear camera: `));
- assert.equal(out.results[0].blocker,'Scene/furniture/benches');assert.equal(out.results[0].view,frozen[0]);assert.deepEqual(out.results[0].inspection,results[0].inspection);out.results.slice(1).forEach((r,i)=>assert.equal(r,results[i+1]));assert.equal(out.report.length,1);
- // what is not a frozen V10 camera found blocked is never searched for again: a view that was a GAP in the plan, one that was not frozen, one that failed on its pixels (its inspection was clear), and a stage view
+ assert.equal(out.results[0].blocker,'Scene/furniture/benches');assert.equal(out.results[0].view,frozen[0]);assert.deepEqual(out.results[0].inspection,results[0].inspection);out.results.slice(1).forEach((r,i)=>assert.equal(r,results[i+1]));assert.equal(out.report?.length,1,'the search report is returned');
+ // what is not a frozen V10 camera found blocked (or a view frozen as a GAP, the next test) is never searched for again: a GAP that this run's own search recorded (CHANGED (frozen GAP re-search): a GAP
+ // frozen from an earlier run is searched for again now, so this entry is one that is not frozen), one that was not frozen, one that failed on its pixels (its inspection was clear), and a stage view
  reset();
- const odd=[{...blockedResult(frozen[0]),view:{...frozen[0],status:'GAP'}},{...blockedResult(frozen[1]),view:{...frozen[1],search:{chosen:B}}},{...blockedResult(frozen[2]),inspection:{clear:true}},
+ const odd=[{...blockedResult(frozen[0]),view:{...frozen[0],status:'GAP',search:{chosen:B}}},{...blockedResult(frozen[1]),view:{...frozen[1],search:{chosen:B}}},{...blockedResult(frozen[2]),inspection:{clear:true}},
   {view:{id:'V03',suffix:'front-3m',status:'OK',search:{frozen:true},placement:{id:B}},status:'GAP',reason:'x',inspection:{clear:false}},
   {...blockedResult(frozen[3]),status:'OK'}];
- out=await C.reseatStationResults({results:odd,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,odd);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ out=await reseat({results:odd,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,odd);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
  // a frozen placement this plan does not have is not searched for (the drift check refuses such a file first)
- out=await C.reseatStationResults({results:[{...blockedResult(frozen[0]),view:{...frozen[0],placement:{id:'stop-9-nowhere'}}}],station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ out=await reseat({results:[{...blockedResult(frozen[0]),view:{...frozen[0],placement:{id:'stop-9-nowhere'}}}],station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
  // two views blocked, one found and one not: the one is photographed, the other keeps its GAP
- reset();out=await C.reseatStationResults({results:frozen.map((v,i)=>i<2?blockedResult(v):okResult(v)),station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null,[frozen[1].suffix]:1}}),capture});
+ reset();out=await reseat({results:frozen.map((v,i)=>i<2?blockedResult(v):okResult(v)),station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null,[frozen[1].suffix]:1}}),capture});
  assert.deepEqual(calls.capture,[[frozen[1].suffix]]);assert.deepEqual(out.results.slice(0,2).map(r=>r.status),['GAP','OK']);
+});
+
+test('a V10 view frozen as a GAP is an earlier answer too: it is searched for again in its own placement, so a rule that tries more positions can find it a camera, and a GAP that stays says how many were inspected',async()=>{
+ const plan=stationPlans.get('lner5'),A=plan.placements[0].id,B=plan.placements[1].id,suffix='station-150m-coach';
+ // round 2's search stopped at the spread: the view was frozen as a GAP, with its placement, its reason and its blocker
+ const held=F.stationViewsFromSearch(plan,fakeReport(plan,{[B]:{...allAt(plan,B)[B],[suffix]:null}})),frozen=F.stationViewsFromFrozen(plan,manifestOf(held)),gap=frozen.find(v=>v.suffix===suffix);
+ assert.ok(gap.status==='GAP'&&gap.search.frozen===true&&gap.placement.id===B&&gap.blocker,'the fixture: a view frozen as a GAP that keeps its placement and its blocker');
+ const okResult=view=>({view,status:'OK',reason:null,inspection:{clear:true},file:`lner5-${view.suffix}.png`,attempts:1}),gapResult=view=>({view,status:'GAP',reason:view.reason,attempts:0});
+ const results=frozen.map(v=>v===gap?gapResult(v):okResult(v)),calls={search:[],capture:[]};
+ const searchWith=accepts=>async placements=>{calls.search.push(placements.map(p=>p.id));return fakeReport(plan,accepts).filter(r=>placements.some(p=>p.id===r.placementId));};
+ const capture=async views=>{calls.capture.push(views.map(v=>v.suffix));return views.map(okResult);};
+ const reset=()=>{calls.search=[];calls.capture=[];};
+ // the search finds a camera: the placement alone is searched, only that view is photographed and takes its place, and what it replaces has no camera, only the reason and the blocker it was frozen with
+ let out=await reseat({results,station:plan,search:searchWith({[A]:allAt(plan,A,0)[A],[B]:{...allAt(plan,B)[B],[suffix]:1}}),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[[suffix]]});assert.deepEqual(out.report?.map(r=>r.placementId),[B],'the search report is returned');
+ const done=out.results.find(r=>r.view.suffix===suffix),cam=plan.placements[1].views.find(v=>v.suffix===suffix).candidates[1];
+ assert.equal(done.status,'OK');assert.equal(done.file,`lner5-${suffix}.png`);vec(done.view.eye,cam.eye,1e-12);near(horizontal(done.view.eye,done.view.target),150,1e-6,'and V10\'s rule holds');assert.equal(done.view.search.frozen,undefined);
+ assert.deepEqual(done.view.search.replacesFrozen,{eye:null,azimuthDeg:null,platform:null,reason:gap.reason,blocker:gap.blocker});
+ assert.deepEqual(out.results.map(r=>r.view.suffix),frozen.map(v=>v.suffix),'in their places');out.results.filter(r=>r!==done).forEach(r=>assert.ok(results.includes(r),`${r.view.suffix} is untouched`));
+ // the search finds none: nothing is photographed, and the GAP keeps its place, its view and what it was, with a reason that says what it was and what the new search inspected
+ reset();out=await reseat({results,station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[suffix]:null}}),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[]},'a search, and no photograph');
+ const stays=out.results.find(r=>r.view.suffix===suffix),cams=plan.placements[1].views.find(v=>v.suffix===suffix);
+ assert.equal(stays.status,'GAP');assert.equal(stays.view,gap);assert.equal(stays.attempts,0);
+ assert.equal(stays.reason,`${gap.reason}; searched again in ${B}: no clear camera: ${cams.candidates.length} of ${cams.candidateCount} candidate positions over platforms were inspected (${cams.spreadCount} spread over the platforms, then ${cams.candidates.length-cams.spreadCount} thinned-out neighbours); blocked by Scene/furniture/benches (coach occluded) x${cams.candidates.length}`);
+ assert.equal(out.report?.length,1,'the search report is returned');out.results.filter(r=>r!==stays).forEach(r=>assert.ok(results.includes(r)));
+ // a GAP the plan itself gives (its spec is not OK) is no answer of the rule's, and a GAP with no placement has nowhere to be searched: both stay as recorded
+ reset();const own={...plan,views:plan.views.map(s=>s.suffix===suffix?{...s,status:'GAP',reason:'the plan has no such view'}:s)};
+ out=await reseat({results,station:own,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,results);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ const lost=(({placement,...rest})=>rest)(gap),homeless=results.map(r=>r.view===gap?gapResult(lost):r);
+ out=await reseat({results:homeless,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,homeless);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // and one with no placement ahead of a blocked camera does not hide it: the placement searched is that of the first view that can be searched
+ const camera=frozen[0],hidden=[gapResult(lost),{view:camera,status:'GAP',reason:'coach occluded',blocker:'Scene/furniture/benches',inspection:{clear:false},attempts:2},...frozen.filter(v=>v!==gap&&v!==camera).map(okResult)];
+ reset();out=await reseat({results:hidden,station:plan,search:searchWith(allAt(plan,B)),capture});assert.deepEqual(calls,{search:[[B]],capture:[[camera.suffix]]});assert.equal(out.results[0],hidden[0],'the GAP with no placement is as recorded');assert.equal(out.results[1].status,'OK');assert.equal(out.results[1].view.search.replacesFrozen?.reason,'coach occluded');
+ // a view of another id, one whose status is neither OK nor GAP (even if its result says GAP), and a GAP that this run's own search recorded (it is not frozen) are left alone
+ reset();const other=[{view:{...gap,id:'V03'},status:'GAP',reason:gap.reason,attempts:0},{view:{...gap,status:'N/A'},status:'N/A',reason:'x',attempts:0},{view:{...gap,status:'N/A'},status:'GAP',reason:'x',attempts:0},{view:{...gap,search:{chosen:B}},status:'GAP',reason:gap.reason,attempts:0}];
+ out=await reseat({results:other,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,other);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // the planner on its own: a frozen GAP has no eye, bearing or platform to name, and takes its blocker from the view when the result carries none
+ const planned=calm(()=>F.reseatBlockedStationViews(plan,[{view:gap,reason:gap.reason}],fakeReport(plan,{[B]:{...allAt(plan,B)[B],[suffix]:1}})),'reseatBlockedStationViews');
+ assert.deepEqual(planned.replacements.map(v=>v.suffix),[suffix]);assert.deepEqual(planned.replacements[0].search.replacesFrozen,{eye:null,azimuthDeg:null,platform:null,reason:gap.reason,blocker:gap.blocker});
 });
 
 test('the summary of a station search lists every placement tried and, per view, how many cameras were inspected, the bearing accepted and what blocked the rest',()=>{
