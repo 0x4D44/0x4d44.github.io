@@ -56,6 +56,7 @@ export function londonRoofCeiling(scene: THREE.Scene): number {
 export function createStations(options: {
   scene: THREE.Scene; camera: THREE.PerspectiveCamera; controls: OrbitControls; renderer: THREE.WebGLRenderer;
   ready: Promise<unknown>; data: KxData; kxObjects(): THREE.Object3D[];
+  stationStatus?(id: StationId): string | undefined;
 }) {
   const { scene: london, camera, controls, renderer } = options;
   const doc = renderer.domElement.ownerDocument, win = doc.defaultView!;
@@ -155,7 +156,7 @@ export function createStations(options: {
   else pose(viewOf(initialId));
   return {
     select, state: selection.state, activeScene: () => activeScene,
-    statusText: (kx: string): string => selection.state().selected === 'kings-cross' ? kx : stationMessage(selection.state().selected),
+    statusText: (kx: string): string => selection.state().selected === 'kings-cross' ? kx : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected),
     accounting: () => ({ londonGpuReleases: releases, scene: active, placeholder: !!placeholderScene }),
     frame(time: number): void {
       if (disposed) return;
@@ -181,6 +182,9 @@ export function createStations(options: {
         if (t >= 1) { hop = null; renderer.domElement.style.opacity = '1'; selection.finish(); }
       }
       maskKx();
+      const state = selection.state();
+      const message = state.phase === 'ready' ? options.stationStatus?.(state.selected) : undefined;
+      if (message && notice.textContent !== message) notice.textContent = message;
     },
     dispose(): void {
       if (disposed) return; disposed = true; flight = null; hop = null; selection.dispose(); cancelInput(); observer.disconnect();

@@ -117,8 +117,8 @@ export function layoutForLength(lengthM: number): TrainLayout {
 }
 
 export interface TrailSample { point: Pt; back: Pt }
-export interface CarPose {
-  car: Car;
+export interface CarPose<C = Car> {
+  car: C;
   frontBogie: TrailSample;
   rearBogie: TrailSample;
   position: Pt;
@@ -145,8 +145,11 @@ export function sampleOccupied(graph: Graph, train: TrainView, behindM: number):
   return null;
 }
 
-export function carPoses(graph: Graph, train: TrainView, layout = layoutForLength(train.lengthM)): CarPose[] {
-  const poses: CarPose[] = [];
+type PositionedCar = Pick<Car, 'index' | 'end' | 'bogies'>;
+export function carPoses(graph: Graph, train: TrainView): CarPose[];
+export function carPoses<C extends PositionedCar>(graph: Graph, train: TrainView, layout: { readonly cars: readonly C[] }): CarPose<C>[];
+export function carPoses(graph: Graph, train: TrainView, layout: { readonly cars: readonly PositionedCar[] } = layoutForLength(train.lengthM)): CarPose<PositionedCar>[] {
+  const poses: CarPose<PositionedCar>[] = [];
   for (const car of layout.cars) {
     // A first observation at the model boundary may not have a full train's track behind it.
     if (car.end > train.occupiedLengthM + 1e-7) continue;

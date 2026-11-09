@@ -35,6 +35,7 @@ import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 import { createStations } from './stations.ts';
 import { resizeViewport } from './viewport.ts';
+import { createStPancrasLive } from './stpancras-live.ts';
 
 const data = trackData as unknown as KxData;
 /** A standing train's nose stops this far (metres) north of its buffer stop. */
@@ -205,9 +206,12 @@ function start(): void {
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
   Object.assign(kx, { evidenceBuildTrain: buildTrain });
+  const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,
+    mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
+    stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
-  Object.assign(kx, { stations });
+  Object.assign(kx, { stations, stPancras });
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
@@ -218,7 +222,7 @@ function start(): void {
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
   let sampleTimeMs = 0, lastBoardFrame = -Infinity;
-  const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? 0;
+  const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? stPancras.timeMs();
   Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
@@ -243,6 +247,7 @@ function start(): void {
     resize(); // render at the actual host size even before a queued window.resize event
     const dt = lastFrame === undefined ? 0 : Math.max(0, (time - lastFrame) / 1000); lastFrame = time;
     feed?.advance(dt);
+    stPancras.frame(dt, stations.state().selected === 'st-pancras', feed?.timeMs());
     if (mode === 'demo') sampleTimeMs += dt * 1000;
     if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
     paintStatus();
@@ -342,6 +347,7 @@ function start(): void {
     if (event.persisted) return;
     disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
     stations.dispose();
+    stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
   }, { once: true });
 }
