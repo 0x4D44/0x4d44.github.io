@@ -146,6 +146,32 @@ test('one shared source-map build serves selected axes and motion precedes dimen
   assert.ok(!calls.some(step => step.args.some(arg => /signal-report\.ts$/.test(arg))));
 });
 
+test('axis 05 keeps standard train capture and adds a separate portal capture with shared prerequisites', async () => {
+  const f = await fixture(), calls = [];
+  const result = await invoke(f, ['--only', '5', '--gpu'], fake(calls));
+  const captures = calls.filter(step => step.args.some(arg => /train-capture\.mjs$/.test(arg)));
+  assert.equal(captures.length, 2);
+  const ordinary = captures.find(step => !step.args.includes('--mode'));
+  const portal = captures.find(step => step.args.includes('--mode') && step.args[step.args.indexOf('--mode') + 1] === 'portal');
+  assert.ok(ordinary, 'ordinary train capture remains enabled');
+  assert.ok(portal, 'portal train capture is registered for axis 05');
+  assert.equal(portal.id, '05-portal-capture');
+  assert.equal(portal.axis, '05');
+  assert.equal(portal.timeoutMs, 900000);
+  assert.deepEqual(portal.needs, ordinary.needs);
+  assert.deepEqual(portal.requires, ['build', '05-motion', '03-dimensions']);
+  assert.deepEqual(portal.inputs, ['sclass']);
+  assert.deepEqual(portal.outputs.map(output => output.path), [path.join(f.out, 'axis-05/portal-capture/captures.json')]);
+  for (const flag of ['--motion', '--dimensions', '--sclass', '--dist']) {
+    assert.equal(portal.args[portal.args.indexOf(flag) + 1], ordinary.args[ordinary.args.indexOf(flag) + 1], `${flag} is shared`);
+  }
+  assert.notEqual(portal.args[portal.args.indexOf('--out') + 1], ordinary.args[ordinary.args.indexOf('--out') + 1]);
+  assert.ok(portal.args[portal.args.indexOf('--out') + 1].startsWith(path.join(f.out, 'axis-05') + path.sep));
+  assert.equal(result.steps.filter(step => step.id === '05-motion').length, 1);
+  assert.equal(result.steps.filter(step => step.id === '03-dimensions').length, 1);
+  assert.equal(result.steps.find(step => step.id === portal.id).status, 'passed');
+});
+
 test('GPU evidence stays incomplete without opt-in and manual keychain commands never run', async () => {
   const f = await fixture(), calls = [];
   const result = await invoke(f, [], fake(calls));

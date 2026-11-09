@@ -12,6 +12,10 @@ if not out.is_relative_to(src.parent / '.scratch'):
     raise SystemExit('output must be under worktree .scratch')
 out.mkdir(parents=True, exist_ok=True)
 MUTANTS = [
+    ('CLI schedule resolver disconnected', 'tools/axis05-evidence.ts', 'createTrainKinds(policy.serviceFor)', 'createTrainKinds(() => undefined)', 'Axis 05 optional inputs freeze'),
+    ('birth-day schedule ignored', 'tools/axis05-evidence.ts', 'return calls ? matchService(description, atMs, calls) : undefined;', 'return undefined;', 'Axis 05 schedules select'),
+    ('duplicate schedule date accepted', 'tools/axis05-evidence.ts', 'if (schedules.has(doc.date)) throw new Error(`duplicate schedule date: ${doc.date}`);', 'void doc.date;', 'Axis 05 schedules reject'),
+    ('optional provenance hashes omitted', 'tools/axis05-evidence.ts', '...(schedules.length ? { schedules } : {})', '...(schedules.length ? { schedules: [] } : {})', 'Axis 05 optional inputs freeze'),
     ('occupied order exchanges omitted', 'tools/axis05-evidence.ts', 'exchanges.push({ atMs: tickMs!, edge: entry.edge, trainIds: [idA, idB] });', 'void tickMs;', 'Axis 05 pass-through compares'),
     ('stationary samples omitted', 'tools/axis05-evidence.ts', 'z.speed.add(s.train.speed);', 'if (s.train.speed > 0) z.speed.add(s.train.speed);', 'Axis 05 distributions include holds'),
     ('arrival confirmation omitted', 'tools/axis05-evidence.ts', 'captureCandidates.push(h.pending); h.pending = undefined;', 'h.pending = undefined;', 'Axis 05 arrival candidates'),

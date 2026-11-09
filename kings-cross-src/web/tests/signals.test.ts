@@ -109,6 +109,16 @@ test('posts sit two metres to their side of travel and the head faces oncoming t
   layer.dispose();
 });
 
+test('runtime heads reconstruct facing from travel when duplicate vectors are omitted', () => {
+  const value = signal({ point: undefined, facing: undefined, travel: [0.6, 0.8] });
+  const { layer, drawn } = fixture([value]);
+  assert.deepEqual(drawn.signal.facing, [-0.6, -0.8], 'drawn records retain the resolved vector for downstream capture tools');
+  assert.equal(drawn.group.rotation.y, Math.atan2(-value.travel[0], -value.travel[1]));
+  assert.equal(drawn.group.position.x, value.edge.point[0] + 2 * value.travel[1]);
+  assert.equal(drawn.group.position.z, value.edge.point[1] - 2 * value.travel[0]);
+  layer.dispose();
+});
+
 test('without a table a byte remains grey unknown with a white vector question mark', () => {
   const { layer, drawn } = fixture(); layer.apply(row());
   assert.equal(drawn.state, 'unknown'); assert.equal(aspect(drawn.group), 0x666666);
@@ -499,12 +509,18 @@ test('uncertain public and inferred positions say why even if the aspect and ide
   assert.match(head.label, /position inferred from TD.*uncertain.*side/i); layer.dispose();
 });
 
-test('every public overlay head has a source-backed review and assumed sides never pass as reviewed', () => {
+test('runtime public signal reviews carry only render status; the committed OSM ledger holds full evidence', () => {
   const overlay = JSON.parse(readFileSync(new URL('../src/data/kx-signals.json', import.meta.url), 'utf8'));
+  const ledger = JSON.parse(readFileSync(new URL('../src/data/kx-signal-review.json', import.meta.url), 'utf8'));
+  const byId = new Map((ledger.signals as PublicSignalReview[]).map(r => [r.id, r]));
   assert.ok(overlay.signals.length > 0);
   for (const s of overlay.signals as OverlaySignal[]) {
-    assert.ok(s.positionReview, `missing review for public OSM node ${s.id}`);
-    const r = s.positionReview!;
+    assert.equal('point' in s, false, 'runtime uses edge.point rather than duplicating the source point');
+    assert.equal('facing' in s, false, 'runtime derives facing from travel');
+    assert.ok(s.positionReview, `missing review status for public OSM node ${s.id}`);
+    assert.deepEqual(Object.keys(s.positionReview!), ['status'], 'runtime keeps only the field consumed by the renderer');
+    const r = byId.get(s.id)!;
+    assert.equal(s.positionReview!.status, r.status);
     assert.equal(r.id, s.id); assert.deepEqual(r.point, s.edge.point);
     assert.ok(r.evidence.includes(`https://www.openstreetmap.org/node/${s.id}/history`));
     assert.ok(r.evidence.includes(`https://api.openstreetmap.org/api/0.6/node/${s.id}/${r.nodeVersion}.json`));

@@ -80,6 +80,7 @@ M = [
 
 # Audit mutations check that bad output is detected, independently of the motion policy.
 A = [
+    ('audit uses raw platform instead of drawn outline', 'pts: platformDrawingOutline(p, data)', 'pts: p.pts'),
     ('audit loses maximum speed', 'counts.maxSpeedMps = Math.max(counts.maxSpeedMps, train.speed);', 'counts.maxSpeedMps = 0;'),
     ('audit ignores acceleration violations', 'counts.accelerationViolationTicks++;', 'counts.accelerationViolationTicks += 0;'),
     ('audit ignores deceleration violations', 'counts.decelerationViolationTicks++;', 'counts.decelerationViolationTicks += 0;'),

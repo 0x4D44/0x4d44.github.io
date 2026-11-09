@@ -13,6 +13,15 @@ if not out.is_relative_to(src.parent / '.scratch'):
 out.mkdir(parents=True, exist_ok=True)
 C, F, R = 'tools/train-capture.mjs', 'tools/train-framing.mjs', 'tools/capture-runtime.mjs'
 M = [
+ ('frozen relay discovery blocks timetable loading', C, "if(u.pathname==='/relay/health')return", "if(u.pathname==='/relay/no-health')return"),
+ ('follow CDP failure drops named ray diagnostics', C, '{details:value.failure.details??null}', '{details:null}'),
+ ('follow alternatives retain the old distant views', F, 'distance=[42,34,28][index]', 'distance=[42,52,64][index]'),
+ ('follow alternatives retain the old shallow elevation', F, 'distance*[.32,.48,.8][index]', 'distance*.32'),
+ ('frozen dated schedule not served', C, "const schedule=frozen.schedules?.get(u.searchParams.get('date'));", 'const schedule=undefined;'),
+ ('frozen schedule birth day ignored', C, "const calls=schedules.get(new Date(atTime).toISOString().slice(0,10))?.calls;", 'const calls=undefined;'),
+ ('frame enrichment ignores scheduled birth resolver', C, 'const candidates=structuredClone(report.captureCandidates),graph=buildGraph(data);', 'serviceFor=()=>undefined;const candidates=structuredClone(report.captureCandidates),graph=buildGraph(data);'),
+ ('portal planning ignores scheduled birth resolver', C, 'export function portalCapturePlan(recordings,data,anchors,serviceFor=()=>undefined) {', 'export function portalCapturePlan(recordings,data,anchors,serviceFor=()=>undefined) { serviceFor=()=>undefined;'),
+ ('portal canonical seek ignores scheduled birth resolver', C, 'const canonicalKinds=createTrainKinds(serviceFor)', 'const canonicalKinds=createTrainKinds(()=>undefined)'),
  ('portal entry accepts stationary frame', C, '||f.speedMps<=.05', ''),
  ('portal sequence accepts backward time', C, '||(i&&f.timeMs<=frames[i-1].timeMs)', ''),
  ('portal capture skips face metadata', C, '!p?.portal||', ''),
@@ -71,7 +80,7 @@ M = [
  ('camera alternatives unbounded', C, 'alternatives.slice(0,6)', 'alternatives'),
  ('failed phase timing lost', C, 'finally{timings.push', 'finally{if(false)timings.push'),
  ('follow camera uses whole consist instead of leading coach', F, 'trainBounds(T,coach),centre', 'trainBounds(T,group),centre'),
- ('follow camera is a station overview', F, 'const distance=[42,52,64]', 'const distance=[242,252,264]'),
+ ('follow camera is a station overview', F, 'distance=[42,34,28][index]', 'distance=[242,252,264][index]'),
  ('vertical train readability ignored', F, 'verticalSpan<minVerticalSpan', 'false'),
  ('chunk hits lose original mesh identity', F, 'hit.object=mesh;hits.push(hit)', 'hits.push(hit)'),
  ('only browser parent receives deadline signals', R, 'kill(-child.pid,signal)', 'kill(child.pid,signal)'),
@@ -83,7 +92,7 @@ M = [
  ('undrawn large mesh triangles become occluders', F, 'geometry.drawRange.count<(index?.count??positions.count)', 'false'),
 ]
 def run(work):
-    return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/portal-entry.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/train-capture-schedule.test.mjs','tools/tests/train-framing.test.mjs','tools/tests/portal-entry.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
 with tempfile.TemporaryDirectory(prefix='train-capture-', dir=out) as directory:
     work=Path(directory)/'kings-cross-src'
     for name in ['tools','core','web']:

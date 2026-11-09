@@ -202,6 +202,10 @@ export function buildPlan(o, inputs, mutations = []) {
       requires: ['05-motion'], outputs: [fileOutput(path.join(dim, 'axis03-evidence.json')), fileOutput(path.join(dim, 'axis03-evidence.md'))] });
     node('03-train-capture', '03', 'train-capture.mjs', ['--motion', motionJson, '--dimensions', path.join(dim, 'axis03-evidence.json'), '--sclass', input('sclass'), '--dist', dist, '--out', shots, ...chrome], {
       axes: ['03', '05'], needs: capture, requires: ['build', '05-motion', '03-dimensions'], inputs: ['sclass'], timeoutMs: 900000, outputs: [fileOutput(path.join(shots, 'captures.json'))] });
+    if (selected.has('05')) node('05-portal-capture', '05', 'train-capture.mjs', ['--motion', motionJson, '--dimensions', path.join(dim, 'axis03-evidence.json'), '--sclass', input('sclass'), '--dist', dist, '--out', path.join(axis('05'), 'portal-capture'), '--mode', 'portal', ...chrome], {
+      needs: capture, requires: ['build', '05-motion', '03-dimensions'], inputs: ['sclass'], timeoutMs: 900000,
+      outputs: [fileOutput(path.join(axis('05'), 'portal-capture/captures.json'))],
+      note: 'Portal entry uses the same frozen motion, dimensions, sclass and fresh build as the ordinary train capture, with an independent output directory.' });
   }
   if (selected.has('04')) {
     const replay = path.join(axis('04'), 'replay'), live = path.join(axis('04'), 'live');

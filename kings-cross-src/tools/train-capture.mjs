@@ -2,7 +2,7 @@
 import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
-import {readFile,writeFile,realpath,mkdir,mkdtemp,stat} from 'node:fs/promises';
+import {readFile,writeFile,realpath,mkdir,mkdtemp,stat,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
@@ -13,6 +13,10 @@ import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
 import {createTrainKinds} from '../web/src/trains-live.ts';
 import {createReplayFeed,parseRecording} from '../web/src/feed.ts';
+import {matchService,validDate} from '../core/schedule.ts';
+
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const isInside=(directory,file)=>{const r=path.relative(directory,file);return !!r&&r!=='..'&&!r.startsWith(`..${path.sep}`)&&!path.isAbsolute(r);};
 
 export async function frozenBytes(entry) {
   if(!entry?.capturedPath||!/^[a-f0-9]{64}$/.test(entry.sha256))throw new Error('missing frozen input fingerprint');
@@ -20,15 +24,51 @@ export async function frozenBytes(entry) {
   if(createHash('sha256').update(bytes).digest('hex')!==entry.sha256)throw new Error('frozen input hash mismatch');
   return bytes;
 }
+async function frozenScheduleBytes(entry) {
+  if(!entry?.capturedPath||!path.isAbsolute(entry.capturedPath)||!Number.isSafeInteger(entry.bytes)||entry.bytes<0)
+    throw new Error('invalid frozen schedule fingerprint');
+  const scratch=path.join(ROOT,'.scratch'),scratchInfo=await lstat(scratch);
+  if(!scratchInfo.isDirectory()||scratchInfo.isSymbolicLink())throw new Error('frozen schedule scratch must be a private directory');
+  const privateRoot=await realpath(scratch),capturedPath=path.resolve(entry.capturedPath);
+  if(!isInside(privateRoot,capturedPath))throw new Error('frozen schedule must stay inside private .scratch');
+  const info=await lstat(capturedPath);
+  if(!info.isFile()||info.isSymbolicLink()||(info.mode&0o077)!==0)throw new Error('frozen schedule must be a regular private file');
+  if(!isInside(privateRoot,await realpath(capturedPath)))throw new Error('frozen schedule symlink escapes .scratch');
+  const bytes=await frozenBytes(entry);
+  if(entry.bytes!==bytes.length)throw new Error('frozen schedule byte count mismatch');
+  return bytes;
+}
+export async function frozenSchedulePolicy(entries=[]) {
+  if(!Array.isArray(entries))throw new Error('invalid frozen schedule manifest');
+  const schedules=new Map();
+  for(const entry of entries) {
+    if(!entry||!validDate(entry.date)||!Number.isSafeInteger(entry.bytes)||entry.bytes<0||schedules.has(entry.date))throw new Error('invalid or duplicate frozen schedule input');
+    let document;
+    try{document=JSON.parse((await frozenScheduleBytes(entry)).toString('utf8'));}catch(error){throw new Error(`invalid frozen schedule ${entry.date}: ${error.message}`);}
+    if(!document||document.date!==entry.date||document.dates!==undefined||!Array.isArray(document.calls)||document.calls.length>10000)
+      throw new Error(`invalid frozen schedule document for ${entry.date}`);
+    for(const call of document.calls)if(!call||typeof call!=='object'||call.date!==entry.date||!validDate(call.serviceDate)||
+      !['uid','headcode','operator','origin','destination'].every(key=>typeof call[key]==='string')||
+      call.platform!==null&&typeof call.platform!=='string'||
+      ![call.arrivalMs,call.departureMs].every(value=>value===null||typeof value==='number'&&Number.isFinite(value)))
+      throw new Error(`invalid frozen schedule call for ${entry.date}`);
+    schedules.set(entry.date,{date:entry.date,calls:document.calls});
+  }
+  return {dates:[...schedules.keys()].sort(),schedules,serviceFor(description,atTime){
+    if(!Number.isFinite(atTime))return undefined;
+    const calls=schedules.get(new Date(atTime).toISOString().slice(0,10))?.calls;
+    return calls?matchService(description,atTime,calls):undefined;
+  }};
+}
 /** Causal replay only: find a physical leading end crossing the drawn south face. */
-export function portalCapturePlan(recordings,data,anchors) {
+export function portalCapturePlan(recordings,data,anchors,serviceFor=()=>undefined) {
   const mouth=tunnelMouths(data).find(m=>m.id==='gasworks-south');
   if(!mouth)throw new Error('Gasworks south mouth missing');
   const face={...mouth,origin:mouth.origin.map((v,i)=>v+mouth.axis[i]*1.2)};
   const along=p=>(p[0]-face.origin[0])*face.axis[0]+(p[1]-face.origin[1])*face.axis[1];
   const graph=buildGraph(data);
   for(const [recordingIndex,rows] of recordings.entries()) {
-    const kinds=createTrainKinds(()=>undefined),motion=createMotion(graph,anchors,{lengthM:kinds.lengthM,
+    const kinds=createTrainKinds(serviceFor),motion=createMotion(graph,anchors,{lengthM:kinds.lengthM,
       wayMaxspeed:new Map(data.rails.filter(r=>r.maxspeed!==undefined).map(r=>[r.id,r.maxspeed]))});
     const feed=createReplayFeed(rows,1,{advance:s=>motion.advance(s),apply:(e,t)=>motion.apply(e,t)},()=>{}),history=new Map();
     const start=rows[0]?.t,end=rows.at(-1)?.t;
@@ -47,7 +87,7 @@ export function portalCapturePlan(recordings,data,anchors) {
           const lateral=(crossing.point[0]-face.origin[0])*face.across[0]+(crossing.point[1]-face.origin[1])*face.across[1];
           const bore=mouth.bores.reduce((a,b)=>Math.abs(a.lateral-lateral)<Math.abs(b.lateral-lateral)?a:b);
           // Reproduce the browser's direct first seek and subsequent frame deltas exactly.
-          const canonicalKinds=createTrainKinds(()=>undefined),canonical=createMotion(graph,anchors,{lengthM:canonicalKinds.lengthM,
+          const canonicalKinds=createTrainKinds(serviceFor),canonical=createMotion(graph,anchors,{lengthM:canonicalKinds.lengthM,
             wayMaxspeed:new Map(data.rails.filter(r=>r.maxspeed!==undefined).map(r=>[r.id,r.maxspeed]))});
           const replay=createReplayFeed(rows,1,{advance:s=>canonical.advance(s),apply:(e,at)=>canonical.apply(e,at)},()=>{});
           let previous=start;
@@ -164,11 +204,22 @@ export function verifyReplayFrame(plan, expected, actual) {
 }
 export function frozenTrainEndpoint(url, frozen) {
   const u=new URL(url,'http://127.0.0.1');
+  if(u.pathname==='/relay/health')return {type:'application/json',body:'{"ok":true,"mode":"frozen-capture"}'};
   if(u.pathname==='/relay/anchors')return {type:'application/json',body:frozen.anchors};
   if(u.pathname==='/relay/recording')return {type:'application/x-ndjson',body:frozen.recording};
   if(u.pathname==='/relay/sclass'&&frozen.table)return {type:'application/json',body:frozen.table};
-  // Deliberately matches the axis05 no-schedule birth policy; never query the growing live relay.
+  if(u.pathname==='/relay/schedule'){
+    const schedule=frozen.schedules?.get(u.searchParams.get('date'));
+    if(schedule)return {type:'application/json',body:JSON.stringify(schedule)};
+  }
+  // Missing dates retain the audit's fallback policy; never query the growing live relay.
   if(u.pathname.startsWith('/relay/'))return {status:404,type:'application/json',body:'{"error":"not in frozen train pack"}'};
+}
+/** CDP exception descriptions discard custom Error fields. Return plain failure data
+ * from the page, then construct the error here so every blocked ray is retained. */
+export function checkedCaptureView(value) {
+  if(value?.failure)throw Object.assign(new Error(value.failure.message),{details:value.failure.details??null});
+  return value;
 }
 export function replayUrl(origin,startMs) {
   const date=new Date(startMs).toISOString().slice(0,10).replaceAll('-','');
@@ -189,10 +240,10 @@ export async function measuredPhase(timings,phase,work,now=()=>performance.now()
 }
 /** The audit candidate stores its terminal headcode. Earlier frames may precede a real rename.
  * Learn each frame's expected description on the same causal replay, never from that future label. */
-export function describeCaptureFrames(report,recordings,data,anchors) {
+export function describeCaptureFrames(report,recordings,data,anchors,serviceFor=()=>undefined) {
   const candidates=structuredClone(report.captureCandidates),graph=buildGraph(data);
   for(const [index,rows] of recordings.entries()) {
-    const kinds=createTrainKinds(()=>undefined),motion=createMotion(graph,anchors,{lengthM:kinds.lengthM,
+    const kinds=createTrainKinds(serviceFor),motion=createMotion(graph,anchors,{lengthM:kinds.lengthM,
       wayMaxspeed:new Map(data.rails.filter(r=>r.maxspeed!==undefined).map(r=>[r.id,r.maxspeed]))});
     const feed=createReplayFeed(rows,1,{advance:s=>motion.advance(s),apply:(e,t)=>motion.apply(e,t)},()=>{});
     const targets=candidates.filter(p=>p.recordingIndex===index).flatMap(p=>p.frames.map(frame=>({frame,id:p.trainId}))).sort((a,b)=>a.frame.timeMs-b.frame.timeMs);
@@ -235,13 +286,14 @@ export function corridorPoints(plan,graph,anchors) {
 export async function main(args=process.argv.slice(2)) {
   const options=new Map();for(let i=0;i<args.length;i+=2){if(!['--motion','--dimensions','--dist','--out','--chrome','--sclass','--timeout-seconds','--mode'].includes(args[i])||!args[i+1]||options.has(args[i]))throw new Error('usage: train-capture.mjs --motion <axis05.json> --dimensions <axis03.json> --dist <dist> --out <.scratch/shots> [--mode portal] [--chrome none|path]');options.set(args[i],args[i+1]);}
   const required=n=>{if(!options.has(n))throw new Error(`missing ${n}`);return path.resolve(options.get(n));};
-  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),scratch=await realpath(path.join(root,'.scratch'));
+  const root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
   const reportFile=required('--motion');let report=JSON.parse(await readFile(reportFile,'utf8')),dimensions=JSON.parse(await readFile(required('--dimensions'),'utf8'));
   const portalMode=options.get('--mode')==='portal';if(options.has('--mode')&&!portalMode)throw new Error('--mode must be portal');
   const inputs=report.reproducibility.inputHashes;
+  const schedulePolicy=await frozenSchedulePolicy(inputs.schedules);
   const anchorsBytes=await frozenBytes(inputs.anchors),graphBytes=await frozenBytes(inputs.graph),recordings=await Promise.all(inputs.recordings.map(frozenBytes));
   const graph=JSON.parse(graphBytes),anchors=JSON.parse(anchorsBytes);
-  if(portalMode)report={...report,portalMode:true,captureCandidates:[portalCapturePlan(recordings.map(b=>parseRecording(b.toString())),graph,anchors)]};
+  if(portalMode)report={...report,portalMode:true,captureCandidates:[portalCapturePlan(recordings.map(b=>parseRecording(b.toString())),graph,anchors,schedulePolicy.serviceFor)]};
   const {requirements,plans}=capturePlans(report);
   const currentGraph=await readFile(path.join(root,'kings-cross-src/web/src/data/kx-track.json'));
   if(createHash('sha256').update(currentGraph).digest('hex')!==inputs.graph.sha256)throw new Error('page graph changed; regenerate axis05 and rebuild');
@@ -255,8 +307,10 @@ export async function main(args=process.argv.slice(2)) {
   await mkdir(out,{recursive:true});
   const table=options.has('--sclass')?await readFile(required('--sclass')):null;
   if(table){const value=JSON.parse(table);if(!value||value.area!==anchors.area||!Array.isArray(value.hypotheses))throw new Error('--sclass must be the relay hypothesis document (sclass.json), not the decoded-address report');}
-  if(options.get('--chrome')==='none'){console.log(JSON.stringify({inputsVerified:true,requirements,candidates:plans.length,kinds,stagingTracks:catalogueTracks(graph,27).length,sclass:table?createHash('sha256').update(table).digest('hex'):null,anchorCounts:{anchored:anchors.anchors.length,unmapped:anchors.unmapped.length},portalPlans:portalMode?plans:undefined}));return;}
-  const describeStart=performance.now();report=describeCaptureFrames(report,recordings.map(b=>parseRecording(b.toString())),graph,anchors);const descriptionsMs=performance.now()-describeStart;
+  if(options.get('--chrome')==='none'){console.log(JSON.stringify({inputsVerified:true,requirements,candidates:plans.length,kinds,stagingTracks:catalogueTracks(graph,27).length,
+    schedules:(inputs.schedules??[]).map(({date,capturedPath,sha256,bytes})=>({date,capturedPath,sha256,bytes})),
+    sclass:table?createHash('sha256').update(table).digest('hex'):null,anchorCounts:{anchored:anchors.anchors.length,unmapped:anchors.unmapped.length},portalPlans:portalMode?plans:undefined}));return;}
+  const describeStart=performance.now();report=describeCaptureFrames(report,recordings.map(b=>parseRecording(b.toString())),graph,anchors,schedulePolicy.serviceFor);const descriptionsMs=performance.now()-describeStart;
   const chromePath=options.get('--chrome')??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   const timeoutMs=Number(options.get('--timeout-seconds')??720)*1000;
   if(!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>840000)throw new Error('--timeout-seconds must be positive and at most 840');
@@ -264,7 +318,7 @@ export async function main(args=process.argv.slice(2)) {
   const timings=[{phase:'frame-descriptions',elapsedMs:descriptionsMs}],closeups=[],failedCloseups=[],requests=[];
   const tableInput=table?{source:required('--sclass'),sha256:createHash('sha256').update(table).digest('hex')}:null;
   if(table){await mkdir(path.join(out,'inputs'),{recursive:true});await writeFile(path.join(out,'inputs',`sclass-${tableInput.sha256.slice(0,12)}.json`),table,{mode:0o600});}
-  const frozen={anchors:anchorsBytes,recording:recordings[0],table};
+  const frozen={anchors:anchorsBytes,recording:recordings[0],table,schedules:schedulePolicy.schedules};
   const lifetime=createCaptureLifetime({timeoutMs,onStop:()=>cdp?.close()});
   const phase=(name,work)=>measuredPhase(timings,name,work);
   const starts=recordings.map(bytes=>JSON.parse(bytes.toString().split('\n').find(s=>s.trim())).t);
@@ -362,9 +416,9 @@ export async function main(args=process.argv.slice(2)) {
             window.__signalFrame(${frame.timeMs-session.start});
             const visibility=F.inspectTrainFrame(T,k.scene,k.camera,follow.coach,k.parts.terrain,{minScreenSpan:.3,minVerticalSpan:.08});
             if(visibility.clear){selected={candidate,camera:follow.camera,visibility};break;}
-            attempts.push({candidate,...visibility});
+            attempts.push({candidate,camera:follow.camera,...visibility});
           }
-          if(!selected)throw Object.assign(new Error('no clear close follow view of leading coach'),{details:attempts});
+          if(!selected)return {failure:{message:'no clear close follow view of leading coach',details:attempts}};
           if(window.__trainMarker)k.scene.remove(window.__trainMarker);const marker=new T.Box3Helper(F.trainBounds(T,t.group.getObjectByName(selected.camera.focusCoach)||t.group),0xffd44a);
           // The selected coach name is local to this physical train, never a same-named coach in another consist.
           window.__trainMarker=marker;k.scene.add(marker);
@@ -373,7 +427,7 @@ export async function main(args=process.argv.slice(2)) {
           window.__signalFrame(${frame.timeMs-session.start});
           return {id:t.id,description:t.description,kind:t.kind,timeMs:k.feed.timeMs,point:v.leading.point,speedMps:v.speed,state:v.state,reversals:v.reversals,lengthM:v.lengthM,rendered:t.group.userData.captureDraws>0,occupied:v.occupied.map(s=>({a:s.edge.a,b:s.edge.b,fromT:s.fromT,toT:s.toT,edgeLengthM:s.edge.length})),...selected,attempts,signalCounts:k.signals?.counts()??null,trainsDrawn:k.trains.length};
         })()`));
-        verifyReplayFrame(plan,frame,inspected);preferredView=inspected.candidate;attempts.push(...inspected.attempts);captures.push({frame:i,...inspected});
+        checkedCaptureView(inspected);verifyReplayFrame(plan,frame,inspected);preferredView=inspected.candidate;attempts.push(...inspected.attempts);captures.push({frame:i,...inspected});
         const file=`recording-${plan.recordingIndex}-${plan.direction}-train-${plan.trainId}-frame-${i}.png`;
         const metadata={...plan,frames:undefined,frame:captures.at(-1),...session,input:inputs.recordings[plan.recordingIndex],anchors:inputs.anchors,sclass:tableInput,
           cutaway:'shed and city hidden; target leading coach highlighted; all other trains, track, platforms, terrain, portals and signals retained',camera:inspected.camera};
@@ -410,7 +464,9 @@ export async function main(args=process.argv.slice(2)) {
       'Architectural cutaways are named in each sidecar; terrain, track, portals and other trains remain visible and ray-tested.',
       ...(portalMode?[]:['Coach shots are staged catalogue specimens at 3 m from a body-side detail, not identified recorded services.']),
       'Normal page replay advances directly on its injected frame clock. Each recording is loaded only when changed or rewinding; no future steps or synthetic train positions are injected.',
-      'Signals remain enabled; absence of a supplied frozen S-class table is honestly unknown. Schedule stays absent to preserve the audited formation-birth policy.']};
+      `Signals remain enabled; absence of a supplied frozen S-class table is honestly unknown. ${schedulePolicy.dates.length
+        ? `Frozen schedule dates ${schedulePolicy.dates.join(', ')} determine formations at physical birth.`
+        : 'No frozen schedule supplied; the endpoint remains 404 and page headcode fallback preserves audited formation births.'}`]};
   await writeFile(path.join(out,'captures.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx',mode:0o600});
   console.log(JSON.stringify({sequences:motionResult?.shots.length??0,missing,closeups:closeups.length,missingKinds:result.missingKinds,cleanup,fatal,timingTotalsMs:result.timingTotalsMs,out}));
   process.exitCode=lifetime.reason()?process.exitCode:missing.length||result.missingKinds.length||fatal?1:0;

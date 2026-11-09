@@ -7,7 +7,7 @@ import { capturePlan, signalReport, signalReportMarkdown } from '../../tools/sig
 import type { AnchorMap } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
 import type { TimedTdEvent } from '../sclass.ts';
-import type { SignalOverlay } from '../../web/src/signals.ts';
+import type { PublicSignalReview, SignalOverlay } from '../../web/src/signals.ts';
 
 const evidence = { trials: 4, support: 4, contradictions: 0, unmatchedCycles: 0, precision: 1, recall: 1 };
 const hypothesis = (berth: string, bit: number, kind = 'proceed') => ({ id: berth, berth, bit, kind, address: '10', proceedValue: 1,
@@ -25,11 +25,12 @@ const report = () => signalReport([rows], data, overlay, anchors, table);
 test('signal report separates public geographic review from identity and inventories every uncertainty and displacement', () => {
   const reviewed = structuredClone(overlay);
   reviewed.signals[0]!.sideSource = 'osm';
-  reviewed.signals[0]!.positionReview = { id: 1, status: 'reviewed', reviewedAt: '2026-11-09', point: [10, 0],
+  reviewed.signals[0]!.positionReview = { status: 'reviewed' };
+  const review: PublicSignalReview = { id: 1, status: 'reviewed', reviewedAt: '2026-11-09', point: [10, 0],
     wayId: 1, from: 1, to: 2, direction: 'forward', rawPosition: 'left', side: 'left', nodeVersion: 1, wayVersion: 1,
-    latitude: 0, longitude: 0, evidence: ['https://www.openstreetmap.org/node/1/history'], reason: 'Synthetic public coordinate, direction and side review', previousPost: [10, 0] };
+    latitude: 0, longitude: 0, evidence: ['https://www.openstreetmap.org/node/1/history'], reason: 'Synthetic public coordinate, direction and side review', previousPost: [10, 0] as [number, number] };
   const map: AnchorMap = { ...anchors, anchors: [{ berth: '9903', kind: 'inferred', from: 1, to: 2, t: .5, point: [50, 0], errorM: 75, evidence: 'synthetic private chain' }] };
-  const r = signalReport([rows], data, reviewed, map, table);
+  const r = signalReport([rows], data, reviewed, map, table, undefined, [review]);
   assert.deepEqual(r.counts.positionReview, { reviewed: 1, topology: 0, uncertain: 2 });
   assert.equal(r.counts.positionReviewedDecodedHeads, 1); assert.equal(r.counts.positionUncertainDecodedHeads, 1);
   const head = r.heads.find(h => h.id === 1)!;
@@ -42,6 +43,10 @@ test('signal report separates public geographic review from identity and invento
   const md = signalReportMarkdown(r);
   assert.match(md, /Every drawn head: position and side review/);
   assert.match(md, /openstreetmap.org\/node\/1\/history/); assert.match(md, /synthetic private chain/);
+
+  const stale = signalReport([rows], data, reviewed, map, table, undefined, [{ ...review, point: [10.02, 0] }]);
+  assert.equal(stale.heads.find(h => h.id === 1)!.positionReview.status, 'uncertain', 'a review coordinate outside the builder tolerance is not rejoined');
+  assert.equal(stale.heads.find(h => h.id === 1)!.postDeltaM, null, 'rejected review coordinates do not contribute a post baseline');
 });
 
 test('signal report inventories all eight bits of constant refresh bytes and separates route from proceed', () => {

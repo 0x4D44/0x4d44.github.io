@@ -14,6 +14,19 @@ import publicReviews from '../web/src/data/kx-signal-review.json' with { type: '
 
 export interface SignalBuildOptions { raw?: RawElement[]; anchors?: AnchorMap; reviews?: readonly PublicSignalReview[] }
 interface ReviewNote { id: number; ref?: string; classification: string[]; notes: string[]; snapM?: number }
+type BuiltOverlaySignal = Omit<OverlaySignal, 'positionReview' | 'facing'> & {
+  facing: [number, number]; positionReview?: PublicSignalReview;
+};
+
+/** Keep the human review pinned to the same public OSM geometry and raw position tag. */
+export function publicSignalReviewMatches(signal: OverlaySignal, reviewed: PublicSignalReview,
+  rawPosition: string | null | undefined, checkRawPosition = true): boolean {
+  return dist(reviewed.point, signal.edge.point) < .01 && reviewed.wayId === signal.edge.wayId &&
+    reviewed.from === signal.edge.from && reviewed.to === signal.edge.to && reviewed.direction === signal.direction &&
+    (!checkRawPosition || reviewed.rawPosition === rawPosition) &&
+    (reviewed.status === 'uncertain' || (rawPosition === 'left' || rawPosition === 'right' ||
+      !checkRawPosition && (reviewed.rawPosition === 'left' || reviewed.rawPosition === 'right')) && reviewed.side === signal.side);
+}
 
 /** Pure build hook. No private input is read while constructing the public overlay. */
 export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {}) {
@@ -24,7 +37,7 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
   const serving = components(g).filter((c) => c.some((id) => seeds.has(id)));
   const reachable = new Set(serving.flat());
   const rawById = new Map((options.raw ?? []).filter((e) => e.type === 'node').map((e) => [e.id, e]));
-  const signals: OverlaySignal[] = [];
+  const signals: BuiltOverlaySignal[] = [];
   const included: ReviewNote[] = [];
   const excluded: ReviewNote[] = [];
   for (const signal of data.signals) {
@@ -61,7 +74,7 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     else if (!positionKnown) note.notes.push(`${rawPosition === undefined ? 'Missing position' : `Unsupported position ${JSON.stringify(rawPosition)}`}: UK left-of-travel convention assumed; not a surveyed position.`);
     else if (!forward) note.notes.push('OSM way-relative side flipped for backward train travel.');
     const berth = signal.ref?.match(/^YA\s*(\d{4})$/)?.[1];
-    const out: OverlaySignal = {
+    const out: BuiltOverlaySignal = {
       id: signal.id, point: [signal.x, signal.z],
       ...(signal.ref ? { ref: signal.ref } : {}), ...(signal.direction ? { direction: signal.direction } : {}),
       kinds: [...signal.kinds], edge: { wayId: s.edge.wayId, from: s.edge.a, to: s.edge.b, t: s.t, point: s.point },
@@ -73,17 +86,14 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     const reviewed = reviews.length === 1 ? reviews[0] : undefined;
     // A human review is pinned to this track, direction and raw side evidence.
     // A later OSM rebuild cannot silently carry an old approval onto changed geometry.
-    if (reviewed && dist(reviewed.point, out.edge.point) < .01 && reviewed.wayId === out.edge.wayId &&
-        reviewed.from === out.edge.from && reviewed.to === out.edge.to && reviewed.direction === signal.direction &&
-        reviewed.rawPosition === (rawPosition ?? null) &&
-        (reviewed.status === 'uncertain' || positionKnown && reviewed.side === side)) {
+    if (reviewed && publicSignalReviewMatches(out, reviewed, rawPosition ?? null)) {
       out.positionReview = structuredClone(reviewed);
     }
     if (signal.ref && !berth) note.notes.push('Non-YA reference retained; no public berth binding.');
     if (classification.includes('train_protection') && !classification.includes('main')) note.notes.push('Protection board retained; not classified as a main signal.');
     signals.push(out); included.push(note);
   }
-  const overlay: SignalOverlay = { attribution: data.attribution, signals };
+  const overlay = { attribution: data.attribution, signals };
   const privateTrials = signals.filter((s) => !s.ref && s.kinds.includes('main')).map((s) => {
     const candidates = (options.anchors?.anchors ?? []).filter((a) => {
       if (a.kind !== 'inferred' && !(a.kind === 'signal' && a.evidence.startsWith('Topology'))) return false;
@@ -150,7 +160,14 @@ function main() {
     raw: raw?.elements ?? raw, anchors: anchorsPath ? read(anchorsPath) : undefined,
   });
   mkdirSync(out, { recursive: true });
-  writeFileSync(resolve(repo, 'kings-cross-src/web/src/data/kx-signals.json'), JSON.stringify(result.overlay, null, 2) + '\n');
+  const runtimeOverlay: SignalOverlay = { ...result.overlay, signals: result.overlay.signals.map(signal => {
+    const { positionReview, ...fields } = signal;
+    const compact = { ...fields, ...(positionReview ? { positionReview: { status: positionReview.status } } : {}) };
+    delete (compact as Partial<OverlaySignal>).point;
+    delete (compact as Partial<OverlaySignal>).facing;
+    return compact;
+  }) };
+  writeFileSync(resolve(repo, 'kings-cross-src/web/src/data/kx-signals.json'), JSON.stringify(runtimeOverlay, null, 2) + '\n');
   writeFileSync(resolve(out, 'report.json'), JSON.stringify(result.report, null, 2) + '\n');
   if (anchorsPath) writeFileSync(resolve(out, 'private-topology.json'), JSON.stringify(result.privateReview, null, 2) + '\n');
   console.log(JSON.stringify(result.report.counts));

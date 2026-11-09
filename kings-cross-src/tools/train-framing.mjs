@@ -117,8 +117,11 @@ export function followTrainCamera(T,camera,controls,group,leading,ground,candida
   const back=centre.clone().sub(nose);back.y=0;if(back.lengthSq()<.1)back.set(0,0,1);back.normalize();
   const across=new T.Vector3(-back.z,0,back.x),side=candidate%2?-1:1;
   const target=centre.clone().addScaledVector(back,8);target.y=Math.max(1.8,centre.y);
-  const distance=[42,52,64][Math.floor(candidate/2)%3];
-  const position=target.clone().addScaledVector(across,side*distance).addScaledVector(back,-12);position.y+=distance*.32;
+  // Farther views shrink coach height below the strict follow-frame threshold and
+  // keep the same shallow ray through platform screens. Closer, higher alternatives
+  // look over furniture while preserving a readable leading coach.
+  const index=Math.floor(candidate/2)%3,distance=[42,34,28][index];
+  const position=target.clone().addScaledVector(across,side*distance).addScaledVector(back,-12);position.y+=distance*[.32,.48,.8][index];
   const groundY=ground?.heightAt(position.x,position.z);
   if(groundY!==undefined&&!Number.isFinite(groundY))throw new Error('follow camera terrain unavailable');
   if(Number.isFinite(groundY))position.y=Math.max(position.y,groundY+.5);

@@ -1,7 +1,10 @@
 // Local-only Axis 05 evidence. Never commit captured TD inputs or generated reports.
-import { readFile, writeFile, realpath } from 'node:fs/promises';
+import { readFile, writeFile, realpath, mkdir, open, lstat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { matchService, validDate } from '../core/schedule.ts';
+import type { ScheduleCall } from '../core/schedule.ts';
 import { createTrainKinds } from '../web/src/trains-live.ts';
 import { auditRecording, renderMotionAuditMarkdown } from './motion-audit.ts';
 import type { MotionAuditSample } from './motion-audit.ts';
@@ -147,38 +150,118 @@ export function handlingEvidence(rows: readonly RecordedEvent[], anchors: Anchor
   return { steps, lateSourceSteps, lateThresholdMs: 1000, maxSourceLagMs, missingSourceTimeSteps, missingMappedEndpointSteps, discontinuousDescriptionSteps, snapshots,
     meaning: 'Lag compares recorder t with TD source time. Description discontinuity is an observed chain gap, not proof of a dropped message; rename/reconnect can also cause it. Missing endpoints mean no mapped anchor. Unknown missing wire steps cannot be counted. Playback reconciles checkpoints, applies late observations at delivery, and never preloads future chains.' };
 }
+/** Explicit per-day caches only. Never borrow a neighbouring day's repeated headcodes. */
+export function axis05SchedulePolicy(documents: readonly unknown[]) {
+  const schedules = new Map<string, readonly ScheduleCall[]>();
+  for (const document of documents) {
+    const doc = document as { date?: unknown; dates?: unknown; calls?: unknown } | null;
+    if (!doc || typeof doc.date !== 'string' || !validDate(doc.date) || doc.dates !== undefined || !Array.isArray(doc.calls)) {
+      throw new Error('--schedule must contain one valid date and calls array (not dates)');
+    }
+    if (schedules.has(doc.date)) throw new Error(`duplicate schedule date: ${doc.date}`);
+    for (const call of doc.calls) {
+      if (!call || typeof call !== 'object' || call.date !== doc.date || typeof call.headcode !== 'string' ||
+          typeof call.operator !== 'string' || typeof call.origin !== 'string' || typeof call.destination !== 'string' ||
+          typeof call.uid !== 'string' || typeof call.serviceDate !== 'string' ||
+          ![call.arrivalMs, call.departureMs].every((value) => value === null || typeof value === 'number' && Number.isFinite(value))) {
+        throw new Error(`invalid schedule call for ${doc.date}`);
+      }
+    }
+    schedules.set(doc.date, doc.calls as ScheduleCall[]);
+  }
+  return {
+    dates: [...schedules.keys()].sort(),
+    serviceFor(description: string, atMs: number) {
+      const calls = schedules.get(new Date(atMs).toISOString().slice(0, 10));
+      return calls ? matchService(description, atMs, calls) : undefined;
+    },
+  };
+}
+
+const isInside = (root: string, path: string) => { const r = relative(root, path); return !!r && !r.startsWith('..') && !isAbsolute(r); };
+async function freezeAxisInput(out: string, scratch: string, name: string, path: string, bytes: Buffer) {
+  const directory = resolve(out, 'inputs');
+  await mkdir(directory, { recursive: true, mode: 0o700 });
+  if (!isInside(scratch, await realpath(directory))) throw new Error('captured input directory escapes .scratch');
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const capturedPath = resolve(directory, `${name}-${sha256.slice(0, 12)}.json`);
+  try {
+    const handle = await open(capturedPath, 'wx', 0o600);
+    try { await handle.writeFile(bytes); } finally { await handle.close(); }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const info = await lstat(capturedPath);
+    if (!info.isFile() || info.isSymbolicLink() || createHash('sha256').update(await readFile(capturedPath)).digest('hex') !== sha256) {
+      throw new Error(`captured input path already exists with different content: ${capturedPath}`);
+    }
+  }
+  if (!isInside(scratch, await realpath(capturedPath))) throw new Error('captured input symlink escapes .scratch');
+  return { path, capturedPath, bytes: bytes.length, sha256 };
+}
+
 export async function runAxis05(args: string[]) {
   // Replay CLI owns bounded capture, partial growing-tail handling, hashes and output containment.
-  const frozen = await runReplayReport(args);
+  const replayArgs: string[] = [], schedulePaths: string[] = [];
+  let sclassPath: string | undefined;
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i]!, value = args[i + 1];
+    if (key === '--schedule' || key === '--sclass') {
+      if (!value || value.startsWith('--') || key === '--sclass' && sclassPath !== undefined) throw new Error(`invalid or repeated ${key}`);
+      if (key === '--schedule') schedulePaths.push(resolve(value)); else sclassPath = resolve(value);
+    } else replayArgs.push(key, value!);
+  }
+  const scheduleBytes = await Promise.all(schedulePaths.map((path) => readFile(path)));
+  const policy = axis05SchedulePolicy(scheduleBytes.map((bytes) => JSON.parse(bytes.toString('utf8'))));
+  const sclassBytes = sclassPath ? await readFile(sclassPath) : undefined;
+  if (sclassBytes) {
+    const doc = JSON.parse(sclassBytes.toString('utf8'));
+    if (!doc || typeof doc.area !== 'string' || !Array.isArray(doc.hypotheses)) throw new Error('--sclass must be a relay hypothesis document');
+  }
+  const frozen = await runReplayReport(replayArgs);
   const repro = frozen.reproducibility!;
   const inputs = repro.inputHashes;
   const outIndex = args.indexOf('--out'), out = resolve(args[outIndex + 1]!);
   const data = JSON.parse(await readFile(inputs.graph.capturedPath, 'utf8')) as KxData;
   const anchors = JSON.parse(await readFile(inputs.anchors.capturedPath, 'utf8')) as AnchorMap;
+  const scratch = await realpath(fileURLToPath(new URL('../../.scratch', import.meta.url)));
+  const schedules = [];
+  for (const [index, path] of schedulePaths.entries()) {
+    const date = JSON.parse(scheduleBytes[index]!.toString()).date as string;
+    schedules.push({ ...await freezeAxisInput(out, scratch, `schedule-${date}`, path, scheduleBytes[index]!), date });
+  }
+  const sclass = sclassBytes ? await freezeAxisInput(out, scratch, 'sclass', sclassPath!, sclassBytes) : undefined;
+  const lengthPolicy = schedules.length
+    ? `Page createTrainKinds/matchService at physical birth using UTC-day schedule caches (${policy.dates.join(', ')}); missing days and unmatched services explicitly use the page headcode fallback.`
+    : 'No schedule supplied; GPU schedule endpoint must return 404.';
   const recordings = [];
   for (const [index, input] of inputs.recordings.entries()) {
     const rows = parseRecording(await readFile(input.capturedPath, 'utf8'));
     const collector = evidenceCollector(index);
-    const kinds = createTrainKinds(() => undefined);
+    const kinds = createTrainKinds(policy.serviceFor);
     const audit = auditRecording(rows, data, anchors, { onSample: collector.onSample, lengthM: kinds.lengthM,
-      lengthPolicy: 'Page createTrainKinds with no schedule: frozen LNER headcode fallback at physical birth; schedule endpoint must return 404 for capture equivalence.' });
+      lengthPolicy });
     const trains = audit.trains.map((t) => ({ ...t, kind: kinds.formationFor(t)?.kind }));
     const measured = collector.result();
     for (const candidate of measured.captureCandidates) candidate.kind = kinds.formationFor({ id: candidate.trainId })?.kind;
     const replay = frozen.recordings?.[index]?.metrics ?? frozen;
-    recordings.push({ index, input, audit: { ...audit, trains }, handling: { ...handlingEvidence(rows, anchors),
-      replayOutcomes: { motion: replay.motion, stepSummary: replay.stepSummary, platformStepSummary: replay.platformStepSummary } }, ...measured });
+    const observedDates = [...new Set(rows.map((row) => new Date(row.t).toISOString().slice(0, 10)))].sort();
+    const scheduleCoverage = { observedDates, scheduledDates: observedDates.filter((date) => policy.dates.includes(date)),
+      fallbackDates: observedDates.filter((date) => !policy.dates.includes(date)) };
+    recordings.push({ index, input, scheduleCoverage, audit: { ...audit, trains }, handling: { ...handlingEvidence(rows, anchors),
+      replayOutcomes: { lengthPolicy: 'Independent replay-report fallback lengths; scheduled drawn-motion metrics are in audit/distributions above.',
+        motion: replay.motion, stepSummary: replay.stepSummary, platformStepSummary: replay.platformStepSummary } }, ...measured });
   }
   const report = { schemaVersion: 1, recordings, captureCandidates: recordings.flatMap((r) => r.captureCandidates),
-    lengthPolicy: 'No schedule supplied; GPU schedule endpoint must return 404.', reproducibility: { ...repro,
-      command: { ...repro.command, args: [fileURLToPath(import.meta.url), ...repro.command.args.slice(1)] } }, references: recordings[0]!.audit.method.references,
+    lengthPolicy, schedulePolicy: { dates: policy.dates, missingDays: 'page headcode fallback', selection: 'UTC date at physical birth' },
+    sclassPolicy: 'Provenance only; does not affect motion or signal thresholds.', reproducibility: { ...repro,
+      inputHashes: { ...inputs, ...(schedules.length ? { schedules } : {}), ...(sclass ? { sclass } : {}) },
+      command: { ...repro.command, args: [fileURLToPath(import.meta.url), ...repro.command.args.slice(1), ...schedules.flatMap((input) => ['--schedule', input.capturedPath]), ...(sclass ? ['--sclass', sclass.capturedPath] : [])] } }, references: recordings[0]!.audit.method.references,
     limitations: ['All distributions sample the drawn model at 100 ms, including stationary trains; quantiles round to 0.01 units. These are simulation measurements, not telemetry of actual railway speed.',
       'Speed limits use OSM way tags and existing model caps; 0.7 m/s², 3 m buffer clearance and 2 m platform tolerance are modeling audit bounds, not independently certified infrastructure rules.',
-      'Train lengths use the existing fallback by description. No schedule or rolling-stock identification is inferred.',
+      lengthPolicy,
       'Overlap counts test occupied-track intersection each tick. Separate same-edge occupied-center order exchanges detect sampled pass-through candidates. Zero sampled findings do not prove continuous-time absence of overlap/pass-through between samples.',
       'Capture candidates require measured body travel of at least 1 m, two seconds of platform hold, and full recording-relative timestamps. Direction is the arrival/departure transition; headingRadians is the drawn departure/arrival cab orientation.'] };
   // Guard report filenames too: a preexisting output file could itself be an escaping symlink.
-  const scratch = await realpath(fileURLToPath(new URL('../../.scratch', import.meta.url)));
   for (const name of ['axis05-evidence.json', 'axis05-evidence.md']) {
     try { const r = relative(scratch, await realpath(resolve(out, name))); if (!r || r.startsWith('..') || isAbsolute(r)) throw new Error('report symlink escapes .scratch'); }
     catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }

@@ -12,7 +12,7 @@ import type { AnchorMap, BerthAnchor } from '../core/anchors.ts';
 import type { Edge, Graph } from '../core/graph.ts';
 import type { KxData, Platform } from '../core/osm.ts';
 import { trainLayout } from '../core/train.ts';
-import { stationPlatforms } from '../core/station.ts';
+import { platformDrawingOutline, stationPlatforms } from '../core/station.ts';
 import { tunnelMouths } from '../core/landmarks.ts';
 import { matchService } from '../core/schedule.ts';
 import type { ScheduleCall } from '../core/schedule.ts';
@@ -262,7 +262,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
   const located = anchors.anchors.flatMap((a) => { const p = locateAnchor(graph, a); return p ? [p] : []; });
   const locatedByBerth = new Map(located.map((a) => [a.anchor.berth, a]));
   const platformAnchors = located.filter((a) => a.anchor.platform !== undefined);
-  const shapes = [...stationPlatforms(data).values()].flatMap((p) => { const shape = platformShape(p); return shape ? [shape] : []; });
+  const shapes = [...stationPlatforms(data).values()].flatMap((p) => { const shape = platformShape({ ...p, pts: platformDrawingOutline(p, data) }); return shape ? [shape] : []; });
   const gasworksSouth = tunnelMouths(data).find((m) => m.id === 'gasworks-south');
   const throatHull = convexHull([...shapes.flatMap((s) => s.platform.pts as [number, number][]), ...(gasworksSouth?.bores.flatMap((b) => b.tracks.map((t) => [t.x, t.z] as [number, number])) ?? [])]);
   const lengths = { long: trainLayout('lner9').length, short: trainLayout('lner5').length };
@@ -501,13 +501,13 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
       maxProfileSamplesPerTrain: profileCap, speedFallbackKmh: 40, stationKmh: 25, platformApproachRouteM: 400 },
     method: {
       noFutureLearnedChains: true,
-      zoneDefinitions: { platform: 'occupied track is within 5 m of a surface OSM platform polygon selected by stationPlatforms() or includes a mapped platform anchor stop',
+      zoneDefinitions: { platform: 'occupied track is within 5 m of a surface platform drawing outline selected by stationPlatforms()/platformDrawingOutline() or includes a mapped platform anchor stop',
         throat: 'occupied track or leading point is within 12 m of the convex hull joining those platform polygons to the OSM Gasworks south portal tracks; coarse audit envelope only',
         approach: 'all other on-model track outside the platform and throat envelope' },
       speedLimit: 'minimum OSM way maxspeed (40 km/h fallback) over every occupied track section, capped at 25 km/h where occupied track intersects KINGS_CROSS; the core also has a route-distance 400 m platform approach cap, not independently checked because routes are not exposed',
-      platformStop: 'stationary trains targeting a mapped platform berth are checked only when the leading end is within 5 m of its mapped physical buffer or the occupied body intersects that selected surface platform polygon; buffer clearance is checked only at a buffer stop',
-      bodyContainment: 'occupied body projected along the selected OSM platform polygon long axis; 2 m endpoint tolerance; geometry only, not a safety certification',
-      heldClassification: 'continuous zero-speed interval beyond max(anchor.errorM, 5 m) from every located anchor; ordinary dwell at an anchor is informational and is not a violation',
+      platformStop: 'stationary trains targeting a mapped platform berth are checked only when the leading end is within 5 m of its mapped physical buffer or the occupied body intersects that selected surface platform drawing outline; buffer clearance is checked only at a buffer stop',
+      bodyContainment: 'occupied body projected along the selected platform drawing outline long axis; 2 m endpoint tolerance; geometry only, not a safety certification',
+      heldClassification: 'continuous interval at speed <= 0.05 m/s beyond max(anchor.errorM, 5 m) from every located anchor; ordinary dwell at an anchor is informational and is not a violation',
       cabReversal: 'a reversal counter increase on occupied surface-platform track with occupied-body overlap consistent with odometer distance is treated as a legal cab label reversal; its nose-label jump is excluded from point-speed, teleport and backward metrics; reversals elsewhere are reported',
       trainLengths: options.lengthPolicy ?? `Fallback LNER IET shape assumption: descriptions starting with 1 use ${lengths.long} m (9-car); other descriptions use ${lengths.short} m (5-car)`,
       limits: '0.7 m/s² accel/decel thresholds are modeling audit bounds; core currently models 0.7 accel and 0.6 service braking',

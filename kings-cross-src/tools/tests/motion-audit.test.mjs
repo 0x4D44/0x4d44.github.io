@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { auditRecording } from '../motion-audit.ts';
+import { PLATFORM_9_OUTLINE_BASIS } from '../../core/station.ts';
 
 const data = {
   attribution: 'synthetic', origin: { lat: 0, lon: 0 },
@@ -136,4 +137,27 @@ test('reports nose clearance from the physical buffer and the train body beyond 
   assert.equal(report.counts.platformBufferClearanceViolations, 1);
   assert.equal(report.counts.platformBodyContainmentViolations, 1);
   assert.equal(report.trains[1].platformStops.length, 0, 'a held approach train does not inherit its platform target as a platform stop');
+});
+
+test('assesses platform 9 against the drawn 176 m extension and retains genuine overhang', () => {
+  const basis = PLATFORM_9_OUTLINE_BASIS;
+  const fixture = { ...data, nodes: [[basis.bufferNode, 0, -200], [2, 0, -450]],
+    rails: [{ ...data.rails[0], nodes: [basis.bufferNode, 2] }],
+    buffers: [{ id: basis.bufferNode, x: 0, z: -200 }],
+    platforms: [{ id: basis.osmId, ref: '9', pts: [[-2, -200], [-2, -300], [2, -300], [2, -200]] }] };
+  const map = { ...anchors, anchors: [{ berth: 'P9', kind: 'platform', platform: '9', from: basis.bufferNode, to: 2,
+    t: 0, point: [0, -200], errorM: 5, evidence: 'synthetic physical buffer' }] };
+  const run = (backM) => auditRecording(rows(100), fixture, map, { createMotion: scriptedFactory((_seconds, graph) => [{
+    ...view(graph, { x: 3, targetBerth: 'P9' }), heading: 0, lengthM: backM - 3, occupiedLengthM: backM - 3,
+    leading: { edge: graph.edges[0], t: 3 / 250, point: [0, -203] },
+    occupied: [{ edge: graph.edges[0], fromT: 3 / 250, toT: backM / 250 }],
+  }]) });
+  const fit = run(175);
+  assert.equal(fit.counts.platformBodyContainmentViolations, 0, 'body fits drawn extension despite exceeding raw 100 m polygon');
+  assert.ok(fit.trains[0].platformStops[0].maximumBodyOutsidePlatformM <= 2);
+  assert.equal(fit.counts.platformBufferClearanceViolations, 0);
+  const outside = run(181);
+  assert.equal(outside.counts.platformBodyContainmentViolations, 1, 'genuine overhang retains the existing 2 m tolerance');
+  assert.ok(outside.trains[0].platformStops[0].maximumBodyOutsidePlatformM > 2);
+  assert.equal(fixture.platforms[0].pts[1][1], -300, 'audit must not rewrite source geometry');
 });

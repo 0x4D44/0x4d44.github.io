@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile, stat, symlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { evidenceCollector, handlingEvidence, runAxis05 } from '../axis05-evidence.ts';
+import { axis05SchedulePolicy, evidenceCollector, handlingEvidence, runAxis05 } from '../axis05-evidence.ts';
 import { auditRecording } from '../motion-audit.ts';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const anchors = { area: 'Y9', sources: ['synthetic'], anchors: [], unmapped: [] };
@@ -91,4 +91,74 @@ test('Axis 05 pass-through compares occupied centers and excludes stationary cab
   occupied(500, 1, 0.1, 0.2); occupied(500, 2, 0.7, 0.8);
   assert.equal(c.result().passThrough.sameEdgeOrderExchangeSamples, 1);
   assert.equal(c.result().passThrough.sameEdgeOrderExchangeSamples, 1);
+});
+
+const date = '2026-11-08', atMs = Date.parse(date + 'T12:00:00Z');
+const call = { date, serviceDate: date, uid: 'SYNTH', headcode: '1A01', operator: 'GN', origin: 'MOORGATE', destination: 'KNGX',
+  platform: null, arrivalMs: atMs, departureMs: null };
+test('Axis 05 schedules select the birth day and preserve fallback and physical formation', async () => {
+  const { createTrainKinds } = await import('../../web/src/trains-live.ts');
+  const policy = axis05SchedulePolicy([{ date, calls: [call] }]);
+  assert.deepEqual(policy.dates, [date]);
+  assert.equal(policy.serviceFor('1A01', atMs), call);
+  assert.equal(policy.serviceFor('1A01', atMs - 86400000), undefined);
+  assert.equal(policy.serviceFor('1A01', atMs + 91 * 60000), undefined);
+  const kinds = createTrainKinds(policy.serviceFor), fallback = createTrainKinds(() => undefined);
+  const length = kinds.lengthM('1A01', { id: 1, timeMs: atMs });
+  assert.equal(kinds.formationFor({ id: 1 }).kind, 'gn717x6');
+  assert.notEqual(length, fallback.lengthM('1A01', { id: 1, timeMs: atMs }));
+  assert.equal(kinds.lengthM('2Z01', { id: 1, timeMs: atMs - 86400000 }), length);
+  kinds.lengthM('1A01', { id: 2, timeMs: atMs - 86400000 });
+  assert.equal(kinds.formationFor({ id: 2 }).kind, 'lner9');
+});
+test('Axis 05 schedules reject invalid dates duplicate days and mismatched calls', () => {
+  for (const docs of [ [{ date: '2026-02-30', calls: [] }], [{ dates: [date], calls: [] }],
+    [{ date, dates: [date], calls: [] }], [{ date, calls: [] }, { date, calls: [] }],
+    [{ date, calls: [{ ...call, date: '2026-11-07' }] }], [{ date, calls: [{ ...call, arrivalMs: 'no' }] }],
+    [{ date, calls: null }] ]) assert.throws(() => axis05SchedulePolicy(docs), /schedule/);
+});
+test('Axis 05 optional inputs freeze private bytes and reproduce all supplied caches', async () => {
+  await mkdir(resolve(root, '.scratch'), { recursive: true });
+  const dir = await mkdtemp(resolve(root, '.scratch/axis05-input-test-'));
+  const graph = resolve(dir, 'graph.json'), map = resolve(dir, 'anchors.json'), recording = resolve(dir, 'recording.ndjson');
+  const schedule = resolve(dir, 'schedule.json'), second = resolve(dir, 'second.json'), sclass = resolve(dir, 'sclass.json');
+  const birthAnchors = { ...anchors, anchors: [{ berth: 'S1', kind: 'signal', from: 1, to: 2, t: 0.5,
+    point: [50, -200], errorM: 5, evidence: 'synthetic signal birth' }] };
+  const birthRows = [{ t: atMs, e: { kind: 'interpose', area: 'Y9', descr: '1A01', to: 'S1' } },
+    { t: atMs + 100, e: { kind: 'heartbeat', area: 'Y9' } }];
+  await Promise.all([writeFile(graph, JSON.stringify(data)), writeFile(map, JSON.stringify(birthAnchors)),
+    writeFile(recording, birthRows.map((row) => JSON.stringify(row)).join('\n') + '\n'),
+    writeFile(schedule, JSON.stringify({ date, calls: [call] })), writeFile(second, JSON.stringify({ date: '2026-11-07', calls: [] })),
+    writeFile(sclass, JSON.stringify({ area: 'Y9', hypotheses: [] }))]);
+  const base = ['--recording', recording, '--anchors', map, '--graph', graph];
+  const out = resolve(dir, 'report');
+  const report = await runAxis05([...base, '--out', out, '--schedule', schedule, '--schedule', second, '--sclass', sclass]);
+  assert.equal(report.recordings[0].audit.trains[0].kind, 'gn717x6');
+  const inputs = report.reproducibility.inputHashes;
+  assert.equal(inputs.schedules.length, 2);
+  for (const input of [...inputs.schedules, inputs.sclass]) {
+    assert.equal(input.sha256, createHash('sha256').update(await readFile(input.path)).digest('hex'));
+    assert.deepEqual(await readFile(input.path), await readFile(input.capturedPath));
+    assert.equal((await stat(input.capturedPath)).mode & 0o777, 0o600);
+    assert.ok(report.reproducibility.command.args.includes(input.capturedPath));
+  }
+  assert.equal(report.reproducibility.command.args.filter((a) => a === '--schedule').length, 2);
+  assert.ok(report.reproducibility.command.args.includes('--sclass'));
+  const rerun = await runAxis05(report.reproducibility.command.args.slice(1));
+  assert.deepEqual(rerun.recordings.map((r) => r.audit.counts), report.recordings.map((r) => r.audit.counts));
+  const plain = await runAxis05([...base, '--out', resolve(dir, 'plain')]);
+  assert.deepEqual(plain.recordings[0].audit.counts, report.recordings[0].audit.counts);
+  assert.equal(plain.recordings[0].audit.trains[0].kind, 'lner9');
+  assert.notEqual(plain.recordings[0].audit.trains[0].lengthM, report.recordings[0].audit.trains[0].lengthM);
+  assert.match(plain.lengthPolicy, /404/);
+  assert.deepEqual(plain.recordings[0].scheduleCoverage.fallbackDates, [date]);
+  assert.deepEqual(report.recordings[0].scheduleCoverage.scheduledDates, [date]);
+  assert.deepEqual(report.recordings[0].scheduleCoverage.fallbackDates, []);
+  assert.equal(plain.reproducibility.inputHashes.schedules, undefined);
+  await assert.rejects(runAxis05([...base, '--out', resolve(dir, 'invalid'), '--sclass', sclass, '--sclass', sclass]), /repeated/);
+  // Refuse an existing symlink even when it points at the exact same private bytes.
+  const trapped = resolve(dir, 'trapped'); await mkdir(resolve(trapped, 'inputs'), { recursive: true });
+  const input = inputs.schedules[0];
+  await symlink(schedule, resolve(trapped, 'inputs', 'schedule-' + date + '-' + input.sha256.slice(0, 12) + '.json'));
+  await assert.rejects(runAxis05([...base, '--out', trapped, '--schedule', schedule]), /different content/);
 });

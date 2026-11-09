@@ -10,8 +10,9 @@ import type { SignalHypothesis, SignalState, TimedTdEvent } from '../core/sclass
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import { createSignals, signalRefBerth, validatedSignalHypotheses } from '../web/src/signals.ts';
-import type { SignalEvent, SignalOverlay } from '../web/src/signals.ts';
-import { buildSignalOverlay } from './build-signals.ts';
+import type { PublicSignalReview, SignalEvent, SignalOverlay } from '../web/src/signals.ts';
+import { buildSignalOverlay, publicSignalReviewMatches } from './build-signals.ts';
+import publicReviews from '../web/src/data/kx-signal-review.json' with { type: 'json' };
 
 export const CAPTURE_STATES: readonly SignalState[] = ['proceed', 'danger', 'unknown'];
 export interface SignalInterval { headId: number; berth: string; state: SignalState; startMs: number; endMs: number }
@@ -29,10 +30,21 @@ const cell = (v: unknown) => String(v ?? '—').replaceAll('|', '\\|').replaceAl
 
 /** Includes every observed bit, every drawn head, and every decoded but unpositioned berth. */
 export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], data: KxData, overlay: SignalOverlay,
-  anchors: AnchorMap, table: unknown, raw: RawElement[] = []) {
+  anchors: AnchorMap, table: unknown, raw?: RawElement[], reviews: readonly PublicSignalReview[] = publicReviews.signals as PublicSignalReview[]) {
   const hypotheses = validatedSignalHypotheses(table, anchors.area);
   const decoded = hypotheses.filter(admitted);
   const proceed = decoded.filter(h => (h.kind ?? 'proceed') === 'proceed');
+  const rawById = new Map((raw ?? []).filter(e => e.type === 'node').map(e => [e.id, e]));
+  const publicReviewById = new Map<number, PublicSignalReview>();
+  for (const signal of overlay.signals) {
+    const marker = signal.positionReview;
+    if (!marker) continue;
+    const candidates = reviews.filter(review => review.id === signal.id);
+    if (candidates.length !== 1 || candidates[0]!.status !== marker.status) continue;
+    const rawPosition = raw === undefined ? undefined : rawById.get(signal.id)?.tags?.['railway:signal:position'] ?? null;
+    if (publicSignalReviewMatches(signal, candidates[0]!, rawPosition, raw !== undefined))
+      publicReviewById.set(signal.id, candidates[0]!);
+  }
   const layer = createSignals(overlay, new THREE.Scene(), { area: anchors.area, platforms: data.platforms });
   const graph = buildGraph(data);
   layer.setAnchors(anchors, graph); layer.setTable(table);
@@ -43,17 +55,18 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
     const anchor = anchors.anchors.find(a => a.berth === berth);
     const aspect = proceed.find(h => h.berth === berth);
     const rail = graph.edges.find(e => (e.a === r.signal.edge.from && e.b === r.signal.edge.to) || (e.a === r.signal.edge.to && e.b === r.signal.edge.from));
-    const positionReview = !r.inferredPosition && r.signal.positionReview ? r.signal.positionReview : {
+    const positionReview = !r.inferredPosition && publicReviewById.has(r.signal.id) ? publicReviewById.get(r.signal.id)! : {
       status: 'uncertain' as const, evidence: rail ? [`https://www.openstreetmap.org/way/${rail.wayId}`] : [] as string[],
       reason: r.inferredPosition ? `No public evidence identifies a signal position or side here; OSM way ${rail?.wayId ?? 'unavailable'} supports the rail only; ${r.label}; ${anchor?.evidence ?? 'anchor evidence unavailable'}`
         : 'No public review of this head\'s track position and side. Berth/reference identity alone cannot establish the mast side.',
     };
-    const previousPost = r.signal.positionReview?.previousPost;
+    const previousPost = publicReviewById.get(r.signal.id)?.previousPost;
+    const facing = r.signal.facing ?? [-r.signal.travel[0], -r.signal.travel[1]];
     return { id: r.signal.id, ref: r.signal.ref ?? null, berth: berth ?? null, decoded: Boolean(aspect),
       hypothesisId: aspect?.id ?? null, positionSource: source,
       review: source === 'reference' ? 'osm-ref-match' : source === 'nearby' || source === 'private-topology' ? 'topology' : 'unreviewed',
       inferred: r.inferredPosition, point: [...r.signal.edge.point], post: [r.group.position.x, r.group.position.y, r.group.position.z],
-      facing: [...r.signal.facing], travel: [...r.signal.travel], side: r.signal.side,
+      facing: [...facing], travel: [...r.signal.travel], side: r.signal.side,
       positionReview, postDeltaM: previousPost ? [r.group.position.x - previousPost[0], r.group.position.z - previousPost[1]] : null,
       errorM: source === 'reference' ? 0 : anchor?.errorM ?? null,
       positionReason: source === 'reference' ? `OSM reference ${r.signal.ref} uniquely names the berth`
@@ -66,7 +79,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   const decodedHeads = proceed.map(h => {
     const positions = headRows.filter(r => r.berth === h.berth && r.decoded);
     const unmapped = anchors.unmapped.find(a => a.berth === h.berth);
-    const rawRefs = raw.filter(e => e.type === 'node' && e.tags?.railway === 'signal' && signalRefBerth(e.tags.ref) === h.berth)
+    const rawRefs = (raw ?? []).filter(e => e.type === 'node' && e.tags?.railway === 'signal' && signalRefBerth(e.tags.ref) === h.berth)
       .map(e => ({ id: e.id, ref: e.tags!.ref, inOverlay: overlay.signals.some(s => s.id === e.id) }));
     return { berth: h.berth, hypothesisId: h.id, address: h.address, bit: h.bit, heldOut: h.heldOut,
       headIds: positions.map(p => p.id), positionSource: positions[0]?.positionSource ?? null,
@@ -125,7 +138,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   };
   const captures = recordings.map((_, recording) => ({ recording, cases: capturePlan(intervals.filter(i => i.recording === recording)) }));
   const metadata = table && typeof table === 'object' ? table as Record<string, unknown> : {};
-  const reviews = (items: { review: string }[]) => Object.fromEntries([...new Set(items.map(h => h.review))].sort().map(review => [review, items.filter(h => h.review === review).length]));
+  const reviewCounts = (items: { review: string }[]) => Object.fromEntries([...new Set(items.map(h => h.review))].sort().map(review => [review, items.filter(h => h.review === review).length]));
   return { area: anchors.area, states: CAPTURE_STATES, unsupportedStates: ['caution'],
     validation: metadata.validation ?? null, windows: metadata.windows ?? null, folds: metadata.folds ?? null,
     evidencePolicy: 'Supplied table held-out evidence; >=3 supports and precision/recall >=0.8 in both folds. Route bits never drive an aspect. No re-learning or synthetic hypotheses.',
@@ -142,7 +155,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
         topology: headRows.filter(h => h.positionReview.status !== 'reviewed' && h.review === 'topology').length,
         uncertain: headRows.filter(h => h.positionReview.status !== 'reviewed' && h.review !== 'topology').length,
       },
-      publicOverlayReview: reviews(overlay.signals), effectiveOverlayReview: reviews(headRows.filter(h => !h.inferred)), drawnHeadReview: reviews(headRows) },
+      publicOverlayReview: reviewCounts(overlay.signals), effectiveOverlayReview: reviewCounts(headRows.filter(h => !h.inferred)), drawnHeadReview: reviewCounts(headRows) },
     heldOut: { all: total(decoded), proceed: total(proceed) }, bits, heads: headRows, decodedHeads, captures, intervals };
 }
 
@@ -196,7 +209,7 @@ export async function main(args = process.argv.slice(2)) {
   const overlay = await json(resolve(root, 'kings-cross-src/web/src/data/kx-signals.json')) as SignalOverlay;
   const anchorsBytes = await readFile(one('--anchors')), tableBytes = await readFile(one('--table'));
   const anchors = JSON.parse(anchorsBytes.toString()) as AnchorMap, table = JSON.parse(tableBytes.toString());
-  const raw = values.has('--raw') ? await json(one('--raw')) : { elements: [] };
+  const raw = values.has('--raw') ? await json(one('--raw')) : undefined;
   const recordings: TimedTdEvent[][] = [], sources = [];
   for (const [index, input] of (values.get('--recording') ?? []).entries()) {
     const bytes = await readFile(resolve(input));
@@ -207,9 +220,10 @@ export async function main(args = process.argv.slice(2)) {
     recordings.push(rows); sources.push(await save(`recording-${index}.ndjson`, complete));
   }
   if (!recordings.length) throw new Error('missing --recording');
-  const privateReview = buildSignalOverlay(data, { raw: raw.elements ?? raw, anchors }).privateReview;
+  const rawElements = raw === undefined ? undefined : raw.elements ?? raw;
+  const privateReview = buildSignalOverlay(data, { raw: rawElements, anchors }).privateReview;
   const reviewedTable = { ...table, signalMappings: privateReview.signalMappings };
-  const report = signalReport(recordings, data, overlay, anchors, reviewedTable, raw.elements ?? raw);
+  const report = signalReport(recordings, data, overlay, anchors, reviewedTable, rawElements);
   const inputs = { anchors: await save('anchors.json', anchorsBytes), table: await save('sclass.json', JSON.stringify(reviewedTable)), recordings: sources,
     overlaySha256: createHash('sha256').update(JSON.stringify(overlay)).digest('hex') };
   await save('private-topology.json', JSON.stringify(privateReview, null, 2));

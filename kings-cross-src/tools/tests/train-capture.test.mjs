@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createHash} from 'node:crypto';
-import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,writeFile,symlink} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {EventEmitter} from 'node:events';
 import * as T from 'three';
-import {ALL_KINDS} from '../../core/train.ts';
+import {ALL_KINDS,trainLayout} from '../../core/train.ts';
 import {buildTrain} from '../../web/src/train.ts';
-import {selectPortalFrames,verifyPortalSequence,capturePortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
+import {selectPortalFrames,verifyPortalSequence,capturePortalFrames,capturePlans,captureSequences,verifyReplayFrame,frozenTrainEndpoint,frozenBytes,frozenSchedulePolicy,portalCapturePlan,catalogueTracks,corridorPoints,replaySession,replayUrl,measuredPhase,describeCaptureFrames} from '../train-capture.mjs';
 import {detailCamera,inspectTrainFrame,sequenceCamera,setCaptureView,trainBounds,followTrainCamera,portalTrainCamera,intersectCaptureRay} from '../train-framing.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from '../capture-runtime.mjs';
 const frame=(timeMs,speedMps=0)=>({timeMs,point:[0,10],speedMps,state:speedMps?'moving':'held',lengthM:26,reversals:0,occupied:[{a:1,b:2,fromT:0,toT:1,edgeLengthM:40}]});
@@ -34,8 +34,21 @@ test('train screenshots require the actual rendered physical train kind clock po
  for(const change of [{id:2},{kind:'other'},{description:'OTHER'},{timeMs:2},{point:[0,10.06]},{speedMps:2},{state:'held'},
   {reversals:1},{lengthM:25},{rendered:false},{occupied:[]},{occupied:[{a:2,b:1,fromT:0,toT:1}]},{visibility:{clear:false}}])assert.throws(()=>verifyReplayFrame(p,expected,{...actual,...change}));
 });
-test('train capture serves frozen bytes and no schedule to preserve audited formation births',()=>{
- const frozen={anchors:'a',recording:'r'};assert.equal(frozenTrainEndpoint('/relay/anchors',frozen).body,'a');assert.equal(frozenTrainEndpoint('/relay/recording?date=20990101',frozen).body,'r');assert.equal(frozenTrainEndpoint('/relay/schedule',frozen).status,404);assert.equal(frozenTrainEndpoint('/other',frozen),undefined);
+test('train capture serves only the frozen schedule for its requested date',()=>{
+ const date='2026-11-08',doc={date,calls:[{headcode:'1A01',operator:'GN'}]},frozen={anchors:'a',recording:'r',schedules:new Map([[date,doc]])};
+ assert.equal(frozenTrainEndpoint('/relay/anchors',frozen).body,'a');assert.equal(frozenTrainEndpoint('/relay/recording?date=20990101',frozen).body,'r');
+ const response=frozenTrainEndpoint(`/relay/schedule?date=${date}`,frozen);assert.equal(response.status,undefined);assert.deepEqual(JSON.parse(response.body),doc);
+ assert.equal(frozenTrainEndpoint('/relay/schedule?date=2026-11-09',frozen).status,404);assert.equal(frozenTrainEndpoint('/relay/schedule',{}).status,404);assert.equal(frozenTrainEndpoint('/other',frozen),undefined);
+});
+test('frozen schedule policy verifies provenance and matches only its birth day',async()=>{
+ const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(scratch+'/train-schedule-test-');
+ const date='2026-11-08',at=Date.parse(date+'T12:00:00Z'),call={date,serviceDate:date,uid:'SYN',headcode:'1A01',operator:'GN',origin:'MOORGATE',destination:'KNGX',platform:null,arrivalMs:at,departureMs:null};
+ const bytes=Buffer.from(JSON.stringify({date,calls:[call]})),capturedPath=dir+'/schedule.json';await writeFile(capturedPath,bytes,{mode:0o600});
+ const entry={date,capturedPath,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')},policy=await frozenSchedulePolicy([entry]);
+ assert.deepEqual(policy.dates,[date]);assert.deepEqual(policy.serviceFor('1A01',at),call);assert.equal(policy.serviceFor('1A01',at-86400000),undefined);
+ assert.equal(policy.serviceFor('1A01',at+91*60000),undefined);assert.equal((await frozenSchedulePolicy()).serviceFor('1A01',at),undefined);
+ for(const entries of [[entry,entry],[{...entry,date:'2026-11-09'}],[{...entry,bytes:1}],[{...entry,sha256:'0'.repeat(64)}]])await assert.rejects(frozenSchedulePolicy(entries));
+ const linked=dir+'/linked.json';await symlink(capturedPath,linked);await assert.rejects(frozenSchedulePolicy([{...entry,capturedPath:linked}]),/private file/);
 });
 test('train capture verifies immutable input fingerprints before launching a browser',async()=>{
  const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(scratch+'/train-capture-test-'),bytes=Buffer.from('synthetic');
@@ -126,10 +139,19 @@ test('capture descriptions follow a physical train rename at each recorded frame
  const anchors={area:'TEST',sources:['synthetic'],unmapped:[],anchors:[{berth:'P',kind:'platform',platform:'1',from:1,to:2,t:.9,point:[900,-1000],errorM:1,evidence:'synthetic'}]};
  const rows=[{t:1000,e:{kind:'interpose',area:'TEST',to:'P',descr:'BEFORE'}},{t:2000,e:{kind:'interpose',area:'TEST',to:'P',descr:'AFTER'}}];
  const p={captureCandidates:[{recordingIndex:0,trainId:1,description:'AFTER',frames:[{timeMs:1500},{timeMs:2500}]}]};
- let enriched;assert.doesNotThrow(()=>{enriched=describeCaptureFrames(p,[rows],data,anchors);});
+ const births=[];let enriched;assert.doesNotThrow(()=>{enriched=describeCaptureFrames(p,[rows],data,anchors,(description,at)=>{births.push([description,at]);return {operator:'GN',origin:'MOORGATE',destination:'KNGX'};});});
+ assert.deepEqual(births,[['BEFORE',1000]],'enrichment uses the same immutable schedule resolver at physical birth');
  assert.deepEqual(enriched.captureCandidates[0].frames.map(f=>f.description),['BEFORE','AFTER']);assert.equal(p.captureCandidates[0].frames[0].description,undefined);
  const candidate=plan(),expected={...candidate.frames[0],description:'BEFORE'},actual={...expected,id:candidate.trainId,kind:candidate.kind,rendered:true,visibility:{clear:true}};
  assert.doesNotThrow(()=>assert.equal(verifyReplayFrame(candidate,expected,actual),true));assert.throws(()=>verifyReplayFrame(candidate,expected,{...actual,description:candidate.description}));
+});
+test('portal planning and canonical seek use the same scheduled formation',()=>{
+ const nodes=[[1,0,-100],[2,0,-450],[3,0,-950],[4,0,-1300]],rails=[{id:1,nodes:[1,2]},{id:2,nodes:[2,3],tunnel:true},{id:3,nodes:[3,4]}].map(r=>({service:'main',tunnel:false,bridge:false,layer:0,ref:'ECM1',...r}));
+ const anchors={area:'TEST',sources:['synthetic'],unmapped:[],anchors:[{berth:'A',kind:'signal',from:1,to:2,t:0,point:[0,-100],errorM:1,evidence:'synthetic'},{berth:'B',kind:'signal',from:3,to:4,t:1,point:[0,-1300],errorM:1,evidence:'synthetic'}]};
+ const rows=[{t:1000,e:{kind:'step',area:'TEST',from:'A',to:'B',descr:'1A01'}},{t:201000,e:{kind:'heartbeat',area:'TEST'}}],births=[];
+ let result;assert.doesNotThrow(()=>{result=portalCapturePlan([rows],{nodes,rails},anchors,(description,at)=>{births.push([description,at]);return {operator:'GN',origin:'MOORGATE',destination:'KNGX'};});});
+ assert.equal(result.kind,'gn717x6');assert.equal(births.length,2,'planning and canonical seek must both resolve at birth');
+ assert.ok(result.frames.every(f=>Math.abs(f.lengthM-trainLayout('gn717x6').length)<1e-6));
 });
 test('deadlines and termination signal the detached browser group and cleanup waits for descendants',async()=>{
  for(const reason of ['SIGTERM','SIGINT','deadline']){
