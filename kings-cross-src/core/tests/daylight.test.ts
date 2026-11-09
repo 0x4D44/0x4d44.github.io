@@ -245,7 +245,19 @@ test('in dense fog the sky, the horizon and the fog become one colour, so the ed
   assert.ok(rig(30, { visibilityM: 250 }).sun.intensity < 0.5 * rig(30).sun.intensity, 'fog takes the sun\'s edge away');
   const clear = rig(30);
   assert.ok(spread(clear.dome.zenith) > 0.2 && spread(foggy.dome.zenith) < 0.6 * spread(clear.dome.zenith), 'and the sky loses its blue');
-  assert.deepEqual(rig(30).fog, rig(30).dome.horizon, 'in clear air the fog colour is the horizon colour');
+});
+
+// Round six (the E1 scorer: the noon overview's far third was a neutral grey, "a faint blue tint in the clear far haze"): in clear air the fog is the horizon's colour a little bluer (the red
+// down, the blue up, the green as it was); a cloud's haze and a fog are grey and keep the horizon's colour, so the tint goes with them.
+test('in clear air the fog is the horizon\'s colour, a little bluer; under cloud and in fog it is the horizon\'s again', () => {
+  const clear = rig(30);
+  assert.ok(clear.fog[2] > clear.dome.horizon[2] && clear.fog[0] < clear.dome.horizon[0], 'bluer: less red, more blue');
+  assert.equal(clear.fog[1], clear.dome.horizon[1], 'the green is the horizon\'s');
+  const lean = (r: SkyRig): number => r.fog[2] - r.fog[0] - (r.dome.horizon[2] - r.dome.horizon[0]);
+  assert.ok(lean(clear) > 0.05 && lean(clear) < 0.12, `a faint tint: the blue less the red is ${lean(clear).toFixed(3)} more than the horizon's`);
+  assert.ok(Math.abs(lean(rig(30, { cloud: 1 }))) < 1e-9, 'an overcast sky\'s haze is the horizon\'s colour');
+  assert.ok(lean(rig(30, { cloud: 0.5 })) > 0 && lean(rig(30, { cloud: 0.5 })) < lean(clear), 'a broken sky\'s is between');
+  assert.ok(lean(rig(30, { visibilityM: 250 })) < 0.01, 'a fog is the horizon\'s colour (one colour, no seam)');
 });
 
 test('stars show on dark clear nights only', () => {

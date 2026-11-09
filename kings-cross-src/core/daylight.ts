@@ -48,7 +48,7 @@ export interface SkyRig {
   dome: { zenith: Rgb; horizon: Rgb };
   /** the glow round the sun on the dome: colour and 0..1 strength */
   glow: { colour: Rgb; strength: number };
-  /** the colour fog fades into, which is the dome's horizon colour */
+  /** the colour fog fades into, which is the dome's horizon colour (in clear air a little bluer: the haze scatters the blue) */
   fog: Rgb;
   /** 0 (clear) to 1 (dense fog): how foggy the visibility is */
   fogAmount: number;
@@ -246,6 +246,14 @@ export const DAYLIGHT_FLOOR = 0.12;
 /** The stylised moon's strength on a clear night (the key light's intensity; the reference sun is 1.7). */
 export const MOON_INTENSITY = 0.55;
 
+/**
+ * How much bluer the haze of a clear day is than the horizon it meets, as a share of the horizon's own colour (the red falls and the blue rises by it, in sRGB). Round six (the E1
+ * scorer: the noon overview's far third reads a neutral grey, B less R 6.7 with the pure haze at the frame's corner 17, "a faint blue tint in the clear far haze"): air scatters the
+ * blue, and the far ground fades into the horizon's colour, which was all the fog had. 0.06 draws the far third at B less R 10.3 and the pure haze at the frame's corner at 24.8 (the noon overview's frozen
+ * view; the blue of the far blocks rises, their L does not move). The tint belongs to clear air: it goes with cloud and with fog (a cloud's haze and a fog are grey), so an overcast day and a fog are as they were.
+ */
+const HAZE_BLUE = 0.06;
+
 /** How far a cloud sky's colour is pulled toward its own grey (1 is a neutral grey): a bright overcast keeps a little of the blue, a pale cool white. */
 const CLOUD_SKY_GREY = 0.9;
 /** What the day adds to the grey of a cloud sky's zenith and horizon, as a multiple of it (at full day; none at dusk). */
@@ -288,7 +296,9 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
   const darker = 1 - 0.14 * rain;
   zenith = scaleRgb(zenith, darker);
   horizon = scaleRgb(horizon, darker);
-  const fogColour = mixRgb(horizon, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog);
+  const clearAir = (1 - cloud) * (1 - fog);
+  const haze: Rgb = [horizon[0] * (1 - HAZE_BLUE * clearAir), horizon[1], Math.min(1, horizon[2] * (1 + HAZE_BLUE * clearAir))];
+  const fogColour = mixRgb(haze, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog);
   zenith = mixRgb(zenith, scaleRgb(fogColour, 0.88), 0.85 * fog);
   horizon = mixRgb(horizon, fogColour, 0.9 * fog);
 
