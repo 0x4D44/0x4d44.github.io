@@ -64,6 +64,15 @@ export function waverleySteps(paint:Batch,glass:Batch,input:StepsInput){
    const prev=treads[i-1];if(!prev.flight)flights.push({s0:tr.s0,s1:tr.s0,y0:prev.y,y1:tr.y});const fl=flights[flights.length-1];fl.s1=tr.s1;fl.y1=tr.y;
   }else box(tr.s0,tr.s1,.03,.97,foot,tr.y,stone);
  }
+ // the escalators run as smooth inclines over their stepped base: the moving deck from the flight's head to its foot, its steel sides
+ // closing the sawtooth between the incline and the treads under it (R-wv1-d2)
+ for(const fl of flights){const [t0,t1]=S.escalator,q=(s:number,t:number,y:number):V3=>{const p=f.at(s,t);return [p[0],y,p[1]];};
+  const line=(s:number)=>fl.y0+(fl.y1-fl.y0)*(s-fl.s0)/(fl.s1-fl.s0);
+  paint.poly([q(fl.s0,t0,fl.y0+.01),q(fl.s0,t1,fl.y0+.01),q(fl.s1,t1,fl.y1+.01),q(fl.s1,t0,fl.y1+.01)],undefined,{facing:[0,1,0],color:C(STEPS_COLOURS.escalator)});
+  for(const tr of treads)if(tr.flight&&tr.s0>=fl.s0-1e-9&&tr.s1<=fl.s1+1e-9)for(const [t,sd] of [[t0,-1],[t1,1]] as [number,number][]){
+   const n=unit([f.at(tr.s0,t1)[0]-f.at(tr.s0,t0)[0],0,f.at(tr.s0,t1)[1]-f.at(tr.s0,t0)[1]]);
+   paint.poly([q(tr.s0,t,line(tr.s0)+.01),q(tr.s1,t,line(tr.s1)+.01),q(tr.s1,t,tr.y-.03),q(tr.s0,t,tr.y-.03)],undefined,{normal:[n[0]*sd,0,n[2]*sd],color:C(STEPS_COLOURS.steel)});}
+ }
  // the cheek walls along both edges: from under the tread to the handrail or the ground beside it, whichever is higher (ASSUMED 0.4 m thick)
  for(const tr of treads)for(const [t0,t1] of [[0,.03],[.97,1]] as [number,number][]){let gy=-Infinity;
   for(let k=0;k<=4;k++){const p=f.at(tr.s0+(tr.s1-tr.s0)*k/4,(t0+t1)/2),q=f.at(tr.s0+(tr.s1-tr.s0)*k/4,t0<.5?0:1);gy=Math.max(gy,g.heightAt(p[0],p[1]),g.heightAt(q[0],q[1]));}

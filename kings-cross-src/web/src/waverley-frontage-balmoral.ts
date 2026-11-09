@@ -20,9 +20,9 @@ export const BALMORAL_LEVELS={
  chimney:38.6,// stacks, R-wv2-a2
  bay:4.2,// window bay, R-wv2-a2 (about 17 bays along Princes Street)
  below:18,// the facade texture's reach below P: the station side falls ~16 m to the platforms (OSM ground, DTM)
- tower:{shaft:39.6,corbel:41,stage:49.2,dial:45,turret:50.6,turretCap:53.2,gable:52.2,lantern:[49.2,51.6],cornice:51.6,dome:55,top:58},// top: HES 58 m
- // the crown (R-wv2-a at ~8.7 px/m on the 12 m tower): an ogee bell about 6.8 m across and 3.4 m tall on a short octagonal drum, an open
- // lantern 1.4 m, its cap and finial to the top; the Dutch gables stop ~3 m under the bell so it reads above them from the street
+ tower:{shaft:39.6,corbel:41,stage:49.2,dial:45,turret:50.6,turretCap:53.2,gable:52.2,lantern:[49.2,51.6],cornice:51.6,dome:56.1,top:58},// top: HES 58 m
+ // the crown (R-wv2-a at ~8.7 px/m on the 12 m tower; R-wv2-b): an ogee bell about 5.2 m across and 4.5 m tall on a short octagonal
+ // drum, an open lantern 0.9 m, its cap and finial to the top; the clock gables are slim pediments that stop under the bell's shoulder
 } as const;
 export const BALMORAL_COLOURS={stone:0xad9f88,cornice:0xc2b59d,slate:0x4f545a,lead:0x6f7880,pane:0x2a3038,surround:0xd2c2a2} as const;
 
@@ -49,7 +49,7 @@ function ashlarCanvas(w:number,h:number,paint:(g:CanvasRenderingContext2D)=>void
  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');if(!g)return null;
  paint(g);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
 }
-const STONE='#ad9f88',LIGHT='#c2b59d',SHADE='#76685a',GLASS='#2b323b',FRAME='#d8c7a6';
+const STONE='#ad9f88',LIGHT='#cbbfa6',SHADE='#76685a',GLASS='#2b323b',FRAME='#ddd0b4';
 /** One window bay of the hotel facade, `bay` m wide, from P-below to P+cornice: storeys and window sizes ASSUMED from R-wv2-a2 and R-wv2-b. */
 export function balmoralFacadeTexture():THREE.CanvasTexture|null{
  const L=BALMORAL_LEVELS,W=192,H=2048,span=L.below+L.cornice,ky=H/span,kx=W/L.bay,Y=(m:number)=>H-(m+L.below)*ky;
@@ -57,21 +57,32 @@ export function balmoralFacadeTexture():THREE.CanvasTexture|null{
   g.fillStyle=STONE;g.fillRect(0,0,W,H);
   // ashlar courses, 0.45 m; rusticated (deeper joints) below the first-floor balcony band
   for(let m=-L.below;m<L.cornice;m+=.45){g.fillStyle=m<8.2?'rgba(58,48,38,.45)':'rgba(58,48,38,.16)';g.fillRect(0,Y(m),W,m<8.2?3:1.5);}
-  const win=(cx:number,y0:number,w:number,h:number,arch=false,pediment=false)=>{
+  const win=(cx:number,y0:number,w:number,h:number,arch=false,pediment:'triangle'|'segment'|'hood'|null=null)=>{
    const x=cx*kx-w*kx/2,top=Y(y0+h),bottom=Y(y0);
    g.fillStyle=FRAME;g.fillRect(x-.18*kx,top-.18*ky,w*kx+.36*kx,bottom-top+.36*ky);
    g.fillStyle=GLASS;g.beginPath();
    if(arch){g.moveTo(x,bottom);g.lineTo(x,top+w*kx/2);g.arc(x+w*kx/2,top+w*kx/2,w*kx/2,Math.PI,0);g.lineTo(x+w*kx,bottom);}else g.rect(x,top,w*kx,bottom-top);
    g.fill();g.fillStyle='rgba(216,199,166,.8)';g.fillRect(x+w*kx/2-1.5,top,3,bottom-top);g.fillRect(x,(top+bottom)/2-1.5,w*kx,3);
-   if(pediment){g.fillStyle=LIGHT;g.beginPath();g.moveTo(x-.35*kx,top-.25*ky);g.lineTo(x+w*kx/2,top-.95*ky);g.lineTo(x+w*kx+.35*kx,top-.25*ky);g.fill();}
+   // window heads (R-wv2-a2): a triangular pediment, a segmental one or a flat hood, each with its shadow under it
+   if(pediment==='triangle'||pediment==='segment'){g.fillStyle=SHADE;g.fillRect(x-.4*kx,top-.24*ky,w*kx+.8*kx,.1*ky);g.fillStyle=LIGHT;g.beginPath();g.moveTo(x-.4*kx,top-.26*ky);
+    if(pediment==='triangle')g.lineTo(x+w*kx/2,top-1.0*ky);else g.quadraticCurveTo(x+w*kx/2,top-1.25*ky,x+w*kx+.4*kx,top-.26*ky);g.lineTo(x+w*kx+.4*kx,top-.26*ky);g.fill();}
+   else if(pediment==='hood'){g.fillStyle=SHADE;g.fillRect(x-.3*kx,top-.22*ky,w*kx+.6*kx,.1*ky);g.fillStyle=LIGHT;g.fillRect(x-.3*kx,top-.42*ky,w*kx+.6*kx,.22*ky);}
    g.fillStyle=LIGHT;g.fillRect(x-.3*kx,bottom,w*kx+.6*kx,.22*ky);
   };
+  // block-to-block tone (a fixed pseudo-random walk, so every build draws the same stones), ±6%
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+  for(let m=-L.below;m<L.cornice;m+=.45)for(let x=(Math.round(m/.45)%2)*.6;x<L.bay;x+=1.2){const t=rnd();g.fillStyle=t<.5?`rgba(60,48,36,${(.5-t)*.14})`:`rgba(235,225,205,${(t-.5)*.14})`;g.fillRect(x*kx,Y(m+.45),1.2*kx,.45*ky);}
+  // the base: darker and weathered toward the station floor, and a dark plinth course on the street
+  const base=g.createLinearGradient(0,Y(0),0,Y(-L.below));base.addColorStop(0,'rgba(50,42,34,0)');base.addColorStop(1,'rgba(50,42,34,.38)');g.fillStyle=base;g.fillRect(0,Y(0),W,Y(-L.below)-Y(0));
+  g.fillStyle='rgba(45,38,30,.45)';g.fillRect(0,Y(.6),W,.6*ky);g.fillRect(0,Y(-L.below+1.2),W,1.2*ky);
+  // soot under the main cornice, fading over two metres
+  const soot=g.createLinearGradient(0,Y(23.6),0,Y(21.4));soot.addColorStop(0,'rgba(40,34,28,.4)');soot.addColorStop(1,'rgba(40,34,28,0)');g.fillStyle=soot;g.fillRect(0,Y(23.6),W,Y(21.4)-Y(23.6));
   // below the street, on the station side: plain storeys of 3.6 m
   for(let m=-L.below+1;m<-1;m+=3.6)win(L.bay/2,m,1.3,2.0);
   win(L.bay/2,.6,2.4,3.7,true);// ground floor: tall round-headed openings (R-wv2-a2)
   win(L.bay/2,5.3,1.5,1.9);// mezzanine (HES)
   g.fillStyle=LIGHT;g.fillRect(0,Y(8.6),W,.4*ky);g.fillStyle=SHADE;g.fillRect(0,Y(8.2),W,.12*ky);// first-floor balcony band
-  win(L.bay/2,9.2,1.5,2.6,false,true);win(L.bay/2,13.0,1.45,2.4);win(L.bay/2,16.7,1.4,2.2);win(L.bay/2,20.3,1.35,2.0);
+  win(L.bay/2,9.2,1.5,2.6,false,'triangle');win(L.bay/2,13.0,1.45,2.4,false,'segment');win(L.bay/2,16.7,1.4,2.2,false,'hood');win(L.bay/2,20.3,1.35,2.0);
   g.fillStyle=SHADE;g.fillRect(0,Y(23.6),W,.25*ky);g.fillStyle=LIGHT;g.fillRect(0,Y(24.1),W,.5*ky);// frieze under the main cornice
  });
 }
@@ -112,7 +123,7 @@ export function balmoralTower(b:BalmoralBatches,input:BalmoralInput,dialRadius:n
   for(let s=-hw+.6;s<=hw-.5;s+=.9)obox(b.paint,[o[0]+n[0]*.2+right[0]*s,P+T.shaft+.25,o[2]+n[2]*.2+right[2]*s],right,up,n,[.18,.3,.2],stone);
   // clock-stage cornice and the Dutch gable over the dial (HES "Dutch gabled bays"; outline ASSUMED from R-wv2-b)
   obox(b.paint,[o[0]+n[0]*.15,P+T.stage-.2,o[2]+n[2]*.15],right,up,n,[hw+.15,.25,.25],cornice);
-  const g=[[hw-1.3,T.stage],[hw-1.3,T.stage+.6],[hw-2.1,T.stage+.8],[2.4,T.stage+1.3],[1.5,T.gable-.9],[1.5,T.gable-.4],[0,T.gable]] as [number,number][];
+  const g=[[hw-1.6,T.stage],[hw-1.6,T.stage+.6],[hw-2.4,T.stage+.8],[1.9,T.stage+1.3],[1.1,T.gable-.9],[1.1,T.gable-.4],[0,T.gable]] as [number,number][];
   slab(b.paint,[...g.map(([s,y])=>[s,P+y] as [number,number]),...g.slice(0,-1).reverse().map(([s,y])=>[-s,P+y] as [number,number])],[o[0]+n[0]*.1,0,o[2]+n[2]*.1],right,n,1.2,stone);
   obox(b.paint,[o[0]+n[0]*.16,P+T.gable+.15,o[2]+n[2]*.16],right,up,n,[.35,.3,.3],cornice);// gable finial block
   // the dial (3.2 m, Smith of Derby) with a stone surround, on the stage face
@@ -133,16 +144,16 @@ export function balmoralTower(b:BalmoralBatches,input:BalmoralInput,dialRadius:n
  const sq=[at(-half[0],-half[1],0),at(half[0],-half[1],0),at(half[0],half[1],0),at(-half[0],half[1],0)];
  for(let i=0;i<4;i++){const a=sq[i],e=sq[(i+1)%4],m=[(a[0]+e[0])/2-centre[0],0,(a[2]+e[2])/2-centre[1]] as V3;b.paint.tri([a[0],P+T.stage,a[2]],[e[0],P+T.stage,e[2]],[centre[0],P+T.stage+2.4,centre[1]],undefined,m);}
  const [l0,l1]=T.lantern;
- prism(b.paint,centre[0],centre[1],3.1,P+l0,P+l1,8,stone,Math.PI/8,false);
- for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4+Math.PI/8,n:V3=[Math.cos(a),0,Math.sin(a)],r=3.1*Math.cos(Math.PI/8)+.02;
-  obox(b.paint,[centre[0]+n[0]*r,P+(l0+l1)/2+.3,centre[1]+n[2]*r],[-n[2],0,n[0]],up,n,[.4,.6,.02],C(BALMORAL_COLOURS.pane));}
- revolve(b.paint,centre[0],centre[1],[[3.45,P+T.cornice-.35],[3.45,P+T.cornice],[3.3,P+T.cornice]],8,cornice,Math.PI/8);
+ prism(b.paint,centre[0],centre[1],2.4,P+l0,P+l1,8,stone,Math.PI/8,false);
+ for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4+Math.PI/8,n:V3=[Math.cos(a),0,Math.sin(a)],r=2.4*Math.cos(Math.PI/8)+.02;
+  obox(b.paint,[centre[0]+n[0]*r,P+(l0+l1)/2+.3,centre[1]+n[2]*r],[-n[2],0,n[0]],up,n,[.32,.6,.02],C(BALMORAL_COLOURS.pane));}
+ revolve(b.paint,centre[0],centre[1],[[2.75,P+T.cornice-.35],[2.75,P+T.cornice],[2.6,P+T.cornice]],8,cornice,Math.PI/8);
  // the ogee bell, open lantern, cap and finial: the published top, P+58 (HES)
  const c=P+T.cornice;
- revolve(b.spire,centre[0],centre[1],[[3.3,c],[3.4,c+.4],[3.25,c+1.0],[2.75,c+1.8],[1.95,c+2.6],[1.2,c+3.1],[.95,P+T.dome]],16,lead);
- for(let i=0;i<8;i++){const a=i*Math.PI/4,x=centre[0]+.82*Math.cos(a),z=centre[1]+.82*Math.sin(a);prism(b.spire,x,z,.11,P+T.dome,P+T.dome+1.4,6,stone,0,false);}// the lantern's posts
- prism(b.spire,centre[0],centre[1],.55,P+T.dome,P+T.dome+1.4,8,C(BALMORAL_COLOURS.pane),Math.PI/8,false);// the dark lantern core seen between them
- revolve(b.spire,centre[0],centre[1],[[1.05,P+T.dome+1.4],[1.0,P+T.dome+1.65],[.6,P+T.dome+2.0],[.2,P+T.dome+2.3],[.07,P+T.top-.3],[0,P+T.top]],8,lead);
+ revolve(b.spire,centre[0],centre[1],[[2.5,c],[2.6,c+.5],[2.5,c+1.3],[2.1,c+2.3],[1.4,c+3.3],[.8,c+4.0],[.6,P+T.dome]],16,lead);
+ for(let i=0;i<8;i++){const a=i*Math.PI/4,x=centre[0]+.55*Math.cos(a),z=centre[1]+.55*Math.sin(a);prism(b.spire,x,z,.08,P+T.dome,P+T.dome+.9,6,stone,0,false);}// the lantern's posts
+ prism(b.spire,centre[0],centre[1],.36,P+T.dome,P+T.dome+.9,8,C(BALMORAL_COLOURS.pane),Math.PI/8,false);// the dark lantern core seen between them
+ revolve(b.spire,centre[0],centre[1],[[.75,P+T.dome+.9],[.7,P+T.dome+1.1],[.42,P+T.dome+1.35],[.14,P+T.dome+1.55],[.05,P+T.top-.15],[0,P+T.top]],8,lead);
  return {centre,along,back,half};
 }
 
@@ -158,26 +169,30 @@ export function balmoralBody(b:BalmoralBatches,input:BalmoralInput,tower:{centre
  }
  cap(b.paint,ring,()=>top);
  // the roofline on the outline with the OSM's sub-metre notches smoothed out (never the walls)
- const roof=ccw(simplifyRing(ring,1.2)),inner=insetRing(roof,2.2),y1=top+.6,y2=P+L.mansard;
+ const roof=ccw(simplifyRing(ring,1.2)),inner=insetRing(roof,2.2),y1=top+.6,y2=P+L.mansard;let gk=0;const features:{kind:'gable'|'dormer'|'stack';x:number;z:number}[]=[];
  for(let i=0;i<roof.length;i++){
   const a=roof[i],c=roof[(i+1)%roof.length],len=Math.hypot(c[0]-a[0],c[1]-a[1]);if(len<.5)continue;
   const n:V3=[(c[1]-a[1])/len,0,-(c[0]-a[0])/len],along:V3=[(c[0]-a[0])/len,0,(c[1]-a[1])/len];
-  wallBox(b.paint,[a[0]+n[0]*.35,a[1]+n[2]*.35],[c[0]+n[0]*.35,c[1]+n[2]*.35],top-.5,y1,.55,cornice,.55);// main cornice
+  wallBox(b.paint,[a[0]+n[0]*.45,a[1]+n[2]*.45],[c[0]+n[0]*.45,c[1]+n[2]*.45],top-.5,y1,.8,cornice,.8);// main cornice, 1.25 m proud
+  wallBox(b.paint,[a[0]+n[0]*.1,a[1]+n[2]*.1],[c[0]+n[0]*.1,c[1]+n[2]*.1],top-1.6,top-.5,.2,stone,.2);// the frieze under it
   const ia=inner[i],ic=inner[(i+1)%roof.length];
   b.paint.poly([[a[0],y1,a[1]],[c[0],y1,c[1]],[ic[0],y2,ic[1]],[ia[0],y2,ia[1]]],undefined,{facing:unit([n[0],.5,n[2]]),color:slate});// mansard
-  if(len<9)continue;
-  const bays=Math.floor(len/L.bay);
-  for(let k=0;k<bays;k++){
-   const s=(k+.5)*len/bays,m:Pt=[a[0]+along[0]*s,a[1]+along[2]*s];
+  // every edge of 3.5 m or more carries its bays, the pattern counted round the whole roofline (R-wv2-a: gables and stacks along the front)
+  if(len<3.5)continue;
+  const bays=Math.max(1,Math.floor(len/L.bay));
+  for(let kk=0;kk<bays;kk++){
+   const k=gk++,s=(kk+.5)*len/bays,m:Pt=[a[0]+along[0]*s,a[1]+along[2]*s];
    if(Math.hypot(m[0]-tower.centre[0],m[1]-tower.centre[1])<9)continue;
-   if(k%3===1&&k<bays-1){
+   if(k%3===1&&len>=7){
     // a Dutch gable standing on the wall line (R-wv2-a2, R-wv2-b), with an attic window
+    features.push({kind:'gable',x:m[0],z:m[1]});
     const g=[[2.8,L.cornice],[2.8,L.cornice+3.6],[2.2,L.cornice+4.0],[1.9,L.cornice+5.6],[1.2,L.cornice+6.1],[1.2,L.gable-1.6],[.6,L.gable-.9],[0,L.gable]] as [number,number][];
     slab(b.paint,[...g.map(([x,y])=>[x,P+y] as [number,number]),...g.slice(0,-1).reverse().map(([x,y])=>[-x,P+y] as [number,number])],[m[0]+n[0]*.05,0,m[1]+n[2]*.05],along,n,3.2,stone);
     obox(b.paint,[m[0]+n[0]*.08,P+L.cornice+2.7,m[1]+n[2]*.08],along,[0,1,0],n,[.7,1.1,.02],pane);
     obox(b.paint,[m[0]+n[0]*.08,P+L.cornice+5.2,m[1]+n[2]*.08],along,[0,1,0],n,[.4,.4,.02],pane);
    }else{
     // a dormer on the mansard: stone cheeks, window, pitched cap
+    features.push({kind:'dormer',x:m[0],z:m[1]});
     const c0:V3=[m[0]-n[0]*1.3,0,m[1]-n[2]*1.3];
     obox(b.paint,[c0[0],(y1+y1+2.6)/2,c0[2]],along,[0,1,0],n,[1.0,1.3,1.0],stone);
     obox(b.paint,[c0[0]+n[0]*1.01,y1+1.25,c0[2]+n[2]*1.01],along,[0,1,0],n,[.6,.85,.01],pane);
@@ -186,6 +201,7 @@ export function balmoralBody(b:BalmoralBatches,input:BalmoralInput,tower:{centre
    }
    if(k%3===2||(k%3===0&&k>0)){
     // a chimney stack on the attic behind the bay, inboard of the mansard, with its cope and pots (R-wv2-b: a stack beside every gable)
+    features.push({kind:'stack',x:m[0],z:m[1]});
     const s0:Pt=[m[0]-n[0]*3.4-along[0]*(k%3===2?1.2:-1.2),m[1]-n[2]*3.4-along[2]*(k%3===2?1.2:-1.2)];
     obox(b.paint,[s0[0],(y2-1+P+L.chimney)/2,s0[1]],along,[0,1,0],n,[1.2,(P+L.chimney-y2+1)/2,.55],stone);
     obox(b.paint,[s0[0],P+L.chimney+.12,s0[1]],along,[0,1,0],n,[1.35,.15,.68],cornice);
@@ -227,4 +243,5 @@ export function balmoralBody(b:BalmoralBatches,input:BalmoralInput,tower:{centre
  const ne=insetRing(roof,1.0)[corner(75.3,-138.5)];
  prism(b.paint,ne[0],ne[1],1.9,P+19,P+L.cornice+2,12,stone,0,false);
  revolve(b.paint,ne[0],ne[1],[[2.0,P+L.cornice+2],[2.0,P+L.cornice+2.3],[1.7,P+L.cornice+3.1],[.9,P+L.cornice+4],[.2,P+L.cornice+4.8],[0,P+L.cornice+5.4]],12,lead);
+ return {features};
 }

@@ -86,8 +86,12 @@ function parapets(b:Batch,f:Frame,deck:Deck,style:'north'|'waverley',gaps:readon
     wallBox(b,a,c,y+H-.24,y+H-.16,.22,C(BRIDGE_COLOURS.panel),.01);// bed moulding
     wallBox(b,a,c,y+H-.16,y+H-.05,.3,C(BRIDGE_COLOURS.coping),.01);// the cope, overhanging both faces
     wallBox(b,a,c,y+H-.05,y+H,.24,C(BRIDGE_COLOURS.coping),.01);// its weathered top
-    for(const o of [1,-1]){const n:V3=[out[0]*o,0,out[2]*o];obox(b,[mid[0]+n[0]*.19,y+.62,mid[2]+n[2]*.19],ax,[0,1,0],n,[len/2-.28,.26,.01],C(BRIDGE_COLOURS.panel));}
-    obox(b,[a[0],y+.6,a[1]],ax,[0,1,0],out,[.16,.62,.27],C(BRIDGE_COLOURS.balustrade));// post at each panel joint
+    // R-wv2-b: each bay a sunk panel inside a raised frame, between heavy post blocks with caps
+    wallBox(b,a,c,y+H-.42,y+H-.24,.25,C(BRIDGE_COLOURS.balustrade),.01);// the frame's top rail, standing 7 cm proud of the panel
+    wallBox(b,a,c,y+.25,y+.4,.25,C(BRIDGE_COLOURS.balustrade),.01);// and its bottom rail
+    for(const o of [1,-1]){const n:V3=[out[0]*o,0,out[2]*o];obox(b,[mid[0]+n[0]*.19,y+.62,mid[2]+n[2]*.19],ax,[0,1,0],n,[len/2-.42,.2,.005],C(BRIDGE_COLOURS.panel));}
+    obox(b,[a[0],y+.55,a[1]],ax,[0,1,0],out,[.3,.55,.34],C(BRIDGE_COLOURS.balustrade));// post block at each panel joint
+    obox(b,[a[0],y+H+.07,a[1]],ax,[0,1,0],out,[.36,.07,.4],C(BRIDGE_COLOURS.coping));// its cap
    }
   }
  }

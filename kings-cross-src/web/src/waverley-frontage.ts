@@ -50,7 +50,7 @@ export function buildWaverleyFrontage(ground:Pick<Terrain,'heightAt'|'rangeUnder
  const input={towerRing:tr,bodyRing:body,P,foot:ground.rangeUnder(body,4).min-.15};
  const batches={facade,tower,paint,spire,dial};
  const frame=balmoralTower(batches,input,data.balmoral.clockDiameter/2);
- balmoralBody(batches,input,frame);
+ const hotel=balmoralBody(batches,input,frame);
  const dials:ClockDial[]=[];
  const {centre,along,back,half}=towerFrame(tr);
  for(const [n,dist] of [[[-back[0],0,-back[2]],half[1]],[back,half[1]],[[-along[0],0,-along[2]],half[0]],[along,half[0]]] as [[number,number,number],number][]){
@@ -69,6 +69,6 @@ export function buildWaverleyFrontage(ground:Pick<Terrain,'heightAt'|'rangeUnder
  const glassMat=own(new THREE.MeshLambertMaterial({color:0xcfe0dc,transparent:true,opacity:.32,depthWrite:false,side:THREE.DoubleSide}));
  add(glass,glassMat,'waverley-steps-canopy');
  add(spire,paintMat,'waverley-balmoral-spire-and-hands');add(dial,dialMat,'waverley-balmoral-clock-dials');
- group.userData.frontage={northBridge:north,waverleyBridge:waverley,mall,steps,P};
+ group.userData.frontage={northBridge:north,waverleyBridge:waverley,mall,steps,hotel,P};
  let disposed=false;return {group,stats,omitBuildingIds:[...WAVERLEY_FRONTAGE_OMIT_IDS],dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of ownedGeometries)g.dispose();for(const m of ownedMaterials)m.dispose();for(const t of ownedTextures)t.dispose();group.clear();}};
 }

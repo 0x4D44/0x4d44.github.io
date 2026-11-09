@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import {buildWaverleyFrontage,WAVERLEY_FRONTAGE_HEIGHTS,WAVERLEY_FRONTAGE_SOURCES,WAVERLEY_FRONTAGE_OMIT_IDS} from '../src/waverley-frontage.ts';
 import {BALMORAL_LEVELS,towerFrame} from '../src/waverley-frontage-balmoral.ts';
 import {NORTH_BRIDGE,WAVERLEY_BRIDGE_COLUMN,bridgeFrame} from '../src/waverley-frontage-bridges.ts';
+import {MALL_ROOF} from '../src/waverley-frontage-mall.ts';
+import {ccw,simplifyRing} from '../src/waverley-frontage-mesh.ts';
 import {buildWaverleyScene,waverleyRailwayFootprint,waverleyRailwayIntrusions,waverleyTrackSegments} from '../src/waverley-scene.ts';
 import {WAVERLEY_LEVELS} from '../src/waverley-mesh.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
@@ -189,7 +191,11 @@ test('the Waverley Steps keep public-stair dimensions, stand on the ground and s
  const last=st.treads.at(-1)!,foot=st.frame.at(last.s1-.05,.5);assert.ok(last.y-g.heightAt(foot[0],foot[1])<.3,'the stair lands on the station floor');
  const head=st.frame.at(.1,.5);assert.ok(Math.abs(st.treads[0].y-g.heightAt(head[0],head[1]))<.6,'the head meets Princes Street');
  for(const k of st.canopy){for(const t of st.treads)if(t.s1>=k.s-2&&t.s0<=k.s+2)assert.ok(k.y-t.y>=2.4,`canopy headroom ${(k.y-t.y).toFixed(2)} at s ${k.s}`);
-  for(const t of [.02,.98]){const p=st.frame.at(k.s,t);assert.ok(!inRing(p[0],p[1],body)&&!inRing(p[0],p[1],mall)||edgeDist(p[0],p[1],ring)<1,'the canopy stays off the hotel and the mall');}}
+}
+ // every vertex of the drawn canopy and balustrade glass lies within the mapped cover and never more than 5 cm into the hotel or the mall
+ const glass=positions(realScene().parts.buildings.getObjectByName('waverley-steps-canopy') as THREE.Mesh);assert.ok(glass.length>100);
+ for(const v of glass){assert.ok(inRing(v.x,v.z,ring)||edgeDist(v.x,v.z,ring)<=.05,`canopy glass at ${v.x.toFixed(2)},${v.z.toFixed(2)} outside the steps cover`);
+  for(const [r,name] of [[body,'hotel'],[mall,'mall']] as [Pt[],string][])assert.ok(!inRing(v.x,v.z,r)||edgeDist(v.x,v.z,r)<=.05,`canopy glass ${edgeDist(v.x,v.z,r).toFixed(2)} m inside the ${name}`);}
  assert.ok(st.trees.length>=2);
  for(const tr of st.trees){assert.ok(inRing(tr.x,tr.z,ring));assert.ok(tr.y1-tr.y0>=2.4);assert.ok(st.treads.some((t:{flight:boolean;y:number})=>!t.flight&&Math.abs(t.y-tr.y0)<1e-9),'every tree stands on a landing');}
 });
@@ -210,8 +216,32 @@ test('the Market Street approach runs on from the bridge, grades down to the gro
 test('the Balmoral crown: the ogee bell stands clear above the clock gables and the corner spires, all under the published top',()=>{
  const T=BALMORAL_LEVELS.tower;
  assert.ok(T.dome-T.gable>=2.5,'the bell rises at least 2.5 m over the gables\' apex, so it reads above them from the street');
- assert.ok(T.dome-T.cornice>=3,'a bell at least 3 m tall');
+ assert.ok(T.dome-T.cornice>=4,'a tall ogee bell, at least 4 m');
  assert.ok(T.turretCap+1.6<T.dome,'the corner spires stop under the bell\'s shoulder');
  assert.ok(T.turretCap+1.6-T.turret>=4,'tall ogee crown spires, bell and point');
- assert.ok(T.top>T.dome+2,'a lantern and finial over the bell');
+ assert.ok(T.top>=T.dome+1.5,'a lantern and finial over the bell');
+});
+
+test('Princes Mall: a hipped glass roof on the terrace, inside the outline and off the inner rings',()=>{
+ const mall=frontageOf().mall,ring=ringOf(extra.princesMall.ring),holes=extra.princesMall.holes.map(ringOf),y=mall.pyramid;
+ assert.ok(y,'the glazed roof is drawn');
+ assert.ok((y.x1-y.x0)*(y.z1-y.z0)>=400,`glazed roof ${((y.x1-y.x0)*(y.z1-y.z0)).toFixed(0)} m2`);
+ assert.ok(Math.abs(y.top-(mall.roof+MALL_ROOF.kerb+MALL_ROOF.rise))<1e-9&&MALL_ROOF.rise>=2.5,'it rises over the terrace');
+ for(let i=0;i<=10;i++)for(let j=0;j<=10;j++){const x=y.x0+(y.x1-y.x0)*i/10,z=y.z0+(y.z1-y.z0)*j/10;
+  assert.ok(inRing(x,z,ring),`glazed roof at ${x.toFixed(1)},${z.toFixed(1)} outside the mall`);for(const h of holes)assert.ok(!inRing(x,z,h),'off the inner rings');}
+});
+test('the Balmoral roofline: a gable or a stack at least every third bay along the whole Princes Street front',()=>{
+ const hotel=frontageOf().hotel;
+ // the street front: the longest roofline edge facing north (Princes Street), and the features within 4 m of it, by distance along it
+ const roof=ccw(simplifyRing(ringOf(extra.balmoralBody.ring),1.2));let best:[Pt,Pt]|null=null,bl=0;
+ for(let i=0;i<roof.length;i++){const a=roof[i],c=roof[(i+1)%roof.length],len=Math.hypot(c[0]-a[0],c[1]-a[1]);if(-(c[0]-a[0])/len<-.8&&len>bl){bl=len;best=[a,c];}}
+ assert.ok(best&&bl>30,'a Princes Street front');const [a,c]=best!,u=[(c[0]-a[0])/bl,(c[1]-a[1])/bl];
+ const front=(hotel.features as {kind:string;x:number;z:number}[]).filter(q=>segDist(q.x,q.z,a,c)<4).map(q=>({...q,s:(q.x-a[0])*u[0]+(q.z-a[1])*u[1]}));
+ assert.ok(front.length>=10,`${front.length} roof features along Princes Street`);
+ const big=front.filter(q=>q.kind!=='dormer').map(q=>q.s).sort((p,q)=>p-q);
+ assert.ok(big.length>=6,`${big.length} gables and stacks along Princes Street`);
+ // the tower stands in the front: the run across it is the tower's, not a bare roof
+ const {centre}=towerFrame(ringOf(data.balmoral.ring)),st=(centre[0]-a[0])*u[0]+(centre[1]-a[1])*u[1];
+ for(let i=1;i<big.length;i++)if(!(big[i-1]<st&&big[i]>st))assert.ok(big[i]-big[i-1]<=3*BALMORAL_LEVELS.bay+.5,`a ${(big[i]-big[i-1]).toFixed(1)} m run without a gable or stack at ${big[i-1].toFixed(1)} m along the front`);
+ assert.ok(big[0]<3*BALMORAL_LEVELS.bay&&big.at(-1)!>bl-3*BALMORAL_LEVELS.bay,'from one end of the front to the other');
 });
