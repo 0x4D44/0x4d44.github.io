@@ -541,8 +541,8 @@ export const FITOUT = {
   totem: { width: 1.1, depth: 0.22, height: 3 },
   /** the third keeps out of the gateline view's sight lines to the gate mouths (tested) */
   totems: [[-30, -15], [-30, 15], [-24, -26]] as readonly (readonly [number, number])[],
-  /** on short brackets from the Range's face, `bottom` above the floor */
-  board: { length: 16.8, height: 1.05, bottom: 5.6, standoff: 0.3, depth: 0.12 },
+  /** on short brackets from the Range's face, `bottom` above the floor: ten tall panels in the first-floor windows' band (5.0 to 7.6 m), a pale bar above and below (R-a, R-e) */
+  board: { length: 16.8, height: 2.6, bottom: 5, standoff: 0.3, depth: 0.12, panels: 10, bar: 0.1 },
   /** each board's southern end, metres north of the funnel axis */
   boards: [-24.3, 7.5] as readonly number[],
   /** fare gate cabinets either side of each aisle, at this u, the first bay's centre at v0 + 4 */
@@ -551,15 +551,17 @@ export const FITOUT = {
   shops: [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 48] as readonly number[],
   /** a lit interior 4 cm in front of a shop's dark pane (0.375 m inside the face, 2.8 m wide, 3.2 m high) */
   shopfront: { width: 2.6, top: 3.15, bottom: 0.04, u: RANGE_FACE + 0.335 },
-  /** navy plates over the openings (head 3.6 m), clear of the string course */
-  plate: { height: 0.5, bottom: 3.64, standoff: 0.22, depth: 0.05, bayWidth: 5.2, shopWidth: 2.6 },
+  /** navy plates over the openings (head 3.6 m), up to the string course's top (4.25 m) */
+  plate: { height: 0.6, bottom: 3.64, standoff: 0.22, depth: 0.05, bayWidth: 5.2, shopWidth: 2.6 },
+  /** stone dressings round the Range's windows, 1.4 m wide (shed.ts: one in every bay): how far they stand out and how wide the sill and hood run; a clear opening is 3.3 m (a bay) or 1.4 m (a shop) each side of its centre */
+  dressing: { depth: 0.12, sill: 0.2, wide: 1, reveal: [3.3, 1.4] as readonly [number, number] },
 } as const;
 /** The lettering the signs carry. Generic words only. */
 export const FITOUT_TEXT = {
   totem: ['Underground', 'Platforms 0 to 8', 'Toilets', 'Left luggage', 'Information'],
   board: ['Leeds   Platform 4   On time', 'York   Platform 6   On time', 'Cambridge   Platform 2   Delayed', 'Peterborough   Platform 3   On time', 'Newcastle   Platform 5   On time'],
-  /** over the five gate bays, southernmost first, then over the two shops */
-  plates: ['Platforms 0 to 8', 'Underground', 'Toilets', 'Left luggage', 'Information', 'Cafe', 'News and gifts'],
+  /** over each of the five gate bays, which all lead to the platforms; then over each of the two shops */
+  plates: ['Platforms 0 to 8  →', 'Cafe', 'News and gifts'],
 } as const;
 
 /** v of the centre of each opening that carries a plate: the five gate bays, then the two shops. */
@@ -570,10 +572,10 @@ export function plateCentres(): number[] {
 
 /** The sign atlas: one canvas, a region [x, y, w, h] for each lettered face, in its aspect. Null in Node. */
 const ATLAS = {
-  width: 1024, height: 512,
-  totem: [0, 0, 192, 448], board: [0, 448, 1024, 64], shop: [192, 0, 208, 250],
-  /** a 56 px row per plate: 582 px for a bay's 5.2 m by 0.5 m, 291 for a shop's 2.6 m */
-  plates: [0, 1, 2, 3, 4, 5, 6].map((k): readonly [number, number, number, number] => [400, k * 56, k < 5 ? 582 : 291, 56]),
+  width: 2048, height: 768,
+  totem: [0, 0, 192, 448], board: [0, 448, 2048, 292], shop: [192, 0, 208, 250],
+  /** a 67 px row per plate, the five bays sharing the first: 582 px for a bay's 5.2 m by 0.6 m, 291 for a shop's 2.6 m */
+  plates: [[400, 0, 582, 67], [400, 67, 291, 67], [400, 134, 291, 67]] as readonly (readonly [number, number, number, number])[],
 } as const;
 const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, ATLAS.height, (g, fill) => {
   const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board, [sx, sy, sw, sh] = ATLAS.shop;
@@ -594,19 +596,24 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
   screen.addColorStop(0, '#c9c4ff');
   screen.addColorStop(1, '#6f86e8');
   fill(screen, tx + 12, ty + 270, tw - 24, th - 284);
-  // board: near black, amber lettering, three entries to a row (R-a)
-  fill('#121418', bx, by, bw, bh);
-  g.fillStyle = '#ffb21a';
-  g.font = 'bold 23px monospace';
-  const cell = (bw - 28) / 3;
-  for (let row = 0; row < 2; row++) for (let k = 0; k < 3; k++) g.fillText(FITOUT_TEXT.board[(row * 3 + k) % FITOUT_TEXT.board.length]!, bx + 14 + k * cell, by + 18 + row * 28, cell - 22);
+  // board: a bank of near-black panels in a grey frame, each a pale header and rows of amber lettering (R-a, R-e)
+  const { panels } = FITOUT.board, pw = bw / panels;
+  fill('#3a3f46', bx, by, bw, bh);
+  g.font = 'bold 19px monospace';
+  for (let p = 0; p < panels; p++) {
+    fill('#0d0f13', bx + p * pw + 4, by + 4, pw - 8, bh - 8);
+    for (let row = 0; row < 11; row++) {
+      g.fillStyle = row ? '#ffb21a' : '#e6e2ff';
+      g.fillText(FITOUT_TEXT.board[(p + row) % FITOUT_TEXT.board.length]!.replace(/ {3}/g, ' '), bx + p * pw + 10, by + 18 + row * 24, pw - 20);
+    }
+  }
   // plates: navy, white lettering, a pictogram square (R-ab, R-b)
-  ATLAS.plates.forEach(([px, py, pw, ph], i) => {
-    fill('#1d2c66', px, py, pw, ph);
-    g.strokeRect(px + 12, py + 12, ph - 24, ph - 24);
+  ATLAS.plates.forEach(([px, py, w, h], i) => {
+    fill('#1d2c66', px, py, w, h);
+    g.strokeRect(px + 14, py + 14, h - 28, h - 28);
     g.fillStyle = '#ffffff';
-    g.font = `bold ${i < 5 ? 30 : 26}px sans-serif`;
-    g.fillText(FITOUT_TEXT.plates[i]!, px + ph, py + ph / 2 + 1, pw - ph - 12);
+    g.font = `bold ${i ? 28 : 36}px sans-serif`;
+    g.fillText(FITOUT_TEXT.plates[i]!, px + h, py + h / 2 + 1, w - h - 12);
   });
   // a lit shopfront: warm light, shelves, counter, goods (generic)
   const light = g.createLinearGradient(0, sy, 0, sy + sh), goods = ['#c4202c', '#2b5fb4', '#e6e0d2', '#3c8a52', '#d9a21b', '#7b4a9a'];
@@ -676,12 +683,13 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
       sign(ATLAS.totem, pts, [side, 0, 0], NAVY);
     }
   }
-  // departure boards: a dark frame on brackets, the lettered face toward the concourse
+  // departure boards: a dark bank between a pale bar above and below, on brackets, the lettered face toward the concourse
   for (const dv of FITOUT.boards) {
     const v0 = funnelV + dv, v1 = v0 + board.length, face = RANGE_FACE - board.standoff - board.depth;
-    part(face + board.depth / 2, board.bottom, (v0 + v1) / 2, board.depth, board.height, board.length, BOARD);
+    part(face + board.depth / 2, board.bottom + board.bar, (v0 + v1) / 2, board.depth, board.height - 2 * board.bar, board.length, BOARD);
+    for (const y of [board.bottom, board.bottom + board.height - board.bar]) part(face + board.depth / 2, y, (v0 + v1) / 2, board.depth, board.bar, board.length, PAPER);
     for (const f of [0.05, 0.5, 0.95]) part(RANGE_FACE - board.standoff / 2, board.bottom + 0.2, v0 + f * board.length, board.standoff, 0.12, 0.1, PLINTH);
-    const x = face - 0.004, y0 = board.bottom + 0.06, y1 = board.bottom + board.height - 0.06;
+    const x = face - 0.004, y0 = board.bottom + board.bar, y1 = board.bottom + board.height - board.bar;
     const pts = ([[v0 + 0.06, y0], [v1 - 0.06, y0], [v1 - 0.06, y1], [v0 + 0.06, y1]] as const).map(([v, y]): V3 => L(x, y, v));
     // seen from the west the board's left is its northern end
     sign(ATLAS.board, [pts[1]!, pts[0]!, pts[3]!, pts[2]!], [-1, 0, 0], BOARD);
@@ -702,12 +710,37 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     const y0 = plate.bottom + 0.02, y1 = plate.bottom + plate.height - 0.02;
     // seen from the west the plate's left is its northern end
     const pts = ([[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]] as const).map(([w, y]): V3 => L(face - 0.004, y, w));
-    sign(ATLAS.plates[i]!, pts, [-1, 0, 0], NAVY);
+    sign(ATLAS.plates[Math.max(0, i - gate.bays + 1)]!, pts, [-1, 0, 0], NAVY);
   });
   // the shops' lit interiors, on the Range's dark panes (shed.ts)
   for (const v of FITOUT.shops) {
     const pts = ([[v + shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.top], [v + shopfront.width / 2, shopfront.top]] as const).map(([w, y]): V3 => L(shopfront.u, y, w));
     sign(ATLAS.shop, pts, [-1, 0, 0], rgb(0xe8c58a));
+  }
+  // stone dressings on the Range's face round the window shed.ts puts in every bay (1.4 x 2.6 m, the ground floor round-headed; R-ab, R-b): jambs and a
+  // sill, an arch ring and key on the ground floor, a hood with a shallow pediment on the first; the top storey stays plain, and no window is dressed
+  // where there is none (an opening) or where a board hangs over it
+  const { dressing: dress } = FITOUT, STONE = rgb(0xe2d8bb), opens = plateCentres(), { v0: rv0, v1: rv1, bay } = WESTERN_RANGE, bays = Math.floor((rv1 - rv0) / bay);
+  const flat = (pts: V3[]): void => solid.poly(pts, undefined, { normal: [-1, 0, 0], color: STONE });
+  for (let i = 0; i < bays; i++) {
+    const v = rv0 + (rv1 - rv0 - bays * bay) / 2 + (i + 0.5) * bay;
+    const ground = !opens.some((c, k) => Math.abs(v - c) < dress.reveal[+(k >= gate.bays)] + 0.7), first = !FITOUT.boards.some(b => v > funnelV + b - dress.wide && v < funnelV + b + board.length + dress.wide);
+    for (const [on, y0, h, sill] of [[ground, 1.4, 1.9, 1.28], [first, 5, 2.6, 4.88]] as const) {
+      if (!on) continue;
+      for (const s of [-1, 1]) part(RANGE_FACE - dress.depth / 2, y0, v + s * 0.8, dress.depth, h, 0.2, STONE);
+      part(RANGE_FACE - dress.sill / 2, sill, v, dress.sill, 0.12, 2 * dress.wide, STONE);
+    }
+    if (ground) {
+      for (let k = 0; k < 8; k++) {
+        const at = (r: number, a: number): V3 => L(RANGE_FACE - dress.depth, 3.3 + r * Math.sin(a), v + r * Math.cos(a)), a = (k * Math.PI) / 8, b = a + Math.PI / 8;
+        flat([at(0.7, a), at(0.9, a), at(0.9, b), at(0.7, b)]);
+      }
+      part(RANGE_FACE - 0.07, 4.05, v, 0.14, 0.25, 0.3, STONE);
+    }
+    if (first) {
+      part(RANGE_FACE - dress.sill / 2, 7.6, v, dress.sill, 0.2, 2 * dress.wide, STONE);
+      flat([-1, -0.5, 0, 0.5, 1].map(k => L(RANGE_FACE - 0.14, 7.8 + 0.22 * (1 - k * k), v + 0.95 * k)));
+    }
   }
   const group = new THREE.Group();
   group.name = 'concourse-fitout';

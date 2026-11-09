@@ -23,15 +23,17 @@ shutil.copytree(src, work, ignore=shutil.ignore_patterns('node_modules', '.git',
 (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
 target = work / 'web/src/concourse.ts'
 original = target.read_text()
-BOARD = 'board: { length: 16.8, height: 1.05, bottom: 5.6, standoff: 0.3, depth: 0.12 }'
+BOARD = 'board: { length: 16.8, height: 2.6, bottom: 5, standoff: 0.3, depth: 0.12, panels: 10, bar: 0.1 }'
 TOTEMS = 'totems: [[-30, -15], [-30, 15], [-24, -26]]'
 mutations = [
     ('ticket block beside the funnel feet', 'clusters: [[-23.5, -12], [-23.5, 12]]', 'clusters: [[-19.5, -2], [-23.5, 12]]'),
     ('totem against the Range', TOTEMS, 'totems: [[-30, -15], [-30, 15], [-13, -30]]'),
     ('totem beyond the concourse', TOTEMS, 'totems: [[-30, -15], [-30, 15], [-24, -80]]'),
     ('board inside the brickwork', BOARD, BOARD.replace('standoff: 0.3', 'standoff: -0.3')),
-    ('board low enough to meet the plates', BOARD, BOARD.replace('bottom: 5.6', 'bottom: 3.7')),
-    ('boards hung low, as in round 1', BOARD, BOARD.replace('bottom: 5.6', 'bottom: 4.9')),
+    ('board low enough to meet the plates', BOARD, BOARD.replace('bottom: 5,', 'bottom: 3.7,')),
+    ('boards hung low, under the first-floor sills', BOARD, BOARD.replace('bottom: 5,', 'bottom: 4.5,')),
+    ('boards a strip again, as in round 2', BOARD, BOARD.replace('height: 2.6', 'height: 1.05')),
+    ('boards of two broad panels', BOARD, BOARD.replace('panels: 10', 'panels: 2')),
     ('ticket machines shorter than a person plus a head', 'cluster: { size: 1.78, height: 2.2 }', 'cluster: { size: 1.78, height: 1.8 }'),
     ('ticket machines with white cowls', 'part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, RED);', 'part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, PAPER);'),
     ('a block of three ticket machines', '      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz', '      if (k === 3) continue;\n      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz'),
@@ -45,15 +47,33 @@ mutations = [
     ('a brand on a board', "'York   Platform 6   On time'", "'Costa   Platform 6   On time'"),
     ('totem lettering mirrored', 'const left = side < 0 ? 1 : -1;', 'const left = side < 0 ? -1 : 1;'),
     ('plate lettering mirrored', '[[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]]', '[[v - half + 0.02, y0], [v + half - 0.02, y0], [v + half - 0.02, y1], [v - half + 0.02, y1]]'),
-    ('plates face east', 'sign(ATLAS.plates[i]!, pts, [-1, 0, 0], NAVY);', 'sign(ATLAS.plates[i]!, pts, [1, 0, 0], NAVY);'),
+    ('plates face east', 'sign(ATLAS.plates[Math.max(0, i - gate.bays + 1)]!, pts, [-1, 0, 0], NAVY);', 'sign(ATLAS.plates[Math.max(0, i - gate.bays + 1)]!, pts, [1, 0, 0], NAVY);'),
     ('signs lit, not glowing', 'signs: new THREE.MeshBasicMaterial({', 'signs: new THREE.MeshLambertMaterial({'),
     ('floor as pale as the shared paving', 'FLOOR_TINT = 0x94948e;', 'FLOOR_TINT = 0xffffff;'),
     ('floor black', 'FLOOR_TINT = 0x94948e;', 'FLOOR_TINT = 0x0a0a0a;'),
     ('ticket machines missing', 'for (const [u, dv] of FITOUT.clusters) {', 'for (const [u, dv] of [] as (readonly [number, number])[]) {'),
     ('gate cabinets missing', 'part(gate.u, 0, v, gate.length, gate.height - 0.1, gate.width, SILVER);', 'void SILVER;'),
     ('plate bodies missing', 'part(back - plate.depth / 2, plate.bottom, v, plate.depth, plate.height, half * 2, NAVY);', 'void NAVY;'),
-    ('board bodies missing', 'part(face + board.depth / 2, board.bottom, (v0 + v1) / 2, board.depth, board.height, board.length, BOARD);', 'void BOARD;'),
+    ('board bodies missing', 'part(face + board.depth / 2, board.bottom + board.bar, (v0 + v1) / 2, board.depth, board.height - 2 * board.bar, board.length, BOARD);', 'void BOARD;'),
+    ('board bars missing', 'for (const y of [board.bottom, board.bottom + board.height - board.bar]) part(', 'for (const y of [] as number[]) part('),
     ('shopfront interiors missing', 'for (const v of FITOUT.shops) {', 'for (const v of [] as number[]) {'),
+    ('each gate bay its own sign, as in round 2', 'ATLAS.plates[Math.max(0, i - gate.bays + 1)]!', 'ATLAS.plates[Math.min(i, 2)]!'),
+    ('the toilets over a gate', "'Platforms 0 to 8  →', 'Cafe'", "'Toilets', 'Cafe'"),
+    ('the shops share one sign', 'ATLAS.plates[Math.max(0, i - gate.bays + 1)]!', 'ATLAS.plates[Math.min(1, Math.max(0, i - gate.bays + 1))]!'),
+    ('dressings on no window', 'for (let i = 0; i < bays; i++) {\n    const v = rv0', 'for (let i = 0; i < 0; i++) {\n    const v = rv0'),
+    ('dressings half a bay out', '(i + 0.5) * bay;\n    const ground', 'i * bay;\n    const ground'),
+    ('a window dressed where an opening is', 'const ground = !opens.some((c, k) => Math.abs(v - c) < dress.reveal[+(k >= gate.bays)] + 0.7)', 'const ground = true'),
+    ('a window dressed beside an opening that has none', 'dress.reveal[+(k >= gate.bays)] + 0.7)', 'dress.reveal[+(k >= gate.bays)] + 0)'),
+    ('a window dressed under a board', 'first = !FITOUT.boards.some(b => v > funnelV + b - dress.wide && v < funnelV + b + board.length + dress.wide);', 'first = true;'),
+    ('dressings that skip a window beside a board', 'v > funnelV + b - dress.wide && v < funnelV + b + board.length + dress.wide', 'v > funnelV + b - 0.2 && v < funnelV + b + board.length + 0.2'),
+    ('jambs missing', 'for (const s of [-1, 1]) part(RANGE_FACE - dress.depth / 2, y0, v + s * 0.8, dress.depth, h, 0.2, STONE);', 'void h;'),
+    ('sills missing', 'part(RANGE_FACE - dress.sill / 2, sill, v, dress.sill, 0.12, 2 * dress.wide, STONE);', 'void sill;'),
+    ('arch rings missing', 'flat([at(0.7, a), at(0.9, a), at(0.9, b), at(0.7, b)]);', 'void at;'),
+    ('arch rings fat', 'flat([at(0.7, a), at(0.9, a), at(0.9, b), at(0.7, b)]);', 'flat([at(0.7, a), at(1.2, a), at(1.2, b), at(0.7, b)]);'),
+    ('arch keys missing', 'part(RANGE_FACE - 0.07, 4.05, v, 0.14, 0.25, 0.3, STONE);', 'void v;'),
+    ('hoods missing', 'part(RANGE_FACE - dress.sill / 2, 7.6, v, dress.sill, 0.2, 2 * dress.wide, STONE);', 'void v;'),
+    ('pediments missing', 'flat([-1, -0.5, 0, 0.5, 1].map(k => L(RANGE_FACE - 0.14, 7.8 + 0.22 * (1 - k * k), v + 0.95 * k)));', 'void v;'),
+    ('pediments flat', '7.8 + 0.22 * (1 - k * k)', '7.8 + 0 * k'),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:
