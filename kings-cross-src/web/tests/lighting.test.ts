@@ -560,7 +560,10 @@ test('addRoofShade: the concourse\'s fill is weighted by how far down the face l
     assert.ok(found, `${name} is in the scene`);
     return found.color.g;
   };
-  for (const steel of ['concourse-member', 'concourse-funnel']) assert.ok(weight(0, green(steel)) < 0.55, `${steel}: ${weight(0, green(steel))}`);
+  // the funnel's legs were a material of their own, 'concourse-funnel', until the concourse's round 7 gave them the members' (shaded round in their vertex colours): the members are always
+  // held to it, the funnel's material while the scene has one
+  const steels = ['concourse-member', 'concourse-funnel'].filter((name, i) => i === 0 || named.some((x) => x.name === name));
+  for (const steel of steels) assert.ok(weight(0, green(steel)) < 0.55, `${steel}: ${weight(0, green(steel))}`);
   assert.ok(weight(0, (material('brick') as THREE.MeshLambertMaterial).color.g) > 0.95, 'the Range\'s brick keeps its fill: it is held at (110, 94, 71) by it');
   assert.ok(weight(0, (material('concourseFloor') as THREE.MeshLambertMaterial).color.g) > 0.9, 'and the floor, a mid grey');
 });
