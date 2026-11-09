@@ -145,3 +145,35 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
   close(bbox(named('concourse-wall')).max.y, rimTop, EPS);
   close(rimTop, canopy.rim, 1e-9);
 });
+
+// Arup Journal 2/2012, printed p.15 fig.6 explicitly measures the overall N–S roof extent:
+// https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf#page=15
+test('the drawn concourse spans Arup’s 138 m overall roof within the structure tolerance', () => {
+  const group = buildConcourse(canopy, station.pts, layout);
+  const mesh = group.getObjectByName('concourse-panels') as THREE.Mesh;
+  const p = mesh.geometry.getAttribute('position');
+  const v = Array.from({length: p.count}, (_, i) => worldToShed(layout, [p.getX(i), p.getZ(i)]).v);
+  const span = Math.max(...v) - Math.min(...v);
+  assert.ok(Math.abs(span - 138) < 3, `drawn overall N–S extent ${span} m, not a fitted-circle diameter`);
+});
+
+// Arup pp.12–16 and JMP put the funnel next to the Western Range façade. The existing
+// full-round funnel approximation must clear that façade; its exact survey position is unknown.
+test('the funnel stands beside the Western Range without entering its brickwork', () => {
+  const column = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-column')!;
+  const {u} = worldToShed(layout, [column.position.x, column.position.z]);
+  const gap = -WESTERN_RANGE.depth - (u + FUNNEL_RADIUS);
+  assert.ok(gap >= 0 && gap <= 1, `funnel top is ${gap} m from the façade`);
+});
+
+test('the roof reaches the OSM concourse arc including its north and south canopy ends', () => {
+  const roof = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-panels') as THREE.Mesh;
+  const p = roof.geometry.getAttribute('position');
+  for (const point of station.pts) {
+    const {u,v} = worldToShed(layout, point);
+    if (u >= -45 || v > WESTERN_RANGE.v1 + .1) continue;
+    let nearest = Infinity;
+    for (let i=0;i<p.count;i++) nearest = Math.min(nearest, Math.hypot(p.getX(i)-point[0],p.getZ(i)-point[1]));
+    assert.ok(nearest < 3, `OSM roof edge u=${u}, v=${v} is ${nearest} m from the drawn roof`);
+  }
+});

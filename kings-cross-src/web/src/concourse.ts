@@ -1,16 +1,17 @@
-// The Western Concourse: a glazed steel diagrid roof on a single funnel column, 20 m at the column
-// falling to 5 m at the rim (published heights, core/station.ts), clipped to the OSM station
-// footprint and kept clear of the train shed and the Western Range.
+// The Western Concourse: a semicircular-ish diagrid against the Western Range, following OSM's
+// full roof boundary. Arup Journal 2/2012 pp.12–16 describes a cut shell; fig.6 measures its
+// overall north–south extent as 138 m. Twice the fitted arc radius is a different measurement.
+// https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf#page=15
 //
 // What is drawn: a triangulated lattice of white tubular steel (every triangle edge is a member,
 // 0.3 m square: ASSUMED), a glass or panel infill in every triangle (glass inside 55 % of the radius,
 // pale solid panels outside it: ASSUMED, the brief wants glazing "near the apex"), a trumpet-shaped
 // column that flares into the roof, a floor, and a glazed wall round the rim. The roof surface is
-// the same shallow parabola as before (concourseHeight in core/station.ts); the lattice nodes sit on
-// it in rings about 4.3 m apart, with more nodes on the outer rings so the triangles stay about the
-// same size (about 4.5 m edges: ASSUMED; the real roof's diagrid is much finer detail).
+// an inferred smooth surface with the existing 20 m/5 m height bounds (concourseHeight in
+// core/station.ts). Arup's three-tangent-circle S section has no dimensioned construction here;
+// this surface is an approximation, not a reconstruction of its engineering geometry.
 import * as THREE from 'three';
-import { concourseHeight, pointInPolygon, worldToShed } from '../../core/station.ts';
+import { concourseHeight, pointInPolygon, shedToWorld, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
 import { Batch, material } from './materials.ts';
@@ -27,7 +28,7 @@ const TUBE = 0.3; // member cross-section, metres: ASSUMED
 
 export interface Diagrid {
   /** node positions in world x, z (metres) with the radius from the column */
-  nodes: { x: number; z: number; r: number; ring: number }[];
+  nodes: { x: number; z: number; r: number; ring: number; height?: number }[];
   /** triangles as node indices */
   tris: [number, number, number][];
   rings: number;
@@ -39,15 +40,15 @@ export interface Diagrid {
  * triangles stay about EDGE metres across, and adjacent rings stitched by a two-pointer sweep so every
  * annulus is closed with no gaps. Odd rings are turned half a step so the lattice staggers.
  */
-export function diagrid(radius: number, centre: Pt): Diagrid {
-  const rings = Math.max(2, Math.round((radius - FUNNEL_RADIUS) / EDGE));
+export function diagrid(radius: number, centre: Pt, spacing = EDGE): Diagrid {
+  const rings = Math.max(2, Math.round((radius - FUNNEL_RADIUS) / spacing));
   const dr = (radius - FUNNEL_RADIUS) / rings;
   const counts: number[] = [];
   const nodes: Diagrid['nodes'] = [];
   const first: number[] = [];
   for (let k = 0; k <= rings; k++) {
     const r = FUNNEL_RADIUS + k * dr;
-    const n = Math.max(12, 6 * Math.round((2 * Math.PI * r) / (6 * EDGE)));
+    const n = Math.max(12, 6 * Math.round((2 * Math.PI * r) / (6 * spacing)));
     counts.push(n);
     first.push(nodes.length);
     const turn = (k % 2) * (Math.PI / n);
@@ -117,6 +118,88 @@ export function keepTriangles(d: Diagrid, footprint: Pt[], shed: Pick<ShedLayout
   });
 }
 
+/**
+ * Use the OSM roof boundary, rather than cutting it short at the fitted circle. The station
+ * polygon includes the suburban roof to the north; the reviewed Western Range end separates it
+ * from this concourse. OSM vertices are rounded to 0.1 m, hence the 0.1 m endpoint allowance.
+ *
+ * JMP locates the funnel beside, but not touching, the historic façade:
+ * https://mcaslan.agencyprojects.com/Kings-Cross-Station
+ * Its exact surveyed position is unavailable. ASSUMPTION: centre it along the OSM roof extent
+ * and leave 0.3 m between the existing full-round funnel top and the assumed Range façade.
+ */
+export function concourseGrid(canopy: ConcourseCanopy, footprint: Pt[], shed: ShedLayout): { centre: Pt; grid: Diagrid } {
+  const local = footprint.map(p => worldToShed(shed, p));
+  const arc = local.filter(p => p.u < -45 && p.v <= WESTERN_RANGE.v1 + .1);
+  if (arc.length < 3) throw new Error('the OSM concourse boundary is needed to build its roof');
+  const north = Math.max(...arc.map(p => p.v));
+  const westWall = -WESTERN_RANGE.depth - .3;
+  const south = Math.min(...local.filter(p => p.u < westWall && p.v <= north).map(p => p.v));
+  const centreUV = { u: westWall - FUNNEL_RADIUS, v: (south + north) / 2 };
+  const centre = shedToWorld(shed, centreUV.u, centreUV.v);
+  // More boundary samples retain the small OSM steps/canopies instead of cutting their corners.
+  const grid = diagrid(canopy.radius, centre, EDGE * .6);
+  const cross = (ax: number, az: number, bx: number, bz: number): number => ax * bz - az * bx;
+  for (const n of grid.nodes) {
+    const dx = (n.x - centre[0]) / n.r, dz = (n.z - centre[1]) / n.r;
+    const dv = dx * Math.sin(shed.heading) - dz * Math.cos(shed.heading);
+    let rim = dv > 0 ? (north - centreUV.v) / dv : Infinity;
+    for (let i = 0; i < footprint.length; i++) {
+      const a = footprint[i]!, b = footprint[(i + 1) % footprint.length]!;
+      const ex = b[0] - a[0], ez = b[1] - a[1], det = cross(dx, dz, ex, ez);
+      if (Math.abs(det) < 1e-10) continue;
+      const ax = a[0] - centre[0], az = a[1] - centre[1];
+      const distance = cross(ax, az, ex, ez) / det, t = cross(ax, az, dx, dz) / det;
+      if (distance > 0 && t >= 0 && t <= 1) rim = Math.min(rim, distance);
+    }
+    // The same topology now runs to the actual boundary in each direction.
+    n.r = FUNNEL_RADIUS + (Math.max(FUNNEL_RADIUS, rim) - FUNNEL_RADIUS) * (n.r - FUNNEL_RADIUS) / (canopy.radius - FUNNEL_RADIUS);
+    n.x = centre[0] + dx * n.r;
+    n.z = centre[1] + dz * n.r;
+  }
+  // The façade is a CUT through the shell, not a low outer rim. Clip interpolated roof faces to
+  // it after building the surface; squeezing every east-facing ring onto the wall makes folds.
+  const triangles: Diagrid['tris'] = [];
+  const uAt = (i: number): number => worldToShed(shed, [grid.nodes[i]!.x, grid.nodes[i]!.z]).u;
+  const cutNodes = new Map<string, number>();
+  for (const tri of grid.tris) {
+    const polygon: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const a = tri[i]!, b = tri[(i + 1) % 3]!, au = uAt(a), bu = uAt(b);
+      if (au <= westWall) polygon.push(a);
+      if ((au <= westWall) === (bu <= westWall)) continue;
+      const key = `${Math.min(a, b)}:${Math.max(a, b)}`;
+      let cut = cutNodes.get(key);
+      if (cut === undefined) {
+        const t = (westWall - au) / (bu - au), na = grid.nodes[a]!, nb = grid.nodes[b]!;
+        const x = na.x + t * (nb.x - na.x), z = na.z + t * (nb.z - na.z);
+        cut = grid.nodes.length;
+        grid.nodes.push({ x, z, r: Math.hypot(x - centre[0], z - centre[1]), ring: -1 });
+        cutNodes.set(key, cut);
+      }
+      polygon.push(cut);
+    }
+    for (let i = 1; i + 1 < polygon.length; i++) triangles.push([polygon[0]!, polygon[i]!, polygon[i + 1]!]);
+  }
+  grid.tris = triangles.filter(t => {
+    const a = grid.nodes[t[0]]!, b = grid.nodes[t[1]]!, c = grid.nodes[t[2]]!;
+    return Math.abs(cross(b.x - a.x, b.z - a.z, c.x - a.x, c.z - a.z)) > 1e-8;
+  });
+  for (const n of grid.nodes) {
+    // Distance to the OUTER boundary gives a smooth fall to the rim despite the small OSM
+    // outline steps. Treating the façade cut as a rim would pinch the high shell down to 5 m.
+    let toRim = Math.max(0, north - worldToShed(shed, [n.x, n.z]).v);
+    for (let i = 0; i < footprint.length; i++) {
+      const a = footprint[i]!, b = footprint[(i + 1) % footprint.length]!;
+      const dx = b[0] - a[0], dz = b[1] - a[1], length2 = dx * dx + dz * dz;
+      const t = length2 ? Math.max(0, Math.min(1, ((n.x - a[0]) * dx + (n.z - a[1]) * dz) / length2)) : 0;
+      toRim = Math.min(toRim, Math.hypot(n.x - a[0] - t * dx, n.z - a[1] - t * dz));
+    }
+    n.height = concourseHeight(canopy, canopy.radius * n.r / (n.r + toRim));
+  }
+  return { centre, grid };
+}
+
 /** The lathe profile of the trumpet column: [radius, height] pairs from the floor to the funnel rim. */
 export function columnProfile(apex: number): [number, number][] {
   const top = apex - 0.1;
@@ -124,10 +207,10 @@ export function columnProfile(apex: number): [number, number][] {
 }
 
 export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: ShedLayout): THREE.Group {
-  const [cx, cz] = canopy.centre;
-  const d = diagrid(canopy.radius, canopy.centre);
+  const { centre, grid: d } = concourseGrid(canopy, footprint, shed);
+  const [cx, cz] = centre;
   const kept = keepTriangles(d, footprint, shed);
-  const height = (n: Diagrid['nodes'][number]): number => concourseHeight(canopy, n.r);
+  const height = (n: Diagrid['nodes'][number]): number => n.height ?? concourseHeight(canopy, n.r);
   const at = (i: number): V3 => {
     const n = d.nodes[i] as Diagrid['nodes'][number];
     return [n.x, height(n), n.z];
