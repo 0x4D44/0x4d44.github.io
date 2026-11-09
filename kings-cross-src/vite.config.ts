@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, parseAst } from 'vite';
 import type { Plugin } from 'vite';
 
 // The shared "← Almanac" back button (see /almanac-back.js at the repo root) is a classic
@@ -13,6 +13,107 @@ const almanacBack = (): Plugin => ({
   },
 });
 
+// ---- the GLSL squeeze ------------------------------------------------------------------------------------------------------------------------------
+// A shader is a template string, and the minifier ships a string as written: its comments, its indentation, its trailing blanks. three.js's own shaders (its build
+// marks them `/* glsl */`, a few with their comments) and this page's (materials.ts, lighting.ts, weather.ts and the rest, marked the same way) come to about 800 B
+// of the gzipped bundle. The production build strips from each marked template what a GLSL compiler ignores, and nothing else: a template with no marker is not
+// touched, nor is anything outside a template, nor a `${...}` hole (it is code, read as such, never as text).
+//
+// Every newline stays, a blank line included: a line keeps its number, so the source maps (which this plugin does not rewrite) stay true to the line, and a `#define`,
+// `#if` or `#include` keeps its own line. Dropping the blank lines would save another 50 B and put every line after a squeezed template out of true.
+
+/** Stands for a `${...}` while a template's text is squeezed (a private-use character that no shader holds). */
+const HOLE = '';
+
+/**
+ * The text of a template literal's parts as written, escapes unread, squeezed: the comments gone (a block comment leaves one space, or its newlines), the white space beside
+ * every newline gone, a run of spaces and tabs one space. A `//` comment ends at a newline or at a `\n` escape (which GLSL reads as a newline); a hole lying in a comment goes
+ * with it, and the text is then left as it was (null) like the others the squeeze cannot make certain of: a backslash before white space (a line continued, or an escape that
+ * trimming would turn into one) and a block comment of several lines that sits in a `#` line (it would end that line where the comment did).
+ */
+export function squeezeGlslParts(parts: readonly string[]): string[] | null {
+  if (parts.some((p) => p.includes(HOLE) || /\\[ \t\r\n]/.test(p))) return null;
+  const text = parts.reduce((s, p, i) => `${s}${HOLE}${i}${HOLE}${p}`);
+  let unsure = false;
+  const squeezed = text
+    .replace(/\/\*[\s\S]*?\*\/|\/\/(?:[^\n\\]|\\[^n])*/g, (c, at: number) => {
+      if (c[1] !== '*') return '';
+      const newlines = c.split('\n').length - 1;
+      if (newlines && /^[ \t]*#/.test(text.slice(text.lastIndexOf('\n', at - 1) + 1, at))) unsure = true;
+      return newlines ? '\n'.repeat(newlines) : ' ';
+    })
+    .replace(/[ \t\r]*\n[ \t]*/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ');
+  if (unsure) return null;
+  const out: string[] = [];
+  let from = 0;
+  for (const m of squeezed.matchAll(new RegExp(`${HOLE}(\\d+)${HOLE}`, 'g'))) {
+    out.push(squeezed.slice(from, m.index));
+    from = m.index + m[0].length;
+  }
+  out.push(squeezed.slice(from));
+  return out.length === parts.length ? out : null; // (fewer: a hole went with its comment)
+}
+
+interface AstNode {
+  type: string;
+  start: number;
+  end: number;
+  quasis?: { start: number; end: number; value: { raw: string } }[];
+  [key: string]: unknown;
+}
+
+/**
+ * The edits (from, to, text) that squeeze one template literal's parts. The parser reads a part's range as its text alone (JavaScript) or from the backtick or `}`
+ * to the `${` or backtick (TypeScript), so each part is found by the range that holds exactly its raw text; if one does not (CRLF line ends: the raw text is not
+ * the source's), the template is left as it was.
+ */
+function templateEdits(code: string, node: AstNode): [number, number, string][] {
+  const quasis = node.quasis ?? [];
+  const spans = quasis.map((q, i) => [[q.start, q.end], [q.start + 1, q.end - (i === quasis.length - 1 ? 1 : 2)]].find(([from, to]) => code.slice(from, to) === q.value.raw));
+  const out = squeezeGlslParts(quasis.map((q) => q.value.raw));
+  if (!out || spans.some((s) => !s)) return [];
+  return spans.flatMap((s, i) => (s && out[i] !== code.slice(s[0], s[1]) ? [[s[0], s[1], out[i] ?? ''] as [number, number, string]] : []));
+}
+
+/** `code` with every template literal that follows a `/* glsl *\/` marker squeezed, and the same string if there is none. `lang` is how the parser reads it. */
+export function squeezeGlsl(code: string, lang: 'js' | 'ts' = 'js'): string {
+  const opens = new Set<number>(); // where each marked template's backtick is, which a template literal in the syntax tree must start at (not a marker in a string or a comment)
+  for (const m of code.matchAll(/\/\* glsl \*\/\s*`/g)) opens.add(m.index + m[0].length - 1);
+  if (!opens.size) return code;
+  const [first, last] = [Math.min(...opens), Math.max(...opens)];
+  const edits: [number, number, string][] = [];
+  const visit = (n: unknown): void => {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) return n.forEach(visit);
+    const node = n as AstNode;
+    if (typeof node.end === 'number' && (node.end <= first || node.start > last)) return; // (no marked template in it)
+    if (node.type === 'TemplateLiteral' && opens.has(node.start)) edits.push(...templateEdits(code, node));
+    for (const key in node) visit(node[key]);
+  };
+  visit(parseAst(code, { lang }));
+  let out = code;
+  for (const [from, to, text] of edits.sort((a, b) => b[0] - a[0])) out = out.slice(0, from) + text + out.slice(to);
+  return out;
+}
+
+export const glslSqueeze = (): Plugin => ({
+  name: 'glsl-squeeze',
+  apply: 'build',
+  enforce: 'pre', // (the marker is a comment, which the TypeScript transform drops)
+  transform(code, id) {
+    const file = id.split('?', 1)[0] ?? id;
+    if (!/\.[cm]?[jt]s$/.test(file) || !code.includes('/* glsl */')) return null;
+    try {
+      const out = squeezeGlsl(code, /ts$/.test(file) ? 'ts' : 'js');
+      return out === code ? null : { code: out, map: null }; // (every line keeps its number, so the map stays true)
+    } catch (e) {
+      this.warn(`glsl-squeeze left ${file} as it was: ${e instanceof Error ? e.message : e}`);
+      return null;
+    }
+  },
+});
+
 // The Vite project root is web/, so the repo's responsive test (which treats every
 // top-level <dir>/index.html as a published document) never sees this source index.html.
 // The build goes straight into the served directory, ../kings-cross/, with relative URLs
@@ -20,7 +121,7 @@ const almanacBack = (): Plugin => ({
 export default defineConfig({
   root: 'web',
   base: './',
-  plugins: [almanacBack()],
+  plugins: [almanacBack(), glslSqueeze()],
   build: {
     outDir: '../../kings-cross',
     emptyOutDir: true,
