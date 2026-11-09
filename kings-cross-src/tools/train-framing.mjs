@@ -564,12 +564,28 @@ export function planCatalogueViews(f) {
       else { push('V08', suffix, { status: 'N/A', reason: na }); push('V08', `${suffix}-low`, { status: 'N/A', reason: na }); }
     }
   }
-  // V09: V02's pose in the leading and trailing lighting states, if the page can switch lamps; else a functional GAP.
-  const lampReason = "the built page exposes no window.__kx.setTrainLampState(group, 'leading'|'trailing'): the lamp meshes are static, so there is no state pair to compare; no switch is invented";
-  for (const state of ['leading', 'trailing']) push('V09', `lights-${state}`, { eye: [0, 1.7, -3], target: [0, 1.7, 0], fov: 50, region: box(-1.3, 1.3, .9, 2.5, -.2, 1.2),
-    capability: { function: 'setTrainLampState', state, reason: lampReason }, notes: { poseOf: 'V02 front-3m', state } });
+  // V09: V02's pose in the leading and trailing lamp states, which the page switches with setTrainLampState(group, { front, rear }); a page without that function is a functional GAP.
+  const lampReason = 'the built page exposes no window.__kx.setTrainLampState(group, { front, rear }): the lamp meshes are static, so there is no state pair to compare; no switch is invented';
+  for (const name of Object.keys(LAMP_STATES)) push('V09', `lights-${name}`, { eye: [0, 1.7, -3], target: [0, 1.7, 0], fov: 50, region: box(-1.3, 1.3, .9, 2.5, -.2, 1.2),
+    capability: { function: 'setTrainLampState', state: { ...LAMP_STATES[name] }, reason: lampReason }, notes: { poseOf: 'V02 front-3m', state: name } });
   return out;
 }
+/**
+ * What V09 asks of the page's `window.__kx.setTrainLampState(train, { front, rear })` (web/src/train.ts; modes 'head' | 'tail' | 'off'). `front` is car 0's cab
+ * end, the end V02's pose faces; `rear` the last car's. `leading`: the train in service, white lamps at the front cab. `trailing`: the same train running the other
+ * way, so the front cab shows its red lamps. A coupled unit's inner cab ends stay dark in either state (the page's rule, not asked for here).
+ */
+export const LAMP_STATES = Object.freeze({ leading: Object.freeze({ front: 'head', rear: 'tail' }), trailing: Object.freeze({ front: 'tail', rear: 'head' }) });
+/**
+ * A planned view as a pass of `exposure` takes it. The lamps (V09) are the one view taken at dusk under a name of their own, `<suffix>-dusk`, so the two passes
+ * can sit in one pack and be told apart by name; its pose is the day view's (`poseSuffix`), so a dusk pass reuses the day poses. Every other view keeps its name.
+ */
+export function viewForExposure(view, exposure) {
+  if (view.id !== 'V09' || exposure !== 'dusk') return view;
+  return { ...view, suffix: `${view.suffix}-dusk`, poseSuffix: view.suffix, notes: { ...view.notes, exposure } };
+}
+/** The frozen entry of a view in a held kind: under its own suffix, else under the suffix its pose is shared with. */
+export const frozenEntryOf = (held, view) => held?.views?.[view.suffix] ?? (view.poseSuffix ? held?.views?.[view.poseSuffix] : undefined);
 /** The numbers that define a view, for freezing and comparison. */
 export const poseOf = v => ({ status: v.status, frame: v.frame, eye: v.eye, target: v.target, fov: v.fov, up: v.up, near: v.near, region: v.region, extents: v.extents,
   car: v.car, rotationY: v.rotation?.rotationY,

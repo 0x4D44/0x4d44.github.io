@@ -12,6 +12,7 @@ import {ALL_KINDS,TRAIN_SPECS,trainLayout} from '../../core/train.ts';
 import {PLATFORM_HEIGHT} from '../../core/scene.ts';
 import {pointInPolygon} from '../../core/station.ts';
 import {buildTrain,bodySpec,carPlan} from '../../web/src/train.ts';
+import {trainNight} from '../../web/src/train-geom.ts';
 import * as F from '../train-framing.mjs';
 import * as C from '../train-capture.mjs';
 
@@ -167,14 +168,47 @@ test('V08 stands 2 m from the side at the first joint and the joint nearest mid-
  assert.equal(view('gn387x8','gangway-mid').notes.joint.index,2);
 });
 
-test('V09 uses the V02 pose in the leading and trailing lamp states and is a functional GAP while the page has no lamp switch',()=>{
+test('V09 uses the V02 pose in the leading and trailing lamp states, asks the page for the state objects, and is a functional GAP while the page has no lamp switch',()=>{
+ // CHANGED (lamp state objects): the state is what setTrainLampState(group, { front, rear }) takes, written out here; it was the word leading or trailing
+ const states={leading:{front:'head',rear:'tail'},trailing:{front:'tail',rear:'head'}};
  for(const kind of ALL_KINDS) {
   const front=view(kind,'front-3m');
-  for(const state of ['leading','trailing']) {
-   const v=view(kind,`lights-${state}`);vec(v.eye,front.eye,1e-9);vec(v.target,front.target,1e-9);assert.equal(v.fov,front.fov);
-   assert.equal(v.capability?.function,'setTrainLampState');assert.equal(v.capability?.state,state);assert.match(v.capability?.reason,/no window\.__kx\.setTrainLampState/);
+  for(const [name,state] of Object.entries(states)) {
+   const v=view(kind,`lights-${name}`);vec(v.eye,front.eye,1e-9);vec(v.target,front.target,1e-9);assert.equal(v.fov,front.fov);
+   assert.equal(v.capability?.function,'setTrainLampState');assert.deepEqual(v.capability?.state,state);assert.equal(v.notes.state,name);assert.match(v.capability?.reason,/no window\.__kx\.setTrainLampState\(group, \{ front, rear \}\)/);
   }
  }
+ assert.deepEqual(F.LAMP_STATES,states);assert.ok(Object.isFrozen(F.LAMP_STATES)&&Object.isFrozen(F.LAMP_STATES.leading)&&Object.isFrozen(F.LAMP_STATES.trailing));
+ // the plan hands out its own copy of a state, so a page that edits the object it is given cannot change the next plan's
+ const fresh=F.planCatalogueViews(formations.get('lner5')).find(x=>x.suffix==='lights-leading');
+ assert.doesNotThrow(()=>{fresh.capability.state.front='off';},'the plan holds a copy it can edit');assert.equal(F.LAMP_STATES.leading.front,'head');assert.equal(F.planCatalogueViews(formations.get('lner5')).find(x=>x.suffix==='lights-leading').capability.state.front,'head');
+});
+
+test('the dusk lamp views are the day lamp views under a name of their own and stand where they stand; every other view keeps its name in both passes',()=>{
+ for(const kind of ALL_KINDS) {
+  const planned=plans.get(kind),day=planned.map(v=>F.viewForExposure(v,'day')),dusk=planned.map(v=>F.viewForExposure(v,'dusk'));
+  day.forEach((v,i)=>assert.equal(v,planned[i],`${kind}/${planned[i].suffix}: a day pass takes every view as planned`));
+  assert.deepEqual(dusk.filter(v=>v.id==='V09').map(v=>v.suffix),['lights-leading-dusk','lights-trailing-dusk'],`${kind}: the lamp views at dusk`);
+  assert.deepEqual(dusk.map(v=>v.suffix).filter(x=>!x.startsWith('lights-')),planned.map(v=>v.suffix).filter(x=>!x.startsWith('lights-')),`${kind}: no other view is renamed`);
+  planned.forEach((v,i)=>{
+   if(v.id!=='V09'){assert.equal(dusk[i],v,`${kind}/${v.suffix} keeps its name at dusk`);return;}
+   const w=dusk[i];assert.equal(w.poseSuffix,v.suffix);assert.deepEqual(F.poseOf(w),F.poseOf(v),'the same pose');assert.deepEqual(w.capability,v.capability);assert.equal(w.notes.exposure,'dusk');assert.equal(w.notes.state,v.notes.state);assert.deepEqual(w.rotation,v.rotation);
+   assert.equal(v.suffix.endsWith('-dusk'),false,'the planned view is not edited');assert.equal(v.poseSuffix,undefined);assert.equal(v.notes.exposure,undefined);
+  });
+ }
+ // the frozen entry of a view: under its own name, else under the name its pose is shared with, else none
+ const held={views:{'lights-leading':{plan:'day'},'lights-leading-dusk':{plan:'dusk'},'lights-trailing':{plan:'day trailing'}}};
+ const lamp=F.viewForExposure(any('lner5','lights-leading'),'dusk'),twin=F.viewForExposure(any('lner5','lights-trailing'),'dusk');
+ assert.equal(F.frozenEntryOf(held,lamp),held.views['lights-leading-dusk'],'a dusk manifest holds its own entry');assert.equal(F.frozenEntryOf(held,twin),held.views['lights-trailing'],'a day manifest holds the pose under the day name');
+ assert.equal(F.frozenEntryOf(held,any('lner5','lights-leading')),held.views['lights-leading']);assert.equal(F.frozenEntryOf(held,any('lner5','front-3m')),undefined);assert.equal(F.frozenEntryOf(undefined,twin),undefined);assert.equal(F.frozenEntryOf({views:{}},twin),undefined);
+ assert.equal(F.frozenEntryOf({views:{'front-3m':{plan:1}}},any('lner5','front-3m')).plan,1,'a view with no pose twin is found by its own name only');
+ // a dusk pass over a day manifest: no drift when the poses are the day's, and a drift named for the dusk view when one moved
+ const plansOf=kinds=>new Map(kinds.map(kind=>[kind,{views:plans.get(kind).map(v=>F.viewForExposure(v,'dusk'))}]));
+ const manifest=frozenManifest(['lner5']);assert.deepEqual(C.frozenPoseDrift(C.loadFrozenPoses(JSON.stringify(manifest)),plansOf(['lner5'])),[]);
+ manifest.kinds.lner5.views['lights-leading'].plan.eye[2]=-3.001;
+ assert.deepEqual(C.frozenPoseDrift(C.loadFrozenPoses(JSON.stringify(manifest)),plansOf(['lner5'])).map(d=>[d.view,d.reason,d.at]),[['lights-leading-dusk','pose differs from the frozen pose','/eye/2']]);
+ delete manifest.kinds.lner5.views['lights-trailing'];
+ assert.ok(C.frozenPoseDrift(C.loadFrozenPoses(JSON.stringify(manifest)),plansOf(['lner5'])).some(d=>d.view==='lights-trailing-dusk'&&d.reason==='view missing from the frozen poses'));
 });
 
 test('stage rotation turns the specimen so the sun sits within 15 degrees of the camera bearing, as a pure function of the local pose',()=>{
@@ -465,6 +499,12 @@ test('catalogue preflight plans the views without Chrome, and refuses to capture
   assert.equal(frozen.exposure,'day');
   await assert.rejects(run('--kinds','lner5','--views','V01','--exposure','dusk'),/--exposure dusk reuses the poses of a day pass, so poses cannot change between exposures: give --poses/);
   const [dusk]=await ok('--kinds','lner5,gn387x8','--views','V01,V08','--poses',poses,'--exposure','dusk');assert.deepEqual([dusk.exposure,dusk.posesFrozen,dusk.planned],['dusk',true,plain.planned]);
+  // the lamp views at dusk: named for the exposure, posed as the day views of the frozen manifest
+  const [lamps]=await ok('--kinds','lner5,gn387x8','--views','V09','--poses',poses,'--exposure','dusk');assert.deepEqual([lamps.exposure,lamps.posesFrozen,lamps.planned],['dusk',true,{lner5:{OK:2},gn387x8:{OK:2}}]);
+  const [lampsDay]=await ok('--kinds','lner5','--views','V09','--poses',poses);assert.deepEqual([lampsDay.exposure,lampsDay.planned],['day',{lner5:{OK:2}}]);
+  const moved=frozenManifest(['lner5']);moved.kinds.lner5.views['lights-trailing'].plan.fov=51;await writeFile(poses,JSON.stringify(moved));
+  await assert.rejects(run('--kinds','lner5','--views','V09','--poses',poses,'--exposure','dusk'),/refusing to capture: 1 pose\(s\) differ from .*lner5\/lights-trailing-dusk pose differs from the frozen pose at \/fov/);
+  await writeFile(poses,JSON.stringify(frozenManifest(['lner5','gn387x8'])));
   const tampered=frozenManifest(['lner5']);tampered.kinds.lner5.views['front-3m'].plan.eye[2]=-3.001;tampered.kinds.lner5.views['roof-plan'].plan.fov=51;await writeFile(poses,JSON.stringify(tampered));
   await assert.rejects(run('--kinds','lner5','--views','V02,V06','--poses',poses),/refusing to capture: 2 pose\(s\) differ from .*lner5\/front-3m pose differs from the frozen pose at \/eye\/2; lner5\/roof-plan pose differs from the frozen pose at \/fov/);
   await assert.rejects(run('--kinds','lner5,hull5','--views','V01','--poses',poses),/refusing to capture.*hull5\/\* kind missing/);
@@ -524,6 +564,12 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.deepEqual(gap.outcome,{status:'GAP',reason:'coach occluded',file:null,blocker:'Scene/screen',inspection:{clear:false,reason:'coach occluded'}});
  const na=C.manifestEntry({view:any('lner5','unit-coupling'),status:'N/A',reason:'single unit: x'});assert.deepEqual(na.outcome,{status:'N/A',reason:'single unit: x',file:null,blocker:null});
  const lamps=C.manifestEntry({view:view('lner5','lights-leading'),status:'GAP',reason:'no lamp switch',functional:true});assert.equal(lamps.capability?.function,'setTrainLampState');
+ // CHANGED (lamp state objects): the entry names the state objects; the reason a missing page function is reported with stays on the GAP that says so and is not on a picture
+ assert.deepEqual(lamps.capability.state,{front:'head',rear:'tail'});assert.match(lamps.capability.reason,/no window\.__kx\.setTrainLampState\(group, \{ front, rear \}\)/);
+ const lit=C.manifestEntry({view:view('lner5','lights-trailing'),status:'OK',inspection:{checkedSamples:30,visibleFraction:1},verdict:{ok:true},file:'lner5-lights-trailing.png'});
+ assert.deepEqual(lit.capability,{function:'setTrainLampState',state:{front:'tail',rear:'head'}},'no reason on a picture the page could take');
+ const twin=C.manifestEntry({view:F.viewForExposure(view('lner5','lights-trailing'),'dusk'),status:'OK',inspection:{checkedSamples:30,visibleFraction:1},verdict:{ok:true},file:'lner5-lights-trailing-dusk.png'});
+ assert.deepEqual([twin.suffix,twin.poseFrom,'poseFrom' in lit],['lights-trailing-dusk','lights-trailing',false]);assert.deepEqual(twin.plan,lit.plan,'the dusk view stands where the day view does');
  const session={renderer:'ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max)',size:[1600,1000],devicePixelRatio:1,toneMapping:0,toneMappingExposure:1,outputColorSpace:'srgb',background:'35465e',fog:null,lights:[{type:'DirectionalLight'}]};
  const live={pose:{position:[1,2,3],target:[4,5,6],fov:50,aspect:1.6,near:.03,far:9000,up:[0,1,0],positionErrorM:0},placement:{position:[0,0,0],rotationY:1.25},inspection:{clear:true},labelText:'label',costs:{triangles:11,drawCalls:12},info:{calls:13,triangles:14}};
  const sidecar=C.catalogueSidecar({kind:'lner5',view:v,file:'lner5-front-3m.png',formation:formations.get('lner5'),session,host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
@@ -542,7 +588,7 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.equal(thameslink.formation.classes,'700/0');assert.equal(thameslink.formation.classNote,null,'a kind that is one class has no note');assert.equal(thameslink.formation.kind,'tl700x8');
  // the exposure, the page's atmosphere, the lamp level of the trains and the lamp API are in the render state; what was hidden, and what was still drawn, is in `chrome`
  assert.deepEqual(sidecar.renderState,{toneMapping:0,toneMappingExposure:1,outputColorSpace:'srgb',background:'35465e',fog:null,lights:session.lights,exposure:'day',urlQuery:C.catalogueUrlQuery('day'),rig:'fixed',pinnedTime:null,pinnedWeather:null,
-  atmosphere:null,trainNight:0,trainNightSource:C.trainNightOf(C.exposureRecord('day'),null).trainNightSource,lampApi:false});
+  atmosphere:null,trainNight:0,trainNightSource:C.trainNightOf(C.exposureRecord('day'),null).trainNightSource,lampApi:false,lampState:null});
  const atmosphere={timeMs:Date.parse('2026-11-09T16:30:00Z'),iso:'2026-11-09T16:30:00.000Z',sun:{elevationDeg:-3.2,azimuthDeg:215},weather:{label:'clear sky',visibilityM:null},rig:{daylight:.1,lampLevel:.8}};
  const chrome={hidden:[{name:'h1',drawn:true,box:[1380,12,200,30]},{name:'nav.station-switcher',drawn:true,box:[120,8,700,34]}],visible:[]};
  const dusk=C.catalogueSidecar({kind:'lner5',view:v,file:'lner5-front-3m.png',formation:formations.get('lner5'),session:{...session,lampApi:true},host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
@@ -551,6 +597,15 @@ test('a manifest entry freezes the pose and records the outcome, and a sidecar c
  assert.deepEqual(dusk.renderState.atmosphere,atmosphere);assert.equal(dusk.renderState.trainNight,.8);assert.match(dusk.renderState.trainNightSource,/rig\.lampLevel/);assert.equal(dusk.renderState.lampApi,true);
  assert.deepEqual(dusk.chrome,chrome);assert.deepEqual(dusk.hiddenDom,['h1','nav.station-switcher']);assert.equal(sidecar.chrome,null,'a sidecar of a page that reported no chrome record says so');
  assert.deepEqual(C.trainNightOf({rig:'atmosphere'},null),{trainNight:null,trainNightSource:'unavailable: the page gave no atmosphere state'});
+ // a lamp view: the state the page was given, the lamp level it drew with (read in the page, which beats the worked-out one, and a zero is a reading), and where its pose comes from
+ const trailing=F.viewForExposure(view('lner5','lights-trailing'),'dusk');
+ const lamp=C.catalogueSidecar({kind:'lner5',view:trailing,file:'lner5-lights-trailing-dusk.png',formation:formations.get('lner5'),session:{...session,lampApi:true},host:{os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'abc'}},build:{indexSha256:'x'},
+  state:{hidden:[],hiddenDom:[],stage:{railHeadTopY:0}},result:{verdict:{ok:true},live:{...live,atmosphere,lampState:{front:'tail',rear:'head'},trainNight:.55}},timings:{inspect:1},exposure:C.exposureRecord('dusk')});
+ assert.deepEqual(lamp.renderState.lampState,{front:'tail',rear:'head'});assert.equal(lamp.renderState.trainNight,.55,'the value the page drew with, not the atmosphere lamp level .8');assert.match(lamp.renderState.trainNightSource,/^read from the page/);assert.equal(lamp.renderState.lampApi,true);
+ assert.deepEqual([lamp.renderState.exposure,lamp.renderState.rig],['dusk','atmosphere']);assert.ok(!/bare=1/.test(lamp.renderState.urlQuery),'the dusk lamp picture is taken on the page as built, not on the bare one');
+ assert.deepEqual(lamp.view,{id:'V09',suffix:'lights-trailing-dusk',frame:'front',notes:trailing.notes,car:null,capability:{function:'setTrainLampState',state:{front:'tail',rear:'head'}},poseFrom:'lights-trailing'},'the sidecar names the state, not the reason a missing function is reported with');
+ assert.equal(C.trainNightOf({rig:'fixed'},null,0).trainNight,0);assert.match(C.trainNightOf({rig:'fixed'},null,0).trainNightSource,/^read from the page/,'a zero read from the page is a reading, not an absence');
+ assert.equal(C.trainNightOf({rig:'atmosphere'},atmosphere,.3).trainNight,.3);assert.equal(C.trainNightOf({rig:'atmosphere'},atmosphere,null).trainNight,.8,'without a reading, the lamp level of the atmosphere');
 });
 
 // ---- the in-page driver, against a stand-in for the page ---------------------------------------------------------------------------------------
@@ -641,12 +696,35 @@ test('the in-page driver puts the specimen on the neutral stage, hides what the 
 });
 
 test('the in-page driver stops at a page that moves the camera, and at a lamp view when the page has no lamp switch',()=>{
- const page=fakePage(),v=view('lner5','front-3m'),lamp=view('lner5','lights-leading');
+ const page=fakePage(),v=view('lner5','front-3m'),lamp=view('lner5','lights-leading'),other=view('lner5','lights-trailing');
  withPage(page,cat=>{
   cat.begin('lner5',formations.get('lner5').length);
   assert.throws(()=>cat.view(lamp,'x'),/page lost setTrainLampState/);
-  const states=[];page.k.setTrainLampState=(group,state)=>states.push([group.name,state]);cat.view(lamp,'x');assert.deepEqual(states,[['train-lner5','leading']]);
+  // CHANGED (lamp state objects): the page is given the state object (a copy: it cannot edit the plan), and the frame reports the state it was given; it was the word leading
+  const states=[];page.k.setTrainLampState=(group,state)=>states.push([group.name,state]);
+  const first=cat.view(lamp,'x');assert.deepEqual(states,[['train-lner5',{front:'head',rear:'tail'}]]);assert.deepEqual(first.lampState,{front:'head',rear:'tail'});assert.notEqual(states[0][1],lamp.capability.state,'the page gets a copy');
+  const second=cat.view(other,'x');assert.deepEqual(states.at(-1),['train-lner5',{front:'tail',rear:'head'}]);assert.deepEqual(second.lampState,{front:'tail',rear:'head'});
+  // a page that edits the state it is given changes neither the plan nor what the frame reports
+  page.k.setTrainLampState=(group,state)=>{state.front='off';};const third=cat.view(lamp,'x');assert.deepEqual(third.lampState,{front:'head',rear:'tail'});assert.deepEqual(lamp.capability.state,{front:'head',rear:'tail'});
+  // a view that is not a lamp view does not touch the lamps and reports no state
+  const calls=states.length;page.k.setTrainLampState=(group,state)=>states.push([group.name,state]);const plain=cat.view(v,'x');assert.equal(states.length,calls);assert.equal(plain.lampState,null);
   page.window.__signalFrame=()=>{page.camera.position.x+=.5;};assert.throws(()=>cat.view(v,'x'),/moved the camera by 0\.5 m/);
+ });
+});
+
+test('a frame reports the lamp level the page draws the trains with, read from the train material, and null where no material takes it',()=>{
+ const page=fakePage();
+ withPage(page,cat=>{
+  cat.begin('lner5',formations.get('lner5').length);
+  try {for(const level of [0,.375,1]){trainNight.value=level;assert.equal(cat.view(view('lner5','front-3m'),'x').trainNight,level,`the page's value ${level}`);}}
+  finally {trainNight.value=0;}
+  // a train whose materials take no night uniform has no reading, and the hook that asks the material is harmless to it
+  const group=page.scene.children.at(-1),saved=[];group.traverse(o=>{if(o.isMesh){saved.push([o,o.material]);o.material=new T.MeshBasicMaterial();}});
+  assert.equal(cat.view(view('lner5','front-3m'),'x').trainNight,null);for(const [o,m] of saved)o.material=m;
+  // a material whose hook throws is skipped, and the next one is asked
+  const odd=new T.MeshBasicMaterial();odd.onBeforeCompile=()=>{throw new Error('no');};const first=saved[0][0];first.material=odd;
+  try {trainNight.value=.5;let frame;assert.doesNotThrow(()=>{frame=cat.view(view('lner5','front-3m'),'x');},'a hook that throws is skipped');assert.equal(frame.trainNight,.5);} finally {trainNight.value=0;first.material=saved[0][1];}
+  cat.end();
  });
 });
 

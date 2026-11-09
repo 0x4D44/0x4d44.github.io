@@ -13,7 +13,7 @@ import {bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {CATALOGUE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,planCatalogueViews,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch} from './train-framing.mjs';
+import {CATALOGUE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,planCatalogueViews,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
@@ -479,7 +479,7 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
     const held=frozen.kinds[kind];
     if(!held){drifts.push({kind,reason:'kind missing from the frozen poses'});continue;}
     for(const view of plan.views) {
-      const entry=held.views?.[view.suffix];
+      const entry=frozenEntryOf(held,view);
       if(!entry?.plan){drifts.push({kind,view:view.suffix,reason:'view missing from the frozen poses'});continue;}
       const at=poseDifference(poseOf(view),entry.plan,tol);
       if(at!==null)drifts.push({kind,view:view.suffix,reason:'pose differs from the frozen pose',at});
@@ -526,6 +526,25 @@ export function catalogueDriver() {
       rig:{daylight:a.rig.daylight,lampLevel:a.rig.lampLevel,stars:a.rig.stars,fogAmount:a.rig.fogAmount,sunIntensity:a.rig.sun.intensity,moonIntensity:a.rig.moon.intensity,hemisphereIntensity:a.rig.hemisphere.intensity}};
   };
   cat.atmosphere=atmosphereOf;
+  /**
+   * The lamp level the page is giving the trains, read where the shared train material takes it: its onBeforeCompile hook binds the page's `trainNight` object as
+   * the `uNight` uniform (web/src/train-geom.ts plain()), so asking the hook for a shader's uniforms gives that object, and its value is what the frame was drawn with.
+   * null when no material of the train does.
+   */
+  const readTrainNight=group=>{
+    let value=null;
+    group.traverse(o=>{
+      if(value!==null||!o.isMesh)return;
+      for(const m of Array.isArray(o.material)?o.material:[o.material]) {
+        if(typeof m?.onBeforeCompile!=='function')continue;
+        const probe={uniforms:{},vertexShader:'',fragmentShader:''};
+        try{m.onBeforeCompile(probe,k.renderer);}catch{continue;}
+        const night=probe.uniforms.uNight;
+        if(night&&typeof night.value==='number'){value=night.value;return;}
+      }
+    });
+    return value;
+  };
   const sceneChildren=()=>k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}));
   cat.begin=(kind,length)=>{
     const {T,F}=cat;
@@ -554,14 +573,19 @@ export function catalogueDriver() {
     if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
     const info={calls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles};
     const inspection=F.inspectCatalogueView(T,k.scene,k.camera,s.group,s.ground,view,view.id==='V10'?F.stationCheckOptions():undefined);
-    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text,chrome,atmosphere:atmosphereOf()};
+    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text,chrome,atmosphere:atmosphereOf(),trainNight:readTrainNight(s.group)};
   };
   cat.view=(view,text)=>{
     const {T,F}=cat,s=cat.state;
     F.placeStageSpecimen(s.group,s.stage,view.rotation.rotationY);
     const pose=F.setCatalogueView(T,k.camera,k.controls,s.group,view);
-    if(view.capability){if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');k.setTrainLampState(s.group,view.capability.state);}
-    return settle(view,text,pose);
+    // a lamp view: the page is told the state object, and the frame reports the one it was told
+    let lampState=null;
+    if(view.capability){
+      if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');
+      lampState={...view.capability.state};k.setTrainLampState(s.group,{...lampState});
+    }
+    return {...settle(view,text,pose),lampState};
   };
   /** V10: a camera given in world metres, the specimen stood where the placement says; the sidecar also gets the pose in the train's own frame. */
   cat.stationView=(view,text)=>{
@@ -653,10 +677,12 @@ export function checkExposure(exposure,session) {
 }
 
 /**
- * The lamp level the page gives the trains' windows and lenses, and where it was read: the atmosphere's rig sets `trainNight.value` to its `lampLevel` (web/src/atmosphere.ts apply).
- * The fixed day rig has no atmosphere, so nothing ever sets it and it keeps its initial 0 (web/src/train-geom.ts); that is inferred from the code, not read from the page.
+ * The lamp level the page gives the trains' windows and lenses, and where it was read. `read` is the value the page's shared train material was drawn with (read in
+ * the page, see readTrainNight in the driver); without it, the value is worked out: the atmosphere's rig sets `trainNight.value` to its `lampLevel` (web/src/atmosphere.ts
+ * apply), and the fixed day rig has no atmosphere, so nothing ever sets it and it keeps its initial 0 (web/src/train-geom.ts), which is inferred from the code.
  */
-export function trainNightOf(exposure,atmosphere) {
+export function trainNightOf(exposure,atmosphere,read=null) {
+  if(typeof read==='number')return {trainNight:read,trainNightSource:'read from the page: the uNight uniform the shared train material is drawn with (web/src/train-geom.ts plain(), bound to trainNight)'};
   if(atmosphere)return {trainNight:atmosphere.rig.lampLevel,trainNightSource:'the page atmosphere: rig.lampLevel, which atmosphere.ts apply copies to trainNight.value'};
   if(exposure.rig==='fixed')return {trainNight:0,trainNightSource:'inferred: the fixed rig has no atmosphere, so trainNight keeps its initial 0 (web/src/train-geom.ts)'};
   return {trainNight:null,trainNightSource:'unavailable: the page gave no atmosphere state'};
@@ -666,7 +692,8 @@ export function trainNightOf(exposure,atmosphere) {
 export function catalogueSidecar({kind,view,file,formation,session,host,build,state,result,timings,exposure=exposureRecord('day')}) {
   const live=result.live;
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-sidecar/1',kind,file,
-    view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,capability:view.capability??null},
+    view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,
+      capability:view.capability?{function:view.capability.function,state:view.capability.state}:null,...(view.poseSuffix?{poseFrom:view.poseSuffix}:{})},
     renderer:session.renderer,host:host.os,macModel:host.macModel,git:host.git,build,
     viewport:{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,
       canvas:session.size,devicePixelRatio:session.devicePixelRatio},
@@ -674,7 +701,7 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
     // the trains' windows and lenses (web/src/atmosphere.ts apply: trainNight.value = rig.lampLevel)
     renderState:{toneMapping:session.toneMapping,toneMappingExposure:session.toneMappingExposure,outputColorSpace:session.outputColorSpace,background:session.background,fog:session.fog,lights:session.lights,
       exposure:exposure.id,urlQuery:exposure.urlQuery,rig:exposure.rig,pinnedTime:exposure.pinnedTime,pinnedWeather:exposure.pinnedWeather,
-      atmosphere:live.atmosphere??null,...trainNightOf(exposure,live.atmosphere??null),lampApi:session.lampApi===true},
+      atmosphere:live.atmosphere??null,...trainNightOf(exposure,live.atmosphere??null,live.trainNight??null),lampApi:session.lampApi===true,lampState:live.lampState??null},
     // V01-V09 are planned in the train's own frame; a V10 view is planned in world metres (the station fixes the specimen), so the page reports its train-local pose
     pose:{trainLocal:{eye:live.local?.eye??view.eye,target:live.local?.target??view.target,fov:view.fov,up:view.up,near:view.near,region:view.region,...(view.extents?{extents:view.extents}:{})},
       world:{position:live.pose.position,target:live.pose.target,fov:live.pose.fov,aspect:live.pose.aspect,near:live.pose.near,far:live.pose.far,up:live.pose.up,positionErrorM:live.pose.positionErrorM}},
@@ -722,14 +749,14 @@ export async function catalogueMain(args) {
   for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
   const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null;
   const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
-    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)),station:stationScene?planStation(formation,stationScene):null}];}));
+    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
     const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
     const drifts=frozenPoseDrift(frozen,plans);
     if(drifts.length)throw new Error(`refusing to capture: ${drifts.length} pose(s) differ from ${opts.poses}: ${drifts.slice(0,8).map(d=>`${d.kind}/${d.view??'*'} ${d.reason}${d.at?` at ${d.at}`:''}`).join('; ')}`);
     for(const plan of plans.values()){
-      plan.views=plan.views.map(v=>freezeView(v,frozen.kinds[plan.kind].views[v.suffix]));
+      plan.views=plan.views.map(v=>freezeView(v,frozenEntryOf(frozen.kinds[plan.kind],v)));
       if(plan.station)plan.stationViews=stationViewsFromFrozen(plan.station,frozen.kinds[plan.kind]);
     }
   }
@@ -832,7 +859,9 @@ export async function catalogueMain(args) {
 /** One view's line in the manifest: the frozen pose that was derived, and what became of it. */
 export function manifestEntry(result) {
   const {view}=result;
-  return {id:view.id,suffix:view.suffix,plan:poseOf(view),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,capability:view.capability??null,
+  return {id:view.id,suffix:view.suffix,plan:poseOf(view),...(view.poseSuffix?{poseFrom:view.poseSuffix}:{}),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,
+    // the reason is what a missing page function is reported as: it belongs to the GAP that says so, not to a picture the page could take
+    capability:view.capability?(result.functional?view.capability:{function:view.capability.function,state:view.capability.state}):null,
     outcome:{status:result.status,reason:result.reason??null,file:result.file??null,blocker:result.blocker??view.blocker??null,
       ...(view.search?{search:view.search}:{}),
       ...(result.status==='GAP'&&result.inspection?{inspection:result.inspection}:{}),
