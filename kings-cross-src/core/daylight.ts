@@ -1,10 +1,12 @@
 // The look of the sky and the light for a given sun elevation and weather. Pure numbers (colours are sRGB triples, 0..1),
 // no three.js: web/src/atmosphere.ts applies the result to the scene, and tests/daylight.test.ts holds the rules.
 //
-// THE REFERENCE RIG. The page has always had one rig (web/src/world.ts LIGHTS: a cool hemisphere, a warm key in the south-west and two
-// weak fills along the railway). `skyRig` scales that rig, it does not replace it: at a high sun in a clear sky the numbers are the
-// reference's own; toward dusk the key dims and reddens and the sky goes through gold and mauve to blue-black; under cloud the key
-// all but goes and the sky greys; in rain it darkens; in fog the sky, the horizon and the scene fog become one colour.
+// THE REFERENCE RIG. The page has one rig (web/src/world.ts LIGHTS: a cool sky hemisphere over a warm paving bounce, a warm key
+// and two weak fills along the railway). `skyRig` scales that rig, it does not replace it: at a high sun in a clear sky the numbers
+// are the reference's own; toward dusk the key dims and reddens and the sky goes through gold and mauve to blue-black; under cloud
+// the key all but goes and the sky greys; in rain it darkens; in fog the sky, the horizon and the scene fog become one colour.
+// The rig is the daylight one (a bright sun against a softer sky, so a shadow is a third as bright as the lit ground beside it, as in
+// the daylight references); the dusk rows keep the absolute light the page had before, so evening and night look as they did.
 //
 // TWILIGHT. Elevation is the geometric elevation of the sun's centre (core/solar.ts). Civil twilight ends at -6 degrees, nautical at
 // -12, astronomical at -18. The station, platform and train lights are fully on by -6 and fully off by +2, and ease between.
@@ -50,6 +52,8 @@ export interface SkyRig {
   fog: Rgb;
   /** 0 (clear) to 1 (dense fog): how foggy the visibility is */
   fogAmount: number;
+  /** the camera's exposure for the filmic tone map: a darker scene is exposed up (night, cloud), as an eye or an auto-exposing camera does */
+  exposure: number;
 }
 
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -84,19 +88,24 @@ interface Row {
 /**
  * Clear-sky keyframes by sun elevation (degrees). Colours are sRGB hex; `sunK` and `hemiK` and `fillK` multiply the reference rig's
  * intensities. The -8 degree row's horizon is the colour the page's old fixed sky had (0x35465e), and its zenith nearly the old
- * zenith (0x0b1322): the dusk the page used to be, now one moment of the evening.
+ * zenith (0x0b1322): the dusk the page used to be, now one moment of the evening. From +6 degrees down the K's hold the light the page
+ * had when its reference sun was 1.7, its hemisphere 1.25 and its fills 0.8 and 0.3 (the reference is now 3.0, 1.0, 0.6 and 0.25: a
+ * bright key over a softer sky, which is what puts a shadow a third as bright as the ground beside it), so evening and night keep
+ * their light. Above +12 the paving bounce under the hemisphere is warm and light, not the old dark blue-grey (0x3a3f48): sunlit
+ * paving throws about a third of the sun back on to the walls and the underside of every canopy (ASSUMED: albedo 0.35, daylight
+ * references R-a and R-d show the shaded sides of buildings lit warm-grey, not dark blue).
  */
 const ROWS: readonly Row[] = [
-  { e: -18, zenith: 0x050a16, horizon: 0x0f1624, sun: 0xff5a30, sunK: 0, hemiSky: 0x3a4f84, hemiGround: 0x0c0f14, hemiK: 0.5, fillK: 0.18, fillTint: 0x7088c8 },
-  { e: -12, zenith: 0x08101f, horizon: 0x18233a, sun: 0xff5a30, sunK: 0, hemiSky: 0x40578f, hemiGround: 0x10141b, hemiK: 0.52, fillK: 0.2, fillTint: 0x7088c8 },
-  { e: -8, zenith: 0x0d1830, horizon: 0x35465e, sun: 0xff5a30, sunK: 0, hemiSky: 0x4d629a, hemiGround: 0x181c24, hemiK: 0.55, fillK: 0.26, fillTint: 0x8096d0 },
-  { e: -4, zenith: 0x1b2c52, horizon: 0x6a5f78, sun: 0xff6a3a, sunK: 0, hemiSky: 0x6e7eae, hemiGround: 0x24272f, hemiK: 0.6, fillK: 0.42, fillTint: 0xc0a8a0 },
-  { e: -1, zenith: 0x2b4272, horizon: 0xc08a6c, sun: 0xff7a40, sunK: 0.12, hemiSky: 0x909dc6, hemiGround: 0x2e323b, hemiK: 0.74, fillK: 0.58, fillTint: 0xffc89a },
-  { e: 2, zenith: 0x365a94, horizon: 0xe8b58a, sun: 0xff9a52, sunK: 0.38, hemiSky: 0xa6b6e0, hemiGround: 0x343842, hemiK: 0.84, fillK: 0.72, fillTint: 0xffd5a8 },
-  { e: 6, zenith: 0x3f69a8, horizon: 0xd2cdc8, sun: 0xffb878, sunK: 0.64, hemiSky: 0xb4c6f0, hemiGround: 0x383c46, hemiK: 0.9, fillK: 0.86, fillTint: 0xffe0bc },
-  { e: 12, zenith: 0x4674b4, horizon: 0xbccde2, sun: 0xffd9a8, sunK: 0.86, hemiSky: 0xbdd0fa, hemiGround: 0x3a3f48, hemiK: 0.97, fillK: 0.95, fillTint: 0xfff0d8 },
-  { e: 25, zenith: 0x4a7dc0, horizon: 0xb0cae6, sun: 0xffe8c2, sunK: 1, hemiSky: 0xc4d6ff, hemiGround: 0x3a3f48, hemiK: 1, fillK: 1, fillTint: 0xfff0d8 },
-  { e: 45, zenith: 0x4a80c6, horizon: 0xa8c8e8, sun: 0xfff0d6, sunK: 1.08, hemiSky: 0xc4d6ff, hemiGround: 0x3a3f48, hemiK: 1.02, fillK: 1, fillTint: 0xfff0d8 },
+  { e: -18, zenith: 0x050a16, horizon: 0x0f1624, sun: 0xff5a30, sunK: 0, hemiSky: 0x3a4f84, hemiGround: 0x0c0f14, hemiK: 0.625, fillK: 0.24, fillTint: 0x7088c8 },
+  { e: -12, zenith: 0x08101f, horizon: 0x18233a, sun: 0xff5a30, sunK: 0, hemiSky: 0x40578f, hemiGround: 0x10141b, hemiK: 0.65, fillK: 0.27, fillTint: 0x7088c8 },
+  { e: -8, zenith: 0x0d1830, horizon: 0x35465e, sun: 0xff5a30, sunK: 0, hemiSky: 0x4d629a, hemiGround: 0x181c24, hemiK: 0.69, fillK: 0.35, fillTint: 0x8096d0 },
+  { e: -4, zenith: 0x1b2c52, horizon: 0x6a5f78, sun: 0xff6a3a, sunK: 0, hemiSky: 0x6e7eae, hemiGround: 0x24272f, hemiK: 0.75, fillK: 0.56, fillTint: 0xc0a8a0 },
+  { e: -1, zenith: 0x2b4272, horizon: 0xc08a6c, sun: 0xff7a40, sunK: 0.07, hemiSky: 0x909dc6, hemiGround: 0x2e323b, hemiK: 0.93, fillK: 0.77, fillTint: 0xffc89a },
+  { e: 2, zenith: 0x365a94, horizon: 0xe8b58a, sun: 0xff9a52, sunK: 0.215, hemiSky: 0xa6b6e0, hemiGround: 0x343842, hemiK: 1.05, fillK: 0.96, fillTint: 0xffd5a8 },
+  { e: 6, zenith: 0x3f69a8, horizon: 0xd2cdc8, sun: 0xffb878, sunK: 0.36, hemiSky: 0xb4c6f0, hemiGround: 0x383c46, hemiK: 1.12, fillK: 1.14, fillTint: 0xffe0bc },
+  { e: 12, zenith: 0x4674b4, horizon: 0xbccde2, sun: 0xffd9a8, sunK: 0.8, hemiSky: 0xbdd0fa, hemiGround: 0x625d57, hemiK: 1.08, fillK: 1.1, fillTint: 0xfff0d8 },
+  { e: 25, zenith: 0x4a7dc0, horizon: 0xbccfe6, sun: 0xffe8c2, sunK: 1, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1, fillK: 1, fillTint: 0xfff0d8 },
+  { e: 45, zenith: 0x4a80c6, horizon: 0xb4cde8, sun: 0xfff0d6, sunK: 1.08, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1.02, fillK: 1, fillTint: 0xfff0d8 },
 ];
 
 interface Sampled {
@@ -136,12 +145,20 @@ export function fogAmount(visibilityM: number): number {
 }
 
 /**
- * Scene fog distances for a visibility, metres. At 10 km or more it is the page's long-standing fog (1100 to 3600). Below that the
+ * The haze of clear air: the city a kilometre off goes a fifth of the way to the horizon's colour and the far ground and the dome's
+ * edge meet at 2.8 km, so a far skyline reads as distance, not as a cut-out. ASSUMED amounts, judged by eye: the daylight references
+ * (R-lighting-materials-a, -d) are close-ups with no far skyline to measure; a clear London day is hazy at a kilometre (the weather
+ * feed's 24 km visibility). The page's old fog began at 1100 m and ended at 3600.
+ */
+export const CLEAR_FOG = { near: 450, far: 2800 } as const;
+
+/**
+ * Scene fog distances for a visibility, metres. At 10 km or more it is the clear-air haze (`CLEAR_FOG`). Below that the
  * far plane comes in with the visibility: a camera low in the fog sees only about the visibility; a camera high above it looks down
  * through a fog layer that is shallow (a few hundred metres), so its effective visibility grows with its height.
  */
 export function fogRange(visibilityM: number, cameraHeightM = 0): { near: number; far: number } {
-  const clear = { near: 1100, far: 3600 };
+  const clear = { ...CLEAR_FOG };
   if (!(visibilityM < 10_000)) return clear;
   const effective = visibilityM * (1 + Math.max(0, cameraHeightM) / 250);
   const far = Math.min(clear.far, Math.max(60, 1.25 * effective));
@@ -157,6 +174,17 @@ export function describeSun(elevationDeg: number): string {
   const phase = elevationDeg >= 0 ? 'day' : elevationDeg >= -6 ? 'civil twilight' : elevationDeg >= -12 ? 'nautical twilight' : 'night';
   return elevationDeg >= 0 ? `sun ${rounded}° up (${phase})` : `sun ${rounded}° below the horizon (${phase})`;
 }
+
+/**
+ * The camera's exposure for the filmic tone map (three's ACES): the light's numbers are physical, so a bright day and a dark night are
+ * far apart, and a camera or an eye closes down in the one and opens in the other. At night the page keeps the brightness it had
+ * before the tone map (the toe of ACES is steeper than a straight sRGB curve, so it takes about a stop and a half more to read as
+ * well); in a clear day it takes a quarter off (the sun is then 3.0, so the sunlit ground sits about 0.76 of the way up the curve and
+ * every shade below it keeps its detail); under full cloud, when the sun is 12% of itself, it opens a further 90% as a camera does.
+ */
+export const NIGHT_EXPOSURE = 1.8;
+export const DAY_EXPOSURE = 1.25;
+export const CLOUD_EXPOSURE = 0.9;
 
 /** The share of the daylight stand-ins (the shed's sky-lit lining and glazing) kept at night, so they never go quite dead. */
 export const DAYLIGHT_FLOOR = 0.12;
@@ -185,7 +213,8 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
 
   // The sky ambient: under cloud it greys and loses a little; rain darkens it; fog flattens it; snow cover brightens it.
   const hemiColour = desaturate(k.hemiSky, 0.55 * cloud + 0.2 * fog);
-  const hemiGround = mixRgb(k.hemiGround, [0.56, 0.58, 0.62], 0.7 * snow * dayAmount);
+  // snow's bounce is about two and a half times the paving's (an albedo near 0.8 against 0.3), and cool: it lights the underside of everything
+  const hemiGround = mixRgb(k.hemiGround, [0.74, 0.76, 0.8], 0.7 * snow * dayAmount);
   const hemiIntensity = reference.hemisphere.intensity * k.hemiK * (1 - 0.08 * cloud) * (1 - 0.1 * rain) * (1 - 0.12 * fog) * (1 + 0.08 * snow);
 
   // The dome: clear colours, then toward cloud grey (zenith darker, horizon paler), darkened by rain, then into the fog colour.
@@ -216,5 +245,6 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
     glow: { colour: mixRgb(k.sun, [1, 0.9, 0.7], 0.25), strength: glowStrength },
     fog: fogColour,
     fogAmount: fog,
+    exposure: lerp(NIGHT_EXPOSURE, DAY_EXPOSURE, dayAmount) * (1 + CLOUD_EXPOSURE * cloud * dayAmount),
   };
 }

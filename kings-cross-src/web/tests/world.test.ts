@@ -3,7 +3,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { addWorld, LIGHTS } from '../src/world.ts';
+import { DAY_EXPOSURE } from '../../core/daylight.ts';
+import { solarPosition, sunDirection } from '../../core/solar.ts';
+import { addWorld, DAYLIGHT, LIGHTS } from '../src/world.ts';
+import { acesFilmic, toSrgb } from './aces.ts';
 
 type V3 = readonly [number, number, number];
 
@@ -88,6 +91,82 @@ test('a warning yellow reads as yellow on a face looking north or south, not oli
   // the control: the same north face under the sun and sky alone is the olive the fills exist to cure
   const bare = hueValue(shown(YELLOW, NORTH, false));
   assert.ok(bare.hue > 51 && bare.value < 0.4, `without the fills the north face is olive and dim (hue ${bare.hue.toFixed(1)}, value ${bare.value.toFixed(2)})`);
+});
+
+// ---- DAYLIGHT: the rig the page lights the day with (drawn through the filmic tone map of lighting.ts) -----------------------------------------
+
+/** Irradiance, linear rgb, on a face with unit normal `n` under `DAYLIGHT`, the sun in the unit direction `toSun` and the fills where LIGHTS has them. */
+function dayIrradiance(n: V3, toSun: V3, opts: { sun?: boolean; fills?: boolean } = {}): V3 {
+  const h = DAYLIGHT.hemisphere;
+  const hemi = mix(linear(h.ground), linear(h.sky), 0.5 * n[1] + 0.5);
+  const e: [number, number, number] = [hemi[0] * h.intensity, hemi[1] * h.intensity, hemi[2] * h.intensity];
+  const add = (colour: number, dir: V3, intensity: number): void => {
+    const w = Math.max(0, dot(n, unit(dir))) * intensity;
+    const c = linear(colour);
+    for (let k = 0; k < 3; k++) e[k] = (e[k] as number) + (c[k] as number) * w;
+  };
+  if (opts.sun !== false) add(DAYLIGHT.sun.colour, toSun, DAYLIGHT.sun.intensity);
+  if (opts.fills !== false) DAYLIGHT.fills.forEach((f, i) => add(f.colour, (LIGHTS.fills[i] as { position: V3 }).position, f.intensity));
+  return e;
+}
+
+/** What the page draws, 0..1 sRGB, for a Lambert surface of albedo `hex` (a colour) under `DAYLIGHT` at the day's exposure. */
+function drawn(hex: number, n: V3, toSun: V3, opts: { sun?: boolean; fills?: boolean } = {}): V3 {
+  const a = linear(hex);
+  const e = dayIrradiance(n, toSun, opts);
+  return toSrgb(acesFilmic([(a[0] * e[0]) / Math.PI, (a[1] * e[1]) / Math.PI, (a[2] * e[2]) / Math.PI], DAY_EXPOSURE));
+}
+
+const NOON_SUN = solarPosition(Date.parse('2026-06-21T12:00:00+01:00'));
+const TO_SUN: V3 = sunDirection(NOON_SUN.elevationDeg, NOON_SUN.azimuthDeg);
+const UP: V3 = [0, 1, 0];
+const lumaOf = (c: V3): number => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+
+test('DAYLIGHT: a bright sun over a softer sky and a warm paving bounce; the fills are the old ones, weaker by the same ratio, and still along the railway', () => {
+  assert.deepEqual(DAYLIGHT.hemisphere, { sky: 0xc4d6ff, ground: 0x6e6860, intensity: 1.0 });
+  assert.equal(DAYLIGHT.sun.colour, 0xffe8c2);
+  assert.equal(DAYLIGHT.sun.intensity, 3.0);
+  assert.deepEqual(DAYLIGHT.fills.map((f) => [f.name, f.colour, f.intensity]), [['fill-north', 0xfff0d8, 0.6], ['fill-south', 0xfff0d8, 0.25]]);
+  assert.deepEqual(DAYLIGHT.fills.map((f) => f.name), LIGHTS.fills.map((f) => f.name), 'the same two lights, so addWorld\'s positions apply');
+  for (const f of DAYLIGHT.fills) assert.ok(f.intensity <= 0.25 * DAYLIGHT.sun.intensity, `${f.name} is weak beside the sun`);
+  const ground = linear(DAYLIGHT.hemisphere.ground);
+  assert.ok(ground[0] > ground[2], 'the bounce off the paving is warm');
+  assert.ok(DAYLIGHT.sun.intensity > 1.7 && DAYLIGHT.sun.intensity / DAYLIGHT.hemisphere.intensity >= 3, 'a sun that stands well above the sky, which is what makes a shadow');
+});
+
+test('a shadow is about a quarter to a third as bright as the sunlit ground beside it (R-lighting-materials-a2, -d: the shade is soft, not black)', () => {
+  const lit = lumaOf(dayIrradiance(UP, TO_SUN));
+  const shade = lumaOf(dayIrradiance(UP, TO_SUN, { sun: false }));
+  assert.ok(shade / lit >= 0.2 && shade / lit <= 0.4, `the shade is ${(shade / lit).toFixed(2)} of the light`);
+  // on a wall that faces away from the sun the light is the sky and bounce alone, which is the same shade
+  const wall = lumaOf(dayIrradiance([-TO_SUN[0], 0, -TO_SUN[2]].map((x) => x / Math.hypot(TO_SUN[0], TO_SUN[2])) as unknown as V3, TO_SUN));
+  assert.ok(wall / lit < 0.5 && wall / lit > 0.15, `a wall turned from the sun is ${(wall / lit).toFixed(2)} of the lit ground`);
+});
+
+test('the grade keeps the day\'s whites from clipping and the mid-greys where an eye puts them', () => {
+  const white = drawn(0xf4f4f0, UP, TO_SUN); // a pale roof panel or a white-painted face, lit by the sun from above
+  assert.ok(Math.max(...white) < 0.985, `a sunlit white stays below 251/255: ${white.map((v) => Math.round(v * 255))}`);
+  const grey = drawn(0x777777, UP, TO_SUN); // an 18% grey card
+  assert.ok(lumaOf(grey) >= 0.5 && lumaOf(grey) <= 0.8, `a mid-grey in the sun reads as mid-grey: ${grey.map((v) => Math.round(v * 255))}`);
+  const shadowed = drawn(0x777777, UP, TO_SUN, { sun: false });
+  assert.ok(lumaOf(shadowed) > 0.2 && lumaOf(shadowed) < lumaOf(grey), 'and in the shade it is darker but not black');
+});
+
+test('under DAYLIGHT and the grade a warning yellow still reads as yellow on a face looking north or south, not olive and dim', () => {
+  for (const [name, n] of [['north', NORTH], ['south', SOUTH]] as const) {
+    const { hue, value } = hueValue(drawn(YELLOW, n, TO_SUN));
+    assert.ok(hue >= 38 && hue <= 52, `${name}: hue ${hue.toFixed(1)} is not yellow`);
+    assert.ok(value >= 0.5, `${name}: value ${value.toFixed(2)} is dim`);
+  }
+});
+
+test('the sky dome is authored in display colours and is not tone mapped; the lit world is', () => {
+  const scene = new THREE.Scene();
+  const world = addWorld(scene, { grid: false });
+  assert.equal((world.sky.material as THREE.MeshBasicMaterial).toneMapped, false, 'the dome');
+  const ground = scene.children.find((o) => (o as THREE.Mesh).isMesh && o !== world.sky && ((o as THREE.Mesh).material as THREE.Material).type === 'MeshLambertMaterial') as THREE.Mesh | undefined;
+  assert.ok(ground, 'a lit ground is in the scene');
+  assert.equal((ground!.material as THREE.Material).toneMapped, true, 'the lit ground takes the grade');
 });
 
 test('addWorld: the sky, the sun and the fills are in the scene with the numbers of LIGHTS, and nothing else shines', () => {

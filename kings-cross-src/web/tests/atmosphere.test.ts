@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
+import { CLEAR_FOG, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
@@ -17,7 +17,7 @@ import { nightLightSites } from '../src/night.ts';
 import { trainNight } from '../src/train-geom.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
 import type { WeatherState } from '../src/weather.ts';
-import { addWorld, LIGHTS } from '../src/world.ts';
+import { addWorld, DAYLIGHT, LIGHTS } from '../src/world.ts';
 import type { NightLightSites } from '../src/night.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -52,16 +52,18 @@ const compile = (m: THREE.Material) => { const s = lambertShader(); m.onBeforeCo
 
 test.afterEach(() => { trainNight.value = 0; });
 
-test('the reference rig is the page\'s own LIGHTS, so a high sun in a clear sky changes nothing', () => {
-  assert.equal(REFERENCE.sun.colour, LIGHTS.sun.colour);
-  assert.equal(REFERENCE.sun.intensity, LIGHTS.sun.intensity);
-  assert.deepEqual(REFERENCE.hemisphere, LIGHTS.hemisphere);
-  assert.deepEqual(REFERENCE.fills, LIGHTS.fills.map((f) => ({ colour: f.colour, intensity: f.intensity })));
+test('the reference rig is the page\'s own DAYLIGHT, so a high sun in a clear sky changes nothing; the fixed LIGHTS stay for the bare page', () => {
+  assert.equal(REFERENCE.sun.colour, DAYLIGHT.sun.colour);
+  assert.equal(REFERENCE.sun.intensity, DAYLIGHT.sun.intensity);
+  assert.deepEqual(REFERENCE.hemisphere, DAYLIGHT.hemisphere);
+  assert.deepEqual(REFERENCE.fills, DAYLIGHT.fills.map((f) => ({ colour: f.colour, intensity: f.intensity })));
   // the numbers core/tests/daylight.test.ts spells out
-  assert.deepEqual([REFERENCE.sun.intensity, REFERENCE.hemisphere.intensity, ...REFERENCE.fills.map((f) => f.intensity)], [1.7, 1.25, 0.8, 0.3]);
+  assert.deepEqual([REFERENCE.sun.intensity, REFERENCE.hemisphere.intensity, ...REFERENCE.fills.map((f) => f.intensity)], [3, 1, 0.6, 0.25]);
+  // ?bare=1 and ?sky=ref keep the fixed rig the page always had (no atmosphere, no tone map, no shadow)
+  assert.deepEqual([LIGHTS.sun.intensity, LIGHTS.hemisphere.intensity, ...LIGHTS.fills.map((f) => f.intensity)], [1.7, 1.25, 0.8, 0.3]);
 });
 
-test('midsummer noon: the sun is where the astronomy puts it, bright and clear; no lamps, no stars, the page\'s long fog', () => {
+test('midsummer noon: the sun is where the astronomy puts it, bright and clear; no lamps, no stars, the clear-air haze', () => {
   const { atmosphere, lights, world, scene, at } = setup(SITES);
   assert.equal(atmosphere.state(), null, 'nothing computed before the first frame');
   at(NOON);
@@ -73,15 +75,15 @@ test('midsummer noon: the sun is where the astronomy puts it, bright and clear; 
   assert.ok(Math.abs(direction.x - want[0]) + Math.abs(direction.y - want[1]) + Math.abs(direction.z - want[2]) < 1e-9, `the key light shines from the sun: ${direction.toArray()} vs ${want}`);
   assert.ok(Math.abs(lights.sun.position.length() - 700) < 1e-9);
   assert.ok(direction.z > 0 && direction.y > 0.8, 'high in the south');
-  assert.ok(lights.sun.intensity >= 1.7 && lights.sun.intensity <= 2, `bright: ${lights.sun.intensity}`);
+  assert.ok(lights.sun.intensity >= 3 && lights.sun.intensity <= 3.4, `bright: ${lights.sun.intensity}`);
   assert.ok(lights.sun.color.r > lights.sun.color.b, 'warm');
-  assert.ok(lights.hemisphere.intensity >= 1.25 && lights.hemisphere.intensity <= 1.3);
+  assert.ok(lights.hemisphere.intensity >= 1 && lights.hemisphere.intensity <= 1.1);
   assert.equal(trainNight.value, 0, 'the trains\' windows are plain glass by day');
   assert.ok(atmosphere.nightLights!.group.children.every((c) => !c.visible), 'no halos by day');
   assert.equal(world.sky.getObjectByName('stars')!.visible, false);
   assert.equal(world.sky.getObjectByName('sun-disc')!.visible, true);
   const fog = scene.fog as THREE.Fog;
-  assert.deepEqual([fog.near, fog.far], [1100, 3600]);
+  assert.deepEqual([fog.near, fog.far], [CLEAR_FOG.near, CLEAR_FOG.far]);
   assert.equal(atmosphere.precip.stats().drawCalls, 0, 'dry');
   assert.ok(luma(scene.background as THREE.Color) > 0.4, 'a bright sky');
 });
@@ -95,8 +97,9 @@ test('midnight: the stylised moon is the key, the ambient is low, the lamps and 
   assert.ok(lights.sun.color.b > lights.sun.color.r, 'cool');
   const d = lights.sun.position.clone().normalize();
   assert.ok(d.y > 0.5 && d.x < 0 && d.z > 0, `from the south-west, well up: ${d.toArray()}`);
-  assert.ok(lights.hemisphere.intensity < 0.55 * LIGHTS.hemisphere.intensity, `${lights.hemisphere.intensity}`);
-  assert.ok(lights.fills.every((f, i) => f.intensity < 0.2 * (LIGHTS.fills[i] as { intensity: number }).intensity), 'and the fills are faint');
+  assert.ok(lights.hemisphere.intensity < 0.65 * DAYLIGHT.hemisphere.intensity, `${lights.hemisphere.intensity}`);
+  // the light of the night is what it was under the old, dimmer reference (hemisphere 0.69, fills 0.14 and 0.054): faint beside daylight's 0.6 and 0.25
+  assert.ok(lights.fills.every((f, i) => f.intensity < 0.25 * (DAYLIGHT.fills[i] as { intensity: number }).intensity), 'and the fills are faint');
   assert.equal(trainNight.value, 1);
   for (const child of atmosphere.nightLights!.group.children) assert.equal(child.visible, true);
   assert.equal(world.sky.getObjectByName('stars')!.visible, true);
@@ -155,7 +158,7 @@ test('under cloud and rain the light drops but the scene stays readable; in fog 
   at(NOON, state('fog'));
   assert.ok(fog.far > 700, `the same fog from 380 m up is thinner: ${fog.far}`);
   at(NOON, CLEAR_STATE);
-  assert.deepEqual([fog.near, fog.far], [1100, 3600], 'and the clear air gives the long fog back');
+  assert.deepEqual([fog.near, fog.far], [CLEAR_FOG.near, CLEAR_FOG.far], 'and the clear air gives the haze back');
   const horizon = new THREE.Color().copy(scene.background as THREE.Color);
   at(NOON, state('fog'));
   assert.ok(Math.abs(fog.color.r - (scene.background as THREE.Color).r) < 0.03 && Math.abs(fog.color.b - (scene.background as THREE.Color).b) < 0.03, 'the fog and the horizon are one colour');
@@ -300,13 +303,15 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const versions = [asphalt.version, brick.version];
   atmosphere.rescan();
   atmosphere.rescan();
-  assert.equal(asphalt.version, versions[0]! + 1, 'patched once (needsUpdate once), however often it is scanned');
-  assert.equal(brick.version, versions[1], 'other materials are not touched');
+  // every Lambert surface takes the shade under roofs (lighting.ts) once; the named surfaces also take the wet ground, once
+  assert.equal(asphalt.version, versions[0]! + 2, 'patched once for the wet ground and once for the roof shade (needsUpdate each), however often it is scanned');
+  assert.equal(brick.version, versions[1]! + 1, 'a material that is not a named surface takes the roof shade only');
 
   const pristine = lambertShader();
-  const untouched = compile(brick);
-  assert.equal(untouched.fragmentShader, pristine.fragmentShader);
-  assert.deepEqual(Object.keys(untouched.uniforms), []);
+  const roofOnly = compile(brick);
+  assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
+  assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade'].sort());
 
   const s = compile(asphalt);
   const f = s.fragmentShader;
@@ -383,11 +388,11 @@ test('without the atmosphere the world keeps the page\'s own fixed lights (?sky=
   assert.equal(scene.getObjectByName('precipitation'), undefined);
 });
 
-test('the rig at the moment of the old fixed look: skyRig at 25 degrees and no weather is the reference, to the last digit', () => {
+test('the rig at the daylight reference: skyRig at 25 degrees and no weather is the reference (DAYLIGHT), to the last digit', () => {
   const rig = skyRig(25, 200, { cloud: 0, rain: 0, snow: 0, visibilityM: Infinity }, REFERENCE);
-  assert.equal(rig.sun.intensity, LIGHTS.sun.intensity);
-  assert.equal(rig.hemisphere.intensity, LIGHTS.hemisphere.intensity);
-  assert.deepEqual(rig.fills.map((f) => f.intensity), LIGHTS.fills.map((f) => f.intensity));
+  assert.equal(rig.sun.intensity, DAYLIGHT.sun.intensity);
+  assert.equal(rig.hemisphere.intensity, DAYLIGHT.hemisphere.intensity);
+  assert.deepEqual(rig.fills.map((f) => f.intensity), DAYLIGHT.fills.map((f) => f.intensity));
 });
 
 
@@ -402,6 +407,6 @@ test('a configured atmosphere computes the sun at Waverley without changing the 
     assert.ok(Math.abs(actual.elevationDeg - expected.elevationDeg) < 1e-10, 'solar latitude must be the displayed station');
     assert.ok(Math.abs(actual.azimuthDeg - expected.azimuthDeg) < 1e-10, 'solar longitude must be the displayed station');
     assert.ok(Math.abs(actual.elevationDeg - solarPosition(timeMs).elevationDeg) > 3, 'Waverley must not inherit London sun');
-    assert.deepEqual(REFERENCE.sun, { colour: LIGHTS.sun.colour, intensity: LIGHTS.sun.intensity });
+    assert.deepEqual(REFERENCE.sun, { colour: DAYLIGHT.sun.colour, intensity: DAYLIGHT.sun.intensity }, 'the reference rig is the page\'s daylight rig, whatever the location');
   } finally { atmosphere.dispose(); }
 });

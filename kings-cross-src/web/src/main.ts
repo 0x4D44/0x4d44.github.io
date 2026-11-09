@@ -33,6 +33,7 @@ import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
 import { createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
+import { createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
 import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
@@ -68,6 +69,9 @@ function start(): void {
   const params = new URLSearchParams(location.search);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // the sun's shadow (lighting.ts) is drawn only when the atmosphere's sun casts it: ?bare=1 and ?sky=ref keep the old fixed rig, and no shadow
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   host.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -207,6 +211,9 @@ function start(): void {
   const londonClimate = fixedSky ? null : createSceneWeather({ scene, world,
     sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), weather: weatherOptions });
   const atmosphere = londonClimate?.atmosphere ?? null, weatherFeed = londonClimate?.feed ?? null;
+  // The sun's shadow (lighting.ts) is London's; ?shadows=0 leaves it out. Every scene with a climate is drawn through the filmic grade (see the frame loop).
+  const sunShadow = atmosphere && params.get('shadows') !== '0' ? createSunShadow(scene, world.lights.sun) : null;
+  const ungraded = createUngradedScan();
   const replayNoonMs = Date.parse(`${replayDay}T12:00:00Z`);
 
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
@@ -289,7 +296,18 @@ function start(): void {
     else if (stations.activeScene() === scene) world.follow(camera);
     stations.refreshPresentation();
     paintStatus();
-    renderer.render(stations.activeScene(), camera);
+    // The scene on show, if it has a climate (London's, and Edinburgh's own once it has loaded), is lit by the daylight rig and so drawn through the
+    // filmic grade at its own sun's exposure; London's also takes the sun's shadow. A scene with no climate (?bare=1, ?sky=ref, the placeholder)
+    // keeps its fixed lights and no tone map. The unlit things (lines, points, sprites) are left out of the grade as they arrive.
+    const shown = stations.activeScene();
+    const sky = climate?.atmosphere.state() ?? null;
+    if (climate && sky) {
+      ungraded(shown);
+      const toSun = climate.atmosphere.keyDirection();
+      if (shown === scene && sunShadow && toSun) { sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
+    }
+    grade(renderer, sky !== null, sky?.rig.exposure ?? 1);
+    renderer.render(shown, camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
@@ -386,6 +404,6 @@ function start(): void {
     stations.dispose();
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
-    londonClimate?.dispose();
+    sunShadow?.dispose(); londonClimate?.dispose();
   }, { once: true });
 }

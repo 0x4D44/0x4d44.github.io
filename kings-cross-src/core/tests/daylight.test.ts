@@ -3,14 +3,15 @@
 // end of civil twilight (-6 degrees) and off in daylight, cloud dims and greys, rain darkens, fog pulls the scene in and flattens the sky.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CLEAR, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, skyRig, smoothstep } from '../daylight.ts';
+import { CLEAR, CLEAR_FOG, DAY_EXPOSURE, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, NIGHT_EXPOSURE, skyRig, smoothstep } from '../daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig, SkyWeather } from '../daylight.ts';
 
-// web/src/world.ts LIGHTS, spelled out (web/tests/atmosphere.test.ts holds the two together)
+// web/src/world.ts DAYLIGHT, spelled out (web/tests/atmosphere.test.ts holds the two together): a bright sun over a softer sky with a
+// warm bounce off the paving, the physical light of a clear London day, drawn through a filmic tone map (web/src/lighting.ts)
 const REFERENCE: ReferenceRig = {
-  sun: { colour: 0xffe8c2, intensity: 1.7 },
-  hemisphere: { sky: 0xc4d6ff, ground: 0x3a3f48, intensity: 1.25 },
-  fills: [{ colour: 0xfff0d8, intensity: 0.8 }, { colour: 0xfff0d8, intensity: 0.3 }],
+  sun: { colour: 0xffe8c2, intensity: 3.0 },
+  hemisphere: { sky: 0xc4d6ff, ground: 0x6e6860, intensity: 1.0 },
+  fills: [{ colour: 0xfff0d8, intensity: 0.6 }, { colour: 0xfff0d8, intensity: 0.25 }],
 };
 const hex = (h: number): Rgb => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 const rig = (elevation: number, weather: Partial<SkyWeather> = {}, azimuth = 200): SkyRig => skyRig(elevation, azimuth, { ...CLEAR, ...weather }, REFERENCE);
@@ -24,8 +25,8 @@ test('a high sun in a clear sky is the page\'s own rig: the reference numbers, u
   near(r.sun.colour, hex(0xffe8c2), 1e-12, 'sun colour');
   assert.equal(r.hemisphere.intensity, REFERENCE.hemisphere.intensity);
   near(r.hemisphere.sky, hex(0xc4d6ff), 1e-12, 'sky');
-  near(r.hemisphere.ground, hex(0x3a3f48), 1e-12, 'ground');
-  assert.deepEqual(r.fills.map((f) => f.intensity), [0.8, 0.3]);
+  near(r.hemisphere.ground, hex(0x6e6860), 1e-12, 'ground');
+  assert.deepEqual(r.fills.map((f) => f.intensity), [0.6, 0.25]);
   for (const f of r.fills) near(f.colour, hex(0xfff0d8), 1e-12, 'fill colour');
   assert.equal(r.lampLevel, 0);
   assert.equal(r.stars, 0);
@@ -149,16 +150,19 @@ test('fog: 0 at ten kilometres, 1 at two hundred metres, and the scene fog comes
     assert.ok(f >= previous - 1e-12 && f >= 0 && f <= 1, `fog thinned as the visibility fell, at ${v}`);
     previous = f;
   }
-  assert.deepEqual(fogRange(Infinity), { near: 1100, far: 3600 }, 'clear air is the page\'s long-standing fog');
-  assert.deepEqual(fogRange(30_000, 500), { near: 1100, far: 3600 });
+  // clear London air is hazy at distance: the far city fades into the horizon from 450 m and is gone at 2.8 km (R-lighting-materials-d: the
+  // buildings beyond the foreground lose contrast and warm toward the sky's horizon). The amounts are ASSUMED, judged by eye against that photograph.
+  assert.deepEqual({ ...CLEAR_FOG }, { near: 450, far: 2800 });
+  assert.deepEqual(fogRange(Infinity), { ...CLEAR_FOG }, 'clear air is the haze');
+  assert.deepEqual(fogRange(30_000, 500), { ...CLEAR_FOG });
   const mist = fogRange(1800), fog = fogRange(300), dense = fogRange(40);
-  assert.ok(mist.far < 3600 && mist.far > fog.far && fog.far > dense.far, 'denser fog, nearer far plane');
+  assert.ok(mist.far < CLEAR_FOG.far && mist.far > fog.far && fog.far > dense.far, 'denser fog, nearer far plane');
   assert.ok(fog.far <= 400, `300 m of visibility shows about 400 m at most: ${fog.far}`);
   assert.equal(dense.far, 60, 'never closer than sixty metres');
   for (const v of [40, 300, 1800, 8000]) {
     const { near: n, far } = fogRange(v);
     assert.ok(n > 0 && n < far, `near ${n} is inside far ${far} at ${v} m`);
-    assert.ok(fogRange(v, 300).far > fogRange(v, 0).far || fogRange(v, 0).far === 3600, 'a camera high above the fog layer sees further');
+    assert.ok(fogRange(v, 300).far > fogRange(v, 0).far || fogRange(v, 0).far === CLEAR_FOG.far, 'a camera high above the fog layer sees further');
   }
   assert.equal(fogRange(300, -50).far, fogRange(300, 0).far, 'below ground level is ground level');
 });
@@ -302,4 +306,46 @@ test('the daylight stand-ins keep a small floor all night and are the whole of t
   assert.ok(rig(-30).daylight > 0.05 && rig(-30).daylight < 0.25);
   assert.equal(rig(40).daylight, 1);
   assert.ok(rig(-3).daylight > rig(-30).daylight && rig(-3).daylight < rig(40).daylight, 'and it rises through the twilight');
+});
+
+test('exposure: the filmic grade runs at the day\'s exposure, higher at night and under cloud, and it moves smoothly', () => {
+  assert.equal(NIGHT_EXPOSURE, 1.8);
+  assert.equal(DAY_EXPOSURE, 1.25);
+  assert.equal(rig(40).exposure, DAY_EXPOSURE, 'a clear day');
+  assert.equal(rig(-30).exposure, NIGHT_EXPOSURE, 'a clear night');
+  assert.ok(NIGHT_EXPOSURE > DAY_EXPOSURE, 'the filmic toe darkens the shadows, so the dim night light is lifted to be seen');
+  assert.ok(rig(40, { cloud: 1 }).exposure > rig(40).exposure, 'an overcast sky has no sun to carry the picture: the exposure goes up');
+  assert.ok(Math.abs(rig(-30, { cloud: 1 }).exposure - NIGHT_EXPOSURE) < 1e-12, 'but at night cloud changes nothing');
+  let previous = rig(-30).exposure;
+  for (let e = -30; e <= 40; e += 0.1) {
+    const x = rig(e, { cloud: 0.5 }).exposure;
+    assert.ok(Math.abs(x - previous) < 0.03, `the exposure jumped at ${e}: ${previous} to ${x}`);
+    previous = x;
+  }
+});
+
+test('the evening is as dim as it was: only the day\'s light was raised, not the dusk\'s and the night\'s', () => {
+  // The rows as they were before the daylight rig, against the reference they scaled then (sun 1.7, hemisphere 1.25, fills 0.8 and 0.3): the absolute light
+  // at each of those elevations is what the page showed at dusk and at night, and it still is.
+  const OLD_ROWS: readonly (readonly [e: number, sunK: number, hemiK: number, fillK: number])[] = [
+    [-18, 0, 0.5, 0.18], [-12, 0, 0.52, 0.2], [-8, 0, 0.55, 0.26], [-4, 0, 0.6, 0.42], [-1, 0.12, 0.74, 0.58], [2, 0.38, 0.84, 0.72], [6, 0.64, 0.9, 0.86],
+  ];
+  const within = (now: number, then: number, share: number, what: string): void => assert.ok(Math.abs(now - then) <= share * then + 1e-9, `${what}: ${now} against the old ${then}`);
+  for (const [e, sunK, hemiK, fillK] of OLD_ROWS) {
+    const now = rig(e);
+    within(now.sun.intensity, 1.7 * sunK, 0.04, `the sun at ${e}`);
+    within(now.hemisphere.intensity, 1.25 * hemiK, 0.01, `the sky light at ${e}`);
+    within((now.fills[0] as { intensity: number }).intensity, 0.8 * fillK, 0.015, `the first fill at ${e}`);
+    // the second fill's reference fell from 0.3 to 0.25 while the first's fell from 0.8 to 0.6, and one K serves both: it is a touch brighter than it was, by at most 0.01 of light
+    assert.ok((now.fills[1] as { intensity: number }).intensity <= 1.15 * 0.3 * fillK + 1e-9, `the second fill at ${e} is within a sixth of what it was`);
+  }
+  assert.ok(rig(40).sun.intensity > 1.7 * 1.7, `by day the sun is well above the old 1.7: ${rig(40).sun.intensity}`);
+});
+
+test('by day the ground\'s share of the ambient is the paving\'s warm bounce, not the old cold slate', () => {
+  for (const e of [12, 25, 45]) {
+    const g = rig(e).hemisphere.ground;
+    assert.ok(g[0] > g[2], `warm at ${e} degrees: ${g}`);
+    assert.ok(luma(g) > 0.35, `bright enough to lift the underside of things at ${e}: ${luma(g)}`);
+  }
 });

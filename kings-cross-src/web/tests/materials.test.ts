@@ -301,8 +301,21 @@ test('the decal and strip materials are pulled toward the camera, the plain ones
   assert.equal((material('sash') as THREE.MeshLambertMaterial).alphaTest, 0.05);
   assert.equal(material('slateBothSides').side, THREE.DoubleSide);
   assert.equal(material('slate').side, THREE.FrontSide);
-  assert.equal((material('brickRed') as THREE.MeshLambertMaterial).color.getHex(), 0xe3707d);
   assert.notEqual(material('brickRed'), material('brick'));
+});
+
+test('the red brick is its own texture, orange-red, in the same bond at the same scale as the stock brick (R-lighting-materials-c)', () => {
+  const red = TEXTURES.brickRed;
+  assert.deepEqual(red.tile, TEXTURES.brick.tile, 'the same tile, so the UVs in metres that fit the stock brick fit the red');
+  assert.deepEqual(red.px, TEXTURES.brick.px);
+  const [r, g, b] = [(red.average >> 16) & 255, (red.average >> 8) & 255, red.average & 255];
+  assert.ok(r > g * 1.4 && g > b, `an orange-red average, got ${r},${g},${b}`);
+  assert.ok(r > 150 && r < 215, `red, lit enough to read ${r}`);
+  // the stock brick is yellow-buff: its blue is far below its red, but its green is close to it
+  const stock = TEXTURES.brick.average;
+  assert.ok(((stock >> 8) & 255) > ((stock >> 16) & 255) * 0.8, 'the stock brick is buff, not red');
+  assert.equal((material('brickRed') as THREE.MeshLambertMaterial).color.getHex(), red.average, 'in Node the material is flat in the texture average');
+  assert.equal(material('brickRed').name, 'brickRed');
 });
 
 test('rgb: the linear triple a vertex colour wants (sRGB hex in, linear out)', () => {

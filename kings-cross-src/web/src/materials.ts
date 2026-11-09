@@ -25,7 +25,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const IN = 0.0254; // metres per inch
 
-export type TextureName = 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
+export type TextureName = 'brick' | 'brickRed' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
 
 export interface TextureSpec {
   /** metres one tile covers: [along u, along v] */
@@ -48,6 +48,11 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // (stretcher + header + two joints) 14.25 in, and a tile 57 x 24 in. The joint width is ASSUMED.
   brick: { tile: [57 * IN, 24 * IN], px: [579, 244], density: [350, 450], average: 0xa0895a, repeat: true,
     source: 'Imperial brick 9 x 4.5 x 3 in, four courses to the foot; joint 3/8 in ASSUMED' },
+  // The same Flemish bond in red: the Midland Grand's and King's Cross Central's red brick. Its colours are drawn from
+  // R-lighting-materials-c (the hotel's front, 2020): an orange-red face (about 176, 94, 66 where the sun lies on it), a
+  // little darker in the headers, in a pale buff mortar. The exact shades are ASSUMED, matched by eye to that photograph.
+  brickRed: { tile: [57 * IN, 24 * IN], px: [579, 244], density: [350, 450], average: 0xb26952, repeat: true,
+    source: 'Imperial brick 9 x 4.5 x 3 in as the stock brick; the red from R-lighting-materials-c (Midland Grand front), shades ASSUMED' },
   // Ashlar: 0.6 x 0.3 m blocks (two across, two courses). ASSUMED block size.
   stone: { tile: [1.2, 0.6], px: [360, 180], density: [250, 350], average: 0xc8c0aa, repeat: true,
     source: 'ASSUMED block size 0.6 x 0.3 m' },
@@ -125,7 +130,20 @@ function wrapped(w: number, h: number, x: number, y: number, size: number, fn: (
 // ---------------------------------------------------------------------------------------------
 // painters
 
-function paintBrick(g: Ctx, w: number, h: number): void {
+/** The colours of a brick wall: the mortar, and the pairs each brick's colour is mixed between (stretchers, headers, the odd overburnt one). */
+interface BrickPalette {
+  mortar: string;
+  stretcher: readonly [number, number];
+  header: readonly [number, number];
+  burnt: readonly [number, number];
+}
+
+/** London stock is yellow-buff; the headers of a Flemish bond are burnt darker, blue-grey to brown. */
+const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb9a26c, 0x9d8656], header: [0x7c6e58, 0x6b6660], burnt: [0x5e5448, 0x4a4540] };
+/** The Midland Grand's red (R-lighting-materials-c): orange-red stretchers, headers a shade deeper, pale buff mortar. ASSUMED shades. */
+const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86649], header: [0xcf6047, 0xb45640], burnt: [0x5e3a30, 0x4a322c] };
+
+function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_BRICK): void {
   const r = rng(11);
   const pxm = w / TEXTURES.brick.tile[0];
   const course = 3 * IN * pxm;
@@ -133,7 +151,7 @@ function paintBrick(g: Ctx, w: number, h: number): void {
   const header = 4.5 * IN * pxm;
   const joint = 0.375 * IN * pxm;
   const period = stretcher + header + 2 * joint;
-  g.fillStyle = '#a29d8c'; // lime mortar
+  g.fillStyle = palette.mortar; // lime mortar
   g.fillRect(0, 0, w, h);
   for (let row = 0; row < 8; row++) {
     const y = row * course;
@@ -143,9 +161,8 @@ function paintBrick(g: Ctx, w: number, h: number): void {
         const x0 = k * period + shift + (isHeader ? stretcher + joint : 0);
         const len = isHeader ? header : stretcher;
         const dark = r() < 0.03; // an overburnt brick
-        // London stock is yellow-buff; the headers of a Flemish bond are burnt darker, blue-grey to brown.
-        const base = isHeader ? tone(0x7c6e58, 0x6b6660, r(), 0.9 + r() * 0.2) : tone(0xb9a26c, 0x9d8656, r(), 0.9 + r() * 0.18);
-        g.fillStyle = dark ? tone(0x5e5448, 0x4a4540, r()) : base;
+        const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.9 + r() * 0.2) : tone(palette.stretcher[0], palette.stretcher[1], r(), 0.9 + r() * 0.18);
+        g.fillStyle = dark ? tone(palette.burnt[0], palette.burnt[1], r()) : base;
         g.fillRect(x0, y + joint, len, course - joint);
         g.fillStyle = 'rgba(255,245,210,0.13)'; // the lit top arris
         g.fillRect(x0, y + joint, len, Math.max(1, joint * 0.35));
@@ -399,7 +416,8 @@ function paintShedGlass(g: Ctx, w: number, h: number): void {
 }
 
 const PAINTERS: Readonly<Record<TextureName, (g: Ctx, w: number, h: number) => void>> = {
-  brick: paintBrick,
+  brick: (g, w, h) => paintBrick(g, w, h),
+  brickRed: (g, w, h) => paintBrick(g, w, h, RED_BRICK),
   stone: paintStone,
   slate: paintSlate,
   asphalt: paintAsphalt,
@@ -499,9 +517,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // Solid pale roof panels (the outer part of the Western Concourse roof), slightly see-through.
   panel: () => new THREE.MeshLambertMaterial({ color: 0xe3e8ee, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false }),
   concourseFloor: () => tiled('floorSlab'),
-  // The Midland Grand's red brick. The shared brick is London stock, yellow-buff (average 0xa0895a); this
-  // colour multiplies it to a deep brick red (about 0x8e3c2c once mip-mapped). The shade is ASSUMED.
-  brickRed: () => tiled('brick', { color: 0xe3707d }),
+  // The Midland Grand's red brick: its own texture (the same bond and bricks as the stock, drawn in red; see TEXTURES.brickRed).
+  brickRed: () => tiled('brickRed'),
   // The slate seen from inside the shed: the shared slate culls back faces, so this is a two-sided one.
   slateBothSides: () => tiled('slate', { side: THREE.DoubleSide }),
   // Window decals: flat quads stood a hair off a wall, so they are pulled toward the camera (see `nearer`).
@@ -1168,8 +1185,10 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   },
   // roads and paving reuse the station's asphalt and slab textures (shared, not copied)
   asphalt: () => cityFlat('asphalt', 0xffffff),
+  // Paving tones are set under the daylight rig (DAYLIGHT, world.ts) to R-lighting-materials-d/e: pale warm-grey stone, about
+  // (163, 158, 157) where the sun lies on it. The pavement is that; the forecourt plaza, laid in lighter stone, a shade above.
   pavement: () => cityFlat('concourseFloor', 0xd2d0cb),
-  plaza: () => cityFlat('concourseFloor', 0xf3f0e8),
+  plaza: () => cityFlat('concourseFloor', 0xd8d5ce),
 };
 
 function cityFacade(key: FacadeKey): THREE.Material {

@@ -264,7 +264,13 @@ test('city materials are shared, named, distinct from each other and from the st
     assert.equal((m as THREE.MeshLambertMaterial).vertexColors, true);
   }
   assert.equal((cityMaterial('pavement') as THREE.MeshLambertMaterial).color.getHex(), 0xd2d0cb);
-  assert.equal((cityMaterial('plaza') as THREE.MeshLambertMaterial).color.getHex(), 0xf3f0e8);
+  // Paving tones are those of R-lighting-materials-d/e under the daylight rig: pale warm-grey stone, about (163, 158, 157) where the sun
+  // lies on it, not the near-white (0xf3f0e8) the forecourt was drawn in under the old, dimmer rig. The forecourt is a shade lighter than the pavement.
+  const plaza = (cityMaterial('plaza') as THREE.MeshLambertMaterial).color;
+  const pavement = (cityMaterial('pavement') as THREE.MeshLambertMaterial).color;
+  assert.equal(plaza.getHex(), 0xd8d5ce);
+  assert.ok(plaza.r > pavement.r && plaza.g > pavement.g && plaza.b > pavement.b, 'the forecourt is laid in lighter stone than the pavement');
+  assert.ok(plaza.r < 0.75, `the forecourt is no longer near-white (linear red ${plaza.r.toFixed(3)})`);
 });
 
 test('flat layers get a polygon offset in the order of their lift, so they never z-fight; facades get none', () => {

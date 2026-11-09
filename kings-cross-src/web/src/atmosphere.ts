@@ -16,20 +16,21 @@ import type { SolarPosition } from '../../core/solar.ts';
 import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
+import { addRoofShade } from './lighting.ts';
 import { createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
 import { trainNight } from './train-geom.ts';
-import { LIGHTS } from './world.ts';
+import { DAYLIGHT } from './world.ts';
 import type { World } from './world.ts';
 import type { WeatherState } from './weather.ts';
 
-/** The page's long-standing rig, as the reference the sky model scales. */
+/** The page's daylight rig (world.ts DAYLIGHT), as the reference the sky model scales. */
 export const REFERENCE: ReferenceRig = {
-  sun: { colour: LIGHTS.sun.colour, intensity: LIGHTS.sun.intensity },
-  hemisphere: { sky: LIGHTS.hemisphere.sky, ground: LIGHTS.hemisphere.ground, intensity: LIGHTS.hemisphere.intensity },
-  fills: LIGHTS.fills.map((f) => ({ colour: f.colour, intensity: f.intensity })),
+  sun: { colour: DAYLIGHT.sun.colour, intensity: DAYLIGHT.sun.intensity },
+  hemisphere: { sky: DAYLIGHT.hemisphere.sky, ground: DAYLIGHT.hemisphere.ground, intensity: DAYLIGHT.hemisphere.intensity },
+  fills: DAYLIGHT.fills.map((f) => ({ colour: f.colour, intensity: f.intensity })),
 };
 
 /**
@@ -138,7 +139,7 @@ function starPoints(): THREE.Points {
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  const material = new THREE.PointsMaterial({ color: 0xd6e0ff, size: 1.8, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
+  const material = new THREE.PointsMaterial({ color: 0xd6e0ff, size: 1.8, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false, toneMapped: false });
   const points = new THREE.Points(geometry, material);
   points.name = 'stars';
   points.visible = false;
@@ -178,6 +179,8 @@ export interface Atmosphere {
   /** Look again for materials created since (the city, terrain and landmarks load lazily). */
   rescan(): void;
   state(): AtmosphereState | null;
+  /** The unit direction toward the key light (the sun, or the moon after dark), as of the last sky computation; null before the first. */
+  keyDirection(): readonly [number, number, number] | null;
   /** The roofs the weather stops at, drawn from the scene's roof meshes (cover.ts); null while there are none. */
   cover(): CoverMap | null;
   precip: Precip;
@@ -201,7 +204,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
 
   // the sun disc and the stars ride on the dome, which follows the camera
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture(), color: 0xffffff, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: false, toneMapped: false }));
   sunSprite.name = 'sun-disc';
   sunSprite.scale.setScalar(900);
   sunSprite.visible = false;
@@ -242,6 +245,9 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
           patched.add(m);
           patchSurface(lambert, spec);
         }
+        // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
+        // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
+        if (lambert.isMeshLambertMaterial) addRoofShade(lambert);
         const emissive = m as Emissive;
         if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && emissive.emissive.getHex() !== 0 && !standIns.has(emissive)) {
           standIns.set(emissive, emissive.emissive.clone());
@@ -255,6 +261,8 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
   let lastCompute = -Infinity;
   const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '' };
   const sunDirection = new THREE.Vector3();
+  const keyDir: [number, number, number] = [0, 1, 0];
+  let keyKnown = false;
   const colour = new THREE.Color();
 
   /** Repaint the dome: horizon to zenith, with a glow round the sun. The colours are worked in sRGB, then stored as linear. */
@@ -286,6 +294,8 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     // The key light is the sun while it has any strength and the stylised moon after it; the two never overlap (daylight.ts).
     const key = rig.moon.intensity > rig.sun.intensity ? rig.moon : rig.sun;
     sun.position.set(key.direction[0] * 700, key.direction[1] * 700, key.direction[2] * 700);
+    keyDir[0] = key.direction[0]; keyDir[1] = key.direction[1]; keyDir[2] = key.direction[2];
+    keyKnown = true;
     rgb(sun.color, key.colour);
     sun.intensity = key.intensity;
     rgb(hemisphere.color, rig.hemisphere.sky);
@@ -342,6 +352,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     precip, nightLights,
     rescan,
     state: () => state,
+    keyDirection: () => (keyKnown ? keyDir : null),
     cover: () => coverMap,
     update(f) {
       // The sky maths run four times a second; a new weather (a new object, which happens when a reading arrives) runs them at once.

@@ -27,7 +27,8 @@ const GROUND_COLOUR = 0x3a4049;
  * (hue 52 degrees, a third of full brightness, on a flat north face). The two fills run along the railway, low and warm, and
  * are weak beside the sun (the north one under half its strength, the south one under a fifth): they light the faces that
  * look along the tracks, the fronts and backs of trains, and barely touch the ground or the roofs (a tenth of what those
- * receive). Neither casts a shadow: nothing in the scene does.
+ * receive). Neither casts a shadow: nothing in the scene does. This is the FIXED rig, the page as it always was: ?bare=1 and ?sky=ref
+ * keep it (no atmosphere, no tone map, no shadows). The page's own light, by day and by night, is `DAYLIGHT`, below.
  */
 export const LIGHTS = {
   hemisphere: { sky: 0xc4d6ff, ground: 0x3a3f48, intensity: 1.25 },
@@ -35,6 +36,23 @@ export const LIGHTS = {
   fills: [
     { name: 'fill-north', colour: 0xfff0d8, intensity: 0.8, position: [50, 95, -520] as const },
     { name: 'fill-south', colour: 0xfff0d8, intensity: 0.3, position: [-30, 95, 520] as const },
+  ],
+} as const;
+
+/**
+ * The daylight rig that web/src/atmosphere.ts scales by the sun's elevation and the weather (core/daylight.ts `skyRig`'s reference; at a
+ * high sun in a clear sky it is exactly these numbers). It lights the scene for a filmic tone map (web/src/lighting.ts), so its numbers
+ * are physical rather than tuned to a plain sRGB curve: a bright key (3.0) over a soft sky (1.0), so a shadow is a third as bright as
+ * the sunlit ground beside it, with the sky's blue in the shade and the warm paving bounce under it (R-lighting-materials-a2, -d: the
+ * shaded sides of the buildings are warm grey, not dark blue). The fills are the old ones, weaker by the same ratio, and still run along the
+ * railway so a train front that looks north is lit.
+ */
+export const DAYLIGHT = {
+  hemisphere: { sky: 0xc4d6ff, ground: 0x6e6860, intensity: 1.0 },
+  sun: { colour: 0xffe8c2, intensity: 3.0 },
+  fills: [
+    { name: 'fill-north', colour: 0xfff0d8, intensity: 0.6 },
+    { name: 'fill-south', colour: 0xfff0d8, intensity: 0.25 },
   ],
 } as const;
 const FLAT_SIZE = 9000;
@@ -63,7 +81,8 @@ function skyDome(): THREE.Mesh {
     colors.push(c.r, c.g, c.b);
   }
   g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+  // the sky is authored in display colours: the filmic tone map (lighting.ts) is for what the light falls on, not for the sky itself
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false }));
   m.renderOrder = -1;
   return m;
 }
