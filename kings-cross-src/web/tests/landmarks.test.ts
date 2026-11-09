@@ -428,9 +428,9 @@ test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and 
 
 // ---- the Midland Grand -------------------------------------------------------------------------
 
-test('Midland Grand: the clock tower reaches 82 m (the graphical-fidelity rubric: 82 +/- 4; sources give 76 to 85), the entrance tower its assumed height, and nothing is taller', () => {
+test('Midland Grand: the clock tower reaches 76 m ([WP-MGH] 249 ft; other sources give 73 to 85), the entrance tower its assumed height, and nothing is taller', () => {
   const ys = allVertices(midlandGeometry(midland)).map((v) => v[1]);
-  close(Math.max(...ys), 82, 1e-6, 'tallest point');
+  close(Math.max(...ys), 76, 1e-6, 'tallest point');
   close(Math.max(...ys), FIGURES.midland.clockTowerHeight, 1e-6, 'the needle is the plan\'s height');
   assert.ok(ys.some((y) => Math.abs(y - FIGURES.midland.westTowerHeight) < 1e-6), 'the west tower\'s spire is there');
   close(Math.min(...ys), 0, 1e-9, 'on the ground');
@@ -666,7 +666,7 @@ test('Midland Grand: the slate roof is a true-to-scale surface: every facet is l
 });
 
 test('towerStages: the stages rise in order, with the needle running on above the lantern', () => {
-  for (const H of [56, 82]) {
+  for (const H of [56, 76, 82]) {
     const s = towerStages(H);
     const order = [0, s.shaft, s.belfry, s.corbel, s.wall, s.roof, s.lantern, H];
     for (let i = 1; i < order.length; i++) assert.ok((order[i] as number) > (order[i - 1] as number), `stage ${i} of ${H} m`);
@@ -681,7 +681,7 @@ const inTower = (t: (typeof midland.towers)[number], v: V3): { a: number; o: num
   y: v[1],
 });
 
-test('Midland Grand: the clock tower has a belfry of paired arches on every face, a portal at its foot, four equal turrets at the corners of the clock stage below the roof\'s top, and one needle at 82 m', () => {
+test('Midland Grand: the clock tower has a belfry of paired arches on every face, a portal at its foot, four equal turrets at the corners of the clock stage below the roof\'s top, and one needle at 76 m', () => {
   const parts = midlandGeometry(midland);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
@@ -742,7 +742,7 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   assert.equal(mullions.length, 64, 'eight mullions, a box each with four sides of two triangles');
   const pinnacles = triangles(parts.stone as Batch).filter((s) => s.p.some((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6));
   assert.equal(new Set(pinnacles.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6).map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`))).size, 4, 'a pinnacle on each corner of the lantern');
-  // the needle: slender (taller than twice its base), then a thin rod to 82 m
+  // the needle: slender (taller than twice its base), then a thin rod to the tower's height (76 m)
   const needle = slate.filter((s) => s.p.every((v) => v[1] >= st.lantern - 1e-6) && s.p.some((v) => v[1] > st.lantern + 1));
   assert.ok(needle.length >= 8, 'a needle and a rod');
   const baseHalf = Math.max(...needle.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - st.lantern) < 1e-6).map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)))));

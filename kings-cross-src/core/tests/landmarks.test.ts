@@ -174,10 +174,10 @@ test('Midland Grand [HE-STP]: 23 bays on the front, a 10 bay curved wing, towers
   const clock = plan.towers.find((t) => t.name === 'clock');
   const west = plan.towers.find((t) => t.name === 'west');
   assert.ok(clock && west);
-  // 82 m: exploring-london.com's figure and the graphical-fidelity rubric's (82 +/- 4). Wikipedia [WP-MGH] says 76 m, gilbertscott.org
-  // 280 ft; the sources disagree, so the test holds the model to the rubric's band and to the published range.
-  assert.equal(clock.height, 82, 'clock tower 82 m');
-  assert.ok(clock.height >= 76 && clock.height <= 86, 'inside the published 76 to 85 m range');
+  // 76 m (249 ft): Wikipedia [WP-MGH], with Wikishire (about 250 ft) and the 1870s account (240 ft); exploring-london.com says 82 m and gilbertscott.org
+  // 280 ft. The sources disagree, so the test holds the model to the one figure it takes and to the published range.
+  assert.equal(clock.height, 76, 'clock tower 76 m');
+  assert.ok(clock.height >= 72 && clock.height <= 86, 'inside the published 72 to 86 m range');
   assert.ok(west.height < clock.height, 'the west tower is the lower');
   assert.ok(clock.centre[0] > west.centre[0], 'the clock tower is at the east end');
   assert.ok(clock.out[1] > 0.5, 'the front faces south, to Euston Road');

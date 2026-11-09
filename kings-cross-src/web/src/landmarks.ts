@@ -716,7 +716,7 @@ function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, h
 
 /**
  * Where a tower `H` tall's stages end: shaft, belfry, corbel table, wall head (the roof begins), roof top (the lantern stands), lantern top; the needle
- * runs on to `H`. ASSUMED, from hist-b (wall head at 0.69 H, so the spire is 31%; lantern 0.82 to 0.86 H) and hist-c (a belfry about 8 m tall), H being 82 +/- 4 m.
+ * runs on to `H`. ASSUMED, from hist-b (wall head at 0.69 H, so the spire is 31%; lantern 0.82 to 0.86 H) and hist-c (a belfry about 8 m tall), H being 76 m [WP-MGH].
  */
 export function towerStages(H: number): { shaft: number; belfry: number; corbel: number; wall: number; roof: number; lantern: number } {
   const belfry = H * 0.6;
@@ -724,7 +724,7 @@ export function towerStages(H: number): { shaft: number; belfry: number; corbel:
 }
 
 /**
- * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 82 m clock tower): a brick shaft of window rows then lancets, a belfry of
+ * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 76 m clock tower): a brick shaft of window rows then lancets, a belfry of
  * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial and a brick gable on each face, [HE-STP] "gabled clocks
  * on each face"), four striped corner turrets, a steep slate roof, a lantern and a needle; a pointed portal at the foot of the front.
  */
