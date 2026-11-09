@@ -241,20 +241,20 @@ test('uniform blue fog is not mistaken for grid strokes and a close-up can show 
  assert.equal(inspectCapturePixels(f.png(f.full),f.png(f.grid),oneDatum).clear,true,'a carriage is shorter than one ten metre height cell');
 });
 
-test('section plots actual surface railheads at zero and schematic tunnel lines at minus four true metres',()=>{
- const data={nodes:[[1,0,0],[2,0,-100],[3,0,-200]],rails:[{id:1,nodes:[1,2],service:'main'},{id:2,nodes:[2,3],service:'main',tunnel:true}]};
+test('section plots surface and tunnel rails continuously at the train datum in true metres',()=>{
+ const data={nodes:[[1,0,0],[2,0,-100],[3,0,-200]],rails:[{id:1,nodes:[1,2],service:'main'},{id:2,nodes:[2,3],ref:'ECM1',service:'main',tunnel:true}]};
  const scene=new T.Scene(),track=buildTrack(data,{origin:[0,0],heading:0,width:50});scene.add(track);
  const route={segments:[{a:[0,0],b:[0,-100],tunnel:false,wayId:1},{a:[0,-100],b:[0,-200],tunnel:true,wayId:2}]};
  const evidence=prepareSideEvidence(T,scene,'terrain-section',{sectionRoute:route},{heightAt:()=>0});
- assert.equal(TUNNEL_DEPTH,-4);
+ assert.equal(TUNNEL_DEPTH,0);
  const rails=evidence.section.rails;assert.ok(rails.filter(p=>!p.tunnel).every(p=>p.y===0&&p.source==='track-rails top vertices'));
- assert.ok(rails.filter(p=>p.tunnel).every(p=>p.y===-4&&p.source==='track-tunnel'));
+ assert.ok(rails.filter(p=>p.tunnel).every(p=>p.y===0&&p.source==='track-tunnel'));
  const blue=scene.getObjectByName('axis01-rail-section'),orange=scene.getObjectByName('axis01-terrain-section');
  assert.ok(blue.renderOrder>orange.renderOrder,'blue stays visible even where drawn ground and rails coincide');
  assert.equal(blue.geometry.attributes.position.getY(0),0);
- assert.equal(blue.geometry.attributes.position.getY(blue.geometry.attributes.position.count-1),-40,'plot exaggerates -4 true metres by ten, without shifting the datum');
+ assert.equal(blue.geometry.attributes.position.getY(blue.geometry.attributes.position.count-1),0,'exaggeration cannot shift the zero rail datum');
  const plan=gridPlan({x:[-1,1],y:[-40,220],z:[-1900,0]},'side',10,{verticalScale:10,chainage:true});
  assert.deepEqual(plan.labels.filter(p=>p.text.startsWith('y ')).map(p=>p.text),['y 0 m true','y 10 m true','y 20 m true']);
  assert.equal(plan.labels.find(p=>p.text==='y 10 m true').position[1],100);
- assert.match(evidence.section.basis,/schematic.*y=-4 m/);
+ assert.match(evidence.section.basis,/tunnel rails.*y=0 m/);
 });

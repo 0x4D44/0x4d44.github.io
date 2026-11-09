@@ -33,7 +33,10 @@ import {
   STATION_ZONE,
   trackChains,
 } from '../src/track.ts';
-import { GROUND_Y } from '../src/world.ts';
+import { addTerrain, GROUND_Y } from '../src/world.ts';
+import { addPortals, portalHole } from '../src/portals.ts';
+import { tunnelMouths } from '../../core/landmarks.ts';
+import { terrainFromFunction } from '../../core/terrain.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -449,7 +452,7 @@ test('ballast: the top is at BALLAST_TOP, the shoulders fall to the ground, and 
 
 // ---- the lines -----------------------------------------------------------------------------------
 
-test('lines: beyond the zone the old twin-rail lines, along the zone a lifted copy with a near cutoff, and the tunnel lines as main.ts drew them', () => {
+test('lines: beyond the zone twin rails, along the zone a lifted copy, and modelled ECML tunnel lines at train level', () => {
   const rails = railSegments(data);
   const g = buildTrack(data, layout);
   const lines = mesh(g, 'track-lines');
@@ -476,8 +479,9 @@ test('lines: beyond the zone the old twin-rail lines, along the zone a lifted co
   assert.equal(mat.opacity, 0.7);
   assert.equal(mat.transparent, true);
   const tp = tunnel.geometry.getAttribute('position');
-  assert.equal(tp.count * 3, rails.tunnel.length);
-  for (let i = 0; i < rails.tunnel.length; i++) near(tp.array[i] as number, rails.tunnel[i] as number, 1e-3, `tunnel coordinate ${i}`);
+  const modelled = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => r.ref === 'ECM1') }).tunnel;
+  assert.equal(tp.count * 3, modelled.length);
+  for (let i = 0; i < modelled.length; i++) near(tp.array[i] as number, modelled[i] as number, 1e-3, `tunnel coordinate ${i}`);
   assert.ok(vertices(tunnel.geometry).every((p) => p.y === TUNNEL_DEPTH), 'the tunnel lines stay at TUNNEL_DEPTH');
 });
 
@@ -651,4 +655,83 @@ test('buffer stops: the chevron bands tile the beam face exactly, red and white 
   assert.ok(white > 200 && red > 200, `both colours are well represented (${white} white, ${red} red of 960 samples)`);
   near(bands.reduce((s, b) => s + polygonArea(b.poly), 0), 1.2 * 0.5, 1e-9, 'the bands add up to half the face');
   assert.ok(bands.every((b) => b.poly.every(([x, y]) => x >= -1e-9 && x <= 1.2 + 1e-9 && y >= 0.75 - 1e-9 && y <= 1.25 + 1e-9)), 'every band lies inside the half face');
+});
+
+
+test('tunnel rails meet the surface railhead and live train wheel datum without a mouth step', () => {
+  const fixture: Pick<KxData, 'nodes' | 'rails'> = {
+    nodes: [[1, 10, -40], [2, 10, -80], [3, 10, -220], [4, 10, -260]],
+    rails: [
+      { id: 1, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 },
+      { id: 2, nodes: [2, 3], ref: 'ECM1', service: 'main', tunnel: true, bridge: false, layer: -1 },
+      { id: 3, nodes: [3, 4], service: 'main', tunnel: false, bridge: false, layer: 0 },
+    ],
+  };
+  const group = buildTrack(fixture, FLAT);
+  group.updateMatrixWorld(true);
+  const line = group.getObjectByName('track-tunnel') as THREE.LineSegments;
+  assert.ok(line?.isLineSegments);
+  const points = vertices(line.geometry);
+  assert.ok(points.length >= 2);
+  for (const p of points) near(p.y, RAIL_TOP, 1e-9, 'tunnel track shares train wheels’ y=0 contact plane');
+  assert.equal(RAIL_TOP, 0);
+  const surface = mesh(group, 'track-rails');
+  near(boxOf(surface.geometry).max.y, 0, 1e-9, 'surface railhead y=0');
+  assert.deepEqual(points[0]?.toArray(), [10, 0, -80]);
+  assert.deepEqual(points.at(-1)?.toArray(), [10, 0, -220]);
+  const material = line.material as THREE.LineBasicMaterial;
+  assert.equal(material.depthTest, true, 'terrain must occlude tunnel strokes');
+  assert.equal(line.renderOrder, 0, 'tunnel strokes must not be a screen overlay');
+});
+
+test('only modelled ECML bores rise to the train datum; unrelated underground routes stay hidden', () => {
+  const fixture: Pick<KxData, 'nodes' | 'rails'> = {
+    nodes: [[1, 10, -80], [2, 10, -220], [3, 30, -80], [4, 30, -220], [5, 50, -80], [6, 50, -220]],
+    rails: [
+      { id: 1, nodes: [1, 2], ref: 'ECM1', service: 'main', tunnel: true, bridge: false, layer: -1 },
+      { id: 2, nodes: [3, 4], ref: 'MCL', service: 'main', tunnel: true, bridge: false, layer: -2 },
+      { id: 3, nodes: [5, 6], service: 'main', tunnel: true, bridge: false, layer: -1 },
+    ],
+  };
+  const group = buildTrack(fixture, FLAT);
+  const line = group.getObjectByName('track-tunnel') as THREE.LineSegments;
+  assert.ok(line?.isLineSegments, 'the modelled bore stays drawn');
+  assert.deepEqual(vertices(line.geometry).map(p => p.toArray()), [[10, 0, -80], [10, 0, -220]],
+    'routes without modelled portals or rail elevations must not appear across flat ground');
+  const unrelated = buildTrack({ ...fixture, rails: fixture.rails.slice(1) }, FLAT);
+  assert.equal(unrelated.getObjectByName('track-tunnel'), undefined);
+});
+
+
+test('terrain and flat-mode portal banks hide level tunnel track from overview and in-shed cameras', () => {
+  const fixture = {
+    nodes: [[1, 10, -40], [2, 10, -80], [3, 10, -220], [4, 10, -260]],
+    rails: [
+      { id: 1, nodes: [1, 2], ref: 'ECM1', service: 'main', tunnel: false, bridge: false, layer: 0 },
+      { id: 2, nodes: [2, 3], ref: 'ECM1', service: 'main', tunnel: true, bridge: false, layer: -1 },
+      { id: 3, nodes: [3, 4], ref: 'ECM1', service: 'main', tunnel: false, bridge: false, layer: 0 },
+    ],
+    buildings: [], platforms: [], signals: [], switches: [], buffers: [],
+  } as unknown as KxData;
+  for (const mode of ['terrain', 'terrain=0', 'bare']) {
+    const scene = new THREE.Scene();
+    const track = buildTrack(fixture, FLAT); scene.add(track);
+    if (mode === 'terrain') {
+      const hill = terrainFromFunction((_, z) => z < -80 && z > -220 ? 8 : GROUND_Y,
+        { x0: -64, x1: 64, z0: -320, z1: 0 }, 2);
+      const ground = addTerrain(scene, hill, { exclude: portalHole(tunnelMouths(fixture)) }).ground;
+      addPortals(scene, fixture, { terrain: ground });
+    } else addPortals(scene, fixture); // main.ts retains these banks in both flat modes.
+    scene.updateMatrixWorld(true);
+    const blockers: THREE.Object3D[] = [];
+    scene.traverseVisible(o => { if (o instanceof THREE.Mesh && o.parent !== track) blockers.push(o); });
+    for (const camera of [[260, 380, 340], [48, 7.5, -16]]) for (const z of [-110, -150, -190]) {
+      const origin = new THREE.Vector3(...camera), target = new THREE.Vector3(10, 0, z);
+      const ray = new THREE.Raycaster(origin, target.clone().sub(origin).normalize(), 0, origin.distanceTo(target) - 0.01);
+      const hit = ray.intersectObjects(blockers, false)[0];
+      assert.ok(hit, `${mode} camera ${camera}: tunnel at ${z} leaks through its cover`);
+      assert.match(hit.object.name, /^(terrain-|portals-)/);
+      assert.ok(hit.distance < origin.distanceTo(target));
+    }
+  }
 });

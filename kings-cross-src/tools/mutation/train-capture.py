@@ -13,6 +13,11 @@ if not out.is_relative_to(src.parent / '.scratch'):
 out.mkdir(parents=True, exist_ok=True)
 C, F, R = 'tools/train-capture.mjs', 'tools/train-framing.mjs', 'tools/capture-runtime.mjs'
 M = [
+ ('portal entry accepts stationary frame', C, '||f.speedMps<=.05', ''),
+ ('portal sequence accepts backward time', C, '||(i&&f.timeMs<=frames[i-1].timeMs)', ''),
+ ('portal capture skips face metadata', C, '!p?.portal||', ''),
+ ('portal samples include buried body', F, 'return w<-.3&&w>-28', 'return true'),
+ ('portal camera stays below drawn terrain', F, 'position[1]=Math.max(position[1],groundY+.5)', 'position[1]=6'),
  ('no measured movement required', C, '&&c.movedM>=1', '&&true'),
  ('all-day capture completeness ignored', C, "if(missing.length)throw new Error(`no measured sequence candidates", "if(false)throw new Error(`no measured sequence candidates"),
  ('one bad sequence aborts the run', C, 'catch(error){failed.push(', 'catch(error){throw error;failed.push('),

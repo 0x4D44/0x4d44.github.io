@@ -13,7 +13,7 @@ M=[
  ('dark grid blue mistaken for rail profile',P,'rail:([r,g,b])=>b>130&&b>r+50&&b>g+45','rail:([r,g,b])=>b>r+35&&b>g+35'),
  ('blue profile concealed by ground',F,"name==='axis01-rail-section'?9001:9000",'9000'),
  ('exaggerated height labels lose true-metre units',F,"${verticalScale!==1?' true':''}",''),
- ('schematic tunnel depth falsely flattened','core/scene.ts','export const TUNNEL_DEPTH = -4;','export const TUNNEL_DEPTH = 0;'),
+ ('tunnel rails below train datum','core/scene.ts','export const TUNNEL_DEPTH = 0;','export const TUNNEL_DEPTH = -4;'),
  ('grid lost to distant scene fog',F,'depthWrite:false,fog:false,toneMapped:false','depthWrite:false,fog:true,toneMapped:false'),
  ('profiles lost to distant scene fog',F,'opacity:1,depthTest:false,depthWrite:false,fog:false','opacity:1,depthTest:false,depthWrite:false,fog:true'),
  ('profile rendered before transparent grid',F,'color,transparent:true,opacity:1','color,transparent:false,opacity:1'),

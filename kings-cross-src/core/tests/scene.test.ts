@@ -13,12 +13,13 @@ const rails: KxData['rails'] = [
   { id: 4, nodes: [1, 99], service: 'main', tunnel: false, bridge: false, layer: 0 }, // node 99 unknown: skipped
 ];
 
-test('scene: rail segments are bucketed by class, with tunnels below ground', () => {
+test('scene: rail segments retain their class and tunnels share the train rail level', () => {
   const s = railSegments({ nodes, rails });
   assert.equal(s.main.length, 2 * 6, 'two main segments');
   assert.equal(s.siding.length, 6);
   assert.equal(s.tunnel.length, 6);
   assert.deepEqual(s.siding, [20, 0, 0, 20, 0, 10]);
+  assert.equal(TUNNEL_DEPTH, 0, 'a tunnel tag does not invent a rail-height step');
   assert.equal(s.tunnel[1], TUNNEL_DEPTH);
   assert.equal(s.tunnel[4], TUNNEL_DEPTH);
   assert.ok(s.main.every((v, i) => i % 3 !== 1 || v === 0), 'main track is at y = 0');

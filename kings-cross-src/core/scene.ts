@@ -4,8 +4,12 @@ import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
 import { isSurfacePlatform, railPair } from './station.ts';
 
-/** Height of the rail head above ground, metres. Tunnels are drawn below ground. */
-export const TUNNEL_DEPTH = -4;
+/**
+ * Tunnel railhead level, matching surface rails and train wheels. The original scaffold put
+ * these at -4 m beneath flat ground; terrain and portal covers now provide actual occlusion.
+ * Keep the exported name for geometry readers; a tunnel tag is not elevation evidence.
+ */
+export const TUNNEL_DEPTH = 0;
 export const PLATFORM_HEIGHT = 0.9;
 export const DEFAULT_BUILDING_HEIGHT = 9;
 export const LEVEL_HEIGHT = 3.2;
