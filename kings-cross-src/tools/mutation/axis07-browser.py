@@ -2,14 +2,16 @@
 
 Usage: python3 -I -u kings-cross-src/tools/mutation/axis07-browser.py kings-cross-src <worktree>/.scratch/axis07-browser-mutations
 """
-import os
 import re
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_command: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -140,19 +142,8 @@ MUTATIONS = [
 def run(work):
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
                'web/tests/csp.test.ts', 'tools/tests/axis07-browser.test.mjs']
-    process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, stdin=subprocess.DEVNULL, start_new_session=True)
-    expired = False
-    try:
-        stdout, stderr = process.communicate(timeout=12)
-    except subprocess.TimeoutExpired:
-        expired = True
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        stdout, stderr = process.communicate(timeout=3)
-    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr), expired
+    ran = kxmut.run_command(work, command, timeout=12)
+    return subprocess.CompletedProcess(command, ran.returncode, ran.stdout, ran.stderr), ran
 
 
 def test_names(output):
@@ -182,9 +173,9 @@ try:
     (root / 'web/src').symlink_to((src / 'web/src').resolve(), target_is_directory=True)
     (root / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
 
-    baseline, expired = run(root)
+    baseline, ran = run(root)
     expected = test_names(baseline.stdout)
-    if baseline.returncode or baseline.stderr or expired or len(expected) != 15 or '# tests 15' not in baseline.stdout:
+    if baseline.returncode or baseline.stderr or ran.expired or len(expected) != 15 or '# tests 15' not in baseline.stdout:
         print(baseline.stdout, baseline.stderr)
         raise SystemExit('baseline failed or did not run exactly the fifteen focused tests')
 
@@ -196,13 +187,13 @@ try:
         if old not in changed:
             raise SystemExit(f'mutation pattern missing: {label}: {old}')
         (root / filename).write_text(changed.replace(old, new, 1))
-        result, expired = run(root)
+        result, ran = run(root)
         failures = assertion_failures(result.stdout)
         required_failures = {expected_failure} if isinstance(expected_failure, str) else set(expected_failure)
         named = {name for name in test_names(result.stdout) if name in expected}
-        if expired:
+        if ran.expired:
             timeouts.append(label)
-            print(f'[TIMEOUT] {label}', flush=True)
+            print(f'[{"OVERCAP" if ran.overcap else "TIMEOUT"}] {label}: {ran.limit_note()}', flush=True)
         elif result.returncode and failures == required_failures and named == expected and not result.stderr:
             print(f'[CAUGHT] {label}: {", ".join(sorted(failures))}', flush=True)
         else:

@@ -5,6 +5,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src=Path(sys.argv[1]).resolve();out=Path(sys.argv[2]).resolve()
 if not out.is_relative_to(src.parent/'.scratch'):raise SystemExit('output must be under worktree .scratch')
 out.mkdir(parents=True,exist_ok=True)
@@ -63,7 +68,7 @@ M=[
  ('stale source hash accepted',C,"!==source.sha256)throw",'!==source.sha256&&false)throw'),
 ]
 def run(work):
- return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/axis01-capture.test.mjs'],cwd=work,stdin=subprocess.DEVNULL,capture_output=True,text=True,timeout=30)
+ return kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/axis01-capture.test.mjs'],cwd=work,timeout=30)
 with tempfile.TemporaryDirectory(prefix='axis01-capture-',dir=out) as directory:
  work=Path(directory)/'kings-cross-src'
  for name in ['tools','core','web']:shutil.copytree(src/name,work/name)
@@ -74,7 +79,11 @@ with tempfile.TemporaryDirectory(prefix='axis01-capture-',dir=out) as directory:
  for label,target,old,new in M:
   file=work/target;original=file.read_text()
   if old not in original:raise SystemExit('missing mutation pattern: '+label)
-  file.write_text(original.replace(old,new,1));result=run(work);file.write_text(original)
+  file.write_text(original.replace(old,new,1))
+  try:result=run(work)
+  except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+   file.write_text(original);survivors.append(label);print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)',flush=True);continue
+  file.write_text(original)
   failed=set()
   for block in re.split(r'(?=^not ok \d+ - )',result.stdout,flags=re.M)[1:]:
    block=re.split(r'^(?:ok \d+ - |# Subtest:|1\.\.)',block,maxsplit=1,flags=re.M)[0];match=re.match(r'not ok \d+ - ([^\n]+)',block)

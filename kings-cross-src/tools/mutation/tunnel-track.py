@@ -6,6 +6,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 if not out.is_relative_to(src.parent / '.scratch'):
@@ -23,10 +27,9 @@ M = [
 ]
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=10000',
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=10000',
         '--test-name-pattern=scene: rail segments retain|tunnel rails meet|terrain and flat-mode portal banks|only modelled ECML bores',
-        'core/tests/scene.test.ts', 'web/tests/track.test.ts'], cwd=work, stdin=subprocess.DEVNULL,
-        capture_output=True, text=True, timeout=30)
+        'core/tests/scene.test.ts', 'web/tests/track.test.ts'], cwd=work, timeout=30)
 
 with tempfile.TemporaryDirectory(prefix='tunnel-track-', dir=out) as directory:
     work = Path(directory) / 'kings-cross-src'
@@ -49,6 +52,10 @@ with tempfile.TemporaryDirectory(prefix='tunnel-track-', dir=out) as directory:
         target.write_text(original.replace(old, new, 1))
         try:
             result = run(work)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            survivors.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         finally:
             target.write_text(original)
         failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))

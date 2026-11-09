@@ -11,6 +11,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
@@ -120,8 +124,7 @@ export function analyseSteps(...args: Parameters<typeof originalAnalyse>): Retur
 '''
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths.test.ts'],
-                          cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths.test.ts'], cwd=work, timeout=30)
 
 def assertion_failures(output):
     failures = set()
@@ -170,9 +173,9 @@ with tempfile.TemporaryDirectory(prefix='berths-mutations-', dir=scratch) as tem
         (work / 'core/berths.ts').write_text(changed + wrapper)
         try:
             result = run(work)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as error:
             survivors.append(label)
-            print(f'[INVALID] {label}: timed out', flush=True)
+            print(f'[INVALID] {label}: {kxmut.why(error)}', flush=True)
             continue
         failed = assertion_failures(result.stdout)
         named_failures = set(re.findall(r'^not ok \d+ - (berths: .+)$', result.stdout, re.M))

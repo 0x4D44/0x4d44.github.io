@@ -68,14 +68,12 @@ if SCRATCH.exists():
 SCRATCH.mkdir(parents=True)
 
 
-def run(root: Path, scratch: Path, timeout: int = 55):
+def run(root: Path, scratch: Path, timeout: int = 45):
     env = dict(os.environ)
     env['ROUND36_FIDELITY_SCRATCH'] = str(scratch)
-    return subprocess.run(
-        ['deltic', 'timeout', '45', 'node', '--test', '--test-reporter=tap',
-         '--test-timeout=20000', TEST],
-        cwd=root, env=env, stdin=subprocess.DEVNULL, capture_output=True,
-        text=True, timeout=timeout,
+    return kxmut.run_process(
+        ['node', '--test', '--test-reporter=tap', '--test-timeout=20000', TEST],
+        cwd=root, env=env, timeout=timeout,
     )
 
 
@@ -103,8 +101,8 @@ for number, (label, old, new, expected) in enumerate(MUTATIONS, 1):
             result = run(mutated_package, case / 'fixtures')
         except subprocess.TimeoutExpired as error:
             invalid.append(label)
-            (SCRATCH / f'{number:02d}.log').write_text(f'TIMEOUT: {label}\n{error.stdout or ""}{error.stderr or ""}')
-            print(f'INVALID TIMEOUT: {label}', flush=True)
+            (SCRATCH / f'{number:02d}.log').write_text(f'{kxmut.why(error)}: {label}\n{error.stdout or ""}{error.stderr or ""}')
+            print(f'INVALID {"OVERCAP" if isinstance(error, kxmut.OverCap) else "TIMEOUT"}: {label} ({kxmut.why(error)})', flush=True)
             continue
         output = result.stdout + result.stderr
         (SCRATCH / f'{number:02d}.log').write_text(output)

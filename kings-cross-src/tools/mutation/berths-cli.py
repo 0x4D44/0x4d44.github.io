@@ -10,6 +10,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
@@ -33,9 +37,9 @@ MUTATIONS = [
 
 
 def run(package):
-    return subprocess.run(
+    return kxmut.run_process(
         ['node', '--test', '--test-reporter=tap', '--test-timeout=15000', 'tools/tests/berths.test.ts'],
-        cwd=package, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=25)
+        cwd=package, timeout=25)
 
 
 def test_names(output, prefix):
@@ -83,9 +87,9 @@ with tempfile.TemporaryDirectory(prefix='berths-cli-mutations-', dir=scratch) as
         (package / 'tools' / 'berths.ts').write_text(original.replace(old, new, 1))
         try:
             result = run(package)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as error:
             survivors.append(label)
-            print(f'[INVALID] {label}: timed out', flush=True)
+            print(f'[INVALID] {label}: {kxmut.why(error)}', flush=True)
             continue
         failed = assertion_failures(result.stdout)
         named = test_names(result.stdout, 'not ok')

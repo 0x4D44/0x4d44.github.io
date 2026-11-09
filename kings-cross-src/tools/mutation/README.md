@@ -28,6 +28,41 @@ anchor and a failing baseline each get the verdict above. Drivers that predate i
 `train-capture`, `tunnel-track`, `western-front`) already copy what their tests import, take
 their baseline in the copy, and accept only named assertion failures.
 
+## Limits on every test run
+
+A mutant can loop, allocate without bound or print without end. `subprocess.run(timeout=)` kills
+only the top `node --test`; its `--test-isolation=process` workers go on as orphans, and a mutant that
+loops and allocates never lets `--test-timeout` fire. That once left orphaned workers holding hundreds
+of gigabytes between them and ran a Mac out of memory. So every test command a driver starts, the
+older drivers' included, goes through `lib/kxmut.py` (`run_command`; the drivers that keep their own
+counting call `run_process`, a drop-in for `subprocess.run` that raises `TimeoutExpired`) and gets
+these limits whatever the driver does:
+
+- It is a process group and session of its own. When the run ends however it ends (it finishes,
+  times out, hits a cap, or the driver is interrupted or sent SIGTERM or SIGHUP), every process left in its
+  tree is killed and waited for: a worker, or a daemon that left the group. Only a SIGKILL of the
+  driver itself can leave a run behind.
+- Every `node` in it gets `NODE_OPTIONS=--max-old-space-size=4096`, so a runaway script heap aborts
+  that process. A stricter value in the environment stays; a looser one is lowered to 4096.
+- A watchdog polls the tree every 0.25 s (every 0.1 s once it holds a quarter of the cap) and kills it
+  past 4 GB. That is the physical footprint on macOS (resident, compressed and swapped pages: a runaway
+  process is mostly compressed, and `ps` shows almost none of it) and resident plus swap on Linux. A
+  driver runs a handful of test files; a whole test directory at once peaks at 0.9 to 2.6 GB and the
+  whole suite at 3.3 GB. A fast allocator (a typed array filled in a loop) overshoots by up to a gigabyte
+  between polls, so the cap sits that far below the 6 GB at which the fleet's guard kills a `node --test`
+  process: the harness decides first and says why, and does not rely on the guard.
+- stdout and stderr go to temporary files, and a run that writes more than 64 MB is killed.
+
+A run cut short for its time is a `TIMEOUT`; one cut short for its memory or output is an `OVERCAP`
+(`[OVERCAP ]` in the log, `OVERCAP:` in the error list). Neither is a kill and both count against the
+total. The older drivers print them as survivors or invalid runs. `live.py` and `relay.py`, which count
+a hang as caught, count an `OVERCAP` the same way. A driver prints one line on stderr when it ends with
+the most memory any of its runs held (`kxmut: 24 test runs; the largest tree held 1.1 GB against a cap
+of 4.0 GB`), so a cap that is too tight shows up in the log. `KXMUT_MEMORY_CAP_GB`, `KXMUT_HEAP_MB` and
+`KXMUT_OUTPUT_CAP_MB` change the defaults. `tools/tests/mutation-harness.test.mjs` runs a script that
+allocates without bound, a tree with a daemon in it, endless output and a SIGTERM mid-run against the
+harness, and checks by pid that nothing is left.
+
 Run each driver from the repository root. Drivers that accept a scratch path keep their
 temporary copies and logs under the private `.scratch/mutation/` directory. Most take the
 package directory and that scratch path; the commands below show each driver's actual

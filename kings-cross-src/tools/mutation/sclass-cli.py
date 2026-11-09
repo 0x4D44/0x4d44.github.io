@@ -8,6 +8,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
@@ -63,8 +67,7 @@ MUTATIONS = [
 
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=15000', 'tools/tests/sclass.test.mjs'],
-                          cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=40)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=15000', 'tools/tests/sclass.test.mjs'], cwd=work, timeout=40)
 
 
 def completed(output, expected):
@@ -114,9 +117,9 @@ with tempfile.TemporaryDirectory(prefix='sclass-cli-mutation-', dir=scratch) as 
         target.write_text(original.replace(old, new))
         try:
             result = run(work)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as error:
             survivors.append(label)
-            print(f'[INVALID] {label}: timeout', flush=True)
+            print(f'[INVALID] {label}: {kxmut.why(error)}', flush=True)
             continue
         failed = assertion_failures(result.stdout)
         named = set(re.findall(r'^not ok \d+ - ([^\n]+)$', result.stdout, re.M))

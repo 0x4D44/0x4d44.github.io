@@ -7,6 +7,11 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 if not scratch.is_relative_to((src.parent / '.scratch').resolve()):
@@ -96,7 +101,7 @@ def run(root, target=None, cli=False):
     if target==R: command+=['kings-cross-src/core/tests/signal-report.test.ts']
     elif target in (C,F): command+=['kings-cross-src/tools/tests/signal-capture.test.mjs']
     else: command+=['kings-cross-src/core/tests/signal-report.test.ts','kings-cross-src/tools/tests/signal-capture.test.mjs']
-    return subprocess.run(command,cwd=root,capture_output=True,text=True,stdin=subprocess.DEVNULL,timeout=60)
+    return kxmut.run_process(command,cwd=root,timeout=60)
 
 with tempfile.TemporaryDirectory(prefix='signal-report-',dir=scratch) as tmp:
     root=Path(tmp);pkg=root/'kings-cross-src'
@@ -117,7 +122,12 @@ with tempfile.TemporaryDirectory(prefix='signal-report-',dir=scratch) as tmp:
         original=(src/target).read_text()
         if old not in original: raise SystemExit(f'missing mutation pattern: {label}')
         (pkg/target).write_text(original.replace(old,new,1))
-        result=run(root,target,label.startswith('CLI'))
+        try:
+            result=run(root,target,label.startswith('CLI'))
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            (pkg/target).write_text(original)
+            survivors.append(label);print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)',flush=True)
+            continue
         failed=set()
         for block in re.split(r'(?=^not ok \d+ - )',result.stdout,flags=re.M)[1:]:
             block=re.split(r'^(?:ok \d+ - |# Subtest:|1\.\.)',block,maxsplit=1,flags=re.M)[0]

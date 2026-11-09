@@ -2,14 +2,16 @@
 Usage: python3 -I -u tools/mutation/board.py <kings-cross-src> <worktree/.scratch>
 Copies the board projection, its synthetic tests, the page's panel colours (web/index.html) and the tiny shared graph core.
 """
-import os
 import re
-import signal
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_command: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
 
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
@@ -164,19 +166,12 @@ MUTATIONS = [(F, label, changes) for label, changes in M] + [('web/src/feed.ts',
 
 def run(work):
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000', 'web/tests/board.test.ts']
-    proc = subprocess.Popen(command, cwd=work, text=True, stdin=subprocess.DEVNULL,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
-    expired = False
-    try:
-        out, err = proc.communicate(timeout=12)
-    except subprocess.TimeoutExpired:
-        expired = True
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        out, err = proc.communicate(timeout=3)
-    return subprocess.CompletedProcess(command, proc.returncode, out, err), expired or 'testTimeoutFailure' in out
+    ran = kxmut.run_command(work, command, timeout=12)
+    if ran.expired:  # (kind, why) when the run was cut short or a test timed out inside it
+        stalled = ('OVERCAP' if ran.overcap else 'TIMEOUT', ran.limit_note())
+    else:
+        stalled = ('TIMEOUT', 'a test timed out') if 'testTimeoutFailure' in ran.stdout else None
+    return subprocess.CompletedProcess(command, ran.returncode, ran.stdout, ran.stderr), stalled
 
 
 def assertion_failures(output):
@@ -230,24 +225,20 @@ try:
                 raise SystemExit(f'Mutation pattern missing: {label}: {old}')
             changed = changed.replace(old, new, 1)
         (root / filename).write_text(changed)
-        try:
-            result, expired = run(root)
-            assertion_names = assertion_failures(result.stdout)
-            named_failures = set(re.findall(r'^not ok \d+ - ([^\n]+)$', result.stdout, re.M))
-            if expired:
-                timeouts.append(label)
-                print(f'[TIMEOUT] {label}', flush=True)
-            elif result.returncode and assertion_names and assertion_names == named_failures and complete_tests(result.stdout, expected) and not result.stderr:
-                failed_tests.update(assertion_names)
-                print(f'[CAUGHT] {label}: {", ".join(sorted(assertion_names))}', flush=True)
-            else:
-                survivors.append(label)
-                print(f'[SURVIVED] {label} (survived or invalid TAP/runtime result)', flush=True)
-                if result.returncode:
-                    print(result.stdout[-1500:], result.stderr[-1000:])
-        except subprocess.TimeoutExpired:
+        result, expired = run(root)
+        assertion_names = assertion_failures(result.stdout)
+        named_failures = set(re.findall(r'^not ok \d+ - ([^\n]+)$', result.stdout, re.M))
+        if expired:
             timeouts.append(label)
-            print(f'[TIMEOUT] {label} (timeout is not a kill)', flush=True)
+            print(f'[{expired[0]}] {label}: {expired[1]} (that is not a kill)', flush=True)
+        elif result.returncode and assertion_names and assertion_names == named_failures and complete_tests(result.stdout, expected) and not result.stderr:
+            failed_tests.update(assertion_names)
+            print(f'[CAUGHT] {label}: {", ".join(sorted(assertion_names))}', flush=True)
+        else:
+            survivors.append(label)
+            print(f'[SURVIVED] {label} (survived or invalid TAP/runtime result)', flush=True)
+            if result.returncode:
+                print(result.stdout[-1500:], result.stderr[-1000:])
     print(f'{len(MUTATIONS) - len(survivors) - len(timeouts)}/{len(MUTATIONS)} mutations caught; {len(timeouts)} timeouts; {len(failed_tests & expected)}/{len(expected)} tests observed red')
     for label in survivors:
         print('NOT CAUGHT:', label)

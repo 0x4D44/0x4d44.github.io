@@ -6,6 +6,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 if not out.is_relative_to(src.parent / '.scratch'):
@@ -30,7 +34,7 @@ def run(work, pattern=None):
     if pattern:
         args.append('--test-name-pattern=' + pattern)
     args.extend(['tools/tests/axis05-evidence.test.mjs', 'tools/tests/motion-audit.test.mjs'] if pattern and pattern.startswith('detects frozen body') else ['tools/tests/axis05-evidence.test.mjs'])
-    return subprocess.run(args, cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    return kxmut.run_process(args, cwd=work, timeout=30)
 with tempfile.TemporaryDirectory(prefix='axis05-', dir=out) as directory:
     work = Path(directory) / 'kings-cross-src'
     work.mkdir()
@@ -54,7 +58,13 @@ with tempfile.TemporaryDirectory(prefix='axis05-', dir=out) as directory:
         if old not in original:
             raise SystemExit('missing mutation pattern: ' + label)
         target.write_text(original.replace(old, new, 1))
-        result = run(work, pattern)
+        try:
+            result = run(work, pattern)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            target.write_text(original)
+            survivors.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         target.write_text(original)
         failures = set(re.findall(r'^not ok \d+ - (.*)', result.stdout, re.M))
         if result.returncode and len(failures) == 1 and all(name.startswith(pattern) for name in failures) and 'ERR_ASSERTION' in result.stdout and not result.stderr:

@@ -5,6 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src, out = (Path(p).resolve() for p in sys.argv[1:])
 if src == out or src.is_relative_to(out) or out.is_relative_to(src) or '.scratch' not in out.parts:
     raise SystemExit('Choose a separate output under worktree .scratch')
@@ -42,9 +46,11 @@ mutations = [
 
 
 def run(name):
-    result = subprocess.run(
-        ['deltic', 'timeout', '60', 'node', '--test', '--test-reporter=tap', 'web/tests/hotel-roof.test.ts'],
-        cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=75)
+    try:
+        result = kxmut.run_process(['node', '--test', '--test-reporter=tap', 'web/tests/hotel-roof.test.ts'], cwd=work, timeout=60)
+    except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap; the log keeps what it wrote
+        (out / f'{name}.log').write_text(f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}')
+        raise
     (out / f'{name}.log').write_text(result.stdout + result.stderr)
     return result
 
@@ -58,6 +64,9 @@ for i, (label, old, new, expected_failure) in enumerate(mutations):
     target.write_text(original.replace(old, new, 1))
     try:
         result = run(f'm{i:02d}')
+    except subprocess.TimeoutExpired as error:
+        print(f'SURVIVED/INVALID: {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+        continue
     finally:
         target.write_text(original)
     body = result.stdout + result.stderr

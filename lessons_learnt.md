@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - a timed-out node --test leaves workers running: use kxmut.run_command (kings-cross-src tools/mutation/lib/kxmut.py)
+  subprocess.run(timeout=) kills only the top node --test. Its --test-isolation=process workers keep running, and a mutant that loops and allocates never
+  lets --test-timeout fire: one mutation run left orphaned workers holding 283, 203 and 159 GB compressed and the Mac ran out of memory. run_command gives
+  each run its own process group and SIGKILLs the whole tree on a timeout, on 4 GB of physical footprint or on 64 MB of output (reported OVERCAP, never a
+  kill), caps every node's heap, and sweeps leftovers. Every driver now runs its tests that way. A SIGKILL of the driver itself still orphans a run.
 - 2026-11-09 - a nearest-read roof mask draws a saw at slanted edges: blur it (web/src/cover.ts:blurRoofed)
   The wet and the snow on the ground stopped at a roof by a nearest-sampled 0.5 m cell map, so a canopy edge on the screen was a row of half-metre steps (a white
   saw along the platform, plainly visible on a real GPU and in no unit test). The ground reads a second texture, the roofed cells blurred by COVER_BLUR and filtered

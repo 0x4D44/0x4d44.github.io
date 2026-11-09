@@ -8,6 +8,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src, out = (Path(s).resolve() for s in sys.argv[1:3])
 if out == src or out.is_relative_to(src) or src.is_relative_to(out):
     raise SystemExit('output must be separate from source')
@@ -31,7 +35,7 @@ mutations = [
 ]
 
 def run(work):
-    return subprocess.run(['deltic', 'timeout', '60', 'node', '--test', '--test-reporter=tap', 'web/tests/western-front.test.ts'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=75)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', 'web/tests/western-front.test.ts'], cwd=work, timeout=60)
 
 def copy(source, work):
     for name in ('core', 'web'):
@@ -65,7 +69,14 @@ with tempfile.TemporaryDirectory(prefix='western-front-', dir=out) as tmp:
         if original.count(old) != 1:
             raise SystemExit(f'nonunique mutation anchor: {label}: {original.count(old)}')
         file.write_text(original.replace(old, new, 1))
-        result = run(work)
+        try:
+            result = run(work)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            file.write_text(original)
+            (out / f'mutation-{i}.log').write_text(f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}')
+            survivors.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         file.write_text(original)
         (out / f'mutation-{i}.log').write_text(result.stdout + result.stderr)
         if result.returncode and titles[which] in failed_assertions(result):

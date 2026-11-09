@@ -6,6 +6,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 if not out.is_relative_to(src.parent / '.scratch'):
@@ -92,7 +96,7 @@ M = [
  ('undrawn large mesh triangles become occluders', F, 'geometry.drawRange.count<(index?.count??positions.count)', 'false'),
 ]
 def run(work):
-    return subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/train-capture-schedule.test.mjs','tools/tests/train-framing.test.mjs','tools/tests/portal-entry.test.mjs'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    return kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=20000','tools/tests/train-capture.test.mjs','tools/tests/train-capture-schedule.test.mjs','tools/tests/train-framing.test.mjs','tools/tests/portal-entry.test.mjs'], cwd=work, timeout=30)
 with tempfile.TemporaryDirectory(prefix='train-capture-', dir=out) as directory:
     work=Path(directory)/'kings-cross-src'
     for name in ['tools','core','web']:
@@ -106,7 +110,11 @@ with tempfile.TemporaryDirectory(prefix='train-capture-', dir=out) as directory:
     for label,target,old,new in M:
         file=work/target;original=file.read_text()
         if old not in original:raise SystemExit('missing mutation pattern: '+label)
-        file.write_text(original.replace(old,new,1));result=run(work);file.write_text(original)
+        file.write_text(original.replace(old,new,1))
+        try:result=run(work)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            file.write_text(original);survivors.append(label);print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)',flush=True);continue
+        file.write_text(original)
         failed=set()
         for block in re.split(r'(?=^not ok \d+ - )',result.stdout,flags=re.M)[1:]:
             block=re.split(r'^(?:ok \d+ - |# Subtest:|1\.\.)',block,maxsplit=1,flags=re.M)[0]

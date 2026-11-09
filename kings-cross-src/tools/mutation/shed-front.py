@@ -9,6 +9,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 if out == src or out.is_relative_to(src) or src.is_relative_to(out):
@@ -37,9 +41,7 @@ MUTATIONS = [
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ['deltic', 'timeout', '60', 'node', '--test', '--test-reporter=tap', 'web/tests/shed-front.test.ts'],
-        cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=75)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', 'web/tests/shed-front.test.ts'], cwd=work, timeout=60)
 
 with tempfile.TemporaryDirectory(prefix='shed-front-', dir=out) as tmp:
     work = Path(tmp) / 'kings-cross-src'
@@ -60,7 +62,14 @@ with tempfile.TemporaryDirectory(prefix='shed-front-', dir=out) as tmp:
         if old not in original:
             raise SystemExit(f'missing mutation anchor: {label}')
         file.write_text(original.replace(old, new, 1))
-        result = run(work)
+        try:
+            result = run(work)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            file.write_text(original)
+            (out / f'mutation-{i}.log').write_text(f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}')
+            failures.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         file.write_text(original)
         (out / f'mutation-{i}.log').write_text(result.stdout + result.stderr)
         failed = set(re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M))

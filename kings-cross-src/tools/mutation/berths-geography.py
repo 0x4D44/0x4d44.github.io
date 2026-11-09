@@ -7,6 +7,10 @@ import subprocess
 import sys
 import tempfile
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(__file__).resolve().parents[2]
 scratch = src.parent / '.scratch'
 scratch.mkdir(exist_ok=True)
@@ -48,8 +52,7 @@ MUTATIONS = [
 ]
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths-geography.test.ts'],
-                          cwd=work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=25)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=8000', 'core/tests/berths-geography.test.ts'], cwd=work, timeout=25)
 
 def assertion_failures(output):
     result = set()
@@ -79,8 +82,8 @@ with tempfile.TemporaryDirectory(prefix='berths-geography-', dir=scratch) as tem
         target.write_text(changed)
         try:
             result = run(work)
-        except subprocess.TimeoutExpired:
-            sys.exit(f'Invalid mutation timeout (cannot prove assertion): {label}')
+        except subprocess.TimeoutExpired as error:
+            sys.exit(f'Invalid mutation timeout (cannot prove assertion): {label}: {kxmut.why(error)}')
         failures = assertion_failures(result.stdout)
         if result.returncode and failures and not result.stderr:
             killed += 1

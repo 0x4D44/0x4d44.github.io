@@ -9,6 +9,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
@@ -113,8 +117,7 @@ M = [
 ]
 
 def run(work):
-    return subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=20000', 'web/tests/signals.test.ts'], cwd=work,
-                          text=True, capture_output=True, stdin=subprocess.DEVNULL, timeout=40)
+    return kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=20000', 'web/tests/signals.test.ts'], cwd=work, timeout=40)
 
 def assertion_failures(output):
     failures = set()
@@ -183,9 +186,9 @@ try:
                 survivors.append(label)
                 print(f'[SURVIVED] {label} (survived or invalid TAP/runtime result)', flush=True)
                 if result.returncode: print(result.stdout[-1500:], result.stderr[-1000:])
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as error:
             survivors.append(label)
-            print(f'[SURVIVED] {label} (timeout is not a kill)', flush=True)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
     print(f'{len(M) - len(survivors)}/{len(M)} mutations caught; {len(failed_tests & expected)}/{len(expected)} tests observed red')
     for label in survivors: print('NOT CAUGHT:', label)
     for name in sorted(expected - failed_tests): print('NEVER RED:', name)

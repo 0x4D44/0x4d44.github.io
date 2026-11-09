@@ -7,6 +7,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
 if src == out or src.is_relative_to(out) or out.is_relative_to(src) or '.scratch' not in out.parts:
@@ -38,7 +42,7 @@ def run(work: Path, name: str | None = None):
     if name:
         command.append('--test-name-pattern=^' + re.escape(name) + '$')
     command.append(TEST)
-    return subprocess.run(command, cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60)
+    return kxmut.run_process(command, cwd=work, timeout=60)
 
 with tempfile.TemporaryDirectory(prefix='station-evidence-', dir=out) as directory:
     work = Path(directory) / 'kings-cross-src'
@@ -64,6 +68,10 @@ with tempfile.TemporaryDirectory(prefix='station-evidence-', dir=out) as directo
         target.write_text(original.replace(old, new, 1))
         try:
             result = run(work, test_name)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            failures.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         finally:
             target.write_text(original)
         failed = re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)

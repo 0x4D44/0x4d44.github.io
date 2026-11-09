@@ -3,9 +3,12 @@ Copies source once; never mutates SOURCE. Kills require assertion evidence, not 
 """
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_command: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
 
 src, scratch = (Path(p).resolve() for p in sys.argv[1:])
 scratch.mkdir(parents=True, exist_ok=True)
@@ -25,13 +28,14 @@ mutations = [
     ('column moved into facade', 'column.position.set(cx, 0, cz);', 'column.position.set(cx + 10, 0, cz);'),
 ]
 def run(label):
-    result = subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=10000', 'web/tests/concourse.test.ts'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    """(exit code, output, why): `why` is empty unless the run was cut short, for its time or the memory it held (never a kill)."""
+    result = kxmut.run_command(work, ['node', '--test', '--test-reporter=tap', '--test-timeout=10000', 'web/tests/concourse.test.ts'], timeout=30)
     output = result.stdout + result.stderr
     (scratch / f'{label}.log').write_text(output)
-    return result.returncode, output
+    return result.returncode, output, (('OVERCAP' if result.overcap else 'TIMEOUT'), result.limit_note()) if result.expired else None
 
-code, _ = run('baseline')
-if code:
+code, _, stalled = run('baseline')
+if code or stalled:
     raise SystemExit('Baseline failed; inspect baseline.log')
 survivors, invalid = [], []
 try:
@@ -39,8 +43,11 @@ try:
         if original.count(old) != 1:
             raise SystemExit(f'Expected one mutation anchor for {label}')
         (work / rel).write_text(original.replace(old, new, 1))
-        code, output = run(f'm{i:02d}')
-        if code == 0:
+        code, output, stalled = run(f'm{i:02d}')
+        if stalled:
+            invalid.append(label)
+            print(f'[{stalled[0]}] {label}: {stalled[1]} (that is not a kill)', flush=True)
+        elif code == 0:
             survivors.append(label)
             print(f'[SURVIVED] {label}', flush=True)
         elif 'AssertionError' in output and not re.search(r'SyntaxError|TypeError|ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION', output):

@@ -8,6 +8,10 @@ import shutil
 import subprocess
 import sys
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src, out = [Path(p).resolve() for p in sys.argv[1:]]
 out.mkdir(parents=True, exist_ok=True)
 work = out / 'work'
@@ -27,7 +31,10 @@ M = [
  ('overall tower height grows', 'CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]', 'CLOCK_TOWER_HEIGHT - capTop + 0.55, 0.045]'),
 ]
 def run(name):
- r = subprocess.run(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,stdin=subprocess.DEVNULL,capture_output=True,text=True,timeout=30)
+ try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
+ except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap; the log keeps what it wrote
+  (out/(name+'.log')).write_text(f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}')
+  raise
  (out/(name+'.log')).write_text(r.stdout+r.stderr)
  return r
 baseline = run('baseline')
@@ -37,7 +44,9 @@ try:
  for i,(name,old,new) in enumerate(M):
   if original.count(old)!=1: raise SystemExit('Expected one mutation anchor: '+name)
   f.write_text(original.replace(old,new,1))
-  r=run('m'+str(i))
+  try: r=run('m'+str(i))
+  except subprocess.TimeoutExpired as error:
+   invalid.append(name); print(f'[INVALID] {name}: {kxmut.why(error)} (that is not a kill)',flush=True); continue
   if r.returncode==0: survivors.append(name); print('[SURVIVED] '+name,flush=True)
   elif 'ERR_ASSERTION' in r.stdout and not re.search('SyntaxError|TypeError|ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION',r.stdout+r.stderr): print('[KILLED] '+name+' (assertion)',flush=True)
   else: invalid.append(name); print('[INVALID] '+name,flush=True)

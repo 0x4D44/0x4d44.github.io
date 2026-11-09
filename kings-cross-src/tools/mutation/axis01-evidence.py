@@ -9,6 +9,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[sys.argv.index('--out') + 1]).resolve() if '--out' in sys.argv else src.parent / '.scratch' / 'round21-geometry' / 'mutations'
 scratch.mkdir(parents=True, exist_ok=True)
@@ -25,6 +29,7 @@ NAMES = [
     'checks transformed actual top boundaries in both directions and rejects missing or narrowed tops',
     'anchors rail and mouth node identities to raw OSM and exposes translated tunnel nodes',
     'checks real drawn outlines against approved outlines while keeping raw P9 inference explicit',
+    'checks every platform against Network Rail construction-drawing lengths, an independent non-OSM reference',
 ]
 MUTATIONS = [
     ('invalid raw extract accepted', "typeof value !== 'object' || value === null || !Array.isArray((value as { elements?: unknown }).elements)", 'false', NAMES[8]),
@@ -41,6 +46,9 @@ MUTATIONS = [
     ('surface eleven hidden by report', "drawn: platforms.some(p => p.ref === '11')", 'drawn: false', NAMES[2]),
     ('concourse tolerance tightened past the drawn roof', 'withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 3', 'withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 0.3', NAMES[5]),
     ('documented outline inference reported as OSM mismatch', "? { code: 'platform-outline-inferred'", "? { code: 'platform-osm-tolerance'", NAMES[6]),
+    ('platform drawing-length check always passes', 'withinGaTolerance: KINGS_CROSS_PLATFORM_GA_M[ref] ? Math.abs(drawnLengthM - KINGS_CROSS_PLATFORM_GA_M[ref]!.length) <= TOLERANCES.platformM : null',
+     'withinGaTolerance: KINGS_CROSS_PLATFORM_GA_M[ref] ? true : null', NAMES[10]),
+    ('platform drawing-length flags dropped', "...platforms.filter(p => p.withinGaTolerance === false).map(p => ({ code: 'platform-ga-length'", "...platforms.filter(p => false).map(p => ({ code: 'platform-ga-length'", NAMES[10]),
 ]
 
 def run(work: Path, name: str | None = None):
@@ -48,8 +56,7 @@ def run(work: Path, name: str | None = None):
     if name:
         command.append('--test-name-pattern=^' + re.escape(name) + '$')
     command.append(TEST)
-    return subprocess.run(command, cwd=work, capture_output=True, text=True,
-                          stdin=subprocess.DEVNULL, timeout=45)
+    return kxmut.run_process(command, cwd=work, timeout=45)
 
 with tempfile.TemporaryDirectory(prefix='axis01-', dir=scratch) as temp:
     work = Path(temp)
@@ -75,6 +82,10 @@ with tempfile.TemporaryDirectory(prefix='axis01-', dir=scratch) as temp:
         try:
             result = run(work, name)
             (scratch / (re.sub(r'[^a-z0-9]+', '-', label.lower()) + '.tap')).write_text(result.stdout + result.stderr)
+        except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
+            failures.append(label)
+            print(f'[SURVIVED] {label} ({kxmut.why(error)}; that is not a kill)', flush=True)
+            continue
         finally:
             target.write_text(original)
         failed = re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)
