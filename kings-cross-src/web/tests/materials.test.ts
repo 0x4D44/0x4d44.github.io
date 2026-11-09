@@ -695,7 +695,7 @@ test('the King\'s Cross front\'s brick and stone carry the contact shade at the 
   for (const [footed, plain] of [['brickFoot', 'brick'], ['stoneFoot', 'stone']] as const) {
     const a = material(footed) as THREE.MeshLambertMaterial;
     const b = material(plain) as THREE.MeshLambertMaterial;
-    assert.deepEqual(a.defines, { FOOT_SHADE: '0.32' }, `${footed}: the define lighting.ts FOOT_SHADE is, with the front's depth (round six)`);
+    assert.deepEqual(a.defines, { FOOT_SHADE: '0.32', FLOOD: footed === 'brickFoot' ? 'vec4( 0.25, 14.0, 0.35, 0.0 )' : 'vec4( 0.14, 14.0, 0.35, 0.0 )' }, `${footed}: the define lighting.ts FOOT_SHADE is, with the front's depth (round six), and the floodlight FLOOD (round seven)`);
     assert.equal(b.defines, undefined, `${plain}: the shared material is the plain one`);
     assert.notEqual(a, b, `${footed} is a material of its own`);
     assert.equal(a.name, footed);

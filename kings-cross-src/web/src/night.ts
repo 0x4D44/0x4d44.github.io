@@ -64,7 +64,7 @@ export function nightLightSites({ lamps, layout, canopy, footprint }: NightLight
 
 let halo: THREE.Texture | null | undefined;
 /** A soft round glow: white in the middle, clear at the edge. Null where there is no canvas (Node). */
-function haloTexture(): THREE.Texture | null {
+export function haloTexture(): THREE.Texture | null {
   if (halo !== undefined) return halo;
   halo = null;
   if (typeof document !== 'undefined') {
@@ -86,10 +86,18 @@ function haloTexture(): THREE.Texture | null {
   return halo;
 }
 
+/** Something else that comes on at dusk and goes out at dawn: the street lamps, which are built when the city arrives (streetlights.ts). */
+export interface NightLayer {
+  /** 0 (off) to 1 (full) */
+  setLevel(level: number): void;
+}
+
 export interface NightLights {
   group: THREE.Group;
   /** 0 (off) to 1 (full); the halos are hidden at 0 */
   setLevel(level: number): void;
+  /** Hand a layer the level from now on (and at once): the city's lamps arrive after the first frame. */
+  attach(layer: NightLayer): void;
   counts(): { platform: number; shed: number; concourse: number };
   dispose(): void;
 }
@@ -112,17 +120,24 @@ export function createNightLights(sites: NightLightSites): NightLights {
     group.add(points);
     layers.push({ points, material, strength });
   };
+  let level = 0;
+  const attached: NightLayer[] = [];
   add('lights-platform', sites.platform, 0xffd9a0, 7, 0.95);
   add('lights-shed', sites.shed, 0xffe2b0, 13, 0.55);
   add('lights-concourse', sites.concourse, 0xffe6bc, 11, 0.6);
   return {
     group,
-    setLevel(level) {
-      const l = Math.min(1, Math.max(0, level));
+    setLevel(next) {
+      level = Math.min(1, Math.max(0, next));
       for (const layer of layers) {
-        layer.material.opacity = l * layer.strength;
-        layer.points.visible = l > 0.01;
+        layer.material.opacity = level * layer.strength;
+        layer.points.visible = level > 0.01;
       }
+      for (const layer of attached) layer.setLevel(level);
+    },
+    attach(layer) {
+      attached.push(layer);
+      layer.setLevel(level);
     },
     counts: () => ({ platform: sites.platform.length / 3, shed: sites.shed.length / 3, concourse: sites.concourse.length / 3 }),
     dispose() {

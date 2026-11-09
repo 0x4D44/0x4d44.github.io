@@ -20,6 +20,10 @@ import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
+import type { NightLayer } from './night.ts';
+import { forecourtMasts } from '../../core/streetlights.ts';
+import { createStreetLights } from './streetlights.ts';
+import type { StreetLights } from './streetlights.ts';
 import { GROUND_Y } from './world.ts';
 
 export interface CityOptions {
@@ -29,6 +33,10 @@ export interface CityOptions {
   exclude?: readonly (readonly [number, number][])[];
   /** draw the trees (default true) */
   trees?: boolean;
+  /** place the street lamps (default true): their posts stand in the scene by day, their glow and pools of light come on with the night lights */
+  lamps?: boolean;
+  /** the lights that come on at dusk (atmosphere.ts `nightLights`): the lamps' glow follows its level. Without it they stay dark. */
+  night?: { attach(layer: NightLayer): void } | null;
   /** the ground the city stands on: buildings, streets, squares, parks, water and trees follow it. Without it, everything stands on the flat plane at GROUND_Y */
   terrain?: Terrain;
   /**
@@ -44,12 +52,16 @@ export interface CityStats {
   drawCalls: number;
   triangles: number;
   trees: number;
+  /** street lamps and forecourt masts placed (their own draw calls, counted in `City.lights`, not in `drawCalls`) */
+  lamps: number;
   byKey: Partial<Record<CityKey, { vertices: number; triangles: number }>>;
   buildings: CityMeshes['stats'];
 }
 
 export interface City {
   group: THREE.Group;
+  /** the street lamps, a group of their own in the scene (null without any) */
+  lights: StreetLights | null;
   stats: CityStats;
   dispose(): void;
 }
@@ -131,11 +143,11 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const exclude = [...(opts.exclude ?? []), ...data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts)];
   const rails = railSegments(data, railShapes(data)); // surface track only, as drawn (core/curves.ts): a street that crosses it rides over it
   const drape = opts.terrain ? { ...PAGE_DRAPE, ...opts.drape } : undefined;
-  const build: CityBuildOptions = { hidden, exclude, groundY: GROUND_Y, trees: opts.trees !== false, rails: [...rails.main, ...rails.siding], terrain: opts.terrain, drape };
+  const build: CityBuildOptions = { hidden, exclude, groundY: GROUND_Y, trees: opts.trees !== false, lamps: opts.lamps !== false, rails: [...rails.main, ...rails.siding], terrain: opts.terrain, drape };
   const built = buildCity(data.buildings, city, build);
   const group = new THREE.Group();
   group.name = 'city';
-  const stats: CityStats = { drawCalls: 0, triangles: 0, trees: 0, byKey: {}, buildings: built.stats };
+  const stats: CityStats = { drawCalls: 0, triangles: 0, trees: 0, lamps: built.lamps.length, byKey: {}, buildings: built.stats };
   const geometries: THREE.BufferGeometry[] = [];
   for (const key of CITY_KEYS) {
     const acc = built.meshes[key];
@@ -158,12 +170,25 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     stats.triangles += built.trees.length * (trees.geometry.getAttribute('position').count / 3);
   }
   scene.add(group);
+  // the street lamps, and the masts of the forecourt (the same glow and pools, a mast of their own)
+  const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
+  const lights = lamps.length > 0 ? createStreetLights(lamps) : null;
+  stats.lamps = lamps.length;
+  if (lights) {
+    scene.add(lights.group);
+    opts.night?.attach(lights);
+  }
   return {
     group,
+    lights,
     stats,
     dispose() {
       scene.remove(group);
       for (const g of geometries) g.dispose();
+      if (lights) {
+        scene.remove(lights.group);
+        lights.dispose();
+      }
     },
   };
 }

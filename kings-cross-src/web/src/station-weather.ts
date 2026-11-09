@@ -7,6 +7,7 @@ import { describeSun } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
+import { floodLit, litWalls } from './materials.ts';
 import { CLEAR_STATE, createWeatherFeed, weatherState } from './weather.ts';
 import type { WeatherFeedOptions, WeatherObservation, WeatherState } from './weather.ts';
 import { addWorld } from './world.ts';
@@ -61,6 +62,35 @@ export function addWaverleyLights(group: THREE.Group): void {
   sun.position.set(-300, 600, 250); group.add(hemisphere, sun);
 }
 
+/**
+ * Round seven (night lighting): what the Scottish scene lights after dark, done here, by mesh name, and not in waverley-city.ts and waverley-frontage.ts, which own the meshes. The city blocks' windows
+ * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's tower floodlit from its foot and its clock dials glowing (lighting.ts
+ * `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm). By day nothing changes. The
+ * function returned puts every material back as it was.
+ */
+export function lightWaverleyNight(scene: THREE.Object3D): () => void {
+  const undo: (() => void)[] = [];
+  const material = (name: string): THREE.MeshLambertMaterial | null => {
+    const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
+    return mesh?.isMesh && (mesh.material as THREE.MeshLambertMaterial).isMeshLambertMaterial ? mesh.material as THREE.MeshLambertMaterial : null;
+  };
+  const flood = (name: string, ...numbers: [number, number, number, number?]): void => {
+    const m = material(name);
+    if (!m) return;
+    const before = m.defines;
+    floodLit(m, ...numbers);
+    m.needsUpdate = true;
+    undo.push(() => { m.defines = before; m.needsUpdate = true; });
+  };
+  const walls = material('waverley-building-walls');
+  if (walls) undo.push(litWalls(walls, [1.2, 0.6])); // the sandstone's tile (materials.ts TEXTURES.stone)
+  // the tower's foot: the lowest point of the mesh it shares with the bridges' parapets (ASSUMED: the bridges are at street level too)
+  const parapets = scene.getObjectByName('waverley-balmoral-and-bridge-parapets');
+  if (parapets) flood('waverley-balmoral-and-bridge-parapets', 0.25, 30, 0.25, new THREE.Box3().setFromObject(parapets).min.y);
+  flood('waverley-balmoral-clock-dials', 1.5, 1, 1); // a dial is lit all over: no fall-off
+  return () => undo.forEach((u) => u());
+}
+
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
@@ -77,9 +107,11 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   world.carve(extent);
   const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
+  const night = lightWaverleyNight(scene);
   let disposed = false;
   return { ...climate, dispose(): void {
     if (disposed) return; disposed = true;
+    night();
     climate.dispose();
     // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not
     // sweep model/shared materials or the global shader-uniform textures.

@@ -18,6 +18,8 @@ import { ORIGIN, project, round } from './geo.ts';
 import type { LatLon, Pt } from './geo.ts';
 import type { Building } from './osm.ts';
 import { pointInPolygon } from './station.ts';
+import { lampSpots } from './streetlights.ts';
+import type { LampRun, LampSpot } from './streetlights.ts';
 import { seatY } from './terrain.ts';
 import type { Terrain } from './terrain.ts';
 
@@ -1280,6 +1282,8 @@ export interface CityBuildOptions {
   groundY?: number;
   /** also build the tree list */
   trees?: boolean;
+  /** also place the street lamps (core/streetlights.ts) */
+  lamps?: boolean;
   /** flat xyz segment pairs of the surface railway (scene.ts railSegments main + siding): a street that crosses one rides over it */
   rails?: readonly number[];
   /** the ground the city stands on: without it everything stands on the flat plane at `groundY` */
@@ -1308,6 +1312,8 @@ export interface TreeSpot {
 export interface CityMeshes {
   meshes: Record<CityKey, MeshAcc>;
   trees: TreeSpot[];
+  /** the street lamps along the roads drawn (core/streetlights.ts) */
+  lamps: LampSpot[];
   stats: {
     buildings: number;
     /** of those, open-sided `building=roof` canopies (no facade) */
@@ -1594,6 +1600,7 @@ export function buildCity(buildings: readonly Building[], city: CityData, opts: 
   for (let i = 0; i + 5 < rails.length; i += 6) railGrid.add({ a: [rails[i] as number, rails[i + 2] as number], b: [rails[i + 3] as number, rails[i + 5] as number], reach: 0 });
   const order: RoadClass[] = ['path', 'cycleway', 'pedestrian', 'service', 'minor', 'tertiary', 'secondary', 'primary', 'trunk'];
   const roads = city.roads.slice().sort((p, q) => order.indexOf(p.cls) - order.indexOf(q.cls));
+  const lampRuns: LampRun[] = [];
   for (const r of roads) {
     const runs = roadRuns(r.pts, (mid) => inAny(mid, exclude), (a, b) => railGrid.crosses(a, b));
     if (runs.length === 0) {
@@ -1612,6 +1619,7 @@ export function buildCity(buildings: readonly Building[], city: CityData, opts: 
       const cuts = surf?.cuts;
       // the height of a layer: its lift above the flat ground, or above the ground (the deck) under each vertex
       const at = (layer: number, extra = 0): Height => (surf ? (x, z, s, o) => surf.ground(x, z, s, o) + layer + lift + extra + raise : groundY + layer + lift + extra);
+      if (opts.lamps !== false) lampRuns.push({ id: r.id, cls: r.cls, half, line, y: at(LAYER_LIFT.pavement) });
       if (style.surface === 'paving') {
         strip(acc.pavement, line, -half, half, at(LAYER_LIFT.pavement), kerbTint, { cuts });
       } else {
@@ -1637,26 +1645,27 @@ export function buildCity(buildings: readonly Building[], city: CityData, opts: 
     stats.roads++;
   }
 
+  // the buildings' boxes: a tree or a lamp stands outside every building
+  const boxes = buildings.map((b) => {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (const p of b.pts) {
+      if (p[0] < minX) minX = p[0];
+      if (p[0] > maxX) maxX = p[0];
+      if (p[1] < minZ) minZ = p[1];
+      if (p[1] > maxZ) maxZ = p[1];
+    }
+    return { minX, maxX, minZ, maxZ };
+  });
+  const inBuilding = (t: Pt): boolean => buildings.some((b, i) => {
+    const box = boxes[i] as (typeof boxes)[number];
+    return t[0] >= box.minX && t[0] <= box.maxX && t[1] >= box.minZ && t[1] <= box.maxZ && pointInPolygon(t, b.pts);
+  });
   // trees: where OSM puts them, outside the excluded polygons and outside every building, with a repeatable size
   const trees: TreeSpot[] = [];
   if (opts.trees !== false) {
-    const boxes = buildings.map((b) => {
-      let minX = Infinity;
-      let maxX = -Infinity;
-      let minZ = Infinity;
-      let maxZ = -Infinity;
-      for (const p of b.pts) {
-        if (p[0] < minX) minX = p[0];
-        if (p[0] > maxX) maxX = p[0];
-        if (p[1] < minZ) minZ = p[1];
-        if (p[1] > maxZ) maxZ = p[1];
-      }
-      return { minX, maxX, minZ, maxZ };
-    });
-    const inBuilding = (t: Pt): boolean => buildings.some((b, i) => {
-      const box = boxes[i] as (typeof boxes)[number];
-      return t[0] >= box.minX && t[0] <= box.maxX && t[1] >= box.minZ && t[1] <= box.maxZ && pointInPolygon(t, b.pts);
-    });
     city.trees.forEach((t, i) => {
       if (inAny(t, exclude) || inBuilding(t)) return;
       const spot: TreeSpot = { x: t[0], z: t[1], height: 6 + hash01(i, 7) * 6, yaw: hash01(i, 8) * Math.PI * 2, tone: hash01(i, 9) };
@@ -1664,5 +1673,12 @@ export function buildCity(buildings: readonly Building[], city: CityData, opts: 
       trees.push(spot);
     });
   }
-  return { meshes: acc, trees, stats };
+  // street lamps (core/streetlights.ts): along the runs of road drawn, not in a building, on the station or in another road's carriageway
+  const carriage = new SegmentGrid();
+  for (const r of city.roads) {
+    if (ROAD_STYLE[r.cls].surface !== 'asphalt' && r.cls !== 'pedestrian') continue;
+    for (let i = 0; i + 1 < r.pts.length; i++) carriage.add({ a: r.pts[i] as Pt, b: r.pts[i + 1] as Pt, reach: roadWidth(r).width / 2 });
+  }
+  const lamps = opts.lamps === false ? [] : lampSpots(lampRuns, { rand: hash01, modern: inKxCentral, blocked: (p) => inAny(p, exclude) || inBuilding(p) || carriage.nearest(p, 6) < 0.3 });
+  return { meshes: acc, trees, lamps, stats };
 }

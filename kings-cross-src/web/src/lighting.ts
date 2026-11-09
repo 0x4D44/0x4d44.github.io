@@ -21,6 +21,7 @@
 // the platforms under the Barlow shed are a fifth as bright as the forecourt, and the tarmac is near black.)
 import * as THREE from 'three';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
+import { windowNight } from './materials.ts';
 
 const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
   const m = (o as { material?: THREE.Material | THREE.Material[] }).material;
@@ -414,6 +415,18 @@ export const GLOW_BELOW_GAIN = 30;
 export const FOOT_SHADE = 'FOOT_SHADE';
 
 /**
+ * A define a wall material with a map can carry (`material.defines = { [FLOOD]: 'vec4( 0.25, 14.0, 0.35, 0.0 )' }`) for the floodlight on a floodlit wall after dark: the wall's own colour, in a warm
+ * light (1, 0.82, 0.5), is added to what it glows with, as `x * ( z + ( 1 - z ) exp( -h / y ) )` of that colour, `x` the define's first number (the strength), `y` its second (how far up the wall the
+ * light carries, metres), `z` its third (what is left far above the lamps) and `h` the fragment's height in the world above the fourth (`w`, the foot of the lit wall: 0 where the ground is the datum,
+ * the rail head, as it is within a metre at the lit walls of King's Cross, 0.4 m under it at the hotel and the Barlow shed and up to 2.7 m over it at the Midland's uphill end; the Balmoral's is
+ * where its tower stands on the Scottish scene's ground). It is not the wall's own v, which starts again at zero on every trim and course. All of it times the night's level (`windowNight`, 0 by
+ * day: the wall is the sun's alone). A wall is lit from its foot, from the lamps in the ground (night-a-kx-square-2015-skinner.jpg: the front's brick
+ * is a gold (123, 109, 77) halfway up and (187, 178, 102) at the foot, and the tower's brick falls from (122, 102, 53) at its foot to (84, 67, 32) at its top; night-c-st-pancras-hotel-2011-johndoes.jpg:
+ * the Midland's arcade and porch are warm-lit from below and the upper brick is only lightly graded, and night-c-st-pancras-hotel-clock-2013-bourez.jpg: "how little floodlight the upper masonry gets").
+ */
+export const FLOOD = 'FLOOD';
+
+/**
  * A define a paving material with a map can carry (`material.defines = { [MOTTLE]: '' }`) for the tone of one slab against the next: the surface's colour is multiplied by 0.8 to 1.2
  * by a hash of the slab, a slab being half a tile of the paving's texture on a side (1.2 m on the forecourt: the texture's 2 x 2 slabs, whose joints the hash's cells follow). The same number
  * every time for one slab. The texture itself cannot do this: it is one tile of four slabs repeated every 2.4 m, and its mip levels average the four to one grey a little way off. The number is
@@ -438,8 +451,10 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   material.onBeforeCompile = (shader, renderer) => {
     prior.call(material, shader, renderer);
     Object.assign(shader.uniforms, coverUniforms, roofShadeUniforms);
+    shader.uniforms.uWinNight = windowNight;
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
+    if (!fragment.includes('uniform float uWinNight;')) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
     fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef ${MOTTLE}
@@ -461,6 +476,9 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) * ( 1.0 - ${INTERIOR.down.toFixed(2)} * looksDown ) * ( 1.0 - ${INTERIOR.pale.toFixed(2)} * material.diffuseColor.g * material.diffuseColor.g ) ) * material.diffuseColor * RECIPROCAL_PI;
 #ifdef ${GLOW_BELOW}
   totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;
+#endif
+#ifdef ${FLOOD}
+  totalEmissiveRadiance += diffuseColor.rgb * vec3( 1.0, 0.82, 0.5 ) * uWinNight * ${FLOOD}.x * mix( ${FLOOD}.z, 1.0, exp( -max( ( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y - ${FLOOD}.w, 0.0 ) / ${FLOOD}.y ) );
 #endif
 }`);
     shader.fragmentShader = fragment;

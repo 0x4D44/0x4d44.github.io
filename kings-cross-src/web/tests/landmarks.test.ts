@@ -10,7 +10,7 @@ import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
 import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
-import { FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
+import { FLOOD, FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
@@ -2761,7 +2761,9 @@ test('materials: the tinted looks (terracotta and buff brick, the Barlow\'s deep
   // round five (the E2 scorer: "building bases ... meet the ground with no darkening"): the four wall materials carry the contact shade at the foot of a wall (lighting.ts FOOT_SHADE), each
   // alone and with the define alone (a shared define object would be one edit away from all of them); the roofs, the glass and the rest do not
   // (the value is the depth of the long fall-off: the landmarks keep the slight 0.08 the hotel's measured stone was fitted to, the King's Cross front's is deeper, round six)
-  for (const key of ['brick', 'brickRed', 'brickDeep', 'stone'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08' }, `${key}: a wall that stands on the ground`);
+  // round seven (night lighting): the Midland's red brick and the stone (its dressings and the hotel's stucco strips) are floodlit from the foot as well (lighting.ts FLOOD); the stock brick and the Barlow's flank are not
+  for (const key of ['brick', 'brickDeep'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08' }, `${key}: a wall that stands on the ground`);
+  for (const key of ['brickRed', 'stone'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08', [FLOOD]: key === 'stone' ? 'vec4( 0.12, 5.0, 0.04, 0.0 )' : 'vec4( 0.28, 5.0, 0.04, 0.0 )' }, `${key}: a wall that stands on the ground, floodlit`);
   for (const key of ['slate', 'shedSlate', 'sash', 'pane', 'rib', 'lining', 'metal'] as const) assert.equal(lambert(key).defines?.[FOOT_SHADE], undefined, `${key}: no wall`);
   assert.notEqual(lambert('brick').defines, lambert('stone').defines, 'the define objects are the materials\' own');
   // the glow is the emissive colour times the pane texture, whose average colour the library records: neutral here, blue in the library's

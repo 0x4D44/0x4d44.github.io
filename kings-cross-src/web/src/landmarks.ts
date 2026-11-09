@@ -7,7 +7,7 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES } from './materials.ts';
+import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 import type { ClockDial } from './clocks.ts';
 
@@ -29,6 +29,13 @@ export interface MaterialSet {
   /** the materials (and textures) this set made itself, to dispose; the shared ones from materials.ts are not ours */
   owned: (THREE.Material | THREE.Texture)[];
 }
+
+/**
+ * The Midland's floodlight (lighting.ts `FLOOD`: the strength, how far up the wall it carries in metres, and what is left above that): the arcade and the porch lit from below and the brick above
+ * only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg). The numbers are ASSUMED from those photographs' look and tuned to it; the stone,
+ * which is the lighter and takes a light the more, has the less of it. The hotel's stucco strips are the same material and take the same wash (ASSUMED: no night photograph of it).
+ */
+const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as const;
 
 export function createMaterials(): MaterialSet {
   const owned: (THREE.Material | THREE.Texture)[] = [];
@@ -102,7 +109,9 @@ export function createMaterials(): MaterialSet {
   // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
   // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
   const midlandBrick: [number, number, number] = [0.88, 0.92, 0.885];
-  const brickRed = footShaded(tint('brickRed', midlandBrick));
+  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
+  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD).
+  const brickRed = floodLit(footShaded(tint('brickRed', midlandBrick)), ...MIDLAND_FLOOD.brick);
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
   // pale salmon (144, 98, 83) in the oblique view, and was a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
@@ -114,7 +123,7 @@ export function createMaterials(): MaterialSet {
   const brickDeep = footShaded(tint('brickRed', midlandBrick.map((c) => c * 0.55) as [number, number, number]));
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
-  const stone = footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]));
+  const stone = floodLit(footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain])), ...MIDLAND_FLOOD.stone);
   // hist-a: the hotel's London stock is a golden-brown, greyer and darker than the sunlit King's Cross stock: (125, 103, 76) as the mean of the brick in the photograph. This tint
   // renders (120, 101, 74) at the noon rig (dE 1.8); the earlier (1.15, 1.05, 0.88) rendered (136, 117, 81), dE 7.0, too pale and golden.
   // Round five: the stock texture has a paler joint, a redder and 6%-darker brick (materials.ts STOCK_BRICK), so this is (0.846, 0.8, 0.8) x the gain, a few per cent up in green and blue

@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FLOOD, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { cityMaterial, material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -916,15 +916,21 @@ test('the walls that stand on the ground have the contact shade, and the Range\'
     assert.ok(mesh, `${name} is a mesh of the scene`);
     return materialsOf(mesh)[0] as THREE.Material;
   };
+  // round seven (night lighting): the front is also floodlit from its foot, and the Midland's red brick and the stone (its dressings, and the hotel's stucco strips) are; the stock brick and the Barlow's flank are not
   for (const name of ['shed-front', 'shed-brick', 'shed-stone', 'tower-brick', 'tower-stone']) {
-    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.32' }, `${name}: a wall of the front, on the ground, with the deeper shade (round six, E2)`);
+    const stone = name.endsWith('stone');
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.32', [FLOOD]: stone ? 'vec4( 0.14, 14.0, 0.35, 0.0 )' : 'vec4( 0.25, 14.0, 0.35, 0.0 )' }, `${name}: a wall of the front, on the ground, with the deeper shade (round six, E2) and the floodlight (round seven)`);
   }
-  for (const name of ['landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone']) {
-    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08' }, `${name}: a wall on the ground, with the slight one the hotel's measured stone was fitted to`);
+  for (const name of ['landmarks-brick', 'landmarks-brickDeep']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08' }, `${name}: a wall on the ground, with the slight shade the hotel's measured stone was fitted to, and no floodlight`);
+  }
+  for (const name of ['landmarks-brickRed', 'landmarks-stone']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08', [FLOOD]: name.endsWith('stone') ? 'vec4( 0.12, 5.0, 0.04, 0.0 )' : 'vec4( 0.28, 5.0, 0.04, 0.0 )' }, `${name}: a wall on the ground, with the slight shade, and the Midland's floodlight (round seven)`);
   }
   // not the Range: its brick is held at (110, 94, 71) by the concourse's fill and the sun, and not the stock the whole city shares (the city's facades have their own, in their shader)
   for (const name of ['range-brick', 'range-stone', 'landmarks-slate', 'shed-aisle-roofs', 'kxcentral-brick', 'city-stock', 'city-red']) {
     assert.equal(find(name).defines?.[FOOT_SHADE], undefined, `${name}: no contact shade of this kind`);
+    assert.equal(find(name).defines?.[FLOOD], undefined, `${name}: and no floodlight (round seven)`);
   }
   assert.equal((material('brick') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'the shared brick is the plain one, for the Range and the rest');
   assert.equal((material('stone') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'and the shared stone');

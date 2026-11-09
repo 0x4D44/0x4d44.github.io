@@ -575,8 +575,22 @@ export const footShaded = <T extends THREE.Material>(m: T, depth = '0.08'): T =>
   m.defines = { ...m.defines, FOOT_SHADE: depth };
   return m;
 };
+/**
+ * A wall material floodlit after dark: the define lighting.ts `FLOOD` names (not imported, as `footShaded`'s: a test holds the two to one name). `strength`, `reach` (how far up the wall the light
+ * carries, metres), `floor` (the share of the light left far above the lamps) and `base` (the height in the world of the wall's foot, 0 by default) are lighting.ts `FLOOD`'s four numbers.
+ */
+export const floodLit = <T extends THREE.Material>(m: T, strength: number, reach: number, floor: number, base = 0): T => {
+  m.defines = { ...m.defines, FLOOD: `vec4( ${glslFloat(strength)}, ${glslFloat(reach)}, ${glslFloat(floor)}, ${glslFloat(base)} )` };
+  return m;
+};
 /** The King's Cross front's depth of the contact shade's long fall-off (see `footShaded`; the landmarks keep 0.08): 0.82 of the light at 1.2 m up the wall and 0.93 at 3 m, where 0.08 keeps 0.95 and 0.98. */
 const FRONT_FOOT = '0.32';
+/**
+ * The King's Cross front's floodlight (night-a-kx-square-2015-skinner.jpg, the brick measured at (96, 81, 60) halfway up the tower and (116, 96, 68) at its foot against the photograph's (99, 82, 37) and
+ * (122, 102, 53), the wall (94 to 109, 78 to 90, 56 to 63) against (110 to 125, 99 to 109, 56 to 80)): carries far up the wall (14 m) and leaves a third of its light at the tower's top. The stone, which
+ * is the lighter and takes a light the more, has the less of it (the ribs in the photograph are the brightest thing in the front).
+ */
+const FRONT_FLOOD = { brick: [0.25, 14, 0.35], stone: [0.14, 14, 0.35] } as const;
 
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
@@ -834,6 +848,57 @@ export function litPane<T extends THREE.MeshLambertMaterial>(m: T): T {
   return m;
 }
 
+/** The window grid of a plain city wall: metres to a window along it and up it (a Scottish tenement's bay is about 3 m, its storey 3.3), and the glass in the cell as shares of it (`winPane`'s rectangle). ASSUMED. */
+export const WALL_CELL = [3, 3.3] as const;
+export const WALL_RECT = [0.3, 0.7, 0.25, 0.82] as const;
+
+/**
+ * GLSL for a plain wall's lit windows, after the emissive colour is read (`totalEmissiveRadiance` and the `normal` are there): the wall's map UV, in cells of `WALL_CELL` (`WALL_TILE` is the map's tile
+ * over the cell), through `winTile`, only where the face looks sideways (a wall; the roofs and the plinths of the same mesh have none), the building's number from its vertex colour (a tone to each: 17
+ * of them in the Scottish scene, so the seed is the tone's own and a building keeps its lights whatever else is built).
+ */
+const LIT_WALL_GLSL = /* glsl */`
+#if defined( WALL_WIN ) && defined( USE_MAP )
+if ( uWinNight > 0.003 ) {
+  vec2 wv = vMapUv * WALL_TILE;
+  vec2 ww = fwidth( wv );
+#ifdef USE_COLOR
+  float wseed = fract( floor( vColor.r * 100.0 + 0.5 ) * 0.6180339 );
+#else
+  float wseed = 0.5;
+#endif
+  totalEmissiveRadiance += ( WIN_GAIN * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 );
+}
+#endif
+`;
+
+/**
+ * Light the windows of a plain city wall after dark (round seven, the Scottish scene: waverley-city.ts's sandstone blocks have no windows by day and showed by night as dark slabs): a Lambert wall
+ * with a map (the stone's, whose repeat is 1 / `tile` metres), UVs that are metres along the wall and up it and a vertex colour to each building, gets a grid of windows, `WALL_CELL` metres to a
+ * window, lit as the city's facades are (`winTile`: warm or a little cool, a share of each building's own, some floors dark, each its own hour of the dusk). By day nothing changes. The material is
+ * patched where it stands (a patch it already has runs first and stays in its program key) and the function returned puts it back as it was.
+ */
+export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, number]): () => void {
+  const [defines, onBeforeCompile, key] = [m.defines, m.onBeforeCompile, m.customProgramCacheKey()];
+  m.defines = { ...defines, WALL_WIN: '', WALL_TILE: `vec2( ${glslFloat(tile[0] / WALL_CELL[0])}, ${glslFloat(tile[1] / WALL_CELL[1])} )`, WIN_RECT: glslVec4(WALL_RECT), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(NIGHT_MODE.house) };
+  m.onBeforeCompile = (shader, renderer) => {
+    onBeforeCompile.call(m, shader, renderer);
+    shader.uniforms.uWinNight = windowNight;
+    let f = shader.fragmentShader;
+    if (!f.includes('uniform float uWinNight;')) f = f.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+    if (!f.includes('float winHash(')) f = f.replace('#include <common>', `#include <common>${WIN_NIGHT_GLSL}`);
+    shader.fragmentShader = f.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${LIT_WALL_GLSL}`);
+  };
+  m.customProgramCacheKey = () => `${key}+litWalls`;
+  m.needsUpdate = true;
+  return () => {
+    m.defines = defines;
+    m.onBeforeCompile = onBeforeCompile;
+    m.customProgramCacheKey = () => key;
+    m.needsUpdate = true;
+  };
+}
+
 /**
  * The panes of the shed's great windows, in the shed's frame (x across, y up). shed.ts `lunetteBars` puts a vertical bar every 1.6 m from the window's centre line and a transom at a third
  * and two thirds of the half disc's radius (SHED_SPAN_WIDTH / 2 / 3 = 5.334 m) above the springing (SHED_CROWN_HEIGHT - SHED_SPAN_WIDTH / 2 = 5.6388 m): a pane is 1.6 by 5.334 m. The two windows
@@ -958,8 +1023,9 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
   // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker
   // band at the south front's own view, and the close brick view's median L falls from 51.9 to 50.6 (dE2000 to R-a2 3.3 to 4.4, to R-a 2.4 to 3.4)
-  brickFoot: () => footShaded(tiled('brick'), FRONT_FOOT),
-  stoneFoot: () => footShaded(tiled('stone'), FRONT_FOOT),
+  // Round seven (night lighting): the front is floodlit from the foot, the brick's gold and the ribs' stone brighter at the lamps (night-a-kx-square-2015-skinner.jpg, see lighting.ts `FLOOD`)
+  brickFoot: () => floodLit(footShaded(tiled('brick'), FRONT_FOOT), ...FRONT_FLOOD.brick),
+  stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();
