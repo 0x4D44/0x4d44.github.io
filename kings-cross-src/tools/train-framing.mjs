@@ -626,15 +626,23 @@ export function stationViewSpecs(f) {
       region: { min: region.min.map(q6), max: region.max.map(q6) }, car: { index: car.index, type: car.type } };
   });
 }
-/** Candidate cameras for one view at one placement: the focus in world metres, how many positions lie over platforms, and the best few, each with its exact eye. */
+/**
+ * Candidate cameras for one view at one placement: the focus in world metres, how many positions lie over platforms (`candidateCount`), and every
+ * one of them with its exact eye, in two passes. Pass 'spread' is the best few (`thinCandidates`: none within `minSeparationDeg` of another, at
+ * most `max`, `spreadCount` of them), in the order the search has always tried them. Pass 'neighbour' is every other position over a platform
+ * (the ones thinning dropped, and any past `max`), best first again, tried only when no spread camera is clear. So the search never claims a view
+ * has no camera while a platform position at that distance is untried, and a camera the spread pass accepts is the same camera as before.
+ */
 export function stationCameras({ placement, spec, platforms, inside, stepDeg = 1, edgeClearM = CATALOGUE.platformEdgeClearM, max = CATALOGUE.stationMaxCandidates, minSeparationDeg = CATALOGUE.stationMinSeparationDeg }) {
   const focusWorld = placedPoint(placement, spec.focusLocal), front = wrapDeg(placement.rotationY / D2R + 180), spread = CATALOGUE.stationFrontAngleDeg;
   const all = stationCandidates({ focusXZ: [focusWorld[0], focusWorld[2]], distanceM: spec.distanceM, platforms, inside, stepDeg, edgeClearM, preferredBearingsDeg: [front - spread, front + spread] });
-  const candidates = thinCandidates(all, minSeparationDeg, max).map(c => {
+  const kept = thinCandidates(all, minSeparationDeg, max), keptSet = new Set(kept);
+  const camera = (c, pass) => {
     const pose = stationPose({ candidate: c, focus: focusWorld, distanceM: spec.distanceM });
-    return { azimuthDeg: c.azimuthDeg, platform: c.platform, eye: pose.eye, near: pose.near };
-  });
-  return { focusWorld, candidateCount: all.length, candidates };
+    return { azimuthDeg: c.azimuthDeg, platform: c.platform, eye: pose.eye, near: pose.near, pass };
+  };
+  const candidates = [...kept.map(c => camera(c, 'spread')), ...all.filter(c => !keptSet.has(c)).map(c => camera(c, 'neighbour'))];
+  return { focusWorld, candidateCount: all.length, spreadCount: kept.length, candidates };
 }
 /**
  * Everything V10 needs before the page is asked anything, a pure function of the formation and the station's data: the placements in the
@@ -681,8 +689,17 @@ const stationBase = (spec, placement, planned, platformHeightM) => ({ id: 'V10',
 const stationNotes = view => ({ focus: view.focus, distanceM: view.distanceM, azimuthDeg: view.azimuthDeg ?? null, platform: view.platform ?? null, placement: view.placement?.id ?? null, orientation: view.placement?.orientation ?? null,
   stop: view.placement?.stop ?? null, eyeAbovePlatformM: CATALOGUE.eyeAbovePlatformM, platformHeightM: view.platformHeightM, sceneryKept: true });
 /**
+ * How much of a view's candidate list its search inspected, split by pass. The candidates are listed spread first, then the thinned-out
+ * neighbours (stationCameras), so how many were tested says how many of each: `tested` of the `candidateCount` positions over platforms.
+ */
+const searchCounts = (tested, planned) => {
+  const spread = Math.min(tested, planned.spreadCount);
+  return { tested, candidateCount: planned.candidateCount, spreadCount: planned.spreadCount, testedSpread: spread, testedNeighbours: tested - spread };
+};
+/**
  * The six V10 views once the search has run: the chosen placement's accepted cameras as OK views, every other view a GAP that says how many
- * candidate positions were inspected and what blocked them, by name. Nothing is invented: a view with no clear camera has no pose.
+ * candidate positions were inspected (the spread over the platforms, then the neighbours thinning dropped) and what blocked them, by name.
+ * Nothing is invented: a view with no clear camera has no pose.
  */
 export function stationViewsFromSearch(station, report, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
   const at = chooseStation(report), chosen = at >= 0 ? report[at] : null, placement = chosen ? station.placements.find(p => p.id === chosen.placementId) : null;
@@ -692,12 +709,13 @@ export function stationViewsFromSearch(station, report, { platformHeightM = CATA
     const finish = view => ({ ...view, notes: stationNotes(view) });
     if (spec.status !== 'OK' || !placement) return finish({ ...base, status: 'GAP', reason: spec.reason ?? 'no placement could be searched', search });
     if (found?.accepted == null) {
-      const failures = failureSummary(found?.tried ?? []), reason = `no clear camera: ${found?.tested ?? 0} of ${planned.candidateCount} candidate positions over platforms were inspected${failures.length ? `; blocked by ${failures.map(([k, n]) => `${k} x${n}`).join('; ')}` : ''}`;
-      return finish({ ...base, status: 'GAP', reason, blocker: failures[0]?.[0] ?? null, search: { ...search, tested: found?.tested ?? 0, candidateCount: planned.candidateCount, failures } });
+      const counts = searchCounts(found?.tested ?? 0, planned), failures = failureSummary(found?.tried ?? []);
+      const reason = `no clear camera: ${counts.tested} of ${counts.candidateCount} candidate positions over platforms were inspected (${counts.testedSpread} spread over the platforms, then ${counts.testedNeighbours} thinned-out neighbours)${failures.length ? `; blocked by ${failures.map(([k, n]) => `${k} x${n}`).join('; ')}` : ''}`;
+      return finish({ ...base, status: 'GAP', reason, blocker: failures[0]?.[0] ?? null, search: { ...search, ...counts, failures } });
     }
     const c = planned.candidates[found.accepted.index];
     return finish({ ...base, status: 'OK', reason: null, eye: c.eye, target: planned.focusWorld, near: c.near, azimuthDeg: c.azimuthDeg, platform: c.platform,
-      search: { ...search, tested: found.tested, candidateCount: planned.candidateCount, rejectedBefore: found.tried.filter(t => !t.clear) } });
+      search: { ...search, ...searchCounts(found.tested, planned), pass: c.pass, rejectedBefore: found.tried.filter(t => !t.clear) } });
   });
 }
 /**
@@ -992,7 +1010,7 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
       for (const [index, c] of view.candidates.entries()) {
         setWorldView(T, camera, controls, { eye: c.eye, target: view.focusWorld, fov: 50, up: [0, 1, 0], near: c.near });
         const r = inspectCatalogueView(T, scene, camera, group, ground, { region: view.region }, stationCheckOptions());
-        tried.push({ azimuthDeg: c.azimuthDeg, platform: c.platform, clear: r.clear, reason: r.clear ? null : r.reason, blocker: r.blocker ?? null });
+        tried.push({ azimuthDeg: c.azimuthDeg, platform: c.platform, pass: c.pass ?? null, clear: r.clear, reason: r.clear ? null : r.reason, blocker: r.blocker ?? null });
         if (r.clear) { accepted = { index, azimuthDeg: c.azimuthDeg }; break; }
       }
       views[view.suffix] = { tested: tried.length, accepted, tried };

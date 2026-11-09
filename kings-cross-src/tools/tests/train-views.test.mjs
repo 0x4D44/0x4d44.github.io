@@ -718,18 +718,23 @@ test('V10 camera positions are exactly the asked distance from the focus, over a
  // facing south (rotationY 0 puts the nose toward -z, so the front bearing is 180): the best cameras are 45 degrees either side of it
  const placement={position:[0,0,0],rotationY:0},spec={suffix:'s',distanceM:25,focus:'cab',focusLocal:[0,1.7,0]};
  const cameras=args=>calm(()=>F.stationCameras(args),'stationCameras'),cams=cameras({placement,spec,platforms,inside,edgeClearM:.5});
- assert.deepEqual(cams.candidates.slice(0,6).map(c=>c.azimuthDeg),[135,225,133,137,223,227]);assert.equal(cams.candidateCount,360);assert.ok(cams.candidates.length<=48);
+ // CHANGED (V10 thinned-out neighbours): `candidates` used to be only the thinned list (at most 48 of the 360 positions); it is now every position over a platform,
+ // the same thinned list first (`spreadCount`, at most 48) and the neighbours that thinning dropped after it. Evidence: the tests below, and the round-2 replay
+ // (every accepted round-2 camera is still at the same index, with the same rejected cameras before it).
+ assert.deepEqual(cams.candidates.slice(0,6).map(c=>c.azimuthDeg),[135,225,133,137,223,227]);assert.equal(cams.candidateCount,360);assert.equal(cams.spreadCount,48);assert.equal(cams.candidates.length,360);
  // bearings: 0 is +z, 90 is +x, so a platform that lies only to the -z side of the focus offers only bearings of 115 to 245 degrees at 25 m
  const south=cameras({placement,spec,platforms:[{ref:'N',pts:[[-60,-60],[60,-60],[60,-10],[-60,-10]]}],inside,edgeClearM:.5});
  assert.equal(south.candidateCount,131);assert.deepEqual(south.candidates.slice(0,2).map(c=>c.azimuthDeg),[135,225]);assert.ok(south.candidates.every(c=>c.azimuthDeg>=115&&c.azimuthDeg<=245&&c.eye[2]<=-10.5+1e-9));
  const west=cameras({placement:{position:[0,0,0],rotationY:Math.PI/2},spec,platforms:[{ref:'W',pts:[[-60,-60],[-10,-60],[-10,60],[-60,60]]}],inside,edgeClearM:.5});
  assert.deepEqual(west.candidates.slice(0,2).map(c=>c.azimuthDeg),[225,315],'rotationY pi/2 sends the nose to -x, so the front bearing is 270 and the best cameras are at 225 and 315');assert.ok(west.candidates.every(c=>c.eye[0]<=-10.5+1e-9));
  for(const c of cams.candidates) {near(horizontal(c.eye,cams.focusWorld),25,1e-9);near(c.eye[1],2.6,1e-12);assert.equal(c.near,.25);assert.equal(c.platform,'P');}
- const gaps=cams.candidates.map(c=>c.azimuthDeg).sort((p,q)=>p-q).map((a,i,all)=>i?a-all[i-1]:99);assert.ok(gaps.every(g=>g>=2),`azimuths are 2 degrees apart at least: ${gaps}`);
+ // CHANGED (V10 thinned-out neighbours): the two-degree gap is a property of the spread pass, not of the whole list (the neighbours are what thinning dropped)
+ const gaps=cams.candidates.filter(c=>c.pass==='spread').map(c=>c.azimuthDeg).sort((p,q)=>p-q).map((a,i,all)=>i?a-all[i-1]:99);assert.equal(gaps.length,48);assert.ok(gaps.every(g=>g>=2),`azimuths are 2 degrees apart at least: ${gaps}`);
  assert.deepEqual(F.stationCameras({placement:{position:[0,0,0],rotationY:Math.PI},spec,platforms,inside,edgeClearM:.5}).candidates.slice(0,2).map(c=>c.azimuthDeg),[45,315],'a train turned about faces the other way');
  // a 4 m wide platform leaves only the points a half metre in from both its edges, whatever the bearing
  const sliver=F.stationCameras({placement,spec,platforms:[{ref:'S',pts:[[10,-60],[14,-60],[14,60],[10,60]]}],inside,edgeClearM:.5});
- assert.ok(sliver.candidates.length>=8&&sliver.candidateCount<=24,`${sliver.candidates.length} of ${sliver.candidateCount}`);assert.ok(sliver.candidates.every(c=>c.platform==='S'&&c.eye[0]>=10.5-1e-9&&c.eye[0]<=13.5+1e-9),'only points a half metre inside the sliver');
+ // CHANGED (V10 thinned-out neighbours): the count of at least eight is the spread's (`candidates` is now every position)
+ assert.ok(sliver.spreadCount>=8&&sliver.candidateCount<=24&&sliver.candidates.length===sliver.candidateCount,`${sliver.spreadCount} of ${sliver.candidateCount}`);assert.ok(sliver.candidates.every(c=>c.platform==='S'&&c.eye[0]>=10.5-1e-9&&c.eye[0]<=13.5+1e-9),'only points a half metre inside the sliver');
  // thinning: the first `max` of the order, skipping neighbours
  const ordered=[10,11,12,13,20,21,40].map(azimuthDeg=>({azimuthDeg}));
  assert.deepEqual(F.thinCandidates(ordered,2,10).map(c=>c.azimuthDeg),[10,12,20,40]);assert.deepEqual(F.thinCandidates(ordered,2,3).map(c=>c.azimuthDeg),[10,12,20]);assert.deepEqual(F.thinCandidates([{azimuthDeg:359},{azimuthDeg:1},{azimuthDeg:3}],5,9).map(c=>c.azimuthDeg),[359],'azimuth wraps at 360');
@@ -741,7 +746,9 @@ test('every V10 camera of every kind stands on a real platform, 2.6 m up, exactl
  for(const kind of ALL_KINDS) {
   const plan=stationPlans.get(kind);assert.deepEqual(plan.views.map(v=>[v.suffix,v.status]),F.STATION_VIEWS.map(s=>[s,'OK']),`${kind}: every view has cameras to search`);
   for(const p of plan.placements) for(const v of p.views) {
-   const spec=plan.specs.find(s=>s.suffix===v.suffix);assert.ok(v.candidates.length>0&&v.candidates.length<=48&&v.candidateCount>=v.candidates.length,`${kind} ${p.id} ${v.suffix}`);
+   // CHANGED (V10 thinned-out neighbours): the list is every position over a platform; the 48-camera limit is the spread's (`spreadCount`), and the neighbours follow it
+   const spec=plan.specs.find(s=>s.suffix===v.suffix);assert.ok(v.spreadCount>0&&v.spreadCount<=48&&v.candidates.length===v.candidateCount&&v.candidateCount>=v.spreadCount,`${kind} ${p.id} ${v.suffix}`);
+   assert.deepEqual(v.candidates.map(c=>c.pass),v.candidates.map((c,i)=>i<v.spreadCount?'spread':'neighbour'),`${kind} ${p.id} ${v.suffix}: spread first, then neighbours`);
    vec(v.focusWorld,F.placedPoint(p,spec.focusLocal),1e-9);
    for(const c of v.candidates) {
     near(horizontal(c.eye,v.focusWorld),spec.distanceM,1e-6,`${kind} ${p.id} ${v.suffix} az ${c.azimuthDeg}`);near(c.eye[1],PLATFORM_HEIGHT+1.7,1e-12);
@@ -756,9 +763,55 @@ test('every V10 camera of every kind stands on a real platform, 2.6 m up, exactl
  // the half metre of clearance is the planner's own default: a 4 m wide strip 10 to 14 m east of the cab focus offers cameras only 10.5 to 13.5 m east of it
  const focus0=stationPlans.get('lner5').placements[0].views[0].focusWorld,strip=[[focus0[0]+10,focus0[2]-80],[focus0[0]+14,focus0[2]-80],[focus0[0]+14,focus0[2]+80],[focus0[0]+10,focus0[2]+80]];
  const narrow=planOf('lner5',{...station,platforms:[{ref:'S',pts:strip}],stopIndexes:[3],orientations:['nose-at-buffers']}).placements[0].views[0];
- assert.ok(narrow.candidates.length>=4&&narrow.candidateCount<=24,`${narrow.candidates.length} of ${narrow.candidateCount}`);assert.ok(narrow.candidates.every(c=>c.platform==='S'&&c.eye[0]-focus0[0]>=10.5-1e-9&&c.eye[0]-focus0[0]<=13.5+1e-9),'no camera within a half metre of the strip edge');
+ // CHANGED (V10 thinned-out neighbours): at least four in the spread (it was `candidates.length`, the thinned list)
+ assert.ok(narrow.spreadCount>=4&&narrow.candidateCount<=24,`${narrow.spreadCount} of ${narrow.candidateCount}`);assert.ok(narrow.candidates.every(c=>c.platform==='S'&&c.eye[0]-focus0[0]>=10.5-1e-9&&c.eye[0]-focus0[0]<=13.5+1e-9),'no camera within a half metre of the strip edge');
  assert.equal(planOf('lner5',{...station,stops:[]}).placements.length,0,'no stop, no placement');
  assert.deepEqual(planOf('lner5',{...station,stopIndexes:[1,3],orientations:['nose-at-buffers']}).placements.map(p=>p.id),['stop-1-nose-at-buffers','stop-3-nose-at-buffers']);
+});
+
+test('V10 tries the spread of cameras first and then the neighbours that thinning dropped, each position over a platform once',()=>{
+ const square=[[-60,-60],[60,-60],[60,60],[-60,60]],platforms=[{ref:'P',pts:square}],inside=pointInPolygon;
+ const placement={position:[0,0,0],rotationY:0},spec={suffix:'s',distanceM:25,focus:'cab',focusLocal:[0,1.7,0]};
+ const cameras=args=>calm(()=>F.stationCameras({placement,spec,platforms,inside,edgeClearM:.5,...args}),'stationCameras'),cams=cameras({});
+ const raw=F.stationCandidates({focusXZ:[0,0],distanceM:25,platforms,inside,edgeClearM:.5,preferredBearingsDeg:[135,225]}),kept=F.thinCandidates(raw);
+ const rawAz=raw.map(c=>c.azimuthDeg),keptAz=kept.map(c=>c.azimuthDeg),dropped=rawAz.filter(a=>!keptAz.includes(a));
+ // the spread is the list the search has always tried, in the same order (so every camera it accepted is still at the same place); the neighbours follow, best first again
+ assert.deepEqual(cams.candidates.slice(0,cams.spreadCount).map(c=>c.azimuthDeg),keptAz);assert.deepEqual(cams.candidates.slice(cams.spreadCount).map(c=>c.azimuthDeg),dropped);
+ assert.deepEqual([cams.spreadCount,cams.candidateCount,cams.candidates.length],[kept.length,raw.length,raw.length]);assert.equal(new Set(cams.candidates.map(c=>c.azimuthDeg)).size,360,'every position once');
+ assert.deepEqual(cams.candidates.map(c=>c.pass),cams.candidates.map((c,i)=>i<kept.length?'spread':'neighbour'));
+ // a neighbour is a real camera: the same distance, height, platform and near plane rules as a spread one, and the same exact eye the position gives
+ for(const c of cams.candidates.slice(cams.spreadCount)) {near(horizontal(c.eye,cams.focusWorld),25,1e-9);near(c.eye[1],2.6,1e-12);assert.equal(c.platform,'P');assert.equal(c.near,.25);}
+ const first=cams.candidates[cams.spreadCount],pose=F.stationPose({candidate:raw.find(c=>c.azimuthDeg===first.azimuthDeg),focus:cams.focusWorld,distanceM:25});vec(first.eye,pose.eye,1e-12);
+ // the limits move the boundary between the passes, not the set of positions: a tighter max and a wider separation both leave more neighbours
+ const few=cameras({max:5});assert.deepEqual([few.spreadCount,few.candidates.length],[5,360]);assert.deepEqual(few.candidates.slice(0,5).map(c=>c.azimuthDeg),keptAz.slice(0,5));assert.equal(few.candidates[5].pass,'neighbour');
+ assert.equal(new Set(few.candidates.map(c=>c.azimuthDeg)).size,360,'positions past max are neighbours, not lost');
+ const wide=cameras({minSeparationDeg:10});assert.ok(wide.spreadCount<kept.length&&wide.spreadCount>=30&&wide.spreadCount<=36,`${wide.spreadCount}`);assert.equal(wide.candidates.length,360);
+ // nothing to thin: positions five degrees apart are all in the spread, and there are no neighbours
+ const sparse=cameras({stepDeg:5,max:100});assert.deepEqual([sparse.spreadCount,sparse.candidateCount,sparse.candidates.length],[72,72,72]);assert.ok(sparse.candidates.every(c=>c.pass==='spread'));
+ // the real station: the Pendolino's 150 m coach view has 17 positions over platforms and the spread keeps 12, which is where the round-2 search stopped
+ const view150=stationPlans.get('tl700x8').placements[0].views.find(v=>v.suffix==='station-150m-coach');
+ assert.deepEqual([view150.candidateCount,view150.spreadCount,view150.candidates.length],[17,12,17]);assert.deepEqual(view150.candidates.slice(12).map(c=>[c.azimuthDeg,c.platform]),[[201,'10'],[163,'0'],[165,'1'],[171,'3'],[182,'7']]);
+});
+
+test('a V10 view whose spread has no clear camera goes on to the neighbours, and its record says which pass found the camera and how many of each were inspected',()=>{
+ const plan=stationPlans.get('tl700x8'),A=plan.placements[0].id,planned=plan.placements[0].views.find(v=>v.suffix==='station-150m-coach'),extra=planned.candidateCount-planned.spreadCount;
+ assert.ok(extra>0,'the real station has a view with neighbours');
+ const accepted=index=>F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{...allAt(plan,A)[A],'station-150m-coach':index}})).find(v=>v.suffix==='station-150m-coach');
+ // the third neighbour is the first clear camera: it is the view's pose, and the spread (all of it) and two neighbours were rejected before it
+ const index=planned.spreadCount+2,late=accepted(index);
+ assert.equal(late.status,'OK');vec(late.eye,planned.candidates[index].eye,1e-12);assert.equal(late.azimuthDeg,planned.candidates[index].azimuthDeg);assert.equal(late.platform,planned.candidates[index].platform);assert.equal(late.near,planned.candidates[index].near);
+ assert.deepEqual([late.search.tested,late.search.candidateCount,late.search.spreadCount,late.search.testedSpread,late.search.testedNeighbours,late.search.pass],[index+1,planned.candidateCount,planned.spreadCount,planned.spreadCount,3,'neighbour']);
+ assert.equal(late.search.rejectedBefore.length,index);
+ // a camera from the spread says so, and tested no neighbour
+ const early=accepted(3);assert.deepEqual([early.search.tested,early.search.testedSpread,early.search.testedNeighbours,early.search.pass,early.search.spreadCount,early.search.candidateCount],[4,4,0,'spread',planned.spreadCount,planned.candidateCount]);
+ // the first neighbour is the first position after the spread
+ assert.equal(accepted(planned.spreadCount).search.pass,'neighbour');assert.equal(accepted(planned.spreadCount-1).search.pass,'spread');
+ // nothing clear: every position was inspected, and the reason and the counts say both passes were
+ const gap=accepted(null);assert.equal(gap.status,'GAP');assert.deepEqual([gap.search.tested,gap.search.candidateCount,gap.search.testedSpread,gap.search.testedNeighbours],[planned.candidateCount,planned.candidateCount,planned.spreadCount,extra]);
+ assert.match(gap.reason,new RegExp(`^no clear camera: ${planned.candidateCount} of ${planned.candidateCount} candidate positions over platforms were inspected \\(${planned.spreadCount} spread over the platforms, then ${extra} thinned-out neighbours\\); blocked by `));
+ // a search that stopped inside the spread reports no neighbours tested, and does not claim the other positions were inspected
+ const partial=F.stationViewsFromSearch(plan,[{placementId:A,clear:0,views:{'station-150m-coach':{tested:5,accepted:null,tried:Array(5).fill({clear:false,reason:'coach occluded',blocker:'X/bench'})}}}]).find(v=>v.suffix==='station-150m-coach');
+ assert.deepEqual([partial.search.tested,partial.search.testedSpread,partial.search.testedNeighbours],[5,5,0]);assert.match(partial.reason,new RegExp(`^no clear camera: 5 of ${planned.candidateCount} candidate positions over platforms were inspected \\(5 spread over the platforms, then 0 thinned-out neighbours\\)`));
 });
 
 test('the V10 search chooses the first placement with every view clear, else the first with the most, and says what blocked the rest',()=>{
@@ -779,8 +832,10 @@ test('the V10 search chooses the first placement with every view clear, else the
  views=F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{'station-25m':0,'station-75m':0,'station-150m':0},[B]:{'station-25m':0,'station-75m':0,'station-150m':0,'station-25m-coach':0}}));
  assert.deepEqual(views.map(v=>v.status),['OK','OK','OK','OK','GAP','GAP']);assert.ok(views.slice(0,4).every(v=>v.placement.id===B));
  const gap=views[4],cams=plan.placements[1].views[4];assert.equal(gap.eye,undefined);assert.equal(gap.target,undefined);assert.equal(gap.blocker,'Scene/furniture/benches (coach occluded)');
- assert.equal(gap.reason,`no clear camera: ${cams.candidates.length} of ${cams.candidateCount} candidate positions over platforms were inspected; blocked by Scene/furniture/benches (coach occluded) x${cams.candidates.length}`);
+ // CHANGED (V10 thinned-out neighbours): a view is a GAP only after every position over a platform was tried, and the reason says how many were the spread and how many the neighbours
+ assert.equal(gap.reason,`no clear camera: ${cams.candidates.length} of ${cams.candidateCount} candidate positions over platforms were inspected (${cams.spreadCount} spread over the platforms, then ${cams.candidates.length-cams.spreadCount} thinned-out neighbours); blocked by Scene/furniture/benches (coach occluded) x${cams.candidates.length}`);
  assert.deepEqual(gap.search.failures,[['Scene/furniture/benches (coach occluded)',cams.candidates.length]]);assert.equal(gap.search.tested,cams.candidates.length);assert.equal(gap.search.candidateCount,cams.candidateCount);assert.equal(gap.notes.placement,B);
+ assert.deepEqual([gap.search.tested,gap.search.candidateCount,gap.search.spreadCount,gap.search.testedSpread,gap.search.testedNeighbours],[cams.candidateCount,cams.candidateCount,cams.spreadCount,cams.spreadCount,cams.candidateCount-cams.spreadCount]);
  const none=F.stationViewsFromSearch(plan,[]);assert.ok(none.every(v=>v.status==='GAP'&&v.reason==='no placement could be searched'&&v.placement===undefined&&v.search.chosen===null));
  const bare=planOf('lner5',{...station,platforms:[]}),bareViews=F.stationViewsFromSearch(bare,fakeReport(bare,{[bare.placements[0].id]:{}}));assert.ok(bareViews.every(v=>v.status==='GAP'&&/no platform point lies exactly/.test(v.reason)));
  assert.deepEqual(views[0].notes,{focus:views[0].focus,distanceM:25,azimuthDeg:views[0].azimuthDeg,platform:views[0].platform,placement:B,orientation:'cab-at-north-end',stop:plan.placements[1].stop,eyeAbovePlatformM:1.7,platformHeightM:.9,sceneryKept:true});
@@ -827,12 +882,13 @@ test('a V10 search view is checked and chosen through the same inspection as the
  const at=(x,y=2.6,z=13)=>F.placedPoint(placement,[x,y,z]),target=at(0,1.7,13);
  // a screen stands between the train and the first camera, on the left; the second camera is on the right with a clear view
  const screen=new T.Mesh(new T.BoxGeometry(.3,10,80),new T.MeshBasicMaterial());screen.name='platform-screen';screen.position.set(...at(-8,5,13));screen.rotation.y=placement.rotationY;f.scene.add(screen);
- const candidates=[{azimuthDeg:270,platform:'L',eye:at(-30),near:.3},{azimuthDeg:90,platform:'R',eye:at(30),near:.3},{azimuthDeg:91,platform:'R',eye:at(31),near:.3}];
+ // CHANGED (V10 thinned-out neighbours): the candidates carry the pass they belong to, and the search records it for each camera it tried
+ const candidates=[{azimuthDeg:270,platform:'L',eye:at(-30),near:.3,pass:'spread'},{azimuthDeg:90,platform:'R',eye:at(30),near:.3,pass:'neighbour'},{azimuthDeg:91,platform:'R',eye:at(31),near:.3,pass:'neighbour'}];
  const second={id:'p2',position:[0,0,0],rotationY:0,views:[{suffix:'v',region:spec,focusWorld:[0,1.7,13],candidates:[]}]};
  const report=F.searchStation(T,f,[{...placement,views:[{suffix:'v',region:spec,focusWorld:target,candidates}]},second]);
  assert.equal(report.length,1,'the first placement has every view clear, so the second is never tried');const r=report[0];assert.deepEqual([r.placementId,r.clear],['p1',1]);
  assert.deepEqual([r.views.v.tested,r.views.v.accepted],[2,{index:1,azimuthDeg:90}],'the first clear camera ends the view');
- assert.deepEqual(r.views.v.tried.map(t=>[t.azimuthDeg,t.platform,t.clear,t.reason]),[[270,'L',false,'coach occluded'],[90,'R',true,null]]);assert.match(r.views.v.tried[0].blocker,/platform-screen/);assert.equal(r.views.v.tried[1].blocker,null);
+ assert.deepEqual(r.views.v.tried.map(t=>[t.azimuthDeg,t.platform,t.clear,t.reason]),[[270,'L',false,'coach occluded'],[90,'R',true,null]]);assert.match(r.views.v.tried[0].blocker,/platform-screen/);assert.equal(r.views.v.tried[1].blocker,null);assert.deepEqual(r.views.v.tried.map(t=>t.pass),['spread','neighbour'],'each tried camera records its pass');
  vec(f.group.position.toArray(),placement.position,1e-12);near(f.group.rotation.y,placement.rotationY,1e-12);vec(f.camera.position.toArray(),candidates[1].eye,1e-9,'the camera is left at the last candidate tried');assert.equal(f.camera.near,.3);assert.equal(f.camera.fov,50);
  // it is the very check the picture gets: the same options, so a camera the search calls clear is clear to the picture
  assert.deepEqual(F.stationCheckOptions(),{minScreenSpan:.03});
@@ -920,7 +976,8 @@ test('catalogue preflight and frozen poses cover V10: the planned counts, the fr
   await run('--kinds','lner5','--views','V02','--poses',poses).then(()=>assert.fail('the stage views are missing from this manifest'),e=>assert.match(e.message,/lner5\/front-3m view missing from the frozen poses/));
   await save(manifest());const [only]=await ok('--kinds','lner5','--views','V10','--poses',poses);assert.equal(only.posesFrozen,true,'V01-V09 entries are not needed when only V10 is captured');
   const manifestOfRun=C.stationManifest(station);assert.deepEqual([manifestOfRun.stopIndex,manifestOfRun.stop?.id,manifestOfRun.orientations,manifestOfRun.platformHeightM,manifestOfRun.eyeAbovePlatformM,manifestOfRun.noseToStopM],[3,station.stops[3].id,F.STATION_ORIENTATIONS,.9,1.7,1.5]);
-  assert.deepEqual(manifestOfRun.search,{azimuthStepDeg:1,maxCandidates:48,minSeparationDeg:2,edgeClearM:.5,frontAngleDeg:45,minScreenSpan:.03});assert.equal(manifestOfRun.trackData.sha256,station.sha256);assert.match(manifestOfRun.rule,/nose at the buffers first/);assert.deepEqual(manifestOfRun.platforms.slice(0,3),station.platforms.slice(0,3).map(p=>p.ref));
+  // CHANGED (V10 thinned-out neighbours): the manifest's search block names the two passes
+  assert.deepEqual(manifestOfRun.search,{azimuthStepDeg:1,maxCandidates:48,minSeparationDeg:2,edgeClearM:.5,frontAngleDeg:45,minScreenSpan:.03,passes:['spread','neighbour']});assert.equal(manifestOfRun.trackData.sha256,station.sha256);assert.match(manifestOfRun.rule,/nose at the buffers first/);assert.deepEqual(manifestOfRun.platforms.slice(0,3),station.platforms.slice(0,3).map(p=>p.ref));
  } finally {console.log=log;await rm(dir,{recursive:true,force:true});}
 });
 
