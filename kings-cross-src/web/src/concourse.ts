@@ -20,16 +20,25 @@ const TUBE_SIDES = 8; // ASSUMED exterior approximation; no unsourced wall thick
 export const SOFFIT_LIFT = 0.12;
 export const SKIN_LIFT = 0.45;
 /** A cladding diamond's bulge at its middle (ASSUMED, R-c2: two tones to a diamond). */
-export const FACET_RISE = 0.1;
+export const FACET_RISE = 0.2;
 /** Glazed zones (published 15 %; ASSUMED widths tuned to it): within 11 m of the funnel axis (R-a), within 4.6 m of the outline (R-c2). */
 export const FUNNEL_GLAZING_RADIUS = 11;
 export const RIM_GLAZING_WIDTH = 4.6;
 /** Published glazed share and the band the rubric accepts. */
 export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
-/** Rooflights (R-c, R-c2; ASSUMED): 34 m from the axis, every 20 degrees from 20 to 80 south of west, half-diagonals 3.2 m up the slope, 5 m across. */
-export const ROOFLIGHT_RADIUS = 34;
-export const ROOFLIGHT_AZIMUTHS = [20, 40, 60, 80] as const;
-export const ROOFLIGHT_HALF = { along: 3.2, across: 5 } as const;
+/**
+ * Rooflights (R-c, R-c2; ASSUMED): clean rhombi of dark glass in a pale frame laid on the cladding, not cells of the lattice, a row of four round the dome
+ * three quarters of the way from the funnel axis to the outline. R-c2 puts them on the south-west; they stand 12 degrees apart from 26 north of west to 10
+ * south of it, the dome's west face, because from a low standpoint in the west (concourse-exterior-west, 1.1 m up) the roof is nearly edge-on: south of 12
+ * degrees its own shoulder hides a rooflight, and nearer in than 55 m it is a line a few pixels tall; and from the square the hotel hides the south-west.
+ * Half-diagonals 4 m up the slope and 4.7 m across (R-c2: a rhombus a twelfth of the dome across, a little wider than tall). The frame is this share of the
+ * half-diagonals wide and rises from 0.7 m over the roof (clear of the cladding's pillows) to the glass 1.1 m over it.
+ */
+export const ROOFLIGHT_RADIUS = 58;
+export const ROOFLIGHT_AZIMUTHS = [-26, -14, -2, 10] as const;
+export const ROOFLIGHT_HALF = { along: 4, across: 4.7 } as const;
+export const ROOFLIGHT_FRAME = 0.14;
+export const ROOFLIGHT_KERB = [0.7, 1.1] as const;
 /** Roof edge fascia (R-c: a thin bright band): rim height up to the skin, on the outline, so the 138 m extent is the cells'. */
 export const FASCIA_BOTTOM = 0;
 /** Wall framing, metres (ASSUMED, R-c): a post at each rim node, two bars along each edge, a transom at this share of the height. */
@@ -490,7 +499,7 @@ function roofMaterial(): RoofMaterials {
   roofMaterials = {
     // Unlit: the scene's lights shine from above, so a lit underside would be black (R-a: pale soffit).
     soffit: new THREE.MeshBasicMaterial({ map: pillowTexture('triangle', 0.5), color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, name: 'concourse-soffit' }),
-    cladding: new THREE.MeshPhongMaterial({ map: pillowTexture('diamond', 0.62), color: 0xffffff, vertexColors: true, specular: 0xaab4c0, shininess: 46, name: 'concourse-cladding' }),
+    cladding: new THREE.MeshPhongMaterial({ map: pillowTexture('diamond', 0.62), color: 0xffffff, vertexColors: true, specular: 0xe8f0f8, shininess: 64, name: 'concourse-cladding' }),
     // Glows from below as daylight does (R-a, conc-ab).
     skylight: new THREE.MeshBasicMaterial({ map: pillowTexture('triangle', 0.7), color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, name: 'concourse-skylight' }),
     // Dark and glassy from above (R-c).
@@ -508,23 +517,31 @@ function roofMaterial(): RoofMaterials {
 
 type Tri = [number, number, number];
 
-/** Which kept cells are glazed: round the funnel, in the brim, and the rooflights (15 % published; R-a, R-c, R-c2). */
-export function glazedCells(d: Diagrid, kept: Tri[], centre: Pt, shed: Pick<ShedLayout, 'origin' | 'heading'>, rim: (x: number, z: number) => number): Set<number> {
-  const mid = kept.map((t): Pt => [(d.nodes[t[0]]!.x + d.nodes[t[1]]!.x + d.nodes[t[2]]!.x) / 3, (d.nodes[t[0]]!.z + d.nodes[t[1]]!.z + d.nodes[t[2]]!.z) / 3]);
+/** Which kept cells are glazed: round the funnel and in the brim (15 % published; R-a, R-c2). */
+export function glazedCells(d: Diagrid, kept: Tri[], centre: Pt, rim: (x: number, z: number) => number): Set<number> {
   const glazed = new Set<number>();
-  mid.forEach(([x, z], i) => {
+  kept.forEach((t, i) => {
+    const x = (d.nodes[t[0]]!.x + d.nodes[t[1]]!.x + d.nodes[t[2]]!.x) / 3, z = (d.nodes[t[0]]!.z + d.nodes[t[1]]!.z + d.nodes[t[2]]!.z) / 3;
     if (Math.hypot(x - centre[0], z - centre[1]) < FUNNEL_GLAZING_RADIUS || rim(x, z) < RIM_GLAZING_WIDTH) glazed.add(i);
   });
-  const funnel = worldToShed(shed, centre);
-  for (const azimuth of ROOFLIGHT_AZIMUTHS) {
-    const a = (azimuth * Math.PI) / 180, target = shedToWorld(shed, funnel.u - ROOFLIGHT_RADIUS * Math.cos(a), funnel.v - ROOFLIGHT_RADIUS * Math.sin(a));
-    const ex = (target[0] - centre[0]) / ROOFLIGHT_RADIUS, ez = (target[1] - centre[1]) / ROOFLIGHT_RADIUS; // up the slope; across it is (-ez, ex)
-    mid.forEach(([x, z], i) => {
-      const s = (x - target[0]) * ex + (z - target[1]) * ez, t = (z - target[1]) * ex - (x - target[0]) * ez;
-      if (Math.abs(s) / ROOFLIGHT_HALF.along + Math.abs(t) / ROOFLIGHT_HALF.across <= 1) glazed.add(i);
-    });
-  }
   return glazed;
+}
+
+/**
+ * The rooflights (R-c, R-c2): for each, the rhombus of its frame's outer edge and the smaller one of its glass, as four corners each (outward along the ray
+ * from the funnel axis, then to one side, inward, the other side), over the roof's smooth surface `surface(x, z)`.
+ */
+export function rooflights(centre: Pt, shed: Pick<ShedLayout, 'origin' | 'heading'>, surface: (x: number, z: number) => number): { outer: V3[]; inner: V3[] }[] {
+  const funnel = worldToShed(shed, centre);
+  return ROOFLIGHT_AZIMUTHS.map(azimuth => {
+    const a = (azimuth * Math.PI) / 180, [x, z] = shedToWorld(shed, funnel.u - ROOFLIGHT_RADIUS * Math.cos(a), funnel.v - ROOFLIGHT_RADIUS * Math.sin(a));
+    const ex = (x - centre[0]) / ROOFLIGHT_RADIUS, ez = (z - centre[1]) / ROOFLIGHT_RADIUS; // up the slope; across it is (-ez, ex)
+    const ring = (k: number, lift: number): V3[] => ([[1, 0], [0, 1], [-1, 0], [0, -1]] as const).map(([s, t]) => {
+      const p = s * k * ROOFLIGHT_HALF.along, q = t * k * ROOFLIGHT_HALF.across, px = x + p * ex - q * ez, pz = z + p * ez + q * ex;
+      return [px, surface(px, pz) + lift, pz];
+    });
+    return { outer: ring(1, ROOFLIGHT_KERB[0]), inner: ring(1 - ROOFLIGHT_FRAME, ROOFLIGHT_KERB[1]) };
+  });
 }
 
 // Ground-level fit-out, ASSUMED positions scaled by 1.7 m people; generic signs only. R-ab, R-b: red-topped ticket machines, navy totems;
@@ -794,10 +811,10 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
 
   // Between the members: glass, or a soffit under silver cladding, two cells either side of a rib one diamond facet (R-c, R-c2).
   const rim = (x: number, z: number): number => rimDistance(shed, footprint, north, x, z);
-  const glazed = glazedCells(d, kept, centre, shed, rim);
+  const glazed = glazedCells(d, kept, centre, rim);
   const tone = rng(0x4b58), paneTone = rng(0x91a3);
-  const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.84, k * 0.92, k]; }; // daylight, a pale blue-white, each pane its own shade
-  const SOFFIT_TONE = rgb(0xdadee2), CLADDING_TONE = rgb(0xa9adb2), UP: V3 = [0, 1, 0]; // CLADDING_TONE: the dome's mean in R-c is about (154, 152, 146)
+  const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.68, k * 0.82, k]; }; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a), each pane its own shade
+  const SOFFIT_TONE = rgb(0xdadee2), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
   const scaled = (c: Rgb, k: number): Rgb => [c[0] * k, c[1] * k, c[2] * k];
   const nodeAt = (i: number, by: number): V3 => { const p = at(i); return [p[0], p[1] + by, p[2]]; };
   const barycentric: [V2, V2, V2] = [[0, 0], [1, 0], [0, 1]];
@@ -838,6 +855,12 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     if (glazed.has(i) || paired.has(i)) return;
     cladding.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], [[0, 0], [1, 0], [1, 1]], { facing: UP, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
   });
+  // The rooflights: dark glass in a pale frame that rises to it, laid on the cladding (R-c, R-c2). The pillow texture's middle is full light, its edge dark.
+  const surface = (x: number, z: number): number => { const r = Math.hypot(x - cx, z - cz); return concourseHeight(canopy, (canopy.radius * r) / (r + rim(x, z))); }; // the nodes' own height law
+  for (const { outer, inner } of rooflights(centre, shed, surface)) {
+    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { facing: UP, color: rgb(0xeef1f4) });
+    cladding.poly(inner, undefined, { facing: UP, color: rgb(0x405468) });
+  }
   // The oculus: glass over the funnel's open top (R-a).
   const crown = d.nodes.filter(n => n.ring === 0);
   for (let i = 0; i < crown.length; i++) {
