@@ -768,20 +768,20 @@ function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, h
 }
 
 /**
- * One corner pinnacle of a tower (hist-c: the clock tower's four are clusters of slender shafts round a dark core, under a banded spirelet): a stone plinth, eight 0.3 m shafts, three
- * to a face (the corners and the middles of a square 0.15 m inside `half`), the dark core behind them, a stone capital and a spirelet of four stripes to a point. 7.15 m in all,
- * 1.9 m wide (hist-c: 7.2 m against a clock stage 11.4 m wide); sizes ASSUMED.
+ * One corner pinnacle of a tower (hist-c: the clock tower's four are clusters of slender shafts round a dark core, under a tall, slender spirelet banded in stone and red brick): a stone plinth, eight
+ * 0.3 m shafts, three to a face (the corners and the middles of a square 0.15 m inside `half`), the dark core behind them, a stone capital and a spirelet of eight stripes from a base 1.3 m wide to a point,
+ * 4.7 m tall: 7.15 m in all, 1.9 m wide at the cluster (hist-c: 7.2 m against a clock stage 11.4 m wide, the spirelet two thirds of it and its base about half the cluster's width); sizes ASSUMED.
  */
 function addPinnacle(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, half: number): void {
   const stone = part(parts, 'stone');
   const rotY = yaw(along);
   const slab = (y: number, h: number, skip: ('-y' | '+y')[]): void => stone.box([c[0], y + h / 2, c[1]], [2 * half + 0.2, h, 2 * half + 0.2], { rotY, skip });
-  const [y1, y2] = [y0 + 0.5, y0 + 2.9];
+  const [y1, y2] = [y0 + 0.5, y0 + 2.2];
   slab(y0, 0.5, ['-y']);
   addWalls(part(parts, 'pane'), squareAbout(c, along, out, half - 0.35), y1, y2);
   for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) stone.box([c[0] + (along[0] * a + out[0] * b) * (half - 0.15), (y1 + y2) / 2, c[1] + (along[1] * a + out[1] * b) * (half - 0.15)], [0.3, y2 - y1, 0.3], { rotY, skip: ['-y', '+y'] });
   slab(y2, 0.25, []);
-  addSpirelet(parts, c, along, out, y2 + 0.25, half, 4, 4);
+  addSpirelet(parts, c, along, out, y2 + 0.25, 0.65, 4.7, 8);
 }
 
 /**
@@ -833,7 +833,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
   // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones); hist-c: two tall groups from the balcony to the corbels,
   // their lancets about 5 m, and slender stone shafts with capitals standing in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
-  const gh = bT - sT - 2.4;
+  const gh = bT - sT - 2.6;
   const shafted = gh - 2.5 * Math.sin(Math.PI / 3) - 0.1;
   for (const f of faces) {
     if (!clockTower) for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, shift(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
@@ -846,14 +846,15 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
       }
     }
   }
-  // the corbel table: three steps, each a little farther out
-  for (let k = 0; k < 3; k++) addBand(stone, ring(h), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
-  // and under it a row of corbels, as far out as the first step, in front of a dark recess (hist-c: the table is a deep machicolation, dense with corbels); their size and spacing are ASSUMED
-  const nc = Math.round((2 * h) / 0.9);
-  addBand(part(parts, 'pane'), ring(h), bT - 0.9, 0.9, 0.04);
+  // the corbel table (hist-c: the tower's most visible ornament, a deep arcaded machicolation): a cornice of three steps stepping out 0.45, 0.625 and 0.8 m, under it a row of corbels 1.2 m tall, each a
+  // broad block 0.45 m out over a narrow one 0.3 m out, 1.3 m apart in front of a dark recess, and a pendant 1.8 m tall under each corner (the photograph's hanging corner turrets); sizes ASSUMED
+  for (let k = 0; k < 3; k++) addBand(stone, ring(h), bT + 0.6 * k, 0.6, 0.45 + 0.175 * k);
+  addBand(part(parts, 'pane'), ring(h), bT - 1.2, 1.2, 0.04);
+  const nc = Math.round((2 * h) / 1.3);
   for (const f of faces) {
-    for (let k = 0; k < nc; k++) stone.box(onWall(f, ((k + 0.5) * 2 * h) / nc - h, bT - 0.45, 0.05), [0.5, 0.9, 0.4], { rotY: yaw(f.dir), skip: ['+y'] });
+    for (let k = 0; k < nc; k++) for (const [y, w, hh, d] of [[bT - 0.325, 0.7, 0.65, 0.45], [bT - 0.925, 0.5, 0.55, 0.3]] as const) stone.box(onWall(f, ((k + 0.5) * 2 * h) / nc - h, y, d / 2), [w, hh, d], { rotY: yaw(f.dir), skip: ['+y'] });
   }
+  for (const c of sq(h + 0.25)) stone.box([c[0], bT - 0.9, c[1]], [0.5, 1.8, 0.5], { rotY: yaw(t.along), skip: ['+y'] });
   // the clock stage
   const grow = 0.5;
   addWalls(brick, sq(h + grow), tT, wH);

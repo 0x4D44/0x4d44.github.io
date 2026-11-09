@@ -1133,7 +1133,7 @@ test('Midland Grand [hist-b, hist-c]: a lucarne on each face of each tower\'s sp
   }
 });
 
-test('Midland Grand [hist-c]: the four corner pinnacles of each tower are clusters of eight slender stone shafts (three to a face) round a dark core, on a plinth under a capital, with a spirelet banded in four stripes: 7.15 m tall, 1.9 m wide, flush with the clock stage', () => {
+test('Midland Grand [hist-c]: the four corner pinnacles of each tower are clusters of eight slender stone shafts (three to a face) round a dark core, on a plinth under a capital, with a tall spirelet banded in eight stripes on a base 1.3 m wide: 7.15 m tall, 1.9 m wide at the cluster, flush with the clock stage', () => {
   const parts = midlandGeometry(midland);
   const [stone, brick, pane] = [parts.stone, parts.brickRed, parts.pane].map((m) => triangles(m as Batch));
   const half = 0.95;
@@ -1148,14 +1148,14 @@ test('Midland Grand [hist-c]: the four corner pinnacles of each tower are cluste
         return Math.abs(p.a - ca) < half + 0.15 && Math.abs(p.o - co) < half + 0.15 && v[1] >= y0 - 1e-6 && v[1] <= y1 + 1e-6;
       }));
       const reach = (ts: Tri[]): number => Math.max(...ts.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a - ca), Math.abs(inTower(t, v).o - co)))));
-      const [y1, y2, y3] = [st.wall + 0.5, st.wall + 2.9, st.wall + 3.15];
+      const [y1, y2, y3] = [st.wall + 0.5, st.wall + 2.2, st.wall + 2.45];
       // a plinth 2.1 m across and 0.5 m thick on the wall head, 0.1 m proud of the shafts
       const plinth = of(stone, st.wall, y1);
       assert.equal(plinth.length, 10, `${where}: a plinth of five faces`);
       close(reach(plinth), half + 0.1, 1e-6, `${where}: the plinth is 2.1 m across`);
       close(Math.max(...plinth.flatMap((tr) => tr.p.map((v) => v[1]))), y1, 1e-9, `${where}: and 0.5 m thick, up to the foot of the shafts`);
       close(Math.min(...plinth.flatMap((tr) => tr.p.map((v) => v[1]))), st.wall, 1e-9, `${where}: on the wall head`);
-      // eight shafts 0.3 m square, three to a face: at the corners and the middles of a square 0.8 m from the middle, from the plinth to the capital, flush with the stage's walls
+      // eight shafts 0.3 m square, three to a face: at the corners and the middles of a square 0.8 m from the middle, from the plinth to the capital, flush with the stage's walls (round 6: 1.7 m tall, under a longer spirelet)
       const shafts = of(stone, y1, y2).filter((tr) => Math.abs(geoNormal(tr)[1]) < 1e-9);
       assert.equal(shafts.length, 64, `${where}: eight shafts of four faces of two triangles`);
       for (const [da, db] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]] as const) {
@@ -1166,7 +1166,7 @@ test('Midland Grand [hist-c]: the four corner pinnacles of each tower are cluste
         close(spanOf((v) => inTower(t, v).o), 0.3, 1e-6, `${where}: and 0.3 m deep`);
       }
       close(Math.min(...shafts.flatMap((tr) => tr.p.map((v) => v[1]))), y1, 1e-9, `${where}: the shafts rise from the plinth`);
-      close(Math.max(...shafts.flatMap((tr) => tr.p.map((v) => v[1]))), y2, 1e-9, `${where}: 2.4 m tall`);
+      close(Math.max(...shafts.flatMap((tr) => tr.p.map((v) => v[1]))), y2, 1e-9, `${where}: 1.7 m tall`);
       close(Math.max(...shafts.flatMap((tr) => tr.p.map((v) => Math.max(sa * inTower(t, v).a, so * inTower(t, v).o)))), P, 1e-6, `${where}: flush with the stage's walls`);
       // the dark core behind them: 1.2 m square, four faces of the library's pane
       const core = of(pane, y1, y2);
@@ -1176,16 +1176,17 @@ test('Midland Grand [hist-c]: the four corner pinnacles of each tower are cluste
       const capital = of(stone, y2, y3).filter((tr) => !shafts.includes(tr) && tr.p.some((v) => v[1] > y2 + 1e-6));
       assert.equal(capital.length, 10, `${where}: a capital of five faces`);
       close(reach(capital), half + 0.1, 1e-6, `${where}: as wide as the plinth`);
-      // the spirelet: four stripes 1 m tall, stone and red brick by turns, from the capital to the point
-      const above = (m: Tri[]): Tri[] => of(m, y3, y3 + 4).filter((tr) => tr.p.some((v) => v[1] > y3 + 1e-6));
+      // the spirelet (round 6, the scorer: "stubby"; hist-c: tall, slender and striped, its base about half the cluster's width): eight stripes 0.5875 m tall, stone and red brick by turns, from a base 1.3 m wide to the point
+      const above = (m: Tri[]): Tri[] => of(m, y3, y3 + 4.7).filter((tr) => tr.p.some((v) => v[1] > y3 + 1e-6));
       const [stripesStone, stripesBrick] = [above(stone), above(brick)];
-      assert.equal(stripesStone.length, 16, `${where}: stone stripes 1 and 3, of four faces of two triangles`);
-      assert.equal(stripesBrick.length, 12, `${where}: red stripes 2 and 4, the last a point of four triangles`);
-      for (const [k, ts] of [[0, stripesStone.filter((tr) => Math.max(...tr.p.map((v) => v[1])) < y3 + 1 + 1e-6)], [1, stripesBrick.filter((tr) => Math.max(...tr.p.map((v) => v[1])) < y3 + 2 + 1e-6)]] as const) {
+      assert.equal(stripesStone.length, 32, `${where}: stone stripes 1, 3, 5 and 7, of four faces of two triangles`);
+      assert.equal(stripesBrick.length, 28, `${where}: red stripes 2, 4 and 6 of four faces of two triangles, the 8th a point of four triangles`);
+      for (let k = 0; k < 7; k++) {
+        const ts = (k % 2 ? stripesBrick : stripesStone).filter((tr) => tr.p.every((v) => v[1] >= y3 + k * 0.5875 - 1e-6 && v[1] <= y3 + (k + 1) * 0.5875 + 1e-6));
         assert.ok(ts.length >= 8, `${where}: stripe ${k + 1} is whole`);
-        close(reach(ts), half * (1 - k / 4), 1e-6, `${where}: stripe ${k + 1} starts as wide as the taper gives`);
+        close(reach(ts), 0.65 * (1 - k / 8), 1e-6, `${where}: stripe ${k + 1} starts as wide as the taper gives`);
       }
-      const apex = [...stripesStone, ...stripesBrick].flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 4 - 1e-6);
+      const apex = [...stripesStone, ...stripesBrick].flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 4.7 - 1e-6);
       assert.ok(apex.length > 0 && apex.every((v) => Math.abs(inTower(t, v).a - ca) < 1e-6 && Math.abs(inTower(t, v).o - co) < 1e-6), `${where}: the spirelet ends in a point on the axis`);
       close(Math.max(...apex.map((v) => v[1])), st.wall + 7.15, 1e-6, `${where}: 7.15 m over the wall head`);
       assert.ok(st.wall + 7.15 < st.roof, `${where}: under the roof's top`);
@@ -1198,7 +1199,7 @@ test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front 
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
   const h = t.side / 2;
-  const spring = st.shaft + 0.9 + (st.belfry - st.shaft - 2.4) - 2.5 * Math.sin(Math.PI / 3); // where a group's arch springs (the group is 2.5 m wide)
+  const spring = st.shaft + 0.9 + (st.belfry - st.shaft - 2.6) - 2.5 * Math.sin(Math.PI / 3); // where a group's arch springs (the group is 2.5 m wide, and stops 0.2 m lower than round 5's, under the deeper table)
   for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
     const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
     const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
@@ -1221,7 +1222,7 @@ test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front 
     const transoms = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.2)) < 1e-6));
     assert.equal(transoms.length, 8, `${n}: four transoms of two triangles to a front face`);
     for (const tr of transoms) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.95, 1e-6, `${n}: a transom is as wide as its lancet`);
-    close(Math.min(...transoms.flatMap((tr) => tr.p.map((v) => v[1]))), st.shaft + 0.9 + (st.belfry - st.shaft - 3.3) / 2 - 0.07, 1e-9, `${n}: half-way up the lancets`);
+    close(Math.min(...transoms.flatMap((tr) => tr.p.map((v) => v[1]))), st.shaft + 0.9 + (st.belfry - st.shaft - 3.5) / 2 - 0.07, 1e-9, `${n}: half-way up the lancets`);
     // in front of the lights: the dark panes of the groups stand 0.1 m out (the balustrade, 0.4 m out, is a pane too, and below them)
     const lights = triangles(parts.pane as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.1)) < 1e-6 && v[1] >= st.shaft + 0.9 - 1e-9 && v[1] < spring + 1));
     assert.ok(lights.length >= 8, `${n}: four lancets`);
@@ -1273,7 +1274,7 @@ test('Midland Grand [hist-c]: each tower\'s clock stage has a brick gable with a
   }
 });
 
-test('Midland Grand [hist-c]: a row of corbels 0.9 m tall under the corbel table on every face of each tower, no farther out than its first step, in front of a dark recess, clear of the belfry\'s windows', () => {
+test('Midland Grand [hist-c]: a deep corbel table under the clock stage of each tower (round 6, the scorer: "a flat banded strip"): a cornice of three steps out 0.45, 0.625 and 0.8 m over a row of two-tier corbels 1.2 m tall, no farther out than the first step, in front of a dark recess, and a pendant under each corner, clear of the belfry\'s windows', () => {
   const parts = midlandGeometry(midland);
   const stone = triangles(parts.stone as Batch);
   const pane = triangles(parts.pane as Batch);
@@ -1281,20 +1282,35 @@ test('Midland Grand [hist-c]: a row of corbels 0.9 m tall under the corbel table
     const st = towerStages(t.height);
     const bT = st.belfry;
     const half = t.side / 2;
-    const nc = Math.round(t.side / 0.9);
+    const nc = Math.round(t.side / 1.3);
     const reachOf = (v: V3): number => Math.max(Math.abs((v[0] - t.centre[0]) * t.along[0] + (v[2] - t.centre[1]) * t.along[1]), Math.abs((v[0] - t.centre[0]) * t.out[0] + (v[2] - t.centre[1]) * t.out[1]));
-    const corbels = stone.filter((s) => s.p.some((v) => v[1] < bT - 0.1) && s.p.every((v) => v[1] >= bT - 0.9 - 1e-9 && v[1] <= bT + 1e-9 && reachOf(v) < half + 0.3));
-    assert.equal(corbels.length, 4 * nc * 10, `${t.name}: ${nc} corbels to a face, five faces to a corbel (the top is under the first step)`);
-    close(Math.max(...corbels.flatMap((s) => s.p.map(reachOf))), half + 0.25, 1e-6, `${t.name}: as far out as the first step of the table`);
-    close(Math.min(...corbels.flatMap((s) => s.p.map((v) => v[1]))), bT - 0.9, 1e-9, `${t.name}: hanging 0.9 m under the table`);
+    // the corbels: two blocks to each, five faces to a block (the top is under the course above), the upper 0.65 m tall and the lower 0.55 m
+    const corbels = stone.filter((s) => s.p.some((v) => v[1] < bT - 0.1) && s.p.every((v) => v[1] >= bT - 1.2 - 1e-9 && v[1] <= bT + 1e-9 && reachOf(v) < half + 0.48));
+    assert.equal(corbels.length, 4 * nc * 20, `${t.name}: ${nc} corbels to a face, two blocks to a corbel, five faces to a block`);
+    close(Math.max(...corbels.flatMap((s) => s.p.map(reachOf))), half + 0.45, 1e-6, `${t.name}: as far out as the first step of the table`);
+    close(Math.min(...corbels.flatMap((s) => s.p.map((v) => v[1]))), bT - 1.2, 1e-9, `${t.name}: hanging 1.2 m under the table`);
+    // the lower block is narrower and shallower than the upper (a stepped corbel, not a slab): its faces stand 0.3 m out, the upper's 0.45 m
+    const outs = new Set(corbels.filter((s) => s.p.every((v) => Math.abs(reachOf(v) - half - 0.3) < 1e-6 || Math.abs(reachOf(v) - half - 0.45) < 1e-6) && s.p.every((v) => Math.abs(reachOf(v) - reachOf(s.p[0] as V3)) < 1e-9)).map((s) => reachOf(s.p[0] as V3).toFixed(3)));
+    assert.equal(outs.size, 2, `${t.name}: two depths of corbel face (${[...outs]})`);
+    // the cornice: three steps of 0.6 m, out 0.45, 0.625 and 0.8 m
+    for (const [k, out] of [[0, 0.45], [1, 0.625], [2, 0.8]] as const) {
+      const face = stone.filter((s) => s.p.every((v) => v[1] >= bT + 0.6 * k - 1e-9 && v[1] <= bT + 0.6 * (k + 1) + 1e-9 && Math.abs(reachOf(v) - half - out) < 1e-6));
+      assert.ok(face.length >= 8, `${t.name}: step ${k + 1} has its faces ${out} m out`);
+    }
+    // a pendant under each corner: a box 0.5 m square, 1.8 m tall, hanging from the table, its outer faces 0.5 m beyond the walls
+    for (const [sa, so] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+      const hang = stone.filter((s) => s.p.every((v) => { const a = (v[0] - t.centre[0]) * t.along[0] + (v[2] - t.centre[1]) * t.along[1]; const o = (v[0] - t.centre[0]) * t.out[0] + (v[2] - t.centre[1]) * t.out[1]; return a * sa >= half - 1e-6 && a * sa <= half + 0.5 + 1e-6 && o * so >= half - 1e-6 && o * so <= half + 0.5 + 1e-6 && v[1] >= bT - 1.8 - 1e-9 && v[1] <= bT + 1e-9; }));
+      assert.equal(hang.length, 10, `${t.name}: a pendant at ${sa},${so}, five faces of two triangles`);
+      close(Math.min(...hang.flatMap((s) => s.p.map((v) => v[1]))), bT - 1.8, 1e-9, `${t.name}: hanging 1.8 m under the table`);
+    }
     // the recess behind them, dark: a band of the library's pane, 0.04 m out, the corbels' height, one front face to each side
-    const recess = pane.filter((s) => s.p.every((v) => (Math.abs(v[1] - (bT - 0.9)) < 1e-9 || Math.abs(v[1] - bT) < 1e-9) && reachOf(v) < half + 0.3) && s.p.some((v) => Math.abs(v[1] - (bT - 0.9)) < 1e-9) && s.p.some((v) => Math.abs(v[1] - bT) < 1e-9));
+    const recess = pane.filter((s) => s.p.every((v) => (Math.abs(v[1] - (bT - 1.2)) < 1e-9 || Math.abs(v[1] - bT) < 1e-9) && reachOf(v) < half + 0.3) && s.p.some((v) => Math.abs(v[1] - (bT - 1.2)) < 1e-9) && s.p.some((v) => Math.abs(v[1] - bT) < 1e-9));
     assert.equal(recess.length, 8, `${t.name}: a dark recess, two triangles to a side`);
     close(Math.max(...recess.flatMap((s) => s.p.map(reachOf))), half + 0.04, 1e-6, `${t.name}: standing 0.04 m out`);
     // nothing of the belfry's stonework (the arches, jambs and sills) reaches up into the corbels' band
-    const belfry = stone.filter((s) => s.p.every((v) => v[1] > st.shaft - 1e-9 && v[1] < bT - 1e-9 && Math.hypot(v[0] - t.centre[0], v[2] - t.centre[1]) < half + 0.5) && !s.p.every((v) => v[1] >= bT - 0.9 - 1e-9));
+    const belfry = stone.filter((s) => s.p.every((v) => v[1] > st.shaft - 1e-9 && v[1] < bT - 1e-9 && Math.hypot(v[0] - t.centre[0], v[2] - t.centre[1]) < half + 0.5) && !s.p.every((v) => v[1] >= bT - 1.2 - 1e-9));
     assert.ok(belfry.length > 0, `${t.name}: the belfry has stonework`);
-    assert.ok(Math.max(...belfry.flatMap((s) => s.p.map((v) => v[1]))) < bT - 0.9, `${t.name}: the belfry's stonework ends under the corbels`);
+    assert.ok(Math.max(...belfry.flatMap((s) => s.p.map((v) => v[1]))) < bT - 1.2, `${t.name}: the belfry's stonework ends under the corbels`);
   }
 });
 
@@ -1312,7 +1328,7 @@ test('Midland Grand [hist-c]: each face of the clock tower\'s belfry has two gro
   assert.equal(rail.length, 8, 'a front face of two triangles on each of the four sides');
   close(Math.max(...rail.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))), h + 0.4, 1e-6, 'the balustrade stands 0.4 m out');
   const groupBase = st.shaft + 0.9;
-  const groupHeight = st.belfry - st.shaft - 2.4;
+  const groupHeight = st.belfry - st.shaft - 2.6;
   const lancetTop = groupBase + groupHeight - 0.9; // the lancets end under the oculus of their group
   for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
     const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
@@ -1328,7 +1344,7 @@ test('Midland Grand [hist-c]: each face of the clock tower\'s belfry has two gro
     assert.equal(panes.length, 4, `${n}: four lancets, two groups of two`);
     // tall: from the group's sill to under its oculus, over half of the stage (the round-3 lancets were 4.0 m, round 4's 4.3 m)
     const ys = triangles(parts.pane as Batch).filter((tr) => onFace(tr) && tr.p.every((v) => v[1] < lancetTop + 1e-9)).flatMap((tr) => tr.p.map((v) => v[1]));
-    close(Math.max(...ys) - Math.min(...ys), st.belfry - st.shaft - 3.3, 1e-6, `${n}: the lancets stand from the group's sill to under its oculus, 3.3 m short of the stage`);
+    close(Math.max(...ys) - Math.min(...ys), st.belfry - st.shaft - 3.5, 1e-6, `${n}: the lancets stand from the group's sill to under its oculus, 3.5 m short of the stage`);
     assert.ok(Math.max(...ys) - Math.min(...ys) > 5, `${n}: about 5 m tall (hist-c: the lights are about 5.5 m), above round 4's 4.3`);
     assert.ok((Math.max(...ys) - Math.min(...ys)) / (st.belfry - st.shaft) > 0.55, `${n}: and fill over half the stage`);
     close((panes[1] as [number, number])[0] - (panes[0] as [number, number])[1], 0.6, 1e-6, `${n}: a 0.6 m shaft between the pair`);
