@@ -259,9 +259,10 @@ test('fog amount and scene fog distances at known visibilities; a nonsense visib
   }
   assert.equal(fogAmount(0), 1);
   assert.equal(fogAmount(-5), 1);
-  assert.deepEqual(fogRange(NaN), { near: 1100, far: 3600 }, 'an unknown visibility has the clear fog');
-  // far = 1.25 x the visibility (seen from higher up, the visibility grows with the height over 250 m), at least 60 m and at most the clear 3600 m; near = a fifth of far, at most 1100 m
-  for (const [v, h, near, far] of [[300, 0, 75, 375], [1800, 0, 450, 2250], [40, 0, 12, 60], [9000, 0, 720, 3600], [5000, 0, 720, 3600], [300, 250, 150, 750], [300, 1000, 375, 1875], [2000, 100, 700, 3500]] as const) {
+  assert.deepEqual(fogRange(NaN), { ...CLEAR_FOG }, 'an unknown visibility has the clear air\'s haze (round one made clear air hazy: 80 m to 2 km, where it was 1100 m to 3600 m)');
+  // far = 1.25 x the visibility (seen from higher up, the visibility grows with the height over 250 m), at least 60 m and at most the weather's own haze, 2800 m (HAZE_CAP, what every thinner
+  // visibility is capped at: the page's old clear fog was 3600 m and is now the clear air's own 2 km); near = a fifth of far, at most that haze's 450 m
+  for (const [v, h, near, far] of [[300, 0, 75, 375], [1800, 0, 450, 2250], [40, 0, 12, 60], [9000, 0, 450, 2800], [5000, 0, 450, 2800], [300, 250, 150, 750], [300, 1000, 375, 1875], [2000, 100, 450, 2800]] as const) {
     const r = fogRange(v, h);
     assert.ok(Math.abs(r.near - near) < 1e-9 && Math.abs(r.far - far) < 1e-9, `${v} m seen from ${h} m: ${JSON.stringify(r)} against ${near} to ${far}`);
   }
