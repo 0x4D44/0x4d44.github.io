@@ -28,6 +28,7 @@ mutations = [
     ('rib depth range narrowed', '0.45 - 0.20 * t', '0.45 - 0.10 * t'),
     ('round tube polygon coarsened', 'const TUBE_SIDES = 8', 'const TUBE_SIDES = 4'),
     ('tube diameter interpolation flattened', '0.219 - 0.080 * t', '0.219 - 0.040 * t'),
+    ('roof members split over two meshes', "add(members, mat.member, 'concourse-lattice');", "add(members, mat.member, 'concourse-lattice');\n  add(members, mat.member, 'concourse-lattice');"),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:

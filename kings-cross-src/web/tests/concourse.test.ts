@@ -113,7 +113,8 @@ test('columnProfile: a trumpet that rises from a flared foot, narrows to a waist
 test('buildConcourse: lattice under the published apex, panels and floor facing up, rim glazing facing out', () => {
   const group = buildConcourse(canopy, station.pts, layout);
   const named = (n: string): THREE.Mesh => group.getObjectByName(n) as THREE.Mesh;
-  for (const n of ['concourse-lattice', 'concourse-glass', 'concourse-panels', 'concourse-wall', 'concourse-mullions', 'concourse-floor', 'concourse-column']) assert.ok(named(n), `no ${n}`);
+  assert.deepEqual(group.children.map(c => c.name).sort(), ['concourse-cladding', 'concourse-column', 'concourse-floor', 'concourse-glass', 'concourse-glass-top',
+    'concourse-lattice', 'concourse-mullions', 'concourse-panels', 'concourse-wall'], 'the concourse is these meshes and no others');
   const bbox = (m: THREE.Mesh): THREE.Box3 => {
     m.geometry.computeBoundingBox();
     return m.geometry.boundingBox as THREE.Box3;
@@ -124,12 +125,14 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
   assert.ok(lattice.min.y > canopy.rim - 0.5 && lattice.min.y < canopy.rim + 2);
   // the column rises to just under the funnel
   close(bbox(named('concourse-column')).max.y, canopy.apex - 0.1, EPS);
-  // roof infill and the floor face up
-  for (const n of ['concourse-glass', 'concourse-panels', 'concourse-floor']) {
+  // roof infill and the floor face up; the soffit mesh also holds the roof's vertical edge fascia, which looks sideways but never down
+  for (const n of ['concourse-glass', 'concourse-floor']) {
     const g = named(n).geometry;
     const normal = g.getAttribute('normal');
     for (let i = 0; i < normal.count; i++) assert.ok(normal.getY(i) > 0.3, `${n}: a face points down`);
   }
+  const soffitNormal = named('concourse-panels').geometry.getAttribute('normal');
+  for (let i = 0; i < soffitNormal.count; i++) assert.ok(soffitNormal.getY(i) > 0.3 || Math.abs(soffitNormal.getY(i)) < 1e-6, `concourse-panels: a face points down (${soffitNormal.getY(i)})`);
   close(bbox(named('concourse-floor')).max.y, 0.02, EPS);
   // each rim glazing quad faces away from the column
   const wall = named('concourse-wall').geometry;
