@@ -437,7 +437,7 @@ test('the stock brick is worn like the close-up (burnt ends, duller grey-brown b
   const red = draw('brickRed');
   const burnt = (rs: typeof stock.rects) => rs.filter((r) => /^rgba\(52,36,18,/.test(String(r.style)));
   const cracks = (rs: typeof stock.rects) => rs.filter((r) => r.style === 'rgba(30,22,14,0.4)');
-  const chips = (rs: typeof stock.rects) => rs.filter((r) => r.style === '#a29d8c').slice(1); // the first is the wall of mortar under everything
+  const chips = (rs: typeof stock.rects) => rs.filter((r) => r.style === '#b8ae96').slice(1); // the first is the wall of mortar under everything
   assert.ok(burnt(stock.rects).length >= 25, `most stock bricks have a burnt end: ${burnt(stock.rects).length} of about 64`);
   assert.ok(cracks(stock.rects).length >= 2, `a few are cracked: ${cracks(stock.rects).length}`);
   assert.ok(chips(stock.rects).length >= 4, `a few have a chipped corner: ${chips(stock.rects).length}`);
@@ -455,6 +455,31 @@ test('the stock brick is worn like the close-up (burnt ends, duller grey-brown b
   assert.deepEqual(plain(again.rects), plain(stock.rects), 'the same wall every load, so screenshots compare');
 });
 
+test('a brick wall has a wide pale joint and not a thin dark line (round five, the E3 scorer: "R-a shows a wide pale lime joint")', () => {
+  const [w, h] = TEXTURES.brick.px;
+  for (const [name, mortar] of [['brick', '#b8ae96'], ['brickRed', '#b8aa94']] as const) {
+    const a = recorder();
+    PAINTERS[name](a.ctx, w, h);
+    assert.equal(a.rects[0]!.style, mortar, `${name}: the wall of mortar is under everything`);
+    // the bricks' faces are the flat rgb() fills (the arris, the shade and the wear are rgba, the chips the mortar's own hex): their area inside the tile is the brick's share
+    const brickArea = a.rects.filter((r) => String(r.style).startsWith('rgb(')).reduce((sum, r) => {
+      const [x, y, rw, rh] = r.args as [number, number, number, number];
+      return sum + Math.max(0, Math.min(x + rw, w) - Math.max(x, 0)) * Math.max(0, Math.min(y + rh, h) - Math.max(y, 0));
+    }, 0);
+    // R-a's close-up is 23.5% mortar by pixel count (50.7% brick face, 25.8% shadow and dark brick); a 3/8 in joint alone is 17% of a Flemish wall, which is what drew a line
+    const share = 1 - brickArea / (w * h);
+    assert.ok(share > 0.2 && share < 0.27, `${name}: the mortar is about 23% of the wall, as in R-a: ${(100 * share).toFixed(1)}%`);
+  }
+  // the stock's mortar is a pale lime, lighter than the median brick face by over 15 of 255 in luma (it was 3 lighter than the bricks' own and read as a grey outline)
+  const stock = recorder();
+  PAINTERS.brick(stock.ctx, w, h);
+  const faces = stock.rects.filter((r) => typeof r.style === 'string' && r.style.startsWith('rgb(') && r.args[2]! > 80 && r.args[3]! > 20).map((r) => String(r.style).match(/\d+/g)!.map(Number) as [number, number, number]);
+  const lumas = faces.map(([R, G, B]) => 0.2126 * R + 0.7152 * G + 0.0722 * B).sort((p, q) => p - q);
+  const median = lumas[Math.floor(lumas.length / 2)]!;
+  assert.ok(faces.length > 20, `the stretchers are found: ${faces.length}`);
+  assert.ok(hexLuma(String(stock.rects[0]!.style)) - median > 15, `the mortar is paler than the brick: luma ${hexLuma(String(stock.rects[0]!.style)).toFixed(0)} against a median stretcher's ${median.toFixed(0)}`);
+});
+
 test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on the forecourt are a visible strip darker than the square (E5)', () => {
   const avg = TEXTURES.asphalt.average;
   const [r, g, b] = [(avg >> 16) & 255, (avg >> 8) & 255, avg & 255];
@@ -466,14 +491,17 @@ test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on 
   // reflective), cool-neutral, still the darkest flat thing in the street and under the open ground (0.13); at four-fifths (0.14) the roads were the ground's own tone and
   // drew as one plain from the overview
   const [rb, , bb] = [(road.getHex() >> 16) & 255, (road.getHex() >> 8) & 255, road.getHex() & 255];
-  assert.ok(road.r > 0.5 && road.r < 0.7 && bb >= rb && bb - rb <= 16, `a road is the same tarmac at about three-fifths of the light, cool-neutral: ${rb},${(road.getHex() >> 8) & 255},${bb}`);
+  // round five (the E5 scorer: the roads were L 41 in the overview, within 5 L of the footways, the ground and the flat roofs, so the street pattern dissolved): about 0.7 of that light again,
+  // L 36 to 40 there and 10 L or more under the footway (L 50 to 52)
+  assert.ok(road.r > 0.36 && road.r < 0.5 && bb >= rb && bb - rb <= 16, `a road is the same tarmac at about two-fifths of the platform's light (0.42 linear), cool-neutral: ${rb},${(road.getHex() >> 8) & 255},${bb}`);
   const lin = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   const roadLight = lin(road) * lin(new THREE.Color(avg));
   const groundLight = lin((terrainMaterial('ground') as THREE.MeshLambertMaterial).color);
   const pavingLight = lin((cityMaterial('pavement') as THREE.MeshLambertMaterial).color) * lin(new THREE.Color(TEXTURES.floorSlab.average));
-  assert.ok(roadLight > 0.09 && roadLight < 0.13, `the road's reflectance is about 0.11 (mid-grey tarmac, L 44 to 52): ${roadLight.toFixed(3)}`);
+  assert.ok(roadLight > 0.065 && roadLight < 0.09, `the road's reflectance is about 0.078 (mid-grey tarmac, L 36 to 40 in the overview, hist-a's sunlit L 44): ${roadLight.toFixed(3)}`);
   assert.ok(roadLight < 0.9 * groundLight, `the road's reflectance (${roadLight.toFixed(3)}) is under the open ground's (${groundLight.toFixed(3)}), so it still reads apart from it`);
-  assert.ok(roadLight > 0.55 * pavingLight && roadLight < 0.85 * pavingLight, `the road sits just under the paving (${pavingLight.toFixed(3)}), not 35 L below it: ${roadLight.toFixed(3)}`);
+  // (a road at 0.5 of the paving's light is about 14 L under it, L 37 against 51 in the overview; round three's quarter-light road was 35 L under it)
+  assert.ok(roadLight > 0.4 * pavingLight && roadLight < 0.65 * pavingLight, `the road sits at about half the paving's light (${pavingLight.toFixed(3)}), 14 L under it and not 35 L: ${roadLight.toFixed(3)}`);
   const a = recorder();
   PAINTERS.asphalt(a.ctx, 256, 256);
   const base = String(a.styles[0]);

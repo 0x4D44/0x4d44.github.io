@@ -151,8 +151,16 @@ interface BrickPalette {
  * stretcher's light and the stretchers a 15% spread, which at the distance of the hotel (a brick a few pixels long) read as a speckle of light
  * and dark bricks with no course in it; the headers are 0.84 now, the stretchers a 10% spread, so the mortar's courses are what the eye finds.
  */
-const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb4a06c, 0xa18a5a], header: [0x948462, 0x857a66], burnt: [0x72665a, 0x5e564c],
-  wear: { grey: [0xa99a72, 0x8f8362] } }; // (was 0xa39d6e, 0x8c8662: green at 0.11 of the way from red to blue against the buff's 0.28; these keep the buff's hue, 0.27, duller and darker)
+const STOCK_BRICK: BrickPalette = { mortar: '#b8ae96', stretcher: [0xb79f6c, 0xa4895a], header: [0x978362, 0x887966], burnt: [0x75655a, 0x61554c],
+  wear: { grey: [0xac9972, 0x928262] } }; // (was 0xa39d6e, 0x8c8662: green at 0.11 of the way from red to blue against the buff's 0.28; these keep the buff's hue, 0.27, duller and darker)
+/*
+ * Round five (the E3 scorer: "stock-brick mortar is a thin dark line; R-a shows a wide pale lime joint"). The mortar was (162, 157, 140), L 65, the stretchers' own lightness, in a
+ * line 3.8 px wide that the underside shade then darkened: it drew a grey outline, not a joint. It is (184, 174, 150), L 72, a pale lime, and each brick is drawn 0.7 px in from its
+ * joint on every side (3.8 px of joint is 5.2), so the mortar is 23% of the wall (it was 17%) where R-a's is 23.5%, and it reads as a course of pale joints between warm bricks.
+ * The wall draws about what it did at a distance (the bricks are 6% darker in their lightness to pay for the paler, wider mortar: the south front's tower is a median L 56.2 where
+ * it was 56.5) and its bricks are L 53.0 in the close view where they were 55.4 (R-a 53.4, R-a2 54.8), and a little redder (a* +2, to 3.0: R-a 1.3, R-a2 2.9, and R-d, the same wall in
+ * overcast, 4.8). Every hex above is the one it was, moved by about +3 in red and -1 in green. The Midland's red takes the same inset.
+ */
 /** The Midland Grand's red (R-lighting-materials-c): orange-red stretchers, headers a shade deeper, pale buff mortar. ASSUMED shades. */
 const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86649], header: [0xcf6047, 0xb45640], burnt: [0x5e3a30, 0x4a322c] };
 
@@ -202,17 +210,18 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
         const len = isHeader ? header : stretcher;
         const dark = r() < 0.015; // an overburnt brick (one in sixty-six: they were one in thirty-three and near black, the strongest speckle in a close view)
         const colours = !isHeader && palette.wear && r() < 0.3 ? palette.wear.grey : isHeader ? palette.header : palette.stretcher; // (a stock fired a duller grey-brown: one in three stretchers)
-        const lift = palette.wear ? 0.03 : 0; // (the wear below darkens the average a little: the bricks start that much lighter, so the wall keeps its hue and lightness)
+        const lift = palette.wear ? -0.06 : 0; // (a stock wall draws 6% darker in its brick, to pay for the paler, wider joint: see STOCK_BRICK)
         const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.95 + lift + r() * 0.1) : tone(colours[0], colours[1], r(), 0.95 + lift + r() * 0.1);
         g.fillStyle = dark ? tone(palette.burnt[0], palette.burnt[1], r()) : base;
-        g.fillRect(x0, y + joint, len, course - joint);
+        const [bx, by, bl, bh] = [x0 + 0.7, y + joint + 0.7, len - 1.4, course - joint - 1.4]; // the brick, drawn in from its joint
+        g.fillRect(bx, by, bl, bh);
         g.fillStyle = 'rgba(255,245,210,0.13)'; // the lit top arris
-        g.fillRect(x0, y + joint, len, Math.max(1, joint * 0.35));
+        g.fillRect(bx, by, bl, Math.max(1, joint * 0.35));
         g.fillStyle = 'rgba(0,0,0,0.14)'; // the shaded underside
-        g.fillRect(x0, y + course - Math.max(1.2, joint * 0.4), len, Math.max(1.2, joint * 0.4));
-        if (palette.wear && !dark) wearBrick(g, r, palette.mortar, x0, y + joint, len, course - joint);
+        g.fillRect(bx, by + bh - Math.max(1.2, joint * 0.4), bl, Math.max(1.2, joint * 0.4));
+        if (palette.wear && !dark) wearBrick(g, r, palette.mortar, bx, by, bl, bh);
         g.fillStyle = r() < 0.5 ? 'rgba(60,45,25,0.12)' : 'rgba(255,240,190,0.08)'; // one grain in the face (it was four: the speckle)
-        g.fillRect(x0 + r() * len, y + joint + r() * (course - joint), 1.5 + r() * 2, 1 + r() * 1.5);
+        g.fillRect(bx + r() * bl, by + r() * bh, 1.5 + r() * 2, 1 + r() * 1.5);
       }
     }
   }
@@ -1366,7 +1375,11 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   // asphalt's light, 0x858889, 0.045 reflective, a road drew near-black (L 24) and 35 L under the footway; 0xc9cdd4 is the same texture at about three-fifths of it,
   // cool-neutral under the warm sun, 0.11 reflective: L 46 to 48 at the noon rig, 11 L under the footway and still the darkest flat thing in the street, under the open
   // ground (0.13). At 0xe0dfdc, 0.14, the roads were the ground's own tone and drew as one khaki plain from the overview)
-  asphalt: () => cityFlat('asphalt', 0xc9cdd4),
+  // Round five (the E5 scorer: "roads, footways, the ground plane and flat roofs are now near the same mid-grey, so the street pattern dissolves ... darken the carriageway a few L"):
+  // in the overview's lower left the roads were L 41, the footways L 50 to 54 and the ground and flat roofs L 46 to 54, within 5 L of the road. 0xadb0b6 is the same tarmac at about
+  // 0.7 of that light (0.078 reflective): the roads are L 36 to 40 there, 10 L or more under the footways (L 50 to 52) and the plaza (L 70), well over round three's near-black (L 24)
+  // and 7 L under hist-a's sunlit tarmac (L 44)
+  asphalt: () => cityFlat('asphalt', 0xadb0b6),
   // Paving tones are set under the daylight rig (DAYLIGHT, world.ts) to R-lighting-materials-d/e: pale warm-grey stone, about
   // (163, 158, 157) where the sun lies on it. The pavement is that; the forecourt plaza, laid in lighter stone, a shade above.
   // The footways and paths are darker than the squares they cross (R-lighting-materials-a2, -e: a pale square crossed by darker strips of
