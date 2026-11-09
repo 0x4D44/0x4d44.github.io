@@ -144,6 +144,35 @@ test('an overcast day\'s sky is the pale cool white of a bright overcast, not a 
   }
 });
 
+test('an overcast horizon is a pale white with a little blue left in it: much greyer than the clear horizon, and not a neutral grey', () => {
+  const clear = rig(40).dome.horizon, cloudy = rig(40, { cloud: 1 }).dome.horizon;
+  assert.ok(spread(cloudy) < 0.5 * spread(clear), `greyer than the clear horizon: ${spread(cloudy)} against ${spread(clear)}`);
+  assert.ok(cloudy[2] > cloudy[0] && spread(cloudy) > 0.01, `but not a neutral grey, a little blue: ${cloudy}`);
+  assert.ok(cloudy.every((v) => v <= 1), `and not brighter than white: ${cloudy}`);
+});
+
+test('a part-clouded sky keeps a measurable blue in its zenith and its horizon, which thins as the cover rises: the cloud is grey, not a neutral grey', () => {
+  // The blue over red (sRGB, 0..1) of the dome's two colours at a high sun in dry air. The floors are about nine tenths of what the sky gives now: for the zenith 0.391, 0.303, 0.216 and
+  // 0.128 at a cover of a quarter, a half, three quarters and the whole, for the horizon 0.166, 0.127, 0.089 and 0.051 (clear, 0.478 and 0.204). A cloud pulled all the way to a neutral grey
+  // (CLOUD_SKY_GREY 1 where it is 0.9) leaves the zenith 0.371, 0.263, 0.156 and 0.048 and the horizon 0.161, 0.117, 0.074 and 0.031: under the floors from a half (zenith) and
+  // from three quarters (horizon).
+  const excess = (cloud: number, part: 'zenith' | 'horizon'): number => { const c = rig(55, { cloud }).dome[part]; return c[2] - c[0]; };
+  const floors = {
+    zenith: [[0.25, 0.35], [0.5, 0.27], [0.75, 0.19], [1, 0.115]],
+    horizon: [[0.25, 0.15], [0.5, 0.115], [0.75, 0.08], [1, 0.045]],
+  } as const;
+  for (const part of ['zenith', 'horizon'] as const) {
+    for (const [cloud, floor] of floors[part]) assert.ok(excess(cloud, part) > floor, `the ${part} at a cover of ${cloud} has a blue excess of ${excess(cloud, part).toFixed(4)}, not over ${floor}`);
+    let previous = excess(0, part);
+    for (const cloud of [0.25, 0.5, 0.75, 1]) {
+      const now = excess(cloud, part);
+      assert.ok(now < previous - 0.02, `the ${part}'s blue falls as the cover rises: ${previous.toFixed(4)} to ${now.toFixed(4)} at ${cloud}`);
+      previous = now;
+    }
+    assert.ok(excess(1, part) < 0.5 * excess(0, part), `by a whole cover the cloud has taken more than half of the ${part}'s blue`);
+  }
+});
+
 test('rain darkens the sky and the light and brings the lamps on in the afternoon; heavier rain is darker', () => {
   const dry = rig(35, { cloud: 1 }), light = rig(35, { cloud: 1, rain: 0.35 }), heavy = rig(35, { cloud: 1, rain: 1 });
   assert.ok(luma(heavy.dome.zenith) < luma(light.dome.zenith) && luma(light.dome.zenith) < luma(dry.dome.zenith));
@@ -379,6 +408,40 @@ test('exposure under a dry overcast deck opens a further CLOUD_EXPOSURE_DRY (rou
   for (const e of [-30, -12, -6]) assert.equal(rig(e, { cloud: 1 }).exposure, rig(e).exposure, `no lift at ${e} degrees`);
 });
 
+test('rain takes the cloud lift away along one curve, in the sky and in the exposure: half of it at a rain amount of a quarter, none from a half', () => {
+  // the dry deck's exposure above the wet deck's is CLOUD_EXPOSURE_DRY x the lift, so the lift can be read back from it
+  const lift = (rain: number): number => (rig(55, { cloud: 1, rain }).exposure / DAY_EXPOSURE - 1 - CLOUD_EXPOSURE) / CLOUD_EXPOSURE_DRY;
+  assert.ok(Math.abs(lift(0) - 1) < 1e-9, `dry: all of it, ${lift(0)}`);
+  assert.ok(Math.abs(lift(0.25) - 0.5) < 1e-9, `a rain amount of a quarter: half of it, ${lift(0.25)}`);
+  assert.ok(Math.abs(lift(0.1) - (1 - smoothstep(0, 0.5, 0.1))) < 1e-9 && Math.abs(lift(0.4) - (1 - smoothstep(0, 0.5, 0.4))) < 1e-9, 'and by a smoothstep between');
+  assert.ok(Math.abs(lift(0.5)) < 1e-9 && Math.abs(lift(1)) < 1e-9, `none from a rain amount of a half: ${lift(0.5)}, ${lift(1)}`);
+  // the sky is lifted by the same share: its colour is linear in the lift, so the quarter-rain sky is half way between the dry sky and the half-rain sky as the half rain would be with the dry sky's darkening
+  const sky = (rain: number, part: 'zenith' | 'horizon'): Rgb => rig(55, { cloud: 1, rain }).dome[part];
+  for (const part of ['zenith', 'horizon'] as const) {
+    const unlifted = sky(0.5, part).map((v) => v / (1 - 0.14 * 0.5));
+    const lifted = sky(0, part);
+    const quarter = lifted.map((v, i) => (v + (unlifted[i] as number)) / 2 * (1 - 0.14 * 0.25));
+    near(sky(0.25, part), quarter, 1e-9, `the ${part} at a rain amount of a quarter`);
+  }
+});
+
+test('no sky colour is ever outside what a screen can show: the dome and the fog stay between 0 and 1 in every light and weather', () => {
+  for (const e of [-30, -12, -6, -1, 2, 8, 20, 40, 61]) {
+    for (const cloud of [0, 0.5, 1]) {
+      for (const rain of [0, 0.5, 1]) {
+        for (const snow of [0, 1]) {
+          for (const visibilityM of [Infinity, 2000, 200]) {
+            const r = rig(e, { cloud, rain, snow, visibilityM });
+            for (const [name, c] of [['zenith', r.dome.zenith], ['horizon', r.dome.horizon], ['fog', r.fog]] as const) {
+              for (const v of c) assert.ok(v >= 0 && v <= 1, `${name} ${c} at ${e} degrees, cloud ${cloud}, rain ${rain}, snow ${snow}, visibility ${visibilityM}`);
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
 test('the evening is as dim as it was: only the day\'s light was raised, not the dusk\'s and the night\'s', () => {
   // The rows as they were before the daylight rig, against the reference they scaled then (sun 1.7, hemisphere 1.25, fills 0.8 and 0.3): the absolute light
   // at each of those elevations is what the page showed at dusk and at night, and it still is.
@@ -435,6 +498,22 @@ test('clear air is aerial perspective: haze from 100 m, so a high view shows the
   assert.equal(fogRange(20_000).far, CLEAR_FOG.far, 'and the clear air is reached at 20 km');
   assert.ok(Math.abs(fogRange(10_001).near - 450) < 1, 'no step as the visibility passes 10 km');
   assert.deepEqual(fogRange(NaN), { ...CLEAR_FOG }, 'an unreadable visibility is the clear air, as it always was');
+});
+
+test('between 10 and 20 km of visibility the clear air\'s haze eases in from the weather\'s own along a smoothstep, near plane and far plane together', () => {
+  const weather = fogRange(10_000);
+  for (const v of [10_500, 12_500, 15_000, 17_500, 19_500]) {
+    const t = smoothstep(10_000, 20_000, v);
+    const want = { near: weather.near + (CLEAR_FOG.near - weather.near) * t, far: weather.far + (CLEAR_FOG.far - weather.far) * t };
+    const got = fogRange(v);
+    assert.ok(Math.abs(got.near - want.near) < 1e-9 && Math.abs(got.far - want.far) < 1e-9, `${v} m: ${JSON.stringify(got)} against ${JSON.stringify(want)}`);
+  }
+  // the shape: a quarter of the way through the visibilities it has come a seventh of the way, half way through it is half there, three quarters through it is nearly all there
+  const share = (v: number): number => (weather.far - fogRange(v).far) / (weather.far - CLEAR_FOG.far);
+  const nearShare = (v: number): number => (weather.near - fogRange(v).near) / (weather.near - CLEAR_FOG.near);
+  for (const [v, want] of [[12_500, 0.15625], [15_000, 0.5], [17_500, 0.84375]] as const) {
+    assert.ok(Math.abs(share(v) - want) < 1e-9 && Math.abs(nearShare(v) - want) < 1e-9, `${v} m: the far plane ${share(v)} and the near plane ${nearShare(v)} of the way, against ${want}`);
+  }
 });
 
 test('a cloud deck has structure: smooth, fixed, about half on average, and different from one part of the sky to another', () => {

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CLEAR_FOG, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
+import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
@@ -105,6 +105,28 @@ test('midnight: the stylised moon is the key, the ambient is low, the lamps and 
   assert.equal(world.sky.getObjectByName('stars')!.visible, true);
   assert.equal(world.sky.getObjectByName('sun-disc')!.visible, false, 'the sun is not in the sky');
   assert.ok(luma(scene.background as THREE.Color) < 0.1, 'a dark sky');
+});
+
+test('the key light\'s direction is handed on for the sun\'s shadow: unknown before the first sky, then the sun\'s by day and the moon\'s after dark, the way the light itself shines from', () => {
+  const { atmosphere, lights, at } = setup();
+  assert.equal(atmosphere.keyDirection(), null, 'nothing is known before the first sky');
+  const same = (a: readonly number[], b: readonly number[], what: string): void => assert.ok(a.every((v, i) => Math.abs(v - (b[i] as number)) < 1e-9), `${what}: ${a} against ${b}`);
+  for (const iso of ['2026-06-21T07:30:00Z', NOON, '2026-06-21T17:30:00Z']) {
+    at(iso);
+    const key = atmosphere.keyDirection();
+    assert.ok(key, `known after the first sky (${iso})`);
+    const pos = solarPosition(Date.parse(iso));
+    same(key, sunDirection(pos.elevationDeg, pos.azimuthDeg), `by day, at ${iso}, it is the sun's`);
+    assert.ok(Math.abs(Math.hypot(...key) - 1) < 1e-9, 'a unit vector');
+    same(key, lights.sun.position.clone().normalize().toArray(), 'and it is where the key light shines from');
+  }
+  at(MIDNIGHT);
+  const night = atmosphere.keyDirection();
+  assert.ok(night, 'known after dark');
+  same(night, atmosphere.state()!.rig.moon.direction, 'after dark it is the moon\'s');
+  const pos = solarPosition(Date.parse(MIDNIGHT));
+  assert.ok(sunDirection(pos.elevationDeg, pos.azimuthDeg)[1] < -0.5 && night[1] > 0.5, 'the sun is far below the horizon then, and the key well above it');
+  same(night, lights.sun.position.clone().normalize().toArray(), 'and again it is where the key light shines from');
 });
 
 test('dusk and dawn through the frame loop are smooth: nothing the scene shows jumps from one minute to the next', () => {
@@ -287,6 +309,56 @@ test('an overcast dome carries the cloud deck\'s billows, a clear one is a smoot
   assert.ok(spread(high) < 0.005, 'a clearing sky is smooth again (the dome is repainted when the cloud changes, not only when its colours do)');
 });
 
+test('the billows come in with the cloud: none under a little cloud, fewer under broken cloud than under an overcast, and a paler deck is a paler dome, vertex for vertex', () => {
+  const { world, at } = setup();
+  const attr = world.sky.geometry.getAttribute('color') as THREE.BufferAttribute;
+  const pos = world.sky.geometry.getAttribute('position');
+  const lumaAt = (i: number): number => luma(new THREE.Color().setRGB(attr.getX(i), attr.getY(i), attr.getZ(i), THREE.LinearSRGBColorSpace));
+  const ring: number[] = [];
+  for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getY(i) / 5200 - Math.sin((26.25 * Math.PI) / 180)) < 1e-3) ring.push(i);
+  const spread = (): number => {
+    const l = ring.map(lumaAt);
+    const mean = l.reduce((s, v) => s + v, 0) / l.length;
+    return Math.sqrt(l.reduce((s, v) => s + (v - mean) ** 2, 0) / l.length) / mean;
+  };
+  const spreadAt = (cloud: number): number => { at(NOON, { ...CLEAR_STATE, cloud }); return spread(); };
+  assert.ok(spreadAt(0.1) < 0.005, `a little cloud leaves the dome smooth: ${spread()}`);
+  const broken = spreadAt(0.5);
+  const overcast = spreadAt(1);
+  assert.ok(broken > 0.1 && broken < 0.8 * overcast, `broken cloud has billows, but fewer than an overcast sky: ${broken} against ${overcast}`);
+  // round the ring the dome is the cloud deck's pattern: where the deck is paler by more than a few hundredths, the dome is paler
+  const deckAt = (i: number): number => { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), r = Math.hypot(x, y, z); return cloudDeck(x / r, y / r, z / r); };
+  let pairs = 0;
+  for (const i of ring) {
+    for (const j of ring) {
+      if (deckAt(i) - deckAt(j) <= 0.03) continue;
+      pairs++;
+      assert.ok(lumaAt(i) > lumaAt(j), `vertex ${i} (deck ${deckAt(i).toFixed(3)}) is not paler than ${j} (deck ${deckAt(j).toFixed(3)})`);
+    }
+  }
+  assert.ok(pairs > 1000, `a deck with plenty of patches: ${pairs} pairs`);
+});
+
+test('the dome eases from its horizon colour to its zenith colour along the sky\'s curve, which a cloud slows a little: to the power 0.45 clear, 0.465 under a thin cloud', () => {
+  const { world, atmosphere, at } = setup();
+  const attr = world.sky.geometry.getAttribute('color') as THREE.BufferAttribute;
+  const pos = world.sky.geometry.getAttribute('position');
+  let checked = 0;
+  for (const cloud of [0, 0.15]) { // (the billows begin above a cloud of 0.15, so the dome is the plain gradient here)
+    at(NOON, { ...CLEAR_STATE, cloud });
+    const { dome, glow } = atmosphere.state()!.rig;
+    assert.equal(glow.strength, 0, 'no sunset glow at noon');
+    for (let i = 0; i < pos.count; i += 17) {
+      const t = Math.min(1, Math.max(0, pos.getY(i) / Math.hypot(pos.getX(i), pos.getY(i), pos.getZ(i))));
+      const k = Math.pow(t, 0.45 + 0.1 * cloud);
+      const want = new THREE.Color().setRGB(...([0, 1, 2] as const).map((c) => (dome.horizon[c] as number) + ((dome.zenith[c] as number) - (dome.horizon[c] as number)) * k) as [number, number, number], THREE.SRGBColorSpace);
+      assert.ok(Math.abs(attr.getX(i) - want.r) + Math.abs(attr.getY(i) - want.g) + Math.abs(attr.getZ(i) - want.b) < 1e-5, `vertex ${i} (${t.toFixed(3)} of the way up) at a cloud of ${cloud}`);
+      if (t > 0.05 && t < 0.95) checked++;
+    }
+  }
+  assert.ok(checked > 100, `a good spread of heights: ${checked}`);
+});
+
 test('the overcast deck\'s dark masses are lifted, and the bright ones are still there (round five, E1)', () => {
   const { world, at } = setup();
   const attr = world.sky.geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -360,6 +432,48 @@ test('two scenes share the station\'s glowing surfaces: the second atmosphere ta
   assert.deepEqual(shared.emissive.toArray(), dimmed.toArray(), 'the same night dims it the same, whichever scene shows it');
   waverley.at(NOON);
   assert.deepEqual(shared.emissive.toArray(), built.toArray(), 'and the day brings back what it was built with');
+});
+
+test('a stand-in may be a Phong surface, as the platform canopy\'s glass is: it dims after dark and the day brings it back, like a Lambert one', () => {
+  const { scene, atmosphere, at } = setup();
+  const glass = new THREE.MeshPhongMaterial({ color: 0xdddddd, emissive: 0x3a5670 });
+  const clear = new THREE.MeshPhongMaterial({ color: 0xdddddd });
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), glass), new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), clear));
+  atmosphere.rescan();
+  const built = glass.emissive.clone();
+  at(NOON);
+  assert.deepEqual(glass.emissive.toArray(), built.toArray(), 'by day it is as it was built');
+  at(MIDNIGHT);
+  assert.ok(Math.abs(glass.emissive.r / built.r - (DAYLIGHT_FLOOR + LAMP_SHARE)) < 1e-9, `dimmed to the floor and the lamps\' share: ${glass.emissive.r / built.r}`);
+  assert.equal(clear.emissive.getHex(), 0, 'a Phong material with no emissive is left alone');
+  at(NOON);
+  assert.deepEqual(glass.emissive.toArray(), built.toArray(), 'and the day brings it back exactly');
+});
+
+test('a stand-in that a night has dimmed to black, to the eight bits of a hex colour, is still one for the second scene\'s atmosphere, which brings back what it was built with', () => {
+  // The second atmosphere finds the material in the state the first left it, and a very dim glow is then 0x000000. It is still a stand-in: the colour it was built with is remembered.
+  const london = setup(), waverley = setup();
+  const faint = new THREE.MeshLambertMaterial({ color: 0xdddddd, emissive: 0x010101 });
+  for (const { scene } of [london, waverley]) scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), faint));
+  london.atmosphere.rescan();
+  const built = faint.emissive.clone();
+  assert.ok(built.getHex() !== 0, 'it glows when it is built');
+  london.at(MIDNIGHT);
+  assert.equal(faint.emissive.getHex(), 0, 'the night takes it to black');
+  assert.ok(faint.emissive.r > 0 && faint.emissive.r < built.r, 'though it is not quite nothing');
+  waverley.atmosphere.rescan();
+  waverley.at(NOON);
+  assert.deepEqual(faint.emissive.toArray(), built.toArray(), 'the second scene\'s atmosphere found it all the same, and brings back the colour it was built with');
+});
+
+test('a surface that does not glow when the scene is scanned is not taken over later: only what was built glowing is dimmed after dark', () => {
+  const { scene, atmosphere, at } = setup();
+  const plain = new THREE.MeshLambertMaterial({ color: 0xdddddd });
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), plain));
+  atmosphere.rescan();
+  plain.emissive.setHex(0x336699); // lit by something else after the scan, which the atmosphere does not know of
+  at(MIDNIGHT);
+  assert.equal(plain.emissive.getHex(), 0x336699, 'the night leaves it as it is');
 });
 
 test('the far rails, which are unlit lines, dim after dark so they do not glow white against the night city', () => {
@@ -472,6 +586,17 @@ test('two scenes share the station\'s surfaces: the second atmosphere\'s scan le
   const wet = compile(shared).fragmentShader;
   assert.ok(wet.includes('uniform float uWet;') && wet.includes('uniform vec4 uRoofShade;'), 'the ballast has the wet ground and the roof shade, as the key says');
   assert.ok(compile(plain).fragmentShader.includes('uniform vec4 uRoofShade;'), 'the steel has the roof shade');
+});
+
+test('a material with a wet surface\'s name that is not a Lambert material is left as it is: the shader the wet ground patches is the Lambert one', () => {
+  const { scene, atmosphere } = setup();
+  const basic = new THREE.MeshBasicMaterial({ color: 0x808080 }); basic.name = 'asphalt';
+  const phong = new THREE.MeshPhongMaterial({ color: 0x808080 }); phong.name = 'ballast';
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), basic), new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), phong));
+  const versions = [basic.version, phong.version];
+  atmosphere.rescan();
+  assert.deepEqual([basic.version, phong.version], versions, 'neither is compiled again');
+  for (const m of [basic, phong]) assert.ok(!compile(m).fragmentShader.includes('uWet'), `${m.name}: no wet ground in its shader`);
 });
 
 test('rain and snow are drawn when the weather has them, with the scene\'s view, and not otherwise', () => {
