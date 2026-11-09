@@ -1422,11 +1422,14 @@ test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, and
   }
 });
 
-test('bogie budgets: a near bogie is at most 2,600 triangles (a motor bogie) or 2,400 (a trailer), a far one at most 300, in every style', () => {
+// The AT300's budget is 100 (motor) and 150 (trailer) above the others': its photograph shows the lugs, arms, ribs and cables of `at300Detail`, about 170 triangles.
+// The real limit is the rubric's 1.5 x per kind (see the cost counter), which the AT300 kinds meet with room to spare.
+test('bogie budgets: a near bogie is at most 2,600 triangles (a motor bogie) or 2,400 (a trailer), the AT300\'s 2,700 or 2,550, a far one at most 300, in every style', () => {
   for (const { label, spec } of BOGIE_CASES) {
     const nearN = trisOf(bogieSoup(spec));
     const farN = trisOf(bogieFarSoup(spec));
-    assert.ok(nearN <= (spec.motor ? 2600 : 2400), `${label}: ${nearN} triangles in the near bogie`);
+    const cap = spec.style === 'hitachi' ? (spec.motor ? 2700 : 2550) : spec.motor ? 2600 : 2400;
+    assert.ok(nearN <= cap, `${label}: ${nearN} triangles in the near bogie (at most ${cap})`);
     assert.ok(nearN >= 1800, `${label}: ${nearN} triangles is too bare for a bogie that reads as one at three metres`);
     assert.ok(farN <= 300 && farN >= 100, `${label}: ${farN} triangles in the far bogie`);
     // the wheels are the bulk of it, and the rest is the frame, springs, discs and the drive
@@ -1519,6 +1522,107 @@ test('bogie styles: absent a style a bogie is the Hitachi\'s, or the Alstom\'s i
     return false;
   };
   assert.deepEqual(styles.map(hasYellow), [true, false, false, false]);
+});
+
+test('bogies: the AT300 frame carries the lugs, arms, ribs and cables its photograph shows, each standing on the box or beam it belongs to, and the springs it shows; no other maker\'s frame carries them', () => {
+  // lner-gwr800-bogie-detail-2017.jpg: the vertical lug with its eye over each axle box, the trailing arm from each box inboard, the diagonal webs on
+  // the beam's face either side of the step's plate, and the sensor cable looping from the box end to the frame. The routing of the cable is ASSUMED.
+  const r = 0.43;
+  const w = 1.3;
+  const spec: BogieSpec = { radius: r, wheelbase: 2 * w, track: FIGURES.gauge.value, motor: true, style: 'hitachi' };
+  const CAP = 0x4f545b;
+  const RUBBER = 0x1f2125;
+  const colourOf = (soup: Soup, hex: number): V3t[] => {
+    const c = col(hex);
+    const out: V3t[] = [];
+    for (let i = 0; i < soup.pos.length / 3; i++) {
+      if (Math.abs((soup.clr[3 * i] as number) - c.r) < 1e-6 && Math.abs((soup.clr[3 * i + 1] as number) - c.g) < 1e-6 && Math.abs((soup.clr[3 * i + 2] as number) - c.b) < 1e-6) out.push([soup.pos[3 * i] as number, soup.pos[3 * i + 1] as number, soup.pos[3 * i + 2] as number]);
+    }
+    return out;
+  };
+  const span = (v: V3t[], axis: 0 | 1 | 2): [number, number] => [Math.min(...v.map((p) => p[axis])), Math.max(...v.map((p) => p[axis]))];
+  // the beam's lower and upper edge at distance z from the middle: straight between the outline's corners (the same outline the source draws, here by its numbers)
+  const along = (pts: [number, number][], z: number): number => {
+    const a = Math.abs(z);
+    for (let k = 0; k + 1 < pts.length; k++) {
+      const [z0, y0] = pts[k] as [number, number];
+      const [z1, y1] = pts[k + 1] as [number, number];
+      if (a >= z0 && a <= z1) return y0 + ((y1 - y0) * (a - z0)) / (z1 - z0);
+    }
+    throw new Error(`no beam at ${z}`);
+  };
+  const bottom = (z: number): number => r + along([[0, -0.08], [0.5, -0.08], [0.82, 0.1], [w - 0.28, 0.26], [w + 0.33, 0.26]], z);
+  const top = (z: number): number => r + along([[0, 0.4], [0.75, 0.44], [w - 0.3, 0.5], [w + 0.3, 0.5]], z);
+  const parts = bogieParts(spec);
+  const frame = vertsOf(parts.frame);
+  for (const sx of [-1, 1]) {
+    const out = (p: V3t): number => sx * p[0];
+    const mine = frame.filter((p) => out(p) > 0);
+    for (const az of [-w, w]) {
+      const inward = az < 0 ? 1 : -1;
+      const where = `side ${sx}, axle at z ${az}`;
+      // the lug: one box up the outside of the axle box (whose outer face is at 1.085), reaching the beam end's underside
+      const lug = mine.filter((p) => out(p) > 1.0845 && out(p) < 1.1055 && Math.abs(p[2] - az) < 0.0555 && p[1] > r + 0.085);
+      assert.equal(lug.length, 36, `${where}: the lug is ${lug.length} vertices, not one box's 36`);
+      near(Math.min(...lug.map(out)), 1.085, 1e-9, `${where}: the lug's inner face is the box's outer face`);
+      near(Math.max(...lug.map(out)), 1.105, 1e-9, `${where}: the lug's outer face`);
+      near(span(lug, 1)[0], r + 0.09, 1e-9, `${where}: the lug's foot, inside the box's top at ${r + 0.11}`);
+      near(span(lug, 1)[1], r + 0.27, 1e-9, `${where}: the lug's head, at the beam end's underside ${r + 0.26}`);
+      near(span(lug, 2)[0], az - 0.055, 1e-9, `${where}: the lug's near edge`);
+      near(span(lug, 2)[1], az + 0.055, 1e-9, `${where}: the lug's far edge`);
+      // the arm: one bar from inside the axle box inboard to the beam
+      const arm = mine.filter((p) => out(p) > 0.981 && out(p) < 1.06 && p[1] > r - 0.01 && p[1] < r + 0.13 && Math.abs(p[2]) > 0.55 && Math.abs(p[2]) < 1.25 && Math.sign(p[2]) === Math.sign(az));
+      assert.equal(arm.length, 36, `${where}: the arm is ${arm.length} vertices, not one bar's 36`);
+      near(Math.min(...arm.map(out)), 0.985, 1e-9, `${where}: the arm's inner face, inside the beam's thickness`);
+      near(Math.max(...arm.map(out)), 1.055, 1e-9, `${where}: the arm's outer face, inside the beam's thickness`);
+      near(span(arm, 1)[0], r + 0.005, 1e-9, `${where}: the arm's underside`);
+      near(span(arm, 1)[1], r + 0.105, 1e-9, `${where}: the arm's top, under the axle box's top at ${r + 0.11}`);
+      const [a0, a1] = [az + inward * 0.1, az + inward * 0.7].sort((p, q) => p - q) as [number, number];
+      near(span(arm, 2)[0], a0, 1e-9, `${where}: the arm's end`);
+      near(span(arm, 2)[1], a1, 1e-9, `${where}: the arm's other end`);
+      assert.ok(Math.abs(az + inward * 0.1 - az) < 0.125, `${where}: the arm starts inside the axle box (0.125 m either side of the axle)`);
+      const inner = Math.abs(az + inward * 0.7);
+      assert.ok(bottom(inner) <= span(arm, 1)[1] && top(inner) >= span(arm, 1)[0], `${where}: the arm's inboard end (z ${inner}) meets the beam, which spans ${bottom(inner)} to ${top(inner)}`);
+      // the cable: two strips on the face of the beam, standing a few millimetres off it, from beside the lug inboard
+      const cable = colourOf(parts.frame, RUBBER).filter((p) => Math.abs(out(p) - 1.072) < 1e-9 && Math.sign(p[2]) === Math.sign(az) && out(p) > 0);
+      assert.equal(cable.length, 12, `${where}: the cable is ${cable.length} vertices, not two strips' 12`);
+      near(span(cable, 2)[0], Math.min(az + inward * 0.09, az + inward * 0.72), 1e-9, `${where}: the cable's end`);
+      near(span(cable, 2)[1], Math.max(az + inward * 0.09, az + inward * 0.72), 1e-9, `${where}: the cable's other end`);
+      assert.ok(1.072 - 1.065 > 0.003 && 1.072 - 1.065 < 0.012, 'the cable stands 3 to 12 mm off the beam face (1.065)');
+      for (const p of cable) assert.ok(p[1] >= bottom(p[2]) + 0.005 && p[1] <= top(p[2]) - 0.005, `${where}: the cable at z ${p[2]}, y ${p[1]} is off the beam (${bottom(p[2])} to ${top(p[2])})`);
+    }
+    // the ribs: one bar each side of the middle on the beam's face, rising outward, inside the beam's outline, in the lighter cap colour
+    for (const zs of [-1, 1]) {
+      const rib = colourOf(parts.frame, CAP).filter((p) => out(p) > 1.06 && Math.abs(p[2]) < 0.9 && Math.sign(p[2]) === zs);
+      assert.equal(rib.length, 36, `side ${sx}, ${zs > 0 ? 'forward' : 'aft'}: the rib is ${rib.length} vertices, not one bar's 36`);
+      near(Math.min(...rib.map(out)), 1.065, 1e-9, 'a rib stands on the beam face');
+      near(Math.max(...rib.map(out)), 1.085, 1e-9, 'a rib stands 2 cm proud');
+      const lowest = rib.reduce((a, b) => (b[1] < a[1] ? b : a));
+      const highest = rib.reduce((a, b) => (b[1] > a[1] ? b : a));
+      assert.ok(Math.abs(highest[2]) > Math.abs(lowest[2]) + 0.2, `side ${sx}: the rib rises outward (low end at z ${lowest[2]}, high end at ${highest[2]})`);
+      assert.ok(span(rib, 1)[1] - span(rib, 1)[0] > 0.35, `side ${sx}: the rib is ${span(rib, 1)[1] - span(rib, 1)[0]} m tall, a long web`);
+      for (const p of rib) assert.ok(p[1] >= bottom(p[2]) - 0.002 && p[1] <= top(p[2]) + 0.002, `side ${sx}: the rib's corner at z ${p[2]}, y ${p[1]} is off the beam (${bottom(p[2])} to ${top(p[2])})`);
+    }
+    // the broad springs: the primary stack on each box (a drum of 0.08 m with wraps of 0.096) and the air spring's 0.17 m bag
+    const springs = vertsOf(parts.springs).filter((p) => out(p) > 0);
+    for (const az of [-w, w]) {
+      const stack = springs.filter((p) => Math.abs(p[2] - az) < 0.2 && p[1] < r + 0.3);
+      near(Math.max(...stack.map((p) => Math.hypot(out(p) - 0.985, p[2] - az))), 0.096, 1e-9, `side ${sx}, axle at z ${az}: the primary stack's widest wrap`);
+    }
+    // its top is a fan: the rim (twelve sides, 0.17 m from the axis) and the middle
+    const bag = springs.filter((p) => Math.abs(p[1] - (BOGIE_TOP - 0.005)) < 1e-9);
+    const rim = bag.filter((p) => Math.hypot(out(p) - 0.97, p[2]) > 1e-9);
+    assert.equal(new Set(rim.map((p) => `${p[0].toFixed(6)},${p[2].toFixed(6)}`)).size, 12, `side ${sx}: the air spring's rim is not twelve-sided`);
+    for (const p of rim) near(Math.hypot(out(p) - 0.97, p[2]), 0.17, 1e-9, `side ${sx}: the air spring's top edge is a circle of 0.17 m about its axis`);
+  }
+  // no other maker's frame carries any of it
+  for (const style of ['electrostar', 'alstom', 'siemens'] as const) {
+    const v = vertsOf(bogieParts({ ...spec, style, diesel: style === 'alstom' }).frame);
+    assert.equal(v.filter((p) => Math.abs(p[0]) > 1.0845 && Math.abs(p[0]) < 1.1055 && Math.abs(Math.abs(p[2]) - w) < 0.0555 && p[1] > r + 0.085).length, 0, `${style}: a lug over the axle box`);
+    assert.equal(v.filter((p) => Math.abs(p[0]) > 0.981 && Math.abs(p[0]) < 1.06 && p[1] > r - 0.01 && p[1] < r + 0.13 && Math.abs(p[2]) > 0.55 && Math.abs(p[2]) < 1.25).length, 0, `${style}: an axle-box arm`);
+    assert.equal(v.filter((p) => Math.abs(Math.abs(p[0]) - 1.085) < 1e-9 && Math.abs(p[2]) > 0.49 && Math.abs(p[2]) < 0.83).length, 0, `${style}: a rib on the beam`);
+    assert.equal(v.filter((p) => Math.abs(Math.abs(p[0]) - 1.072) < 1e-9).length, 0, `${style}: a cable on the beam`);
+  }
 });
 
 // --- liveries -------------------------------------------------------------------------------------

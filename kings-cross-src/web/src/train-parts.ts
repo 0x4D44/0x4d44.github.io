@@ -391,6 +391,37 @@ function beamOutline(half: readonly P2[]): P2[] {
   return out;
 }
 
+/** The AT300's primary spring stack (centre x, radius) and air spring (centre x, radius): broad drums, set inboard of the beam's face so nothing outboard of 1.14 m. */
+const AT300_SPRING = { x: 0.985, radius: 0.08 } as const;
+const AT300_AIR_SPRING = { x: 0.97, radius: 0.17 } as const;
+
+/**
+ * What the AT300 photograph shows on an outside frame beyond the beam, boxes, springs, damper and step (lner-gwr800-bogie-detail-2017.jpg, a leading
+ * bogie in GWR green; hardware only, so no paint is taken from it). A leading bogie shows its sensor cabling and end furniture; the plain
+ * shapes below stand for what is plainly there, and the routing of the cable is ASSUMED (the photograph shows it looping from the axle-box end to the frame):
+ *  - a narrow lug standing up the outside of each axle box to the beam end (the vertical strap with its eye over the box, in front of the spring stack);
+ *  - the axle-box arm: a bar from each box inboard under the beam to where the beam deepens (the long trailing arm each box carries);
+ *  - two ribs on the outer face of each beam, rising outward from the deep middle (the diagonal webs either side of the step's plate);
+ *  - a cable along the beam's outer face from each lug toward the middle (a dark strip a few millimetres proud).
+ * Every part is attached to the box or the beam it stands on, and nothing is wider than the 1.15 m envelope.
+ */
+function at300Detail(F: Soup, sx: 1 | -1, r: number, w: number, pal: Palette): void {
+  for (const az of [-w, w]) {
+    const inward = az < 0 ? 1 : -1;
+    const [lx0, lx1] = xs(sx, 1.085, 1.105);
+    F.box(lx0, lx1, r + 0.09, r + 0.27, az - 0.055, az + 0.055, pal.cap);
+    F.bar([r + 0.055, az + inward * 0.1], [r + 0.055, az + inward * 0.7], 0.07, 0.1, pal.frame, sx * 1.02);
+    const x = sx * 1.072;
+    const path: [number, number][] = [[az + inward * 0.09, r + 0.31], [az + inward * 0.42, r + 0.37], [az + inward * 0.72, r + 0.34]];
+    for (let k = 0; k + 1 < path.length; k++) {
+      const [za, ya] = path[k] as [number, number];
+      const [zb, yb] = path[k + 1] as [number, number];
+      F.face([[x, ya - 0.015, za], [x, ya + 0.015, za], [x, yb + 0.015, zb], [x, yb - 0.015, zb]], [0, (ya + yb) / 2, (za + zb) / 2], pal.rubber);
+    }
+  }
+  for (const zs of [-1, 1]) F.bar([r - 0.04, zs * 0.52], [r + 0.38, zs * 0.8], 0.02, 0.055, pal.cap, sx * 1.075);
+}
+
 /**
  * An outside-frame bogie (Hitachi AT300, Electrostar, Class 180): an axle box and a coil spring on each journal, a side beam resting on the springs,
  * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams.
@@ -398,6 +429,8 @@ function beamOutline(half: readonly P2[]): P2[] {
 function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: BogieStyle): void {
   const r = spec.radius;
   const w = spec.wheelbase / 2;
+  // what the AT300 photograph shows and the other makers' photographs do not: see `at300Detail`
+  const hitachi = style === 'hitachi';
   const beam =
     style === 'alstom'
       ? // a boxy straight beam with shallow ends (GC180-01: a squarer frame than the Hitachi's)
@@ -411,16 +444,19 @@ function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: Bo
   for (const sx of [-1, 1]) {
     const [bx0, bx1] = xs(sx, 0.975, 1.065);
     plate(F, beam, bx0, bx1, pal.frame, pal.box, sx as 1 | -1);
-    // the air spring on the middle of the beam, a rubber drum standing up to the underside of the body
+    // the air spring on the middle of the beam, a rubber drum standing up to the underside of the body (the AT300's is the broad bag the photograph shows behind the step's plate, inboard of the beam's face)
     const topMid = r + 0.4;
-    tube(S, axisY(sx * OUT_JOURNAL, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, 0.12, 10, pal.rubber, 'end');
+    if (hitachi) tube(S, axisY(sx * AT300_AIR_SPRING.x, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, AT300_AIR_SPRING.radius, 12, pal.rubber, 'end');
+    else tube(S, axisY(sx * OUT_JOURNAL, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, 0.12, 10, pal.rubber, 'end');
     for (const az of [-w, w]) {
-      // the axle box, its round end cap, and the spring on top of it
+      // the axle box, its round end cap, and the spring on top of it (the AT300's stack is the broad one the photograph shows, set a little inboard so the lug below stands clear of it)
       const [ax0, ax1] = xs(sx, 0.955, 1.085);
       F.box(ax0, ax1, r - 0.13, r + 0.11, az - 0.125, az + 0.125, pal.box);
       tube(F, axisX(sx * 1.085, r, az, sx as 1 | -1), 0, 0.035, 0.07, 10, pal.cap, 'end');
-      coilSpring(S, sx * OUT_JOURNAL, r + 0.11, az, springTop - (r + 0.11), 0.062, pal);
+      if (hitachi) coilSpring(S, sx * AT300_SPRING.x, r + 0.11, az, springTop - (r + 0.11), AT300_SPRING.radius, pal);
+      else coilSpring(S, sx * OUT_JOURNAL, r + 0.11, az, springTop - (r + 0.11), 0.062, pal);
     }
+    if (hitachi) at300Detail(F, sx as 1 | -1, r, w, pal);
     // the yaw damper: a black cylinder along the bogie with a clevis at each end, on the outside of the beam
     const yD = r - 0.03;
     tube(F, axisZ(sx * 1.095, yD, -0.42), 0, 0.84, 0.032, 8, pal.damper);
