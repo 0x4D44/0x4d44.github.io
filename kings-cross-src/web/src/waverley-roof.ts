@@ -13,6 +13,16 @@ import {Batch} from './materials.ts';
 import type {V3} from './materials.ts';
 export interface RidgeRoofProfile {gutter:number;rise:number;pitch:number;phase:number}
 export const WAVERLEY_ROOF_PROFILE={gutter:8,rise:2.4,pitch:12,phase:0} as const;
+/** The opaque strips of each pitch, half-widths in plan (m) either side of a furrow and of a ridge: the gutter walkway and the ridge capping
+ * that read as solid bands between the glazed slopes from North Bridge and the Scott Monument (R-wv1-a, R-wv1-a3). ASSUMED widths, scaled
+ * from those photos against the ASSUMED 12 m pitch; no published figure. */
+export const WAVERLEY_ROOF_BANDS={gutter:.9,ridge:.35} as const;
+/** How far the solid strips stand above the glazing they cover (m): the glazing writes no depth, so this only keeps the strip on top. */
+export const WAVERLEY_ROOF_STRIP_LIFT=.03;
+/** The roof's height (y) at east coordinate x: gutter at each furrow, ridge midway, straight slopes. */
+export function roofHeight(x:number,profile:RidgeRoofProfile=WAVERLEY_ROOF_PROFILE):number{
+ const half=profile.pitch/2,t=((x-profile.phase)%profile.pitch+profile.pitch)%profile.pitch;return profile.gutter+profile.rise*(1-Math.abs(t-half)/half);
+}
 const clean=(ring:readonly Pt[]):Pt[]=>ring.length>1&&ring[0][0]===ring.at(-1)![0]&&ring[0][1]===ring.at(-1)![1]?ring.slice(0,-1):[...ring];
 function clip(ring:Pt[],x:number,greater:boolean):Pt[]{
  const result:Pt[]=[];
@@ -26,13 +36,25 @@ function clip(ring:Pt[],x:number,greater:boolean):Pt[]{
 function inside(p:Pt,r:Pt[]):boolean{
  let yes=false;for(let i=0,j=r.length-1;i<r.length;j=i++)if((r[i][1]>p[1])!==(r[j][1]>p[1])&&p[0]<(r[j][0]-r[i][0])*(p[1]-r[i][1])/(r[j][1]-r[i][1])+r[i][0])yes=!yes;return yes;
 }
+/** The north-south runs [z0, z1] of the line at east coordinate x that lie inside the outer ring and outside every hole. */
+export function footprintRuns(outer:readonly Pt[],holes:readonly (readonly Pt[])[],x:number):[number,number][]{
+ const rings=[clean(outer),...holes.map(clean)],zs:number[]=[],out:[number,number][]=[];
+ for(const ring of rings)for(let i=0;i<ring.length;i++){
+  const a=ring[i],b=ring[(i+1)%ring.length];
+  if(a[0]===b[0]){if(Math.abs(x-a[0])<1e-7)zs.push(a[1],b[1]);continue;}
+  if(x>=Math.min(a[0],b[0])&&x<=Math.max(a[0],b[0]))zs.push(a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]));
+ }
+ const cuts=[...new Set(zs)].sort((a,b)=>a-b);
+ for(let i=1;i<cuts.length;i++){const z0=cuts[i-1],z1=cuts[i],mid:Pt=[x,(z0+z1)/2];if(inside(mid,rings[0])&&!rings.slice(1).some(r=>inside(mid,r)))out.push([z0,z1]);}
+ return out;
+}
 /** Split triangulated OSM faces at each gutter/ridge. Clipping triangles retains
  * concavities and holes exactly; moving only original OSM corners would bridge bays. */
-export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt[])[],profile:RidgeRoofProfile=WAVERLEY_ROOF_PROFILE):{glass:Batch;ribs:Batch}{
+export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt[])[],profile:RidgeRoofProfile=WAVERLEY_ROOF_PROFILE,bands:{gutter:number;ridge:number}=WAVERLEY_ROOF_BANDS):{glass:Batch;ribs:Batch;solid:Batch}{
  if(!Number.isFinite(profile.pitch)||profile.pitch<=0||![profile.gutter,profile.rise,profile.phase].every(Number.isFinite))throw Error('Invalid Waverley roof profile');
- const glass=new Batch(),ribs=new Batch(),rings=[clean(outer),...holes.map(clean)],points=rings.flat(),half=profile.pitch/2;
- if(rings[0].length<3)return {glass,ribs};
- const height=(x:number):number=>{const t=((x-profile.phase)%profile.pitch+profile.pitch)%profile.pitch;return profile.gutter+profile.rise*(1-Math.abs(t-half)/half);};
+ const glass=new Batch(),ribs=new Batch(),solid=new Batch(),rings=[clean(outer),...holes.map(clean)],points=rings.flat(),half=profile.pitch/2;
+ if(rings[0].length<3)return {glass,ribs,solid};
+ const height=(x:number):number=>roofHeight(x,profile);
  const faces=THREE.ShapeUtils.triangulateShape(rings[0].map(p=>new THREE.Vector2(...p)),rings.slice(1).map(r=>r.map(p=>new THREE.Vector2(...p))));
  for(const face of faces){
   const triangle=face.map(i=>points[i]),lo=Math.min(...triangle.map(p=>p[0])),hi=Math.max(...triangle.map(p=>p[0]));
@@ -42,23 +64,20 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
     const pts=[poly[0],poly[i],poly[i+1]] as [Pt,Pt,Pt];
     glass.tri(...pts.map(p=>[p[0],height(p[0]),p[1]] as V3) as [V3,V3,V3],pts,[0,1,0]);
    }
+   // The solid strips over this half pitch: the gutter band at its furrow end, the capping at its ridge end (k even rises from a furrow).
+   const rising=((k%2)+2)%2===0,[g0,g1]=rising?[x0,x0+bands.gutter]:[x0+half-bands.gutter,x0+half],[r0,r1]=rising?[x0+half-bands.ridge,x0+half]:[x0,x0+bands.ridge];
+   for(const [a,b]of [[g0,g1],[r0,r1]]){
+    const band=clip(clip(poly,a,true),b,false);
+    for(let i=1;i+1<band.length;i++){const pts=[band[0],band[i],band[i+1]] as [Pt,Pt,Pt];solid.tri(...pts.map(p=>[p[0],height(p[0])+WAVERLEY_ROOF_STRIP_LIFT,p[1]] as V3) as [V3,V3,V3],pts,[0,1,0]);}
+   }
   }
  }
  const lo=Math.min(...rings[0].map(p=>p[0])),hi=Math.max(...rings[0].map(p=>p[0]));
  // Ridge and gutter runners terminate at the footprint/hole, rather than bridging
  // the central building. Fine cassette bars remain in the existing KX texture.
  for(let k=Math.ceil((lo-profile.phase)/half);profile.phase+k*half<hi;k++){
-  const x=profile.phase+k*half,zs:number[]=[];
-  for(const ring of rings)for(let i=0;i<ring.length;i++){
-   const a=ring[i],b=ring[(i+1)%ring.length];
-   if(a[0]===b[0]){if(Math.abs(x-a[0])<1e-7)zs.push(a[1],b[1]);continue;}
-   if(x>=Math.min(a[0],b[0])&&x<=Math.max(a[0],b[0]))zs.push(a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]));
-  }
-  const cuts=[...new Set(zs)].sort((a,b)=>a-b);
-  for(let i=1;i<cuts.length;i++){
-   const z0=cuts[i-1],z1=cuts[i],mid:Pt=[x,(z0+z1)/2];
-   if(z1-z0>.16&&inside(mid,rings[0])&&!rings.slice(1).some(r=>inside(mid,r)))ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.08]);
-  }
+  const x=profile.phase+k*half;
+  for(const [z0,z1]of footprintRuns(outer,holes,x))if(z1-z0>.16)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.08]);
  }
- return {glass,ribs};
+ return {glass,ribs,solid};
 }

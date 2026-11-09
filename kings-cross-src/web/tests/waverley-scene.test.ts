@@ -8,6 +8,7 @@ import {terrainFromFunction} from '../../core/terrain.ts';
 import {material} from '../src/materials.ts';
 import {WAVERLEY_FRONTAGE_OMIT_IDS} from '../src/waverley-frontage.ts';
 import {WAVERLEY_CITY_OMIT_IDS} from '../src/waverley-city.ts';
+import {WAVERLEY_STATION_OMIT_IDS} from '../src/waverley-station.ts';
 import {RAILWAY_OVERLAP_TOLERANCE, WAVERLEY_LEVELS, buildWaverleyScene, polygonSurface, waverleyGround, waverleyRailwayIntrusions, waverleyTrackSegments} from '../src/waverley-scene.ts';
 
 const rect=(x0:number,z0:number,x1:number,z1:number):[number,number][]=>[[x0,z0],[x1,z0],[x1,z1],[x0,z1]];
@@ -146,8 +147,8 @@ test('no drawn Waverley city block stands on a track or a platform (way/37773878
   const standing=[...drawn].map(id=>[id,railwayProbeOverlap(d,byId.get(id)!)] as const).filter(([,m2])=>m2>=RAILWAY_OVERLAP_TOLERANCE);
   assert.deepEqual(standing,[],'every drawn block overlaps the railway by less than the mapping tolerance');
   assert.ok(drawn.has('way/62065007'),'an office whose wall overlaps a platform edge by a mapping sliver is kept');
-  const left=new Set([...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS,...waverleyRailwayIntrusions(d)]);
-  assert.deepEqual([...drawn],d.buildings.map(b=>b.id).filter(id=>!left.has(id)),'only the landmark replacements and the railway intrusions are left out');
+  const left=new Set([...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS,...WAVERLEY_STATION_OMIT_IDS,...waverleyRailwayIntrusions(d)]);
+  assert.deepEqual([...drawn],d.buildings.map(b=>b.id).filter(id=>!left.has(id)),'only the element replacements and the railway intrusions are left out');
  } finally {built.dispose();}
 });
 
