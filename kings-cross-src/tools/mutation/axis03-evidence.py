@@ -19,13 +19,17 @@ scratch.mkdir(parents=True, exist_ok=True)
 
 FILE = 'tools/axis03-evidence.ts'
 TEST = 'tools/tests/axis03-evidence.test.ts'
+WEB_TEST = 'web/tests/train-detail.test.ts'
+WEB_CLASS_180 = 'Class 180: five cars of the fleet owner’s 23.71 and 23.02 m, single-leaf doors, no pantograph, a driven bogie and a trailer bogie on every car, and an uncovered Scharfenberg at each end'
 TESTS = [
     'measures every ALL_KINDS coach body and roof envelope while excluding separate running gear',
-    'keeps class-specific source dimensions and exposes the Class 802 driving-car discrepancy',
+    'keeps the Class 802 transfer explicitly assumed and selects the Class 180 fleet owner’s dimensions',
     'joins motion birth kinds only when recording and anchor hashes match',
     'labels missing source dimensions and model-derived measurements as non-independent',
+    WEB_CLASS_180,
 ]
 MUTATIONS = [
+    ('Class 180 drawn formation loses primary car dimensions', 'core/train.ts', 'carLength: { value: 23.02,', 'carLength: { value: 23.03,', WEB_CLASS_180),
     ('pantograph mesh enters body envelope', FILE,
      "const BODY_MESH_NAMES = new Set(['body-shell', 'body-detail', 'livery-decals', 'cab-glass']);",
      "const BODY_MESH_NAMES = new Set(['body-shell', 'body-detail', 'livery-decals', 'cab-glass', 'pantograph-mesh']);", TESTS[0]),
@@ -35,6 +39,8 @@ MUTATIONS = [
     ('Class 802 driving length is replaced by the Class 800/801 figure', FILE,
      'valueM: drive ? 25.7 : 26,',
      'valueM: drive ? 25.85 : 26,', TESTS[1]),
+    ('Class 802 transfer falsely called published', FILE, "basis: 'assumed', source: TRAIN_SPECS.hull5.source", "basis: 'published', source: TRAIN_SPECS.hull5.source", TESTS[1]),
+    ('Class 180 owner figure replaced by secondary number', 'core/train.ts', 'carLength: { value: 23.02,', 'carLength: { value: 23.03,', TESTS[1]),
     ('motion report recording hash is not checked', FILE,
      "if (input.sha256 !== expected!.sha256) throw new Error(`motion report recording ${index + 1} hash does not match the supplied recording`);",
      "if (false) throw new Error(`motion report recording ${index + 1} hash does not match the supplied recording`);", TESTS[2]),
@@ -47,7 +53,7 @@ def run(work: Path, test_name: str | None = None) -> subprocess.CompletedProcess
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=10000']
     if test_name:
         command.append(f'--test-name-pattern={test_name}')
-    command.append(TEST)
+    command.extend([WEB_TEST if test_name == WEB_CLASS_180 else TEST] if test_name else [TEST, WEB_TEST])
     return subprocess.run(command, cwd=work, capture_output=True, text=True,
                           stdin=subprocess.DEVNULL, timeout=45)
 

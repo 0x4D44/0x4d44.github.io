@@ -1458,12 +1458,18 @@ test('Class 700: eight or twelve cars of 20.55 and 20.15 m, a pantograph on each
   assert.equal(EMU_FIGURES.desiro700.wheelDiameter.value, EMU_FIGURES.desiro.wheelDiameter.value);
 });
 
-test('Class 180: five cars of 23.71 and 23.03 m, single-leaf doors, no pantograph, a driven bogie and a trailer bogie on every car, and an uncovered Scharfenberg at each end', () => {
+test('Class 180: five cars of the fleet owner’s 23.71 and 23.02 m, single-leaf doors, no pantograph, a driven bogie and a trailer bogie on every car, and an uncovered Scharfenberg at each end', () => {
   const g = built('gc180x5');
   const layout = trainLayout('gc180x5');
   assert.deepEqual(layout.cars.map((c) => c.type), ['DMSL', 'MFL', 'MSL', 'MSLRB', 'DMSL']);
-  near(layout.length, 116.51, 0.01, 'train length (published 116.52 m)');
-  layout.cars.forEach((car, i) => near(car.length, i === 0 || i === 4 ? 23.71 : 23.03, 1e-9, `car ${i} length`));
+  // Primary source: Angel Trains, https://angeltrains.co.uk/fleet/class-180/ (reviewed 2026-11-09):
+  // DMSL 23.71 m, MFL/MSL/MSLRB 23.02 m; formation DMSL(A)-MFL-MSL-MSLRB-DMSL(B).
+  // 116.48 m is the calculated sum of those rounded car dimensions, NOT a published whole-unit length.
+  // Wikipedia https://en.wikipedia.org/wiki/British_Rail_Class_180 gives 116.52 m and 23.03 m
+  // intermediates; their source disagreement remains explicit in the dimension report.
+  const summedPrimaryCarLengths = 2 * 23.71 + 3 * 23.02;
+  near(layout.length, summedPrimaryCarLengths, 1e-9, 'model formation: sum of Angel Trains’ car lengths');
+  layout.cars.forEach((car, i) => near(car.length, i === 0 || i === 4 ? 23.71 : 23.02, 1e-9, `car ${i} length`));
   assert.equal(all(g, 'pantograph').length, 0, 'a diesel unit has no pantograph');
   assert.equal(bodySpec('adelante').doorLeaves, 1);
   for (const car of layout.cars) {

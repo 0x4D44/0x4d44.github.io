@@ -76,7 +76,7 @@ M = [
     ("EMU pantograph base off centre", "EMU_PANTOGRAPH_CARS.has(type) && f.pantographLength ? ([centre - half, centre + half] as const)", "EMU_PANTOGRAPH_CARS.has(type) && f.pantographLength ? ([centre, centre + 2 * half] as const)"),
     ("EMU pantograph 2.5 m long", "pantographLength: { value: 2.0, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<string, Figure>;", "pantographLength: { value: 2.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read; the Azuma\\'s drawn 2.02 m is used, to be replaced.' },\n} as const satisfies Record<string, Figure>;"),
     # --- the Grand Central Class 180 (Alstom Coradia 1000 diesel multiple unit) -------------------------------------------
-    ("Class 180 intermediate car 24 m", "carLength: { value: 23.03,", "carLength: { value: 24.0,"),
+    ("Class 180 intermediate car 24 m", "carLength: { value: 23.02,", "carLength: { value: 24.0,"),
     ("Class 180 driving car as the others", "drivingCarLength: { value: 23.71, unit: 'm', basis: 'published', source: `${WIKI_180}", "drivingCarLength: { value: 23.03, unit: 'm', basis: 'published', source: `${WIKI_180}"),
     ("Class 180 width 2.8 m", "bodyWidth: { value: 2.73,", "bodyWidth: { value: 2.8,"),
     ("Class 180 height called published", "height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia, loco-info.com", "height: { value: 3.77, unit: 'm', basis: 'published', source: 'Not published in any page read (Wikipedia, loco-info.com"),

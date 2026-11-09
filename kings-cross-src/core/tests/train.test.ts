@@ -254,7 +254,7 @@ test('train: carLength agrees with the commuter figures, and driving cars are ex
 
 // --- the Thameslink Class 700 and Grand Central's Class 180 -----------------------------------------------------
 
-test('train: the Grand Central Class 180 is five cars, DMSL-MFL-MSL-MSLRB-DMSL, 23.71 m at the cabs and 23.03 m between, 116.51 m (published: 116.52 m)', () => {
+test('train: the Class 180 uses its fleet owner’s 23.02 m intermediate cars and reports the rounded formation total honestly', () => {
   assert.deepEqual(GC_KINDS, ['gc180x5']);
   const spec = TRAIN_SPECS.gc180x5;
   assert.equal(spec.cars.join('-'), 'DMSL-MFL-MSL-MSLRB-DMSL');
@@ -263,9 +263,10 @@ test('train: the Grand Central Class 180 is five cars, DMSL-MFL-MSL-MSLRB-DMSL, 
   assert.equal(spec.family, 'adelante');
   assert.equal(spec.livery, 'grandcentral');
   const { cars, length } = trainLayout('gc180x5');
-  assert.deepEqual(cars.map((c) => c.length), [23.71, 23.03, 23.03, 23.03, 23.71]);
-  // Wikipedia and loco-info.com both give the train length as 116.52 m: the sum of the car lengths is within a centimetre of it
-  near(length, 116.52, 0.011, '180 train length');
+  assert.deepEqual(cars.map((c) => c.length), [23.71, 23.02, 23.02, 23.02, 23.71]);
+  near(length, 2 * ADELANTE.drivingCarLength.value + 3 * ADELANTE.carLength.value, 1e-9, '180 formation from the chosen primary dimensions');
+  near(length, 116.48, 1e-9, '180 summed car length');
+  assert.match(ADELANTE.carLength.source, /https:\/\/angeltrains.co.uk\/fleet\/class-180\//);
   // a cab at each end only, and no pantograph anywhere: it is a diesel unit
   assert.deepEqual(cars.map((c) => c.cab), ['front', null, null, null, 'rear']);
   assert.ok(cars.every((c) => c.pantograph === null), 'a diesel unit has no pantograph');
@@ -276,7 +277,7 @@ test('train: the Grand Central Class 180 is five cars, DMSL-MFL-MSL-MSLRB-DMSL, 
     near(car.end - car.bogies[1], ADELANTE.bogieFromEnd.value, 1e-9, `car ${car.index} second bogie`);
   }
   assert.ok(spec.source.includes('Wikipedia') && spec.source.includes('Angel Trains'), 'the formation names its sources');
-  assert.deepEqual([ADELANTE.carLength.value, ADELANTE.drivingCarLength.value, ADELANTE.bodyWidth.value], [23.03, 23.71, 2.73]);
+  assert.deepEqual([ADELANTE.carLength.value, ADELANTE.drivingCarLength.value, ADELANTE.bodyWidth.value], [23.02, 23.71, 2.73]);
   assert.equal(ADELANTE.height.basis, 'assumed', 'no page read gives the 180 a height');
   // the figures the model assumes are pinned too, so changing one is a deliberate edit with its source
   assert.deepEqual([ADELANTE.bogieFromEnd.value, ADELANTE.wheelDiameter.value, ADELANTE.wheelbaseMotor.value, ADELANTE.doorWidth.value, ADELANTE.doorFromEnd.value, ADELANTE.floorHeight.value], [3.5, 0.84, 2.7, 0.9, 3.8, 1.1]);
