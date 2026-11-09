@@ -1,0 +1,1407 @@
+Groundsky clean-tree deterministic PNG rebuild
+UTC 2026-11-03T05:17:06.266688+00:00
+Repository: /workspace/scratch/32e9192f94b1/groundsky-repo
+Fresh tree: /workspace/scratch/32e9192f94b1/groundsky-rebuild-gj52isq0
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python /workspace/scratch/32e9192f94b1/groundsky-rebuild-check.py
+Python: 3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]
+Dependencies: {"Pillow": "12.3.0", "numpy": "2.3.5", "scipy": "1.17.0"}
+Environment: OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 PYTHONDONTWRITEBYTECODE=1
+Process nice value: 19
+COPY /workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/tools/groundsky_ground.py -> /workspace/scratch/32e9192f94b1/groundsky-rebuild-gj52isq0/la-ladera/tools/groundsky_ground.py
+SHA256 46d04cde9d8a7fa802ed326394b8b2443fb9b19fab5f2360a63035cd93fe86d7
+COPY /workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/tools/groundsky_sky.py -> /workspace/scratch/32e9192f94b1/groundsky-rebuild-gj52isq0/la-ladera/tools/groundsky_sky.py
+SHA256 975d1d68abcbbbcf069b0e3a32cb49210b40bc5d6e1b1984f242a0eb1ebdb365
+Snapshot: 122 distinct existing intended master PNGs
+
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python /workspace/scratch/32e9192f94b1/groundsky-rebuild-gj52isq0/la-ladera/tools/groundsky_ground.py
+ground 01/24 kikuyu_lush: 271,017 bytes
+ground 02/24 kikuyu_dry: 274,317 bytes
+ground 03/24 kikuyu_trampled: 168,714 bytes
+ground 04/24 kikuyu_clover_edge: 288,345 bytes
+ground 05/24 dirt_brown: 80,633 bytes
+ground 06/24 dirt_dry_pale: 87,367 bytes
+ground 07/24 red_clay_dry: 116,271 bytes
+ground 08/24 red_clay_wet: 88,089 bytes
+ground 09/24 gravel_fine_grey: 310,626 bytes
+ground 10/24 gravel_coarse_river: 353,649 bytes
+ground 11/24 packed_earth_tyres: 105,358 bytes
+ground 12/24 packed_earth_footworn: 85,959 bytes
+ground 13/24 mud_rutted: 68,634 bytes
+ground 14/24 mud_puddled: 54,282 bytes
+ground 15/24 stone_scatter_dark: 144,942 bytes
+ground 16/24 stone_scatter_pale: 136,906 bytes
+ground 17/24 leaf_litter_eucalyptus: 106,463 bytes
+ground 18/24 leaf_litter_mixed: 119,065 bytes
+ground 19/24 cobble_edge_moss: 231,707 bytes
+ground 20/24 cracked_concrete_light: 86,237 bytes
+ground 21/24 cracked_concrete_dark: 89,910 bytes
+ground 22/24 asphalt_repaired: 93,857 bytes
+ground 23/24 asphalt_gravel_edge: 97,409 bytes
+ground 24/24 sand_to_kikuyu: 204,379 bytes
+decal dirt_patch_soft: 21,656 bytes
+decal dirt_scuffed_path: 19,595 bytes
+decal dirt_footworn_spots: 29,009 bytes
+decal dirt_clay_margin: 28,223 bytes
+decal gravel_patch_fine: 46,685 bytes
+decal gravel_patch_coarse: 38,484 bytes
+decal gravel_spill_elongated: 46,574 bytes
+decal gravel_grass_intrusion: 29,663 bytes
+decal grass_patch_lush: 53,211 bytes
+decal grass_patch_dry: 56,686 bytes
+decal grass_patch_sparse: 44,639 bytes
+decal grass_patch_moss: 56,701 bytes
+decal mud_patch_dark: 20,742 bytes
+decal mud_patch_puddle: 19,398 bytes
+decal mud_patch_rut: 19,573 bytes
+decal mud_patch_splash: 31,844 bytes
+mask atlas 1: 189,256 bytes
+mask atlas 2: 294,731 bytes
+Source self-check: 90 PNGs; 148 exact edge comparisons; total 4,710,806 bytes
+[exit 0; seconds 133.424]
+
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python /workspace/scratch/32e9192f94b1/groundsky-rebuild-gj52isq0/la-ladera/tools/groundsky_sky.py
+city: 9 PNGs, 565,307 bytes
+haze: 5 PNGs, 1,298 bytes
+vegetation: 18 PNGs, 713,155 bytes
+TOTAL: 32 PNGs, 1,279,760 bytes
+[exit 0; seconds 12.453]
+MATCH dev/groundsky/masters/city/city_far_day.png
+  expected 63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7 (81091 bytes)
+  rebuilt  63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7 (81091 bytes)
+MATCH dev/groundsky/masters/city/city_far_dusk.png
+  expected 6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8 (81514 bytes)
+  rebuilt  6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8 (81514 bytes)
+MATCH dev/groundsky/masters/city/city_far_night.png
+  expected d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48 (81698 bytes)
+  rebuilt  d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48 (81698 bytes)
+MATCH dev/groundsky/masters/city/city_middle_day.png
+  expected 7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e (57993 bytes)
+  rebuilt  7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e (57993 bytes)
+MATCH dev/groundsky/masters/city/city_middle_dusk.png
+  expected 729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34 (60340 bytes)
+  rebuilt  729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34 (60340 bytes)
+MATCH dev/groundsky/masters/city/city_middle_night.png
+  expected 83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129 (60608 bytes)
+  rebuilt  83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129 (60608 bytes)
+MATCH dev/groundsky/masters/city/city_near_day.png
+  expected be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb (44805 bytes)
+  rebuilt  be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb (44805 bytes)
+MATCH dev/groundsky/masters/city/city_near_dusk.png
+  expected 765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31 (48509 bytes)
+  rebuilt  765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31 (48509 bytes)
+MATCH dev/groundsky/masters/city/city_near_night.png
+  expected 9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352 (48749 bytes)
+  rebuilt  9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352 (48749 bytes)
+MATCH dev/groundsky/masters/decals/dirt_clay_margin_albedo.png
+  expected 8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f (28223 bytes)
+  rebuilt  8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f (28223 bytes)
+MATCH dev/groundsky/masters/decals/dirt_footworn_spots_albedo.png
+  expected 726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39 (29009 bytes)
+  rebuilt  726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39 (29009 bytes)
+MATCH dev/groundsky/masters/decals/dirt_patch_soft_albedo.png
+  expected c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09 (21656 bytes)
+  rebuilt  c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09 (21656 bytes)
+MATCH dev/groundsky/masters/decals/dirt_scuffed_path_albedo.png
+  expected 1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c (19595 bytes)
+  rebuilt  1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c (19595 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_dry_albedo.png
+  expected d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e (56686 bytes)
+  rebuilt  d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e (56686 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_lush_albedo.png
+  expected 9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a (53211 bytes)
+  rebuilt  9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a (53211 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_moss_albedo.png
+  expected 623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616 (56701 bytes)
+  rebuilt  623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616 (56701 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_sparse_albedo.png
+  expected 01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031 (44639 bytes)
+  rebuilt  01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031 (44639 bytes)
+MATCH dev/groundsky/masters/decals/gravel_grass_intrusion_albedo.png
+  expected 33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb (29663 bytes)
+  rebuilt  33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb (29663 bytes)
+MATCH dev/groundsky/masters/decals/gravel_patch_coarse_albedo.png
+  expected f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831 (38484 bytes)
+  rebuilt  f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831 (38484 bytes)
+MATCH dev/groundsky/masters/decals/gravel_patch_fine_albedo.png
+  expected c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518 (46685 bytes)
+  rebuilt  c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518 (46685 bytes)
+MATCH dev/groundsky/masters/decals/gravel_spill_elongated_albedo.png
+  expected aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d (46574 bytes)
+  rebuilt  aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d (46574 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_dark_albedo.png
+  expected 64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb (20742 bytes)
+  rebuilt  64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb (20742 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_puddle_albedo.png
+  expected 7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b (19398 bytes)
+  rebuilt  7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b (19398 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_rut_albedo.png
+  expected 66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7 (19573 bytes)
+  rebuilt  66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7 (19573 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_splash_albedo.png
+  expected 34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b (31844 bytes)
+  rebuilt  34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b (31844 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png
+  expected 458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e (37718 bytes)
+  rebuilt  458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e (37718 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png
+  expected 8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef (28975 bytes)
+  rebuilt  8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef (28975 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png
+  expected f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8 (30716 bytes)
+  rebuilt  f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8 (30716 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_albedo.png
+  expected 7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02 (43725 bytes)
+  rebuilt  7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02 (43725 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_normal.png
+  expected 652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d (22059 bytes)
+  rebuilt  652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d (22059 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_orm.png
+  expected cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f (28073 bytes)
+  rebuilt  cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f (28073 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_albedo.png
+  expected d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089 (50833 bytes)
+  rebuilt  d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089 (50833 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_normal.png
+  expected ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143 (112657 bytes)
+  rebuilt  ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143 (112657 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_orm.png
+  expected 470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc (68217 bytes)
+  rebuilt  470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc (68217 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png
+  expected e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f (33897 bytes)
+  rebuilt  e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f (33897 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_normal.png
+  expected 2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe (21165 bytes)
+  rebuilt  2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe (21165 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_orm.png
+  expected 86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de (34848 bytes)
+  rebuilt  86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de (34848 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_albedo.png
+  expected 374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89 (32337 bytes)
+  rebuilt  374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89 (32337 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_normal.png
+  expected cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160 (21630 bytes)
+  rebuilt  cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160 (21630 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_orm.png
+  expected 1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a (32270 bytes)
+  rebuilt  1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a (32270 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_albedo.png
+  expected 88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e (29949 bytes)
+  rebuilt  88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e (29949 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_normal.png
+  expected 848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149 (23042 bytes)
+  rebuilt  848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149 (23042 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_orm.png
+  expected e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1 (27642 bytes)
+  rebuilt  e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1 (27642 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_albedo.png
+  expected 3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e (30871 bytes)
+  rebuilt  3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e (30871 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_normal.png
+  expected 80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8 (23156 bytes)
+  rebuilt  80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8 (23156 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_orm.png
+  expected f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e (33340 bytes)
+  rebuilt  f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e (33340 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_albedo.png
+  expected bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d (79293 bytes)
+  rebuilt  bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d (79293 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_normal.png
+  expected 5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412 (183115 bytes)
+  rebuilt  5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412 (183115 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_orm.png
+  expected 8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425 (91241 bytes)
+  rebuilt  8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425 (91241 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_albedo.png
+  expected be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29 (82754 bytes)
+  rebuilt  be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29 (82754 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_normal.png
+  expected d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179 (151654 bytes)
+  rebuilt  d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179 (151654 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_orm.png
+  expected 9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171 (76218 bytes)
+  rebuilt  9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171 (76218 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png
+  expected de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f (106842 bytes)
+  rebuilt  de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f (106842 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png
+  expected de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488 (153456 bytes)
+  rebuilt  de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488 (153456 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png
+  expected 3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d (28047 bytes)
+  rebuilt  3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d (28047 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_albedo.png
+  expected 2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65 (102511 bytes)
+  rebuilt  2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65 (102511 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_normal.png
+  expected ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45 (141327 bytes)
+  rebuilt  ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45 (141327 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_orm.png
+  expected e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422 (30479 bytes)
+  rebuilt  e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422 (30479 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_albedo.png
+  expected e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c (102705 bytes)
+  rebuilt  e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c (102705 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_normal.png
+  expected dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422 (140896 bytes)
+  rebuilt  dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422 (140896 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_orm.png
+  expected 7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983 (27416 bytes)
+  rebuilt  7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983 (27416 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_albedo.png
+  expected 489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5 (72841 bytes)
+  rebuilt  489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5 (72841 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_normal.png
+  expected ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369 (67641 bytes)
+  rebuilt  ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369 (67641 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_orm.png
+  expected b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f (28232 bytes)
+  rebuilt  b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f (28232 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png
+  expected 8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42 (40748 bytes)
+  rebuilt  8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42 (40748 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png
+  expected d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2 (37945 bytes)
+  rebuilt  d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2 (37945 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png
+  expected d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832 (27770 bytes)
+  rebuilt  d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832 (27770 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png
+  expected 595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e (44026 bytes)
+  rebuilt  595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e (44026 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_normal.png
+  expected ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58 (46242 bytes)
+  rebuilt  ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58 (46242 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_orm.png
+  expected 53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9 (28797 bytes)
+  rebuilt  53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9 (28797 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_albedo.png
+  expected 1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977 (26448 bytes)
+  rebuilt  1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977 (26448 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_normal.png
+  expected 6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05 (15480 bytes)
+  rebuilt  6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05 (15480 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_orm.png
+  expected 8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16 (12354 bytes)
+  rebuilt  8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16 (12354 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_albedo.png
+  expected 432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5 (26232 bytes)
+  rebuilt  432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5 (26232 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_normal.png
+  expected f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4 (22231 bytes)
+  rebuilt  f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4 (22231 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_orm.png
+  expected 238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2 (20171 bytes)
+  rebuilt  238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2 (20171 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_albedo.png
+  expected 6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea (30937 bytes)
+  rebuilt  6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea (30937 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_normal.png
+  expected 696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78 (24991 bytes)
+  rebuilt  696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78 (24991 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_orm.png
+  expected 4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30 (30031 bytes)
+  rebuilt  4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30 (30031 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_albedo.png
+  expected 2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b (36151 bytes)
+  rebuilt  2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b (36151 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_normal.png
+  expected a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2 (33653 bytes)
+  rebuilt  a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2 (33653 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_orm.png
+  expected 4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e (35554 bytes)
+  rebuilt  4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e (35554 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_albedo.png
+  expected 8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c (34490 bytes)
+  rebuilt  8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c (34490 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_normal.png
+  expected 4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93 (41504 bytes)
+  rebuilt  4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93 (41504 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_orm.png
+  expected 1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52 (40277 bytes)
+  rebuilt  1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52 (40277 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_albedo.png
+  expected d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74 (30914 bytes)
+  rebuilt  d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74 (30914 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_normal.png
+  expected 2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5 (25345 bytes)
+  rebuilt  2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5 (25345 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_orm.png
+  expected 2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486 (31830 bytes)
+  rebuilt  2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486 (31830 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png
+  expected 1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946 (89641 bytes)
+  rebuilt  1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946 (89641 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_normal.png
+  expected eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c (87464 bytes)
+  rebuilt  eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c (87464 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_orm.png
+  expected a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b (27274 bytes)
+  rebuilt  a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b (27274 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_albedo.png
+  expected f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb (39160 bytes)
+  rebuilt  f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb (39160 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_normal.png
+  expected d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466 (57620 bytes)
+  rebuilt  d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466 (57620 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_orm.png
+  expected c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98 (48162 bytes)
+  rebuilt  c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98 (48162 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_albedo.png
+  expected bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250 (37402 bytes)
+  rebuilt  bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250 (37402 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_normal.png
+  expected 714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126 (54299 bytes)
+  rebuilt  714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126 (54299 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_orm.png
+  expected 967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36 (45205 bytes)
+  rebuilt  967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36 (45205 bytes)
+MATCH dev/groundsky/masters/haze/haze_07.png
+  expected ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70 (262 bytes)
+  rebuilt  ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70 (262 bytes)
+MATCH dev/groundsky/masters/haze/haze_12.png
+  expected 974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec (269 bytes)
+  rebuilt  974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec (269 bytes)
+MATCH dev/groundsky/masters/haze/haze_17p2.png
+  expected 567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1 (250 bytes)
+  rebuilt  567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1 (250 bytes)
+MATCH dev/groundsky/masters/haze/haze_19p5.png
+  expected 3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b (263 bytes)
+  rebuilt  3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b (263 bytes)
+MATCH dev/groundsky/masters/haze/haze_22.png
+  expected ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5 (254 bytes)
+  rebuilt  ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5 (254 bytes)
+MATCH dev/groundsky/masters/masks/terrain_blend_masks_01.png
+  expected cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b (189256 bytes)
+  rebuilt  cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b (189256 bytes)
+MATCH dev/groundsky/masters/masks/terrain_blend_masks_02.png
+  expected a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb (294731 bytes)
+  rebuilt  a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb (294731 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png
+  expected b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857 (48112 bytes)
+  rebuilt  b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857 (48112 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod1.png
+  expected f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679 (28819 bytes)
+  rebuilt  f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679 (28819 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod2.png
+  expected b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae (14041 bytes)
+  rebuilt  b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae (14041 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png
+  expected 4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee (89831 bytes)
+  rebuilt  4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee (89831 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod1.png
+  expected 16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150 (48510 bytes)
+  rebuilt  16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150 (48510 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod2.png
+  expected eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9 (20964 bytes)
+  rebuilt  eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9 (20964 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png
+  expected b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee (62969 bytes)
+  rebuilt  b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee (62969 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod1.png
+  expected 42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103 (34998 bytes)
+  rebuilt  42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103 (34998 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod2.png
+  expected 4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6 (15242 bytes)
+  rebuilt  4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6 (15242 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png
+  expected e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186 (74789 bytes)
+  rebuilt  e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186 (74789 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod1.png
+  expected c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac (46267 bytes)
+  rebuilt  c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac (46267 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod2.png
+  expected bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783 (20034 bytes)
+  rebuilt  bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783 (20034 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png
+  expected 5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380 (74535 bytes)
+  rebuilt  5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380 (74535 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod1.png
+  expected cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae (30339 bytes)
+  rebuilt  cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae (30339 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod2.png
+  expected 5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3 (9915 bytes)
+  rebuilt  5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3 (9915 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png
+  expected ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d (52836 bytes)
+  rebuilt  ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d (52836 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod1.png
+  expected 6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a (28287 bytes)
+  rebuilt  6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a (28287 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod2.png
+  expected 4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30 (12667 bytes)
+  rebuilt  4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30 (12667 bytes)
+
+FINAL
+{
+  "ok": true,
+  "expectedCount": 122,
+  "generatedCount": 122,
+  "matchingCount": 122,
+  "expectedBytes": 5990566,
+  "generatedBytes": 5990566,
+  "missing": [],
+  "drift": [],
+  "extra": [],
+  "originalChanges": [],
+  "generatorChanges": [],
+  "elapsedSeconds": 145.919
+}
+
+Final catalogue pin verification, after final packaging
+$ /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python /workspace/scratch/32e9192f94b1/groundsky-catalogue-pins-check.py
+Driver source follows, so the exact file-byte/hash check can be reproduced:
+from pathlib import Path
+import datetime
+import hashlib
+import json
+import shlex
+import sys
+
+root = Path('/workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera')
+report_path = root / 'dev/groundsky/verification/rebuild.json'
+log_path = root / 'dev/groundsky/verification/rebuild.log'
+report = json.loads(report_path.read_text())
+if not report['ok']:
+    raise SystemExit('The clean rebuild must pass before the final catalogue-pin check')
+catalogue_path = root / 'tools/groundsky.catalog.json'
+catalogue_bytes = catalogue_path.read_bytes()
+catalogue = json.loads(catalogue_bytes)
+checks = []
+for record in catalogue['files']:
+    file_bytes = (root / record['path']).read_bytes()
+    digest = hashlib.sha256(file_bytes).hexdigest()
+    checks.append({
+        'path': record['path'], 'format': record['format'],
+        'catalogueBytes': record['bytes'], 'actualBytes': len(file_bytes),
+        'catalogueSha256': record['sha256'], 'actualSha256': digest,
+        'matches': record['bytes'] == len(file_bytes) and record['sha256'] == digest,
+    })
+failed = [c['path'] for c in checks if not c['matches']]
+counts = {kind: sum(c['format'] == kind for c in checks) for kind in ['png', 'ktx2']}
+result = {
+    'ok': not failed and counts == {'png': 122, 'ktx2': 122},
+    'utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    'command': [sys.executable, str(Path(__file__).resolve())],
+    'cataloguePath': 'tools/groundsky.catalog.json',
+    'catalogueSha256': hashlib.sha256(catalogue_bytes).hexdigest(),
+    'fileCount': len(checks), 'counts': counts,
+    'matchingCount': sum(c['matches'] for c in checks), 'mismatchedPaths': failed,
+    'actualBytes': sum(c['actualBytes'] for c in checks), 'files': checks,
+}
+report['cataloguePinCheck'] = result
+report['ok'] = report['ok'] and result['ok']
+report_path.write_text(json.dumps(report, indent=2) + '\n')
+summary = {k: v for k, v in result.items() if k != 'files'}
+with log_path.open('a') as log:
+    log.write('\nFinal catalogue pin verification, after final packaging\n')
+    log.write('$ ' + shlex.join(result['command']) + '\n')
+    log.write('Driver source follows, so the exact file-byte/hash check can be reproduced:\n')
+    log.write(Path(__file__).read_text() + '\n')
+    for entry in checks:
+        log.write(('MATCH ' if entry['matches'] else 'MISMATCH ') + entry['path'] + '\n')
+        log.write(f'  catalogue {entry["catalogueSha256"]} ({entry["catalogueBytes"]} bytes)\n')
+        log.write(f'  actual    {entry["actualSha256"]} ({entry["actualBytes"]} bytes)\n')
+    log.write('FINAL CATALOGUE CHECK\n' + json.dumps(summary, indent=2) + '\n')
+    log.write('\nClean-tree rebuild driver source, for the earlier logged rebuild commands:\n')
+    log.write(Path('/workspace/scratch/32e9192f94b1/groundsky-rebuild-check.py').read_text() + '\n')
+print(json.dumps(summary, indent=2))
+sys.exit(0 if result['ok'] else 1)
+
+MATCH dev/groundsky/masters/decals/dirt_clay_margin_albedo.png
+  catalogue 8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f (28223 bytes)
+  actual    8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f (28223 bytes)
+MATCH dev/groundsky/masters/decals/dirt_footworn_spots_albedo.png
+  catalogue 726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39 (29009 bytes)
+  actual    726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39 (29009 bytes)
+MATCH dev/groundsky/masters/decals/dirt_patch_soft_albedo.png
+  catalogue c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09 (21656 bytes)
+  actual    c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09 (21656 bytes)
+MATCH dev/groundsky/masters/decals/dirt_scuffed_path_albedo.png
+  catalogue 1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c (19595 bytes)
+  actual    1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c (19595 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_dry_albedo.png
+  catalogue d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e (56686 bytes)
+  actual    d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e (56686 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_lush_albedo.png
+  catalogue 9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a (53211 bytes)
+  actual    9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a (53211 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_moss_albedo.png
+  catalogue 623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616 (56701 bytes)
+  actual    623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616 (56701 bytes)
+MATCH dev/groundsky/masters/decals/grass_patch_sparse_albedo.png
+  catalogue 01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031 (44639 bytes)
+  actual    01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031 (44639 bytes)
+MATCH dev/groundsky/masters/decals/gravel_grass_intrusion_albedo.png
+  catalogue 33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb (29663 bytes)
+  actual    33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb (29663 bytes)
+MATCH dev/groundsky/masters/decals/gravel_patch_coarse_albedo.png
+  catalogue f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831 (38484 bytes)
+  actual    f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831 (38484 bytes)
+MATCH dev/groundsky/masters/decals/gravel_patch_fine_albedo.png
+  catalogue c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518 (46685 bytes)
+  actual    c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518 (46685 bytes)
+MATCH dev/groundsky/masters/decals/gravel_spill_elongated_albedo.png
+  catalogue aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d (46574 bytes)
+  actual    aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d (46574 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_dark_albedo.png
+  catalogue 64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb (20742 bytes)
+  actual    64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb (20742 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_puddle_albedo.png
+  catalogue 7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b (19398 bytes)
+  actual    7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b (19398 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_rut_albedo.png
+  catalogue 66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7 (19573 bytes)
+  actual    66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7 (19573 bytes)
+MATCH dev/groundsky/masters/decals/mud_patch_splash_albedo.png
+  catalogue 34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b (31844 bytes)
+  actual    34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b (31844 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png
+  catalogue 458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e (37718 bytes)
+  actual    458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e (37718 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png
+  catalogue 8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef (28975 bytes)
+  actual    8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef (28975 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png
+  catalogue f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8 (30716 bytes)
+  actual    f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8 (30716 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_albedo.png
+  catalogue 7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02 (43725 bytes)
+  actual    7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02 (43725 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_normal.png
+  catalogue 652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d (22059 bytes)
+  actual    652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d (22059 bytes)
+MATCH dev/groundsky/masters/ground/asphalt_repaired_orm.png
+  catalogue cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f (28073 bytes)
+  actual    cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f (28073 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_albedo.png
+  catalogue d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089 (50833 bytes)
+  actual    d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089 (50833 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_normal.png
+  catalogue ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143 (112657 bytes)
+  actual    ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143 (112657 bytes)
+MATCH dev/groundsky/masters/ground/cobble_edge_moss_orm.png
+  catalogue 470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc (68217 bytes)
+  actual    470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc (68217 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png
+  catalogue e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f (33897 bytes)
+  actual    e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f (33897 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_normal.png
+  catalogue 2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe (21165 bytes)
+  actual    2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe (21165 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_dark_orm.png
+  catalogue 86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de (34848 bytes)
+  actual    86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de (34848 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_albedo.png
+  catalogue 374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89 (32337 bytes)
+  actual    374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89 (32337 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_normal.png
+  catalogue cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160 (21630 bytes)
+  actual    cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160 (21630 bytes)
+MATCH dev/groundsky/masters/ground/cracked_concrete_light_orm.png
+  catalogue 1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a (32270 bytes)
+  actual    1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a (32270 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_albedo.png
+  catalogue 88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e (29949 bytes)
+  actual    88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e (29949 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_normal.png
+  catalogue 848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149 (23042 bytes)
+  actual    848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149 (23042 bytes)
+MATCH dev/groundsky/masters/ground/dirt_brown_orm.png
+  catalogue e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1 (27642 bytes)
+  actual    e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1 (27642 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_albedo.png
+  catalogue 3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e (30871 bytes)
+  actual    3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e (30871 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_normal.png
+  catalogue 80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8 (23156 bytes)
+  actual    80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8 (23156 bytes)
+MATCH dev/groundsky/masters/ground/dirt_dry_pale_orm.png
+  catalogue f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e (33340 bytes)
+  actual    f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e (33340 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_albedo.png
+  catalogue bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d (79293 bytes)
+  actual    bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d (79293 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_normal.png
+  catalogue 5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412 (183115 bytes)
+  actual    5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412 (183115 bytes)
+MATCH dev/groundsky/masters/ground/gravel_coarse_river_orm.png
+  catalogue 8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425 (91241 bytes)
+  actual    8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425 (91241 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_albedo.png
+  catalogue be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29 (82754 bytes)
+  actual    be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29 (82754 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_normal.png
+  catalogue d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179 (151654 bytes)
+  actual    d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179 (151654 bytes)
+MATCH dev/groundsky/masters/ground/gravel_fine_grey_orm.png
+  catalogue 9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171 (76218 bytes)
+  actual    9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171 (76218 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png
+  catalogue de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f (106842 bytes)
+  actual    de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f (106842 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png
+  catalogue de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488 (153456 bytes)
+  actual    de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488 (153456 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png
+  catalogue 3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d (28047 bytes)
+  actual    3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d (28047 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_albedo.png
+  catalogue 2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65 (102511 bytes)
+  actual    2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65 (102511 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_normal.png
+  catalogue ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45 (141327 bytes)
+  actual    ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45 (141327 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_dry_orm.png
+  catalogue e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422 (30479 bytes)
+  actual    e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422 (30479 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_albedo.png
+  catalogue e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c (102705 bytes)
+  actual    e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c (102705 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_normal.png
+  catalogue dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422 (140896 bytes)
+  actual    dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422 (140896 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_lush_orm.png
+  catalogue 7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983 (27416 bytes)
+  actual    7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983 (27416 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_albedo.png
+  catalogue 489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5 (72841 bytes)
+  actual    489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5 (72841 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_normal.png
+  catalogue ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369 (67641 bytes)
+  actual    ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369 (67641 bytes)
+MATCH dev/groundsky/masters/ground/kikuyu_trampled_orm.png
+  catalogue b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f (28232 bytes)
+  actual    b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f (28232 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png
+  catalogue 8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42 (40748 bytes)
+  actual    8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42 (40748 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png
+  catalogue d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2 (37945 bytes)
+  actual    d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2 (37945 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png
+  catalogue d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832 (27770 bytes)
+  actual    d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832 (27770 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png
+  catalogue 595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e (44026 bytes)
+  actual    595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e (44026 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_normal.png
+  catalogue ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58 (46242 bytes)
+  actual    ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58 (46242 bytes)
+MATCH dev/groundsky/masters/ground/leaf_litter_mixed_orm.png
+  catalogue 53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9 (28797 bytes)
+  actual    53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9 (28797 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_albedo.png
+  catalogue 1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977 (26448 bytes)
+  actual    1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977 (26448 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_normal.png
+  catalogue 6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05 (15480 bytes)
+  actual    6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05 (15480 bytes)
+MATCH dev/groundsky/masters/ground/mud_puddled_orm.png
+  catalogue 8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16 (12354 bytes)
+  actual    8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16 (12354 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_albedo.png
+  catalogue 432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5 (26232 bytes)
+  actual    432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5 (26232 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_normal.png
+  catalogue f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4 (22231 bytes)
+  actual    f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4 (22231 bytes)
+MATCH dev/groundsky/masters/ground/mud_rutted_orm.png
+  catalogue 238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2 (20171 bytes)
+  actual    238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2 (20171 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_albedo.png
+  catalogue 6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea (30937 bytes)
+  actual    6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea (30937 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_normal.png
+  catalogue 696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78 (24991 bytes)
+  actual    696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78 (24991 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_footworn_orm.png
+  catalogue 4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30 (30031 bytes)
+  actual    4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30 (30031 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_albedo.png
+  catalogue 2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b (36151 bytes)
+  actual    2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b (36151 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_normal.png
+  catalogue a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2 (33653 bytes)
+  actual    a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2 (33653 bytes)
+MATCH dev/groundsky/masters/ground/packed_earth_tyres_orm.png
+  catalogue 4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e (35554 bytes)
+  actual    4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e (35554 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_albedo.png
+  catalogue 8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c (34490 bytes)
+  actual    8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c (34490 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_normal.png
+  catalogue 4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93 (41504 bytes)
+  actual    4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93 (41504 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_dry_orm.png
+  catalogue 1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52 (40277 bytes)
+  actual    1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52 (40277 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_albedo.png
+  catalogue d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74 (30914 bytes)
+  actual    d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74 (30914 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_normal.png
+  catalogue 2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5 (25345 bytes)
+  actual    2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5 (25345 bytes)
+MATCH dev/groundsky/masters/ground/red_clay_wet_orm.png
+  catalogue 2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486 (31830 bytes)
+  actual    2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486 (31830 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png
+  catalogue 1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946 (89641 bytes)
+  actual    1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946 (89641 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_normal.png
+  catalogue eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c (87464 bytes)
+  actual    eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c (87464 bytes)
+MATCH dev/groundsky/masters/ground/sand_to_kikuyu_orm.png
+  catalogue a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b (27274 bytes)
+  actual    a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b (27274 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_albedo.png
+  catalogue f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb (39160 bytes)
+  actual    f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb (39160 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_normal.png
+  catalogue d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466 (57620 bytes)
+  actual    d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466 (57620 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_dark_orm.png
+  catalogue c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98 (48162 bytes)
+  actual    c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98 (48162 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_albedo.png
+  catalogue bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250 (37402 bytes)
+  actual    bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250 (37402 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_normal.png
+  catalogue 714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126 (54299 bytes)
+  actual    714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126 (54299 bytes)
+MATCH dev/groundsky/masters/ground/stone_scatter_pale_orm.png
+  catalogue 967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36 (45205 bytes)
+  actual    967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36 (45205 bytes)
+MATCH dev/groundsky/masters/masks/terrain_blend_masks_01.png
+  catalogue cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b (189256 bytes)
+  actual    cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b (189256 bytes)
+MATCH dev/groundsky/masters/masks/terrain_blend_masks_02.png
+  catalogue a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb (294731 bytes)
+  actual    a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb (294731 bytes)
+MATCH dev/groundsky/masters/city/city_far_day.png
+  catalogue 63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7 (81091 bytes)
+  actual    63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7 (81091 bytes)
+MATCH dev/groundsky/masters/city/city_far_dusk.png
+  catalogue 6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8 (81514 bytes)
+  actual    6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8 (81514 bytes)
+MATCH dev/groundsky/masters/city/city_far_night.png
+  catalogue d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48 (81698 bytes)
+  actual    d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48 (81698 bytes)
+MATCH dev/groundsky/masters/city/city_middle_day.png
+  catalogue 7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e (57993 bytes)
+  actual    7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e (57993 bytes)
+MATCH dev/groundsky/masters/city/city_middle_dusk.png
+  catalogue 729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34 (60340 bytes)
+  actual    729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34 (60340 bytes)
+MATCH dev/groundsky/masters/city/city_middle_night.png
+  catalogue 83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129 (60608 bytes)
+  actual    83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129 (60608 bytes)
+MATCH dev/groundsky/masters/city/city_near_day.png
+  catalogue be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb (44805 bytes)
+  actual    be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb (44805 bytes)
+MATCH dev/groundsky/masters/city/city_near_dusk.png
+  catalogue 765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31 (48509 bytes)
+  actual    765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31 (48509 bytes)
+MATCH dev/groundsky/masters/city/city_near_night.png
+  catalogue 9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352 (48749 bytes)
+  actual    9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352 (48749 bytes)
+MATCH dev/groundsky/masters/haze/haze_07.png
+  catalogue ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70 (262 bytes)
+  actual    ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70 (262 bytes)
+MATCH dev/groundsky/masters/haze/haze_12.png
+  catalogue 974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec (269 bytes)
+  actual    974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec (269 bytes)
+MATCH dev/groundsky/masters/haze/haze_17p2.png
+  catalogue 567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1 (250 bytes)
+  actual    567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1 (250 bytes)
+MATCH dev/groundsky/masters/haze/haze_19p5.png
+  catalogue 3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b (263 bytes)
+  actual    3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b (263 bytes)
+MATCH dev/groundsky/masters/haze/haze_22.png
+  catalogue ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5 (254 bytes)
+  actual    ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5 (254 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png
+  catalogue e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186 (74789 bytes)
+  actual    e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186 (74789 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod1.png
+  catalogue c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac (46267 bytes)
+  actual    c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac (46267 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod2.png
+  catalogue bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783 (20034 bytes)
+  actual    bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783 (20034 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png
+  catalogue 5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380 (74535 bytes)
+  actual    5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380 (74535 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod1.png
+  catalogue cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae (30339 bytes)
+  actual    cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae (30339 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod2.png
+  catalogue 5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3 (9915 bytes)
+  actual    5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3 (9915 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png
+  catalogue b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857 (48112 bytes)
+  actual    b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857 (48112 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod1.png
+  catalogue f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679 (28819 bytes)
+  actual    f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679 (28819 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_banana_groves_lod2.png
+  catalogue b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae (14041 bytes)
+  actual    b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae (14041 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png
+  catalogue b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee (62969 bytes)
+  actual    b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee (62969 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod1.png
+  catalogue 42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103 (34998 bytes)
+  actual    42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103 (34998 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod2.png
+  catalogue 4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6 (15242 bytes)
+  actual    4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6 (15242 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png
+  catalogue 4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee (89831 bytes)
+  actual    4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee (89831 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod1.png
+  catalogue 16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150 (48510 bytes)
+  actual    16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150 (48510 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod2.png
+  catalogue eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9 (20964 bytes)
+  actual    eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9 (20964 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png
+  catalogue ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d (52836 bytes)
+  actual    ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d (52836 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod1.png
+  catalogue 6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a (28287 bytes)
+  actual    6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a (28287 bytes)
+MATCH dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod2.png
+  catalogue 4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30 (12667 bytes)
+  actual    4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30 (12667 bytes)
+MATCH assets/textures/groundsky/decals/dirt_clay_margin_albedo.ktx2
+  catalogue 313690cad93e07d7e34e73071e3f4c12bdef6195f483ab019efa375c26205f86 (22106 bytes)
+  actual    313690cad93e07d7e34e73071e3f4c12bdef6195f483ab019efa375c26205f86 (22106 bytes)
+MATCH assets/textures/groundsky/decals/dirt_footworn_spots_albedo.ktx2
+  catalogue 3099f6e2b3280136a5b6e77351b81a7202d43906d2bba93791bc937743a9913f (39955 bytes)
+  actual    3099f6e2b3280136a5b6e77351b81a7202d43906d2bba93791bc937743a9913f (39955 bytes)
+MATCH assets/textures/groundsky/decals/dirt_patch_soft_albedo.ktx2
+  catalogue 6f2933023cfc1d6cc276f18705f150e843d618777e3d866594b5e2f14212fbae (20327 bytes)
+  actual    6f2933023cfc1d6cc276f18705f150e843d618777e3d866594b5e2f14212fbae (20327 bytes)
+MATCH assets/textures/groundsky/decals/dirt_scuffed_path_albedo.ktx2
+  catalogue dc1bf5874dfd265bf593894871f4a322b1dd1b1bb6faf8a844e3228ae4305247 (25102 bytes)
+  actual    dc1bf5874dfd265bf593894871f4a322b1dd1b1bb6faf8a844e3228ae4305247 (25102 bytes)
+MATCH assets/textures/groundsky/decals/grass_patch_dry_albedo.ktx2
+  catalogue d7439f6a8ea2ea1cd44b4ab0f968dd266ca8853f2ba70612c9c14fda3dd2d6d7 (25790 bytes)
+  actual    d7439f6a8ea2ea1cd44b4ab0f968dd266ca8853f2ba70612c9c14fda3dd2d6d7 (25790 bytes)
+MATCH assets/textures/groundsky/decals/grass_patch_lush_albedo.ktx2
+  catalogue 2b73c0bd7a93410517509a2e8149eb4f826db090d62d928fe740b773ed88a6eb (25270 bytes)
+  actual    2b73c0bd7a93410517509a2e8149eb4f826db090d62d928fe740b773ed88a6eb (25270 bytes)
+MATCH assets/textures/groundsky/decals/grass_patch_moss_albedo.ktx2
+  catalogue 1ba1a09a3ac38c6cb08d46a74d8c74b6f6b768f890140dce83b400468e5531eb (26770 bytes)
+  actual    1ba1a09a3ac38c6cb08d46a74d8c74b6f6b768f890140dce83b400468e5531eb (26770 bytes)
+MATCH assets/textures/groundsky/decals/grass_patch_sparse_albedo.ktx2
+  catalogue ff6356e9ecd1c9d25ab1ab08df00530b674880079c26bdb7784399b98db6c3e2 (57855 bytes)
+  actual    ff6356e9ecd1c9d25ab1ab08df00530b674880079c26bdb7784399b98db6c3e2 (57855 bytes)
+MATCH assets/textures/groundsky/decals/gravel_grass_intrusion_albedo.ktx2
+  catalogue 18074f3a3fd50ab9e56e2fb790ae02084625350873b64760e44a2b1e9e3f2c56 (45132 bytes)
+  actual    18074f3a3fd50ab9e56e2fb790ae02084625350873b64760e44a2b1e9e3f2c56 (45132 bytes)
+MATCH assets/textures/groundsky/decals/gravel_patch_coarse_albedo.ktx2
+  catalogue e9c25b063131a3f37fc8a2b655992bd7eeaa45794ec5c3da9e03dc01a3843f34 (54613 bytes)
+  actual    e9c25b063131a3f37fc8a2b655992bd7eeaa45794ec5c3da9e03dc01a3843f34 (54613 bytes)
+MATCH assets/textures/groundsky/decals/gravel_patch_fine_albedo.ktx2
+  catalogue 5c9b8a1d71924a353105fe76fddf987322f0b33f5d151b18b6986690c8d21cf8 (43777 bytes)
+  actual    5c9b8a1d71924a353105fe76fddf987322f0b33f5d151b18b6986690c8d21cf8 (43777 bytes)
+MATCH assets/textures/groundsky/decals/gravel_spill_elongated_albedo.ktx2
+  catalogue 2905e612bb8a90ae55cdd9f633ec2c96a3113a076f3dd8454e0cce71c9b5bd9e (41373 bytes)
+  actual    2905e612bb8a90ae55cdd9f633ec2c96a3113a076f3dd8454e0cce71c9b5bd9e (41373 bytes)
+MATCH assets/textures/groundsky/decals/mud_patch_dark_albedo.ktx2
+  catalogue 2068ffbdcbfef8eeaaeeae82957d2a1351275f626f0ac85965e6cf62faa415fd (25475 bytes)
+  actual    2068ffbdcbfef8eeaaeeae82957d2a1351275f626f0ac85965e6cf62faa415fd (25475 bytes)
+MATCH assets/textures/groundsky/decals/mud_patch_puddle_albedo.ktx2
+  catalogue e5ebd133478ed58545d22d23a8961c6f1528a9a004d7e6cec82d2fee9824da3f (23036 bytes)
+  actual    e5ebd133478ed58545d22d23a8961c6f1528a9a004d7e6cec82d2fee9824da3f (23036 bytes)
+MATCH assets/textures/groundsky/decals/mud_patch_rut_albedo.ktx2
+  catalogue 8e869e7ce14c73382401913bb1fd75ea6f9a742d054999f808d8ae665afd675f (25048 bytes)
+  actual    8e869e7ce14c73382401913bb1fd75ea6f9a742d054999f808d8ae665afd675f (25048 bytes)
+MATCH assets/textures/groundsky/decals/mud_patch_splash_albedo.ktx2
+  catalogue d19755fcb3fcd80acb6b11191e515d9d9857c09929c8316d072358c893cba791 (40084 bytes)
+  actual    d19755fcb3fcd80acb6b11191e515d9d9857c09929c8316d072358c893cba791 (40084 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_gravel_edge_albedo.ktx2
+  catalogue ed7f051d59ce0fe71b1c4bb78ffe36f5d503cd61bde7c8495e20dbc0d42afb2a (45565 bytes)
+  actual    ed7f051d59ce0fe71b1c4bb78ffe36f5d503cd61bde7c8495e20dbc0d42afb2a (45565 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_gravel_edge_normal.ktx2
+  catalogue c3d0efcd9e3cf16ef8f0430a37c07731e02b0a04e56cf817f1ea54951178642f (5337 bytes)
+  actual    c3d0efcd9e3cf16ef8f0430a37c07731e02b0a04e56cf817f1ea54951178642f (5337 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_gravel_edge_orm.ktx2
+  catalogue be3fbb8998002d0e3b9501cdaf42920135265ccc2990639fed712bf6e8882436 (7235 bytes)
+  actual    be3fbb8998002d0e3b9501cdaf42920135265ccc2990639fed712bf6e8882436 (7235 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_repaired_albedo.ktx2
+  catalogue b509007b8cf8b3c4e799a3168264a1d0f72974a4ea569bc8b148bc723d95543d (49737 bytes)
+  actual    b509007b8cf8b3c4e799a3168264a1d0f72974a4ea569bc8b148bc723d95543d (49737 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_repaired_normal.ktx2
+  catalogue 9859e84a8e5a010f07d94923b11c36b6227c86bc523f5d968dade746ea421421 (966 bytes)
+  actual    9859e84a8e5a010f07d94923b11c36b6227c86bc523f5d968dade746ea421421 (966 bytes)
+MATCH assets/textures/groundsky/ground/asphalt_repaired_orm.ktx2
+  catalogue 007775ed488d7dfac6286124b3d55261e9c8c1c3b7b1e12867a56a32a940ba6e (8137 bytes)
+  actual    007775ed488d7dfac6286124b3d55261e9c8c1c3b7b1e12867a56a32a940ba6e (8137 bytes)
+MATCH assets/textures/groundsky/ground/cobble_edge_moss_albedo.ktx2
+  catalogue a8131d8e3392ff2a8deb20ba044533a4c4b264d5282d8ba5b755fde9ba46b9f9 (95627 bytes)
+  actual    a8131d8e3392ff2a8deb20ba044533a4c4b264d5282d8ba5b755fde9ba46b9f9 (95627 bytes)
+MATCH assets/textures/groundsky/ground/cobble_edge_moss_normal.ktx2
+  catalogue f85800eada3f32c5f48310dee7eae873fe66b25479423c9327f47a2a72876807 (49692 bytes)
+  actual    f85800eada3f32c5f48310dee7eae873fe66b25479423c9327f47a2a72876807 (49692 bytes)
+MATCH assets/textures/groundsky/ground/cobble_edge_moss_orm.ktx2
+  catalogue 2364ba9518f77b447adbd1a809ebdd71cd4b3ff9ba9ff75d4ce50404aaa14f38 (19649 bytes)
+  actual    2364ba9518f77b447adbd1a809ebdd71cd4b3ff9ba9ff75d4ce50404aaa14f38 (19649 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_dark_albedo.ktx2
+  catalogue 68e64f7720f492d8020fb41181ad9b4a86a44a555ef8d137f1afb471c5148ad7 (30213 bytes)
+  actual    68e64f7720f492d8020fb41181ad9b4a86a44a555ef8d137f1afb471c5148ad7 (30213 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_dark_normal.ktx2
+  catalogue 487060df68e3935f17272f048b8358557fd1683a9dbc2aecab731d4824d07b7c (2106 bytes)
+  actual    487060df68e3935f17272f048b8358557fd1683a9dbc2aecab731d4824d07b7c (2106 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_dark_orm.ktx2
+  catalogue 35b604290da3502b8bc7cb1c3e2606219ef9deca17d69d1a4a91c15448be0248 (11219 bytes)
+  actual    35b604290da3502b8bc7cb1c3e2606219ef9deca17d69d1a4a91c15448be0248 (11219 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_light_albedo.ktx2
+  catalogue 242378b90d29eb3d8188691273a3694363be8d74cdd631a4a84b4606b6633341 (32210 bytes)
+  actual    242378b90d29eb3d8188691273a3694363be8d74cdd631a4a84b4606b6633341 (32210 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_light_normal.ktx2
+  catalogue ecf9dc39d496629d83b8b898dffa700a027ca21a07a2f13b6a0b7a4d4a74c0ef (2154 bytes)
+  actual    ecf9dc39d496629d83b8b898dffa700a027ca21a07a2f13b6a0b7a4d4a74c0ef (2154 bytes)
+MATCH assets/textures/groundsky/ground/cracked_concrete_light_orm.ktx2
+  catalogue 0709a87b9859893392b756f85f033b49393bae1e3321ab07d973aceaf6faf7ac (9301 bytes)
+  actual    0709a87b9859893392b756f85f033b49393bae1e3321ab07d973aceaf6faf7ac (9301 bytes)
+MATCH assets/textures/groundsky/ground/dirt_brown_albedo.ktx2
+  catalogue e7a0429289c9e389941377ed78dd7d9ba8f8a3b5275a4c1ed76c1558016e41ef (22717 bytes)
+  actual    e7a0429289c9e389941377ed78dd7d9ba8f8a3b5275a4c1ed76c1558016e41ef (22717 bytes)
+MATCH assets/textures/groundsky/ground/dirt_brown_normal.ktx2
+  catalogue 056010d057d0fdf87c83d71e3e34cfb10f3297b59094ad9ccec78a070780183d (3807 bytes)
+  actual    056010d057d0fdf87c83d71e3e34cfb10f3297b59094ad9ccec78a070780183d (3807 bytes)
+MATCH assets/textures/groundsky/ground/dirt_brown_orm.ktx2
+  catalogue e84a5ccec45ceb78897d59e57da7a0aa86333fdbafe5ff61715cf69e67c1af17 (8260 bytes)
+  actual    e84a5ccec45ceb78897d59e57da7a0aa86333fdbafe5ff61715cf69e67c1af17 (8260 bytes)
+MATCH assets/textures/groundsky/ground/dirt_dry_pale_albedo.ktx2
+  catalogue 77cc56963574f22c23d250ab0846273957fe4e4a24af8db733566f0ff725e169 (23717 bytes)
+  actual    77cc56963574f22c23d250ab0846273957fe4e4a24af8db733566f0ff725e169 (23717 bytes)
+MATCH assets/textures/groundsky/ground/dirt_dry_pale_normal.ktx2
+  catalogue 1ee28f053f7734ef3f9b35f4794c244a695df857a885038e07775cf3ccbc2394 (3753 bytes)
+  actual    1ee28f053f7734ef3f9b35f4794c244a695df857a885038e07775cf3ccbc2394 (3753 bytes)
+MATCH assets/textures/groundsky/ground/dirt_dry_pale_orm.ktx2
+  catalogue f8b4a06504e355b75a8ebcff4b2c701bd60f43b312cd87003b848484954bb6fd (7933 bytes)
+  actual    f8b4a06504e355b75a8ebcff4b2c701bd60f43b312cd87003b848484954bb6fd (7933 bytes)
+MATCH assets/textures/groundsky/ground/gravel_coarse_river_albedo.ktx2
+  catalogue 9426464c91b631c9bb19eb19217d269bc4f471d6872e552cfcf1fb4a7b6294d8 (129551 bytes)
+  actual    9426464c91b631c9bb19eb19217d269bc4f471d6872e552cfcf1fb4a7b6294d8 (129551 bytes)
+MATCH assets/textures/groundsky/ground/gravel_coarse_river_normal.ktx2
+  catalogue ee4bb8033311f5f45ec353b234bef7519d53d39907c014a0fe57c543c647ae15 (119551 bytes)
+  actual    ee4bb8033311f5f45ec353b234bef7519d53d39907c014a0fe57c543c647ae15 (119551 bytes)
+MATCH assets/textures/groundsky/ground/gravel_coarse_river_orm.ktx2
+  catalogue 7c7a4b74525b9271d1a07b026128e732e9bb7e523c9ed60223db605212772ba6 (38383 bytes)
+  actual    7c7a4b74525b9271d1a07b026128e732e9bb7e523c9ed60223db605212772ba6 (38383 bytes)
+MATCH assets/textures/groundsky/ground/gravel_fine_grey_albedo.ktx2
+  catalogue 7780e7df0c82492de6a4051fef4f4892f79fb39767a282bb1621ea1f5c152195 (133394 bytes)
+  actual    7780e7df0c82492de6a4051fef4f4892f79fb39767a282bb1621ea1f5c152195 (133394 bytes)
+MATCH assets/textures/groundsky/ground/gravel_fine_grey_normal.ktx2
+  catalogue b4fe4d1a62bff642fd0bf5b47960e0222621b1513646094195325350b2dd3da7 (129927 bytes)
+  actual    b4fe4d1a62bff642fd0bf5b47960e0222621b1513646094195325350b2dd3da7 (129927 bytes)
+MATCH assets/textures/groundsky/ground/gravel_fine_grey_orm.ktx2
+  catalogue 893ed26b6c53d3d1e668930de754ec6fac928f3c9fa92e88f6b483150377d6ab (14645 bytes)
+  actual    893ed26b6c53d3d1e668930de754ec6fac928f3c9fa92e88f6b483150377d6ab (14645 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_clover_edge_albedo.ktx2
+  catalogue 34c1380f296d3f86ab5eff910ee40c46f88a82900d56a2630f936e1eb530d460 (52448 bytes)
+  actual    34c1380f296d3f86ab5eff910ee40c46f88a82900d56a2630f936e1eb530d460 (52448 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_clover_edge_normal.ktx2
+  catalogue ac8eb21e5ae9fbb745d6e75fff5ca3bd91756fda98bf4e09ee7907f7486b10f3 (10846 bytes)
+  actual    ac8eb21e5ae9fbb745d6e75fff5ca3bd91756fda98bf4e09ee7907f7486b10f3 (10846 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_clover_edge_orm.ktx2
+  catalogue 8d3ef49fd7738e8509a5b9253665f6203ef54cc402a5632e91f0c5c8c4fa679f (6752 bytes)
+  actual    8d3ef49fd7738e8509a5b9253665f6203ef54cc402a5632e91f0c5c8c4fa679f (6752 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_dry_albedo.ktx2
+  catalogue e681d793d40507b481d7442b0396692de5b6151aa41e31447a65cae1bc93657e (77959 bytes)
+  actual    e681d793d40507b481d7442b0396692de5b6151aa41e31447a65cae1bc93657e (77959 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_dry_normal.ktx2
+  catalogue e6d045106318b092d48587320962958e63aef75ea47533f74a503db78599c33b (8840 bytes)
+  actual    e6d045106318b092d48587320962958e63aef75ea47533f74a503db78599c33b (8840 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_dry_orm.ktx2
+  catalogue 877521e420ffa68be64d56f154ff301f6db01c0b70baa60d28b921868ccc2c74 (7270 bytes)
+  actual    877521e420ffa68be64d56f154ff301f6db01c0b70baa60d28b921868ccc2c74 (7270 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2
+  catalogue 19448ab3859671dccb9fcb8acdc3fa29ece2bede32a28f8e986257a7f4a60eb8 (50093 bytes)
+  actual    19448ab3859671dccb9fcb8acdc3fa29ece2bede32a28f8e986257a7f4a60eb8 (50093 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_lush_normal.ktx2
+  catalogue 398771c16f2411c890b3f17432fa196273ce84a2748b0d1ab64d722dc200b8a7 (8858 bytes)
+  actual    398771c16f2411c890b3f17432fa196273ce84a2748b0d1ab64d722dc200b8a7 (8858 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_lush_orm.ktx2
+  catalogue 4941f398458e1eaf3cdc30fea5e6b16b8c455dcd2f6f57677a1adf2fe5873d16 (6835 bytes)
+  actual    4941f398458e1eaf3cdc30fea5e6b16b8c455dcd2f6f57677a1adf2fe5873d16 (6835 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_trampled_albedo.ktx2
+  catalogue e220d70e24c3a5a732fee243600eabafae5988adc8ebae3b100fc0195e2b71ab (73905 bytes)
+  actual    e220d70e24c3a5a732fee243600eabafae5988adc8ebae3b100fc0195e2b71ab (73905 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_trampled_normal.ktx2
+  catalogue 18017b334108144a008e6f7e7a4097df3f3df8ea020278c4da1afdb672033bb5 (4889 bytes)
+  actual    18017b334108144a008e6f7e7a4097df3f3df8ea020278c4da1afdb672033bb5 (4889 bytes)
+MATCH assets/textures/groundsky/ground/kikuyu_trampled_orm.ktx2
+  catalogue cf79e86a866eed5e1abfbc8675f2518398f32b1da1049bcd01087dae33e77c3f (8097 bytes)
+  actual    cf79e86a866eed5e1abfbc8675f2518398f32b1da1049bcd01087dae33e77c3f (8097 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_eucalyptus_albedo.ktx2
+  catalogue 1d80038572afc0ffab58dac159be1bbffbf9118371a0db8cc4772263a3bf9a7b (46968 bytes)
+  actual    1d80038572afc0ffab58dac159be1bbffbf9118371a0db8cc4772263a3bf9a7b (46968 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_eucalyptus_normal.ktx2
+  catalogue bdef63b2bbd6cd458d80fa183d479e2046f6ac3f01311152ed8db6caa7e30c55 (5816 bytes)
+  actual    bdef63b2bbd6cd458d80fa183d479e2046f6ac3f01311152ed8db6caa7e30c55 (5816 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_eucalyptus_orm.ktx2
+  catalogue b42b7150b13f022a7d177566996f52e777a3c6d0e5ce8bf38a0cbef1e550a0b8 (8267 bytes)
+  actual    b42b7150b13f022a7d177566996f52e777a3c6d0e5ce8bf38a0cbef1e550a0b8 (8267 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_mixed_albedo.ktx2
+  catalogue 53b33bf14cf0c92aaac77d4785368d8f61959b14da1712d118b7a30a086c57e7 (54114 bytes)
+  actual    53b33bf14cf0c92aaac77d4785368d8f61959b14da1712d118b7a30a086c57e7 (54114 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_mixed_normal.ktx2
+  catalogue 41d2222cce28ab1e85ba4bc93fc5236fbe3cbb2f09c2e36411b56241ec80c84c (8042 bytes)
+  actual    41d2222cce28ab1e85ba4bc93fc5236fbe3cbb2f09c2e36411b56241ec80c84c (8042 bytes)
+MATCH assets/textures/groundsky/ground/leaf_litter_mixed_orm.ktx2
+  catalogue 7f5507f4bb539df7f6267c40cbaa050b44dd924b1d83a1f539c06d1a80a81887 (9067 bytes)
+  actual    7f5507f4bb539df7f6267c40cbaa050b44dd924b1d83a1f539c06d1a80a81887 (9067 bytes)
+MATCH assets/textures/groundsky/ground/mud_puddled_albedo.ktx2
+  catalogue c79b9c8c0b8b4dfe121612a144f881cb7b37d10ae991dfa321c1c81adea6e2bf (18731 bytes)
+  actual    c79b9c8c0b8b4dfe121612a144f881cb7b37d10ae991dfa321c1c81adea6e2bf (18731 bytes)
+MATCH assets/textures/groundsky/ground/mud_puddled_normal.ktx2
+  catalogue e4e94ff68a76b2e4e1b941559a5464f162419005a048a57dbf0d87d702d18db9 (2914 bytes)
+  actual    e4e94ff68a76b2e4e1b941559a5464f162419005a048a57dbf0d87d702d18db9 (2914 bytes)
+MATCH assets/textures/groundsky/ground/mud_puddled_orm.ktx2
+  catalogue 6162d52ad921bc03e9e7da1b84f14638548421e23899b2fb022f31d11438747a (18142 bytes)
+  actual    6162d52ad921bc03e9e7da1b84f14638548421e23899b2fb022f31d11438747a (18142 bytes)
+MATCH assets/textures/groundsky/ground/mud_rutted_albedo.ktx2
+  catalogue d7516554856a4df581fc5c6d2342f927c1dce01b172c0ec0ff34f4c700d10ce2 (23935 bytes)
+  actual    d7516554856a4df581fc5c6d2342f927c1dce01b172c0ec0ff34f4c700d10ce2 (23935 bytes)
+MATCH assets/textures/groundsky/ground/mud_rutted_normal.ktx2
+  catalogue a95f54ea96f549edd43fc605dc9f63a4297d3218394a108deb6fd54c44e8fc26 (12295 bytes)
+  actual    a95f54ea96f549edd43fc605dc9f63a4297d3218394a108deb6fd54c44e8fc26 (12295 bytes)
+MATCH assets/textures/groundsky/ground/mud_rutted_orm.ktx2
+  catalogue 8d8399d2e784a007a925cb599bff62bbbbfc4593647cb72018dda9ad2fc66b95 (28344 bytes)
+  actual    8d8399d2e784a007a925cb599bff62bbbbfc4593647cb72018dda9ad2fc66b95 (28344 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_footworn_albedo.ktx2
+  catalogue 5b57b2dbea426958fd2864adfcb311d19f181c1985459b4acb3001d5e6a5d086 (26488 bytes)
+  actual    5b57b2dbea426958fd2864adfcb311d19f181c1985459b4acb3001d5e6a5d086 (26488 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_footworn_normal.ktx2
+  catalogue 3d6ccb43db981ac8d45a57c48b0e307f9e00cc1cf420c4913421e82260317391 (3842 bytes)
+  actual    3d6ccb43db981ac8d45a57c48b0e307f9e00cc1cf420c4913421e82260317391 (3842 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_footworn_orm.ktx2
+  catalogue aef0d84595c514962f9cf3ecf3fe78cc4977959546ffa4bb6bfc2ed5f7c182a8 (8971 bytes)
+  actual    aef0d84595c514962f9cf3ecf3fe78cc4977959546ffa4bb6bfc2ed5f7c182a8 (8971 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_tyres_albedo.ktx2
+  catalogue fc0f02f1fa22f0e9921e023f6caab5a4ca6a49e214d81394aabdd0dca9605be2 (32442 bytes)
+  actual    fc0f02f1fa22f0e9921e023f6caab5a4ca6a49e214d81394aabdd0dca9605be2 (32442 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_tyres_normal.ktx2
+  catalogue 0512c9facaadc3523be89dd99ca732c9d8282f545d26d3f7dc8b5c3de82f17a6 (4563 bytes)
+  actual    0512c9facaadc3523be89dd99ca732c9d8282f545d26d3f7dc8b5c3de82f17a6 (4563 bytes)
+MATCH assets/textures/groundsky/ground/packed_earth_tyres_orm.ktx2
+  catalogue b67e9ea65692092e095047daf3ed2465167a28bd3e2b5e3bf4945e17e74c786e (9814 bytes)
+  actual    b67e9ea65692092e095047daf3ed2465167a28bd3e2b5e3bf4945e17e74c786e (9814 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_dry_albedo.ktx2
+  catalogue d46322242b061f9b2e70ef905bea6e757c8e6644ad847670e11eff189aad3cd7 (32812 bytes)
+  actual    d46322242b061f9b2e70ef905bea6e757c8e6644ad847670e11eff189aad3cd7 (32812 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_dry_normal.ktx2
+  catalogue 797ad67cbcd8c86b437cdfda3381765b1ef799038309b29905a87341f4a77a67 (8358 bytes)
+  actual    797ad67cbcd8c86b437cdfda3381765b1ef799038309b29905a87341f4a77a67 (8358 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_dry_orm.ktx2
+  catalogue d3d8d8cc064cad7b409571f766ddf348f502037ecc1e5e5373492e94f0a2069a (12288 bytes)
+  actual    d3d8d8cc064cad7b409571f766ddf348f502037ecc1e5e5373492e94f0a2069a (12288 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_wet_albedo.ktx2
+  catalogue 147625e8d356fc601ce48046d5662220446474b36ea8af0857f5157fbd539508 (18034 bytes)
+  actual    147625e8d356fc601ce48046d5662220446474b36ea8af0857f5157fbd539508 (18034 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_wet_normal.ktx2
+  catalogue 310bcc64346e39dfa0782836a4679abc4fd67f601c9dee62f163d17a843e809c (3575 bytes)
+  actual    310bcc64346e39dfa0782836a4679abc4fd67f601c9dee62f163d17a843e809c (3575 bytes)
+MATCH assets/textures/groundsky/ground/red_clay_wet_orm.ktx2
+  catalogue ecb2397d13764da67a4d32672b820fb27ad56a7cba54ba2a332254deef783ffa (20976 bytes)
+  actual    ecb2397d13764da67a4d32672b820fb27ad56a7cba54ba2a332254deef783ffa (20976 bytes)
+MATCH assets/textures/groundsky/ground/sand_to_kikuyu_albedo.ktx2
+  catalogue e71886eba045c10ff8e1a84abaa09362eced5346f8161eb57c3dda03b5b8ba21 (71449 bytes)
+  actual    e71886eba045c10ff8e1a84abaa09362eced5346f8161eb57c3dda03b5b8ba21 (71449 bytes)
+MATCH assets/textures/groundsky/ground/sand_to_kikuyu_normal.ktx2
+  catalogue f41eb37b59b89a6cf161befe45bfafb30ebc2e989577ac5ce4a46268770a8df9 (2808 bytes)
+  actual    f41eb37b59b89a6cf161befe45bfafb30ebc2e989577ac5ce4a46268770a8df9 (2808 bytes)
+MATCH assets/textures/groundsky/ground/sand_to_kikuyu_orm.ktx2
+  catalogue 44d831c6943468b43a82cc911a28383940225ecc04213a809d6e8dd4b3b9712b (7137 bytes)
+  actual    44d831c6943468b43a82cc911a28383940225ecc04213a809d6e8dd4b3b9712b (7137 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_dark_albedo.ktx2
+  catalogue 008bbf5815a1dd2aa8d62c3ac27a5b8ab3587edc7999a52db104efb755820157 (47716 bytes)
+  actual    008bbf5815a1dd2aa8d62c3ac27a5b8ab3587edc7999a52db104efb755820157 (47716 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_dark_normal.ktx2
+  catalogue 2e12d2ce5f9fc0076e98caa9b2e7b960e065b3c8822b994d89ee4251f517fb26 (27604 bytes)
+  actual    2e12d2ce5f9fc0076e98caa9b2e7b960e065b3c8822b994d89ee4251f517fb26 (27604 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_dark_orm.ktx2
+  catalogue 20ca9a64d79deab6f95d6fc8268b2725a46ca1bdba8b3c77e7cee9d072cbdf66 (22168 bytes)
+  actual    20ca9a64d79deab6f95d6fc8268b2725a46ca1bdba8b3c77e7cee9d072cbdf66 (22168 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_pale_albedo.ktx2
+  catalogue 3da9bc8940d61bb976df999db42047f351312c5b3bba96faa1bc6635a10a5f2b (44305 bytes)
+  actual    3da9bc8940d61bb976df999db42047f351312c5b3bba96faa1bc6635a10a5f2b (44305 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_pale_normal.ktx2
+  catalogue 0c4ba09f5efa16f04a6dd0b264353b296db01718d7aacea87247c7109e913a82 (25278 bytes)
+  actual    0c4ba09f5efa16f04a6dd0b264353b296db01718d7aacea87247c7109e913a82 (25278 bytes)
+MATCH assets/textures/groundsky/ground/stone_scatter_pale_orm.ktx2
+  catalogue 00ab772366403572c060cf10824369bcf17221e8d3618f29ec3ae1fefbf001c8 (18417 bytes)
+  actual    00ab772366403572c060cf10824369bcf17221e8d3618f29ec3ae1fefbf001c8 (18417 bytes)
+MATCH assets/textures/groundsky/masks/terrain_blend_masks_01.ktx2
+  catalogue a6426b11d74249ad97edc776200c1b6a1323cd17ad9770d4335204a48d4cc8e4 (93687 bytes)
+  actual    a6426b11d74249ad97edc776200c1b6a1323cd17ad9770d4335204a48d4cc8e4 (93687 bytes)
+MATCH assets/textures/groundsky/masks/terrain_blend_masks_02.ktx2
+  catalogue a94d7c0ec822bf082d1d9bd60ccd43f847408458f01390d8618865734e125d87 (190237 bytes)
+  actual    a94d7c0ec822bf082d1d9bd60ccd43f847408458f01390d8618865734e125d87 (190237 bytes)
+MATCH assets/textures/groundsky/city/city_far_day.ktx2
+  catalogue 2ece4217d8d6a39ae544ae4cec7330e65a6ca2d5961f07f3126eef73ff541062 (162562 bytes)
+  actual    2ece4217d8d6a39ae544ae4cec7330e65a6ca2d5961f07f3126eef73ff541062 (162562 bytes)
+MATCH assets/textures/groundsky/city/city_far_dusk.ktx2
+  catalogue 09ccfb534d9f3c04da80003c8dff921473a4b98c8a82542b37b088022f78e661 (145277 bytes)
+  actual    09ccfb534d9f3c04da80003c8dff921473a4b98c8a82542b37b088022f78e661 (145277 bytes)
+MATCH assets/textures/groundsky/city/city_far_night.ktx2
+  catalogue 77b01e0d9aafeb56a166982c719f281443469380a358cec5c17067a228d30948 (68187 bytes)
+  actual    77b01e0d9aafeb56a166982c719f281443469380a358cec5c17067a228d30948 (68187 bytes)
+MATCH assets/textures/groundsky/city/city_middle_day.ktx2
+  catalogue e44dce2a8d9d0b0b8522283fff2392317f5a95268a8217da39689943dc747a38 (162098 bytes)
+  actual    e44dce2a8d9d0b0b8522283fff2392317f5a95268a8217da39689943dc747a38 (162098 bytes)
+MATCH assets/textures/groundsky/city/city_middle_dusk.ktx2
+  catalogue ee7acbaac3a040319a0e7f2e3c0783f17c0aafe7656034dda06a951978a215e3 (164080 bytes)
+  actual    ee7acbaac3a040319a0e7f2e3c0783f17c0aafe7656034dda06a951978a215e3 (164080 bytes)
+MATCH assets/textures/groundsky/city/city_middle_night.ktx2
+  catalogue fdc34fc552edbb20bf521e8cff3567271e1bb7984f061ee105e7658eae38a11c (129192 bytes)
+  actual    fdc34fc552edbb20bf521e8cff3567271e1bb7984f061ee105e7658eae38a11c (129192 bytes)
+MATCH assets/textures/groundsky/city/city_near_day.ktx2
+  catalogue bd98677f3e53f85a49ad43b755237339a9be5ee6a93ab2aa584fdd79a4c80b5c (143320 bytes)
+  actual    bd98677f3e53f85a49ad43b755237339a9be5ee6a93ab2aa584fdd79a4c80b5c (143320 bytes)
+MATCH assets/textures/groundsky/city/city_near_dusk.ktx2
+  catalogue 19e54b5485942a0875d73108c9fadfdc6c55763d25c2fd6ce5dc7d21b2ddf5d8 (152868 bytes)
+  actual    19e54b5485942a0875d73108c9fadfdc6c55763d25c2fd6ce5dc7d21b2ddf5d8 (152868 bytes)
+MATCH assets/textures/groundsky/city/city_near_night.ktx2
+  catalogue 7ae76b8eb257930fe7a5eb25528c718d964190814ea2e7711ff8ca5229ae3574 (133187 bytes)
+  actual    7ae76b8eb257930fe7a5eb25528c718d964190814ea2e7711ff8ca5229ae3574 (133187 bytes)
+MATCH assets/textures/groundsky/haze/haze_07.ktx2
+  catalogue f20e8c1f4d3cd7d159eb682969b850297033f61d28033ff3aef3a51ee38d9b2b (1706 bytes)
+  actual    f20e8c1f4d3cd7d159eb682969b850297033f61d28033ff3aef3a51ee38d9b2b (1706 bytes)
+MATCH assets/textures/groundsky/haze/haze_12.ktx2
+  catalogue 85de7dd34ae8157e85d4e166fccc685f1db8666967a58d647d433a7bd31a2dcd (1716 bytes)
+  actual    85de7dd34ae8157e85d4e166fccc685f1db8666967a58d647d433a7bd31a2dcd (1716 bytes)
+MATCH assets/textures/groundsky/haze/haze_17p2.ktx2
+  catalogue 59245cdb5dfaaeeda9bdb4aec0b6930d979114fd4a224300c873da596919f09e (1722 bytes)
+  actual    59245cdb5dfaaeeda9bdb4aec0b6930d979114fd4a224300c873da596919f09e (1722 bytes)
+MATCH assets/textures/groundsky/haze/haze_19p5.ktx2
+  catalogue 972be3a4e25d4f3de5225c8ff91d43bf3a5ae34d14cd404557e1cf386636fea9 (1713 bytes)
+  actual    972be3a4e25d4f3de5225c8ff91d43bf3a5ae34d14cd404557e1cf386636fea9 (1713 bytes)
+MATCH assets/textures/groundsky/haze/haze_22.ktx2
+  catalogue 96b658496762f47c97d112fa2f646266cd2143795e71e83feae1f321c498a66c (1742 bytes)
+  actual    96b658496762f47c97d112fa2f646266cd2143795e71e83feae1f321c498a66c (1742 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod0.ktx2
+  catalogue 799b965b0a120e90e8f5cb30d53d1798fdd3e441ed4ec1276f06475386fadb5c (230403 bytes)
+  actual    799b965b0a120e90e8f5cb30d53d1798fdd3e441ed4ec1276f06475386fadb5c (230403 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod1.ktx2
+  catalogue 2ae9a5a57e0bec5f6f43b1201fd7bbf05c0e6e5130aa04dbde6530a6560820ab (128485 bytes)
+  actual    2ae9a5a57e0bec5f6f43b1201fd7bbf05c0e6e5130aa04dbde6530a6560820ab (128485 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod2.ktx2
+  catalogue 21b392978d223d0079ddc22157023f17dcdb30e151889fd72110d1ffccacd091 (49395 bytes)
+  actual    21b392978d223d0079ddc22157023f17dcdb30e151889fd72110d1ffccacd091 (49395 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod0.ktx2
+  catalogue 06f4ff429b6d73090d66063c2bd7d5beb4046db56eae5f7ebdd44d7fb66e3b0e (176268 bytes)
+  actual    06f4ff429b6d73090d66063c2bd7d5beb4046db56eae5f7ebdd44d7fb66e3b0e (176268 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod1.ktx2
+  catalogue d455b412f08cfaa13621b17668c50eceea97de67bceda50d73bc521cf219ea58 (64551 bytes)
+  actual    d455b412f08cfaa13621b17668c50eceea97de67bceda50d73bc521cf219ea58 (64551 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod2.ktx2
+  catalogue 025354669108bc90ab7aa47079016dd68f3b0a89fb460ff2df072c661c31a548 (20735 bytes)
+  actual    025354669108bc90ab7aa47079016dd68f3b0a89fb460ff2df072c661c31a548 (20735 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_banana_groves_lod0.ktx2
+  catalogue 633df3d62b5178565baee7995b36639032d1dda71555bc6da7f963b51e18e418 (140428 bytes)
+  actual    633df3d62b5178565baee7995b36639032d1dda71555bc6da7f963b51e18e418 (140428 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_banana_groves_lod1.ktx2
+  catalogue 1867ca5baafb478c94d692a135dac00f2f696f5a677061c3e6dce7a30ca67e5e (86600 bytes)
+  actual    1867ca5baafb478c94d692a135dac00f2f696f5a677061c3e6dce7a30ca67e5e (86600 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_banana_groves_lod2.ktx2
+  catalogue b3a6bf11fcf15195a2aa090cbffea70e1928a25cfbe895654861acbe31483362 (37292 bytes)
+  actual    b3a6bf11fcf15195a2aa090cbffea70e1928a25cfbe895654861acbe31483362 (37292 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod0.ktx2
+  catalogue e3156f1b305d29742a2e8b1e145a41266d7751c8b23f542e5c40b2fb4c063e61 (136491 bytes)
+  actual    e3156f1b305d29742a2e8b1e145a41266d7751c8b23f542e5c40b2fb4c063e61 (136491 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod1.ktx2
+  catalogue 75091cb41835b301dfe00b8e8ba07c9339e3e8d8fd14e7315f2918646834720a (76329 bytes)
+  actual    75091cb41835b301dfe00b8e8ba07c9339e3e8d8fd14e7315f2918646834720a (76329 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod2.ktx2
+  catalogue 154408857530ab945d627f410bfcc28662acf66b7900357b1f60a5a896fbe437 (33333 bytes)
+  actual    154408857530ab945d627f410bfcc28662acf66b7900357b1f60a5a896fbe437 (33333 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod0.ktx2
+  catalogue 5e38563acda0a9cea327d6b6d0a06de3fababb9952f7b78756b2b81a0ddc9d8f (255028 bytes)
+  actual    5e38563acda0a9cea327d6b6d0a06de3fababb9952f7b78756b2b81a0ddc9d8f (255028 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod1.ktx2
+  catalogue 7ae8da4ff36a1d7ffd93243b8d03345591db8ec983d924c91e0d1efbaae309bf (129847 bytes)
+  actual    7ae8da4ff36a1d7ffd93243b8d03345591db8ec983d924c91e0d1efbaae309bf (129847 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod2.ktx2
+  catalogue 8c2d7b93a898b3024508e2dc680942286dcd0c2b832d8e44a0ce444fe14f9ad8 (50902 bytes)
+  actual    8c2d7b93a898b3024508e2dc680942286dcd0c2b832d8e44a0ce444fe14f9ad8 (50902 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod0.ktx2
+  catalogue 6c75926440cf0a8c56dc53217517de951dc003b63b707b93e7f5281cb4a696a8 (135370 bytes)
+  actual    6c75926440cf0a8c56dc53217517de951dc003b63b707b93e7f5281cb4a696a8 (135370 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod1.ktx2
+  catalogue faafd6b8e878accfd0403e5fda28a37d9d3bc8e8f2e88dd39c81d10d6d7a499f (73715 bytes)
+  actual    faafd6b8e878accfd0403e5fda28a37d9d3bc8e8f2e88dd39c81d10d6d7a499f (73715 bytes)
+MATCH assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod2.ktx2
+  catalogue 302e9cce3143b81fa4e710ae8cb975659f45cba74b713b5467a7fd6ed9764552 (29710 bytes)
+  actual    302e9cce3143b81fa4e710ae8cb975659f45cba74b713b5467a7fd6ed9764552 (29710 bytes)
+FINAL CATALOGUE CHECK
+{
+  "ok": true,
+  "utc": "2026-11-03T05:20:33.548215+00:00",
+  "command": [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+    "/workspace/scratch/32e9192f94b1/groundsky-catalogue-pins-check.py"
+  ],
+  "cataloguePath": "tools/groundsky.catalog.json",
+  "catalogueSha256": "ec5340a93a874ae5c19b99a4149d91112bc0d2b2b5e29dfbc00f8e64d182c035",
+  "fileCount": 244,
+  "counts": {
+    "png": 122,
+    "ktx2": 122
+  },
+  "matchingCount": 244,
+  "mismatchedPaths": [],
+  "actualBytes": 11947713
+}
+
+Clean-tree rebuild driver source, for the earlier logged rebuild commands:
+from __future__ import annotations
+
+import datetime
+import hashlib
+import importlib.metadata
+import json
+import os
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+
+
+REPO = Path('/workspace/scratch/32e9192f94b1/groundsky-repo')
+ROOT = REPO / 'la-ladera'
+OUT = ROOT / 'dev/groundsky/verification'
+OUT.mkdir(parents=True, exist_ok=True)
+LOG = OUT / 'rebuild.log'
+REPORT = OUT / 'rebuild.json'
+scratch = Path(tempfile.mkdtemp(prefix='groundsky-rebuild-', dir='/workspace/scratch/32e9192f94b1'))
+mini = scratch / 'la-ladera'
+(mini / 'tools').mkdir(parents=True)
+env = dict(os.environ)
+env.update(OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2', MKL_NUM_THREADS='2',
+           NUMEXPR_NUM_THREADS='2', PYTHONDONTWRITEBYTECODE='1')
+try:
+    os.nice(max(0, 19 - os.getpriority(os.PRIO_PROCESS, 0)))
+except (AttributeError, OSError):
+    pass
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def write_log(text):
+    with LOG.open('a', encoding='utf-8') as log:
+        log.write(text + '\n')
+
+
+start = time.monotonic()
+now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+LOG.write_text('Groundsky clean-tree deterministic PNG rebuild\n'
+               f'UTC {now}\nRepository: {REPO}\nFresh tree: {scratch}\n'
+               '$ ' + shlex.join([sys.executable, str(Path(__file__).resolve())]) + '\n', encoding='utf-8')
+versions = {name: importlib.metadata.version(name) for name in ['numpy', 'Pillow', 'scipy']}
+write_log('Python: ' + sys.version.replace('\n', ' '))
+write_log('Dependencies: ' + json.dumps(versions, sort_keys=True))
+write_log('Environment: OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 NUMEXPR_NUM_THREADS=2 PYTHONDONTWRITEBYTECODE=1')
+write_log('Process nice value: ' + str(os.getpriority(os.PRIO_PROCESS, 0)))
+
+sources = []
+for name in ['groundsky_ground.py', 'groundsky_sky.py']:
+    original = ROOT / 'tools' / name
+    copied = mini / 'tools' / name
+    shutil.copyfile(original, copied)
+    pin = {'path': 'tools/' + name, 'sha256': digest(original), 'copiedSha256': digest(copied),
+           'bytes': original.stat().st_size}
+    assert pin['sha256'] == pin['copiedSha256']
+    sources.append(pin)
+    write_log(f'COPY {original} -> {copied}\nSHA256 {pin["sha256"]}')
+
+expected = []
+for name in ['ground-metadata.json', 'sky-metadata.json']:
+    obj = json.loads((ROOT / 'dev/groundsky' / name).read_text())
+    for entry in obj['files']:
+        source = ROOT / entry['path']
+        expected.append({'path': entry['path'], 'expectedSha256': digest(source),
+                         'expectedBytes': source.stat().st_size})
+assert len(expected) == 122 and len({r['path'] for r in expected}) == 122
+write_log('Snapshot: 122 distinct existing intended master PNGs')
+
+commands = []
+failure = None
+for name in ['groundsky_ground.py', 'groundsky_sky.py']:
+    command = [sys.executable, str(mini / 'tools' / name)]
+    write_log('\n$ ' + shlex.join(command))
+    print('RUN ' + name, flush=True)
+    then = time.monotonic()
+    result = subprocess.run(command, cwd=scratch, env=env, text=True, capture_output=True,
+                            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    elapsed = round(time.monotonic() - then, 3)
+    write_log(result.stdout.rstrip())
+    if result.stderr:
+        write_log('STDERR:\n' + result.stderr.rstrip())
+    write_log(f'[exit {result.returncode}; seconds {elapsed}]')
+    commands.append({'argv': command, 'cwd': str(scratch), 'exitCode': result.returncode, 'elapsedSeconds': elapsed})
+    if result.returncode:
+        failure = f'{name} failed with exit {result.returncode}'
+        break
+
+results = []
+missing = []
+drift = []
+original_changes = []
+for entry in sorted(expected, key=lambda item: item['path']):
+    fresh = mini / entry['path']
+    actual = ROOT / entry['path']
+    entry['originalStillMatchesSnapshot'] = digest(actual) == entry['expectedSha256']
+    if not entry['originalStillMatchesSnapshot']:
+        original_changes.append(entry['path'])
+    if not fresh.exists():
+        entry.update(present=False, matches=False)
+        missing.append(entry['path'])
+        write_log('MISSING ' + entry['path'])
+    else:
+        entry.update(present=True, actualSha256=digest(fresh), actualBytes=fresh.stat().st_size)
+        entry['matches'] = (entry['actualSha256'] == entry['expectedSha256'] and entry['actualBytes'] == entry['expectedBytes'])
+        if not entry['matches']:
+            drift.append(entry['path'])
+        write_log(('MATCH ' if entry['matches'] else 'DRIFT ') + entry['path']
+                  + f'\n  expected {entry["expectedSha256"]} ({entry["expectedBytes"]} bytes)'
+                  + f'\n  rebuilt  {entry["actualSha256"]} ({entry["actualBytes"]} bytes)')
+    results.append(entry)
+
+generated_paths = {p.relative_to(mini).as_posix() for p in (mini / 'dev/groundsky/masters').rglob('*.png')}
+extra = sorted(generated_paths - {e['path'] for e in expected})
+generator_changes = []
+for entry in sources:
+    entry['sourceStillMatchesSnapshot'] = digest(ROOT / entry['path']) == entry['sha256']
+    if not entry['sourceStillMatchesSnapshot']:
+        generator_changes.append(entry['path'])
+ok = not (failure or missing or drift or extra or original_changes or generator_changes) and len(generated_paths) == 122
+report = {
+    'ok': ok, 'utc': now, 'scratchTree': str(scratch),
+    'python': sys.version, 'dependencies': versions,
+    'threadLimits': {key: env[key] for key in ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS']},
+    'nice': os.getpriority(os.PRIO_PROCESS, 0), 'generatorSources': sources,
+    'commands': commands, 'expectedCount': 122, 'generatedCount': len(generated_paths),
+    'matchingCount': sum(r['matches'] for r in results),
+    'expectedBytes': sum(r['expectedBytes'] for r in expected),
+    'generatedBytes': sum(r.get('actualBytes', 0) for r in results),
+    'missing': missing, 'drift': drift, 'extra': extra, 'originalChanges': original_changes,
+    'generatorChanges': generator_changes, 'failure': failure,
+    'elapsedSeconds': round(time.monotonic() - start, 3), 'files': results,
+}
+REPORT.write_text(json.dumps(report, indent=2) + '\n')
+summary = {key: report[key] for key in ['ok', 'expectedCount', 'generatedCount', 'matchingCount', 'expectedBytes', 'generatedBytes', 'missing', 'drift', 'extra', 'originalChanges', 'generatorChanges', 'elapsedSeconds']}
+write_log('\nFINAL\n' + json.dumps(summary, indent=2))
+print(json.dumps(summary, indent=2), flush=True)
+sys.exit(0 if ok else 1)

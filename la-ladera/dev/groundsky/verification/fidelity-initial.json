@@ -1,0 +1,5980 @@
+{
+  "version": 1,
+  "utc": "2026-11-03T05:09:42.544429+00:00",
+  "complete": true,
+  "gates": {
+    "rgbRmseMax": 12.0,
+    "maskRgbaRmseMax": 12.0,
+    "opacityRmseMax": 8.0,
+    "normalMeanDegreesMax": 8.0,
+    "seamMeanMax": 8.0,
+    "seamMaxMax": 80,
+    "transparentGutterMax": 8,
+    "opaqueAlphaMin": 247,
+    "metallicMax": 8
+  },
+  "notes": [
+    "All KTX2 mip levels are independently extracted, inflated and decoded.",
+    "Colour cutout RGB RMSE weights pixels by source opacity; opacity is tested separately.",
+    "Mask alpha is the fourth data channel, never a transparency weight.",
+    "Source tiling is exact; lossy delivery seam deltas are measured, not claimed exact.",
+    "These fixed gates catch catastrophic degradation; they do not replace visual review or native-GPU integration."
+  ],
+  "files": [
+    {
+      "id": "dirt_clay_margin_albedo",
+      "path": "assets/textures/groundsky/decals/dirt_clay_margin_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/dirt_clay_margin_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "0c44f167669f784e8934cb96badb96c934d20113d1b0fa392c46efb4616cf834",
+      "sourceSha256": "8188acf09f87c46715b8f78249336bee27377ba26f6c13cec4a06f6653edc63f",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/dirt_clay_margin_albedo.png",
+      "decodedSha256": "d44dc9937b25243a308fc2ac898c69f3ec57da6b2a5674ecafd98a336c0da13e",
+      "quality": {
+        "rgbRmse": 2.69134421217371,
+        "rgbaRmse": 2.464483703336508,
+        "maxChannelError": 27,
+        "channelRmse": [
+          3.8121397755025654,
+          2.3902076905480576,
+          1.8741320826538406,
+          0.7326978646677441
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.7326978646677441,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_footworn_spots_albedo",
+      "path": "assets/textures/groundsky/decals/dirt_footworn_spots_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/dirt_footworn_spots_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "c4dd8d0bcff6febe032f2b1c514c9835c368d8f3db0483ac06a8a931463766b1",
+      "sourceSha256": "726ac1f846ff588a6c10bc10e9a60356148d3c6ee3623accefcf1075707d3e39",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/dirt_footworn_spots_albedo.png",
+      "decodedSha256": "dcae2c6bae488168cba74ae1410872256834b5e953b561d1be25bc906fd60e07",
+      "quality": {
+        "rgbRmse": 1.0220669916402065,
+        "rgbaRmse": 1.3571489018470553,
+        "maxChannelError": 15,
+        "channelRmse": [
+          1.5147211584936289,
+          1.6071738588279738,
+          1.3525457609265539,
+          0.8128004252274971
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.8128004252274971,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_patch_soft_albedo",
+      "path": "assets/textures/groundsky/decals/dirt_patch_soft_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/dirt_patch_soft_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "0f7964bd02345315ee285fa4f1551fdbd2d4b13c49a1ef528a443695167d24c1",
+      "sourceSha256": "c9f08cdfed3bf6d8c9fd81fadc487923a3de236ef39f44940ad868e3ce62ee09",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/dirt_patch_soft_albedo.png",
+      "decodedSha256": "f70b8b492eddc7871881514f784996c512b3f5a9fca11d9e399e7aa540eba23d",
+      "quality": {
+        "rgbRmse": 1.2938239350295855,
+        "rgbaRmse": 1.1728970965869636,
+        "maxChannelError": 12,
+        "channelRmse": [
+          1.4698884488293502,
+          1.266033342208642,
+          1.1638674988724622,
+          0.6202824890410316
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6202824890410316,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_scuffed_path_albedo",
+      "path": "assets/textures/groundsky/decals/dirt_scuffed_path_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/dirt_scuffed_path_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "7b457b3b53cee003ff0b3fbaf647276e34a144db8730ca402411f69d740fce1d",
+      "sourceSha256": "1c3889c92e289131b3bfce70536123d1974de3f3f8917870fba4f2bedf65492c",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/dirt_scuffed_path_albedo.png",
+      "decodedSha256": "85937f434c4bf17f27ecb864dd1d1159ff5d23c702e78ec67819c9e7e23af12d",
+      "quality": {
+        "rgbRmse": 1.8775325420507734,
+        "rgbaRmse": 1.8156392764976308,
+        "maxChannelError": 29,
+        "channelRmse": [
+          2.244291056478951,
+          2.112630408962497,
+          1.7990582015592649,
+          0.6704654545770796
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6704654545770796,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "grass_patch_dry_albedo",
+      "path": "assets/textures/groundsky/decals/grass_patch_dry_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/grass_patch_dry_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "cb22957ea1cfe6f7496c30233c8fc7ed9f2f696edcff80f057c9e9707b3096b9",
+      "sourceSha256": "d443bfecae250e0169ce753721905b4b5acd2f69decc1b0ff6e97a3a9d182e4e",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/grass_patch_dry_albedo.png",
+      "decodedSha256": "1088acfecef8e7848b24671dd2d4254f251064ada44df94e9876f9e9a2a0d46e",
+      "quality": {
+        "rgbRmse": 3.474981615342602,
+        "rgbaRmse": 3.0416026348184877,
+        "maxChannelError": 29,
+        "channelRmse": [
+          4.444452990417742,
+          3.3590201256964782,
+          2.301617559433491,
+          0.8196123313977755
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.8196123313977755,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "grass_patch_lush_albedo",
+      "path": "assets/textures/groundsky/decals/grass_patch_lush_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/grass_patch_lush_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "687a42300311b2814294d5f6ac521d0e03c58eb036db8a6b9a25ee9b040f1fdd",
+      "sourceSha256": "9c5c1aa101a147835c35271b3f4e7768aea723a51b0b68e3e0d4ca63d4209f6a",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/grass_patch_lush_albedo.png",
+      "decodedSha256": "d52f104e9afcbf07f507ae32d6ef2f01cfa71fa2f653c849ea1c4e03609b1143",
+      "quality": {
+        "rgbRmse": 2.31805487612819,
+        "rgbaRmse": 2.047293350914144,
+        "maxChannelError": 16,
+        "channelRmse": [
+          2.3820615491882435,
+          2.8751041559343036,
+          1.5080869750988803,
+          0.7422080589257806
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.7422080589257806,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "grass_patch_moss_albedo",
+      "path": "assets/textures/groundsky/decals/grass_patch_moss_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/grass_patch_moss_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "487b271f7e8ff9139ad085d3e79ab4483d4756122449cfae2caa0918de0e8fd1",
+      "sourceSha256": "623a7c2a104131de9b97cee57b1d3e888320e54269a3beb9637abc8918824616",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/grass_patch_moss_albedo.png",
+      "decodedSha256": "1821cb9c0a1cfb233d9ef89d3eb6518ff9099b415c023c9521ed909108970c83",
+      "quality": {
+        "rgbRmse": 2.552792728788416,
+        "rgbaRmse": 2.3093330761481328,
+        "maxChannelError": 19,
+        "channelRmse": [
+          3.1367655711402813,
+          2.9176098706265945,
+          1.5426955355418837,
+          0.7748689602233259
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.7748689602233259,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "grass_patch_sparse_albedo",
+      "path": "assets/textures/groundsky/decals/grass_patch_sparse_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/grass_patch_sparse_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "3e61a05762a0b7586fad358fdd43a323728e1d044c2acbc4f9bbde4535e79cb6",
+      "sourceSha256": "01b7d165da3467e2139bbc16595447ec1049246d5837311fabc1f041ffbf6031",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/grass_patch_sparse_albedo.png",
+      "decodedSha256": "9cee67e396ec157c6653f7641e54335de04c9f7d0de1a9b9ceada9640aac1df5",
+      "quality": {
+        "rgbRmse": 1.908808787945684,
+        "rgbaRmse": 2.472847543943204,
+        "maxChannelError": 46,
+        "channelRmse": [
+          3.199157341634388,
+          2.975703077824306,
+          1.9281934135578542,
+          1.2855168448330847
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.2855168448330847,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_grass_intrusion_albedo",
+      "path": "assets/textures/groundsky/decals/gravel_grass_intrusion_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/gravel_grass_intrusion_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "c0c6a83de97f904ae218ea5e5d59635bfb57f0660d466c44064feeafdecdda18",
+      "sourceSha256": "33f5d06465f8bf3adfc353aaf1371f1114cf32f0689a406175177443a983d8cb",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/gravel_grass_intrusion_albedo.png",
+      "decodedSha256": "b75bb4fa5904c70fe323408cba02b8c604a57a6d7cff3f3d8e1628f97d494598",
+      "quality": {
+        "rgbRmse": 1.4653572260437238,
+        "rgbaRmse": 1.7700962402558982,
+        "maxChannelError": 27,
+        "channelRmse": [
+          2.2516702174853553,
+          1.790793035854681,
+          1.8288645756278206,
+          0.9545987101969946
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.9545987101969946,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_patch_coarse_albedo",
+      "path": "assets/textures/groundsky/decals/gravel_patch_coarse_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/gravel_patch_coarse_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "34fc91a7e5b5d245ec60422d6e13e973da12b2b3a6486633048e2cbe445b7d74",
+      "sourceSha256": "f7c2bd33bb24e7bf6841b6c73429f69e8d6805798dec4224fbf68800af12d831",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/gravel_patch_coarse_albedo.png",
+      "decodedSha256": "3b35a7814f37a419a0e16d18a683b66926c7cc27a7696f6a2c2d10853ed08351",
+      "quality": {
+        "rgbRmse": 2.959964230914667,
+        "rgbaRmse": 2.644588407859503,
+        "maxChannelError": 70,
+        "channelRmse": [
+          3.8384367653717852,
+          2.395584049248057,
+          2.47105975686981,
+          1.1818778816563231
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.1818778816563231,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_patch_fine_albedo",
+      "path": "assets/textures/groundsky/decals/gravel_patch_fine_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/gravel_patch_fine_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "13d9d03628686e4f6761f952cf88425b67c4e790d1af1e2e1065735db8b62a42",
+      "sourceSha256": "c3667cb439a99c30c7912e59814d6f0c2ade7d48d2ca4aecdb702061ba49d518",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/gravel_patch_fine_albedo.png",
+      "decodedSha256": "74d50645b15cc8b5515b85b48a3979a611663708404d17818d89cdf06f9c53d7",
+      "quality": {
+        "rgbRmse": 2.8596356284259423,
+        "rgbaRmse": 2.662279891824319,
+        "maxChannelError": 45,
+        "channelRmse": [
+          3.0964738048971223,
+          3.1136965983132745,
+          2.779723016127096,
+          1.1579379571030566
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.1579379571030566,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_spill_elongated_albedo",
+      "path": "assets/textures/groundsky/decals/gravel_spill_elongated_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/gravel_spill_elongated_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "e4c0c222c88a1cf50e9a4cfe234675c43323328cdb74e37a259073bbe0a84a99",
+      "sourceSha256": "aaac8253540764af684c9f0b61ef91f7b4a9c7a18312ea6bd065af374b55381d",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/gravel_spill_elongated_albedo.png",
+      "decodedSha256": "cdd2d9735de9411c9c06d947fe747843c90a198fcb50efc5328da26ebbaa178a",
+      "quality": {
+        "rgbRmse": 2.937446715746509,
+        "rgbaRmse": 2.716423003458007,
+        "maxChannelError": 45,
+        "channelRmse": [
+          3.147900708349758,
+          3.2101354780752875,
+          2.8603273900587523,
+          1.058345075727386
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.058345075727386,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_patch_dark_albedo",
+      "path": "assets/textures/groundsky/decals/mud_patch_dark_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/mud_patch_dark_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "0e61d0d41d5d116f087356be009440265521909d5d4187bab6a5383825a52dcf",
+      "sourceSha256": "64413e6302af1970cf035d6ba97b92ff3b982e3100f84c9938929326eb5d06bb",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/mud_patch_dark_albedo.png",
+      "decodedSha256": "ea74aafce1a678962aada77888908d2b0c25545d9f40f8c40442cdfb22b3edfe",
+      "quality": {
+        "rgbRmse": 1.6962681823368686,
+        "rgbaRmse": 1.7441275020502953,
+        "maxChannelError": 37,
+        "channelRmse": [
+          2.212867352867478,
+          2.0397227888063076,
+          1.6134183885416624,
+          0.712427610768938
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.712427610768938,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_patch_puddle_albedo",
+      "path": "assets/textures/groundsky/decals/mud_patch_puddle_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/mud_patch_puddle_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "82451d6e153a1c518c85ba60c91a72cfc12f84d2f94a47625bb81b1e5a02a3c7",
+      "sourceSha256": "7fa5b94e70d01d4295da4a8d2645dbef7fff7d46766ee421b0e817b6c541345b",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/mud_patch_puddle_albedo.png",
+      "decodedSha256": "d45a4fc3c132c675335be85009fac5b163c9aa5273b15c5e336c513335bc1337",
+      "quality": {
+        "rgbRmse": 1.7259061664356596,
+        "rgbaRmse": 1.5902096189119466,
+        "maxChannelError": 33,
+        "channelRmse": [
+          2.368896673085153,
+          1.5892761866986562,
+          1.2469322707712016,
+          0.6501970432633167
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6501970432633167,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_patch_rut_albedo",
+      "path": "assets/textures/groundsky/decals/mud_patch_rut_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/mud_patch_rut_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "7d71b1854644ec3336e233ad04ec8c98687b391991b6c85ef554301e18f19dab",
+      "sourceSha256": "66469324fb17ad6bb20270e0b757868d19f9d0fa930713eeb3bfffa0e66b34d7",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/mud_patch_rut_albedo.png",
+      "decodedSha256": "c7245fee5302b9adf68d7f1d6b6a51f41a49bcad823489eabe77ec6c0497e97d",
+      "quality": {
+        "rgbRmse": 2.028434991221409,
+        "rgbaRmse": 1.5246439533774148,
+        "maxChannelError": 37,
+        "channelRmse": [
+          1.7856369873755398,
+          1.8744485680012752,
+          1.468252544165092,
+          0.6635769134534137
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6635769134534137,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_patch_splash_albedo",
+      "path": "assets/textures/groundsky/decals/mud_patch_splash_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/decals/mud_patch_splash_albedo.png",
+      "kind": "decal",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "efc3eb62442bd04e51467bbe71090db0eafe87ac6020432d0ae7fdbb4101db41",
+      "sourceSha256": "34c8daf3c4207134530a918d89ad764207e78989dcc4d273d24b5d647673577b",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/decals/mud_patch_splash_albedo.png",
+      "decodedSha256": "84f3a2ebf054032d8ef405fdfa5ea18410c5f5a16faf2358012ccd145323a1ff",
+      "quality": {
+        "rgbRmse": 1.1140351251072944,
+        "rgbaRmse": 1.3874121423346972,
+        "maxChannelError": 15,
+        "channelRmse": [
+          1.7633095471533158,
+          1.436110114845965,
+          1.3140453142455266,
+          0.8951323376213535
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.8951323376213535,
+        "decodedSeams": {},
+        "outerEdgeAlphaMax": 0
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_gravel_edge_albedo",
+      "path": "assets/textures/groundsky/ground/asphalt_gravel_edge_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "00d85f6aefc0fa34710fbc9a592ea69ae23a791c58ff03fca668dd54c2114d1c",
+      "sourceSha256": "458fd47fb66bf4a8617287da3545da54fea609bda56f53783ce7ee6852ec073e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_gravel_edge_albedo.png",
+      "decodedSha256": "fa87cf1862797426a34a10a0ec54c68291e9b9f77e134a2e9ff3c7595b67f3fb",
+      "quality": {
+        "rgbRmse": 1.6485179140264783,
+        "rgbaRmse": 1.4276583921406614,
+        "maxChannelError": 70,
+        "channelRmse": [
+          1.871104963105754,
+          1.641616376438959,
+          1.3988909279307913,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 35,
+            "mean": 0.260498046875
+          },
+          "y": {
+            "max": 37,
+            "mean": 0.231201171875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_gravel_edge_normal",
+      "path": "assets/textures/groundsky/ground/asphalt_gravel_edge_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "6eff0c4b32428699a5c9e1a2ef7753ac48b01a57a68c4c3f482ce7f7dd463c3f",
+      "sourceSha256": "8302a65bdafb676339bd7c28d55508f464733863bcbe24136d62acdc5a7de3ef",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_gravel_edge_normal.png",
+      "decodedSha256": "1656a0dc56ebb684df1c95f01ed7d16cd4d116e0b542ae4df9fa602c6933932a",
+      "quality": {
+        "rgbRmse": 1.6389706945027922,
+        "rgbaRmse": 1.4193902574976425,
+        "maxChannelError": 53,
+        "channelRmse": [
+          1.94374309182856,
+          2.0167682569572807,
+          0.46171788249442614,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.2496171236206513,
+          "rmsDegrees": 1.2746061418587193,
+          "maxDegrees": 28.01348501090897,
+          "minLength": 0.9337204667536221,
+          "maxLength": 1.1215069227507148,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 27,
+            "mean": 0.255126953125
+          },
+          "y": {
+            "max": 31,
+            "mean": 0.314208984375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_gravel_edge_orm",
+      "path": "assets/textures/groundsky/ground/asphalt_gravel_edge_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "693bcfd467e2aee343a08d7f7688a4b55fe3b11f9f182bce88f3283672e32663",
+      "sourceSha256": "f64eda1c1e85e9a3262f132c8951baa595a4a4a799ba09746f3b9c8d0f7b6ec8",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_gravel_edge_orm.png",
+      "decodedSha256": "1e57f5cb262884527b9ab4a44f4a8db56010812eec8d8d1a859b08eb133ec19a",
+      "quality": {
+        "rgbRmse": 1.0645433113552976,
+        "rgbaRmse": 0.921921551062495,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.783361404673495,
+          1.6691621535734253,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.08935546875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.099609375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_repaired_albedo",
+      "path": "assets/textures/groundsky/ground/asphalt_repaired_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_repaired_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "a0342383dad14e045a751f7aefc3c4820256be6c3c6cc79c03a5298e9df437eb",
+      "sourceSha256": "7bc55ef2862867b2762af35c4d32e3492cafc48515307aefd810d9a561cb8a02",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_repaired_albedo.png",
+      "decodedSha256": "9300b3c167d7245073c929b5c29c0c85a554821e9430d98d00ff93a17d05a4ae",
+      "quality": {
+        "rgbRmse": 2.4059703053338195,
+        "rgbaRmse": 2.08363140517009,
+        "maxChannelError": 63,
+        "channelRmse": [
+          2.3066912717370545,
+          2.3835340064159376,
+          2.5227010024168965,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 62,
+            "mean": 0.417724609375
+          },
+          "y": {
+            "max": 52,
+            "mean": 0.420166015625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_repaired_normal",
+      "path": "assets/textures/groundsky/ground/asphalt_repaired_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_repaired_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "178af8c455ef96f701338d1d46b0abe69db095d474d251d1e248f472eb2a3919",
+      "sourceSha256": "652a519e2af9e47f2ec6cb797353958676eb9df7472a16614ae6c32f7595263d",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_repaired_normal.png",
+      "decodedSha256": "34e9e39a06a55aa2e4433fb976ecae97e225e50ebdb264762f86c0e393a3b0a6",
+      "quality": {
+        "rgbRmse": 0.9301313948700038,
+        "rgbaRmse": 0.8055174168148782,
+        "maxChannelError": 16,
+        "channelRmse": [
+          1.1469613274038748,
+          1.1221098332628912,
+          0.14416126630660886,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.11865521802868004,
+          "rmsDegrees": 0.7246981811105396,
+          "maxDegrees": 7.215738182997394,
+          "minLength": 1.0000153785822494,
+          "maxLength": 1.0009991164156815,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.029296875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.005859375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "asphalt_repaired_orm",
+      "path": "assets/textures/groundsky/ground/asphalt_repaired_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/asphalt_repaired_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "7108a9025f0831c06dbee61964ab6d5ef76490c5a842d11ba115ae7218add9f1",
+      "sourceSha256": "cc6153e791b643c8c00360a65b4ed186636e1c658412d31e52c2b5988b52e71f",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/asphalt_repaired_orm.png",
+      "decodedSha256": "6e2d6813d55ec920a4ca50d5a20e4b200720962fe72d962e393aa802893adf76",
+      "quality": {
+        "rgbRmse": 0.8750643025340115,
+        "rgbaRmse": 0.7578279159393655,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.07948042948974923,
+          1.5135704351090282,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.123046875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.076171875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cobble_edge_moss_albedo",
+      "path": "assets/textures/groundsky/ground/cobble_edge_moss_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cobble_edge_moss_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "e44c91ac295cd6b0b6de0aaff935a91afbf52403e118212b407e95f4ca93fce4",
+      "sourceSha256": "d08bc952eedbca33f4691de531be033559324345b452bfb4eb4f775d132f3089",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cobble_edge_moss_albedo.png",
+      "decodedSha256": "52ed09624a257f8d89e4437979c381e0f00e15c05ef2ddeabf4f6f8d5a1775f1",
+      "quality": {
+        "rgbRmse": 1.6443571721938273,
+        "rgbaRmse": 1.424055084014997,
+        "maxChannelError": 65,
+        "channelRmse": [
+          1.8454375222254207,
+          1.4948843507465497,
+          1.5720727269090977,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.250244140625
+          },
+          "y": {
+            "max": 64,
+            "mean": 0.28515625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cobble_edge_moss_normal",
+      "path": "assets/textures/groundsky/ground/cobble_edge_moss_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cobble_edge_moss_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "093c81dda729070c59b4125cb129b397a3ac19a72c4e1afaa97e236609be509f",
+      "sourceSha256": "ac98b8a1922eef7ece63ea1211281dd4e06098aca82df6fa438e45e07821f143",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cobble_edge_moss_normal.png",
+      "decodedSha256": "91e71dbd091c69e65a061ed49cd79c9d741e69c9f4f377a32bf5b8659cf17503",
+      "quality": {
+        "rgbRmse": 3.3181524453579234,
+        "rgbaRmse": 2.873604311309418,
+        "maxChannelError": 62,
+        "channelRmse": [
+          3.9639990296656156,
+          3.8260463754382794,
+          1.6366086208101072,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.3910228705693917,
+          "rmsDegrees": 2.5531061798713783,
+          "maxDegrees": 30.682123829425443,
+          "minLength": 0.8664004559648597,
+          "maxLength": 1.1062647093142772,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 58,
+            "mean": 0.694580078125
+          },
+          "y": {
+            "max": 33,
+            "mean": 0.372802734375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cobble_edge_moss_orm",
+      "path": "assets/textures/groundsky/ground/cobble_edge_moss_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cobble_edge_moss_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "92685bacc9cf30599a1216baa4eaf86888c72553a5c5366fd35d13d6e1b3d053",
+      "sourceSha256": "470467ba6fe5b3a4f3518a0adf4937502dae19c41a45a9f123a8bbf8d4ea07dc",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cobble_edge_moss_orm.png",
+      "decodedSha256": "920cd0cf2859722d37873b9701edb183e8a5474a204162c22b19de2cd3d66f78",
+      "quality": {
+        "rgbRmse": 2.193431768131335,
+        "rgbaRmse": 1.8995676326695545,
+        "maxChannelError": 27,
+        "channelRmse": [
+          3.463133104745482,
+          1.5620940634799108,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 12,
+            "mean": 0.323486328125
+          },
+          "y": {
+            "max": 12,
+            "mean": 0.562744140625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_dark_albedo",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_dark_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "ff3ce0932839f0ffbd934d000200be33c5af3a38582f20235be0e618e671ea43",
+      "sourceSha256": "e954f7582dc1157bf1d6d13caafebcac2a2821edcefdbe96c63a32946841a71f",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_dark_albedo.png",
+      "decodedSha256": "e8453d546e793e85318b084669a491b92da935d0bdca85942f0afa807edd5961",
+      "quality": {
+        "rgbRmse": 1.7239614373339536,
+        "rgbaRmse": 1.4929943998759383,
+        "maxChannelError": 63,
+        "channelRmse": [
+          1.8275907338966786,
+          1.7805115356928614,
+          1.5510705634764979,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.181396484375
+          },
+          "y": {
+            "max": 29,
+            "mean": 0.111328125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_dark_normal",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_dark_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_dark_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "a041a2a6a9806a2d42a03a061ed1fe64f586ff9c34b1420a0d7c325bda2e763f",
+      "sourceSha256": "2145dc21c11325481e45bf712864dcaef151fa21efaabe14231bec7d411e17fe",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_dark_normal.png",
+      "decodedSha256": "b69d506cad009d868b29020c41c51c2982130b93c2779e05eb164d18b58f390b",
+      "quality": {
+        "rgbRmse": 1.3726643463110213,
+        "rgbaRmse": 1.1887621947745048,
+        "maxChannelError": 34,
+        "channelRmse": [
+          1.9108530969453064,
+          1.3847459971942888,
+          0.2893806974373315,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.21971941966949726,
+          "rmsDegrees": 1.0693576196283912,
+          "maxDegrees": 16.281571292390378,
+          "minLength": 0.9733314373273154,
+          "maxLength": 1.0432478195864563,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.017578125
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.0322265625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_dark_orm",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_dark_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_dark_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "fa42d82eb90a6d71efda0295a506ffde23ed9b1c6a341c7f3121524248ef0cb5",
+      "sourceSha256": "86b05693cc932cc16fb60beb36da14087b49151995b510186e41b3e90c7123de",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_dark_orm.png",
+      "decodedSha256": "e1ba99e267772ad4e3ad9a827da7b06a37f633e21beac6e87920a60f160ba96c",
+      "quality": {
+        "rgbRmse": 1.2077835849395024,
+        "rgbaRmse": 1.0459712668314496,
+        "maxChannelError": 27,
+        "channelRmse": [
+          1.070277303966245,
+          1.7974231713101663,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.1171875
+          },
+          "y": {
+            "max": 20,
+            "mean": 0.064453125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_light_albedo",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_light_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_light_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "f1a4879f9fc37d1a1c7e5ee86f1c734990861f099b6241464c60aaaf252b0a9f",
+      "sourceSha256": "374e58ec44d23ea198fc28c75692ff95105ea8166a289551ad4c339f97bfdf89",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_light_albedo.png",
+      "decodedSha256": "8079afff28392797ea960b88a0e79e7995a22859f9dee1333956f1cda093f152",
+      "quality": {
+        "rgbRmse": 1.5563073082602101,
+        "rgbaRmse": 1.3478016650487212,
+        "maxChannelError": 49,
+        "channelRmse": [
+          1.6343650919685035,
+          1.6003750004004493,
+          1.4261584475367626,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 39,
+            "mean": 0.282470703125
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.277099609375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_light_normal",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_light_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_light_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "300cc02db7e5ccc2c3030518402d3f2644c1e03c5d669f1d070fffe407b2b951",
+      "sourceSha256": "cb27ecc56a9227c621660e1bd261387af3b87e45555ff5ff517da6f062aae160",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_light_normal.png",
+      "decodedSha256": "d6253fb8a293fe4576662af66db6c60c9a630d98c87bf740eddcb7f8df5d40d8",
+      "quality": {
+        "rgbRmse": 1.3852896189935198,
+        "rgbaRmse": 1.199696001647254,
+        "maxChannelError": 37,
+        "channelRmse": [
+          1.9483763072569364,
+          1.369027082711749,
+          0.2944088952379239,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.22287452979678898,
+          "rmsDegrees": 1.0789920587393065,
+          "maxDegrees": 16.80063450670403,
+          "minLength": 0.9614403522538177,
+          "maxLength": 1.0392304845413265,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.005859375
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.0234375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "cracked_concrete_light_orm",
+      "path": "assets/textures/groundsky/ground/cracked_concrete_light_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/cracked_concrete_light_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "968845706dc31c67b56e616e209f49d33b8e84ad12d1a22db424d66bf46fb91b",
+      "sourceSha256": "1dfdb371ff3a94fbdeb5bcd0afef855212ffb9554b4e90199389f8f34a2bf91a",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/cracked_concrete_light_orm.png",
+      "decodedSha256": "6dcd73663b48358168db70cbc35d8b5f3b8096c2b46804f0356616828518a120",
+      "quality": {
+        "rgbRmse": 1.0790435269084624,
+        "rgbaRmse": 0.9344791060918859,
+        "maxChannelError": 27,
+        "channelRmse": [
+          1.102312414425503,
+          1.5092753691399652,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.1171875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.0908203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_brown_albedo",
+      "path": "assets/textures/groundsky/ground/dirt_brown_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_brown_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "a8bf427dcc98de79d9b907ae9f52696958ebc073239fe67451ad26d44efcfcd6",
+      "sourceSha256": "88779e7929beac3bf4939be80f3cdf9d8fa543ee53bd7d045b440879353fb86e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_brown_albedo.png",
+      "decodedSha256": "0eaae09339b25ee1da3925bb18ce2cc9a7c6ef989b5f609631c45c15c83d430d",
+      "quality": {
+        "rgbRmse": 1.7255095756601835,
+        "rgbaRmse": 1.494335126995026,
+        "maxChannelError": 63,
+        "channelRmse": [
+          1.9974871585132388,
+          1.7776653962907174,
+          1.3349534364502136,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 35,
+            "mean": 0.227783203125
+          },
+          "y": {
+            "max": 32,
+            "mean": 0.1767578125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_brown_normal",
+      "path": "assets/textures/groundsky/ground/dirt_brown_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_brown_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "228ea805f06394c24673ac5cf476b140dc12e5c604b6b8fd59b47a4c2e1e087d",
+      "sourceSha256": "848d742f724da0dab28f15aa1cdc1cdd09ee9fb0f04988cb8774f798f73c2149",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_brown_normal.png",
+      "decodedSha256": "cb9a5b2a9be238fe0da7c90b4ef4e4313e3d7ca2a2fd3237a44487d1b7ff8894",
+      "quality": {
+        "rgbRmse": 1.4453393332250104,
+        "rgbaRmse": 1.2517005796617209,
+        "maxChannelError": 53,
+        "channelRmse": [
+          1.7301421879896521,
+          1.7650466917091951,
+          0.3977883230145875,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.19612710199176592,
+          "rmsDegrees": 1.1242380245072867,
+          "maxDegrees": 28.01348501090897,
+          "minLength": 0.9581717179806675,
+          "maxLength": 1.1162839985406598,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 22,
+            "mean": 0.204345703125
+          },
+          "y": {
+            "max": 12,
+            "mean": 0.178955078125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_brown_orm",
+      "path": "assets/textures/groundsky/ground/dirt_brown_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_brown_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "1748af63f33154b201c2677a4061cd323fdc6cc0200d39ddee37ad55a938187b",
+      "sourceSha256": "e6f5a89ec37dec6edaf79afcfaf1ee8fc940b69ae6091f037d7184762dd4f9e1",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_brown_orm.png",
+      "decodedSha256": "56be8be530345a0d47e8f6254c4ee63bb91ba2e0ace85ae2b06b0070e7148019",
+      "quality": {
+        "rgbRmse": 0.8993773036959978,
+        "rgbaRmse": 0.7788835925878862,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.0557411062219935,
+          1.5567695822720835,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.1171875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.099609375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_dry_pale_albedo",
+      "path": "assets/textures/groundsky/ground/dirt_dry_pale_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_dry_pale_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "2df7da8051944e1d7a27d6bcfea97cb5c0302166d89e0b0db1109e875fe93db3",
+      "sourceSha256": "3843d2796528a4610a74d614b3aa07e28d8c083fe95708e4b98d27f1fb99cc6e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_dry_pale_albedo.png",
+      "decodedSha256": "2e402e45d54a4495d90ecfd16dda168f33c27c3f656aa826301e855b0fedaf3a",
+      "quality": {
+        "rgbRmse": 1.781168260985485,
+        "rgbaRmse": 1.5425369624279812,
+        "maxChannelError": 54,
+        "channelRmse": [
+          2.0886608162725055,
+          1.713615377245668,
+          1.4895299443989807,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.07763671875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.1669921875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_dry_pale_normal",
+      "path": "assets/textures/groundsky/ground/dirt_dry_pale_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_dry_pale_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "4fa01e7890f3d3d4473a326c6bdbbf765137ec92efae6c98431305b405e7b232",
+      "sourceSha256": "80ae4659159dcf042651b430753e232694fda1fc68e4f498992661b0d5f5d6b8",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_dry_pale_normal.png",
+      "decodedSha256": "12c9cdc085415d82d71e05855aca650bb2fc382b951e3558ef7e55143049cfa6",
+      "quality": {
+        "rgbRmse": 1.4494496013419165,
+        "rgbaRmse": 1.255260176267327,
+        "maxChannelError": 53,
+        "channelRmse": [
+          1.7430488954427805,
+          1.7613538546024892,
+          0.40264821800596473,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.19784249358605555,
+          "rmsDegrees": 1.1271676114462192,
+          "maxDegrees": 28.40827669872076,
+          "minLength": 0.9397620090227422,
+          "maxLength": 1.1188160381322092,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.005859375
+          },
+          "y": {
+            "max": 17,
+            "mean": 0.172607421875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "dirt_dry_pale_orm",
+      "path": "assets/textures/groundsky/ground/dirt_dry_pale_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/dirt_dry_pale_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "fe87256904b680463356d860dbb2ff69c596e96edb2f94d4b057154430d28814",
+      "sourceSha256": "f9fc1eb7d8dce54d16494dff06d4fec8d54b7780b88cfb75cf75583d54dca12e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/dirt_dry_pale_orm.png",
+      "decodedSha256": "031b80be7f29e8d0647903e94ea5aab097b87a17717db22137119de3866c5664",
+      "quality": {
+        "rgbRmse": 0.9928448919708116,
+        "rgbaRmse": 0.8598288984643395,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.043552935783159684,
+          1.7191061864591919,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.076171875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.087890625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_coarse_river_albedo",
+      "path": "assets/textures/groundsky/ground/gravel_coarse_river_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_coarse_river_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "92d82cda9b826b03da0f3e4401b22a0bbb552c10d94d13414ae1110ce5cd348c",
+      "sourceSha256": "bc1a67287b1fbac0a1cfb63356b446edcdc382c4c4dd95d0570a14b2ad56b28d",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_coarse_river_albedo.png",
+      "decodedSha256": "27c37fb896db78134e035748ea7ed2cc78e03afe91e0ae229e23ee90dffa75cd",
+      "quality": {
+        "rgbRmse": 2.741783641263861,
+        "rgbaRmse": 2.3744542850151036,
+        "maxChannelError": 77,
+        "channelRmse": [
+          3.405878729228757,
+          2.212506603511288,
+          2.461084561268142,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 43,
+            "mean": 0.76611328125
+          },
+          "y": {
+            "max": 55,
+            "mean": 0.93798828125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_coarse_river_normal",
+      "path": "assets/textures/groundsky/ground/gravel_coarse_river_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_coarse_river_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "e5156439c18c87206416cf09145a3529badc8fcaad6371ced707e6e9ec2f443c",
+      "sourceSha256": "5a526a77ca2012e6087baf0a6abab4d8e277a2136147c2ee67fde82a6009f412",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_coarse_river_normal.png",
+      "decodedSha256": "461eb7f9d2ccef0e2d068898353e8348167059ebd544bc6fd830ff9ce8c5ac56",
+      "quality": {
+        "rgbRmse": 3.9343955906255195,
+        "rgbaRmse": 3.40728653001918,
+        "maxChannelError": 66,
+        "channelRmse": [
+          4.563826903648924,
+          4.569779011164157,
+          2.1741687545483663,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.611382510859547,
+          "rmsDegrees": 2.9915724158527337,
+          "maxDegrees": 34.1099095437772,
+          "minLength": 0.7825372037173987,
+          "maxLength": 1.211066490894355,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 42,
+            "mean": 1.842529296875
+          },
+          "y": {
+            "max": 54,
+            "mean": 1.517333984375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_coarse_river_orm",
+      "path": "assets/textures/groundsky/ground/gravel_coarse_river_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_coarse_river_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "5734864f252b180155398e7246cc88237dc49c510a93f00680c2436a016287aa",
+      "sourceSha256": "8607100c2585b2926905310eef59c44f6e6c6c3c8dc797bbafc4fce355bcd425",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_coarse_river_orm.png",
+      "decodedSha256": "846d8847e16004334fe7192437bc2db79bcce3fac239c59c3f9444438a21d8f9",
+      "quality": {
+        "rgbRmse": 2.3856929524655954,
+        "rgbaRmse": 2.066070702464707,
+        "maxChannelError": 30,
+        "channelRmse": [
+          3.857693448707616,
+          1.4808085109595943,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 25,
+            "mean": 0.528076171875
+          },
+          "y": {
+            "max": 14,
+            "mean": 0.6845703125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_fine_grey_albedo",
+      "path": "assets/textures/groundsky/ground/gravel_fine_grey_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_fine_grey_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "3f670a17b7c286e9397a256651651abeacfab109c3ff155e3d4422a7ea157faf",
+      "sourceSha256": "be921d101e0f78a731084ce625331bf11c45853ab785240cc600315854ab3b29",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_fine_grey_albedo.png",
+      "decodedSha256": "aed235df0409645102a560cba8974a5cf9e4a5ef6c7fa32449b3705f9335d317",
+      "quality": {
+        "rgbRmse": 2.5276817634242694,
+        "rgbaRmse": 2.1890366198080646,
+        "maxChannelError": 63,
+        "channelRmse": [
+          2.5612616919738893,
+          2.7041112610989853,
+          2.301140179186739,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 32,
+            "mean": 0.700439453125
+          },
+          "y": {
+            "max": 52,
+            "mean": 1.019775390625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_fine_grey_normal",
+      "path": "assets/textures/groundsky/ground/gravel_fine_grey_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_fine_grey_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "eb268e3d5cd9a15300769ca32ac68293ec5b49b51ac0fefcdd0004709a237052",
+      "sourceSha256": "d4d2c23e0ec6f030d38f09d4936e5f1cceea68f4b05e49b634bd3ec721d65179",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_fine_grey_normal.png",
+      "decodedSha256": "1f8430815a9e4242904304c0824b676cad19627629694e66540fd877ed934dda",
+      "quality": {
+        "rgbRmse": 3.708182013921151,
+        "rgbaRmse": 3.211379825912258,
+        "maxChannelError": 65,
+        "channelRmse": [
+          4.222147950695939,
+          4.210801386004561,
+          2.386306752109027,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.3383462247606057,
+          "rmsDegrees": 2.7821148057683445,
+          "maxDegrees": 31.616187519517403,
+          "minLength": 0.7887229005916615,
+          "maxLength": 1.2479402483749102,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 54,
+            "mean": 1.07568359375
+          },
+          "y": {
+            "max": 58,
+            "mean": 1.42724609375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "gravel_fine_grey_orm",
+      "path": "assets/textures/groundsky/ground/gravel_fine_grey_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/gravel_fine_grey_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "05368b3310bd53039f00da036d78a27ef6da9368331aefe4fb7aa07d04c9103a",
+      "sourceSha256": "9cd4cf50947a2ad06640ea3e10665b7af78d8683cdb4d0120eb0f505f3a3d171",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/gravel_fine_grey_orm.png",
+      "decodedSha256": "95e1cb8c3f1997abd57726ab0c6cd6b04da6892749c77e68f48c80f890635c6b",
+      "quality": {
+        "rgbRmse": 2.3158319886121204,
+        "rgbaRmse": 2.005569333034731,
+        "maxChannelError": 27,
+        "channelRmse": [
+          3.643529952718575,
+          1.677475150957557,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 16,
+            "mean": 0.326416015625
+          },
+          "y": {
+            "max": 15,
+            "mean": 0.383544921875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_clover_edge_albedo",
+      "path": "assets/textures/groundsky/ground/kikuyu_clover_edge_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "d4d4ec67100d66fc34e8587fb21e2e279f2815d9fccb378199798030655f7cc1",
+      "sourceSha256": "de0fe8a31a0f0a2c04976c1673b043171615048df6ba6e9a0d89a3038ae1df3f",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_clover_edge_albedo.png",
+      "decodedSha256": "7f5ad4866967e0731fc6640697e7293ac86f6504770a77d060aa44794b20d3f1",
+      "quality": {
+        "rgbRmse": 3.6905536830987375,
+        "rgbaRmse": 3.196113243593732,
+        "maxChannelError": 70,
+        "channelRmse": [
+          4.546952918784413,
+          4.058582353621812,
+          1.9270931209281288,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 28,
+            "mean": 1.333984375
+          },
+          "y": {
+            "max": 49,
+            "mean": 0.94384765625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_clover_edge_normal",
+      "path": "assets/textures/groundsky/ground/kikuyu_clover_edge_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "5197482a744da4d28e4ea57d650473b02608b11a004a94e058372dc451441ac6",
+      "sourceSha256": "de4092271fc32a16a08725bf24dc1ddea2e153c534392dc7132f98c4863cc488",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_clover_edge_normal.png",
+      "decodedSha256": "21f3709096f7816b2b67253cd6a6c7156afc6a321f73f42a15c91e14e6c8fb31",
+      "quality": {
+        "rgbRmse": 3.604022352089334,
+        "rgbaRmse": 3.121174912716308,
+        "maxChannelError": 54,
+        "channelRmse": [
+          4.358747867882363,
+          4.363837689032522,
+          0.961857053355054,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.310749443901253,
+          "rmsDegrees": 2.8014988468654023,
+          "maxDegrees": 28.622236230000546,
+          "minLength": 0.9178397652526118,
+          "maxLength": 1.138113266330425,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 30,
+            "mean": 0.9365234375
+          },
+          "y": {
+            "max": 31,
+            "mean": 0.8388671875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_clover_edge_orm",
+      "path": "assets/textures/groundsky/ground/kikuyu_clover_edge_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "e50e217dbae90edff4be73c41d3bfb2752aaf9a28f6a1dda9fbbf87464473a86",
+      "sourceSha256": "3bcec7a7c75920960304959ce04f8532bba6e8f3617d72214b8fb0cde893870d",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_clover_edge_orm.png",
+      "decodedSha256": "bb8788621516beda7e88bf2546e768bed95fca4049f7653352f1b59c7194bc48",
+      "quality": {
+        "rgbRmse": 0.9818224231444262,
+        "rgbaRmse": 0.8502831604482677,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.19128414073717295,
+          1.689774005383566,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.05859375
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.076171875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_dry_albedo",
+      "path": "assets/textures/groundsky/ground/kikuyu_dry_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_dry_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "677f813a1dd9f0f24a1d1bcd4bd15eac61ed5ac37930d5fff514e1ae0176d9d0",
+      "sourceSha256": "2ab80773d1e7e92e40502ba87db3ab9a4ef428e74cf973733baf7459daf09a65",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_dry_albedo.png",
+      "decodedSha256": "f7a562e5abfe6a0af23e79f1efec809f02b4a4d7eed149561d0b0f0c9702db6b",
+      "quality": {
+        "rgbRmse": 3.4835866540912255,
+        "rgbaRmse": 3.016874538727435,
+        "maxChannelError": 59,
+        "channelRmse": [
+          4.4491585182353015,
+          3.280692062172144,
+          2.418300230017448,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 44,
+            "mean": 0.960693359375
+          },
+          "y": {
+            "max": 34,
+            "mean": 0.9990234375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_dry_normal",
+      "path": "assets/textures/groundsky/ground/kikuyu_dry_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_dry_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "838b6ba1e30355847eb253cdd76a97e47b1846534e328e499d9b2ee8962d0723",
+      "sourceSha256": "ff164d215ca726583a0e83bfc58b1c042e125244f9d7c36548c5d4a55b1cca45",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_dry_normal.png",
+      "decodedSha256": "72a8465172672609b0be1a79e6ade09ed393e2846145032aa6bbce53aa593d7c",
+      "quality": {
+        "rgbRmse": 3.4094787600515293,
+        "rgbaRmse": 2.952695219868093,
+        "maxChannelError": 61,
+        "channelRmse": [
+          4.177400508771113,
+          4.076893704617225,
+          0.8954881106406875,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.1888710822634097,
+          "rmsDegrees": 2.6508386417566596,
+          "maxDegrees": 28.86515472151343,
+          "minLength": 0.9144152912517639,
+          "maxLength": 1.1363823562821442,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 30,
+            "mean": 0.6669921875
+          },
+          "y": {
+            "max": 33,
+            "mean": 0.88916015625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_dry_orm",
+      "path": "assets/textures/groundsky/ground/kikuyu_dry_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_dry_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "e52e1454d22335663c6944d0ec6653aaff87ffe28f9384948550f58d4c031255",
+      "sourceSha256": "e1d52a3842ac5b7e292c6e3df659947eaaca1f53ea8ab268e603bbe1a3107422",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_dry_orm.png",
+      "decodedSha256": "450ecf7422f0da357f6b8b49ac3766e4c0b9bbf106d878b67070879bfda9cc17",
+      "quality": {
+        "rgbRmse": 0.8111394592742757,
+        "rgbaRmse": 0.7024673777434958,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.07043446453225376,
+          1.403168077381091,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.052734375
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.08203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_lush_albedo",
+      "path": "assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_lush_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "8228a736f2668b22ce22f9bbdc285f6fdf91d463c9e149941532d943bb8bc4fc",
+      "sourceSha256": "e5f6c705c63826f32094d400f99c1a0c08d574d80562eb9687df43e93602cd0c",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_lush_albedo.png",
+      "decodedSha256": "884be167015bcea49ce8b43285ceb772c64cca8e18786b205a47a867acf8ed83",
+      "quality": {
+        "rgbRmse": 3.7506342457485338,
+        "rgbaRmse": 3.2481445371221174,
+        "maxChannelError": 50,
+        "channelRmse": [
+          4.170047545493606,
+          4.561912812372725,
+          2.0003566423958863,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 42,
+            "mean": 0.879150390625
+          },
+          "y": {
+            "max": 30,
+            "mean": 0.949462890625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_lush_normal",
+      "path": "assets/textures/groundsky/ground/kikuyu_lush_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_lush_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "d1b45ff27286fb72b2d79b40c938c95453542ea5b8ae86d7e2c4b09cbda3aad3",
+      "sourceSha256": "dc1e1819f2f580f411f81c241853812ccb7c42f4bef3c1127514c8f9fd6ca422",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_lush_normal.png",
+      "decodedSha256": "2d59e345743d090549e276e15cc34cecdcbc182eb7d482b073110f0acbad57ee",
+      "quality": {
+        "rgbRmse": 3.4114280330486837,
+        "rgbaRmse": 2.9543833398025394,
+        "maxChannelError": 57,
+        "channelRmse": [
+          4.114406507853257,
+          4.145134884580325,
+          0.8961247406367319,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 1.1887252024759531,
+          "rmsDegrees": 2.6524805410691017,
+          "maxDegrees": 29.527104651455563,
+          "minLength": 0.8894529160172622,
+          "maxLength": 1.1527744310527055,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 38,
+            "mean": 0.6923828125
+          },
+          "y": {
+            "max": 37,
+            "mean": 0.746826171875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_lush_orm",
+      "path": "assets/textures/groundsky/ground/kikuyu_lush_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_lush_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "6bd03010e0a10582791b2b60fa13690fa3cc01d744ec1b0b0c6479da555a49df",
+      "sourceSha256": "7e2c5718c7f4b9715f32d3cbe9cd9ba7f9d62e4f6e978e02a4561578dee04983",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_lush_orm.png",
+      "decodedSha256": "71da4a845eaeb162385c8fc1813125b24e2f3ac8c03600e149ef386f0f8df8ac",
+      "quality": {
+        "rgbRmse": 0.9700897141225917,
+        "rgbaRmse": 0.8401223363801482,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.051248600638288774,
+          1.6794629323899866,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.05859375
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.111328125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_trampled_albedo",
+      "path": "assets/textures/groundsky/ground/kikuyu_trampled_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_trampled_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "c5f6147468764dd9393722dd353e2d6450b8f1c0fd4e74011acfa1d6fed57268",
+      "sourceSha256": "489fc2eeb6b8eec499f5e6fe75b48a632d111e9231812e67206144d9a659f1d5",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_trampled_albedo.png",
+      "decodedSha256": "bbb1d47c7dff7c552a1cdd3b2159aab521a955282d57cf806b8bca6a757b4953",
+      "quality": {
+        "rgbRmse": 2.6922805613593477,
+        "rgbaRmse": 2.3315833602522242,
+        "maxChannelError": 67,
+        "channelRmse": [
+          3.1316151602100977,
+          2.81228806438894,
+          2.0072733233065216,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 41,
+            "mean": 0.69189453125
+          },
+          "y": {
+            "max": 35,
+            "mean": 0.774658203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_trampled_normal",
+      "path": "assets/textures/groundsky/ground/kikuyu_trampled_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_trampled_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "f748c1d82acc66933c280bf17e1af86eebc837605309dad5b89967d04b123288",
+      "sourceSha256": "ef391fb7fc96e579fcf3aef458fa3e98fa13675961c97e0f6b3e9ae51a198369",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_trampled_normal.png",
+      "decodedSha256": "0b0ad4525344e1538987534909e929f3e9adb6157ec859adb0db7ff7aa529f88",
+      "quality": {
+        "rgbRmse": 2.242631290126531,
+        "rgbaRmse": 1.9421756685714457,
+        "maxChannelError": 53,
+        "channelRmse": [
+          2.7071247827794296,
+          2.72551368281377,
+          0.5755309597407573,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.5202532623124005,
+          "rmsDegrees": 1.7442315972016234,
+          "maxDegrees": 28.622236230000546,
+          "minLength": 0.9177727415188203,
+          "maxLength": 1.1163942066339831,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 28,
+            "mean": 0.256591796875
+          },
+          "y": {
+            "max": 32,
+            "mean": 0.8359375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "kikuyu_trampled_orm",
+      "path": "assets/textures/groundsky/ground/kikuyu_trampled_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_trampled_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "b960d0266423b53fa72b0d3bc693da00220bb06b835fb6ac44da3a154dd330a7",
+      "sourceSha256": "b3a1cbee13b52d23051d8d45ff385b29caf170ac23d5f0b87a3e7307fbc3ed3f",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/kikuyu_trampled_orm.png",
+      "decodedSha256": "2e7a9a3e36c66eefebf942696d8d0173a446b2766dc6df48810838cee0f871cb",
+      "quality": {
+        "rgbRmse": 0.8993762433235882,
+        "rgbaRmse": 0.778882674278442,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.0146484375,
+          1.5576964737853647,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.123046875
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.046875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_eucalyptus_albedo",
+      "path": "assets/textures/groundsky/ground/leaf_litter_eucalyptus_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "396a74f77b9141fd7dfadd489f1e7bbd362f9e1e5fcc823e1f2854395c68af4b",
+      "sourceSha256": "8e8ce32223d1e739d2b34c427c0814e7a52e683eed23a61b4b8516df32689d42",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_eucalyptus_albedo.png",
+      "decodedSha256": "50323edd09fc5aa316392654475e870a66e5ec369030f6bcef2c929ef6753981",
+      "quality": {
+        "rgbRmse": 1.6015887994855398,
+        "rgbaRmse": 1.3870165867710988,
+        "maxChannelError": 78,
+        "channelRmse": [
+          1.6367647806400145,
+          1.5833318944556407,
+          1.5840837139395616,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 56,
+            "mean": 0.29248046875
+          },
+          "y": {
+            "max": 14,
+            "mean": 0.170654296875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_eucalyptus_normal",
+      "path": "assets/textures/groundsky/ground/leaf_litter_eucalyptus_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "31677d1341923adde12934534e6b2084bbb8915d7ac5c5b245ef28dacb5f0030",
+      "sourceSha256": "d3319d298617287db648248c93d6d45871a5ddc1c111dc8182c01a21edd04db2",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_eucalyptus_normal.png",
+      "decodedSha256": "35b68d014b9e72d34206bbc512117f78bf5f7abaab33b678b2fdac8545bdeb17",
+      "quality": {
+        "rgbRmse": 1.7932830734489618,
+        "rgbaRmse": 1.5530286977834364,
+        "maxChannelError": 45,
+        "channelRmse": [
+          2.1801004873091574,
+          2.159989804137856,
+          0.47874675540472006,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.35916683236786684,
+          "rmsDegrees": 1.3932353333512197,
+          "maxDegrees": 25.30466016353566,
+          "minLength": 0.9619520714536317,
+          "maxLength": 1.0700278645489507,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 20,
+            "mean": 0.2744140625
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.08203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_eucalyptus_orm",
+      "path": "assets/textures/groundsky/ground/leaf_litter_eucalyptus_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "46b3b3d7070604c966d1118a1a6823918f3b742bec99243b4dd2bd261ac4c180",
+      "sourceSha256": "d0cc736633f495462c226407bfe1de250c2c3c43635b9d714f707bb7840e6832",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_eucalyptus_orm.png",
+      "decodedSha256": "e4e498dc64e5ab53a88557a8f73156723d680bfb32d8a4e2975cbfd444fd8804",
+      "quality": {
+        "rgbRmse": 0.9721196135612507,
+        "rgbaRmse": 0.8418802808611545,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.03588119740405046,
+          1.6833782013808654,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.146484375
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.12890625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_mixed_albedo",
+      "path": "assets/textures/groundsky/ground/leaf_litter_mixed_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "5cd7b222386f7210ac0c53c36c49369d9be2d78ec4a162785758d9859998b324",
+      "sourceSha256": "595616b2034d1adcd4c888c2fecb484d55d9e45141f6ffa03a6057a70e1e447e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_mixed_albedo.png",
+      "decodedSha256": "748663a1d0a96fa7f87cc1324258e7812b410c34ed6cb7062b37ff92ca4c8f65",
+      "quality": {
+        "rgbRmse": 1.972400892996781,
+        "rgbaRmse": 1.7081492797823246,
+        "maxChannelError": 82,
+        "channelRmse": [
+          2.4105647651281723,
+          2.102475786829447,
+          1.1999453850079815,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 52,
+            "mean": 0.258056640625
+          },
+          "y": {
+            "max": 53,
+            "mean": 0.34814453125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_mixed_normal",
+      "path": "assets/textures/groundsky/ground/leaf_litter_mixed_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_mixed_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "8ab647bbd6ce184569f9c215a7c9da4bc00179e96bf4ab473de11d98e289e3bb",
+      "sourceSha256": "ca4be4db828d7693ed6a7faa46b4cc4d5372d0285eca855ea7290389e10fbb58",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_mixed_normal.png",
+      "decodedSha256": "fd125f7ce57bc54c9e9c17016f077f311f301fe13c173fc2dfe72b5ec821ef19",
+      "quality": {
+        "rgbRmse": 1.5514481373334033,
+        "rgbaRmse": 1.3435934995847758,
+        "maxChannelError": 37,
+        "channelRmse": [
+          1.8560751476201822,
+          1.8982486081439156,
+          0.4154650846608721,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.38907002183659356,
+          "rmsDegrees": 1.2010732322719295,
+          "maxDegrees": 21.026117528593275,
+          "minLength": 0.9461551325201961,
+          "maxLength": 1.0607317590547742,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 16,
+            "mean": 0.30908203125
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.17578125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "leaf_litter_mixed_orm",
+      "path": "assets/textures/groundsky/ground/leaf_litter_mixed_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/leaf_litter_mixed_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "2ec0b65f9e3b9904fd18eab7b81d2c9fcdaece46934339155a26730676816980",
+      "sourceSha256": "53ec414bdc35cc2f2f2ec52df378e4b13f032b84704e0eeebb01a7a795ee7aa9",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/leaf_litter_mixed_orm.png",
+      "decodedSha256": "ccb76f97ecd9de3e9b1a211b5a7cd53bd3c512150da4b4a139072a7f822ee5e3",
+      "quality": {
+        "rgbRmse": 0.9718668030682431,
+        "rgbaRmse": 0.8416613405518668,
+        "maxChannelError": 6,
+        "channelRmse": [
+          0.0,
+          1.6833226811037336,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.08203125
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.05859375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_puddled_albedo",
+      "path": "assets/textures/groundsky/ground/mud_puddled_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_puddled_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "a9a7a68ff9c754a8c28e0a0abce7dc5b435429d431ec139afa4994d573d14626",
+      "sourceSha256": "1747bc8a3fb0ba6ef569c06557db3866e5b8d51857e2859e2f6036757e2db977",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_puddled_albedo.png",
+      "decodedSha256": "69214170e8c268d089bfa1ab8468913c0f281129a6eae618b5b63ded0a659714",
+      "quality": {
+        "rgbRmse": 1.7347486855197312,
+        "rgbaRmse": 1.5023364308417493,
+        "maxChannelError": 53,
+        "channelRmse": [
+          2.109514472023888,
+          1.6141925297787,
+          1.4044180911914097,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.111328125
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.1552734375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_puddled_normal",
+      "path": "assets/textures/groundsky/ground/mud_puddled_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_puddled_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "ee36ee3239e48cfb2990cce912ed286724ee2a0a089a4b21efb35d23c4eaa0f5",
+      "sourceSha256": "6eb4e54108efc1a9c18b9d9ce5f614d65b74b46754d28e07551dcf1934c66b05",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_puddled_normal.png",
+      "decodedSha256": "64582545854477640da3a1d28d25863e9ad2a0d8864f7c2b14103ec99a190866",
+      "quality": {
+        "rgbRmse": 0.8252958518634559,
+        "rgbaRmse": 0.7147271733516717,
+        "maxChannelError": 34,
+        "channelRmse": [
+          1.0350470719252696,
+          0.9684359133603694,
+          0.18479494019554485,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.11049967855132886,
+          "rmsDegrees": 0.6415383816161491,
+          "maxDegrees": 16.871299032068382,
+          "minLength": 0.9798194405611165,
+          "maxLength": 1.0293576082859908,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.005859375
+          },
+          "y": {
+            "max": 12,
+            "mean": 0.05859375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_puddled_orm",
+      "path": "assets/textures/groundsky/ground/mud_puddled_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_puddled_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "953c5a97e1d0e8b1a418235acea119bbcee1e56869ed297aa2aa85e2c2fa4ce0",
+      "sourceSha256": "8298a4f7fd419be568a8617c21b91602e2b957b75dba14f5e6362238f0e0cb16",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_puddled_orm.png",
+      "decodedSha256": "578593629419200eccc860ad62b380be0bfb2c6f9590625c74d6e65dfcba15dc",
+      "quality": {
+        "rgbRmse": 0.9160498075200849,
+        "rgbaRmse": 0.7933224044442388,
+        "maxChannelError": 20,
+        "channelRmse": [
+          0.044974917733083805,
+          1.586007252930344,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 17,
+            "mean": 0.147705078125
+          },
+          "y": {
+            "max": 17,
+            "mean": 0.046142578125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_rutted_albedo",
+      "path": "assets/textures/groundsky/ground/mud_rutted_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_rutted_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "426a0338c4174c607057ce2cbdf5a64cdd8f31a7b0374c033ad0fe490ee67ae4",
+      "sourceSha256": "432ce8e94f2e34f7e09bbf6e5c46dccb2db2b0903e6e5874328fab9b745ed0d5",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_rutted_albedo.png",
+      "decodedSha256": "7f7bb1ae5a3e9424831f64461d44374892ef296b29c86dcc31eb22adae1ad874",
+      "quality": {
+        "rgbRmse": 1.8008583035812775,
+        "rgbaRmse": 1.5595890395175351,
+        "maxChannelError": 55,
+        "channelRmse": [
+          1.9425416385699754,
+          1.9870109772208586,
+          1.4168949317287411,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 35,
+            "mean": 0.073486328125
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.08203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_rutted_normal",
+      "path": "assets/textures/groundsky/ground/mud_rutted_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_rutted_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "e28f91bd670c4ffe485c6f1a4d3a6a246ca91487ea15194d30392385badcc09c",
+      "sourceSha256": "f40545b9f8b9c3b1de2db223a432e9d745ccc21964e40ef9facf045d20b7c4d4",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_rutted_normal.png",
+      "decodedSha256": "fa6812d23fe42f18bad23df437225c29c1706e09465dd1184d6f3958ce404897",
+      "quality": {
+        "rgbRmse": 1.6995047726827424,
+        "rgbaRmse": 1.4718143069961525,
+        "maxChannelError": 62,
+        "channelRmse": [
+          2.4318633808612335,
+          1.4727595366423523,
+          0.7628690983185998,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.3208404282987458,
+          "rmsDegrees": 1.302183804599473,
+          "maxDegrees": 29.570404938072613,
+          "minLength": 0.9156925725105665,
+          "maxLength": 1.1527744310527055,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.0234375
+          },
+          "y": {
+            "max": 22,
+            "mean": 0.29443359375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "mud_rutted_orm",
+      "path": "assets/textures/groundsky/ground/mud_rutted_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/mud_rutted_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "ca6ba960c533fd78459da6f73fb2639b7bf0ac9e324691af147aa775d035b6c7",
+      "sourceSha256": "238bdf74d74c50b2a3e45815257c525ef50d3ae3393ba758ca1f3684d3e189a2",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/mud_rutted_orm.png",
+      "decodedSha256": "5ac437d3d29a1acad3f43053ad5ef48799d1f545853b3b8855134f532457531e",
+      "quality": {
+        "rgbRmse": 1.229927387937183,
+        "rgbaRmse": 1.0651483627638387,
+        "maxChannelError": 38,
+        "channelRmse": [
+          1.3602860127557819,
+          1.6394468891351504,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 18,
+            "mean": 0.183837890625
+          },
+          "y": {
+            "max": 19,
+            "mean": 0.1748046875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_footworn_albedo",
+      "path": "assets/textures/groundsky/ground/packed_earth_footworn_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_footworn_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "be28c40a477c4c3837ec23aaca9d56c29ea2aade4df4dc5b18946788eb9bdc8b",
+      "sourceSha256": "6c2ed008e13e87d18512ba2cc6079c2359990623b573282f50129a035584f4ea",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_footworn_albedo.png",
+      "decodedSha256": "d80e24ee8da3900ff35d036ac70bc7bafc5789209d8b8ac8db2f252c1f7417f5",
+      "quality": {
+        "rgbRmse": 1.8755261848484237,
+        "rgbaRmse": 1.6242533215416437,
+        "maxChannelError": 59,
+        "channelRmse": [
+          1.8517180429788331,
+          1.753394241193711,
+          2.012347965539663,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 33,
+            "mean": 0.282470703125
+          },
+          "y": {
+            "max": 24,
+            "mean": 0.305908203125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_footworn_normal",
+      "path": "assets/textures/groundsky/ground/packed_earth_footworn_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_footworn_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "39718539b1de67b4f3de2f2264d9ad17cbdf05397618ce25b381c5cf19a79898",
+      "sourceSha256": "696274497a04a63a2fb91c18616821bc28095596c589ff58e7931122ef329a78",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_footworn_normal.png",
+      "decodedSha256": "e6de8fd18b4a453de14eb01959172beb8eb44de3b2092b08760717cdccc2ce16",
+      "quality": {
+        "rgbRmse": 1.4461810277495646,
+        "rgbaRmse": 1.252429508502211,
+        "maxChannelError": 34,
+        "channelRmse": [
+          1.756783824442482,
+          1.7438450613054348,
+          0.38344972474400085,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.21011376943954357,
+          "rmsDegrees": 1.1249383354738145,
+          "maxDegrees": 17.109546235511008,
+          "minLength": 0.9645065950701797,
+          "maxLength": 1.0408865590985201,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 27,
+            "mean": 0.302001953125
+          },
+          "y": {
+            "max": 24,
+            "mean": 0.26025390625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_footworn_orm",
+      "path": "assets/textures/groundsky/ground/packed_earth_footworn_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_footworn_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "6b57b1b0d3ed73e8aae66ea89f764179d1ae08ce797d8be49ac411a36a2f0d6d",
+      "sourceSha256": "4e467cf329a0c27c926fe28799b79a72cce92b776e68c7cf6144cbbf2337ad30",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_footworn_orm.png",
+      "decodedSha256": "b6055305c461e012ad130e4c0fd38a01e2fe4080daa6ae94c58f0bba6756baa3",
+      "quality": {
+        "rgbRmse": 0.9912183138067082,
+        "rgbaRmse": 0.8584202404529848,
+        "maxChannelError": 18,
+        "channelRmse": [
+          0.05316663120631328,
+          1.7160170588323453,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.12890625
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.111328125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_tyres_albedo",
+      "path": "assets/textures/groundsky/ground/packed_earth_tyres_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_tyres_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "55002b842f3b3c70ccd7b7a84f477b4f3c8d3f4dfff06b0bc6dbc34a1f76668c",
+      "sourceSha256": "2a813ca2fa9d6f1ba5c987fc0e0025bd262196fb3d41b0e73cfaa6bdb8e9f43b",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_tyres_albedo.png",
+      "decodedSha256": "cf3e1d5e0ccbb236a4c0206707e17aa19f7fef58b1a904877bcc25fbf94ca658",
+      "quality": {
+        "rgbRmse": 2.0031585389025883,
+        "rgbaRmse": 1.7347861824973603,
+        "maxChannelError": 58,
+        "channelRmse": [
+          2.213798693525801,
+          2.327644247303353,
+          1.3111445375983997,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.1220703125
+          },
+          "y": {
+            "max": 46,
+            "mean": 0.3681640625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_tyres_normal",
+      "path": "assets/textures/groundsky/ground/packed_earth_tyres_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_tyres_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "e754827d93cc80b7e223bda7f42438614a5caba7c278bc103ba3397366e59afc",
+      "sourceSha256": "a5ece44fbe3c7558280c836f10caed0867eddeb74282e00b445336f9ae6f20e2",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_tyres_normal.png",
+      "decodedSha256": "c8fbf9f53e45d474c8070f03a7b9d2286703cbc093a0c3b8f922a70051fba09d",
+      "quality": {
+        "rgbRmse": 2.239015468787613,
+        "rgbaRmse": 1.9390442754363968,
+        "maxChannelError": 49,
+        "channelRmse": [
+          2.659494191601774,
+          2.761558517275333,
+          0.5834860828769893,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.5275772686339832,
+          "rmsDegrees": 1.7425970381107514,
+          "maxDegrees": 26.83991537953068,
+          "minLength": 0.9646341436741023,
+          "maxLength": 1.0529320480124258,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.041015625
+          },
+          "y": {
+            "max": 35,
+            "mean": 0.7470703125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "packed_earth_tyres_orm",
+      "path": "assets/textures/groundsky/ground/packed_earth_tyres_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/packed_earth_tyres_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "767ee8cfdc2c41329423cc37d4219d9eeb552998d04b36a16d50f008840e3f90",
+      "sourceSha256": "4b178a33cdfa7c0f555df79111ac55c228b880956d826f6291fd0d58cd95912e",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/packed_earth_tyres_orm.png",
+      "decodedSha256": "25c8046a1d018318a2b9a4c34d5a0b17f4e71513836557b5ebfee00315860517",
+      "quality": {
+        "rgbRmse": 1.3658775811808541,
+        "rgbaRmse": 1.1828846837622615,
+        "maxChannelError": 27,
+        "channelRmse": [
+          1.7030902824013077,
+          1.6420560862247116,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.10546875
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.26220703125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_dry_albedo",
+      "path": "assets/textures/groundsky/ground/red_clay_dry_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_dry_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "5909b250ac8bdd97c234d529685a5ce25bc3ed1a11b0edf877f5de64784f332d",
+      "sourceSha256": "8024e4ad6f6308fe003c91b8d81ba61df62893a9f3cdc2dbcc1a8989c946751c",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_dry_albedo.png",
+      "decodedSha256": "5155311d2879d38571ab9f4a16caebe8499c4d379c4ac4a38ea8d7defc1b773e",
+      "quality": {
+        "rgbRmse": 1.6083873693582946,
+        "rgbaRmse": 1.3929043209903083,
+        "maxChannelError": 68,
+        "channelRmse": [
+          2.042913899314459,
+          1.2250169869626983,
+          1.444495057580507,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 42,
+            "mean": 0.146240234375
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.16796875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_dry_normal",
+      "path": "assets/textures/groundsky/ground/red_clay_dry_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_dry_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "91cf9d753b13b5cd2e29b592ed1e0e6f608c6d6541a02995aed82970fd9a4104",
+      "sourceSha256": "4ca9d830f0b3e4d31058938e4a156a8a29d3d2c86b6cafd2de75d61c02a0dc93",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_dry_normal.png",
+      "decodedSha256": "9a0f81cc329bd558528903f9a302fa883046327aa1e6d3947e8d20c14748b127",
+      "quality": {
+        "rgbRmse": 2.276368514161096,
+        "rgbaRmse": 1.9713929616385462,
+        "maxChannelError": 53,
+        "channelRmse": [
+          2.8513372462937543,
+          2.6082200103939908,
+          0.7827037256014006,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.5256564901617184,
+          "rmsDegrees": 1.7598131560580923,
+          "maxDegrees": 28.40827669872076,
+          "minLength": 0.9121251659389188,
+          "maxLength": 1.1475866055775652,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 35,
+            "mean": 0.1904296875
+          },
+          "y": {
+            "max": 31,
+            "mean": 0.1103515625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_dry_orm",
+      "path": "assets/textures/groundsky/ground/red_clay_dry_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_dry_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "92f59855ae5696c2adb5d16498c84982a133d673f135d5e5e63930cd890c359e",
+      "sourceSha256": "1fddb18d0e01b8adf99d014c68b316049e8431d236abd66a5bd3cada317a8a52",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_dry_orm.png",
+      "decodedSha256": "8d8e60692403daa5be61d20ca836ce65467746f12a8b9bdb5ab1ef3d25632880",
+      "quality": {
+        "rgbRmse": 1.5266362443472004,
+        "rgbaRmse": 1.3221057699427432,
+        "maxChannelError": 42,
+        "channelRmse": [
+          2.02827352911562,
+          1.696455469133346,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.17431640625
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.08056640625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_wet_albedo",
+      "path": "assets/textures/groundsky/ground/red_clay_wet_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_wet_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "193d170a241e77b54fd054b4576863ee9296da1fb006280e9222985fe593f765",
+      "sourceSha256": "d949a19a7ab9346cb7496a1a897e8cd1985a6f0abb98e865548a5171597a4e74",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_wet_albedo.png",
+      "decodedSha256": "f9f2a2a45baba5aaacf316f54f54f1f3cc8ba283cbdd9ad05d3e56ac9bb0dd25",
+      "quality": {
+        "rgbRmse": 2.223849315487628,
+        "rgbaRmse": 1.9259100014009205,
+        "maxChannelError": 52,
+        "channelRmse": [
+          2.9958538969038924,
+          1.8661759321841231,
+          1.542324269577204,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 40,
+            "mean": 0.119873046875
+          },
+          "y": {
+            "max": 40,
+            "mean": 0.1318359375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_wet_normal",
+      "path": "assets/textures/groundsky/ground/red_clay_wet_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_wet_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "f91a4e09fd1a90ed31032453e3bb30a73c1401ebc9ed02480e68c1601cb699df",
+      "sourceSha256": "2182276424ccabc13887c22d4cbb6d1932949cf1f9d52acec5ed9426bf35b3d5",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_wet_normal.png",
+      "decodedSha256": "b2b2e73a6a90d7cc4c7256778903768e0d7478d6e17455fd819635a9e8286c32",
+      "quality": {
+        "rgbRmse": 1.747192583235345,
+        "rgbaRmse": 1.513113162385566,
+        "maxChannelError": 49,
+        "channelRmse": [
+          2.0953670349534073,
+          2.1257711021240007,
+          0.4985779567358259,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.30563527020887116,
+          "rmsDegrees": 1.357168922765551,
+          "maxDegrees": 26.83991537953068,
+          "minLength": 0.952376173987024,
+          "maxLength": 1.077532602307228,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 5,
+            "mean": 0.03076171875
+          },
+          "y": {
+            "max": 31,
+            "mean": 0.130859375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "red_clay_wet_orm",
+      "path": "assets/textures/groundsky/ground/red_clay_wet_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/red_clay_wet_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "b99def4880ffbf883a6c6125342f4c850271816314802271744482f0672d5273",
+      "sourceSha256": "2a6ffd4d8a2560b27a0ff2b1b624d091dcd10712800de49af0401fd7a7bd0486",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/red_clay_wet_orm.png",
+      "decodedSha256": "49d841cbfed60e135d93155b0956bedf4c6c2a52926e8def36d4edcf665f9b8e",
+      "quality": {
+        "rgbRmse": 1.2919396552922535,
+        "rgbaRmse": 1.1188525616396023,
+        "maxChannelError": 42,
+        "channelRmse": [
+          1.217561582539212,
+          1.8774631851183152,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 8,
+            "mean": 0.094970703125
+          },
+          "y": {
+            "max": 8,
+            "mean": 0.067626953125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "sand_to_kikuyu_albedo",
+      "path": "assets/textures/groundsky/ground/sand_to_kikuyu_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "03c7f63f925a14cddddce12f7819f92f0695330558ef7496aac2d1dae071e039",
+      "sourceSha256": "1f605ffc8a862eb6397c76d9f7a9ab6982cfd980d7f4a823694f546938c94946",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/sand_to_kikuyu_albedo.png",
+      "decodedSha256": "736c64a55dfa3f59102b65fd3d4faeecd3ed9c6962204de241686a4a15899e22",
+      "quality": {
+        "rgbRmse": 2.3108894307035763,
+        "rgbaRmse": 2.0012889523262563,
+        "maxChannelError": 58,
+        "channelRmse": [
+          2.769032249100327,
+          2.0970110193926264,
+          1.9888778421011133,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 50,
+            "mean": 0.5537109375
+          },
+          "y": {
+            "max": 42,
+            "mean": 0.5859375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "sand_to_kikuyu_normal",
+      "path": "assets/textures/groundsky/ground/sand_to_kikuyu_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/sand_to_kikuyu_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "e716b26eaef7c015f0f39f26fc4c3721448cbeb00028f4051f619ef57f8d7a96",
+      "sourceSha256": "eed5990ed5491debc8abab7d47ba6e37f94e61b18566181255c9bf25f764732c",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/sand_to_kikuyu_normal.png",
+      "decodedSha256": "6129d10acfaedbf32b2030f21e2a1ea19f7729cd3e9c48bca9a2ae26d1e2bad8",
+      "quality": {
+        "rgbRmse": 2.2491948135195874,
+        "rgbaRmse": 1.9478598465681658,
+        "maxChannelError": 38,
+        "channelRmse": [
+          2.711009967286105,
+          2.7672600519630297,
+          0.41149567382318286,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.6353115972515336,
+          "rmsDegrees": 1.7524915633897813,
+          "maxDegrees": 17.990194730298303,
+          "minLength": 0.9615683075839917,
+          "maxLength": 1.0381052150548273,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 12,
+            "mean": 0.328125
+          },
+          "y": {
+            "max": 13,
+            "mean": 0.220703125
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "sand_to_kikuyu_orm",
+      "path": "assets/textures/groundsky/ground/sand_to_kikuyu_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/sand_to_kikuyu_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "5c9c0a222c173885e6b97e76ba47cf2d6ed4128d9972142406c8a9056eafe48a",
+      "sourceSha256": "a9105987d53ce4a6c70c208f6e4bac465a90d7ab7a643bdbd9d416cfd312573b",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/sand_to_kikuyu_orm.png",
+      "decodedSha256": "837e2a0f896f24c3c3a1e4a199c231e265e4d7431f379d3fabfebf2c4bf406f8",
+      "quality": {
+        "rgbRmse": 0.895775963180842,
+        "rgbaRmse": 0.775764740214083,
+        "maxChannelError": 15,
+        "channelRmse": [
+          0.14226340479115998,
+          1.5449934796933358,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 4,
+            "mean": 0.140625
+          },
+          "y": {
+            "max": 4,
+            "mean": 0.09375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_dark_albedo",
+      "path": "assets/textures/groundsky/ground/stone_scatter_dark_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_dark_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "b27c6d34cdf3ac987e5fdd0e862773b5d292464343ac594b98c81c6efcddd866",
+      "sourceSha256": "f8eb4c8390ed45afb58088da1515d5e0913e2a29752ded3dd99b76f08391ddeb",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_dark_albedo.png",
+      "decodedSha256": "80a7906481d689398d2037d49fa1f16569552720cd32b30bf3364fe5328eb273",
+      "quality": {
+        "rgbRmse": 1.7436932042943538,
+        "rgbaRmse": 1.5100826113251995,
+        "maxChannelError": 70,
+        "channelRmse": [
+          2.1364629895776246,
+          1.3064694598979327,
+          1.6882124915501533,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 60,
+            "mean": 0.392578125
+          },
+          "y": {
+            "max": 61,
+            "mean": 0.212890625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_dark_normal",
+      "path": "assets/textures/groundsky/ground/stone_scatter_dark_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_dark_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "d8c95ebe16ebd6f14846057783fbeb5da727a21fb06c3ed8139d457097095603",
+      "sourceSha256": "d4d1d6ef01be5e38d4184076ef6b51ab6a21730c332846e7a66a540d58d83466",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_dark_normal.png",
+      "decodedSha256": "4453119e038ed1d186ab02ac8f3359eaed1eb56dd8b6a311b315349d1a392a37",
+      "quality": {
+        "rgbRmse": 2.119563459879736,
+        "rgbaRmse": 1.83559580118909,
+        "maxChannelError": 62,
+        "channelRmse": [
+          2.5223802176278407,
+          2.4950629122032275,
+          0.9433487601304971,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.4704455072408025,
+          "rmsDegrees": 1.6329446724494494,
+          "maxDegrees": 30.884695317645466,
+          "minLength": 0.8354598012979291,
+          "maxLength": 1.1372481406154655,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 58,
+            "mean": 0.801513671875
+          },
+          "y": {
+            "max": 53,
+            "mean": 0.291748046875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_dark_orm",
+      "path": "assets/textures/groundsky/ground/stone_scatter_dark_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_dark_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "8a0e09e8e8660fc556da00979185d87ce9f869a7b2bbc8fcdcd30dae8827c001",
+      "sourceSha256": "c9bb0b473c9b92c51e17ba0cea0efb1d9112d76c06a5477719499ea42d7d7c98",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_dark_orm.png",
+      "decodedSha256": "2fd4234817544005771c51cda8f9d5e8370cb424c7aef0d48e0a42af0eb67551",
+      "quality": {
+        "rgbRmse": 1.279035313392905,
+        "rgbaRmse": 1.1076770737356467,
+        "maxChannelError": 27,
+        "channelRmse": [
+          1.6327759953118797,
+          1.4972763765756683,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 16,
+            "mean": 0.333740234375
+          },
+          "y": {
+            "max": 23,
+            "mean": 0.2021484375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_pale_albedo",
+      "path": "assets/textures/groundsky/ground/stone_scatter_pale_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_pale_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [],
+      "deliverySha256": "2338a5046392222f5ab922946dff1a0446458238c91c914f7af1c0f346d8fc34",
+      "sourceSha256": "bf9617bdd78ee8c54907e9be5decee9d0480da38a07dad571a698b2bade12250",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_pale_albedo.png",
+      "decodedSha256": "b28e972c6f7f371dbd8e197f12e2709555eaf535314c3d5760373628d2a98ee3",
+      "quality": {
+        "rgbRmse": 1.9166515460316296,
+        "rgbaRmse": 1.6598689290661106,
+        "maxChannelError": 64,
+        "channelRmse": [
+          2.101100941850886,
+          1.7054022167471903,
+          1.9229242205514492,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 46,
+            "mean": 0.478271484375
+          },
+          "y": {
+            "max": 48,
+            "mean": 0.695556640625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_pale_normal",
+      "path": "assets/textures/groundsky/ground/stone_scatter_pale_normal.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_pale_normal.png",
+      "kind": "ground",
+      "role": "normal",
+      "errors": [],
+      "deliverySha256": "e7a697ca0bc9460f47f52a8943b8783a46efdd9508abda2b3a799d6f3755ac79",
+      "sourceSha256": "714f68590425cad91ad24c8b9c302eeb84734741f8946d61128c3b5ddfe9d126",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_pale_normal.png",
+      "decodedSha256": "fb9bf1d6fa5062207f7713938d9fecd0174a28906ef2de4da85e2a008521987e",
+      "quality": {
+        "rgbRmse": 2.065902908259481,
+        "rgbaRmse": 1.789124400304863,
+        "maxChannelError": 62,
+        "channelRmse": [
+          2.4722668671118897,
+          2.431834361007139,
+          0.8820105767340339,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "normal": {
+          "meanDegrees": 0.4376912579563628,
+          "rmsDegrees": 1.5929819991290284,
+          "maxDegrees": 30.456776828294313,
+          "minLength": 0.8354598012979291,
+          "maxLength": 1.1439357517925306,
+          "negativeZPixels": 0
+        },
+        "decodedSeams": {
+          "x": {
+            "max": 47,
+            "mean": 0.245361328125
+          },
+          "y": {
+            "max": 61,
+            "mean": 1.244384765625
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "stone_scatter_pale_orm",
+      "path": "assets/textures/groundsky/ground/stone_scatter_pale_orm.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/stone_scatter_pale_orm.png",
+      "kind": "ground",
+      "role": "orm",
+      "errors": [],
+      "deliverySha256": "c1416cb96e1a8038238b688b19e6b84e0b0dac1ab1a4fe0831bac2baef9f5aab",
+      "sourceSha256": "967bbc1939d74cb446b2e41ee6aeb0ebb26d3c40d0690700d4e654a76bdc9e36",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/ground/stone_scatter_pale_orm.png",
+      "decodedSha256": "87d37e715c56a62fd9152d91c3e8defe197f6a71540c465a01cd8f0ff5fa7108",
+      "quality": {
+        "rgbRmse": 1.3122815147080298,
+        "rgbaRmse": 1.1364691286538762,
+        "maxChannelError": 27,
+        "channelRmse": [
+          1.669202147532219,
+          1.542728917278415,
+          0.0,
+          0.0
+        ],
+        "sourceAlphaRange": [
+          255,
+          255
+        ],
+        "decodedAlphaRange": [
+          255,
+          255
+        ],
+        "metallicMaximum": 0,
+        "decodedSeams": {
+          "x": {
+            "max": 26,
+            "mean": 0.120849609375
+          },
+          "y": {
+            "max": 28,
+            "mean": 0.32421875
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "terrain_blend_masks_01",
+      "path": "assets/textures/groundsky/masks/terrain_blend_masks_01.ktx2",
+      "sourcePath": "dev/groundsky/masters/masks/terrain_blend_masks_01.png",
+      "kind": "blend-mask",
+      "role": "mask",
+      "errors": [],
+      "deliverySha256": "b75bf790b5288e9227c031d93cf7659dc9935fc620c8e79e9bc6d384c988066a",
+      "sourceSha256": "cf91011798f28debefb3e511957b0a66466764a24e275c8ab65fe680d661276b",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/masks/terrain_blend_masks_01.png",
+      "decodedSha256": "c36299d3fbda0e7964febcc91dc6ef11bbaf68dfe35ab3a753117a9f439b5d01",
+      "quality": {
+        "rgbRmse": 2.1239777144264504,
+        "rgbaRmse": 2.0889924499134236,
+        "maxChannelError": 26,
+        "channelRmse": [
+          2.08694673618842,
+          2.1077926917591077,
+          2.176168027294772,
+          1.9803317472182602
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 19,
+            "mean": 0.70458984375
+          },
+          "y": {
+            "max": 21,
+            "mean": 1.075927734375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "terrain_blend_masks_02",
+      "path": "assets/textures/groundsky/masks/terrain_blend_masks_02.ktx2",
+      "sourcePath": "dev/groundsky/masters/masks/terrain_blend_masks_02.png",
+      "kind": "blend-mask",
+      "role": "mask",
+      "errors": [],
+      "deliverySha256": "3cf50b19797f7e4ef09b78f080edd7869a870eab42f083889eb18ad64e6f5d81",
+      "sourceSha256": "a0044b723f8ced882314c8d3fb02cafff05b34d427f90bf10971bfa28428c6bb",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/masks/terrain_blend_masks_02.png",
+      "decodedSha256": "5824d7cd00cd586cc342c32ab8b5fe149a6702d0fc4b9d49eb59862038af39f3",
+      "quality": {
+        "rgbRmse": 2.819062326612609,
+        "rgbaRmse": 2.81771422342659,
+        "maxChannelError": 34,
+        "channelRmse": [
+          2.8431997919716916,
+          2.8230276801508607,
+          2.790710816980805,
+          2.8136660383959144
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "decodedSeams": {
+          "x": {
+            "max": 21,
+            "mean": 1.46630859375
+          },
+          "y": {
+            "max": 20,
+            "mean": 1.38427734375
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "id": "city_far_day",
+      "path": "assets/textures/groundsky/city/city_far_day.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_far_day.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "bf9fcb3292c4bac5c2d9abedaa8423ce015097052ee0ce6fc98ec44f2918373d",
+      "sourceSha256": "63128b87aca11f9678c5f59edb90205730f878093ff5066f1ea946abeb93a5d7",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_far_day.png",
+      "decodedSha256": "ceb3e1854a1db3c85918b1529b364e966fef65f279164467a4b813eba3624118",
+      "quality": {
+        "rgbRmse": 1.8436103415289067,
+        "rgbaRmse": 1.4810311248285353,
+        "maxChannelError": 41,
+        "channelRmse": [
+          1.9576943619895881,
+          1.4386396451597907,
+          1.5635290190684783,
+          0.6534053365124584
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6534053365124584,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 32001
+      },
+      "ok": true
+    },
+    {
+      "id": "city_far_dusk",
+      "path": "assets/textures/groundsky/city/city_far_dusk.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_far_dusk.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "4b3aa60edb295297b8c66c932f830219f008b1cb2a7b7a046c5cf07d4238006c",
+      "sourceSha256": "6b4a3f8f86dddbf4e9f5f8b6b2985c632cbe102e370a3206a7bfc0cf479b27b8",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_far_dusk.png",
+      "decodedSha256": "f2b26ffd8649bffc9950c8946cd4fd34e4c5f917bee604f81a528b5b8f782ee6",
+      "quality": {
+        "rgbRmse": 2.0066144153056493,
+        "rgbaRmse": 1.5845644790540157,
+        "maxChannelError": 69,
+        "channelRmse": [
+          2.0484459359630356,
+          1.6627452812810395,
+          1.63709322121109,
+          0.6343906644944848
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.6343906644944848,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 32611
+      },
+      "ok": true
+    },
+    {
+      "id": "city_far_night",
+      "path": "assets/textures/groundsky/city/city_far_night.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_far_night.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "0a363742402e16c86d0c30b80ee7f67fd6a231e2bcdd35302af4fa7c0a7973f6",
+      "sourceSha256": "d28c618594da002d01e5156041792937c982b2ebeb48295c89cb88dcd1d47c48",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_far_night.png",
+      "decodedSha256": "edb769702d8e4a0620870ae89e2226ed8707a1dc63b3763d63854df89f7c2abf",
+      "quality": {
+        "rgbRmse": 1.8379040160516384,
+        "rgbaRmse": 1.5277580226237475,
+        "maxChannelError": 79,
+        "channelRmse": [
+          2.156797256682488,
+          1.365218308426563,
+          1.572041029911542,
+          0.5909905810952991
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.5909905810952991,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 32353
+      },
+      "ok": true
+    },
+    {
+      "id": "city_middle_day",
+      "path": "assets/textures/groundsky/city/city_middle_day.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_middle_day.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "56ab512843cc0b6cba72aaa2093cf7baed0a9593538015cb09124d3dd8f61613",
+      "sourceSha256": "7ddcecbc9359574d663f1c15f5eb6c95bd4f3cd96004de0de7fc5751142a654e",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_middle_day.png",
+      "decodedSha256": "5bf010b84e67e529ef80b4a43cd992b4df8e7bdc8b8addc3a82ec2d40d25c6d2",
+      "quality": {
+        "rgbRmse": 2.048296771796744,
+        "rgbaRmse": 1.3730227819637826,
+        "maxChannelError": 63,
+        "channelRmse": [
+          1.7332450691394004,
+          1.2363165543001207,
+          1.4561079029615691,
+          0.9422838860802792
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.9422838860802792,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 22806
+      },
+      "ok": true
+    },
+    {
+      "id": "city_middle_dusk",
+      "path": "assets/textures/groundsky/city/city_middle_dusk.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_middle_dusk.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "886ddacfdf361bd8b265ee647cfad7143f87061b8b1cd7d869399afdd457f3bd",
+      "sourceSha256": "729d5271de7113ddd80a1e0c74a2ad432c30766a0d722dd555b8701d8ed06d34",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_middle_dusk.png",
+      "decodedSha256": "89b6050109c230a50daaa2febc17ee8607c1280cf6c6f8aead1941fb6d0ee130",
+      "quality": {
+        "rgbRmse": 2.145746489988818,
+        "rgbaRmse": 1.6299805243329104,
+        "maxChannelError": 95,
+        "channelRmse": [
+          1.8123795041776118,
+          1.4021630130854588,
+          2.133868616222955,
+          0.9072872671260802
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.9072872671260802,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 23029
+      },
+      "ok": true
+    },
+    {
+      "id": "city_middle_night",
+      "path": "assets/textures/groundsky/city/city_middle_night.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_middle_night.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "d99b8cebcd7a7aea828bfb03e1b2e09fca0e142ac57fb6341e912d6caa77a53d",
+      "sourceSha256": "83241782ff55d8e3bd02c6cb87356b75bfd05ec4e6c5aef2bc869a257828a129",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_middle_night.png",
+      "decodedSha256": "1e39d7a7da011df17b53b44f9737dcc75db17f51b412dec0a81c6a6ac7c04e81",
+      "quality": {
+        "rgbRmse": 1.942479614457998,
+        "rgbaRmse": 1.3887933820099856,
+        "maxChannelError": 110,
+        "channelRmse": [
+          1.6500126693701571,
+          1.361659443406954,
+          1.5528375555340466,
+          0.8526579084724514
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.8526579084724514,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 22820
+      },
+      "ok": true
+    },
+    {
+      "id": "city_near_day",
+      "path": "assets/textures/groundsky/city/city_near_day.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_near_day.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "18db3f0a26d2657806bda613fa55bb95e36734bf2af2b799e20c63425c3d6af3",
+      "sourceSha256": "be46422ca28ad98dc923e28c59607841700e650052377ec0260865280705e9eb",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_near_day.png",
+      "decodedSha256": "e8a26d4b1e12061a7dbd54985cff689ee2fab9cebe6d18976fa96f9f3ef00620",
+      "quality": {
+        "rgbRmse": 2.6093669193319022,
+        "rgbaRmse": 1.6895571990839613,
+        "maxChannelError": 75,
+        "channelRmse": [
+          1.6745770447059178,
+          2.1391786018556767,
+          1.6616083952322958,
+          1.130123129356312
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.130123129356312,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 23920
+      },
+      "ok": true
+    },
+    {
+      "id": "city_near_dusk",
+      "path": "assets/textures/groundsky/city/city_near_dusk.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_near_dusk.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "b4a42e561347ee229de1d223b4594c5e511130f5c532b7c8d37f29b82e21edf9",
+      "sourceSha256": "765bec8762331b824b0e58ec7835fb6aa0022f8a8ebe0129344061d74e505c31",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_near_dusk.png",
+      "decodedSha256": "fc466e6d242fd48ee1180cee730e96b4dd657cc0639e073bf855bf75fd13edba",
+      "quality": {
+        "rgbRmse": 2.9782301788983654,
+        "rgbaRmse": 1.7236202941958658,
+        "maxChannelError": 98,
+        "channelRmse": [
+          1.660709495361732,
+          2.1763010277372197,
+          1.8094791362621099,
+          1.0559406888517948
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.0559406888517948,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 23895
+      },
+      "ok": true
+    },
+    {
+      "id": "city_near_night",
+      "path": "assets/textures/groundsky/city/city_near_night.ktx2",
+      "sourcePath": "dev/groundsky/masters/city/city_near_night.png",
+      "kind": "city",
+      "role": "panorama",
+      "errors": [],
+      "deliverySha256": "3095d51f9d81b8cd57a620278ed8cd5b18fcd9fb99c9fa7c26c4a3a855a2ab35",
+      "sourceSha256": "9ea35283a7f4cfa979787781f31b2ad1192c3d4b118c66711544242e6d66a352",
+      "width": 4096,
+      "height": 512,
+      "mipCount": 13,
+      "gpuBytes": 1256192,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/city/city_near_night.png",
+      "decodedSha256": "329879843a11507e654daa8f4a91ae9c72630edb769624e610499b6933a18868",
+      "quality": {
+        "rgbRmse": 2.5608695380350195,
+        "rgbaRmse": 1.5248883503550625,
+        "maxChannelError": 91,
+        "channelRmse": [
+          1.4714684186029277,
+          1.079809007004325,
+          2.209843557007544,
+          1.0423639379761347
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.0423639379761347,
+        "decodedSeams": {},
+        "topRowAlphaMax": 0,
+        "softAlphaPixels": 24834
+      },
+      "ok": true
+    },
+    {
+      "id": "haze_07",
+      "path": "assets/textures/groundsky/haze/haze_07.ktx2",
+      "sourcePath": "dev/groundsky/masters/haze/haze_07.png",
+      "kind": "haze",
+      "role": "ramp",
+      "errors": [],
+      "deliverySha256": "891c049e0b1cbbbd1843ef5331b40fa6cadcca0a51fdc3c6d8d6d6c50a8b86f4",
+      "sourceSha256": "ab868ad679abfaca93793d7d8c11b86c4152330ac2fd723b1d2be27bdc2dfe70",
+      "width": 256,
+      "height": 4,
+      "mipCount": 9,
+      "gpuBytes": 1440,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/haze/haze_07.png",
+      "decodedSha256": "9d9b88a2ca47cb97d2cb7aded7261d656338a2145089349f1ce5af528dc06f14",
+      "quality": {
+        "rgbRmse": 0.6346707565229067,
+        "rgbaRmse": 0.610375780769519,
+        "maxChannelError": 3,
+        "channelRmse": [
+          0.6327642728536433,
+          0.6067652449671125,
+          0.6931585316505886,
+          0.4911323014219285
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.4911323014219285,
+        "decodedSeams": {}
+      },
+      "ok": true
+    },
+    {
+      "id": "haze_12",
+      "path": "assets/textures/groundsky/haze/haze_12.ktx2",
+      "sourcePath": "dev/groundsky/masters/haze/haze_12.png",
+      "kind": "haze",
+      "role": "ramp",
+      "errors": [],
+      "deliverySha256": "f1515a3204847d07cca0203a40ec586869e331ecff9f87dbed1629d6cbd358f5",
+      "sourceSha256": "974f035c45b09aa069027ba19b4f41992bf1c8de82bba1e15af7210a81a6c0ec",
+      "width": 256,
+      "height": 4,
+      "mipCount": 9,
+      "gpuBytes": 1440,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/haze/haze_12.png",
+      "decodedSha256": "e6228de52c3de6c61f9d9c19cc72ad0a744efe8605ce1d9a6adef3c7a7847f7d",
+      "quality": {
+        "rgbRmse": 0.6488092914347641,
+        "rgbaRmse": 0.7139787286747414,
+        "maxChannelError": 3,
+        "channelRmse": [
+          0.7781187248742958,
+          0.7288689868556626,
+          0.75,
+          0.582961190818051
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.582961190818051,
+        "decodedSeams": {}
+      },
+      "ok": true
+    },
+    {
+      "id": "haze_17p2",
+      "path": "assets/textures/groundsky/haze/haze_17p2.ktx2",
+      "sourcePath": "dev/groundsky/masters/haze/haze_17p2.png",
+      "kind": "haze",
+      "role": "ramp",
+      "errors": [],
+      "deliverySha256": "ccc75d7aae19af38d5f42786bde07ccf8aab6b61602cba765cc77da6844d0e30",
+      "sourceSha256": "567e52cf4b78275b671070a442825aeb8d39bc91d59b3965397c7c443698a3e1",
+      "width": 256,
+      "height": 4,
+      "mipCount": 9,
+      "gpuBytes": 1440,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/haze/haze_17p2.png",
+      "decodedSha256": "42c06e8cbe4eccefe49d346217b13280515fe7fe01005419e474560a95981815",
+      "quality": {
+        "rgbRmse": 0.751382207634974,
+        "rgbaRmse": 0.751788232732463,
+        "maxChannelError": 3,
+        "channelRmse": [
+          0.8716453550613346,
+          0.7447734554883115,
+          0.7730823048033113,
+          0.5904513633653495
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.5904513633653495,
+        "decodedSeams": {}
+      },
+      "ok": true
+    },
+    {
+      "id": "haze_19p5",
+      "path": "assets/textures/groundsky/haze/haze_19p5.ktx2",
+      "sourcePath": "dev/groundsky/masters/haze/haze_19p5.png",
+      "kind": "haze",
+      "role": "ramp",
+      "errors": [],
+      "deliverySha256": "ab42b1054fc5b12f08bc445210143b20635a2fe928f4b68b5213533555ee323b",
+      "sourceSha256": "3db9864fe4c9734fdfd65e58653ecd8030916eabfb4f91ffe94fd867eedfaa9b",
+      "width": 256,
+      "height": 4,
+      "mipCount": 9,
+      "gpuBytes": 1440,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/haze/haze_19p5.png",
+      "decodedSha256": "bd57ddeaa22c023516354e90cd4613eee994bbdc4fb18deecbe1aba104662816",
+      "quality": {
+        "rgbRmse": 0.8788818791237738,
+        "rgbaRmse": 0.7991694907840263,
+        "maxChannelError": 3,
+        "channelRmse": [
+          0.9164298936634487,
+          0.9057110466368399,
+          0.75,
+          0.5762215285808054
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.5762215285808054,
+        "decodedSeams": {}
+      },
+      "ok": true
+    },
+    {
+      "id": "haze_22",
+      "path": "assets/textures/groundsky/haze/haze_22.ktx2",
+      "sourcePath": "dev/groundsky/masters/haze/haze_22.png",
+      "kind": "haze",
+      "role": "ramp",
+      "errors": [],
+      "deliverySha256": "fbef04be92d7f9cbe4412bd5db620ee35db5c393200a6aca985340f4087a79c7",
+      "sourceSha256": "ae613a93fa5ac676f0566571eb6c0fac36259157a73504d0ae8f73f2bdb072e5",
+      "width": 256,
+      "height": 4,
+      "mipCount": 9,
+      "gpuBytes": 1440,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/haze/haze_22.png",
+      "decodedSha256": "6fec7a99028e9655d41559455afee593fe4b81c05d252431c54b4d0c54e47988",
+      "quality": {
+        "rgbRmse": 0.7717192852504486,
+        "rgbaRmse": 0.7281987623581903,
+        "maxChannelError": 3,
+        "channelRmse": [
+          0.7043392293490403,
+          0.8172935519138763,
+          0.7880950133074057,
+          0.5796011559684815
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 0.5796011559684815,
+        "decodedSeams": {}
+      },
+      "ok": true
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter eucalyptus_stands_04 has alpha 24 >8"
+      ],
+      "deliverySha256": "6eb97d3b43cbad6412085461971640d586c5dbfce67e3b5bb71ef36ddd5d35cd",
+      "sourceSha256": "e97931472d3677452692031780a61bbfaff84e1b1ecf069e060dfd8a763ac186",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_eucalyptus_stands_lod0.png",
+      "decodedSha256": "5853ebd86f75690cf3592c978a44bb89a54f7aa17153bb3c03ca408a965a1cdf",
+      "quality": {
+        "rgbRmse": 3.0530593357442237,
+        "rgbaRmse": 3.268791561701279,
+        "maxChannelError": 159,
+        "channelRmse": [
+          2.936635640991142,
+          2.983806136473781,
+          2.7469052327198957,
+          4.203281669107598
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 4.203281669107598,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "eucalyptus_stands_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "eucalyptus_stands_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "eucalyptus_stands_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "eucalyptus_stands_04",
+            "maxAlpha": 24
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter eucalyptus_stands_01 has alpha 33 >8",
+        "Decoded vegetation gutter eucalyptus_stands_02 has alpha 13 >8",
+        "Decoded vegetation gutter eucalyptus_stands_03 has alpha 14 >8",
+        "Decoded vegetation gutter eucalyptus_stands_04 has alpha 23 >8"
+      ],
+      "deliverySha256": "69838bb6ba0534486129ec91f48dafede04398b5de1dc0736b0a9153149a691a",
+      "sourceSha256": "c7c37991f4bea6b4726ca7858911c0938c7d1495de0514519f3ad78740cc25ac",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_eucalyptus_stands_lod1.png",
+      "decodedSha256": "3633f795b69b4b48ee7e264012ee9d21ef72be087f9c73b0a1f06df6536e2d6e",
+      "quality": {
+        "rgbRmse": 6.098567064790762,
+        "rgbaRmse": 6.375348549084548,
+        "maxChannelError": 168,
+        "channelRmse": [
+          6.710730019893688,
+          5.87347846923893,
+          5.300175271644915,
+          7.413283472968367
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 7.413283472968367,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "eucalyptus_stands_01",
+            "maxAlpha": 33
+          },
+          {
+            "id": "eucalyptus_stands_02",
+            "maxAlpha": 13
+          },
+          {
+            "id": "eucalyptus_stands_03",
+            "maxAlpha": 14
+          },
+          {
+            "id": "eucalyptus_stands_04",
+            "maxAlpha": 23
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_eucalyptus_stands_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_eucalyptus_stands_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Opacity RMSE 10.5639 exceeds 8.0",
+        "Decoded vegetation gutter eucalyptus_stands_03 has alpha 16 >8"
+      ],
+      "deliverySha256": "94e5fec121bea0d2c227a4555c927f2c6f1dca4745732f6486b0f0937851d80e",
+      "sourceSha256": "bfe9b561c5fb4186a031b72fd423a9eecfb216b24d0af8334af5518ef339d783",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_eucalyptus_stands_lod2.png",
+      "decodedSha256": "959c05aea57deb1b56bbce8e2cd744367da0fd64d23b8f974d411a3d02e66f4e",
+      "quality": {
+        "rgbRmse": 9.01368704962853,
+        "rgbaRmse": 8.99791311864716,
+        "maxChannelError": 154,
+        "channelRmse": [
+          9.377847061182523,
+          8.31217875612815,
+          7.430778992839828,
+          10.563945964728479
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 10.563945964728479,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "eucalyptus_stands_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "eucalyptus_stands_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "eucalyptus_stands_03",
+            "maxAlpha": 16
+          },
+          {
+            "id": "eucalyptus_stands_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter kikuyu_slopes_02 has alpha 17 >8",
+        "Decoded vegetation gutter kikuyu_slopes_04 has alpha 13 >8"
+      ],
+      "deliverySha256": "a911bbb51967c7a3ef7a53878b54b82746a598219f7d067cad8c7080029423f7",
+      "sourceSha256": "5f68d61e78c18816f8a93ad0537e9f7d8cd75f3c84f107fe7b3a6087fad0b380",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_kikuyu_slopes_lod0.png",
+      "decodedSha256": "6550f37ae79e5c33f4e40ac75f696301e54662e37405fed8842074726b2ab39d",
+      "quality": {
+        "rgbRmse": 5.413080276012655,
+        "rgbaRmse": 3.4826678896797665,
+        "maxChannelError": 119,
+        "channelRmse": [
+          3.22164564528089,
+          3.2788334258297382,
+          2.800923406379718,
+          4.420518215404684
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 4.420518215404684,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "kikuyu_slopes_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "kikuyu_slopes_02",
+            "maxAlpha": 17
+          },
+          {
+            "id": "kikuyu_slopes_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "kikuyu_slopes_04",
+            "maxAlpha": 13
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter kikuyu_slopes_02 has alpha 27 >8",
+        "Decoded vegetation gutter kikuyu_slopes_03 has alpha 27 >8",
+        "Decoded vegetation gutter kikuyu_slopes_04 has alpha 28 >8"
+      ],
+      "deliverySha256": "33974eceeff8abc87b632e3d9242dc099bfc9da98f5dba6b76837ae6e0513c99",
+      "sourceSha256": "cdcbbabbf646b92864b13bcb16c25d5ee9107c58ad080e86d6baf1aa1fd29fae",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_kikuyu_slopes_lod1.png",
+      "decodedSha256": "90e3c82272ca7452103540fa9ecf260e7f9c2f9ffd95d9f53b15445d334ec9e7",
+      "quality": {
+        "rgbRmse": 7.471210688622032,
+        "rgbaRmse": 5.252011413364255,
+        "maxChannelError": 140,
+        "channelRmse": [
+          5.392144826511815,
+          4.700338051184207,
+          3.8285963118665673,
+          6.6714272985401735
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 6.6714272985401735,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "kikuyu_slopes_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "kikuyu_slopes_02",
+            "maxAlpha": 27
+          },
+          {
+            "id": "kikuyu_slopes_03",
+            "maxAlpha": 27
+          },
+          {
+            "id": "kikuyu_slopes_04",
+            "maxAlpha": 28
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_kikuyu_slopes_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_kikuyu_slopes_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter kikuyu_slopes_01 has alpha 28 >8",
+        "Decoded vegetation gutter kikuyu_slopes_03 has alpha 36 >8"
+      ],
+      "deliverySha256": "fe6725bfb9467b2c06b7719e071df9e72e63c9c4d8a8ee38b1a29ff2ed4d391b",
+      "sourceSha256": "5cacced82f5a929222472415493a76deb603b796a36ccee46bce1514462a08f3",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_kikuyu_slopes_lod2.png",
+      "decodedSha256": "a30fac58ff1578fcda6d8f3ddddf0af0ffbdae5cd4166d18c903d371e6da4875",
+      "quality": {
+        "rgbRmse": 8.798912282880341,
+        "rgbaRmse": 6.096737173488592,
+        "maxChannelError": 142,
+        "channelRmse": [
+          6.182960771851136,
+          5.461017133271311,
+          4.458828242037608,
+          7.79409746681844
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 7.79409746681844,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "kikuyu_slopes_01",
+            "maxAlpha": 28
+          },
+          {
+            "id": "kikuyu_slopes_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "kikuyu_slopes_03",
+            "maxAlpha": 36
+          },
+          {
+            "id": "kikuyu_slopes_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_banana_groves_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_banana_groves_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter banana_groves_02 has alpha 13 >8"
+      ],
+      "deliverySha256": "c752f5c5a12f5cb1608a327aa6c493134273e5f338e6c7845371edfd8368026e",
+      "sourceSha256": "b73f3072b392ea6428598c61a80f06a8695945ddf5e98de8be4ada94d15a1857",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_banana_groves_lod0.png",
+      "decodedSha256": "6bfbcb9ec5fec4b6dce17f60291b3e1d8b351b32d045861726b03652459ba23a",
+      "quality": {
+        "rgbRmse": 2.1749360057852827,
+        "rgbaRmse": 2.5465478511458723,
+        "maxChannelError": 126,
+        "channelRmse": [
+          2.218177614122776,
+          2.397074060243648,
+          2.298765274005405,
+          3.1605420531359987
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 3.1605420531359987,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "banana_groves_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "banana_groves_02",
+            "maxAlpha": 13
+          },
+          {
+            "id": "banana_groves_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "banana_groves_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_banana_groves_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_banana_groves_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter banana_groves_01 has alpha 13 >8",
+        "Decoded vegetation gutter banana_groves_03 has alpha 28 >8"
+      ],
+      "deliverySha256": "1cdd3cd7ee41607f368a095e838afcf3ccb6c030bd47ffd6659e7190cbff0766",
+      "sourceSha256": "f0d145fd33a65de1b1b88fc807cd4e0ca4cf50c2862cbdb0b7f087166de0b679",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_banana_groves_lod1.png",
+      "decodedSha256": "b1909cf10504b612e3187e62927c2f0c0b8f487184644a214e204aebc269ebf0",
+      "quality": {
+        "rgbRmse": 4.770904889326789,
+        "rgbaRmse": 5.008131757965155,
+        "maxChannelError": 182,
+        "channelRmse": [
+          5.371822038692352,
+          4.5567896393872465,
+          4.4453296627524574,
+          5.5627129331830485
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 5.5627129331830485,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "banana_groves_01",
+            "maxAlpha": 13
+          },
+          {
+            "id": "banana_groves_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "banana_groves_03",
+            "maxAlpha": 28
+          },
+          {
+            "id": "banana_groves_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_banana_groves_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_banana_groves_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_banana_groves_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Opacity RMSE 8.7229 exceeds 8.0",
+        "Decoded vegetation gutter banana_groves_01 has alpha 28 >8"
+      ],
+      "deliverySha256": "7dc62fed29ba3593ccedaa5c90214077fff254b5a4d697cf09de142befa986d5",
+      "sourceSha256": "b4c36b5ec534ca5bfbf3fe2062d1d9e5a2e88cdeff42ae7c57e57da39e86e1ae",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_banana_groves_lod2.png",
+      "decodedSha256": "945221e09f88066d4748a67a906a125e0c0ae13649bd7e115636397ff039a3a3",
+      "quality": {
+        "rgbRmse": 8.001810220311958,
+        "rgbaRmse": 7.775579753492963,
+        "maxChannelError": 163,
+        "channelRmse": [
+          8.107892145253444,
+          7.158679266650618,
+          6.98321810364017,
+          8.72287928650139
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 8.72287928650139,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "banana_groves_01",
+            "maxAlpha": 28
+          },
+          {
+            "id": "banana_groves_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "banana_groves_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "banana_groves_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [],
+      "deliverySha256": "ee692e2f981c2f99dfafef047ed2bdcc770e182cde03534497793ee116e212e1",
+      "sourceSha256": "b3bbcb3b11707a90324caf0c38479bbd16060d6045baebf4925a076463921cee",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cypress_hedges_lod0.png",
+      "decodedSha256": "6177d699fb6d6669a8917e3cbbc019869f7bc853020789da286e0b2a1d586143",
+      "quality": {
+        "rgbRmse": 2.3882209162426444,
+        "rgbaRmse": 2.0657351004247744,
+        "maxChannelError": 72,
+        "channelRmse": [
+          1.7951189831585785,
+          2.23594684932095,
+          2.2789368071287606,
+          1.9114346896865222
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 1.9114346896865222,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cypress_hedges_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter cypress_hedges_04 has alpha 23 >8"
+      ],
+      "deliverySha256": "3711995113d67c3844d72891564d65629645c2928b3b219aab3856c12c3e7879",
+      "sourceSha256": "42a27af76448a2b19e4b8a95656423ab93ae5a5a604b4ec51744fe5d5ffcf103",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cypress_hedges_lod1.png",
+      "decodedSha256": "e67f33a64dbdfd4abc29ac4b31f64b2992e775136c7d3253c729d28ddc16b36f",
+      "quality": {
+        "rgbRmse": 3.3046206284245527,
+        "rgbaRmse": 3.1697940107260236,
+        "maxChannelError": 86,
+        "channelRmse": [
+          3.1596268822302593,
+          3.0266752033981503,
+          2.750266322331348,
+          3.6718396773566977
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 3.6718396773566977,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cypress_hedges_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_04",
+            "maxAlpha": 23
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_cypress_hedges_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cypress_hedges_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [],
+      "deliverySha256": "a70ce1bdfc3fed0c9afe4a9f9e8deda68a3055767649d6c8a0959d459c4e1d34",
+      "sourceSha256": "4fae1cc3adfcafb6f21fc15fbd144c824cfeafed40af892822462b9cf9f878e6",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cypress_hedges_lod2.png",
+      "decodedSha256": "729773be4d4756cc3522d8bcbce659b9a75a5b41214d80e6232218a6336a32a2",
+      "quality": {
+        "rgbRmse": 4.549827030189149,
+        "rgbaRmse": 4.692757874741384,
+        "maxChannelError": 91,
+        "channelRmse": [
+          4.866317450827326,
+          4.510250708130903,
+          4.158947520998777,
+          5.173746651986867
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 5.173746651986867,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cypress_hedges_01",
+            "maxAlpha": 1
+          },
+          {
+            "id": "cypress_hedges_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cypress_hedges_03",
+            "maxAlpha": 3
+          },
+          {
+            "id": "cypress_hedges_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter cloud_forest_edge_04 has alpha 23 >8"
+      ],
+      "deliverySha256": "2013e1cd37b8ecb43c7a741988967920183c0d7964cb6c2b32b8160c21bbcee7",
+      "sourceSha256": "4c48cebbc64e1f5895368d938a6494d7d038948af5f4b0931b84bd292b2b36ee",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cloud_forest_edge_lod0.png",
+      "decodedSha256": "ca603b666bae6a65cc57b6f99c05be317ba67841ca0590a12cfca7814f6e8451",
+      "quality": {
+        "rgbRmse": 2.6731608239850115,
+        "rgbaRmse": 2.778991725358864,
+        "maxChannelError": 78,
+        "channelRmse": [
+          2.5406415988056135,
+          2.64278761208877,
+          2.5210497634497497,
+          3.3311112308763726
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 3.3311112308763726,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cloud_forest_edge_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cloud_forest_edge_02",
+            "maxAlpha": 6
+          },
+          {
+            "id": "cloud_forest_edge_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "cloud_forest_edge_04",
+            "maxAlpha": 23
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter cloud_forest_edge_01 has alpha 14 >8",
+        "Decoded vegetation gutter cloud_forest_edge_02 has alpha 28 >8",
+        "Decoded vegetation gutter cloud_forest_edge_03 has alpha 32 >8",
+        "Decoded vegetation gutter cloud_forest_edge_04 has alpha 28 >8"
+      ],
+      "deliverySha256": "df81ad787c39cd85a64bd33d5b1f3383355cc58bcc941942be02fdd3a7fc5432",
+      "sourceSha256": "16f0a616e85c243ba8a80aca08d05209599e77972949f6fd8c6ccc927c31a150",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cloud_forest_edge_lod1.png",
+      "decodedSha256": "999cd6a8a0d39fcd9eeea6113e5d7811e4dac556262664eadee3c571722c0821",
+      "quality": {
+        "rgbRmse": 4.471238746702486,
+        "rgbaRmse": 4.913436388844044,
+        "maxChannelError": 130,
+        "channelRmse": [
+          4.979254217721492,
+          4.62595213291127,
+          4.12881016326227,
+          5.773036421496558
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 5.773036421496558,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cloud_forest_edge_01",
+            "maxAlpha": 14
+          },
+          {
+            "id": "cloud_forest_edge_02",
+            "maxAlpha": 28
+          },
+          {
+            "id": "cloud_forest_edge_03",
+            "maxAlpha": 32
+          },
+          {
+            "id": "cloud_forest_edge_04",
+            "maxAlpha": 28
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_cloud_forest_edge_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_cloud_forest_edge_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Opacity RMSE 8.0578 exceeds 8.0",
+        "Decoded vegetation gutter cloud_forest_edge_01 has alpha 23 >8",
+        "Decoded vegetation gutter cloud_forest_edge_02 has alpha 9 >8",
+        "Decoded vegetation gutter cloud_forest_edge_03 has alpha 56 >8"
+      ],
+      "deliverySha256": "0593f9cbf4b8c8a6749efd175945fc540479b7e3ea4514df47fd6614ddf6ec2d",
+      "sourceSha256": "eed37840d96e8975d70d179a03a75bbcbb6b7433670cc821f9ad2f4c272db6a9",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_cloud_forest_edge_lod2.png",
+      "decodedSha256": "bfe83bb55d38381c5a1318889bf4b819af64877a740bd9ec6ab2ed87dfa050aa",
+      "quality": {
+        "rgbRmse": 6.541377347514762,
+        "rgbaRmse": 6.976334212477886,
+        "maxChannelError": 115,
+        "channelRmse": [
+          7.151985330314868,
+          6.594555267771095,
+          5.9252945581283925,
+          8.057840109573117
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 8.057840109573117,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "cloud_forest_edge_01",
+            "maxAlpha": 23
+          },
+          {
+            "id": "cloud_forest_edge_02",
+            "maxAlpha": 9
+          },
+          {
+            "id": "cloud_forest_edge_03",
+            "maxAlpha": 56
+          },
+          {
+            "id": "cloud_forest_edge_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod0",
+      "path": "assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod0.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [],
+      "deliverySha256": "0c9b1208cd3e19febe86e4b013e4dfad207b7b2a7ead7a010b4b5b32696bdbf0",
+      "sourceSha256": "ffa81d558c170009f5ad175345df04441eb8b21a2a7886559a3f2a2288698e6d",
+      "width": 1024,
+      "height": 1024,
+      "mipCount": 11,
+      "gpuBytes": 626288,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_rooftop_container_gardens_lod0.png",
+      "decodedSha256": "56e088aa7989fb6fa5da6a28a06f785164428ea1aa944bf15bb608b8c87b91dd",
+      "quality": {
+        "rgbRmse": 3.771148398161552,
+        "rgbaRmse": 2.949088996912885,
+        "maxChannelError": 128,
+        "channelRmse": [
+          2.5906456443783137,
+          2.7641012875868984,
+          2.53786987465303,
+          3.7411254140169268
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 3.7411254140169268,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "rooftop_container_gardens_01",
+            "maxAlpha": 0
+          },
+          {
+            "id": "rooftop_container_gardens_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "rooftop_container_gardens_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "rooftop_container_gardens_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod1",
+      "path": "assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod1.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod1.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Decoded vegetation gutter rooftop_container_gardens_01 has alpha 25 >8",
+        "Decoded vegetation gutter rooftop_container_gardens_02 has alpha 28 >8",
+        "Decoded vegetation gutter rooftop_container_gardens_03 has alpha 13 >8",
+        "Decoded vegetation gutter rooftop_container_gardens_04 has alpha 33 >8"
+      ],
+      "deliverySha256": "c0212dd0ba6d2f23fa35c8cf745d15a85161c801e1a2d69fc676d6308876a633",
+      "sourceSha256": "6a6a7dc13be9fda9ea78af00f212dd73f1f247c0faade09ec4626d9d51c8e52a",
+      "width": 512,
+      "height": 512,
+      "mipCount": 10,
+      "gpuBytes": 158432,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_rooftop_container_gardens_lod1.png",
+      "decodedSha256": "fcca6386e64e7d0f4f70c1f40fbc7b8f635947251410d35e34a322ee505c1879",
+      "quality": {
+        "rgbRmse": 6.5497977922621535,
+        "rgbaRmse": 5.140270278889921,
+        "maxChannelError": 126,
+        "channelRmse": [
+          5.615765939513714,
+          4.623729221929482,
+          3.9506572514590355,
+          6.096402417534741
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 6.096402417534741,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "rooftop_container_gardens_01",
+            "maxAlpha": 25
+          },
+          {
+            "id": "rooftop_container_gardens_02",
+            "maxAlpha": 28
+          },
+          {
+            "id": "rooftop_container_gardens_03",
+            "maxAlpha": 13
+          },
+          {
+            "id": "rooftop_container_gardens_04",
+            "maxAlpha": 33
+          }
+        ]
+      },
+      "ok": false
+    },
+    {
+      "id": "vegetation_rooftop_container_gardens_lod2",
+      "path": "assets/textures/groundsky/vegetation/vegetation_rooftop_container_gardens_lod2.ktx2",
+      "sourcePath": "dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod2.png",
+      "kind": "vegetation",
+      "role": "billboard",
+      "errors": [
+        "Opacity RMSE 8.6521 exceeds 8.0",
+        "Decoded vegetation gutter rooftop_container_gardens_01 has alpha 28 >8"
+      ],
+      "deliverySha256": "27d9fe3103424f4603410b2cf847c3e47523993f0f829e991771122cba3f7bd8",
+      "sourceSha256": "4ca23b550f4767351555ebf3bb5b75f24072d432b36ae395c62e2ddeec703f30",
+      "width": 256,
+      "height": 256,
+      "mipCount": 9,
+      "gpuBytes": 40096,
+      "decodedPath": "/workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_rooftop_container_gardens_lod2.png",
+      "decodedSha256": "7cac36f89fe218fbeefa207fb44391f9401d8df78856b0c98ec61a50185e8fac",
+      "quality": {
+        "rgbRmse": 9.704265340931242,
+        "rgbaRmse": 7.560938145794558,
+        "maxChannelError": 118,
+        "channelRmse": [
+          8.581103087610316,
+          6.901589871111108,
+          5.704833059718559,
+          8.652095086720236
+        ],
+        "sourceAlphaRange": [
+          0,
+          255
+        ],
+        "decodedAlphaRange": [
+          0,
+          255
+        ],
+        "opacityRmse": 8.652095086720236,
+        "decodedSeams": {},
+        "cellGutters": [
+          {
+            "id": "rooftop_container_gardens_01",
+            "maxAlpha": 28
+          },
+          {
+            "id": "rooftop_container_gardens_02",
+            "maxAlpha": 0
+          },
+          {
+            "id": "rooftop_container_gardens_03",
+            "maxAlpha": 0
+          },
+          {
+            "id": "rooftop_container_gardens_04",
+            "maxAlpha": 0
+          }
+        ]
+      },
+      "ok": false
+    }
+  ],
+  "cityPhaseAlphaDifferences": [
+    {
+      "layer": "far",
+      "pairs": [
+        {
+          "phases": [
+            "day",
+            "dusk"
+          ],
+          "max": 59,
+          "mean": 0.023849964141845703,
+          "rmse": 0.4753858705532074
+        },
+        {
+          "phases": [
+            "day",
+            "night"
+          ],
+          "max": 41,
+          "mean": 0.036832332611083984,
+          "rmse": 0.5926941971079187
+        },
+        {
+          "phases": [
+            "dusk",
+            "night"
+          ],
+          "max": 65,
+          "mean": 0.03277397155761719,
+          "rmse": 0.554895496324146
+        }
+      ]
+    },
+    {
+      "layer": "middle",
+      "pairs": [
+        {
+          "phases": [
+            "day",
+            "dusk"
+          ],
+          "max": 79,
+          "mean": 0.03283500671386719,
+          "rmse": 0.8143699841407074
+        },
+        {
+          "phases": [
+            "day",
+            "night"
+          ],
+          "max": 81,
+          "mean": 0.04738330841064453,
+          "rmse": 0.9618337529926864
+        },
+        {
+          "phases": [
+            "dusk",
+            "night"
+          ],
+          "max": 83,
+          "mean": 0.040927886962890625,
+          "rmse": 0.8892726334765906
+        }
+      ]
+    },
+    {
+      "layer": "near",
+      "pairs": [
+        {
+          "phases": [
+            "day",
+            "dusk"
+          ],
+          "max": 111,
+          "mean": 0.05194664001464844,
+          "rmse": 1.0661786294106685
+        },
+        {
+          "phases": [
+            "day",
+            "night"
+          ],
+          "max": 98,
+          "mean": 0.06455230712890625,
+          "rmse": 1.1886703345783642
+        },
+        {
+          "phases": [
+            "dusk",
+            "night"
+          ],
+          "max": 93,
+          "mean": 0.055400848388671875,
+          "rmse": 1.0931665226600422
+        }
+      ]
+    }
+  ],
+  "ok": false,
+  "fileCount": 122,
+  "mipCount": 1316,
+  "failedCount": 15,
+  "elapsedSeconds": 52.212
+}

@@ -1,0 +1,22 @@
+UTC 2026-11-03T05:31:13.457Z
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tests/payload.mjs
+ok   textures                                                33.5 / 40 MB
+ok   models                                                  35.1 / 40 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       71.9 / 150 MB
+ok   estimated GPU texture memory                           505.0 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  3.29 MB  dev/beach_props/contact-08.png
+  3.24 MB  dev/beach_props/contact-07.png
+  3.16 MB  dev/beach_props/contact-02.png
+  3.12 MB  dev/beach_props/catalogue.jpg
+  3.11 MB  dev/beach_props/contact-04.png
+  2.99 MB  dev/beach_props/contact-03.png
+  2.90 MB  dev/beach_props/contact-05.png
+PAYLOAD OK
+
+[exit 0]

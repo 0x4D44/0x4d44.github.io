@@ -1,0 +1,59 @@
+[
+  {
+    "name": "validator.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tools/groundsky_validate.mjs",
+      "--complete",
+      "--json"
+    ],
+    "start": "2026-11-03T05:29:27.073Z",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "tests.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "la-ladera/tests/groundsky-assets.test.mjs"
+    ],
+    "start": "2026-11-03T05:29:44.551Z",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "mutations.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tests/groundsky-mutations.mjs",
+      "--out",
+      "la-ladera/dev/groundsky/verification"
+    ],
+    "start": "2026-11-03T05:30:12.847Z",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "payload-after.log",
+    "command": [
+      "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+      "la-ladera/tests/payload.mjs"
+    ],
+    "start": "2026-11-03T05:31:13.457Z",
+    "exitCode": 0,
+    "error": null
+  },
+  {
+    "name": "git-diff-check.log",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "start": "2026-11-03T05:31:13.923Z",
+    "exitCode": 0,
+    "error": null
+  }
+]

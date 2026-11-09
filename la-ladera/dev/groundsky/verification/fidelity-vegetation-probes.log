@@ -1,0 +1,59 @@
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.188 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.038 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha8a1.astc 6x6 -medium -j 2 -silent -cw 1 1 1 8 -a 1
+[exit 0; 0.158 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha8a1.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha8a1.png -j 2 -silent
+[exit 0; 0.031 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4a1-thorough.astc 6x6 -thorough -j 2 -silent -cw 1 1 1 4 -a 1
+[exit 0; 0.447 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4a1-thorough.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod2-alpha4a1-thorough.png -j 2 -silent
+[exit 0; 0.044 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.073 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_kikuyu_slopes_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.032 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.131 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_banana_groves_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.019 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.096 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cypress_hedges_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.015 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.157 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.033 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4.astc 6x6 -medium -j 2 -silent -cw 1 1 1 4
+[exit 0; 0.127 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4.png -j 2 -silent
+[exit 0; 0.032 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha8a1.astc 6x6 -medium -j 2 -silent -cw 1 1 1 8 -a 1
+[exit 0; 0.186 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha8a1.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha8a1.png -j 2 -silent
+[exit 0; 0.047 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4a1-thorough.astc 6x6 -thorough -j 2 -silent -cw 1 1 1 4 -a 1
+[exit 0; 0.203 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4a1-thorough.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_rooftop_container_gardens_lod2-alpha4a1-thorough.png -j 2 -silent
+[exit 0; 0.042 s]

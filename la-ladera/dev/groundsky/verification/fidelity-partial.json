@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "utc": "2026-11-03T05:04:16.725634+00:00",
+  "complete": false,
+  "gates": {
+    "rgbRmseMax": 12.0,
+    "maskRgbaRmseMax": 12.0,
+    "opacityRmseMax": 8.0,
+    "normalMeanDegreesMax": 8.0,
+    "seamMeanMax": 8.0,
+    "seamMaxMax": 80,
+    "transparentGutterMax": 8,
+    "opaqueAlphaMin": 247,
+    "metallicMax": 8
+  },
+  "notes": [
+    "All KTX2 mip levels are independently extracted, inflated and decoded.",
+    "Colour cutout RGB RMSE weights pixels by source opacity; opacity is tested separately.",
+    "Mask alpha is the fourth data channel, never a transparency weight.",
+    "Source tiling is exact; lossy delivery seam deltas are measured, not claimed exact.",
+    "These fixed gates catch catastrophic degradation; they do not replace visual review or native-GPU integration."
+  ],
+  "files": [
+    {
+      "id": "kikuyu_lush_albedo",
+      "path": "assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2",
+      "sourcePath": "dev/groundsky/masters/ground/kikuyu_lush_albedo.png",
+      "kind": "ground",
+      "role": "albedo",
+      "errors": [
+        "RuntimeError: Command exited 3: /workspace/scratch/32e9192f94b1/ktx-runtime/KTX-Software-4.4.2-Linux-x86_64/bin/ktx validate --warnings-as-errors /workspace/scratch/32e9192f94b1/groundsky-repo/la-ladera/assets/textures/groundsky/ground/kikuyu_lush_albedo.ktx2\nValidation failed\n\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 10 byteOffset is 472 but based on the vkFormat, DFD and image sizes the expected value is 468.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 9 byteOffset is 496 but based on the vkFormat, DFD and image sizes the expected value is 493.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 8 byteOffset is 528 but based on the vkFormat, DFD and image sizes the expected value is 521.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 7 byteOffset is 560 but based on the vkFormat, DFD and image sizes the expected value is 553.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 6 byteOffset is 640 but based on the vkFormat, DFD and image sizes the expected value is 635.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 5 byteOffset is 800 but based on the vkFormat, DFD and image sizes the expected value is 795.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 4 byteOffset is 1392 but based on the vkFormat, DFD and image sizes the expected value is 1387.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 3 byteOffset is 3232 but based on the vkFormat, DFD and image sizes the expected value is 3230.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 2 byteOffset is 10176 but based on the vkFormat, DFD and image sizes the expected value is 10175.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 1 byteOffset is 34288 but based on the vkFormat, DFD and image sizes the expected value is 34282.\nerror-4004: Invalid byteOffset in Level Index. byteOffset must match the expected value.\n    Level 0 byteOffset is 107792 but based on the vkFormat, DFD and image sizes the expected value is 107789.\nerror-5004: Non-conformant texture file accepted by libktx.\n    KTX 2.0 file does not conform to the specification but it is currently accepted by libktx.\n"
+      ],
+      "deliverySha256": "f561711e376e045ba06aac9cde9e67aa661519268b958241f92bbc98493bde0b",
+      "sourceSha256": "270b67fb7ec6e2cb82e6eb9ad88e784fe4bb79304b50d6d2747ea1dac28d75cf",
+      "ok": false
+    }
+  ],
+  "cityPhaseAlphaDifferences": [],
+  "ok": false,
+  "fileCount": 1,
+  "mipCount": 0,
+  "failedCount": 1,
+  "elapsedSeconds": 0.008
+}

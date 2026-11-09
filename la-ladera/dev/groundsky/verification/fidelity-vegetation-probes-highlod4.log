@@ -1,0 +1,23 @@
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim4-alpha2.astc 4x4 -medium -j 2 -silent -cw 1 1 1 2
+[exit 0; 0.579 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim4-alpha2.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod0-untrim4-alpha2.png -j 2 -silent
+[exit 0; 0.185 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim4-alpha2.astc 4x4 -medium -j 2 -silent -cw 1 1 1 2
+[exit 0; 0.415 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim4-alpha2.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_eucalyptus_stands_lod1-untrim4-alpha2.png -j 2 -silent
+[exit 0; 0.091 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim4-alpha2.astc 4x4 -medium -j 2 -silent -cw 1 1 1 2
+[exit 0; 0.325 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim4-alpha2.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod0-untrim4-alpha2.png -j 2 -silent
+[exit 0; 0.221 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cs /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-trim.png /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim4-alpha2.astc 4x4 -medium -j 2 -silent -cw 1 1 1 2
+[exit 0; 0.307 s]
+
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -ds /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim4-alpha2.astc /workspace/scratch/32e9192f94b1/vegetation-probes/vegetation_cloud_forest_edge_lod1-untrim4-alpha2.png -j 2 -silent
+[exit 0; 0.041 s]

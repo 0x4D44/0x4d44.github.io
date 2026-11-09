@@ -1,0 +1,214 @@
+TAP version 13
+# Subtest: [complete] the complete pack passes its independent decoded acceptance gate
+ok 1 - [complete] the complete pack passes its independent decoded acceptance gate
+  ---
+  duration_ms: 17021.259656
+  type: 'test'
+  ...
+# Subtest: [png_filters] every PNG row filter reconstructs the same exact pixels
+ok 2 - [png_filters] every PNG row filter reconstructs the same exact pixels
+  ---
+  duration_ms: 5.938708
+  type: 'test'
+  ...
+# Subtest: [png_palette] packed palette indices and transparency retain all colours and alpha
+ok 3 - [png_palette] packed palette indices and transparency retain all colours and alpha
+  ---
+  duration_ms: 0.382185
+  type: 'test'
+  ...
+# Subtest: [png_damage] CRC damage, truncation, trailing bytes and illegal filters fail decoding
+ok 4 - [png_damage] CRC damage, truncation, trailing bytes and illegal filters fail decoding
+  ---
+  duration_ms: 0.905634
+  type: 'test'
+  ...
+# Subtest: [mip_accounting] GPU accounting includes compressed block rounding and the complete mip tail
+ok 5 - [mip_accounting] GPU accounting includes compressed block rounding and the complete mip tail
+  ---
+  duration_ms: 9.115369
+  type: 'test'
+  ...
+# Subtest: [ktx_header] KTX2 dimensions, ASTC colour model and full mip counts are structural gates
+ok 6 - [ktx_header] KTX2 dimensions, ASTC colour model and full mip counts are structural gates
+  ---
+  duration_ms: 0.601265
+  type: 'test'
+  ...
+# Subtest: [ktx_overlap] a KTX2 mip cannot overlap its header or another section
+ok 7 - [ktx_overlap] a KTX2 mip cannot overlap its header or another section
+  ---
+  duration_ms: 0.530969
+  type: 'test'
+  ...
+# Subtest: [ktx_payload] all Zstd and zlib mip streams are inflated and damaged compressed bytes fail
+ok 8 - [ktx_payload] all Zstd and zlib mip streams are inflated and damaged compressed bytes fail
+  ---
+  duration_ms: 1.32881
+  type: 'test'
+  ...
+# Subtest: [coverage] removing a whole material cannot pass as a complete catalogue
+ok 9 - [coverage] removing a whole material cannot pass as a complete catalogue
+  ---
+  duration_ms: 1063.394052
+  type: 'test'
+  ...
+# Subtest: [missing_file] a declared texture must exist on disk
+ok 10 - [missing_file] a declared texture must exist on disk
+  ---
+  duration_ms: 760.727761
+  type: 'test'
+  ...
+# Subtest: [path_escape] texture paths cannot escape either allowed namespace
+ok 11 - [path_escape] texture paths cannot escape either allowed namespace
+  ---
+  duration_ms: 503.600298
+  type: 'test'
+  ...
+# Subtest: [binary_pins] changed file bytes cannot pass with stale SHA-256 pins
+ok 12 - [binary_pins] changed file bytes cannot pass with stale SHA-256 pins
+  ---
+  duration_ms: 381.511903
+  type: 'test'
+  ...
+# Subtest: [catalogue_agreement] catalogue and manifest cannot silently disagree on world scale
+ok 13 - [catalogue_agreement] catalogue and manifest cannot silently disagree on world scale
+  ---
+  duration_ms: 391.291753
+  type: 'test'
+  ...
+# Subtest: [colour_space] normal and ORM data cannot be declared as sRGB
+ok 14 - [colour_space] normal and ORM data cannot be declared as sRGB
+  ---
+  duration_ms: 473.090798
+  type: 'test'
+  ...
+# Subtest: [seam_x] changing one horizontal opposite edge fails after truthful re-pinning
+ok 15 - [seam_x] changing one horizontal opposite edge fails after truthful re-pinning
+  ---
+  duration_ms: 1362.439381
+  type: 'test'
+  ...
+# Subtest: [seam_y] changing one vertical opposite edge fails after truthful re-pinning
+ok 16 - [seam_y] changing one vertical opposite edge fails after truthful re-pinning
+  ---
+  duration_ms: 1581.915849
+  type: 'test'
+  ...
+# Subtest: [normal_vectors] normal pixels must be unit forward-facing tangent vectors
+ok 17 - [normal_vectors] normal pixels must be unit forward-facing tangent vectors
+  ---
+  duration_ms: 1430.127741
+  type: 'test'
+  ...
+# Subtest: [orm_packing] nonmetallic terrain cannot hide metallic values in packed blue
+ok 18 - [orm_packing] nonmetallic terrain cannot hide metallic values in packed blue
+  ---
+  duration_ms: 1418.935721
+  type: 'test'
+  ...
+# Subtest: [decal_alpha] a hard opaque decal is rejected even with correct PNG hashes
+ok 19 - [decal_alpha] a hard opaque decal is rejected even with correct PNG hashes
+  ---
+  duration_ms: 658.849274
+  type: 'test'
+  ...
+# Subtest: [decal_metres] decal physical size is constrained to the requested one to four metres
+ok 20 - [decal_metres] decal physical size is constrained to the requested one to four metres
+  ---
+  duration_ms: 829.931011
+  type: 'test'
+  ...
+# Subtest: [mask_channels] every packed mask channel has real full-range image content
+ok 21 - [mask_channels] every packed mask channel has real full-range image content
+  ---
+  duration_ms: 1191.469023
+  type: 'test'
+  ...
+# Subtest: [city_registration] day dusk and night retain the exact registered skyline silhouette
+ok 22 - [city_registration] day dusk and night retain the exact registered skyline silhouette
+  ---
+  duration_ms: 2011.935191
+  type: 'test'
+  ...
+# Subtest: [city_arc] the panorama must describe the requested 200 degree physical arc
+ok 23 - [city_arc] the panorama must describe the requested 200 degree physical arc
+  ---
+  duration_ms: 748.160364
+  type: 'test'
+  ...
+# Subtest: [haze_rows] a 256 by 4 gradient is four matching rows rather than an arbitrary small image
+ok 24 - [haze_rows] a 256 by 4 gradient is four matching rows rather than an arbitrary small image
+  ---
+  duration_ms: 445.343374
+  type: 'test'
+  ...
+# Subtest: [haze_hours] all five specified hours are present exactly once
+ok 25 - [haze_hours] all five specified hours are present exactly once
+  ---
+  duration_ms: 584.266216
+  type: 'test'
+  ...
+# Subtest: [vegetation_lod] vegetation cell UVs stay registered across all three LODs
+ok 26 - [vegetation_lod] vegetation cell UVs stay registered across all three LODs
+  ---
+  duration_ms: 898.949245
+  type: 'test'
+  ...
+# Subtest: [vegetation_gutters] vegetation alpha never touches the outer atlas border
+ok 27 - [vegetation_gutters] vegetation alpha never touches the outer atlas border
+  ---
+  duration_ms: 1664.128404
+  type: 'test'
+  ...
+# Subtest: [source_pairing] a delivery cannot be silently paired to two different masters
+ok 28 - [source_pairing] a delivery cannot be silently paired to two different masters
+  ---
+  duration_ms: 1073.043083
+  type: 'test'
+  ...
+# Subtest: [unlisted_payload] unlisted disk files are counted and rejected rather than hidden from budgets
+ok 29 - [unlisted_payload] unlisted disk files are counted and rejected rather than hidden from budgets
+  ---
+  duration_ms: 490.730756
+  type: 'test'
+  ...
+# Subtest: [file_budget] a file over four million bytes fails the fixed per-file budget
+ok 30 - [file_budget] a file over four million bytes fails the fixed per-file budget
+  ---
+  duration_ms: 472.349513
+  type: 'test'
+  ...
+# Subtest: [fixed_budgets] manifest declarations cannot increase the texture or GPU acceptance caps
+ok 31 - [fixed_budgets] manifest declarations cannot increase the texture or GPU acceptance caps
+  ---
+  duration_ms: 392.97821
+  type: 'test'
+  ...
+# Subtest: [offline_registry] the new library cannot enter a production boot asset registry
+ok 32 - [offline_registry] the new library cannot enter a production boot asset registry
+  ---
+  duration_ms: 332.931323
+  type: 'test'
+  ...
+# Subtest: [offline_js] production game JavaScript cannot import the dormant library
+ok 33 - [offline_js] production game JavaScript cannot import the dormant library
+  ---
+  duration_ms: 590.109438
+  type: 'test'
+  ...
+# Subtest: [review_proof] review PNG proofs must decode successfully after their own hash check
+ok 34 - [review_proof] review PNG proofs must decode successfully after their own hash check
+  ---
+  duration_ms: 317.757971
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 39165.749509

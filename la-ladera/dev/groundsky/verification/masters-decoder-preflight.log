@@ -1,0 +1,124 @@
+$ Node 22.16 independent master PNG decoder preflight
+dev/groundsky/masters/decals/dirt_clay_margin_albedo.png: 512x512, 35471 bytes, alpha clear/soft/opaque 178036/23720/60388
+dev/groundsky/masters/decals/dirt_footworn_spots_albedo.png: 512x512, 32631 bytes, alpha clear/soft/opaque 166196/74104/21844
+dev/groundsky/masters/decals/dirt_patch_soft_albedo.png: 512x512, 27915 bytes, alpha clear/soft/opaque 178084/23694/60366
+dev/groundsky/masters/decals/dirt_scuffed_path_albedo.png: 512x512, 25534 bytes, alpha clear/soft/opaque 165748/27203/69193
+dev/groundsky/masters/decals/grass_patch_dry_albedo.png: 512x512, 74407 bytes, alpha clear/soft/opaque 178067/23722/60355
+dev/groundsky/masters/decals/grass_patch_lush_albedo.png: 512x512, 66202 bytes, alpha clear/soft/opaque 165763/27214/69167
+dev/groundsky/masters/decals/grass_patch_moss_albedo.png: 512x512, 77813 bytes, alpha clear/soft/opaque 165762/27185/69197
+dev/groundsky/masters/decals/grass_patch_sparse_albedo.png: 512x512, 51210 bytes, alpha clear/soft/opaque 166077/74499/21568
+dev/groundsky/masters/decals/gravel_grass_intrusion_albedo.png: 512x512, 34815 bytes, alpha clear/soft/opaque 166171/74684/21289
+dev/groundsky/masters/decals/gravel_patch_coarse_albedo.png: 512x512, 56158 bytes, alpha clear/soft/opaque 165726/27181/69237
+dev/groundsky/masters/decals/gravel_patch_fine_albedo.png: 512x512, 59500 bytes, alpha clear/soft/opaque 165751/27154/69239
+dev/groundsky/masters/decals/gravel_spill_elongated_albedo.png: 512x512, 62776 bytes, alpha clear/soft/opaque 178046/23725/60373
+dev/groundsky/masters/decals/mud_patch_dark_albedo.png: 512x512, 24257 bytes, alpha clear/soft/opaque 178029/23720/60395
+dev/groundsky/masters/decals/mud_patch_puddle_albedo.png: 512x512, 21754 bytes, alpha clear/soft/opaque 165754/27200/69190
+dev/groundsky/masters/decals/mud_patch_rut_albedo.png: 512x512, 23330 bytes, alpha clear/soft/opaque 165705/27217/69222
+dev/groundsky/masters/decals/mud_patch_splash_albedo.png: 512x512, 35918 bytes, alpha clear/soft/opaque 178453/64888/18803
+dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png: 1024x1024, 37718 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png: 1024x1024, 42590 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png: 1024x1024, 51263 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/asphalt_repaired_albedo.png: 1024x1024, 43725 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/asphalt_repaired_normal.png: 1024x1024, 33318 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002350
+dev/groundsky/masters/ground/asphalt_repaired_orm.png: 1024x1024, 49354 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cobble_edge_moss_albedo.png: 1024x1024, 50833 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cobble_edge_moss_normal.png: 1024x1024, 175394 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/cobble_edge_moss_orm.png: 1024x1024, 89327 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png: 1024x1024, 33897 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cracked_concrete_dark_normal.png: 1024x1024, 28926 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/cracked_concrete_dark_orm.png: 1024x1024, 55591 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cracked_concrete_light_albedo.png: 1024x1024, 32337 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/cracked_concrete_light_normal.png: 1024x1024, 29122 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/cracked_concrete_light_orm.png: 1024x1024, 53059 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/dirt_brown_albedo.png: 1024x1024, 29949 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/dirt_brown_normal.png: 1024x1024, 32853 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/dirt_brown_orm.png: 1024x1024, 48400 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/dirt_dry_pale_albedo.png: 1024x1024, 30871 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/dirt_dry_pale_normal.png: 1024x1024, 32943 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/dirt_dry_pale_orm.png: 1024x1024, 55906 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/gravel_coarse_river_albedo.png: 1024x1024, 89850 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/gravel_coarse_river_normal.png: 1024x1024, 291579 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/gravel_coarse_river_orm.png: 1024x1024, 127135 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/gravel_fine_grey_albedo.png: 1024x1024, 92018 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/gravel_fine_grey_normal.png: 1024x1024, 254746 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/gravel_fine_grey_orm.png: 1024x1024, 107743 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png: 1024x1024, 124867 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png: 1024x1024, 254445 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png: 1024x1024, 49246 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_dry_albedo.png: 1024x1024, 121487 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_dry_normal.png: 1024x1024, 238961 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/kikuyu_dry_orm.png: 1024x1024, 53437 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_lush_albedo.png: 1024x1024, 120513 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_lush_normal.png: 1024x1024, 237245 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/kikuyu_lush_orm.png: 1024x1024, 48625 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_trampled_albedo.png: 1024x1024, 73503 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/kikuyu_trampled_normal.png: 1024x1024, 96973 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/kikuyu_trampled_orm.png: 1024x1024, 49628 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png: 1024x1024, 41412 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png: 1024x1024, 53690 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png: 1024x1024, 49302 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png: 1024x1024, 44688 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/leaf_litter_mixed_normal.png: 1024x1024, 67965 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/leaf_litter_mixed_orm.png: 1024x1024, 49915 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/mud_puddled_albedo.png: 1024x1024, 27123 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/mud_puddled_normal.png: 1024x1024, 21304 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/mud_puddled_orm.png: 1024x1024, 25116 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/mud_rutted_albedo.png: 1024x1024, 27495 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/mud_rutted_normal.png: 1024x1024, 30453 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/mud_rutted_orm.png: 1024x1024, 34977 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/packed_earth_footworn_albedo.png: 1024x1024, 31609 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/packed_earth_footworn_normal.png: 1024x1024, 34862 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/packed_earth_footworn_orm.png: 1024x1024, 53318 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/packed_earth_tyres_albedo.png: 1024x1024, 37810 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/packed_earth_tyres_normal.png: 1024x1024, 47961 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/packed_earth_tyres_orm.png: 1024x1024, 62718 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/red_clay_dry_albedo.png: 1024x1024, 36202 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/red_clay_dry_normal.png: 1024x1024, 55383 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/red_clay_dry_orm.png: 1024x1024, 67509 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/red_clay_wet_albedo.png: 1024x1024, 31708 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/red_clay_wet_normal.png: 1024x1024, 36618 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/red_clay_wet_orm.png: 1024x1024, 51253 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png: 1024x1024, 90311 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/sand_to_kikuyu_normal.png: 1024x1024, 131946 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.002448
+dev/groundsky/masters/ground/sand_to_kikuyu_orm.png: 1024x1024, 47736 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/stone_scatter_dark_albedo.png: 1024x1024, 39804 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/stone_scatter_dark_normal.png: 1024x1024, 91094 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/stone_scatter_dark_orm.png: 1024x1024, 72251 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/stone_scatter_pale_albedo.png: 1024x1024, 38043 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/ground/stone_scatter_pale_normal.png: 1024x1024, 83863 bytes, alpha clear/soft/opaque 0/0/1048576, normal maximum unit error 0.004794
+dev/groundsky/masters/ground/stone_scatter_pale_orm.png: 1024x1024, 67488 bytes, alpha clear/soft/opaque 0/0/1048576
+dev/groundsky/masters/masks/terrain_blend_masks_01.png: 1024x1024, 346161 bytes, alpha clear/soft/opaque 83266/701000/264310
+dev/groundsky/masters/masks/terrain_blend_masks_02.png: 1024x1024, 515281 bytes, alpha clear/soft/opaque 157261/702699/188616
+dev/groundsky/masters/city/city_far_day.png: 4096x512, 81091 bytes, alpha clear/soft/opaque 583891/29684/1483577
+dev/groundsky/masters/city/city_far_dusk.png: 4096x512, 81514 bytes, alpha clear/soft/opaque 583891/29684/1483577
+dev/groundsky/masters/city/city_far_night.png: 4096x512, 81698 bytes, alpha clear/soft/opaque 583891/29684/1483577
+dev/groundsky/masters/city/city_middle_day.png: 4096x512, 57993 bytes, alpha clear/soft/opaque 1127321/18421/951410
+dev/groundsky/masters/city/city_middle_dusk.png: 4096x512, 60340 bytes, alpha clear/soft/opaque 1127321/18421/951410
+dev/groundsky/masters/city/city_middle_night.png: 4096x512, 60608 bytes, alpha clear/soft/opaque 1127321/18421/951410
+dev/groundsky/masters/city/city_near_day.png: 4096x512, 44805 bytes, alpha clear/soft/opaque 1573672/21239/502241
+dev/groundsky/masters/city/city_near_dusk.png: 4096x512, 48509 bytes, alpha clear/soft/opaque 1573672/21239/502241
+dev/groundsky/masters/city/city_near_night.png: 4096x512, 48749 bytes, alpha clear/soft/opaque 1573672/21239/502241
+dev/groundsky/masters/haze/haze_07.png: 256x4, 262 bytes, alpha clear/soft/opaque 8/1012/4
+dev/groundsky/masters/haze/haze_12.png: 256x4, 269 bytes, alpha clear/soft/opaque 8/1012/4
+dev/groundsky/masters/haze/haze_17p2.png: 256x4, 250 bytes, alpha clear/soft/opaque 8/1012/4
+dev/groundsky/masters/haze/haze_19p5.png: 256x4, 263 bytes, alpha clear/soft/opaque 8/1012/4
+dev/groundsky/masters/haze/haze_22.png: 256x4, 254 bytes, alpha clear/soft/opaque 8/1012/4
+dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod0.png: 1024x1024, 74789 bytes, alpha clear/soft/opaque 653380/58237/336959
+dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod1.png: 512x512, 46267 bytes, alpha clear/soft/opaque 161181/19136/81827
+dev/groundsky/masters/vegetation/vegetation_eucalyptus_stands_lod2.png: 256x256, 20034 bytes, alpha clear/soft/opaque 38976/7168/19392
+dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod0.png: 1024x1024, 74535 bytes, alpha clear/soft/opaque 881333/37192/130051
+dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod1.png: 512x512, 30339 bytes, alpha clear/soft/opaque 219489/11002/31653
+dev/groundsky/masters/vegetation/vegetation_kikuyu_slopes_lod2.png: 256x256, 9915 bytes, alpha clear/soft/opaque 54228/3937/7371
+dev/groundsky/masters/vegetation/vegetation_banana_groves_lod0.png: 1024x1024, 48112 bytes, alpha clear/soft/opaque 675168/32612/340796
+dev/groundsky/masters/vegetation/vegetation_banana_groves_lod1.png: 512x512, 28819 bytes, alpha clear/soft/opaque 167480/10898/83766
+dev/groundsky/masters/vegetation/vegetation_banana_groves_lod2.png: 256x256, 14041 bytes, alpha clear/soft/opaque 41031/4511/19994
+dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod0.png: 1024x1024, 62969 bytes, alpha clear/soft/opaque 580644/38217/429715
+dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod1.png: 512x512, 34998 bytes, alpha clear/soft/opaque 143353/13311/105480
+dev/groundsky/masters/vegetation/vegetation_cypress_hedges_lod2.png: 256x256, 15242 bytes, alpha clear/soft/opaque 35080/4953/25503
+dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod0.png: 1024x1024, 89831 bytes, alpha clear/soft/opaque 569228/56505/422843
+dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod1.png: 512x512, 48510 bytes, alpha clear/soft/opaque 140197/18565/103382
+dev/groundsky/masters/vegetation/vegetation_cloud_forest_edge_lod2.png: 256x256, 20964 bytes, alpha clear/soft/opaque 33955/6873/24708
+dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod0.png: 1024x1024, 52836 bytes, alpha clear/soft/opaque 865176/45551/137849
+dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod1.png: 512x512, 28287 bytes, alpha clear/soft/opaque 214880/14191/33073
+dev/groundsky/masters/vegetation/vegetation_rooftop_container_gardens_lod2.png: 256x256, 12667 bytes, alpha clear/soft/opaque 52773/5594/7169
+PASS: decoded 122 PNG masters independently, 8003197 bytes, every declared seam exact, all normals within 0.035 unit error.

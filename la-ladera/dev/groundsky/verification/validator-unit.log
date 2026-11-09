@@ -1,0 +1,72 @@
+2026-11-03T05:05:22.194471+00:00
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --check la-ladera/tools/groundsky_png.mjs
+
+[exit 0]
+2026-11-03T05:05:22.216262+00:00
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --check la-ladera/tools/groundsky_validate.mjs
+
+[exit 0]
+2026-11-03T05:05:22.240393+00:00
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --check la-ladera/tests/groundsky-assets.test.mjs
+
+[exit 0]
+2026-11-03T05:05:22.261075+00:00
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --check la-ladera/tests/groundsky-mutations.mjs
+
+[exit 0]
+2026-11-03T05:05:22.280430+00:00
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --test '--test-name-pattern=\[(png_filters|png_palette|png_damage|mip_accounting|ktx_header|ktx_overlap|ktx_payload)\]' la-ladera/tests/groundsky-assets.test.mjs
+TAP version 13
+# Subtest: [png_filters] every PNG row filter reconstructs the same exact pixels
+ok 1 - [png_filters] every PNG row filter reconstructs the same exact pixels
+  ---
+  duration_ms: 5.579561
+  type: 'test'
+  ...
+# Subtest: [png_palette] packed palette indices and transparency retain all colours and alpha
+ok 2 - [png_palette] packed palette indices and transparency retain all colours and alpha
+  ---
+  duration_ms: 0.446512
+  type: 'test'
+  ...
+# Subtest: [png_damage] CRC damage, truncation, trailing bytes and illegal filters fail decoding
+ok 3 - [png_damage] CRC damage, truncation, trailing bytes and illegal filters fail decoding
+  ---
+  duration_ms: 2.082356
+  type: 'test'
+  ...
+# Subtest: [mip_accounting] GPU accounting includes compressed block rounding and the complete mip tail
+ok 4 - [mip_accounting] GPU accounting includes compressed block rounding and the complete mip tail
+  ---
+  duration_ms: 1.46115
+  type: 'test'
+  ...
+# Subtest: [ktx_header] KTX2 dimensions, ASTC colour model and full mip counts are structural gates
+ok 5 - [ktx_header] KTX2 dimensions, ASTC colour model and full mip counts are structural gates
+  ---
+  duration_ms: 0.680335
+  type: 'test'
+  ...
+# Subtest: [ktx_overlap] a KTX2 mip cannot overlap its header or another section
+ok 6 - [ktx_overlap] a KTX2 mip cannot overlap its header or another section
+  ---
+  duration_ms: 0.750771
+  type: 'test'
+  ...
+# Subtest: [ktx_payload] all zlib mip streams are inflated and damaged compressed bytes fail
+ok 7 - [ktx_payload] all zlib mip streams are inflated and damaged compressed bytes fail
+  ---
+  duration_ms: 1.119616
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.487142
+
+[exit 0]

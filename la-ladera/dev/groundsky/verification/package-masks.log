@@ -1,0 +1,75 @@
+UTC 2026-11-03T05:18:16Z
+$ la-ladera/tools/groundsky_build.py --astcenc /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 --only terrain_blend_masks_01,terrain_blend_masks_02 --preview-out /workspace/scratch/32e9192f94b1/decoded-delivery --log la-ladera/dev/groundsky/verification/package-masks.log
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-0.png /tmp/groundsky-encode-g247aczu/mip-0.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -dl /tmp/groundsky-encode-g247aczu/mip-0.astc /workspace/scratch/32e9192f94b1/decoded-delivery/masks/terrain_blend_masks_01.png -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-1.png /tmp/groundsky-encode-g247aczu/mip-1.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-2.png /tmp/groundsky-encode-g247aczu/mip-2.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-3.png /tmp/groundsky-encode-g247aczu/mip-3.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-4.png /tmp/groundsky-encode-g247aczu/mip-4.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-5.png /tmp/groundsky-encode-g247aczu/mip-5.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-6.png /tmp/groundsky-encode-g247aczu/mip-6.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-7.png /tmp/groundsky-encode-g247aczu/mip-7.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-8.png /tmp/groundsky-encode-g247aczu/mip-8.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-9.png /tmp/groundsky-encode-g247aczu/mip-9.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-10.png /tmp/groundsky-encode-g247aczu/mip-10.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-0.png /tmp/groundsky-encode-g247aczu/mip-0.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -dl /tmp/groundsky-encode-g247aczu/mip-0.astc /workspace/scratch/32e9192f94b1/decoded-delivery/masks/terrain_blend_masks_02.png -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-1.png /tmp/groundsky-encode-g247aczu/mip-1.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-2.png /tmp/groundsky-encode-g247aczu/mip-2.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-3.png /tmp/groundsky-encode-g247aczu/mip-3.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-4.png /tmp/groundsky-encode-g247aczu/mip-4.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-5.png /tmp/groundsky-encode-g247aczu/mip-5.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-6.png /tmp/groundsky-encode-g247aczu/mip-6.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-7.png /tmp/groundsky-encode-g247aczu/mip-7.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-8.png /tmp/groundsky-encode-g247aczu/mip-8.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-9.png /tmp/groundsky-encode-g247aczu/mip-9.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+$ /workspace/scratch/32e9192f94b1/astc-runtime/bin/astcenc-avx2 -cl /tmp/groundsky-encode-g247aczu/mip-10.png /tmp/groundsky-encode-g247aczu/mip-10.astc 6x6 -medium -j 2 -silent
+
+[exit 0]
+[package complete]

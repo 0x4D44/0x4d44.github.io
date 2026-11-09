@@ -1,0 +1,11 @@
+Final decoded delivery visual spot checks
+
+view_image /workspace/scratch/32e9192f94b1/decoded-delivery/vegetation/vegetation_banana_groves_lod2.png
+SHA-256 00e775faa9228f741dcfb0b4cead764e872153dbef43eee839462edcc5b4c7f7
+PASS visual inspection: recognizable silhouettes and retained details in actual decoded delivery pixels.
+
+view_image /workspace/scratch/32e9192f94b1/decoded-delivery/city/city_near_day.png
+SHA-256 c6891de72b3442ee88fa874a6e79538d070d8b2285ef6f9c4d0ad308d365214b
+PASS visual inspection: recognizable silhouettes and retained details in actual decoded delivery pixels.
+
+These checks do not claim native GPU support, real-time sampling, or game integration. Exact alpha statistics are in fidelity.json; the image viewer may display RGB under transparent pixels.

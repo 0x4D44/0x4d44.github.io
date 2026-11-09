@@ -1,0 +1,916 @@
+{
+  "ok": false,
+  "failures": [
+    "review proof: review needs contact sheets and two eye-height renders"
+  ],
+  "fileCount": 244,
+  "masterCount": 122,
+  "deliveryCount": 122,
+  "textureBytes": 11947713,
+  "masterBytes": 5990566,
+  "deliveryBytes": 5957147,
+  "gpuBytes": 71203680,
+  "rgbaFallbackBytes": 580939256,
+  "edges": [
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_gravel_edge_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/asphalt_repaired_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cobble_edge_moss_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_dark_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/cracked_concrete_light_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_brown_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/dirt_dry_pale_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_coarse_river_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/gravel_fine_grey_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_clover_edge_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_dry_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_lush_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/kikuyu_trampled_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_eucalyptus_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/leaf_litter_mixed_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_puddled_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/mud_rutted_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_footworn_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/packed_earth_tyres_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_dry_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/red_clay_wet_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/sand_to_kikuyu_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_dark_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_albedo.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_albedo.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_normal.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_normal.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_orm.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/ground/stone_scatter_pale_orm.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_01.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_01.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_02.png",
+      "axis": "x",
+      "max": 0,
+      "mean": 0
+    },
+    {
+      "path": "dev/groundsky/masters/masks/terrain_blend_masks_02.png",
+      "axis": "y",
+      "max": 0,
+      "mean": 0
+    }
+  ],
+  "counts": {
+    "decal": 16,
+    "ground": 72,
+    "blend-mask": 2,
+    "city": 9,
+    "haze": 5,
+    "vegetation": 18
+  },
+  "reviewCount": 0,
+  "maxTextureBytes": 12000000,
+  "maxFileBytes": 4000000,
+  "maxGpuBytes": 80000000
+}

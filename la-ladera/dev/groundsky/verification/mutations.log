@@ -1,0 +1,40 @@
+UTC 2026-11-03T05:30:12.847Z
+$ /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tests/groundsky-mutations.mjs --out la-ladera/dev/groundsky/verification
+PASS baseline: 34/34 under Node 22.16.0
+PASS mutation [complete]: attributable assertion failure — the complete pack passes its independent decoded acceptance gate
+PASS mutation [png_filters]: attributable assertion failure — every PNG row filter reconstructs the same exact pixels
+PASS mutation [png_palette]: attributable assertion failure — packed palette indices and transparency retain all colours and alpha
+PASS mutation [png_damage]: attributable assertion failure — CRC damage, truncation, trailing bytes and illegal filters fail decoding
+PASS mutation [mip_accounting]: attributable assertion failure — GPU accounting includes compressed block rounding and the complete mip tail
+PASS mutation [ktx_header]: attributable assertion failure — KTX2 dimensions, ASTC colour model and full mip counts are structural gates
+PASS mutation [ktx_overlap]: attributable assertion failure — a KTX2 mip cannot overlap its header or another section
+PASS mutation [ktx_payload]: attributable assertion failure — all Zstd and zlib mip streams are inflated and damaged compressed bytes fail
+PASS mutation [coverage]: attributable assertion failure — removing a whole material cannot pass as a complete catalogue
+PASS mutation [missing_file]: attributable assertion failure — a declared texture must exist on disk
+PASS mutation [path_escape]: attributable assertion failure — texture paths cannot escape either allowed namespace
+PASS mutation [binary_pins]: attributable assertion failure — changed file bytes cannot pass with stale SHA-256 pins
+PASS mutation [catalogue_agreement]: attributable assertion failure — catalogue and manifest cannot silently disagree on world scale
+PASS mutation [colour_space]: attributable assertion failure — normal and ORM data cannot be declared as sRGB
+PASS mutation [seam_x]: attributable assertion failure — changing one horizontal opposite edge fails after truthful re-pinning
+PASS mutation [seam_y]: attributable assertion failure — changing one vertical opposite edge fails after truthful re-pinning
+PASS mutation [normal_vectors]: attributable assertion failure — normal pixels must be unit forward-facing tangent vectors
+PASS mutation [orm_packing]: attributable assertion failure — nonmetallic terrain cannot hide metallic values in packed blue
+PASS mutation [decal_alpha]: attributable assertion failure — a hard opaque decal is rejected even with correct PNG hashes
+PASS mutation [decal_metres]: attributable assertion failure — decal physical size is constrained to the requested one to four metres
+PASS mutation [mask_channels]: attributable assertion failure — every packed mask channel has real full-range image content
+PASS mutation [city_registration]: attributable assertion failure — day dusk and night retain the exact registered skyline silhouette
+PASS mutation [city_arc]: attributable assertion failure — the panorama must describe the requested 200 degree physical arc
+PASS mutation [haze_rows]: attributable assertion failure — a 256 by 4 gradient is four matching rows rather than an arbitrary small image
+PASS mutation [haze_hours]: attributable assertion failure — all five specified hours are present exactly once
+PASS mutation [vegetation_lod]: attributable assertion failure — vegetation cell UVs stay registered across all three LODs
+PASS mutation [vegetation_gutters]: attributable assertion failure — vegetation alpha never touches the outer atlas border
+PASS mutation [source_pairing]: attributable assertion failure — a delivery cannot be silently paired to two different masters
+PASS mutation [unlisted_payload]: attributable assertion failure — unlisted disk files are counted and rejected rather than hidden from budgets
+PASS mutation [file_budget]: attributable assertion failure — a file over four million bytes fails the fixed per-file budget
+PASS mutation [fixed_budgets]: attributable assertion failure — manifest declarations cannot increase the texture or GPU acceptance caps
+PASS mutation [offline_registry]: attributable assertion failure — the new library cannot enter a production boot asset registry
+PASS mutation [offline_js]: attributable assertion failure — production game JavaScript cannot import the dormant library
+PASS mutation [review_proof]: attributable assertion failure — review PNG proofs must decode successfully after their own hash check
+MUTATIONS OK: 34/34 named tests observed red on their wrong inputs; baseline unchanged
+
+[exit 0]
