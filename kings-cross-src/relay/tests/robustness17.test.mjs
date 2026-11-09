@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createTrustState } from '../trust.mjs';
 import { createScheduleStore, filterSchedule, nameSchedule } from '../schedule.mjs';
@@ -84,7 +85,7 @@ test('round17 schedule ignores malformed optional corpus rows without losing cal
 
 
 test('round17 schedule cache refuses file symlinks and sanitizes corrupt cache errors', async t => {
-  const base = path.resolve('.scratch/round17-cache-tests');
+  const base = fileURLToPath(new URL('../../../.scratch/round17-cache-tests', import.meta.url));
   await mkdir(base, { recursive: true });
   const dir = await mkdtemp(path.join(base, 'cache-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -112,7 +113,7 @@ test('round17 TRUST malformed supplied schedule rows cannot crash matching or en
 
 
 test('round17 successful refreshes keep the same seven-date memo bound as cache reads', async t => {
-  const base = path.resolve('.scratch/round17-cache-tests');
+  const base = fileURLToPath(new URL('../../../.scratch/round17-cache-tests', import.meta.url));
   await mkdir(base, { recursive: true });
   const dataDir = await mkdtemp(path.join(base, 'memo-'));
   t.after(() => rm(dataDir, { recursive: true, force: true }));
