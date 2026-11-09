@@ -3,7 +3,7 @@
 // end of civil twilight (-6 degrees) and off in daylight, cloud dims and greys, rain darkens, fog pulls the scene in and flattens the sky.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CLEAR, CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, NIGHT_EXPOSURE, skyRig, smoothstep } from '../daylight.ts';
+import { CLEAR, CLEAR_FOG, CLOUD_EXPOSURE, CLOUD_EXPOSURE_DRY, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, describeSun, fogAmount, fogRange, lampLevelFor, MOON_INTENSITY, NIGHT_EXPOSURE, skyRig, smoothstep } from '../daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig, SkyWeather } from '../daylight.ts';
 
 // web/src/world.ts DAYLIGHT, spelled out (web/tests/atmosphere.test.ts holds the two together): a bright sun over a softer sky with a
@@ -349,6 +349,19 @@ test('exposure: the filmic grade runs at the day\'s exposure, higher at night an
     assert.ok(Math.abs(x - previous) < 0.03, `the exposure jumped at ${e}: ${previous} to ${x}`);
     previous = x;
   }
+});
+
+test('exposure under a dry overcast deck opens a further CLOUD_EXPOSURE_DRY (round four, E3): rain, dusk and night keep the exposure they had', () => {
+  assert.equal(CLOUD_EXPOSURE, 0.9);
+  assert.ok(CLOUD_EXPOSURE_DRY > 0.5 && CLOUD_EXPOSURE_DRY < 1.5, `a lift of a half to a stop and a half, not a runaway: ${CLOUD_EXPOSURE_DRY}`);
+  const noon = { dry: rig(55, { cloud: 1 }).exposure, rain: rig(55, { cloud: 1, rain: 1 }).exposure, drizzle: rig(55, { cloud: 1, rain: 0.2 }).exposure };
+  assert.ok(Math.abs(noon.dry - DAY_EXPOSURE * (1 + CLOUD_EXPOSURE + CLOUD_EXPOSURE_DRY)) < 1e-12, `a dry overcast noon: ${noon.dry}`);
+  assert.ok(Math.abs(noon.rain - DAY_EXPOSURE * (1 + CLOUD_EXPOSURE)) < 1e-12, `rain keeps the exposure it had: ${noon.rain}`);
+  assert.ok(noon.dry > noon.drizzle && noon.drizzle > noon.rain, 'a drizzle keeps some of the lift, as it keeps some of the sky\'s');
+  assert.equal(rig(55).exposure, DAY_EXPOSURE, 'a clear day is as it was');
+  assert.ok(rig(55, { cloud: 0.5 }).exposure > DAY_EXPOSURE * (1 + 0.5 * CLOUD_EXPOSURE), 'and the lift grows with the cloud');
+  // at dusk and at night the day's lift is not wanted (the sky's own is gone by dayAmount 0): the exposure is the old one
+  for (const e of [-30, -12, -6]) assert.equal(rig(e, { cloud: 1 }).exposure, rig(e).exposure, `no lift at ${e} degrees`);
 });
 
 test('the evening is as dim as it was: only the day\'s light was raised, not the dusk\'s and the night\'s', () => {

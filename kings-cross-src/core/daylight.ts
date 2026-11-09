@@ -229,6 +229,13 @@ export function describeSun(elevationDeg: number): string {
 export const NIGHT_EXPOSURE = 2.3;
 export const DAY_EXPOSURE = 1.25;
 export const CLOUD_EXPOSURE = 0.9;
+/**
+ * What a dry overcast day opens a further, as a multiple of the clear day's exposure (round four, lighting-materials E3): with the sun at 12% of itself and the whole of the
+ * light the sky's, the stock tower of the south front drew L 48 where R-d's overcast one is L 58, the Midland's brick L 41 against R-c's 57 and the road L 15 (the sky dome is not
+ * tone-mapped, so it does not move). 0.75 puts them at about L 58, 56 and 42. The sky's lift goes in rain (gone by a rain amount of 0.5) and this goes with it, so a rainy day's
+ * exposure is what it was.
+ */
+export const CLOUD_EXPOSURE_DRY = 0.75;
 
 /** The share of the daylight stand-ins (the shed's sky-lit lining and glazing) kept at night, so they never go quite dead. */
 export const DAYLIGHT_FLOOR = 0.12;
@@ -299,6 +306,6 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
     glow: { colour: mixRgb(k.sun, [1, 0.9, 0.7], 0.25), strength: glowStrength },
     fog: fogColour,
     fogAmount: fog,
-    exposure: lerp(NIGHT_EXPOSURE, DAY_EXPOSURE, dayAmount) * (1 + CLOUD_EXPOSURE * cloud * dayAmount),
+    exposure: lerp(NIGHT_EXPOSURE, DAY_EXPOSURE, dayAmount) * (1 + (CLOUD_EXPOSURE + CLOUD_EXPOSURE_DRY * lift) * cloud * dayAmount),
   };
 }
