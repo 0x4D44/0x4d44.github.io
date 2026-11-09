@@ -14,6 +14,7 @@
 // With a `terrain` (core/terrain.ts) the city stands on that ground; without one it stands on the flat plane at GROUND_Y.
 import * as THREE from 'three';
 import { buildCity, CITY_KEYS, PAGE_DRAPE } from '../../core/city.ts';
+import { railShapes } from '../../core/curves.ts';
 import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
 import type { KxData } from '../../core/osm.ts';
@@ -128,7 +129,7 @@ export function treeMesh(spots: readonly TreeSpot[], groundY = GROUND_Y): THREE.
 export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: CityOptions = {}): City {
   const hidden = opts.hidden ?? new Set<number>();
   const exclude = [...(opts.exclude ?? []), ...data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts)];
-  const rails = railSegments(data); // surface track only: a street that crosses it rides over it
+  const rails = railSegments(data, railShapes(data)); // surface track only, as drawn (core/curves.ts): a street that crosses it rides over it
   const drape = opts.terrain ? { ...PAGE_DRAPE, ...opts.drape } : undefined;
   const build: CityBuildOptions = { hidden, exclude, groundY: GROUND_Y, trees: opts.trees !== false, rails: [...rails.main, ...rails.siding], terrain: opts.terrain, drape };
   const built = buildCity(data.buildings, city, build);

@@ -33,6 +33,7 @@
 //             "circular portals decorated with a cornice and voussoir".
 //   [WP-COP]  Wikipedia, "Copenhagen Tunnel": three twin-track bores, 594 yd (543 m), between 0 mi 65 ch and 1 mi 12 ch from King's Cross;
 //             two bores carry trains, the eastern one does not.
+import { railShapes, shapeFrom } from './curves.ts';
 import type { Pt } from './geo.ts';
 import type { KxData, Rail } from './osm.ts';
 import { FT, pointInPolygon } from './station.ts';
@@ -1016,24 +1017,29 @@ export interface EnvelopeStation {
 /** How wide the open tracks are on the approach to a mouth: at each `step` metres back from the face, the outermost rail positions across it (the cutting's walls follow them). Rails more than `corridor` m beyond the face's half width are other lines. */
 export function approachEnvelope(data: Pick<KxData, 'nodes' | 'rails'>, mouth: Pick<Mouth, 'origin' | 'axis' | 'across' | 'halfWidth'>, reach = 75, step = 15, corridor = 10): EnvelopeStation[] {
   const pos = new Map<number, Pt>(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const shapes = railShapes(data); // the rails as drawn (core/curves.ts), not the OSM chords
   const out: EnvelopeStation[] = [];
   for (let d = 0; d <= reach; d += step) out.push({ d, lo: null, hi: null });
   for (const r of data.rails) {
     if (r.tunnel) continue;
     for (let i = 0; i + 1 < r.nodes.length; i++) {
-      const a = pos.get(r.nodes[i] as number);
-      const b = pos.get(r.nodes[i + 1] as number);
-      if (!a || !b) continue;
-      const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1.5));
-      for (let k = 0; k <= n; k++) {
-        const x = a[0] + ((b[0] - a[0]) * k) / n - mouth.origin[0];
-        const z = a[1] + ((b[1] - a[1]) * k) / n - mouth.origin[1];
-        const u = x * mouth.across[0] + z * mouth.across[1];
-        const d = -(x * mouth.axis[0] + z * mouth.axis[1]);
-        if (Math.abs(u) > mouth.halfWidth + corridor || d < -step / 2 || d > reach + step / 2) continue;
-        const st = out[Math.max(0, Math.min(out.length - 1, Math.round(d / step)))] as EnvelopeStation;
-        st.lo = st.lo === null ? u : Math.min(st.lo, u);
-        st.hi = st.hi === null ? u : Math.max(st.hi, u);
+      if (!pos.get(r.nodes[i] as number) || !pos.get(r.nodes[i + 1] as number)) continue;
+      const curve = shapeFrom(shapes, r.nodes[i] as number, r.nodes[i + 1] as number);
+      if (!curve) continue;
+      for (let j = 0; j + 1 < curve.length; j++) {
+        const a = curve[j] as Pt;
+        const b = curve[j + 1] as Pt;
+        const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1.5));
+        for (let k = 0; k <= n; k++) {
+          const x = a[0] + ((b[0] - a[0]) * k) / n - mouth.origin[0];
+          const z = a[1] + ((b[1] - a[1]) * k) / n - mouth.origin[1];
+          const u = x * mouth.across[0] + z * mouth.across[1];
+          const d = -(x * mouth.axis[0] + z * mouth.axis[1]);
+          if (Math.abs(u) > mouth.halfWidth + corridor || d < -step / 2 || d > reach + step / 2) continue;
+          const st = out[Math.max(0, Math.min(out.length - 1, Math.round(d / step)))] as EnvelopeStation;
+          st.lo = st.lo === null ? u : Math.min(st.lo, u);
+          st.hi = st.hi === null ? u : Math.max(st.hi, u);
+        }
       }
     }
   }

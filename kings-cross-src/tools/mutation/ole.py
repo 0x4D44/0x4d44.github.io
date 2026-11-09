@@ -51,8 +51,14 @@ MUTATIONS = [
     ('only the first tunnel mouth pushes masts out', CORE, 'mouths.some(m => Math.hypot(p[0] - m[0], p[1] - m[1]) < OLE.mouthReach)', 'mouths.slice(0, 1).some(m => Math.hypot(p[0] - m[0], p[1] - m[1]) < OLE.mouthReach)'),
     ('mouth taper never reaches the minimum', CORE, 'return OLE.minSystemHeight + (OLE.systemHeight - OLE.minSystemHeight) * smooth;', 'return OLE.systemHeight * (0.5 + 0.5 * smooth);'),
     # The wires.
-    ('wires are not cut at the supports', CORE, 'if (s.va !== s.vb) for (const v of vs) {', 'if (false) for (const v of vs) {'),
-    ('no droppers between supports', CORE, 'for (let k = 1; k * OLE.dropperSpacing < len; k++) ts.add(k * OLE.dropperSpacing / len);', ''),
+    ('wires are not cut at the supports', CORE, 'for (const v of vs) for (const at of crossingsOf(s, v)) if (at > 0 && at < len) ts.add(at);', ''),
+    ('no droppers between supports', CORE, 'for (let k = 1; k * OLE.dropperSpacing < len; k++) ts.add(k * OLE.dropperSpacing);', ''),
+    # The curves (core/curves.ts): the wires and the masts follow the track the rails are drawn on.
+    ('wires and masts on the OSM chords', CORE, 'const curves = input.curves ?? railShapes(input.data);\n  const segs', 'const curves: RailShapes = new Map();\n  const segs'),
+    ('wires cut only at droppers and supports, cutting across the curve', CORE, 'for (const q of s.path) if (q.s > 0 && q.s < len) ts.add(q.s);', ''),
+    ('a dropper at every joint of the curve', CORE, 'if (a.hang) {', 'if (true) {'),
+    ('masts kept clear of the chords only', CORE, 'for (let k = 0; k + 1 < curve.length; k++) out.push([curve[k]!, curve[k + 1]!]);', 'out.push([a, b]);'),
+    ('stagger square to the chord at a support', CORE, 'return { u, x, z, wx: x - dir[1] * off, wz: z + dir[0] * off };', 'return { u, x, z, wx: x - (s.b[1] - s.a[1]) / Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]) * off, wz: z + (s.b[0] - s.a[0]) / Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]) * off };'),
     ('stagger laid along the track instead of across it', CORE, 'const n: Pt = [-dir[1], dir[0]];', 'const n: Pt = dir;'),
     ('stagger not applied to the wire', CORE, '      const off = staggerAt(v);\n      const q: Pt', '      const off = 0;\n      const q: Pt'),
     ('catenary may rise through the shed roof', CORE, 'Math.min(catenaryAt(v, systemHeightAt(p, mouths)), roofCap(u, v) - C)', 'catenaryAt(v, systemHeightAt(p, mouths))'),

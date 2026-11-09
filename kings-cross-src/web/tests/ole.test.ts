@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import * as THREE from 'three';
+import { railShapes, shapeFrom } from '../../core/curves.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { tunnelMouths } from '../../core/landmarks.ts';
@@ -21,7 +22,13 @@ const mouths = tunnelMouths(data);
 const ole = buildOle(data, layout, mouths.map(m => m.origin));
 const plan = ole.userData.plan as OlePlan;
 const pos = new Map<number, Pt>(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
-const surface = data.rails.filter(r => !r.tunnel).flatMap(r => r.nodes.slice(1).map((n, i) => [pos.get(r.nodes[i]!)!, pos.get(n)!] as [Pt, Pt]));
+// the track as drawn and run on: every surface segment's curve (core/curves.ts), as its pieces
+const shapes = railShapes(data);
+const curveOf = (a: number, b: number): Pt[] => shapeFrom(shapes, a, b)!;
+const surface = data.rails.filter(r => !r.tunnel).flatMap(r => r.nodes.slice(1).flatMap((n, i) => {
+  const c = curveOf(r.nodes[i]!, n);
+  return c.slice(1).map((q, k) => [c[k]!, q] as [Pt, Pt]);
+}));
 const wires = Array.from({ length: plan.wires.length / 6 }, (_, i) => plan.wires.slice(i * 6, i * 6 + 6));
 
 test('ole (real data): two draw calls, within 60k triangles and 6 draws', () => {
@@ -34,14 +41,26 @@ test('ole (real data): two draw calls, within 60k triangles and 6 draws', () => 
 });
 
 test('ole (real data): every in-zone electrified surface segment carries a contact wire within the stagger of its centre line', () => {
+  // sampled on the curved centre line the rails are drawn on, at every joint of its pieces and a quarter, half and three quarters along
   let checked = 0;
   for (const r of data.rails) {
     if (r.tunnel || r.electrified !== 'contact_line') continue;
     for (let i = 0; i + 1 < r.nodes.length; i++) {
       const a = pos.get(r.nodes[i]!)!, b = pos.get(r.nodes[i + 1]!)!;
       if (!inStationZone(layout, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) continue;
-      for (const t of [0.25, 0.5, 0.75]) {
-        const p: Pt = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      const curve = curveOf(r.nodes[i]!, r.nodes[i + 1]!);
+      const total = curve.slice(1).reduce((sum, q, k) => sum + Math.hypot(q[0] - curve[k]![0], q[1] - curve[k]![1]), 0);
+      const at = (f: number): Pt => { // the point a share f of the way along the curve
+        let left = f * total;
+        for (let k = 0; k + 1 < curve.length; k++) {
+          const p = curve[k]!, q = curve[k + 1]!, l = Math.hypot(q[0] - p[0], q[1] - p[1]);
+          if (left <= l) return [p[0] + (q[0] - p[0]) * left / l, p[1] + (q[1] - p[1]) * left / l];
+          left -= l;
+        }
+        return curve.at(-1)!;
+      };
+      const samples = [...curve.slice(1, -1), ...[0.25, 0.5, 0.75].map(at)];
+      for (const p of samples) {
         const near = wires.some(w => w[1] === OLE.contactHeight && w[4] === OLE.contactHeight && distanceToSegment(p, [w[0]!, w[2]!], [w[3]!, w[5]!]) <= OLE.stagger + 1e-6);
         assert.ok(near, `no contact wire over ${r.id} at ${p}`);
         checked++;

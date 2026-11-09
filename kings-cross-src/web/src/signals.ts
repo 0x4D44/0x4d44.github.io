@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { qualifiesSignalEvidence, signalStates, updateBytes } from '../../core/sclass.ts';
 import type { ByteState, SignalEvidence, SignalHypothesis, SignalState, TimedTdEvent } from '../../core/sclass.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
+import { edgePoint } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import { isSurfacePlatform, longAxis, platformSouthEnd, stationPlatforms } from '../../core/station.ts';
 import type { KxData, Platform } from '../../core/osm.ts';
@@ -148,7 +149,9 @@ export function validatedSignalHypotheses(value: unknown, area = 'Y9'): SignalHy
 
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
 export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
-  options: { fetchImpl?: typeof fetch; area?: string; platforms?: readonly Platform[] } = {}) {
+  options: { fetchImpl?: typeof fetch; area?: string; platforms?: readonly Platform[];
+    /** the track's curves (buildGraph(data, { curves: true })): heads stand off the curved centre line, square to it */
+    track?: Pick<Graph, 'pos' | 'shapes'> } = {}) {
   const area = options.area ?? 'Y9';
   const records: DrawnSignal[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
@@ -174,11 +177,20 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     resources.add(geometry); resources.add(material);
     return new THREE.Mesh(geometry, material);
   }
+  /** Where the head's track point is and which way trains pass it: on the drawn curve when the track has one, else as built. */
+  function onTrack(signal: OverlaySignal): { point: [number, number]; travel: [number, number] } {
+    const track = options.track, { from, to, t } = signal.edge;
+    if (!track?.shapes || !track.pos.has(from) || !track.pos.has(to)) return { point: signal.edge.point, travel: signal.travel };
+    const { point, dir } = edgePoint(track, { a: from, b: to }, t);
+    const sign = dir[0] * signal.travel[0] + dir[1] * signal.travel[1] < 0 ? -1 : 1;
+    return { point, travel: [dir[0] * sign, dir[1] * sign] };
+  }
   function pose(signal: OverlaySignal, group: THREE.Group): void {
     const side = signal.side === 'over-track' ? 0 : signal.side === 'left' ? 1 : -1;
-    group.position.set(signal.edge.point[0] + side * 2 * signal.travel[1], 0,
-      signal.edge.point[1] - side * 2 * signal.travel[0]);
-    const facing = signal.facing ?? [-signal.travel[0], -signal.travel[1]];
+    const { point, travel } = onTrack(signal);
+    group.position.set(point[0] + side * 2 * travel[1], 0,
+      point[1] - side * 2 * travel[0]);
+    const facing = options.track?.shapes ? [-travel[0], -travel[1]] : signal.facing ?? [-signal.travel[0], -signal.travel[1]];
     group.rotation.y = Math.atan2(facing[0], facing[1]);
   }
   function makeHead(signal: OverlaySignal, inferred = false): DrawnSignal {

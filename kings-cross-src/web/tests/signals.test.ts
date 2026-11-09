@@ -6,6 +6,7 @@ import { createReplayFeed, createTimeline } from '../src/feed.ts';
 import { buildSignalOverlay } from '../../tools/build-signals.ts';
 import type { KxData, Platform } from '../../core/osm.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
+import { buildGraph, edgePoint } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import { project, round } from '../../core/geo.ts';
 import { createSignals, platformStarter } from '../src/signals.ts';
@@ -598,4 +599,35 @@ test('empty missing invalid and overlapping snapshots clear stale bytes atomical
     snapshot({ '10': '04' }, { sclass: { addresses: 1, data: [] } })];
   for (const event of invalid) { layer.apply(row()); assert.equal(drawn.state, 'proceed'); layer.apply(event); assert.equal(drawn.state, 'unknown'); }
   layer.apply(row()); layer.apply(snapshot({}, { area: 'OTHER' })); assert.equal(drawn.state, 'proceed'); layer.dispose();
+});
+
+test('on a curved track a head stands 2 m beside the drawn curve, square to it and facing along it, not beside the OSM chord', () => {
+  // invented: a 150 m radius in 40 m chords (they sag 1.3 m inside the arc); signals mid-chord, both sides and both ways
+  const nodes: [number, number, number][] = [];
+  for (let k = 0; k <= 4; k++) { const a = (k * 40) / 150; nodes.push([k + 1, 150 * (1 - Math.cos(a)), -150 * Math.sin(a)]); }
+  const track = buildGraph({ nodes, rails: [{ id: 9, nodes: nodes.map(([id]) => id), service: 'main', tunnel: false, bridge: false, layer: 0 }] }, { curves: true });
+  const chordOf = (from: number, to: number, t: number): { point: [number, number]; travel: [number, number] } => {
+    const a = track.pos.get(from)!, b = track.pos.get(to)!, l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    return { point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], travel: [(b[0] - a[0]) / l, (b[1] - a[1]) / l] };
+  };
+  const cases = [{ from: 2, to: 3, t: 0.5, side: 'left' as const }, { from: 4, to: 3, t: 0.3, side: 'right' as const }];
+  const signals = cases.map((c, i) => { const { point, travel } = chordOf(c.from, c.to, c.t);
+    return signal({ id: i + 1, ref: undefined, berth: undefined, side: c.side, edge: { wayId: 9, from: c.from, to: c.to, t: c.t, point }, travel, facing: [-travel[0], -travel[1]] }); });
+  const layer = createSignals({ attribution: 'synthetic', signals }, new THREE.Scene(), { track });
+  const drawn = layer.signals();
+  assert.equal(drawn.length, 2);
+  cases.forEach((c, i) => {
+    const { point, dir } = edgePoint(track, { a: c.from, b: c.to }, c.t);
+    const side = c.side === 'left' ? 1 : -1;
+    const group = drawn[i]!.group;
+    const expected: [number, number] = [point[0] + side * 2 * dir[1], point[1] - side * 2 * dir[0]];
+    assert.ok(Math.hypot(group.position.x - expected[0], group.position.z - expected[1]) < 1e-9, `head ${i} at ${group.position.x},${group.position.z}, not ${expected}`);
+    assert.ok(Math.abs(group.rotation.y - Math.atan2(-dir[0], -dir[1])) < 1e-9, `head ${i} faces along the curve`);
+    const chord = chordOf(c.from, c.to, c.t).point;
+    assert.ok(Math.hypot(point[0] - chord[0], point[1] - chord[1]) > 0.3, 'the curve is well off the chord here');
+  });
+  // without the curves, where the overlay put it
+  const plain = createSignals({ attribution: 'synthetic', signals }, new THREE.Scene()).signals()[0]!.group;
+  const s0 = signals[0]!;
+  assert.ok(Math.hypot(plain.position.x - (s0.edge.point[0] + 2 * s0.travel[1]), plain.position.z - (s0.edge.point[1] - 2 * s0.travel[0])) < 1e-9);
 });

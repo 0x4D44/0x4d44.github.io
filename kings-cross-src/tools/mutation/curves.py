@@ -30,9 +30,13 @@ M = [
     ('motion heading along the chord', 'core/motion.ts', 'const d = edgePoint(graph, t.pos.edge, t.pos.t).dir;', f'const d = edgePoint({CHORDS}, t.pos.edge, t.pos.t).dir;'),
     ('railSegments ignores the curves', 'core/scene.ts', 'if (curve) {', 'if (curve && false) {'),
     ('buildTrack draws the chords', 'web/src/track.ts', "}, railShapes(data));", '});'),
+    ('signal heads beside the OSM chord', 'web/src/signals.ts', 'if (!track?.shapes || !track.pos.has(from) || !track.pos.has(to)) return', 'if (true) return'),
+    ('signal heads offset along the chord direction', 'web/src/signals.ts', 'return { point, travel: [dir[0] * sign, dir[1] * sign] };', 'return { point, travel: signal.travel };'),
+    ('platform edges classified against the chords', 'web/src/furniture.ts', 'const curve = shapeFrom(shapes, r.nodes[i] as number, r.nodes[i + 1] as number) ?? [a, b];', 'const curve = [a, b];'),
+    ('tunnel cuttings follow the chords', 'core/landmarks.ts', 'const shapes = railShapes(data); // the rails as drawn', 'const shapes = new Map() as ReturnType<typeof railShapes>; // the rails as drawn'),
     ('rails butted, not mitred', 'web/src/track.ts', 'return { x, z, mx: (before[0] + after[0]) / k, mz: (before[1] + after[1]) / k };', 'return { x, z, mx: after[0], mz: after[1] };'),
 ]
-TESTS = ['core/tests/curves.test.ts', 'core/tests/motion.test.ts', 'web/tests/track.test.ts', 'web/tests/trains-live.test.ts']
+TESTS = ['core/tests/curves.test.ts', 'core/tests/motion.test.ts', 'web/tests/track.test.ts', 'web/tests/trains-live.test.ts', 'web/tests/signals.test.ts']
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, 'curves') as work:
     def run():

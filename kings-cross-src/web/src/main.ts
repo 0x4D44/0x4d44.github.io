@@ -72,7 +72,9 @@ function start(): void {
 
   const scene = new THREE.Scene();
   const world = addWorld(scene, { grid: params.has('grid') || params.has('bare'), bare: params.has('bare') });
-  const signalLayer = params.get('signals') === '0' ? null : createSignals(signalData as SignalOverlay, scene);
+  // the track's curves (core/curves.ts): the trains run on them, and the signal heads stand beside them
+  const graph = buildGraph(data, { curves: true });
+  const signalLayer = params.get('signals') === '0' ? null : createSignals(signalData as SignalOverlay, scene, { track: graph });
 
   const rails = railSegments(data); // camera bounds
   const layout = shedLayout(data);
@@ -210,7 +212,6 @@ function start(): void {
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
   // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
-  const graph = buildGraph(data, { curves: true }); // trains run on the drawn curves (core/curves.ts)
   let motion: ReturnType<typeof createMotion> | null = null;
   let liveTrains: ReturnType<typeof createLiveTrains> | null = null;
   let feed: TrainFeed | null = null;

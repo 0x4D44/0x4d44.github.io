@@ -38,6 +38,7 @@
 // arcs web/src/shed.ts draws): if the shed's roof changes shape, so must that function.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { railShapes, shapeFrom } from '../../core/curves.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
@@ -233,18 +234,21 @@ export type PlatformEdgeKind = 'track' | 'end' | 'wall' | 'shared' | 'open';
 /** One straight piece of running rail, [from, to] in world (x, z). */
 export type TrackSegment = [Pt, Pt];
 
-/** The surface rails of the data as segments, or undefined when it does not carry them. */
+/** The surface rails of the data as the pieces of their drawn curves (core/curves.ts), or undefined when it does not carry them. */
 export function trackSegments(data: Partial<Pick<KxData, 'nodes' | 'rails'>>): TrackSegment[] | undefined {
   if (!data.nodes || !data.rails) return undefined;
   const pos = new Map<number, Pt>();
   for (const [id, x, z] of data.nodes) pos.set(id, [x, z]);
+  const shapes = railShapes({ nodes: data.nodes, rails: data.rails });
   const out: TrackSegment[] = [];
   for (const r of data.rails) {
     if (r.tunnel) continue;
     for (let i = 0; i + 1 < r.nodes.length; i++) {
       const a = pos.get(r.nodes[i] as number);
       const b = pos.get(r.nodes[i + 1] as number);
-      if (a && b) out.push([a, b]);
+      if (!a || !b) continue;
+      const curve = shapeFrom(shapes, r.nodes[i] as number, r.nodes[i + 1] as number) ?? [a, b];
+      for (let k = 0; k + 1 < curve.length; k++) out.push([curve[k] as Pt, curve[k + 1] as Pt]);
     }
   }
   return out;

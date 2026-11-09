@@ -20,7 +20,13 @@
 // of every rail. Near a tunnel mouth (OLE.mouthReach) the masts stand further out, behind the
 // approach retaining walls, and the system height tapers so the catenary passes under the crown.
 //
+// THE TRACK IS CURVED. Each wired segment is the smooth curve the page draws its rails on and the
+// trains run on (core/curves.ts railShapes), not the OSM chord: the wires are registered on the curve at
+// every cross line and dropper, and the masts stand clear of the curved rails.
+//
 // FIGURES. Sources are recorded in OLE_SOURCES; ASSUMED marks the rest.
+import { railShapes, shapeFrom } from './curves.ts';
+import type { RailShapes } from './curves.ts';
 import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
 import { worldToShed } from './station.ts';
@@ -126,13 +132,42 @@ export interface OleInput {
   arches?: readonly [number, number][];
   /** tunnel mouth origins (core/landmarks.ts tunnelMouths): the wires taper and masts step out near them */
   mouths?: readonly Pt[];
+  /** the track's curves (core/curves.ts railShapes of the whole data); computed from `data` when not given */
+  curves?: RailShapes;
 }
 
-interface Seg { a: Pt; b: Pt; ua: number; va: number; ub: number; vb: number }
+/** A point of a wired segment's curve: world, shed frame, and metres along the curve from a. */
+interface PathPoint { p: Pt; u: number; v: number; s: number }
+/** One wired OSM segment, from node a to node b, along its curve `path` (just a and b where it is straight). */
+interface Seg { a: Pt; b: Pt; ua: number; va: number; ub: number; vb: number; path: PathPoint[]; length: number }
 
-/** The wired segments: surface, electrified=contact_line, midpoint in the zone. */
-export function wiredSegments(input: Pick<OleInput, 'data' | 'layout' | 'inZone'>): Seg[] {
+/** The curve's point, shed coordinates and unit direction `at` metres along a segment's path. */
+function along(s: Seg, at: number): { p: Pt; u: number; v: number; dir: Pt } {
+  const path = s.path;
+  let i = 0;
+  while (i + 2 < path.length && path[i + 1]!.s < at) i++;
+  const a = path[i]!, b = path[i + 1]!, l = b.s - a.s;
+  const f = l > 0 ? Math.max(0, Math.min(1, (at - a.s) / l)) : 0;
+  const dir: Pt = l > 0 ? [(b.p[0] - a.p[0]) / l, (b.p[1] - a.p[1]) / l] : [0, 0];
+  return { p: [a.p[0] + (b.p[0] - a.p[0]) * f, a.p[1] + (b.p[1] - a.p[1]) * f], u: a.u + (b.u - a.u) * f, v: a.v + (b.v - a.v) * f, dir };
+}
+
+/** Metres along a segment's path where it crosses the cross line v (a piece ending on it counts once). */
+function crossingsOf(s: Seg, v: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 1 < s.path.length; i++) {
+    const a = s.path[i]!, b = s.path[i + 1]!;
+    if (a.v === b.v || (a.v - v) * (b.v - v) > 0) continue;
+    const at = a.s + (b.s - a.s) * (v - a.v) / (b.v - a.v);
+    if (!out.some(x => Math.abs(x - at) < 1e-9)) out.push(at);
+  }
+  return out;
+}
+
+/** The wired segments: surface, electrified=contact_line, midpoint in the zone; each along its curve. */
+export function wiredSegments(input: Pick<OleInput, 'data' | 'layout' | 'inZone' | 'curves'>): Seg[] {
   const pos = new Map<number, Pt>(input.data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const curves = input.curves ?? railShapes(input.data);
   const out: Seg[] = [];
   for (const r of input.data.rails) {
     if (r.tunnel || r.electrified !== 'contact_line') continue;
@@ -141,21 +176,30 @@ export function wiredSegments(input: Pick<OleInput, 'data' | 'layout' | 'inZone'
       if (!a || !b || (a[0] === b[0] && a[1] === b[1])) continue;
       if (!input.inZone((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) continue;
       const sa = worldToShed(input.layout, a), sb = worldToShed(input.layout, b);
-      out.push({ a, b, ua: sa.u, va: sa.v, ub: sb.u, vb: sb.v });
+      const curve = shapeFrom(curves, r.nodes[i]!, r.nodes[i + 1]!) ?? [a, b];
+      let run = 0;
+      const path = curve.map((q, k) => {
+        if (k) run += Math.hypot(q[0] - curve[k - 1]![0], q[1] - curve[k - 1]![1]);
+        const sq = worldToShed(input.layout, q);
+        return { p: q, u: sq.u, v: sq.v, s: run };
+      });
+      out.push({ a, b, ua: sa.u, va: sa.v, ub: sb.u, vb: sb.v, path, length: run });
     }
   }
   return out;
 }
 
-/** Every surface rail segment (wired or not): what a mast must stand clear of. */
-function surfaceSegments(data: Pick<KxData, 'nodes' | 'rails'>): [Pt, Pt][] {
+/** Every surface rail segment (wired or not), as its curve's pieces: what a mast must stand clear of. */
+function surfaceSegments(data: Pick<KxData, 'nodes' | 'rails'>, curves: RailShapes): [Pt, Pt][] {
   const pos = new Map<number, Pt>(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
   const out: [Pt, Pt][] = [];
   for (const r of data.rails) {
     if (r.tunnel) continue;
     for (let i = 0; i + 1 < r.nodes.length; i++) {
       const a = pos.get(r.nodes[i]!), b = pos.get(r.nodes[i + 1]!);
-      if (a && b) out.push([a, b]);
+      if (!a || !b) continue;
+      const curve = shapeFrom(curves, r.nodes[i]!, r.nodes[i + 1]!) ?? [a, b];
+      for (let k = 0; k + 1 < curve.length; k++) out.push([curve[k]!, curve[k + 1]!]);
     }
   }
   return out;
@@ -174,8 +218,8 @@ function toWorld(l: Pick<ShedLayout, 'origin' | 'heading'>, u: number, v: number
 }
 
 /** The cross-line positions v: from OLE.firstV every OLE.span to the end of the wired track. */
-export function supportVs(segs: readonly Seg[]): number[] {
-  const vMax = Math.max(...segs.flatMap(s => [s.va, s.vb]));
+export function supportVs(segs: readonly (Pick<Seg, 'va' | 'vb'> & Partial<Pick<Seg, 'path'>>)[]): number[] {
+  const vMax = Math.max(...segs.flatMap(s => [s.va, s.vb, ...(s.path ?? []).map(q => q.v)]));
   const out: number[] = [];
   for (let v = OLE.firstV; v < vMax; v += OLE.span) out.push(v);
   return out;
@@ -207,7 +251,8 @@ export function catenaryAt(v: number, system: number): number {
 
 export function olePlan(input: OleInput): OlePlan {
   const { layout, mouths = [] } = input;
-  const segs = wiredSegments(input);
+  const curves = input.curves ?? railShapes(input.data);
+  const segs = wiredSegments({ ...input, curves });
   const lines: SupportLine[] = [];
   const members: Member[] = [];
   const wires: number[] = [];
@@ -233,22 +278,21 @@ export function olePlan(input: OleInput): OlePlan {
   // ---- wires: each segment cut at the cross lines and at dropper spacing
   const vs = supportVs(segs);
   for (const s of segs) {
-    const len = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]);
-    const dir: Pt = [(s.b[0] - s.a[0]) / len, (s.b[1] - s.a[1]) / len];
-    const n: Pt = [-dir[1], dir[0]];
-    const ts = new Set<number>([0, 1]);
-    for (let k = 1; k * OLE.dropperSpacing < len; k++) ts.add(k * OLE.dropperSpacing / len);
-    if (s.va !== s.vb) for (const v of vs) {
-      const t = (v - s.va) / (s.vb - s.va);
-      if (t > 0 && t < 1) ts.add(t);
-    }
+    // the wire's points, in metres along the curve: its ends, a dropper every OLE.dropperSpacing, every cross line
+    const len = s.length;
+    const ts = new Set<number>([0, len]);
+    for (let k = 1; k * OLE.dropperSpacing < len; k++) ts.add(k * OLE.dropperSpacing);
+    for (const v of vs) for (const at of crossingsOf(s, v)) if (at > 0 && at < len) ts.add(at);
+    // and every joint of the curve's pieces, so the wire follows the curve; a dropper hangs only at the points above
+    const hangs = new Set(ts);
+    for (const q of s.path) if (q.s > 0 && q.s < len) ts.add(q.s);
     const sorted = [...ts].sort((a, b) => a - b);
     const pts = sorted.map(t => {
-      const p: Pt = [s.a[0] + (s.b[0] - s.a[0]) * t, s.a[1] + (s.b[1] - s.a[1]) * t];
-      const u = s.ua + (s.ub - s.ua) * t, v = s.va + (s.vb - s.va) * t;
+      const { p, u, v, dir } = along(s, t);
+      const n: Pt = [-dir[1], dir[0]];
       const off = staggerAt(v);
       const q: Pt = [p[0] + n[0] * off, p[1] + n[1] * off];
-      return { q, top: catenary(p, u, v) };
+      return { q, top: catenary(p, u, v), hang: hangs.has(t) };
     });
     for (let i = 0; i + 1 < pts.length; i++) {
       const a = pts[i]!, b = pts[i + 1]!;
@@ -257,12 +301,12 @@ export function olePlan(input: OleInput): OlePlan {
     }
     for (let i = 1; i + 1 < pts.length; i++) {
       const a = pts[i]!;
-      wires.push(a.q[0], C, a.q[1], a.q[0], a.top, a.q[1]); counts.droppers++;
+      if (a.hang) { wires.push(a.q[0], C, a.q[1], a.q[0], a.top, a.q[1]); counts.droppers++; }
     }
   }
 
   // ---- supports on each cross line
-  const rails = surfaceSegments(input.data);
+  const rails = surfaceSegments(input.data, curves);
   const signals = (input.data.signals ?? []).map(s => [s.x, s.z] as Pt);
   const clearOf = (p: Pt, clearance: number): boolean =>
     rails.every(([a, b]) => distanceToSegment(p, a, b) >= clearance) && signals.every(s => Math.hypot(p[0] - s[0], p[1] - s[1]) >= 1.5);
@@ -270,13 +314,11 @@ export function olePlan(input: OleInput): OlePlan {
   for (const v of vs) {
     const seen = new Set<string>();
     const held = new Set<object>();
-    const crossings = segs.filter(s => s.va !== s.vb && (s.va - v) * (s.vb - v) <= 0).map(s => {
-      const t = (v - s.va) / (s.vb - s.va);
-      const len = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]), off = staggerAt(v);
-      const x = s.a[0] + (s.b[0] - s.a[0]) * t, z = s.a[1] + (s.b[1] - s.a[1]) * t;
-      // the wire's own position at the support: the centre line moved by the stagger
-      return { u: s.ua + (s.ub - s.ua) * t, x, z, wx: x - (s.b[1] - s.a[1]) / len * off, wz: z + (s.b[0] - s.a[0]) / len * off };
-    }).filter(c => { // a node exactly on the line is met by both its segments
+    const crossings = segs.flatMap(s => crossingsOf(s, v).map(at => {
+      const { p: [x, z], u, dir } = along(s, at), off = staggerAt(v);
+      // the wire's own position at the support: the curved centre line moved by the stagger, square to it
+      return { u, x, z, wx: x - dir[1] * off, wz: z + dir[0] * off };
+    })).filter(c => { // a node exactly on the line is met by both its segments
       const key = `${c.x.toFixed(3)},${c.z.toFixed(3)}`;
       return seen.has(key) ? false : (seen.add(key), true);
     }).sort((a, b) => a.u - b.u);

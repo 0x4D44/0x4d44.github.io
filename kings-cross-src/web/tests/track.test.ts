@@ -35,6 +35,8 @@ import {
   trackChains,
 } from '../src/track.ts';
 import { addTerrain, GROUND_Y } from '../src/world.ts';
+import { trackSegments } from '../src/furniture.ts';
+import { approachEnvelope } from '../../core/landmarks.ts';
 import { addPortals, portalHole } from '../src/portals.ts';
 import { tunnelMouths } from '../../core/landmarks.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
@@ -810,4 +812,40 @@ test('terrain and flat-mode portal banks hide level tunnel track from overview a
       assert.ok(hit.distance < origin.distanceTo(target));
     }
   }
+});
+
+test('curves: the trackside readers take the drawn curves: platform edges classify against them and the tunnel cuttings follow them', () => {
+  // furniture.ts trackSegments (which platform edges face a rail) is the drawn pieces of every surface track
+  const surface = railSegments({ nodes: data.nodes, rails: data.rails.filter((r) => !r.tunnel) }, railShapes(data));
+  const drawn = [...surface.main, ...surface.siding];
+  const pieces = trackSegments(data)!;
+  assert.equal(pieces.length, drawn.length / 6, 'one piece per drawn piece');
+  const key = (a: Pt, b: Pt): string => (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1]) ? `${a}|${b}` : `${b}|${a}`);
+  const want = new Set<string>();
+  for (let i = 0; i + 5 < drawn.length; i += 6) want.add(key([drawn[i]!, drawn[i + 2]!], [drawn[i + 3]!, drawn[i + 5]!]));
+  for (const [a, b] of pieces) assert.ok(want.has(key(a, b)), `piece ${a} - ${b} is not on the drawn track`);
+  // landmarks.ts approachEnvelope (the cutting walls at a tunnel mouth): on a curved approach it measures the curve, not the chord
+  const R = 120;
+  const nodes: KxData['nodes'] = [];
+  for (let k = 0; k <= 3; k++) { const a = (k * 30) / R; nodes.push([k + 1, R * (1 - Math.cos(a)), R * Math.sin(a)]); }
+  const way = { nodes, rails: [{ id: 1, nodes: [1, 2, 3, 4], service: 'main' as const, tunnel: false, bridge: false, layer: 0 }] };
+  const curve = railSegments(way, railShapes(way)).main;
+  const mouth = { origin: [0, 0] as Pt, axis: [0, -1] as Pt, across: [1, 0] as Pt, halfWidth: 40 };
+  const env = approachEnvelope(way, mouth, 90, 15, 10);
+  // each station holds the rails sampled (every 1.5 m) within half a step of it: its widest is the drawn curve's widest over that window, less what the sampling misses
+  const xAt = (z: number): number => {
+    for (let i = 0; i + 5 < curve.length; i += 6) {
+      const z0 = curve[i + 2]!, z1 = curve[i + 5]!;
+      if ((z0 - z) * (z1 - z) <= 0 && z0 !== z1) return curve[i]! + (curve[i + 3]! - curve[i]!) * (z - z0) / (z1 - z0);
+    }
+    return NaN;
+  };
+  let checked = 0;
+  for (const st of env) {
+    if (st.hi === null || st.d < 10 || st.d + 7.5 > 90) continue;
+    const x = Math.max(...[...curve.filter((_, i) => i % 3 === 2).map((z, i) => ({ z, x: curve[i * 3]! }))].filter((q) => q.z >= st.d - 7.5 && q.z <= st.d + 7.5).map((q) => q.x), ...[xAt(st.d + 7.5), xAt(st.d - 7.5)].filter(Number.isFinite));
+    checked++;
+    assert.ok(st.hi <= x + 1e-9 && st.hi > x - 0.3, `at ${st.d} m the envelope reaches ${st.hi.toFixed(2)}, the drawn rail ${x.toFixed(2)}`);
+  }
+  assert.ok(checked >= 4, `${checked} stations`);
 });

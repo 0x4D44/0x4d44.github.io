@@ -2,7 +2,10 @@
 // supports stand, and the tunnel-mouth taper. web/tests/ole.test.ts runs the same plan on the real OSM data.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { railShapes } from '../curves.ts';
+import type { Pt } from '../geo.ts';
 import type { KxData, Rail } from '../osm.ts';
+import { railSegments } from '../scene.ts';
 import { catenaryAt, distanceToSegment, OLE, OLE_SOURCES, olePlan, staggerAt, supportVs, systemHeightAt, wiredSegments } from '../ole.ts';
 
 // A frame with heading 0: u = x - 0, v = -(z - 0). Tracks run north (towards -z).
@@ -240,4 +243,51 @@ test('ole: a node exactly on a cross line is one crossing, held once', () => {
   const at = (kind: string): number => plan.members.filter(m => m.kind === kind && Math.hypot(m.a[0] - c.wx, m.a[2] - c.wz) < 1e-9).length;
   assert.equal(at('arm'), 1, 'one registration arm');
   assert.equal(at('tube'), 1, 'one drop tube');
+});
+
+test('ole: on a curved track the wires follow the curve the rails are drawn on, registered square to it, with a dropper every 9 m', () => {
+  // invented: a 400 m radius bending east as it runs north, OSM nodes every 30 m (the chords sag 0.28 m inside the arc)
+  const R = 400;
+  const nodes: [number, number, number][] = [];
+  for (let k = 0; k <= 10; k++) { const a = (k * 30) / R; nodes.push([k + 1, 10 + R * (1 - Math.cos(a)), -R * Math.sin(a)]); }
+  const data = { nodes, rails: [rail(1, nodes.map(([id]) => id))] };
+  const drawn = railSegments(data, railShapes(data)).main;
+  const pieces: [Pt, Pt][] = [];
+  for (let i = 0; i + 5 < drawn.length; i += 6) pieces.push([[drawn[i]!, drawn[i + 2]!], [drawn[i + 3]!, drawn[i + 5]!]]);
+  const nearest = (p: Pt): { d: number; dir: Pt } => {
+    let best = { d: Infinity, dir: [0, 0] as Pt };
+    for (const [a, b] of pieces) {
+      const d = distanceToSegment(p, a, b), l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (d < best.d) best = { d, dir: [(b[0] - a[0]) / l, (b[1] - a[1]) / l] };
+    }
+    return best;
+  };
+  const plan = olePlan({ data, layout, inZone: everywhere });
+  const wires = segs(plan.wires);
+  const contact = wires.filter(w => w[1] === OLE.contactHeight && w[4] === OLE.contactHeight && (w[0] !== w[3] || w[2] !== w[5]));
+  // every contact wire vertex is within the stagger of the curve, and every point of the curve has a contact wire within it
+  for (const w of contact) for (const p of [[w[0]!, w[2]!], [w[3]!, w[5]!]] as Pt[]) assert.ok(nearest(p).d <= OLE.stagger + 1e-6, `wire vertex ${p} is ${nearest(p).d.toFixed(3)} m off the curve`);
+  let checked = 0;
+  for (const [a, b] of pieces) for (const f of [0, 0.5]) {
+    const p: Pt = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+    assert.ok(contact.some(w => distanceToSegment(p, [w[0]!, w[2]!], [w[3]!, w[5]!]) <= OLE.stagger + 1e-6), `no contact wire over the curve at ${p}`);
+    checked++;
+  }
+  assert.ok(checked > 100, `${checked} points of the curve`);
+  // at each support the track point is on the curve and the wire is moved square to it by the stagger
+  const crossings = plan.lines.flatMap(l => l.crossings.map(c => ({ ...c, v: l.v })));
+  assert.ok(crossings.length >= 6, `${crossings.length} support crossings`);
+  for (const c of crossings) {
+    const { d, dir } = nearest([c.x, c.z]);
+    assert.ok(d < 1e-6, `support crossing ${c.x},${c.z} is ${d} m off the curve`);
+    const off: Pt = [c.wx - c.x, c.wz - c.z];
+    assert.ok(Math.abs(Math.hypot(...off) - Math.abs(staggerAt(c.v))) < 1e-9, 'moved by the stagger');
+    assert.ok(Math.abs(off[0] * dir[0] + off[1] * dir[1]) < 1e-6, `registered ${(off[0] * dir[0] + off[1] * dir[1]).toExponential(2)} m along the track, not square to it`);
+  }
+  // droppers: every OLE.dropperSpacing within a segment (so under twice that across a node, where the count restarts), and not one at every joint of the curve
+  const droppers = wires.filter(w => w[0] === w[3] && w[2] === w[5]).map(w => -w[2]!).sort((a, b) => a - b);
+  assert.equal(droppers.length, plan.counts.droppers);
+  for (let i = 0; i + 1 < droppers.length; i++) assert.ok(droppers[i + 1]! - droppers[i]! < 2 * OLE.dropperSpacing, `droppers ${droppers[i]} and ${droppers[i + 1]} are too far apart`);
+  const arc = 300;
+  assert.ok(droppers.length <= Math.ceil(arc / OLE.dropperSpacing) + crossings.length + 10, `${droppers.length} droppers on ${arc} m: one at every joint?`);
 });
