@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - roof height is not concourseHeight(r): lay features on the nodes' rim-scaled surface (concourse.ts surface)
+  buildConcourse sets a node's height to concourseHeight(canopy, canopy.radius * r / (r + toRim)), toRim being the distance to the OSM outline, so the
+  roof falls to the rim wherever the outline is. On the west the outline is about 74 m from the funnel, not the canopy's 61.6 m radius: 54 to 58 m out the
+  true surface is 3 to 5 m higher than the plain parabola, and a rooflight placed with concourseHeight(r) sat that far under the cladding while every unit
+  test of its own geometry passed. Test a laid-on feature by a ray from the standpoint that must reach it first, and by its height over the surface the
+  nodes use (web/tests/concourse-skin.test.ts hover), never over the plain profile.
 - 2026-11-09 - the track is drawn on curves, not OSM chords: read train positions with edgePoint (kings-cross-src core/graph.ts)
   core/curves.ts bends every rail segment through its nodes (up to 0.86 m off the chord in the station zone, 2.5 m beyond). A
   position lerped between graph.pos nodes sits that far off the drawn rails. Build the graph with { curves: true } and read
