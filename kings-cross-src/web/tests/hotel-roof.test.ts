@@ -11,12 +11,14 @@ import type { Key } from '../src/landmarks.ts';
 import { Batch } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
-const ASSUMED_DORMER_REAR_INSET = 0.68;
-const ASSUMED_STACK_CAP_DEPTH = 1.8;
-const ASSUMED_STACK_CAP_WIDTH = 2.7;
-const ASSUMED_STACK_CAP_HEIGHT = 0.14;
+const ASSUMED_DORMER_INSET = 0.34; // a dormer's face stands this far up the slope
+const ASSUMED_DORMER_HEIGHT = 1.5 + 0.7; // wall and pediment: its ridge meets the roof this much higher, back at ASSUMED_DORMER_INSET + this / (the roof's rise) up the slope
+const ASSUMED_STACK_CAP_HEIGHT = 0.26;
+const ASSUMED_STACK_REACH = 3.8; // m along the facade from a stack site's bay to the far side of the lower companion beside it
 const ASSUMED_DORMER_STACK_GAP = 0.12;
 const ASSUMED_DORMER_WINDOW_SILL = 0.18;
+/** the dormers' bays: two in three of each face (the middle of each three is left bare), and none on a bay too narrow for one */
+const dormerBays = (face: { bays: readonly { width: number }[] }): number => face.bays.filter((b, i) => i % 3 !== 1 && b.width > 2.4).length;
 const GEOMETRY_EPSILON = 1e-4; // 0.1 mm: permits Float32 BufferGeometry vertex rounding.
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -34,6 +36,8 @@ function triangles(m: Batch): Tri[] {
   return out;
 }
 const all = (parts: PartMap<Key>, key: Key): Tri[] => triangles(parts[key] as Batch);
+/** a horizontal triangle that faces up: the top of a corbel course or a cap */
+const top = (t: Tri): boolean => Math.abs(t.p[0][1] - t.p[1][1]) < 1e-9 && Math.abs(t.p[0][1] - t.p[2][1]) < 1e-9 && (t.p[1][2] - t.p[0][2]) * (t.p[2][0] - t.p[0][0]) - (t.p[1][0] - t.p[0][0]) * (t.p[2][2] - t.p[0][2]) > 0;
 const signature = (t: Tri): string => JSON.stringify(t.p);
 function roofFacetCoordinates(edgeIndex: number, p: V3): { t: number; inset: number } | undefined {
   const a = plan.outline[edgeIndex]!, b = plan.outline[(edgeIndex + 1) % plan.outline.length]!;
@@ -56,10 +60,11 @@ function roofFacetCoordinates(edgeIndex: number, p: V3): { t: number; inset: num
 test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the existing material batches', () => {
   const full = hotelGeometry(plan);
   const bare = hotelGeometry({ ...plan, faces: [] });
-  const bays = plan.faces.reduce((n, face) => n + face.bays.length, 0);
+  const dormers = plan.faces.reduce((n, face) => n + dormerBays(face), 0);
   const atticSashes = all(full, 'sash').filter(t => t.p.every(v => v[1] > plan.eaves));
-  // [HE-GNH] confirms plural dormers, but not their count. One per OSM-derived facade bay is ASSUMED.
-  assert.equal(atticSashes.length, bays * 2, 'each assumed attic dormer has one drawn sash quad');
+  // [HE-GNH] confirms plural dormers, but not their count. hist-a: over about two bays in three, in pairs: ASSUMED.
+  assert.equal(atticSashes.length, dormers * 2, 'each assumed attic dormer has one drawn sash quad');
+  assert.ok(dormers < plan.faces.reduce((n, face) => n + face.bays.length, 0) * 0.7 && dormers > 20, `${dormers} dormers: two bays in three, not one to every bay`);
 
   const baselineSlate = new Set(all(bare, 'slate').map(signature));
   const addedSlate = all(full, 'slate').filter(t => !baselineSlate.has(signature(t)));
@@ -79,8 +84,8 @@ test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the e
 
   // Read the cap vertices back from the drawn geometry and invert their OSM roof facet. The
   // ASSUMED cap front must be beyond the dormer rear with a small visible roof gap.
-  const capTops = stone.filter(t => t.p.every(v => Math.abs(v[1] - stackTopY) < 1e-6));
-  assert.ok(capTops.length > 0, 'stack caps have horizontal top triangles');
+  const capTops = stone.filter(t => t.p[0][1] > plan.ridge && top(t));
+  assert.ok(capTops.length >= 18 * 2, 'every stack has a corbel course and a cap with horizontal top triangles');
   for (const t of capTops) for (const v of t.p) {
     let best: { inset: number; roofRun: number } | undefined;
     let bestAlong = Infinity;
@@ -97,11 +102,11 @@ test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the e
         best = { inset: coord.inset, roofRun };
       }
     }
-    assert.ok(best && bestAlong < ASSUMED_STACK_CAP_WIDTH / 2 + 0.3, `chimney top vertex maps to a long OSM roof bay, within the half-width of its cap and a facet's taper (${bestAlong} m)`);
-    const minimumInset = ASSUMED_DORMER_REAR_INSET + ASSUMED_DORMER_STACK_GAP / best!.roofRun;
+    assert.ok(best && bestAlong < ASSUMED_STACK_REACH, `chimney top vertex maps to a long OSM roof bay, within the reach of the stack and its companion (${bestAlong} m)`);
+    const minimumInset = ASSUMED_DORMER_INSET + ASSUMED_DORMER_HEIGHT / (plan.ridge - plan.eaves) + ASSUMED_DORMER_STACK_GAP / best!.roofRun;
     assert.ok(best!.inset > minimumInset - GEOMETRY_EPSILON, `chimney caps clear the dormer roof run in the actual geometry (${best!.inset} <= ${minimumInset}; nearest bay ${bestAlong} m)`);
   }
-  assert.deepEqual(Object.keys(full).sort(), ['brick', 'sash', 'slate', 'stone'], 'roof details share the hotel’s four existing material batches (the ground floor is square-headed: no arched sash)');
+  assert.deepEqual(Object.keys(full).sort(), ['brick', 'brickRed', 'sash', 'slate', 'stone'], 'roof details share the existing material batches: the hotel’s four, and the clay of the pots (the ground floor is square-headed: no arched sash)');
 });
 
 test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof without changing the hotel footprint', () => {
@@ -112,7 +117,8 @@ test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof witho
   const addedSlate = all(full, 'slate').filter(t => !baselineSlate.has(signature(t)));
   const atticStone = all(full, 'stone').filter(t => t.p.some(v => v[1] > plan.eaves));
   const atticBrick = all(full, 'brick').filter(t => t.p.some(v => v[1] > plan.eaves)); // the stacks' shafts: the only brick above the eaves
-  const detail = [...atticSashes, ...addedSlate, ...atticStone, ...atticBrick];
+  const atticPots = full.brickRed ? all(full, 'brickRed') : []; // the pots on them: the hotel has no other red brick
+  const detail = [...atticSashes, ...addedSlate, ...atticStone, ...atticBrick, ...atticPots];
   let closest = Infinity, highest = -Infinity;
   const roof = new THREE.Mesh((bare.slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
   roof.updateMatrixWorld(true);
@@ -143,8 +149,8 @@ test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof witho
     });
     if (sashFoot && hit && Math.abs(v[1] - hit.point.y) < GEOMETRY_EPSILON) feet.set(`${v[0].toFixed(5)},${v[2].toFixed(5)}`, v);
   }
-  const bays = plan.faces.reduce((n, face) => n + face.bays.length, 0);
-  assert.equal(feet.size, bays * 2, 'the two feet of each assumed pediment contact its roof slope');
+  const dormers = plan.faces.reduce((n, face) => n + dormerBays(face), 0);
+  assert.equal(feet.size, dormers * 4, 'the feet of each assumed pediment, its face and its stone border on both sides, contact its roof slope');
   for (const foot of feet.values()) {
     const ray = new THREE.Raycaster(new THREE.Vector3(foot[0], foot[1] + 0.08, foot[2]), new THREE.Vector3(0, -1, 0), 0, 0.2);
     const hit = ray.intersectObject(roof)[0];

@@ -372,27 +372,21 @@ export const HOTEL_ADVANCED: Record<HotelFaceKind, readonly number[]> = { main: 
 export const GROUND = { sill: 0.6, width: 1.5, height: 3.4 } as const;
 const PILASTER = 1.0; // hist-a: the cream pilasters are about this wide at most (ASSUMED); each gives way to the light of the bay beside it
 
-// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry): "Slate roof with pedimented dormers." Sizes and the one-per-bay count are ASSUMED; places follow the facade bays and the eaves/ridge ring.
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry): "Slate roof with pedimented dormers." hist-a shows them over about two bays in
+// three, in pairs with a bay between, each a pale pediment some 2 m wide on a short wall over a sash. Sizes and the pattern are ASSUMED; places follow the facade bays and the eaves/ridge ring.
 const GNH_DORMER_INSET = 0.34; // ASSUMED fraction up the roof slope
-const GNH_DORMER_REAR_INSET = 0.68; // ASSUMED dormer roof run
-const GNH_DORMER_WIDTH = 1.8; // ASSUMED maximum width
-const GNH_DORMER_WALL_HEIGHT = 1.35; // ASSUMED
-const GNH_DORMER_PEDIMENT_RISE = 0.65; // ASSUMED
+const GNH_DORMER_WIDTH = 2.2; // ASSUMED maximum width
+const GNH_DORMER_WALL_HEIGHT = 1.5; // ASSUMED
+const GNH_DORMER_PEDIMENT_RISE = 0.7; // ASSUMED
 const GNH_DORMER_WINDOW_SILL = 0.18; // ASSUMED
-const GNH_DORMER_WINDOW_WIDTH = 1.05; // ASSUMED
-const GNH_DORMER_WINDOW_HEIGHT = 1.15; // ASSUMED
-const GNH_DORMER_REAR_CLEARANCE = 0.04; // ASSUMED: the slate cheeks meet the main roof
+const GNH_DORMER_WINDOW_WIDTH = 1.1; // ASSUMED
+const GNH_DORMER_WINDOW_HEIGHT = 1.25; // ASSUMED
 
-// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry) also records "Prominent slab chimney-stacks";
-// hist-a shows eight or nine in the hotel's brick with pale slab caps, broad blocks a dormer and a half wide and about as deep as the slope's run. ASSUMED: six on each long slope,
-// each standing on the flat top just behind the crest (the slope is too short a run for a stack this deep), clear of the dormers.
-const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 6; // ASSUMED
-const GNH_CHIMNEY_WIDTH = 2.4; // ASSUMED shaft width along a facade bay (it was 1.5 m: slim against hist-a)
-const GNH_CHIMNEY_DEPTH = 1.5; // ASSUMED depth across the roof (it was 0.8 m)
-const GNH_CHIMNEY_CAP_WIDTH = 2.7; // ASSUMED slab cap width
-const GNH_CHIMNEY_CAP_DEPTH = 1.8; // ASSUMED slab cap depth
-const GNH_CHIMNEY_HEIGHT = 3.2; // ASSUMED stack height over the flat top, scaled from hist-a (a stack stands about as tall as it is wide)
-const GNH_CHIMNEY_CAP_HEIGHT = 0.14; // ASSUMED slab cap thickness
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry) also records "Prominent slab chimney-stacks"; hist-a shows eight or nine in the hotel's
+// brick under pale caps with pots, each of a height and width of its own, some with a lower stack beside it. ASSUMED: six sites on each long slope, each a stack (`addStack`) of the scale,
+// shaft height and companion given here, standing on the flat top just behind the crest (the slope is too short a run for a stack this deep), clear of the dormers.
+const GNH_STACKS = [[1.2, 2.8, 1], [1.5, 2.4, 0], [1.0, 3.4, 1], [1.4, 3.0, 0], [1.6, 2.6, 1], [1.1, 3.6, 0]] as const;
+const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = GNH_STACKS.length;
 const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
 
 /** A point on one actual roof facet; `inset` interpolates the matching OSM eaves and roof-ring edges. */
@@ -417,41 +411,18 @@ function hotelRoofPoint(plan: HotelPlan, edgeIndex: number, t: number, inset: nu
 
 function bayParameter(plan: HotelPlan, bay: BayPosition): { edgeLength: number; t: number; roofRun: number } {
   const a = plan.outline[bay.edge] as Pt, b = plan.outline[(bay.edge + 1) % plan.outline.length] as Pt;
-  const ra = plan.roof.ring[bay.edge] as Pt, rb = plan.roof.ring[(bay.edge + 1) % plan.outline.length] as Pt;
   const dx = b[0] - a[0], dz = b[1] - a[1], edgeLength = Math.hypot(dx, dz);
   const t = ((bay.at[0] - a[0]) * dx + (bay.at[1] - a[1]) * dz) / (edgeLength * edgeLength);
-  const roofRun = (Math.hypot(ra[0] - a[0], ra[1] - a[1]) + Math.hypot(rb[0] - b[0], rb[1] - b[1])) / 2;
-  return { edgeLength, t, roofRun };
+  const [x0, , z0] = hotelRoofPoint(plan, bay.edge, t, 0), [x1, , z1] = hotelRoofPoint(plan, bay.edge, t, 1);
+  return { edgeLength, t, roofRun: (x0 - x1) * bay.normal[0] + (z0 - z1) * bay.normal[1] }; // how far in from the eaves, at right angles to the wall, the roof reaches its crest here
 }
 
 function addHotelDormer(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
-  const { edgeLength, t } = bayParameter(plan, bay);
-  const width = Math.min(GNH_DORMER_WIDTH, bay.width * 0.55);
-  const dt = width / (2 * edgeLength);
-  const left = hotelRoofPoint(plan, bay.edge, t - dt, GNH_DORMER_INSET);
-  const right = hotelRoofPoint(plan, bay.edge, t + dt, GNH_DORMER_INSET);
-  const centre = hotelRoofPoint(plan, bay.edge, t, GNH_DORMER_INSET);
-  const shoulderLeft: V3 = [left[0], centre[1] + GNH_DORMER_WALL_HEIGHT, left[2]];
-  const shoulderRight: V3 = [right[0], centre[1] + GNH_DORMER_WALL_HEIGHT, right[2]];
-  const apex: V3 = [centre[0], centre[1] + GNH_DORMER_WALL_HEIGHT + GNH_DORMER_PEDIMENT_RISE, centre[2]];
-  const faceNormal: V3 = [bay.normal[0], 0, bay.normal[1]];
-  part(parts, 'stone').fan([left, right, shoulderRight, apex, shoulderLeft], faceNormal, p => [p[0], p[1]]);
-  addSash(parts, 'sash', { at: [centre[0], centre[2]], dir: bay.dir, normal: bay.normal }, centre[1] + GNH_DORMER_WINDOW_SILL, GNH_DORMER_WINDOW_WIDTH, GNH_DORMER_WINDOW_HEIGHT);
-
-  const backLeft = hotelRoofPoint(plan, bay.edge, t - dt, GNH_DORMER_REAR_INSET);
-  const backRight = hotelRoofPoint(plan, bay.edge, t + dt, GNH_DORMER_REAR_INSET);
-  const backCentre = hotelRoofPoint(plan, bay.edge, t, GNH_DORMER_REAR_INSET);
-  const rearTopLeft: V3 = [backLeft[0], backLeft[1] + GNH_DORMER_REAR_CLEARANCE, backLeft[2]];
-  const rearTopRight: V3 = [backRight[0], backRight[1] + GNH_DORMER_REAR_CLEARANCE, backRight[2]];
-  const rearApex: V3 = [backCentre[0], backCentre[1] + GNH_DORMER_REAR_CLEARANCE, backCentre[2]];
-  const slate = part(parts, 'slate');
-  const depth = Math.hypot(backCentre[0] - centre[0], backCentre[2] - centre[2]);
-  const uv: [number, number][] = [[0, 0], [depth, 0], [depth, GNH_DORMER_WALL_HEIGHT], [0, GNH_DORMER_WALL_HEIGHT]];
-  slate.quadUV(left, backLeft, rearTopLeft, shoulderLeft, uv as [[number, number], [number, number], [number, number], [number, number]], faceNormal);
-  slate.quadUV(right, shoulderRight, rearTopRight, backRight, uv as [[number, number], [number, number], [number, number], [number, number]], [-faceNormal[0], 0, -faceNormal[2]]);
-  const roofUv: [[number, number], [number, number], [number, number], [number, number]] = [[0, 0], [width / 2, 0], [width / 2, depth], [0, depth]];
-  slate.quadUV(apex, shoulderLeft, rearTopLeft, rearApex, roofUv, UP);
-  slate.quadUV(apex, rearApex, rearTopRight, shoulderRight, roofUv, UP);
+  const { t, roofRun } = bayParameter(plan, bay);
+  const [x, y, z] = hotelRoofPoint(plan, bay.edge, t, GNH_DORMER_INSET);
+  const w = Math.min(GNH_DORMER_WIDTH, bay.width * 0.65) / 2;
+  addGable(parts, [x, y, z], bay.dir, bay.normal, (plan.ridge - plan.eaves) / roofRun, w, GNH_DORMER_WALL_HEIGHT + GNH_DORMER_PEDIMENT_RISE, GNH_DORMER_WALL_HEIGHT, 'stone');
+  addSash(parts, 'sash', { at: [x, z], dir: bay.dir, normal: bay.normal }, y + GNH_DORMER_WINDOW_SILL, GNH_DORMER_WINDOW_WIDTH, GNH_DORMER_WINDOW_HEIGHT);
 }
 
 function hotelChimneyBays(plan: HotelPlan): BayPosition[] {
@@ -459,30 +430,16 @@ function hotelChimneyBays(plan: HotelPlan): BayPosition[] {
   return plan.faces.filter(face => face.bays.length >= 8).flatMap(face => Array.from({ length: n }, (_, i) => face.bays[Math.floor(2.5 + (i * (face.bays.length - 6)) / (n - 1))] as BayPosition));
 }
 
-function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
+function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition, [k, h, pair]: readonly [number, number, number]): void {
   const { t, roofRun } = bayParameter(plan, bay);
-  // wholly behind the crest, on the flat top: the middle is the roof's run, the gap and half the cap's depth in from the eaves line
-  const [x, , z] = hotelRoofPoint(plan, bay.edge, t, 1 + (GNH_CHIMNEY_CAP_DEPTH / 2 + GNH_ROOF_DETAIL_GAP) / roofRun);
-  /** the four corners of a w x d slab (along the facade, deep) about the middle at height y, front left first: the sides run front, right, back, left */
-  const ring = (w: number, d: number, y: number): V3[] => ([[-1, 1], [1, 1], [1, -1], [-1, -1]] as const).map(([a, b]): V3 => [x + bay.dir[0] * a * w / 2 + bay.normal[0] * b * d / 2, y, z + bay.dir[1] * a * w / 2 + bay.normal[1] * b * d / 2]);
-  const shaftTopY = plan.ridge + GNH_CHIMNEY_HEIGHT - GNH_CHIMNEY_CAP_HEIGHT;
-  const [foot, shaftTop, capBase, capTop] = [ring(GNH_CHIMNEY_WIDTH, GNH_CHIMNEY_DEPTH, plan.ridge), ring(GNH_CHIMNEY_WIDTH, GNH_CHIMNEY_DEPTH, shaftTopY), ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, shaftTopY), ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, shaftTopY + GNH_CHIMNEY_CAP_HEIGHT)];
-  const stone = part(parts, 'stone');
-  const sides: V3[] = [[bay.normal[0], 0, bay.normal[1]], [bay.dir[0], 0, bay.dir[1]], [-bay.normal[0], 0, -bay.normal[1]], [-bay.dir[0], 0, -bay.dir[1]]];
-  for (let i = 0; i < 4; i++) {
-    const j = (i + 1) % 4;
-    const [a, b] = [foot[i] as V3, foot[j] as V3];
-    const w = Math.hypot(b[0] - a[0], b[2] - a[2]);
-    part(parts, 'brick').quadUV(a, b, shaftTop[j] as V3, shaftTop[i] as V3, [[0, a[1]], [w, b[1]], [w, shaftTopY], [0, shaftTopY]], sides[i] as V3);
-    stone.quadUV(capBase[i] as V3, capBase[j] as V3, capTop[j] as V3, capTop[i] as V3, undefined, sides[i] as V3);
-  }
-  stone.quadUV(capBase[0] as V3, capBase[1] as V3, capBase[2] as V3, capBase[3] as V3, undefined, [0, -1, 0]);
-  stone.quadUV(capTop[0] as V3, capTop[1] as V3, capTop[2] as V3, capTop[3] as V3, undefined, UP);
+  // wholly behind the crest, on the flat top: the middle is half the cap's depth and the gap in from the eaves line of the ring
+  const [x, , z] = hotelRoofPoint(plan, bay.edge, t, 1 + (0.7 * k + GNH_ROOF_DETAIL_GAP) / roofRun);
+  for (const [dx, s, hh] of pair ? [[0, k, h], [1.2 * k + 0.5, 0.7 * k, 0.6 * h]] : [[0, k, h]]) addStack(parts, [x + bay.dir[0] * (dx as number), z + bay.dir[1] * (dx as number)], bay.dir, plan.ridge, hh as number, s as number, 'brick');
 }
 
 function addHotelRoofDetails(parts: PartMap<Key>, plan: HotelPlan): void {
-  for (const face of plan.faces) for (const bay of face.bays) addHotelDormer(parts, plan, bay);
-  for (const bay of hotelChimneyBays(plan)) addHotelChimney(parts, plan, bay);
+  for (const face of plan.faces) face.bays.forEach((bay, i) => { if (i % 3 !== 1 && bay.width > 2.4) addHotelDormer(parts, plan, bay); });
+  hotelChimneyBays(plan).forEach((bay, i) => addHotelChimney(parts, plan, bay, GNH_STACKS[i % GNH_STACKS.length] as readonly [number, number, number]));
 }
 
 export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
@@ -655,15 +612,15 @@ export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h:
   addJambs(parts, p, y, w, h - w / 2, 0.22);
 }
 
-/** A chimney stack on the crown: a brick shaft, a stone corbel course and cap, a clay pot (hist-b, hist-e). Sizes ASSUMED, about a dormer wide. */
-function addStack(parts: PartMap<Key>, c: Pt, dir: Pt, y: number, h: number): void {
+/** A chimney stack on the crown: a brick shaft `k` times 1.4 x 0.95 m, a stone corbel course and cap, a clay pot (hist-b, hist-e). Sizes ASSUMED, about a dormer wide. */
+function addStack(parts: PartMap<Key>, c: Pt, dir: Pt, y: number, h: number, k = 1, key: Key = 'brickRed'): void {
   const rotY = yaw(dir);
-  const brick = part(parts, 'brickRed');
+  const brick = part(parts, key);
   const stone = part(parts, 'stone');
-  brick.box([c[0], y + h / 2, c[1]], [1.4, h, 0.95], { rotY, skip: ['-y'] });
-  stone.box([c[0], y + h - 0.5, c[1]], [1.7, 0.2, 1.25], { rotY, skip: ['-y'] });
-  stone.box([c[0], y + h + 0.13, c[1]], [1.85, 0.26, 1.4], { rotY });
-  brick.box([c[0], y + h + 0.6, c[1]], [0.55, 0.7, 0.55], { rotY, skip: ['-y'] });
+  brick.box([c[0], y + h / 2, c[1]], [1.4 * k, h, 0.95 * k], { rotY, skip: ['-y'] });
+  stone.box([c[0], y + h - 0.5, c[1]], [1.7 * k, 0.2, 1.25 * k], { rotY, skip: ['-y'] });
+  stone.box([c[0], y + h + 0.13, c[1]], [1.85 * k, 0.26, 1.4 * k], { rotY });
+  part(parts, 'brickRed').box([c[0], y + h + 0.6, c[1]], [0.55, 0.7, 0.55], { rotY, skip: ['-y'] });
 }
 
 /** A four-sided spike (or a frustum, if `half1` is more than 0): the cap of a turret, a finial. Stripes alternate when given two materials. */

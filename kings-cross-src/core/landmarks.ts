@@ -64,7 +64,7 @@ export const FIGURES = {
     mainBays: 18, // [HE-GNH] "18 windows wide"
     returnBays: 5, // [HE-GNH] "southern return is 5 windows wide"; the north-west end is ASSUMED to match
     storeys: 5, // [HE-GNH] "5 storeys plus attic"; OSM building:levels = 5
-    groundStorey: 4.5, // ASSUMED: tall ground floor with round-arched openings
+    groundStorey: 4.5, // ASSUMED: a tall ground floor of square-headed openings between stucco piers (hist-a; [HE-GNH] lists round-headed arches, the photograph shows square heads)
     upperStorey: 3.7, // ASSUMED
     roofRise: 4.8, // ASSUMED: slate attic roof with pedimented dormers
     roofInset: 3.2, // ASSUMED
