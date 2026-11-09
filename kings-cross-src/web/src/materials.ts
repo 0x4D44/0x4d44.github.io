@@ -60,8 +60,11 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // sizes are standard trade sizes; that the roof is slate-grey is the brief's, the shade ASSUMED.
   slate: { tile: [1.2, 1.0], px: [192, 160], density: [140, 200], average: 0x525a63, repeat: true,
     source: 'slate 600 x 300 mm, 250 mm gauge (trade size); shade ASSUMED' },
-  asphalt: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x4b4e53, repeat: true,
-    source: 'ASSUMED: tarmac platform surface, grain drawn at 128 texels per metre' },
+  // A neutral light-to-mid grey, not the blue-grey it was: a worn platform surface is about 0.17 reflective (sRGB 118), a warm-neutral grey,
+  // and the sky's blue is the light's, not the paint's (R-lighting-materials-b: the platforms are mid grey in the shade; -d, -e: the paving
+  // and the road are grey, never navy). The city's roads are the same texture at four-fifths of the light (cityMaterial 'asphalt').
+  asphalt: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x767571, repeat: true,
+    source: 'ASSUMED: tarmac platform surface, grain drawn at 128 texels per metre; the tone about 0.17 reflectance' },
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
   // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
@@ -81,9 +84,9 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   floorSlab: { tile: [2.4, 2.4], px: [288, 288], density: [100, 140], average: 0x9ea2a8, repeat: true,
     source: 'ASSUMED: 1.2 m square paving slabs' },
   // The underside of the shed roof between the ribs: painted tongue-and-groove boarding, boards running
-  // along the shed (UV v) and 150 mm wide across it (UV u). Neither the board width nor the pale cream
+  // along the shed (UV v) and 150 mm wide across it (UV u). Neither the board width nor the pale grey-white
   // paint has a source (the 2012 restoration's paint scheme was not found): both ASSUMED.
-  lining: { tile: [1.2, 1.2], px: [192, 192], density: [140, 180], average: 0xe0dccf, repeat: true,
+  lining: { tile: [1.2, 1.2], px: [192, 192], density: [140, 180], average: 0xdcdcd8, repeat: true,
     source: 'ASSUMED: painted boarding 150 mm wide, butt joints every 1.2 m at most' },
   // The shed's own roof glazing: the same panes as roofGlass, but a milky sky-blue that reads as daylight
   // from inside (the Barlow shed keeps the darker roofGlass) and light-painted astragal bars.
@@ -136,12 +139,45 @@ interface BrickPalette {
   stretcher: readonly [number, number];
   header: readonly [number, number];
   burnt: readonly [number, number];
+  /**
+   * The wear of a Victorian stock (R-lighting-materials-a, the close-up): some bricks fired olive-grey, the ends burnt brown, a crack or
+   * a chipped corner here and there. Absent on the red, whose brick is drawn as it was.
+   */
+  wear?: { olive: readonly [number, number] };
 }
 
 /** London stock is yellow-buff; the headers of a Flemish bond are burnt darker, blue-grey to brown. */
-const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb9a26c, 0x9d8656], header: [0x7c6e58, 0x6b6660], burnt: [0x5e5448, 0x4a4540] };
+const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb9a26c, 0x9d8656], header: [0x7c6e58, 0x6b6660], burnt: [0x5e5448, 0x4a4540],
+  wear: { olive: [0xa39d6e, 0x8c8662] } };
 /** The Midland Grand's red (R-lighting-materials-c): orange-red stretchers, headers a shade deeper, pale buff mortar. ASSUMED shades. */
 const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86649], header: [0xcf6047, 0xb45640], burnt: [0x5e3a30, 0x4a322c] };
+
+/**
+ * The wear on one stock brick (x, y, len, height in pixels): an end burnt brown, a soot smudge on the face, a crack, a chipped corner
+ * where the mortar shows. All fillRects with a little alpha, so it tiles and averages to a slightly darker, browner wall at a distance.
+ * The shares are ASSUMED, judged by eye against the close-up (R-lighting-materials-a: most bricks have a burnt end or a stained face).
+ */
+function wearBrick(g: Ctx, r: () => number, mortar: string, x: number, y: number, len: number, h: number): void {
+  if (r() < 0.6) { // a burnt end, the hot end of the clamp
+    const burn = len * (0.15 + r() * 0.3);
+    g.fillStyle = `rgba(52,36,18,${(0.1 + r() * 0.12).toFixed(2)})`;
+    g.fillRect(r() < 0.5 ? x : x + len - burn, y, burn, h);
+  }
+  if (r() < 0.45) { // a smudge of soot or old lime wash across the face
+    const sw = len * (0.2 + r() * 0.4);
+    const sh = h * (0.3 + r() * 0.5);
+    g.fillStyle = r() < 0.7 ? `rgba(40,34,26,${(0.06 + r() * 0.08).toFixed(2)})` : `rgba(235,228,205,${(0.1 + r() * 0.1).toFixed(2)})`;
+    g.fillRect(x + r() * (len - sw), y + r() * (h - sh), sw, sh);
+  }
+  if (r() < 0.14) { // a crack
+    g.fillStyle = 'rgba(30,22,14,0.4)';
+    g.fillRect(x + len * (0.15 + r() * 0.7), y + h * r() * 0.3, Math.max(1, h * 0.05), h * (0.45 + r() * 0.4));
+  }
+  const chip = Math.max(1.5, h * 0.14);
+  g.fillStyle = mortar;
+  if (r() < 0.2) g.fillRect(r() < 0.5 ? x : x + len - chip, y, chip, chip); // a chipped arris at the top
+  if (r() < 0.12) g.fillRect(r() < 0.5 ? x : x + len - chip, y + h - chip, chip, chip);
+}
 
 function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_BRICK): void {
   const r = rng(11);
@@ -161,13 +197,16 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
         const x0 = k * period + shift + (isHeader ? stretcher + joint : 0);
         const len = isHeader ? header : stretcher;
         const dark = r() < 0.03; // an overburnt brick
-        const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.9 + r() * 0.2) : tone(palette.stretcher[0], palette.stretcher[1], r(), 0.9 + r() * 0.18);
+        const colours = !isHeader && palette.wear && r() < 0.3 ? palette.wear.olive : isHeader ? palette.header : palette.stretcher; // (a stock fired olive-grey: one in three stretchers)
+        const lift = palette.wear ? 0.06 : 0; // (the wear below darkens the average a little: the bricks start that much lighter, so the wall keeps its hue and lightness)
+        const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.9 + lift + r() * 0.2) : tone(colours[0], colours[1], r(), 0.9 + lift + r() * 0.18);
         g.fillStyle = dark ? tone(palette.burnt[0], palette.burnt[1], r()) : base;
         g.fillRect(x0, y + joint, len, course - joint);
         g.fillStyle = 'rgba(255,245,210,0.13)'; // the lit top arris
         g.fillRect(x0, y + joint, len, Math.max(1, joint * 0.35));
         g.fillStyle = 'rgba(0,0,0,0.14)'; // the shaded underside
         g.fillRect(x0, y + course - Math.max(1.2, joint * 0.4), len, Math.max(1.2, joint * 0.4));
+        if (palette.wear && !dark) wearBrick(g, r, palette.mortar, x0, y + joint, len, course - joint);
         for (let s = 0; s < 4; s++) {
           g.fillStyle = r() < 0.5 ? 'rgba(60,45,25,0.16)' : 'rgba(255,240,190,0.10)';
           g.fillRect(x0 + r() * len, y + joint + r() * (course - joint), 1.5 + r() * 2, 1 + r() * 1.5);
@@ -219,7 +258,7 @@ function paintSlate(g: Ctx, w: number, h: number): void {
 
 function paintAsphalt(g: Ctx, w: number, h: number): void {
   const r = rng(41);
-  g.fillStyle = '#4a4d52';
+  g.fillStyle = '#767571';
   g.fillRect(0, 0, w, h);
   for (let i = 0; i < 6; i++) { // faint patches of re-laid surface
     g.fillStyle = r() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)';
@@ -233,7 +272,7 @@ function paintAsphalt(g: Ctx, w: number, h: number): void {
     const x = r() * w;
     const y = r() * h;
     const v = r();
-    g.fillStyle = v < 0.45 ? `rgba(20,22,26,${0.2 + r() * 0.25})` : `rgba(${150 + r() * 70},${150 + r() * 70},${150 + r() * 60},${0.12 + r() * 0.2})`;
+    g.fillStyle = v < 0.45 ? `rgba(24,23,22,${0.2 + r() * 0.25})` : `rgba(${160 + r() * 70},${160 + r() * 68},${156 + r() * 64},${0.12 + r() * 0.2})`;
     wrapped(w, h, x, y, 4, (px, py) => g.fillRect(px, py, 1 + (r() < 0.2 ? 1 : 0), 1 + (r() < 0.2 ? 1 : 0)));
   }
 }
@@ -336,17 +375,49 @@ function paintWindow(g: Ctx, w: number, h: number, arched: boolean): void {
   }
   g.closePath(); g.fill();
   const inset = 0.05 * pxm;
+  const glassPath = (): void => {
+    g.beginPath();
+    if (arched) {
+      g.moveTo(gx + inset, h - sx * 0.6 - inset); g.lineTo(gx + inset, w / 2); g.arc(w / 2, w / 2, gw / 2 - inset, Math.PI, 0); g.lineTo(gx + gw - inset, h - sx * 0.6 - inset);
+    } else {
+      g.rect(gx + inset, gy + inset, gw - 2 * inset, h - sx * 1.6 - 2 * inset);
+    }
+    g.closePath();
+  };
+  // The glass mirrors the sky: pale sky-blue at the top, falling to the dark of the room behind it (R-lighting-materials-a2: the great windows
+  // and the sashes beside them are patchy, bright where they catch the sky and dark where they show the interior).
   const lg = g.createLinearGradient(0, 0, 0, h);
-  lg.addColorStop(0, '#7f98ad');
-  lg.addColorStop(1, '#3b4856');
+  lg.addColorStop(0, '#93aec4');
+  lg.addColorStop(0.45, '#5f7890');
+  lg.addColorStop(1, '#2f3b48');
   g.fillStyle = lg;
-  g.beginPath();
-  if (arched) {
-    g.moveTo(gx + inset, h - sx * 0.6 - inset); g.lineTo(gx + inset, w / 2); g.arc(w / 2, w / 2, gw / 2 - inset, Math.PI, 0); g.lineTo(gx + gw - inset, h - sx * 0.6 - inset);
-  } else {
-    g.rect(gx + inset, gy + inset, gw - 2 * inset, h - sx * 1.6 - 2 * inset);
+  glassPath(); g.fill();
+  g.save();
+  glassPath(); g.clip();
+  // a slanting glint of sky across the whole window: a bright band, a dim gap, a fainter band
+  const glint = g.createLinearGradient(0, 0, w, h * 0.55);
+  glint.addColorStop(0, 'rgba(226,238,250,0)');
+  glint.addColorStop(0.3, 'rgba(226,238,250,0.30)');
+  glint.addColorStop(0.5, 'rgba(226,238,250,0.04)');
+  glint.addColorStop(0.68, 'rgba(226,238,250,0.20)');
+  glint.addColorStop(1, 'rgba(226,238,250,0)');
+  g.fillStyle = glint;
+  g.fillRect(0, 0, w, h);
+  // each pane has its own sheet of glass: its own share of sky or room (two columns by four rows, as the bars below divide it)
+  const pr = rng(arched ? 97 : 89);
+  const rows = [0, 1, 2, 3, 4].map((i) => (i === 0 ? 0 : i === 4 ? h : gy + ((h - sx * 2.4) * i) / 4 + (arched ? w / 4 : 0) * (i / 4)));
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 2; col++) {
+      const a = 0.04 + pr() * 0.13;
+      g.fillStyle = pr() < 0.55 ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(8,14,22,${(a * 1.5).toFixed(3)})`;
+      g.fillRect(col * (w / 2), rows[row] as number, w / 2, (rows[row + 1] as number) - (rows[row] as number));
+    }
   }
-  g.closePath(); g.fill();
+  // the reveal shades the glass at its left and top
+  g.fillStyle = 'rgba(0,0,0,0.22)';
+  g.fillRect(0, 0, gx + inset + 0.07 * pxm, h);
+  g.fillRect(0, 0, w, gy + inset + 0.07 * pxm);
+  g.restore();
   // sash bars: two columns by four rows
   g.strokeStyle = '#e9e6dc';
   g.lineWidth = Math.max(2, 0.03 * pxm);
@@ -384,21 +455,21 @@ function paintLining(g: Ctx, w: number, h: number): void {
   const r = rng(83);
   const boards = 8;
   const bw = w / boards;
-  g.fillStyle = '#d9d5c8';
+  g.fillStyle = '#d2d3d0';
   g.fillRect(0, 0, w, h);
   for (let i = 0; i < boards; i++) {
     const x = i * bw;
-    g.fillStyle = tone(0xf2eee3, 0xe6e1d3, r(), 0.98 + r() * 0.04);
+    g.fillStyle = tone(0xeceeed, 0xe1e2df, r(), 0.98 + r() * 0.04);
     g.fillRect(x + 1.5, 0, bw - 3, h);
     for (let s = 0; s < 10; s++) { // grain: faint streaks along the board
-      g.fillStyle = r() < 0.5 ? 'rgba(120,104,76,0.05)' : 'rgba(255,252,240,0.10)';
+      g.fillStyle = r() < 0.5 ? 'rgba(96,100,104,0.05)' : 'rgba(250,252,255,0.10)';
       g.fillRect(x + 2 + r() * (bw - 5), r() * h, 1, 8 + r() * 40);
     }
     const jy = r() * h; // the butt joint of this board (staggered from its neighbours)
-    g.fillStyle = 'rgba(80,68,50,0.22)';
+    g.fillStyle = 'rgba(60,64,68,0.22)';
     g.fillRect(x + 1.5, jy, bw - 3, 1.2);
   }
-  g.fillStyle = 'rgba(70,60,44,0.32)'; // the vee-joints between boards
+  g.fillStyle = 'rgba(52,56,60,0.32)'; // the vee-joints between boards
   for (let i = 0; i < boards; i++) g.fillRect(i * bw - 0.75, 0, 1.5, h);
   g.fillRect(w - 0.75, 0, 0.75, h);
 }
@@ -410,7 +481,7 @@ function paintShedGlass(g: Ctx, w: number, h: number): void {
   g.fillRect(0, 0, w, h);
   g.fillStyle = 'rgba(244,250,255,0.28)'; // a sheen across each pane
   g.fillRect(0, 0, w, h * 0.35);
-  g.fillStyle = 'rgba(226,230,232,1)'; // astragal bars, painted light like the ribs
+  g.fillStyle = 'rgba(66,74,82,1)'; // astragal bars, dark steel like the ribs: a grid of dark lines across bright glass (R-lighting-materials-b)
   g.fillRect(0, 0, 3, h);
   g.fillRect(0, 0, w, 4);
 }
@@ -475,6 +546,83 @@ function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {
   return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : TEXTURES[name].average, ...extra });
 }
 
+/**
+ * GLSL for the glass of a window: of every window on a facade, one mirrors the bright sky and one shows the dark room behind it, and the
+ * rest are between (R-lighting-materials-a2: the windows of a real facade are patchy, none alike). `gk` is 0..1, fixed for a window; the
+ * glass (the blue of the texture, which the stone, the sash bars and the wall are not) is brightened toward a cool sky-blue where `gk` is high
+ * and darkened toward a warm room where it is low, about 0.55 to 1.55 of the painted tone (1.05 on average, so a facade's mean is where it was).
+ * The wall, the surround and the bars are not touched.
+ */
+const GLASS_VARIES_GLSL = /* glsl */`
+float gShare = smoothstep( 0.08, 0.2, ( diffuseColor.b - diffuseColor.r ) / ( diffuseColor.b + diffuseColor.r + 0.02 ) );
+vec3 gTint = mix( vec3( 1.10, 1.03, 0.92 ), vec3( 0.82, 0.92, 1.08 ), gk );
+diffuseColor.rgb *= mix( vec3( 1.0 ), gTint * mix( 0.55, 1.55, gk ), gShare );
+`;
+
+/**
+ * One window to a tile (the city's facades: stock, red, stone, panel, glass and shop repeat one storey by one bay): the window's number is the
+ * tile's, mixed with the building's own (its vertex colour), so a facade is a patchwork of windows and its neighbour a different one.
+ */
+const GLASS_BY_TILE_GLSL = /* glsl */`
+float gSeed = 0.0;
+#ifdef USE_COLOR
+gSeed = dot( vColor.rgb, vec3( 37.1, 91.7, 53.3 ) );
+#endif
+float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed ) * 43758.5453 );
+${GLASS_VARIES_GLSL}`;
+
+/**
+ * The smooth field a decal window's number is read from, at the window's corner (world metres): two sines at frequencies of 2 to 4 radians
+ * a metre, one bent by the other, so windows a few metres apart land on unrelated values and one window, whose corner the shader finds to a
+ * few thousandths of a metre, lands on one. `windowKey` is the same expression in TypeScript (the GLSL below is built from the same numbers),
+ * so the tests can hold the spread and the steadiness to account.
+ */
+export const WINDOW_FIELD = { a: [2.37, 3.11, 1.73], b: [1.13, 2.71, 3.37], k: 1.9 } as const;
+
+/** 0..1, the number of the window whose corner is at (x, y, z) metres: see `WINDOW_FIELD`. */
+export function windowKey(x: number, y: number, z: number): number {
+  const { a, b, k } = WINDOW_FIELD;
+  return 0.5 + 0.5 * Math.sin(x * a[0] + y * a[1] + z * a[2] + k * Math.sin(x * b[0] + y * b[1] + z * b[2]));
+}
+
+/**
+ * A window decal is a quad with the texture drawn once over it (UV 0..1), merged with its neighbours into one mesh: the window's number is
+ * that of its own corner. The corner is rebuilt in the fragment shader from the screen derivatives of the world position and the UV (the
+ * mapping is affine across a quad), and turned into a number by a smooth field (not a hash), so the few thousandths of a metre the derivatives
+ * wander by cannot make a window shimmer: neighbouring windows, metres apart, get different values; one window gets one.
+ */
+const GLASS_BY_QUAD_GLSL = /* glsl */`
+vec3 gDx = dFdx( vWinPos ), gDy = dFdy( vWinPos );
+vec2 gUx = dFdx( vMapUv ), gUy = dFdy( vMapUv );
+float gDet = gUx.x * gUy.y - gUy.x * gUx.y;
+float gk = 0.5;
+if ( abs( gDet ) > 1e-12 ) {
+  vec3 gA = ( gDx * gUy.y - gDy * gUx.y ) / gDet;
+  vec3 gB = ( gDy * gUx.x - gDx * gUy.x ) / gDet;
+  vec3 gO = vWinPos - vMapUv.x * gA - vMapUv.y * gB;
+  gk = 0.5 + 0.5 * sin( dot( gO, vec3( ${WINDOW_FIELD.a.join(', ')} ) ) + ${WINDOW_FIELD.k} * sin( dot( gO, vec3( ${WINDOW_FIELD.b.join(', ')} ) ) ) );
+}
+${GLASS_VARIES_GLSL}`;
+
+/**
+ * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material
+ * must carry a map (the windows are in the texture). Its program key says which, so the two never share a compile.
+ */
+export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile'): T {
+  m.onBeforeCompile = (shader) => {
+    if (by === 'quad') {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWinPos;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+    }
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', by === 'quad' ? '#include <common>\nvarying vec3 vWinPos;' : '#include <common>')
+      .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : GLASS_BY_TILE_GLSL}`);
+  };
+  m.customProgramCacheKey = () => `glassVaries-${by}`;
+  return m;
+}
+
 /** Flat things stood a few centimetres off a wall: pulled toward the camera so they never z-fight at range. */
 function nearer<T extends THREE.Material>(m: T): T {
   m.polygonOffset = true;
@@ -495,22 +643,23 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   roofGlass: () => tiled('roofGlass', { transparent: true, side: THREE.DoubleSide, depthWrite: false }),
   // Plain glass for the big windows: a little reflective (a specular highlight from the sun), tinted blue-green.
   glass: () => new THREE.MeshPhongMaterial({ color: 0x86a9c4, specular: 0xbfd2e4, shininess: 80, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false }),
-  window: () => tiled('window', { transparent: true, alphaTest: 0.05 }),
-  windowArch: () => tiled('windowArch', { transparent: true, alphaTest: 0.05 }),
+  window: () => glassVaries(tiled('window', { transparent: true, alphaTest: 0.05 }), 'quad'),
+  windowArch: () => glassVaries(tiled('windowArch', { transparent: true, alphaTest: 0.05 }), 'quad'),
   concrete: () => new THREE.MeshLambertMaterial({ color: 0x8e8e8a }),
   steel: () => new THREE.MeshLambertMaterial({ color: 0x3d4650 }),
   whiteSteel: () => new THREE.MeshLambertMaterial({ color: 0xe6eaee }),
-  // The restored shed's ironwork: slender ribs and bars painted light. The colour is ASSUMED (a pale
-  // grey-white); the 2012 paint scheme was not found. The emissive term lifts the undersides the same
-  // way as for the lining, below.
-  ribPaint: () => new THREE.MeshLambertMaterial({ color: 0xdadee1, emissive: 0x555b61 }),
-  // The underside of a roof seen from inside: pale painted boarding (the 'lining' texture). The scene's
-  // lights shine from above, so an underside would come out black; the emissive term (which takes the
-  // texture too, so the boards still show) stands in for the light that really comes down through the
-  // glazing and off the platforms.
-  lining: () => tiled('lining', { side: THREE.BackSide, emissive: 0x8d897f, emissiveMap: texture('lining') }),
+  // The restored shed's ironwork: slender ribs and bars in dark grey paint, the colour of the lunette frames in R-lighting-materials-a2 and
+  // of the ribs in R-lighting-materials-b (where they stand as dark silhouettes against the bright glazing; a pale rib reads as a white scaffold).
+  // The first build had them light, to keep the undersides from going black; the small emissive term does that now. The shade of grey is ASSUMED
+  // (the 2012 paint scheme was not found).
+  ribPaint: () => new THREE.MeshLambertMaterial({ color: 0x343b42, emissive: 0x15191d }),
+  // The underside of a roof seen from inside: pale painted boarding (the 'lining' texture), a neutral light grey as in R-lighting-materials-b
+  // (the lined flank of the roof is grey-white there, never cream). The scene's lights shine from above, so an underside would come out
+  // black; the emissive term (which takes the texture too, so the boards still show) stands in for the light that really comes down
+  // through the glazing and off the platforms.
+  lining: () => tiled('lining', { side: THREE.BackSide, emissive: 0x777a7d, emissiveMap: texture('lining') }),
   // The same boarding on the valley's vertical faces, seen from the front.
-  valleyLining: () => tiled('lining', { emissive: 0x8d897f, emissiveMap: texture('lining') }),
+  valleyLining: () => tiled('lining', { emissive: 0x777a7d, emissiveMap: texture('lining') }),
   // The shed's roof glazing. It glows a little (emissive) so it reads as daylight from inside; shed.ts clones
   // it and sets the opacity by camera distance (see glazingOpacity there).
   shedGlass: () => tiled('shedGlass', { transparent: true, side: THREE.DoubleSide, depthWrite: false, emissive: 0x73879a, emissiveMap: texture('shedGlass') }),
@@ -522,8 +671,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // The slate seen from inside the shed: the shared slate culls back faces, so this is a two-sided one.
   slateBothSides: () => tiled('slate', { side: THREE.DoubleSide }),
   // Window decals: flat quads stood a hair off a wall, so they are pulled toward the camera (see `nearer`).
-  sash: () => nearer(tiled('window', { transparent: true, alphaTest: 0.05 })),
-  sashArch: () => nearer(tiled('windowArch', { transparent: true, alphaTest: 0.05 })),
+  sash: () => glassVaries(nearer(tiled('window', { transparent: true, alphaTest: 0.05 })), 'quad'),
+  sashArch: () => glassVaries(nearer(tiled('windowArch', { transparent: true, alphaTest: 0.05 })), 'quad'),
   // A dark pane set in a bar or a frame (the Barlow shed's roof lights, tower openings).
   pane: () => nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })),
   // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
@@ -922,10 +1071,28 @@ function citySash(g: CityCtx, cx: number, h: number, o: SashOptions): void {
   g.fillStyle = '#23272c'; // the reveal
   g.fillRect(x0 - 4, yt - 4, o.ww + 8, o.wh + 8);
   const lg = g.createLinearGradient(0, yt, 0, yb);
-  lg.addColorStop(0, '#8aa3b6');
-  lg.addColorStop(1, '#3a4856');
+  lg.addColorStop(0, '#93aec4'); // the sky in the glass: pale at the top, the dark of the room below
+  lg.addColorStop(0.45, '#5f7890');
+  lg.addColorStop(1, '#2f3b48');
   g.fillStyle = lg;
   g.fillRect(x0, yt, o.ww, o.wh);
+  // a slanting glint of sky, and each pane its own share of sky or room (the sashes are separate sheets of glass)
+  const glint = g.createLinearGradient(x0, yt, x0 + o.ww, yt + o.wh * 0.55);
+  glint.addColorStop(0, 'rgba(226,238,250,0)');
+  glint.addColorStop(0.3, 'rgba(226,238,250,0.26)');
+  glint.addColorStop(0.5, 'rgba(226,238,250,0.04)');
+  glint.addColorStop(0.68, 'rgba(226,238,250,0.18)');
+  glint.addColorStop(1, 'rgba(226,238,250,0)');
+  g.fillStyle = glint;
+  g.fillRect(x0, yt, o.ww, o.wh);
+  const pr = rng(Math.round(cx * 7 + o.ww * 13 + o.wh * 3 + o.sill));
+  for (let row = 0; row < o.rows; row++) {
+    for (let col = 0; col < o.cols; col++) {
+      const a = 0.04 + pr() * 0.13;
+      g.fillStyle = pr() < 0.55 ? `rgba(255,255,255,${a.toFixed(3)})` : `rgba(8,14,22,${(a * 1.5).toFixed(3)})`;
+      g.fillRect(x0 + (o.ww * col) / o.cols, yt + (o.wh * row) / o.rows, o.ww / o.cols, o.wh / o.rows);
+    }
+  }
   g.fillStyle = 'rgba(0,0,0,0.30)'; // depth: the reveal shades the glass at the left and top
   g.fillRect(x0, yt, 5, o.wh);
   g.fillRect(x0, yt, o.ww, 5);
@@ -1171,7 +1338,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   // curtain walling catches the sun: a Phong sheen on top of the drawn glass
   glass: () => {
     const t = cityTexture('glass');
-    return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 });
+    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'tile');
   },
   roof: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
   paint: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
@@ -1184,16 +1351,21 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
     return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.water.average, vertexColors: true, specular: 0x27343a, shininess: 25 });
   },
   // roads and paving reuse the station's asphalt and slab textures (shared, not copied)
-  asphalt: () => cityFlat('asphalt', 0xffffff),
+  // (a road is darker than a platform: the same texture at four-fifths of the light, 0xe0dfdc, which is about 0.14 reflective, weathered road asphalt)
+  asphalt: () => cityFlat('asphalt', 0xe0dfdc),
   // Paving tones are set under the daylight rig (DAYLIGHT, world.ts) to R-lighting-materials-d/e: pale warm-grey stone, about
   // (163, 158, 157) where the sun lies on it. The pavement is that; the forecourt plaza, laid in lighter stone, a shade above.
-  pavement: () => cityFlat('concourseFloor', 0xd2d0cb),
+  // The footways and paths are darker than the squares they cross (R-lighting-materials-a2, -e: a pale square crossed by darker strips of
+  // path paving). The first build had them 0.86 of the plaza in sRGB (0xd2d0cb under 0xf3f0e8); then the plaza was toned down to 0xd8d5ce and
+  // the pavement left at 0xd2d0cb, which flattened the strips away. 0.81 of the plaza here (0xb0aea8), so the paths read across the forecourt.
+  pavement: () => cityFlat('concourseFloor', 0xb0aea8),
   plaza: () => cityFlat('concourseFloor', 0xd8d5ce),
 };
 
 function cityFacade(key: FacadeKey): THREE.Material {
   const t = cityTexture(key);
-  return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true });
+  // one window to a tile: each one mirrors the sky or shows its room (see glassVaries)
+  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile');
 }
 
 function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Material {
@@ -1234,7 +1406,7 @@ export function cityMaterial(name: CityMaterialName): THREE.Material {
 
 export type TerrainMaterialName = 'ground' | 'bank' | 'wall';
 
-const TERRAIN_COLOUR: Readonly<Record<'ground' | 'bank', number>> = { ground: 0x3a4049, bank: 0x3f4a35 };
+const TERRAIN_COLOUR: Readonly<Record<'ground' | 'bank', number>> = { ground: 0x626260, bank: 0x3f4a35 }; // the ground: world.ts GROUND_COLOUR (a test holds the two equal)
 /**
  * The retaining wall's tint over the shared London stock brick (average 0xa0895a): it takes the brick to a dark, sooty brown,
  * about 0x57472a once mip-mapped (a century and a half of coal smoke; the shade is ASSUMED, no survey of these walls was found).

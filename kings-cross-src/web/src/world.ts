@@ -17,7 +17,11 @@ const ZENITH = 0x0b1322;
  * everything outside the terrain's extent (tools/build-terrain.ts holds the same number).
  */
 export const GROUND_Y = -0.2;
-const GROUND_COLOUR = 0x3a4049;
+// The ground where nothing is drawn over it (yards, car parks, the lots between blocks): a neutral mid grey, as worn tarmac and concrete
+// are (about 0.12 reflective; the warmth of the sun is the light's, not the paint's). It was the dusk page's navy 0x3a4049, which under
+// the daylight rig read as holes of dark blue in the overview (R-lighting-materials-d, -e: the ground is grey, never navy).
+// materials.ts TERRAIN_COLOUR.ground is the same number, for the terrain mesh that replaces this plane.
+export const GROUND_COLOUR = 0x626260;
 
 /**
  * The scene's lights (exported so a test can light a surface the way the page does). The hemisphere is the dusk sky over the
@@ -69,7 +73,8 @@ export interface World {
 }
 
 function skyDome(): THREE.Mesh {
-  const g = new THREE.SphereGeometry(5200, 48, 24);
+  // 96 x 48: a vertex every 3.75 degrees, fine enough for atmosphere.ts to paint an overcast deck's billows (5 to 20 degrees) on it
+  const g = new THREE.SphereGeometry(5200, 96, 48);
   const pos = g.getAttribute('position');
   const colors: number[] = [];
   const top = new THREE.Color(ZENITH);

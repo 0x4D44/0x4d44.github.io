@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { Batch, boxProjectUV, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, texelsPerMetre, texture, wallQuad } from '../src/materials.ts';
+import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 
 const names = Object.keys(TEXTURES) as TextureName[];
@@ -316,6 +316,147 @@ test('the red brick is its own texture, orange-red, in the same bond at the same
   assert.ok(((stock >> 8) & 255) > ((stock >> 16) & 255) * 0.8, 'the stock brick is buff, not red');
   assert.equal((material('brickRed') as THREE.MeshLambertMaterial).color.getHex(), red.average, 'in Node the material is flat in the texture average');
   assert.equal(material('brickRed').name, 'brickRed');
+});
+
+/** A canvas context that only writes down what it is asked to draw: the fill style each rectangle was drawn in, and the gradients made. */
+function recorder() {
+  const rects: { style: unknown; args: number[] }[] = [];
+  const styles: unknown[] = [];
+  const gradients: { stops: [number, string][] }[] = [];
+  let fillStyle: unknown = '';
+  const ctx = new Proxy({} as Record<string, unknown>, {
+    get(_t, prop: string) {
+      if (prop === 'fillStyle') return fillStyle;
+      if (prop === 'createLinearGradient') return () => { const g = { stops: [] as [number, string][], addColorStop: (o: number, c: string) => g.stops.push([o, c]) }; gradients.push(g); return g; };
+      if (prop === 'fillRect') return (...args: number[]) => { rects.push({ style: fillStyle, args }); };
+      return () => undefined;
+    },
+    set(_t, prop: string, v) { if (prop === 'fillStyle') { fillStyle = v; styles.push(v); } return true; },
+  });
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, rects, styles, gradients };
+}
+const hexLuma = (hex: string): number => { const n = parseInt(hex.slice(1), 16); return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255); };
+const PANE_OVERLAY = /^rgba\((255,255,255|8,14,22),/;
+
+test('a sash window\'s glass mirrors the sky at the top and the room at the bottom, with a slanting glint and a different share of each in every pane (R-lighting-materials-a2)', () => {
+  for (const name of ['window', 'windowArch'] as const) {
+    const [w, h] = TEXTURES[name].px;
+    const a = recorder();
+    PAINTERS[name](a.ctx, w, h);
+    const glass = a.gradients[0] as { stops: [number, string][] };
+    assert.ok(glass.stops.length >= 3, `${name}: the glass is a gradient of at least three tones, not a two-stop ramp`);
+    assert.ok(hexLuma(glass.stops[0]![1]) > 1.8 * hexLuma(glass.stops[glass.stops.length - 1]![1]), `${name}: pale sky at the top, a dark room at the bottom`);
+    assert.ok(a.gradients.length >= 2, `${name}: and a second gradient for the glint of sky across it`);
+    const panes = a.rects.filter((r) => PANE_OVERLAY.test(String(r.style)) && r.args[2] === w / 2);
+    assert.equal(panes.length, 8, `${name}: two columns by four rows of panes, each overlaid once`);
+    assert.ok(new Set(panes.map((r) => r.style)).size >= 6, `${name}: the panes differ from one another (${new Set(panes.map((r) => r.style)).size} of 8 distinct)`);
+    assert.ok(panes.some((r) => String(r.style).startsWith('rgba(255')) && panes.some((r) => String(r.style).startsWith('rgba(8')), `${name}: some panes catch the sky, others show the room`);
+    const b = recorder();
+    PAINTERS[name](b.ctx, w, h);
+    const plain = (rs: typeof a.rects) => rs.map((r) => ({ style: typeof r.style === 'string' ? r.style : 'gradient', args: r.args }));
+    assert.deepEqual(plain(b.rects), plain(a.rects), `${name}: the same window every load, so screenshots compare`);
+  }
+});
+
+test('the city\'s sash windows differ pane by pane too, and the walls beside them are not touched by it', () => {
+  for (const key of ['stock', 'stone'] as const) {
+    const [w, h] = [TEXTURES.brick.px[0], 1];
+    const a = recorder();
+    CITY_PAINTERS[key](a.ctx, w * 4, h * 400);
+    const panes = a.rects.filter((r) => PANE_OVERLAY.test(String(r.style)));
+    assert.equal(panes.length, 12, `${key}: two columns by six rows`);
+    assert.ok(new Set(panes.map((r) => r.style)).size >= 8, `${key}: ${new Set(panes.map((r) => r.style)).size} of 12 panes distinct`);
+    const g = a.gradients.find((x) => x.stops.length >= 3);
+    assert.ok(g && hexLuma(g.stops[0]![1]) > 1.8 * hexLuma(g.stops[g.stops.length - 1]![1]), `${key}: sky above, room below`);
+  }
+});
+
+test('windowKey: the number a decal window is read from is spread over 0..1 across a facade, differs from one window to the next, and does not move when the shader\'s idea of the corner wanders', () => {
+  // a facade of 12 bays by 5 storeys: windows 3.2 m apart along it, 3.4 m apart up it, on a wall at 40 degrees to the grid
+  const along = [Math.cos(0.7), 0, Math.sin(0.7)], up = [0, 1, 0];
+  const keys: number[][] = [];
+  for (let row = 0; row < 5; row++) {
+    const r: number[] = [];
+    for (let col = 0; col < 12; col++) r.push(windowKey(-80 + col * 3.2 * along[0]! + row * 3.4 * up[0]!, 2 + row * 3.4, -40 + col * 3.2 * along[2]!));
+    keys.push(r);
+  }
+  const flat = keys.flat();
+  const mean = flat.reduce((s, v) => s + v, 0) / flat.length;
+  const sd = Math.sqrt(flat.reduce((s, v) => s + (v - mean) ** 2, 0) / flat.length);
+  assert.ok(flat.every((v) => v >= 0 && v <= 1));
+  assert.ok(mean > 0.35 && mean < 0.65, `about half on average: ${mean}`);
+  assert.ok(sd > 0.25, `windows are spread across the range, not clustered: sd ${sd}`);
+  assert.ok(Math.min(...flat) < 0.1 && Math.max(...flat) > 0.9, 'the darkest and the brightest windows are far apart');
+  let alike = 0, pairs = 0;
+  for (const r of keys) for (let c = 1; c < r.length; c++) { pairs++; if (Math.abs((r[c] as number) - (r[c - 1] as number)) < 0.05) alike++; }
+  assert.ok(alike < 0.2 * pairs, `neighbouring windows differ: ${alike} of ${pairs} pairs within 0.05`);
+  // the corner the shader rebuilds from derivatives is good to a few millimetres at worst: a window does not change with it
+  for (const [x, y, z] of [[-60, 5, -30], [12.3, 18, 40], [-140, 9, 77]] as const) {
+    for (const d of [0.003, -0.003]) {
+      assert.ok(Math.abs(windowKey(x + d, y + d, z - d) - windowKey(x, y, z)) < 0.05, `steady at ${x},${y},${z}`);
+    }
+  }
+});
+
+test('window glass varies from window to window: the decals by their quad, the city\'s facades by their tile, and only where the texture is glass', () => {
+  const shader = (m: THREE.Material) => {
+    const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+    m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+    return s;
+  };
+  for (const name of ['sash', 'sashArch', 'window', 'windowArch'] as const) {
+    const m = material(name);
+    const s = shader(m);
+    assert.ok(s.vertexShader.includes('varying vec3 vWinPos;') && s.vertexShader.includes('vWinPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;'), `${name}: the vertex shader hands over the world position`);
+    assert.ok(s.fragmentShader.includes('dFdx( vWinPos )') && s.fragmentShader.includes('float gk = 0.5;'), `${name}: the fragment shader finds the quad's own corner`);
+    assert.ok(s.fragmentShader.indexOf('#include <map_fragment>') < s.fragmentShader.indexOf('float gShare'), `${name}: after the texture is read, so the glass can be told from the wall`);
+    assert.ok(s.fragmentShader.includes('diffuseColor.rgb *= mix( vec3( 1.0 ), gTint * mix( 0.55, 1.55, gk ), gShare );'), `${name}: the glass alone is brightened or darkened`);
+    assert.equal(m.customProgramCacheKey(), 'glassVaries-quad', `${name}: its own program`);
+  }
+  for (const name of ['stock', 'red', 'stone', 'panel', 'glass', 'shop'] as const) {
+    const m = cityMaterial(name);
+    const s = shader(m);
+    assert.ok(!s.vertexShader.includes('vWinPos'), `${name}: a facade needs no world position`);
+    assert.ok(s.fragmentShader.includes('floor( vMapUv )') && s.fragmentShader.includes('vColor.rgb'), `${name}: a window to a tile, mixed with the building's own colour`);
+    assert.equal(m.customProgramCacheKey(), 'glassVaries-tile', `${name}: its own program`);
+  }
+});
+
+test('the stock brick is worn like the close-up (burnt ends, olive bricks, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {
+  const [w, h] = TEXTURES.brick.px;
+  const draw = (name: 'brick' | 'brickRed') => { const a = recorder(); PAINTERS[name](a.ctx, w, h); return a; };
+  const stock = draw('brick');
+  const red = draw('brickRed');
+  const burnt = (rs: typeof stock.rects) => rs.filter((r) => /^rgba\(52,36,18,/.test(String(r.style)));
+  const cracks = (rs: typeof stock.rects) => rs.filter((r) => r.style === 'rgba(30,22,14,0.4)');
+  const chips = (rs: typeof stock.rects) => rs.filter((r) => r.style === '#a29d8c').slice(1); // the first is the wall of mortar under everything
+  assert.ok(burnt(stock.rects).length >= 25, `most stock bricks have a burnt end: ${burnt(stock.rects).length} of about 64`);
+  assert.ok(cracks(stock.rects).length >= 2, `a few are cracked: ${cracks(stock.rects).length}`);
+  assert.ok(chips(stock.rects).length >= 4, `a few have a chipped corner: ${chips(stock.rects).length}`);
+  assert.equal(burnt(red.rects).length + cracks(red.rects).length + chips(red.rects.filter((r) => r.style === '#b8aa94')).length, 0, 'the red brick has none of it');
+  // a stretcher (the long face) of a stock fired olive-grey is far less saturated than a yellow-buff one: about one in three of them
+  const stretchers = stock.rects.filter((r) => typeof r.style === 'string' && r.style.startsWith('rgb(') && r.args[2]! > 80 && r.args[3]! > 20);
+  const channels = (s: unknown) => String(s).match(/\d+/g)!.map(Number) as [number, number, number];
+  const olive = stretchers.filter((r) => { const [R, , B] = channels(r.style); return R - B < 64; });
+  assert.ok(stretchers.length >= 20, `the stretchers are found: ${stretchers.length}`);
+  assert.ok(olive.length / stretchers.length > 0.15 && olive.length / stretchers.length < 0.5, `about a third are olive-grey: ${olive.length} of ${stretchers.length}`);
+  const again = draw('brick');
+  const plain = (rs: typeof stock.rects) => rs.map((r) => ({ style: String(r.style), args: r.args }));
+  assert.deepEqual(plain(again.rects), plain(stock.rects), 'the same wall every load, so screenshots compare');
+});
+
+test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on the forecourt are a visible strip darker than the square (E5)', () => {
+  const avg = TEXTURES.asphalt.average;
+  const [r, g, b] = [(avg >> 16) & 255, (avg >> 8) & 255, avg & 255];
+  assert.ok(Math.abs(r - b) <= 6 && Math.abs(r - g) <= 4, `neutral: ${r},${g},${b}`);
+  assert.ok(r >= 104 && r <= 130, `about 0.17 reflective (sRGB 118): ${r}`);
+  const road = (cityMaterial('asphalt') as THREE.MeshLambertMaterial).color;
+  assert.ok(road.r < 0.85 && road.r > 0.6 && Math.abs(road.r - road.b) < 0.03, `a road is the same tarmac at about four-fifths of the light, and neutral: ${road.r.toFixed(2)}, ${road.g.toFixed(2)}, ${road.b.toFixed(2)}`);
+  const a = recorder();
+  PAINTERS.asphalt(a.ctx, 256, 256);
+  const base = String(a.styles[0]);
+  const n = parseInt(base.slice(1), 16);
+  assert.ok(base.startsWith('#') && Math.abs(((n >> 16) & 255) - (n & 255)) <= 6, `the painted base is neutral too: ${base}`);
 });
 
 test('rgb: the linear triple a vertex colour wants (sRGB hex in, linear out)', () => {

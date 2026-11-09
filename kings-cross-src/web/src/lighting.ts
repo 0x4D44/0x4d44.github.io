@@ -12,7 +12,7 @@
 // swim) and snapped to the map's own texels (so moving does not either). Only the structure that stands in the sun casts: the train shed
 // and its front, the concourse's lattice and panels, the landmarks, the King's Cross Central blocks, the city's buildings and the
 // canopies' steel. Glass lets the sun through (R-lighting-materials-b, the shed glazing: the sun lies on the platforms in patches
-// between the ribs), so no glazing casts; small things (signals, lamps, benches, trains, trees, rails) do not cast, which keeps the map
+// under the crown glazing, between the dark ribs, and the slate flanks leave the rest in shade), so no glazing casts; small things (signals, lamps, benches, trains, trees, rails) do not cast, which keeps the map
 // to about forty draws in the busiest view. The map is drawn again only when something it depends on has moved, not every frame.
 //
 // THE SHADE UNDER A ROOF. A roof also takes away the sky: under the shed, the concourse or a canopy the hemisphere's light is mostly
@@ -256,8 +256,9 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
 // ---- the shade under a roof --------------------------------------------------------------------------------------------------------------
 
 /**
- * What a point wholly under a roof loses. Of its hemisphere light, per colour: the roof hides the sky, and the blue of it goes first, so
- * what is left is the warm-neutral light thrown back by the pale lining, the buff brick and the platforms (R-lighting-materials-b: the
+ * What a point wholly under a roof LOSES (these are losses, not what is kept: it keeps 0.80, 0.64 and 0.40 of its hemisphere light, red,
+ * green and blue, and 0.85 of its direct light). Of its hemisphere light, per colour: the roof hides the sky, and the blue of it goes first,
+ * so what is left is the warm-neutral light thrown back by the pale lining, the buff brick and the platforms (R-lighting-materials-b: the
  * shade under the Barlow shed is neutral grey-brown, never blue). The sky's linear colour is (0.55, 0.67, 1.0), so these losses leave an
  * up-facing surface (0.44, 0.43, 0.40): a little under half of the sky's light, and warm. The amounts are ASSUMED, judged by eye against that
  * photograph. Of its direct light: the glazing's share, a little (the map holds the shed's own ribs and slate; the glass lets the sun through).

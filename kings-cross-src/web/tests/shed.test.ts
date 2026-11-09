@@ -211,23 +211,29 @@ test('ribMembers: slender sections, as the restored shed has (the first build\'s
   assert.ok(MEMBER_SIZE.web[0] <= 0.12 && MEMBER_SIZE.web[1] <= 0.1, 'webs are no more than 0.12 x 0.10 m');
 });
 
-test('the ironwork is painted light and the roof is lined with pale boarding, both far lighter than the first build\'s near-black steel and dark lining', () => {
+test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and the roof is lined with pale boarding: dark ribs and frames stand against bright glazing and a pale lining', () => {
+  // The first build painted the ironwork light (so the undersides would not go black); the references show it dark: the lunette frames in a2, and the ribs
+  // as dark silhouettes against the bright glazing in b. The small emissive term keeps an underside a dark grey, not black.
   const group = buildShed(layout);
   const luminance = (m: THREE.Material): number => {
     const c = (m as THREE.MeshLambertMaterial).color;
     return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   };
-  const oldSteel = luminance(material('steel'));
+  const lining = luminance(material('lining'));
   for (const name of ['shed-ribs', 'shed-front-bars', 'shed-gable-bars', 'shed-valley-frame']) {
-    const m = byName(group, name).material as THREE.Material;
+    const m = byName(group, name).material as THREE.MeshLambertMaterial;
     assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
-    assert.ok(luminance(m) > 0.5 && luminance(m) > 6 * oldSteel, `${name}: luminance ${luminance(m).toFixed(2)}`);
+    assert.ok(luminance(m) > 0.02 && luminance(m) <= luminance(material('steel')), `${name}: dark steel, no lighter than the station's steel and not black: luminance ${luminance(m).toFixed(3)}`);
+    assert.ok(8 * luminance(m) < lining, `${name} is at least eight times darker than the lining it stands against`);
+    assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);
   }
   for (const [name, key] of [['shed-roof-lining', 'lining'], ['shed-valley-girder', 'valleyLining']] as const) {
     const m = byName(group, name).material as THREE.MeshLambertMaterial;
     assert.equal(m, material(key), name);
     assert.ok(luminance(m) > 0.6, `${name}: luminance ${luminance(m).toFixed(2)}`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b > 0.5, `${name} glows a little (the light comes from above, so an underside would be black)`);
+    // grey-white, not cream (R-lighting-materials-b): the paint's red does not beat its blue by more than a few per cent
+    assert.ok(m.emissive.r < m.emissive.b * 1.06 && m.color.r < m.color.b * 1.08, `${name} is a neutral light grey: emissive ${m.emissive.getHexString()}, colour ${m.color.getHexString()}`);
   }
   assert.equal((byName(group, 'shed-roof-lining').material as THREE.Material).side, THREE.BackSide, 'the lining is seen from inside');
 });

@@ -263,7 +263,7 @@ test('city materials are shared, named, distinct from each other and from the st
     assert.equal((material(from) as THREE.MeshLambertMaterial).vertexColors, false, 'and the station\'s own material is untouched');
     assert.equal((m as THREE.MeshLambertMaterial).vertexColors, true);
   }
-  assert.equal((cityMaterial('pavement') as THREE.MeshLambertMaterial).color.getHex(), 0xd2d0cb);
+  assert.equal((cityMaterial('pavement') as THREE.MeshLambertMaterial).color.getHex(), 0xb0aea8);
   // Paving tones are those of R-lighting-materials-d/e under the daylight rig: pale warm-grey stone, about (163, 158, 157) where the sun
   // lies on it, not the near-white (0xf3f0e8) the forecourt was drawn in under the old, dimmer rig. The forecourt is a shade lighter than the pavement.
   const plaza = (cityMaterial('plaza') as THREE.MeshLambertMaterial).color;
@@ -271,6 +271,11 @@ test('city materials are shared, named, distinct from each other and from the st
   assert.equal(plaza.getHex(), 0xd8d5ce);
   assert.ok(plaza.r > pavement.r && plaza.g > pavement.g && plaza.b > pavement.b, 'the forecourt is laid in lighter stone than the pavement');
   assert.ok(plaza.r < 0.75, `the forecourt is no longer near-white (linear red ${plaza.r.toFixed(3)})`);
+  // the paths read as darker strips across the square (R-lighting-materials-a2, -e), as they did in the first build, whose pavement was 0.86 of its plaza in
+  // sRGB: here the pavement's light is 0.55 to 0.75 of the plaza's, a strip you can see from the overview
+  const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const strip = lum(pavement) / lum(plaza);
+  assert.ok(strip > 0.55 && strip < 0.75, `the pavement is a visible strip across the plaza: ${strip.toFixed(2)} of its light`);
 });
 
 test('flat layers get a polygon offset in the order of their lift, so they never z-fight; facades get none', () => {

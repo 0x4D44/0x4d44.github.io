@@ -5,7 +5,8 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { DAY_EXPOSURE } from '../../core/daylight.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
-import { addWorld, DAYLIGHT, LIGHTS } from '../src/world.ts';
+import { terrainMaterial } from '../src/materials.ts';
+import { addWorld, DAYLIGHT, GROUND_COLOUR, LIGHTS } from '../src/world.ts';
 import { acesFilmic, toSrgb } from './aces.ts';
 
 type V3 = readonly [number, number, number];
@@ -167,6 +168,20 @@ test('the sky dome is authored in display colours and is not tone mapped; the li
   const ground = scene.children.find((o) => (o as THREE.Mesh).isMesh && o !== world.sky && ((o as THREE.Mesh).material as THREE.Material).type === 'MeshLambertMaterial') as THREE.Mesh | undefined;
   assert.ok(ground, 'a lit ground is in the scene');
   assert.equal((ground!.material as THREE.Material).toneMapped, true, 'the lit ground takes the grade');
+});
+
+test('the open ground is a neutral mid grey, never navy, and the terrain mesh that replaces it is the same grey (R-lighting-materials-d, -e)', () => {
+  const scene = new THREE.Scene();
+  const world = addWorld(scene, { grid: false });
+  const ground = scene.children.find((o) => (o as THREE.Mesh).isMesh && o !== world.sky && ((o as THREE.Mesh).material as THREE.Material).type === 'MeshLambertMaterial') as THREE.Mesh | undefined;
+  assert.ok(ground, 'a lit ground is in the scene');
+  const c = (ground!.material as THREE.MeshLambertMaterial).color;
+  const sRgb = [c.getHex() >> 16 & 255, c.getHex() >> 8 & 255, c.getHex() & 255];
+  assert.ok(Math.max(...sRgb) - Math.min(...sRgb) <= 6, `neutral, not blue: ${sRgb.join(', ')}`);
+  const luminance = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  assert.ok(luminance > 0.09 && luminance < 0.16, `worn tarmac or concrete, about 0.12 reflective: ${luminance.toFixed(3)}`);
+  assert.equal(GROUND_COLOUR, c.getHex(), 'the exported colour is the one drawn');
+  assert.equal((terrainMaterial('ground') as THREE.MeshLambertMaterial).color.getHex(), GROUND_COLOUR, 'the terrain draws the same grey');
 });
 
 test('addWorld: the sky, the sun and the fills are in the scene with the numbers of LIGHTS, and nothing else shines', () => {
