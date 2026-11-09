@@ -172,8 +172,19 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const berth = signalRefBerth(s.ref);
     if (berth) matches.set(berth, (matches.get(berth) ?? 0) + 1);
   }
-  function mesh(geometry: THREE.BufferGeometry, color: number): THREE.Mesh {
-    const material = new THREE.MeshBasicMaterial({ color });
+  // One material to a look and not one to a mesh. A head is five draws (the post, the box, the lamp, the dot and the line of its question mark) and a busy view shows
+  // fifty heads: with a material each, the renderer changed material about 250 times a frame for five colours, and that change (a program, its uniforms and textures
+  // refreshed) is most of what the page spends on a frame from a quiet camera. The heads drawn from the overlay share; an inferred head is its own: its post is
+  // translucent and it is disposed, material and all, when its berth goes.
+  const sharedBasic = new Map<number, THREE.MeshBasicMaterial>();
+  let sharedLine: THREE.LineBasicMaterial | undefined;
+  function sharedMaterial(color: number): THREE.MeshBasicMaterial {
+    let material = sharedBasic.get(color);
+    if (!material) { material = new THREE.MeshBasicMaterial({ color }); sharedBasic.set(color, material); resources.add(material); }
+    return material;
+  }
+  function mesh(geometry: THREE.BufferGeometry, color: number, share: boolean): THREE.Mesh {
+    const material = share ? sharedMaterial(color) : new THREE.MeshBasicMaterial({ color });
     resources.add(geometry); resources.add(material);
     return new THREE.Mesh(geometry, material);
   }
@@ -201,7 +212,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     pose(drawnSignal, group);
     // OSM bridge denotes a gantry, not a freestanding mast on an assumed side.
     // Keep the glyph height schematic: no source measures the gantry's elevation.
-    const post = drawnSignal.side === 'over-track' ? undefined : mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999);
+    const post = drawnSignal.side === 'over-track' ? undefined : mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999, !inferred);
     if (post) { post.name = 'post'; post.position.y = 1.85; group.add(post); }
     if (inferred) {
       const material = post!.material as THREE.MeshBasicMaterial; material.transparent = true; material.opacity = 0.45;
@@ -212,16 +223,17 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       resources.add(ringGeometry); resources.add(ringMaterial);
       const ring = new THREE.Line(ringGeometry, ringMaterial); ring.name = 'inferred-position'; ring.computeLineDistances(); group.add(ring);
     }
-    const head = mesh(new THREE.BoxGeometry(0.65, 1.15, 0.28), 0x15191c); head.position.y = 3.8; group.add(head);
-    const lamp = mesh(new THREE.SphereGeometry(0.19, 8, 6), 0x666666) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+    const head = mesh(new THREE.BoxGeometry(0.65, 1.15, 0.28), 0x15191c, !inferred); head.position.y = 3.8; group.add(head);
+    const lamp = mesh(new THREE.SphereGeometry(0.19, 8, 6), 0x666666, !inferred) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
     lamp.name = 'aspect'; lamp.position.set(0, 3.95, 0.18); group.add(lamp);
     const question = new THREE.Group(); question.name = 'unknown';
     // White vector question mark, facing local +z. No canvas, textures or DOM.
     const points = [[-0.1, 0.08], [-0.1, 0.17], [0.1, 0.17], [0.1, 0.03], [0, -0.04], [0, -0.12]];
     const lineGeometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y]) => new THREE.Vector3(x, y, 0)));
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff }); resources.add(lineGeometry); resources.add(lineMaterial);
+    if (!inferred && !sharedLine) { sharedLine = new THREE.LineBasicMaterial({ color: 0xffffff }); resources.add(sharedLine); }
+    const lineMaterial = !inferred && sharedLine ? sharedLine : new THREE.LineBasicMaterial({ color: 0xffffff }); resources.add(lineGeometry); resources.add(lineMaterial);
     question.add(new THREE.Line(lineGeometry, lineMaterial));
-    const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff); dot.position.y = -0.22; question.add(dot);
+    const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff, !inferred); dot.position.y = -0.22; question.add(dot);
     question.position.set(0, 3.48, 0.16); group.add(question);
     const detail = drawnSignal.positionReview?.status === 'reviewed' ? 'reviewed track position and side; height/offset schematic'
       : drawnSignal.positionReview?.reason ?? (drawnSignal.side === 'over-track' ? 'bridge mounting; height unmeasured' : 'side not evidenced by a public position review');
@@ -357,7 +369,9 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const states = signalStates(bytes, proceed, anchors);
     for (const record of records) {
       record.state = (record.signal.kinds.includes('main') || (record.signal.kinds.length === 0 && record.mappingSource === 'reference')) ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
-      lamps.get(record)!.material.color.setHex(record.state === 'proceed' ? 0x35ff69 : record.state === 'danger' ? 0xff2929 : 0x666666);
+      const lamp = lamps.get(record)!, lampColour = record.state === 'proceed' ? 0x35ff69 : record.state === 'danger' ? 0xff2929 : 0x666666;
+      if (record.inferredPosition) lamp.material.color.setHex(lampColour); // its own material
+      else lamp.material = sharedMaterial(lampColour); // the shared one of that colour
       questions.get(record)!.visible = record.state === 'unknown';
     }
   }

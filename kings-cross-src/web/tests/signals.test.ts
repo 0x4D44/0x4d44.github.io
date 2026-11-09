@@ -454,6 +454,48 @@ test('dispose detaches groups and releases every geometry and material exactly o
 });
 
 
+const materialsIn = (group: THREE.Group): Set<THREE.Material> => {
+  const out = new Set<THREE.Material>();
+  group.traverse((o) => { if (o instanceof THREE.Mesh || o instanceof THREE.Line) for (const m of Array.isArray(o.material) ? o.material : [o.material]) out.add(m); });
+  return out;
+};
+
+test('the heads drawn from the overlay share their materials, one to a look, so a view of fifty heads changes material five times, not two hundred and fifty', () => {
+  const four = [1, 2, 3, 4].map((n) => signal({ id: n, ref: `YA 100${n + 3}`, berth: `100${n + 3}`, point: [111 + n, 121], edge: { wayId: 9, from: 3, to: 4, t: 0.8, point: [110 + n, 120] } }));
+  const { layer, scene } = fixture(four); const heads = records(layer);
+  assert.equal(heads.length, 4);
+  const all = new Set<THREE.Material>(); for (const h of heads) for (const m of materialsIn(h.group)) all.add(m);
+  assert.equal(all.size, 5, 'a post, a box, a grey lamp, the dot and the line of the question mark: five looks for four heads');
+  // a lamp changes the look it takes, not the look of the other heads
+  const table = (extra: object[]) => ({ area: 'Y9', hypotheses: [currentHypothesis({ berth: '1004' }), currentHypothesis({ id: 'o', berth: '1005', address: '11', bit: 3 }), ...extra] });
+  layer.setTable(table([]));
+  layer.apply(row('SF', '04', '10')); layer.apply(row('SF', '00', '11'));
+  assert.deepEqual(heads.map((h) => h.state), ['proceed', 'danger', 'unknown', 'unknown']);
+  assert.deepEqual(heads.map((h) => aspect(h.group)), [0x35ff69, 0xff2929, 0x666666, 0x666666]);
+  const lamp = (i: number) => heads[i]!.group.getObjectByName('aspect') as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+  assert.equal(lamp(2).material, lamp(3).material, 'the two grey lamps are one material');
+  assert.notEqual(lamp(0).material, lamp(1).material); assert.notEqual(lamp(0).material, lamp(2).material);
+  layer.apply(row('SF', '00', '10'));
+  assert.deepEqual(heads.map((h) => aspect(h.group)), [0xff2929, 0xff2929, 0x666666, 0x666666], 'one head going red leaves the grey ones grey');
+  assert.equal(lamp(0).material, lamp(1).material, 'and the two red lamps are one material');
+  const posts = heads.map((h) => h.group.children.find((o) => o instanceof THREE.Mesh && o.geometry instanceof THREE.CylinderGeometry) as THREE.Mesh);
+  assert.ok(posts.every((p) => p.material === posts[0]!.material), 'the posts are one material');
+  // an inferred head is its own: a translucent post, a lamp that takes its colour without the others', and nothing shared released when its berth goes
+  const shared = new Set<THREE.Material>(); for (const h of heads) for (const m of materialsIn(h.group)) shared.add(m);
+  const released: THREE.Material[] = []; for (const m of shared) m.addEventListener('dispose', () => { released.push(m); });
+  layer.setAnchors(tdMap([tdAnchor('TD1')]), signalGraph()); layer.setTable(table([currentHypothesis({ id: 'td', berth: 'TD1', address: '12', bit: 1 })]));
+  const td = inferred(layer); assert.equal(td.length, 1, 'one inferred head');
+  assert.ok([...materialsIn(td[0]!.group)].every((m) => !shared.has(m)), 'it shares nothing with the heads of the overlay');
+  layer.apply(row('SF', '02', '12')); assert.equal(td[0]!.state, 'proceed'); assert.equal(aspect(td[0]!.group), 0x35ff69);
+  assert.deepEqual(heads.map((h) => aspect(h.group)), [0xff2929, 0xff2929, 0x666666, 0x666666], 'and its colour is not theirs');
+  layer.setAnchors(tdMap([]), signalGraph());
+  assert.equal(inferred(layer).length, 0); assert.equal(released.length, 0, 'taking it away releases nothing the others use');
+  layer.dispose();
+  assert.equal(released.length, new Set(released).size, 'and the layer releases each look once');
+  assert.ok(shared.size - released.length <= 1, 'every look the heads still showed is released with the layer'); // (a look no head shows now, the green one, may stay in the layer\'s own list only)
+  assert.equal(scene.children.length, 0);
+});
+
 function builderData(): KxData {
   return { attribution: 'synthetic OSM only', origin: { lat: 0, lon: 0 },
     nodes: [[1, 0, -200], [2, 0, -250], [3, 0, -300], [4, 0, -400]],

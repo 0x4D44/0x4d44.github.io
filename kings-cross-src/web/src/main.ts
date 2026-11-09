@@ -33,7 +33,7 @@ import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
 import { createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
-import { createSunShadow, createUngradedScan, grade } from './lighting.ts';
+import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
 import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
@@ -214,6 +214,7 @@ function start(): void {
   // The sun's shadow (lighting.ts) is London's; ?shadows=0 leaves it out. Every scene with a climate is drawn through the filmic grade (see the frame loop).
   const sunShadow = atmosphere && params.get('shadows') !== '0' ? createSunShadow(scene, world.lights.sun) : null;
   const ungraded = createUngradedScan();
+  const additions = createAdditionsWatch();
   const replayNoonMs = Date.parse(`${replayDay}T12:00:00Z`);
 
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
@@ -302,9 +303,10 @@ function start(): void {
     const shown = stations.activeScene();
     const sky = climate?.atmosphere.state() ?? null;
     if (climate && sky) {
-      ungraded(shown);
+      const added = additions(shown); // the scans visit every object of the scene: only on the frame after something was added to it
+      if (added) ungraded(shown);
       const toSun = climate.atmosphere.keyDirection();
-      if (shown === scene && sunShadow && toSun) { sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
+      if (shown === scene && sunShadow && toSun) { if (added) sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
     }
     grade(renderer, sky !== null, sky?.rig.exposure ?? 1);
     renderer.render(shown, camera);

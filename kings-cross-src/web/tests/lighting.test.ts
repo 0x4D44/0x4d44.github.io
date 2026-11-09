@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createSunShadow, createUngradedScan, grade, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -87,6 +87,58 @@ test('createUngradedScan: the unlit things of the scene on show are left out of 
   other.add(new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial()));
   assert.equal(scan(other), 1);
   assert.equal(createUngradedScan()(root), 0, 'and a fresh scan finds them already out of the grade');
+});
+
+test('createAdditionsWatch: the scans of a scene run on the first look and on the frame after something was added anywhere in it, and on no other', () => {
+  const look = createAdditionsWatch();
+  const scene = new THREE.Scene();
+  const station = new THREE.Group();
+  const shed = new THREE.Group();
+  station.add(shed);
+  scene.add(station);
+  assert.equal(look(scene), true, 'the first look at a scene');
+  assert.equal(look(scene), false, 'nothing has come in since');
+  assert.equal(look(scene), false);
+  scene.add(new THREE.Group());
+  assert.equal(look(scene), true, 'an object added to the scene itself');
+  assert.equal(look(scene), false);
+  shed.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial()));
+  assert.equal(look(scene), true, 'an object added deep in a group that was there from the start');
+  assert.equal(look(scene), false);
+  // a train built apart and then brought in: found as one addition, and what it holds already needs no second look
+  const train = new THREE.Group();
+  const car = new THREE.Group();
+  car.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial()));
+  train.add(car);
+  station.add(train);
+  assert.equal(look(scene), true, 'a train arrives');
+  assert.equal(look(scene), false);
+  car.add(new THREE.Group());
+  assert.equal(look(scene), true, 'something added to the car of a train that arrived after the first look');
+  assert.equal(look(scene), false);
+  // a scene is looked at whole again when it comes back on show (London's and Edinburgh's are drawn by turns)
+  const other = new THREE.Scene();
+  assert.equal(look(other), true, 'the other scene, the first time');
+  assert.equal(look(other), false);
+  assert.equal(look(scene), true, 'back to the first: its additions may have come while the other was drawn');
+  assert.equal(look(scene), false);
+  assert.equal(createAdditionsWatch()(scene), true, 'a fresh watch has not looked at anything');
+});
+
+test('the shadow shader: a face turned from the sun does not ask the map, and the soft edge asks SHADOW_TAPS times, in three\'s own chunks that every lit material compiles', () => {
+  const lights = THREE.ShaderChunk.lights_fragment_begin;
+  assert.ok(lights.includes('receiveShadow && dot( geometryNormal, directLight.direction ) > 0.0 ) ? getShadow( directionalShadowMap[ i ]'), 'the directional light asks only the faces it lights');
+  assert.equal(lights.split('getShadow( directionalShadowMap').length - 1, 1, 'and there is one such ask');
+  assert.equal(lights.split('receiveShadow && dot( geometryNormal').length - 1, 1, 'the point, spot and sun lights are left as three has them');
+  const pars = THREE.ShaderChunk.shadowmap_pars_fragment;
+  const start = pars.indexOf('float getShadow( sampler2DShadow');
+  const body = pars.slice(start, pars.indexOf('return mix( 1.0, shadow, shadowIntensity )', start));
+  assert.ok(start > 0 && body.length > 200, 'the hardware-comparison soft edge is there');
+  assert.equal((body.match(/texture\( shadowMap/g) || []).length, SHADOW_TAPS, `${SHADOW_TAPS} asks of the map for one pixel`);
+  assert.equal((body.match(new RegExp(`vogelDiskSample\\( \\d, ${SHADOW_TAPS}, phi \\)`, 'g')) || []).length, SHADOW_TAPS, 'spread over one disk of that many points');
+  const taps: number = SHADOW_TAPS; // (widened: three's own five is a setting this may come back to)
+  assert.ok(body.includes(taps === 5 ? '* 0.2;' : `* ${(1 / taps).toFixed(8)};`), 'and averaged');
+  assert.ok(SHADOW_TAPS >= 3 && SHADOW_TAPS <= 5, 'three asks at the least, or the edge is a hard step with a grain on it');
 });
 
 // ---- the shadow box ----------------------------------------------------------------------------------------------------------------------------
@@ -170,12 +222,16 @@ const meshes: THREE.Mesh[] = [];
 scene.traverse((o) => { if ((o as THREE.Mesh).isMesh || (o as THREE.InstancedMesh).isInstancedMesh) meshes.push(o as THREE.Mesh); });
 const materialsOf = (m: THREE.Mesh): THREE.Material[] => (Array.isArray(m.material) ? m.material : [m.material]);
 
-test('the casters are named meshes of the real scene: every name is there, and none of the small things, the trees, the glass or the rails is one', () => {
+test('the casters are named meshes of the real scene: every name is there, and none of the small things, the glass or the rails is one (the trees are, as one instanced draw)', () => {
   const names = new Set(meshes.map((m) => m.name));
   for (const name of SHADOW_CASTERS) assert.ok(names.has(name), `"${name}" is a mesh in the built scene (a renamed mesh would silently stop casting)`);
-  assert.ok(SHADOW_CASTERS.size <= 45, `${SHADOW_CASTERS.size} casters keeps the shadow pass to a few dozen draws`);
-  // city-glass is the whole wall of a curtain-walled office block (spandrels and mullions as much as glass), the one name with "glass" in it that is a building
-  for (const name of SHADOW_CASTERS) assert.ok(name === 'city-glass' || !/glass|glaz|window|tree|rail|lamp|sign|bench|train|label/i.test(name), `"${name}" is glazing or a small thing`);
+  assert.ok(SHADOW_CASTERS.size <= 46, `${SHADOW_CASTERS.size} casters keeps the shadow pass to a few dozen draws`);
+  // city-glass is the whole wall of a curtain-walled office block (spandrels and mullions as much as glass), the one name with "glass" in it that is a building; city-trees is every
+  // tree of the city in one instanced draw of about 30 triangles a tree, the one small thing that casts (round 3's score: the forecourt's trees floated on the ground)
+  for (const name of SHADOW_CASTERS) assert.ok(name === 'city-glass' || name === 'city-trees' || !/glass|glaz|window|tree|rail|lamp|sign|bench|train|label/i.test(name), `"${name}" is glazing or a small thing`);
+  const trees = meshes.find((m) => m.name === 'city-trees');
+  assert.ok(trees && (trees as THREE.InstancedMesh).isInstancedMesh && (trees as THREE.InstancedMesh).count > 500, 'the trees are one instanced mesh of the city, a thousand of them');
+  assert.ok(SHADOW_CASTERS.has('city-trees'), 'and they cast: a tree that casts no shadow floats on the ground in the picture');
   for (const m of meshes) {
     if (!SHADOW_CASTERS.has(m.name)) continue;
     for (const mat of materialsOf(m)) assert.ok(!['roofGlass', 'shedGlass', 'glass', 'canopyGlass', 'city-glass-pane'].includes(mat.name), `${m.name}: the sun comes through glass (${mat.name})`);
@@ -194,12 +250,14 @@ test('createSunShadow: one directional light casts one 2048 map by hand; the cas
   assert.equal(world.lights.fills.some((f) => f.castShadow) || world.lights.hemisphere.castShadow === true, false, 'one caster: the sun');
   const casting = meshes.filter((m) => m.castShadow);
   assert.deepEqual(new Set(casting.map((m) => m.name)), new Set(meshes.filter((m) => SHADOW_CASTERS.has(m.name)).map((m) => m.name)), 'exactly the named ones');
-  assert.ok(casting.length >= 30 && casting.length <= 45, `${casting.length} casters`);
+  assert.ok(casting.length >= 30 && casting.length <= 46, `${casting.length} casters`); // 45 before the trees (one more draw, instanced) joined them
   for (const m of casting) for (const mat of materialsOf(m)) assert.equal(mat.shadowSide, THREE.DoubleSide, `${m.name}: both faces go into the map`);
   for (const m of meshes) {
     const lit = materialsOf(m).some((mat) => (mat as THREE.MeshLambertMaterial).isMeshLambertMaterial || (mat as THREE.MeshPhongMaterial).isMeshPhongMaterial);
-    assert.equal(m.receiveShadow, lit, `${m.name} takes the shadow if it is lit`);
+    const seeThrough = materialsOf(m).some((mat) => mat.transparent);
+    assert.equal(m.receiveShadow, lit && !seeThrough, `${m.name} takes the shadow if it is lit and not glass (a pane is seen through: the look-up is not paid there)`);
   }
+  assert.ok(meshes.some((m) => !m.receiveShadow && materialsOf(m).some((mat) => (mat as THREE.MeshLambertMaterial).isMeshLambertMaterial && mat.transparent)), 'the scene has lit glass, and it is the exception');
   assert.equal(shadow.casters().length, casting.length);
   assert.equal(shadow.tag(), false, 'a second pass finds nothing new');
   assert.equal(shadow.casters().length, casting.length, 'and does not list a mesh twice');

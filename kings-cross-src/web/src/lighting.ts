@@ -12,7 +12,7 @@
 // swim) and snapped to the map's own texels (so moving does not either). Only the structure that stands in the sun casts: the train shed
 // and its front, the concourse's lattice and panels, the landmarks, the King's Cross Central blocks, the city's buildings and the
 // canopies' steel. Glass lets the sun through (R-lighting-materials-b, the shed glazing: the sun lies on the platforms in patches
-// under the crown glazing, between the dark ribs, and the slate flanks leave the rest in shade), so no glazing casts; small things (signals, lamps, benches, trains, trees, rails) do not cast, which keeps the map
+// under the crown glazing, between the dark ribs, and the slate flanks leave the rest in shade), so no glazing casts; small things (signals, lamps, benches, trains, rails) do not cast, and the trees do (one instanced draw), which keeps the map
 // to about forty draws in the busiest view. The map is drawn again only when something it depends on has moved, not every frame.
 //
 // THE SHADE UNDER A ROOF. A roof also takes away the sky: under the shed, the concourse or a canopy the hemisphere's light is mostly
@@ -74,6 +74,31 @@ export function createUngradedScan(): (root: THREE.Object3D) => number {
   };
 }
 
+/**
+ * A look at whether anything has been added to a scene since the last look. The scans of this module (the ungraded scan above, the shadow's
+ * `tag`) visit every object of the scene, a few thousand of them, to find the few it has not seen: a tenth of a millisecond a frame, on
+ * every frame, to find nothing on nearly all of them (a train arrives every few seconds). The watch hears three's 'childadded' on every
+ * object it has met, so it says yes on the first look at a scene, and after that only on the frame after an object was added anywhere in
+ * it. Call the function it returns with the scene about to be drawn; run the scans when it answers true.
+ */
+export function createAdditionsWatch(): (root: THREE.Object3D) => boolean {
+  const heard = new WeakSet<THREE.Object3D>();
+  let dirty = true;
+  let last: THREE.Object3D | null = null;
+  const hear = (): void => { dirty = true; };
+  return (root) => {
+    if (root === last && !dirty) return false;
+    last = root;
+    dirty = false;
+    root.traverse((o) => {
+      if (heard.has(o)) return;
+      heard.add(o);
+      o.addEventListener('childadded', hear);
+    });
+    return true;
+  };
+}
+
 // ---- the sun's shadow --------------------------------------------------------------------------------------------------------------------
 
 export const SHADOW_MAP_SIZE = 2048;
@@ -91,8 +116,9 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate', 'landmarks-rib',
   // King's Cross Central (kxcentral.ts)
   'kxcentral-brick', 'kxcentral-brickRed', 'kxcentral-stone', 'kxcentral-slate', 'kxcentral-iron', 'kxcentral-drum', 'kxcentral-timber', 'kxcentral-alu', 'kxcentral-curtain',
-  // the city (city.ts): every building's walls and roofs
-  'city-stock', 'city-red', 'city-stone', 'city-panel', 'city-glass', 'city-shop', 'city-roof',
+  // the city (city.ts): every building's walls and roofs, and the trees (one instanced draw of about 30 triangles a tree: without them the forecourt's trees stand in the sun and
+  // cast nothing, and float on the ground in the picture, R-lighting-materials-b and the round 3 score)
+  'city-stock', 'city-red', 'city-stone', 'city-panel', 'city-glass', 'city-shop', 'city-roof', 'city-trees',
   // the platform canopies (furniture.ts)
   'canopy-steel',
 ]);
@@ -179,6 +205,35 @@ function shadowMapTarget(size: number): THREE.WebGLRenderTarget {
   return map;
 }
 
+/**
+ * How many times the soft edge of a shadow asks the map. three takes five; each ask is a hardware 2 x 2 comparison and the asks are turned a different angle at each
+ * pixel, so three leave a fine grain on the edge where five leave a little less, and the edge is a pixel or two wide.
+ */
+export const SHADOW_TAPS = 3;
+
+/** Replace `from` in three's shader chunk `name` with `to`, once for the page; a chunk that no longer reads as expected (three has moved on) is an error, not a silent no-op. */
+function patchChunk(name: 'lights_fragment_begin' | 'shadowmap_pars_fragment', from: string | RegExp, to: string): void {
+  const chunks = THREE.ShaderChunk as unknown as Record<string, string>;
+  const text = chunks[name] as string;
+  if (text.includes(to)) return; // made already (this module loaded twice)
+  const next = text.replace(from, to);
+  if (next === text) throw new Error(`three's ${name} chunk is not the text lighting.ts changes: the shadow cost changes in lighting.ts need to follow it`);
+  chunks[name] = next;
+}
+
+/**
+ * Two changes to three's own shadow shader, made when this module loads (the chunks are shared by every lit material on the page). A face turned away from the sun
+ * (N.L <= 0) gets none of its light, shadow or no shadow, so it is not asked whether it is in the shadow: the picture is the same and the fragment skips the look-up.
+ * And the soft edge takes `SHADOW_TAPS` asks, not five. Together they are most of the shadow's cost in a view full of lit fragments.
+ */
+patchChunk('lights_fragment_begin', 'directLight.color *= ( directLight.visible && receiveShadow ) ? getShadow( directionalShadowMap[ i ]', // the directional light's line, not the point's, spot's or sun's
+  'directLight.color *= ( directLight.visible && receiveShadow && dot( geometryNormal, directLight.direction ) > 0.0 ) ? getShadow( directionalShadowMap[ i ]');
+if (SHADOW_TAPS < 5) {
+  const asks = Array.from({ length: SHADOW_TAPS }, (_, i) => `texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( ${i}, ${SHADOW_TAPS}, phi ) * radius, shadowCoord.z ) )`);
+  patchChunk('shadowmap_pars_fragment', /shadow = \(\s*texture\( shadowMap, vec3\( shadowCoord\.xy \+ vogelDiskSample\( 0, 5, phi \)[\s\S]*?\) \* 0\.2;/,
+    `shadow = ( ${asks.join(' + ')} ) * ${(1 / SHADOW_TAPS).toFixed(8)};`);
+}
+
 /** Make `sun` cast a shadow over `scene` (see the header). The caller adds nothing: the light's target is added here. */
 export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight): SunShadow {
   sun.castShadow = true;
@@ -203,8 +258,9 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       const mats = materialsOf(o);
-      // every lit surface takes the shadow
-      if (mats.some((m) => (m as THREE.MeshLambertMaterial).isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial)) mesh.receiveShadow = true;
+      // every lit surface takes the shadow, but glass: a pane is seen through, so the sun's patch on it is not what the eye reads, and the shed's glazing and the
+      // cars' windows are the large see-through surfaces of a view, where the look-up cost a tenth of a frame (round 4, measured interleaved against the build without it)
+      if (mats.some((m) => (m as THREE.MeshLambertMaterial).isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && !mats.some((m) => m.transparent)) mesh.receiveShadow = true;
       if (SHADOW_CASTERS.has(mesh.name)) {
         mesh.castShadow = true;
         // a roof or a wall is one sheet: both of its faces are drawn into the map, or the sheet that faces the sun would not shade what is behind it
