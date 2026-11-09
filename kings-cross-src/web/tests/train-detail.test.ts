@@ -140,24 +140,25 @@ test('nose: the front edge is rounded by a quarter circle that leaves the face s
   }
 });
 
-test('nose: the rings cut the fillet into filletSteps gaps (six unless the spec says) on a quarter circle, the first at the face and the last where the fillet ends, then run to the nose\'s end 0.14 m or less apart', () => {
+test('nose: the rings cut the fillet into filletSteps gaps (twelve unless the spec says) on a quarter circle, the first at the face and the last where the fillet ends, then run to the nose\'s end 0.07 m or less apart', () => {
+  // CHANGED (six gaps in the fillet unless the spec said, and 0.14 m between the rings behind it): the budget ruling of 2026-11-09 (train-rubric/budget-ruling-2026-11-09.md) pays for noses twice as fine
   for (const family of FAMILIES) {
     const nose = bodySpec(family).nose;
-    const steps = nose.filletSteps ?? 6;
+    const steps = nose.filletSteps ?? 12;
     const at = ringStations(nose);
-    assert.equal(at.length, steps + 1 + Math.ceil((nose.length - nose.fillet) / 0.14), `${family}: the number of rings`);
+    assert.equal(at.length, steps + 1 + Math.ceil((nose.length - nose.fillet) / 0.07), `${family}: the number of rings`);
     for (let k = 0; k <= steps; k++) near(at[k] as number, nose.fillet * (1 - Math.cos((k / steps) * (Math.PI / 2))), 1e-12, `${family}: ring ${k} of the fillet`);
     near(at[0] as number, 0, 1e-12, `${family}: the first ring is the face`);
     near(at[steps] as number, nose.fillet, 1e-12, `${family}: the fillet's last ring`);
     near(at[at.length - 1] as number, nose.length, 1e-12, `${family}: the last ring is the nose's end`);
-    for (let k = steps + 1; k < at.length; k++) assert.ok((at[k] as number) - (at[k - 1] as number) > 0 && (at[k] as number) - (at[k - 1] as number) <= 0.14 + 1e-9, `${family}: ring ${k} is ${(at[k] as number) - (at[k - 1] as number)} m after the one before`);
+    for (let k = steps + 1; k < at.length; k++) assert.ok((at[k] as number) - (at[k - 1] as number) > 0 && (at[k] as number) - (at[k - 1] as number) <= 0.07 + 1e-9, `${family}: ring ${k} is ${(at[k] as number) - (at[k - 1] as number)} m after the one before`);
   }
   // CHANGED (six rings for every nose): the 387's corner is tight (0.06 of the size lost over 0.2 m) on a face 2.9 m tall, and six rings left a 36 degree edge in it: it has nine
   assert.equal(bodySpec('electrostar').nose.filletSteps, 9);
   assert.equal(bodySpec('at300').nose.filletSteps, undefined, 'the others keep the default');
   const three = ringStations({ ...bodySpec('at300').nose, filletSteps: 3 });
   near(three[3] as number, bodySpec('at300').nose.fillet, 1e-12, 'three steps end the fillet at its third ring');
-  assert.deepEqual(ringStations({ ...bodySpec('at300').nose, filletSteps: undefined }), ringStations({ ...bodySpec('at300').nose, filletSteps: 6 }), 'and six is the default');
+  assert.deepEqual(ringStations({ ...bodySpec('at300').nose, filletSteps: undefined }), ringStations({ ...bodySpec('at300').nose, filletSteps: 12 }), 'and twelve is the default');
 });
 
 test('nose: the section morphs from an egg at the tip to the car section, and the bonnet is lower than the roof', () => {
@@ -3824,8 +3825,9 @@ test('trains: every kind draws in at most 80 calls, four materials and a bounded
     assert.ok(meshes <= 80, `${kind} has ${meshes} meshes`);
     assert.equal(far, 2 * layout.cars.length, `${kind}: one far bogie mesh for each of its ${2 * layout.cars.length} bogies`);
     assert.ok(materials.size <= 4, `${kind} has ${materials.size} materials`);
+    // 40,000 near triangles a car, by the budget ruling of 2026-11-09 (train-rubric/budget-ruling-2026-11-09.md; it was 10,000): the busy scene's frame rate is the guard that matters
     const perCar = triCount(g) / layout.cars.length;
-    assert.ok(perCar > 3000 && perCar < 10000, `${kind}: ${perCar.toFixed(0)} triangles a car`);
+    assert.ok(perCar > 3000 && perCar < 40000, `${kind}: ${perCar.toFixed(0)} triangles a car`);
     for (const car of layout.cars) {
       const group = named(g, `car-${car.index}`);
       for (const n of ['body-shell', 'body-detail']) assert.ok(group.getObjectByName(n), `${kind} car ${car.index} has ${n}`);
@@ -4271,7 +4273,9 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       // the band's front row stands on the face's own outline, in the face's plane: where the cap's yellow ends the band's begins, with no slit between them for the red of the loft
       // behind to show through (the row used to stand 4 mm off the loft: 2.7 mm over the outline and 3 mm in front of the face, and the red showed as a hairline along the arch of the
       // face in the 3 m views of the LNER's yellow and of the Hull Trains beak)
-      const edgeRow = tris.filter((t) => t.some((v) => Math.abs(along(v)) > 1e-3)).flat().filter((v) => along(v) < 0.002);
+      // CHANGED (the front row was the vertices within 2 mm of the plane): the rings behind the face are twice as fine now (budget ruling of 2026-11-09), the first 2.6 mm from it, and the
+      // band's second row stands there less its 1.5 mm of lift, a millimetre or so off the plane, so the front row is the vertices within half a millimetre of it
+      const edgeRow = tris.filter((t) => t.some((v) => Math.abs(along(v)) > 1e-3)).flat().filter((v) => along(v) < 0.0005);
       assert.ok(edgeRow.length >= 19, `${kind} car ${car.index}: only ${edgeRow.length} vertices of the band stand at the face's edge`);
       for (const v of edgeRow) {
         assert.ok(Math.abs(along(v)) < 1e-4, `${kind} car ${car.index}: the band's front row stands ${(along(v) * 1000).toFixed(1)} mm off the face's plane`);

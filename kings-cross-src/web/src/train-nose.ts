@@ -29,7 +29,7 @@ export interface NoseSpec {
   /** The fraction of the nose's size the flat front face has lost to that rounding (0.3: the face is 70 % of the ring behind). */
   filletLoss: number;
   /**
-   * How many ring gaps the fillet is cut into (default 6). A tight corner on a tall face (a flat-faced cab's: 0.06 lost over 0.2 m) turns the surface through
+   * How many ring gaps the fillet is cut into (default 12). A tight corner on a tall face (a flat-faced cab's: 0.06 lost over 0.2 m) turns the surface through
    * its quarter circle in the same number of steps as a loose one, each a sharper edge: it takes more rings to stay smooth.
    */
   filletSteps?: number;
@@ -93,12 +93,15 @@ export function ringAt(spec: NoseSpec, s: number): Ring {
   };
 }
 
-/** Where the rings go: close together at the tip (the fillet), then about every 0.14 m. Ends exactly at `length`. */
+/**
+ * Where the rings go: close together at the tip (the fillet), then about every 0.07 m. Ends exactly at `length`. (Twice as fine as it was before the budget ruling of 2026-11-09,
+ * which was 6 gaps in the fillet and 0.14 m between the rings after it: a ring edge of the loft turns the surface about half as far.)
+ */
 export function ringStations(spec: NoseSpec): number[] {
   const out: number[] = [];
-  const steps = spec.filletSteps ?? 6;
+  const steps = spec.filletSteps ?? 12;
   for (let k = 0; k <= steps; k++) out.push(spec.fillet * (1 - Math.cos((k / steps) * (Math.PI / 2))));
-  const n = Math.max(1, Math.ceil((spec.length - spec.fillet) / 0.14));
+  const n = Math.max(1, Math.ceil((spec.length - spec.fillet) / 0.07));
   for (let k = 1; k <= n; k++) out.push(lerp(spec.fillet, spec.length, k / n));
   return out;
 }

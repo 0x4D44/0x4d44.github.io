@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, shellMaterial } from '../src/livery.ts';
-import { NOSE_RECESS, bodySpec, buildTrain, frontOf } from '../src/train.ts';
-import { ringAt } from '../src/train-nose.ts';
+import { NOSE_RECESS, bodySpec, buildTrain, carSection, frontOf } from '../src/train.ts';
+import { eggSection, halfAt, normalised, ringAt, ringStations } from '../src/train-nose.ts';
 import { col } from '../src/train-geom.ts';
 import { MASK_700, MASK_717 } from '../src/train-face.ts';
 import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
@@ -408,6 +408,14 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
   const lumoDome = 0x2a2d33;
   const cars = (kind: TrainKind): number[] => trainLayout(kind).cars.filter((c) => c.cab).map((c) => c.index);
   // CHANGED (the LNER's began 3.2 m back, and Lumo had none): the nose is 3.9 m long now, the cap starts at the glass's top edge (2.0 m), and the 803 has one too (LUMO-03, LUMO-05)
+  // CHANGED again (the dome was held to y > 2.4, which was the shell's top edge at the ring 2.1 m back, the first at or behind 2.0 m when the rings were 0.14 m apart): the rings are
+  // twice as fine now (budget ruling of 2026-11-09), the first at or behind 2.0 m is 2.03 m back, and the dome's lowest edge is the shell's top (column 7 of the section) at that ring
+  const at300 = bodySpec('at300');
+  const sec300 = carSection(at300);
+  const norm300 = normalised(sec300);
+  const domeRing = ringStations(at300.nose).find((s) => s >= 2.0 - 1e-9) as number;
+  const domeFloor = (halfAt(sec300, norm300, eggSection(norm300, at300.nose.widest, at300.nose.boxiness), ringAt(at300.nose, domeRing))[7] as [number, number])[1];
+  assert.ok(domeRing >= 2.0 - 1e-9 && domeRing < 2.1 && domeFloor > 2.3 && domeFloor < 2.45, `the dome's first ring is ${domeRing} m back, its lowest edge ${domeFloor} m up`);
   for (const [kind, colour] of [['lner5', dark], ['lner9', dark], ['lumo5', lumoDome]] as [TrainKind, number][]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
@@ -420,7 +428,7 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
       for (const t of tris) for (const v of t) {
         assert.ok(Math.abs(v.z - tip) >= 2.0 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
         // (CHANGED from 2.5 m: the cap runs a little way down the sides of the glass, about a third of the way down its side edge, 2.6 m: lner-801-214-2025's close crop of the cab)
-        assert.ok(v.y > 2.4, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(2)}, not on the roof or the glass's upper shoulder`);
+        assert.ok(v.y >= domeFloor - 1e-4, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(3)}, under the shell's top edge (${domeFloor.toFixed(3)}): not on the roof or the glass's upper shoulder`);
       }
     }
     // a through car has none
