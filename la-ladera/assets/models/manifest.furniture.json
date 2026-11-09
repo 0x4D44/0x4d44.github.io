@@ -5,7 +5,7 @@
     "catalogSha256": "5f229f22eb098884c9d6933a58213fb38396ba6ed24bb8af629ee27978c36fbc"
   },
   "assetCount": 224,
-  "totalBytes": 5404376,
+  "totalBytes": 5404380,
   "files": [
     {
       "glb": "furniture/furn_details.glb",
@@ -3557,8 +3557,8 @@
     },
     {
       "glb": "furniture/furn_living.glb",
-      "bytes": 1080620,
-      "sha256": "2fd41a6787eb4cc82aa1e0fe1f3c4da5f63eae8ba81d38d22d8ddbb8d3d549ca",
+      "bytes": 1080624,
+      "sha256": "92a8815ec2a66e659d7b507ce0a0736a9781393fcb20cc7a525016a02ea80fee",
       "assets": {
         "sofa_3_vinyl": {
           "node": "sofa_3_vinyl",
@@ -3925,12 +3925,12 @@
             "min": [
               -0.1974,
               0.0,
-              -0.1975
+              -0.162
             ],
             "max": [
               0.1974,
               0.85,
-              0.1975
+              0.162
             ]
           }
         },
