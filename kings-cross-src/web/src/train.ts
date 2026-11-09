@@ -472,9 +472,9 @@ const AT300: BodySpec = {
   doorWidth: ASSUMED.doorWidth,
   doorY: [1.15, 2.86],
   doorLeaves: 1,
-  // the window row: a long low pane with the red band round it (lner-801-214-2025: 1.92 to 2.74 m against the roof edge at 3.35 m and the underframe at 1.0 m;
-  // lner-800-doncaster-2026 has it 1.98 to 2.61 m); it was the generic 1.72 to 2.72 m
-  windowY: [1.92, 2.74],
+  // the window row: a long low pane with the red band round it (lner-801-214-2025, measured again against the cantrail's pinstripe at 3.05 m and the equipment cover's top at 1.0 m:
+  // 1.93 to 2.55 m; lner-800-doncaster-2026: 1.95 to 2.63 m); it was 1.92 to 2.74 m (a pane 0.82 m tall, where the photographs show one about 0.65 m), and before that the generic 1.72 to 2.72 m
+  windowY: [1.98, 2.62],
   // The nose, read off photographs (heights above the rail head, s from the tip; the numbers are estimates, not published): a chin that stands well forward
   // with its foot about 0.5 m up, a steep face rising to the windscreen's sill (about 2.0 m, 0.7 m back), the glass raked at about 34 degrees to its top
   // (2.8 m, 1.9 m back), a low dome behind it, then the roof. lner-800-113-newcastle-2025 (head on: sill 1.9 m, glass top 2.8 m, glass about half the cab's width),

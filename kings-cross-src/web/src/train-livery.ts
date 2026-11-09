@@ -125,11 +125,13 @@ export const HULL_DOOR = 0xc41e46;
 
 /**
  * Top and bottom of the LNER red band beside the windows (metres above the rail head): the band holds the whole window row and a hand's breadth round it, and is
- * about 47% of the body's height between the dark foot and the roof edge. Read off lner-801-214-2025 (the first car: band top 3.05 m, bottom 1.82 m) and
- * lner-800-doncaster-2026 (2.96 m, 1.85 m), each against the height between the roof edge (3.35 m) and the underframe's top (1.0 m). It was [1.52, 2.97], which
- * made the sides two thirds red where the photographs show a white-silver train with a red band.
+ * about 39% of the body's height between the dark foot and the roof edge, with white-silver above it and below it. Read again off lner-801-214-2025 (a close crop of its first car,
+ * measured against the pinstripe at the cantrail, 3.05 m, and the equipment cover's top, 1.0 m: the band from 2.70 m down to 1.84 m, the window row 2.55 to 1.93 m) and
+ * lner-800-doncaster-2026 (2.94 m down to 1.90 m, the windows 2.63 to 1.95 m): the two disagree over the band's top by a quarter of a metre (the 800 photograph is a silver car in
+ * hard sun, its band's upper edge soft), so it is set between them. It was [1.83, 2.97]: a band 48% of the side, reaching the top of the wall, so that a side view read red above and
+ * white below, which the round 3 score called inverted; the photographs show white-silver all round it, over a third of the side white above the windows' band.
  */
-export const LNER_BAND: [number, number] = [1.83, 2.97];
+export const LNER_BAND: [number, number] = [1.85, 2.76];
 
 /**
  * The Azuma's side. lner-801-214-2025 (a 5-car 801 at Doncaster-area track; a close crop of its first car) and lner-800-doncaster-2026: white-silver car sides, one

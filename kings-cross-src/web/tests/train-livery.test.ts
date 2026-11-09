@@ -60,9 +60,17 @@ test('LNER: one red band holds the windows along the whole car, white above and 
   // the band holds the whole row of windows (lner-801-214-2025: the red is the band round the windows, not a stripe under them)
   const windows = bodySpec('at300').windowY;
   assert.ok(bottom < windows[0] && top > windows[1], `the red band (${bottom} to ${top} m) holds the window row (${windows[0]} to ${windows[1]} m)`);
-  // and is not most of the side: between the underframe's top (1.0 m) and the roof edge (3.35 m) it is 40% to 55% of the height (the photographs: 47%)
+  // a low row, as the photographs show it (lner-801-214-2025: 0.62 m; lner-800-doncaster-2026: 0.68 m), with a hand's breadth of red above the glass and under it
+  const glass = windows[1] - windows[0];
+  assert.ok(glass > 0.55 && glass < 0.72, `the window row is ${glass.toFixed(2)} m tall`);
+  assert.ok(top - windows[1] >= 0.08 && windows[0] - bottom >= 0.08, `a hand's breadth of red over the glass (${(top - windows[1]).toFixed(2)} m) and under it (${(windows[0] - bottom).toFixed(2)} m)`);
+  // and is not most of the side: between the underframe's top (1.0 m) and the roof edge (3.35 m) it is 33% to 45% of the height (lner-801-214-2025 measured again against the cantrail's
+  // pinstripe: 37%; lner-800-doncaster-2026: 44%). It was 48%, reaching the top of the wall, and a side view read red above and white below: the round 3 score's "inverted".
   const share = (top - bottom) / (3.35 - 1.0);
-  assert.ok(share > 0.4 && share < 0.55, `the red band is ${(share * 100).toFixed(0)}% of the side's height`);
+  assert.ok(share > 0.33 && share < 0.45, `the red band is ${(share * 100).toFixed(0)}% of the side's height`);
+  // white-silver over it, a good third of a metre of wall and roof shoulder, so the side reads as a white car with a red band and not a red car over a white skirt
+  assert.ok(3.35 - top >= 0.5, `white over the band: the roof edge is ${(3.35 - top).toFixed(2)} m over its top`);
+  assert.ok(bottom - 1.0 >= 0.8, `and white under it: the equipment cover is ${(bottom - 1.0).toFixed(2)} m under its foot`);
   // along a through car (the texture's last column): the window band is red, the body above and below it white
   // (a point exactly on the texture's edge, s = TEX_SPAN, is on no polygon's inside: the last column is read just inside it)
   const LAST = TEX_SPAN - 0.01;
