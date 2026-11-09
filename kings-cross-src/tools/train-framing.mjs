@@ -702,14 +702,15 @@ export function stationViewsFromSearch(station, report, { platformHeightM = CATA
 }
 /**
  * The six V10 views from the frozen manifest of an earlier run: an accepted camera is used exactly as frozen (the placement is the one this
- * run derives, which the drift check has already matched to the frozen one) and nothing is searched; a view frozen as a GAP stays a GAP.
+ * run derives, which the drift check has already matched to the frozen one) and nothing is searched; a view frozen as a GAP stays a GAP, with
+ * the placement, reason and blocker it was frozen with, so the manifest of a replay freezes to the same numbers as the run it replays.
  */
 export function stationViewsFromFrozen(station, held, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
   return station.views.map(spec => {
-    const entry = held?.views?.[spec.suffix], p = entry?.plan, placement = p?.status === 'OK' ? station.placements.find(x => x.id === p.placement?.id) : null;
+    const entry = held?.views?.[spec.suffix], p = entry?.plan, placement = station.placements.find(x => x.id === p?.placement?.id) ?? null;
     const planned = placement?.views.find(v => v.suffix === spec.suffix), frozen = { frozen: true };
     const finish = view => ({ ...view, notes: stationNotes(view) });
-    if (!placement) return finish({ ...stationBase(spec, null, null, platformHeightM), status: 'GAP', reason: `frozen as a GAP: ${entry?.outcome?.reason ?? entry?.reason ?? 'no reason recorded'}`, search: frozen });
+    if (p?.status !== 'OK' || !placement) return finish({ ...stationBase(spec, placement, planned, platformHeightM), status: 'GAP', reason: entry?.outcome?.reason ?? entry?.reason ?? 'no reason recorded', blocker: entry?.outcome?.blocker ?? null, search: frozen });
     return finish({ ...stationBase(spec, placement, planned, platformHeightM), status: 'OK', reason: null, eye: p.eye, target: p.target, near: p.near, azimuthDeg: p.azimuthDeg, platform: p.platform, search: frozen });
   });
 }

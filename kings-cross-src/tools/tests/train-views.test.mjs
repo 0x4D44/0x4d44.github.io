@@ -669,7 +669,8 @@ const fakeReport=(plan,accepts)=>plan.placements.filter(p=>accepts[p.id]).map(p=
 });
 const allAt=(plan,id,index=0)=>({[id]:Object.fromEntries(plan.views.map(v=>[v.suffix,index]))});
 const viewsOf=(kind,accepts)=>{const plan=stationPlans.get(kind);return F.stationViewsFromSearch(plan,fakeReport(plan,accepts(plan)));};
-const manifestOf=views=>({views:Object.fromEntries(views.map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v))),outcome:{status:v.status,reason:v.reason}}]))});
+/** What a run's manifest holds of its views (see C.manifestEntry): the frozen numbers and the outcome. */
+const manifestOf=views=>({views:Object.fromEntries(views.map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v))),outcome:{status:v.status,reason:v.reason,blocker:v.blocker??null}}]))});
 
 test('V10 stands the specimen at the fourth buffer stop from the west, nose at the buffers first and then turned so the leading cab is at the north end',()=>{
  assert.equal(station.stops.length,9);assert.ok(station.stops.every((s,i)=>i===0||s.x>station.stops[i-1].x),'the stops run from west to east');
@@ -794,7 +795,11 @@ test('frozen V10 poses are reused exactly without a search, a frozen GAP stays a
  assert.deepEqual(F.stationFrozenDrift(plan,held),[],'what a search accepted is what the frozen file derives');
  const again=F.stationViewsFromFrozen(plan,held);assert.deepEqual(again.map(v=>v.status),views.map(v=>v.status));
  again.slice(0,5).forEach((v,i)=>{vec(v.eye,views[i].eye,1e-12);vec(v.target,views[i].target,1e-12);assert.equal(v.near,views[i].near);assert.equal(v.azimuthDeg,views[i].azimuthDeg);assert.equal(v.platform,views[i].platform);assert.equal(v.placement.id,B);assert.deepEqual(v.search,{frozen:true});assert.deepEqual(v.region,views[i].region);assert.deepEqual(v.focus,views[i].focus);near(v.rotation.rotationY,plan.placements[1].rotationY,1e-12);});
- assert.equal(again[5].status,'GAP');assert.equal(again[5].eye,undefined);assert.equal(again[5].reason,`frozen as a GAP: ${views[5].reason}`);assert.deepEqual(again[5].search,{frozen:true});
+ assert.equal(again[5].status,'GAP');assert.equal(again[5].eye,undefined);assert.equal(again[5].reason,views[5].reason,'the reason it was frozen with');assert.equal(again[5].blocker,views[5].blocker);assert.deepEqual(again[5].search,{frozen:true});
+ assert.equal(again[5].placement?.id,B,'a frozen GAP keeps the placement it was found in');assert.deepEqual(again[5].focus,views[5].focus);assert.deepEqual(again[5].rotation,views[5].rotation);assert.deepEqual(again[5].notes,views[5].notes);
+ // a replay freezes to the numbers it replays, so its own manifest is as good a poses file as the first
+ for(const v of again) assert.equal(F.poseDifference(F.poseOf(v),held.views[v.suffix].plan),null,`${v.suffix} freezes to its frozen numbers`);
+ assert.deepEqual(F.stationFrozenDrift(plan,manifestOf(again)),[]);assert.deepEqual(F.stationViewsFromFrozen(plan,manifestOf(again)).map(v=>[v.status,v.reason,v.blocker??null]),again.map(v=>[v.status,v.reason,v.blocker??null]),'and a replay of a replay says the same');
  assert.equal(F.stationViewsFromFrozen(plan,undefined).every(v=>v.status==='GAP'&&/no reason recorded/.test(v.reason)),true);
  assert.deepEqual(F.poseDifference(F.poseOf(again[0]),held.views['station-25m'].plan),null,'a frozen view freezes to itself');
  assert.equal(drift(v=>{v['station-25m'].plan.eye[0]+=.001;})[0]?.at,'/eye/0');assert.equal(drift(v=>{v['station-75m'].plan.eye[2]-=.01;})[0]?.reason,'pose differs from the frozen pose');assert.equal(drift(v=>{v['station-75m'].plan.target[1]=1.8;})[0]?.at,'/target/1');
