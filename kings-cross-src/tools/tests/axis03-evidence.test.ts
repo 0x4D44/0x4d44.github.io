@@ -53,7 +53,10 @@ test('measures every ALL_KINDS coach body and roof envelope while excluding sepa
   assert.ok(Math.abs(azuma.geometry.lengthM - 25.849) < 0.002);
   assert.equal(azuma.geometry.widthM, 2.7);
   assert.equal(azuma.geometry.heightAboveRailM, 3.62);
-  assert.equal(azuma.geometry.envelopeHeightM, 3.17);
+  // 3.62 m over the rail down to 0.449 m, not 0.45: the cover's foot is at 0.45 m, and the hem's notches (train-parts.ts SKIRT_HEM) stand 4 mm off its leaning face along the face's normal,
+  // which at the foot is 1.15 mm lower still. The body still excludes the pantograph above and the bogies below.
+  assert.equal(azuma.geometry.envelopeHeightM, 3.171);
+  assert.equal(azuma.geometry.minY, 0.449);
 
   const synthetic = new THREE.Group();
   synthetic.name = 'synthetic-car';
