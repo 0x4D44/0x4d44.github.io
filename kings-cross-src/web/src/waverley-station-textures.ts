@@ -19,11 +19,11 @@ export type StationTextureName=keyof typeof WAVERLEY_STATION_TEXTURES;
 type Ctx=CanvasRenderingContext2D;
 const PAINT:Record<StationTextureName,(g:Ctx,w:number,h:number)=>void>={
  cassettes(g,w,h){
-  // u runs up the slope (x), v across it (z): panes with a soft sky sheen, bright bars at the module edges.
-  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#8b949b');grad.addColorStop(.5,'#a3abb1');grad.addColorStop(1,'#8f989f');
+  // u runs up the slope (x), v across it (z): neutral silver panes with a soft sheen (R-wv1-a3 reads silver-grey, not sky blue), bright bars.
+  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#a9adb0');grad.addColorStop(.5,'#c0c3c5');grad.addColorStop(1,'#adb1b3');
   g.fillStyle=grad;g.fillRect(0,0,w,h);
-  g.fillStyle='#d9dde0';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
-  g.fillStyle='#6f777d';g.fillRect(0,h*.09,w,1);
+  g.fillStyle='#e4e6e7';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
+  g.fillStyle='#7d8285';g.fillRect(0,h*.09,w,1);
  },
  blister(g,w,h){
   g.fillStyle='#cfae3a';g.fillRect(0,0,w,h);

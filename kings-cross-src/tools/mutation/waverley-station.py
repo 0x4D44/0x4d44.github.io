@@ -36,13 +36,13 @@ MUTATIONS = [
     ('a column stands at the band edge, toward a track', STRUCT, 'const p=worldPoint(f,t,band.mid);', 'const p=worldPoint(f,t,band.s0-1);'),
     ('a girder jumps a missing column', STRUCT, 'if(Math.hypot(a.c.x-b.c.x,a.c.z-b.c.z)>S.maxSpan)continue;', ''),
     # furniture
-    ('the lamps hang off the middle line', STRUCT, 'plan.lamps.push({x:mid[0],z:mid[1],', 'plan.lamps.push({x:mid[0]+4,z:mid[1]+4,'),
+    ('the lamps hang off the middle line', STRUCT, 'plan.lamps.push({x:mid[0],z:mid[1],rotY,ref:f.ref});', 'plan.lamps.push({x:mid[0]+4,z:mid[1]+4,rotY,ref:f.ref});'),
     ('no screens are hung', STRUCT, 'plan.screens.push({x:q[0],z:q[1],rotY,ref:f.ref});', ''),
     # ironwork heights
     ('the gutter girders pierce the glazing', STRUCT, 'gutterGirderTop:7.95,', 'gutterGirderTop:8.05,'),
     ('the gutter girders hang into the trains', STRUCT, 'gutterGirderDepth:1.0,', 'gutterGirderDepth:3.5,'),
     ('a platform girder chord is coplanar with a gutter chord', STRUCT, 'platformGirderTop:7.72,', 'platformGirderTop:7.77,'),
-    ('the valance drops onto the block', STRUCT, 'valanceBottom:6.6,', 'valanceBottom:6.2,'),
+    ('the valance drops onto the parapet', STRUCT, 'valanceBottom:7.0,', 'valanceBottom:6.8,'),
     ('the column stops short of its girder', STRUCT, 'y3=underGirder-S.abacus,', 'y3=underGirder-S.abacus-.2,'),
     # the roof's solid strips
     ('the roof rises 2.0 m, not the 2.4 m profile', ROOF, 'export const WAVERLEY_ROOF_PROFILE={gutter:8,rise:2.4,', 'export const WAVERLEY_ROOF_PROFILE={gutter:8,rise:2.0,'),
@@ -58,9 +58,28 @@ MUTATIONS = [
     ('upper windows run into the cornice', BLOCK, [('upperSill:.4,', 'upperSill:.8,'), ('if(y1>h-B.cornice-.1)continue;', '')]),
     ('a door sits behind the plinth', BLOCK, 'windowLift:.03,doorLift:.1,', 'windowLift:.03,doorLift:.05,'),
     # the bridges over the roof and the steps (W2's)
-    ('the roof runs on under the bridges', STATION, 'ridgeRoofBatches(r.outer,r.holes,undefined,undefined,WAVERLEY_ROOF_CUTOUTS)', 'ridgeRoofBatches(r.outer,r.holes)'),
+    ('the roof runs on under the bridges', STATION, 'ridgeRoofBatches(stationRoof!.outer,r.holes,undefined,undefined,WAVERLEY_ROOF_CUTOUTS)', 'ridgeRoofBatches(stationRoof!.outer,r.holes)'),
     ('a cut-out keeps the piece inside it', ROOF, 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);', 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);if(i===c.length-1&&rest.length>=3)pieces.push(clipSide(rest,a,b,1));'),
-    ('the valance runs on under North Bridge', STRUCT, 'if(plan.cutouts.some(c=>inRing(p((k+.5)/n),c)))continue;', ''),
+    ('the valance runs on under North Bridge', STRUCT, 'S.valanceBottom,S.valancePiece,C.valance,underDeck);', 'S.valanceBottom,S.valancePiece,C.valance,()=>false);'),
+    ('the gable cladding runs on under the bridges', STRUCT, 'S.fasciaBottom,S.valancePiece,C.fascia,underDeck);', 'S.fasciaBottom,S.valancePiece,C.fascia,()=>false);'),
+    # round 2: the roof's west extension and the glazing
+    ('the roof stops at OSM short of Waverley Bridge', STATION, 'return [...ring.slice(0,i+1),c2,face,...ring.slice(i+1)];', 'return ring;'),
+    ('the extension reaches under Waverley Bridge', STATION, 'faceGap:.05,', 'faceGap:-.5,'),
+    ('the cassettes are see-through', STATION, 'cassettes.opacity=.97;', 'cassettes.opacity=.7;'),
+    ('the underside glazing shows its top face too', STATION, 'glazing.side=THREE.BackSide;', ''),
+    ('the underside copies the buffer', STATION, 'new THREE.Mesh(top.geometry,glazing)', 'new THREE.Mesh(top.geometry.clone(),glazing)'),
+    # round 2: purlins and the south edge
+    ('the purlins are coplanar with the gutter chords', STRUCT, 'purlinTop:7.92,', 'purlinTop:7.95,'),
+    ('purlins run on past the roof', STRUCT, 'if([x0,(x0+x1)/2,x1].every(px=>underRoof(roof,[px,z],.3,cutouts)))', 'if(true)'),
+    ('the south edge girder runs under the bridges', STRUCT, 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05,cutouts)))', 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05)))'),
+    ('the south edge girder hangs into the trains', STRUCT, 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,S.platformGirderDepth,C.iron);', 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,3.5,C.iron);'),
+    # round 2: platform furniture and finish
+    ('railings stand by a track', STRUCT, 'if([ia,ib].every(q=>inRing(q,f.pts)&&!nearTrack(q,1.75)&&', 'if([ia,ib].every(q=>inRing(q,f.pts)&&'),
+    ('a bench loses a seat slat', STRUCT, 'for(let i=0;i<4;i++){const v=-D/2', 'for(let i=0;i<3;i++){const v=-D/2'),
+    ('an island column stands by a track', STRUCT, 'if(!free(p,S.pedestalRadius)||', 'if(!free(p,-3)||'),
+    ('the blister texture stretches over the strip', STRUCT, '[[s0,0],[s1,0],[s1,warning.to-warning.from],[s0,warning.to-warning.from]]', '[[s0,0],[s1,0],[s1,1],[s0,1]]'),
+    ('the parapet rises into the valance', BLOCK, 'parapetHeight:.85,', 'parapetHeight:1.4,'),
+    ('the pilasters are shallow again', BLOCK, 'bay:4.2,pilasterWidth:.6,pilasterDepth:.3,', 'bay:4.2,pilasterWidth:.6,pilasterDepth:.15,'),
     ('columns stand under the bridges', STRUCT, 'holes=[...roof.holes,...cutouts].map(cleanRing);', 'holes=roof.holes.map(cleanRing);'),
     ('the steps slab is still drawn', STATION, '}else if(r.id!==WAVERLEY_STEPS_ROOF_ID){', '}else{'),
     # the station's bookkeeping
