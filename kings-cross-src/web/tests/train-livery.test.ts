@@ -246,7 +246,9 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
   assert.equal(liveryFor('tl700x12').noseTop, MASK_700);
   assert.equal(liveryFor('tl700x8').noseTopFrom, 0);
   assert.notEqual(MASK_700, MASK_717, 'the 700\'s black is a blue-black, the 717\'s a neutral one');
-  assert.equal(liveryFor('gc180x5').noseTop, null);
+  // CHANGED (the 180's roof over the nose had no dome of its own, so it took the roof's grey): GC180-01 and GC180-05 show the cab's roof the black of the body, from the face back, with its vents
+  assert.equal(liveryFor('gc180x5').noseTop, LIVERIES.grandcentral.body);
+  assert.equal(liveryFor('gc180x5').noseTopFrom, 0);
   assert.equal(liveryFor('gn387x4').noseTopFrom, 99, 'the 387 has no dark top (a distance past any nose)');
 });
 

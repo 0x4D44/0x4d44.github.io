@@ -254,3 +254,31 @@ export const DESIRO_700_FACE: FaceSpec = {
     { name: 'tail-lamp', outline: discOutline(1.15, 1.86, 0.065), lens: 'tail', lift: 0.019, mirror: true },
   ],
 };
+
+// --- the Class 180's face --------------------------------------------------------------------------------------------
+
+/** The smoked glass of the Class 180's lamp pods: a dark grey-blue, lighter than the black face round it so the pod reads as a shape (GC180-05: dark smoked glass, a lens in it). */
+const POD_180 = 0x3c4149;
+
+/**
+ * The Class 180's face, from GC180-05 and GC180-01 (the Halifax and Kings Cross photographs, 235 to 305 px to the metre against the 3.77 m height) and GC180-03:
+ *   the panel   a flat yellow trapezoid under the windscreen: its top edge the glass's foot, about 1.85 m across; its sides slant in to about 1.4 m at its foot, a metre
+ *               and a fifth lower (the photographs show the pods cutting its lower corners); the rest of the face is the livery's black;
+ *   the pods    a big smoked-glass pod outboard of each lower slanted edge, about 0.45 m wide and 0.95 m tall, a round headlight in its lower half and a smaller lamp above it.
+ * The coupler stands in the open under the panel (train.ts draws it), and the windscreen over it is a patch on the nose's roof, not a shape of the face. Sizes ASSUMED, read off
+ * the photographs (the panel's slant and the pods' places to a few centimetres).
+ */
+export const ADELANTE_FACE: FaceSpec = {
+  setback: 0.02,
+  coverTop: 0.95,
+  // the recess ends where the panel begins
+  recess: { half: 0.5, y0: 0.62, y1: 0.95 },
+  // (no glass on this face: the windscreen is a patch on the nose's roof)
+  glassLean: 0,
+  shapes: [
+    { name: 'warning-panel', outline: [[0.95, 2.4], [0.69, 0.95], [-0.69, 0.95], [-0.95, 2.4]], colour: YELLOW, lift: 0.0015 },
+    { name: 'lamp-pod', outline: [[0.94, 2.0], [1.6, 2.0], [1.6, 1.05], [0.74, 1.05]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
+    { name: 'headlight', outline: discOutline(1.0, 1.32, 0.095), lens: 'head', lift: 0.019, mirror: true },
+    { name: 'tail-lamp', outline: discOutline(1.0, 1.7, 0.055), lens: 'tail', lift: 0.019, mirror: true },
+  ],
+};

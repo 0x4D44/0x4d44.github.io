@@ -420,6 +420,9 @@ const HULL: TrainLivery = asTrainLivery(LIVERIES.hulltrains, {
 const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
   scheme: 'grandcentral',
   stripe: null,
+  // the nose's roof is the same black as the body from the face back (GC180-05: a black dome with its vents; the cars' roofs behind it are lighter)
+  noseTop: LIVERIES.grandcentral.body,
+  noseTopFrom: 0,
   sources: [...LIVERIES.grandcentral.sources, 'photographs (private review set): GC180-01-180-101-Kings-Cross and GC180-05-Grand-Central-at-Halifax show the orange band sweeping down the cab side and a thin orange pinstripe'],
 });
 

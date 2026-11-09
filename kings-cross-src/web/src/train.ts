@@ -34,9 +34,9 @@ import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
-import { clamp01, clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
+import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { AMBER, BEZEL, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
+import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
@@ -242,11 +242,27 @@ export interface CarPlan {
 interface GlassSpec {
   /**
    * windscreen: from `s0` (the bonnet end) to `s1` (the roof end), half-width as a fraction of the ring's, corner radii at the top and bottom edges;
-   * `pillar` (metres, 0 or absent: none) is a centre post that divides the glass into two panes, as the Class 180's has
+   * `pillar` (metres, 0 or absent: none) is a centre post that divides the glass into two panes, as the Class 180's has, and `pillarColour` the colour of
+   * its strip (absent: the frame's own black shows between the panes)
    */
-  screen?: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number };
+  screen?: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number; pillarColour?: number };
   /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
   side?: FlankPatch & { surround?: FlankPatch };
+}
+
+/**
+ * A fitting on the nose's roof behind the windscreen: a louvre (a rectangle, `width` across the roof by `length` along it) or a round vent (`width` the diameter), centred at
+ * `x` (the cab's own right: a rear cab's is the train's left) and `s` metres from the tip; a pale `rim` all round it and a dark `colour` inside.
+ */
+interface NoseFitting {
+  name: string;
+  shape: 'louvre' | 'round';
+  x: number;
+  s: number;
+  width: number;
+  length: number;
+  rim: number;
+  colour: number;
 }
 
 /**
@@ -261,27 +277,6 @@ interface FlankPatch {
   sFront1: number;
   v0: number;
   v1: number;
-}
-
-/**
- * A cab front's lamp cluster, one each side of the face. ASSUMED in every family: no drawing or readable photograph of any of
- * these fronts was found, so the shapes follow only what the types are generally said to have (an LED headlight over a tail
- * lamp in the lower corners), and are meant to be replaced.
- */
-interface LampSpec {
-  /** the lenses are rounded rectangles ('rect') or circles ('round') */
-  shape: 'rect' | 'round';
-  /** the cluster's centre: a fraction of the face's height above its underside, and of the face's half-width at that height */
-  y: number;
-  x: number;
-  /** the headlight's width and height, metres */
-  head: [number, number];
-  /** the tail lamp's width and height, and where its centre is relative to the headlight's: outboard, up (metres) */
-  tail: [number, number];
-  tailAt: [number, number];
-  /** the dark bezel round the two, metres of margin (0: none), and its colour (default BEZEL: near black; a lamp pod on a black front needs a lighter smoked grey to show) */
-  bezel: number;
-  bezelColour?: number;
 }
 
 /**
@@ -302,11 +297,12 @@ export interface ClusterSpec {
   rim?: { colour: number; width: number };
 }
 
-/** How a cab front is finished. See LampSpec: all of it ASSUMED unless a comment on a family says otherwise. */
+/**
+ * How a cab front is finished: the AT300's lamps are a cluster on the nose's flank, every other family's lenses are shapes of its flat face (train-face.ts). All of it ASSUMED
+ * (no drawing of any of these fronts was found) unless a comment on a family says otherwise.
+ */
 interface FrontSpec {
-  /** the lamps on the face (every family but the AT300) */
-  lamps?: LampSpec;
-  /** the lamp cluster on the nose's flank (the AT300): in place of `lamps` */
+  /** the lamp cluster on the nose's flank (the AT300): every other family's lamps are shapes of its `face` */
   cluster?: ClusterSpec;
   /**
    * A colour mask on the AT300's front (the LNER's yellow, Hull Trains' grey beak): the face between two straight lines, `hwFoot` either side of the middle at
@@ -320,8 +316,10 @@ interface FrontSpec {
   frame: number;
   /** parked wiper arms along the foot of the windscreen, and the lit destination display at its top edge */
   wipers: boolean;
+  /** how far up the glass a parked wiper's outer end stands, metres along the nose (default 0.08: the arm lies along the glass's foot; the Class 180's lean up the glass, GC180-05) */
+  wiperRise?: number;
   display: boolean;
-  /** a front (evacuation) door outlined on the upper face, between the lamps: its width and the most height it may take (null: none) */
+  /** a front (evacuation) door outlined on the upper face: its width and the most height it may take (null: none) */
   door: { width: number; height: number } | null;
   /** the colour of the yellow warning panel on the front (the upper face and the first half metre of the nose behind it); null: the livery's own front */
   warning: number | null;
@@ -337,8 +335,9 @@ interface FrontSpec {
   /** the colour of the dark swoosh round the cab side window, where the livery has one (the glass spec's `side.surround` is its shape); absent: none */
   cabSideSurround?: number;
   /**
-   * A flat face: a tall, nearly upright wall carrying its windscreens, door, panels, lamp housings and coupler as shapes laid on its plane (train-face.ts), in place of
-   * a windscreen on the nose's roof. When present, `lamps`, `door`, `wipers` and `display` are not used (the shapes carry them), and the glass spec has no `screen`.
+   * A flat face: a wall carrying its panels, lamp housings and, where the windscreens are on it, the screens, door and coupler too, as shapes laid on its plane
+   * (train-face.ts). When present, `door` is not used (the shapes carry the lenses and the door). A face that carries its screens (the 387's, 717's and 700's) has no
+   * `screen` in the glass spec and no `wipers` or `display`; the Class 180's face is the panels and pods under a windscreen that is still a patch on the nose's roof.
    */
   face?: FaceSpec;
 }
@@ -390,6 +389,8 @@ interface BodySpec {
   skirt: { light: number; vents: boolean };
   /** the cab front's lamps, frame, coupler and warning panel */
   front: FrontSpec;
+  /** louvres and vents on the nose's roof behind the glass (the Class 180's: GC180-01, GC180-05) */
+  noseRoof?: readonly NoseFitting[];
   /** a diesel unit's engine, transmission, cooler and tank hanging under the floor (null: an electric unit's underframe is hidden behind its skirts) */
   underfloor: UnderfloorSpec | null;
   plan(car: Car, interior: boolean): CarPlan;
@@ -714,22 +715,22 @@ const DESIRO700_BODY: BodySpec = {
 /**
  * Grand Central's Class 180 Adelante (an Alstom Coradia 1000 diesel-hydraulic unit). Built on the commuter units' recipe from its own
  * figures: 2.73 m wide, cars of 23.71 m (driving) and 23.03 m, one single-leaf door a side near each end. The cab's shape is read from
- * photographs (Wikimedia Commons: "GC 180 at Kings Cross", "180106 London Kings Cross September 29th 2022", "Class 180 approaching
- * Peterborough", "Class 180 Adelante DMU", and "Spare BR Class 180 Cab", a bare glass-fibre cab shell), not from a drawing, so every
- * dimension below is ASSUMED: a tall, wide face nearly as broad as the body, under a large windscreen in two panes divided by a
- * centre post, raked about 33 degrees and wrapping the corners, into a smooth dome of a roof. The face is a broad flat yellow panel
- * between two big dark lamp pods, one at each lower corner, each holding a round headlight and a smaller marker/tail lamp. Under it
- * a black valance, and out of it the Scharfenberg coupler, uncovered (the head stands in the open at a train's end). There is no lit
- * destination display on the glass in any photograph. The yellow warning panel is seen in the photographs (the Grand Central
- * livery's own text does not mention it). The underframe is not hidden: a shallow valance, then the engine, cooler, tank and batteries
- * hanging under the floor between the bogies (Wikipedia: one Cummins QSK19 engine and Voith transmission to each car).
+ * photographs (the review set's GC180-01-180-101-Kings-Cross, GC180-03-180-in-Northallerton-station and GC180-05-Grand-Central-at-Halifax, and Wikimedia Commons:
+ * "180106 London Kings Cross September 29th 2022", "Class 180 approaching Peterborough", "Class 180 Adelante DMU", and "Spare BR Class 180 Cab", a bare glass-fibre cab
+ * shell), not from a drawing, so every dimension below is ASSUMED. The cab is a long raked nose: a face about 1.6 m tall and nearly as broad as the body, its top
+ * edge the foot of a large windscreen in two panes divided by a bright centre post, the glass raked about 35 degrees and wrapping the corners, then a smooth black dome
+ * of a roof, with a louvre, a round vent and a smaller louvre on it behind the glass. The face is a yellow trapezoid under the glass between two big smoked-glass lamp
+ * pods, one at each lower corner, each holding a round headlight and a smaller lamp above it (ADELANTE_FACE). Under it a black valance, and out of it the Scharfenberg
+ * coupler, uncovered (the head stands in the open at a train's end). There is no lit destination display on the glass in any photograph. The underframe is not
+ * hidden: a shallow valance, then the engine, cooler, tank and batteries hanging under the floor between the bogies (Wikipedia: one Cummins QSK19 engine and Voith
+ * transmission to each car).
  */
 const ADELANTE_BODY = ((): BodySpec => {
   const fig = EMU_FIGURES.adelante;
   const floor = fig.floorHeight.value - 0.12;
   const cover = 0.14;
   const crown = fig.height.value - cover;
-  const length = 2.6;
+  const length = 3.1;
   return {
     family: 'adelante',
     half: fig.bodyWidth.value / 2,
@@ -748,25 +749,29 @@ const ADELANTE_BODY = ((): BodySpec => {
     nose: {
       length,
       knots: [
-        // ASSUMED: a tall wide face (nearly the body's width), a short bonnet, then a windscreen raked about 33 degrees that flattens
-        // into the dome of the roof; longer and shallower than the 700's, whose glass is raked about 55 degrees
-        { s: 0, top: 2.4, ws: 0.92, bottom: 0.55 },
-        { s: 0.3, top: 2.5, ws: 0.95, bottom: 0.66 },
-        { s: 0.9, top: 2.95, ws: 0.975, bottom: 0.82 },
-        { s: 1.6, top: 3.33, ws: 0.99, bottom: 0.95 },
-        { s: 2.15, top: 3.55, ws: 0.998, bottom: floor - 0.02 },
+        // ASSUMED, read off GC180-01 and GC180-05 against the published 3.77 m: a face about 1.6 m tall and nearly the body's width, its top edge the windscreen's foot at
+        // about 2.2 m; the glass rising from there to about 3.05 m over a metre and a quarter (about 35 degrees off the horizontal: the 700's is now an upright wall);
+        // then the roof's black dome, falling away from the crown over some two metres more (the door behind the nose stands about 3.4 m from the tip in GC180-01)
+        { s: 0, top: 2.26, ws: 0.97, bottom: 0.55 },
+        { s: 0.12, top: 2.34, ws: 0.98, bottom: 0.62 },
+        { s: 0.5, top: 2.57, ws: 0.985, bottom: 0.7 },
+        { s: 0.9, top: 2.83, ws: 0.99, bottom: 0.8 },
+        { s: 1.25, top: 3.05, ws: 0.995, bottom: 0.9 },
+        { s: 1.9, top: 3.33, ws: 0.997, bottom: 0.98 },
+        { s: 2.5, top: 3.52, ws: 1, bottom: floor - 0.02 },
         { s: length, top: crown, ws: 1, bottom: floor },
       ],
-      fillet: 0.28,
-      filletLoss: 0.18,
-      roundLen: 2.3,
-      widest: 0.42,
-      boxiness: 3.4,
+      fillet: 0.14,
+      filletLoss: 0.09,
+      filletSteps: 9,
+      roundLen: 2.8,
+      widest: 0.47,
+      boxiness: 4.5,
     },
     glass: {
       // two panes, a 10 cm post between them; the glass wraps close to the corners (ASSUMED sizes, from the photographs)
-      screen: { s0: 0.32, s1: 2.05, fraction: 0.88, topRadius: 0.35, bottomRadius: 0.2, pillar: 0.1 },
-      side: { sBack: 2.35, sFront0: 1.8, sFront1: 1.25, v0: 0.55, v1: 0.8 },
+      screen: { s0: 0.14, s1: 1.3, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.12, pillar: 0.1, pillarColour: 0xa4aab2 },
+      side: { sBack: 2.85, sFront0: 2.3, sFront1: 1.7, v0: 0.55, v1: 0.8 },
     },
     gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
     // no pantograph: this value is never used
@@ -774,18 +779,25 @@ const ADELANTE_BODY = ((): BodySpec => {
     underframe: 0.95,
     // a shallow valance (0.3 m deep, black in Grand Central's livery), plain: the engine and tank hang in plain sight under it
     skirt: { light: 0, vents: false },
-    // ASSUMED: a big dark pod at each lower corner (a round headlight, with a smaller lamp above it), the yellow panel running across the whole face and
-    // only just over the bonnet, no display on the glass, and the Scharfenberg coupler out in the open
+    // ASSUMED: the face is the yellow panel between two big smoked-glass pods (ADELANTE_FACE), a crisp trapezoid under the windscreen, no display on the glass, and the
+    // Scharfenberg coupler out in the open
     front: {
-      lamps: { shape: 'round', y: 0.45, x: 0.8, head: [0.17, 0.17], tail: [0.1, 0.1], tailAt: [0, 0.2], bezel: 0.1, bezelColour: 0x3c4149 },
-      frame: 0.07,
+      frame: 0.05,
       wipers: true,
+      wiperRise: 0.5,
       display: false,
       door: null,
-      warning: YELLOW,
-      warningWrap: 0.3,
+      warning: null,
       coupler: { style: 'scharfenberg', covered: false },
+      face: ADELANTE_FACE,
     },
+    // ASSUMED places and sizes, read off GC180-05 and GC180-01: on the roof just behind the windscreen's top edge, a louvre on the cab's right, a round vent a little right of the
+    // middle, and a smaller louvre on the cab's left
+    noseRoof: [
+      { name: 'louvre', shape: 'louvre', x: 0.85, s: 1.62, width: 0.5, length: 0.34, rim: 0x3a3e45, colour: 0x0c0d0f },
+      { name: 'vent', shape: 'round', x: 0.3, s: 1.58, width: 0.24, length: 0.24, rim: 0x5a6068, colour: 0x0c0d0f },
+      { name: 'louvre', shape: 'louvre', x: -0.75, s: 1.66, width: 0.3, length: 0.2, rim: 0x3a3e45, colour: 0x0c0d0f },
+    ],
     // ASSUMED: sizes and order of the pods (a Cummins QSK19 is about 2 m long; the rest are guesses), laid between the bogies
     underfloor: {
       clearance: 0.35,
@@ -1194,9 +1206,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       m.userData = interiorCab ? { end: car.cab, nose: true } : { end: car.cab, style: front.coupler.style, reach: tip };
       group.add(m);
     }
-    // Lamps. Every family but the AT300 has a cluster at each lower corner of the face, a headlight and a tail lamp, in a dark bezel where the family has one;
-    // the AT300's is a window on the flank (below). The lenses are built in the state the cab end has in service (SERVICE_LAMPS; the two coupled units' inner ends
-    // dark), and each records the vertices it covers in the detail mesh, which is how `setTrainLampState` finds it again.
+    // Lamps. Every family but the AT300 has a headlight and a tail lamp at each lower corner of its flat face, shapes of the face (below); the AT300's is a window on the flank
+    // (further on). The lenses are built in the state the cab end has in service (SERVICE_LAMPS; the two coupled units' inner ends dark), and each records the vertices it
+    // covers in the detail mesh, which is how `setTrainLampState` finds it again.
     const lampMode: TrainLampMode = interiorCab ? 'off' : SERVICE_LAMPS[car.cab === 'rear' ? 'rear' : 'front'];
     const lensFan = (role: 'head' | 'tail', poly: V3[], n: V3): void => {
       const look = lensLook(role, lampMode);
@@ -1239,35 +1251,6 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         if (shape.trainEnd && interiorCab) continue;
         place(shape, false);
         if (shape.mirror) place(shape, true);
-      }
-    }
-    const lamps = front.lamps;
-    if (lamps) {
-      const lens = (role: 'head' | 'tail', cx: number, cy: number, w: number, h: number, depth: number): void => {
-        const outline = lamps.shape === 'round' ? ellipse(cx, cy, w / 2, h / 2) : roundedRect(cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2, Math.min(w, h) * 0.25, 2);
-        lensFan(role, onFace(outline, depth), faceN);
-      };
-      for (const sx of [-1, 1]) {
-        const yh = r0.bottom + lamps.y * (r0.top - r0.bottom);
-        const xh = xAtY(tipHalf, yh) * lamps.x;
-        const cx = sx * xh;
-        const tx = cx + sx * lamps.tailAt[0];
-        const ty = yh + lamps.tailAt[1];
-        if (lamps.bezel > 0) {
-          const xs = [cx - lamps.head[0] / 2, cx + lamps.head[0] / 2, tx - lamps.tail[0] / 2, tx + lamps.tail[0] / 2];
-          const ys = [yh - lamps.head[1] / 2, yh + lamps.head[1] / 2, ty - lamps.tail[1] / 2, ty + lamps.tail[1] / 2];
-          const b = lamps.bezel;
-          const [bx0, bx1, by0, by1] = [Math.min(...xs) - b, Math.max(...xs) + b, Math.min(...ys) - b, Math.max(...ys) + b];
-          // (a corner radius over half the housing's height would make the two corners' arcs cross, and the fan zero-area triangles: a low housing, as the 700's, keeps a flat between them)
-          detail.fan(onFace(roundedRect(bx0, bx1, by0, by1, Math.min(lamps.shape === 'round' ? 0.1 : 0.05, 0.45 * Math.min(bx1 - bx0, by1 - by0)), 3), 0.005), faceN, col(lamps.bezelColour ?? BEZEL));
-        }
-        lens('head', cx, yh, lamps.head[0], lamps.head[1], 0.009);
-        lens('tail', tx, ty, lamps.tail[0], lamps.tail[1], 0.009);
-        const m = new THREE.Object3D();
-        m.name = 'headlight';
-        m.position.set(sx * xh, yh, Z(tip));
-        m.userData = { side: sx > 0 ? 'right' : 'left' };
-        group.add(m);
       }
     }
     // a front door outlined on the upper face, with a window and a handle: as tall as the face allows above the cut, and always inside the face's outline
@@ -1342,6 +1325,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // the frame and the glass stand clear of the loft by more than its facets sag between rings (a few mm, up to a centimetre on the steep shoulder), so neither shows through the other
       patch(front.frame, detail, colourOf(def.glass), 0.014);
       patch(0, glass, null, 0.02, screen.pillar ?? 0);
+      if (screen.pillar && screen.pillarColour !== undefined) {
+        // the centre post: a pale metal strip, a hair proud of the frame's black between the two panes (GC180-05: a bright silver post about a hand wide)
+        const half = screen.pillar / 2;
+        nosePatch(24, 1, (v, u) => [lerp(-half, half, u), lerp(screen.s0, screen.s1, 0.5 - 0.5 * Math.cos(Math.PI * v))], detail, colourOf(screen.pillarColour), 0.017);
+      }
       if (mask) {
         // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
         // first row stands only 4 mm off the face's edge, where the cap's strip meets it, and the lift grows to the 12 mm the loft's facets need over the first fifth.
@@ -1358,7 +1346,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const pivot = (screen.pillar ?? 0) / 2 + 0.1;
         for (const sx of [-1, 1]) {
           const a: [number, number] = [sx * pivot, screen.s0 + 0.045];
-          const b: [number, number] = [sx * Math.min(0.8, screenHalfWidth(screen.s0 + 0.08, 0) - 0.2), screen.s0 + 0.08];
+          const rise = front.wiperRise ?? 0.08;
+          const b: [number, number] = [sx * Math.min(0.8, screenHalfWidth(screen.s0 + rise, 0) - 0.2), screen.s0 + rise];
           const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
           const perp: [number, number] = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
           nosePatch(6, 1, (v, u) => [a[0] + (b[0] - a[0]) * v + perp[0] * (u - 0.5) * 0.028, a[1] + (b[1] - a[1]) * v + perp[1] * (u - 0.5) * 0.028], detail, arm, 0.032);
@@ -1371,6 +1360,25 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // (a lit strip of text in a dark panel, as the photographs show it, gn387_02_387121_ely and tl700_01_gatwick_front: not an amber slab across the glass)
         nosePatch(2, 8, (v, u) => [lerp(-hwDisplay - 0.03, hwDisplay + 0.03, u), lerp(top - 0.25, top + 0.02, v)], detail, col(0x0d0e10), 0.03);
         nosePatch(2, 4, (v, u) => [lerp(-hwDisplay * 0.45, hwDisplay * 0.45, u), lerp(top - 0.15, top - 0.08, v)], detail, col(0xffa000), 0.034);
+      }
+    }
+    // Fittings on the nose's roof: a pale rim and a dark grille (a louvre) or a ring round a dark disc (a vent), laid on the roof's surface. A rear cab's right is the train's left.
+    for (const f of spec.noseRoof ?? []) {
+      const cx = f.x * dir;
+      const rim = colourOf(f.rim);
+      const inner = colourOf(f.colour);
+      if (f.shape === 'louvre') {
+        const box = (grow: number): ((v: number, u: number) => [number, number]) => (v, u) => [cx + (u - 0.5) * (f.width + 2 * grow), f.s + (v - 0.5) * (f.length + 2 * grow)];
+        nosePatch(3, 6, box(0.02), detail, rim, 0.01);
+        nosePatch(3, 6, box(0), detail, inner, 0.014);
+      } else {
+        // (a ring, not a disc: the middle of a polar patch would be a row of zero-area triangles)
+        const ring = (r0: number, r1: number): ((v: number, u: number) => [number, number]) => (v, u) => {
+          const r = lerp(r0, r1, v);
+          return [cx + r * Math.cos(2 * Math.PI * u), f.s + r * Math.sin(2 * Math.PI * u)];
+        };
+        nosePatch(1, 14, ring(f.width * 0.32, f.width / 2 + 0.015), detail, rim, 0.01);
+        nosePatch(1, 14, ring(0.01, f.width * 0.32), detail, inner, 0.014);
       }
     }
     // the cab side windows, one each side, following the nose's slope: the pane (glass), and where the kind has one the dark swoosh round it (a
