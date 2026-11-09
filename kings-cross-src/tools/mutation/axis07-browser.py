@@ -166,8 +166,10 @@ try:
     (root / 'tools/tests').mkdir(parents=True)
     (root / 'web/tests').mkdir(parents=True)
     shutil.copy2(src / 'package.json', root / 'package.json')
-    for name in ['tools/axis07-browser.mjs', 'tools/evidence.mjs',
-                 'tools/tests/axis07-browser.test.mjs', 'web/index.html', 'web/tests/csp.test.ts']:
+    # Every module beside axis07-browser.mjs, not a hand-picked pair: it imports evidence.mjs, which imports its own siblings (flicker,
+    # scene-pin, hud, station-scene), and a list that falls behind the imports fails the baseline with ERR_MODULE_NOT_FOUND.
+    siblings = sorted(f'tools/{path.name}' for path in (src / 'tools').iterdir() if path.is_file() and path.suffix in ('.mjs', '.ts'))
+    for name in [*siblings, 'tools/tests/axis07-browser.test.mjs', 'web/index.html', 'web/tests/csp.test.ts']:
         shutil.copy2(src / name, root / name)
     (root / 'core').symlink_to((src / 'core').resolve(), target_is_directory=True)
     (root / 'web/src').symlink_to((src / 'web/src').resolve(), target_is_directory=True)

@@ -1,10 +1,8 @@
 """Bounded mutations for the fixed Station evidence cameras and slate capture path."""
 from __future__ import annotations
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -33,7 +31,7 @@ MUTATIONS = [
     ('slate override leaves auto opacity', 'material.opacity = 1; material.depthWrite = true;', 'material.opacity = .5; material.depthWrite = true;', NAMES[2]),
     ('slate override fails to restore callback', 'cladding.onBeforeRender = callback;', 'cladding.onBeforeRender = function() {};', NAMES[2]),
     ('physical screenshot restore omitted', 'finally { await restore(); }', 'finally { /* mutation */ }', NAMES[3]),
-    ('solid slate pair omitted from Station shots', "for (const pair of pairs)\n    await attempt('02'", "for (const pair of [])\n    await attempt('02'", NAMES[4]),
+    ('solid slate pair omitted from Station shots', "for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))\n    await attempt('02'", "for (const pair of [])\n    await attempt('02'", NAMES[4]),
     ('solid slate pair uses a different camera', 'solid: { camera: cameras[cameraName], roofMaterialEvidence:', 'solid: { camera: { ...cameras[cameraName] }, roofMaterialEvidence:', NAMES[4]),
 ]
 
@@ -44,15 +42,9 @@ def run(work: Path, name: str | None = None):
     command.append(TEST)
     return kxmut.run_process(command, cwd=work, timeout=60)
 
-with tempfile.TemporaryDirectory(prefix='station-evidence-', dir=out) as directory:
-    work = Path(directory) / 'kings-cross-src'
-    work.mkdir()
-    for folder in ['core', 'web', 'node_modules']:
-        (work / folder).symlink_to(src / folder, target_is_directory=True)
-    (work / 'tools' / 'tests').mkdir(parents=True)
-    (work / 'tools' / 'mutation').mkdir(parents=True)
-    for name in [EVIDENCE, TEST, 'package.json']:
-        shutil.copy2(src / name, work / name)
+# The whole package is copied (node_modules linked), not a hand-picked list: evidence.mjs imports its sibling tools (flicker, scene-pin, hud,
+# station-scene), and a list that falls behind its imports fails the baseline with ERR_MODULE_NOT_FOUND.
+with kxmut.workspace(src, out, 'station-evidence') as work:
     baseline = run(work)
     passed = set(re.findall(r'^ok \d+ - (.*)$', baseline.stdout, re.M))
     if baseline.returncode or baseline.stderr or passed != set(NAMES):

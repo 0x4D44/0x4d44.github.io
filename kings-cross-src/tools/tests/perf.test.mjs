@@ -270,11 +270,13 @@ test('the peak and sweep Markdown say where the replay started and list every ca
   assert.match(text, /at most 15 trains drawn, at 2026-11-07T17:50:00\.000Z, over 210 samples/);
   assert.match(peakMarkdown({ mode: 'given', from: 'baseline.json', startISO: 'x', startMs: 5, windowMs: 60000, busyFloor: 4 }).join('\n'), /given by baseline\.json/);
   assert.match(peakMarkdown({ mode: 'none' }).join('\n'), /not used/); assert.match(peakMarkdown(undefined).join('\n'), /not used/);
-  const cameras = { 'south-front': sweepCamera(), top: sweepCamera({ view: { grid: true }, steady60: false, busy: false, fps: { median: 41, p5: 38 }, frameDistribution: { p50: 16.7, p95: 33.3, p99: 50, max: 66.7, slowShare: .31, missedSlots: 90 } }) };
+  // `quiet` is steady but not at the peak, so the steady count and the busy count differ (2 and 1) and the two flag columns differ.
+  const cameras = { 'south-front': sweepCamera(), top: sweepCamera({ view: { grid: true }, steady60: false, busy: false, fps: { median: 41, p5: 38 }, frameDistribution: { p50: 16.7, p95: 33.3, p99: 50, max: 66.7, slowShare: .31, missedSlots: 90 } }), quiet: sweepCamera({ busy: false, trainsShown: { min: 1, median: 2, max: 3 } }) };
   const md = sweepMarkdown(cameras, sweepSummary(cameras)).join('\n');
-  assert.match(md, /1 of 2 cameras steady at 60 FPS/); assert.match(md, /1 of 2 measured at the peak/);
+  assert.match(md, /2 of 3 cameras steady at 60 FPS/); assert.match(md, /1 of 3 measured at the peak/);
   assert.match(md, /\| south-front \| 10\/12\/14 \| 60 \| 60 \| 16\.7 \| 16\.7 \| 16\.8 \| 33\.3 \| 0\.33 \| 1 \| yes \| yes \|/);
   assert.match(md, /\| top \(grid view\) \| 10\/12\/14 \| 41 \| 38 \| 16\.7 \| 33\.3 \| 50 \| 66\.7 \| 31 \| 90 \| NO \| NO \|/);
+  assert.match(md, /\| quiet \| 1\/2\/3 \| 60 \| 60 \| 16\.7 \| 16\.7 \| 16\.8 \| 33\.3 \| 0\.33 \| 1 \| yes \| NO \|/, 'steady and not at the peak: the Steady 60 and At peak columns are different columns');
   assert.match(sweepMarkdown({}, sweepSummary({})).join('\n'), /not measured/);
 });
 
