@@ -14,7 +14,7 @@ const { centre, grid } = concourseGrid(canopy, footprint, shed, exclusions);
 const roofEdges = [...edgesOf(keepTriangles(grid, footprint, shed)).values()];
 
 // ASSUMED classification: in each ring step, the closest connection from each inner node on one hand
-// (anticlockwise from above) is a box rib; all remaining triangulation edges are round diagrid members.
+// (the way atan2(z, x) grows: clockwise seen from above, z being south) is a box rib; all remaining triangulation edges are round diagrid members.
 const radial = new Map<number, { key: string; delta: number }>();
 const angle = (i: number): number => Math.atan2(grid.nodes[i]!.z - centre[1], grid.nodes[i]!.x - centre[0]);
 const turn = (inner: number, outer: number): number => (angle(outer) - angle(inner) + 1e-6 + 4 * Math.PI) % (2 * Math.PI);
@@ -90,15 +90,15 @@ test('roof member classification and drawn sections match the published member f
   assert.equal(offset, position.count, 'all drawn member vertices were measured');
 });
 
-// R-ab: the lattice swirls out of the funnel in continuous curves. The ribs are those curves: nearly all of them turn the same way (anticlockwise
-// from above), and each runs on into the next ring's rib, so a chain of them sweeps round as it goes out instead of zigzagging about a radius.
+// R-ab: the lattice swirls out of the funnel in continuous curves. The ribs are those curves: nearly all of them turn the same way (the way
+// atan2(z, x) grows), and each runs on into the next ring's rib, so a chain of them sweeps round as it goes out instead of zigzagging about a radius.
 test('roof ribs sweep out of the funnel as swept curves, all turning one way', () => {
   type Rib = { a: number; b: number };
   const innerOf = (e: Rib): number => (grid.nodes[e.a]!.ring < grid.nodes[e.b]!.ring ? e.a : e.b);
   const outerOf = (e: Rib): number => (innerOf(e) === e.a ? e.b : e.a);
   const signed = (e: Rib): number => { const d = angle(outerOf(e)) - angle(innerOf(e)); return Math.atan2(Math.sin(d), Math.cos(d)); };
-  const anticlockwise = ribs.filter(e => signed(e) > -1e-6).length;
-  assert.ok(anticlockwise >= 0.95 * ribs.length, `${anticlockwise} of ${ribs.length} ribs turn anticlockwise`);
+  const oneWay = ribs.filter(e => signed(e) > -1e-6).length;
+  assert.ok(oneWay >= 0.95 * ribs.length, `${oneWay} of ${ribs.length} ribs turn the same way`);
   const byInner = new Map(ribs.map(e => [innerOf(e), e] as const));
   const swirls = ribs.filter(e => grid.nodes[innerOf(e)]!.ring === 2).map(e => {
     let total = 0, length = 0;

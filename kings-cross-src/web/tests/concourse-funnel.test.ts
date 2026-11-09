@@ -4,7 +4,8 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, columnLegs, columnMembers, columnRadius, columnTubeDiameter, concourseGrid, FUNNEL_HEAD_RING, FUNNEL_REACH, funnelHead, RANGE_FACE } from '../src/concourse.ts';
+import { buildConcourse, COLUMN_SEGMENTS, columnLegs, columnMembers, columnRadius, columnStrands, columnTubeDiameter, concourseGrid, edgesOf, FORK_START, FUNNEL_HEAD_RING, FUNNEL_REACH, funnelHead, funnelRoof, keepTriangles, RANGE_FACE, tubeRings } from '../src/concourse.ts';
+import type { Ring } from '../src/concourse.ts';
 type V3 = [number, number, number];
 
 // The funnel: a tree of long, thick, round white tubes. R-a (conc-a-funnel-2012), R-ab (conc-ab-funnel-brick-2025) and R-b
@@ -21,9 +22,15 @@ const group = buildConcourse(canopy, station.pts, layout, [hotel.pts]);
 const column = group.getObjectByName('concourse-column') as THREE.Mesh;
 const { centre, grid } = concourseGrid(canopy, station.pts, layout, [hotel.pts]);
 const head = funnelHead(grid, centre, layout);
+const kept = keepTriangles(grid, station.pts, layout);
+const roof = funnelRoof(grid, kept, centre, layout);
 const { nodes, edges } = columnMembers(head);
 const top = head.reduce((s, p) => s + p[1], 0) / head.length;
 const close = (a: number, b: number, eps: number): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
+const dot3 = (a: readonly number[], b: readonly number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
+const angle3 = (a: readonly number[], b: readonly number[]): number => Math.acos(Math.max(-1, Math.min(1, dot3(a, b))));
+const distance3 = (a: readonly number[], b: readonly number[]): number => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!);
+const toward = (a: readonly number[], b: readonly number[]): V3 => { const d: V3 = [b[0]! - a[0]!, b[1]! - a[1]!, b[2]! - a[2]!], l = Math.hypot(...d); return [d[0] / l, d[1] / l, d[2] / l]; };
 const radiusOf = (n: readonly number[]): number => Math.hypot(n[0]!, n[2]!);
 const length = ([a, b]: [number, number]): number => Math.hypot(nodes[a]![0] - nodes[b]![0], nodes[a]![1] - nodes[b]![1], nodes[a]![2] - nodes[b]![2]);
 const position = column.geometry.getAttribute('position');
@@ -92,7 +99,7 @@ test('funnel: it stands beside the Range, 0.25 to 1 m short of the face, never e
 });
 
 test('funnel: legs cross in diamonds, pass every crossing without a kink, stand upright on the floor and sweep outwards into the roof', () => {
-  const legs = columnLegs(head), dot = (a: readonly number[], b: readonly number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
+  const legs = columnLegs(head, roof), dot = (a: readonly number[], b: readonly number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
   assert.equal(legs.length, edges.length, 'one curve to each member');
   const first = (e: number): V3 => legs[e]!.tans[0]!, last = (e: number): V3 => legs[e]!.tans[legs[e]!.tans.length - 1]!;
   nodes.forEach((p, n) => {
@@ -102,7 +109,10 @@ test('funnel: legs cross in diamonds, pass every crossing without a kink, stand 
     const straight = ins.filter(i => outs.some(o => dot(last(i), first(o)) > Math.cos(Math.PI / 36))).length;
     assert.ok(straight >= Math.min(ins.length, outs.length), `${straight} of ${ins.length} legs go straight on at the node ${n}, ${p[1].toFixed(1)} m up, which ${outs.length} leave`);
     if (!ins.length) for (const o of outs) assert.ok(first(o)[1] > 0.97, `the foot at node ${n} is upright, ${first(o)[1].toFixed(2)}`);
-    if (!outs.length && p[0] < FUNNEL_REACH - 1e-6) for (const i of ins) assert.ok(last(i)[1] < 0.3, `the leg into the roof at node ${n} lands within 17 degrees of the roof's slope, ${last(i)[1].toFixed(2)} (R-a: the legs fan out into the first ring of members)`);
+    if (!outs.length && p[0] < FUNNEL_REACH - 1e-6) for (const i of ins) {
+      assert.ok(last(i)[1] < 0.3, `the leg into the roof at node ${n} lands within 17 degrees of the roof's slope, ${last(i)[1].toFixed(2)} (R-a: the legs fan out into the first ring of members)`);
+      assert.ok(roof[n - nodes.length + head.length]!.some(m => dot(last(i), m) > 0.99999), `the leg into the roof at node ${n} lands along none of the members the roof sends out of it`);
+    }
     // R-a, R-ab: between the feet and the bell two parents lie either side of a node, half a step round: legs cross in diamonds
     if (ins.length && p[1] > 0.05 * top && p[1] < 0.55 * top) {
       const under = ins.map(e => nodes[edges[e]![0]]!);
@@ -110,6 +120,128 @@ test('funnel: legs cross in diamonds, pass every crossing without a kink, stand 
       if (p[0] < FUNNEL_REACH - 1e-6 && under.every(q => q[0] < FUNNEL_REACH - 1e-6)) assert.ok(Math.min(...turn) < -0.15 && Math.max(...turn) > 0.15, `the legs under node ${n}, ${p[1].toFixed(1)} m up, do not cross it (${turn.map(t => t.toFixed(2))})`);
     }
   });
+});
+
+// R-a, R-ab: where two legs cross they run straight on, each as one tube, not as pieces cut off at the crossing.
+test('funnel: legs that go straight on are drawn as one tube, so a crossing cuts no leg across and draws no ring twice', () => {
+  const legs = columnLegs(head, roof), strands = columnStrands(head, roof);
+  assert.equal(strands.reduce((s, rings) => s + rings.length - 1, 0), COLUMN_SEGMENTS * legs.length, 'every leg is drawn once, in its own pieces, the ring it shares with the next leg counted once');
+  let joined = 0;
+  legs.forEach((leg, e) => {
+    if (leg.next === undefined) return;
+    const next = legs[leg.next]!;
+    assert.ok(distance3(leg.pts[leg.pts.length - 1]!, next.pts[0]!) < 1e-9 && dot3(leg.tans[leg.tans.length - 1]!, next.tans[0]!) > 0.99999, `leg ${e} does not meet the leg it goes on into along the same line`);
+    joined++;
+  });
+  assert.equal(joined, legs.length - 2 * head.length, 'every leg goes on into another but the two that land on each roof node');
+  assert.ok(strands.length * 4 < legs.length, `${strands.length} tubes for ${legs.length} legs`);
+  for (const rings of strands) for (let k = 1; k < rings.length; k++) assert.ok(distance3(rings[k - 1]!.p, rings[k]!.p) > 0.25, `two rings of one tube lie ${distance3(rings[k - 1]!.p, rings[k]!.p).toFixed(3)} m apart`);
+});
+
+// A frame worked out from the tangent alone flips as the tangent passes the vertical, and the tube pinches into a bow-tie there.
+test('funnel: a tube never twists, however its tangent bends: each ring is the last one turned by no more than the tangent turned', () => {
+  const lean = ([x, y, z]: V3): V3 => { const l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; };
+  const over = [[0.5, 0.8, 0], [0.12, 0.99, 0.02], [-0.2, 0.97, 0.05], [-0.55, 0.8, 0.1]].map(t => lean(t as V3)).map((t, k) => ({ p: [k, k, 0] as V3, t, r: 0.1 }));
+  const check = (label: string, rings: Ring[]): void => {
+    const frames = tubeRings(rings), spoke = (k: number): V3 => toward(rings[k]!.p, frames[k]![0]!.p); // the ring's first vertex, out from its axis
+    for (let k = 0; k + 1 < frames.length; k++) {
+      const turned = angle3(spoke(k), spoke(k + 1)), bent = angle3(rings[k]!.t, rings[k + 1]!.t);
+      assert.ok(turned <= bent + 1e-9, `${label}: ring ${k} to ${k + 1} turns the frame ${(turned * 57.3).toFixed(0)} degrees, the tangent ${(bent * 57.3).toFixed(0)}`);
+    }
+  };
+  check('a tube leaning over the vertical', over);
+  columnStrands(head, roof).forEach((rings, s) => check(`strand ${s}`, rings));
+});
+
+// Two equal tubes that cross meet along a crease, and each leans a different way there, so lit plainly they show a hard step across it (a tear).
+test('funnel: where two tubes cross, each is shaded halfway toward the other\'s own normal at the crossing, so the crease shows no step', () => {
+  let crossed = 0, round = 0;
+  for (const rings of columnStrands(head, roof)) {
+    const frames = tubeRings(rings), crossings = rings.filter(c => c.x);
+    rings.forEach((ring, k) => {
+      for (const vertex of frames[k]!) {
+        const radial = toward(ring.p, vertex.p);
+        close(Math.hypot(...vertex.n), 1, 1e-9);
+        if (ring.x) {
+          // at the crossing itself: halfway between the tube's own normal and the other tube's, which is straight out from the other's axis
+          const along = dot3(radial, ring.x), other = toward([0, 0, 0], [radial[0] - along * ring.x[0], radial[1] - along * ring.x[1], radial[2] - along * ring.x[2]]);
+          close(angle3(vertex.n, other), angle3(radial, other) / 2, 1e-6);
+          if (angle3(radial, other) > 0.2) crossed++;
+        }
+        // well clear of every tube that crosses it (two radii from its axis) a vertex is shaded round
+        const clear = crossings.every(c => { const a = [vertex.p[0] - c.p[0], vertex.p[1] - c.p[1], vertex.p[2] - c.p[2]], d = dot3(a, c.x!); return Math.hypot(a[0]! - d * c.x![0], a[1]! - d * c.x![1], a[2]! - d * c.x![2]) > 2 * ring.r; });
+        if (clear) { assert.ok(angle3(vertex.n, radial) < 1e-6, 'a vertex well clear of the tubes that cross it is shaded round, its normal straight out from its own axis'); round++; }
+      }
+    });
+  }
+  assert.ok(crossed > 500 && round > 1000, `${crossed} vertices where two tubes lean apart at a crossing, ${round} clear of any`);
+});
+
+// R-ab: a leg that starts above the floor grows out of the legs it crosses, as a branch; at the foot, 24 legs start from 12 feet.
+test('funnel: a leg that forks off starts inside the legs it grows from, at part of its width, and is full width a third of the way on', () => {
+  const strands = columnStrands(head, roof), forks = strands.filter(rings => rings[0]!.p[1] > 0);
+  const owed = nodes.reduce((s, _, n) => s + Math.max(0, edges.filter(([a]) => a === n).length - edges.filter(([, b]) => b === n).length) * (nodes[n]![1] > 0 ? 1 : 0), 0);
+  assert.equal(forks.length, owed, 'one fork for each leg a node sends out beyond the legs that arrive at it');
+  assert.equal(strands.length, forks.length + edges.filter(([a]) => nodes[a]![1] === 0).length, 'the other tubes start on the floor');
+  for (const rings of forks) {
+    const full = columnTubeDiameter(rings[0]!.p[1], top) / 2;
+    assert.ok(rings[0]!.r > 0.5 * full && rings[0]!.r < full, `a fork starts ${(rings[0]!.r / full).toFixed(2)} of its width: inside the legs it leaves, but not as a needle`);
+    close(rings[0]!.r, FORK_START * full, 1e-9);
+    close(rings[1]!.r, columnTubeDiameter(rings[1]!.p[1], top) / 2, 1e-9);
+    assert.ok(strands.some(other => other !== rings && other.some(ring => distance3(ring.p, rings[0]!.p) < 1e-9)), 'a fork starts on the axis of another leg');
+  }
+  for (const rings of strands.filter(r => r[0]!.p[1] === 0)) close(rings[0]!.r, columnTubeDiameter(0, top) / 2, 1e-9);
+});
+
+// R-a: the legs run on into the roof's own members, each along the one nearest its heading.
+test('funnel: a leg into the roof lands along the roof member nearest its heading, and two legs along two members where the roof sends out two', () => {
+  const legs = columnLegs(head, roof), first = nodes.length - head.length;
+  head.forEach((_, k) => {
+    const n = first + k, ins = edges.flatMap(([, b], e) => (b === n ? [e] : []));
+    const end = (e: number): V3 => legs[e]!.tans[legs[e]!.tans.length - 1]!, heading = (e: number): V3 => toward(nodes[edges[e]![0]]!, nodes[n]!);
+    if (nodes[n]![0] >= FUNNEL_REACH - 1e-6) { for (const e of ins) assert.ok(dot3(end(e), heading(e)) > 0.99999, `a leg against the Range at node ${k} rises straight`); return; }
+    const members = roof[k]!, landed = ins.map(e => members.findIndex(m => dot3(end(e), m) > 0.99999));
+    assert.ok(landed.every(j => j >= 0), `a leg into node ${k} lands along no roof member`);
+    if (ins.length > 1 && members.length > 1) assert.notEqual(landed[0], landed[1], `both legs into node ${k} land along one of its ${members.length} members`);
+    let best = { leg: 0, member: 0, dot: -Infinity };
+    ins.forEach((e, i) => members.forEach((m, j) => { if (dot3(heading(e), m) > best.dot) best = { leg: i, member: j, dot: dot3(heading(e), m) }; }));
+    assert.equal(landed[best.leg], best.member, `the leg and member at node ${k} that suit each other best are matched`);
+  });
+});
+
+// The real roof never puts two legs in a head node after the same member, so the rule is pinned with a roof made to: the leg that suits the member
+// better takes it, and the other takes the member left, not the same one over it.
+test('funnel: where two legs suit the same roof member, the nearer takes it and the other goes along the member left', () => {
+  const first = nodes.length - head.length, k = head.findIndex((_, i) => nodes[first + i]![0] < FUNNEL_REACH - 1e-6 && edges.filter(([, b]) => b === first + i).length === 2);
+  assert.ok(k >= 0, 'a head node with two legs and room to stand on');
+  const n = first + k, ins = edges.flatMap(([, b], e) => (b === n ? [e] : [])), a = toward(nodes[edges[ins[0]!]![0]]!, nodes[n]!), b = toward(nodes[edges[ins[1]!]![0]]!, nodes[n]!);
+  const x = toward([0, 0, 0], [1.3 * a[0] + 0.7 * b[0], 1.3 * a[1] + 0.7 * b[1], 1.3 * a[2] + 0.7 * b[2]]), y = toward([0, 0, 0], [x[0], x[1] - 1.5, x[2] + 0.4]);
+  assert.ok(dot3(a, x) > dot3(b, x) && dot3(a, x) > dot3(a, y) && dot3(b, x) > dot3(b, y), 'both legs suit x better than y, the first leg suiting it better than the second');
+  const legs = columnLegs(head, roof.map((members, i) => (i === k ? [x, y] : members))), end = (e: number): V3 => legs[e]!.tans[legs[e]!.tans.length - 1]!;
+  assert.ok(dot3(end(ins[0]!), x) > 0.99999, 'the leg that suits x better lands along it');
+  assert.ok(dot3(end(ins[1]!), y) > 0.99999, 'the other leg lands along the member left');
+});
+
+// The members are the lattice's own links, so a leg that lands along one runs on into it.
+test('funnelRoof: the members out of a head node are the lattice links to the ring beyond it, unit vectors in the funnel\'s frame, none rising', () => {
+  const axis = worldToShed(layout, centre), at = (i: number): V3 => { const n = grid.nodes[i]!, s = worldToShed(layout, [n.x, n.z]); return [s.u - axis.u, n.height!, axis.v - s.v]; };
+  const links = [...edgesOf(kept).values()], ring = grid.nodes.flatMap((n, i) => (n.ring === FUNNEL_HEAD_RING ? [i] : []));
+  assert.equal(roof.length, ring.length, 'a list for each head node');
+  let linked = 0;
+  ring.forEach((i, k) => {
+    const want = links.flatMap(({ a, b }) => { const o = a === i ? b : b === i ? a : -1; return o >= 0 && grid.nodes[o]!.ring === FUNNEL_HEAD_RING + 1 ? [toward(at(i), at(o))] : []; });
+    if (!want.length) {
+      // only where the roof is cut away at the Range, against which the legs rise
+      assert.ok(head[k]![0] >= FUNNEL_REACH, `head node ${k} is clear of the Range and has no lattice link beyond it`);
+      assert.deepEqual(roof[k], [toward([0, 0, 0], [head[k]![0], 0, head[k]![2]])], 'a head node the roof sends nothing out of gets the way straight out, level');
+      return;
+    }
+    linked++;
+    assert.equal(roof[k]!.length, want.length, `head node ${k} sends out ${want.length} members`);
+    for (const m of roof[k]!) { close(Math.hypot(...m), 1, 1e-9); assert.ok(want.some(w => dot3(w, m) > 0.99999), `head node ${k}: a member that is no link of the lattice`); }
+  });
+  assert.ok(linked >= 12 && linked < ring.length, `${linked} of ${ring.length} head nodes have the lattice beyond them`);
+  for (const m of roof.flat()) assert.ok(m[1] <= 0.02, `a member rises ${m[1].toFixed(2)}: the roof falls away from the funnel's mouth`);
 });
 
 test('funnel: members run 1.2 to 5.1 m between nodes; a leg is 0.36 m through at the floor, 0.22 m at the roof, and is drawn that wide', () => {

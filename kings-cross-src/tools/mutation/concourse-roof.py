@@ -25,7 +25,7 @@ original = target.read_text()
 mutations = [
     ('farthest link called a rib', 'delta < (nearest.get(inner)?.delta ?? Infinity)', 'delta > (nearest.get(inner)?.delta ?? -Infinity)'),
     ('ribs take the nearest link on either hand', 'delta=(angle(outer)-angle(inner)+1e-6+4*Math.PI)%(2*Math.PI)', 'raw=Math.abs(angle(inner)-angle(outer)), delta=Math.min(raw,2*Math.PI-raw)'),
-    ('ribs take the nearest link clockwise', 'delta=(angle(outer)-angle(inner)+1e-6+4*Math.PI)%(2*Math.PI)', 'delta=(angle(inner)-angle(outer)+1e-6+4*Math.PI)%(2*Math.PI)'),
+    ('ribs take the nearest link on the other hand','delta=(angle(outer)-angle(inner)+1e-6+4*Math.PI)%(2*Math.PI)', 'delta=(angle(inner)-angle(outer)+1e-6+4*Math.PI)%(2*Math.PI)'),
     ('rib width doubled', 'const RIB_WIDTH = 0.15', 'const RIB_WIDTH = 0.3'),
     ('rib depth range narrowed', '0.45 - 0.2 * t', '0.45 - 0.1 * t'),
     ('round tube polygon coarsened', 'const TUBE_SIDES = 8', 'const TUBE_SIDES = 4'),

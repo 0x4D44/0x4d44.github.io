@@ -44,8 +44,20 @@ mutations = [
     ('rings not turned half a step', '((rings.length - 1 - k) % 2) * 0.5', '0'),
     ('legs kink at every crossing', 'ends[i]![1] = ends[o]![0] = unit(sum(dirs[i]!, dirs[o]!));', 'ends[i]![1] = dirs[i]!; ends[o]![0] = dirs[o]!;'),
     ('feet not upright', 'ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));', 'ends[o]![0] = dirs[o]!;'),
-    ('legs reach the roof without sweeping out', 'ends[i]![1] = unit(sum(dirs[i]!, [2 * o[0], 0, 2 * o[2]]));', 'ends[i]![1] = [0, 1, 0];'),
-    ('legs land steeper, half the outward weight', 'ends[i]![1] = unit(sum(dirs[i]!, [2 * o[0], 0, 2 * o[2]]));', 'ends[i]![1] = unit(sum(dirs[i]!, [0.5 * o[0], 0, 0.5 * o[2]]));'),
+    ('legs reach the roof without sweeping out', '{ ends[i]![1] = links[j]!; landed', '{ ends[i]![1] = [0, 1, 0]; landed'),
+    ('legs land straight out, along no roof member', '{ ends[i]![1] = links[j]!; landed', '{ ends[i]![1] = unit([p[0], 0, p[2]]); landed'),
+    ('both legs of a node land along one member', 'for (const shared of [false, true])', 'for (const shared of [true])'),
+    ('a leg lands along the roof member farthest from its heading', '.sort((x, y) => y[2] - x[2]);', '.sort((x, y) => x[2] - y[2]);'),
+    ('every leg is cut off at every crossing', 'goesOn = new Set(legs.map(l => l.next));', 'goesOn = new Set<number | undefined>();'),
+    ('the ring a leg shares with the next is drawn twice', 'for (let k = l === leg ? 0 : 1;', 'for (let k = 0;'),
+    ('forks start as needles', 'export const FORK_START = 0.7;', 'export const FORK_START = 0;'),
+    ('forks start at full width, a collar on the leg they leave', 'export const FORK_START = 0.7;', 'export const FORK_START = 1;'),
+    ('tube frames from the tangent alone, so they flip at the vertical', '    f = u;\n', '    f = [0, 1, 0];\n'),
+    ('crossing tubes lit plainly, a step across the crease', 'if (g > 0 && away > 1e-9) shade = unit(', 'if (g > 9 && away > 1e-9) shade = unit('),
+    ('crossing tubes lit entirely as the other', 'g = Math.min(1, 2 - away / r);', 'g = Math.min(9, 2 - away / r);'),
+    ('the blend reaches four radii from the other tube', 'g = Math.min(1, 2 - away / r);', 'g = Math.min(1, 4 - away / r);'),
+    ('the roof members taken from the ring inside the head', 'grid.nodes[o]!.ring > n.ring ? [o] : []', 'grid.nodes[o]!.ring < n.ring ? [o] : []'),
+    ('only the first roof member of a node is kept', 'out.length ? out.map(o =>', 'out.length ? out.slice(0, 1).map(o =>'),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:

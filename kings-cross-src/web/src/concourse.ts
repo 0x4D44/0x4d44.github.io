@@ -119,8 +119,8 @@ export function edgesOf(tris: [number, number, number][]): Map<string, Edge> {
   return out;
 }
 
-// Arup pp.13-16: radial box ribs, axial tubes. ASSUMED: each inner node's nearest link outward on one hand (anticlockwise from above) is a rib, so
-// the ribs run on from ring to ring as swept curves, as the lattice swirls out of the funnel in R-ab.
+// Arup pp.13-16: radial box ribs, axial tubes. ASSUMED: each inner node's nearest link outward on one hand (the way atan2(z, x) grows, which is clockwise
+// seen from above, z being south; which hand the real lattice takes is not read from R-ab) is a rib, so the ribs run on from ring to ring as swept curves.
 function roofRibs(edges: Map<string, Edge>, nodes: Diagrid['nodes'], centre: Pt): Set<string> {
   const nearest = new Map<number, {key:string;delta:number}>();
   const angle = (i:number): number => Math.atan2(nodes[i]!.z-centre[1], nodes[i]!.x-centre[0]);
@@ -140,18 +140,38 @@ function roundMember(batch: Batch, p: V3, q: V3, diameter: number): void {
   tube(batch, [{ p: end(p, -0.05), t, r }, { p: end(q, 0.05), t, r }]);
 }
 
-/** A round tube through rings of {point, tangent, radius}; a ring's frame comes from its tangent alone, so tubes meeting at a ring share it (no seam). */
-function tube(batch: Batch, rings: readonly { p: V3; t: V3; r: number }[], clamp?: readonly [number, number]): void {
-  const verts = rings.map(({ p, t, r }) => {
-    let u: V3 = [-t[0] * t[1], 1 - t[1] * t[1], -t[2] * t[1]];
-    const l = Math.hypot(...u);
-    u = l < 1e-6 ? [1, 0, 0] : [u[0] / l, u[1] / l, u[2] / l];
+/**
+ * The rings of a round tube through {point, tangent, radius}. The first ring's frame comes from its tangent alone, so tubes starting at one ring share it,
+ * and each next ring's is the last one's turned just enough to square with the new tangent, so a tube never twists however its tangent bends.
+ */
+export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, number]): { n: V3; p: V3 }[][] {
+  let f: V3 = [0, 1, 0];
+  const crossings = rings.filter(c => c.x);
+  return rings.map(({ p, t, r }) => {
+    const k = f[0] * t[0] + f[1] * t[1] + f[2] * t[2], w: V3 = [f[0] - k * t[0], f[1] - k * t[1], f[2] - k * t[2]], l = Math.hypot(...w);
+    const u: V3 = l < 1e-6 ? [1, 0, 0] : [w[0] / l, w[1] / l, w[2] / l];
+    f = u;
     const v: V3 = [t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2], t[0] * u[1] - t[1] * u[0]];
     return Array.from({ length: TUBE_SIDES }, (_, j) => {
       const c = Math.cos((j * 2 * Math.PI) / TUBE_SIDES), s = Math.sin((j * 2 * Math.PI) / TUBE_SIDES), n: V3 = [c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2]];
-      return { n, p: [p[0] + r * n[0], clamp ? Math.min(clamp[1], Math.max(clamp[0], p[1] + r * n[1])) : p[1] + r * n[1], p[2] + r * n[2]] as V3 };
+      const q: V3 = [p[0] + r * n[0], p[1] + r * n[1], p[2] + r * n[2]];
+      // Where two tubes cross, each is lit as if it ran into the other: its normal leans toward the other tube's own normal at that point (out from
+      // the other's axis), fully within a radius of that axis and not at all beyond two, so the two agree along the crease and the crossing is welded, not torn.
+      let shade = n;
+      for (const { p: o, x } of crossings) {
+        const a: V3 = [q[0] - o[0], q[1] - o[1], q[2] - o[2]], d = a[0] * x![0] + a[1] * x![1] + a[2] * x![2], m: V3 = [a[0] - d * x![0], a[1] - d * x![1], a[2] - d * x![2]], away = Math.hypot(...m), g = Math.min(1, 2 - away / r);
+        if (g > 0 && away > 1e-9) shade = unit(sum(shade, [(g * m[0]) / away, (g * m[1]) / away, (g * m[2]) / away]));
+      }
+      return { n: shade, p: [q[0], clamp ? Math.min(clamp[1], Math.max(clamp[0], q[1])) : q[1], q[2]] as V3 };
     });
   });
+}
+
+/** A ring of a round tube: its point, its tangent, its radius, and where another tube crosses it the tangent of that one. */
+export interface Ring { p: V3; t: V3; r: number; x?: V3 }
+
+function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number]): void {
+  const verts = tubeRings(rings, clamp);
   for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < TUBE_SIDES; j++) {
     const a = verts[k]![j]!, b = verts[k]![(j + 1) % TUBE_SIDES]!, c = verts[k + 1]![(j + 1) % TUBE_SIDES]!, d = verts[k + 1]![j]!;
     batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n] });
@@ -319,21 +339,34 @@ export const COLUMN_SEGMENTS = 3;
 const sum = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const unit = (a: V3): V3 => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
 
-/** Each leg a Hermite curve (conc-ab: long, no collars) sharing end tangents with the leg it continues into: no kink; upright at the floor, flat into the roof. */
-export function columnLegs(head: V3[]): { pts: V3[]; tans: V3[] }[] {
+/**
+ * Each leg a Hermite curve (conc-ab: long, no collars) sharing end tangents with the leg it continues into (`next`): no kink; upright at the floor,
+ * and under the roof along the member of the roof it is closest to (`roof`: the members out of each head node; R-a: the legs run on into the roof).
+ */
+export function columnLegs(head: V3[], roof: V3[][]): { pts: V3[]; tans: V3[]; next?: number; across?: V3 }[] {
   const { nodes, edges } = columnMembers(head);
   const dirs = edges.map(([a, b]) => unit([nodes[b]![0] - nodes[a]![0], nodes[b]![1] - nodes[a]![1], nodes[b]![2] - nodes[a]![2]]));
   const dot = (i: number, j: number): number => dirs[i]![0] * dirs[j]![0] + dirs[i]![1] * dirs[j]![1] + dirs[i]![2] * dirs[j]![2];
   const ends = edges.map((_, e): [V3, V3] => [dirs[e]!, dirs[e]!]); // tangent at an edge's lower and upper node
+  const onward: number[] = [], across: V3[] = []; // the leg a leg goes on into; the tangent of the other leg that crosses it where it ends
+  const first = nodes.length - head.length; // the head's nodes are the last ones
   nodes.forEach((p, n) => {
-    const ins = edges.flatMap(([, b], e) => (b === n ? [e] : [])), outs = edges.flatMap(([a], e) => (a === n ? [e] : [])), used = new Set<number>();
+    const ins = edges.flatMap(([, b], e) => (b === n ? [e] : [])), outs = edges.flatMap(([a], e) => (a === n ? [e] : [])), used = new Set<number>(), through: number[] = [];
     for (const [i, o] of ins.flatMap(i => outs.map(o => [i, o] as const)).sort((x, y) => dot(y[0], y[1]) - dot(x[0], x[1]))) {
       if (used.has(i) || used.has(o)) continue;
       used.add(i).add(o);
       ends[i]![1] = ends[o]![0] = unit(sum(dirs[i]!, dirs[o]!));
+      onward[i] = o;
+      through.push(i);
     }
+    through.forEach((i, k) => { across[i] = ends[through[1 - k] ?? i]![1]; });
     if (!ins.length) for (const o of outs) ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));
-    else if (!outs.length && p[0] < FUNNEL_REACH) for (const i of ins) { const o = unit([p[0], 0, p[2]]); ends[i]![1] = unit(sum(dirs[i]!, [2 * o[0], 0, 2 * o[2]])); }
+    else if (!outs.length && p[0] < FUNNEL_REACH && roof[n - first]) {
+      // each leg lands along the roof member nearest its own heading; two legs share one only where the node sends out a single member
+      const links = roof[n - first]!, pairs = ins.flatMap(i => links.map((l, j) => [i, j, dirs[i]![0] * l[0] + dirs[i]![1] * l[1] + dirs[i]![2] * l[2]] as const)).sort((x, y) => y[2] - x[2]);
+      const landed = new Set<number>(), taken = new Set<number>();
+      for (const shared of [false, true]) for (const [i, j] of pairs) if (!landed.has(i) && (shared || !taken.has(j))) { ends[i]![1] = links[j]!; landed.add(i); taken.add(j); }
+    }
   });
   return edges.map(([a, b], e) => {
     const P = nodes[a]!, Q = nodes[b]!, L = Math.hypot(Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]), [t0, t1] = ends[e]!;
@@ -343,13 +376,45 @@ export function columnLegs(head: V3[]): { pts: V3[]; tans: V3[] }[] {
       return [0, 1, 2].map(c => h[0]! * P[c]! + h[1]! * L * t0[c]! + h[2]! * Q[c]! + h[3]! * L * t1[c]!) as V3;
     };
     const ks = Array.from({ length: COLUMN_SEGMENTS + 1 }, (_, k) => k / COLUMN_SEGMENTS);
-    return { pts: ks.map(s => at(s, false)), tans: ks.map(s => unit(at(s, true))) };
+    return { pts: ks.map(s => at(s, false)), tans: ks.map(s => unit(at(s, true))), next: onward[e], across: across[e] };
   });
 }
 
-function columnGeometry(head: V3[]): THREE.BufferGeometry {
-  const batch = new Batch(), top = head.reduce((s, p) => s + p[1], 0) / head.length;
-  for (const { pts, tans } of columnLegs(head)) tube(batch, pts.map((p, k) => ({ p, t: tans[k]!, r: columnTubeDiameter(p[1], top) / 2 })), [0, 99]);
+/**
+ * The funnel as the tubes it is made of. Legs that go straight on into one another are one tube, so a crossing leaves no seam and no ring is cut
+ * across a leg. A tube that starts above the floor forks off the legs it grows from: it starts on their axis at a part of its width (`FORK_START`),
+ * hidden inside them, and reaches its full width a third of its way on, so it leaves them as a branch and not as a needle.
+ */
+export function columnStrands(head: V3[], roof: V3[][]): Ring[][] {
+  const legs = columnLegs(head, roof), top = head.reduce((s, p) => s + p[1], 0) / head.length, goesOn = new Set(legs.map(l => l.next));
+  return legs.flatMap((leg, e) => {
+    if (goesOn.has(e)) return [];
+    const rings: Ring[] = [];
+    for (let l: (typeof legs)[number] | undefined = leg; l; l = legs[l.next ?? -1]) for (let k = l === leg ? 0 : 1; k < l.pts.length; k++) rings.push({ p: l.pts[k]!, t: l.tans[k]!, r: columnTubeDiameter(l.pts[k]![1], top) / 2, x: k === l.pts.length - 1 ? l.across : undefined });
+    if (leg.pts[0]![1] > 0) rings[0]!.r *= FORK_START;
+    return [rings];
+  });
+}
+/** The share of its width a leg has where it forks off the legs it grows from. */
+export const FORK_START = 0.7;
+
+/**
+ * The members the roof sends outward from each node of the funnel's head (ribs and tubes alike), as unit vectors in the funnel's frame
+ * (x = u, z = -v from its axis), in the order of `funnelHead`. A node the roof sends nothing out of gets the way straight out, level.
+ */
+export function funnelRoof(grid: Diagrid, kept: [number, number, number][], centre: Pt, shed: ShedLayout): V3[][] {
+  const axis = worldToShed(shed, centre), links = [...edgesOf(kept).values()];
+  const at = (i: number): V3 => { const n = grid.nodes[i]!, s = worldToShed(shed, [n.x, n.z]); return [s.u - axis.u, n.height!, axis.v - s.v]; };
+  return grid.nodes.flatMap((n, i) => {
+    if (n.ring !== FUNNEL_HEAD_RING) return [];
+    const p = at(i), out = links.flatMap(({ a, b }) => { const o = a === i ? b : b === i ? a : -1; return o >= 0 && grid.nodes[o]!.ring > n.ring ? [o] : []; });
+    return [out.length ? out.map(o => { const q = at(o); return unit([q[0] - p[0], q[1] - p[1], q[2] - p[2]]); }) : [unit([p[0], 0, p[2]])]];
+  });
+}
+
+function columnGeometry(head: V3[], roof: V3[][]): THREE.BufferGeometry {
+  const batch = new Batch();
+  for (const rings of columnStrands(head, roof)) tube(batch, rings, [0, 99]);
   return batch.build();
 }
 
@@ -847,7 +912,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   add(floor, mat.floor, 'concourse-floor');
   group.add(buildFitOut(shed, worldToShed(shed, centre).v));
   // The funnel: one mesh about its own axis in the shed's frame, its legs landing on the roof's third ring.
-  const column = addMesh(group, columnGeometry(funnelHead(d, centre, shed)), mat.funnel, 'concourse-column');
+  const column = addMesh(group, columnGeometry(funnelHead(d, centre, shed), funnelRoof(d, kept, centre, shed)), mat.funnel, 'concourse-column');
   column.position.set(cx, 0, cz);
   column.rotation.y = -shed.heading;
   return group;
