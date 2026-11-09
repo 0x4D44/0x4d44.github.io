@@ -309,7 +309,7 @@ test('the daylight stand-ins keep a small floor all night and are the whole of t
 });
 
 test('exposure: the filmic grade runs at the day\'s exposure, higher at night and under cloud, and it moves smoothly', () => {
-  assert.equal(NIGHT_EXPOSURE, 1.8);
+  assert.equal(NIGHT_EXPOSURE, 2.3);
   assert.equal(DAY_EXPOSURE, 1.25);
   assert.equal(rig(40).exposure, DAY_EXPOSURE, 'a clear day');
   assert.equal(rig(-30).exposure, NIGHT_EXPOSURE, 'a clear night');

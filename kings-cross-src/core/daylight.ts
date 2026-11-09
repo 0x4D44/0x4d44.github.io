@@ -177,12 +177,15 @@ export function describeSun(elevationDeg: number): string {
 
 /**
  * The camera's exposure for the filmic tone map (three's ACES): the light's numbers are physical, so a bright day and a dark night are
- * far apart, and a camera or an eye closes down in the one and opens in the other. At night the page keeps the brightness it had
- * before the tone map (the toe of ACES is steeper than a straight sRGB curve, so it takes about a stop and a half more to read as
- * well); in a clear day it takes a quarter off (the sun is then 3.0, so the sunlit ground sits about 0.76 of the way up the curve and
- * every shade below it keeps its detail); under full cloud, when the sun is 12% of itself, it opens a further 90% as a camera does.
+ * far apart, and a camera or an eye closes down in the one and opens in the other. At night it opens a little over a stop (the toe of
+ * ACES is steeper than a straight sRGB curve, so the dim light needs it to read as well): 2.3 puts the mean brightness of a close night
+ * view (the south front, the Edinburgh street) within 5% of what the page showed before the tone map, and of a high one (the overview,
+ * mostly dark ground) a fifth lower, with the lit windows and lamps brighter than before and the deep shade darker; the dusk comes out
+ * a tenth brighter (ASSUMED: judged by the mean luma of fixed captures against the old page, not against a night reference). In a clear
+ * day it takes a quarter off (the sun is then 3.0, so the sunlit ground sits about 0.76 of the way up the curve and every shade below
+ * it keeps its detail); under full cloud, when the sun is 12% of itself, it opens a further 90% as a camera does.
  */
-export const NIGHT_EXPOSURE = 1.8;
+export const NIGHT_EXPOSURE = 2.3;
 export const DAY_EXPOSURE = 1.25;
 export const CLOUD_EXPOSURE = 0.9;
 
