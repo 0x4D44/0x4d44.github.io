@@ -328,6 +328,25 @@ export const CATALOGUE = Object.freeze({
   /** core/scene.ts PLATFORM_HEIGHT; the capture passes the real constant and a test pins the two equal. */
   platformHeightM: .9,
   eyeAbovePlatformM: 1.7,
+  /** V10: web/src/main.ts NOSE_TO_STOP, the gap the page leaves between a standing train's nose and its buffer stop. */
+  noseToStopM: 1.5,
+  /** V10: the specimen stands at this buffer stop, counted from the west (the page's own sample stop for the 5-car LNER). */
+  stationStopIndex: 3,
+  /** V10: the leading cab is looked at 1.5 m behind the nose (V01's target) and the coach at the centre of car 1, both 1.7 m up. */
+  stationFocusHeightM: 1.7,
+  stationCabFocusZ: 1.5,
+  /** V10: the cab view judges the front 12 m of the train, the coach view all of car 1, both from just above the platform edge up (the platform hides the running gear from any platform). */
+  stationRegionLengthM: 12,
+  stationRegionFloorM: 1,
+  /** V10: a camera stands at least this far inside its platform's edge. */
+  platformEdgeClearM: .5,
+  /** V10: at most this many candidate cameras are inspected per view and placement, no two closer than this in azimuth. */
+  stationMaxCandidates: 48,
+  stationMinSeparationDeg: 2,
+  /** V10: candidates are tried best first: nearest a front three-quarter view of the specimen, this many degrees off its nose. */
+  stationFrontAngleDeg: 45,
+  /** V10: the least a checked region may span in the frame (V01-V09 ask .05; a cab 150 m away is small). */
+  stationMinScreenSpan: .03,
 });
 /** Output suffixes of V01-V09 (the neutral specimen stage), in file order. Every kind gets every suffix, as OK, GAP or N/A. */
 export const STAGE_VIEWS = Object.freeze([
@@ -341,7 +360,12 @@ export const STAGE_VIEWS = Object.freeze([
   ['V08', ['gangway', 'gangway-mid', 'coupling-low', 'unit-coupling', 'unit-coupling-low', 'unit-coupling-2', 'unit-coupling-2-low']],
   ['V09', ['lights-leading', 'lights-trailing']],
 ].map(([id, suffixes]) => Object.freeze([id, Object.freeze(suffixes)])));
-export const STATION_VIEWS = Object.freeze(['station-25m', 'station-75m', 'station-150m', 'station-25m-coach', 'station-75m-coach', 'station-150m-coach']);
+/** V10: [output suffix, horizontal distance from the focus in metres, the focus: the leading cab or the centre of car 1]. */
+export const STATION_VIEW_TABLE = Object.freeze([['station-25m', 25, 'cab'], ['station-75m', 75, 'cab'], ['station-150m', 150, 'cab'],
+  ['station-25m-coach', 25, 'coach'], ['station-75m-coach', 75, 'coach'], ['station-150m-coach', 150, 'coach']].map(row => Object.freeze(row)));
+export const STATION_VIEWS = Object.freeze(STATION_VIEW_TABLE.map(([suffix]) => suffix));
+/** V10 placements, in the order they are tried: the nose at the buffers (as the page stands its own sample trains), then turned so the leading cab is at the north end. */
+export const STATION_ORIENTATIONS = Object.freeze(['nose-at-buffers', 'cab-at-north-end']);
 export const VIEW_IDS = Object.freeze([...STAGE_VIEWS.map(([id]) => id), 'V10']);
 
 const D2R = Math.PI / 180;
@@ -512,7 +536,9 @@ export function planCatalogueViews(f) {
 }
 /** The numbers that define a view, for freezing and comparison. */
 export const poseOf = v => ({ status: v.status, frame: v.frame, eye: v.eye, target: v.target, fov: v.fov, up: v.up, near: v.near, region: v.region, extents: v.extents,
-  car: v.car, rotationY: v.rotation?.rotationY });
+  car: v.car, rotationY: v.rotation?.rotationY,
+  // V10 only: where the specimen stands, which camera over which platform, and what it looks at
+  ...(v.id === 'V10' ? { placement: v.placement, distanceM: v.distanceM, azimuthDeg: v.azimuthDeg, platform: v.platform, platformHeightM: v.platformHeightM, focus: v.focus } : {}) });
 /** Deep equality on poses: numbers within `tol`, everything else exact. Returns the first difference path, or null. */
 export function poseDifference(a, b, tol = 1e-6, path = '') {
   if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= tol ? null : path;
@@ -524,26 +550,195 @@ export function poseDifference(a, b, tol = 1e-6, path = '') {
   return null;
 }
 
+// ---- V10: the specimen at a real buffer stop, and cameras standing on the platforms around it --------------------------------------------
+/** Distance from a point to the nearest edge of a polygon, both in the XZ plane. */
+export function polygonEdgeDistance(p, pts) {
+  let best = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length], dx = b[0] - a[0], dz = b[1] - a[1], len2 = dx * dx + dz * dz;
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / len2)) : 0;
+    best = Math.min(best, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz));
+  }
+  return best;
+}
+/** One V10 camera position: `distanceM` from the focus along bearing `azimuthDeg` (x = sin, z = cos), or null where that point is not `edgeClearM` inside a platform. */
+export function stationCameraAt({ focusXZ, distanceM, azimuthDeg, platforms, inside, edgeClearM = 0 }) {
+  const xz = [focusXZ[0] + distanceM * Math.sin(azimuthDeg * D2R), focusXZ[1] + distanceM * Math.cos(azimuthDeg * D2R)];
+  const platform = platforms.find(p => inside(xz, p.pts) && (edgeClearM <= 0 || polygonEdgeDistance(xz, p.pts) >= edgeClearM));
+  return platform ? { azimuthDeg, xz, platform: platform.ref } : null;
+}
 /**
  * V10: camera XZ candidates at exactly `distanceM` from the focus, one per `stepDeg` of azimuth, kept only where the point lies
- * over a platform polygon, best first (nearest a preferred bearing, then by azimuth). Azimuths are bearings (x = sin, z = cos).
+ * over a platform polygon (and `edgeClearM` inside its edge), best first (nearest a preferred bearing, then by azimuth). Azimuths are bearings (x = sin, z = cos).
  */
-export function stationCandidates({ focusXZ, distanceM, platforms, inside, stepDeg = 1, preferredBearingsDeg = [] }) {
+export function stationCandidates({ focusXZ, distanceM, platforms, inside, stepDeg = 1, preferredBearingsDeg = [], edgeClearM = 0 }) {
   const out = [];
   for (let k = 0; k * stepDeg < 360; k++) {
-    const az = k * stepDeg, xz = [focusXZ[0] + distanceM * Math.sin(az * D2R), focusXZ[1] + distanceM * Math.cos(az * D2R)];
-    const platform = platforms.find(p => inside(xz, p.pts));
-    if (!platform) continue;
-    out.push({ azimuthDeg: az, xz, platform: platform.ref, preference: preferredBearingsDeg.length ? Math.min(...preferredBearingsDeg.map(b => Math.abs(wrapDeg(az - b)))) : 0 });
+    const az = k * stepDeg, found = stationCameraAt({ focusXZ, distanceM, azimuthDeg: az, platforms, inside, edgeClearM });
+    if (found) out.push({ ...found, preference: preferredBearingsDeg.length ? Math.min(...preferredBearingsDeg.map(b => Math.abs(wrapDeg(az - b)))) : 0 });
   }
   return out.sort((a, b) => a.preference - b.preference || a.azimuthDeg - b.azimuthDeg);
+}
+/**
+ * The first `max` of an ordered candidate list, skipping any within `minSeparationDeg` of azimuth of one already kept: the search spreads
+ * over the platforms instead of testing a dozen neighbours of one blocked camera.
+ */
+export function thinCandidates(ordered, minSeparationDeg = CATALOGUE.stationMinSeparationDeg, max = CATALOGUE.stationMaxCandidates) {
+  const kept = [];
+  for (const c of ordered) {
+    if (kept.length >= max) break;
+    if (kept.every(o => Math.abs(wrapDeg(c.azimuthDeg - o.azimuthDeg)) >= minSeparationDeg - 1e-9)) kept.push(c);
+  }
+  return kept;
 }
 /** The V10 eye: platform surface + 1.7 m above the candidate XZ, target the focus, FOV 50. Asserts the horizontal distance. */
 export function stationPose({ candidate, focus, distanceM, platformHeightM = CATALOGUE.platformHeightM }) {
   const eye = [candidate.xz[0], platformHeightM + CATALOGUE.eyeAbovePlatformM, candidate.xz[1]];
   const horizontal = Math.hypot(eye[0] - focus[0], eye[2] - focus[2]);
   if (Math.abs(horizontal - distanceM) >= 1e-6) throw new Error(`station camera is ${horizontal} m from its focus, not ${distanceM} m`);
-  return { eye, target: [...focus], fov: 50, near: .5, up: [0, 1, 0], horizontalDistanceM: horizontal, azimuthDeg: candidate.azimuthDeg, platform: candidate.platform };
+  return { eye, target: [...focus], fov: 50, near: catalogueNear(eye, focus), up: [0, 1, 0], horizontalDistanceM: horizontal, azimuthDeg: candidate.azimuthDeg, platform: candidate.platform };
+}
+/**
+ * Where the specimen stands for V10. `standing` is core/station.ts standingTrainPose at the buffer stop: the nose 1.5 m north of the stop and
+ * the turn that sends the body north, along the track ('nose-at-buffers', the way the page stands its own sample trains). The other
+ * orientation turns the train half way round and puts the nose where the tail was, so the leading cab is at the north end and the tail
+ * stands the same 1.5 m from the buffers.
+ */
+export function stationPlacement({ standing, heading, length, orientation }) {
+  const north = [Math.sin(heading), -Math.cos(heading)];
+  if (orientation === 'nose-at-buffers') return { position: [standing.nose[0], 0, standing.nose[1]], rotationY: standing.rotationY };
+  if (orientation === 'cab-at-north-end') return { position: [standing.nose[0] + north[0] * length, 0, standing.nose[1] + north[1] * length], rotationY: wrap(standing.rotationY + Math.PI) };
+  throw new Error(`unknown station orientation ${orientation}`);
+}
+/** A train-local point in world metres, for a placement {position, rotationY}: three.js turns local (x, z) to (x cos + z sin, -x sin + z cos). */
+export function placedPoint(placement, p) {
+  const c = Math.cos(placement.rotationY), s = Math.sin(placement.rotationY);
+  return [placement.position[0] + p[0] * c + p[2] * s, placement.position[1] + p[1], placement.position[2] - p[0] * s + p[2] * c];
+}
+/** The six V10 views of a formation, before any camera is chosen: the focus (train-local), the region whose clear view the check judges, and the car it belongs to. */
+export function stationViewSpecs(f) {
+  const half = f.half, top = f.roofTop + .3, c0 = f.cars[0], c1 = f.cars[1], y = CATALOGUE.stationFocusHeightM;
+  return STATION_VIEW_TABLE.map(([suffix, distanceM, focus]) => {
+    const cab = focus === 'cab', car = cab ? c0 : c1;
+    const low = CATALOGUE.stationRegionFloorM;
+    const region = cab ? box(-half - .3, half + .3, low, top, -.2, CATALOGUE.stationRegionLengthM) : box(-half - .3, half + .3, low, top, c1.start - .01, c1.end + .01);
+    return { id: 'V10', suffix, distanceM, focus, focusLocal: [0, y, cab ? CATALOGUE.stationCabFocusZ : q6((c1.start + c1.end) / 2)],
+      region: { min: region.min.map(q6), max: region.max.map(q6) }, car: { index: car.index, type: car.type } };
+  });
+}
+/** Candidate cameras for one view at one placement: the focus in world metres, how many positions lie over platforms, and the best few, each with its exact eye. */
+export function stationCameras({ placement, spec, platforms, inside, stepDeg = 1, edgeClearM = CATALOGUE.platformEdgeClearM, max = CATALOGUE.stationMaxCandidates, minSeparationDeg = CATALOGUE.stationMinSeparationDeg }) {
+  const focusWorld = placedPoint(placement, spec.focusLocal), front = wrapDeg(placement.rotationY / D2R + 180), spread = CATALOGUE.stationFrontAngleDeg;
+  const all = stationCandidates({ focusXZ: [focusWorld[0], focusWorld[2]], distanceM: spec.distanceM, platforms, inside, stepDeg, edgeClearM, preferredBearingsDeg: [front - spread, front + spread] });
+  const candidates = thinCandidates(all, minSeparationDeg, max).map(c => {
+    const pose = stationPose({ candidate: c, focus: focusWorld, distanceM: spec.distanceM });
+    return { azimuthDeg: c.azimuthDeg, platform: c.platform, eye: pose.eye, near: pose.near };
+  });
+  return { focusWorld, candidateCount: all.length, candidates };
+}
+/**
+ * Everything V10 needs before the page is asked anything, a pure function of the formation and the station's data: the placements in the
+ * order they are tried (each orientation at the chosen buffer stop) with every view's candidate cameras, and one plan row per view. A view
+ * with no platform point at its distance from either focus is a GAP already; the rest are OK until the search says otherwise.
+ * `inside(xz, pts)` is core/station.ts pointInPolygon; `standing(stop)` is its standingTrainPose at the stop.
+ */
+export function planStation(f, { heading, stops, platforms, inside, standing, stopIndexes = [CATALOGUE.stationStopIndex], orientations = STATION_ORIENTATIONS, stepDeg = 1,
+  edgeClearM = CATALOGUE.platformEdgeClearM, max = CATALOGUE.stationMaxCandidates, minSeparationDeg = CATALOGUE.stationMinSeparationDeg }) {
+  const specs = stationViewSpecs(f), placements = [];
+  for (const index of stopIndexes) {
+    const stop = stops[index];
+    if (!stop) continue;
+    for (const orientation of orientations) {
+      const placement = { id: `stop-${index}-${orientation}`, orientation, stop: { index, id: stop.id, x: stop.x, z: stop.z }, ...stationPlacement({ standing: standing(stop), heading, length: f.length, orientation }) };
+      placement.views = specs.map(spec => ({ suffix: spec.suffix, region: spec.region, ...stationCameras({ placement, spec, platforms, inside, stepDeg, edgeClearM, max, minSeparationDeg }) }));
+      placements.push(placement);
+    }
+  }
+  const views = specs.map(spec => {
+    const candidateCount = placements.reduce((n, p) => n + p.views.find(v => v.suffix === spec.suffix).candidateCount, 0);
+    return { ...spec, status: candidateCount ? 'OK' : 'GAP', candidateCount,
+      reason: candidateCount ? null : `no platform point lies exactly ${spec.distanceM} m from the ${spec.focus} focus, in any placement` };
+  });
+  return { specs, placements, views, context: { platforms, inside, edgeClearM } };
+}
+/** Which placement the search settled on: the first with every view clear, else the first with the most clear views (the search stops at the first full one); -1 if none was tried. */
+export function chooseStation(report) {
+  let best = -1, most = -1;
+  report.forEach((r, i) => { if (r.clear > most) { best = i; most = r.clear; } });
+  return best;
+}
+/** The commonest reasons candidates failed, as what blocked them (the occluder's name chain) or, with none, why: [[text, count], ...] most first. */
+export function failureSummary(tried, top = 4) {
+  const counts = new Map();
+  for (const t of tried) if (!t.clear) { const key = t.blocker ? `${t.blocker} (${t.reason})` : t.reason; counts.set(key, (counts.get(key) ?? 0) + 1); }
+  return [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, top);
+}
+const stationBase = (spec, placement, planned, platformHeightM) => ({ id: 'V10', suffix: spec.suffix, frame: 'station', distanceM: spec.distanceM, fov: 50, up: [0, 1, 0], region: spec.region, car: spec.car, platformHeightM,
+  focus: { name: spec.focus, local: spec.focusLocal, world: planned?.focusWorld ?? null },
+  ...(placement ? { placement: { id: placement.id, orientation: placement.orientation, stop: placement.stop, position: placement.position, rotationY: placement.rotationY },
+    rotation: { ruleId: 'station-placement', basis: 'the specimen stands where the real track at the buffer stop puts it; the sun is not consulted', rotationY: placement.rotationY, orientation: placement.orientation } } : {}) });
+/** What a station view says of itself in its sidecar. */
+const stationNotes = view => ({ focus: view.focus, distanceM: view.distanceM, azimuthDeg: view.azimuthDeg ?? null, platform: view.platform ?? null, placement: view.placement?.id ?? null, orientation: view.placement?.orientation ?? null,
+  stop: view.placement?.stop ?? null, eyeAbovePlatformM: CATALOGUE.eyeAbovePlatformM, platformHeightM: view.platformHeightM, sceneryKept: true });
+/**
+ * The six V10 views once the search has run: the chosen placement's accepted cameras as OK views, every other view a GAP that says how many
+ * candidate positions were inspected and what blocked them, by name. Nothing is invented: a view with no clear camera has no pose.
+ */
+export function stationViewsFromSearch(station, report, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
+  const at = chooseStation(report), chosen = at >= 0 ? report[at] : null, placement = chosen ? station.placements.find(p => p.id === chosen.placementId) : null;
+  const search = { placements: report.map(r => ({ id: r.placementId, clear: r.clear })), chosen: placement?.id ?? null };
+  return station.views.map(spec => {
+    const planned = placement?.views.find(v => v.suffix === spec.suffix), base = stationBase(spec, placement, planned, platformHeightM), found = chosen?.views[spec.suffix];
+    const finish = view => ({ ...view, notes: stationNotes(view) });
+    if (spec.status !== 'OK' || !placement) return finish({ ...base, status: 'GAP', reason: spec.reason ?? 'no placement could be searched', search });
+    if (found?.accepted == null) {
+      const failures = failureSummary(found?.tried ?? []), reason = `no clear camera: ${found?.tested ?? 0} of ${planned.candidateCount} candidate positions over platforms were inspected${failures.length ? `; blocked by ${failures.map(([k, n]) => `${k} x${n}`).join('; ')}` : ''}`;
+      return finish({ ...base, status: 'GAP', reason, blocker: failures[0]?.[0] ?? null, search: { ...search, tested: found?.tested ?? 0, candidateCount: planned.candidateCount, failures } });
+    }
+    const c = planned.candidates[found.accepted.index];
+    return finish({ ...base, status: 'OK', reason: null, eye: c.eye, target: planned.focusWorld, near: c.near, azimuthDeg: c.azimuthDeg, platform: c.platform,
+      search: { ...search, tested: found.tested, candidateCount: planned.candidateCount, rejectedBefore: found.tried.filter(t => !t.clear) } });
+  });
+}
+/**
+ * The six V10 views from the frozen manifest of an earlier run: an accepted camera is used exactly as frozen (the placement is the one this
+ * run derives, which the drift check has already matched to the frozen one) and nothing is searched; a view frozen as a GAP stays a GAP.
+ */
+export function stationViewsFromFrozen(station, held, { platformHeightM = CATALOGUE.platformHeightM } = {}) {
+  return station.views.map(spec => {
+    const entry = held?.views?.[spec.suffix], p = entry?.plan, placement = p?.status === 'OK' ? station.placements.find(x => x.id === p.placement?.id) : null;
+    const planned = placement?.views.find(v => v.suffix === spec.suffix), frozen = { frozen: true };
+    const finish = view => ({ ...view, notes: stationNotes(view) });
+    if (!placement) return finish({ ...stationBase(spec, null, null, platformHeightM), status: 'GAP', reason: `frozen as a GAP: ${entry?.outcome?.reason ?? entry?.reason ?? 'no reason recorded'}`, search: frozen });
+    return finish({ ...stationBase(spec, placement, planned, platformHeightM), status: 'OK', reason: null, eye: p.eye, target: p.target, near: p.near, azimuthDeg: p.azimuthDeg, platform: p.platform, search: frozen });
+  });
+}
+/**
+ * Every way the frozen V10 poses of one kind differ from what this run derives: a view missing, a placement this run cannot derive (or two
+ * placements in one kind), a camera that no longer lies exactly `distanceM` from the focus over a platform, or numbers that moved by more than `tol`.
+ */
+export function stationFrozenDrift(station, held, { tol = 1e-6 } = {}) {
+  const drifts = [], { platforms, inside, edgeClearM } = station.context;
+  let placementId = null;
+  for (const spec of station.views) {
+    const p = held?.views?.[spec.suffix]?.plan;
+    if (!p) { drifts.push({ view: spec.suffix, reason: 'view missing from the frozen poses' }); continue; }
+    if (p.status !== 'OK') continue;
+    const placement = station.placements.find(x => x.id === p.placement?.id);
+    if (!placement) { drifts.push({ view: spec.suffix, reason: 'frozen placement is not one this run derives', at: '/placement/id' }); continue; }
+    if (placementId !== null && placementId !== placement.id) { drifts.push({ view: spec.suffix, reason: 'views of one kind must share one placement', at: '/placement/id' }); continue; }
+    placementId = placement.id;
+    const wanted = { orientation: placement.orientation, stop: placement.stop, position: placement.position, rotationY: placement.rotationY };
+    const placementAt = poseDifference(wanted, { orientation: p.placement.orientation, stop: p.placement.stop, position: p.placement.position, rotationY: p.placement.rotationY }, tol, '/placement');
+    if (placementAt !== null) { drifts.push({ view: spec.suffix, reason: 'placement differs from the frozen placement', at: placementAt }); continue; }
+    const focus = placedPoint(placement, spec.focusLocal), camera = stationCameraAt({ focusXZ: [focus[0], focus[2]], distanceM: spec.distanceM, azimuthDeg: p.azimuthDeg, platforms, inside, edgeClearM });
+    if (!camera) { drifts.push({ view: spec.suffix, reason: 'the frozen camera is no longer over a platform', at: '/azimuthDeg' }); continue; }
+    const pose = stationPose({ candidate: camera, focus, distanceM: spec.distanceM });
+    const at = poseDifference({ eye: pose.eye, target: pose.target, fov: pose.fov, near: pose.near, up: pose.up, distanceM: spec.distanceM, platform: camera.platform, region: spec.region },
+      { eye: p.eye, target: p.target, fov: p.fov, near: p.near, up: p.up, distanceM: p.distanceM, platform: p.platform, region: p.region }, tol);
+    if (at !== null) drifts.push({ view: spec.suffix, reason: 'pose differs from the frozen pose', at });
+  }
+  return drifts;
 }
 
 // ============================================================================================
@@ -584,9 +779,9 @@ export function hideSceneryForStage(scene) {
   return hidden;
 }
 export const describeObjects = list => list.map(o => ({ name: o.name || '', type: o.type }));
-/** Specimen and stage share one rigid transform: the vertical-axis rotation the sun rule asks for. */
+/** Specimen and stage share one rigid transform: the vertical-axis rotation the sun rule asks for. V10 has no stage (the station is the stage): it passes null. */
 export function placeStageSpecimen(group, stage, rotationY, position = [0, 0, 0]) {
-  for (const o of [group, stage]) { o.position.set(...position); o.rotation.set(0, rotationY, 0); o.updateMatrixWorld(true); }
+  for (const o of [group, stage]) if (o) { o.position.set(...position); o.rotation.set(0, rotationY, 0); o.updateMatrixWorld(true); }
 }
 /** Static triangles and draw calls of a train, counted exactly as .scratch/train-rubric/measure-costs.mjs does. Call it after the frame is rendered, so the LODs are the ones drawn. */
 export function trainCosts(group) {
@@ -637,10 +832,12 @@ export function cameraInsideMesh(T, point, meshes) {
       if (mesh.geometry.boundingBox.containsPoint(mesh.worldToLocal(point.clone()))) return mesh;
       continue;
     }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material], sides = materials.map(m => m.side);
+    // an inside-out shell (the page's sky dome) is drawn to be looked at from inside: a camera within it is where it belongs
+    if (materials.every(m => m.side === T.BackSide)) continue;
     if (mesh.isInstancedMesh) { if (!mesh.boundingBox) mesh.computeBoundingBox(); box.copy(mesh.boundingBox); }
     else { if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox(); box.copy(mesh.geometry.boundingBox); }
     if (!box.applyMatrix4(mesh.matrixWorld).containsPoint(point)) continue;
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material], sides = materials.map(m => m.side);
     let odd = 0;
     materials.forEach(m => { m.side = T.DoubleSide; });
     try {
@@ -774,4 +971,34 @@ export function inspectCatalogueView(T, scene, camera, group, ground, view, { co
   }
   return { clear: true, checkedSamples: points.length, candidateSamples: all.length, visibleFraction, screenSpan: span, verticalSpan: spanY, groundY: groundY ?? null, sampleNdc,
     ...(extents ? { extentsNdc: { minX: extents.minX, maxX: extents.maxX, minY: extents.minY, maxY: extents.maxY, widthFraction: extents.widthFraction, vertices: extents.vertices } } : {}) };
+}
+/** The options V10's check runs with, in the search and in the final check alike, so a camera the search calls clear is clear to the picture. */
+export const stationCheckOptions = () => ({ minScreenSpan: CATALOGUE.stationMinScreenSpan });
+/**
+ * The V10 search, in the page. For each placement in order the specimen is stood there and, view by view, its candidate cameras are tried best
+ * first; the first whose check (`inspectCatalogueView`) is clear is accepted and the rest of that view is not tried. A placement with every view
+ * clear ends the search. A camera is clear by the check or it is not; every failure is recorded with its reason and the occluder's name chain.
+ */
+export function searchStation(T, { scene, camera, controls, group, ground }, placements) {
+  const report = [];
+  for (const placement of placements) {
+    placeStageSpecimen(group, null, placement.rotationY, placement.position);
+    const views = {};
+    let clear = 0;
+    for (const view of placement.views) {
+      const tried = [];
+      let accepted = null;
+      for (const [index, c] of view.candidates.entries()) {
+        setWorldView(T, camera, controls, { eye: c.eye, target: view.focusWorld, fov: 50, up: [0, 1, 0], near: c.near });
+        const r = inspectCatalogueView(T, scene, camera, group, ground, { region: view.region }, stationCheckOptions());
+        tried.push({ azimuthDeg: c.azimuthDeg, platform: c.platform, clear: r.clear, reason: r.clear ? null : r.reason, blocker: r.blocker ?? null });
+        if (r.clear) { accepted = { index, azimuthDeg: c.azimuthDeg }; break; }
+      }
+      views[view.suffix] = { tested: tried.length, accepted, tried };
+      if (accepted) clear++;
+    }
+    report.push({ placementId: placement.id, clear, views });
+    if (clear === placement.views.length) break;
+  }
+  return report;
 }

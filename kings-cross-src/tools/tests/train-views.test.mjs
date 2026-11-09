@@ -211,7 +211,8 @@ test('V10 candidate cameras stand on a platform exactly the asked distance from 
   for(const c of candidates) {
    assert.ok(pointInPolygon(c.xz,c.platform==='X'?platform.pts:[[-8,-200],[-5,-200],[-5,200],[-8,200]]),'over its platform');
    near(Math.hypot(c.xz[0]-focusXZ[0],c.xz[1]-focusXZ[1]),distance,1e-9);
-   const pose=F.stationPose({candidate:c,focus:[0,1.7,0],distanceM:distance});near(pose.eye[1],PLATFORM_HEIGHT+1.7,1e-12);near(pose.horizontalDistanceM,distance,1e-6);assert.equal(pose.fov,50);assert.equal(pose.near,.5);
+   const pose=F.stationPose({candidate:c,focus:[0,1.7,0],distanceM:distance});near(pose.eye[1],PLATFORM_HEIGHT+1.7,1e-12);near(pose.horizontalDistanceM,distance,1e-6);assert.equal(pose.fov,50);assert.equal(pose.near,distance/100,'the near plane is a hundredth of the distance, like every catalogue view');
+   assert.deepEqual([pose.platform,pose.azimuthDeg,pose.up],[c.platform,c.azimuthDeg,[0,1,0]]);vec(pose.target,[0,1.7,0]);
   }
  }
  const ordered=F.stationCandidates({focusXZ:[0,0],distanceM:25,platforms:[{ref:'X',pts:platform.pts}],inside:pointInPolygon,stepDeg:1,preferredBearingsDeg:[100]});
@@ -448,12 +449,15 @@ test('catalogue preflight plans the views without Chrome, and refuses to capture
  try {
   const dist=path.join(dir,'dist'),out=path.join(dir,'out');await mkdir(dist);
   const run=async(...args)=>{const lines=[];console.log=(...a)=>lines.push(a.join(' '));try{await C.catalogueMain(['--mode','catalogue','--dist',dist,'--out',out,'--chrome','none',...args]);}finally{console.log=log;}return lines.map(l=>JSON.parse(l));};
-  const [plain]=await run('--kinds','gn387x8,lner5','--views','V01,V08');
+  /** A run that is expected to succeed: whatever it throws instead is an assertion failure, not a crash. */
+  const ok=async(...args)=>{try{return await run(...args);}catch(e){assert.fail(`catalogueMain threw: ${e?.message}`);}};
+  const [plain]=await ok('--kinds','gn387x8,lner5','--views','V01,V08');
   assert.deepEqual([plain.catalogue,plain.rubric,plain.kinds,plain.views,plain.posesFrozen],[true,F.CATALOGUE.rubric,['lner5','gn387x8'],['V01','V08'],false]);
   assert.deepEqual(plain.planned,{lner5:{OK:7,'N/A':4},gn387x8:{OK:9,'N/A':2}});
-  const [v10only]=await run('--kinds','lner5','--views','V10');assert.deepEqual(v10only.planned,{lner5:{}},'station views are planned in the page, not by the stage planner');
+  const [v10only]=await ok('--kinds','lner5','--views','V10');assert.deepEqual(v10only.planned,{lner5:{OK:6}},'the six station views have cameras over platforms to be searched');
+  const [both]=await ok('--kinds','lner5','--views','V02,V10');assert.deepEqual(both.planned,{lner5:{OK:8}});
   const poses=path.join(dir,'manifest.json');await writeFile(poses,JSON.stringify(frozenManifest(['lner5','gn387x8'])));
-  const [frozen]=await run('--kinds','lner5,gn387x8','--views','V01,V08','--poses',poses);assert.equal(frozen.posesFrozen,true);assert.deepEqual(frozen.planned,plain.planned);
+  const [frozen]=await ok('--kinds','lner5,gn387x8','--views','V01,V08','--poses',poses);assert.equal(frozen.posesFrozen,true);assert.deepEqual(frozen.planned,plain.planned);
   const tampered=frozenManifest(['lner5']);tampered.kinds.lner5.views['front-3m'].plan.eye[2]=-3.001;tampered.kinds.lner5.views['roof-plan'].plan.fov=51;await writeFile(poses,JSON.stringify(tampered));
   await assert.rejects(run('--kinds','lner5','--views','V02,V06','--poses',poses),/refusing to capture: 2 pose\(s\) differ from .*lner5\/front-3m pose differs from the frozen pose at \/eye\/2; lner5\/roof-plan pose differs from the frozen pose at \/fov/);
   await assert.rejects(run('--kinds','lner5,hull5','--views','V01','--poses',poses),/refusing to capture.*hull5\/\* kind missing/);
@@ -641,4 +645,287 @@ test('a planned view is exactly its frozen numbers: status, frame, pose, region,
  const gap=F.poseOf(allMotor.find(x=>x.suffix==='bogie-trailer'));assert.deepEqual([gap.status,gap.eye,gap.rotationY],['GAP',undefined,undefined]);
  assert.equal(F.poseDifference(p,JSON.parse(JSON.stringify(p))),null);assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.00001]}),'/a/1');assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.00001]},1e-3),null);assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.0000001]}),null);
  assert.equal(F.poseDifference({a:1},{a:'1'}),'/a');assert.equal(F.poseDifference({a:null},{a:undefined}),'/a');assert.equal(F.poseDifference({a:[1]},{a:{0:1}}),'/a');assert.equal(F.poseDifference({a:1,b:2},{a:1}),'/b');
+});
+
+// ---- V10: the specimen at a real buffer stop, with cameras standing on the platforms ------------------------------------------------------
+const station=await C.loadStationScene();
+/** Runs `fn`; whatever it throws that is not already an assertion becomes one, so a broken function fails the assertion that asked for it. */
+const calm=(fn,what='the call')=>{try{return fn();}catch(e){if(e instanceof assert.AssertionError)throw e;assert.fail(`${what} threw ${e?.name}: ${e?.message}`);}};
+const planOf=(kind,scene=station)=>calm(()=>F.planStation(formations.get(kind),scene),`planStation(${kind})`);
+/** The station plan of a kind, made on first use (so a broken planner fails the tests that ask for a plan, not the whole file). */
+const stationPlans={cache:new Map(),get(kind){if(!this.cache.has(kind))this.cache.set(kind,planOf(kind));return this.cache.get(kind);}};
+const NORTH=[Math.sin(station.heading),-Math.cos(station.heading)];
+const horizontal=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
+/** What the page's search would report for a plan: `accepts[placementId][suffix]` is the index of the accepted candidate, or null for none; every candidate before it failed. */
+const fakeReport=(plan,accepts)=>plan.placements.filter(p=>accepts[p.id]).map(p=>{
+ const views={};let clear=0;
+ for(const v of p.views){
+  const index=accepts[p.id][v.suffix]??null;
+  assert.ok(index===null||v.candidates[index],`${p.id} ${v.suffix} has ${v.candidates.length} candidate cameras, so none is number ${index} to accept`);
+  const tried=v.candidates.slice(0,index===null?v.candidates.length:index+1).map((c,i)=>({azimuthDeg:c.azimuthDeg,platform:c.platform,clear:i===index,reason:i===index?null:'coach occluded',blocker:i===index?null:'Scene/furniture/benches'}));
+  views[v.suffix]={tested:tried.length,accepted:index===null?null:{index,azimuthDeg:v.candidates[index].azimuthDeg},tried};if(index!==null)clear++;
+ }
+ return {placementId:p.id,clear,views};
+});
+const allAt=(plan,id,index=0)=>({[id]:Object.fromEntries(plan.views.map(v=>[v.suffix,index]))});
+const viewsOf=(kind,accepts)=>{const plan=stationPlans.get(kind);return F.stationViewsFromSearch(plan,fakeReport(plan,accepts(plan)));};
+const manifestOf=views=>({views:Object.fromEntries(views.map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v))),outcome:{status:v.status,reason:v.reason}}]))});
+
+test('V10 stands the specimen at the fourth buffer stop from the west, nose at the buffers first and then turned so the leading cab is at the north end',()=>{
+ assert.equal(station.stops.length,9);assert.ok(station.stops.every((s,i)=>i===0||s.x>station.stops[i-1].x),'the stops run from west to east');
+ assert.equal(F.CATALOGUE.stationStopIndex,3);assert.equal(F.CATALOGUE.noseToStopM,1.5);assert.deepEqual(F.STATION_ORIENTATIONS,['nose-at-buffers','cab-at-north-end']);
+ const stop=station.stops[3];
+ for(const kind of ALL_KINDS) {
+  const plan=stationPlans.get(kind),L=formations.get(kind).length;assert.deepEqual(plan.placements.map(p=>p.id),['stop-3-nose-at-buffers','stop-3-cab-at-north-end'],kind);
+  const [a,b]=plan.placements,standing=station.standing(stop);
+  assert.deepEqual([a.orientation,a.stop],['nose-at-buffers',{index:3,id:stop.id,x:stop.x,z:stop.z}]);vec(a.position,[standing.nose[0],0,standing.nose[1]],1e-12,kind);near(a.rotationY,standing.rotationY,1e-12);
+  vec(F.placedPoint(a,[0,0,0]),[stop.x+1.5*NORTH[0],0,stop.z+1.5*NORTH[1]],1e-9,`${kind}: the nose stands 1.5 m north of the stop`);
+  const aTail=F.placedPoint(a,[0,0,L]);vec([aTail[0]-a.position[0],aTail[2]-a.position[2]],[L*NORTH[0],L*NORTH[1]],1e-9,`${kind}: the body runs north`);
+  vec(F.placedPoint(b,[0,0,L]),[stop.x+1.5*NORTH[0],0,stop.z+1.5*NORTH[1]],1e-9,`${kind}: the tail stands where the nose stood, 1.5 m from the stop`);
+  vec(F.placedPoint(b,[0,0,0]),aTail,1e-9,`${kind}: the nose stands where the other orientation's tail stood`);
+  const back=F.placedPoint(b,[0,0,1]);vec([back[0]-b.position[0],back[2]-b.position[2]],[-NORTH[0],-NORTH[1]],1e-9,`${kind}: the body runs south`);
+  near(Math.abs(wrapDeg((b.rotationY-a.rotationY)/D2R)),180,1e-9,`${kind}: half a turn apart`);assert.ok(Math.abs(b.rotationY)<=Math.PI+1e-12);
+ }
+ assert.throws(()=>F.stationPlacement({standing:station.standing(stop),heading:station.heading,length:100,orientation:'sideways'}),/unknown station orientation sideways/);
+ // the maths is the page's: a group put there in three.js sends train-local points to the same world points
+ for(const p of stationPlans.get('lner5').placements) {
+  const group=new T.Group();group.position.set(...p.position);group.rotation.y=p.rotationY;group.updateMatrixWorld(true);
+  for(const local of [[0,0,0],[1.3,1.7,5],[-2,.5,60],[0,3,120.5]]) vec(F.placedPoint(p,local),group.localToWorld(new T.Vector3(...local)).toArray(),1e-9,`${p.id} ${local}`);
+ }
+});
+
+test('V10 looks at the leading cab and at the middle of car 1, from 25, 75 and 150 m, and judges the body above the platform edge',()=>{
+ assert.deepEqual(F.STATION_VIEWS,['station-25m','station-75m','station-150m','station-25m-coach','station-75m-coach','station-150m-coach']);
+ assert.deepEqual(F.STATION_VIEW_TABLE.map(r=>r[1]),[25,75,150,25,75,150]);assert.deepEqual(F.STATION_VIEW_TABLE.map(r=>r[2]),['cab','cab','cab','coach','coach','coach']);
+ for(const kind of ALL_KINDS) {
+  const f=formations.get(kind),specs=F.stationViewSpecs(f),c1=f.cars[1];
+  assert.deepEqual(specs.map(s=>s.suffix),F.STATION_VIEWS,kind);assert.ok(specs.every(s=>s.id==='V10'));
+  for(const s of specs.slice(0,3)) {vec(s.focusLocal,[0,1.7,1.5]);assert.deepEqual(s.car,{index:0,type:f.cars[0].type});near(s.region.min[2],-.2);near(s.region.max[2],12);}
+  for(const s of specs.slice(3)) {vec(s.focusLocal,[0,1.7,(c1.start+c1.end)/2],1e-6,kind);assert.deepEqual(s.car,{index:1,type:c1.type});near(s.region.min[2],c1.start-.01,1e-6);near(s.region.max[2],c1.end+.01,1e-6);}
+  for(const s of specs) {near(s.region.min[1],1);near(s.region.max[1],f.roofTop+.3,1e-6);near(s.region.max[0],f.half+.3,1e-6);near(s.region.min[0],-f.half-.3,1e-6);}
+ }
+});
+
+test('V10 camera positions are exactly the asked distance from the focus, over a platform and clear of its edge, and are tried best first',()=>{
+ const square=[[-60,-60],[60,-60],[60,60],[-60,60]],platforms=[{ref:'P',pts:square}],inside=pointInPolygon;
+ near(F.polygonEdgeDistance([0,0],square),60);near(F.polygonEdgeDistance([59,0],square),1);near(F.polygonEdgeDistance([0,100],square),40,1e-9);near(F.polygonEdgeDistance([3,4],[[0,0],[0,0],[0,0]]),5,1e-12,'a degenerate edge is a point');
+ near(F.polygonEdgeDistance([100,100],square),Math.hypot(40,40),1e-9,'beyond a corner, the distance is to the corner, not to the line of an edge');near(F.polygonEdgeDistance([-59,0],square),1,1e-12,'the closing edge counts');near(F.polygonEdgeDistance([0,59.5],square),.5,1e-12);
+ const at=F.stationCameraAt({focusXZ:[0,0],distanceM:25,azimuthDeg:90,platforms,inside,edgeClearM:.5});vec(at.xz,[25,0],1e-9);assert.equal(at.platform,'P');
+ assert.equal(F.stationCameraAt({focusXZ:[0,0],distanceM:25,azimuthDeg:90,platforms:[],inside}),null);
+ assert.equal(F.stationCameraAt({focusXZ:[0,0],distanceM:59.9,azimuthDeg:90,platforms,inside,edgeClearM:.5}),null,'a tenth of a metre inside the edge is not clear of it');assert.ok(F.stationCameraAt({focusXZ:[0,0],distanceM:59.9,azimuthDeg:90,platforms,inside}),'with no clearance asked, any point inside counts');
+ assert.ok(F.stationCameraAt({focusXZ:[0,0],distanceM:59.4,azimuthDeg:90,platforms,inside,edgeClearM:.5}));assert.equal(F.stationCameraAt({focusXZ:[0,0],distanceM:59.6,azimuthDeg:90,platforms,inside,edgeClearM:.5}),null);
+ // facing south (rotationY 0 puts the nose toward -z, so the front bearing is 180): the best cameras are 45 degrees either side of it
+ const placement={position:[0,0,0],rotationY:0},spec={suffix:'s',distanceM:25,focus:'cab',focusLocal:[0,1.7,0]};
+ const cameras=args=>calm(()=>F.stationCameras(args),'stationCameras'),cams=cameras({placement,spec,platforms,inside,edgeClearM:.5});
+ assert.deepEqual(cams.candidates.slice(0,6).map(c=>c.azimuthDeg),[135,225,133,137,223,227]);assert.equal(cams.candidateCount,360);assert.ok(cams.candidates.length<=48);
+ // bearings: 0 is +z, 90 is +x, so a platform that lies only to the -z side of the focus offers only bearings of 115 to 245 degrees at 25 m
+ const south=cameras({placement,spec,platforms:[{ref:'N',pts:[[-60,-60],[60,-60],[60,-10],[-60,-10]]}],inside,edgeClearM:.5});
+ assert.equal(south.candidateCount,131);assert.deepEqual(south.candidates.slice(0,2).map(c=>c.azimuthDeg),[135,225]);assert.ok(south.candidates.every(c=>c.azimuthDeg>=115&&c.azimuthDeg<=245&&c.eye[2]<=-10.5+1e-9));
+ const west=cameras({placement:{position:[0,0,0],rotationY:Math.PI/2},spec,platforms:[{ref:'W',pts:[[-60,-60],[-10,-60],[-10,60],[-60,60]]}],inside,edgeClearM:.5});
+ assert.deepEqual(west.candidates.slice(0,2).map(c=>c.azimuthDeg),[225,315],'rotationY pi/2 sends the nose to -x, so the front bearing is 270 and the best cameras are at 225 and 315');assert.ok(west.candidates.every(c=>c.eye[0]<=-10.5+1e-9));
+ for(const c of cams.candidates) {near(horizontal(c.eye,cams.focusWorld),25,1e-9);near(c.eye[1],2.6,1e-12);assert.equal(c.near,.25);assert.equal(c.platform,'P');}
+ const gaps=cams.candidates.map(c=>c.azimuthDeg).sort((p,q)=>p-q).map((a,i,all)=>i?a-all[i-1]:99);assert.ok(gaps.every(g=>g>=2),`azimuths are 2 degrees apart at least: ${gaps}`);
+ assert.deepEqual(F.stationCameras({placement:{position:[0,0,0],rotationY:Math.PI},spec,platforms,inside,edgeClearM:.5}).candidates.slice(0,2).map(c=>c.azimuthDeg),[45,315],'a train turned about faces the other way');
+ // a 4 m wide platform leaves only the points a half metre in from both its edges, whatever the bearing
+ const sliver=F.stationCameras({placement,spec,platforms:[{ref:'S',pts:[[10,-60],[14,-60],[14,60],[10,60]]}],inside,edgeClearM:.5});
+ assert.ok(sliver.candidates.length>=8&&sliver.candidateCount<=24,`${sliver.candidates.length} of ${sliver.candidateCount}`);assert.ok(sliver.candidates.every(c=>c.platform==='S'&&c.eye[0]>=10.5-1e-9&&c.eye[0]<=13.5+1e-9),'only points a half metre inside the sliver');
+ // thinning: the first `max` of the order, skipping neighbours
+ const ordered=[10,11,12,13,20,21,40].map(azimuthDeg=>({azimuthDeg}));
+ assert.deepEqual(F.thinCandidates(ordered,2,10).map(c=>c.azimuthDeg),[10,12,20,40]);assert.deepEqual(F.thinCandidates(ordered,2,3).map(c=>c.azimuthDeg),[10,12,20]);assert.deepEqual(F.thinCandidates([{azimuthDeg:359},{azimuthDeg:1},{azimuthDeg:3}],5,9).map(c=>c.azimuthDeg),[359],'azimuth wraps at 360');
+ assert.deepEqual(F.thinCandidates(ordered).map(c=>c.azimuthDeg),[10,12,20,40],'the defaults are the catalogue limits');assert.deepEqual([F.CATALOGUE.stationMaxCandidates,F.CATALOGUE.stationMinSeparationDeg,F.CATALOGUE.platformEdgeClearM,F.CATALOGUE.stationFrontAngleDeg],[48,2,.5,45]);
+});
+
+test('every V10 camera of every kind stands on a real platform, 2.6 m up, exactly 25, 75 or 150 m from its focus, in both placements',()=>{
+ const byRef=new Map(station.platforms.map(p=>[p.ref,p.pts]));
+ for(const kind of ALL_KINDS) {
+  const plan=stationPlans.get(kind);assert.deepEqual(plan.views.map(v=>[v.suffix,v.status]),F.STATION_VIEWS.map(s=>[s,'OK']),`${kind}: every view has cameras to search`);
+  for(const p of plan.placements) for(const v of p.views) {
+   const spec=plan.specs.find(s=>s.suffix===v.suffix);assert.ok(v.candidates.length>0&&v.candidates.length<=48&&v.candidateCount>=v.candidates.length,`${kind} ${p.id} ${v.suffix}`);
+   vec(v.focusWorld,F.placedPoint(p,spec.focusLocal),1e-9);
+   for(const c of v.candidates) {
+    near(horizontal(c.eye,v.focusWorld),spec.distanceM,1e-6,`${kind} ${p.id} ${v.suffix} az ${c.azimuthDeg}`);near(c.eye[1],PLATFORM_HEIGHT+1.7,1e-12);
+    const outline=byRef.get(c.platform);assert.ok(outline,'a real platform');assert.ok(pointInPolygon([c.eye[0],c.eye[2]],outline));assert.ok(F.polygonEdgeDistance([c.eye[0],c.eye[2]],outline)>=.5);
+    assert.equal(c.near,F.catalogueNear(c.eye,v.focusWorld));
+   }
+  }
+ }
+ // no platform at all: every view is a GAP before any page is asked
+ const bare=planOf('lner5',{...station,platforms:[]});
+ assert.deepEqual(bare.views.map(v=>v.status),Array(6).fill('GAP'));assert.match(bare.views[0].reason,/no platform point lies exactly 25 m from the cab focus, in any placement/);assert.match(bare.views[5].reason,/150 m from the coach focus/);
+ // the half metre of clearance is the planner's own default: a 4 m wide strip 10 to 14 m east of the cab focus offers cameras only 10.5 to 13.5 m east of it
+ const focus0=stationPlans.get('lner5').placements[0].views[0].focusWorld,strip=[[focus0[0]+10,focus0[2]-80],[focus0[0]+14,focus0[2]-80],[focus0[0]+14,focus0[2]+80],[focus0[0]+10,focus0[2]+80]];
+ const narrow=planOf('lner5',{...station,platforms:[{ref:'S',pts:strip}],stopIndexes:[3],orientations:['nose-at-buffers']}).placements[0].views[0];
+ assert.ok(narrow.candidates.length>=4&&narrow.candidateCount<=24,`${narrow.candidates.length} of ${narrow.candidateCount}`);assert.ok(narrow.candidates.every(c=>c.platform==='S'&&c.eye[0]-focus0[0]>=10.5-1e-9&&c.eye[0]-focus0[0]<=13.5+1e-9),'no camera within a half metre of the strip edge');
+ assert.equal(planOf('lner5',{...station,stops:[]}).placements.length,0,'no stop, no placement');
+ assert.deepEqual(planOf('lner5',{...station,stopIndexes:[1,3],orientations:['nose-at-buffers']}).placements.map(p=>p.id),['stop-1-nose-at-buffers','stop-3-nose-at-buffers']);
+});
+
+test('the V10 search chooses the first placement with every view clear, else the first with the most, and says what blocked the rest',()=>{
+ assert.equal(F.chooseStation([]),-1);assert.equal(F.chooseStation([{clear:2},{clear:6}]),1);assert.equal(F.chooseStation([{clear:6},{clear:6}]),0);assert.equal(F.chooseStation([{clear:3},{clear:3},{clear:2}]),0);assert.equal(F.chooseStation([{clear:0}]),0);
+ const tried=[{clear:false,reason:'coach occluded',blocker:'A/bench'},{clear:false,reason:'coach occluded',blocker:'A/bench'},{clear:true},{clear:false,reason:'camera inside a mesh',blocker:'A/lamp'},{clear:false,reason:'sample has no visible train surface',blocker:null},{clear:false,reason:'camera inside a mesh',blocker:'A/lamp'},{clear:false,reason:'coach occluded',blocker:'A/bench'}];
+ assert.deepEqual(F.failureSummary(tried),[['A/bench (coach occluded)',3],['A/lamp (camera inside a mesh)',2],['sample has no visible train surface',1]]);assert.deepEqual(F.failureSummary(tried,1),[['A/bench (coach occluded)',3]]);assert.deepEqual(F.failureSummary([]),[]);
+ assert.deepEqual(F.failureSummary([{clear:false,reason:'b'},{clear:false,reason:'a'}]),[['a',1],['b',1]],'ties are in name order');
+ const plan=stationPlans.get('lner5'),[A,B]=plan.placements.map(p=>p.id);
+ // placement B has all six clear: it is chosen over A with two, and the OK views are B's own cameras
+ let views=F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{'station-25m':0,'station-75m':2},[B]:Object.fromEntries(plan.views.map((v,i)=>[v.suffix,i%2]))}));
+ assert.deepEqual(views.map(v=>v.status),Array(6).fill('OK'));assert.ok(views.every(v=>v.placement.id===B&&v.frame==='station'&&v.fov===50&&v.id==='V10'&&v.reason===null));
+ views.forEach((v,i)=>{const planned=plan.placements[1].views[i],c=planned.candidates[i%2];vec(v.eye,c.eye,1e-12);vec(v.target,planned.focusWorld,1e-12);assert.equal(v.near,c.near);assert.equal(v.azimuthDeg,c.azimuthDeg);assert.equal(v.platform,c.platform);assert.deepEqual(v.up,[0,1,0]);assert.equal(v.platformHeightM,.9);
+  near(horizontal(v.eye,v.target),v.distanceM,1e-6);assert.equal(v.search.chosen,B);assert.deepEqual(v.search.placements,[{id:A,clear:2},{id:B,clear:6}]);assert.equal(v.search.rejectedBefore.length,i%2);});
+ assert.deepEqual(views[0].rotation,{ruleId:'station-placement',basis:views[0].rotation.basis,rotationY:plan.placements[1].rotationY,orientation:'cab-at-north-end'});
+ // the search stops at the first full placement, so a report with only A in it chooses A
+ views=F.stationViewsFromSearch(plan,fakeReport(plan,allAt(plan,A)));assert.ok(views.every(v=>v.status==='OK'&&v.placement.id===A));
+ // neither full: the first with the most clear; the others are GAPs that count what was inspected and name what blocked it
+ views=F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{'station-25m':0,'station-75m':0,'station-150m':0},[B]:{'station-25m':0,'station-75m':0,'station-150m':0,'station-25m-coach':0}}));
+ assert.deepEqual(views.map(v=>v.status),['OK','OK','OK','OK','GAP','GAP']);assert.ok(views.slice(0,4).every(v=>v.placement.id===B));
+ const gap=views[4],cams=plan.placements[1].views[4];assert.equal(gap.eye,undefined);assert.equal(gap.target,undefined);assert.equal(gap.blocker,'Scene/furniture/benches (coach occluded)');
+ assert.equal(gap.reason,`no clear camera: ${cams.candidates.length} of ${cams.candidateCount} candidate positions over platforms were inspected; blocked by Scene/furniture/benches (coach occluded) x${cams.candidates.length}`);
+ assert.deepEqual(gap.search.failures,[['Scene/furniture/benches (coach occluded)',cams.candidates.length]]);assert.equal(gap.search.tested,cams.candidates.length);assert.equal(gap.search.candidateCount,cams.candidateCount);assert.equal(gap.notes.placement,B);
+ const none=F.stationViewsFromSearch(plan,[]);assert.ok(none.every(v=>v.status==='GAP'&&v.reason==='no placement could be searched'&&v.placement===undefined&&v.search.chosen===null));
+ const bare=planOf('lner5',{...station,platforms:[]}),bareViews=F.stationViewsFromSearch(bare,fakeReport(bare,{[bare.placements[0].id]:{}}));assert.ok(bareViews.every(v=>v.status==='GAP'&&/no platform point lies exactly/.test(v.reason)));
+ assert.deepEqual(views[0].notes,{focus:views[0].focus,distanceM:25,azimuthDeg:views[0].azimuthDeg,platform:views[0].platform,placement:B,orientation:'cab-at-north-end',stop:plan.placements[1].stop,eyeAbovePlatformM:1.7,platformHeightM:.9,sceneryKept:true});
+ assert.deepEqual(views[0].focus,{name:'cab',local:[0,1.7,1.5],world:plan.placements[1].views[0].focusWorld});
+});
+
+test('frozen V10 poses are reused exactly without a search, a frozen GAP stays a GAP, and any pose that moved or can no longer be derived is refused with where',()=>{
+ const plan=stationPlans.get('gn387x12'),[A,B]=plan.placements.map(p=>p.id);
+ const views=F.stationViewsFromSearch(plan,fakeReport(plan,{[A]:{'station-25m':1,'station-75m':1},[B]:{...allAt(plan,B,2)[B],'station-150m-coach':null}}));
+ assert.deepEqual(views.map(v=>v.status),['OK','OK','OK','OK','OK','GAP'],'placement B has five clear views against two, so it is the one frozen');
+ const held=manifestOf(views),drift=change=>{const m=JSON.parse(JSON.stringify(held));change(m.views);return F.stationFrozenDrift(plan,m);};
+ assert.deepEqual(F.stationFrozenDrift(plan,held),[],'what a search accepted is what the frozen file derives');
+ const again=F.stationViewsFromFrozen(plan,held);assert.deepEqual(again.map(v=>v.status),views.map(v=>v.status));
+ again.slice(0,5).forEach((v,i)=>{vec(v.eye,views[i].eye,1e-12);vec(v.target,views[i].target,1e-12);assert.equal(v.near,views[i].near);assert.equal(v.azimuthDeg,views[i].azimuthDeg);assert.equal(v.platform,views[i].platform);assert.equal(v.placement.id,B);assert.deepEqual(v.search,{frozen:true});assert.deepEqual(v.region,views[i].region);assert.deepEqual(v.focus,views[i].focus);near(v.rotation.rotationY,plan.placements[1].rotationY,1e-12);});
+ assert.equal(again[5].status,'GAP');assert.equal(again[5].eye,undefined);assert.equal(again[5].reason,`frozen as a GAP: ${views[5].reason}`);assert.deepEqual(again[5].search,{frozen:true});
+ assert.equal(F.stationViewsFromFrozen(plan,undefined).every(v=>v.status==='GAP'&&/no reason recorded/.test(v.reason)),true);
+ assert.deepEqual(F.poseDifference(F.poseOf(again[0]),held.views['station-25m'].plan),null,'a frozen view freezes to itself');
+ assert.equal(drift(v=>{v['station-25m'].plan.eye[0]+=.001;})[0]?.at,'/eye/0');assert.equal(drift(v=>{v['station-75m'].plan.eye[2]-=.01;})[0]?.reason,'pose differs from the frozen pose');assert.equal(drift(v=>{v['station-75m'].plan.target[1]=1.8;})[0]?.at,'/target/1');
+ assert.equal(drift(v=>{v['station-150m'].plan.near*=2;})[0]?.at,'/near');assert.equal(drift(v=>{v['station-25m'].plan.platform='X';})[0]?.at,'/platform');assert.equal(drift(v=>{v['station-25m-coach'].plan.region.max[2]+=1;})[0]?.at,'/region/max/2');
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.eye[0]+=1e-9;}),[],'a nanometre is inside the tolerance');
+ assert.deepEqual(drift(v=>{delete v['station-75m'];}).map(d=>[d.view,d.reason]),[['station-75m','view missing from the frozen poses']]);assert.deepEqual(drift(v=>{delete v['station-75m'].plan;}).map(d=>d.reason),['view missing from the frozen poses']);
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.placement.id='stop-9-nose-at-buffers';}).map(d=>[d.reason,d.at]),[['frozen placement is not one this run derives','/placement/id']]);
+ assert.deepEqual(drift(v=>{v['station-75m'].plan.placement.id=A;}).map(d=>[d.view,d.reason]),[['station-75m','views of one kind must share one placement']]);
+ assert.equal(drift(v=>{v['station-25m'].plan.placement.position[0]+=.01;})[0]?.reason,'placement differs from the frozen placement');assert.equal(drift(v=>{v['station-25m'].plan.placement.rotationY+=.01;})[0]?.at,'/placement/rotationY');
+ assert.equal(drift(v=>{v['station-25m'].plan.placement.stop.id=1;})[0]?.at,'/placement/stop/id');assert.equal(drift(v=>{v['station-25m'].plan.placement.orientation='x';})[0]?.at,'/placement/orientation');
+ // the camera is re-derived from the frozen placement and azimuth: a bearing with no platform under it, and a bearing over another platform point, are both refused
+ const focus25=F.placedPoint(plan.placements[1],plan.specs[0].focusLocal),cameraAt=az=>F.stationCameraAt({focusXZ:[focus25[0],focus25[2]],distanceM:25,azimuthDeg:az,platforms:plan.context.platforms,inside:plan.context.inside,edgeClearM:plan.context.edgeClearM});
+ const bearings=[...Array(360).keys()],off=bearings.find(az=>!cameraAt(az)),elsewhere=bearings.find(az=>cameraAt(az)&&az!==views[0].azimuthDeg);assert.ok(off!==undefined&&elsewhere!==undefined);
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.azimuthDeg=off;}).map(d=>[d.reason,d.at]),[['the frozen camera is no longer over a platform','/azimuthDeg']]);
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.azimuthDeg=elsewhere;}).map(d=>d.reason),['pose differs from the frozen pose'],'the frozen eye is not where that bearing puts the camera');
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.azimuthDeg+=360;}),[],'a full turn is the same bearing');
+ assert.deepEqual(drift(v=>{v['station-150m-coach'].plan.status='OK';}).map(d=>d.reason),['the frozen camera is no longer over a platform'],'a GAP edited to OK has no camera to derive');
+ assert.deepEqual(drift(v=>{v['station-25m'].plan.status='GAP';}),[],'a view frozen as a GAP is not checked');
+ // the check is against what this run derives: with no platforms left, no frozen camera can stand anywhere
+ const stripped=planOf('gn387x12',{...station,platforms:[]});assert.ok(F.stationFrozenDrift({...stripped,placements:plan.placements,context:stripped.context},held).some(d=>d.reason==='the frozen camera is no longer over a platform'));
+});
+
+test('a V10 search view is checked and chosen through the same inspection as the final picture, placement by placement',()=>{
+ const f=checkFixture(),placement={id:'p1',position:[100,0,-40],rotationY:.7},spec=side(0).region;
+ const at=(x,y=2.6,z=13)=>F.placedPoint(placement,[x,y,z]),target=at(0,1.7,13);
+ // a screen stands between the train and the first camera, on the left; the second camera is on the right with a clear view
+ const screen=new T.Mesh(new T.BoxGeometry(.3,10,80),new T.MeshBasicMaterial());screen.name='platform-screen';screen.position.set(...at(-8,5,13));screen.rotation.y=placement.rotationY;f.scene.add(screen);
+ const candidates=[{azimuthDeg:270,platform:'L',eye:at(-30),near:.3},{azimuthDeg:90,platform:'R',eye:at(30),near:.3},{azimuthDeg:91,platform:'R',eye:at(31),near:.3}];
+ const second={id:'p2',position:[0,0,0],rotationY:0,views:[{suffix:'v',region:spec,focusWorld:[0,1.7,13],candidates:[]}]};
+ const report=F.searchStation(T,f,[{...placement,views:[{suffix:'v',region:spec,focusWorld:target,candidates}]},second]);
+ assert.equal(report.length,1,'the first placement has every view clear, so the second is never tried');const r=report[0];assert.deepEqual([r.placementId,r.clear],['p1',1]);
+ assert.deepEqual([r.views.v.tested,r.views.v.accepted],[2,{index:1,azimuthDeg:90}],'the first clear camera ends the view');
+ assert.deepEqual(r.views.v.tried.map(t=>[t.azimuthDeg,t.platform,t.clear,t.reason]),[[270,'L',false,'coach occluded'],[90,'R',true,null]]);assert.match(r.views.v.tried[0].blocker,/platform-screen/);assert.equal(r.views.v.tried[1].blocker,null);
+ vec(f.group.position.toArray(),placement.position,1e-12);near(f.group.rotation.y,placement.rotationY,1e-12);vec(f.camera.position.toArray(),candidates[1].eye,1e-9,'the camera is left at the last candidate tried');assert.equal(f.camera.near,.3);assert.equal(f.camera.fov,50);
+ // it is the very check the picture gets: the same options, so a camera the search calls clear is clear to the picture
+ assert.deepEqual(F.stationCheckOptions(),{minScreenSpan:.03});
+ const sameAsPicture=F.inspectCatalogueView(T,f.scene,f.camera,f.group,f.ground,{region:spec},F.stationCheckOptions());assert.equal(sameAsPicture.clear,true,JSON.stringify(sameAsPicture).slice(0,200));
+ // nothing clear: every candidate is tried and recorded, and the search goes on to the next placement
+ // (each view is judged on its own region: the first view's holds none of the train, the second view's is the car it looks at)
+ const elsewhere={min:[-1.6,.6,100],max:[1.6,3.4,120]};
+ const blocked=F.searchStation(T,f,[{...placement,views:[{suffix:'v',region:elsewhere,focusWorld:target,candidates:[candidates[0]]},{suffix:'w',region:spec,focusWorld:target,candidates:[candidates[1]]}]},{...placement,id:'p3',views:[{suffix:'v',region:spec,focusWorld:target,candidates:[]}]}]);
+ assert.deepEqual(blocked.map(b=>[b.placementId,b.clear]),[['p1',1],['p3',0]],'one of two views clear is not a full placement');assert.deepEqual(blocked[1].views.v,{tested:0,accepted:null,tried:[]});
+ assert.equal(blocked[0].views.v.accepted,null);assert.deepEqual(blocked[0].views.w.accepted,{index:0,azimuthDeg:90});
+ // a station view may be smaller in the frame (0.03 of it) than the V01-V09 views (0.05): a 12 m region at 300 m is 0.049, at 600 m 0.024
+ const distant=m=>F.searchStation(T,f,[{...placement,views:[{suffix:'v',region:spec,focusWorld:target,candidates:[{azimuthDeg:90,platform:'R',eye:at(m),near:m/100}]}]}])[0];
+ const far=distant(300);assert.equal(far.clear,1,JSON.stringify(far.views.v.tried));
+ assert.equal(F.inspectCatalogueView(T,f.scene,f.camera,f.group,f.ground,{region:spec}).reason,'viewed region too small in frame','the V01-V09 default refuses that same picture');
+ const toofar=distant(600);assert.equal(toofar.clear,0);assert.equal(toofar.views.v.tried[0].reason,'viewed region too small in frame');
+});
+
+test('the in-page driver adds only the specimen for V10, keeps every piece of scenery, and sets cameras in world metres',()=>{
+ const page=fakePage(),before=page.scene.children.slice(),plan=stationPlans.get('lner5'),B=plan.placements[1],spec=plan.specs[0];
+ const eye=F.placedPoint(B,[-30,2.6,1.5]),pose={id:'V10',suffix:'station-25m',eye,target:F.placedPoint(B,[0,1.7,1.5]),fov:50,up:[0,1,0],near:.3,region:spec.region,placement:{id:B.id,position:B.position,rotationY:B.rotationY}};
+ withPage(page,cat=>{
+  const begun=cat.beginStation('lner5');
+  assert.deepEqual(begun.hidden,[]);assert.equal(begun.stage,null);assert.deepEqual(begun.hiddenDom,['h1','div.hud']);assert.match(begun.scenery,/^kept/);assert.match(begun.ground,/flat fallback/);
+  assert.equal(page.h1.style.display,'none');assert.ok(page.scene.children.every(o=>o.visible),'nothing is hidden');assert.equal(page.scene.children.length,before.length+1);assert.equal(page.scene.children.at(-1).name,'train-lner5');
+  assert.throws(()=>cat.begin('lner5',100),/already on stage/);assert.throws(()=>cat.beginStation('lner5'),/already on stage/);
+  const text="lner5 catalogue specimen at King's Cross, station scenery kept - V10 station-25m",r=cat.stationView(pose,text);
+  assert.equal(r.inspection.clear,true,JSON.stringify(r.inspection).slice(0,300));near(r.pose.positionErrorM,0,1e-9);vec(r.pose.position,eye,1e-9);vec(page.camera.position.toArray(),eye,1e-9);assert.equal(page.camera.near,.3);
+  vec(r.placement.position,B.position,1e-12);near(r.placement.rotationY,B.rotationY,1e-12);assert.ok(r.local,'the page reports the pose in the train frame too');vec(r.local.eye,[-30,2.6,1.5],1e-9);vec(r.local.target,[0,1.7,1.5],1e-9);assert.equal(r.labelText,text);assert.equal(page.made.get('capture-train-label').textContent,text);assert.equal(page.frames.length,1);
+  const group=page.scene.getObjectByName('train-lner5');assert.equal(group.children.some(c=>c.visible),true);cat.isolate('empty');assert.equal(group.visible,false);cat.isolate('all');assert.equal(group.visible,true);
+  const report=cat.stationSearch([{...B,views:[{suffix:'station-25m',region:spec.region,focusWorld:pose.target,candidates:[{azimuthDeg:270,platform:'x',eye,near:.3}]}]}]);
+  assert.equal(report[0].clear,1);assert.equal(report[0].views['station-25m'].accepted.index,0);
+  // the picture's own check admits a smaller subject than V01-V09 do: the cab region at 330 m is a few percent of the frame
+  const distantPose={...pose,eye:F.placedPoint(B,[-330,2.6,1.5]),near:3.3},distant=cat.stationView(distantPose,'far');
+  assert.equal(distant.inspection.clear,true,JSON.stringify(distant.inspection).slice(0,300));assert.ok(distant.inspection.screenSpan>=.03&&distant.inspection.screenSpan<.05,`${distant.inspection.screenSpan}`);
+  assert.equal(F.inspectCatalogueView(T,page.scene,page.camera,group,cat.state.ground,distantPose).reason,'viewed region too small in frame','the V01-V09 default refuses that same picture');
+  page.window.__signalFrame=()=>{page.camera.position.x+=.5;};assert.throws(()=>cat.stationView(pose,'x'),/moved the camera by 0\.5 m/);page.window.__signalFrame=t=>page.frames.push(t);
+  assert.equal(cat.end(),true);
+  assert.deepEqual(page.scene.children,before,'only the specimen was added, and it is gone');assert.ok(page.scene.children.every(o=>o.visible));assert.equal(page.h1.style.display,'');assert.equal(page.hud.style.display,'flex');assert.equal(page.made.size,0);assert.equal(cat.state,null);
+  // the stage flow still works afterwards, and a page with terrain gives the check its ground
+  page.k.parts={terrain:{heightAt:()=>-.5}};const again=cat.beginStation('hull5');assert.equal(again.ground,'the page terrain');assert.equal(cat.state.ground.heightAt(0,0),-.5,'the check takes its ground from the page terrain');cat.end();
+ });
+});
+
+test('a V10 manifest entry freezes the placement and the search, and its sidecar says how far the camera really is and what it stands on',()=>{
+ const plan=stationPlans.get('lner5'),B=plan.placements[1].id,views=F.stationViewsFromSearch(plan,fakeReport(plan,{[B]:{...allAt(plan,B,1)[B],'station-75m-coach':null}})),ok=views[0],gap=views[4];
+ assert.deepEqual(Object.keys(F.poseOf(ok)).sort(),['azimuthDeg','car','distanceM','extents','eye','focus','fov','frame','near','placement','platform','platformHeightM','region','rotationY','status','target','up']);
+ const frozenPose=F.poseOf(ok);
+ assert.deepEqual([frozenPose.frame,frozenPose.placement?.id,frozenPose.rotationY,frozenPose.distanceM,frozenPose.azimuthDeg,frozenPose.platform,frozenPose.platformHeightM],['station',B,plan.placements[1].rotationY,25,ok.azimuthDeg,ok.platform,.9]);
+ assert.ok(typeof frozenPose.platform==='string'&&frozenPose.platform!=='');assert.deepEqual(frozenPose.focus,{name:'cab',local:[0,1.7,1.5],world:plan.placements[1].views[0].focusWorld});
+ const entry=C.manifestEntry({view:ok,status:'OK',reason:null,file:'lner5-station-25m.png',inspection:{checkedSamples:30,visibleFraction:.5},verdict:{ok:true}});
+ assert.deepEqual(entry.plan,F.poseOf(ok));assert.equal(entry.outcome.search,ok.search);assert.equal(entry.rotation.ruleId,'station-placement');assert.equal(entry.notes.sceneryKept,true);
+ const gapEntry=C.manifestEntry({view:gap,status:'GAP',reason:gap.reason,attempts:0});assert.equal(gapEntry.outcome.blocker,gap.blocker);assert.equal(gapEntry.outcome.search.failures.length,1);assert.equal(gapEntry.plan.status,'GAP');assert.equal(gapEntry.plan.eye,undefined);
+ assert.equal(C.manifestEntry({view:ok,status:'GAP',reason:'x',blocker:'from the run',inspection:{clear:false}}).outcome.blocker,'from the run','a blocker found at capture time wins');
+ const session={renderer:'ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max)',size:[1600,1000],devicePixelRatio:1,toneMapping:0,toneMappingExposure:1,outputColorSpace:'srgb',background:'35465e',fog:null,lights:[]};
+ const live={pose:{position:[10,2.6,-30.5],target:[10,1.7,-5],fov:50,aspect:1.6,near:.25,far:9000,up:[0,1,0],positionErrorM:1e-15},local:{eye:[-3,2.6,-25],target:[0,1.7,1.5]},placement:{position:plan.placements[1].position,rotationY:plan.placements[1].rotationY},inspection:{clear:true},labelText:'t',costs:{triangles:1,drawCalls:2},info:{calls:3,triangles:4}};
+ const sidecar=C.catalogueSidecar({kind:'lner5',view:ok,file:'lner5-station-25m.png',formation:formations.get('lner5'),session,host:{os:{platform:'darwin'},macModel:'M',git:{head:'h'}},build:{indexSha256:'x'},
+  state:{hidden:[],hiddenDom:['h1'],stage:null,scenery:'kept: x',ground:'the page terrain'},result:{verdict:{ok:true},live},timings:{}});
+ assert.deepEqual(sidecar.view.suffix,'station-25m');vec(sidecar.pose.trainLocal.eye,[-3,2.6,-25]);vec(sidecar.pose.trainLocal.target,[0,1.7,1.5]);vec(sidecar.pose.world.position,[10,2.6,-30.5]);assert.deepEqual(sidecar.pose.trainLocal.region,ok.region);
+ assert.deepEqual(sidecar.specimen.rotationRule,ok.rotation);assert.deepEqual([sidecar.hiddenSceneNames,sidecar.stage],[[],null]);
+ const s=sidecar.station;assert.ok(s,'a V10 sidecar has a station block');
+ assert.deepEqual([s?.placement?.id,s?.distanceM,s?.azimuthDeg,s?.platform,s?.platformHeightM,s?.scenery,s?.ground],[B,25,ok.azimuthDeg,ok.platform,.9,'kept: x','the page terrain']);near(s?.horizontalDistanceM,25.5,1e-12,"the distance the page measured, not the planned one");near(s?.eyeAbovePlatformM,1.7,1e-12);assert.equal(s?.search,ok.search);
+ const stage=C.catalogueSidecar({kind:'lner5',view:view('lner5','front-3m'),file:'f.png',formation:formations.get('lner5'),session,host:{os:{}},build:{},state:{hidden:[],hiddenDom:[],stage:{}},result:{verdict:{ok:true},live:{...live,local:undefined}},timings:{}});
+ assert.equal('station' in stage,false,'only V10 has a station block');vec(stage.pose.trainLocal.eye,view('lner5','front-3m').eye,1e-12,'a stage view reports the pose it was planned in');
+});
+
+test('catalogue preflight and frozen poses cover V10: the planned counts, the frozen reuse, and a refusal when a camera or placement moved',async()=>{
+ const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(scratch+'/train-views-test-'),log=console.log;
+ try {
+  const dist=path.join(dir,'dist'),out=path.join(dir,'out');await mkdir(dist);
+  const run=async(...args)=>{const lines=[];console.log=(...a)=>lines.push(a.join(' '));try{await C.catalogueMain(['--mode','catalogue','--dist',dist,'--out',out,'--chrome','none',...args]);}finally{console.log=log;}return lines.map(l=>JSON.parse(l));};
+  const ok=async(...args)=>{try{return await run(...args);}catch(e){assert.fail(`catalogueMain threw: ${e?.message}`);}};
+  const kinds=['lner5','gn387x4'],manifest=(mutate=()=>{})=>{
+   const m={rubric:F.CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',kinds:{}};
+   for(const kind of kinds){const plan=stationPlans.get(kind),B=plan.placements[1].id,views=F.stationViewsFromSearch(plan,fakeReport(plan,{[B]:{...allAt(plan,B,1)[B],'station-150m':null}}));m.kinds[kind]={views:manifestOf(views).views};}
+   mutate(m);return m;};
+  const poses=path.join(dir,'poses.json'),save=async m=>writeFile(poses,JSON.stringify(m));await save(manifest());
+  const [frozen]=await ok('--kinds',kinds.join(','),'--views','V10','--poses',poses);assert.equal(frozen.posesFrozen,true);assert.deepEqual(frozen.planned,{lner5:{OK:5,GAP:1},gn387x4:{OK:5,GAP:1}},'a frozen GAP stays a GAP in the plan');
+  const [fresh]=await ok('--kinds',kinds.join(','),'--views','V10');assert.deepEqual(fresh.planned,{lner5:{OK:6},gn387x4:{OK:6}});
+  await save(manifest(m=>{m.kinds.lner5.views['station-25m'].plan.eye[0]+=.5;}));
+  await assert.rejects(run('--kinds','lner5','--views','V10','--poses',poses),/refusing to capture: 1 pose\(s\) differ from .*lner5\/station-25m pose differs from the frozen pose at \/eye\/0/);
+  await save(manifest(m=>{m.kinds.gn387x4.views['station-75m'].plan.placement.rotationY+=.2;}));
+  await assert.rejects(run('--kinds','gn387x4','--views','V10','--poses',poses),/gn387x4\/station-75m placement differs from the frozen placement at \/placement\/rotationY/);
+  await save(manifest(m=>{delete m.kinds.lner5.views['station-150m-coach'];}));
+  await assert.rejects(run('--kinds','lner5','--views','V10','--poses',poses),/lner5\/station-150m-coach view missing from the frozen poses/);
+  await run('--kinds','lner5','--views','V02','--poses',poses).then(()=>assert.fail('the stage views are missing from this manifest'),e=>assert.match(e.message,/lner5\/front-3m view missing from the frozen poses/));
+  await save(manifest());const [only]=await ok('--kinds','lner5','--views','V10','--poses',poses);assert.equal(only.posesFrozen,true,'V01-V09 entries are not needed when only V10 is captured');
+  const manifestOfRun=C.stationManifest(station);assert.deepEqual([manifestOfRun.stopIndex,manifestOfRun.stop?.id,manifestOfRun.orientations,manifestOfRun.platformHeightM,manifestOfRun.eyeAbovePlatformM,manifestOfRun.noseToStopM],[3,station.stops[3].id,F.STATION_ORIENTATIONS,.9,1.7,1.5]);
+  assert.deepEqual(manifestOfRun.search,{azimuthStepDeg:1,maxCandidates:48,minSeparationDeg:2,edgeClearM:.5,frontAngleDeg:45,minScreenSpan:.03});assert.equal(manifestOfRun.trackData.sha256,station.sha256);assert.match(manifestOfRun.rule,/nose at the buffers first/);assert.deepEqual(manifestOfRun.platforms.slice(0,3),station.platforms.slice(0,3).map(p=>p.ref));
+ } finally {console.log=log;await rm(dir,{recursive:true,force:true});}
+});
+
+test('a camera inside an inside-out shell such as the sky dome is where it belongs, and V10 puts no specimen stage under the train',()=>{
+ // (the mesh the check names is compared by name: a failing assertion must not try to print a 500 m sphere)
+ const shell=(name,material,geometry=new T.SphereGeometry(500,16,12))=>{const m=new T.Mesh(geometry,material);m.name=name;m.updateMatrixWorld(true);return m;};
+ const enclosing=mesh=>F.cameraInsideMesh(T,new T.Vector3(0,2.6,0),[mesh])?.name??null;
+ assert.equal(enclosing(shell('sky-dome',new T.MeshBasicMaterial({side:T.BackSide}))),null,'the sky dome does not enclose the camera');
+ assert.equal(enclosing(shell('closed-shell',new T.MeshBasicMaterial())),'closed-shell','the same shell, facing outward, is a solid the camera is inside');
+ const halves=new T.SphereGeometry(500,16,12),half=Math.floor(halves.index.count/6)*3;halves.addGroup(0,half,0);halves.addGroup(half,halves.index.count-half,1);
+ assert.equal(enclosing(shell('half-dome',[new T.MeshBasicMaterial({side:T.BackSide}),new T.MeshBasicMaterial()],halves)),'half-dome','only a mesh whose every material is inside-out is exempt');
+ const group=new T.Group();F.placeStageSpecimen(group,null,1.2,[3,0,-4]);vec(group.position.toArray(),[3,0,-4]);near(group.rotation.y,1.2);
 });

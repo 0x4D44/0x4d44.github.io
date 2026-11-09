@@ -13,7 +13,7 @@ import {bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {CATALOGUE,STAGE_VIEWS,STATION_VIEWS,VIEW_IDS,planCatalogueViews,poseOf,poseDifference,stationCandidates,stationPose} from './train-framing.mjs';
+import {CATALOGUE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,planCatalogueViews,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
@@ -320,6 +320,25 @@ export function describeFormation(kind) {
   };
 }
 
+/**
+ * The real station's numbers for V10, read from the file the page is built from: the shed's heading, its buffer stops from west to east, and the
+ * outline of every surface platform. `inside` and `standing` are core/station.ts pointInPolygon and standingTrainPose, which planStation calls.
+ */
+export async function loadStationScene(file=fileURLToPath(new URL('../web/src/data/kx-track.json',import.meta.url))) {
+  if(PLATFORM_HEIGHT!==CATALOGUE.platformHeightM)throw new Error(`the page's platform height is ${PLATFORM_HEIGHT} m but the catalogue says ${CATALOGUE.platformHeightM} m`);
+  const bytes=await readFile(file),data=JSON.parse(bytes.toString('utf8')),layout=shedLayout(data);
+  const stops=shedBufferStops(data,layout).sort((p,q)=>worldToShed(layout,[p.x,p.z]).u-worldToShed(layout,[q.x,q.z]).u);
+  return {heading:layout.heading,stops,platforms:[...stationPlatforms(data)].map(([ref,p])=>({ref,pts:p.pts})),inside:pointInPolygon,
+    standing:stop=>standingTrainPose(layout,stop,CATALOGUE.noseToStopM),file,sha256:sha256(bytes)};
+}
+/** What every V10 view of a run shares, for the manifest: the data it was placed from and the search limits. */
+export function stationManifest(scene) {
+  return {trackData:{file:'kings-cross-src/web/src/data/kx-track.json',sha256:scene.sha256},heading:scene.heading,stopIndex:CATALOGUE.stationStopIndex,stop:scene.stops[CATALOGUE.stationStopIndex]??null,
+    platforms:scene.platforms.map(p=>p.ref),orientations:STATION_ORIENTATIONS,platformHeightM:PLATFORM_HEIGHT,eyeAbovePlatformM:CATALOGUE.eyeAbovePlatformM,noseToStopM:CATALOGUE.noseToStopM,
+    search:{azimuthStepDeg:1,maxCandidates:CATALOGUE.stationMaxCandidates,minSeparationDeg:CATALOGUE.stationMinSeparationDeg,edgeClearM:CATALOGUE.platformEdgeClearM,frontAngleDeg:CATALOGUE.stationFrontAngleDeg,minScreenSpan:CATALOGUE.stationMinScreenSpan},
+    rule:'The specimen stands at one real buffer stop, nose at the buffers first, then turned so the leading cab is at the north end. For each view the cameras that lie exactly D m from the focus over a platform are tried best first (nearest a front three-quarter view) and the first whose check is clear is accepted; the first placement with all six clear is kept, else the one with most. Poses are then frozen.'};
+}
+
 export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--timeout-seconds'];
 /** `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--timeout-seconds N]`. */
@@ -454,6 +473,7 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
       const at=poseDifference(poseOf(view),entry.plan,tol);
       if(at!==null)drifts.push({kind,view:view.suffix,reason:'pose differs from the frozen pose',at});
     }
+    if(plan.station)for(const d of stationFrozenDrift(plan.station,held,{tol}))drifts.push({kind,...d});
   }
   return drifts;
 }
@@ -472,28 +492,59 @@ export function catalogueDriver() {
   const frame=()=>window.__signalFrame(0);
   const names=list=>list.map(o=>({name:o.name||'',type:o.type}));
   const disposeGeometries=object=>object.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+  // the page's title and the map-data credit describe the page, not the specimen, so they come off the pictures too (DOM only; restored by end)
+  const hideHud=()=>{
+    const dom=[...document.querySelectorAll('h1, .hud')].map(el=>({el,display:el.style.display,name:el.tagName.toLowerCase()+(el.className?'.'+el.className:'')}));
+    for(const d of dom)d.el.style.display='none';
+    return dom;
+  };
+  const sceneChildren=()=>k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}));
   cat.begin=(kind,length)=>{
     const {T,F}=cat;
     if(cat.state)throw new Error('a specimen is already on stage');
     const group=k.evidenceBuildTrain(kind),hidden=F.hideSceneryForStage(k.scene),stage=F.buildCatalogueStage(T,{length});
     k.scene.add(stage);k.scene.add(group);
-    // the page's title and the map-data credit describe scenery the stage hides, so they come off the pictures too (DOM only; restored by end)
-    const dom=[...document.querySelectorAll('h1, .hud')].map(el=>({el,display:el.style.display,name:el.tagName.toLowerCase()+(el.className?'.'+el.className:'')}));
-    for(const d of dom)d.el.style.display='none';
+    const dom=hideHud();
     cat.state={kind,length,group,stage,hidden,dom,saved:null,ground:{heightAt:()=>F.CATALOGUE.groundY}};
-    return {hidden:names(hidden),hiddenDom:dom.map(d=>d.name),stage:stage.userData.levels,children:k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}))};
+    return {hidden:names(hidden),hiddenDom:dom.map(d=>d.name),stage:stage.userData.levels,children:sceneChildren()};
+  };
+  /** V10: only the specimen is added; the station stays exactly as the page built it (nothing hidden, no stage). */
+  cat.beginStation=kind=>{
+    const {F}=cat;
+    if(cat.state)throw new Error('a specimen is already on stage');
+    const group=k.evidenceBuildTrain(kind);k.scene.add(group);
+    const dom=hideHud(),terrain=k.parts?.terrain??null;
+    cat.state={kind,length:null,group,stage:null,hidden:[],dom,saved:null,ground:terrain??{heightAt:()=>F.CATALOGUE.groundY}};
+    return {hidden:[],hiddenDom:dom.map(d=>d.name),stage:null,scenery:'kept: the page as built, with the specimen added',ground:terrain?'the page terrain':'flat fallback: the page has no terrain',children:sceneChildren()};
+  };
+  /** One frame for the view the camera has been set to, then the check, the costs and the pose the sidecar reports. */
+  const settle=(view,text,pose)=>{
+    const {T,F}=cat,s=cat.state;
+    label(text);frame();
+    const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
+    if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
+    const info={calls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles};
+    const inspection=F.inspectCatalogueView(T,k.scene,k.camera,s.group,s.ground,view,view.id==='V10'?F.stationCheckOptions():undefined);
+    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text};
   };
   cat.view=(view,text)=>{
     const {T,F}=cat,s=cat.state;
     F.placeStageSpecimen(s.group,s.stage,view.rotation.rotationY);
     const pose=F.setCatalogueView(T,k.camera,k.controls,s.group,view);
     if(view.capability){if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');k.setTrainLampState(s.group,view.capability.state);}
-    label(text);frame();
-    const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
-    if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
-    const info={calls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles};
-    const inspection=F.inspectCatalogueView(T,k.scene,k.camera,s.group,s.ground,view);
-    return {pose,inspection,info,costs:F.trainCosts(s.group),placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text};
+    return settle(view,text,pose);
+  };
+  /** V10: a camera given in world metres, the specimen stood where the placement says; the sidecar also gets the pose in the train's own frame. */
+  cat.stationView=(view,text)=>{
+    const {T,F}=cat,s=cat.state;
+    F.placeStageSpecimen(s.group,null,view.placement.rotationY,view.placement.position);
+    const pose=F.setWorldView(T,k.camera,k.controls,view);
+    return {...settle(view,text,pose),local:{eye:s.group.worldToLocal(new T.Vector3(...view.eye)).toArray(),target:s.group.worldToLocal(new T.Vector3(...view.target)).toArray()}};
+  };
+  /** V10: the placements' candidate cameras tried best first (searchStation); the report goes back to Node, which freezes what it accepts. */
+  cat.stationSearch=placements=>{
+    const {T,F}=cat,s=cat.state;
+    return F.searchStation(T,{scene:k.scene,camera:k.camera,controls:k.controls,group:s.group,ground:s.ground},placements);
   };
   /** 'empty' hides the specimen, 'car:N' shows only car N, 'all' restores; each draws one frame. */
   cat.isolate=mode=>{
@@ -506,7 +557,8 @@ export function catalogueDriver() {
   };
   cat.end=()=>{
     const s=cat.state;if(!s)return false;
-    k.scene.remove(s.group);k.scene.remove(s.stage);disposeGeometries(s.group);disposeGeometries(s.stage);
+    k.scene.remove(s.group);disposeGeometries(s.group);
+    if(s.stage){k.scene.remove(s.stage);disposeGeometries(s.stage);}
     for(const o of s.hidden)o.visible=true;
     for(const d of s.dom)d.el.style.display=d.display;
     document.getElementById('capture-train-label')?.remove();
@@ -541,9 +593,13 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
     viewport:{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,
       canvas:session.size,devicePixelRatio:session.devicePixelRatio},
     renderState:{toneMapping:session.toneMapping,toneMappingExposure:session.toneMappingExposure,outputColorSpace:session.outputColorSpace,background:session.background,fog:session.fog,lights:session.lights},
-    pose:{trainLocal:{eye:view.eye,target:view.target,fov:view.fov,up:view.up,near:view.near,region:view.region,...(view.extents?{extents:view.extents}:{})},
+    // V01-V09 are planned in the train's own frame; a V10 view is planned in world metres (the station fixes the specimen), so the page reports its train-local pose
+    pose:{trainLocal:{eye:live.local?.eye??view.eye,target:live.local?.target??view.target,fov:view.fov,up:view.up,near:view.near,region:view.region,...(view.extents?{extents:view.extents}:{})},
       world:{position:live.pose.position,target:live.pose.target,fov:live.pose.fov,aspect:live.pose.aspect,near:live.pose.near,far:live.pose.far,up:live.pose.up,positionErrorM:live.pose.positionErrorM}},
     specimen:{groupWorldPosition:live.placement.position,rotationY:live.placement.rotationY,rotationRule:view.rotation},
+    ...(view.id==='V10'?{station:{placement:view.placement,focus:view.focus,distanceM:view.distanceM,azimuthDeg:view.azimuthDeg,platform:view.platform,platformHeightM:view.platformHeightM,
+      horizontalDistanceM:Math.hypot(live.pose.position[0]-live.pose.target[0],live.pose.position[2]-live.pose.target[2]),eyeAbovePlatformM:live.pose.position[1]-view.platformHeightM,
+      scenery:state.scenery,ground:state.ground,search:view.search}}:{}),
     formation:{kind,family:formation.family,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
     dimensions:formation.dimensions,
     visibility:live.inspection,pixels:result.verdict,
@@ -557,16 +613,20 @@ export async function catalogueMain(args) {
   const inside=p=>{const r=path.relative(scratch,p);return !r.startsWith('..')&&!path.isAbsolute(r);};
   if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
   for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
-  const stageIds=opts.views.filter(id=>id!=='V10');
-  const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id))}];}));
+  const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null;
+  const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
+    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)),station:stationScene?planStation(formation,stationScene):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
     const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
     const drifts=frozenPoseDrift(frozen,plans);
     if(drifts.length)throw new Error(`refusing to capture: ${drifts.length} pose(s) differ from ${opts.poses}: ${drifts.slice(0,8).map(d=>`${d.kind}/${d.view??'*'} ${d.reason}${d.at?` at ${d.at}`:''}`).join('; ')}`);
-    for(const plan of plans.values())plan.views=plan.views.map(v=>freezeView(v,frozen.kinds[plan.kind].views[v.suffix]));
+    for(const plan of plans.values()){
+      plan.views=plan.views.map(v=>freezeView(v,frozen.kinds[plan.kind].views[v.suffix]));
+      if(plan.station)plan.stationViews=stationViewsFromFrozen(plan.station,frozen.kinds[plan.kind]);
+    }
   }
-  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,plan.views.reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
+  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
   if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,posesFrozen:!!frozen,planned:counts}));return;}
   const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   await mkdir(out,{recursive:true});
@@ -576,6 +636,7 @@ export async function catalogueMain(args) {
   const manifest={rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated:new Date().toISOString(),viewport:CATALOGUE.viewport,
     sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
       text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose."},
+    station:stationScene?stationManifest(stationScene):null,
     host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,kinds:{}};
   const summary={kinds:{},timingsMs:{}};
   try {
@@ -609,35 +670,54 @@ export async function catalogueMain(args) {
     await evaluate(`(${catalogueDriver.toString()})()`);
     const shoot=async()=>Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64');
     const publish=async(file,bytes,sidecar)=>{await writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});await writeFile(path.join(out,file+'.json'),JSON.stringify(sidecar,null,2)+'\n',{flag:'wx',mode:0o600});return file;};
+    // the views of one specimen already on stage: check, photograph (with the empty-stage baseline), verify the pixels, write the picture and its sidecar
+    const captureViews=async(kind,plan,views,state)=>{
+      const live=new Map();
+      return runCatalogueViews(views,{
+        check:()=>lifetime.check(),
+        unavailable:view=>view.capability&&!session.lampApi?view.capability.reason:null,
+        inspect:async view=>{
+          const station=view.id==='V10',text=`${kind} catalogue specimen ${station?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}`;
+          const r=await evaluate(`window.__cat.${station?'stationView':'view'}(${JSON.stringify(view)},${JSON.stringify(text)})`);live.set(view,r);return r.inspection;
+        },
+        shoot:async view=>{
+          const shot=await shoot();
+          await evaluate(`window.__cat.isolate('empty')`);const baseline=await shoot();
+          let subject=null;
+          if(view.extents?.scope==='car'){await evaluate(`window.__cat.isolate('car:${view.extents.car}')`);subject=await shoot();}
+          await evaluate(`window.__cat.isolate('all')`);
+          return {shot,baseline,subject};
+        },
+        verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
+        publish:async(view,picture,inspection,verdict,timingsMs)=>{
+          const file=`${kind}-${view.suffix}.png`;
+          return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs}));
+        },
+      });
+    };
     for(const [kind,plan] of plans) {
       lifetime.check();const kindStart=performance.now();
-      const state=await evaluate(`window.__cat.begin(${JSON.stringify(kind)},${plan.formation.length})`);
       const entries={};
-      try {
-        const live=new Map();
-        const results=await runCatalogueViews(plan.views,{
-          check:()=>lifetime.check(),
-          unavailable:view=>view.capability&&!session.lampApi?view.capability.reason:null,
-          inspect:async view=>{
-            const text=`${kind} catalogue specimen on neutral stage - ${view.id} ${view.suffix}`;
-            const r=await evaluate(`window.__cat.view(${JSON.stringify(view)},${JSON.stringify(text)})`);live.set(view,r);return r.inspection;
-          },
-          shoot:async view=>{
-            const shot=await shoot();
-            await evaluate(`window.__cat.isolate('empty')`);const baseline=await shoot();
-            let subject=null;
-            if(view.extents?.scope==='car'){await evaluate(`window.__cat.isolate('car:${view.extents.car}')`);subject=await shoot();}
-            await evaluate(`window.__cat.isolate('all')`);
-            return {shot,baseline,subject};
-          },
-          verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
-          publish:async(view,picture,inspection,verdict,timingsMs)=>{
-            const file=`${kind}-${view.suffix}.png`;
-            return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs}));
-          },
-        });
-        for(const r of results)entries[r.view.suffix]=manifestEntry(r);
-      } finally {await evaluate('window.__cat.end()');}
+      if(plan.views.length) {
+        const state=await evaluate(`window.__cat.begin(${JSON.stringify(kind)},${plan.formation.length})`);
+        try {for(const r of await captureViews(kind,plan,plan.views,state))entries[r.view.suffix]=manifestEntry(r);}
+        finally {await evaluate('window.__cat.end()');}
+      }
+      if(plan.station) {
+        // V10 on the page as built: the specimen is added to the station, searched for its cameras (unless the poses are frozen), then photographed
+        const state=await evaluate(`window.__cat.beginStation(${JSON.stringify(kind)})`);
+        try {
+          let views=plan.stationViews;
+          if(!views){
+            const report=await evaluate(`window.__cat.stationSearch(${JSON.stringify(plan.station.placements)})`);
+            views=stationViewsFromSearch(plan.station,report);
+            // every placement the search tried, with what it found view by view (the manifest keeps the chosen placement's detail)
+            summary.stationSearch??={};summary.stationSearch[kind]=report.map(r=>({placement:r.placementId,clear:r.clear,
+              views:Object.fromEntries(Object.entries(r.views).map(([s,v])=>[s,{tested:v.tested,acceptedAzimuthDeg:v.accepted?.azimuthDeg??null,failures:failureSummary(v.tried)}]))}));
+          }
+          for(const r of await captureViews(kind,plan,views,state))entries[r.view.suffix]=manifestEntry(r);
+        } finally {await evaluate('window.__cat.end()');}
+      }
       manifest.kinds[kind]={formation:{family:plan.formation.family,lengthM:plan.formation.length,dimensions:plan.formation.dimensions,cars:plan.formation.cars},views:entries};
       const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
       summary.kinds[kind]=tally;summary.timingsMs[kind]=Math.round(performance.now()-kindStart);
@@ -656,7 +736,8 @@ export async function catalogueMain(args) {
 export function manifestEntry(result) {
   const {view}=result;
   return {id:view.id,suffix:view.suffix,plan:poseOf(view),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,capability:view.capability??null,
-    outcome:{status:result.status,reason:result.reason??null,file:result.file??null,blocker:result.blocker??null,
+    outcome:{status:result.status,reason:result.reason??null,file:result.file??null,blocker:result.blocker??view.blocker??null,
+      ...(view.search?{search:view.search}:{}),
       ...(result.status==='GAP'&&result.inspection?{inspection:result.inspection}:{}),
       ...(result.status==='OK'?{checkedSamples:result.inspection.checkedSamples,visibleFraction:result.inspection.visibleFraction,pixels:result.verdict}:{})}};
 }
