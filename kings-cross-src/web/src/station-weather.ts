@@ -54,6 +54,13 @@ export function createSceneWeather(options: AtmosphereOptions & { weather: Weath
 }
 export type SceneWeather = ReturnType<typeof createSceneWeather>;
 
+/** The Waverley model's own fixed lights (waverley-scene.ts adds them unless its caller lights the scene): what shows under ?sky=ref,
+ * ?bare=1 or the Node tests. createWaverleyWeather hides them while the daylight rig lights the scene, and shows them again on dispose. */
+export function addWaverleyLights(group: THREE.Group): void {
+  const hemisphere = new THREE.HemisphereLight(0xd8e6f5, 0x7a7566, 2.1), sun = new THREE.DirectionalLight(0xfff0d9, 2.4);
+  sun.position.set(-300, 600, 250); group.add(hemisphere, sun);
+}
+
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');

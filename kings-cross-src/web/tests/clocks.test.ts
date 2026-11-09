@@ -8,7 +8,7 @@ import { balmoralTime, createClocks, handAngles, handGeometry, handMatrix, HANDS
 import type { ClockDial } from '../src/clocks.ts';
 import { addLandmarks } from '../src/landmarks.ts';
 import { buildTower } from '../src/shed.ts';
-import { buildWaverleyLandmarks } from '../src/waverley-landmarks.ts';
+import { buildWaverleyFrontage } from '../src/waverley-frontage.ts';
 
 const TAU = Math.PI * 2;
 const deg = (r: number): number => (r * 360) / TAU;
@@ -64,7 +64,7 @@ function buildings(): { name: string; root: THREE.Object3D; count: number; dialM
   const kx = new THREE.Group().add(tower);
   const london = new THREE.Scene();
   const landmarks = addLandmarks(london, data);
-  const waverley = buildWaverleyLandmarks(ground);
+  const waverley = buildWaverleyFrontage(ground);
   const meshesOf = (root: THREE.Object3D, keep: (m: THREE.Mesh) => boolean): THREE.Mesh[] => {
     const out: THREE.Mesh[] = [];
     root.traverse((o) => { if ((o as THREE.Mesh).isMesh && keep(o as THREE.Mesh)) out.push(o as THREE.Mesh); });

@@ -3,7 +3,7 @@
 // (BST in summer, GMT in winter); Edinburgh keeps the same zone.
 //
 // A building declares its dials on the object that carries them, `object.userData.clockDials` (a ClockDial[] in that object's own frame): shed.ts the
-// King's Cross tower, landmarks.ts the Midland Grand's clock tower, waverley-landmarks.ts the Balmoral. `createClocks().frame(scene, ms)` finds them
+// King's Cross tower, landmarks.ts the Midland Grand's clock tower, waverley-frontage.ts the Balmoral. `createClocks().frame(scene, ms)` finds them
 // and draws every hand of a scene as one instanced mesh, one draw call: a dark box per hand standing just proud of its dial, the dial texture carrying
 // only the face (ring, numerals, ticks).
 //
