@@ -771,6 +771,12 @@ export function towerStages(H: number): { shaft: number; belfry: number; corbel:
 }
 
 /**
+ * The window groups of the facade's upper storeys, by base and height (hist-b): the first floor's are the tallest, the top storey's the shortest, under the cornice;
+ * sizes ASSUMED. The towers carry the same rows while they are part of the facade.
+ */
+export const ROWS = [[6.9, 4.0], [12.4, 3.4], [17.9, 2.6]] as const;
+
+/**
  * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 76 m clock tower): a brick shaft of window rows then lancets, a belfry of
  * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial and a brick gable on each face, [HE-STP] "gabled clocks
  * on each face"), four striped corner turrets, a steep slate roof, a lantern and a needle; a pointed portal at the foot of the front.
@@ -792,26 +798,27 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
   for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.2);
-  addBand(stone, ring(h), sT, 0.5, 0.25);
+  addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out (ASSUMED)
   // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
-    for (const [y, wh] of [[6.9, 3.4], [12.4, 3.4], [17.9, 3.0]] as const) if (!inside) addTwin(parts, f, y, 2.4, wh);
+    for (const [y, wh] of ROWS) if (!inside) addTwin(parts, f, y, 2.4, wh);
     for (const y of [22, 31.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
   // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones)
   for (const f of faces) {
-    if (clockTower) for (const dx of [-1.8, 1.8]) addTwin(parts, shift(f, dx), sT + 1.2, 2.7, bT - sT - 2.7); // hist-c: two groups fill over half the face; sizes ASSUMED
+    if (clockTower) for (const dx of [-1.8, 1.8]) addTwin(parts, shift(f, dx), sT + 0.9, 2.5, bT - sT - 2.4); // hist-c: two tall groups from the balcony to the corbels, their lancets about 4.3 m; sizes ASSUMED
     else for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, shift(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
   }
   // the corbel table: three steps, each a little farther out
   for (let k = 0; k < 3; k++) addBand(stone, ring(h), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
-  // and under it a row of corbels, as far out as the first step (hist-c: the table is dense with them); their size and spacing are ASSUMED
+  // and under it a row of corbels, as far out as the first step, in front of a dark recess (hist-c: the table is a deep machicolation, dense with corbels); their size and spacing are ASSUMED
   const nc = Math.round((2 * h) / 0.9);
+  addBand(part(parts, 'pane'), ring(h), bT - 0.9, 0.9, 0.04);
   for (const f of faces) {
-    for (let k = 0; k < nc; k++) stone.box(onWall(f, ((k + 0.5) * 2 * h) / nc - h, bT - 0.3, 0.05), [0.5, 0.6, 0.4], { rotY: yaw(f.dir), skip: ['+y'] });
+    for (let k = 0; k < nc; k++) stone.box(onWall(f, ((k + 0.5) * 2 * h) / nc - h, bT - 0.45, 0.05), [0.5, 0.9, 0.4], { rotY: yaw(f.dir), skip: ['+y'] });
   }
   // the clock stage
   const grow = 0.5;
@@ -875,8 +882,9 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge, true, plan.roof.runs);
 
   // windows: four storeys, round-headed at the bottom and pairs of pointed lancets above; the front and the curved wing in bays, the rest evenly
-  const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, { y: 6.9, h: 3.4, head: 'pointed' as Head }, { y: 12.4, h: 3.4, head: 'pointed' as Head }, { y: 17.9, h: 3.0, head: 'pointed' as Head }];
-  for (const row of rows.slice(1)) addBand(stone, segs, row.y - 0.45, 0.25, 0.14); // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; sizes ASSUMED
+  const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, ...ROWS.map(([y, h]) => ({ y, h, head: 'pointed' as Head }))];
+  // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; the first floor's is its balcony, standing 0.4 m out; sizes ASSUMED
+  rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.14 : 0.4));
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
   const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {
@@ -939,7 +947,8 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
     }
   });
-  // hist-b, hist-e: pairs of big corbelled brick stacks along the crown, a pair only where both stand wholly on it, clear of the towers
+  // hist-b, hist-c, hist-e: clusters of three big corbelled brick stacks along the crown, 8.4 m tall, rising well above the cresting (the scorer: about twice the round-3 height);
+  // a cluster only where all three stand wholly on the crown, clear of the towers. Sizes and spacing ASSUMED.
   for (const e of edges) {
     const ra = plan.roof.ring[e.i] as Pt;
     const rb = plan.roof.ring[(e.i + 1) % plan.outline.length] as Pt;
@@ -947,12 +956,12 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
     if (l < 8) continue;
     const n = Math.max(1, Math.round(l / 11));
     for (let k = 0; k < n; k++) {
-      const pair = [-1, 1].map((o): Pt => {
-        const s = ((k + 0.5) / n) * l + o * 1.4;
+      const cluster = [-2, 0, 2].map((o): Pt => {
+        const s = ((k + 0.5) / n) * l + o;
         return [ra[0] + e.dir[0] * s - e.normal[0] * 1.2, ra[1] + e.dir[1] * s - e.normal[1] * 1.2];
       });
       const stands = (c: Pt): boolean => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]): Pt => [c[0] + e.dir[0] * (a as number) + e.normal[0] * (b as number) * 0.75, c[1] + e.dir[1] * (a as number) + e.normal[1] * (b as number) * 0.75]).every((p) => pointInPolygon(p, plan.roof.ring) && !plan.towers.some((t) => pointInQuad(p, towerSquare(t, 1.6))));
-      if (pair.every(stands)) for (const c of pair) addStack(parts, c, e.dir, plan.ridge - 0.3, 4.2);
+      if (cluster.every(stands)) for (const c of cluster) addStack(parts, c, e.dir, plan.ridge - 0.3, 8.4);
     }
   }
   // hist-b, hist-e: iron cresting along the crown; a plain strip 0.7 m tall stands for its piercing (ASSUMED), cut at the towers
@@ -1048,8 +1057,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
       strip(lining, k, 0.08, across); // painted boarding just under it: the shared lining is seen from inside only (hist-d)
     }
   }
-  // the ribs: two chords and a Warren lattice 2 m deep (hist-d2: about 2 m under a 62 m chord); a bar is a ribbon of width w and thickness 2t along the shed,
-  // with an underside if a chord. Members ASSUMED, scaled from hist-d2: chords 0.2 x 0.34 m, lattice 0.14 x 0.14 m.
+  // the ribs: two chords and an X-braced lattice 2.6 m deep (hist-d, hist-d2: deep girders that read as a dense web over the whole arch); a bar is a ribbon of width w and
+  // thickness 2t along the shed, with an underside if a chord. Members ASSUMED, scaled from hist-d2: chords 0.3 x 0.4 m, lattice 0.24 x 0.2 m.
   const bar = (v: number, a: P2, b: P2, w: number, t: number, under = false): void => {
     const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const n: P2 = [(-(b[1] - a[1]) / l) * (w / 2), ((b[0] - a[0]) / l) * (w / 2)];
@@ -1057,19 +1066,18 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     for (const m of [-1, 1]) rib.quadUV(e(a, -1, m * t), e(b, -1, m * t), e(b, 1, m * t), e(a, 1, m * t), undefined, dir(0, 0, m));
     if (under) rib.quadUV(e(a, -1, -t), e(b, -1, -t), e(b, -1, t), e(a, -1, t), undefined, dir(-n[0], -n[1]));
   };
-  const top = section.map((_, k) => into(k, 0.2));
-  const bot = section.map((_, k) => into(k, 1.9));
+  const top = section.map((_, k) => into(k, 0.25));
+  const bot = section.map((_, k) => into(k, 2.45));
+  const mid = (a: P2, b: P2): P2 => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   for (const v of plan.ribs) {
     for (let k = 0; k < steps; k++) {
       const [t0, t1, b0, b1] = [top[k], top[k + 1], bot[k], bot[k + 1]] as P2[];
-      const mid: P2 = [(b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2];
-      bar(v, t0, t1, 0.2, 0.17, true);
-      bar(v, b0, b1, 0.2, 0.17, true);
-      bar(v, t0, mid, 0.14, 0.07);
-      bar(v, mid, t1, 0.14, 0.07);
-      bar(v, t0, b0, 0.14, 0.07);
+      bar(v, t0, t1, 0.3, 0.2, true);
+      bar(v, b0, b1, 0.3, 0.2, true);
+      // the lattice: a vertical at each node and two crossing diagonals (an X) between the chords
+      for (const [a, b] of [[t0, mid(b0, b1)], [mid(b0, b1), t1], [b0, mid(t0, t1)], [mid(t0, t1), b1], [t0, b0]] as const) bar(v, a, b, 0.24, 0.1);
     }
-    bar(v, top[steps] as P2, bot[steps] as P2, 0.14, 0.07);
+    bar(v, top[steps] as P2, bot[steps] as P2, 0.24, 0.1);
   }
   // a purlin under the roof at every node of the arch, along the whole shed: the lines that run away down the vault in hist-d
   for (let k = 0; k <= steps; k++) {
@@ -1085,6 +1093,25 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     if ((p.y < F.screenFoot) !== (q.y < F.screenFoot)) gable.push([p.x + ((F.screenFoot - p.y) / (q.y - p.y)) * (q.x - p.x), F.screenFoot]);
   }
   glass.fan(gable.map((p) => at(p[0], L, p[1])), dir(0, 0, 1), (p) => [((p[0] - plan.origin[0]) * c + (p[2] - plan.origin[1]) * s) / 4, p[1] / 2]);
+  // hist-d2: a strong grid of white iron in the screen, a mullion at the middle and every 3.6 m (a pane) either side up to the arch and a transom at each pane's height, bars
+  // 0.3 m wide standing a hand's breadth inside the glass (ASSUMED sizes)
+  const archY = (u: number): number => {
+    let k = 0;
+    while (k < steps - 1 && sec(k + 1).x < u) k++;
+    return sec(k).y + ((u - sec(k).x) / (sec(k + 1).x - sec(k).x)) * (sec(k + 1).y - sec(k).y);
+  };
+  const archX = (y: number): number => {
+    let k = 0;
+    while (sec(k + 1).y <= y) k++;
+    return sec(k).x + ((y - sec(k).y) / (sec(k + 1).y - sec(k).y)) * (sec(k + 1).x - sec(k).x);
+  };
+  const mid2 = margin + plan.span / 2;
+  for (let j = -9; j <= 9; j++) {
+    const u = mid2 + 3.6 * j;
+    const head = Math.min(archY(u - 0.15), archY(u + 0.15)) - 0.1; // both corners of its head stay inside the arch
+    if (head > F.screenFoot + 1) bar(L - 0.15, [u, F.screenFoot], [u, head], 0.3, 0.05);
+  }
+  for (let y = F.screenFoot + 3.6; y < plan.rise - 1; y += 3.6) bar(L - 0.15, [archX(y + 0.15) + 0.1, y], [2 * mid2 - archX(y + 0.15) - 0.1, y], 0.3, 0.05);
 
   // ---- the extension [NSC-EXT], wall to wall like the shed: no ribs, no arch
   const W = plan.width;
