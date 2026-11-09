@@ -7,7 +7,7 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { footShaded, mergeParts, material, part, TEXTURES } from './materials.ts';
+import { footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 import type { ClockDial } from './clocks.ts';
 
@@ -142,7 +142,8 @@ export function createMaterials(): MaterialSet {
   // Round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the library's pane is (0.017, 0.025, 0.04), L 6 lit at the noon rig in the
   // Midland's ground-floor arches; hist-b's windows are mixed, some white with the sky and the dark ones about L 12 to 20. This is a dark blue-grey glass, L 24 (not a black hole), flat:
   // a patchy reflection would need the window shader the sash decals have (and a map, which a framed pane lacks), over the size cap.
-  const pane = tint('pane', [0.05, 0.08, 0.125]);
+  // Round seven (night lighting): the windows of this pane are lit after dark (materials.ts `litPane`: the glass `addGlass` builds, the bands and the balcony of the pane stay dark).
+  const pane = litPane(tint('pane', [0.05, 0.08, 0.125]));
   // Round five (the historic D5 scorer: the crown must be the brightest band of the vault from inside, as in hist-d and hist-d2, where the boarding is L 39 to 49 and the glazing L 56 to 63): the
   // library's pale boarding (a light grey, R-lighting-materials-b's) drew the flank panels at L 71, over the crown's L 53 and 15 under the crown's new glow. At 0.55 of its light, colour and
   // glow both, the flank is L 61 to 63 and the crown, at L 77, the brightest thing in the vault; the other users of the library's lining keep its pale grey.
@@ -385,10 +386,27 @@ export function addWindow(m: Batch, p: Placed, y: number, w: number, h: number, 
   m.fan(pts, [p.normal[0], 0, p.normal[1]], textured ? (q) => [along(q), q[1]] : undefined);
 }
 
+/**
+ * The number of the window whose sill's middle is at `p` and `y`: 0 to `PANE_UV.numbers` - 1, from where it stands (to a tenth of a metre), so that a window's light is its own and the same on every build
+ * (round seven: the lit panes of materials.ts `litPane` read their number from their UVs).
+ */
+export function windowId(p: Placed, y: number): number {
+  const [x, h, z] = [Math.round(p.at[0] * 10), Math.round(y * 10), Math.round(p.at[1] * 10)];
+  return ((Math.imul(x, 73856093) ^ Math.imul(h, 19349663) ^ Math.imul(z, 83492791)) >>> 0) % PANE_UV.numbers;
+}
+
+/** A window's glass: the flat shape of `addWindow` (`lift` off the wall), wearing the UVs of a lit pane (materials.ts `paneUv`) so that it can glow after dark. */
+export function addGlass(m: Batch, p: Placed, y: number, w: number, h: number, head: Head, lift: number): void {
+  const id = windowId(p, y);
+  const pts = windowOutline(w, h, head).map(([x, yy]) => onWall(p, x, y + yy, lift));
+  const along = (q: V3): number => (q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1];
+  m.fan(pts, [p.normal[0], 0, p.normal[1]], (q) => paneUv(id, 0.5 + along(q) / w, (q[1] - y) / h));
+}
+
 /** One window with its stone surround: the surround is `margin` bigger all round and a hair behind the glass. */
 export function addFramedWindow(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number, head: Head, margin: number): void {
   addWindow(part(parts, 'stone'), p, y - margin, w + 2 * margin, h + margin * (head === 'flat' ? 1.6 : 1.3), head, 0.05, true);
-  addWindow(part(parts, 'pane'), p, y, w, h, head, 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, head, 0.1);
 }
 
 /** A sash window from the shared texture (surround, glass and bars drawn in it): a w x h quad, UVs spanning the whole texture. */
@@ -649,7 +667,7 @@ export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h:
   const sw = n > 2 ? 0.4 : 0.6; // the shafts between the lancets: stone 0.6 m wide between a pair, 0.4 m between three, so that they read as a group across the street
   const lw = (W - sw * (n - 1)) / n;
   for (let k = 0; k < n; k++) {
-    addWindow(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
+    addGlass(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
     // hist-b, hist-c: two lights stacked in each lancet, a transom 0.1 m tall at 0.45 of its height, and (between the lights) a shaft 0.2 m square with a capital standing out of the wall (ASSUMED sizes)
     addWindow(stone, shift(p, (k - (n - 1) / 2) * (lw + sw)), y + (h - 0.9) * 0.45, lw, 0.1, 'flat', 0.15, true);
     if (k) {
@@ -681,7 +699,7 @@ function addJambs(parts: PartMap<Key>, p: Placed, y: number, W: number, spring: 
 
 /** A round-headed opening in a ring of red and stone voussoirs, on jambs of red and stone courses (hist-b: the ground storey's arcade); sizes ASSUMED. */
 export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number): void {
-  addWindow(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
   // hist-b: the glazed arch is not a black hole: a stone mullion 0.18 m wide up to the springing and a transom 0.16 m tall at 0.55 of it, standing 0.05 m in front of the glass (ASSUMED)
   addWindow(part(parts, 'stone'), p, y, 0.18, h - w / 2, 'flat', 0.15, true);
   addWindow(part(parts, 'stone'), p, y + (h - w / 2) * 0.55, w, 0.16, 'flat', 0.15, true);
@@ -1031,7 +1049,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   });
   if (clockTower) {
     addWalls(stone, sq(lant), rT + 0.4, lT - 0.4);
-    for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addWindow(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
+    for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addGlass(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
     addBand(stone, ring(lant), rT, 0.4, 0.1);
     addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
     for (const c of sq(lant)) addSpike(stone, c, t.along, t.out, 0.22, rT, lT + 0.9);

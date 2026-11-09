@@ -658,15 +658,19 @@ vec3 winLight( vec4 h, float night, float share, float off, float cool ) {
 vec3 winMean( float night, float share, float off, float cool ) {
   return mix( vec3( 1.0, 0.70, 0.40 ), vec3( 0.66, 0.82, 1.0 ), cool ) * ( 0.75 * share * ( 1.0 - off ) * clamp( ( night - 0.15 ) / 0.6, 0.0, 1.0 ) );
 }
+float winRoom( float y, vec4 r ) {
+  return mix( 0.72, 1.0, smoothstep( r.z, r.w, y ) );
+}
 vec3 winTile( vec2 v, vec2 w, float seed, float night, vec4 rect, vec4 mode, float glass ) {
   vec2 cell = floor( v );
+  vec2 f = v - cell;
   float share = mode.x + mode.y * fract( seed * 3.71 + 0.29 );
   vec4 h = vec4( winHash( cell, seed, 1.0 ), winHash( vec2( 0.0, cell.y ), seed, 2.0 ), winHash( cell, seed, 3.0 ), winHash( cell, seed, 4.0 ) );
   float span = max( w.x, w.y );
   float far = smoothstep( 0.25, 0.6, span );
   float near = 1.0 - smoothstep( 0.03, 0.1, span );
-  vec3 own = winLight( h, night, share, mode.z, mode.w ) * ( winPane( v - cell, rect, w ) * mix( 1.0, 0.3 + 0.7 * glass, near ) );
-  return mix( own, winMean( night, share, mode.z, mode.w ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) ), far );
+  vec3 own = winLight( h, night, share, mode.z, mode.w ) * ( winPane( f, rect, w ) * winRoom( f.y, rect ) * mix( 1.0, 0.3 + 0.7 * glass, near ) );
+  return mix( own, winMean( night, share, mode.z, mode.w ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) * 0.86 ), far );
 }
 vec3 winDecal( vec2 v, vec2 w, vec4 g, float night, vec4 rect, float glass, float blind ) {
   float share = 0.3 + 0.4 * g.w;
@@ -674,8 +678,16 @@ vec3 winDecal( vec2 v, vec2 w, vec4 g, float night, vec4 rect, float glass, floa
   float span = max( w.x, w.y );
   float far = smoothstep( 0.25, 0.6, span );
   float near = 1.0 - smoothstep( 0.03, 0.1, span );
-  vec3 own = winLight( h, night, share, 0.0, 0.1 ) * ( winPane( v, rect, w ) * mix( 1.0, 0.3 + 0.7 * glass, near ) * mix( 0.55, 1.0, blind ) );
-  return mix( own, winMean( night, share, 0.0, 0.1 ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) * 0.8 ), far );
+  vec3 own = winLight( h, night, share, 0.0, 0.1 ) * ( winPane( v, rect, w ) * winRoom( v.y, rect ) * mix( 1.0, 0.3 + 0.7 * glass, near ) * mix( 0.55, 1.0, blind ) );
+  return mix( own, winMean( night, share, 0.0, 0.1 ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) * 0.7 ), far );
+}
+vec3 winPaneLit( vec2 v, vec2 w, float night, float share ) {
+  float id = floor( v.x );
+  vec2 c = vec2( id, 0.0 );
+  vec4 h = vec4( winHash( c, 0.0, 1.0 ), 1.0, winHash( c, 0.0, 3.0 ), winHash( c, 0.0, 4.0 ) );
+  float far = smoothstep( 0.25, 0.6, max( w.x, w.y ) );
+  vec3 own = winLight( h, night, share, 0.0, 0.1 ) * winRoom( -1.0 - v.y, vec4( 0.0, 1.0, 0.0, 1.0 ) );
+  return mix( own, winMean( night, share, 0.0, 0.1 ) * 0.7, far );
 }
 `;
 
@@ -686,8 +698,8 @@ vec3 winDecal( vec2 v, vec2 w, vec4 g, float night, vec4 rect, float glass, floa
  */
 const NIGHT_MODE = {
   house: [0.14, 0.5, 0.12, 0.18],
-  curtain: [0.55, 0.4, 0.4, 0.35],
-  shop: [0.4, 0.45, 0, 0.12],
+  curtain: [0.4, 0.4, 0.4, 0.5],
+  shop: [0.3, 0.35, 0, 0.15],
 } as const;
 
 /** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
@@ -718,7 +730,7 @@ float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed )
 ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
-if ( uWinNight > 0.003 ) totalEmissiveRadiance += winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare );
+if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare );
 `;
 
 /**
@@ -763,15 +775,18 @@ if ( abs( gDet ) > 1e-12 ) {
   }
 }
 ${GLASS_VARIES_GLSL}${GLASS_BLIND_GLSL}
-if ( uWinNight > 0.003 ) totalEmissiveRadiance += winDecal( vMapUv, fwidth( vMapUv ), vec4( gLit, gHour, gk, gArea ), uWinNight, WIN_RECT, gShare, gBlind * smoothstep( 0.97 - gDrop, 1.03 - gDrop, vMapUv.y ) );`;
+if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winDecal( vMapUv, fwidth( vMapUv ), vec4( gLit, gHour, gk, gArea ), uWinNight, WIN_RECT, gShare, gBlind * smoothstep( 0.97 - gDrop, 1.03 - gDrop, vMapUv.y ) );`;
+
+/** How bright, at the most, a window's light is, as a share of its colour: a house's, a shopfront's plate glass, a curtain wall's (the whole wall is glass, which a flat share would drown the street in) and a decal's. */
+const NIGHT_GAIN = { house: 0.8, shop: 0.45, curtain: 0.35, decal: 0.8 } as const;
 
 /**
  * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material
  * must carry a map (the windows are in the texture). Its program key says which, so the two never share a compile.
  */
-export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain', glass: readonly number[] = DECAL_GLASS, mode: readonly number[] = NIGHT_MODE.house): T {
+export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain', glass: readonly number[] = DECAL_GLASS, mode: readonly number[] = NIGHT_MODE.house, gain: number = NIGHT_GAIN.decal): T {
   // after dark (`windowNight`): the pane of the window's glass in its tile or quad, and for a facade how its windows are lit. Defines, so each kind of facade is a program of its own.
-  m.defines = { ...m.defines, WIN_RECT: glslVec4(glass), ...(by === 'quad' ? {} : { WIN_MODE: glslVec4(mode) }) };
+  m.defines = { ...m.defines, WIN_RECT: glslVec4(glass), WIN_GAIN: glslFloat(gain), ...(by === 'quad' ? {} : { WIN_MODE: glslVec4(mode) }) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
     if (by === 'quad') {
@@ -784,6 +799,38 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
       .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
   };
   m.customProgramCacheKey = () => `glassVaries-${by}`;
+  return m;
+}
+
+/**
+ * A lit pane's UVs. The Midland Grand's windows are flat dark panes with no texture (landmarks.ts `addGlass`), so their UVs are free: u is the window's number (0 to `PANE_UV.numbers` - 1, from where it
+ * stands: its light is its own and the same on every build) plus its way across the glass mapped into 0.1 to 0.9 (so the number is `floor( u )` all over the pane, to the last pixel), and v is -1 minus
+ * its way up (-1 at the sill to -2 at the head). Nothing else the pane's material wears has a v under zero (the bands, the walls and the balcony have metres up from the ground), so a negative v is a window.
+ */
+export const PANE_UV = { numbers: 2048, margin: 0.1, share: 0.3 } as const;
+
+/** The UV of a point `across` (0 to 1 from the left) and `up` (0 to 1 from the sill) of the window numbered `id` (a whole number, 0 to `PANE_UV.numbers` - 1). */
+export function paneUv(id: number, across: number, up: number): [number, number] {
+  return [id + PANE_UV.margin + (1 - 2 * PANE_UV.margin) * across, -1 - up];
+}
+
+/**
+ * Light a flat pane's windows after dark (a Midland Grand pane is a clone of the library's dark pane, tinted: landmarks.ts): the pane keeps its own look by day and, where its UV says it is a window
+ * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
+ * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
+ */
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T): T {
+  m.defines = { ...m.defines, WIN_GAIN: glslFloat(NIGHT_GAIN.decal) };
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vWinUv;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinUv = uv;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}`)
+      .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} );`);
+  };
+  m.customProgramCacheKey = () => 'litPane';
   return m;
 }
 
@@ -1607,7 +1654,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   // curtain walling catches the sun: a Phong sheen on top of the drawn glass
   glass: () => {
     const t = cityTexture('glass');
-    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'curtain', FACADE_GLASS.glass, NIGHT_MODE.curtain);
+    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'curtain', FACADE_GLASS.glass, NIGHT_MODE.curtain, NIGHT_GAIN.curtain);
   },
   roof: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
   paint: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
@@ -1641,7 +1688,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
 function cityFacade(key: FacadeKey): THREE.Material {
   const t = cityTexture(key);
   // one window to a tile: each one mirrors the sky or shows its room (see glassVaries)
-  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile', FACADE_GLASS[key], key === 'shop' ? NIGHT_MODE.shop : NIGHT_MODE.house);
+  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile', FACADE_GLASS[key], key === 'shop' ? NIGHT_MODE.shop : NIGHT_MODE.house, key === 'shop' ? NIGHT_GAIN.shop : NIGHT_GAIN.house);
 }
 
 function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Material {
