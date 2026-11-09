@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { coverUniforms } from '../src/cover.ts';
 import { createPrecip, MAX_WIDTH, RAIN_STREAKS, SNOW_FLAKES, SNOW_SCALE } from '../src/precip.ts';
 import type { PrecipFrame } from '../src/precip.ts';
 
@@ -142,6 +143,18 @@ test('the shaders are well-formed for every GPU: no smoothstep with its edges re
       assert.ok(m.vertexShader.includes(term), `${o.name}: the fade has lost ${term}`);
     }
     assert.ok(/attribute vec2 aRand/.test(m.vertexShader) && o.geometry.getAttribute('aRand').itemSize === 2);
+  }
+  p.dispose();
+});
+
+test('both drops are held back by the roofs: the cover read is in each vertex shader once, and the map they read is the one shared map', () => {
+  const p = createPrecip();
+  for (const o of [p.rain, p.snow]) {
+    const m = shader(o);
+    assert.equal(m.vertexShader.split('float coverAt(').length - 1, 1, `${o.name}: the cover read is in the shader once`);
+    assert.ok(m.vertexShader.indexOf('float coverAt(') < m.vertexShader.indexOf('void main'), `${o.name}: and declared above where it is used`);
+    for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(m.uniforms[name] === coverUniforms[name], `${o.name}: ${name} is the shared one`);
+    assert.equal(m.fragmentShader.includes('coverAt'), false, `${o.name}: the vertex shader decides, so a streak is wholly there or wholly gone`);
   }
   p.dispose();
 });

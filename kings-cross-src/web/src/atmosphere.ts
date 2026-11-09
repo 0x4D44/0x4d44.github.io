@@ -4,7 +4,8 @@
 //   the lamps: halos (night.ts), the trains' lit windows and lenses (train-geom.ts), and the daylight stand-ins (the shed's lining,
 //   ribs and glazing, the platform canopy glass), which glow like day by day and dim after dark;
 //   the ground: darker and a little glossy when wet, covered when it snows (a few lines in the Lambert shader of each surface);
-//   rain streaks or snow flakes (precip.ts).
+//   rain streaks or snow flakes (precip.ts);
+//   the roofs (cover.ts): the weather stops at them, so nothing falls and nothing is wet or white under the shed, the concourse or a canopy.
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
@@ -12,6 +13,8 @@ import { fogRange, skyRig } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
+import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
+import type { CoverMap } from './cover.ts';
 import { createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
@@ -59,7 +62,10 @@ const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { v
 /**
  * Add wetness and snow to a Lambert surface in its own shader: after the texture and colours are applied the surface darkens
  * (`uDark` x `uWet`) and blends toward snow (`uSnowK` x `uSnowCover`); after lighting, a sky-coloured sheen that grows at glancing
- * angles is added (`uSheenK` x `uWet`). With uWet and uSnowCover at 0 the surface draws as it always did.
+ * angles is added (`uSheenK` x `uWet`). With uWet and uSnowCover at 0 the surface draws as it always did. Under a roof (cover.ts) none
+ * of it applies: the point's world position is read back from the view-space one the fragment already has, and the weather's share of it
+ * (`coverOpen`: 1 in the open, 0 under a roof, a soft line between at the roof's edge) multiplies the wet and the snow. In dry weather the
+ * cover is not read at all.
  */
 function patchSurface(material: THREE.MeshLambertMaterial, spec: { dark: number; sheen: number; snow: number }): void {
   const own = { uDark: { value: spec.dark }, uSheenK: { value: spec.sheen }, uSnowK: { value: spec.snow } };
@@ -68,13 +74,26 @@ function patchSurface(material: THREE.MeshLambertMaterial, spec: { dark: number;
     shader.uniforms.uSnowCover = surfaceUniforms.snowCover;
     shader.uniforms.uSheen = surfaceUniforms.sheen;
     shader.uniforms.uSnowColour = surfaceUniforms.snowColour;
-    Object.assign(shader.uniforms, own);
+    Object.assign(shader.uniforms, coverUniforms, own);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uWet;\nuniform float uSnowCover;\nuniform vec3 uSheen;\nuniform vec3 uSnowColour;\nuniform float uDark;\nuniform float uSheenK;\nuniform float uSnowK;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - uDark * uWet;\ndiffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour, 0.85 * uSnowCover * uSnowK );')
+      .replace('#include <common>', `#include <common>
+uniform float uWet;
+uniform float uSnowCover;
+uniform vec3 uSheen;
+uniform vec3 uSnowColour;
+uniform float uDark;
+uniform float uSheenK;
+uniform float uSnowK;
+${COVER_GLSL}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+float coverOpen = 1.0;
+if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );
+float wetHere = uWet * coverOpen;
+diffuseColor.rgb *= 1.0 - uDark * wetHere;
+diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour, 0.85 * uSnowCover * coverOpen * uSnowK );`)
       .replace('#include <opaque_fragment>', `{
   float wetFresnel = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 3.0 );
-  outgoingLight += uSheen * uSheenK * uWet * ( 0.05 + 0.6 * wetFresnel );
+  outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel );
 }
 #include <opaque_fragment>`);
   };
@@ -156,6 +175,8 @@ export interface Atmosphere {
   /** Look again for materials created since (the city, terrain and landmarks load lazily). */
   rescan(): void;
   state(): AtmosphereState | null;
+  /** The roofs the weather stops at, drawn from the scene's roof meshes (cover.ts); null while there are none. */
+  cover(): CoverMap | null;
   precip: Precip;
   nightLights: NightLights | null;
   dispose(): void;
@@ -188,7 +209,17 @@ export function createAtmosphere({ scene, world, sites }: AtmosphereOptions): At
   const patched = new Set<THREE.Material>();
   const standIns = new Map<Emissive, THREE.Color>();
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
+  // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
+  let roofKey: string | null = null;
+  let coverMap: CoverMap | null = null;
   const rescan = (): void => {
+    const roofs = findRoofs(scene);
+    const key = roofs.map((m) => m.uuid).join(',');
+    if (key !== roofKey) {
+      roofKey = key;
+      coverMap = buildCoverMap(scene, roofs);
+      applyCover(coverMap);
+    }
     // the far rails are unlit lines, which would glow white against a night city: they follow the daylight
     scene.getObjectByName('track')?.traverse((o) => {
       const line = o as THREE.LineSegments;
@@ -308,6 +339,7 @@ export function createAtmosphere({ scene, world, sites }: AtmosphereOptions): At
     precip, nightLights,
     rescan,
     state: () => state,
+    cover: () => coverMap,
     update(f) {
       // The sky maths run four times a second; a new weather (a new object, which happens when a reading arrives) runs them at once.
       if (state === null || f.weather !== state.weather || f.wallMs - lastCompute >= 250) {
@@ -331,6 +363,7 @@ export function createAtmosphere({ scene, world, sites }: AtmosphereOptions): At
         snow: state.weather.snow, windMs: state.weather.windMs, daylight: state.rig.daylight });
     },
     dispose() {
+      applyCover(null);
       precip.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);

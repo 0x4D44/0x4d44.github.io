@@ -11,6 +11,20 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - a nearest-read roof mask draws a saw at slanted edges: blur it (web/src/cover.ts:blurRoofed)
+  The wet and the snow on the ground stopped at a roof by a nearest-sampled 0.5 m cell map, so a canopy edge on the screen was a row of half-metre steps (a white
+  saw along the platform, plainly visible on a real GPU and in no unit test). The ground reads a second texture, the roofed cells blurred by COVER_BLUR and filtered
+  linearly, gated by the nearest height map; the drops keep the unblurred cells. A test that sweeps the shed eaves holds the edge to one monotone ramp.
+- 2026-11-09 - a failed assert.equal on a big map ate 60 GB: use assert.ok (web/tests/cover-shaders.test.ts:sameBytes)
+  A red test that compared the 225 kB cover map (or a uniform that holds a DataTexture) with assert.equal or deepEqual made Node build a line diff of both
+  before it reported: 68 GB resident, no output, the machine in swap, three times in one mutation run. Compare identity, or Buffer.compare, with
+  assert.ok(a === b, message) so a failure is cheap, and cap a mutation run with NODE_OPTIONS=--max-old-space-size=3072.
+- 2026-11-09 - a roof the weather does not know is open sky: name it (kings-cross-src web/src/cover.ts:ROOF_MESHES)
+  cover.ts draws the height map that stops rain, snow and wetness from the roof meshes it finds by name (shed, concourse, canopy, landmarks). A new roof, or
+  one renamed, lets the drops through and leaves the ground under it wet. web/tests/cover.test.ts holds ROOF_MESHES to the real builders' names.
+- 2026-11-09 - run shader logic in Node instead of grepping it (kings-cross-src web/tests/glsl.ts:Glsl)
+  glsl.ts runs the page's own vertex shaders and the patched Lambert lines (Node has no GPU) on the real roofs, as strict as a compiler (no vec3 + vec4, no
+  reversed smoothstep, no call before its definition). When a shader needs a GLSL form it lacks, add the form with a case in glsl.test.ts. A GPU run is still owed.
 - 2026-11-09 - a patched shader's type error shows only on a real GPU: vColor is vec4 (kings-cross-src web/src/train-geom.ts:trainNight)
   three 0.187 declares `varying vec4 vColor` in fragment shaders, so `outgoingLight + vColor * k` adds a vec4 to a vec3 and the program fails to link.
   Node, tsc and the build all passed; only a headless Chrome on the real GPU (--use-angle=metal, signal-capture.mjs manualFrames) printed the error.

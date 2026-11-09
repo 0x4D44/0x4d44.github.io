@@ -3,8 +3,10 @@
 // costs two uniform updates. The drops fill a box that lies between the camera and what it is looking at (the orbit target), as wide
 // as the view is deep: near a train the box is a few metres across and the streaks short, from the default view it is a few hundred
 // metres and the streaks long, and the drops on screen look about the same either way. The drops fade toward the box's edges, so
-// nothing pops as the box moves.
+// nothing pops as the box moves. A drop that reaches a roof stops there: the cover map (cover.ts) is read for each drop, so none falls
+// under the shed, the concourse or a canopy.
 import * as THREE from 'three';
+import { COVER_GLSL, coverUniforms } from './cover.ts';
 
 /** The most streaks and flakes ever drawn: the buffers are built once at this size and `drawRange` shows a share of them. */
 export const RAIN_STREAKS = 3200;
@@ -75,6 +77,7 @@ uniform float uOpacity;
 attribute vec2 aRand; // x: speed jitter, y: 0 at the streak's tail, 1 at its head
 varying float vAlpha;
 ${FADE}
+${COVER_GLSL}
 float wrap1(float v) { return v - floor(v); }
 void main() {
   float speed = uFall * (0.85 + 0.3 * aRand.x);
@@ -88,7 +91,8 @@ void main() {
     uCentre.z + (wrap1((across.y - uCentre.z) / uBox.z) - 0.5) * uBox.z);
   vec3 dir = normalize(vec3(uWind.x, -speed, uWind.y));
   vec3 world = p - dir * uLen * (1.0 - aRand.y);
-  vAlpha = uOpacity * dropFade(world, cycle);
+  // under a roof, whether the streak's head is, so the whole streak goes at once (p is the same for both of its ends)
+  vAlpha = uOpacity * dropFade(world, cycle) * (1.0 - coverAt(p));
   gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
 }
 `;
@@ -112,6 +116,7 @@ uniform float uSize;
 attribute vec2 aRand;
 varying float vAlpha;
 ${FADE}
+${COVER_GLSL}
 float wrap1(float v) { return v - floor(v); }
 void main() {
   float speed = uFall * (0.7 + 0.6 * aRand.x);
@@ -124,7 +129,7 @@ void main() {
     cycle * uBox.y,
     uCentre.z + (wrap1((across.y - uCentre.z) / uBox.z) - 0.5) * uBox.z);
   vec4 mv = viewMatrix * vec4(world, 1.0);
-  vAlpha = uOpacity * dropFade(world, cycle);
+  vAlpha = uOpacity * dropFade(world, cycle) * (1.0 - coverAt(world));
   gl_PointSize = clamp(uSize * 420.0 / max(-mv.z, 0.1), 2.0, 6.5);
   gl_Position = projectionMatrix * mv;
 }
@@ -158,6 +163,7 @@ export function createPrecip(): Precip {
   const rainUniforms = {
     uTime: { value: 0 }, uCentre: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(100, 100, 100) }, uFall: { value: 9 },
     uLen: { value: 3 }, uWind: { value: new THREE.Vector2() }, uOpacity: { value: 0 }, uColor: { value: new THREE.Vector3(0.8, 0.85, 0.92) },
+    ...coverUniforms,
   };
   const rainMaterial = new THREE.ShaderMaterial({ vertexShader: RAIN_VERTEX, fragmentShader: RAIN_FRAGMENT, uniforms: rainUniforms, transparent: true, depthWrite: false });
   const rain = new THREE.LineSegments(rainGeometry, rainMaterial);
@@ -178,6 +184,7 @@ export function createPrecip(): Precip {
   const snowUniforms = {
     uTime: { value: 0 }, uCentre: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(100, 100, 100) }, uFall: { value: 1.2 },
     uWind: { value: new THREE.Vector2() }, uOpacity: { value: 0 }, uSize: { value: 0.06 }, uColor: { value: new THREE.Vector3(0.95, 0.97, 1) },
+    ...coverUniforms,
   };
   const snowMaterial = new THREE.ShaderMaterial({ vertexShader: SNOW_VERTEX, fragmentShader: SNOW_FRAGMENT, uniforms: snowUniforms, transparent: true, depthWrite: false });
   const snow = new THREE.Points(snowGeometry, snowMaterial);

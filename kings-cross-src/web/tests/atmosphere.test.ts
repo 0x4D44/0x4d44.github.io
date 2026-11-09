@@ -10,6 +10,7 @@ import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
 import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SURFACES } from '../src/atmosphere.ts';
+import { coverUniforms } from '../src/cover.ts';
 import { furniturePlan } from '../src/furniture.ts';
 import { cityMaterial, material, terrainMaterial } from '../src/materials.ts';
 import { nightLightSites } from '../src/night.ts';
@@ -312,13 +313,19 @@ test('wet ground: the shader of each named surface is patched once with the shar
   for (const decl of ['uniform float uWet;', 'uniform float uSnowCover;', 'uniform vec3 uSheen;', 'uniform vec3 uSnowColour;', 'uniform float uDark;', 'uniform float uSheenK;', 'uniform float uSnowK;']) {
     assert.equal(f.split(decl).length - 1, 1, `${decl} once`);
   }
-  const order = ['#include <map_fragment>', '#include <color_fragment>', 'diffuseColor.rgb *= 1.0 - uDark * uWet;', 'diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour',
-    'outgoingLight += uSheen * uSheenK * uWet', '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
+  const order = ['#include <map_fragment>', '#include <color_fragment>', 'float coverOpen = 1.0;', 'float wetHere = uWet * coverOpen;', 'diffuseColor.rgb *= 1.0 - uDark * wetHere;',
+    'diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour', 'outgoingLight += uSheen * uSheenK * wetHere', '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
-  assert.deepEqual([...order].sort((a, b) => a - b), order, 'in the order: texture, colour, darken, whiten, then the sheen on the lit result, then output');
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'in the order: texture, colour, the weather\'s share here, darken, whiten, then the sheen on the lit result, then output');
+  assert.ok(f.indexOf('varying vec3 vViewPosition;') < f.indexOf('coverGroundAt( cameraPosition'), 'the view position it reads the world point from is declared above');
   assert.ok(f.indexOf('vViewPosition') < f.indexOf('uSheen * uSheenK'), 'the view vector it uses is declared above');
   assert.ok(f.indexOf('vec3 normal') < f.indexOf('uSheen * uSheenK'), 'and so is the normal');
   assert.ok(f.indexOf('outgoingLight =') < f.indexOf('uSheen * uSheenK'), 'and the lit result');
+  // under a roof (cover.ts) the weather does not reach the surface; the cover is read only when there is some weather to keep off
+  assert.equal(f.split('float coverGroundAt(').length - 1, 1, 'the ground\'s cover read is in the shader once');
+  assert.ok(f.indexOf('float coverGroundAt(') < f.indexOf('coverGroundAt( cameraPosition'), 'and declared above where it is used');
+  assert.ok(f.includes('if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );'), 'read at the surface\'s own world position, with the soft edge, and not at all in dry weather');
+  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(s.uniforms[name] === coverUniforms[name], `${name} is the shared one, so every surface sees the same roofs`);
   assert.equal(s.uniforms.uDark!.value, SURFACES.get('asphalt')!.dark);
   assert.equal(s.uniforms.uSheenK!.value, SURFACES.get('asphalt')!.sheen);
   assert.equal(s.uniforms.uSnowK!.value, 1);

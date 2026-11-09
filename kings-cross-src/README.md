@@ -28,8 +28,14 @@ the sun, the sky, the ambient light and, below -6 degrees (the end of civil twil
 (`core/daylight.ts`, `web/src/atmosphere.ts`). The weather is Open-Meteo's (`web/src/weather.ts`): the forecast `current`
 block for a live page, polled at most every ten minutes; the archive `hourly` block (one request) for a replay's day. Cloud
 greys the light and the sky, rain and snow are two bounded GPU draws near the camera (`web/src/precip.ts`), the ground and
-platforms go wet or white, and fog and mist pull the scene fog in. If Open-Meteo cannot be reached the sky stays clear and the
-status line says `weather unavailable (...), clear sky assumed`. The page sends nothing else to anyone, and no key is used.
+platforms go wet or white, and fog and mist pull the scene fog in. Roofs keep it off: nothing falls and nothing is wet or white
+under the train shed, the Western Concourse or a platform canopy. The roofs are not listed a second time; `web/src/cover.ts`
+draws a top-down height map from the roof meshes themselves (found by name), and the drops' and the wet ground's shaders read
+it, so a roof that changes shape or is added (name it in `ROOF_MESHES`) changes where the weather stops. A drop is under a roof
+or not; the ground's wet and snow fade over about a metre at a roof's edge (a blurred copy of the map, read through the GPU's
+bilinear filter), so the edge of a canopy is a soft straight line and not a row of half-metre steps. If Open-Meteo cannot be
+reached the sky stays clear and the status line says `weather unavailable (...), clear sky assumed`. The page sends nothing
+else to anyone, and no key is used.
 Weather data: [Open-Meteo.com](https://open-meteo.com/), CC BY 4.0; the page's `connect-src` names only
 `https://api.open-meteo.com` and `https://archive-api.open-meteo.com`.
 
