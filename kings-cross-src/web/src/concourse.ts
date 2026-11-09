@@ -24,7 +24,7 @@ import * as THREE from 'three';
 import { concourseHeight, pointInPolygon, shedToWorld, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
-import { Batch, material, rgb, rng } from './materials.ts';
+import { Batch, material, rgb, rng, texture } from './materials.ts';
 import type { Rgb, V2, V3 } from './materials.ts';
 import { WESTERN_RANGE } from './shed.ts';
 
@@ -168,12 +168,14 @@ function roofRibs(edges: Map<string, {a:number;b:number;uses:number}>, nodes: Di
   return new Set([...nearest.values()].map(v=>v.key));
 }
 
-function roundMember(batch: Batch, p: V3, q: V3, diameter: number): void {
+/** A round member: TUBE_SIDES flat strips with smooth normals. `clamp` keeps its ends between two heights (a foot on the floor, a head under the roof). */
+function roundMember(batch: Batch, p: V3, q: V3, diameter: number, clamp?: readonly [number, number]): void {
   const dx=q[0]-p[0], dy=q[1]-p[1], dz=q[2]-p[2], len=Math.hypot(dx,dy,dz);
   const ry=Math.atan2(-dz,dx), rz=Math.asin(dy/len), cy=Math.cos(ry), sy=Math.sin(ry), cz=Math.cos(rz), sz=Math.sin(rz);
   const u: V3=[-sz*cy,cz,sz*sy], v: V3=[sy,0,cy], r=diameter/2;
+  const level=(y:number):number=>clamp?Math.min(clamp[1],Math.max(clamp[0],y)):y;
   const at=(end:V3,t:number):V3=>[end[0]+r*(u[0]*Math.cos(t)+v[0]*Math.sin(t)),
-    end[1]+r*(u[1]*Math.cos(t)+v[1]*Math.sin(t)),end[2]+r*(u[2]*Math.cos(t)+v[2]*Math.sin(t))];
+    level(end[1]+r*(u[1]*Math.cos(t)+v[1]*Math.sin(t))),end[2]+r*(u[2]*Math.cos(t)+v[2]*Math.sin(t))];
   // ASSUMED 0.1 m joint overlap, retained from the box members: 0.05 m at each end.
   const p0:V3=[p[0]-dx*.05/len,p[1]-dy*.05/len,p[2]-dz*.05/len], q0:V3=[q[0]+dx*.05/len,q[1]+dy*.05/len,q[2]+dz*.05/len];
   for(let i=0;i<TUBE_SIDES;i++) {
@@ -316,38 +318,88 @@ export function concourseGrid(canopy: ConcourseCanopy, footprint: Pt[], shed: Sh
   return { centre, grid };
 }
 
+// The funnel (the central tree column). R-a, conc-ab and conc-b show a tree of long, thick, round white tubes: a dozen
+// or more legs stand on the floor and widen steadily as they rise, cross each other in tall diamonds, branch, and run on
+// into the roof's own lattice round a ring of glass. FUNNEL_RADIUS and the 20 m height are pinned by the roof grid and the
+// tests; the rest is ASSUMED from the photographs, scaled by the people in them (about 1.7 m): feet about 4 m across, legs
+// about 0.35 m through, 12 legs at the floor, 36 under the roof. The real funnel is wider at the top than this one
+// (conc-a: about 2.7 times its width at the floor); the top radius stays at the roof grid's first ring, so the flare is
+// compressed to fit it.
+/** Radius of the legs at the floor, before the splay, metres (ASSUMED: conc-ab, the feet span about 3.7 m). */
+const COLUMN_STEM = 1.8;
+/** How much wider than that the feet stand, and how quickly that dies away with height, metres (ASSUMED: conc-ab shows the feet splayed at the floor). */
+const COLUMN_FOOT = 0.25;
+const COLUMN_FOOT_DECAY = 0.6;
+/** The widening is this share a straight cone and the rest a bell (the fifth power of the height) that sweeps out under the roof (ASSUMED: conc-a, conc-b: the legs widen all the way up and sweep out under the glass). */
+const COLUMN_CONE = 0.4;
+/**
+ * Heights of the lattice's rings for a funnel 19.9 m tall, metres: about 1.6 m apart, closing a little toward the roof, so
+ * that the members stay under 2 m long and the funnel's profile reads as a curve (ASSUMED: the diamonds in conc-b are
+ * about 1 m across and 3 m tall at mid height).
+ */
+const COLUMN_LEVELS = [0, 1.0, 2.6, 4.2, 5.8, 7.4, 9.0, 10.6, 12.2, 13.7, 15.1, 16.4, 17.5, 18.5, 19.3, 19.9] as const;
+/** Members to a ring at this radius: 12 legs at the floor, forking to 18 and then 24 under the roof, which is 2 for each of the roof's 12 first-ring nodes (every other one stands on a node; the rest on the ring's chords). */
+const columnCount = (radius: number): number => (radius < 2.6 ? 12 : radius < 3.8 ? 18 : 24);
+/** Diameter of a leg at this height, metres: stouter at the floor, slimmer under the roof (ASSUMED, conc-ab: about 0.35 m at the foot, 0.22 m at the head). */
+export function columnTubeDiameter(y: number, top: number): number {
+  return 0.36 - 0.14 * Math.max(0, Math.min(1, y / top));
+}
+/** The foot collar round each leg: a short sleeve at the floor (ASSUMED, conc-ab: the legs stand in plain collars). */
+export const COLUMN_COLLAR = { radius: 0.26, height: 0.42 } as const;
+
 /** ASSUMED retained trumpet envelope, [radius, height] metres; not a measured member centreline. */
 export function columnProfile(apex: number): [number, number][] {
-  const top = apex - 0.1;
-  return [[2.2, 0], [1.5, 0.35], [1.3, 1.2], [1.25, 7], [1.5, 9.5], [2.2, 12.5], [3.4, 15.8], [4.6, top - 1.6], [FUNNEL_RADIUS, top]];
+  const top = apex - 0.1, last = COLUMN_LEVELS.length - 1;
+  return COLUMN_LEVELS.map((level, i): [number, number] => {
+    if (i === last) return [FUNNEL_RADIUS, top];
+    const y = (level * top) / COLUMN_LEVELS[last]!, t = y / top;
+    const widening = COLUMN_CONE * t + (1 - COLUMN_CONE) * t ** 5;
+    return [COLUMN_STEM + (FUNNEL_RADIUS - COLUMN_STEM) * widening + COLUMN_FOOT * Math.exp(-y / COLUMN_FOOT_DECAY), y];
+  });
+}
+
+/** A unit icosahedron: the corners are also the smooth normals of a node's blob. */
+const ICOSAHEDRON = (() => {
+  const phi = (1 + Math.sqrt(5)) / 2, length = Math.hypot(1, phi);
+  const corners = ([[-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0], [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi], [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]] as V3[])
+    .map((c): V3 => [c[0] / length, c[1] / length, c[2] / length]);
+  const faces: [number, number, number][] = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  return { corners, faces };
+})();
+
+/** The envelope's radius at height y: straight between the profile's rings, as the envelope test reads it. */
+function columnEnvelope(profile: readonly [number, number][], y: number): number {
+  const upper = Math.max(1, profile.findIndex(p => p[1] >= y));
+  const [r0, y0] = profile[upper - 1]!, [r1, y1] = profile[upper]!;
+  return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
 }
 
 // JMP built photograph (brickwork visible through the stalk):
 // https://mcaslan.agencyprojects.com/storage/app/uploads/public/69a/2c2/318/69a2c23185a88699376861.jpg
 // Arup Journal 2/2012 pp.13–16 describes the funnel/diagrid, not a solid skin.
-// ASSUMED member layout: the retained envelope's levels carry 12→36 nodes,
-// alternating half-pitch rotations; each upper node branches to its two nearest
-// lower neighbours. This is an open visual approximation, not fabricated-steel setting out.
-const COLUMN_MEMBER = .18; // ASSUMED square white member width, metres
+// ASSUMED member layout: the retained envelope's rings carry 12→36 nodes, alternating half-pitch rotations (counted down
+// from the top ring, which sits on the roof's own first-ring angles); each upper node branches to its two nearest lower
+// neighbours, so equal rings make a diagrid of crossing helices and a ring with more nodes forks them. Centre lines stand
+// inside the envelope by their own radius, so the drawn tubes stay within it. An open visual approximation, not steel setting out.
 export function columnMembers(apex: number): {nodes: V3[]; edges: [number, number][]} {
   const nodes: V3[] = [], edges: [number, number][] = [];
-  const counts = [12, 12, 12, 12, 12, 18, 24, 30, 36]; // ASSUMED circumferential densities
-  let previous: number[] = [];
-  for (const [level, [radius, y]] of columnProfile(apex).entries()) {
-    const count = counts[level]!;
-    const current: number[] = [];
+  const profile = columnProfile(apex), top = apex - 0.1;
+  let previous: { index: number; angle: number }[] = [];
+  for (const [level, [radius, y]] of profile.entries()) {
+    const count = columnCount(radius), phase = ((profile.length - 1 - level) % 2) * 0.5;
+    // 1.7 radii and 3 cm in from the envelope: a node's blob is 1.44 radii out, and a tilted tube's rim reaches 1/cos(tilt) radii sideways. A foot also leaves room for its collar.
+    let r = radius - (0.85 * columnTubeDiameter(y, top) + 0.03);
+    if (level === 0) r = Math.min(r, columnEnvelope(profile, COLUMN_COLLAR.height) - COLUMN_COLLAR.radius - 0.02);
+    const current: typeof previous = [];
     for (let i = 0; i < count; i++) {
-      const angle = (i + (level % 2) * .5) * 2 * Math.PI / count; // ASSUMED angular phase
-      // Inset the square section's half diagonal to retain the existing outer envelope.
-      const r = radius - COLUMN_MEMBER / Math.sqrt(2);
-      current.push(nodes.length);
+      const angle = ((i + phase) * 2 * Math.PI) / count; // ASSUMED angular phase
+      current.push({ index: nodes.length, angle });
       nodes.push([r * Math.cos(angle), y, r * Math.sin(angle)]);
       if (previous.length) {
-        const nearest = [...previous].sort((a,b) => {
-          const distance = (n: number): number => Math.hypot(nodes[n]![0]-nodes.at(-1)![0], nodes[n]![2]-nodes.at(-1)![2]);
-          return distance(a)-distance(b);
-        });
-        for (const a of nearest.slice(0, 2)) edges.push([a, nodes.length-1]);
+        const apart = (a: number): number => { const d = Math.abs(a - angle) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+        const nearest = [...previous].sort((a, b) => apart(a.angle) - apart(b.angle) || a.index - b.index);
+        for (const a of nearest.slice(0, 2)) edges.push([a.index, nodes.length - 1]);
       }
     }
     previous = current;
@@ -356,18 +408,34 @@ export function columnMembers(apex: number): {nodes: V3[]; edges: [number, numbe
 }
 
 function columnGeometry(apex: number): THREE.BufferGeometry {
-  const batch = new Batch(), {nodes, edges} = columnMembers(apex);
-  // ASSUMED horizontal square sections at each joint, joined by four planar faces.
-  // No shell, infill or end caps: shared joints meet, and foot/top ends meet floor/roof.
-  const h = COLUMN_MEMBER / 2;
-  const corners = [[-h,-h],[-h,h],[h,h],[h,-h]] as const;
-  for (const [a,b] of edges) {
-    const p=nodes[a]!, q=nodes[b]!;
-    for (let i=0;i<4;i++) {
-      const c=corners[i]!, d=corners[(i+1)%4]!;
-      batch.poly([[p[0]+c[0],p[1],p[2]+c[1]], [p[0]+d[0],p[1],p[2]+d[1]],
-        [q[0]+d[0],q[1],q[2]+d[1]], [q[0]+c[0],q[1],q[2]+c[1]]]);
+  const batch = new Batch(), {nodes, edges} = columnMembers(apex), top = apex - 0.1;
+  // Round tubes, a leg's diameter set by its height; their ends are clamped to the floor and to the roof's first ring.
+  for (const [a, b] of edges) {
+    const p = nodes[a]!, q = nodes[b]!;
+    roundMember(batch, p, q, columnTubeDiameter((p[1] + q[1]) / 2, top), [0, top]);
+  }
+  // A cast node at each crossing (conc-b: the legs cross at slightly swollen white nodes), 1.44 times a leg's width: a smooth
+  // twenty-sided blob that closes the notches where tubes meet at an angle. None at the floor (the collar does that job) or at
+  // the head (the roof's own first ring does).
+  for (const n of nodes) {
+    if (n[1] <= 0 || n[1] >= top) continue;
+    const radius = 0.72 * columnTubeDiameter(n[1], top);
+    for (const [a, b, c] of ICOSAHEDRON.faces) {
+      const corners = [a, b, c].map(i => ICOSAHEDRON.corners[i]!);
+      batch.poly(corners.map((k): V3 => [n[0] + radius * k[0], n[1] + radius * k[1], n[2] + radius * k[2]]), undefined, { normals: corners });
     }
+  }
+  // A collar round each foot: a short eight-sided sleeve, capped.
+  for (const n of nodes) {
+    if (n[1] !== 0) continue;
+    const { radius, height } = COLUMN_COLLAR;
+    const ring = (y: number): V3[] => Array.from({ length: TUBE_SIDES }, (_, i) => [n[0] + radius * Math.cos((i * 2 * Math.PI) / TUBE_SIDES), y, n[2] + radius * Math.sin((i * 2 * Math.PI) / TUBE_SIDES)]);
+    const foot = ring(0), head = ring(height);
+    for (let i = 0; i < TUBE_SIDES; i++) {
+      const j = (i + 1) % TUBE_SIDES, mid = (i + 0.5) * 2 * Math.PI / TUBE_SIDES;
+      batch.poly([foot[i]!, foot[j]!, head[j]!, head[i]!], undefined, { normal: [Math.cos(mid), 0, Math.sin(mid)] });
+    }
+    batch.poly(head, undefined, { normal: [0, 1, 0] });
   }
   return batch.build();
 }
@@ -421,13 +489,20 @@ interface RoofMaterials {
   skylight: THREE.Material;
   /** the same glazing seen from above: dark and reflective, as R-c shows the rooflights */
   skylightTop: THREE.Material;
-  /** white painted steel: the ribs, the diagonals, the mullions, the funnel */
+  /** white painted steel: the ribs, the diagonals, the mullions */
   member: THREE.Material;
+  /** the same paint on the funnel's thick round tubes, lifted less from below so that the roundness shows (conc-ab: soft grey on the shaded side) */
+  funnel: THREE.Material;
+  /** the paving: charcoal stone in large slabs (R-ab, R-b: lit 64 to 87 a channel, against 136 for the shared pale paving) */
+  floor: THREE.Material;
 }
 let roofMaterials: RoofMaterials | null = null;
+/** The slab texture's average colour (materials.ts) and the tint that darkens it to the references' charcoal (ASSUMED; tuned so the lit floor means 64 to 87 a channel, R-ab, R-b). */
+const FLOOR_AVERAGE = 0x9ea2a8, FLOOR_TINT = 0x94948e;
 
 function roofMaterial(): RoofMaterials {
   if (roofMaterials) return roofMaterials;
+  const slabs = texture('floorSlab');
   roofMaterials = {
     // The scene's lights shine from above, so a lit underside would come out black (materials.ts gives the shed's
     // 'lining' an emissive term for the same reason). Unlit instead: R-a shows a pale, even, light grey soffit.
@@ -441,6 +516,10 @@ function roofMaterial(): RoofMaterials {
     skylightTop: new THREE.MeshPhongMaterial({ color: 0x6f8aa5, emissive: 0x16202b, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.66, side: THREE.FrontSide, depthWrite: false, name: 'concourse-skylight-top' }),
     // Painted white steel seen from below needs the same emissive lift (ribPaint in materials.ts is the shed's version).
     member: new THREE.MeshLambertMaterial({ color: 0xf7f9fb, emissive: 0xbcc1c7, name: 'concourse-member' }),
+    funnel: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, emissive: 0x7d8288, name: 'concourse-funnel' }),
+    // The shared 'concourseFloor' is a pale grey; the references show a dark charcoal stone, mean about (64..87) a channel against
+    // the model's 136. The same slab texture, darkened; where there is no canvas (Node) the colour is the product of the two.
+    floor: new THREE.MeshLambertMaterial({ map: slabs, color: slabs ? FLOOR_TINT : new THREE.Color(FLOOR_AVERAGE).multiply(new THREE.Color(FLOOR_TINT)), name: 'concourse-floor' }),
   };
   return roofMaterials;
 }
@@ -490,6 +569,261 @@ export function glazedCells(d: Diagrid, kept: Tri[], centre: Pt, shed: Pick<Shed
     if (second >= 0) glazed.add(second);
   }
   return glazed;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ground-level fit-out: what the references put on the floor and on the Range's face. All positions are ASSUMED, scaled from
+// the funnel and the Range bays by the people in the photographs (about 1.7 m); the shapes are generic, with no operator names,
+// logos or shop brands (the rubric allows generic signage only).
+//   R-ab, R-b   red-topped, white-faced ticket machines stand in a block on the open floor in front of the Range; dark-blue
+//               wayfinding totems with white lettering and a lit screen at the foot stand either side of the funnel
+//   R-a         two long dark departure boards with amber lettering hang on the Range's face, either side of its centre bay
+//   R-ab, R-b   navy plates with white lettering over each ground-floor opening of the Range, and lit shopfronts in the
+//               openings that are shops
+//   Arup 2/2012 pp.24-29   fare gates stand in the five southern bays (the shed's own bays, 8 m apart from v = 12.1, 6.6 m clear)
+
+/** u of the Western Range's west face, the concourse's side: buildWesternRange's east face is 0.01 m inside the shed's west wall (u = 0), 12 m deep. */
+export const RANGE_FACE = -WESTERN_RANGE.depth - 0.01;
+
+/** Sizes in metres; positions are [u, metres north of the funnel axis] in the shed frame (u across, east; v along, north). */
+export const FITOUT = {
+  /** four machines back to back round a red core: a square block, the red caps reaching 0.825 m from its axis */
+  cluster: { size: 1.65, height: 2.0 },
+  clusters: [[-23.5, -12], [-23.5, 12]] as readonly (readonly [number, number])[],
+  totem: { width: 1.1, depth: 0.22, height: 2.4 },
+  /** the third stands out of the fan of sight lines from the gateline view (55 m out at v = 38) to the five gate mouths, which the pack's view tests require clear */
+  totems: [[-30, -15], [-30, 15], [-24, -26]] as readonly (readonly [number, number])[],
+  /** hung on the Range's face on short brackets, `bottom` above the floor, `standoff` out from the face */
+  board: { length: 16.8, height: 1.05, bottom: 4.9, standoff: 0.3, depth: 0.12 },
+  /** each board's southern end, metres north of the funnel axis */
+  boards: [-24.3, 7.5] as readonly number[],
+  /** fare gates: cabinets either side of each aisle, across each bay at this u (inside the Range), the first bay's centre at v0 + 4 */
+  gate: { u: -9, length: 1.6, width: 0.22, height: 1.0, offsets: [-3, -1.8, -0.6, 0.6, 1.8, 3] as readonly number[], bays: 5, firstBay: 4, pitch: 8 },
+  /** the Range's two shops, v of each centre: WESTERN_SHOPS in shed.ts (v0 + 44, v0 + 48), whose pane stands 0.4 m inside the Range's face (tested against the built Range) */
+  shops: [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 48] as readonly number[],
+  /** a lit interior drawn 1 cm in front of a shop's dark pane, which is 2.8 m wide and rises to 3.2 m */
+  shopfront: { width: 2.6, top: 3.15, bottom: 0.04, u: RANGE_FACE + 0.365 },
+  /** navy plates over the openings, `standoff` out from the Range's face (clear of the string course's 0.15 m), `bottom` above the floor (the openings' head is 3.6 m) */
+  plate: { height: 0.5, bottom: 3.64, standoff: 0.22, depth: 0.05, bayWidth: 5.2, shopWidth: 2.6 },
+} as const;
+/** The lettering the signs carry. Generic words only. */
+export const FITOUT_TEXT = {
+  totem: ['Underground', 'Platforms 0 to 8', 'Toilets', 'Left luggage', 'Information'],
+  board: ['Leeds   Platform 4   On time', 'York   Platform 6   On time', 'Cambridge   Platform 2   Delayed', 'Peterborough   Platform 3   On time', 'Newcastle   Platform 5   On time'],
+  /** over the five gate bays, southernmost first, then over the two shops */
+  plates: ['Platforms 0 to 8', 'Underground', 'Toilets', 'Left luggage', 'Information', 'Cafe', 'News and gifts'],
+} as const;
+
+export interface Footprint { kind: 'cluster' | 'totem' | 'board' | 'gate' | 'plate'; u0: number; u1: number; v0: number; v1: number; bottom: number; top: number }
+/** Where each solid piece of the fit-out stands (with its brackets and plinth), in the shed frame, given the funnel axis's v. */
+export function fitOutFootprints(funnelV: number): Footprint[] {
+  const { cluster, totem, board, gate, plate } = FITOUT, out: Footprint[] = [];
+  for (const [u, dv] of FITOUT.clusters) out.push({ kind: 'cluster', u0: u - cluster.size / 2, u1: u + cluster.size / 2, v0: funnelV + dv - cluster.size / 2, v1: funnelV + dv + cluster.size / 2, bottom: 0, top: cluster.height });
+  // a totem stands on a plinth 0.3 m deep and 0.1 m wider than its body
+  for (const [u, dv] of FITOUT.totems) out.push({ kind: 'totem', u0: u - 0.15, u1: u + 0.15, v0: funnelV + dv - totem.width / 2 - 0.05, v1: funnelV + dv + totem.width / 2 + 0.05, bottom: 0, top: totem.height });
+  for (const dv of FITOUT.boards) out.push({ kind: 'board', u0: RANGE_FACE - board.standoff - board.depth, u1: RANGE_FACE, v0: funnelV + dv, v1: funnelV + dv + board.length, bottom: board.bottom, top: board.bottom + board.height });
+  for (let i = 0; i < gate.bays; i++) for (const o of gate.offsets) {
+    const v = WESTERN_RANGE.v0 + gate.firstBay + i * gate.pitch + o;
+    out.push({ kind: 'gate', u0: gate.u - gate.length / 2, u1: gate.u + gate.length / 2, v0: v - gate.width / 2 - 0.01, v1: v + gate.width / 2 + 0.01, bottom: 0, top: gate.height + 0.02 });
+  }
+  for (const [i, v] of plateCentres().entries()) {
+    const half = (i < gate.bays ? plate.bayWidth : plate.shopWidth) / 2;
+    out.push({ kind: 'plate', u0: RANGE_FACE - plate.standoff - plate.depth, u1: RANGE_FACE, v0: v - half, v1: v + half, bottom: plate.bottom, top: plate.bottom + plate.height });
+  }
+  return out;
+}
+/** v of the centre of each opening that carries a plate: the five gate bays, then the two shops. */
+export function plateCentres(): number[] {
+  const { gate } = FITOUT;
+  return [...Array.from({ length: gate.bays }, (_, i) => WESTERN_RANGE.v0 + gate.firstBay + i * gate.pitch), ...FITOUT.shops];
+}
+
+/**
+ * The sign atlas: one canvas for every lettered face, regions in pixels [x, y, width, height] from the top left. Null in Node.
+ * Each region has the aspect ratio of the face it goes on, so lettering is not stretched.
+ */
+const ATLAS = {
+  width: 1024, height: 512,
+  totem: [0, 0, 192, 448], board: [0, 448, 1024, 64], shop: [192, 0, 208, 250],
+  /** one 56 px row per plate: 582 px wide for a gate bay's 5.2 m by 0.5 m, 291 px for a shop's 2.6 m by 0.5 m */
+  plates: [0, 1, 2, 3, 4, 5, 6].map((k): readonly [number, number, number, number] => [400, k * 56, k < 5 ? 582 : 291, 56]),
+} as const;
+function signAtlas(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas');
+  c.width = ATLAS.width;
+  c.height = ATLAS.height;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  const [tx, ty, tw, th] = ATLAS.totem, [bx, by, bw, bh] = ATLAS.board;
+  // the totem: dark blue, a lettered row for each entry, a lit screen at the foot (R-b: white lettering, a pictogram square, a screen below)
+  g.fillStyle = '#1b2a5e';
+  g.fillRect(tx, ty, tw, th);
+  g.fillStyle = '#ffffff';
+  g.font = 'bold 18px sans-serif';
+  g.textBaseline = 'middle';
+  FITOUT_TEXT.totem.forEach((line, i) => {
+    const y = ty + 30 + i * 46;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 2;
+    g.strokeRect(tx + 10, y - 12, 24, 24);
+    g.fillText(line, tx + 44, y, tw - 50);
+    g.fillRect(tx + 10, y + 21, tw - 20, 1);
+  });
+  const screen = g.createLinearGradient(0, ty + 270, 0, ty + th - 14);
+  screen.addColorStop(0, '#c9c4ff');
+  screen.addColorStop(1, '#6f86e8');
+  g.fillStyle = screen;
+  g.fillRect(tx + 12, ty + 270, tw - 24, th - 284);
+  // the board: near black, two rows of amber lettering, three whole entries to a row (R-a: amber on black)
+  g.fillStyle = '#121418';
+  g.fillRect(bx, by, bw, bh);
+  g.fillStyle = '#ffb21a';
+  g.font = 'bold 23px monospace';
+  const cell = (bw - 28) / 3;
+  for (let row = 0; row < 2; row++) {
+    for (let k = 0; k < 3; k++) g.fillText(FITOUT_TEXT.board[(row * 3 + k) % FITOUT_TEXT.board.length]!, bx + 14 + k * cell, by + 18 + row * 28, cell - 22);
+  }
+  // the plates over the openings: navy, white lettering, a square pictogram at the left (R-ab, R-b: "Family Waiting", "Toilets", "Platforms 0 to 8")
+  ATLAS.plates.forEach(([px, py, pw, ph], i) => {
+    g.fillStyle = '#1d2c66';
+    g.fillRect(px, py, pw, ph);
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 2;
+    g.strokeRect(px + 12, py + 12, ph - 24, ph - 24);
+    g.fillStyle = '#ffffff';
+    g.font = `bold ${i < 5 ? 30 : 26}px sans-serif`;
+    g.textBaseline = 'middle';
+    g.fillText(FITOUT_TEXT.plates[i]!, px + ph, py + ph / 2 + 1, pw - ph - 12);
+  });
+  // a lit shopfront seen through its glazing: warm light, shelves, a counter, a few goods (generic: no marks)
+  {
+    const [sx, sy, sw, sh] = ATLAS.shop;
+    const light = g.createLinearGradient(0, sy, 0, sy + sh);
+    light.addColorStop(0, '#fff1d2');
+    light.addColorStop(0.7, '#f3c987');
+    light.addColorStop(1, '#a8743d');
+    g.fillStyle = light;
+    g.fillRect(sx, sy, sw, sh);
+    g.fillStyle = '#5a4a3c';
+    for (const shelf of [0.22, 0.38, 0.54]) g.fillRect(sx + 8, sy + sh * shelf, sw - 16, 4);
+    const goods = ['#c4202c', '#2b5fb4', '#e6e0d2', '#3c8a52', '#d9a21b', '#7b4a9a'];
+    for (const [k, shelf] of [0.22, 0.38, 0.54].entries()) for (let j = 0; j < 6; j++) {
+      g.fillStyle = goods[(j + k * 2) % goods.length]!;
+      g.fillRect(sx + 12 + j * 31, sy + sh * shelf - 16, 22, 16);
+    }
+    g.fillStyle = '#3a2f27';
+    g.fillRect(sx, sy + sh * 0.72, sw, sh * 0.28);
+    g.fillStyle = '#d8d2c8';
+    g.fillRect(sx, sy + sh * 0.72, sw, 6);
+    g.fillStyle = '#fff6dc';
+    for (const lamp of [0.2, 0.5, 0.8]) g.fillRect(sx + sw * lamp - 10, sy + 4, 20, 6);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+const atlasUV = (region: readonly [number, number, number, number], u: number, v: number): V2 =>
+  [(region[0] + u * region[2]) / ATLAS.width, 1 - (region[1] + (1 - v) * region[3]) / ATLAS.height];
+
+let fitOutMaterials: { solid: THREE.Material; signs: THREE.Material } | null = null;
+function fitOutMaterial(): { solid: THREE.Material; signs: THREE.Material } {
+  if (fitOutMaterials) return fitOutMaterials;
+  const atlas = signAtlas();
+  fitOutMaterials = {
+    solid: new THREE.MeshLambertMaterial({ vertexColors: true, name: 'concourse-fitout' }),
+    // unlit, so the boards and the totems' screens glow as lit signs do; vertex colours carry the flat tone where there is no canvas
+    signs: new THREE.MeshBasicMaterial({ map: atlas, color: 0xffffff, vertexColors: true, name: 'concourse-signs' }),
+  };
+  return fitOutMaterials;
+}
+
+/**
+ * The fit-out as two meshes (lit solids, unlit signs) in a group turned into the shed's frame, so every position here is
+ * the shed's own (x = u, z = -v). Pieces avoid the funnel's feet, the Range's face and each other (tested).
+ */
+function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
+  const solid = new Batch({ colored: true, uv: false }), signs = new Batch({ colored: true });
+  const textured = typeof document !== 'undefined';
+  const WHITE: Rgb = [1, 1, 1], RED = rgb(0xc4202c), PAPER = rgb(0xe7e9eb), SCREEN = rgb(0x18222c), KEYPAD = rgb(0x8c9298), NAVY = rgb(0x1b2a5e), PLINTH = rgb(0x3b3f45);
+  const BOARD = rgb(0x121418), SILVER = rgb(0xbcc1c6), TOP = rgb(0x2c3036), LED = rgb(0x35c06e);
+  const L = (u: number, y: number, v: number): V3 => [u, y, -v];
+  const part = (u: number, y0: number, v: number, du: number, dy: number, dv: number, color: Rgb): void => solid.box(L(u, y0 + dy / 2, v), [du, dy, dv], { color });
+  const { cluster, totem, board, gate } = FITOUT;
+  // ticket machines: four white machines back to back round a red core, red heads, a dark screen and a grey keypad on each front
+  for (const [u, dv] of FITOUT.clusters) {
+    const v = funnelV + dv;
+    part(u, 0, v, 0.6, cluster.height, 0.6, RED);
+    for (let k = 0; k < 4; k++) {
+      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz = Math.round(Math.sin((k * Math.PI) / 2));
+      const wide = dz === 0 ? [0.5, 0.9] : [0.9, 0.5], mu = u + du * 0.55, mv = v + dz * 0.55;
+      part(mu, 0, mv, wide[0]!, 1.72, wide[1]!, PAPER);
+      part(mu, 1.72, mv, wide[0]! + 0.05, cluster.height - 1.72, wide[1]! + 0.05, RED);
+      // fronts, 1 cm proud of the body
+      const fu = mu + du * 0.255, fv = mv + dz * 0.255, across = (a: number, b: number): [number, number] => (dz === 0 ? [a, b] : [b, a]);
+      const [sx, sz] = across(0.02, 0.46), [kx, kz] = across(0.02, 0.4);
+      part(fu, 1.2, fv, sx, 0.34, sz, SCREEN);
+      part(fu, 0.78, fv, kx, 0.3, kz, KEYPAD);
+    }
+  }
+  // wayfinding totems: a dark plinth and body, the lettered faces on both sides in the unlit mesh
+  for (const [u, dv] of FITOUT.totems) {
+    const v = funnelV + dv, h = totem.height;
+    part(u, 0, v, 0.3, 0.1, totem.width + 0.1, PLINTH);
+    part(u, 0.1, v, totem.depth, h - 0.1, totem.width, NAVY);
+    for (const side of [-1, 1]) {
+      const x = u + side * (totem.depth / 2 + 0.004), y0 = 0.1 + 0.12, y1 = h - 0.1;
+      // seen from the west face, north is on the left; from the east face, south is
+      const left = side < 0 ? 1 : -1;
+      const pts = ([[left, y0], [-left, y0], [-left, y1], [left, y1]] as const).map(([k, y]): V3 => L(x, y, v + k * (totem.width / 2 - 0.04)));
+      signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.totem, p!, q!)), { normal: [side, 0, 0], color: textured ? WHITE : NAVY });
+    }
+  }
+  // departure boards: a dark frame on brackets, the lettered face toward the concourse
+  for (const dv of FITOUT.boards) {
+    const v0 = funnelV + dv, v1 = v0 + board.length, face = RANGE_FACE - board.standoff - board.depth;
+    part(face + board.depth / 2, board.bottom, (v0 + v1) / 2, board.depth, board.height, board.length, BOARD);
+    for (const f of [0.05, 0.5, 0.95]) part(RANGE_FACE - board.standoff / 2, board.bottom + 0.2, v0 + f * board.length, board.standoff, 0.12, 0.1, PLINTH);
+    const x = face - 0.004, y0 = board.bottom + 0.06, y1 = board.bottom + board.height - 0.06;
+    const pts = ([[v0 + 0.06, y0], [v1 - 0.06, y0], [v1 - 0.06, y1], [v0 + 0.06, y1]] as const).map(([v, y]): V3 => L(x, y, v));
+    // seen from the west the board's left is its northern end
+    signs.poly([pts[1]!, pts[0]!, pts[3]!, pts[2]!], [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.board, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : BOARD });
+  }
+  // fare gates: silver cabinets with a dark top, a green light at the entry end, either side of each aisle
+  for (let i = 0; i < gate.bays; i++) for (const o of gate.offsets) {
+    const v = WESTERN_RANGE.v0 + gate.firstBay + i * gate.pitch + o;
+    part(gate.u, 0, v, gate.length, gate.height - 0.1, gate.width, SILVER);
+    part(gate.u, gate.height - 0.1, v, gate.length, 0.1, gate.width + 0.02, TOP);
+    part(gate.u - gate.length / 2 + 0.25, gate.height, v, 0.4, 0.02, gate.width - 0.06, LED);
+  }
+  // navy plates over the five gate bays and the two shops, on two short brackets each; the lettered face looks west
+  const { plate, shopfront } = FITOUT;
+  plateCentres().forEach((v, i) => {
+    const half = (i < gate.bays ? plate.bayWidth : plate.shopWidth) / 2, back = RANGE_FACE - plate.standoff, face = back - plate.depth;
+    part(back - plate.depth / 2, plate.bottom, v, plate.depth, plate.height, half * 2, NAVY);
+    for (const side of [-1, 1]) part(RANGE_FACE - plate.standoff / 2, plate.bottom + plate.height / 2 - 0.04, v + side * (half - 0.2), plate.standoff, 0.08, 0.08, PLINTH);
+    const y0 = plate.bottom + 0.02, y1 = plate.bottom + plate.height - 0.02;
+    // seen from the west the plate's left is its northern end
+    const pts = ([[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]] as const).map(([w, y]): V3 => L(face - 0.004, y, w));
+    signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.plates[i]!, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : NAVY });
+  });
+  // the shops' lit interiors, on the dark panes (the panes themselves are the Range's, in shed.ts)
+  for (const v of FITOUT.shops) {
+    const pts = ([[v + shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.top], [v + shopfront.width / 2, shopfront.top]] as const).map(([w, y]): V3 => L(shopfront.u, y, w));
+    signs.poly(pts, [[0, 0], [1, 0], [1, 1], [0, 1]].map(([p, q]) => atlasUV(ATLAS.shop, p!, q!)), { normal: [-1, 0, 0], color: textured ? WHITE : rgb(0xe8c58a) });
+  }
+  const group = new THREE.Group();
+  group.name = 'concourse-fitout';
+  group.rotation.y = -shed.heading;
+  group.position.set(shed.origin[0], 0, shed.origin[1]);
+  const mat = fitOutMaterial();
+  for (const [batch, m, name] of [[solid, mat.solid, 'concourse-fitout-solid'], [signs, mat.signs, 'concourse-fitout-signs']] as const) {
+    const mesh = new THREE.Mesh(batch.build(), m);
+    mesh.name = name;
+    group.add(mesh);
+  }
+  return group;
 }
 
 export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: ShedLayout, exclusions: Pt[][] = []): THREE.Group {
@@ -651,9 +985,10 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   }
   add(wall, material('glass'), 'concourse-wall', 3);
   add(mullions, mat.member, 'concourse-mullions');
-  add(floor, material('concourseFloor'), 'concourse-floor');
+  add(floor, mat.floor, 'concourse-floor');
+  group.add(buildFitOut(shed, worldToShed(shed, centre).v));
   // Open branching stalk, batched into one mesh at the retained position.
-  const column = new THREE.Mesh(columnGeometry(canopy.apex), mat.member);
+  const column = new THREE.Mesh(columnGeometry(canopy.apex), mat.funnel);
   column.name = 'concourse-column';
   column.position.set(cx, 0, cz);
   group.add(column);

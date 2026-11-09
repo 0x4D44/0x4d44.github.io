@@ -84,8 +84,11 @@ python3 -I -u kings-cross-src/tools/mutation/berths-cli.py kings-cross-src .scra
 python3 -I -u kings-cross-src/tools/mutation/berths-geography.py
 python3 -I -u kings-cross-src/tools/mutation/berths.py kings-cross-src .scratch/mutation/berths
 python3 -I -u kings-cross-src/tools/mutation/board.py kings-cross-src .scratch/mutation/board
+python3 -I -u kings-cross-src/tools/mutation/concourse-fitout.py kings-cross-src .scratch/mutation/concourse-fitout
+python3 -I -u kings-cross-src/tools/mutation/concourse-funnel.py kings-cross-src .scratch/mutation/concourse-funnel
 python3 -I -u kings-cross-src/tools/mutation/concourse-hotel.py kings-cross-src .scratch/mutation/concourse-hotel
 python3 -I -u kings-cross-src/tools/mutation/concourse-roof.py kings-cross-src .scratch/mutation/concourse-roof
+python3 -I -u kings-cross-src/tools/mutation/concourse-skin.py kings-cross-src .scratch/mutation/concourse-skin
 python3 -I -u kings-cross-src/tools/mutation/concourse.py kings-cross-src .scratch/mutation/concourse
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
 python3 -I -u kings-cross-src/tools/mutation/curves.py kings-cross-src .scratch/mutation/curves

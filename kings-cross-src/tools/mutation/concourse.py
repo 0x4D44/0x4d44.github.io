@@ -22,8 +22,8 @@ original = (work / rel).read_text()
 mutations = [
     ('opaque shell restored', 'return batch.build();', "return new THREE.LatheGeometry(columnProfile(apex).map(([r,y])=>new THREE.Vector2(r,y)),40);"),
     ('one parent removes branching connectivity', 'nearest.slice(0, 2)', 'nearest.slice(0, 1)'),
-    ('drawn members missing', 'for (const [a,b] of edges) {', 'for (const [a,b] of edges.filter((_, i) => i % 2 === 0)) {'),
-    ('members outside retained envelope', 'radius - COLUMN_MEMBER / Math.sqrt(2)', 'radius + 1'),
+    ('drawn members missing', 'for (const [a, b] of edges) {', 'for (const [a, b] of edges.filter((_, i) => i % 2 === 0)) {'),
+    ('members outside retained envelope', 'let r = radius - (0.85 * columnTubeDiameter(y, top) + 0.03);', 'let r = radius + 1;'),
     ('stalk height shortened', 'nodes.push([r * Math.cos(angle), y, r * Math.sin(angle)]);', 'nodes.push([r * Math.cos(angle), y * .9, r * Math.sin(angle)]);'),
     ('column moved into facade', 'column.position.set(cx, 0, cz);', 'column.position.set(cx + 10, 0, cz);'),
 ]

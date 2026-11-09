@@ -113,7 +113,7 @@ test('columnProfile: a trumpet that rises from a flared foot, narrows to a waist
 test('buildConcourse: lattice under the published apex, panels and floor facing up, rim glazing facing out', () => {
   const group = buildConcourse(canopy, station.pts, layout);
   const named = (n: string): THREE.Mesh => group.getObjectByName(n) as THREE.Mesh;
-  assert.deepEqual(group.children.map(c => c.name).sort(), ['concourse-cladding', 'concourse-column', 'concourse-floor', 'concourse-glass', 'concourse-glass-top',
+  assert.deepEqual(group.children.map(c => c.name).sort(), ['concourse-cladding', 'concourse-column', 'concourse-fitout', 'concourse-floor', 'concourse-glass', 'concourse-glass-top',
     'concourse-lattice', 'concourse-mullions', 'concourse-panels', 'concourse-wall'], 'the concourse is these meshes and no others');
   const bbox = (m: THREE.Mesh): THREE.Box3 => {
     m.geometry.computeBoundingBox();

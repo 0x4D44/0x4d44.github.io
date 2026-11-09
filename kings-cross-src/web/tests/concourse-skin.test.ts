@@ -117,7 +117,9 @@ test('roof build-up: a ray meets the cladding from above and the soffit from bel
   // whole cells only: a cell clipped to a sliver by the Range cut can lie wholly under a member (0.15 m rib, 0.22 m tube)
   const soffit = soffitCells().filter(f => f.area > 1.5), glazed = roofGlass().filter(f => f.area > 1.5);
   assert.ok(soffit.length > 1000 && glazed.length > 100, `${soffit.length} solid and ${glazed.length} glazed whole cells`);
-  const first = (start: THREE.Vector3, direction: THREE.Vector3): string | undefined => new THREE.Raycaster(start, direction).intersectObject(skin, true)[0]?.object.name;
+  // the roof's own layers only: not the funnel or the fit-out standing under it
+  const layers = skin.children.filter(c => !['concourse-column', 'concourse-fitout'].includes(c.name));
+  const first = (start: THREE.Vector3, direction: THREE.Vector3): string | undefined => new THREE.Raycaster(start, direction).intersectObjects(layers, true)[0]?.object.name;
   for (let i = 0; i < soffit.length; i += 9) {
     const m = soffit[i]!.mid;
     assert.equal(first(new THREE.Vector3(m.x, 45, m.z), new THREE.Vector3(0, -1, 0)), 'concourse-cladding', `solid cell at ${m.x.toFixed(1)}, ${m.z.toFixed(1)} is not clad from above`);
@@ -178,5 +180,7 @@ test('roof materials: the underside reads light, as the scene lights shine from 
   assert.equal(soffit.side, THREE.DoubleSide, 'the soffit shows from below, the apron from outside');
   const member = (skin.getObjectByName('concourse-lattice') as THREE.Mesh).material as THREE.MeshLambertMaterial;
   assert.ok(lum(member.emissive) > 0.35, `members glow ${lum(member.emissive).toFixed(2)} from below`);
-  assert.equal((skin.getObjectByName('concourse-column') as THREE.Mesh).material, member, 'the funnel is the same white steel');
+  const funnel = (skin.getObjectByName('concourse-column') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+  assert.equal(funnel.type, 'MeshLambertMaterial', 'the funnel is the same painted steel');
+  assert.ok(funnel.color.r > 0.85 && lum(funnel.emissive) > 0.15 && lum(funnel.emissive) < lum(member.emissive), `the funnel's tubes stay white but keep a shaded side (glow ${lum(funnel.emissive).toFixed(2)})`);
 });
