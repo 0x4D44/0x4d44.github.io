@@ -139,7 +139,7 @@ M = [
     ("cluster: the Azuma's window as short as the face is deep", "sBack0: 0.2, sFront1: 0.32, sBack1: 0.9, colour: POD }", "sBack0: 0.2, sFront1: 0.32, sBack1: 0.1, colour: POD }"),
     ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },", "cabSideSurround: CAB_SWOOSH },"),
     ("cluster: the Hull Trains cab's window in the Azuma's black", "window: { ...AT300_CLUSTER.window, colour: HULL_POD }", "window: { ...AT300_CLUSTER.window, colour: POD }"),
-    ("cluster: the window starts at the face's plane", "export const FACE_CLEAR = 0.04;", "export const FACE_CLEAR = 0;"),
+    ("cluster: the window starts at the face's plane", "export const FACE_CLEAR = 0.05;", "export const FACE_CLEAR = 0;"),
     ("cluster: the Lumo cab with the Azuma's pale rim", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER } },"),
     ("cluster: the Azuma's window at the foot of the nose", "window: { y0: 1.2, y1: 1.86,", "window: { y0: 0.7, y1: 1.0,"),
     ("cluster: drawn on one side only", "      for (const side of [-1, 1]) {\n        if (cluster.rim) windowPatch(", "      for (const side of [1]) {\n        if (cluster.rim) windowPatch("),
@@ -368,8 +368,8 @@ M = [
     ("mask: the cap 10 cm wider at its foot than its line", "lerp(mask.hwFoot, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom))", "lerp(mask.hwFoot + 0.1, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom))"),
     ("mask: the band over the nose stops half a metre short of the glass", "const sEnd = screen.s0 - front.frame + 0.06;", "const sEnd = screen.s0 - front.frame - 0.5;"),
     ("mask: the band over the nose runs on past the glass", "const sEnd = screen.s0 - front.frame + 0.06;", "const sEnd = screen.s0 - front.frame + 0.6;"),
-    ("cluster: no pale rim on the Azuma window", "if (cluster.rim) windowPatch(side, PANE_LIFT.swoosh - 0.004, cluster.rim.width, cluster.rim.colour);", ""),
-    ("cluster: only the tail lens drawn", "const at = disc(side, 'head', cluster.head, PANE_LIFT.pane);", "const at = disc(side, 'tail', cluster.head, PANE_LIFT.pane);"),
+    ("cluster: no pale rim on the Azuma window", "if (cluster.rim) windowPatch(side, CLUSTER_LIFT.rim, cluster.rim.width, cluster.rim.colour);", ""),
+    ("cluster: only the tail lens drawn", "const at = disc(side, 'head', cluster.head, CLUSTER_LIFT.lens);", "const at = disc(side, 'tail', cluster.head, CLUSTER_LIFT.lens);"),
     ("paint: Hull town names dropped", "    const rest = LIVERIES.hulltrains.decals(c).slice(1);", "    const rest: DecalItem[] = [];", LV),
     # --- the side skirts: thin panels inboard of the body's lowest corner, lighter on the Azuma, with louvres ----------------
     ("skirt: stands out of the body again (the proud box)", "  return edge - SKIRT_SETBACK - (floor + SKIRT_TUCK - y) * SKIRT_LEAN;", "  return edge + 0.12 - (floor + SKIRT_TUCK - y) * SKIRT_LEAN;", P),
@@ -534,6 +534,22 @@ M = [
     ('livery: the Desiro foot has a second stripe', "  return [{ colour: 0x41464e, pts: rect(0, TEX_SPAN, TEX_Y0, 1.0) }];", "  return [{ colour: 0x41464e, pts: rect(0, TEX_SPAN, TEX_Y0, 1.0) }, { colour: 0xffffff, pts: rect(0, TEX_SPAN, 1.2, 1.3) }];", LV),
     ('page: the lamp switch is not imported', "import { buildTrain, setTrainLampState, standTrain } from './train.ts';", "import { buildTrain, standTrain } from './train.ts';", 'web/src/main.ts'),
     ('page: the lamp switch is not on window.__kx', "Object.assign(kx, { evidenceBuildTrain: buildTrain, setTrainLampState, atmosphere, weatherFeed });", "Object.assign(kx, { evidenceBuildTrain: buildTrain, atmosphere, weatherFeed });", 'web/src/main.ts'),
+    # --- the cluster stays on the flank, its layers stand apart, its grid follows the shoulder (round 3, after the first Metal capture) ----------------
+    ("cluster: no stop on the flank", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 0;"),
+    ("cluster: the stop at the section's widest point", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 1;"),
+    ("cluster: the stop never bites", "return lerp(a[1], b[1], (a[0] - limit) / (a[0] - b[0]));", "return Infinity;"),
+    ("cluster: the stop takes the section's first point for the widest", "const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0]));", "const limit = FLANK_FRACTION * (h[0] as [number, number])[0];"),
+    ("cluster: the window not a rim's width under the stop", "const reserve = cluster.rim?.width ?? 0;", "const reserve = 0;"),
+    ("cluster: the rim not laid on the stop itself", "Math.min(y, flankTop(s) - reserve + grow)", "Math.min(y, flankTop(s) - reserve)"),
+    ("cluster: the window a rim's width over the stop", "Math.min(y, flankTop(s) - reserve + grow)", "Math.min(y, flankTop(s) + reserve + grow)"),
+    ("cluster: the rim at the swoosh's height", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;", "export const CLUSTER_LIFT = { rim: 0.012, window: 0.026, lens: 0.03 } as const;"),
+    ("cluster: the window 4 mm over the rim", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.018, lens: 0.03 } as const;"),
+    ("cluster: the lenses at the window's height", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.026 } as const;"),
+    ("cluster: the window below the rim", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;", "export const CLUSTER_LIFT = { rim: 0.026, window: 0.014, lens: 0.03 } as const;"),
+    ("cluster: five rows", "      const rows = 8;\n      const cols = 8;", "      const rows = 5;\n      const cols = 8;"),
+    ("cluster: three columns", "      const rows = 8;\n      const cols = 8;", "      const rows = 8;\n      const cols = 3;"),
+    ("cluster: the lenses where the photographs put them", "head: { s: 0.42, y: 1.57, r: 0.1 },", "head: { s: 0.4, y: 1.66, r: 0.11 },"),
+    ("cluster: the tail lamp above the window's front edge", "tail: { s: 0.25, y: 1.4, r: 0.07 },", "tail: { s: 0.1, y: 1.4, r: 0.07 },"),
 ]
 only = sys.argv[3:]
 selected = [m for m in M if not only or any(o in m[0] for o in only)]

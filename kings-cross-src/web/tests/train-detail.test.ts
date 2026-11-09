@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, COVER_RELIEF, END_GAP, FACE_CLEAR, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_LIFT, COVER_RELIEF, END_GAP, FACE_CLEAR, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit } from '../src/train-parts.ts';
@@ -1248,11 +1248,14 @@ test('fronts: the Azuma\'s front: a round-lensed lamp cluster on each cheek, par
   // lner-800-doncaster-2026 show round lenses in a housing that sweeps back and up the cheek, and wiper arms parked on the glass
   // CHANGED a third time (a pod with the lenses on the face): lner-800-113-newcastle-2025 (head on) and lner-801-214-2025 show the headlights about 0.9 m either side of the
   // middle and 1.65 m up, in a slanted smoked-glass window with a pale rim that wraps from the face onto the cheek, a smaller lamp below and nearer the face: the spec is that window
+  // CHANGED a fourth time (the headlight 1.66 m up, 0.11 m in radius, 0.4 m behind the face; the tail lamp 1.42 m up, 0.075 m, 0.2 m): this nose's flank turns over onto its roof at under
+  // 1.75 m where the cluster stands, the window now stops there (FLANK_FRACTION: its top-front corner used to be laid across the roof's rounding and the colour mask's band, a strip of shards),
+  // and a lens of the photographs' size and height would stand out above it. Both lenses sit lower in the window, the headlight 0.1 m in radius at 1.57 m and the tail lamp 0.07 m at 1.4 m
   assert.deepEqual(bodySpec('at300').front, {
     cluster: {
       window: { y0: 1.2, y1: 1.86, sFront0: FACE_CLEAR, sBack0: 0.2, sFront1: 0.32, sBack1: 0.9, colour: POD },
-      head: { s: 0.4, y: 1.66, r: 0.11 },
-      tail: { s: 0.2, y: 1.42, r: 0.075 },
+      head: { s: 0.42, y: 1.57, r: 0.1 },
+      tail: { s: 0.25, y: 1.4, r: 0.07 },
       rim: { colour: 0xc7ccd3, width: 0.025 },
     },
     frame: 0.07,
@@ -3464,7 +3467,8 @@ test('lamps: the AT300 kinds\' lamp clusters are a window on each cheek, behind 
         // far as the spec's top edge and up and down as far as its height
         const win: THREE.Vector3[] = onSide(trisOfColour(mesh, cluster.window.colour)).flat();
         assert.ok(win.length >= 300, `${here}: only ${win.length} window vertices`);
-        assert.ok(Math.min(...win.map(along)) > FACE_CLEAR - 0.02, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
+        // (CHANGED: the allowance for the lift was a literal 2 cm, the window's old 12 mm and a little over; it is the window's own lift now, which is 26 mm)
+        assert.ok(Math.min(...win.map(along)) > FACE_CLEAR - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
         const reach = Math.max(...win.map(along));
         near(reach, cluster.window.sBack1, 0.1, `${here}: the window's reach`);
         near(Math.min(...win.map((v) => v.y)), cluster.window.y0, 0.03, `${here}: the window's foot`);
@@ -3517,6 +3521,91 @@ test('lamps: the AT300 kinds\' lamp clusters are a window on each cheek, behind 
   // the head lens is bigger than the tail lens, and the window's top edge is longer than its foot's (a slanted wedge, as the photographs show it)
   const base = bodySpec('at300').front.cluster;
   assert.ok(base && base.head.r > base.tail.r && base.window.sBack1 - base.window.sFront1 > base.window.sBack0 - base.window.sFront0, 'the headlight is bigger than the tail lamp; the window is longer at its top');
+});
+
+test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, its layers stand apart, its grid follows the shoulder, and both lenses lie inside the window', () => {
+  // Round 3, after the first Metal capture: in the 3/4 and head-on views the cluster's window was torn at its edges, black shards in the yellow mask's corners and white shards in the
+  // window. The window's top edge is a level line at 1.86 m and at the tip the nose itself is lower than that, so its top-front corner was laid across the roof's rounding and under the
+  // colour mask's band (which stands up to 12 mm off the loft, where the window stood 12 mm too: z-fighting); the window and its rim, two patches on different grids, also differed by more
+  // than their 4 mm of gap between their vertices; and 5 rows of a window 0.66 m tall sag 7 mm between rows on the shoulder
+  const spec = bodySpec('at300');
+  const sec = carSection(spec);
+  const norm = normalised(sec);
+  const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
+  const widest = (s: number): number => Math.max(...halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, s))).map((p) => p[0]));
+  /** The flank, as a fraction of the section's widest half-width: written here, not read from FLANK_FRACTION, so that the stop being switched off or loosened is seen. */
+  const FLANK = 0.75;
+  // the layers: the rim 2 mm over the highest of the colour mask's band (12 mm) and the cab side window's swoosh, the window 10 mm over the rim, the lenses 3 mm over the window
+  const BAND_TOP = 0.012;
+  assert.ok(CLUSTER_LIFT.rim - Math.max(BAND_TOP, PANE_LIFT.swoosh) >= 0.002 - 1e-9, `the rim stands ${CLUSTER_LIFT.rim} m off the loft, under or level with what it meets`);
+  assert.ok(CLUSTER_LIFT.window - CLUSTER_LIFT.rim >= 0.01 - 1e-9, `the window stands ${CLUSTER_LIFT.window}, the rim ${CLUSTER_LIFT.rim}`);
+  assert.ok(CLUSTER_LIFT.lens - CLUSTER_LIFT.window >= 0.003 - 1e-9, `the lenses stand ${CLUSTER_LIFT.lens}, the window ${CLUSTER_LIFT.window}`);
+  for (const kind of ['lner5', 'hull5', 'lumo5'] as const) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    const cluster = frontOf(kind).cluster;
+    assert.ok(cluster, `${kind}: has a cluster`);
+    for (const car of endCabs(layout)) {
+      const mesh = detailOf(g, car);
+      const face = facePlane(car, true, false);
+      const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+      const headHex = car.cab === 'front' ? LENS.headOn : LENS.headOff;
+      const tailHex = car.cab === 'rear' ? LENS.tailOn : LENS.tailOff;
+      for (const sign of [-1, 1]) {
+        const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
+        const onSide = (ts: Tri[]): Tri[] => ts.filter((t) => t.every((v) => v.x * sign > 0));
+        const winTris = onSide(trisOfColour(mesh, cluster.window.colour));
+        const win: THREE.Vector3[] = winTris.flat();
+        const rim: THREE.Vector3[] = cluster.rim ? onSide(trisOfColour(mesh, cluster.rim.colour)).flat() : [];
+        // on the flank: no vertex of the window or its rim stands nearer the middle than three quarters of the section's widest half-width at its own distance from the tip (a
+        // vertex is lifted along the normal, which moves its distance a few millimetres: 2 cm of slack), and the stop is set no looser than that
+        assert.ok(FLANK_FRACTION >= FLANK, `the stop is at ${FLANK_FRACTION} of the widest half-width`);
+        for (const [label, vs] of [['window', win], ['rim', rim]] as const) {
+          for (const v of vs) {
+            const limit = FLANK * widest(along(v) + NOSE_RECESS);
+            assert.ok(Math.abs(v.x) >= limit - 0.02, `${here}: a ${label} vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, the flank starts at ${limit.toFixed(3)}`);
+          }
+        }
+        if (cluster.rim) {
+          // the rim edges the window where the stop bites too: over the front of the top edge the rim's highest vertex stands at least a rim's width over the window's (less what the lifts
+          // move them, a few millimetres)
+          const top = (vs: THREE.Vector3[]): number => Math.max(...vs.filter((v) => along(v) < 0.45).map((v) => v.y));
+          assert.ok(top(rim) - top(win) >= 0.012, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+        }
+        // the grid follows the shoulder: no edge of the window climbs more than 9 cm (the rows: 5 rows of its 0.66 m sag 7 mm between them on the shoulder, 8 rows 3 mm), and an edge
+        // along a row (climbing under 2 cm) runs no further than 15 cm behind the face-ward one (the columns: they crowd toward the front edge, the last two are the furthest apart)
+        let rowStep = 0;
+        let colStep = 0;
+        for (const t of winTris) {
+          for (const [a, b] of [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]] as const) {
+            const dy = Math.abs(a.y - b.y);
+            rowStep = Math.max(rowStep, dy);
+            if (dy < 0.02) colStep = Math.max(colStep, Math.abs(along(a) - along(b)));
+          }
+        }
+        assert.ok(rowStep > 0.04 && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);
+        assert.ok(colStep > 0.05 && colStep <= 0.15, `${here}: the window's columns are up to ${colStep.toFixed(3)} m apart`);
+        // both lenses lie inside the window: every vertex of a lens, seen from the side (distance behind the face, height), is in one of the window's triangles or within 5 mm of its edge
+        // (the layers' lifts shift a vertex that much)
+        const inWindow = (a: number, y: number): boolean =>
+          winTris.some((t) => {
+            const p = t.map((v): [number, number] => [along(v), v.y]) as [[number, number], [number, number], [number, number]];
+            const area = (p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) - (p[2][0] - p[0][0]) * (p[1][1] - p[0][1]);
+            if (Math.abs(area) < 1e-9) return false;
+            return [0, 1, 2].every((i) => {
+              const [x0, y0] = p[i] as [number, number];
+              const [x1, y1] = p[(i + 1) % 3] as [number, number];
+              return (Math.sign(area) * ((x1 - x0) * (y - y0) - (y1 - y0) * (a - x0))) / Math.hypot(x1 - x0, y1 - y0) >= -0.005;
+            });
+          });
+        for (const [role, hex] of [['head', headHex], ['tail', tailHex]] as const) {
+          const lens = onSide(trisOfColour(mesh, hex)).flat();
+          assert.ok(lens.length >= 14, `${here} ${role} lens: ${lens.length} vertices`);
+          for (const v of lens) assert.ok(inWindow(along(v), v.y), `${here} ${role} lens: a vertex ${along(v).toFixed(3)} m behind the face, ${v.y.toFixed(3)} m up, is outside the window`);
+        }
+      }
+    }
+  }
 });
 
 test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains beak\'s grey over the face between two slanted lines and back over the nose\'s top to the windscreen; none on Lumo or any other kind', () => {

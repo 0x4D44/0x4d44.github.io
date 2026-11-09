@@ -145,6 +145,15 @@ const PANE_SKY_ROWS: readonly [readonly [number, number], readonly [number, numb
  */
 export const PANE_LIFT = { swoosh: 0.012, seal: 0.014, pane: 0.016, sky: 0.022 } as const;
 /**
+ * How far each layer of an AT300 lamp cluster stands off the loft, metres: the pale rim, the smoked window, the lenses. The cluster's top and back edges lie under the colour
+ * mask's band over the nose's top (4 to 12 mm) and against the cab side window's swoosh (12 mm), and a layer at the same height as either of them is z-fought into a ragged
+ * edge (the black window torn by shards of yellow and red in the 3/4 views), so the rim stands 2 mm over the highest of those, the window 2 mm over the rim and the lenses 3 mm
+ * over the window.
+ */
+export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;
+/** A lamp cluster stays on the nose's flank: where the outline's half-width falls under this fraction of the section's widest, above the window's foot, it has turned over onto the roof. */
+export const FLANK_FRACTION = 0.8;
+/**
  * The lenses of a cab's lamps, lit and dark. A train in service shows white headlights at its leading end and red tail lamps at its trailing end,
  * and the other lenses unlit (an unlit headlamp is a pale reflector, an unlit tail lens a dark red); the cab ends of two coupled units show none
  * of the four. Car 0 is the leading car and the last car the trailing one (trains-live.ts walks the cars back from the leading end), so a train is
@@ -432,15 +441,20 @@ function windowsIn(from: number, to: number, pitch: number, pier: number, atLeas
 
 /**
  * No part of a cluster starts closer to the nose's tip than this, metres along the nose. Where the face turns into the cheek the surface leans forward, so a patch lifted
- * off it by a centimetre would stand ahead of the face's plane, outside its own car.
+ * off it by a centimetre would stand ahead of the face's plane, outside its own car: the window's lift (CLUSTER_LIFT.window, 26 mm) takes at most that much off its distance
+ * behind the face, and it still stands 2 cm or more behind it.
  */
-export const FACE_CLEAR = 0.04;
+export const FACE_CLEAR = 0.05;
 
-/** The AT300's cluster (see ClusterSpec); a kind's own colours are laid over it (FRONT_OVERRIDES). */
+/**
+ * The AT300's cluster (see ClusterSpec); a kind's own colours are laid over it (FRONT_OVERRIDES). The photographs put the headlight about 1.65 m up, level with the windscreen's lower
+ * corners; this nose's flank turns over onto its roof at under 1.75 m where the cluster stands (the loft's face is lower than the real one), and the window stops there
+ * (FLANK_FRACTION), so the lenses sit where the window can hold them: the headlight 1.57 m up and 0.1 m in radius, the tail lamp lower and nearer the face (ASSUMED, from the loft's own outline).
+ */
 export const AT300_CLUSTER: ClusterSpec = {
   window: { y0: 1.2, y1: 1.86, sFront0: FACE_CLEAR, sBack0: 0.2, sFront1: 0.32, sBack1: 0.9, colour: POD },
-  head: { s: 0.4, y: 1.66, r: 0.11 },
-  tail: { s: 0.2, y: 1.42, r: 0.075 },
+  head: { s: 0.42, y: 1.57, r: 0.1 },
+  tail: { s: 0.25, y: 1.4, r: 0.07 },
   rim: { colour: 0xc7ccd3, width: 0.025 },
 };
 
@@ -1414,8 +1428,23 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         return { p: [p[0] + n[0] * lift, p[1] + n[1] * lift, p[2] + n[2] * lift], n };
       };
       const win = cluster.window;
-      const rows = 5;
-      const cols = 14;
+      const rows = 8;
+      const cols = 8;
+      // The highest a layer of the cluster may stand at distance s from the tip: the cluster is on the flank, so it stops where the outline has turned over onto the nose's top
+      // (its half-width under FLANK_FRACTION of the section's widest, above the window's foot). The window's top edge is a level line, and at the tip the nose itself is lower than
+      // that line, so without the stop the window's top-front corner is laid across the roof's rounding and the colour mask's band, a ragged strip of shards in the face's corners.
+      const flankTop = (s: number): number => {
+        const h = glassHalf(Math.max(0, s));
+        const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0]));
+        for (let k = 1; k < h.length; k++) {
+          const a = h[k - 1] as [number, number];
+          const b = h[k] as [number, number];
+          if (a[1] >= win.y0 && b[1] > a[1] && a[0] >= limit && b[0] < limit) return lerp(a[1], b[1], (a[0] - limit) / (a[0] - b[0]));
+        }
+        return Infinity;
+      };
+      // (the rim is laid on the stop itself, the window a rim's width under it, so the pale edge runs along the window's top where the stop bites)
+      const reserve = cluster.rim?.width ?? 0;
       const windowPatch = (side: number, lift: number, grow: number, colour: number): void => {
         const grid: { p: V3; n: V3 }[][] = [];
         for (let q = 0; q <= rows; q++) {
@@ -1425,7 +1454,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           const sF = Math.max(FACE_CLEAR, lerp(win.sFront0, win.sFront1, f) - grow);
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
-          grid.push(Array.from({ length: cols + 1 }, (_, p) => lifted(side, lerp(sF, sB, (p / cols) * (p / cols)), y, lift)));
+          grid.push(
+            Array.from({ length: cols + 1 }, (_, p) => {
+              const s = lerp(sF, sB, (p / cols) * (p / cols));
+              return lifted(side, s, Math.min(y, flankTop(s) - reserve + grow), lift);
+            }),
+          );
         }
         for (let i = 0; i < rows; i++) {
           for (let j = 0; j < cols; j++) {
@@ -1454,10 +1488,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         return c.p;
       };
       for (const side of [-1, 1]) {
-        if (cluster.rim) windowPatch(side, PANE_LIFT.swoosh - 0.004, cluster.rim.width, cluster.rim.colour);
-        windowPatch(side, PANE_LIFT.swoosh, 0, win.colour);
-        disc(side, 'tail', cluster.tail, PANE_LIFT.pane);
-        const at = disc(side, 'head', cluster.head, PANE_LIFT.pane);
+        if (cluster.rim) windowPatch(side, CLUSTER_LIFT.rim, cluster.rim.width, cluster.rim.colour);
+        windowPatch(side, CLUSTER_LIFT.window, 0, win.colour);
+        disc(side, 'tail', cluster.tail, CLUSTER_LIFT.lens);
+        const at = disc(side, 'head', cluster.head, CLUSTER_LIFT.lens);
         const m = new THREE.Object3D();
         m.name = 'headlight';
         m.position.set(at[0], at[1], Z(at[2]));
